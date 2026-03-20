@@ -27,6 +27,7 @@ except Exception:
 class DataType(Enum):
     FLOAT = "FLOAT"
     UCHAR = "UCHAR"
+    INT8 = "INT8"
     INT16 = "INT16"
     UINT16 = "UINT16"
     BOOL = "BOOL"
@@ -141,16 +142,22 @@ class IdmModbusClient:
             return round(value * reg.multiplier, 2)
 
         elif reg.datatype == DataType.UCHAR:
-            return registers[0] & 0xFF
+            return round((registers[0] & 0xFF) * reg.multiplier, 2) if reg.multiplier != 1.0 else (registers[0] & 0xFF)
+
+        elif reg.datatype == DataType.INT8:
+            val = registers[0] & 0xFF
+            if val >= 128:
+                val -= 256
+            return round(val * reg.multiplier, 2) if reg.multiplier != 1.0 else val
 
         elif reg.datatype == DataType.INT16:
             val = registers[0]
             if val >= 32768:
                 val -= 65536
-            return val
+            return round(val * reg.multiplier, 2) if reg.multiplier != 1.0 else val
 
         elif reg.datatype == DataType.UINT16:
-            return registers[0]
+            return round(registers[0] * reg.multiplier, 2) if reg.multiplier != 1.0 else registers[0]
 
         elif reg.datatype == DataType.BOOL:
             return bool(registers[0] & 0x01)
@@ -165,16 +172,24 @@ class IdmModbusClient:
             return [low, high]
 
         elif reg.datatype == DataType.UCHAR:
-            return [int(value) & 0xFF]
+            val = int(round(float(value) / reg.multiplier))
+            return [val & 0xFF]
+
+        elif reg.datatype == DataType.INT8:
+            val = int(round(float(value) / reg.multiplier))
+            if val < 0:
+                val += 256
+            return [val & 0xFF]
 
         elif reg.datatype == DataType.INT16:
-            val = int(value)
+            val = int(round(float(value) / reg.multiplier))
             if val < 0:
                 val += 65536
             return [val & 0xFFFF]
 
         elif reg.datatype == DataType.UINT16:
-            return [int(value) & 0xFFFF]
+            val = int(round(float(value) / reg.multiplier))
+            return [val & 0xFFFF]
 
         elif reg.datatype == DataType.BOOL:
             return [1 if value else 0]
