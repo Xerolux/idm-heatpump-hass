@@ -23,14 +23,14 @@ acknowledge_errors:
   name: "Acknowledge Errors"
   description: "Acknowledge/clear active error messages on the heat pump"
   target:
-    device:
+    entity:
       integration: idm_heatpump_v2
 
 write_register:
   name: "Write Register"
   description: "Write a value directly to a Modbus register (advanced)"
   target:
-    device:
+    entity:
       integration: idm_heatpump_v2
   fields:
     address:
