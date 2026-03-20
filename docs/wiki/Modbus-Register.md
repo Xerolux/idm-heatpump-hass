@@ -26,11 +26,14 @@ Die IDM Navigator 2.0 Warmepumpe stellt **663 Register** uber Modbus TCP zur Ver
 
 | Typ | Beschreibung | Register |
 |-----|-------------|----------|
-| **FLOAT** | IEEE 754 Gleitkomma (2 Register, Low Word first) | 2 |
-| **UCHAR** | 8-Bit vorzeichenlos (in 16-Bit Register) | 1 |
-| **WORD** | 16-Bit vorzeichenlos | 1 |
-| **INT16** | 16-Bit vorzeichenbehaftet | 1 |
+| **FLOAT** | IEEE 754 Gleitkomma (2 Register, Little Endian `<f` / `<HH`) | 2 |
+| **UCHAR** | 8-Bit vorzeichenlos (in 16-Bit Register, oft mit Multiplikator) | 1 |
+| **INT8** | 8-Bit vorzeichenbehaftet (für negative Werte wie Parallelverschiebung) | 1 |
+| **UINT16** | 16-Bit vorzeichenlos (z.B. für Leistungsbegrenzungen) | 1 |
+| **INT16** | 16-Bit vorzeichenbehaftet (z.B. für Bivalenzpunkte bis -20°C) | 1 |
 | **BOOL** | Boolean (0/1) | 1 |
+
+> **Wichtig:** Beim Schreiben von Integer-Werten (`UCHAR`, `INT8`, `INT16`, `UINT16`) wendet die Integration automatisch den im Code hinterlegten `multiplier` an und rundet den Wert passend.
 
 ## Modbus-Parameter
 

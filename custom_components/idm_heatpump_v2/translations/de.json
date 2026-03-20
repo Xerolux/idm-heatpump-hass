@@ -3,9 +3,24 @@
     "step": {
       "user": {
         "title": "IDM Navigator Heatpump",
-        "description": "Geben Sie die Verbindungsdaten Ihrer IDM Wärmepumpe ein.",
+        "description": "Gib die Verbindungsdaten deiner IDM Wärmepumpe ein. Stelle sicher, dass Modbus TCP in der Steuerung (Fachmannebene) aktiviert ist.",
         "data": {
           "name": "Name",
+          "host": "IP-Adresse / Hostname",
+          "port": "Modbus TCP Port",
+          "slave_id": "Slave ID"
+        },
+        "data_description": {
+          "name": "Ein Name für das Gerät in Home Assistant.",
+          "host": "Die IP-Adresse deines IDM Navigator 2.0.",
+          "port": "Der Modbus TCP Port (Standard ist 502).",
+          "slave_id": "Die Modbus Slave ID (Standard ist 1)."
+        }
+      },
+      "reconfigure": {
+        "title": "Verbindung anpassen",
+        "description": "Passe die Netzwerk-Verbindungsdaten deiner Wärmepumpe an.",
+        "data": {
           "host": "IP-Adresse / Hostname",
           "port": "Modbus TCP Port",
           "slave_id": "Slave ID"
@@ -13,17 +28,23 @@
       },
       "options": {
         "title": "Optionen",
-        "description": "Konfigurieren Sie die Abfrageintervalle und Heizkreise.",
+        "description": "Konfiguriere das Scan-Intervall und Hardware-Komponenten. Änderungen hier starten die Integration neu.",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)",
           "hide_unused_registers": "Unbenutzte Register ausblenden",
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonen"
+        },
+        "data_description": {
+          "scan_interval": "Wie oft Daten abgerufen werden. Ein geringer Wert bedeutet schnelle Updates, erzeugt aber mehr Last.",
+          "hide_unused_registers": "Blendet Sensoren automatisch aus, die inaktive Werte (z.B. -1.0) liefern.",
+          "heating_circuits": "Wähle aus, welche Heizkreise (A-G) verbaut und aktiv sind.",
+          "zone_count": "Wähle aus, wie viele IDM Zonenmodule installiert sind (0 wenn keine)."
         }
       },
       "zones": {
         "title": "Zonen-Konfiguration",
-        "description": "Konfigurieren Sie die Anzahl der Räume pro Zone.",
+        "description": "Konfiguriere die Anzahl der aktiven Räume pro Zone.",
         "data": {
           "zone_0_rooms": "Zone 1 - Räume",
           "zone_1_rooms": "Zone 2 - Räume",
@@ -35,6 +56,11 @@
           "zone_7_rooms": "Zone 8 - Räume",
           "zone_8_rooms": "Zone 9 - Räume",
           "zone_9_rooms": "Zone 10 - Räume"
+        },
+        "data_description": {
+          "zone_0_rooms": "Anzahl der belegten Raumfühler in Zone 1 (max 8).",
+          "zone_1_rooms": "Anzahl der belegten Raumfühler in Zone 2 (max 8).",
+          "zone_2_rooms": "Anzahl der belegten Raumfühler in Zone 3 (max 8)."
         }
       }
     },
