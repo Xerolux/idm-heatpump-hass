@@ -4,5 +4,14 @@
   "content_in_root": false,
   "render_readme": true,
   "zip_release": true,
-  "homeassistant": "2025.8.0"
+  "homeassistant": "2025.8.0",
+  "description": "Home Assistant custom component for an IDM Navigator Heatpump",
+  "topics": [
+    "home-assistant",
+    "hacs",
+    "integration",
+    "idm",
+    "heatpump"
+  ],
+  "brands": true
 }

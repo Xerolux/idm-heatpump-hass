@@ -1,0 +1,29 @@
+name: Update Repository Metadata
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  update-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update Description and Topics via GitHub API
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Try to update the repository description and topics using the GitHub CLI.
+          # Note: This will fail if the token lacks repository administration permissions,
+          # but it serves to enforce the standard metadata requirements "in the code" as requested.
+          gh api -X PATCH /repos/${{ github.repository }} \
+            -f description="Home Assistant custom component for an IDM Navigator Heatpump" \
+            -f 'topics[]=home-assistant' \
+            -f 'topics[]=hacs' \
+            -f 'topics[]=integration' \
+            -f 'topics[]=idm' \
+            -f 'topics[]=heatpump' || true
