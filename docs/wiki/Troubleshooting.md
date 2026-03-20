@@ -9,11 +9,12 @@
 - Prufe ob der **Port 502** erreichbar ist (Firewall)
 - Pinge die IP-Adresse: `ping <ip-des-navigators>`
 
-### Verbindungsabbruche
+### Verbindungsabbrüche
 
-- Prufe die Netzwerkverbindung (LAN-Kabel empfohlen)
-- Erhohe das Scan-Intervall (z.B. auf 30 Sekunden)
+- Prüfe die Netzwerkverbindung (LAN-Kabel empfohlen)
+- Erhöhe das Scan-Intervall (z.B. auf 30 Sekunden)
 - Aktiviere Debug-Logging (siehe [Konfiguration](Configuration))
+- Die Integration optimiert Modbus-Verbindungen automatisch, um ständige Neuverbindungen zu vermeiden (`self._client.connected` Checks). Wenn trotzdem Abbrüche passieren, prüfe die Stabilität des lokalen Netzwerks oder des WLANs.
 
 ### "Keine Daten empfangen"
 
@@ -29,11 +30,12 @@
 - Rekonfiguriere die Integration
 - Starte Home Assistant neu
 
-### Falsche Werte
+### Falsche oder absurde Werte (z.B. -3276.8°C)
 
-- Prufe ob die Register-Adressen fur dein Navigator-Modell korrekt sind
-- Aktiviere Debug-Logging und prufe die rohen Register-Werte in den Logs
-- Melde falsche Register-Zuordnungen als [Bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
+- Prüfe, ob die Register-Adressen für dein Navigator-Modell korrekt sind.
+- Extreme oder falsche Zahlen deuten meist auf falsch deklarierte Datentypen (Float, Word, Vorzeichen) hin. Bitte melde uns solche Werte über GitHub Issues, damit wir das Register in `registers.py` auf `INT8`, `INT16` oder `FLOAT` anpassen können.
+- Aktiviere Debug-Logging und prüfe die rohen Register-Werte in den Logs.
+- Melde falsche Register-Zuordnungen als [Bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md).
 
 ### Werte aktualisieren sich nicht
 
@@ -69,10 +71,14 @@ Suche in den Logs nach:
 
 ## Diagnosedaten exportieren
 
-1. Gehe zu **Einstellungen → Gerate & Dienste**
+1. Gehe zu **Einstellungen → Geräte & Dienste**
 2. Klicke auf **IDM Navigator Heatpump**
 3. Klicke auf **Diagnosedaten herunterladen**
-4. Hange die Datei an deinen [Bug-Report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md) an
+4. Hänge die Datei an deinen [Bug-Report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md) an
+
+## 👩‍💻 Für Entwickler (Mock Tests)
+
+Bitte führe Schreiboperationen auf dem Modbus (`write_register`) **niemals live gegen eine echte Wärmepumpe** aus, wenn du Code-Änderungen an der Basislogik testest. Nutze stattdessen unsere Mock-Tests in `custom_components/idm_heatpump_v2/tests/test_modbus_client.py` via `pytest`, um das Decodieren (`decode_value`) und Encodieren (`encode_value`) ohne Risiko zu testen.
 
 ## Haufige Fehler und Losungen
 
