@@ -3,9 +3,24 @@
     "step": {
       "user": {
         "title": "IDM Navigator Heatpump",
-        "description": "Enter the connection details of your IDM heat pump.",
+        "description": "Enter the connection details of your IDM heat pump. Make sure Modbus TCP is activated in the IDM settings (Installer level).",
         "data": {
           "name": "Name",
+          "host": "IP Address / Hostname",
+          "port": "Modbus TCP Port",
+          "slave_id": "Slave ID"
+        },
+        "data_description": {
+          "name": "A friendly name for your heat pump in Home Assistant.",
+          "host": "The IP address of your IDM Navigator 2.0.",
+          "port": "The Modbus TCP port (default is usually 502).",
+          "slave_id": "The Modbus Slave ID (default is 1)."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure IDM Navigator Heatpump",
+        "description": "Update the connection details of your heat pump.",
+        "data": {
           "host": "IP Address / Hostname",
           "port": "Modbus TCP Port",
           "slave_id": "Slave ID"
@@ -13,12 +28,18 @@
       },
       "options": {
         "title": "Options",
-        "description": "Configure scan intervals and heating circuits.",
+        "description": "Configure scan intervals and heating circuits. Adjusting these will re-initialize the integration.",
         "data": {
           "scan_interval": "Scan Interval (seconds)",
           "hide_unused_registers": "Hide unused registers",
           "heating_circuits": "Heating Circuits",
           "zone_count": "Zone Count"
+        },
+        "data_description": {
+          "scan_interval": "How often to read data from the heat pump. Lower values mean faster updates but more network traffic.",
+          "hide_unused_registers": "Automatically hide sensors that return unused values (e.g. -1.0).",
+          "heating_circuits": "Select which heating circuits (A-G) are configured on your heat pump.",
+          "zone_count": "Select the number of Zone Modules you have installed (0 if none)."
         }
       },
       "zones": {
@@ -35,6 +56,11 @@
           "zone_7_rooms": "Zone 8 - Rooms",
           "zone_8_rooms": "Zone 9 - Rooms",
           "zone_9_rooms": "Zone 10 - Rooms"
+        },
+        "data_description": {
+          "zone_0_rooms": "Number of rooms active in Zone 1 (max 8).",
+          "zone_1_rooms": "Number of rooms active in Zone 2 (max 8).",
+          "zone_2_rooms": "Number of rooms active in Zone 3 (max 8)."
         }
       }
     },
