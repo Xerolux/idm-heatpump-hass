@@ -138,6 +138,44 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None):
+        """Handle a reconfiguration flow initialized by the user."""
+        errors: dict[str, str] = {}
+        entry = self._get_reconfigure_entry()
+
+        if user_input is not None:
+            if not await self._test_connection(user_input):
+                errors["base"] = "cannot_connect"
+            else:
+                return self.async_update_reload_and_abort(
+                    entry,
+                    data_updates={
+                        CONF_HOST: user_input[CONF_HOST],
+                        CONF_PORT: user_input[CONF_PORT],
+                        CONF_SLAVE_ID: user_input[CONF_SLAVE_ID],
+                    },
+                )
+
+        schema = vol.Schema(
+            {
+                vol.Required(CONF_HOST, default=entry.data[CONF_HOST]): TextSelector(
+                    TextSelectorConfig(type=TextSelectorType.TEXT)
+                ),
+                vol.Required(CONF_PORT, default=entry.data.get(CONF_PORT, DEFAULT_PORT)): NumberSelector(
+                    NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
+                ),
+                vol.Optional(CONF_SLAVE_ID, default=entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)): NumberSelector(
+                    NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
+                ),
+            }
+        )
+
+        return self.async_show_form(
+            step_id="reconfigure",
+            data_schema=schema,
+            errors=errors,
+        )
+
     async def async_step_options(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
         schema = _build_options_schema(self._options)

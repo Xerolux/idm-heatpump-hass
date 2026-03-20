@@ -27,6 +27,7 @@ except Exception:
 class DataType(Enum):
     FLOAT = "FLOAT"
     UCHAR = "UCHAR"
+    INT8 = "INT8"
     INT16 = "INT16"
     UINT16 = "UINT16"
     BOOL = "BOOL"
@@ -141,16 +142,22 @@ class IdmModbusClient:
             return round(value * reg.multiplier, 2)
 
         elif reg.datatype == DataType.UCHAR:
-            return registers[0] & 0xFF
+            return round((registers[0] & 0xFF) * reg.multiplier, 2) if reg.multiplier != 1.0 else (registers[0] & 0xFF)
+
+        elif reg.datatype == DataType.INT8:
+            val = registers[0] & 0xFF
+            if val >= 128:
+                val -= 256
+            return round(val * reg.multiplier, 2) if reg.multiplier != 1.0 else val
 
         elif reg.datatype == DataType.INT16:
             val = registers[0]
             if val >= 32768:
                 val -= 65536
-            return val
+            return round(val * reg.multiplier, 2) if reg.multiplier != 1.0 else val
 
         elif reg.datatype == DataType.UINT16:
-            return registers[0]
+            return round(registers[0] * reg.multiplier, 2) if reg.multiplier != 1.0 else registers[0]
 
         elif reg.datatype == DataType.BOOL:
             return bool(registers[0] & 0x01)
@@ -160,21 +167,29 @@ class IdmModbusClient:
     def encode_value(self, value: Any, reg: RegisterDef) -> list[int]:
         if reg.datatype == DataType.FLOAT:
             float_val = float(value) / reg.multiplier
-            raw = struct.pack(">f", float_val)
-            low, high = struct.unpack(">HH", raw)
+            raw = struct.pack("<f", float_val)
+            low, high = struct.unpack("<HH", raw)
             return [low, high]
 
         elif reg.datatype == DataType.UCHAR:
-            return [int(value) & 0xFF]
+            val = int(round(float(value) / reg.multiplier))
+            return [val & 0xFF]
+
+        elif reg.datatype == DataType.INT8:
+            val = int(round(float(value) / reg.multiplier))
+            if val < 0:
+                val += 256
+            return [val & 0xFF]
 
         elif reg.datatype == DataType.INT16:
-            val = int(value)
+            val = int(round(float(value) / reg.multiplier))
             if val < 0:
                 val += 65536
             return [val & 0xFFFF]
 
         elif reg.datatype == DataType.UINT16:
-            return [int(value) & 0xFFFF]
+            val = int(round(float(value) / reg.multiplier))
+            return [val & 0xFFFF]
 
         elif reg.datatype == DataType.BOOL:
             return [1 if value else 0]
@@ -183,7 +198,8 @@ class IdmModbusClient:
 
     async def read_register(self, reg: RegisterDef) -> Any:
         try:
-            await self.connect()
+            if self._client is None or not self._client.connected:
+                await self.connect()
             registers = await self._read_registers(reg.address, reg.size)
             return self.decode_value(registers, reg)
         except (ConnectionException, ModbusException) as err:
@@ -200,7 +216,8 @@ class IdmModbusClient:
             raise ValueError(f"Value {value} above maximum {reg.max_val}")
 
         try:
-            await self.connect()
+            if self._client is None or not self._client.connected:
+                await self.connect()
             encoded = self.encode_value(value, reg)
             await self._write_registers(reg.address, encoded)
             _LOGGER.debug("Wrote %s = %s to address %d", reg.name, value, reg.address)
@@ -214,7 +231,8 @@ class IdmModbusClient:
         if not register_list:
             return {}
 
-        await self.connect()
+        if self._client is None or not self._client.connected:
+            await self.connect()
 
         sorted_regs = sorted(register_list, key=lambda r: r.address)
         groups: list[list[RegisterDef]] = []
