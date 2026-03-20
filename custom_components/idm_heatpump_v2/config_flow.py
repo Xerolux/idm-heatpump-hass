@@ -54,6 +54,10 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 
 
 def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
+    circuits_default = options.get(CONF_HEATING_CIRCUITS, ["A"])
+    if "A" not in circuits_default:
+        circuits_default = ["A"] + [c for c in circuits_default if c != "A"]
+    
     return vol.Schema(
         {
             vol.Required(
@@ -61,14 +65,14 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                 default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
             ): NumberSelector(
                 NumberSelectorConfig(
-                    min=5, max=300, step=5,
+                    min=5, max=300, step=1,
                     mode=NumberSelectorMode.BOX,
                     unit_of_measurement="s",
                 )
             ),
             vol.Required(
                 CONF_HEATING_CIRCUITS,
-                default=options.get(CONF_HEATING_CIRCUITS, ["A"]),
+                default=circuits_default,
             ): SelectSelector(
                 SelectSelectorConfig(
                     options=HEATING_CIRCUITS,
