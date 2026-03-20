@@ -160,8 +160,8 @@ class IdmModbusClient:
     def encode_value(self, value: Any, reg: RegisterDef) -> list[int]:
         if reg.datatype == DataType.FLOAT:
             float_val = float(value) / reg.multiplier
-            raw = struct.pack(">f", float_val)
-            low, high = struct.unpack(">HH", raw)
+            raw = struct.pack("<f", float_val)
+            low, high = struct.unpack("<HH", raw)
             return [low, high]
 
         elif reg.datatype == DataType.UCHAR:
@@ -183,7 +183,8 @@ class IdmModbusClient:
 
     async def read_register(self, reg: RegisterDef) -> Any:
         try:
-            await self.connect()
+            if self._client is None or not self._client.connected:
+                await self.connect()
             registers = await self._read_registers(reg.address, reg.size)
             return self.decode_value(registers, reg)
         except (ConnectionException, ModbusException) as err:
@@ -200,7 +201,8 @@ class IdmModbusClient:
             raise ValueError(f"Value {value} above maximum {reg.max_val}")
 
         try:
-            await self.connect()
+            if self._client is None or not self._client.connected:
+                await self.connect()
             encoded = self.encode_value(value, reg)
             await self._write_registers(reg.address, encoded)
             _LOGGER.debug("Wrote %s = %s to address %d", reg.name, value, reg.address)
@@ -214,7 +216,8 @@ class IdmModbusClient:
         if not register_list:
             return {}
 
-        await self.connect()
+        if self._client is None or not self._client.connected:
+            await self.connect()
 
         sorted_regs = sorted(register_list, key=lambda r: r.address)
         groups: list[list[RegisterDef]] = []
