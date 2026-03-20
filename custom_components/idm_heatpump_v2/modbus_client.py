@@ -12,6 +12,17 @@ from pymodbus.exceptions import ConnectionException, ModbusException
 
 _LOGGER = logging.getLogger(__name__)
 
+_PMODBUS_SLAVE_PARAM = "slave"
+
+try:
+    import inspect
+    from pymodbus.client.mixin import ModbusClientMixin
+    sig = inspect.signature(ModbusClientMixin.read_input_registers)
+    if "device_id" in sig.parameters:
+        _PMODBUS_SLAVE_PARAM = "device_id"
+except Exception:
+    pass
+
 
 class DataType(Enum):
     FLOAT = "FLOAT"
@@ -44,8 +55,8 @@ class RegisterDef:
 class IdmModbusClient:
     def __init__(self, host: str, port: int = 502, slave_id: int = 1) -> None:
         self._host = host
-        self._port = port
-        self._slave_id = slave_id
+        self._port = int(port)
+        self._slave_id = int(slave_id)
         self._client: AsyncModbusTcpClient | None = None
         self._lock = asyncio.Lock()
 
@@ -60,7 +71,9 @@ class IdmModbusClient:
     async def connect(self) -> None:
         if self._client is None or not self._client.connected:
             self._client = AsyncModbusTcpClient(
-                host=self._host, port=self._port, timeout=10
+                host=str(self._host), 
+                port=int(self._port), 
+                timeout=10
             )
             await self._client.connect()
             _LOGGER.debug("Connected to %s:%d", self._host, self._port)
@@ -79,20 +92,37 @@ class IdmModbusClient:
     async def _read_registers(self, address: int, count: int) -> list[int]:
         async with self._lock:
             client = self._get_client()
-            result = await client.read_input_registers(
-                address=address, count=count, device_id=self._slave_id
-            )
+            addr = int(address)
+            cnt = int(count)
+            slave = int(self._slave_id)
+            _LOGGER.debug("Calling read_input_registers address=%s count=%s %s=%s", addr, cnt, _PMODBUS_SLAVE_PARAM, slave)
+            kwargs = {_PMODBUS_SLAVE_PARAM: slave}
+            try:
+                result = await client.read_input_registers(
+                    address=addr, count=cnt, **kwargs
+                )
+            except Exception as e:
+                _LOGGER.error("Exception during read_input_registers: %s", e)
+                raise
+            
+            _LOGGER.debug("Result type: %s, isError: %s", type(result).__name__, result.isError())
 
             if result.isError():
                 raise ModbusException(f"Modbus error reading address {address}")
+            
+            _LOGGER.debug("Registers: %s", result.registers)
 
             return list(result.registers)
 
     async def _write_registers(self, address: int, values: list[int]) -> None:
         async with self._lock:
             client = self._get_client()
+            addr = int(address)
+            slave = int(self._slave_id)
+            vals = [int(v) for v in values]
+            kwargs = {_PMODBUS_SLAVE_PARAM: slave}
             result = await client.write_registers(
-                address=address, values=values, device_id=self._slave_id
+                address=addr, values=vals, **kwargs
             )
 
             if result.isError():
@@ -249,16 +279,32 @@ class IdmModbusClient:
         return data
 
     async def test_connection(self) -> bool:
+        from pymodbus.client import AsyncModbusTcpClient as FreshClient
+        test_client = FreshClient(
+            host=str(self._host), 
+            port=int(self._port), 
+            timeout=10
+        )
         try:
-            await self.connect()
-            test_reg = RegisterDef(
-                address=1350,
-                datatype=DataType.FLOAT,
-                name="test",
+            await test_client.connect()
+            if not test_client.connected:
+                _LOGGER.warning("Test connection failed: not connected")
+                return False
+            
+            kwargs = {_PMODBUS_SLAVE_PARAM: int(self._slave_id)}
+            result = await test_client.read_input_registers(
+                address=1350, count=2, **kwargs
             )
-            result = await self.read_register(test_reg)
-            return result is not None
-        except Exception:
+            
+            if result.isError():
+                _LOGGER.warning("Test connection failed: Modbus error %s", result)
+                return False
+            
+            registers = list(result.registers)
+            _LOGGER.debug("Test connection successful, registers: %s", registers)
+            return True
+        except Exception as err:
+            _LOGGER.warning("Test connection failed: %s", err)
             return False
         finally:
-            await self.disconnect()
+            test_client.close()

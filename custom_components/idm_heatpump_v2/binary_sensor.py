@@ -5,7 +5,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
+from .const import DOMAIN, UNUSED_VALUE
 from .coordinator import IdmCoordinator
 
 
@@ -33,7 +33,14 @@ class IdmBinarySensor(BinarySensorEntity):
 
     @property
     def available(self) -> bool:
-        return self._register.name in self._coordinator.data
+        if self._register.name not in self._coordinator.data:
+            return False
+        if self._coordinator.hide_unused:
+            value = self._coordinator.data.get(self._register.name)
+            if value is not None and isinstance(value, float):
+                if abs(value - UNUSED_VALUE) < 0.01:
+                    return False
+        return True
 
     @property
     def is_on(self) -> bool:

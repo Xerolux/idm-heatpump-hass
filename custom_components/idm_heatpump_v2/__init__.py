@@ -11,10 +11,12 @@ from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_HEATING_CIRCUITS,
+    CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_HIDE_UNUSED,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DOMAIN,
@@ -47,13 +49,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "Setting up %s v%s", NAME, integration.manifest.get("version", "unknown")
     )
 
-    host = entry.data[CONF_HOST]
-    port = entry.data.get(CONF_PORT, 502)
-    slave_id = entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)
-    scan_interval = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
+    host = str(entry.data[CONF_HOST])
+    port = int(entry.data.get(CONF_PORT, 502))
+    slave_id = int(entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
+    scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     circuits = entry.options.get(CONF_HEATING_CIRCUITS, ["A"])
-    zone_count = entry.options.get(CONF_ZONE_COUNT, 0)
+    zone_count = int(entry.options.get(CONF_ZONE_COUNT, 0))
     zone_rooms = entry.options.get(CONF_ZONE_ROOMS, {})
+    hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
 
     client = IdmModbusClient(host=host, port=port, slave_id=slave_id)
 
@@ -78,6 +81,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         number_descriptions=number_descs,
         select_descriptions=select_descs,
         switch_descriptions=switch_descs,
+        hide_unused=hide_unused,
     )
     coordinator.config_entry = entry
     coordinator.setup_registers(circuits, zone_count, zone_rooms)
