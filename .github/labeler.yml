@@ -1,0 +1,34 @@
+python:
+  - changed-files:
+      - any-glob-to-any-file: "**/*.py"
+
+documentation:
+  - changed-files:
+      - any-glob-to-any-file: "*.md"
+      - any-glob-to-any-file: "docs/**/*"
+
+custom_components:
+  - changed-files:
+      - any-glob-to-any-file: "custom_components/idm_heatpump_v2/**/*"
+
+configuration:
+  - changed-files:
+      - any-glob-to-any-file: "*.yaml"
+      - any-glob-to-any-file: "*.yml"
+      - any-glob-to-any-file: "*.json"
+
+github_workflows:
+  - changed-files:
+      - any-glob-to-any-file: ".github/workflows/*.yml"
+      - any-glob-to-any-file: ".github/workflows/*.yaml"
+
+tests:
+  - changed-files:
+      - any-glob-to-any-file: "tests/**/*"
+
+dependencies:
+  - head-branch: "dependabot/.*"
+
+translations:
+  - changed-files:
+      - any-glob-to-any-file: "custom_components/**/translations/**/*"

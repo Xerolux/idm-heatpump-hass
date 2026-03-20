@@ -1,0 +1,8 @@
+{
+  "name": "IDM Navigator Heatpump",
+  "filename": "idm_heatpump_v2.zip",
+  "content_in_root": false,
+  "render_readme": true,
+  "zip_release": true,
+  "homeassistant": "2025.8.0"
+}
