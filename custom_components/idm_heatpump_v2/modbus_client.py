@@ -79,14 +79,9 @@ class IdmModbusClient:
     async def _read_registers(self, address: int, count: int) -> list[int]:
         async with self._lock:
             client = self._get_client()
-            try:
-                result = await client.read_input_registers(
-                    address=address, count=count, slave=self._slave_id
-                )
-            except TypeError:
-                result = await client.read_input_registers(
-                    address=address, count=count, device_id=self._slave_id
-                )
+            result = await client.read_input_registers(
+                address=address, count=count, device_id=self._slave_id
+            )
 
             if result.isError():
                 raise ModbusException(f"Modbus error reading address {address}")
@@ -96,14 +91,9 @@ class IdmModbusClient:
     async def _write_registers(self, address: int, values: list[int]) -> None:
         async with self._lock:
             client = self._get_client()
-            try:
-                result = await client.write_registers(
-                    address=address, values=values, slave=self._slave_id
-                )
-            except TypeError:
-                result = await client.write_registers(
-                    address=address, values=values, device_id=self._slave_id
-                )
+            result = await client.write_registers(
+                address=address, values=values, device_id=self._slave_id
+            )
 
             if result.isError():
                 raise ModbusException(f"Modbus error writing address {address}")
@@ -114,8 +104,8 @@ class IdmModbusClient:
                 raise ValueError("Not enough registers for FLOAT")
             low_word = registers[0]
             high_word = registers[1]
-            raw = struct.pack(">HH", low_word, high_word)
-            value = struct.unpack(">f", raw)[0]
+            raw = struct.pack("<HH", low_word, high_word)
+            value = struct.unpack("<f", raw)[0]
             if value != value:
                 return None
             return round(value * reg.multiplier, 2)
@@ -262,7 +252,7 @@ class IdmModbusClient:
         try:
             await self.connect()
             test_reg = RegisterDef(
-                address=1000,
+                address=1350,
                 datatype=DataType.FLOAT,
                 name="test",
             )

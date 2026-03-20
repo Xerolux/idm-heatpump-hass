@@ -20,11 +20,13 @@ CONF_ZONE_ROOMS = "zone_rooms"
 DEFAULT_HOST = ""
 DEFAULT_PORT = 502
 DEFAULT_SLAVE_ID = 1
-DEFAULT_SCAN_INTERVAL = 30
+DEFAULT_SCAN_INTERVAL = 10
 
 MAX_ZONE_COUNT = 10
 MAX_ROOM_COUNT = 8
 HEATING_CIRCUITS = ["A", "B", "C", "D", "E", "F", "G"]
+HEATING_CIRCUITS_OPTIONAL = ["B", "C", "D", "E", "F", "G"]
+ZONE_OPTIONS = [str(i) for i in range(1, 11)]
 
 
 class SystemMode(enum.IntEnum):
