@@ -20,4 +20,4 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
-          ignore: description, topics
+          ignore: "description,topics,brands"
