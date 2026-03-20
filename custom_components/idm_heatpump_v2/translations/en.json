@@ -16,6 +16,7 @@
         "description": "Configure scan intervals and heating circuits.",
         "data": {
           "scan_interval": "Scan Interval (seconds)",
+          "hide_unused_registers": "Hide unused registers",
           "heating_circuits": "Heating Circuits",
           "zone_count": "Zone Count"
         }

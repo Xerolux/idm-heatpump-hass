@@ -16,6 +16,7 @@
         "description": "Konfigurieren Sie die Abfrageintervalle und Heizkreise.",
         "data": {
           "scan_interval": "Abfrageintervall (Sekunden)",
+          "hide_unused_registers": "Unbenutzte Register ausblenden",
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonen"
         }

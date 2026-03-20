@@ -8,6 +8,8 @@ from homeassistant import config_entries
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
+    BooleanSelector,
+    BooleanSelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -20,10 +22,12 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_HEATING_CIRCUITS,
+    CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_HIDE_UNUSED,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
@@ -70,6 +74,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                     unit_of_measurement="s",
                 )
             ),
+            vol.Required(
+                CONF_HIDE_UNUSED,
+                default=options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED),
+            ): BooleanSelector(BooleanSelectorConfig()),
             vol.Required(
                 CONF_HEATING_CIRCUITS,
                 default=circuits_default,
@@ -183,9 +191,9 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         from .modbus_client import IdmModbusClient
 
         client = IdmModbusClient(
-            host=data[CONF_HOST],
-            port=data.get(CONF_PORT, DEFAULT_PORT),
-            slave_id=data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID),
+            host=str(data[CONF_HOST]),
+            port=int(data.get(CONF_PORT, DEFAULT_PORT)),
+            slave_id=int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
         )
         try:
             return await client.test_connection()
