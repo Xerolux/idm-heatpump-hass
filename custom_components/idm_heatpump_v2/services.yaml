@@ -1,0 +1,58 @@
+set_system_mode:
+  name: "Set System Mode"
+  description: "Set the operating mode of the heat pump system"
+  target:
+    entity:
+      integration: idm_heatpump_v2
+  fields:
+    mode:
+      name: "Mode"
+      description: "System operating mode"
+      required: true
+      selector:
+        select:
+          options:
+            - "Standby"
+            - "Automatik"
+            - "Abwesend"
+            - "Urlaub"
+            - "Nur Warmwasser"
+            - "Nur Heizung/Kuehlung"
+
+acknowledge_errors:
+  name: "Acknowledge Errors"
+  description: "Acknowledge/clear active error messages on the heat pump"
+  target:
+    device:
+      integration: idm_heatpump_v2
+
+write_register:
+  name: "Write Register"
+  description: "Write a value directly to a Modbus register (advanced)"
+  target:
+    device:
+      integration: idm_heatpump_v2
+  fields:
+    address:
+      name: "Address"
+      description: "Modbus register address"
+      required: true
+      selector:
+        number:
+          min: 0
+          max: 10000
+          mode: box
+    value:
+      name: "Value"
+      description: "Value to write"
+      required: true
+      selector:
+        text:
+          multiline: false
+    acknowledge_risk:
+      name: "Acknowledge Risk"
+      description: "You must acknowledge that writing directly to registers can damage your heat pump"
+      required: true
+      selector:
+        constant:
+          value: true

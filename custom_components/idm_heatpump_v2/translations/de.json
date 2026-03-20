@@ -1,0 +1,77 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "IDM Navigator Heatpump",
+        "description": "Geben Sie die Verbindungsdaten Ihrer IDM Wärmepumpe ein.",
+        "data": {
+          "name": "Name",
+          "host": "IP-Adresse / Hostname",
+          "port": "Modbus TCP Port",
+          "slave_id": "Slave ID"
+        }
+      },
+      "options": {
+        "title": "Optionen",
+        "description": "Konfigurieren Sie die Abfrageintervalle und Heizkreise.",
+        "data": {
+          "scan_interval": "Abfrageintervall (Sekunden)",
+          "heating_circuits": "Heizkreise",
+          "zone_count": "Anzahl Zonen"
+        }
+      },
+      "zones": {
+        "title": "Zonen-Konfiguration",
+        "description": "Konfigurieren Sie die Anzahl der Räume pro Zone.",
+        "data": {
+          "zone_0_rooms": "Zone 1 - Räume",
+          "zone_1_rooms": "Zone 2 - Räume",
+          "zone_2_rooms": "Zone 3 - Räume",
+          "zone_3_rooms": "Zone 4 - Räume",
+          "zone_4_rooms": "Zone 5 - Räume",
+          "zone_5_rooms": "Zone 6 - Räume",
+          "zone_6_rooms": "Zone 7 - Räume",
+          "zone_7_rooms": "Zone 8 - Räume",
+          "zone_8_rooms": "Zone 9 - Räume",
+          "zone_9_rooms": "Zone 10 - Räume"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfen Sie IP und Port."
+    },
+    "abort": {
+      "already_configured": "Diese Wärmepumpe ist bereits konfiguriert."
+    }
+  },
+  "services": {
+    "set_system_mode": {
+      "name": "Betriebsart setzen",
+      "description": "Setzt die Betriebsart der Wärmepumpe",
+      "fields": {
+        "mode": {
+          "name": "Modus",
+          "description": "Betriebsart"
+        }
+      }
+    },
+    "acknowledge_errors": {
+      "name": "Störungen quittieren",
+      "description": "Quittiert aktive Störmeldungen der Wärmepumpe"
+    },
+    "write_register": {
+      "name": "Register schreiben",
+      "description": "Schreibt einen Wert direkt in ein Modbus-Register (Fortgeschritten)",
+      "fields": {
+        "address": {
+          "name": "Adresse",
+          "description": "Modbus-Registeradresse"
+        },
+        "value": {
+          "name": "Wert",
+          "description": "Zu schreibender Wert"
+        }
+      }
+    }
+  }
+}

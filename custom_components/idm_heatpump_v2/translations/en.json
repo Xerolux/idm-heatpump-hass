@@ -1,0 +1,47 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "IDM Navigator Heatpump",
+        "description": "Enter the connection details of your IDM heat pump.",
+        "data": {
+          "name": "Name",
+          "host": "IP Address / Hostname",
+          "port": "Modbus TCP Port",
+          "slave_id": "Slave ID"
+        }
+      },
+      "options": {
+        "title": "Options",
+        "description": "Configure scan intervals and heating circuits.",
+        "data": {
+          "scan_interval": "Scan Interval (seconds)",
+          "heating_circuits": "Heating Circuits",
+          "zone_count": "Zone Count"
+        }
+      },
+      "zones": {
+        "title": "Zone Configuration",
+        "description": "Configure the number of rooms per zone.",
+        "data": {
+          "zone_0_rooms": "Zone 1 - Rooms",
+          "zone_1_rooms": "Zone 2 - Rooms",
+          "zone_2_rooms": "Zone 3 - Rooms",
+          "zone_3_rooms": "Zone 4 - Rooms",
+          "zone_4_rooms": "Zone 5 - Rooms",
+          "zone_5_rooms": "Zone 6 - Rooms",
+          "zone_6_rooms": "Zone 7 - Rooms",
+          "zone_7_rooms": "Zone 8 - Rooms",
+          "zone_8_rooms": "Zone 9 - Rooms",
+          "zone_9_rooms": "Zone 10 - Rooms"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the heat pump. Check IP and port."
+    },
+    "abort": {
+      "already_configured": "This heat pump is already configured."
+    }
+  }
+}
