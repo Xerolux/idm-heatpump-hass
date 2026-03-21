@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import math
 import struct
 from dataclasses import dataclass, field
 from enum import Enum
@@ -20,8 +21,8 @@ try:
     sig = inspect.signature(ModbusClientMixin.read_input_registers)
     if "device_id" in sig.parameters:
         _PMODBUS_SLAVE_PARAM = "device_id"
-except Exception:
-    pass
+except Exception:  # noqa: BLE001
+    _LOGGER.debug("Could not detect pymodbus slave parameter name; using default 'slave'")
 
 
 class DataType(Enum):
@@ -137,7 +138,7 @@ class IdmModbusClient:
             high_word = registers[1]
             raw = struct.pack("<HH", low_word, high_word)
             value = struct.unpack("<f", raw)[0]
-            if value != value:
+            if math.isnan(value):
                 return None
             return round(value * reg.multiplier, 2)
 
@@ -290,8 +291,8 @@ class IdmModbusClient:
                 try:
                     individual = await self.read_register(reg)
                     data[reg.name] = individual
-                except Exception:
-                    pass
+                except Exception as fallback_err:  # noqa: BLE001
+                    _LOGGER.debug("Fallback read for %s also failed: %s", reg.name, fallback_err)
             offset += reg.size
 
         return data

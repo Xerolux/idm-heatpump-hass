@@ -1,7 +1,6 @@
 """Service handlers for IDM Heatpump integration."""
 
 import logging
-from typing import Any
 
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
 from homeassistant.exceptions import HomeAssistantError
@@ -117,7 +116,7 @@ async def _handle_write_register(
         try:
             value = float(value)
         except (ValueError, TypeError):
-            pass
+            _LOGGER.debug("Value %r is not numeric, passing as-is", value)
 
     reg = RegisterDef(
         address=address,
