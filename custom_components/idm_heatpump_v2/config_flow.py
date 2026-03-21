@@ -1,4 +1,4 @@
-"""Config flow for IDM Navigator Heatpump integration."""
+"""Config flow for IDM Heatpump integration."""
 
 import logging
 from typing import Any

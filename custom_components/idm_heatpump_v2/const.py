@@ -1,9 +1,9 @@
-"""Constants for IDM Navigator Heatpump integration."""
+"""Constants for IDM Heatpump integration."""
 
 import enum
 
 DOMAIN = "idm_heatpump_v2"
-NAME = "IDM Navigator Heatpump"
+NAME = "IDM Heatpump"
 MANUFACTURER = "iDM Energiesysteme"
 MODEL = "Navigator 2.0"
 MODEL_ZONE = "Navigator Pro Einzelraumregelung"

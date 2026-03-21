@@ -1,4 +1,4 @@
-"""Number platform for IDM Navigator Heatpump."""
+"""Number platform for IDM Heatpump."""
 
 import logging
 

@@ -1,4 +1,4 @@
-"""Service handlers for IDM Navigator Heatpump integration."""
+"""Service handlers for IDM Heatpump integration."""
 
 import logging
 from typing import Any

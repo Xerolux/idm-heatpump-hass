@@ -1,13 +1,13 @@
-# IDM Navigator Heatpump - Home Assistant Integration
+# IDM Heatpump - Home Assistant Integration
 
-> **Die komplette Dokumentation** fur das IDM Navigator Heatpump Addon.
+> **Die komplette Dokumentation** fur das IDM Heatpump Addon.
 > Von der Installation bis zur Fehlerbehebung - mit allen Features, Entities und Services.
 
 ---
 
-## Was ist das IDM Navigator Heatpump Addon?
+## Was ist das IDM Heatpump Addon?
 
-Das **IDM Navigator Heatpump Home Assistant Integration** verbindet [Home Assistant](https://www.home-assistant.io/) mit dem [IDM Navigator 2.0](https://www.idm-energiesysteme.de/) von IDM EnergieSysteme GmbH. Es ermoglicht vollstandige lokale Steuerung und Uberwachung deiner Warmepumpe uber **Modbus TCP - ohne Cloud, ohne Abonnement**.
+Das **IDM Heatpump Home Assistant Integration** verbindet [Home Assistant](https://www.home-assistant.io/) mit dem [IDM Navigator 2.0](https://www.idm-energiesysteme.de/) von IDM EnergieSysteme GmbH. Es ermoglicht vollstandige lokale Steuerung und Uberwachung deiner Warmepumpe uber **Modbus TCP - ohne Cloud, ohne Abonnement**.
 
 | Feature | Details |
 |---------|---------|
@@ -88,5 +88,5 @@ Das **IDM Navigator Heatpump Home Assistant Integration** verbindet [Home Assist
 
 ---
 
-*Diese Wiki dokumentiert das IDM Navigator Heatpump Addon.*
+*Diese Wiki dokumentiert das IDM Heatpump Addon.*
 *Entwickelt von [Xerolux](https://github.com/Xerolux)*
