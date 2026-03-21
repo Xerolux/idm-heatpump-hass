@@ -84,9 +84,9 @@ _CIRCUIT_SELECTOR = SelectSelector(
 
 
 def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
-    circuits_default = options.get(CONF_HEATING_CIRCUITS, ["A"])
-    if "A" not in circuits_default:
-        circuits_default = ["A"] + [c for c in circuits_default if c != "A"]
+    circuits_default = options.get(CONF_HEATING_CIRCUITS, ["a"])
+    if "a" not in circuits_default:
+        circuits_default = ["a"] + [c for c in circuits_default if c != "a"]
 
     return vol.Schema(
         {
