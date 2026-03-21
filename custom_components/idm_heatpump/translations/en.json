@@ -1,0 +1,174 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up IDM Navigator Heat Pump",
+        "description": "Enter the connection details of your IDM heat pump.\n\n**Prerequisite:** Modbus TCP must be enabled in the IDM controller under *Installer level → Communication → Modbus*.",
+        "data": {
+          "name": "Name",
+          "host": "IP Address / Hostname",
+          "port": "Port",
+          "slave_id": "Slave ID"
+        },
+        "data_description": {
+          "name": "Display name for the device in Home Assistant, e.g. \"IDM Heat Pump\".",
+          "host": "IP address or hostname of your IDM Navigator 2.0, e.g. `192.168.1.100`.",
+          "port": "Modbus TCP port of the controller. Default is `502`.",
+          "slave_id": "Modbus slave ID. Default is `1`. Only change this if multiple devices share the same bus."
+        }
+      },
+      "reconfigure": {
+        "title": "Reconfigure – {name}",
+        "description": "Current connection: **{host}**\n\nUpdate the network settings of your heat pump. The integration will restart automatically afterwards.",
+        "data": {
+          "host": "IP Address / Hostname",
+          "port": "Port",
+          "slave_id": "Slave ID"
+        },
+        "data_description": {
+          "host": "New IP address or hostname of the IDM Navigator 2.0.",
+          "port": "Modbus TCP port. Default is `502`.",
+          "slave_id": "Modbus slave ID. Default is `1`."
+        }
+      },
+      "options": {
+        "title": "Configuration – {name}",
+        "description": "Adjust the polling interval and installed components. Changes will restart the integration.",
+        "data": {
+          "scan_interval": "Scan interval",
+          "hide_unused_registers": "Hide unused sensors",
+          "heating_circuits": "Heating circuits",
+          "zone_count": "Number of zone modules",
+          "technician_codes": "Show Installer Level codes"
+        },
+        "data_description": {
+          "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
+          "hide_unused_registers": "Automatically mark sensors that return inactive values (e.g. −1.0) as *unavailable* and hide them.",
+          "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
+          "zone_count": "Number of IDM zone modules installed (0 if none).",
+          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute."
+        }
+      },
+      "zones": {
+        "title": "Configure zone modules",
+        "description": "Enter the number of active rooms per zone module (maximum 8 rooms per zone). Configuring {zone_count} zone module(s).",
+        "data": {
+          "zone_0_rooms": "Zone 1 – Rooms",
+          "zone_1_rooms": "Zone 2 – Rooms",
+          "zone_2_rooms": "Zone 3 – Rooms",
+          "zone_3_rooms": "Zone 4 – Rooms",
+          "zone_4_rooms": "Zone 5 – Rooms",
+          "zone_5_rooms": "Zone 6 – Rooms",
+          "zone_6_rooms": "Zone 7 – Rooms",
+          "zone_7_rooms": "Zone 8 – Rooms",
+          "zone_8_rooms": "Zone 9 – Rooms",
+          "zone_9_rooms": "Zone 10 – Rooms"
+        },
+        "data_description": {
+          "zone_0_rooms": "Number of active room sensors in Zone 1 (1–8).",
+          "zone_1_rooms": "Number of active room sensors in Zone 2 (1–8).",
+          "zone_2_rooms": "Number of active room sensors in Zone 3 (1–8).",
+          "zone_3_rooms": "Number of active room sensors in Zone 4 (1–8).",
+          "zone_4_rooms": "Number of active room sensors in Zone 5 (1–8).",
+          "zone_5_rooms": "Number of active room sensors in Zone 6 (1–8).",
+          "zone_6_rooms": "Number of active room sensors in Zone 7 (1–8).",
+          "zone_7_rooms": "Number of active room sensors in Zone 8 (1–8).",
+          "zone_8_rooms": "Number of active room sensors in Zone 9 (1–8).",
+          "zone_9_rooms": "Number of active room sensors in Zone 10 (1–8)."
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Failed to connect to the heat pump. Check the IP address, port, and whether Modbus TCP is enabled in the controller.",
+      "host_required": "Please enter a valid IP address or hostname.",
+      "name_required": "Please enter a name for the device."
+    },
+    "abort": {
+      "already_configured": "This heat pump is already configured.",
+      "reconfigure_successful": "Connection details updated. The integration will restart."
+    }
+  },
+  "options": {
+    "step": {
+      "options": {
+        "title": "Configuration – {name}",
+        "description": "Adjust the polling interval and installed components. Changes will restart the integration.",
+        "data": {
+          "scan_interval": "Scan interval",
+          "hide_unused_registers": "Hide unused sensors",
+          "heating_circuits": "Heating circuits",
+          "zone_count": "Number of zone modules",
+          "technician_codes": "Show Installer Level codes"
+        },
+        "data_description": {
+          "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
+          "hide_unused_registers": "Automatically mark sensors that return inactive values (e.g. −1.0) as *unavailable* and hide them.",
+          "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
+          "zone_count": "Number of IDM zone modules installed (0 if none).",
+          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute."
+        }
+      },
+      "zones": {
+        "title": "Configure zone modules",
+        "description": "Enter the number of active rooms per zone module (maximum 8 rooms per zone). Configuring {zone_count} zone module(s).",
+        "data": {
+          "zone_0_rooms": "Zone 1 – Rooms",
+          "zone_1_rooms": "Zone 2 – Rooms",
+          "zone_2_rooms": "Zone 3 – Rooms",
+          "zone_3_rooms": "Zone 4 – Rooms",
+          "zone_4_rooms": "Zone 5 – Rooms",
+          "zone_5_rooms": "Zone 6 – Rooms",
+          "zone_6_rooms": "Zone 7 – Rooms",
+          "zone_7_rooms": "Zone 8 – Rooms",
+          "zone_8_rooms": "Zone 9 – Rooms",
+          "zone_9_rooms": "Zone 10 – Rooms"
+        },
+        "data_description": {
+          "zone_0_rooms": "Number of active room sensors in Zone 1 (1–8).",
+          "zone_1_rooms": "Number of active room sensors in Zone 2 (1–8).",
+          "zone_2_rooms": "Number of active room sensors in Zone 3 (1–8).",
+          "zone_3_rooms": "Number of active room sensors in Zone 4 (1–8).",
+          "zone_4_rooms": "Number of active room sensors in Zone 5 (1–8).",
+          "zone_5_rooms": "Number of active room sensors in Zone 6 (1–8).",
+          "zone_6_rooms": "Number of active room sensors in Zone 7 (1–8).",
+          "zone_7_rooms": "Number of active room sensors in Zone 8 (1–8).",
+          "zone_8_rooms": "Number of active room sensors in Zone 9 (1–8).",
+          "zone_9_rooms": "Number of active room sensors in Zone 10 (1–8)."
+        }
+      }
+    }
+  },
+  "selector": {
+    "heating_circuit": {
+      "options": {
+        "a": "Circuit A – Primary",
+        "b": "Circuit B",
+        "c": "Circuit C",
+        "d": "Circuit D",
+        "e": "Circuit E",
+        "f": "Circuit F",
+        "g": "Circuit G"
+      }
+    }
+  },
+  "exceptions": {
+    "no_device_configured": {
+      "message": "No IDM heat pump is currently configured or loaded."
+    },
+    "invalid_mode": {
+      "message": "Invalid operating mode: \"{mode}\". Valid modes: standby, automatik, automatic, abwesend, away, urlaub, holiday, nur warmwasser, hot water only, nur heizung/kuehlung, heating/cooling only."
+    },
+    "acknowledge_risk_required": {
+      "message": "You must set acknowledge_risk to true to use the write_register service."
+    },
+    "write_failed": {
+      "message": "Failed to write register: {error}"
+    }
+  },
+  "issues": {
+    "cannot_connect": {
+      "title": "Cannot connect to IDM heat pump",
+      "description": "Home Assistant cannot reach the IDM heat pump at **{host}**.\n\nPlease check:\n- Network connectivity to the device\n- Modbus TCP is enabled in the controller (*Installer level → Communication → Modbus*)\n- The IP address and port are correct in the integration settings"
+    }
+  }
+}

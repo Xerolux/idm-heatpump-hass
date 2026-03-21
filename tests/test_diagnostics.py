@@ -5,8 +5,8 @@ from datetime import timedelta
 
 import pytest
 
-from custom_components.idm_heatpump_v2.diagnostics import async_get_config_entry_diagnostics
-from custom_components.idm_heatpump_v2.const import DOMAIN
+from custom_components.idm_heatpump.diagnostics import async_get_config_entry_diagnostics
+from custom_components.idm_heatpump.const import DOMAIN
 
 
 def _make_hass_with_coordinator(mock_hass, mock_config_entry):
@@ -19,9 +19,10 @@ def _make_hass_with_coordinator(mock_hass, mock_config_entry):
     coord.number_descriptions = [1, 2]
     coord.select_descriptions = [1, 2, 3, 4]
     coord.switch_descriptions = []
-    mock_hass.data[DOMAIN] = {
-        mock_config_entry.entry_id: {"coordinator": coord}
-    }
+
+    # Use runtime_data (new architecture)
+    mock_config_entry.runtime_data = MagicMock()
+    mock_config_entry.runtime_data.coordinator = coord
     return coord
 
 
@@ -65,3 +66,11 @@ class TestDiagnostics:
         entry_data = result["entry"].get("data", {})
         assert "host" not in entry_data
         assert "port" not in entry_data
+
+    async def test_coordinator_counts_match(self, mock_hass, mock_config_entry):
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.sensor_descriptions = list(range(10))
+        coord.switch_descriptions = [1, 2]
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        assert result["data"]["sensor_count"] == 10
+        assert result["data"]["switch_count"] == 2

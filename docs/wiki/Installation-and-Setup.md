@@ -29,11 +29,11 @@
 
 ## Manuelle Installation
 
-1. Lade die neueste [Release](https://github.com/Xerolux/idm-heatpump-hass/releases) herunter (`idm_heatpump_v2.zip`)
+1. Lade die neueste [Release](https://github.com/Xerolux/idm-heatpump-hass/releases) herunter (`idm_heatpump.zip`)
 2. Entpacke die ZIP-Datei
-3. Kopiere den Ordner `idm_heatpump_v2` in dein `custom_components/` Verzeichnis:
+3. Kopiere den Ordner `idm_heatpump` in dein `custom_components/` Verzeichnis:
    ```
-   <ha-config>/custom_components/idm_heatpump_v2/
+   <ha-config>/custom_components/idm_heatpump/
    ```
 4. Starte Home Assistant neu
 
@@ -53,7 +53,7 @@
 1. Gehe zu **Einstellungen → Gerate & Dienste**
 2. Finde die **IDM Heatpump** Integration
 3. Klicke auf die drei Punkte → **Loschen**
-4. (Optional) Losche den Ordner `custom_components/idm_heatpump_v2/`
+4. (Optional) Losche den Ordner `custom_components/idm_heatpump/`
 5. Starte Home Assistant neu
 
 ## Upgrade

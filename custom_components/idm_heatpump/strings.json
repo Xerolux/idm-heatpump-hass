@@ -150,5 +150,25 @@
         "g": "Circuit G"
       }
     }
+  },
+  "exceptions": {
+    "no_device_configured": {
+      "message": "No IDM heat pump is currently configured or loaded."
+    },
+    "invalid_mode": {
+      "message": "Invalid operating mode: \"{mode}\". Valid modes: standby, automatik, automatic, abwesend, away, urlaub, holiday, nur warmwasser, hot water only, nur heizung/kuehlung, heating/cooling only."
+    },
+    "acknowledge_risk_required": {
+      "message": "You must set acknowledge_risk to true to use the write_register service."
+    },
+    "write_failed": {
+      "message": "Failed to write register: {error}"
+    }
+  },
+  "issues": {
+    "cannot_connect": {
+      "title": "Cannot connect to IDM heat pump",
+      "description": "Home Assistant cannot reach the IDM heat pump at **{host}**.\n\nPlease check:\n- Network connectivity to the device\n- Modbus TCP is enabled in the controller (*Installer level → Communication → Modbus*)\n- The IP address and port are correct in the integration settings"
+    }
   }
 }

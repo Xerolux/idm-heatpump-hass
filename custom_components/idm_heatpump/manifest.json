@@ -1,5 +1,5 @@
 {
-  "domain": "idm_heatpump_v2",
+  "domain": "idm_heatpump",
   "name": "IDM Heatpump",
   "codeowners": ["@xerolux"],
   "config_flow": true,
@@ -8,6 +8,6 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Xerolux/idm-heatpump-hass/issues",
   "quality_scale": "gold",
-  "requirements": [],
+  "requirements": ["pymodbus>=3.6.0"],
   "version": "0.2.2"
 }

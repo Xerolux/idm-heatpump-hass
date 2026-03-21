@@ -17,8 +17,12 @@
 
 ## Automatisierung
 - [Services Referenz](Services)
+- [Beispiel-Automatisierungen](Examples)
 
 ## Betrieb & Wartung
+- [Datenaktualisierung](Data-Update)
+- [Unterstützte Geräte](Supported-Devices)
+- [Bekannte Einschränkungen](Known-Limitations)
 - [Troubleshooting](Troubleshooting)
 - [Modbus-Register](Modbus-Register)
 

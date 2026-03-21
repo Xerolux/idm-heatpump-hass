@@ -6,9 +6,10 @@ from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from .const import UNUSED_VALUE
+from .const import DOMAIN, UNUSED_VALUE
 from .modbus_client import IdmModbusClient, RegisterDef
 from .registers import collect_all_registers
 
@@ -24,11 +25,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         config_entry: ConfigEntry,
         client: IdmModbusClient,
         scan_interval: timedelta,
-        sensor_descriptions: list[dict],
-        binary_sensor_descriptions: list[dict],
-        number_descriptions: list[dict],
-        select_descriptions: list[dict],
-        switch_descriptions: list[dict],
+        sensor_descriptions: list[dict[str, Any]],
+        binary_sensor_descriptions: list[dict[str, Any]],
+        number_descriptions: list[dict[str, Any]],
+        select_descriptions: list[dict[str, Any]],
+        switch_descriptions: list[dict[str, Any]],
         hide_unused: bool = True,
     ) -> None:
         self._client = client
@@ -58,23 +59,23 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._registers = collect_all_registers(circuits, zone_count, zone_rooms)
 
     @property
-    def sensor_descriptions(self) -> list[dict]:
+    def sensor_descriptions(self) -> list[dict[str, Any]]:
         return self._sensor_descs
 
     @property
-    def binary_sensor_descriptions(self) -> list[dict]:
+    def binary_sensor_descriptions(self) -> list[dict[str, Any]]:
         return self._binary_descs
 
     @property
-    def number_descriptions(self) -> list[dict]:
+    def number_descriptions(self) -> list[dict[str, Any]]:
         return self._number_descs
 
     @property
-    def select_descriptions(self) -> list[dict]:
+    def select_descriptions(self) -> list[dict[str, Any]]:
         return self._select_descs
 
     @property
-    def switch_descriptions(self) -> list[dict]:
+    def switch_descriptions(self) -> list[dict[str, Any]]:
         return self._switch_descs
 
     @property
@@ -109,13 +110,25 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if not data:
                 raise UpdateFailed("No data received from heat pump")
 
+            # Clear any lingering repair issue on successful update
+            ir.async_delete_issue(self.hass, DOMAIN, "cannot_connect")
+
             for reg_name, value in data.items():
                 if self.is_register_unused(reg_name, value):
                     self._unused_registers.add(reg_name)
 
             return data
         except Exception as err:
-            _LOGGER.error("Error updating data: %s", err)
+            # Create a repair issue so users are guided to fix connectivity
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                "cannot_connect",
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="cannot_connect",
+                translation_placeholders={"host": self._client.host},
+            )
             raise UpdateFailed(f"Error communicating with heat pump: {err}") from err
 
     async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
@@ -124,6 +137,5 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self.data is not None:
             self.data[reg.name] = value
         self.async_update_listeners()
-        # Schedule a full refresh so dependent registers (e.g. status after a
-        # mode change, error flags after acknowledge) are also updated promptly
+        # Schedule a full refresh so dependent registers are also updated promptly
         await self.async_request_refresh()

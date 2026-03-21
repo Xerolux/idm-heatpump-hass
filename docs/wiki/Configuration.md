@@ -58,7 +58,7 @@ Aktiviere erweitertes Logging zur Fehlerbehebung:
 logger:
   default: info
   logs:
-    custom_components.idm_heatpump_v2: debug
+    custom_components.idm_heatpump: debug
 ```
 
 ## EEPROM-Hinweis
