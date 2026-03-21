@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Switch platform for IDM Heatpump."""
 
 import logging

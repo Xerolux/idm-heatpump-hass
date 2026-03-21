@@ -1,3 +1,4 @@
+from __future__ import annotations
 """IDM Heatpump integration for Home Assistant."""
 
 import logging
