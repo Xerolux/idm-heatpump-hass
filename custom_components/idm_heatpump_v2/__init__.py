@@ -1,7 +1,9 @@
 """IDM Heatpump integration for Home Assistant."""
 
 import logging
+from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
@@ -43,7 +45,30 @@ PLATFORMS = [
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+@dataclass
+class IdmHeatpumpData:
+    """Runtime data stored in ConfigEntry.runtime_data."""
+
+    coordinator: IdmCoordinator
+    client: IdmModbusClient
+
+
+type IdmConfigEntry = ConfigEntry[IdmHeatpumpData]
+
+
+async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
+    """Set up the IDM Heatpump component.
+
+    Services are registered here (action-setup rule) so they are available
+    as soon as the domain loads, independently of config entries.
+    """
+    from .services import async_setup_services
+
+    await async_setup_services(hass)
+    return True
+
+
+async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     integration = await async_get_integration(hass, DOMAIN)
     _LOGGER.info(
         "Setting up %s v%s", NAME, integration.manifest.get("version", "unknown")
@@ -86,32 +111,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     coordinator.setup_registers(circuits, zone_count, zone_rooms)
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
-        "coordinator": coordinator,
-        "client": client,
-    }
+    entry.runtime_data = IdmHeatpumpData(coordinator=coordinator, client=client)
 
     await coordinator.async_config_entry_first_refresh()
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
-    from .services import async_setup_services
-    await async_setup_services(hass)
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
-        data = hass.data[DOMAIN].pop(entry.entry_id)
-        client: IdmModbusClient = data["client"]
-        await client.disconnect()
+        await entry.runtime_data.client.disconnect()
         from .services import async_unload_services
+
         await async_unload_services(hass)
     return unload_ok
 
 
-async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_reload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)

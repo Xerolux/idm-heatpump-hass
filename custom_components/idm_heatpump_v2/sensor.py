@@ -2,18 +2,22 @@
 
 from datetime import timedelta
 
-from homeassistant.components.sensor import SensorEntity, SensorStateClass
+from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
+
+from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER, MODEL
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
 from .coordinator import IdmCoordinator
+from .entity import IdmEntity
 from .modbus_client import DataType
 from .technician_codes import calculate_codes
+
+PARALLEL_UPDATES = 0
 
 
 async def async_setup_entry(
@@ -21,7 +25,7 @@ async def async_setup_entry(
     entry: ConfigEntry,
     async_add_entities: AddEntitiesCallback,
 ) -> None:
-    coordinator: IdmCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
+    coordinator: IdmCoordinator = entry.runtime_data.coordinator
     entities = [
         IdmSensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in coordinator.sensor_descriptions
@@ -38,34 +42,7 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class IdmSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
-    _attr_has_entity_name = True
-
-    def __init__(self, coordinator: IdmCoordinator, reg, entity_desc) -> None:
-        super().__init__(coordinator)
-        self._register = reg
-        self.entity_description = entity_desc
-        self._attr_unique_id = (
-            f"{coordinator.client.host}:{coordinator.client.port}_{reg.name}"
-        )
-        self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
-            name=coordinator.config_entry.title,
-            manufacturer=MANUFACTURER,
-            model=MODEL,
-        )
-
-    @property
-    def available(self) -> bool:
-        if not super().available:
-            return False
-        if not self.coordinator.data or self._register.name not in self.coordinator.data:
-            return False
-        if self.coordinator.hide_unused:
-            value = self.coordinator.data.get(self._register.name)
-            if isinstance(value, float) and abs(value - UNUSED_VALUE) < 0.01:
-                return False
-        return True
+class IdmSensor(IdmEntity, SensorEntity):
 
     @property
     def native_value(self):
@@ -80,6 +57,7 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:key-variant"
+    _attr_entity_registry_enabled_default = False
 
     _NAMES = {
         "level_1": "Fachmann Ebene 1",
@@ -103,7 +81,6 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        # Refresh every 60 seconds so the code is always current
         self._cancel_timer = async_track_time_interval(
             self.hass, self._async_refresh, timedelta(seconds=60)
         )
