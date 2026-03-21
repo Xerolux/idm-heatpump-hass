@@ -7,97 +7,129 @@
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #e0e0e0; line-height: 1.6; }
-        .container { max-width: 900px; margin: 0 auto; padding: 2rem; }
+        .container { max-width: 920px; margin: 0 auto; padding: 2rem; }
         h1 { color: #4fc3f7; font-size: 2.5rem; margin-bottom: 0.5rem; }
-        .subtitle { color: #888; font-size: 1.1rem; margin-bottom: 2rem; }
-        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; margin-right: 0.5rem; margin-bottom: 0.5rem; }
-        .badge-ha { background: #41bdf5; color: #000; }
-        .badge-hacs { background: #ff6d00; color: #fff; }
+        .subtitle { color: #888; font-size: 1.1rem; margin-bottom: 1.5rem; }
+        .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem; align-items: center; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; }
+        .badge-ha { background: #41bdf5; color: #000; font-weight: 600; }
+        .badge-hacs { background: #ff6d00; color: #fff; font-weight: 600; }
         .badge-license { background: #66bb6a; color: #000; }
-        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 2rem 0; }
+        .badge-modbus { background: #555; color: #fff; }
+        .hacs-btn { margin: 1.5rem 0; }
+        .hacs-btn img { height: 40px; border-radius: 6px; }
+        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
         .feature { background: #16213e; padding: 1.25rem; border-radius: 8px; border: 1px solid #2a2a4a; }
         .feature h3 { color: #4fc3f7; margin-bottom: 0.5rem; }
         .feature p { font-size: 0.9rem; color: #aaa; }
-        .section { margin: 2rem 0; }
-        .section h2 { color: #4fc3f7; margin-bottom: 1rem; font-size: 1.5rem; }
+        .section { margin: 2.5rem 0; }
+        .section h2 { color: #4fc3f7; margin-bottom: 1rem; font-size: 1.5rem; border-bottom: 1px solid #2a2a4a; padding-bottom: 0.4rem; }
         .steps { background: #16213e; padding: 1.5rem; border-radius: 8px; border: 1px solid #2a2a4a; }
         .steps ol { padding-left: 1.5rem; }
         .steps li { margin-bottom: 0.5rem; }
         .steps code { background: #0a0a1a; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.9rem; }
-        .links { display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 2rem; }
-        .link { color: #4fc3f7; text-decoration: none; padding: 0.5rem 1rem; border: 1px solid #4fc3f7; border-radius: 6px; transition: all 0.2s; }
+        .support-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
+        .support-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: opacity 0.2s; }
+        .support-btn:hover { opacity: 0.85; }
+        .btn-bmac { background: #ffdd00; color: #000; }
+        .btn-kofi { background: #29abe0; color: #fff; }
+        .btn-sponsor { background: #db61a2; color: #fff; }
+        .btn-paypal { background: #003087; color: #fff; }
+        .disclaimer { background: #1e1e0e; border: 1px solid #5a5a20; border-radius: 8px; padding: 1.25rem 1.5rem; margin-top: 1rem; }
+        .disclaimer p { font-size: 0.9rem; color: #ccc; margin-bottom: 0.4rem; }
+        .disclaimer p:last-child { margin-bottom: 0; }
+        .disclaimer strong { color: #e0c060; }
+        .links { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+        .link { color: #4fc3f7; text-decoration: none; padding: 0.5rem 1rem; border: 1px solid #4fc3f7; border-radius: 6px; font-size: 0.9rem; transition: all 0.2s; }
         .link:hover { background: #4fc3f7; color: #1a1a2e; }
         .footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #2a2a4a; color: #666; font-size: 0.85rem; }
         .footer a { color: #4fc3f7; text-decoration: none; }
+        .footer p { margin-bottom: 0.3rem; }
+        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
+        th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #2a2a4a; font-size: 0.9rem; }
+        th { color: #4fc3f7; background: #16213e; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>IDM Heatpump</h1>
-        <p class="subtitle">Home Assistant Integration via Modbus TCP</p>
-        
-        <div>
-            <span class="badge badge-ha">HA 2025.8.0+</span>
+        <p class="subtitle">Home Assistant Integration – 100% lokal via Modbus TCP</p>
+
+        <div class="badges">
+            <span class="badge badge-ha">HA 2025.12.0+</span>
             <span class="badge badge-hacs">HACS</span>
             <span class="badge badge-license">MIT License</span>
-            <span class="badge" style="background:#666;color:#fff;">Modbus TCP</span>
+            <span class="badge badge-modbus">Modbus TCP</span>
+        </div>
+
+        <div class="hacs-btn">
+            <a href="https://my.home-assistant.io/redirect/hacs_repository/?repository=https%3A%2F%2Fgithub.com%2FXerolux%2Fidm-heatpump-hass&owner=Xerolux&category=Integration"
+               target="_blank" rel="noopener noreferrer">
+                <img src="https://my.home-assistant.io/badges/hacs_repository.svg"
+                     alt="Add IDM Heatpump to HACS">
+            </a>
         </div>
 
         <div class="section">
             <h2>Features</h2>
             <div class="features">
                 <div class="feature">
-                    <h3>System Monitoring</h3>
-                    <p>100+ sensors for temperatures, pressures, flow rates, energy, runtime hours</p>
+                    <h3>🌡️ System Monitoring</h3>
+                    <p>100+ sensors for temperatures, pressures, flow rates, energy, and runtime hours</p>
                 </div>
                 <div class="feature">
-                    <h3>Heating Circuits A-G</h3>
+                    <h3>🔧 Heating Circuits A–G</h3>
                     <p>Up to 7 circuits with individual setpoints and mode control</p>
                 </div>
                 <div class="feature">
-                    <h3>Zone Modules</h3>
+                    <h3>🏠 Zone Modules</h3>
                     <p>Up to 10 zones with 8 rooms each (room thermostat function)</p>
                 </div>
                 <div class="feature">
-                    <h3>Solar & PV</h3>
+                    <h3>☀️ Solar &amp; PV</h3>
                     <p>Solar hot water, PV surplus utilization, battery monitoring</p>
                 </div>
                 <div class="feature">
-                    <h3>Domestic Hot Water</h3>
+                    <h3>💧 Domestic Hot Water</h3>
                     <p>DHW setpoint and priority control</p>
                 </div>
                 <div class="feature">
-                    <h3>Full Control</h3>
+                    <h3>⚡ Full Control</h3>
                     <p>Write setpoints, change modes, acknowledge errors via HA UI</p>
                 </div>
                 <div class="feature">
-                    <h3>Installer Codes</h3>
-                    <p>Optional sensors showing the current Installer Level 1 &amp; 2 access codes, refreshed every minute</p>
+                    <h3>🔑 Installer Codes</h3>
+                    <p>Optional sensors for Fachmann Ebene 1 &amp; 2 codes – refreshed every minute</p>
+                </div>
+                <div class="feature">
+                    <h3>🛡️ EEPROM Protection</h3>
+                    <p>88 write-protected registers, exponential backoff on connection errors</p>
                 </div>
             </div>
+        </div>
+
+        <div class="section">
+            <h2>Supported Platforms</h2>
+            <table>
+                <tr><th>Platform</th><th>Entities</th><th>Description</th></tr>
+                <tr><td>Sensor</td><td>100+</td><td>Temperatures, pressures, energy, runtimes, error codes</td></tr>
+                <tr><td>Binary Sensor</td><td>9</td><td>Error states, switch states, alarms</td></tr>
+                <tr><td>Number</td><td>~30</td><td>Writable setpoints and parameters</td></tr>
+                <tr><td>Select</td><td>~15</td><td>Operating modes, circuit modes, room modes</td></tr>
+                <tr><td>Switch</td><td>4</td><td>GLT remote control requests</td></tr>
+            </table>
         </div>
 
         <div class="section">
             <h2>Quick Start</h2>
             <div class="steps">
                 <ol>
-                    <li>Add custom repository in HACS: <code>https://github.com/Xerolux/idm-heatpump-hass</code></li>
-                    <li>Download "IDM Heatpump" and restart HA</li>
-                    <li>Go to Settings &rarr; Devices & Services &rarr; Add Integration</li>
-                    <li>Enter heat pump IP address and Modbus port (default: 502)</li>
-                    <li>Select heating circuits and zones &rarr; Done!</li>
+                    <li>Click the HACS button above — or manually add <code>Xerolux/idm-heatpump-hass</code> as a custom repository</li>
+                    <li>Download "IDM Heatpump" and restart Home Assistant</li>
+                    <li>Go to <strong>Settings → Devices &amp; Services → Add Integration → IDM Heatpump</strong></li>
+                    <li>Enter your heat pump IP address and Modbus port (default: <code>502</code>)</li>
+                    <li>Select heating circuits, zones, and optional features → Done!</li>
                 </ol>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Platforms</h2>
-            <div class="features">
-                <div class="feature"><h3>Sensor</h3><p>100+ read-only sensors</p></div>
-                <div class="feature"><h3>Binary Sensor</h3><p>Error states, switch states</p></div>
-                <div class="feature"><h3>Number</h3><p>~30 writable setpoints</p></div>
-                <div class="feature"><h3>Select</h3><p>~15 mode selectors</p></div>
-                <div class="feature"><h3>Switch</h3><p>GLT requests</p></div>
             </div>
         </div>
 
@@ -106,12 +138,39 @@
             <a href="https://github.com/Xerolux/idm-heatpump-hass/wiki" class="link">Wiki Documentation</a>
             <a href="https://github.com/Xerolux/idm-heatpump-hass/releases" class="link">Releases</a>
             <a href="https://github.com/Xerolux/idm-heatpump-hass/issues" class="link">Report a Bug</a>
-            <a href="https://github.com/sponsors/xerolux" class="link">Sponsor</a>
+        </div>
+
+        <div class="section">
+            <h2>Support This Project</h2>
+            <p style="color:#aaa;margin-bottom:1rem;">This integration is developed in my free time. Every contribution is a huge motivation – thank you! ❤️</p>
+            <div class="support-grid">
+                <a href="https://www.buymeacoffee.com/xerolux" target="_blank" rel="noopener noreferrer" class="support-btn btn-bmac">
+                    ☕ Buy Me a Coffee
+                </a>
+                <a href="https://ko-fi.com/xerolux" target="_blank" rel="noopener noreferrer" class="support-btn btn-kofi">
+                    Ko-Fi
+                </a>
+                <a href="https://github.com/sponsors/xerolux" target="_blank" rel="noopener noreferrer" class="support-btn btn-sponsor">
+                    ♥ GitHub Sponsors
+                </a>
+                <a href="https://paypal.me/xerolux" target="_blank" rel="noopener noreferrer" class="support-btn btn-paypal">
+                    PayPal
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>⚠️ Disclaimer</h2>
+            <div class="disclaimer">
+                <p><strong>This is an unofficial community project</strong> and is not affiliated with, endorsed by, or connected to IDM Energiesysteme GmbH in any way.</p>
+                <p>All trademarks, logos, and product names (e.g. "IDM", "Navigator") are the property of their respective owners. Logos and images are used solely for identification of the compatible device and not for commercial purposes.</p>
+                <p>This project is provided without any warranty. Use at your own risk — especially when writing Modbus registers.</p>
+            </div>
         </div>
 
         <div class="footer">
-            <p>Developed by <a href="https://github.com/Xerolux">Xerolux</a> for the Home Assistant & Heat Pump Community</p>
-            <p>Integration for IDM Navigator 2.0 by IDM EnergieSysteme GmbH</p>
+            <p>Made with ❤️ by <a href="https://github.com/Xerolux">Xerolux</a> for the Home Assistant &amp; Heat Pump Community</p>
+            <p>Compatible with IDM Navigator 2.0 by IDM EnergieSysteme GmbH</p>
         </div>
     </div>
 </body>
