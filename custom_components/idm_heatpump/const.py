@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import enum
 
-DOMAIN: str = "idm_heatpump_v2"
+DOMAIN: str = "idm_heatpump"
 NAME: str = "IDM Heatpump"
 MANUFACTURER: str = "iDM Energiesysteme"
 MODEL: str = "Navigator 2.0"

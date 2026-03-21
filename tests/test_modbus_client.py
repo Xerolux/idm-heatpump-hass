@@ -6,7 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pymodbus.exceptions import ConnectionException, ModbusException
 
-from custom_components.idm_heatpump_v2.modbus_client import (
+from custom_components.idm_heatpump.modbus_client import (
     DataType,
     IdmModbusClient,
     RegisterDef,
@@ -320,7 +320,7 @@ class TestReadBatch:
 class TestConnectDisconnect:
     async def test_connect(self):
         with patch(
-            "custom_components.idm_heatpump_v2.modbus_client.AsyncModbusTcpClient"
+            "custom_components.idm_heatpump.modbus_client.AsyncModbusTcpClient"
         ) as mock_class:
             mock_tcp = AsyncMock()
             mock_tcp.connected = True
@@ -332,7 +332,7 @@ class TestConnectDisconnect:
 
     async def test_connect_skips_if_already_connected(self):
         with patch(
-            "custom_components.idm_heatpump_v2.modbus_client.AsyncModbusTcpClient"
+            "custom_components.idm_heatpump.modbus_client.AsyncModbusTcpClient"
         ) as mock_class:
             mock_tcp = AsyncMock()
             mock_tcp.connected = True
@@ -381,7 +381,7 @@ class TestTestConnection:
 
     async def test_connection_fails_not_connected(self):
         with patch(
-            "custom_components.idm_heatpump_v2.modbus_client.AsyncModbusTcpClient"
+            "custom_components.idm_heatpump.modbus_client.AsyncModbusTcpClient"
         ) as mock_class:
             mock_tcp = AsyncMock()
             mock_tcp.connected = False
@@ -393,7 +393,7 @@ class TestTestConnection:
 
     async def test_connection_fails_on_exception(self):
         with patch(
-            "custom_components.idm_heatpump_v2.modbus_client.AsyncModbusTcpClient"
+            "custom_components.idm_heatpump.modbus_client.AsyncModbusTcpClient"
         ) as mock_class:
             mock_tcp = AsyncMock()
             mock_tcp.connect.side_effect = ConnectionException("refused")

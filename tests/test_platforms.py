@@ -4,8 +4,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from custom_components.idm_heatpump_v2.modbus_client import DataType, RegisterDef
-from custom_components.idm_heatpump_v2.const import DOMAIN, UNUSED_VALUE
+from custom_components.idm_heatpump.modbus_client import DataType, RegisterDef
+from custom_components.idm_heatpump.const import DOMAIN, UNUSED_VALUE
 
 
 def _make_register(name="temp", address=100, writable=False, enum_options=None, datatype=DataType.FLOAT):
@@ -46,7 +46,7 @@ def _make_desc(key="temp"):
 
 class TestIdmSensor:
     def test_native_value_plain(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmSensor
+        from custom_components.idm_heatpump.sensor import IdmSensor
 
         coord = _make_coordinator(data={"temp": 22.5})
         reg = _make_register("temp")
@@ -54,7 +54,7 @@ class TestIdmSensor:
         assert sensor.native_value == 22.5
 
     def test_native_value_none_when_missing(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmSensor
+        from custom_components.idm_heatpump.sensor import IdmSensor
 
         coord = _make_coordinator(data={})
         reg = _make_register("temp")
@@ -62,7 +62,7 @@ class TestIdmSensor:
         assert sensor.native_value is None
 
     def test_native_value_enum_lookup(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmSensor
+        from custom_components.idm_heatpump.sensor import IdmSensor
 
         enum_opts = {0: "Standby", 1: "Automatic"}
         coord = _make_coordinator(data={"mode": 1})
@@ -71,7 +71,7 @@ class TestIdmSensor:
         assert sensor.native_value == "Automatic"
 
     def test_native_value_enum_unknown(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmSensor
+        from custom_components.idm_heatpump.sensor import IdmSensor
 
         enum_opts = {0: "Standby"}
         coord = _make_coordinator(data={"mode": 99})
@@ -80,7 +80,7 @@ class TestIdmSensor:
         assert "Unknown" in sensor.native_value
 
     def test_native_value_none_with_enum_returns_none(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmSensor
+        from custom_components.idm_heatpump.sensor import IdmSensor
 
         enum_opts = {0: "Standby"}
         coord = _make_coordinator(data={})
@@ -91,7 +91,7 @@ class TestIdmSensor:
 
 class TestSensorAsyncSetupEntry:
     async def test_creates_sensors_from_coordinator(self):
-        from custom_components.idm_heatpump_v2.sensor import async_setup_entry
+        from custom_components.idm_heatpump.sensor import async_setup_entry
 
         coord = _make_coordinator()
         reg1 = _make_register("outdoor_temp", 100)
@@ -112,7 +112,7 @@ class TestSensorAsyncSetupEntry:
         assert len(added_entities) == 2
 
     async def test_excludes_enum_uchar_sensors(self):
-        from custom_components.idm_heatpump_v2.sensor import async_setup_entry
+        from custom_components.idm_heatpump.sensor import async_setup_entry
 
         coord = _make_coordinator()
         reg_normal = _make_register("temp", 100)
@@ -134,7 +134,7 @@ class TestSensorAsyncSetupEntry:
         assert len(added_entities) == 1  # enum UCHAR excluded
 
     async def test_adds_technician_sensors_when_enabled(self):
-        from custom_components.idm_heatpump_v2.sensor import async_setup_entry
+        from custom_components.idm_heatpump.sensor import async_setup_entry
 
         coord = _make_coordinator()
         coord.sensor_descriptions = []
@@ -153,7 +153,7 @@ class TestSensorAsyncSetupEntry:
 
 class TestIdmTechnicianCodeSensor:
     def test_init(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
@@ -161,22 +161,22 @@ class TestIdmTechnicianCodeSensor:
         assert sensor._attr_name == "Fachmann Ebene 1"
 
     def test_level_2_name(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_2")
         assert sensor._attr_name == "Fachmann Ebene 2"
 
     def test_available_always_true(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         coord = _make_coordinator(last_update_success=False)
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
         assert sensor.available is True
 
     def test_native_value_returns_code(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
-        from custom_components.idm_heatpump_v2.technician_codes import calculate_codes
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
@@ -184,12 +184,12 @@ class TestIdmTechnicianCodeSensor:
         assert sensor.native_value == expected
 
     def test_entity_disabled_by_default(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         assert IdmTechnicianCodeSensor._attr_entity_registry_enabled_default is False
 
     async def test_async_will_remove_cancels_timer(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
@@ -200,7 +200,7 @@ class TestIdmTechnicianCodeSensor:
         assert sensor._cancel_timer is None
 
     async def test_async_will_remove_no_timer(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
@@ -209,7 +209,7 @@ class TestIdmTechnicianCodeSensor:
         await sensor.async_will_remove_from_hass()
 
     def test_async_refresh_writes_ha_state(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
@@ -218,7 +218,7 @@ class TestIdmTechnicianCodeSensor:
         sensor.async_write_ha_state.assert_called_once()
 
     async def test_async_added_to_hass_starts_timer(self):
-        from custom_components.idm_heatpump_v2.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
         from unittest.mock import patch, MagicMock
 
         coord = _make_coordinator()
@@ -227,7 +227,7 @@ class TestIdmTechnicianCodeSensor:
         cancel_mock = MagicMock()
 
         with patch(
-            "custom_components.idm_heatpump_v2.sensor.async_track_time_interval",
+            "custom_components.idm_heatpump.sensor.async_track_time_interval",
             return_value=cancel_mock,
         ) as mock_timer:
             await sensor.async_added_to_hass()
@@ -241,7 +241,7 @@ class TestIdmTechnicianCodeSensor:
 
 class TestIdmBinarySensor:
     def test_is_on_true(self):
-        from custom_components.idm_heatpump_v2.binary_sensor import IdmBinarySensor
+        from custom_components.idm_heatpump.binary_sensor import IdmBinarySensor
 
         coord = _make_coordinator(data={"fault": 1})
         reg = _make_register("fault")
@@ -249,7 +249,7 @@ class TestIdmBinarySensor:
         assert sensor.is_on is True
 
     def test_is_on_false(self):
-        from custom_components.idm_heatpump_v2.binary_sensor import IdmBinarySensor
+        from custom_components.idm_heatpump.binary_sensor import IdmBinarySensor
 
         coord = _make_coordinator(data={"fault": 0})
         reg = _make_register("fault")
@@ -257,7 +257,7 @@ class TestIdmBinarySensor:
         assert sensor.is_on is False
 
     def test_is_on_none_returns_false(self):
-        from custom_components.idm_heatpump_v2.binary_sensor import IdmBinarySensor
+        from custom_components.idm_heatpump.binary_sensor import IdmBinarySensor
 
         coord = _make_coordinator(data={})
         reg = _make_register("fault")
@@ -267,7 +267,7 @@ class TestIdmBinarySensor:
 
 class TestBinarySensorAsyncSetupEntry:
     async def test_creates_entities(self):
-        from custom_components.idm_heatpump_v2.binary_sensor import async_setup_entry
+        from custom_components.idm_heatpump.binary_sensor import async_setup_entry
 
         coord = _make_coordinator()
         coord.binary_sensor_descriptions = [
@@ -283,7 +283,7 @@ class TestBinarySensorAsyncSetupEntry:
         assert len(added) == 1
 
     async def test_empty_descriptions(self):
-        from custom_components.idm_heatpump_v2.binary_sensor import async_setup_entry
+        from custom_components.idm_heatpump.binary_sensor import async_setup_entry
 
         coord = _make_coordinator()
         coord.binary_sensor_descriptions = []
@@ -303,7 +303,7 @@ class TestBinarySensorAsyncSetupEntry:
 
 class TestIdmNumber:
     def test_native_value(self):
-        from custom_components.idm_heatpump_v2.number import IdmNumber
+        from custom_components.idm_heatpump.number import IdmNumber
 
         coord = _make_coordinator(data={"dhw_target": 48.0})
         reg = _make_register("dhw_target", writable=True)
@@ -311,7 +311,7 @@ class TestIdmNumber:
         assert num.native_value == 48.0
 
     def test_native_value_none_when_missing(self):
-        from custom_components.idm_heatpump_v2.number import IdmNumber
+        from custom_components.idm_heatpump.number import IdmNumber
 
         coord = _make_coordinator(data={})
         reg = _make_register("dhw_target", writable=True)
@@ -319,7 +319,7 @@ class TestIdmNumber:
         assert num.native_value is None
 
     def test_native_value_converts_to_float(self):
-        from custom_components.idm_heatpump_v2.number import IdmNumber
+        from custom_components.idm_heatpump.number import IdmNumber
 
         coord = _make_coordinator(data={"dhw_target": 48})
         reg = _make_register("dhw_target", writable=True)
@@ -328,7 +328,7 @@ class TestIdmNumber:
         assert num.native_value == 48.0
 
     async def test_async_set_native_value(self):
-        from custom_components.idm_heatpump_v2.number import IdmNumber
+        from custom_components.idm_heatpump.number import IdmNumber
 
         coord = _make_coordinator(data={"dhw_target": 48.0})
         reg = _make_register("dhw_target", writable=True)
@@ -338,7 +338,7 @@ class TestIdmNumber:
 
     async def test_async_set_native_value_raises_on_error(self):
         from homeassistant.exceptions import HomeAssistantError
-        from custom_components.idm_heatpump_v2.number import IdmNumber
+        from custom_components.idm_heatpump.number import IdmNumber
 
         coord = _make_coordinator()
         coord.async_write_register = AsyncMock(side_effect=Exception("write failed"))
@@ -350,7 +350,7 @@ class TestIdmNumber:
 
 class TestNumberAsyncSetupEntry:
     async def test_creates_entities(self):
-        from custom_components.idm_heatpump_v2.number import async_setup_entry
+        from custom_components.idm_heatpump.number import async_setup_entry
 
         coord = _make_coordinator()
         coord.number_descriptions = [
@@ -373,7 +373,7 @@ class TestNumberAsyncSetupEntry:
 
 class TestIdmSelect:
     def test_init_sets_options(self):
-        from custom_components.idm_heatpump_v2.select import IdmSelect
+        from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby", 1: "Automatic", 2: "Away"}
         coord = _make_coordinator()
@@ -382,7 +382,7 @@ class TestIdmSelect:
         assert set(sel._attr_options) == {"Standby", "Automatic", "Away"}
 
     def test_current_option_found(self):
-        from custom_components.idm_heatpump_v2.select import IdmSelect
+        from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby", 1: "Automatic"}
         coord = _make_coordinator(data={"system_mode": 1})
@@ -391,7 +391,7 @@ class TestIdmSelect:
         assert sel.current_option == "Automatic"
 
     def test_current_option_none_when_missing(self):
-        from custom_components.idm_heatpump_v2.select import IdmSelect
+        from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby"}
         coord = _make_coordinator(data={})
@@ -400,7 +400,7 @@ class TestIdmSelect:
         assert sel.current_option is None
 
     def test_current_option_none_when_raw_none(self):
-        from custom_components.idm_heatpump_v2.select import IdmSelect
+        from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby"}
         coord = _make_coordinator(data={"system_mode": None})
@@ -409,7 +409,7 @@ class TestIdmSelect:
         assert sel.current_option is None
 
     def test_option_to_value(self):
-        from custom_components.idm_heatpump_v2.select import IdmSelect
+        from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby", 1: "Automatic"}
         coord = _make_coordinator()
@@ -418,7 +418,7 @@ class TestIdmSelect:
         assert sel._option_to_value("Automatic") == 1
 
     def test_option_to_value_raises_on_unknown(self):
-        from custom_components.idm_heatpump_v2.select import IdmSelect
+        from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby"}
         coord = _make_coordinator()
@@ -428,7 +428,7 @@ class TestIdmSelect:
             sel._option_to_value("NonExistent")
 
     async def test_async_select_option(self):
-        from custom_components.idm_heatpump_v2.select import IdmSelect
+        from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby", 1: "Automatic"}
         coord = _make_coordinator(data={"system_mode": 0})
@@ -439,7 +439,7 @@ class TestIdmSelect:
 
     async def test_async_select_option_raises_on_error(self):
         from homeassistant.exceptions import HomeAssistantError
-        from custom_components.idm_heatpump_v2.select import IdmSelect
+        from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby", 1: "Automatic"}
         coord = _make_coordinator()
@@ -452,7 +452,7 @@ class TestIdmSelect:
 
 class TestSelectAsyncSetupEntry:
     async def test_creates_entities_with_enum(self):
-        from custom_components.idm_heatpump_v2.select import async_setup_entry
+        from custom_components.idm_heatpump.select import async_setup_entry
 
         coord = _make_coordinator()
         enum_opts = {0: "Standby", 1: "Auto"}
@@ -470,7 +470,7 @@ class TestSelectAsyncSetupEntry:
         assert len(added) == 1
 
     async def test_excludes_entries_without_enum(self):
-        from custom_components.idm_heatpump_v2.select import async_setup_entry
+        from custom_components.idm_heatpump.select import async_setup_entry
 
         coord = _make_coordinator()
         coord.select_descriptions = [
@@ -493,7 +493,7 @@ class TestSelectAsyncSetupEntry:
 
 class TestIdmSwitch:
     def test_is_on_true(self):
-        from custom_components.idm_heatpump_v2.switch import IdmSwitch
+        from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator(data={"heating_request": 1})
         reg = _make_register("heating_request", writable=True)
@@ -501,7 +501,7 @@ class TestIdmSwitch:
         assert sw.is_on is True
 
     def test_is_on_false(self):
-        from custom_components.idm_heatpump_v2.switch import IdmSwitch
+        from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator(data={"heating_request": 0})
         reg = _make_register("heating_request", writable=True)
@@ -509,7 +509,7 @@ class TestIdmSwitch:
         assert sw.is_on is False
 
     def test_is_on_none_returns_false(self):
-        from custom_components.idm_heatpump_v2.switch import IdmSwitch
+        from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator(data={})
         reg = _make_register("heating_request", writable=True)
@@ -517,7 +517,7 @@ class TestIdmSwitch:
         assert sw.is_on is False
 
     async def test_async_turn_on(self):
-        from custom_components.idm_heatpump_v2.switch import IdmSwitch
+        from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator(data={"heating_request": 0})
         reg = _make_register("heating_request", writable=True)
@@ -526,7 +526,7 @@ class TestIdmSwitch:
         coord.async_write_register.assert_called_once_with(reg, True)
 
     async def test_async_turn_off(self):
-        from custom_components.idm_heatpump_v2.switch import IdmSwitch
+        from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator(data={"heating_request": 1})
         reg = _make_register("heating_request", writable=True)
@@ -536,7 +536,7 @@ class TestIdmSwitch:
 
     async def test_async_turn_on_raises_on_error(self):
         from homeassistant.exceptions import HomeAssistantError
-        from custom_components.idm_heatpump_v2.switch import IdmSwitch
+        from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator()
         coord.async_write_register = AsyncMock(side_effect=Exception("write error"))
@@ -547,7 +547,7 @@ class TestIdmSwitch:
 
     async def test_async_turn_off_raises_on_error(self):
         from homeassistant.exceptions import HomeAssistantError
-        from custom_components.idm_heatpump_v2.switch import IdmSwitch
+        from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator()
         coord.async_write_register = AsyncMock(side_effect=Exception("write error"))
@@ -559,7 +559,7 @@ class TestIdmSwitch:
 
 class TestSwitchAsyncSetupEntry:
     async def test_creates_entities(self):
-        from custom_components.idm_heatpump_v2.switch import async_setup_entry
+        from custom_components.idm_heatpump.switch import async_setup_entry
 
         coord = _make_coordinator()
         coord.switch_descriptions = [
@@ -582,7 +582,7 @@ class TestSwitchAsyncSetupEntry:
 
 class TestTechnicianCodes:
     def test_returns_dict_with_two_keys(self):
-        from custom_components.idm_heatpump_v2.technician_codes import calculate_codes
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
 
         result = calculate_codes()
         assert "level_1" in result
@@ -590,7 +590,7 @@ class TestTechnicianCodes:
 
     def test_level_1_format(self):
         from datetime import datetime
-        from custom_components.idm_heatpump_v2.technician_codes import calculate_codes
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
 
         dt = datetime(2025, 3, 15, 10, 30)
         result = calculate_codes(dt)
@@ -598,7 +598,7 @@ class TestTechnicianCodes:
 
     def test_level_2_format(self):
         from datetime import datetime
-        from custom_components.idm_heatpump_v2.technician_codes import calculate_codes
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
 
         dt = datetime(2025, 3, 15, 10, 30)
         # hours=10 -> hh_last=0, hh_first=1; year_last=5; month_last=3; day_last=5
@@ -606,7 +606,7 @@ class TestTechnicianCodes:
         assert result["level_2"] == "01535"
 
     def test_uses_current_time_when_none(self):
-        from custom_components.idm_heatpump_v2.technician_codes import calculate_codes
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
         from datetime import datetime
 
         result = calculate_codes()
@@ -617,7 +617,7 @@ class TestTechnicianCodes:
 
     def test_single_digit_day_and_month(self):
         from datetime import datetime
-        from custom_components.idm_heatpump_v2.technician_codes import calculate_codes
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
 
         dt = datetime(2025, 1, 5, 8, 0)
         result = calculate_codes(dt)
@@ -625,7 +625,7 @@ class TestTechnicianCodes:
 
     def test_midnight_hour(self):
         from datetime import datetime
-        from custom_components.idm_heatpump_v2.technician_codes import calculate_codes
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
 
         dt = datetime(2025, 3, 15, 0, 0)
         result = calculate_codes(dt)

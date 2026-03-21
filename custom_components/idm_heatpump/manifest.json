@@ -1,5 +1,5 @@
 {
-  "domain": "idm_heatpump_v2",
+  "domain": "idm_heatpump",
   "name": "IDM Heatpump",
   "codeowners": ["@xerolux"],
   "config_flow": true,

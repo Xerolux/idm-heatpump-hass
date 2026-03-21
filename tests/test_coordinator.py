@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.idm_heatpump_v2.coordinator import IdmCoordinator
-from custom_components.idm_heatpump_v2.modbus_client import DataType, RegisterDef
-from custom_components.idm_heatpump_v2.const import UNUSED_VALUE
+from custom_components.idm_heatpump.coordinator import IdmCoordinator
+from custom_components.idm_heatpump.modbus_client import DataType, RegisterDef
+from custom_components.idm_heatpump.const import UNUSED_VALUE
 
 
 def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
@@ -67,7 +67,7 @@ class TestSetupRegisters:
     def test_registers_count(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry)
         with patch(
-            "custom_components.idm_heatpump_v2.coordinator.collect_all_registers",
+            "custom_components.idm_heatpump.coordinator.collect_all_registers",
             return_value=[MagicMock(), MagicMock(), MagicMock()],
         ):
             coord.setup_registers(["a"], 0, {})
@@ -76,7 +76,7 @@ class TestSetupRegisters:
     def test_empty_registers(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry)
         with patch(
-            "custom_components.idm_heatpump_v2.coordinator.collect_all_registers",
+            "custom_components.idm_heatpump.coordinator.collect_all_registers",
             return_value=[],
         ):
             coord.setup_registers(["a"], 0, {})
@@ -117,7 +117,7 @@ class TestAsyncUpdateData:
         client.read_batch = AsyncMock(return_value={"temp": 22.5, "mode": 1})
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
-        with patch("custom_components.idm_heatpump_v2.coordinator.ir") as mock_ir:
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             data = await coord._async_update_data()
 
         assert data["temp"] == 22.5
@@ -131,7 +131,7 @@ class TestAsyncUpdateData:
         client.read_batch = AsyncMock(return_value={})
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
-        with patch("custom_components.idm_heatpump_v2.coordinator.ir"):
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
             with pytest.raises(UpdateFailed):
                 await coord._async_update_data()
 
@@ -142,7 +142,7 @@ class TestAsyncUpdateData:
         client.read_batch = AsyncMock(side_effect=Exception("connection lost"))
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
-        with patch("custom_components.idm_heatpump_v2.coordinator.ir") as mock_ir:
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             with pytest.raises(UpdateFailed):
                 await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
@@ -152,7 +152,7 @@ class TestAsyncUpdateData:
         client.read_batch = AsyncMock(return_value={"dead": UNUSED_VALUE, "alive": 5.0})
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, hide_unused=True)
 
-        with patch("custom_components.idm_heatpump_v2.coordinator.ir"):
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
         assert "dead" in coord.unused_registers
         assert "alive" not in coord.unused_registers
@@ -162,10 +162,10 @@ class TestAsyncUpdateData:
         client.read_batch = AsyncMock(return_value={"temp": 20.0})
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
-        with patch("custom_components.idm_heatpump_v2.coordinator.ir") as mock_ir:
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             await coord._async_update_data()
         mock_ir.async_delete_issue.assert_called_once_with(
-            mock_hass, "idm_heatpump_v2", "cannot_connect"
+            mock_hass, "idm_heatpump", "cannot_connect"
         )
 
     async def test_issue_created_on_failure(self, mock_hass, mock_config_entry):
@@ -173,7 +173,7 @@ class TestAsyncUpdateData:
         client.read_batch = AsyncMock(side_effect=Exception("timeout"))
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
-        with patch("custom_components.idm_heatpump_v2.coordinator.ir") as mock_ir:
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             with pytest.raises(Exception):
                 await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()

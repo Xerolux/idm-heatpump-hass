@@ -37,7 +37,7 @@ Please enable debug logging and paste relevant log entries:
 logger:
   default: info
   logs:
-    custom_components.idm_heatpump_v2: debug
+    custom_components.idm_heatpump: debug
 ```
 
 ```

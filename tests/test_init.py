@@ -6,14 +6,14 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.idm_heatpump_v2 import (
+from custom_components.idm_heatpump import (
     IdmHeatpumpData,
     async_setup,
     async_setup_entry,
     async_unload_entry,
     async_reload_entry,
 )
-from custom_components.idm_heatpump_v2.const import DOMAIN
+from custom_components.idm_heatpump.const import DOMAIN
 
 
 class TestIdmHeatpumpData:
@@ -32,18 +32,18 @@ class TestIdmHeatpumpData:
 class TestAsyncSetup:
     async def test_calls_setup_services(self, mock_hass):
         with patch(
-            "custom_components.idm_heatpump_v2.services.async_setup_services",
+            "custom_components.idm_heatpump.services.async_setup_services",
             new_callable=lambda: lambda: AsyncMock(return_value=None),
         ) as mock_setup:
             with patch(
-                "custom_components.idm_heatpump_v2.async_setup.__wrapped__",
+                "custom_components.idm_heatpump.async_setup.__wrapped__",
                 create=True,
             ):
                 pass
         # Simpler: patch the import inside async_setup
         mock_setup_services = AsyncMock()
         with patch(
-            "custom_components.idm_heatpump_v2.services.async_setup_services",
+            "custom_components.idm_heatpump.services.async_setup_services",
             mock_setup_services,
         ):
             result = await async_setup(mock_hass, {})
@@ -51,7 +51,7 @@ class TestAsyncSetup:
 
     async def test_returns_true(self, mock_hass):
         with patch(
-            "custom_components.idm_heatpump_v2.services.async_setup_services",
+            "custom_components.idm_heatpump.services.async_setup_services",
             AsyncMock(),
         ):
             result = await async_setup(mock_hass, {})
@@ -93,28 +93,28 @@ class TestAsyncSetupEntry:
         mock_coordinator.setup_registers = MagicMock()
 
         with patch(
-            "custom_components.idm_heatpump_v2.IdmModbusClient",
+            "custom_components.idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ), patch(
-            "custom_components.idm_heatpump_v2.IdmCoordinator",
+            "custom_components.idm_heatpump.IdmCoordinator",
             return_value=mock_coordinator,
         ), patch(
-            "custom_components.idm_heatpump_v2.async_get_integration",
+            "custom_components.idm_heatpump.async_get_integration",
             return_value=MagicMock(manifest={"version": "0.2.1"}),
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_sensor_descriptions",
+            "custom_components.idm_heatpump.get_all_sensor_descriptions",
             return_value=[],
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_binary_sensor_descriptions",
+            "custom_components.idm_heatpump.get_all_binary_sensor_descriptions",
             return_value=[],
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_number_descriptions",
+            "custom_components.idm_heatpump.get_all_number_descriptions",
             return_value=[],
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_select_descriptions",
+            "custom_components.idm_heatpump.get_all_select_descriptions",
             return_value=[],
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_switch_descriptions",
+            "custom_components.idm_heatpump.get_all_switch_descriptions",
             return_value=[],
         ):
             result = await async_setup_entry(mock_hass, entry)
@@ -133,10 +133,10 @@ class TestAsyncSetupEntry:
         mock_client.connect = AsyncMock(side_effect=Exception("connection refused"))
 
         with patch(
-            "custom_components.idm_heatpump_v2.IdmModbusClient",
+            "custom_components.idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ), patch(
-            "custom_components.idm_heatpump_v2.async_get_integration",
+            "custom_components.idm_heatpump.async_get_integration",
             return_value=MagicMock(manifest={"version": "0.2.1"}),
         ), pytest.raises(ConfigEntryNotReady):
             await async_setup_entry(mock_hass, entry)
@@ -151,24 +151,24 @@ class TestAsyncSetupEntry:
         mock_coordinator.setup_registers = MagicMock()
 
         with patch(
-            "custom_components.idm_heatpump_v2.IdmModbusClient",
+            "custom_components.idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ), patch(
-            "custom_components.idm_heatpump_v2.IdmCoordinator",
+            "custom_components.idm_heatpump.IdmCoordinator",
             return_value=mock_coordinator,
         ), patch(
-            "custom_components.idm_heatpump_v2.async_get_integration",
+            "custom_components.idm_heatpump.async_get_integration",
             return_value=MagicMock(manifest={"version": "0.2.1"}),
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_sensor_descriptions", return_value=[]
+            "custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_binary_sensor_descriptions", return_value=[]
+            "custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_number_descriptions", return_value=[]
+            "custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_select_descriptions", return_value=[]
+            "custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]
         ), patch(
-            "custom_components.idm_heatpump_v2.get_all_switch_descriptions", return_value=[]
+            "custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]
         ):
             await async_setup_entry(mock_hass, entry)
 
@@ -184,7 +184,7 @@ class TestAsyncUnloadEntry:
         mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
         with patch(
-            "custom_components.idm_heatpump_v2.services.async_unload_services",
+            "custom_components.idm_heatpump.services.async_unload_services",
             AsyncMock(),
         ):
             result = await async_unload_entry(mock_hass, entry)
@@ -201,7 +201,7 @@ class TestAsyncUnloadEntry:
         mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
         with patch(
-            "custom_components.idm_heatpump_v2.services.async_unload_services",
+            "custom_components.idm_heatpump.services.async_unload_services",
             AsyncMock(),
         ):
             await async_unload_entry(mock_hass, entry)

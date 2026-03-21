@@ -9,7 +9,7 @@ documentation:
 
 custom_components:
   - changed-files:
-      - any-glob-to-any-file: "custom_components/idm_heatpump_v2/**/*"
+      - any-glob-to-any-file: "custom_components/idm_heatpump/**/*"
 
 configuration:
   - changed-files:

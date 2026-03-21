@@ -3,7 +3,7 @@
 #
 # Current target: Gold
 # HACS compatible: yes
-# Goal: Official HA Core submission (requires domain rename idm_heatpump_v2 → idm_heatpump)
+# Goal: Official HA Core submission (requires domain rename idm_heatpump → idm_heatpump)
 
 rules:
 
@@ -332,7 +332,7 @@ rules:
   # domain-rename:
   #   status: todo
   #   comment: >
-  #     Domain must be renamed from idm_heatpump_v2 to idm_heatpump before
+  #     Domain must be renamed from idm_heatpump to idm_heatpump before
   #     the HA Core PR. HACS must continue working during transition.
   #
   # ha-core-docs:
