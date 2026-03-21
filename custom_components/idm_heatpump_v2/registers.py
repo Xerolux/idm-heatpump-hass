@@ -6,11 +6,8 @@ entity descriptions for Home Assistant platforms.
 """
 
 import logging
-from dataclasses import dataclass
-from typing import Any
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntityDescription,
 )
 from homeassistant.components.number import (
@@ -40,8 +37,6 @@ from .const import (
     SYSTEM_MODE_OPTIONS,
 )
 from .modbus_client import DataType, RegisterDef
-
-_LOGGER = logging.getLogger(__name__)
 
 HK_OFFSET = {"a": 0, "b": 2, "c": 4, "d": 6, "e": 8, "f": 10, "g": 12}
 HK_MODE_ADDR = {"a": 1498, "b": 1499, "c": 1500, "d": 1501, "e": 1502, "f": 1503, "g": 1504}
@@ -443,7 +438,6 @@ EXTERNAL_NUMBERS = [
 
 def _hk_numbers(circuit: str) -> list[dict]:
     idx = ord(circuit) - ord("a")
-    base_mode = 1393 + idx
     base_heat_normal = 1401 + idx * 2
     base_heat_eco = 1415 + idx * 2
     base_curve = 1429 + idx * 2
