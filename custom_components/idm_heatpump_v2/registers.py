@@ -33,6 +33,7 @@ from homeassistant.const import (
 
 from .const import (
     CIRCUIT_MODE_OPTIONS,
+    ISC_MODE_OPTIONS,
     ROOM_MODE_OPTIONS,
     SOLAR_MODE_OPTIONS,
     SYSTEM_MODE_OPTIONS,
@@ -42,8 +43,8 @@ from .modbus_client import DataType, RegisterDef
 _LOGGER = logging.getLogger(__name__)
 
 HK_OFFSET = {"A": 0, "B": 2, "C": 4, "D": 6, "E": 8, "F": 10, "G": 12}
-HK_MODE_ADDR = {"A": 1550, "B": 1551, "C": 1552, "D": 1553, "E": 1554, "F": 1555, "G": 1556}
-HK_CONST_ADDR = {"A": 1600, "B": 1601, "C": 1602, "D": 1603, "E": 1604, "F": 1605, "G": 1606}
+HK_MODE_ADDR = {"A": 1498, "B": 1499, "C": 1500, "D": 1501, "E": 1502, "F": 1503, "G": 1504}
+HK_CONST_ADDR = {"A": 1449, "B": 1450, "C": 1451, "D": 1452, "E": 1453, "F": 1454, "G": 1455}
 
 # ============================================================
 # READ-ONLY SENSORS
@@ -99,6 +100,8 @@ SYSTEM_SENSORS = [
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(1036, "Warmwasser Solltemperatur", "dhw_target_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1048, "Aktueller Strompreis", "current_energy_price",
+            unit="€", device_class="monetary"),
     _sensor(1050, "Fehlercode", "error_code", datatype=DataType.UCHAR,
             icon="mdi:alert-circle"),
     _sensor(1052, "Stoermeldungen", "fault_message", datatype=DataType.UCHAR,
@@ -159,6 +162,12 @@ SYSTEM_SENSORS = [
             unit=PERCENTAGE, icon="mdi:tune-variant"),
     _sensor(1265, "Maximale Leistung Warmwasser", "max_power_dhw", datatype=DataType.UINT16,
             unit=PERCENTAGE, icon="mdi:tune-variant"),
+    _sensor(1392, "Feuchtesensor", "humidity",
+            unit=PERCENTAGE, device_class="humidity"),
+    _sensor(1690, "Externe Aussentemperatur", "outdoor_temp_ext",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1692, "Externe Feuchte", "humidity_ext",
+            unit=PERCENTAGE, device_class="humidity"),
     _sensor(1748, "Energiezaehler Heizen", "energy_heating",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
     _sensor(1750, "Energiezaehler Kuehlen", "energy_cooling",
@@ -167,8 +176,28 @@ SYSTEM_SENSORS = [
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
     _sensor(1754, "Energiezaehler Abtauen", "energy_defrost",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
+    _sensor(1756, "Waermemenge Abtauung", "energy_defrost_total",
+            unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
+    _sensor(1758, "Waermemenge Passive Kuehlung", "energy_passive_cooling_total",
+            unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
+    _sensor(1760, "Waermemenge Solar", "energy_solar_total",
+            unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
+    _sensor(1762, "Waermemenge Elektroheizeinsatz", "energy_electric_total",
+            unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
     _sensor(1790, "Maximale Leistung Waermepumpe", "max_power_heatpump",
             unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
+    _sensor(1850, "Solar Kollektortemperatur", "solar_collector_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1852, "Solar Kollektorruecklauftemperatur", "solar_collector_return_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1854, "Solar Ladetemperatur", "solar_charge_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1857, "Solar WQ-Referenztemperatur/Pooltemperatur", "solar_reference_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1870, "ISC Ladetemperatur Kuehlen", "isc_charge_cooling_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1872, "ISC Rueckkuehltemperatur", "isc_recooling_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(4120, "Firmware Version Navigator", "firmware_version",
             datatype=DataType.UCHAR, icon="mdi:information"),
     _sensor(4122, "Aktuelle Leistungsaufnahme Gesamt", "power_draw_total",
@@ -196,6 +225,8 @@ def _hk_sensors(circuit: str) -> list[dict]:
                 unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
         _sensor(1378 + off, f"Heizkurve HK {C}", f"heating_curve_{c}",
                 icon="mdi:chart-line"),
+        _sensor(1650 + off, f"Externe Raumtemperatur HK {C}", f"room_temp_ext_hk_{c}",
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
         _sensor(1457 + off, f"Raumsolltemperatur Kuehlung Normal HK {C}", f"room_target_cool_normal_{c}",
                 unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
         _sensor(1471 + off, f"Raumsolltemperatur Kuehlung Eco HK {C}", f"room_target_cool_eco_{c}",
@@ -222,6 +253,8 @@ PV_SENSORS = [
     _sensor(86, "Batteriefuellstand", "battery_level",
             datatype=DataType.UCHAR, unit=PERCENTAGE,
             icon="mdi:battery"),
+    _sensor(1792, "Momentanleistung Solar", "current_power_solar",
+            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
 ]
 
 # ============================================================
@@ -258,6 +291,11 @@ BINARY_SENSORS = [
     _binary_sensor(1057, "Verdichter 2", "compressor2", icon="mdi:engine"),
     _binary_sensor(1058, "Verdichter 3", "compressor3", icon="mdi:engine"),
     _binary_sensor(1059, "Verdichter 4", "compressor4", icon="mdi:engine"),
+    _binary_sensor(1099, "Summenstoerung Waermepumpe", "total_fault", icon="mdi:alert-circle"),
+    _binary_sensor(1100, "Status Verdichter 1", "state_compressor1", icon="mdi:engine"),
+    _binary_sensor(1101, "Status Verdichter 2", "state_compressor2", icon="mdi:engine"),
+    _binary_sensor(1102, "Status Verdichter 3", "state_compressor3", icon="mdi:engine"),
+    _binary_sensor(1103, "Status Verdichter 4", "state_compressor4", icon="mdi:engine"),
     _binary_sensor(1060, "Anforderung Heizen", "request_heating",
             icon="mdi:fire"),
     _binary_sensor(1061, "Anforderung Kuehlen", "request_cooling",
@@ -506,6 +544,8 @@ SYSTEM_SELECTS = [
 SOLAR_SELECTS = [
     _select(1856, "Solar Betriebsart", "solar_mode", SOLAR_MODE_OPTIONS,
             icon="mdi:solar-power"),
+    _select(1874, "ISC Modus", "isc_mode", ISC_MODE_OPTIONS,
+            icon="mdi:sync"),
 ]
 
 
