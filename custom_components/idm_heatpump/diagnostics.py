@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Diagnostics support for IDM Heatpump integration."""
 
 from typing import Any
