@@ -29,6 +29,7 @@
 | **❄️ Kaskade & Bivalenz** | Mehrfach-Wärmepumpen-Steuerung, Heizstab-Integration |
 | **📡 GLT Fernwartung** | GLT-Temperaturanforderungen (zyklisches Schreiben) |
 | **🛡️ Fehlermanagement** | Fehlererkennung, Fehlerquittierung, Diagnosedaten-Export |
+| **🔑 Fachmann-Ebene** | Optionale Sensoren für Fachmann Ebene 1 & 2 Codes (zeitbasiert, minütlich aktualisiert) |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
 
 ---
@@ -73,7 +74,7 @@ Die vollständige Dokumentation befindet sich im **[Wiki][wiki]**:
 
 ## 🔑 Voraussetzungen
 
-- Home Assistant **2025.8.0+** (getestet bis 2026.x)
+- Home Assistant **2025.12.0+** (getestet bis 2026.x)
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Python 3.12+
@@ -129,6 +130,7 @@ Diese Integration wird in meiner Freizeit entwickelt:
 [![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
 
 - ⭐ Repository auf GitHub sternen
 - 🐛 [Bugs melden][issues]
@@ -174,6 +176,7 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 ---
 
 <!-- Wiki Links -->
+[paypal]: https://paypal.me/xerolux
 [wiki]: https://github.com/Xerolux/idm-heatpump-hass/wiki
 [wiki-install]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-and-Setup
 [wiki-config]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Configuration
