@@ -15,6 +15,7 @@ from homeassistant.helpers.selector import (
     NumberSelectorMode,
     SelectSelector,
     SelectSelectorConfig,
+    SelectSelectorMode,
     TextSelector,
     TextSelectorConfig,
     TextSelectorType,
@@ -39,6 +40,7 @@ from .const import (
 
 _LOGGER = logging.getLogger(__name__)
 
+# Schema for initial setup – no defaults so add_suggested_values_to_schema fills them
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): TextSelector(
@@ -56,21 +58,47 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
     }
 )
 
+# Schema for reconfigure – values are injected via add_suggested_values_to_schema
+STEP_RECONFIGURE_SCHEMA = vol.Schema(
+    {
+        vol.Required(CONF_HOST): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.TEXT)
+        ),
+        vol.Required(CONF_PORT, default=DEFAULT_PORT): NumberSelector(
+            NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
+        ),
+        vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): NumberSelector(
+            NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
+        ),
+    }
+)
+
+_CIRCUIT_SELECTOR = SelectSelector(
+    SelectSelectorConfig(
+        options=HEATING_CIRCUITS,
+        multiple=True,
+        mode=SelectSelectorMode.LIST,
+        translation_key="heating_circuit",
+    )
+)
+
 
 def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
     circuits_default = options.get(CONF_HEATING_CIRCUITS, ["A"])
     if "A" not in circuits_default:
         circuits_default = ["A"] + [c for c in circuits_default if c != "A"]
-    
+
     return vol.Schema(
         {
             vol.Required(
                 CONF_SCAN_INTERVAL,
-                default=options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL),
+                default=int(options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)),
             ): NumberSelector(
                 NumberSelectorConfig(
-                    min=5, max=300, step=1,
-                    mode=NumberSelectorMode.BOX,
+                    min=5,
+                    max=300,
+                    step=1,
+                    mode=NumberSelectorMode.SLIDER,
                     unit_of_measurement="s",
                 )
             ),
@@ -81,32 +109,38 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
             vol.Required(
                 CONF_HEATING_CIRCUITS,
                 default=circuits_default,
-            ): SelectSelector(
-                SelectSelectorConfig(
-                    options=HEATING_CIRCUITS,
-                    multiple=True,
-                )
-            ),
+            ): _CIRCUIT_SELECTOR,
             vol.Required(
                 CONF_ZONE_COUNT,
-                default=options.get(CONF_ZONE_COUNT, 0),
+                default=int(options.get(CONF_ZONE_COUNT, 0)),
             ): NumberSelector(
-                NumberSelectorConfig(min=0, max=MAX_ZONE_COUNT, mode=NumberSelectorMode.BOX)
+                NumberSelectorConfig(
+                    min=0,
+                    max=MAX_ZONE_COUNT,
+                    step=1,
+                    mode=NumberSelectorMode.SLIDER,
+                )
             ),
         }
     )
 
 
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
+    existing_rooms: dict = options.get(CONF_ZONE_ROOMS, {})
     schema_dict: dict = {}
     for z in range(zone_count):
         schema_dict[
             vol.Required(
                 f"zone_{z}_rooms",
-                default=options.get(CONF_ZONE_ROOMS, {}).get(z, 1),
+                default=int(existing_rooms.get(z, 1)),
             )
         ] = NumberSelector(
-            NumberSelectorConfig(min=1, max=MAX_ROOM_COUNT, mode=NumberSelectorMode.BOX)
+            NumberSelectorConfig(
+                min=1,
+                max=MAX_ROOM_COUNT,
+                step=1,
+                mode=NumberSelectorMode.SLIDER,
+            )
         )
     return vol.Schema(schema_dict)
 
@@ -123,18 +157,28 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: dict[str, str] = {}
 
         if user_input is not None:
-            self._data = user_input.copy()
-            await self.async_set_unique_id(user_input[CONF_HOST])
-            self._abort_if_unique_id_configured()
+            name = user_input.get(CONF_NAME, "").strip()
+            host = user_input.get(CONF_HOST, "").strip()
 
-            if not await self._test_connection(user_input):
-                errors["base"] = "cannot_connect"
+            if not name:
+                errors[CONF_NAME] = "name_required"
+            elif not host:
+                errors[CONF_HOST] = "host_required"
             else:
-                return await self.async_step_options()
+                await self.async_set_unique_id(host)
+                self._abort_if_unique_id_configured()
+
+                if not await self._test_connection(user_input):
+                    errors["base"] = "cannot_connect"
+                else:
+                    self._data = {**user_input, CONF_HOST: host, CONF_NAME: name}
+                    return await self.async_step_options()
 
         return self.async_show_form(
             step_id="user",
-            data_schema=STEP_USER_DATA_SCHEMA,
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_USER_DATA_SCHEMA, user_input or {}
+            ),
             errors=errors,
         )
 
@@ -144,35 +188,38 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         entry = self._get_reconfigure_entry()
 
         if user_input is not None:
-            if not await self._test_connection(user_input):
+            host = user_input.get(CONF_HOST, "").strip()
+            if not host:
+                errors[CONF_HOST] = "host_required"
+            elif not await self._test_connection(user_input):
                 errors["base"] = "cannot_connect"
             else:
                 return self.async_update_reload_and_abort(
                     entry,
                     data_updates={
-                        CONF_HOST: user_input[CONF_HOST],
-                        CONF_PORT: user_input[CONF_PORT],
-                        CONF_SLAVE_ID: user_input[CONF_SLAVE_ID],
+                        CONF_HOST: host,
+                        CONF_PORT: int(user_input.get(CONF_PORT, DEFAULT_PORT)),
+                        CONF_SLAVE_ID: int(
+                            user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)
+                        ),
                     },
                 )
 
-        schema = vol.Schema(
-            {
-                vol.Required(CONF_HOST, default=entry.data[CONF_HOST]): TextSelector(
-                    TextSelectorConfig(type=TextSelectorType.TEXT)
-                ),
-                vol.Required(CONF_PORT, default=entry.data.get(CONF_PORT, DEFAULT_PORT)): NumberSelector(
-                    NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
-                ),
-                vol.Optional(CONF_SLAVE_ID, default=entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)): NumberSelector(
-                    NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
-                ),
-            }
-        )
+        suggested = {
+            CONF_HOST: entry.data[CONF_HOST],
+            CONF_PORT: entry.data.get(CONF_PORT, DEFAULT_PORT),
+            CONF_SLAVE_ID: entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID),
+        }
 
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=schema,
+            data_schema=self.add_suggested_values_to_schema(
+                STEP_RECONFIGURE_SCHEMA, suggested
+            ),
+            description_placeholders={
+                "name": entry.title,
+                "host": entry.data[CONF_HOST],
+            },
             errors=errors,
         )
 
@@ -182,8 +229,9 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             self._options.update(user_input)
-            if user_input.get(CONF_ZONE_COUNT, 0) > 0:
+            if int(user_input.get(CONF_ZONE_COUNT, 0)) > 0:
                 return await self.async_step_zones()
+            self._options[CONF_ZONE_ROOMS] = {}
             return self.async_create_entry(
                 title=self._data[CONF_NAME],
                 data=self._data,
@@ -193,18 +241,20 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="options",
             data_schema=schema,
+            description_placeholders={"name": self._data.get(CONF_NAME, "")},
             errors=errors,
         )
 
     async def async_step_zones(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
-        zone_count = self._options.get(CONF_ZONE_COUNT, 0)
+        zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         schema = _build_zones_schema(self._options, zone_count)
 
         if user_input is not None:
-            zone_rooms: dict[int, int] = {}
-            for z in range(zone_count):
-                zone_rooms[z] = user_input.get(f"zone_{z}_rooms", 1)
+            zone_rooms: dict[int, int] = {
+                z: int(user_input.get(f"zone_{z}_rooms", 1))
+                for z in range(zone_count)
+            }
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             return self.async_create_entry(
                 title=self._data[CONF_NAME],
@@ -215,6 +265,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="zones",
             data_schema=schema,
+            description_placeholders={"zone_count": str(zone_count)},
             errors=errors,
         )
 
@@ -229,7 +280,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         from .modbus_client import IdmModbusClient
 
         client = IdmModbusClient(
-            host=str(data[CONF_HOST]),
+            host=str(data[CONF_HOST]).strip(),
             port=int(data.get(CONF_PORT, DEFAULT_PORT)),
             slave_id=int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
         )
@@ -254,7 +305,7 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
 
         if user_input is not None:
             self._options.update(user_input)
-            if user_input.get(CONF_ZONE_COUNT, 0) > 0:
+            if int(user_input.get(CONF_ZONE_COUNT, 0)) > 0:
                 return await self.async_step_zones()
             self._options[CONF_ZONE_ROOMS] = {}
             return self.async_create_entry(data=self._options)
@@ -262,23 +313,26 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
         return self.async_show_form(
             step_id="options",
             data_schema=schema,
+            description_placeholders={"name": self.config_entry.title},
             errors=errors,
         )
 
     async def async_step_zones(self, user_input: dict[str, Any] | None = None):
         errors: dict[str, str] = {}
-        zone_count = self._options.get(CONF_ZONE_COUNT, 0)
+        zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         schema = _build_zones_schema(self._options, zone_count)
 
         if user_input is not None:
-            zone_rooms: dict[int, int] = {}
-            for z in range(zone_count):
-                zone_rooms[z] = user_input.get(f"zone_{z}_rooms", 1)
+            zone_rooms: dict[int, int] = {
+                z: int(user_input.get(f"zone_{z}_rooms", 1))
+                for z in range(zone_count)
+            }
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             return self.async_create_entry(data=self._options)
 
         return self.async_show_form(
             step_id="zones",
             data_schema=schema,
+            description_placeholders={"zone_count": str(zone_count)},
             errors=errors,
         )

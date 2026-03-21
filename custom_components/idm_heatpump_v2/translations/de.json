@@ -2,101 +2,181 @@
   "config": {
     "step": {
       "user": {
-        "title": "IDM Navigator Heatpump",
-        "description": "Gib die Verbindungsdaten deiner IDM Wärmepumpe ein. Stelle sicher, dass Modbus TCP in der Steuerung (Fachmannebene) aktiviert ist.",
+        "title": "IDM Navigator Wärmepumpe einrichten",
+        "description": "Gib die Verbindungsdaten deiner IDM Wärmepumpe ein.\n\n**Voraussetzung:** Modbus TCP muss in der IDM-Steuerung unter *Fachmannebene → Kommunikation → Modbus* aktiviert sein.",
         "data": {
           "name": "Name",
           "host": "IP-Adresse / Hostname",
-          "port": "Modbus TCP Port",
-          "slave_id": "Slave ID"
+          "port": "Port",
+          "slave_id": "Slave-ID"
         },
         "data_description": {
-          "name": "Ein Name für das Gerät in Home Assistant.",
-          "host": "Die IP-Adresse deines IDM Navigator 2.0.",
-          "port": "Der Modbus TCP Port (Standard ist 502).",
-          "slave_id": "Die Modbus Slave ID (Standard ist 1)."
+          "name": "Anzeigename des Geräts in Home Assistant, z. B. \"IDM Wärmepumpe\".",
+          "host": "IP-Adresse oder Hostname deines IDM Navigator 2.0, z. B. `192.168.1.100`.",
+          "port": "Modbus-TCP-Port der Steuerung. Standard ist `502`.",
+          "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen."
         }
       },
       "reconfigure": {
-        "title": "Verbindung anpassen",
-        "description": "Passe die Netzwerk-Verbindungsdaten deiner Wärmepumpe an.",
+        "title": "Verbindung anpassen – {name}",
+        "description": "Aktuelle Verbindung: **{host}**\n\nÄndere hier die Netzwerkdaten deiner Wärmepumpe. Die Integration wird danach automatisch neu gestartet.",
         "data": {
           "host": "IP-Adresse / Hostname",
-          "port": "Modbus TCP Port",
-          "slave_id": "Slave ID"
+          "port": "Port",
+          "slave_id": "Slave-ID"
+        },
+        "data_description": {
+          "host": "Neue IP-Adresse oder neuer Hostname des IDM Navigator 2.0.",
+          "port": "Modbus-TCP-Port. Standard ist `502`.",
+          "slave_id": "Modbus-Slave-ID. Standard ist `1`."
         }
       },
       "options": {
-        "title": "Optionen",
-        "description": "Konfiguriere das Scan-Intervall und Hardware-Komponenten. Änderungen hier starten die Integration neu.",
+        "title": "Konfiguration – {name}",
+        "description": "Passe Abfrageintervall und installierte Komponenten an. Änderungen starten die Integration neu.",
         "data": {
-          "scan_interval": "Abfrageintervall (Sekunden)",
-          "hide_unused_registers": "Unbenutzte Register ausblenden",
+          "scan_interval": "Abfrageintervall",
+          "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
-          "zone_count": "Anzahl Zonen"
+          "zone_count": "Anzahl Zonenmodule"
         },
         "data_description": {
-          "scan_interval": "Wie oft Daten abgerufen werden. Ein geringer Wert bedeutet schnelle Updates, erzeugt aber mehr Last.",
-          "hide_unused_registers": "Blendet Sensoren automatisch aus, die inaktive Werte (z.B. -1.0) liefern.",
-          "heating_circuits": "Wähle aus, welche Heizkreise (A-G) verbaut und aktiv sind.",
-          "zone_count": "Wähle aus, wie viele IDM Zonenmodule installiert sind (0 wenn keine)."
+          "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
+          "hide_unused_registers": "Sensoren, die inaktive Werte liefern (z. B. −1,0), werden automatisch als *nicht verfügbar* markiert und ausgeblendet.",
+          "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
+          "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden)."
         }
       },
       "zones": {
-        "title": "Zonen-Konfiguration",
-        "description": "Konfiguriere die Anzahl der aktiven Räume pro Zone.",
+        "title": "Zonenmodule konfigurieren",
+        "description": "Gib an, wie viele Räume pro Zonenmodul aktiv sind (maximal 8 Räume pro Zone). Es werden {zone_count} Zonenmodule konfiguriert.",
         "data": {
-          "zone_0_rooms": "Zone 1 - Räume",
-          "zone_1_rooms": "Zone 2 - Räume",
-          "zone_2_rooms": "Zone 3 - Räume",
-          "zone_3_rooms": "Zone 4 - Räume",
-          "zone_4_rooms": "Zone 5 - Räume",
-          "zone_5_rooms": "Zone 6 - Räume",
-          "zone_6_rooms": "Zone 7 - Räume",
-          "zone_7_rooms": "Zone 8 - Räume",
-          "zone_8_rooms": "Zone 9 - Räume",
-          "zone_9_rooms": "Zone 10 - Räume"
+          "zone_0_rooms": "Zone 1 – Räume",
+          "zone_1_rooms": "Zone 2 – Räume",
+          "zone_2_rooms": "Zone 3 – Räume",
+          "zone_3_rooms": "Zone 4 – Räume",
+          "zone_4_rooms": "Zone 5 – Räume",
+          "zone_5_rooms": "Zone 6 – Räume",
+          "zone_6_rooms": "Zone 7 – Räume",
+          "zone_7_rooms": "Zone 8 – Räume",
+          "zone_8_rooms": "Zone 9 – Räume",
+          "zone_9_rooms": "Zone 10 – Räume"
         },
         "data_description": {
-          "zone_0_rooms": "Anzahl der belegten Raumfühler in Zone 1 (max 8).",
-          "zone_1_rooms": "Anzahl der belegten Raumfühler in Zone 2 (max 8).",
-          "zone_2_rooms": "Anzahl der belegten Raumfühler in Zone 3 (max 8)."
+          "zone_0_rooms": "Anzahl der aktiven Raumfühler in Zone 1 (1–8).",
+          "zone_1_rooms": "Anzahl der aktiven Raumfühler in Zone 2 (1–8).",
+          "zone_2_rooms": "Anzahl der aktiven Raumfühler in Zone 3 (1–8).",
+          "zone_3_rooms": "Anzahl der aktiven Raumfühler in Zone 4 (1–8).",
+          "zone_4_rooms": "Anzahl der aktiven Raumfühler in Zone 5 (1–8).",
+          "zone_5_rooms": "Anzahl der aktiven Raumfühler in Zone 6 (1–8).",
+          "zone_6_rooms": "Anzahl der aktiven Raumfühler in Zone 7 (1–8).",
+          "zone_7_rooms": "Anzahl der aktiven Raumfühler in Zone 8 (1–8).",
+          "zone_8_rooms": "Anzahl der aktiven Raumfühler in Zone 9 (1–8).",
+          "zone_9_rooms": "Anzahl der aktiven Raumfühler in Zone 10 (1–8)."
         }
       }
     },
     "error": {
-      "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfen Sie IP und Port."
+      "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfe IP-Adresse, Port und ob Modbus TCP in der Steuerung aktiviert ist.",
+      "host_required": "Bitte eine gültige IP-Adresse oder einen Hostnamen eingeben.",
+      "name_required": "Bitte einen Namen für das Gerät eingeben."
     },
     "abort": {
-      "already_configured": "Diese Wärmepumpe ist bereits konfiguriert."
+      "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
+      "reconfigure_successful": "Verbindungsdaten wurden aktualisiert. Die Integration wird neu gestartet."
+    }
+  },
+  "options": {
+    "step": {
+      "options": {
+        "title": "Konfiguration – {name}",
+        "description": "Passe Abfrageintervall und installierte Komponenten an. Änderungen starten die Integration neu.",
+        "data": {
+          "scan_interval": "Abfrageintervall",
+          "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
+          "heating_circuits": "Heizkreise",
+          "zone_count": "Anzahl Zonenmodule"
+        },
+        "data_description": {
+          "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
+          "hide_unused_registers": "Sensoren, die inaktive Werte liefern (z. B. −1,0), werden automatisch als *nicht verfügbar* markiert und ausgeblendet.",
+          "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
+          "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden)."
+        }
+      },
+      "zones": {
+        "title": "Zonenmodule konfigurieren",
+        "description": "Gib an, wie viele Räume pro Zonenmodul aktiv sind (maximal 8 Räume pro Zone). Es werden {zone_count} Zonenmodule konfiguriert.",
+        "data": {
+          "zone_0_rooms": "Zone 1 – Räume",
+          "zone_1_rooms": "Zone 2 – Räume",
+          "zone_2_rooms": "Zone 3 – Räume",
+          "zone_3_rooms": "Zone 4 – Räume",
+          "zone_4_rooms": "Zone 5 – Räume",
+          "zone_5_rooms": "Zone 6 – Räume",
+          "zone_6_rooms": "Zone 7 – Räume",
+          "zone_7_rooms": "Zone 8 – Räume",
+          "zone_8_rooms": "Zone 9 – Räume",
+          "zone_9_rooms": "Zone 10 – Räume"
+        },
+        "data_description": {
+          "zone_0_rooms": "Anzahl der aktiven Raumfühler in Zone 1 (1–8).",
+          "zone_1_rooms": "Anzahl der aktiven Raumfühler in Zone 2 (1–8).",
+          "zone_2_rooms": "Anzahl der aktiven Raumfühler in Zone 3 (1–8).",
+          "zone_3_rooms": "Anzahl der aktiven Raumfühler in Zone 4 (1–8).",
+          "zone_4_rooms": "Anzahl der aktiven Raumfühler in Zone 5 (1–8).",
+          "zone_5_rooms": "Anzahl der aktiven Raumfühler in Zone 6 (1–8).",
+          "zone_6_rooms": "Anzahl der aktiven Raumfühler in Zone 7 (1–8).",
+          "zone_7_rooms": "Anzahl der aktiven Raumfühler in Zone 8 (1–8).",
+          "zone_8_rooms": "Anzahl der aktiven Raumfühler in Zone 9 (1–8).",
+          "zone_9_rooms": "Anzahl der aktiven Raumfühler in Zone 10 (1–8)."
+        }
+      }
+    }
+  },
+  "selector": {
+    "heating_circuit": {
+      "options": {
+        "A": "Heizkreis A – Hauptkreis",
+        "B": "Heizkreis B",
+        "C": "Heizkreis C",
+        "D": "Heizkreis D",
+        "E": "Heizkreis E",
+        "F": "Heizkreis F",
+        "G": "Heizkreis G"
+      }
     }
   },
   "services": {
     "set_system_mode": {
       "name": "Betriebsart setzen",
-      "description": "Setzt die Betriebsart der Wärmepumpe",
+      "description": "Setzt die Betriebsart der Wärmepumpe.",
       "fields": {
         "mode": {
           "name": "Modus",
-          "description": "Betriebsart"
+          "description": "Betriebsart (z. B. standby, automatik, urlaub)."
         }
       }
     },
     "acknowledge_errors": {
       "name": "Störungen quittieren",
-      "description": "Quittiert aktive Störmeldungen der Wärmepumpe"
+      "description": "Quittiert aktive Störmeldungen der Wärmepumpe."
     },
     "write_register": {
       "name": "Register schreiben",
-      "description": "Schreibt einen Wert direkt in ein Modbus-Register (Fortgeschritten)",
+      "description": "Schreibt einen Wert direkt in ein Modbus-Register. Nur für erfahrene Nutzer – falsche Werte können die Anlage beschädigen.",
       "fields": {
         "address": {
-          "name": "Adresse",
-          "description": "Modbus-Registeradresse"
+          "name": "Registeradresse",
+          "description": "Modbus-Registeradresse (dezimal)."
         },
         "value": {
           "name": "Wert",
-          "description": "Zu schreibender Wert"
+          "description": "Zu schreibender Wert."
+        },
+        "acknowledge_risk": {
+          "name": "Risiko bestätigen",
+          "description": "Muss auf `true` gesetzt sein, um den Schreibvorgang zu erlauben."
         }
       }
     }
