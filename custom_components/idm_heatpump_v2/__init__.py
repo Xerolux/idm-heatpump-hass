@@ -1,4 +1,4 @@
-"""IDM Navigator Heatpump integration for Home Assistant."""
+"""IDM Heatpump integration for Home Assistant."""
 
 import logging
 from datetime import timedelta
