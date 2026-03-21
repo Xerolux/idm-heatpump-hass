@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Fachmann Ebene code calculation for IDM Navigator heat pumps."""
 
 from datetime import datetime

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Data update coordinator for IDM Navigator heat pump."""
 
 import logging

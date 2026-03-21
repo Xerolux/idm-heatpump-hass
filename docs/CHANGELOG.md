@@ -10,6 +10,29 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.2.3] - 2026-03-21
+
+## v0.2.3 - IDM Heatpump
+
+**STABLE RELEASE**
+
+### Breaking Changes
+
+- **Domain umbenannt:** `idm_heatpump_v2` → `idm_heatpump`
+  Bestehende Installationen müssen nach dem Update neu eingerichtet werden (Entities bekommen neue IDs).
+
+### Improvements
+
+- rename: Integration-Domain von `idm_heatpump_v2` auf `idm_heatpump` umbenannt (HA Core Anforderung)
+- docs: HA Core Integration Dokumentationsseite hinzugefügt (`docs/ha-core-integration-page.md`)
+- fix(quality_scale): Domain-Rename, Config-Flow-Coverage und Test-Coverage als done markiert
+
+---
+
+[Full changelog: v0.2.2...v0.2.3](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.2.2...v0.2.3)
+
+---
+
 ## [0.2.2] - 2026-03-21
 
 ## v0.2.2 - IDM Heatpump

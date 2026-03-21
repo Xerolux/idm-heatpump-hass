@@ -2,7 +2,7 @@
 
 ## Voraussetzungen
 
-- **Home Assistant** 2025.8.0 oder neuer
+- **Home Assistant** 2025.12.0 oder neuer (getestet bis 2026.3)
 - **HACS** ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
 - **IDM Navigator 2.0** Warmepumpe mit aktiviertem Modbus TCP
 - Modbus TCP muss in der Navigator-Steuerung aktiviert sein (Port 502, Slave ID 1)

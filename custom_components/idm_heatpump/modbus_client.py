@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Async Modbus TCP client for IDM Navigator heat pumps."""
 
 import asyncio

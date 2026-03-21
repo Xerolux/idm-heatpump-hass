@@ -32,6 +32,7 @@
 
 ---
 
-**HA:** 2025.8.0+ (getestet bis 2026.x)
+**HA:** 2025.12.0+ · getestet bis 2026.3
+**Python:** 3.14.2 · **pymodbus:** 3.11.2
 
 [GitHub](https://github.com/Xerolux/idm-heatpump-hass) · [Issues](https://github.com/Xerolux/idm-heatpump-hass/issues) · [HACS](https://hacs.xyz/)

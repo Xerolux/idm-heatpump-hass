@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Register definitions for IDM Navigator 2.0 heat pumps.
 
 All Modbus register addresses, data types, units, and read/write capabilities
