@@ -1,5 +1,14 @@
 # Changelog
 
+> **Dieses Projekt macht dir das Leben mit deiner IDM Wärmepumpe leichter – und das komplett kostenlos!**
+> Falls es dir gefällt und du die Entwicklung unterstützen möchtest, freue ich mich riesig über eine kleine Aufmerksamkeit. Kein Muss – aber mega motivierend! 😊☕
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Spendier%20mir%20einen%20Kaffee!-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-Danke%20f%C3%BCr%20deine%20Unterst%C3%BCtzung!-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral%20Link%20nutzen-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+---
+
 All notable changes to this project will be documented in this file.
 ## [0.2.2] - 2026-03-21
 
