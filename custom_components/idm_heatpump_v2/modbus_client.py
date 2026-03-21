@@ -47,7 +47,7 @@ class RegisterDef:
     multiplier: float = 1.0
     size: int = field(init=False)
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if self.datatype == DataType.FLOAT:
             self.size = 2
         else:

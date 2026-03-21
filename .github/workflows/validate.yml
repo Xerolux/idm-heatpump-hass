@@ -61,9 +61,10 @@ jobs:
       - name: Type check with mypy
         run: |
           mypy custom_components/idm_heatpump_v2/ \
+            --strict \
             --ignore-missing-imports \
-            --no-strict-optional \
-            --warn-return-any
+            --allow-untyped-globals \
+            --allow-subclassing-any
         continue-on-error: true
       
       - name: Run Unit Tests
