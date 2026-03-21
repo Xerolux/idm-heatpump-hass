@@ -137,13 +137,13 @@
   "selector": {
     "heating_circuit": {
       "options": {
-        "A": "Heizkreis A – Hauptkreis",
-        "B": "Heizkreis B",
-        "C": "Heizkreis C",
-        "D": "Heizkreis D",
-        "E": "Heizkreis E",
-        "F": "Heizkreis F",
-        "G": "Heizkreis G"
+        "a": "Heizkreis A – Hauptkreis",
+        "b": "Heizkreis B",
+        "c": "Heizkreis C",
+        "d": "Heizkreis D",
+        "e": "Heizkreis E",
+        "f": "Heizkreis F",
+        "g": "Heizkreis G"
       }
     }
   },

@@ -137,13 +137,13 @@
   "selector": {
     "heating_circuit": {
       "options": {
-        "A": "Circuit A – Primary",
-        "B": "Circuit B",
-        "C": "Circuit C",
-        "D": "Circuit D",
-        "E": "Circuit E",
-        "F": "Circuit F",
-        "G": "Circuit G"
+        "a": "Circuit A – Primary",
+        "b": "Circuit B",
+        "c": "Circuit C",
+        "d": "Circuit D",
+        "e": "Circuit E",
+        "f": "Circuit F",
+        "g": "Circuit G"
       }
     }
   }

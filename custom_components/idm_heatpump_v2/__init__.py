@@ -53,7 +53,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     port = int(entry.data.get(CONF_PORT, 502))
     slave_id = int(entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
     scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
-    circuits = entry.options.get(CONF_HEATING_CIRCUITS, ["A"])
+    circuits = entry.options.get(CONF_HEATING_CIRCUITS, ["a"])
     zone_count = int(entry.options.get(CONF_ZONE_COUNT, 0))
     zone_rooms = entry.options.get(CONF_ZONE_ROOMS, {})
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
