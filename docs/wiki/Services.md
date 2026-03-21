@@ -4,7 +4,7 @@
 
 Setzt den Betriebsmodus der Warmepumpe.
 
-**Service:** `idm_heatpump_v2.set_system_mode`
+**Service:** `idm_heatpump.set_system_mode`
 
 **Target:** Entity der Integration
 
@@ -22,7 +22,7 @@ Setzt den Betriebsmodus der Warmepumpe.
 
 **Beispiel:**
 ```yaml
-service: idm_heatpump_v2.set_system_mode
+service: idm_heatpump.set_system_mode
 target:
   entity_id: sensor.idm_navigator_system_mode
 data:
@@ -33,13 +33,13 @@ data:
 
 Quittiert/loscht aktive Fehlermeldungen auf der Warmepumpe.
 
-**Service:** `idm_heatpump_v2.acknowledge_errors`
+**Service:** `idm_heatpump.acknowledge_errors`
 
 **Target:** Gerat der Integration
 
 **Beispiel:**
 ```yaml
-service: idm_heatpump_v2.acknowledge_errors
+service: idm_heatpump.acknowledge_errors
 target:
   device_id: abc123def456
 ```
@@ -48,7 +48,7 @@ target:
 
 Schreibt einen Wert direkt in ein Modbus-Register (Fortgeschritten).
 
-**Service:** `idm_heatpump_v2.write_register`
+**Service:** `idm_heatpump.write_register`
 
 **Target:** Gerat der Integration
 
@@ -62,7 +62,7 @@ Schreibt einen Wert direkt in ein Modbus-Register (Fortgeschritten).
 
 **Beispiel:**
 ```yaml
-service: idm_heatpump_v2.write_register
+service: idm_heatpump.write_register
 target:
   device_id: abc123def456
 data:
@@ -83,7 +83,7 @@ automation:
         entity_id: input_boolean.zuhause
         to: "off"
     action:
-      - service: idm_heatpump_v2.set_system_mode
+      - service: idm_heatpump.set_system_mode
         target:
           entity_id: sensor.idm_navigator_system_mode
         data:
@@ -100,7 +100,7 @@ automation:
         entity_id: input_boolean.urlaub
         to: "on"
     action:
-      - service: idm_heatpump_v2.set_system_mode
+      - service: idm_heatpump.set_system_mode
         target:
           entity_id: sensor.idm_navigator_system_mode
         data:
@@ -119,7 +119,7 @@ automation:
         for:
           minutes: 5
     action:
-      - service: idm_heatpump_v2.acknowledge_errors
+      - service: idm_heatpump.acknowledge_errors
         target:
           device_id: abc123def456
 ```

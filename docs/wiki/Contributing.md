@@ -14,7 +14,7 @@ Wir freuen uns uber Beitrage zu diesem Projekt!
 
 1. Fork das Repository
 2. Klone den Fork lokal
-3. Kopiere `custom_components/idm_heatpump_v2/` in dein HA `custom_components/` Verzeichnis
+3. Kopiere `custom_components/idm_heatpump/` in dein HA `custom_components/` Verzeichnis
 4. Aktiviere Debug-Logging
 5. Starte HA neu
 

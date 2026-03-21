@@ -42,8 +42,8 @@ All notable changes to this project will be documented in this file.
 3. Click Install
 
 **Manual:**
-1. Download `idm_heatpump_v2.zip`
-2. Extract to `custom_components/idm_heatpump_v2`
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
 3. Restart Home Assistant
 
 ---
@@ -128,8 +128,8 @@ _Generated automatically by GitHub Actions on 2026-03-21 19:01:43 UTC_
 3. Click Install
 
 **Manual:**
-1. Download `idm_heatpump_v2.zip`
-2. Extract to `custom_components/idm_heatpump_v2`
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
 3. Restart Home Assistant
 
 ---
@@ -226,8 +226,8 @@ _Generated automatically by GitHub Actions on 2026-03-21 18:27:56 UTC_
 3. Click Install
 
 **Manual:**
-1. Download `idm_heatpump_v2.zip`
-2. Extract to `custom_components/idm_heatpump_v2`
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
 3. Restart Home Assistant
 
 ---

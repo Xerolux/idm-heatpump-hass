@@ -1,33 +1,21 @@
-"""Binary sensor platform for IDM Heatpump."""
+"""Base entity for IDM Heatpump integration."""
 
-from homeassistant.components.binary_sensor import BinarySensorEntity
-from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceInfo
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
 from .coordinator import IdmCoordinator
+from .modbus_client import RegisterDef
 
 
-async def async_setup_entry(
-    hass: HomeAssistant,
-    entry: ConfigEntry,
-    async_add_entities: AddEntitiesCallback,
-) -> None:
-    coordinator: IdmCoordinator = hass.data[DOMAIN][entry.entry_id]["coordinator"]
-    entities = [
-        IdmBinarySensor(coordinator, desc_info["register"], desc_info["description"])
-        for desc_info in coordinator.binary_sensor_descriptions
-    ]
-    async_add_entities(entities)
+class IdmEntity(CoordinatorEntity[IdmCoordinator]):
+    """Base class for all IDM Heatpump entities."""
 
-
-class IdmBinarySensor(CoordinatorEntity[IdmCoordinator], BinarySensorEntity):
     _attr_has_entity_name = True
 
-    def __init__(self, coordinator: IdmCoordinator, reg, entity_desc) -> None:
+    def __init__(
+        self, coordinator: IdmCoordinator, reg: RegisterDef, entity_desc
+    ) -> None:
         super().__init__(coordinator)
         self._register = reg
         self.entity_description = entity_desc
@@ -52,8 +40,3 @@ class IdmBinarySensor(CoordinatorEntity[IdmCoordinator], BinarySensorEntity):
             if isinstance(value, float) and abs(value - UNUSED_VALUE) < 0.01:
                 return False
         return True
-
-    @property
-    def is_on(self) -> bool:
-        value = self.coordinator.data.get(self._register.name)
-        return bool(value) if value is not None else False

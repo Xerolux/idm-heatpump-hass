@@ -4,11 +4,11 @@ on:
   push:
     branches: [main]
     paths:
-      - 'custom_components/idm_heatpump_v2/**'
+      - 'custom_components/idm_heatpump/**'
   pull_request:
     branches: [main]
     paths:
-      - 'custom_components/idm_heatpump_v2/**'
+      - 'custom_components/idm_heatpump/**'
   schedule:
     - cron: '0 2 * * MON'
   workflow_dispatch:

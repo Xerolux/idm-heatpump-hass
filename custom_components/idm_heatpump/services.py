@@ -2,8 +2,9 @@
 
 import logging
 
+from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
-from homeassistant.exceptions import HomeAssistantError
+from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from .const import DOMAIN
 from .modbus_client import DataType, RegisterDef
@@ -14,7 +15,7 @@ _SERVICES = ["set_system_mode", "acknowledge_errors", "write_register"]
 
 
 async def async_setup_services(hass: HomeAssistant) -> None:
-    """Register services only if not already registered."""
+    """Register services. Called from async_setup (once per domain load)."""
     if hass.services.has_service(DOMAIN, "set_system_mode"):
         return
 
@@ -37,21 +38,29 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
 
 async def async_unload_services(hass: HomeAssistant) -> None:
-    """Remove services only when no more IDM entries are configured."""
-    if hass.data.get(DOMAIN):
+    """Remove services when no more IDM entries are configured."""
+    if hass.config_entries.async_entries(DOMAIN):
         return
     for service in _SERVICES:
         hass.services.async_remove(DOMAIN, service)
 
 
 async def _get_coordinator(hass: HomeAssistant, call: ServiceCall):
+    """Return the first loaded IDM coordinator."""
     from .coordinator import IdmCoordinator
 
-    for entry_id, data in hass.data.get(DOMAIN, {}).items():
-        coordinator = data.get("coordinator")
-        if isinstance(coordinator, IdmCoordinator):
-            return coordinator
-    raise HomeAssistantError("No IDM heat pump configured")
+    for entry in hass.config_entries.async_entries(DOMAIN):
+        if entry.state == ConfigEntryState.LOADED:
+            try:
+                coordinator = entry.runtime_data.coordinator
+                if isinstance(coordinator, IdmCoordinator):
+                    return coordinator
+            except AttributeError:
+                continue
+    raise ServiceValidationError(
+        translation_domain=DOMAIN,
+        translation_key="no_device_configured",
+    )
 
 
 async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -77,7 +86,11 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
     mode_val = mode_map.get(mode_str)
 
     if mode_val is None:
-        raise HomeAssistantError(f"Invalid mode: {mode_str}")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_mode",
+            translation_placeholders={"mode": mode_str},
+        )
 
     reg = RegisterDef(
         address=1005,
@@ -105,7 +118,10 @@ async def _handle_write_register(
     coordinator = await _get_coordinator(hass, call)
 
     if call.data.get("acknowledge_risk") is not True:
-        raise HomeAssistantError("You must acknowledge the risk to use this service")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="acknowledge_risk_required",
+        )
 
     address = int(call.data["address"])
     value = call.data["value"]
@@ -130,4 +146,8 @@ async def _handle_write_register(
         _LOGGER.warning("Manual register write: address=%d value=%s", address, value)
         return {"success": True, "address": address, "value": str(value)}
     except Exception as err:
-        raise HomeAssistantError(f"Failed to write register: {err}") from err
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="write_failed",
+            translation_placeholders={"error": str(err)},
+        ) from err

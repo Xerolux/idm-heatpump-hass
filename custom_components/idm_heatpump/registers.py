@@ -6,6 +6,7 @@ entity descriptions for Home Assistant platforms.
 """
 
 import logging
+from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
@@ -28,6 +29,7 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfTemperature,
 )
+from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
     CIRCUIT_MODE_OPTIONS,
@@ -67,10 +69,12 @@ def _sensor(
     key: str,
     datatype: DataType = DataType.FLOAT,
     unit: str | None = None,
-    device_class=None,
+    device_class: SensorDeviceClass | str | None = None,
     icon: str | None = None,
     category: str = "system",
-) -> dict:
+    entity_category: EntityCategory | None = None,
+    disabled: bool = False,
+) -> dict[str, Any]:
     resolved_dc = _SENSOR_DC_MAP.get(device_class, device_class)
     state_class = _SENSOR_STATE_CLASS_MAP.get(resolved_dc)
     return {
@@ -87,6 +91,8 @@ def _sensor(
             device_class=resolved_dc,
             state_class=state_class,
             icon=icon,
+            entity_category=entity_category,
+            entity_registry_enabled_default=not disabled,
         ),
         "category": category,
     }
@@ -98,9 +104,9 @@ SYSTEM_SENSORS = [
     _sensor(1002, "Gemittelte Aussentemperatur", "outdoor_temp_avg",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(1004, "Interne Meldung", "internal_message", datatype=DataType.UCHAR,
-            icon="mdi:message-alert"),
+            icon="mdi:message-alert", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1006, "Smart Grid Status", "smart_grid_status", datatype=DataType.UCHAR,
-            icon="mdi:transmission-tower"),
+            icon="mdi:transmission-tower", entity_category=EntityCategory.DIAGNOSTIC),
     _sensor(1008, "Waermespeichertemperatur", "storage_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(1010, "Kaeltetespeichertemperatur", "cold_storage_temp",
@@ -116,47 +122,62 @@ SYSTEM_SENSORS = [
     _sensor(1048, "Aktueller Strompreis", "current_energy_price",
             unit="€", device_class="monetary"),
     _sensor(1050, "Fehlercode", "error_code", datatype=DataType.UCHAR,
-            icon="mdi:alert-circle"),
+            icon="mdi:alert-circle", entity_category=EntityCategory.DIAGNOSTIC),
     _sensor(1052, "Stoermeldungen", "fault_message", datatype=DataType.UCHAR,
-            icon="mdi:alert"),
+            icon="mdi:alert", entity_category=EntityCategory.DIAGNOSTIC),
     _sensor(1090, "Waermepumpenstatus", "heatpump_status", datatype=DataType.UCHAR,
             icon="mdi:heat-pump"),
     _sensor(1104, "Status Ladepumpe", "charge_pump_status", datatype=DataType.UCHAR,
-            icon="mdi:pump"),
+            icon="mdi:pump", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1105, "Status Sole-/Zwischenkreispumpe", "brine_pump_status",
-            datatype=DataType.UCHAR, icon="mdi:pump"),
+            datatype=DataType.UCHAR, icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1106, "Status Waermequellen-/Grundwasserpumpe", "source_pump_status",
-            datatype=DataType.UCHAR, icon="mdi:pump"),
+            datatype=DataType.UCHAR, icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1107, "Status EVT-Sollwert Istwert", "evt_status",
-            datatype=DataType.UCHAR, icon="mdi:thermostat"),
+            datatype=DataType.UCHAR, icon="mdi:thermostat",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1108, "Statusadditional Pumpentyp", "additional_pump_status",
-            datatype=DataType.UCHAR, icon="mdi:pump"),
+            datatype=DataType.UCHAR, icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1109, "Statusadditional Pumpentyp 2", "additional_pump2_status",
-            datatype=DataType.UCHAR, icon="mdi:pump"),
+            datatype=DataType.UCHAR, icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1110, "Umschaltventil Heizung/Kuehlung", "valve_heating_cooling",
-            datatype=DataType.UCHAR, icon="mdi:valve"),
+            datatype=DataType.UCHAR, icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1111, "Umschaltventil Heizung/Warmwasser", "valve_heating_dhw",
-            datatype=DataType.UCHAR, icon="mdi:valve"),
+            datatype=DataType.UCHAR, icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1112, "Umschaltventil Speicher/Waermequelle", "valve_storage_source",
-            datatype=DataType.UCHAR, icon="mdi:valve"),
+            datatype=DataType.UCHAR, icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1113, "Umschaltventil Waermequelle/Kaeltespeicher", "valve_source_cold",
-            datatype=DataType.UCHAR, icon="mdi:valve"),
+            datatype=DataType.UCHAR, icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1114, "Umschaltventil Speicher/Bypass", "valve_storage_bypass",
-            datatype=DataType.UCHAR, icon="mdi:valve"),
+            datatype=DataType.UCHAR, icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1115, "Umschaltventil HK1", "valve_hk1", datatype=DataType.UCHAR,
-            icon="mdi:valve"),
+            icon="mdi:valve", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1116, "Umschaltventil HK2", "valve_hk2", datatype=DataType.UCHAR,
-            icon="mdi:valve"),
+            icon="mdi:valve", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1117, "Umschaltventil HK3", "valve_hk3", datatype=DataType.UCHAR,
-            icon="mdi:valve"),
+            icon="mdi:valve", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1150, "Laufender Verdichter Stufe", "compressor_stage_running",
-            datatype=DataType.UCHAR, icon="mdi:engine"),
-    _sensor(1151, "Verdichter 1 Stufe", "compressor1_stage", datatype=DataType.UCHAR),
-    _sensor(1152, "Verdichter 2 Stufe", "compressor2_stage", datatype=DataType.UCHAR),
+            datatype=DataType.UCHAR, icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC),
+    _sensor(1151, "Verdichter 1 Stufe", "compressor1_stage", datatype=DataType.UCHAR,
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _sensor(1152, "Verdichter 2 Stufe", "compressor2_stage", datatype=DataType.UCHAR,
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1240, "Bivalenzpunkt 1", "bivalency_point_1", datatype=DataType.INT16,
-            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1241, "Bivalenzpunkt 2", "bivalency_point_2", datatype=DataType.INT16,
-            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1250, "Aktuelle Leistung Heizen", "current_power_heating",
             unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
     _sensor(1252, "Aktuelle Leistung Kuehlen", "current_power_cooling",
@@ -164,17 +185,23 @@ SYSTEM_SENSORS = [
     _sensor(1254, "Aktuelle Leistung Warmwasser", "current_power_dhw",
             unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
     _sensor(1260, "Minimale Leistung Heizen", "min_power_heating", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant"),
+            unit=PERCENTAGE, icon="mdi:tune-variant",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1261, "Maximale Leistung Heizen", "max_power_heating", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant"),
+            unit=PERCENTAGE, icon="mdi:tune-variant",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1262, "Minimale Leistung Kuehlen", "min_power_cooling", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant"),
+            unit=PERCENTAGE, icon="mdi:tune-variant",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1263, "Maximale Leistung Kuehlen", "max_power_cooling", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant"),
+            unit=PERCENTAGE, icon="mdi:tune-variant",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1264, "Minimale Leistung Warmwasser", "min_power_dhw", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant"),
+            unit=PERCENTAGE, icon="mdi:tune-variant",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1265, "Maximale Leistung Warmwasser", "max_power_dhw", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant"),
+            unit=PERCENTAGE, icon="mdi:tune-variant",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1392, "Feuchtesensor", "humidity",
             unit=PERCENTAGE, device_class="humidity"),
     _sensor(1690, "Externe Aussentemperatur", "outdoor_temp_ext",
@@ -198,7 +225,8 @@ SYSTEM_SENSORS = [
     _sensor(1762, "Waermemenge Elektroheizeinsatz", "energy_electric_total",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
     _sensor(1790, "Maximale Leistung Waermepumpe", "max_power_heatpump",
-            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
+            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT,
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1850, "Solar Kollektortemperatur", "solar_collector_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(1852, "Solar Kollektorruecklauftemperatur", "solar_collector_return_temp",
@@ -212,13 +240,14 @@ SYSTEM_SENSORS = [
     _sensor(1872, "ISC Rueckkuehltemperatur", "isc_recooling_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(4120, "Firmware Version Navigator", "firmware_version",
-            datatype=DataType.UCHAR, icon="mdi:information"),
+            datatype=DataType.UCHAR, icon="mdi:information",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(4122, "Aktuelle Leistungsaufnahme Gesamt", "power_draw_total",
             unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
 ]
 
 
-def _hk_sensors(circuit: str) -> list[dict]:
+def _hk_sensors(circuit: str) -> list[dict[str, Any]]:
     """Generate sensors for a specific heating circuit."""
     c = circuit.lower()
     C = circuit.upper()
@@ -281,8 +310,10 @@ def _binary_sensor(
     key: str,
     datatype: DataType = DataType.UCHAR,
     icon: str = "mdi:toggle-switch",
-    device_class=None,
-) -> dict:
+    device_class: str | None = None,
+    entity_category: EntityCategory | None = None,
+    disabled: bool = False,
+) -> dict[str, Any]:
     return {
         "register": RegisterDef(
             address=address,
@@ -294,21 +325,31 @@ def _binary_sensor(
             name=name,
             icon=icon,
             device_class=device_class,
+            entity_category=entity_category,
+            entity_registry_enabled_default=not disabled,
         ),
     }
 
 
 BINARY_SENSORS = [
     _binary_sensor(1054, "Stoerung", "fault", icon="mdi:alert-circle"),
-    _binary_sensor(1056, "Verdichter 1", "compressor1", icon="mdi:engine"),
-    _binary_sensor(1057, "Verdichter 2", "compressor2", icon="mdi:engine"),
-    _binary_sensor(1058, "Verdichter 3", "compressor3", icon="mdi:engine"),
-    _binary_sensor(1059, "Verdichter 4", "compressor4", icon="mdi:engine"),
+    _binary_sensor(1056, "Verdichter 1", "compressor1", icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _binary_sensor(1057, "Verdichter 2", "compressor2", icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _binary_sensor(1058, "Verdichter 3", "compressor3", icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _binary_sensor(1059, "Verdichter 4", "compressor4", icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _binary_sensor(1099, "Summenstoerung Waermepumpe", "total_fault", icon="mdi:alert-circle"),
-    _binary_sensor(1100, "Status Verdichter 1", "state_compressor1", icon="mdi:engine"),
-    _binary_sensor(1101, "Status Verdichter 2", "state_compressor2", icon="mdi:engine"),
-    _binary_sensor(1102, "Status Verdichter 3", "state_compressor3", icon="mdi:engine"),
-    _binary_sensor(1103, "Status Verdichter 4", "state_compressor4", icon="mdi:engine"),
+    _binary_sensor(1100, "Status Verdichter 1", "state_compressor1", icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _binary_sensor(1101, "Status Verdichter 2", "state_compressor2", icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _binary_sensor(1102, "Status Verdichter 3", "state_compressor3", icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _binary_sensor(1103, "Status Verdichter 4", "state_compressor4", icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _binary_sensor(1060, "Anforderung Heizen", "request_heating",
             icon="mdi:fire"),
     _binary_sensor(1061, "Anforderung Kuehlen", "request_cooling",
@@ -337,10 +378,10 @@ def _number(
     datatype: DataType = DataType.FLOAT,
     unit: str | None = None,
     step: float = 0.5,
-    device_class=None,
+    device_class: str | None = None,
     icon: str | None = None,
     mode: NumberMode = NumberMode.BOX,
-) -> dict:
+) -> dict[str, Any]:
     resolved_dc = _NUMBER_DC_MAP.get(device_class, device_class)
     return {
         "register": RegisterDef(
@@ -362,6 +403,7 @@ def _number(
             device_class=resolved_dc,
             icon=icon,
             mode=mode,
+            entity_category=EntityCategory.CONFIG,
         ),
     }
 
@@ -436,7 +478,7 @@ EXTERNAL_NUMBERS = [
 ]
 
 
-def _hk_numbers(circuit: str) -> list[dict]:
+def _hk_numbers(circuit: str) -> list[dict[str, Any]]:
     idx = ord(circuit) - ord("a")
     base_heat_normal = 1401 + idx * 2
     base_heat_eco = 1415 + idx * 2
@@ -536,7 +578,7 @@ def _select(
     options: dict[int, str],
     datatype: DataType = DataType.UCHAR,
     icon: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     return {
         "register": RegisterDef(
             address=address,
@@ -550,6 +592,7 @@ def _select(
             name=name,
             options=list(options.values()),
             icon=icon,
+            entity_category=EntityCategory.CONFIG,
         ),
     }
 
@@ -567,7 +610,7 @@ SOLAR_SELECTS = [
 ]
 
 
-def _hk_selects(circuit: str) -> list[dict]:
+def _hk_selects(circuit: str) -> list[dict[str, Any]]:
     idx = ord(circuit) - ord("a")
     base = 1393 + idx
     prefix = f"hk_{circuit.lower()}"
@@ -593,7 +636,7 @@ def _switch(
     key: str,
     datatype: DataType = DataType.BOOL,
     icon: str = "mdi:toggle-switch",
-) -> dict:
+) -> dict[str, Any]:
     return {
         "register": RegisterDef(
             address=address,
@@ -628,7 +671,7 @@ ZONE_BASE_ADDRESSES = [2000, 2067, 2130, 2193, 2256, 2319, 2382, 2445, 2508, 257
 ZONE_MODE_ADDRESSES = [2059, 2126, 2189, 2252, 2315, 2378, 2441, 2504, 2567, 2630]
 
 
-def _zone_sensors(zone_idx: int, room_count: int) -> list[dict]:
+def _zone_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     if zone_idx >= len(ZONE_BASE_ADDRESSES):
         return []
 
@@ -669,7 +712,7 @@ def _zone_sensors(zone_idx: int, room_count: int) -> list[dict]:
     return sensors
 
 
-def _zone_binary_sensors(zone_idx: int, room_count: int) -> list[dict]:
+def _zone_binary_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     if zone_idx >= len(ZONE_BASE_ADDRESSES):
         return []
 
@@ -687,7 +730,7 @@ def _zone_binary_sensors(zone_idx: int, room_count: int) -> list[dict]:
     return sensors
 
 
-def _zone_numbers(zone_idx: int, room_count: int) -> list[dict]:
+def _zone_numbers(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     if zone_idx >= len(ZONE_BASE_ADDRESSES):
         return []
 
@@ -706,7 +749,7 @@ def _zone_numbers(zone_idx: int, room_count: int) -> list[dict]:
     return numbers
 
 
-def _zone_selects(zone_idx: int, room_count: int) -> list[dict]:
+def _zone_selects(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     if zone_idx >= len(ZONE_MODE_ADDRESSES):
         return []
 
@@ -742,7 +785,7 @@ def get_all_sensor_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     descriptions = list(SYSTEM_SENSORS) + list(PV_SENSORS)
     for circuit in circuits:
         descriptions.extend(_hk_sensors(circuit))
@@ -756,7 +799,7 @@ def get_all_binary_sensor_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     descriptions = list(BINARY_SENSORS)
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 1)
@@ -768,7 +811,7 @@ def get_all_number_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     descriptions = list(DHW_NUMBERS) + list(BIVALENCY_NUMBERS)
     descriptions.extend(CASCADE_NUMBERS)
     descriptions.extend(EXTERNAL_NUMBERS)
@@ -784,7 +827,7 @@ def get_all_select_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     descriptions = list(SYSTEM_SELECTS) + list(SOLAR_SELECTS)
     for circuit in circuits:
         descriptions.extend(_hk_selects(circuit))
@@ -798,7 +841,7 @@ def get_all_switch_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     return list(GLT_SWITCHES)
 
 
