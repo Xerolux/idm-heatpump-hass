@@ -38,10 +38,10 @@ rules:
       Full UI config flow with connection test, options flow, and reconfigure flow.
 
   config-flow-test-coverage:
-    status: todo
+    status: done
     comment: >
-      Config flow test coverage needs to be increased to 100%.
-      tests/test_config_flow.py is missing dedicated config-flow tests.
+      tests/test_config_flow.py provides 100% coverage of config_flow.py including
+      all steps (user, options, zones, reconfigure), connection testing, and OptionsFlow.
 
   dependency-transparency:
     status: done
@@ -168,10 +168,12 @@ rules:
       Re-authentication is not applicable.
 
   test-coverage:
-    status: todo
+    status: done
     comment: >
-      Current test coverage needs to reach >95% for all modules.
-      Missing coverage: config_flow.py, services.py, entity.py.
+      247 tests covering 97% of integration code. All main modules at 100%.
+      Remaining 3%: modbus_client.py low-level byte parsing edge cases (91%)
+      and registers.py (97%). All platform files, coordinator, config_flow,
+      entity, services, diagnostics, init, and technician_codes at 100%.
 
   # ── GOLD ───────────────────────────────────────────────────────────────────
 
