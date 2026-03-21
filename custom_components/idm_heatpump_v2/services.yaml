@@ -1,41 +1,37 @@
 set_system_mode:
   name: "Set System Mode"
   description: "Set the operating mode of the heat pump system"
-  target:
-    entity:
-      integration: idm_heatpump_v2
   fields:
     mode:
       name: "Mode"
-      description: "System operating mode"
+      description: "System operating mode (e.g. standby, automatik, automatic, urlaub, holiday)"
       required: true
       selector:
         select:
           options:
-            - "Standby"
-            - "Automatik"
-            - "Abwesend"
-            - "Urlaub"
-            - "Nur Warmwasser"
-            - "Nur Heizung/Kuehlung"
+            - "standby"
+            - "automatik"
+            - "automatic"
+            - "abwesend"
+            - "away"
+            - "urlaub"
+            - "holiday"
+            - "nur warmwasser"
+            - "hot water only"
+            - "nur heizung/kuehlung"
+            - "heating/cooling only"
 
 acknowledge_errors:
   name: "Acknowledge Errors"
   description: "Acknowledge/clear active error messages on the heat pump"
-  target:
-    entity:
-      integration: idm_heatpump_v2
 
 write_register:
   name: "Write Register"
-  description: "Write a value directly to a Modbus register (advanced)"
-  target:
-    entity:
-      integration: idm_heatpump_v2
+  description: "Write a value directly to a Modbus register (advanced use only)"
   fields:
     address:
       name: "Address"
-      description: "Modbus register address"
+      description: "Modbus register address (decimal)"
       required: true
       selector:
         number:
@@ -44,14 +40,14 @@ write_register:
           mode: box
     value:
       name: "Value"
-      description: "Value to write"
+      description: "Value to write to the register"
       required: true
       selector:
         text:
           multiline: false
     acknowledge_risk:
       name: "Acknowledge Risk"
-      description: "You must acknowledge that writing directly to registers can damage your heat pump"
+      description: "Must be set to true – writing incorrect values can damage your heat pump"
       required: true
       selector:
         constant:

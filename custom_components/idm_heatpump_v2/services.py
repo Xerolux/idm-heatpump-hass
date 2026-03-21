@@ -59,12 +59,19 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
     coordinator = await _get_coordinator(hass, call)
 
     mode_map = {
+        # German
         "standby": 0,
         "automatik": 1,
         "abwesend": 2,
         "urlaub": 3,
         "nur warmwasser": 4,
         "nur heizung/kuehlung": 5,
+        # English aliases
+        "automatic": 1,
+        "away": 2,
+        "holiday": 3,
+        "hot water only": 4,
+        "heating/cooling only": 5,
     }
 
     mode_str = call.data.get("mode", "").lower()
