@@ -72,7 +72,7 @@ Suche in den Logs nach:
 ## Diagnosedaten exportieren
 
 1. Gehe zu **Einstellungen → Geräte & Dienste**
-2. Klicke auf **IDM Navigator Heatpump**
+2. Klicke auf **IDM Heatpump**
 3. Klicke auf **Diagnosedaten herunterladen**
 4. Hänge die Datei an deinen [Bug-Report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md) an
 

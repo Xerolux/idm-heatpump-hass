@@ -1,4 +1,4 @@
-"""Diagnostics support for IDM Navigator Heatpump integration."""
+"""Diagnostics support for IDM Heatpump integration."""
 
 from typing import Any
 

@@ -1,4 +1,4 @@
-"""Sensor platform for IDM Navigator Heatpump."""
+"""Sensor platform for IDM Heatpump."""
 
 from homeassistant.components.sensor import SensorEntity
 from homeassistant.config_entries import ConfigEntry

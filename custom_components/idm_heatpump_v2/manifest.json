@@ -1,6 +1,6 @@
 {
   "domain": "idm_heatpump_v2",
-  "name": "IDM Navigator Heatpump",
+  "name": "IDM Heatpump",
   "codeowners": ["@xerolux"],
   "config_flow": true,
   "documentation": "https://github.com/Xerolux/idm-heatpump-hass",

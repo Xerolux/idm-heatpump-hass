@@ -3,7 +3,7 @@
 All notable changes to this project will be documented in this file.
 ## [0.2.0] - 2026-03-21
 
-## v0.2.0 - IDM Navigator Heatpump
+## v0.2.0 - IDM Heatpump
 
 **STABLE RELEASE**
 
@@ -17,7 +17,7 @@ All notable changes to this project will be documented in this file.
 - Fix Hassfest target validation and add brand assets for HACS (6810943)
 - Fix encode_value endianness bug, optimize connect(), and add mock tests (8850754)
 - feat: add hide_unused option, fix pymodbus compat, dynamic HK sensors (481a4c2)
-- feat: add IDM Navigator Heatpump integration with full CI/CD, docs, and wiki (450815e)
+- feat: add IDM Heatpump integration with full CI/CD, docs, and wiki (450815e)
 
 ### Improvements
 
@@ -52,7 +52,7 @@ All notable changes to this project will be documented in this file.
 
 **HACS (Recommended):**
 1. Add custom repository: `Xerolux/idm-heatpump-hass`
-2. Search for "IDM Navigator Heatpump"
+2. Search for "IDM Heatpump"
 3. Click Install
 
 **Manual:**

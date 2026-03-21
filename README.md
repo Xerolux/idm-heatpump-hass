@@ -1,4 +1,4 @@
-# 🔥 IDM Navigator Heatpump für Home Assistant
+# 🔥 IDM Heatpump für Home Assistant
 
 [![GitHub Release][releases-shield]][releases]
 [![Downloads][downloads-shield]][releases]
@@ -42,12 +42,12 @@
 ```
 HACS → Integrationen → ⋮ → Benutzerdefinierte Repositories
 URL: https://github.com/Xerolux/idm-heatpump-hass  |  Kategorie: Integration
-→ "IDM Navigator Heatpump" herunterladen → HA neu starten
+→ "IDM Heatpump" herunterladen → HA neu starten
 ```
 
 **2. Integration einrichten**
 ```
-Einstellungen → Geräte & Dienste → Integration hinzufügen → "IDM Navigator Heatpump"
+Einstellungen → Geräte & Dienste → Integration hinzufügen → "IDM Heatpump"
 IP-Adresse & Port eingeben → Heizkreise & Zonen konfigurieren → Fertig!
 ```
 

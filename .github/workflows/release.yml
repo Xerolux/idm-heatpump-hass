@@ -165,7 +165,7 @@ jobs:
 
           [ -z "$BUG_FIXES" ] && BUG_FIXES="- Minor bug fixes and stability improvements"
           [ -z "$IMPROVEMENTS" ] && IMPROVEMENTS="- Performance improvements and code optimizations"
-          [ -z "$NEW_FEATURES" ] && NEW_FEATURES="- Enhanced IDM Navigator Heatpump functionality"
+          [ -z "$NEW_FEATURES" ] && NEW_FEATURES="- Enhanced IDM Heatpump functionality"
 
           if [ -z "$PREVIOUS_TAG" ]; then
             CHANGELOG_LINK="Full changelog: Initial release"
@@ -175,7 +175,7 @@ jobs:
           fi
 
           {
-            echo "## $TAG - IDM Navigator Heatpump"
+            echo "## $TAG - IDM Heatpump"
             echo ""
             echo "**$TYPE_BADGE**"
             echo ""
@@ -197,7 +197,7 @@ jobs:
             echo ""
             echo "**HACS (Recommended):**"
             echo "1. Add custom repository: \`${{ github.repository }}\`"
-            echo "2. Search for \"IDM Navigator Heatpump\""
+            echo "2. Search for \"IDM Heatpump\""
             echo "3. Click Install"
             echo ""
             echo "**Manual:**"
