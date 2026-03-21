@@ -6,7 +6,7 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, DOMAIN
+from .const import CONF_HOST, CONF_PORT, DOMAIN
 
 TO_REDACT = {CONF_HOST, CONF_PORT}
 
@@ -22,7 +22,7 @@ async def async_get_config_entry_diagnostics(
         "data": async_redact_data(
             {
                 "scan_interval": coordinator.update_interval.total_seconds(),
-                "registers_count": len(coordinator._registers),
+                "registers_count": coordinator.registers_count,
                 "last_update_success": coordinator.last_update_success,
                 "sensor_count": len(coordinator.sensor_descriptions),
                 "binary_sensor_count": len(coordinator.binary_sensor_descriptions),
