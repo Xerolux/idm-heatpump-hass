@@ -11,8 +11,14 @@ from .modbus_client import DataType, RegisterDef
 
 _LOGGER = logging.getLogger(__name__)
 
+_SERVICES = ["set_system_mode", "acknowledge_errors", "write_register"]
+
 
 async def async_setup_services(hass: HomeAssistant) -> None:
+    """Register services only if not already registered."""
+    if hass.services.has_service(DOMAIN, "set_system_mode"):
+        return
+
     hass.services.async_register(
         DOMAIN,
         "set_system_mode",
@@ -27,12 +33,15 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         "write_register",
         _handle_write_register,
-        supports_response=SupportsResponse.ONLY,
+        supports_response=SupportsResponse.OPTIONAL,
     )
 
 
 async def async_unload_services(hass: HomeAssistant) -> None:
-    for service in ["set_system_mode", "acknowledge_errors", "write_register"]:
+    """Remove services only when no more IDM entries are configured."""
+    if hass.data.get(DOMAIN):
+        return
+    for service in _SERVICES:
         hass.services.async_remove(DOMAIN, service)
 
 
@@ -50,12 +59,19 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
     coordinator = await _get_coordinator(hass, call)
 
     mode_map = {
+        # German
         "standby": 0,
         "automatik": 1,
         "abwesend": 2,
         "urlaub": 3,
         "nur warmwasser": 4,
         "nur heizung/kuehlung": 5,
+        # English aliases
+        "automatic": 1,
+        "away": 2,
+        "holiday": 3,
+        "hot water only": 4,
+        "heating/cooling only": 5,
     }
 
     mode_str = call.data.get("mode", "").lower()
@@ -81,7 +97,7 @@ async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> 
         name="error_acknowledge",
         writable=True,
     )
-    await coordinator.client.write_register(reg, 1)
+    await coordinator.async_write_register(reg, 1)
 
 
 async def _handle_write_register(
