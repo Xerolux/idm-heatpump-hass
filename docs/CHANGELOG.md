@@ -1,6 +1,22 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+
+## [0.2.2] - 2026-03-21
+
+### New Features
+
+- feat: Fachmann-Ebene Codes as HA sensor entities (optional, enabled via config flow)
+  - Two sensors: Ebene 1 (`TTMM`) and Ebene 2 (time-based 5-digit code)
+  - Auto-refresh every 60 seconds via `async_track_time_interval`
+  - Activate under **Settings → Devices & Services → IDM Heatpump → Options → Fachmann-Ebene Codes anzeigen**
+
+---
+
+[Full changelog: v0.2.1...v0.2.2](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.2.1...v0.2.2)
+
+---
+
 ## [0.2.1] - 2026-03-21
 
 ## v0.2.1 - IDM Heatpump
