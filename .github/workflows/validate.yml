@@ -4,14 +4,14 @@ on:
   push:
     branches: [main]
     paths:
-      - 'custom_components/idm_heatpump_v2/**'
+      - 'custom_components/idm_heatpump/**'
       - '.github/workflows/validate.yml'
       - 'requirements*.txt'
       - 'pyproject.toml'
   pull_request:
     branches: [main]
     paths:
-      - 'custom_components/idm_heatpump_v2/**'
+      - 'custom_components/idm_heatpump/**'
       - '.github/workflows/validate.yml'
       - 'requirements*.txt'
       - 'pyproject.toml'
@@ -48,19 +48,19 @@ jobs:
           
       - name: Lint with Ruff
         run: |
-          ruff check custom_components/idm_heatpump_v2/ \
+          ruff check custom_components/idm_heatpump/ \
             --line-length=120 \
             --output-format=github
         continue-on-error: true
         
       - name: Format check with Ruff
         run: |
-          ruff format custom_components/idm_heatpump_v2/ --check
+          ruff format custom_components/idm_heatpump/ --check
         continue-on-error: true
         
       - name: Type check with mypy
         run: |
-          mypy custom_components/idm_heatpump_v2/ \
+          mypy custom_components/idm_heatpump/ \
             --strict \
             --ignore-missing-imports \
             --allow-untyped-globals \
@@ -72,7 +72,7 @@ jobs:
           pytest tests/ \
             -v \
             --tb=short \
-            --cov=custom_components/idm_heatpump_v2 \
+            --cov=custom_components/idm_heatpump \
             --cov-report=xml \
             --cov-report=term-missing
         continue-on-error: true

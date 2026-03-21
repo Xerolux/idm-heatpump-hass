@@ -59,12 +59,12 @@ Aktiviere erweitertes Logging:
 logger:
   default: info
   logs:
-    custom_components.idm_heatpump_v2: debug
+    custom_components.idm_heatpump: debug
     pymodbus: debug
 ```
 
 Suche in den Logs nach:
-- `idm_heatpump_v2` - Integration-spezifische Meldungen
+- `idm_heatpump` - Integration-spezifische Meldungen
 - `Modbus read error` - Modbus-Lesefehler
 - `Modbus write error` - Modbus-Schreibfehler
 - `Decode failed` - Register-Dekodierungsfehler
@@ -78,7 +78,7 @@ Suche in den Logs nach:
 
 ## 👩‍💻 Für Entwickler (Mock Tests)
 
-Bitte führe Schreiboperationen auf dem Modbus (`write_register`) **niemals live gegen eine echte Wärmepumpe** aus, wenn du Code-Änderungen an der Basislogik testest. Nutze stattdessen unsere Mock-Tests in `custom_components/idm_heatpump_v2/tests/test_modbus_client.py` via `pytest`, um das Decodieren (`decode_value`) und Encodieren (`encode_value`) ohne Risiko zu testen.
+Bitte führe Schreiboperationen auf dem Modbus (`write_register`) **niemals live gegen eine echte Wärmepumpe** aus, wenn du Code-Änderungen an der Basislogik testest. Nutze stattdessen unsere Mock-Tests in `custom_components/idm_heatpump/tests/test_modbus_client.py` via `pytest`, um das Decodieren (`decode_value`) und Encodieren (`encode_value`) ohne Risiko zu testen.
 
 ## Haufige Fehler und Losungen
 

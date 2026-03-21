@@ -4,13 +4,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.idm_heatpump_v2.config_flow import (
+from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpConfigFlow,
     IdmHeatpumpOptionsFlow,
     _build_options_schema,
     _build_zones_schema,
 )
-from custom_components.idm_heatpump_v2.const import (
+from custom_components.idm_heatpump.const import (
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
@@ -246,7 +246,7 @@ class TestTestConnection:
         mock_client = AsyncMock()
         mock_client.test_connection = AsyncMock(return_value=True)
         with patch(
-            "custom_components.idm_heatpump_v2.modbus_client.IdmModbusClient",
+            "custom_components.idm_heatpump.modbus_client.IdmModbusClient",
             return_value=mock_client,
         ):
             result = await flow._test_connection({
@@ -261,7 +261,7 @@ class TestTestConnection:
         mock_client = AsyncMock()
         mock_client.test_connection = AsyncMock(side_effect=Exception("connection refused"))
         with patch(
-            "custom_components.idm_heatpump_v2.modbus_client.IdmModbusClient",
+            "custom_components.idm_heatpump.modbus_client.IdmModbusClient",
             return_value=mock_client,
         ):
             result = await flow._test_connection({
@@ -276,7 +276,7 @@ class TestTestConnection:
         mock_client = AsyncMock()
         mock_client.test_connection = AsyncMock(return_value=False)
         with patch(
-            "custom_components.idm_heatpump_v2.modbus_client.IdmModbusClient",
+            "custom_components.idm_heatpump.modbus_client.IdmModbusClient",
             return_value=mock_client,
         ):
             result = await flow._test_connection({

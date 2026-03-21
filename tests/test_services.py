@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from custom_components.idm_heatpump_v2.services import (
+from custom_components.idm_heatpump.services import (
     async_setup_services,
     async_unload_services,
     _get_coordinator,
@@ -13,12 +13,12 @@ from custom_components.idm_heatpump_v2.services import (
     _handle_acknowledge_errors,
     _handle_write_register,
 )
-from custom_components.idm_heatpump_v2.const import DOMAIN
+from custom_components.idm_heatpump.const import DOMAIN
 
 
 def _make_coordinator_in_hass(mock_hass):
     from homeassistant.config_entries import ConfigEntryState
-    from custom_components.idm_heatpump_v2.coordinator import IdmCoordinator
+    from custom_components.idm_heatpump.coordinator import IdmCoordinator
 
     coord = MagicMock(spec=IdmCoordinator)
     coord.async_write_register = AsyncMock()

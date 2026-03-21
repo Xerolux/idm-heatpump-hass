@@ -18,7 +18,7 @@ automation:
         for:
           hours: 2
     action:
-      - service: idm_heatpump_v2.set_system_mode
+      - service: idm_heatpump.set_system_mode
         data:
           mode: "urlaub"
 ```
@@ -35,7 +35,7 @@ automation:
         entity_id: person.ich
         to: "home"
     action:
-      - service: idm_heatpump_v2.set_system_mode
+      - service: idm_heatpump.set_system_mode
         data:
           mode: "automatik"
 ```
@@ -174,5 +174,5 @@ button:
       idm_acknowledge_errors:
         friendly_name: "IDM Störungen quittieren"
         press:
-          service: idm_heatpump_v2.acknowledge_errors
+          service: idm_heatpump.acknowledge_errors
 ```
