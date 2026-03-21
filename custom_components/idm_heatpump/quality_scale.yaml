@@ -341,11 +341,11 @@ rules:
   #     homeassistant.io/integrations/idm_heatpump/
   #
   # config-flow-test-coverage-100:
-  #   status: todo
+  #   status: done
   #   comment: >
-  #     100% config flow test coverage is required for HA Core.
+  #     100% config flow test coverage achieved (test_config_flow.py).
   #
   # test-coverage-95:
-  #   status: todo
+  #   status: done
   #   comment: >
-  #     >95% overall test coverage required for Silver tier in HA Core.
+  #     97% overall test coverage achieved (247 tests).
