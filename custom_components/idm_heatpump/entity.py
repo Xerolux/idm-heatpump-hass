@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Base entity for IDM Heatpump integration."""
 
 from homeassistant.helpers.device_registry import DeviceInfo

@@ -1,3 +1,4 @@
+from __future__ import annotations
 """Binary sensor platform for IDM Heatpump."""
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
