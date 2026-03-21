@@ -28,8 +28,8 @@ UNUSED_VALUE = -1.0
 
 MAX_ZONE_COUNT = 10
 MAX_ROOM_COUNT = 8
-HEATING_CIRCUITS = ["A", "B", "C", "D", "E", "F", "G"]
-HEATING_CIRCUITS_OPTIONAL = ["B", "C", "D", "E", "F", "G"]
+HEATING_CIRCUITS = ["a", "b", "c", "d", "e", "f", "g"]
+HEATING_CIRCUITS_OPTIONAL = ["b", "c", "d", "e", "f", "g"]
 ZONE_OPTIONS = [str(i) for i in range(1, 11)]
 
 
