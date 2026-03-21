@@ -67,10 +67,10 @@ rules:
       instructions including HACS and manual install.
 
   docs-removal-instructions:
-    status: todo
+    status: done
     comment: >
-      Removal/uninstall instructions are missing from the documentation.
-      Should be added to Installation-and-Setup.md.
+      docs/wiki/Installation-and-Setup.md contains a "Deinstallation" section
+      with step-by-step removal instructions (UI deletion + optional file cleanup).
 
   entity-event-setup:
     status: done
@@ -200,33 +200,33 @@ rules:
       Not applicable – no discovery protocol available for Modbus TCP.
 
   docs-data-update:
-    status: todo
+    status: done
     comment: >
-      A section explaining how data is polled (DataUpdateCoordinator, batch
-      Modbus reads, configurable interval) should be added to the docs.
+      docs/wiki/Data-Update.md explains the DataUpdateCoordinator polling mechanism,
+      batch Modbus reads (up to 30 consecutive registers), configurable interval,
+      optimistic writes, and repair-issue error handling.
 
   docs-examples:
-    status: todo
+    status: done
     comment: >
-      Automation YAML examples (e.g. holiday mode, heating setpoint automation,
-      fault notification) should be added to the documentation.
+      docs/wiki/Examples.md provides 7 automation YAML examples: vacation mode,
+      return-home mode, fault notification, PV surplus hot water boost, heating
+      circuit schedule, energy dashboard, and smart-grid control.
 
   docs-known-limitations:
-    status: todo
+    status: done
     comment: >
-      Known limitations should be documented:
-      - EEPROM-protected registers (88 registers with write throttling)
-      - Single-device per config entry
-      - Modbus TCP only (no serial)
-      - Navigator 2.0 / Navigator Pro firmware required
+      docs/wiki/Known-Limitations.md documents: device compatibility, Modbus TCP
+      only, EEPROM write throttling (88 registers, 1/min), single device per
+      config entry, read-only registers, zone module limits, polling-only
+      (no push), and firmware update limitations.
 
   docs-supported-devices:
-    status: todo
+    status: done
     comment: >
-      A list of supported IDM models should be added:
-      - IDM Navigator 2.0 (confirmed)
-      - IDM Navigator Pro with zone modules (confirmed)
-      - Other IDM models with Navigator firmware (untested)
+      docs/wiki/Supported-Devices.md lists IDM Navigator 2.0 and Navigator Pro
+      as confirmed, documents Modbus TCP prerequisites, unsupported devices,
+      and untested compatible models.
 
   docs-supported-functions:
     status: done
@@ -320,11 +320,12 @@ rules:
       Modbus TCP does not use HTTP/websessions. Not applicable.
 
   strict-typing:
-    status: todo
+    status: done
     comment: >
-      Full mypy --strict compliance is not yet achieved. Type annotations
-      need to be added to all functions and variables. Currently mypy runs
-      with ignore-missing-imports and no-strict-optional only.
+      All integration files have complete type annotations (from __future__ import
+      annotations, explicit return types, no bare dict/list). mypy.ini configures
+      strict=true with allow-subclassing-any and allow-untyped-globals for HA
+      compatibility. validate.yml runs mypy --strict --ignore-missing-imports.
 
   # ── FOR HA CORE SUBMISSION (additional requirements) ──────────────────────
   #

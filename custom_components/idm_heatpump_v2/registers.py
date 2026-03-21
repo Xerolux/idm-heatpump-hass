@@ -6,6 +6,7 @@ entity descriptions for Home Assistant platforms.
 """
 
 import logging
+from typing import Any
 
 from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
@@ -68,12 +69,12 @@ def _sensor(
     key: str,
     datatype: DataType = DataType.FLOAT,
     unit: str | None = None,
-    device_class=None,
+    device_class: SensorDeviceClass | str | None = None,
     icon: str | None = None,
     category: str = "system",
     entity_category: EntityCategory | None = None,
     disabled: bool = False,
-) -> dict:
+) -> dict[str, Any]:
     resolved_dc = _SENSOR_DC_MAP.get(device_class, device_class)
     state_class = _SENSOR_STATE_CLASS_MAP.get(resolved_dc)
     return {
@@ -246,7 +247,7 @@ SYSTEM_SENSORS = [
 ]
 
 
-def _hk_sensors(circuit: str) -> list[dict]:
+def _hk_sensors(circuit: str) -> list[dict[str, Any]]:
     """Generate sensors for a specific heating circuit."""
     c = circuit.lower()
     C = circuit.upper()
@@ -309,10 +310,10 @@ def _binary_sensor(
     key: str,
     datatype: DataType = DataType.UCHAR,
     icon: str = "mdi:toggle-switch",
-    device_class=None,
+    device_class: str | None = None,
     entity_category: EntityCategory | None = None,
     disabled: bool = False,
-) -> dict:
+) -> dict[str, Any]:
     return {
         "register": RegisterDef(
             address=address,
@@ -377,10 +378,10 @@ def _number(
     datatype: DataType = DataType.FLOAT,
     unit: str | None = None,
     step: float = 0.5,
-    device_class=None,
+    device_class: str | None = None,
     icon: str | None = None,
     mode: NumberMode = NumberMode.BOX,
-) -> dict:
+) -> dict[str, Any]:
     resolved_dc = _NUMBER_DC_MAP.get(device_class, device_class)
     return {
         "register": RegisterDef(
@@ -477,7 +478,7 @@ EXTERNAL_NUMBERS = [
 ]
 
 
-def _hk_numbers(circuit: str) -> list[dict]:
+def _hk_numbers(circuit: str) -> list[dict[str, Any]]:
     idx = ord(circuit) - ord("a")
     base_heat_normal = 1401 + idx * 2
     base_heat_eco = 1415 + idx * 2
@@ -577,7 +578,7 @@ def _select(
     options: dict[int, str],
     datatype: DataType = DataType.UCHAR,
     icon: str | None = None,
-) -> dict:
+) -> dict[str, Any]:
     return {
         "register": RegisterDef(
             address=address,
@@ -609,7 +610,7 @@ SOLAR_SELECTS = [
 ]
 
 
-def _hk_selects(circuit: str) -> list[dict]:
+def _hk_selects(circuit: str) -> list[dict[str, Any]]:
     idx = ord(circuit) - ord("a")
     base = 1393 + idx
     prefix = f"hk_{circuit.lower()}"
@@ -635,7 +636,7 @@ def _switch(
     key: str,
     datatype: DataType = DataType.BOOL,
     icon: str = "mdi:toggle-switch",
-) -> dict:
+) -> dict[str, Any]:
     return {
         "register": RegisterDef(
             address=address,
@@ -670,7 +671,7 @@ ZONE_BASE_ADDRESSES = [2000, 2067, 2130, 2193, 2256, 2319, 2382, 2445, 2508, 257
 ZONE_MODE_ADDRESSES = [2059, 2126, 2189, 2252, 2315, 2378, 2441, 2504, 2567, 2630]
 
 
-def _zone_sensors(zone_idx: int, room_count: int) -> list[dict]:
+def _zone_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     if zone_idx >= len(ZONE_BASE_ADDRESSES):
         return []
 
@@ -711,7 +712,7 @@ def _zone_sensors(zone_idx: int, room_count: int) -> list[dict]:
     return sensors
 
 
-def _zone_binary_sensors(zone_idx: int, room_count: int) -> list[dict]:
+def _zone_binary_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     if zone_idx >= len(ZONE_BASE_ADDRESSES):
         return []
 
@@ -729,7 +730,7 @@ def _zone_binary_sensors(zone_idx: int, room_count: int) -> list[dict]:
     return sensors
 
 
-def _zone_numbers(zone_idx: int, room_count: int) -> list[dict]:
+def _zone_numbers(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     if zone_idx >= len(ZONE_BASE_ADDRESSES):
         return []
 
@@ -748,7 +749,7 @@ def _zone_numbers(zone_idx: int, room_count: int) -> list[dict]:
     return numbers
 
 
-def _zone_selects(zone_idx: int, room_count: int) -> list[dict]:
+def _zone_selects(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     if zone_idx >= len(ZONE_MODE_ADDRESSES):
         return []
 
@@ -784,7 +785,7 @@ def get_all_sensor_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     descriptions = list(SYSTEM_SENSORS) + list(PV_SENSORS)
     for circuit in circuits:
         descriptions.extend(_hk_sensors(circuit))
@@ -798,7 +799,7 @@ def get_all_binary_sensor_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     descriptions = list(BINARY_SENSORS)
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 1)
@@ -810,7 +811,7 @@ def get_all_number_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     descriptions = list(DHW_NUMBERS) + list(BIVALENCY_NUMBERS)
     descriptions.extend(CASCADE_NUMBERS)
     descriptions.extend(EXTERNAL_NUMBERS)
@@ -826,7 +827,7 @@ def get_all_select_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     descriptions = list(SYSTEM_SELECTS) + list(SOLAR_SELECTS)
     for circuit in circuits:
         descriptions.extend(_hk_selects(circuit))
@@ -840,7 +841,7 @@ def get_all_switch_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     return list(GLT_SWITCHES)
 
 

@@ -25,11 +25,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         config_entry: ConfigEntry,
         client: IdmModbusClient,
         scan_interval: timedelta,
-        sensor_descriptions: list[dict],
-        binary_sensor_descriptions: list[dict],
-        number_descriptions: list[dict],
-        select_descriptions: list[dict],
-        switch_descriptions: list[dict],
+        sensor_descriptions: list[dict[str, Any]],
+        binary_sensor_descriptions: list[dict[str, Any]],
+        number_descriptions: list[dict[str, Any]],
+        select_descriptions: list[dict[str, Any]],
+        switch_descriptions: list[dict[str, Any]],
         hide_unused: bool = True,
     ) -> None:
         self._client = client
@@ -59,23 +59,23 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._registers = collect_all_registers(circuits, zone_count, zone_rooms)
 
     @property
-    def sensor_descriptions(self) -> list[dict]:
+    def sensor_descriptions(self) -> list[dict[str, Any]]:
         return self._sensor_descs
 
     @property
-    def binary_sensor_descriptions(self) -> list[dict]:
+    def binary_sensor_descriptions(self) -> list[dict[str, Any]]:
         return self._binary_descs
 
     @property
-    def number_descriptions(self) -> list[dict]:
+    def number_descriptions(self) -> list[dict[str, Any]]:
         return self._number_descs
 
     @property
-    def select_descriptions(self) -> list[dict]:
+    def select_descriptions(self) -> list[dict[str, Any]]:
         return self._select_descs
 
     @property
-    def switch_descriptions(self) -> list[dict]:
+    def switch_descriptions(self) -> list[dict[str, Any]]:
         return self._switch_descs
 
     @property

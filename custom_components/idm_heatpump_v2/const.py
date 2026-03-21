@@ -1,37 +1,39 @@
 """Constants for IDM Heatpump integration."""
 
+from __future__ import annotations
+
 import enum
 
-DOMAIN = "idm_heatpump_v2"
-NAME = "IDM Heatpump"
-MANUFACTURER = "iDM Energiesysteme"
-MODEL = "Navigator 2.0"
-MODEL_ZONE = "Navigator Pro Einzelraumregelung"
+DOMAIN: str = "idm_heatpump_v2"
+NAME: str = "IDM Heatpump"
+MANUFACTURER: str = "iDM Energiesysteme"
+MODEL: str = "Navigator 2.0"
+MODEL_ZONE: str = "Navigator Pro Einzelraumregelung"
 
-CONF_HOST = "host"
-CONF_PORT = "port"
-CONF_SLAVE_ID = "slave_id"
-CONF_NAME = "name"
-CONF_SCAN_INTERVAL = "scan_interval"
-CONF_HEATING_CIRCUITS = "heating_circuits"
-CONF_ZONE_COUNT = "zone_count"
-CONF_ZONE_ROOMS = "zone_rooms"
-CONF_HIDE_UNUSED = "hide_unused_registers"
-CONF_TECHNICIAN_CODES = "technician_codes"
+CONF_HOST: str = "host"
+CONF_PORT: str = "port"
+CONF_SLAVE_ID: str = "slave_id"
+CONF_NAME: str = "name"
+CONF_SCAN_INTERVAL: str = "scan_interval"
+CONF_HEATING_CIRCUITS: str = "heating_circuits"
+CONF_ZONE_COUNT: str = "zone_count"
+CONF_ZONE_ROOMS: str = "zone_rooms"
+CONF_HIDE_UNUSED: str = "hide_unused_registers"
+CONF_TECHNICIAN_CODES: str = "technician_codes"
 
-DEFAULT_HOST = ""
-DEFAULT_PORT = 502
-DEFAULT_SLAVE_ID = 1
-DEFAULT_SCAN_INTERVAL = 10
-DEFAULT_HIDE_UNUSED = True
+DEFAULT_HOST: str = ""
+DEFAULT_PORT: int = 502
+DEFAULT_SLAVE_ID: int = 1
+DEFAULT_SCAN_INTERVAL: int = 10
+DEFAULT_HIDE_UNUSED: bool = True
 
-UNUSED_VALUE = -1.0
+UNUSED_VALUE: float = -1.0
 
-MAX_ZONE_COUNT = 10
-MAX_ROOM_COUNT = 8
-HEATING_CIRCUITS = ["a", "b", "c", "d", "e", "f", "g"]
-HEATING_CIRCUITS_OPTIONAL = ["b", "c", "d", "e", "f", "g"]
-ZONE_OPTIONS = [str(i) for i in range(1, 11)]
+MAX_ZONE_COUNT: int = 10
+MAX_ROOM_COUNT: int = 8
+HEATING_CIRCUITS: list[str] = ["a", "b", "c", "d", "e", "f", "g"]
+HEATING_CIRCUITS_OPTIONAL: list[str] = ["b", "c", "d", "e", "f", "g"]
+ZONE_OPTIONS: list[str] = [str(i) for i in range(1, 11)]
 
 
 class SystemMode(enum.IntEnum):
@@ -43,7 +45,7 @@ class SystemMode(enum.IntEnum):
     HEATING_COOLING_ONLY = 5
 
 
-SYSTEM_MODE_OPTIONS = {
+SYSTEM_MODE_OPTIONS: dict[int, str] = {
     0: "Standby",
     1: "Automatik",
     2: "Abwesend",
@@ -62,7 +64,7 @@ class CircuitMode(enum.IntEnum):
     MANUAL_COOL = 5
 
 
-CIRCUIT_MODE_OPTIONS = {
+CIRCUIT_MODE_OPTIONS: dict[int, str] = {
     0: "Aus",
     1: "Zeitprogramm",
     2: "Normal",
@@ -80,7 +82,7 @@ class RoomMode(enum.IntEnum):
     COMFORT = 4
 
 
-ROOM_MODE_OPTIONS = {
+ROOM_MODE_OPTIONS: dict[int, str] = {
     0: "Aus",
     1: "Automatik",
     2: "Eco",
@@ -97,7 +99,7 @@ class SolarMode(enum.IntEnum):
     SOURCE_POOL = 4
 
 
-SOLAR_MODE_OPTIONS = {
+SOLAR_MODE_OPTIONS: dict[int, str] = {
     0: "Automatik",
     1: "Warmwasser",
     2: "Heizung",
@@ -106,7 +108,7 @@ SOLAR_MODE_OPTIONS = {
 }
 
 
-ISC_MODE_OPTIONS = {
+ISC_MODE_OPTIONS: dict[int, str] = {
     0: "Aus",
     1: "Heizung",
     4: "Warmwasser",

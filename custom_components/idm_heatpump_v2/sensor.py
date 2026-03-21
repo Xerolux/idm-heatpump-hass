@@ -1,5 +1,8 @@
 """Sensor platform for IDM Heatpump."""
 
+from __future__ import annotations
+
+from collections.abc import Callable
 from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
@@ -45,7 +48,7 @@ async def async_setup_entry(
 class IdmSensor(IdmEntity, SensorEntity):
 
     @property
-    def native_value(self):
+    def native_value(self) -> str | float | int | None:
         value = self.coordinator.data.get(self._register.name)
         if value is not None and self._register.enum_options:
             return self._register.enum_options.get(value, f"Unknown ({value})")
@@ -77,7 +80,7 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
             manufacturer=MANUFACTURER,
             model=MODEL,
         )
-        self._cancel_timer = None
+        self._cancel_timer: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
@@ -91,7 +94,7 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
             self._cancel_timer = None
 
     @callback
-    def _async_refresh(self, _now=None) -> None:
+    def _async_refresh(self, _now: object = None) -> None:
         self.async_write_ha_state()
 
     @property
