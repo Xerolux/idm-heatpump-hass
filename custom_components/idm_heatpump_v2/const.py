@@ -17,6 +17,7 @@ CONF_HEATING_CIRCUITS = "heating_circuits"
 CONF_ZONE_COUNT = "zone_count"
 CONF_ZONE_ROOMS = "zone_rooms"
 CONF_HIDE_UNUSED = "hide_unused_registers"
+CONF_TECHNICIAN_CODES = "technician_codes"
 
 DEFAULT_HOST = ""
 DEFAULT_PORT = 502

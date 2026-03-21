@@ -26,6 +26,7 @@ from .const import (
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
+    CONF_TECHNICIAN_CODES,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     DEFAULT_HIDE_UNUSED,
@@ -121,6 +122,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                     mode=NumberSelectorMode.SLIDER,
                 )
             ),
+            vol.Required(
+                CONF_TECHNICIAN_CODES,
+                default=options.get(CONF_TECHNICIAN_CODES, False),
+            ): BooleanSelector(BooleanSelectorConfig()),
         }
     )
 
