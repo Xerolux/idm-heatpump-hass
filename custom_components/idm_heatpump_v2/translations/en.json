@@ -38,13 +38,15 @@
           "scan_interval": "Scan interval",
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
-          "zone_count": "Number of zone modules"
+          "zone_count": "Number of zone modules",
+          "technician_codes": "Show Installer Level codes"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Automatically mark sensors that return inactive values (e.g. −1.0) as *unavailable* and hide them.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of IDM zone modules installed (0 if none)."
+          "zone_count": "Number of IDM zone modules installed (0 if none).",
+          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute."
         }
       },
       "zones": {
@@ -95,13 +97,15 @@
           "scan_interval": "Scan interval",
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
-          "zone_count": "Number of zone modules"
+          "zone_count": "Number of zone modules",
+          "technician_codes": "Show Installer Level codes"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Automatically mark sensors that return inactive values (e.g. −1.0) as *unavailable* and hide them.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of IDM zone modules installed (0 if none)."
+          "zone_count": "Number of IDM zone modules installed (0 if none).",
+          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute."
         }
       },
       "zones": {
