@@ -28,6 +28,17 @@ Wahle die aktiven Heizkreise (A bis G). Nur aktivierte Heizkreise erstellen Enti
 
 Gib die Anzahl der Zonen-Module an (0-10). Jedes Zonen-Modul unterstutzt bis zu 8 Raume.
 
+### Fachmann-Ebene Codes
+
+Aktiviere diese Option, um zwei zusätzliche Sensor-Entities zu erhalten, die die aktuellen Fachmann-Ebene-Zugriffscodes anzeigen:
+
+| Sensor | Beschreibung |
+|--------|-------------|
+| `sensor.{name}_fachmann_ebene_1` | 4-stelliger Code: Tag + Monat (`TTMM`) |
+| `sensor.{name}_fachmann_ebene_2` | 5-stelliger Code aus Stunde, Jahr, Monat, Tag |
+
+Die Codes werden automatisch jede Minute aktualisiert und können z. B. in einer HA-Dashboard-Karte oder Benachrichtigung angezeigt werden. Sie entsprechen den Codes, die am IDM Navigator-Display unter *Fachmannebene* eingegeben werden müssen.
+
 ### Raumnamen
 
 Fur jeden Raum in jeder Zone kannst du einen individuellen Namen vergeben. Diese Namen werden als Entity-Namen in Home Assistant verwendet.

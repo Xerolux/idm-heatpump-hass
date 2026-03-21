@@ -59,6 +59,15 @@ Fur jede aktivierte Zone und jeden Raum:
 | `sensor.{name}_pv_power` | PV-Leistung |
 | `sensor.{name}_battery_soc` | Batterie-Ladezustand |
 
+### Fachmann-Ebene Sensoren
+
+Nur verfügbar wenn die Option **Fachmann-Ebene Codes anzeigen** im Config Flow aktiviert ist:
+
+| Entity | Beschreibung |
+|--------|-------------|
+| `sensor.{name}_fachmann_ebene_1` | Aktueller Fachmann Ebene 1 Code (`TTMM`) |
+| `sensor.{name}_fachmann_ebene_2` | Aktueller Fachmann Ebene 2 Code (zeitbasiert) |
+
 ### Fehler-Sensoren
 
 | Entity | Beschreibung |
