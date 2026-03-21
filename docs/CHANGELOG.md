@@ -1,6 +1,75 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+## [0.2.2] - 2026-03-21
+
+## v0.2.2 - IDM Heatpump
+
+**STABLE RELEASE**
+
+### New Features
+
+- docs: add Tesla referral and fix PayPal link (7df7ef6)
+- feat: add Fachmann Ebene sensors via config flow option (9fe226b)
+- docs: add disclaimer - no affiliation with IDM Energiesysteme GmbH (a3da3b2)
+
+### Improvements
+
+- docs: update GitHub Pages and README for v0.2.2 (a684381)
+- Update custom funding links in FUNDING.yml (a76e93f)
+- Release v0.2.1 - Update changelog and version files (887a67b)
+
+### Bug Fixes
+
+- docs: add Tesla referral and fix PayPal link (7df7ef6)
+
+---
+
+### Installation
+
+**HACS (Recommended):**
+1. Add custom repository: `Xerolux/idm-heatpump-hass`
+2. Search for "IDM Heatpump"
+3. Click Install
+
+**Manual:**
+1. Download `idm_heatpump_v2.zip`
+2. Extract to `custom_components/idm_heatpump_v2`
+3. Restart Home Assistant
+
+---
+
+[Full changelog: v0.2.1...v0.2.2](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.2.1...v0.2.2)
+
+---
+
+### Support
+
+- [Buy Me a Coffee](https://buymeacoffee.com/xerolux)
+- [Ko-Fi](https://ko-fi.com/xerolux)
+- [GitHub Sponsors](https://github.com/sponsors/xerolux)
+- Star this repository
+
+Every contribution is a huge motivation! Thank you!
+
+---
+
+### Feedback & Contributions
+
+- [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
+- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CONTRIBUTING.md)
+
+---
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-03-21 19:01:43 UTC_
+
+---
+
 
 ## [0.2.2] - 2026-03-21
 
