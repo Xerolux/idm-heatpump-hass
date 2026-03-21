@@ -97,7 +97,7 @@ async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> 
         name="error_acknowledge",
         writable=True,
     )
-    await coordinator.client.write_register(reg, 1)
+    await coordinator.async_write_register(reg, 1)
 
 
 async def _handle_write_register(

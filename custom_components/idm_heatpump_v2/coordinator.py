@@ -120,6 +120,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
         await self._client.write_register(reg, value)
+        # Optimistic update so entities reflect the new value immediately
         if self.data is not None:
             self.data[reg.name] = value
         self.async_update_listeners()
+        # Schedule a full refresh so dependent registers (e.g. status after a
+        # mode change, error flags after acknowledge) are also updated promptly
+        await self.async_request_refresh()
