@@ -43,9 +43,9 @@ from .modbus_client import DataType, RegisterDef
 
 _LOGGER = logging.getLogger(__name__)
 
-HK_OFFSET = {"A": 0, "B": 2, "C": 4, "D": 6, "E": 8, "F": 10, "G": 12}
-HK_MODE_ADDR = {"A": 1498, "B": 1499, "C": 1500, "D": 1501, "E": 1502, "F": 1503, "G": 1504}
-HK_CONST_ADDR = {"A": 1449, "B": 1450, "C": 1451, "D": 1452, "E": 1453, "F": 1454, "G": 1455}
+HK_OFFSET = {"a": 0, "b": 2, "c": 4, "d": 6, "e": 8, "f": 10, "g": 12}
+HK_MODE_ADDR = {"a": 1498, "b": 1499, "c": 1500, "d": 1501, "e": 1502, "f": 1503, "g": 1504}
+HK_CONST_ADDR = {"a": 1449, "b": 1450, "c": 1451, "d": 1452, "e": 1453, "f": 1454, "g": 1455}
 
 # ============================================================
 # READ-ONLY SENSORS
@@ -228,7 +228,7 @@ def _hk_sensors(circuit: str) -> list[dict]:
     c = circuit.lower()
     C = circuit.upper()
     off = HK_OFFSET[circuit]
-    idx = ord(circuit.upper()) - ord('A')
+    idx = ord(circuit) - ord("a")
     
     return [
         _sensor(1160 + off, f"Aktuelle Vorlauftemperatur HK {C}", f"flow_temp_hk_{c}",
@@ -442,7 +442,7 @@ EXTERNAL_NUMBERS = [
 
 
 def _hk_numbers(circuit: str) -> list[dict]:
-    idx = ord(circuit) - ord("A")
+    idx = ord(circuit) - ord("a")
     base_mode = 1393 + idx
     base_heat_normal = 1401 + idx * 2
     base_heat_eco = 1415 + idx * 2
@@ -574,7 +574,7 @@ SOLAR_SELECTS = [
 
 
 def _hk_selects(circuit: str) -> list[dict]:
-    idx = ord(circuit) - ord("A")
+    idx = ord(circuit) - ord("a")
     base = 1393 + idx
     prefix = f"hk_{circuit.lower()}"
     return [
