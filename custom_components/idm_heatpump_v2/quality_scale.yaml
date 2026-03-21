@@ -1,0 +1,349 @@
+# Home Assistant Integration Quality Scale
+# https://developers.home-assistant.io/docs/core/integration-quality-scale/
+#
+# Current target: Gold
+# HACS compatible: yes
+# Goal: Official HA Core submission (requires domain rename idm_heatpump_v2 → idm_heatpump)
+
+rules:
+
+  # ── BRONZE ─────────────────────────────────────────────────────────────────
+
+  action-setup:
+    status: done
+    comment: >
+      Services are registered in async_setup (services.py:async_setup_services),
+      not in async_setup_entry.
+
+  appropriate-polling:
+    status: done
+    comment: >
+      Polling interval is user-configurable (5–300 s, default 10 s).
+      DataUpdateCoordinator manages the schedule.
+
+  brands:
+    status: done
+    comment: >
+      Brand assets (icon.png, logo.png) are present in the brand/ directory.
+
+  common-modules:
+    status: done
+    comment: >
+      Shared DeviceInfo and available-logic are centralised in entity.py (IdmEntity).
+      All platforms inherit from this base class.
+
+  config-flow:
+    status: done
+    comment: >
+      Full UI config flow with connection test, options flow, and reconfigure flow.
+
+  config-flow-test-coverage:
+    status: todo
+    comment: >
+      Config flow test coverage needs to be increased to 100%.
+      tests/test_config_flow.py is missing dedicated config-flow tests.
+
+  dependency-transparency:
+    status: done
+    comment: >
+      pymodbus>=3.6.0 is declared in manifest.json requirements.
+
+  docs-actions:
+    status: done
+    comment: >
+      services.yaml documents all three service actions with field descriptions.
+      de.json also includes translated service documentation.
+
+  docs-high-level-description:
+    status: done
+    comment: >
+      README.md provides a high-level overview of the integration and the
+      IDM Navigator 2.0 heat pump.
+
+  docs-installation-instructions:
+    status: done
+    comment: >
+      docs/wiki/Installation-and-Setup.md contains step-by-step installation
+      instructions including HACS and manual install.
+
+  docs-removal-instructions:
+    status: todo
+    comment: >
+      Removal/uninstall instructions are missing from the documentation.
+      Should be added to Installation-and-Setup.md.
+
+  entity-event-setup:
+    status: done
+    comment: >
+      IdmTechnicianCodeSensor subscribes to time-interval events in
+      async_added_to_hass and cleans up in async_will_remove_from_hass.
+
+  entity-unique-id:
+    status: done
+    comment: >
+      All entities set _attr_unique_id as "{host}:{port}_{register_name}".
+
+  has-entity-name:
+    status: done
+    comment: >
+      All entity classes set _attr_has_entity_name = True.
+
+  runtime-data:
+    status: done
+    comment: >
+      IdmHeatpumpData dataclass is stored in ConfigEntry.runtime_data.
+      No hass.data usage for integration data.
+
+  test-before-configure:
+    status: done
+    comment: >
+      config_flow.py:_test_connection() runs a live Modbus connection test
+      before creating the config entry.
+
+  test-before-setup:
+    status: done
+    comment: >
+      async_setup_entry raises ConfigEntryNotReady if the initial connection
+      to the heat pump fails.
+
+  unique-config-entry:
+    status: done
+    comment: >
+      async_set_unique_id(host) + _abort_if_unique_id_configured() prevent
+      duplicate entries for the same device.
+
+  # ── SILVER ─────────────────────────────────────────────────────────────────
+
+  action-exceptions:
+    status: done
+    comment: >
+      Services raise ServiceValidationError for invalid user input (invalid mode,
+      missing risk acknowledgement) and HomeAssistantError for communication
+      failures, both with translation keys.
+
+  config-entry-unloading:
+    status: done
+    comment: >
+      async_unload_entry unloads all platforms and disconnects the Modbus client.
+
+  docs-configuration-parameters:
+    status: done
+    comment: >
+      docs/wiki/Configuration.md and the config flow translations document all
+      configuration parameters.
+
+  docs-installation-parameters:
+    status: done
+    comment: >
+      Installation parameters (host, port, slave_id) are documented in
+      Installation-and-Setup.md and in the config flow step descriptions.
+
+  entity-unavailable:
+    status: done
+    comment: >
+      IdmEntity.available returns False when coordinator data is missing,
+      the coordinator update failed, or the register value is the UNUSED sentinel.
+
+  integration-owner:
+    status: done
+    comment: >
+      manifest.json codeowners: ["@xerolux"].
+
+  log-when-unavailable:
+    status: done
+    comment: >
+      DataUpdateCoordinator automatically logs once when transitioning to
+      unavailable and once when reconnecting. No extra logging needed.
+
+  parallel-updates:
+    status: done
+    comment: >
+      PARALLEL_UPDATES = 0 is set in every platform module, deferring update
+      control to the DataUpdateCoordinator.
+
+  reauthentication-flow:
+    status: exempt
+    comment: >
+      The integration uses local Modbus TCP with no user authentication.
+      Re-authentication is not applicable.
+
+  test-coverage:
+    status: todo
+    comment: >
+      Current test coverage needs to reach >95% for all modules.
+      Missing coverage: config_flow.py, services.py, entity.py.
+
+  # ── GOLD ───────────────────────────────────────────────────────────────────
+
+  devices:
+    status: done
+    comment: >
+      All entities set _attr_device_info with DeviceInfo (centralized in IdmEntity).
+      The integration creates a single device per config entry.
+
+  diagnostics:
+    status: done
+    comment: >
+      diagnostics.py implements async_get_config_entry_diagnostics.
+
+  discovery:
+    status: exempt
+    comment: >
+      Modbus TCP devices have no network discovery protocol. Manual IP
+      configuration is required.
+
+  discovery-update-info:
+    status: exempt
+    comment: >
+      Not applicable – no discovery protocol available for Modbus TCP.
+
+  docs-data-update:
+    status: todo
+    comment: >
+      A section explaining how data is polled (DataUpdateCoordinator, batch
+      Modbus reads, configurable interval) should be added to the docs.
+
+  docs-examples:
+    status: todo
+    comment: >
+      Automation YAML examples (e.g. holiday mode, heating setpoint automation,
+      fault notification) should be added to the documentation.
+
+  docs-known-limitations:
+    status: todo
+    comment: >
+      Known limitations should be documented:
+      - EEPROM-protected registers (88 registers with write throttling)
+      - Single-device per config entry
+      - Modbus TCP only (no serial)
+      - Navigator 2.0 / Navigator Pro firmware required
+
+  docs-supported-devices:
+    status: todo
+    comment: >
+      A list of supported IDM models should be added:
+      - IDM Navigator 2.0 (confirmed)
+      - IDM Navigator Pro with zone modules (confirmed)
+      - Other IDM models with Navigator firmware (untested)
+
+  docs-supported-functions:
+    status: done
+    comment: >
+      docs/wiki/Entities.md and docs/wiki/Modbus-Register.md document all
+      entities and their Modbus register mappings.
+
+  docs-troubleshooting:
+    status: done
+    comment: >
+      docs/wiki/Troubleshooting.md provides troubleshooting guidance.
+
+  docs-use-cases:
+    status: done
+    comment: >
+      README.md and docs/wiki/Services.md describe use cases such as holiday
+      mode, smart-grid control, and zone room management.
+
+  dynamic-devices:
+    status: exempt
+    comment: >
+      The integration manages a single heat pump device. Dynamic device
+      addition after setup is not applicable.
+
+  entity-category:
+    status: done
+    comment: >
+      Diagnostic sensors (error codes, valve/pump status, firmware) use
+      EntityCategory.DIAGNOSTIC. Number and select entities use
+      EntityCategory.CONFIG.
+
+  entity-device-class:
+    status: done
+    comment: >
+      Temperature sensors use SensorDeviceClass.TEMPERATURE, power sensors use
+      POWER, energy sensors use ENERGY, number entities use
+      NumberDeviceClass.TEMPERATURE where applicable.
+
+  entity-disabled-by-default:
+    status: done
+    comment: >
+      Technical/rarely-used entities (valve positions, pump statuses, compressor
+      stages, power limits, firmware version) are disabled by default via
+      entity_registry_enabled_default=False.
+
+  entity-translations:
+    status: done
+    comment: >
+      translations/en.json and translations/de.json provide UI string
+      translations for config flow, options flow, and selectors.
+
+  exception-translations:
+    status: done
+    comment: >
+      ServiceValidationError and HomeAssistantError are raised with
+      translation_domain=DOMAIN and translation_key referencing the
+      "exceptions" block in en.json / de.json.
+
+  icon-translations:
+    status: done
+    comment: >
+      icons.json defines icons for all entity keys across all platforms.
+
+  reconfiguration-flow:
+    status: done
+    comment: >
+      async_step_reconfigure in config_flow.py allows updating the host,
+      port, and slave_id after initial setup.
+
+  repair-issues:
+    status: done
+    comment: >
+      coordinator.py creates a repair issue (ir.async_create_issue) when
+      Modbus communication fails and deletes it on recovery.
+
+  stale-devices:
+    status: exempt
+    comment: >
+      Single-device integration. Stale device cleanup is not applicable.
+
+  # ── PLATINUM ───────────────────────────────────────────────────────────────
+
+  async-dependency:
+    status: done
+    comment: >
+      pymodbus provides AsyncModbusTcpClient. All I/O is non-blocking async.
+
+  inject-websession:
+    status: exempt
+    comment: >
+      Modbus TCP does not use HTTP/websessions. Not applicable.
+
+  strict-typing:
+    status: todo
+    comment: >
+      Full mypy --strict compliance is not yet achieved. Type annotations
+      need to be added to all functions and variables. Currently mypy runs
+      with ignore-missing-imports and no-strict-optional only.
+
+  # ── FOR HA CORE SUBMISSION (additional requirements) ──────────────────────
+  #
+  # domain-rename:
+  #   status: todo
+  #   comment: >
+  #     Domain must be renamed from idm_heatpump_v2 to idm_heatpump before
+  #     the HA Core PR. HACS must continue working during transition.
+  #
+  # ha-core-docs:
+  #   status: todo
+  #   comment: >
+  #     Integration documentation page must be created at
+  #     homeassistant.io/integrations/idm_heatpump/
+  #
+  # config-flow-test-coverage-100:
+  #   status: todo
+  #   comment: >
+  #     100% config flow test coverage is required for HA Core.
+  #
+  # test-coverage-95:
+  #   status: todo
+  #   comment: >
+  #     >95% overall test coverage required for Silver tier in HA Core.

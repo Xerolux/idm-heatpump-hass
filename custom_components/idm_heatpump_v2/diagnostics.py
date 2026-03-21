@@ -6,7 +6,7 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_HOST, CONF_PORT, DOMAIN
+from .const import CONF_HOST, CONF_PORT
 
 TO_REDACT = {CONF_HOST, CONF_PORT}
 
@@ -14,10 +14,9 @@ TO_REDACT = {CONF_HOST, CONF_PORT}
 async def async_get_config_entry_diagnostics(
     hass: HomeAssistant, entry: ConfigEntry
 ) -> dict[str, Any]:
-    coordinator_data = hass.data[DOMAIN][entry.entry_id]
-    coordinator = coordinator_data["coordinator"]
+    coordinator = entry.runtime_data.coordinator
 
-    diagnostics = {
+    return {
         "entry": async_redact_data(entry.as_dict(), TO_REDACT),
         "data": async_redact_data(
             {
@@ -33,5 +32,3 @@ async def async_get_config_entry_diagnostics(
             TO_REDACT,
         ),
     }
-
-    return diagnostics

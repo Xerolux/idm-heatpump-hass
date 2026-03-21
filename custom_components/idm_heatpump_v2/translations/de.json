@@ -151,6 +151,26 @@
       }
     }
   },
+  "exceptions": {
+    "no_device_configured": {
+      "message": "Keine IDM-Wärmepumpe ist aktuell konfiguriert oder geladen."
+    },
+    "invalid_mode": {
+      "message": "Ungültige Betriebsart: \"{mode}\". Gültige Werte: standby, automatik, automatic, abwesend, away, urlaub, holiday, nur warmwasser, hot water only, nur heizung/kuehlung, heating/cooling only."
+    },
+    "acknowledge_risk_required": {
+      "message": "Du musst acknowledge_risk auf true setzen, um den Dienst write_register verwenden zu können."
+    },
+    "write_failed": {
+      "message": "Schreiben des Registers fehlgeschlagen: {error}"
+    }
+  },
+  "issues": {
+    "cannot_connect": {
+      "title": "Verbindung zur IDM-Wärmepumpe nicht möglich",
+      "description": "Home Assistant kann die IDM-Wärmepumpe unter **{host}** nicht erreichen.\n\nBitte prüfen:\n- Netzwerkverbindung zum Gerät\n- Modbus TCP ist in der Steuerung aktiviert (*Fachmannebene → Kommunikation → Modbus*)\n- IP-Adresse und Port sind in den Integrationseinstellungen korrekt"
+    }
+  },
   "services": {
     "set_system_mode": {
       "name": "Betriebsart setzen",
