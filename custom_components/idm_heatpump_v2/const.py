@@ -105,6 +105,14 @@ SOLAR_MODE_OPTIONS = {
 }
 
 
+ISC_MODE_OPTIONS = {
+    0: "Aus",
+    1: "Heizung",
+    4: "Warmwasser",
+    8: "Quelle",
+}
+
+
 class SmartGridStatus(enum.IntEnum):
     GRID_BLOCKED_SOLAR_OFF = 0
     GRID_ALLOWED_SOLAR_OFF = 1
