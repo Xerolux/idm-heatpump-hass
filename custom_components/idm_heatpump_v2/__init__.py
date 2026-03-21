@@ -4,6 +4,7 @@ import logging
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
+from typing import TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
@@ -53,7 +54,7 @@ class IdmHeatpumpData:
     client: IdmModbusClient
 
 
-type IdmConfigEntry = ConfigEntry[IdmHeatpumpData]
+IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
