@@ -35,7 +35,7 @@ Fur jeden Raum in jeder Zone kannst du einen individuellen Namen vergeben. Diese
 ## Rekonfiguration
 
 1. Gehe zu **Einstellungen → Gerate & Dienste**
-2. Klicke auf **IDM Navigator Heatpump**
+2. Klicke auf **IDM Heatpump**
 3. Klicke auf **Rekonfigurieren**
 4. Anderungen am Scan-Intervall, Heizkreisen und Zonen werden ubernommen
 

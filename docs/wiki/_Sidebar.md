@@ -1,4 +1,4 @@
-# IDM Navigator Heatpump
+# IDM Heatpump
 
 **[Home](Home)**
 

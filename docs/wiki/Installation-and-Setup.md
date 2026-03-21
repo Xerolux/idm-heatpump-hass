@@ -23,7 +23,7 @@
 4. Gib die URL ein: `https://github.com/Xerolux/idm-heatpump-hass`
 5. Wahle **Kategorie: Integration**
 6. Klicke auf **Hinzufugen**
-7. Suche nach **"IDM Navigator Heatpump"**
+7. Suche nach **"IDM Heatpump"**
 8. Klicke auf **Herunterladen**
 9. **Starte Home Assistant neu**
 
@@ -41,7 +41,7 @@
 
 1. Gehe zu **Einstellungen → Gerate & Dienste**
 2. Klicke auf **Integration hinzufugen**
-3. Suche nach **"IDM Navigator Heatpump"**
+3. Suche nach **"IDM Heatpump"**
 4. Folge dem Konfigurationsassistenten:
    - **Schritt 1**: IP-Adresse, Port (502) und Name eingeben
    - **Schritt 2**: Scan-Intervall, Heizkreise (A-G), Zonenanzahl
@@ -51,13 +51,13 @@
 ## Deinstallation
 
 1. Gehe zu **Einstellungen → Gerate & Dienste**
-2. Finde die **IDM Navigator Heatpump** Integration
+2. Finde die **IDM Heatpump** Integration
 3. Klicke auf die drei Punkte → **Loschen**
 4. (Optional) Losche den Ordner `custom_components/idm_heatpump_v2/`
 5. Starte Home Assistant neu
 
 ## Upgrade
 
-Uber HACS: Gehe zu HACS → Integrationen → IDM Navigator Heatpump → "Aktualisieren" → HA neu starten.
+Uber HACS: Gehe zu HACS → Integrationen → IDM Heatpump → "Aktualisieren" → HA neu starten.
 
 Manuell: Wiederhole die manuelle Installation (uberschreibt die alten Dateien).

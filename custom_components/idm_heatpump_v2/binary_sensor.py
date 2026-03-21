@@ -1,4 +1,4 @@
-"""Binary sensor platform for IDM Navigator Heatpump."""
+"""Binary sensor platform for IDM Heatpump."""
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
