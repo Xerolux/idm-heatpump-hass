@@ -3,6 +3,76 @@
 All notable changes to this project will be documented in this file.
 ## [0.2.1] - 2026-03-21
 
+## v0.2.1 - IDM Heatpump
+
+**STABLE RELEASE**
+
+### New Features
+
+- test: move tests to root, add full mock test suite (116 tests) (fb7088f)
+- fix: HACS validation compliance - remove ignored checks, add daily schedule (acb9a02)
+- rename-integration-add-brand-logo (a7e24ea)
+- feat: Rename integration to "IDM Heatpump" and add brand logo (118b574)
+
+### Improvements
+
+- Update Home Assistant version to 2025.12.0 (7260658)
+- Release v0.2.0 - Update changelog and version files (9e12fd2)
+
+### Bug Fixes
+
+- fix: resolve all CodeQL alerts (eb2be3b)
+- fix: HACS validation compliance - remove ignored checks, add daily schedule (acb9a02)
+
+---
+
+### Installation
+
+**HACS (Recommended):**
+1. Add custom repository: `Xerolux/idm-heatpump-hass`
+2. Search for "IDM Heatpump"
+3. Click Install
+
+**Manual:**
+1. Download `idm_heatpump_v2.zip`
+2. Extract to `custom_components/idm_heatpump_v2`
+3. Restart Home Assistant
+
+---
+
+[Full changelog: v0.2.0...v0.2.1](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.2.0...v0.2.1)
+
+---
+
+### Support
+
+- [Buy Me a Coffee](https://buymeacoffee.com/xerolux)
+- [Ko-Fi](https://ko-fi.com/xerolux)
+- [GitHub Sponsors](https://github.com/sponsors/xerolux)
+- Star this repository
+
+Every contribution is a huge motivation! Thank you!
+
+---
+
+### Feedback & Contributions
+
+- [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
+- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CONTRIBUTING.md)
+
+---
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-03-21 18:27:56 UTC_
+
+---
+
+## [0.2.1] - 2026-03-21
+
 ### Fixes
 
 - fix: HACS validation compliance - remove ignored checks, add daily schedule
