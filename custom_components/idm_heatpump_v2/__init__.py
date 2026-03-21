@@ -74,6 +74,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     coordinator = IdmCoordinator(
         hass=hass,
+        config_entry=entry,
         client=client,
         scan_interval=timedelta(seconds=scan_interval),
         sensor_descriptions=sensor_descs,
@@ -83,7 +84,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         switch_descriptions=switch_descs,
         hide_unused=hide_unused,
     )
-    coordinator.config_entry = entry
     coordinator.setup_registers(circuits, zone_count, zone_rooms)
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = {
@@ -91,11 +91,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         "client": client,
     }
 
+    await coordinator.async_config_entry_first_refresh()
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
     from .services import async_setup_services
     await async_setup_services(hass)
 
-    await coordinator.async_config_entry_first_refresh()
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
     return True

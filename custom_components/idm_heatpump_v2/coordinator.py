@@ -1,10 +1,10 @@
 """Data update coordinator for IDM Navigator heat pump."""
 
-import asyncio
 import logging
 from datetime import timedelta
 from typing import Any
 
+from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
@@ -21,6 +21,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def __init__(
         self,
         hass: HomeAssistant,
+        config_entry: ConfigEntry,
         client: IdmModbusClient,
         scan_interval: timedelta,
         sensor_descriptions: list[dict],
@@ -43,6 +44,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         super().__init__(
             hass,
             _LOGGER,
+            config_entry=config_entry,
             name="IDM Heatpump",
             update_interval=scan_interval,
         )
@@ -87,6 +89,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def unused_registers(self) -> set[str]:
         return self._unused_registers
 
+    @property
+    def registers_count(self) -> int:
+        return len(self._registers)
+
     def is_register_unused(self, register_name: str, value: Any) -> bool:
         """Check if a register value indicates an unused/invalid register."""
         if not self._hide_unused:
@@ -102,11 +108,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data = await self._client.read_batch(self._registers)
             if not data:
                 raise UpdateFailed("No data received from heat pump")
-            
+
             for reg_name, value in data.items():
                 if self.is_register_unused(reg_name, value):
                     self._unused_registers.add(reg_name)
-            
+
             return data
         except Exception as err:
             _LOGGER.error("Error updating data: %s", err)
@@ -114,5 +120,6 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
         await self._client.write_register(reg, value)
-        self.data[reg.name] = value
+        if self.data is not None:
+            self.data[reg.name] = value
         self.async_update_listeners()
