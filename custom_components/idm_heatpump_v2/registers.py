@@ -22,6 +22,7 @@ from homeassistant.components.select import SelectEntityDescription
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.components.switch import SwitchEntityDescription
 from homeassistant.const import (
@@ -51,6 +52,20 @@ HK_CONST_ADDR = {"A": 1449, "B": 1450, "C": 1451, "D": 1452, "E": 1453, "F": 145
 # ============================================================
 
 
+_SENSOR_DC_MAP = {
+    UnitOfTemperature.CELSIUS: SensorDeviceClass.TEMPERATURE,
+    UnitOfPower.KILO_WATT: SensorDeviceClass.POWER,
+    UnitOfEnergy.KILO_WATT_HOUR: SensorDeviceClass.ENERGY,
+}
+_SENSOR_STATE_CLASS_MAP = {
+    SensorDeviceClass.TEMPERATURE: SensorStateClass.MEASUREMENT,
+    SensorDeviceClass.POWER: SensorStateClass.MEASUREMENT,
+    SensorDeviceClass.ENERGY: SensorStateClass.TOTAL_INCREASING,
+    SensorDeviceClass.HUMIDITY: SensorStateClass.MEASUREMENT,
+    # "humidity" string equals SensorDeviceClass.HUMIDITY, included for clarity
+}
+
+
 def _sensor(
     address: int,
     name: str,
@@ -61,6 +76,8 @@ def _sensor(
     icon: str | None = None,
     category: str = "system",
 ) -> dict:
+    resolved_dc = _SENSOR_DC_MAP.get(device_class, device_class)
+    state_class = _SENSOR_STATE_CLASS_MAP.get(resolved_dc)
     return {
         "register": RegisterDef(
             address=address,
@@ -72,7 +89,8 @@ def _sensor(
             key=key,
             name=name,
             native_unit_of_measurement=unit,
-            device_class=device_class,
+            device_class=resolved_dc,
+            state_class=state_class,
             icon=icon,
         ),
         "category": category,
@@ -310,6 +328,11 @@ BINARY_SENSORS = [
 # ============================================================
 
 
+_NUMBER_DC_MAP = {
+    UnitOfTemperature.CELSIUS: NumberDeviceClass.TEMPERATURE,
+}
+
+
 def _number(
     address: int,
     name: str,
@@ -323,6 +346,7 @@ def _number(
     icon: str | None = None,
     mode: NumberMode = NumberMode.BOX,
 ) -> dict:
+    resolved_dc = _NUMBER_DC_MAP.get(device_class, device_class)
     return {
         "register": RegisterDef(
             address=address,
@@ -340,7 +364,7 @@ def _number(
             native_max_value=max_val,
             native_step=step,
             native_unit_of_measurement=unit,
-            device_class=device_class,
+            device_class=resolved_dc,
             icon=icon,
             mode=mode,
         ),
@@ -359,7 +383,7 @@ DHW_NUMBERS = [
             device_class=UnitOfTemperature.CELSIUS),
 ]
 
-BIVALency_NUMBERS = [
+BIVALENCY_NUMBERS = [
     _number(1120, "2. WE Bivalenzpunkt 1", "bivalency_2we_1",
             -20, 40, DataType.INT16, UnitOfTemperature.CELSIUS, 1,
             device_class=UnitOfTemperature.CELSIUS),
@@ -751,7 +775,7 @@ def get_all_number_descriptions(
     zone_count: int,
     zone_rooms: dict[int, int],
 ) -> list[dict]:
-    descriptions = list(DHW_NUMBERS) + list(BIVALency_NUMBERS)
+    descriptions = list(DHW_NUMBERS) + list(BIVALENCY_NUMBERS)
     descriptions.extend(CASCADE_NUMBERS)
     descriptions.extend(EXTERNAL_NUMBERS)
     for circuit in circuits:
