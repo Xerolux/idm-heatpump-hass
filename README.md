@@ -150,6 +150,19 @@ Dieses Projekt orientiert sich am Workflow und der Code-Struktur von [Violet Poo
 
 ---
 
+## ⚠️ Haftungsausschluss / Disclaimer
+
+Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner Verbindung** zu IDM Energiesysteme GmbH.
+
+- Alle Marken, Logos und Produktnamen (z.B. „IDM", „Navigator") sind Eigentum ihrer jeweiligen Inhaber.
+- Die verwendeten Logos und Bilder dienen ausschließlich der Identifikation des kompatiblen Geräts und werden nicht kommerziell genutzt.
+- Dieses Projekt wird ohne jegliche Garantie bereitgestellt. Die Nutzung erfolgt auf eigene Gefahr — insbesondere beim Schreiben von Modbus-Registern.
+- IDM Energiesysteme GmbH hat dieses Projekt weder autorisiert noch unterstützt.
+
+> This project is an **unofficial community integration** and is **not affiliated with, endorsed by, or connected to IDM Energiesysteme GmbH** in any way. All trademarks and product names belong to their respective owners.
+
+---
+
 <div align="center">
 
 **Made with ❤️ for the Home Assistant & Wärmepumpen Community**
