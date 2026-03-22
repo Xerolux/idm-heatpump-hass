@@ -33,6 +33,7 @@ class DataType(Enum):
     INT16 = "INT16"
     UINT16 = "UINT16"
     BOOL = "BOOL"
+    BITFLAG = "BITFLAG"  # Bitfield: each bit represents an independent flag
 
 
 @dataclass
@@ -49,10 +50,7 @@ class RegisterDef:
     size: int = field(init=False)
 
     def __post_init__(self) -> None:
-        if self.datatype == DataType.FLOAT:
-            self.size = 2
-        else:
-            self.size = 1
+        self.size = 2 if self.datatype == DataType.FLOAT else 1
 
 
 _MAX_GROUP_FAILURES = 3
@@ -170,6 +168,10 @@ class IdmModbusClient:
         elif reg.datatype == DataType.BOOL:
             return bool(registers[0] & 0x01)
 
+        elif reg.datatype == DataType.BITFLAG:
+            # Return raw integer; sensor layer decodes flags using enum_options
+            return registers[0] & 0xFF
+
         raise ValueError(f"Unknown datatype: {reg.datatype}")
 
     def encode_value(self, value: Any, reg: RegisterDef) -> list[int]:
@@ -201,6 +203,9 @@ class IdmModbusClient:
 
         elif reg.datatype == DataType.BOOL:
             return [1 if value else 0]
+
+        elif reg.datatype == DataType.BITFLAG:
+            return [int(value) & 0xFF]
 
         raise ValueError(f"Unknown datatype: {reg.datatype}")
 
