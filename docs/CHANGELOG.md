@@ -10,6 +10,80 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.2.3] - 2026-03-22
+
+## v0.2.3 - IDM Heatpump
+
+**STABLE RELEASE**
+
+### New Features
+
+- docs: add HA Core integration documentation page (4746602)
+- feat: add strict typing and mark all quality scale rules as done (0753c67)
+- chore: add coverage and pytest artifacts to .gitignore (f265e03)
+- test: add comprehensive test suite with 97% coverage (247 tests) (eaf9422)
+- feat: HA quality scale prep – Bronze/Silver/Gold compliance (d2c5463)
+- add-donation-badges (072962b)
+- docs: add donation badges (Buy Me a Coffee, PayPal, Tesla) to top of changelog (513ae11)
+
+### Improvements
+
+- docs: update version references to HA 2026.3, Python 3.14.2, pymodbus 3.11.2 (9526226)
+- fix(quality_scale): update domain-rename status to done (767dc27)
+- Release v0.2.2 - Update changelog and version files (824a486)
+
+### Bug Fixes
+
+- fix(quality_scale): mark config-flow and test-coverage as done (429ffae)
+- fix(quality_scale): update domain-rename status to done (767dc27)
+
+---
+
+### Installation
+
+**HACS (Recommended):**
+1. Add custom repository: `Xerolux/idm-heatpump-hass`
+2. Search for "IDM Heatpump"
+3. Click Install
+
+**Manual:**
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
+3. Restart Home Assistant
+
+---
+
+[Full changelog: v0.2.2...v0.2.3](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.2.2...v0.2.3)
+
+---
+
+### Support
+
+- [Buy Me a Coffee](https://buymeacoffee.com/xerolux)
+- [Ko-Fi](https://ko-fi.com/xerolux)
+- [GitHub Sponsors](https://github.com/sponsors/xerolux)
+- Star this repository
+
+Every contribution is a huge motivation! Thank you!
+
+---
+
+### Feedback & Contributions
+
+- [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
+- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CONTRIBUTING.md)
+
+---
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-03-22 08:03:14 UTC_
+
+---
+
 ## [0.2.3] - 2026-03-21
 
 ## v0.2.3 - IDM Heatpump
