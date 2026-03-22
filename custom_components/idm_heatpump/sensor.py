@@ -60,7 +60,7 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:key-variant"
-    _attr_entity_registry_enabled_default = False
+    _attr_entity_registry_enabled_default = True
 
     _NAMES = {
         "level_1": "Fachmann Ebene 1",
