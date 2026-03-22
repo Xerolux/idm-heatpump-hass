@@ -123,99 +123,123 @@ SYSTEM_SENSORS = [
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(1030, "Warmwasserzapftemperatur", "dhw_draw_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-    _sensor(1036, "Warmwasser Solltemperatur", "dhw_target_temp",
-            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(1048, "Aktueller Strompreis", "current_energy_price",
             unit="€", device_class="monetary", multiplier=0.001),
-    _sensor(1050, "Fehlercode", "error_code", datatype=DataType.UCHAR,
-            icon="mdi:alert-circle", entity_category=EntityCategory.DIAGNOSTIC),
-    _sensor(1052, "Stoermeldungen", "fault_message", datatype=DataType.UCHAR,
-            icon="mdi:alert", entity_category=EntityCategory.DIAGNOSTIC),
-    _sensor(1090, "Waermepumpenstatus", "heatpump_status", datatype=DataType.UCHAR,
+    # --- Waermepumpen-Temperaturen B33–B46 (FLOAT, je 2 Register) ---
+    _sensor(1050, "WP Vorlauftemperatur B33", "hp_flow_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1052, "WP Ruecklauftemperatur B34", "hp_return_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1054, "HGL Vorlauftemperatur B35", "hgl_flow_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1056, "Waermequelleneintrittstemperatur B43", "heat_source_inlet_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1058, "Waermequellenaustrittstemperatur B36", "heat_source_outlet_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1060, "Luftansaugtemperatur B37", "air_intake_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1062, "Luftwaermetauschertemperatur B72", "air_hx_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1064, "Luftansaugtemperatur 2 B46", "air_intake_temp_2",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+    _sensor(1066, "Ladefuehler B45", "charge_sensor_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    # --- Betriebsstatus ---
+    _sensor(1090, "Betriebsart Waermepumpe", "heatpump_status", datatype=DataType.UCHAR,
             icon="mdi:heat-pump"),
-    _sensor(1104, "Status Ladepumpe", "charge_pump_status", datatype=DataType.INT16,
+    _sensor(1098, "EVU-Sperrkontakt", "evu_lock", datatype=DataType.UCHAR,
+            icon="mdi:lock", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    # --- Pumpenstatus ---
+    _sensor(1104, "Status Ladepumpe M73", "charge_pump_status", datatype=DataType.INT16,
             unit=PERCENTAGE, icon="mdi:pump",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1105, "Status Sole-/Zwischenkreispumpe", "brine_pump_status",
+    _sensor(1105, "Status Sole-/Zwischenkreispumpe M16", "brine_pump_status",
             datatype=DataType.INT16, unit=PERCENTAGE, icon="mdi:pump",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1106, "Status Waermequellen-/Grundwasserpumpe", "source_pump_status",
+    _sensor(1106, "Status Waermequellen-/Grundwasserpumpe M15", "source_pump_status",
             datatype=DataType.INT16, unit=PERCENTAGE, icon="mdi:pump",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1107, "Status EVT-Sollwert Istwert", "evt_status",
-            datatype=DataType.INT16, icon="mdi:thermostat",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1108, "Statusadditional Pumpentyp", "additional_pump_status",
+    _sensor(1108, "Status ISC Kaeltespeicherpumpe M84", "isc_cold_pump_status",
             datatype=DataType.INT16, unit=PERCENTAGE, icon="mdi:pump",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1109, "Statusadditional Pumpentyp 2", "additional_pump2_status",
+    _sensor(1109, "Status ISC Rueckkuehlpumpe M17", "isc_recool_pump_status",
             datatype=DataType.INT16, unit=PERCENTAGE, icon="mdi:pump",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1110, "Umschaltventil Heizung/Kuehlung", "valve_heating_cooling",
+    _sensor(1118, "Zirkulationspumpe M64", "circulation_pump_status",
+            datatype=DataType.INT16, icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    # --- Umschaltventile (korrekte Bezeichnungen lt. IDM-Dokumentation) ---
+    _sensor(1110, "Umschaltventil Heizkreis Heizen/Kuehlen M61", "valve_hc_heat_cool",
             datatype=DataType.INT16, icon="mdi:valve",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
-            enum_options={0: "Heizung", 1: "Kuehlung"}),
-    _sensor(1111, "Umschaltventil Heizung/Warmwasser", "valve_heating_dhw",
+            enum_options={0: "Heizen", 1: "Kuehlen"}),
+    _sensor(1111, "Umschaltventil Speicher Heizen/Kuehlen M62", "valve_storage_heat_cool",
             datatype=DataType.INT16, icon="mdi:valve",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
-            enum_options={0: "Heizung", 1: "Warmwasser"}),
-    _sensor(1112, "Umschaltventil Speicher/Waermequelle", "valve_storage_source",
+            enum_options={0: "Heizen", 1: "Kuehlen"}),
+    _sensor(1112, "Umschaltventil Heizen/Warmwasser M63", "valve_heat_dhw",
+            datatype=DataType.INT16, icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
+            enum_options={0: "Heizen", 1: "Warmwasser"}),
+    _sensor(1113, "Umschaltventil Waermequelle Heizen/Kuehlen M74", "valve_source_heat_cool",
+            datatype=DataType.INT16, icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
+            enum_options={0: "Heizen", 1: "Kuehlen"}),
+    _sensor(1114, "Umschaltventil Solar Heizen/Warmwasser M78", "valve_solar_heat_dhw",
+            datatype=DataType.INT16, icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
+            enum_options={0: "Heizen", 1: "Warmwasser"}),
+    _sensor(1115, "Umschaltventil Solar Speicher/Waermequelle M79", "valve_solar_storage_source",
             datatype=DataType.INT16, icon="mdi:valve",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
             enum_options={0: "Speicher", 1: "Waermequelle"}),
-    _sensor(1113, "Umschaltventil Waermequelle/Kaeltespeicher", "valve_source_cold",
+    _sensor(1116, "Umschaltventil ISC Waermequelle/Kaeltespeicher M89", "valve_isc_source_cold",
             datatype=DataType.INT16, icon="mdi:valve",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
             enum_options={0: "Waermequelle", 1: "Kaeltespeicher"}),
-    _sensor(1114, "Umschaltventil Speicher/Bypass", "valve_storage_bypass",
+    _sensor(1117, "Umschaltventil ISC Speicher/Bypass M99", "valve_isc_storage_bypass",
             datatype=DataType.INT16, icon="mdi:valve",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
             enum_options={0: "Speicher", 1: "Bypass"}),
-    _sensor(1115, "Umschaltventil HK1", "valve_hk1", datatype=DataType.INT16,
-            icon="mdi:valve", entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
-            enum_options={0: "Heizung", 1: "Kuehlung"}),
-    _sensor(1116, "Umschaltventil HK2", "valve_hk2", datatype=DataType.INT16,
-            icon="mdi:valve", entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
-            enum_options={0: "Heizung", 1: "Kuehlung"}),
-    _sensor(1117, "Umschaltventil HK3", "valve_hk3", datatype=DataType.INT16,
-            icon="mdi:valve", entity_category=EntityCategory.DIAGNOSTIC, disabled=True,
-            enum_options={0: "Heizung", 1: "Kuehlung"}),
-    _sensor(1150, "Laufender Verdichter Stufe", "compressor_stage_running",
+    # --- Bivalenz ---
+    _sensor(1124, "Bivalenz Betriebszustand", "bivalency_state", datatype=DataType.UCHAR,
+            icon="mdi:heat-pump", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    # --- Kaskade: verfuegbare Stufen (neu) ---
+    _sensor(1147, "Kaskade Verfuegbare Stufen Heizen", "cascade_avail_stages_heat",
+            datatype=DataType.UCHAR, entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _sensor(1148, "Kaskade Verfuegbare Stufen Kuehlen", "cascade_avail_stages_cool",
+            datatype=DataType.UCHAR, entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _sensor(1149, "Kaskade Verfuegbare Stufen Warmwasser", "cascade_avail_stages_dhw",
+            datatype=DataType.UCHAR, entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    # --- Kaskade: laufende Stufen ---
+    _sensor(1150, "Kaskade Laufende Stufen Heizen", "cascade_running_stages_heat",
             datatype=DataType.UCHAR, icon="mdi:engine",
             entity_category=EntityCategory.DIAGNOSTIC),
-    _sensor(1151, "Verdichter 1 Stufe", "compressor1_stage", datatype=DataType.UCHAR,
+    _sensor(1151, "Kaskade Laufende Stufen Kuehlen", "cascade_running_stages_cool",
+            datatype=DataType.UCHAR,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1152, "Verdichter 2 Stufe", "compressor2_stage", datatype=DataType.UCHAR,
+    _sensor(1152, "Kaskade Laufende Stufen Warmwasser", "cascade_running_stages_dhw",
+            datatype=DataType.UCHAR,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1240, "Bivalenzpunkt 1", "bivalency_point_1", datatype=DataType.INT16,
+    # --- Kaskade: Temperaturen (read-only, Mehrkesselanlagen) ---
+    _sensor(1200, "Kaskade Angeforderte Heiztemperatur", "cascade_req_heat_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1241, "Bivalenzpunkt 2", "bivalency_point_2", datatype=DataType.INT16,
+    _sensor(1202, "Kaskade Angeforderte Kuehltemperatur", "cascade_req_cool_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1250, "Aktuelle Leistung Heizen", "current_power_heating",
-            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
-    _sensor(1252, "Aktuelle Leistung Kuehlen", "current_power_cooling",
-            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
-    _sensor(1254, "Aktuelle Leistung Warmwasser", "current_power_dhw",
-            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
-    _sensor(1260, "Minimale Leistung Heizen", "min_power_heating", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
+    _sensor(1204, "Kaskade Angeforderte WW-Temperatur", "cascade_req_dhw_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1261, "Maximale Leistung Heizen", "max_power_heating", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
+    _sensor(1206, "Kaskade Gemittelte VL-Temp Heizen", "cascade_avg_flow_heat",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1262, "Minimale Leistung Kuehlen", "min_power_cooling", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
+    _sensor(1208, "Kaskade Gemittelte VL-Temp Kuehlen", "cascade_avg_flow_cool",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1263, "Maximale Leistung Kuehlen", "max_power_cooling", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1264, "Minimale Leistung Warmwasser", "min_power_dhw", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1265, "Maximale Leistung Warmwasser", "max_power_dhw", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
+    _sensor(1210, "Kaskade Gemittelte VL-Temp Warmwasser", "cascade_avg_flow_dhw",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1392, "Feuchtesensor", "humidity",
             unit=PERCENTAGE, device_class="humidity"),
@@ -223,25 +247,26 @@ SYSTEM_SENSORS = [
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(1692, "Externe Feuchte", "humidity_ext",
             unit=PERCENTAGE, device_class="humidity"),
-    _sensor(1748, "Energiezaehler Heizen", "energy_heating",
+    # --- Waermemengen (lt. offiziellem IDM-YAML: 1750 = Gesamt!) ---
+    _sensor(1748, "Waermemenge Heizen", "energy_heat_heating",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
-    _sensor(1750, "Energiezaehler Kuehlen", "energy_cooling",
+    _sensor(1750, "Waermemenge Gesamt", "energy_heat_total",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
-    _sensor(1752, "Energiezaehler Warmwasser", "energy_dhw",
+    _sensor(1752, "Waermemenge Kuehlen", "energy_heat_cooling",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
-    _sensor(1754, "Energiezaehler Abtauen", "energy_defrost",
+    _sensor(1754, "Waermemenge Warmwasser", "energy_heat_dhw",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
-    _sensor(1756, "Waermemenge Abtauung", "energy_defrost_total",
+    _sensor(1756, "Waermemenge Abtauung", "energy_heat_defrost",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
-    _sensor(1758, "Waermemenge Passive Kuehlung", "energy_passive_cooling_total",
+    _sensor(1758, "Waermemenge Passive Kuehlung", "energy_heat_passive_cooling",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
-    _sensor(1760, "Waermemenge Solar", "energy_solar_total",
+    _sensor(1760, "Waermemenge Solar", "energy_heat_solar",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
-    _sensor(1762, "Waermemenge Elektroheizeinsatz", "energy_electric_total",
+    _sensor(1762, "Waermemenge Elektroheizeinsatz", "energy_heat_electric",
             unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR),
-    _sensor(1790, "Maximale Leistung Waermepumpe", "max_power_heatpump",
-            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT,
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    # --- Momentanleistung (war faelschlicherweise als "Maximale Leistung" deklariert) ---
+    _sensor(1790, "Momentanleistung", "current_power_draw",
+            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
     _sensor(1850, "Solar Kollektortemperatur", "solar_collector_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
     _sensor(1852, "Solar Kollektorruecklauftemperatur", "solar_collector_return_temp",
@@ -257,43 +282,74 @@ SYSTEM_SENSORS = [
     _sensor(4120, "Firmware Version Navigator", "firmware_version",
             datatype=DataType.UCHAR, icon="mdi:information",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(4122, "Aktuelle Leistungsaufnahme Gesamt", "power_draw_total",
+    _sensor(4122, "Aktuelle Leistungsaufnahme Waermepumpe", "power_draw_total",
             unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
+    _sensor(4126, "Thermische Leistung", "thermal_power",
+            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
+    _sensor(4128, "Waermemenge Gesamt (Durchflusssensor)", "energy_total_flow_sensor",
+            unit=UnitOfEnergy.KILO_WATT_HOUR, device_class=UnitOfEnergy.KILO_WATT_HOUR,
+            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
 ]
 
 
 def _hk_sensors(circuit: str) -> list[dict[str, Any]]:
-    """Generate sensors for a specific heating circuit."""
+    """Generate read-only sensors for a specific heating circuit (A–G).
+
+    Address layout (n = circuit index 0–6, off = n*2 for 2-register FLOAT values):
+      1350+off: Vorlauftemperatur (FLOAT)       1378+off: Sollvorlauftemperatur (FLOAT)
+      1364+off: Raumtemperatur (FLOAT)           1393+n:   Betriebsart (UCHAR, via selects)
+      1401+off: Raumsoll Heizen Normal (FLOAT)   1415+off: Raumsoll Heizen Eco (FLOAT)
+      1429+off: Heizkurve (FLOAT)                1442+n:   Heizgrenze (UCHAR)
+      1449+n:   Sollvorlauf Konstant (UCHAR)     1457+off: Raumsoll Kuehlen Normal (FLOAT)
+      1471+off: Raumsoll Kuehlen Eco (FLOAT)     1484+n:   Kuehlgrenze (UCHAR)
+      1491+n:   Sollvorlauf Kuehlen (UCHAR)      1498+n:   Aktive Betriebsart (UCHAR)
+      1505+n:   Parallelverschiebung (UCHAR/INT8) 1650+off: Externe Raumtemperatur (FLOAT)
+    """
     c = circuit.lower()
     C = circuit.upper()
-    off = HK_OFFSET[circuit]
-    idx = ord(circuit) - ord("a")
-    
+    off = HK_OFFSET[c]
+    idx = ord(c) - ord("a")
+
     return [
-        _sensor(1160 + off, f"Aktuelle Vorlauftemperatur HK {C}", f"flow_temp_hk_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-        _sensor(1180 + off, f"Raumtemperatur HK {C}", f"room_temp_hk_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-        _sensor(1200 + off, f"Sollvorlauftemperatur HK {C}", f"target_flow_temp_hk_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-        _sensor(1350 + off, f"Raumsolltemperatur Heizung Normal HK {C}", f"room_target_heat_normal_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-        _sensor(1364 + off, f"Raumsolltemperatur Heizung Eco HK {C}", f"room_target_heat_eco_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-        _sensor(1378 + off, f"Heizkurve HK {C}", f"heating_curve_{c}",
-                icon="mdi:chart-line"),
+        # Live-Betriebstemperaturen (read-only)
+        _sensor(1350 + off, f"Vorlauftemperatur HK {C}", f"flow_temp_hk_{c}",
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
+        _sensor(1364 + off, f"Raumtemperatur HK {C}", f"room_temp_hk_{c}",
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
+        _sensor(1378 + off, f"Sollvorlauftemperatur HK {C}", f"target_flow_temp_hk_{c}",
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
+        # Sollwerte Heizen (auch beschreibbar via _hk_numbers)
+        _sensor(1401 + off, f"Raumsoll Heizen Normal HK {C}", f"room_target_heat_normal_{c}",
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
+        _sensor(1415 + off, f"Raumsoll Heizen Eco HK {C}", f"room_target_heat_eco_{c}",
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
+        _sensor(1429 + off, f"Heizkurve HK {C}", f"heating_curve_{c}",
+                icon="mdi:chart-line", category="hk"),
+        # Sollwerte Kuehlen
+        _sensor(1457 + off, f"Raumsoll Kuehlen Normal HK {C}", f"room_target_cool_normal_{c}",
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
+        _sensor(1471 + off, f"Raumsoll Kuehlen Eco HK {C}", f"room_target_cool_eco_{c}",
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
+        # Einzelregister-Sollwerte (1 Register)
+        _sensor(1449 + idx, f"Vorlauftemperatur Soll Konstant HK {C}", f"const_flow_temp_{c}",
+                datatype=DataType.UCHAR,
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
+        _sensor(1505 + idx, f"Parallelverschiebung HK {C}", f"parallel_shift_{c}",
+                datatype=DataType.INT8, unit="K", icon="mdi:arrow-expand-horizontal",
+                category="hk"),
+        _sensor(1498 + idx, f"Aktive Betriebsart HK {C}", f"active_mode_hk_{c}",
+                datatype=DataType.UCHAR, icon="mdi:thermostat", category="hk"),
         _sensor(1650 + off, f"Externe Raumtemperatur HK {C}", f"room_temp_ext_hk_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-        _sensor(1457 + off, f"Raumsolltemperatur Kuehlung Normal HK {C}", f"room_target_cool_normal_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-        _sensor(1471 + off, f"Raumsolltemperatur Kuehlung Eco HK {C}", f"room_target_cool_eco_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-        _sensor(1505 + idx, f"Parallelverschiebung HK {C}", f"parallel_shift_{c}", datatype=DataType.INT8,
-                unit="K", icon="mdi:arrow-expand-horizontal"),
-        _sensor(HK_MODE_ADDR[circuit], f"Aktive Betriebsart HK {C}", f"active_mode_hk_{c}",
-                datatype=DataType.UCHAR, icon="mdi:thermostat"),
-        _sensor(HK_CONST_ADDR[circuit], f"Vorlauftemperatur Soll Konstant HK {C}", f"const_flow_temp_{c}",
-                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
+                unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
+                category="hk"),
     ]
 
 PV_SENSORS = [
@@ -347,31 +403,29 @@ def _binary_sensor(
 
 
 BINARY_SENSORS = [
-    _binary_sensor(1054, "Stoerung", "fault", icon="mdi:alert-circle"),
-    _binary_sensor(1056, "Verdichter 1", "compressor1", icon="mdi:engine",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _binary_sensor(1057, "Verdichter 2", "compressor2", icon="mdi:engine",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _binary_sensor(1058, "Verdichter 3", "compressor3", icon="mdi:engine",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _binary_sensor(1059, "Verdichter 4", "compressor4", icon="mdi:engine",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _binary_sensor(1099, "Summenstoerung Waermepumpe", "total_fault", icon="mdi:alert-circle"),
+    # --- Stoerung ---
+    _binary_sensor(1099, "Summenstoerung Waermepumpe", "total_fault",
+            icon="mdi:alert-circle", device_class="problem"),
+    # --- Verdichterstatus (laufend / nicht laufend) ---
     _binary_sensor(1100, "Status Verdichter 1", "state_compressor1", icon="mdi:engine",
+            device_class="running",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _binary_sensor(1101, "Status Verdichter 2", "state_compressor2", icon="mdi:engine",
+            device_class="running",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _binary_sensor(1102, "Status Verdichter 3", "state_compressor3", icon="mdi:engine",
+            device_class="running",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _binary_sensor(1103, "Status Verdichter 4", "state_compressor4", icon="mdi:engine",
+            device_class="running",
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _binary_sensor(1060, "Anforderung Heizen", "request_heating",
+    # --- Anforderungsstatus (vom WP-Regler gemeldet, read-only) ---
+    _binary_sensor(1091, "Heizanforderung aktiv", "heating_request_active",
             icon="mdi:fire"),
-    _binary_sensor(1061, "Anforderung Kuehlen", "request_cooling",
+    _binary_sensor(1092, "Kuehlanforderung aktiv", "cooling_request_active",
             icon="mdi:snowflake"),
-    _binary_sensor(1062, "Anforderung Warmwasser", "request_dhw",
+    _binary_sensor(1093, "Warmwasseranforderung aktiv", "dhw_request_active",
             icon="mdi:water-boiler"),
-    _binary_sensor(1064, "Abtauung", "defrost", icon="mdi:snowflake-melt"),
 ]
 
 # ============================================================
@@ -682,8 +736,18 @@ GLT_SWITCHES = [
 # ZONE MODULE SENSORS
 # ============================================================
 
-ZONE_BASE_ADDRESSES = [2000, 2067, 2130, 2193, 2256, 2319, 2382, 2445, 2508, 2571]
-ZONE_MODE_ADDRESSES = [2059, 2126, 2189, 2252, 2315, 2378, 2441, 2504, 2567, 2630]
+# Zonenmodul-Adressen lt. offiziellem IDM-YAML:
+#   Zone n (1-basiert) beginnt bei 2000 + 65*(n-1)
+#   Offset innerhalb der Zone:
+#     +0: Modus Heizen/Kühlen (UCHAR, RO)
+#     +1: Entfeuchtungsausgang (UCHAR, RO)
+#     +2 + r*7: Raumtemperatur Raum r (FLOAT, 2 Reg)
+#     +4 + r*7: Raumsolltemperatur Raum r (FLOAT, 2 Reg, RW)
+#     +6 + r*7: Raumfeuchte Raum r (UCHAR)
+#     +7 + r*7: Betriebsart Raum r (UCHAR, RW)
+#     +8 + r*7: Status Relais Raum r (UCHAR, RO)
+#     +64: Status Relais Raum 9 (optional)
+ZONE_BASE_ADDRESSES = [2000 + 65 * i for i in range(10)]
 
 
 def _zone_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
@@ -693,13 +757,8 @@ def _zone_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     base = ZONE_BASE_ADDRESSES[zone_idx]
     sensors = []
     for room in range(room_count):
-        offset = room * 7
-        room_addr_temp = base + offset + 0
-        room_addr_target = base + offset + 2
-        room_addr_humidity = base + offset + 4
-
         sensors.append(_sensor(
-            room_addr_temp,
+            base + 2 + room * 7,
             f"Zone {zone_idx + 1} Raum {room + 1} Temperatur",
             f"zone{zone_idx + 1}_room{room + 1}_temp",
             unit=UnitOfTemperature.CELSIUS,
@@ -707,7 +766,7 @@ def _zone_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
             category="zone",
         ))
         sensors.append(_sensor(
-            room_addr_target,
+            base + 4 + room * 7,
             f"Zone {zone_idx + 1} Raum {room + 1} Solltemperatur",
             f"zone{zone_idx + 1}_room{room + 1}_target",
             unit=UnitOfTemperature.CELSIUS,
@@ -715,7 +774,7 @@ def _zone_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
             category="zone",
         ))
         sensors.append(_sensor(
-            room_addr_humidity,
+            base + 6 + room * 7,
             f"Zone {zone_idx + 1} Raum {room + 1} Feuchte",
             f"zone{zone_idx + 1}_room{room + 1}_humidity",
             datatype=DataType.UCHAR,
@@ -732,12 +791,19 @@ def _zone_binary_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]
         return []
 
     base = ZONE_BASE_ADDRESSES[zone_idx]
-    sensors = []
+    sensors = [
+        # Entfeuchtungsausgang (zone_base+1, lt. IDM-YAML)
+        _binary_sensor(
+            base + 1,
+            f"Zone {zone_idx + 1} Entfeuchtungsausgang",
+            f"zone{zone_idx + 1}_dehumidifier",
+            icon="mdi:water-off",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ]
     for room in range(room_count):
-        offset = room * 7
-        relay_addr = base + offset + 6
         sensors.append(_binary_sensor(
-            relay_addr,
+            base + 8 + room * 7,
             f"Zone {zone_idx + 1} Raum {room + 1} Relais",
             f"zone{zone_idx + 1}_room{room + 1}_relay",
             icon="mdi:electric-switch",
@@ -752,10 +818,8 @@ def _zone_numbers(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
     base = ZONE_BASE_ADDRESSES[zone_idx]
     numbers = []
     for room in range(room_count):
-        offset = room * 7
-        target_addr = base + offset + 2
         numbers.append(_number(
-            target_addr,
+            base + 4 + room * 7,
             f"Zone {zone_idx + 1} Raum {room + 1} Solltemperatur",
             f"zone{zone_idx + 1}_room{room + 1}_target_set",
             5, 35, DataType.FLOAT, UnitOfTemperature.CELSIUS, 0.5,
@@ -765,23 +829,23 @@ def _zone_numbers(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
 
 
 def _zone_selects(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
-    if zone_idx >= len(ZONE_MODE_ADDRESSES):
+    if zone_idx >= len(ZONE_BASE_ADDRESSES):
         return []
 
+    base = ZONE_BASE_ADDRESSES[zone_idx]
     selects = []
-    mode_addr = ZONE_MODE_ADDRESSES[zone_idx]
+    # Zonenmodus (Heizen/Kühlen) ist laut YAML read-only, aber als Select sinnvoll
     selects.append(_select(
-        mode_addr,
+        base,
         f"Zone {zone_idx + 1} Betriebsart",
         f"zone{zone_idx + 1}_mode",
         {0: "Kuehlung", 1: "Heizung"},
         icon="mdi:thermostat",
     ))
-
+    # Raum-Betriebsarten (RW)
     for room in range(room_count):
-        room_mode_addr = mode_addr + 1 + room
         selects.append(_select(
-            room_mode_addr,
+            base + 7 + room * 7,
             f"Zone {zone_idx + 1} Raum {room + 1} Betriebsart",
             f"zone{zone_idx + 1}_room{room + 1}_mode",
             ROOM_MODE_OPTIONS,
