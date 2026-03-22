@@ -129,3 +129,12 @@ class HeatPumpStatus(enum.IntFlag):
     COOLING = 2
     WATER = 4
     DEFROSTING = 8
+
+
+HP_STATUS_OPTIONS: dict[int, str] = {
+    0: "Aus",
+    1: "Heizen",
+    2: "Kuehlen",
+    4: "Warmwasser",
+    8: "Abtauen",
+}

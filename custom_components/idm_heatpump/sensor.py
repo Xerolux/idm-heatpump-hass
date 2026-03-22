@@ -18,6 +18,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
 from .modbus_client import DataType
+
+def _decode_bitflag(value: int, options: dict[int, str]) -> str:
+    """Decode a bitfield value into a human-readable 'Flag1|Flag2' string."""
+    if value == 0:
+        return options.get(0, "Aus")
+    active = [label for bit, label in options.items() if bit != 0 and (value & bit) == bit]
+    return "|".join(active) if active else f"Unbekannt ({value})"
 from .technician_codes import calculate_codes
 
 PARALLEL_UPDATES = 0
@@ -51,8 +58,12 @@ class IdmSensor(IdmEntity, SensorEntity):
     @property
     def native_value(self) -> str | float | int | None:
         value = self.coordinator.data.get(self._register.name)
-        if value is not None and self._register.enum_options:
-            return self._register.enum_options.get(value, f"Unknown ({value})")
+        if value is None:
+            return None
+        if self._register.enum_options:
+            if self._register.datatype == DataType.BITFLAG:
+                return _decode_bitflag(int(value), self._register.enum_options)
+            return self._register.enum_options.get(value, f"Unbekannt ({value})")
         return value
 
 
