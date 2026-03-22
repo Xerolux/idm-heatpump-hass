@@ -39,6 +39,8 @@ class IdmSelect(IdmEntity, SelectEntity):
 
     @property
     def current_option(self) -> str | None:
+        if not self.coordinator.data:
+            return None
         raw = self.coordinator.data.get(self._register.name)
         if raw is None:
             return None
