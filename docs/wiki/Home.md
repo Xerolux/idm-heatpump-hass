@@ -1,5 +1,10 @@
 # IDM Heatpump - Home Assistant Integration
 
+<p align="center">
+  <img src="../images/heatpump.png" alt="IDM Heatpump" width="300"><br>
+  <small><i>KI generiert</i></small>
+</p>
+
 > **Die komplette Dokumentation** fur das IDM Heatpump Addon.
 > Von der Installation bis zur Fehlerbehebung - mit allen Features, Entities und Services.
 
