@@ -9,5 +9,5 @@
   "issue_tracker": "https://github.com/Xerolux/idm-heatpump-hass/issues",
   "quality_scale": "gold",
   "requirements": ["pymodbus>=3.7.0"],
-  "version": "0.2.7"
+  "version": "0.2.8"
 }
