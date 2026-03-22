@@ -163,6 +163,9 @@
     },
     "write_failed": {
       "message": "Failed to write register: {error}"
+    },
+    "invalid_datatype": {
+      "message": "Invalid datatype: \"{datatype}\". Valid values: uint16, int16, float, uchar, bool."
     }
   },
   "issues": {

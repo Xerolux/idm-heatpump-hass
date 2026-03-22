@@ -101,26 +101,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return False
         if value is None:
             return True
-        if isinstance(value, float) and abs(value - UNUSED_VALUE) < 0.01:
+        if isinstance(value, (int, float)) and abs(value - UNUSED_VALUE) < 0.01:
             return True
         return False
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             data = await self._client.read_batch(self._registers)
-            if not data:
-                raise UpdateFailed("No data received from heat pump")
-
-            # Clear any lingering repair issue on successful update
-            ir.async_delete_issue(self.hass, DOMAIN, "cannot_connect")
-
-            for reg_name, value in data.items():
-                if self.is_register_unused(reg_name, value):
-                    self._unused_registers.add(reg_name)
-
-            return data
         except Exception as err:
-            # Create a repair issue so users are guided to fix connectivity
+            # Only create a repair issue for actual communication failures
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -131,6 +120,18 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_placeholders={"host": self._client.host},
             )
             raise UpdateFailed(f"Error communicating with heat pump: {err}") from err
+
+        # Successful read – clear any previous connectivity repair issue
+        ir.async_delete_issue(self.hass, DOMAIN, "cannot_connect")
+
+        if not data:
+            raise UpdateFailed("No data received from heat pump")
+
+        for reg_name, value in data.items():
+            if self.is_register_unused(reg_name, value):
+                self._unused_registers.add(reg_name)
+
+        return data
 
     async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
         await self._client.write_register(reg, value)

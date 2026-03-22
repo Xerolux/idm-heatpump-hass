@@ -35,6 +35,7 @@ async def async_setup_entry(
         if not (
             desc_info["register"].enum_options
             and desc_info["register"].datatype == DataType.UCHAR
+            and desc_info["register"].writable
         )
     ]
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
@@ -60,7 +61,7 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
 
     _attr_has_entity_name = True
     _attr_icon = "mdi:key-variant"
-    _attr_entity_registry_enabled_default = False
+    _attr_entity_registry_enabled_default = True
 
     _NAMES = {
         "level_1": "Fachmann Ebene 1",

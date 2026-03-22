@@ -127,17 +127,30 @@ async def _handle_write_register(
     address = int(call.data["address"])
     value = call.data["value"]
 
+    _DATATYPE_MAP = {
+        "uint16": DataType.UINT16,
+        "int16": DataType.INT16,
+        "float": DataType.FLOAT,
+        "uchar": DataType.UCHAR,
+        "bool": DataType.BOOL,
+    }
+    datatype_str = str(call.data.get("datatype", "uint16")).lower()
+    datatype = _DATATYPE_MAP.get(datatype_str)
+    if datatype is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_datatype",
+            translation_placeholders={"datatype": datatype_str},
+        )
+
     try:
-        value = int(value)
+        value = int(value) if datatype != DataType.FLOAT else float(value)
     except (ValueError, TypeError):
-        try:
-            value = float(value)
-        except (ValueError, TypeError):
-            _LOGGER.debug("Value %r is not numeric, passing as-is", value)
+        _LOGGER.debug("Value %r is not numeric, passing as-is", value)
 
     reg = RegisterDef(
         address=address,
-        datatype=DataType.UINT16,
+        datatype=datatype,
         name=f"manual_{address}",
         writable=True,
     )

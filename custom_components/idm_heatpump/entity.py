@@ -38,6 +38,6 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
             return False
         if self.coordinator.hide_unused:
             value = self.coordinator.data.get(self._register.name)
-            if isinstance(value, float) and abs(value - UNUSED_VALUE) < 0.01:
+            if isinstance(value, (int, float)) and abs(value - UNUSED_VALUE) < 0.01:
                 return False
         return True
