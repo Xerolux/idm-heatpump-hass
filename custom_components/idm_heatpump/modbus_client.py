@@ -55,6 +55,9 @@ class RegisterDef:
             self.size = 1
 
 
+_MAX_GROUP_FAILURES = 3
+
+
 class IdmModbusClient:
     def __init__(self, host: str, port: int = 502, slave_id: int = 1) -> None:
         self._host = host
@@ -62,6 +65,8 @@ class IdmModbusClient:
         self._slave_id = int(slave_id)
         self._client: AsyncModbusTcpClient | None = None
         self._lock = asyncio.Lock()
+        self._group_failure_counts: dict[int, int] = {}
+        self._permanently_failed_addresses: set[int] = set()
 
     @property
     def host(self) -> str:
@@ -72,14 +77,15 @@ class IdmModbusClient:
         return self._port
 
     async def connect(self) -> None:
-        if self._client is None or not self._client.connected:
-            self._client = AsyncModbusTcpClient(
-                host=str(self._host), 
-                port=int(self._port), 
-                timeout=10
-            )
-            await self._client.connect()
-            _LOGGER.debug("Connected to %s:%d", self._host, self._port)
+        async with self._lock:
+            if self._client is None or not self._client.connected:
+                self._client = AsyncModbusTcpClient(
+                    host=str(self._host),
+                    port=int(self._port),
+                    timeout=10,
+                )
+                await self._client.connect()
+                _LOGGER.debug("Connected to %s:%d", self._host, self._port)
 
     async def disconnect(self) -> None:
         if self._client is not None:
@@ -267,12 +273,29 @@ class IdmModbusClient:
         end = group[-1].address + group[-1].size
         count = end - start
 
+        if start in self._permanently_failed_addresses:
+            return {}
+
         try:
             registers = await self._read_registers(start, count)
+            # Reset failure count on success
+            self._group_failure_counts.pop(start, None)
         except (ConnectionException, ModbusException) as err:
-            _LOGGER.warning(
-                "Failed to read group starting at %d: %s", start, err
-            )
+            failures = self._group_failure_counts.get(start, 0) + 1
+            self._group_failure_counts[start] = failures
+            if failures >= _MAX_GROUP_FAILURES:
+                self._permanently_failed_addresses.add(start)
+                reg_names = [r.name for r in group]
+                _LOGGER.warning(
+                    "Address %d failed %d times, permanently skipping (registers: %s)",
+                    start,
+                    failures,
+                    reg_names,
+                )
+            else:
+                _LOGGER.warning(
+                    "Failed to read group starting at %d: %s", start, err
+                )
             return {}
 
         data: dict[str, Any] = {}
