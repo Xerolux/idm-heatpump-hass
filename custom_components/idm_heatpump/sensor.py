@@ -35,6 +35,7 @@ async def async_setup_entry(
         if not (
             desc_info["register"].enum_options
             and desc_info["register"].datatype == DataType.UCHAR
+            and desc_info["register"].writable
         )
     ]
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
