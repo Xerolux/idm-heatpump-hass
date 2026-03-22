@@ -205,6 +205,13 @@ SYSTEM_SENSORS = [
     # --- Bivalenz ---
     _sensor(1124, "Bivalenz Betriebszustand", "bivalency_state", datatype=DataType.UCHAR,
             icon="mdi:heat-pump", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    # --- Kaskade: verfuegbare Stufen (neu) ---
+    _sensor(1147, "Kaskade Verfuegbare Stufen Heizen", "cascade_avail_stages_heat",
+            datatype=DataType.UCHAR, entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _sensor(1148, "Kaskade Verfuegbare Stufen Kuehlen", "cascade_avail_stages_cool",
+            datatype=DataType.UCHAR, entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
+    _sensor(1149, "Kaskade Verfuegbare Stufen Warmwasser", "cascade_avail_stages_dhw",
+            datatype=DataType.UCHAR, entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     # --- Kaskade: laufende Stufen ---
     _sensor(1150, "Kaskade Laufende Stufen Heizen", "cascade_running_stages_heat",
             datatype=DataType.UCHAR, icon="mdi:engine",
@@ -215,35 +222,24 @@ SYSTEM_SENSORS = [
     _sensor(1152, "Kaskade Laufende Stufen Warmwasser", "cascade_running_stages_dhw",
             datatype=DataType.UCHAR,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1240, "Bivalenzpunkt 1", "bivalency_point_1", datatype=DataType.INT16,
+    # --- Kaskade: Temperaturen (read-only, Mehrkesselanlagen) ---
+    _sensor(1200, "Kaskade Angeforderte Heiztemperatur", "cascade_req_heat_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1241, "Bivalenzpunkt 2", "bivalency_point_2", datatype=DataType.INT16,
+    _sensor(1202, "Kaskade Angeforderte Kuehltemperatur", "cascade_req_cool_temp",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1250, "Aktuelle Leistung Heizen", "current_power_heating",
-            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
-    _sensor(1252, "Aktuelle Leistung Kuehlen", "current_power_cooling",
-            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
-    _sensor(1254, "Aktuelle Leistung Warmwasser", "current_power_dhw",
-            unit=UnitOfPower.KILO_WATT, device_class=UnitOfPower.KILO_WATT),
-    _sensor(1260, "Minimale Leistung Heizen", "min_power_heating", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
+    _sensor(1204, "Kaskade Angeforderte WW-Temperatur", "cascade_req_dhw_temp",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1261, "Maximale Leistung Heizen", "max_power_heating", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
+    _sensor(1206, "Kaskade Gemittelte VL-Temp Heizen", "cascade_avg_flow_heat",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1262, "Minimale Leistung Kuehlen", "min_power_cooling", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
+    _sensor(1208, "Kaskade Gemittelte VL-Temp Kuehlen", "cascade_avg_flow_cool",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1263, "Maximale Leistung Kuehlen", "max_power_cooling", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1264, "Minimale Leistung Warmwasser", "min_power_dhw", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
-            entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1265, "Maximale Leistung Warmwasser", "max_power_dhw", datatype=DataType.UINT16,
-            unit=PERCENTAGE, icon="mdi:tune-variant",
+    _sensor(1210, "Kaskade Gemittelte VL-Temp Warmwasser", "cascade_avg_flow_dhw",
+            unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     _sensor(1392, "Feuchtesensor", "humidity",
             unit=PERCENTAGE, device_class="humidity"),
@@ -795,7 +791,16 @@ def _zone_binary_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]
         return []
 
     base = ZONE_BASE_ADDRESSES[zone_idx]
-    sensors = []
+    sensors = [
+        # Entfeuchtungsausgang (zone_base+1, lt. IDM-YAML)
+        _binary_sensor(
+            base + 1,
+            f"Zone {zone_idx + 1} Entfeuchtungsausgang",
+            f"zone{zone_idx + 1}_dehumidifier",
+            icon="mdi:water-off",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    ]
     for room in range(room_count):
         sensors.append(_binary_sensor(
             base + 8 + room * 7,
