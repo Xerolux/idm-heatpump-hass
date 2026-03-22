@@ -34,6 +34,7 @@ from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
     CIRCUIT_MODE_OPTIONS,
+    HP_STATUS_OPTIONS,
     ISC_MODE_OPTIONS,
     ROOM_MODE_OPTIONS,
     SOLAR_MODE_OPTIONS,
@@ -146,8 +147,8 @@ SYSTEM_SENSORS = [
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     # --- Betriebsstatus ---
-    _sensor(1090, "Betriebsart Waermepumpe", "heatpump_status", datatype=DataType.UCHAR,
-            icon="mdi:heat-pump"),
+    _sensor(1090, "Betriebsart Waermepumpe", "heatpump_status", datatype=DataType.BITFLAG,
+            icon="mdi:heat-pump", enum_options=HP_STATUS_OPTIONS),
     _sensor(1098, "EVU-Sperrkontakt", "evu_lock", datatype=DataType.UCHAR,
             icon="mdi:lock", entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
     # --- Pumpenstatus ---
@@ -346,7 +347,8 @@ def _hk_sensors(circuit: str) -> list[dict[str, Any]]:
                 datatype=DataType.INT8, unit="K", icon="mdi:arrow-expand-horizontal",
                 category="hk"),
         _sensor(1498 + idx, f"Aktive Betriebsart HK {C}", f"active_mode_hk_{c}",
-                datatype=DataType.UCHAR, icon="mdi:thermostat", category="hk"),
+                datatype=DataType.UCHAR, icon="mdi:thermostat", category="hk",
+                enum_options=CIRCUIT_MODE_OPTIONS),
         _sensor(1650 + off, f"Externe Raumtemperatur HK {C}", f"room_temp_ext_hk_{c}",
                 unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
                 category="hk"),
@@ -755,7 +757,18 @@ def _zone_sensors(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
         return []
 
     base = ZONE_BASE_ADDRESSES[zone_idx]
-    sensors = []
+    # Zone mode is read-only per IDM YAML (base+0)
+    sensors = [
+        _sensor(
+            base,
+            f"Zone {zone_idx + 1} Betriebsart",
+            f"zone{zone_idx + 1}_mode",
+            datatype=DataType.UCHAR,
+            icon="mdi:thermostat",
+            category="zone",
+            enum_options={0: "Kuehlung", 1: "Heizung"},
+        )
+    ]
     for room in range(room_count):
         sensors.append(_sensor(
             base + 2 + room * 7,
@@ -834,14 +847,6 @@ def _zone_selects(zone_idx: int, room_count: int) -> list[dict[str, Any]]:
 
     base = ZONE_BASE_ADDRESSES[zone_idx]
     selects = []
-    # Zonenmodus (Heizen/Kühlen) ist laut YAML read-only, aber als Select sinnvoll
-    selects.append(_select(
-        base,
-        f"Zone {zone_idx + 1} Betriebsart",
-        f"zone{zone_idx + 1}_mode",
-        {0: "Kuehlung", 1: "Heizung"},
-        icon="mdi:thermostat",
-    ))
     # Raum-Betriebsarten (RW)
     for room in range(room_count):
         selects.append(_select(
