@@ -77,14 +77,15 @@ class IdmModbusClient:
         return self._port
 
     async def connect(self) -> None:
-        if self._client is None or not self._client.connected:
-            self._client = AsyncModbusTcpClient(
-                host=str(self._host), 
-                port=int(self._port), 
-                timeout=10
-            )
-            await self._client.connect()
-            _LOGGER.debug("Connected to %s:%d", self._host, self._port)
+        async with self._lock:
+            if self._client is None or not self._client.connected:
+                self._client = AsyncModbusTcpClient(
+                    host=str(self._host),
+                    port=int(self._port),
+                    timeout=10,
+                )
+                await self._client.connect()
+                _LOGGER.debug("Connected to %s:%d", self._host, self._port)
 
     async def disconnect(self) -> None:
         if self._client is not None:
