@@ -20,12 +20,14 @@ CONF_ZONE_COUNT: str = "zone_count"
 CONF_ZONE_ROOMS: str = "zone_rooms"
 CONF_HIDE_UNUSED: str = "hide_unused_registers"
 CONF_TECHNICIAN_CODES: str = "technician_codes"
+CONF_ENABLE_CASCADE: str = "enable_cascade"
 
 DEFAULT_HOST: str = ""
 DEFAULT_PORT: int = 502
 DEFAULT_SLAVE_ID: int = 1
 DEFAULT_SCAN_INTERVAL: int = 10
 DEFAULT_HIDE_UNUSED: bool = True
+DEFAULT_ENABLE_CASCADE: bool = False
 
 UNUSED_VALUE: float = -1.0
 

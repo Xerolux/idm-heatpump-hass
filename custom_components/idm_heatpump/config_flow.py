@@ -24,6 +24,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
@@ -31,6 +32,7 @@ from .const import (
     CONF_TECHNICIAN_CODES,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
@@ -128,6 +130,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                 CONF_TECHNICIAN_CODES,
                 default=options.get(CONF_TECHNICIAN_CODES, False),
             ): BooleanSelector(BooleanSelectorConfig()),
+            vol.Required(
+                CONF_ENABLE_CASCADE,
+                default=options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE),
+            ): BooleanSelector(BooleanSelectorConfig()),
         }
     )
 
@@ -186,6 +192,9 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=self.add_suggested_values_to_schema(
                 STEP_USER_DATA_SCHEMA, user_input or {}
             ),
+            description_placeholders={
+                "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
+            },
             errors=errors,
         )
 
@@ -226,6 +235,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={
                 "name": entry.title,
                 "host": entry.data[CONF_HOST],
+                "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
             },
             errors=errors,
         )

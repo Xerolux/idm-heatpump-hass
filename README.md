@@ -1,5 +1,10 @@
 # 🔥 IDM Heatpump für Home Assistant
 
+<p align="center">
+  <img src="docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
+  <small><i>KI generiert</i></small>
+</p>
+
 [![GitHub Release][releases-shield]][releases]
 [![Downloads][downloads-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]

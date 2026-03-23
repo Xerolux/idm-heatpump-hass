@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up IDM Navigator Heat Pump",
-        "description": "Enter the connection details of your IDM heat pump.\n\n**Prerequisite:** Modbus TCP must be enabled in the IDM controller under *Installer level → Communication → Modbus*.",
+        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nEnter the connection details of your IDM heat pump.\n\n**Prerequisite:** Modbus TCP must be enabled in the IDM controller under *Installer level → Communication → Modbus*.",
         "data": {
           "name": "Name",
           "host": "IP Address / Hostname",
@@ -19,7 +19,7 @@
       },
       "reconfigure": {
         "title": "Reconfigure – {name}",
-        "description": "Current connection: **{host}**\n\nUpdate the network settings of your heat pump. The integration will restart automatically afterwards.",
+        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nCurrent connection: **{host}**\n\nUpdate the network settings of your heat pump. The integration will restart automatically afterwards.",
         "data": {
           "host": "IP Address / Hostname",
           "port": "Port",
@@ -39,14 +39,16 @@
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
           "zone_count": "Number of zone modules",
-          "technician_codes": "Show Installer Level codes"
+          "technician_codes": "Show Installer Level codes",
+          "enable_cascade": "Enable Cascade Registers"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Automatically mark sensors that return inactive values (e.g. −1.0) as *unavailable* and hide them.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
           "zone_count": "Number of IDM zone modules installed (0 if none).",
-          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute."
+          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
+          "enable_cascade": "Enables reading and writing cascade operation registers. Only enable this if you have a cascaded heat pump setup."
         }
       },
       "zones": {
@@ -98,14 +100,16 @@
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
           "zone_count": "Number of zone modules",
-          "technician_codes": "Show Installer Level codes"
+          "technician_codes": "Show Installer Level codes",
+          "enable_cascade": "Enable Cascade Registers"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Automatically mark sensors that return inactive values (e.g. −1.0) as *unavailable* and hide them.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
           "zone_count": "Number of IDM zone modules installed (0 if none).",
-          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute."
+          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
+          "enable_cascade": "Enables reading and writing cascade operation registers. Only enable this if you have a cascaded heat pump setup."
         }
       },
       "zones": {
