@@ -24,6 +24,103 @@ All notable changes to this project will be documented in this file.
 
 ### New Features
 
+- docs: update wiki and add wiki link to config flow (9b586c2)
+- Merge pull request #19 from Xerolux/claude/add-code-headers-pzKZI (1fb6526)
+- Add Xerolux 2026 copyright header to all Python source files (fa2e121)
+- Merge pull request #17 from Xerolux/claude/add-claude-documentation-G9lZu (aa69106)
+- docs: add CLAUDE.md with comprehensive codebase guide for AI assistants (6e9eeff)
+- Add Tesla referral badge to README (cb6aff5)
+- add-ai-heatpump-image (a347d6a)
+- feat: add option to toggle cascade registers in config flow (d5176aa)
+- docs: add AI-generated heatpump image to README and Wiki Home (57eb301)
+
+### Improvements
+
+- update-wiki-writing-values (717ba28)
+- docs: update wiki and add wiki link to config flow (9b586c2)
+- Release v0.2.9 - Update changelog and version files (ad3b675)
+- fix-bugs-improve-quality (7312982)
+- update-dependencies-2026 (232cffb)
+- chore: update dependencies and bump HA min version to 2026.3 (a0ad9a7)
+- Update image caption in README.md (f10ef98)
+- Release v0.2.8 - Update changelog and version files (7ddf02a)
+
+### Bug Fixes
+
+- fix-pymodbus-version-requirement (e7df2dc)
+- Fix: Lower pymodbus requirement to 3.11.2 and support both device_id and slave (12b5177)
+- fix-bugs-improve-quality (7312982)
+- fix: 8 bugs and quality improvements (89fe6d0)
+- fix-wiki-links (bce1871)
+- fix-wiki-links (29a89e2)
+- fix: remove .md extension from wiki internal link in Services.md (297eabd)
+- fix: Wiki-Links von raw/blob GitHub-URLs auf korrekte Wiki-Links korrigiert (17e2253)
+- fix(config_flow): use description_placeholders for URLs in translations to satisfy hassfest (886d18b)
+
+---
+
+### Installation
+
+**HACS (Recommended):**
+1. Add custom repository: `Xerolux/idm-heatpump-hass`
+2. Search for "IDM Heatpump"
+3. Click Install
+
+**Manual:**
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
+3. Restart Home Assistant
+
+---
+
+[Full changelog: v0.2.8...v0.2.9](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.2.8...v0.2.9)
+
+---
+
+### Support
+
+Diese Integration wird in meiner Freizeit entwickelt – deine Unterstützung erhöht die Motivation für weitere Features und Updates! 🚀
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+_Jede Unterstützung ist eine große Motivation! Vielen Dank!_
+
+---
+
+### Feedback & Contributions
+
+- [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
+- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CONTRIBUTING.md)
+
+---
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-03-23 16:45:49 UTC_
+
+---
+
+## [0.2.9] - 2026-03-23
+
+## v0.2.9 - IDM Heatpump
+
+**STABLE RELEASE**
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+### New Features
+
 - Merge pull request #19 from Xerolux/claude/add-code-headers-pzKZI (1fb6526)
 - Add Xerolux 2026 copyright header to all Python source files (fa2e121)
 - Merge pull request #17 from Xerolux/claude/add-claude-documentation-G9lZu (aa69106)
