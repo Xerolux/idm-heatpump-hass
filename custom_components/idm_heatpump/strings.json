@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up IDM Navigator Heat Pump",
-        "description": "Enter the connection details of your IDM heat pump.\n\n**Prerequisite:** Modbus TCP must be enabled in the IDM controller under *Installer level → Communication → Modbus*.",
+        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nEnter the connection details of your IDM heat pump.\n\n**Prerequisite:** Modbus TCP must be enabled in the IDM controller under *Installer level → Communication → Modbus*.",
         "data": {
           "name": "Name",
           "host": "IP Address / Hostname",
@@ -19,7 +19,7 @@
       },
       "reconfigure": {
         "title": "Reconfigure – {name}",
-        "description": "Current connection: **{host}**\n\nUpdate the network settings of your heat pump. The integration will restart automatically afterwards.",
+        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nCurrent connection: **{host}**\n\nUpdate the network settings of your heat pump. The integration will restart automatically afterwards.",
         "data": {
           "host": "IP Address / Hostname",
           "port": "Port",
