@@ -1,6 +1,20 @@
 # Beispiel-Automatisierungen
 
-Hier findest du praktische Beispiele für den Einsatz der IDM Heatpump Integration.
+Hier findest du praktische Beispiele für den Einsatz der IDM Heatpump Integration, insbesondere wie man Werte über Automatisierungen schreiben kann.
+
+---
+
+## Werte schreiben per Automatisierung (Übersicht)
+
+In Home Assistant werden schreibbare Werte der Wärmepumpe als **Entitäten** dargestellt. Um diese Werte in Automatisierungen zu ändern, verwendest du nicht `idm_heatpump.write_register`, sondern die Standard-Dienste von Home Assistant:
+
+- Für Temperaturen, Heizkurven oder Sollwerte (Typ `number`): Dienst `number.set_value`
+- Für Betriebsmodi (Typ `select`): Dienst `select.select_option`
+- Für Schalter (Typ `switch`): Dienst `switch.turn_on` oder `switch.turn_off`
+
+**Alternative (Fortgeschritten):** Wenn ein Register nicht als Entität existiert, kannst du den Dienst `idm_heatpump.write_register` verwenden (siehe [Services Referenz](Services)).
+
+Hier sind einige konkrete Anwendungsfälle:
 
 ---
 
