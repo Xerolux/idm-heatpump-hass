@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "IDM Navigator Wärmepumpe einrichten",
-        "description": "Gib die Verbindungsdaten deiner IDM Wärmepumpe ein.\n\n**Voraussetzung:** Modbus TCP muss in der IDM-Steuerung unter *Fachmannebene → Kommunikation → Modbus* aktiviert sein.",
+        "description": "[Hilfe benötigt? Lese die Dokumentation]({wiki_url})\n\nGib die Verbindungsdaten deiner IDM Wärmepumpe ein.\n\n**Voraussetzung:** Modbus TCP muss in der IDM-Steuerung unter *Fachmannebene → Kommunikation → Modbus* aktiviert sein.",
         "data": {
           "name": "Name",
           "host": "IP-Adresse / Hostname",
@@ -19,7 +19,7 @@
       },
       "reconfigure": {
         "title": "Verbindung anpassen – {name}",
-        "description": "Aktuelle Verbindung: **{host}**\n\nÄndere hier die Netzwerkdaten deiner Wärmepumpe. Die Integration wird danach automatisch neu gestartet.",
+        "description": "[Hilfe benötigt? Lese die Dokumentation]({wiki_url})\n\nAktuelle Verbindung: **{host}**\n\nÄndere hier die Netzwerkdaten deiner Wärmepumpe. Die Integration wird danach automatisch neu gestartet.",
         "data": {
           "host": "IP-Adresse / Hostname",
           "port": "Port",
@@ -39,14 +39,16 @@
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
-          "technician_codes": "Fachmann-Ebene Codes anzeigen"
+          "technician_codes": "Fachmann-Ebene Codes anzeigen",
+          "enable_cascade": "Kaskaden-Register aktivieren"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Sensoren, die inaktive Werte liefern (z. B. −1,0), werden automatisch als *nicht verfügbar* markiert und ausgeblendet.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
-          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert."
+          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
+          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind."
         }
       },
       "zones": {
@@ -98,14 +100,16 @@
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
-          "technician_codes": "Fachmann-Ebene Codes anzeigen"
+          "technician_codes": "Fachmann-Ebene Codes anzeigen",
+          "enable_cascade": "Kaskaden-Register aktivieren"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Sensoren, die inaktive Werte liefern (z. B. −1,0), werden automatisch als *nicht verfügbar* markiert und ausgeblendet.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
-          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert."
+          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
+          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind."
         }
       },
       "zones": {

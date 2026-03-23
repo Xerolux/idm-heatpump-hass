@@ -15,12 +15,14 @@ from homeassistant.helpers import config_validation as cv
 from homeassistant.loader import async_get_integration
 
 from .const import (
+    CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
@@ -87,6 +89,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     zone_count = int(entry.options.get(CONF_ZONE_COUNT, 0))
     zone_rooms = entry.options.get(CONF_ZONE_ROOMS, {})
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
+    enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
 
     client = IdmModbusClient(host=host, port=port, slave_id=slave_id)
 
@@ -96,11 +99,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         _LOGGER.error("Failed to connect to %s:%d - %s", host, port, err)
         raise ConfigEntryNotReady(f"Cannot connect to {host}:{port}") from err
 
-    sensor_descs = get_all_sensor_descriptions(circuits, zone_count, zone_rooms)
-    binary_descs = get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms)
-    number_descs = get_all_number_descriptions(circuits, zone_count, zone_rooms)
-    select_descs = get_all_select_descriptions(circuits, zone_count, zone_rooms)
-    switch_descs = get_all_switch_descriptions(circuits, zone_count, zone_rooms)
+    sensor_descs = get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+    binary_descs = get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+    number_descs = get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+    select_descs = get_all_select_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+    switch_descs = get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
 
     coordinator = IdmCoordinator(
         hass=hass,
@@ -114,7 +117,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         switch_descriptions=switch_descs,
         hide_unused=hide_unused,
     )
-    coordinator.setup_registers(circuits, zone_count, zone_rooms)
+    coordinator.setup_registers(circuits, zone_count, zone_rooms, enable_cascade)
 
     entry.runtime_data = IdmHeatpumpData(coordinator=coordinator, client=client)
 
