@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import inspect
 import math
 import struct
 from dataclasses import dataclass, field
@@ -19,20 +20,20 @@ from pymodbus.exceptions import ConnectionException, ModbusException
 
 _LOGGER = logging.getLogger(__name__)
 
-# pymodbus >= 3.12 uses device_id (previously called slave)
+# pymodbus >= 3.10 uses device_id (previously called slave)
 def _get_slave_param() -> str:
     try:
-        from packaging.version import Version
-        if Version(pymodbus.__version__) >= Version("3.12.0"):
+        params = inspect.signature(AsyncModbusTcpClient.read_input_registers).parameters
+        if "device_id" in params:
             return "device_id"
         return "slave"
-    except ImportError:
-        # Fallback if packaging is not available
+    except Exception:
+        # Fallback if inspection fails
         parts = pymodbus.__version__.split(".")
         try:
             major = int(parts[0])
             minor = int(parts[1])
-            if major > 3 or (major == 3 and minor >= 12):
+            if major > 3 or (major == 3 and minor >= 10):
                 return "device_id"
         except (ValueError, IndexError):
             pass
