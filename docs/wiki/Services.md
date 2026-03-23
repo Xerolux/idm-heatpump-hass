@@ -83,7 +83,7 @@ data:
 
 ## Automatisierungs-Beispiele (Werte schreiben)
 
-Hier sind einige Beispiele, wie du Werte über Automatisierungen schreiben kannst. Weitere praxisnahe Beispiele findest du auf der Seite [Examples](Examples.md).
+Hier sind einige Beispiele, wie du Werte über Automatisierungen schreiben kannst. Weitere praxisnahe Beispiele findest du auf der Seite [Examples](Examples).
 
 ### Reguläre Entität ändern (Empfohlene Methode)
 Möchtest du z.B. eine Solltemperatur anpassen, nutze den Standard-Dienst `number.set_value`:
