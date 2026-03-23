@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
 
@@ -48,7 +49,7 @@ class IdmSelect(IdmEntity, SelectEntity):
         raw = self.coordinator.data.get(self._register.name)
         if raw is None:
             return None
-        return self._register.enum_options.get(raw)
+        return self._register.enum_options.get(int(raw))
 
     def _option_to_value(self, option: str) -> int:
         for key, val in self._register.enum_options.items():
@@ -63,5 +64,7 @@ class IdmSelect(IdmEntity, SelectEntity):
         except Exception as err:
             _LOGGER.error("Failed to select %s = %s: %s", self._register.name, option, err)
             raise HomeAssistantError(
-                f"Failed to set {self.entity_description.name}: {err}"
+                translation_domain=DOMAIN,
+                translation_key="write_failed",
+                translation_placeholders={"error": str(err)},
             ) from err

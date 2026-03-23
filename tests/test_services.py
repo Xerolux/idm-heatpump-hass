@@ -46,15 +46,40 @@ class TestSetupServices:
 
 
 class TestUnloadServices:
-    async def test_removes_services_when_no_entries(self, mock_hass):
+    async def test_removes_services_when_no_loaded_entries(self, mock_hass):
+        from homeassistant.config_entries import ConfigEntryState
+
+        # One entry exists but is NOT_LOADED → last loaded entry was just unloaded
+        entry = MagicMock()
+        entry.state = ConfigEntryState.NOT_LOADED
+        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
+        await async_unload_services(mock_hass)
+        assert mock_hass.services.async_remove.call_count == 3
+
+    async def test_removes_services_when_empty(self, mock_hass):
         mock_hass.config_entries.async_entries = MagicMock(return_value=[])
         await async_unload_services(mock_hass)
         assert mock_hass.services.async_remove.call_count == 3
 
-    async def test_keeps_services_when_entries_remain(self, mock_hass):
-        mock_hass.config_entries.async_entries = MagicMock(return_value=[MagicMock()])
+    async def test_keeps_services_when_loaded_entries_remain(self, mock_hass):
+        from homeassistant.config_entries import ConfigEntryState
+
+        entry1 = MagicMock()
+        entry1.state = ConfigEntryState.LOADED
+        entry2 = MagicMock()
+        entry2.state = ConfigEntryState.LOADED
+        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
         await async_unload_services(mock_hass)
         mock_hass.services.async_remove.assert_not_called()
+
+    async def test_removes_services_when_only_one_loaded(self, mock_hass):
+        from homeassistant.config_entries import ConfigEntryState
+
+        entry = MagicMock()
+        entry.state = ConfigEntryState.LOADED
+        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
+        await async_unload_services(mock_hass)
+        assert mock_hass.services.async_remove.call_count == 3
 
 
 class TestGetCoordinator:

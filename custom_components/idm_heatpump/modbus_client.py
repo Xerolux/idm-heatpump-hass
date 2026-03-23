@@ -351,4 +351,5 @@ class IdmModbusClient:
             _LOGGER.warning("Test connection failed: %s", err)
             return False
         finally:
-            test_client.close()
+            if hasattr(test_client, 'close'):
+                test_client.close()

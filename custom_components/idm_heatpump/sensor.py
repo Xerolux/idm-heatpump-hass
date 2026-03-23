@@ -6,7 +6,6 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
@@ -61,6 +60,8 @@ class IdmSensor(IdmEntity, SensorEntity):
 
     @property
     def native_value(self) -> str | float | int | None:
+        if not self.coordinator.data:
+            return None
         value = self.coordinator.data.get(self._register.name)
         if value is None:
             return None
@@ -96,7 +97,7 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
             manufacturer=MANUFACTURER,
             model=MODEL,
         )
-        self._cancel_timer: Callable[[], None] | None = None
+        self._cancel_timer: callback | None = None
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
