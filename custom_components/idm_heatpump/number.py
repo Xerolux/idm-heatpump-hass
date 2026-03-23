@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
 
@@ -47,5 +48,7 @@ class IdmNumber(IdmEntity, NumberEntity):
         except Exception as err:
             _LOGGER.error("Failed to write %s = %s: %s", self._register.name, value, err)
             raise HomeAssistantError(
-                f"Failed to set {self.entity_description.name}: {err}"
+                translation_domain=DOMAIN,
+                translation_key="write_failed",
+                translation_placeholders={"error": str(err)},
             ) from err
