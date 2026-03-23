@@ -41,6 +41,7 @@ def _stub_pymodbus() -> None:
         return
 
     pymodbus = ModuleType("pymodbus")
+    pymodbus.__version__ = "3.11.2"
     sys.modules["pymodbus"] = pymodbus
 
     # pymodbus.client
