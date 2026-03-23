@@ -43,8 +43,13 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
 
 async def async_unload_services(hass: HomeAssistant) -> None:
-    """Remove services when no more IDM entries are configured."""
-    if hass.config_entries.async_entries(DOMAIN):
+    """Remove services when no more IDM entries are loaded."""
+    loaded = [
+        entry
+        for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.state == ConfigEntryState.LOADED
+    ]
+    if len(loaded) > 1:
         return
     for service in _SERVICES:
         hass.services.async_remove(DOMAIN, service)
