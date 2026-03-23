@@ -2,7 +2,7 @@
 
 <p align="center">
   <img src="docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
-  <small><i>KI generiert</i></small>
+  <small><i>KI generiertes Bild</i></small>
 </p>
 
 [![GitHub Release][releases-shield]][releases]
