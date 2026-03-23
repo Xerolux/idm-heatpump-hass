@@ -9,6 +9,7 @@
 [![GitHub Sponsor][sponsor-badge]][github-sponsors]
 [![Ko-Fi][kofi-badge]][kofi]
 [![Buy Me A Coffee][bmac-badge]][bmac]
+[![Tesla](https://img.shields.io/badge/Tesla-Referral-red?style=for-the-badge&logo=tesla)](https://ts.la/sebastian564489)
 
 [![Release Management](https://github.com/Xerolux/idm-heatpump-hass/actions/workflows/release.yml/badge.svg)](https://github.com/Xerolux/idm-heatpump-hass/actions/workflows/release.yml)
 
