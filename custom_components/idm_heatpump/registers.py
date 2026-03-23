@@ -869,6 +869,7 @@ def get_all_sensor_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
     descriptions = list(SYSTEM_SENSORS) + list(PV_SENSORS)
     for circuit in circuits:
@@ -883,6 +884,7 @@ def get_all_binary_sensor_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
     descriptions = list(BINARY_SENSORS)
     for z in range(zone_count):
@@ -895,9 +897,11 @@ def get_all_number_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
     descriptions = list(DHW_NUMBERS) + list(BIVALENCY_NUMBERS)
-    descriptions.extend(CASCADE_NUMBERS)
+    if enable_cascade:
+        descriptions.extend(CASCADE_NUMBERS)
     descriptions.extend(EXTERNAL_NUMBERS)
     for circuit in circuits:
         descriptions.extend(_hk_numbers(circuit))
@@ -911,6 +915,7 @@ def get_all_select_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
     descriptions = list(SYSTEM_SELECTS) + list(SOLAR_SELECTS)
     for circuit in circuits:
@@ -925,6 +930,7 @@ def get_all_switch_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
     return list(GLT_SWITCHES)
 
@@ -933,14 +939,15 @@ def collect_all_registers(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
 ) -> list[RegisterDef]:
     """Collect all unique registers for batch reading."""
     all_descriptions = (
-        get_all_sensor_descriptions(circuits, zone_count, zone_rooms)
-        + get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms)
-        + get_all_number_descriptions(circuits, zone_count, zone_rooms)
-        + get_all_select_descriptions(circuits, zone_count, zone_rooms)
-        + get_all_switch_descriptions(circuits, zone_count, zone_rooms)
+        get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+        + get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+        + get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+        + get_all_select_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+        + get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     )
 
     seen: dict[int, RegisterDef] = {}

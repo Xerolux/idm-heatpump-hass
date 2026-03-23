@@ -24,6 +24,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
@@ -31,6 +32,7 @@ from .const import (
     CONF_TECHNICIAN_CODES,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
@@ -127,6 +129,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
             vol.Required(
                 CONF_TECHNICIAN_CODES,
                 default=options.get(CONF_TECHNICIAN_CODES, False),
+            ): BooleanSelector(BooleanSelectorConfig()),
+            vol.Required(
+                CONF_ENABLE_CASCADE,
+                default=options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE),
             ): BooleanSelector(BooleanSelectorConfig()),
         }
     )

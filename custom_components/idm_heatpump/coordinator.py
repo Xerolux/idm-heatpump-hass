@@ -56,8 +56,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         circuits: list[str],
         zone_count: int,
         zone_rooms: dict[int, int],
+        enable_cascade: bool = False,
     ) -> None:
-        self._registers = collect_all_registers(circuits, zone_count, zone_rooms)
+        self._registers = collect_all_registers(circuits, zone_count, zone_rooms, enable_cascade)
 
     @property
     def sensor_descriptions(self) -> list[dict[str, Any]]:

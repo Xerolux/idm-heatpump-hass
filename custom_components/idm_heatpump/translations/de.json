@@ -39,14 +39,16 @@
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
-          "technician_codes": "Fachmann-Ebene Codes anzeigen"
+          "technician_codes": "Fachmann-Ebene Codes anzeigen",
+          "enable_cascade": "Kaskaden-Register aktivieren"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Sensoren, die inaktive Werte liefern (z. B. −1,0), werden automatisch als *nicht verfügbar* markiert und ausgeblendet.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
-          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert."
+          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
+          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind."
         }
       },
       "zones": {
@@ -98,14 +100,16 @@
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
-          "technician_codes": "Fachmann-Ebene Codes anzeigen"
+          "technician_codes": "Fachmann-Ebene Codes anzeigen",
+          "enable_cascade": "Kaskaden-Register aktivieren"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Sensoren, die inaktive Werte liefern (z. B. −1,0), werden automatisch als *nicht verfügbar* markiert und ausgeblendet.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
-          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert."
+          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
+          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind."
         }
       },
       "zones": {
