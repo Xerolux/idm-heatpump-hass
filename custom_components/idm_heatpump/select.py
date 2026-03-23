@@ -1,3 +1,7 @@
+# IDM Heatpump for Home Assistant
+# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
+# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# Lizenz: MIT
 from __future__ import annotations
 """Select platform for IDM Heatpump."""
 
