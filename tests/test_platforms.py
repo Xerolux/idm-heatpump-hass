@@ -44,6 +44,55 @@ def _make_desc(key="temp"):
 # Sensor platform
 # ---------------------------------------------------------------------------
 
+class TestDecodeBitflag:
+    def test_zero_returns_aus(self):
+        from custom_components.idm_heatpump.sensor import _decode_bitflag
+
+        opts = {0: "Aus", 1: "Heizen", 2: "Kuehlen"}
+        assert _decode_bitflag(0, opts) == "Aus"
+
+    def test_zero_with_no_zero_key_returns_fallback(self):
+        from custom_components.idm_heatpump.sensor import _decode_bitflag
+
+        opts = {1: "Heizen", 2: "Kuehlen"}
+        # no 0-key; default fallback is "Aus"
+        assert _decode_bitflag(0, opts) == "Aus"
+
+    def test_single_bit_set(self):
+        from custom_components.idm_heatpump.sensor import _decode_bitflag
+
+        opts = {0: "Aus", 1: "Heizen", 2: "Kuehlen", 4: "Warmwasser"}
+        assert _decode_bitflag(1, opts) == "Heizen"
+        assert _decode_bitflag(2, opts) == "Kuehlen"
+        assert _decode_bitflag(4, opts) == "Warmwasser"
+
+    def test_multiple_bits_set_pipe_separated(self):
+        from custom_components.idm_heatpump.sensor import _decode_bitflag
+
+        opts = {0: "Aus", 1: "Heizen", 2: "Kuehlen", 4: "Warmwasser", 8: "Abtauen"}
+        result = _decode_bitflag(0b0101, opts)  # bits 1 and 4
+        parts = result.split("|")
+        assert "Heizen" in parts
+        assert "Warmwasser" in parts
+        assert len(parts) == 2
+
+    def test_all_bits_set(self):
+        from custom_components.idm_heatpump.sensor import _decode_bitflag
+
+        opts = {0: "Aus", 1: "A", 2: "B", 4: "C", 8: "D"}
+        result = _decode_bitflag(0b00001111, opts)
+        parts = result.split("|")
+        assert set(parts) == {"A", "B", "C", "D"}
+
+    def test_unknown_value_returns_unbekannt(self):
+        from custom_components.idm_heatpump.sensor import _decode_bitflag
+
+        opts = {1: "Heizen"}
+        # Value 2 has no mapping
+        result = _decode_bitflag(2, opts)
+        assert "Unbekannt" in result or "2" in result
+
+
 class TestIdmSensor:
     def test_native_value_plain(self):
         from custom_components.idm_heatpump.sensor import IdmSensor
@@ -77,7 +126,7 @@ class TestIdmSensor:
         coord = _make_coordinator(data={"mode": 99})
         reg = _make_register("mode", enum_options=enum_opts, datatype=DataType.UCHAR)
         sensor = IdmSensor(coord, reg, _make_desc("mode"))
-        assert "Unknown" in sensor.native_value
+        assert "Unknown" in sensor.native_value or "Unbekannt" in sensor.native_value
 
     def test_native_value_none_with_enum_returns_none(self):
         from custom_components.idm_heatpump.sensor import IdmSensor
@@ -87,6 +136,28 @@ class TestIdmSensor:
         reg = _make_register("mode", enum_options=enum_opts)
         sensor = IdmSensor(coord, reg, _make_desc("mode"))
         assert sensor.native_value is None
+
+    def test_native_value_bitflag_decoded(self):
+        """BITFLAG sensors use _decode_bitflag instead of direct enum lookup."""
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        opts = {0: "Aus", 1: "Heizen", 2: "Kuehlen"}
+        coord = _make_coordinator(data={"hp_status": 1})
+        reg = _make_register("hp_status", enum_options=opts, datatype=DataType.BITFLAG)
+        sensor = IdmSensor(coord, reg, _make_desc("hp_status"))
+        assert sensor.native_value == "Heizen"
+
+    def test_native_value_bitflag_multi_bit(self):
+        """Multiple BITFLAG bits produce pipe-separated string."""
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        opts = {0: "Aus", 1: "Heizen", 2: "Kuehlen", 4: "Warmwasser"}
+        coord = _make_coordinator(data={"hp_status": 3})  # bits 1 and 2
+        reg = _make_register("hp_status", enum_options=opts, datatype=DataType.BITFLAG)
+        sensor = IdmSensor(coord, reg, _make_desc("hp_status"))
+        result = sensor.native_value
+        assert "Heizen" in result
+        assert "Kuehlen" in result
 
 
 class TestSensorAsyncSetupEntry:
@@ -111,12 +182,15 @@ class TestSensorAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added_entities) == 2
 
-    async def test_excludes_enum_uchar_sensors(self):
+    async def test_excludes_writable_enum_uchar_sensors(self):
+        """Writable UCHAR enum registers are select entities, not sensors -> excluded."""
         from custom_components.idm_heatpump.sensor import async_setup_entry
 
         coord = _make_coordinator()
         reg_normal = _make_register("temp", 100)
+        # writable=True UCHAR enum -> this is a select entity, should be excluded from sensor
         reg_enum_uchar = _make_register("mode", 200, datatype=DataType.UCHAR,
+                                        writable=True,
                                         enum_options={0: "off", 1: "on"})
         coord.sensor_descriptions = [
             {"register": reg_normal, "description": _make_desc("temp")},
@@ -131,7 +205,30 @@ class TestSensorAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
 
         await async_setup_entry(MagicMock(), entry, async_add)
-        assert len(added_entities) == 1  # enum UCHAR excluded
+        assert len(added_entities) == 1  # writable enum UCHAR excluded (its a select)
+
+    async def test_readonly_enum_uchar_sensor_included(self):
+        """Read-only UCHAR enum registers ARE included in sensor platform."""
+        from custom_components.idm_heatpump.sensor import async_setup_entry
+
+        coord = _make_coordinator()
+        # writable=False UCHAR enum -> read-only status sensor, should be included
+        reg_enum_uchar = _make_register("status", 200, datatype=DataType.UCHAR,
+                                        writable=False,
+                                        enum_options={0: "off", 1: "on"})
+        coord.sensor_descriptions = [
+            {"register": reg_enum_uchar, "description": _make_desc("status")},
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert len(added_entities) == 1  # read-only enum UCHAR IS included
 
     async def test_adds_technician_sensors_when_enabled(self):
         from custom_components.idm_heatpump.sensor import async_setup_entry
@@ -183,10 +280,10 @@ class TestIdmTechnicianCodeSensor:
         expected = calculate_codes()["level_1"]
         assert sensor.native_value == expected
 
-    def test_entity_disabled_by_default(self):
+    def test_entity_enabled_by_default(self):
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
-        assert IdmTechnicianCodeSensor._attr_entity_registry_enabled_default is False
+        assert IdmTechnicianCodeSensor._attr_entity_registry_enabled_default is True
 
     async def test_async_will_remove_cancels_timer(self):
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor

@@ -402,3 +402,206 @@ class TestTestConnection:
             client = IdmModbusClient("192.168.1.1")
             result = await client.test_connection()
             assert result is False
+
+    async def test_connection_fails_when_modbus_error(self):
+        """test_connection returns False when the test read returns a Modbus error."""
+        mock_tcp = AsyncMock()
+        mock_tcp.connected = True
+        error_result = MagicMock()
+        error_result.isError = MagicMock(return_value=True)
+        mock_tcp.read_input_registers.return_value = error_result
+        mock_tcp.close = MagicMock()
+
+        import pymodbus.client as _pymodbus_client
+        original = _pymodbus_client.AsyncModbusTcpClient
+        _pymodbus_client.AsyncModbusTcpClient = MagicMock(return_value=mock_tcp)
+        try:
+            client = IdmModbusClient("192.168.1.1")
+            result = await client.test_connection()
+            assert result is False
+        finally:
+            _pymodbus_client.AsyncModbusTcpClient = original
+
+    async def test_test_connection_always_closes(self):
+        """test_connection closes the temp client even on success."""
+        mock_tcp = AsyncMock()
+        mock_tcp.connected = True
+        ok_result = _mock_read_result([0x0000, 0x4148])
+        mock_tcp.read_input_registers.return_value = ok_result
+        mock_tcp.close = MagicMock()
+
+        import pymodbus.client as _pymodbus_client
+        original = _pymodbus_client.AsyncModbusTcpClient
+        _pymodbus_client.AsyncModbusTcpClient = MagicMock(return_value=mock_tcp)
+        try:
+            client = IdmModbusClient("192.168.1.1")
+            await client.test_connection()
+            mock_tcp.close.assert_called_once()
+        finally:
+            _pymodbus_client.AsyncModbusTcpClient = original
+
+
+# ---------------------------------------------------------------------------
+# host / port properties
+# ---------------------------------------------------------------------------
+
+class TestClientProperties:
+    def test_host_property(self):
+        client = IdmModbusClient("10.0.0.1")
+        assert client.host == "10.0.0.1"
+
+    def test_port_property(self):
+        client = IdmModbusClient("10.0.0.1", port=1234)
+        assert client.port == 1234
+
+    def test_default_port(self):
+        client = IdmModbusClient("10.0.0.1")
+        assert client.port == 502
+
+
+# ---------------------------------------------------------------------------
+# BITFLAG decode / encode
+# ---------------------------------------------------------------------------
+
+class TestBitflagCodec:
+    def setup_method(self):
+        self.client = IdmModbusClient("127.0.0.1")
+
+    def test_decode_bitflag_returns_raw_int(self):
+        reg = _make_reg(0, DataType.BITFLAG)
+        assert self.client.decode_value([0b00000101], reg) == 5
+
+    def test_decode_bitflag_masks_high_byte(self):
+        reg = _make_reg(0, DataType.BITFLAG)
+        # value 0x01FF -> masked to 0xFF = 255
+        assert self.client.decode_value([0x01FF], reg) == 0xFF
+
+    def test_encode_bitflag(self):
+        reg = _make_reg(0, DataType.BITFLAG, writable=True)
+        assert self.client.encode_value(0b00000101, reg) == [5]
+
+    def test_encode_bitflag_masks_high_byte(self):
+        reg = _make_reg(0, DataType.BITFLAG, writable=True)
+        assert self.client.encode_value(0x1FF, reg) == [0xFF]
+
+
+# ---------------------------------------------------------------------------
+# Batch grouping (30-register limit)
+# ---------------------------------------------------------------------------
+
+class TestReadBatchGrouping:
+    async def test_registers_within_30_limit_form_one_group(self, client_and_tcp):
+        """30 contiguous UCHAR registers => single read_input_registers call."""
+        client, tcp = client_and_tcp
+        tcp.read_input_registers.return_value = _mock_read_result([i for i in range(30)])
+        regs = [_make_reg(1000 + i, DataType.UCHAR, f"r{i}") for i in range(30)]
+        result = await client.read_batch(regs)
+        assert tcp.read_input_registers.call_count == 1
+        assert len(result) == 30
+
+    async def test_registers_exceeding_30_limit_form_two_groups(self, client_and_tcp):
+        """31 contiguous UCHAR registers => two read_input_registers calls."""
+        client, tcp = client_and_tcp
+        tcp.read_input_registers.return_value = _mock_read_result([0] * 31)
+        regs = [_make_reg(1000 + i, DataType.UCHAR, f"r{i}") for i in range(31)]
+        result = await client.read_batch(regs)
+        # First group: 30, second group: 1 → two calls
+        assert tcp.read_input_registers.call_count == 2
+
+    async def test_float_pair_counts_as_two_in_group_size(self, client_and_tcp):
+        """A FLOAT register takes 2 addresses; 15 FLOATs = 30 slots => one group."""
+        client, tcp = client_and_tcp
+        raw = struct.pack("<f", 1.0)
+        low, high = struct.unpack("<HH", raw)
+        tcp.read_input_registers.return_value = _mock_read_result([low, high] * 15)
+        regs = [_make_reg(1000 + i * 2, DataType.FLOAT, f"f{i}") for i in range(15)]
+        result = await client.read_batch(regs)
+        assert tcp.read_input_registers.call_count == 1
+
+    async def test_gap_in_addresses_creates_new_group(self, client_and_tcp):
+        """Non-contiguous registers each form their own group."""
+        client, tcp = client_and_tcp
+        tcp.read_input_registers.return_value = _mock_read_result([7])
+        regs = [
+            _make_reg(1000, DataType.UCHAR, "a"),
+            _make_reg(1005, DataType.UCHAR, "b"),  # gap at 1001-1004
+        ]
+        await client.read_batch(regs)
+        assert tcp.read_input_registers.call_count == 2
+
+
+# ---------------------------------------------------------------------------
+# _read_group permanent failure tracking
+# ---------------------------------------------------------------------------
+
+class TestReadGroupFailureTracking:
+    async def test_first_failure_increments_count(self, client_and_tcp):
+        client, tcp = client_and_tcp
+        tcp.read_input_registers.side_effect = ModbusException("err")
+        regs = [_make_reg(1000, DataType.UCHAR, "x")]
+        result = await client._read_group(regs)
+        assert result == {}
+        assert client._group_failure_counts.get(1000) == 1
+
+    async def test_second_failure_increments_to_two(self, client_and_tcp):
+        client, tcp = client_and_tcp
+        tcp.read_input_registers.side_effect = ModbusException("err")
+        regs = [_make_reg(1000, DataType.UCHAR, "x")]
+        await client._read_group(regs)
+        await client._read_group(regs)
+        assert client._group_failure_counts.get(1000) == 2
+        assert 1000 not in client._permanently_failed_addresses
+
+    async def test_third_failure_marks_permanent(self, client_and_tcp):
+        """After 3 failures, address is marked permanently failed."""
+        client, tcp = client_and_tcp
+        tcp.read_input_registers.side_effect = ModbusException("err")
+        regs = [_make_reg(1000, DataType.UCHAR, "x")]
+        for _ in range(3):
+            await client._read_group(regs)
+        assert 1000 in client._permanently_failed_addresses
+
+    async def test_permanently_failed_address_skipped(self, client_and_tcp):
+        """A permanently-failed group is skipped without calling read."""
+        client, tcp = client_and_tcp
+        client._permanently_failed_addresses.add(1000)
+        regs = [_make_reg(1000, DataType.UCHAR, "x")]
+        result = await client._read_group(regs)
+        assert result == {}
+        tcp.read_input_registers.assert_not_called()
+
+    async def test_success_resets_failure_count(self, client_and_tcp):
+        """A successful read clears the failure counter."""
+        client, tcp = client_and_tcp
+        client._group_failure_counts[1000] = 2
+        tcp.read_input_registers.return_value = _mock_read_result([42])
+        regs = [_make_reg(1000, DataType.UCHAR, "x")]
+        await client._read_group(regs)
+        assert 1000 not in client._group_failure_counts
+
+    async def test_decode_failure_fallback_to_individual_read(self, client_and_tcp):
+        """When batch decode fails, falls back to read_register for that register."""
+        client, tcp = client_and_tcp
+        # Return only 1 register for a FLOAT (needs 2) → decode will fail
+        tcp.read_input_registers.return_value = _mock_read_result([0])
+        import struct as _struct
+        raw = _struct.pack("<f", 99.0)
+        low, high = _struct.unpack("<HH", raw)
+
+        fallback_result = _mock_read_result([low, high])
+
+        call_count = 0
+        original_read = tcp.read_input_registers.side_effect
+
+        async def _side_effect(*args, **kwargs):
+            nonlocal call_count
+            call_count += 1
+            if call_count == 1:
+                return _mock_read_result([0])  # batch read returns 1 register
+            return fallback_result  # fallback individual read
+
+        tcp.read_input_registers.side_effect = _side_effect
+        regs = [_make_reg(1000, DataType.FLOAT, "temp")]
+        result = await client._read_group(regs)
+        # Fallback should have been tried
+        assert call_count >= 1

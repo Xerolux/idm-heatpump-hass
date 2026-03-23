@@ -205,3 +205,96 @@ class TestWriteRegister:
         result = await _handle_write_register(mock_hass, call)
         assert result["success"] is True
         assert result["value"] == "not_a_number"
+
+    @pytest.mark.parametrize("datatype_str,expected_type", [
+        ("uint16", "UINT16"),
+        ("UINT16", "UINT16"),  # case-insensitive
+        ("int16", "INT16"),
+        ("INT16", "INT16"),
+        ("float", "FLOAT"),
+        ("FLOAT", "FLOAT"),
+        ("uchar", "UCHAR"),
+        ("bool", "BOOL"),
+    ])
+    async def test_all_valid_datatypes(self, mock_hass, datatype_str, expected_type):
+        coord = _make_coordinator_in_hass(mock_hass)
+        call = MagicMock()
+        call.data = {
+            "address": 1000,
+            "value": "0",
+            "acknowledge_risk": True,
+            "datatype": datatype_str,
+        }
+        result = await _handle_write_register(mock_hass, call)
+        assert result["success"] is True
+
+    async def test_invalid_datatype_raises(self, mock_hass):
+        _make_coordinator_in_hass(mock_hass)
+        call = MagicMock()
+        call.data = {
+            "address": 1000,
+            "value": "0",
+            "acknowledge_risk": True,
+            "datatype": "hexfloat",  # invalid
+        }
+        with pytest.raises(ServiceValidationError):
+            await _handle_write_register(mock_hass, call)
+
+    async def test_default_datatype_is_uint16(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        call = MagicMock()
+        # Use a MagicMock that supports .get() naturally
+        data = MagicMock()
+        data.__getitem__ = lambda self, k: {"address": 1000, "value": "5", "acknowledge_risk": True}[k]
+        data.get = lambda k, d=None: {"address": 1000, "value": "5", "acknowledge_risk": True}.get(k, d)
+        call.data = data
+        result = await _handle_write_register(mock_hass, call)
+        assert result["success"] is True
+
+
+class TestGetCoordinatorMultipleDevices:
+    async def test_first_loaded_entry_used(self, mock_hass):
+        """With multiple entries, the first LOADED one is used."""
+        from homeassistant.config_entries import ConfigEntryState
+        from custom_components.idm_heatpump.coordinator import IdmCoordinator
+
+        coord1 = MagicMock(spec=IdmCoordinator)
+        coord1.async_write_register = AsyncMock()
+        coord2 = MagicMock(spec=IdmCoordinator)
+        coord2.async_write_register = AsyncMock()
+
+        entry1 = MagicMock()
+        entry1.state = ConfigEntryState.LOADED
+        entry1.runtime_data = MagicMock()
+        entry1.runtime_data.coordinator = coord1
+
+        entry2 = MagicMock()
+        entry2.state = ConfigEntryState.LOADED
+        entry2.runtime_data = MagicMock()
+        entry2.runtime_data.coordinator = coord2
+
+        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
+        call = MagicMock()
+        result = await _get_coordinator(mock_hass, call)
+        assert result is coord1
+
+    async def test_skips_not_loaded_entries(self, mock_hass):
+        """NOT_LOADED entries are skipped; uses next LOADED entry."""
+        from homeassistant.config_entries import ConfigEntryState
+        from custom_components.idm_heatpump.coordinator import IdmCoordinator
+
+        coord2 = MagicMock(spec=IdmCoordinator)
+        coord2.async_write_register = AsyncMock()
+
+        entry1 = MagicMock()
+        entry1.state = ConfigEntryState.NOT_LOADED
+
+        entry2 = MagicMock()
+        entry2.state = ConfigEntryState.LOADED
+        entry2.runtime_data = MagicMock()
+        entry2.runtime_data.coordinator = coord2
+
+        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
+        call = MagicMock()
+        result = await _get_coordinator(mock_hass, call)
+        assert result is coord2
