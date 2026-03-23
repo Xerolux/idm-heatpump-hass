@@ -352,3 +352,155 @@ class TestOptionsFlow:
         entry = MagicMock()
         options_flow = IdmHeatpumpConfigFlow.async_get_options_flow(entry)
         assert isinstance(options_flow, IdmHeatpumpOptionsFlow)
+
+
+class TestConfigFlowZoneBoundaries:
+    async def test_max_zones_accepted(self):
+        """zone_count=10 with 10 rooms each should not error."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 10,
+        }
+        zone_input = {f"zone_{i}_rooms": 8 for i in range(10)}
+        result = await flow.async_step_zones(zone_input)
+        assert result["type"] == "create_entry"
+        zone_rooms = result["options"][CONF_ZONE_ROOMS]
+        assert zone_rooms == {i: 8 for i in range(10)}
+
+    async def test_zone_count_zero_skips_zones_step(self):
+        """zone_count=0 creates entry directly from options step."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM", "host": "10.0.0.1"}
+        result = await flow.async_step_options({
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HIDE_UNUSED: True,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 0,
+            CONF_TECHNICIAN_CODES: False,
+        })
+        assert result["type"] == "create_entry"
+
+    async def test_all_seven_heating_circuits(self):
+        """Selecting all 7 circuits proceeds to entry creation."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM", "host": "10.0.0.1"}
+        result = await flow.async_step_options({
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HIDE_UNUSED: True,
+            CONF_HEATING_CIRCUITS: ["a", "b", "c", "d", "e", "f", "g"],
+            CONF_ZONE_COUNT: 0,
+            CONF_TECHNICIAN_CODES: False,
+        })
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_HEATING_CIRCUITS] == ["a", "b", "c", "d", "e", "f", "g"]
+
+    async def test_zone_rooms_stored_correctly(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM", "host": "10.0.0.1"}
+        flow._options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 3,
+        }
+        result = await flow.async_step_zones({
+            "zone_0_rooms": 1,
+            "zone_1_rooms": 4,
+            "zone_2_rooms": 8,
+        })
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_ZONE_ROOMS] == {0: 1, 1: 4, 2: 8}
+
+
+class TestConfigFlowFullFlow:
+    async def test_user_to_options_to_create_entry(self):
+        """Full happy path: user step → options step → create_entry."""
+        flow = _make_flow()
+        # Step 1: user
+        with patch.object(flow, "_test_connection", return_value=True):
+            step1 = await flow.async_step_user({
+                "name": "IDM Heat",
+                "host": "192.168.1.100",
+                "port": 502,
+                "slave_id": 1,
+            })
+        assert step1["type"] == "form"
+        assert step1["step_id"] == "options"
+
+        # Step 2: options (no zones)
+        step2 = await flow.async_step_options({
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HIDE_UNUSED: True,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 0,
+            CONF_TECHNICIAN_CODES: False,
+        })
+        assert step2["type"] == "create_entry"
+        assert step2["title"] == "IDM Heat"
+
+    async def test_user_to_options_to_zones_to_create_entry(self):
+        """Full happy path with zones: user → options → zones → create_entry."""
+        flow = _make_flow()
+        with patch.object(flow, "_test_connection", return_value=True):
+            await flow.async_step_user({
+                "name": "IDM Zone",
+                "host": "192.168.1.200",
+                "port": 502,
+                "slave_id": 1,
+            })
+
+        step2 = await flow.async_step_options({
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HIDE_UNUSED: False,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 2,
+            CONF_TECHNICIAN_CODES: False,
+        })
+        assert step2["type"] == "form"
+        assert step2["step_id"] == "zones"
+
+        step3 = await flow.async_step_zones({
+            "zone_0_rooms": 3,
+            "zone_1_rooms": 5,
+        })
+        assert step3["type"] == "create_entry"
+        assert step3["options"][CONF_ZONE_ROOMS] == {0: 3, 1: 5}
+        assert step3["options"][CONF_ZONE_COUNT] == 2
+
+
+class TestOptionsFlowFull:
+    async def test_options_change_scan_interval(self):
+        flow = IdmHeatpumpOptionsFlow()
+        flow.config_entry = MagicMock()
+        flow.config_entry.options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 0,
+        }
+        result = await flow.async_step_options({
+            CONF_SCAN_INTERVAL: 30,
+            CONF_HIDE_UNUSED: False,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 0,
+            CONF_TECHNICIAN_CODES: True,
+        })
+        assert result["type"] == "create_entry"
+        assert result["data"][CONF_SCAN_INTERVAL] == 30
+        assert result["data"][CONF_TECHNICIAN_CODES] is True
+
+    async def test_options_defaults_loaded_from_entry(self):
+        """async_step_init loads existing options as defaults."""
+        flow = IdmHeatpumpOptionsFlow()
+        flow.config_entry = MagicMock()
+        flow.config_entry.options = {
+            CONF_SCAN_INTERVAL: 25,
+            CONF_HEATING_CIRCUITS: ["a", "b"],
+            CONF_ZONE_COUNT: 1,
+            CONF_HIDE_UNUSED: False,
+        }
+        result = await flow.async_step_init(None)
+        # Should re-display form with existing options pre-filled
+        assert result["type"] == "form"
+        assert result["step_id"] == "options"
