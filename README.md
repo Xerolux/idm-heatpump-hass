@@ -1,10 +1,5 @@
 # 🔥 IDM Heatpump für Home Assistant
 
-<p align="center">
-  <img src="docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
-  <small><i>KI generiertes Bild</i></small>
-</p>
-
 [![GitHub Release][releases-shield]][releases]
 [![Downloads][downloads-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
@@ -18,6 +13,11 @@
 [![Release Management](https://github.com/Xerolux/idm-heatpump-hass/actions/workflows/release.yml/badge.svg)](https://github.com/Xerolux/idm-heatpump-hass/actions/workflows/release.yml)
 
 > **Steuerung und Überwachung deiner IDM Navigator Wärmepumpe direkt in Home Assistant – 100% lokal über Modbus TCP.**
+
+<p align="center">
+  <img src="docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
+  <small><i>KI generiertes Bild</i></small>
+</p>
 
 ---
 
