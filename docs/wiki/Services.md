@@ -2,11 +2,17 @@
 
 In dieser Integration gibt es mehrere Möglichkeiten, Werte auf die Wärmepumpe zu schreiben:
 1. **Über die regulären Entitäten (Empfohlen):**
-   Viele Werte (wie Temperaturen, Sollwerte oder Modi) werden als `number`, `select` oder `switch` Entitäten in Home Assistant abgebildet. Diese kannst du direkt in Dashboards verändern oder in Automatisierungen mit den Standard-Diensten (z.B. `number.set_value` oder `select.select_option`) nutzen.
+   Viele Werte (wie Temperaturen, Sollwerte oder Modi) werden als `number`, `select` oder `switch` Entitäten in Home Assistant abgebildet. Diese kannst du direkt in Dashboards verändern oder in Automatisierungen mit den Standard-Diensten (z.B. `number.set_value` oder `select.select_option`) nutzen. Eine Liste aller verstellbaren Entitäten findest du unter [Entities](Entities).
 2. **Über spezifische Dienste:**
    Für spezielle Aktionen wie das Quittieren von Fehlern oder das Setzen des Systemmodus gibt es dedizierte Dienste (z.B. `idm_heatpump.set_system_mode`).
-3. **Direkter Modbus-Zugriff (Fortgeschritten):**
-   Fehlt eine Entität für ein bestimmtes Register, kannst du mit dem Dienst `idm_heatpump.write_register` direkt Werte in beliebige Modbus-Register schreiben. **Achtung: Dies geschieht auf eigene Gefahr.**
+3. **Direkter Modbus-Zugriff (Fortgeschritten / Alternative):**
+   Fehlt eine Entität für ein bestimmtes Register oder möchtest du gezielt Register ansprechen, kannst du mit dem Dienst `idm_heatpump.write_register` direkt Werte in beliebige Modbus-Register schreiben. Eine Übersicht der Register findest du unter [Modbus-Register](Modbus-Register). **Achtung: Dies geschieht auf eigene Gefahr.**
+
+### Welche Werte können geschrieben werden?
+Mit dieser Integration kannst du im Wesentlichen folgende Werte verändern (siehe [Entities](Entities)):
+- **Temperaturen & Sollwerte** über `number`-Entitäten (z. B. Warmwasser-Sollwert, Heizkreis-Sollwert, Heizgrenze).
+- **Betriebsmodi** über `select`-Entitäten (z. B. System-Betriebsmodus, Heizkreis-Modus, Raum-Modus).
+- **GLT-Temperaturanforderungen** über `switch`-Entitäten (zyklisches Beschreiben der GLT-Register wird automatisch von der Integration gehandhabt).
 
 ---
 
