@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "IDM Navigator Wärmepumpe einrichten",
-        "description": "[Hilfe benötigt? Lese die Dokumentation](https://github.com/Xerolux/idm-heatpump-hass/wiki)\n\nGib die Verbindungsdaten deiner IDM Wärmepumpe ein.\n\n**Voraussetzung:** Modbus TCP muss in der IDM-Steuerung unter *Fachmannebene → Kommunikation → Modbus* aktiviert sein.",
+        "description": "[Hilfe benötigt? Lese die Dokumentation]({wiki_url})\n\nGib die Verbindungsdaten deiner IDM Wärmepumpe ein.\n\n**Voraussetzung:** Modbus TCP muss in der IDM-Steuerung unter *Fachmannebene → Kommunikation → Modbus* aktiviert sein.",
         "data": {
           "name": "Name",
           "host": "IP-Adresse / Hostname",
@@ -19,7 +19,7 @@
       },
       "reconfigure": {
         "title": "Verbindung anpassen – {name}",
-        "description": "[Hilfe benötigt? Lese die Dokumentation](https://github.com/Xerolux/idm-heatpump-hass/wiki)\n\nAktuelle Verbindung: **{host}**\n\nÄndere hier die Netzwerkdaten deiner Wärmepumpe. Die Integration wird danach automatisch neu gestartet.",
+        "description": "[Hilfe benötigt? Lese die Dokumentation]({wiki_url})\n\nAktuelle Verbindung: **{host}**\n\nÄndere hier die Netzwerkdaten deiner Wärmepumpe. Die Integration wird danach automatisch neu gestartet.",
         "data": {
           "host": "IP-Adresse / Hostname",
           "port": "Port",

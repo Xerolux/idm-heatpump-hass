@@ -192,6 +192,9 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             data_schema=self.add_suggested_values_to_schema(
                 STEP_USER_DATA_SCHEMA, user_input or {}
             ),
+            description_placeholders={
+                "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
+            },
             errors=errors,
         )
 
@@ -232,6 +235,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={
                 "name": entry.title,
                 "host": entry.data[CONF_HOST],
+                "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
             },
             errors=errors,
         )
