@@ -448,6 +448,11 @@ def _stub_homeassistant() -> None:
     helpers.event = event_mod
     event_mod.async_track_time_interval = MagicMock(return_value=MagicMock())
 
+    # homeassistant.helpers.config_validation
+    cv_mod = _make_module("homeassistant.helpers.config_validation")
+    helpers.config_validation = cv_mod
+    cv_mod.config_entry_only_config_schema = lambda domain: {}
+
     # homeassistant.components stubs
     components = _make_module("homeassistant.components")
 

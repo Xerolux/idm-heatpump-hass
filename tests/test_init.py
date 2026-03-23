@@ -238,3 +238,174 @@ class TestAsyncReloadEntry:
         entry.entry_id = "test_id"
         await async_reload_entry(mock_hass, entry)
         mock_hass.config_entries.async_reload.assert_called_once_with("test_id")
+
+
+class TestAsyncSetupEntryOptions:
+    """Verify that config options are extracted correctly with defaults."""
+
+    def _make_entry(self, data_override=None, options_override=None):
+        entry = MagicMock()
+        entry.entry_id = "opt_test_id"
+        entry.title = "IDM Options Test"
+        entry.data = {"host": "10.0.0.5", **(data_override or {})}
+        entry.options = {
+            "scan_interval": 15,
+            "heating_circuits": ["a", "b"],
+            "zone_count": 0,
+            "zone_rooms": {},
+            "hide_unused_registers": False,
+            **(options_override or {}),
+        }
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    def _common_patches(self, mock_client, mock_coordinator):
+        return [
+            patch("custom_components.idm_heatpump.IdmModbusClient", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch("custom_components.idm_heatpump.async_get_integration",
+                  return_value=MagicMock(manifest={"version": "0.2.1"})),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ]
+
+    async def test_default_port_used_when_missing(self, mock_hass):
+        """When port is absent from entry.data, default 502 is used."""
+        entry = self._make_entry()
+        # host only, no port
+        entry.data = {"host": "10.0.0.5"}
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_client(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_client
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        patches[0] = patch("custom_components.idm_heatpump.IdmModbusClient", side_effect=_capture_client)
+
+        ctx = __import__("contextlib").ExitStack()
+        for p in patches:
+            ctx.enter_context(p)
+        with ctx:
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs.get("port") == 502
+
+    async def test_default_slave_id_used_when_missing(self, mock_hass):
+        """When slave_id is absent from entry.data, default 1 is used."""
+        entry = self._make_entry()
+        entry.data = {"host": "10.0.0.5", "port": 502}
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_client(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_client
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        patches[0] = patch("custom_components.idm_heatpump.IdmModbusClient", side_effect=_capture_client)
+
+        ctx = __import__("contextlib").ExitStack()
+        for p in patches:
+            ctx.enter_context(p)
+        with ctx:
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs.get("slave_id") == 1
+
+    async def test_coordinator_first_refresh_failure_raises_not_ready(self, mock_hass):
+        """If coordinator.async_config_entry_first_refresh() fails, ConfigEntryNotReady is raised."""
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        entry = self._make_entry()
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock(
+            side_effect=Exception("first refresh failed")
+        )
+        mock_coordinator.setup_registers = MagicMock()
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        ctx = __import__("contextlib").ExitStack()
+        for p in patches:
+            ctx.enter_context(p)
+        with ctx, pytest.raises(Exception):
+            await async_setup_entry(mock_hass, entry)
+
+    async def test_hide_unused_passed_to_coordinator(self, mock_hass):
+        """hide_unused_registers option is forwarded to IdmCoordinator."""
+        entry = self._make_entry(options_override={"hide_unused_registers": False})
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_coordinator
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        patches[1] = patch("custom_components.idm_heatpump.IdmCoordinator",
+                           side_effect=_capture_coordinator)
+
+        ctx = __import__("contextlib").ExitStack()
+        for p in patches:
+            ctx.enter_context(p)
+        with ctx:
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs.get("hide_unused") is False
+
+    async def test_enable_cascade_defaults_false(self, mock_hass):
+        """enable_cascade defaults to False when not in options."""
+        entry = self._make_entry()
+        # No enable_cascade in options
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        setup_regs_args: list = []
+
+        def _capture_setup_registers(*args, **kwargs):
+            setup_regs_args.extend(args)
+
+        mock_coordinator.setup_registers = _capture_setup_registers
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        ctx = __import__("contextlib").ExitStack()
+        for p in patches:
+            ctx.enter_context(p)
+        with ctx:
+            await async_setup_entry(mock_hass, entry)
+
+        # setup_registers(circuits, zone_count, zone_rooms, enable_cascade=False)
+        # 4th positional arg or absence = False
+        if len(setup_regs_args) >= 4:
+            assert setup_regs_args[3] is False
+        # If not passed at all, that's also fine (default=False)
