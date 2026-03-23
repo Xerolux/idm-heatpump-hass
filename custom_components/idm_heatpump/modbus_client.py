@@ -13,13 +13,32 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+import pymodbus
 from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.exceptions import ConnectionException, ModbusException
 
 _LOGGER = logging.getLogger(__name__)
 
 # pymodbus >= 3.12 uses device_id (previously called slave)
-_PMODBUS_SLAVE_PARAM = "device_id"
+def _get_slave_param() -> str:
+    try:
+        from packaging.version import Version
+        if Version(pymodbus.__version__) >= Version("3.12.0"):
+            return "device_id"
+        return "slave"
+    except ImportError:
+        # Fallback if packaging is not available
+        parts = pymodbus.__version__.split(".")
+        try:
+            major = int(parts[0])
+            minor = int(parts[1])
+            if major > 3 or (major == 3 and minor >= 12):
+                return "device_id"
+        except (ValueError, IndexError):
+            pass
+        return "slave"
+
+_PMODBUS_SLAVE_PARAM = _get_slave_param()
 
 
 class DataType(Enum):
