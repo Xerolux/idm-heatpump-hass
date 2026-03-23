@@ -154,10 +154,6 @@ Der **IDM Navigator 2.0** von [IDM EnergieSysteme GmbH](https://www.idm-energies
 - **Offizieller Shop:** [idm-energiesysteme.de](https://www.idm-energiesysteme.de/)
 - **Modbus-Dokumentation:** Navigator 2.0 Modbus TCP Registerbeschreibung
 
-### Referenz-Addon
-
-Dieses Projekt orientiert sich am Workflow und der Code-Struktur von [Violet Pool Controller][violet] – unserem Referenz-Addon für Home Assistant Integrationen.
-
 ---
 
 ## ⚠️ Haftungsausschluss / Disclaimer
