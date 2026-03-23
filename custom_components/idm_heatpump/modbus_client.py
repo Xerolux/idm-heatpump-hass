@@ -14,16 +14,8 @@ from pymodbus.exceptions import ConnectionException, ModbusException
 
 _LOGGER = logging.getLogger(__name__)
 
-_PMODBUS_SLAVE_PARAM = "slave"
-
-try:
-    import inspect
-    from pymodbus.client.mixin import ModbusClientMixin
-    sig = inspect.signature(ModbusClientMixin.read_input_registers)
-    if "device_id" in sig.parameters:
-        _PMODBUS_SLAVE_PARAM = "device_id"
-except Exception:  # noqa: BLE001
-    _LOGGER.debug("Could not detect pymodbus slave parameter name; using default 'slave'")
+# pymodbus >= 3.12 uses device_id (previously called slave)
+_PMODBUS_SLAVE_PARAM = "device_id"
 
 
 class DataType(Enum):
