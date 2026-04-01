@@ -16,7 +16,7 @@ from custom_components.idm_heatpump.services import (
 from custom_components.idm_heatpump.const import DOMAIN
 
 
-def _make_coordinator_in_hass(mock_hass):
+def _make_coordinator_in_hass(mock_hass, entry_id: str = "entry-1"):
     from homeassistant.config_entries import ConfigEntryState
     from custom_components.idm_heatpump.coordinator import IdmCoordinator
 
@@ -27,6 +27,7 @@ def _make_coordinator_in_hass(mock_hass):
 
     entry = MagicMock()
     entry.state = ConfigEntryState.LOADED
+    entry.entry_id = entry_id
     entry.runtime_data = MagicMock()
     entry.runtime_data.coordinator = coord
 
@@ -86,12 +87,14 @@ class TestGetCoordinator:
     async def test_returns_coordinator(self, mock_hass):
         coord = _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
+        call.data = {}
         result = await _get_coordinator(mock_hass, call)
         assert result is coord
 
     async def test_raises_when_no_entries(self, mock_hass):
         mock_hass.config_entries.async_entries = MagicMock(return_value=[])
         call = MagicMock()
+        call.data = {}
         with pytest.raises(ServiceValidationError):
             await _get_coordinator(mock_hass, call)
 
@@ -102,6 +105,7 @@ class TestGetCoordinator:
         entry.state = ConfigEntryState.NOT_LOADED
         mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
         call = MagicMock()
+        call.data = {}
         with pytest.raises(ServiceValidationError):
             await _get_coordinator(mock_hass, call)
 
@@ -118,8 +122,73 @@ class TestGetCoordinator:
         entry.runtime_data = _BrokenRuntime()
         mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
         call = MagicMock()
+        call.data = {}
         with pytest.raises(ServiceValidationError):
             await _get_coordinator(mock_hass, call)
+
+    async def test_uses_entry_id_when_multiple_entries_loaded(self, mock_hass):
+        from homeassistant.config_entries import ConfigEntryState
+        from custom_components.idm_heatpump.coordinator import IdmCoordinator
+
+        coord1 = MagicMock(spec=IdmCoordinator)
+        coord2 = MagicMock(spec=IdmCoordinator)
+
+        entry1 = MagicMock()
+        entry1.state = ConfigEntryState.LOADED
+        entry1.entry_id = "entry-a"
+        entry1.runtime_data = MagicMock()
+        entry1.runtime_data.coordinator = coord1
+
+        entry2 = MagicMock()
+        entry2.state = ConfigEntryState.LOADED
+        entry2.entry_id = "entry-b"
+        entry2.runtime_data = MagicMock()
+        entry2.runtime_data.coordinator = coord2
+
+        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
+
+        call = MagicMock()
+        call.data = {"entry_id": "entry-b"}
+        result = await _get_coordinator(mock_hass, call)
+        assert result is coord2
+
+    async def test_raises_when_entry_id_not_loaded(self, mock_hass):
+        from homeassistant.config_entries import ConfigEntryState
+
+        entry = MagicMock()
+        entry.state = ConfigEntryState.LOADED
+        entry.entry_id = "entry-a"
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.coordinator = MagicMock()
+        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
+
+        call = MagicMock()
+        call.data = {"entry_id": "does-not-exist"}
+        with pytest.raises(ServiceValidationError):
+            await _get_coordinator(mock_hass, call)
+
+    async def test_uses_first_loaded_when_multiple_entries_without_entry_id(self, mock_hass):
+        from homeassistant.config_entries import ConfigEntryState
+        from custom_components.idm_heatpump.coordinator import IdmCoordinator
+
+        coord1 = MagicMock(spec=IdmCoordinator)
+        entry1 = MagicMock()
+        entry1.state = ConfigEntryState.LOADED
+        entry1.entry_id = "entry-a"
+        entry1.runtime_data = MagicMock()
+        entry1.runtime_data.coordinator = coord1
+
+        entry2 = MagicMock()
+        entry2.state = ConfigEntryState.LOADED
+        entry2.entry_id = "entry-b"
+        entry2.runtime_data = MagicMock()
+        entry2.runtime_data.coordinator = MagicMock()
+
+        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
+        call = MagicMock()
+        call.data = {}
+        result = await _get_coordinator(mock_hass, call)
+        assert result is coord1
 
 
 class TestSetSystemMode:
@@ -300,6 +369,7 @@ class TestGetCoordinatorMultipleDevices:
 
         mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
         call = MagicMock()
+        call.data = {}
         result = await _get_coordinator(mock_hass, call)
         assert result is coord1
 
@@ -321,5 +391,6 @@ class TestGetCoordinatorMultipleDevices:
 
         mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
         call = MagicMock()
+        call.data = {}
         result = await _get_coordinator(mock_hass, call)
         assert result is coord2

@@ -6,6 +6,7 @@ from __future__ import annotations
 """Service handlers for IDM Heatpump integration."""
 
 import logging
+from collections.abc import Mapping
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
@@ -59,14 +60,48 @@ async def _get_coordinator(hass: HomeAssistant, call: ServiceCall):
     """Return the first loaded IDM coordinator."""
     from .coordinator import IdmCoordinator
 
-    for entry in hass.config_entries.async_entries(DOMAIN):
-        if entry.state == ConfigEntryState.LOADED:
+    call_data = call.data if isinstance(call.data, Mapping) else {}
+    requested_entry_id = call_data.get("entry_id")
+    if requested_entry_id is not None:
+        requested_entry_id = str(requested_entry_id).strip()
+        if not requested_entry_id:
+            requested_entry_id = None
+
+    loaded_entries = [
+        entry
+        for entry in hass.config_entries.async_entries(DOMAIN)
+        if entry.state == ConfigEntryState.LOADED
+    ]
+
+    if requested_entry_id is not None:
+        for entry in loaded_entries:
+            if str(entry.entry_id) != requested_entry_id:
+                continue
             try:
                 coordinator = entry.runtime_data.coordinator
                 if isinstance(coordinator, IdmCoordinator):
                     return coordinator
             except AttributeError:
-                continue
+                break
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="entry_not_loaded",
+            translation_placeholders={"entry_id": requested_entry_id},
+        )
+
+    if len(loaded_entries) > 1:
+        _LOGGER.debug(
+            "Multiple loaded IDM entries found, using first loaded entry. "
+            "Provide entry_id in service data for explicit selection."
+        )
+
+    for entry in loaded_entries:
+        try:
+            coordinator = entry.runtime_data.coordinator
+            if isinstance(coordinator, IdmCoordinator):
+                return coordinator
+        except AttributeError:
+            continue
     raise ServiceValidationError(
         translation_domain=DOMAIN,
         translation_key="no_device_configured",

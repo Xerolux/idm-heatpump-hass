@@ -159,6 +159,12 @@
     "no_device_configured": {
       "message": "No IDM heat pump is currently configured or loaded."
     },
+    "entry_not_loaded": {
+      "message": "The selected IDM heat pump entry is not loaded: {entry_id}"
+    },
+    "multiple_entries_select_entry": {
+      "message": "Multiple IDM heat pumps are loaded. Please provide entry_id to target a specific device."
+    },
     "invalid_mode": {
       "message": "Invalid operating mode: \"{mode}\". Valid modes: standby, automatik, automatic, abwesend, away, urlaub, holiday, nur warmwasser, hot water only, nur heizung/kuehlung, heating/cooling only."
     },

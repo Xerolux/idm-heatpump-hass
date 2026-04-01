@@ -518,6 +518,16 @@ class TestReadBatchGrouping:
         result = await client.read_batch(regs)
         assert tcp.read_input_registers.call_count == 1
 
+    async def test_sixteen_float_registers_are_split_into_two_groups(self, client_and_tcp):
+        """16 FLOATs consume 32 words and must be split into 2 groups."""
+        client, tcp = client_and_tcp
+        raw = struct.pack("<f", 1.0)
+        low, high = struct.unpack("<HH", raw)
+        tcp.read_input_registers.return_value = _mock_read_result([low, high] * 16)
+        regs = [_make_reg(1000 + i * 2, DataType.FLOAT, f"f{i}") for i in range(16)]
+        await client.read_batch(regs)
+        assert tcp.read_input_registers.call_count == 2
+
     async def test_gap_in_addresses_creates_new_group(self, client_and_tcp):
         """Non-contiguous registers each form their own group."""
         client, tcp = client_and_tcp

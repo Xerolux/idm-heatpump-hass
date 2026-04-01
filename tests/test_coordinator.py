@@ -157,6 +157,22 @@ class TestAsyncUpdateData:
         assert "dead" in coord.unused_registers
         assert "alive" not in coord.unused_registers
 
+    async def test_unused_registers_are_recomputed_each_update(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.read_batch = AsyncMock(
+            side_effect=[
+                {"dead": UNUSED_VALUE, "alive": 5.0},
+                {"dead": 5.0, "alive": 5.5},
+            ]
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, hide_unused=True)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            await coord._async_update_data()
+            assert "dead" in coord.unused_registers
+            await coord._async_update_data()
+            assert "dead" not in coord.unused_registers
+
     async def test_issue_deleted_on_success(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={"temp": 20.0})
