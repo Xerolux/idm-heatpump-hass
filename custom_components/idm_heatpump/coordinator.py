@@ -132,9 +132,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not data:
             raise UpdateFailed("No data received from heat pump")
 
+        new_unused_registers: set[str] = set()
         for reg_name, value in data.items():
             if self.is_register_unused(reg_name, value):
-                self._unused_registers.add(reg_name)
+                new_unused_registers.add(reg_name)
+        self._unused_registers = new_unused_registers
 
         return data
 

@@ -159,6 +159,12 @@
     "no_device_configured": {
       "message": "Keine IDM-Wärmepumpe ist aktuell konfiguriert oder geladen."
     },
+    "entry_not_loaded": {
+      "message": "Der ausgewählte IDM-Wärmepumpen-Eintrag ist nicht geladen: {entry_id}"
+    },
+    "multiple_entries_select_entry": {
+      "message": "Mehrere IDM-Wärmepumpen sind geladen. Bitte gib entry_id an, um ein bestimmtes Gerät auszuwählen."
+    },
     "invalid_mode": {
       "message": "Ungültige Betriebsart: \"{mode}\". Gültige Werte: standby, automatik, automatic, abwesend, away, urlaub, holiday, nur warmwasser, hot water only, nur heizung/kuehlung, heating/cooling only."
     },

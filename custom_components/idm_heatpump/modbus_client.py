@@ -103,7 +103,9 @@ class IdmModbusClient:
 
     async def disconnect(self) -> None:
         if self._client is not None:
-            self._client.close()
+            maybe_coro = self._client.close()
+            if inspect.isawaitable(maybe_coro):
+                await maybe_coro
             self._client = None
             _LOGGER.debug("Disconnected from %s:%d", self._host, self._port)
 
@@ -266,15 +268,21 @@ class IdmModbusClient:
         sorted_regs = sorted(register_list, key=lambda r: r.address)
         groups: list[list[RegisterDef]] = []
         current_group: list[RegisterDef] = [sorted_regs[0]]
+        current_group_word_count = sorted_regs[0].size
 
         for reg in sorted_regs[1:]:
             last = current_group[-1]
             expected_next = last.address + last.size
-            if reg.address == expected_next and (len(current_group) + reg.size) <= 30:
+            if (
+                reg.address == expected_next
+                and (current_group_word_count + reg.size) <= 30
+            ):
                 current_group.append(reg)
+                current_group_word_count += reg.size
             else:
                 groups.append(current_group)
                 current_group = [reg]
+                current_group_word_count = reg.size
         groups.append(current_group)
 
         results: dict[str, Any] = {}
