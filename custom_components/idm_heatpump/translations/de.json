@@ -211,6 +211,10 @@
           "name": "Wert",
           "description": "Zu schreibender Wert."
         },
+        "datatype": {
+          "name": "Datentyp",
+          "description": "Modbus Datentyp (uint16, int16, float, uchar, bool)."
+        },
         "acknowledge_risk": {
           "name": "Risiko bestätigen",
           "description": "Muss auf `true` gesetzt sein, um den Schreibvorgang zu erlauben."

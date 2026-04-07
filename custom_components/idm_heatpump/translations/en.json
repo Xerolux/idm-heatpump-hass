@@ -183,5 +183,43 @@
       "title": "Cannot connect to IDM heat pump",
       "description": "Home Assistant cannot reach the IDM heat pump at **{host}**.\n\nPlease check:\n- Network connectivity to the device\n- Modbus TCP is enabled in the controller (*Installer level → Communication → Modbus*)\n- The IP address and port are correct in the integration settings"
     }
+  },
+  "services": {
+    "set_system_mode": {
+      "name": "Set System Mode",
+      "description": "Sets the operating mode of the heat pump.",
+      "fields": {
+        "mode": {
+          "name": "Mode",
+          "description": "Operating mode (e.g. standby, automatic, holiday)."
+        }
+      }
+    },
+    "acknowledge_errors": {
+      "name": "Acknowledge Errors",
+      "description": "Acknowledges/clears active error messages on the heat pump."
+    },
+    "write_register": {
+      "name": "Write Register",
+      "description": "Writes a value directly to a Modbus register. Only for advanced users - incorrect values can damage the system.",
+      "fields": {
+        "address": {
+          "name": "Register address",
+          "description": "Modbus register address (decimal)."
+        },
+        "value": {
+          "name": "Value",
+          "description": "Value to write."
+        },
+        "datatype": {
+          "name": "Datatype",
+          "description": "Modbus datatype (uint16, int16, float, uchar, bool)."
+        },
+        "acknowledge_risk": {
+          "name": "Acknowledge risk",
+          "description": "Must be set to `true` to allow the write operation."
+        }
+      }
+    }
   }
 }

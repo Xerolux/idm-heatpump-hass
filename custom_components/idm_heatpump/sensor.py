@@ -21,6 +21,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
 from .modbus_client import DataType
+from .technician_codes import calculate_codes
 
 def _decode_bitflag(value: int, options: dict[int, str]) -> str:
     """Decode a bitfield value into a human-readable 'Flag1|Flag2' string."""
@@ -28,7 +29,6 @@ def _decode_bitflag(value: int, options: dict[int, str]) -> str:
         return options.get(0, "Aus")
     active = [label for bit, label in options.items() if bit != 0 and (value & bit) == bit]
     return "|".join(active) if active else f"Unbekannt ({value})"
-from .technician_codes import calculate_codes
 
 PARALLEL_UPDATES = 0
 
