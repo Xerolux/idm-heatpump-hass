@@ -426,6 +426,23 @@ def _stub_homeassistant() -> None:
 
     device_registry_mod.DeviceInfo = _DeviceInfo
 
+    # homeassistant.helpers.entity_registry
+    entity_registry_mod = _make_module("homeassistant.helpers.entity_registry")
+    helpers.entity_registry = entity_registry_mod
+
+    class _RegistryEntry:
+        def __init__(self, config_entry_id=None):
+            self.config_entry_id = config_entry_id
+
+    class _EntityRegistry:
+        def __init__(self):
+            self.entities = {}
+
+        def async_get(self, entity_id):
+            return self.entities.get(entity_id)
+
+    entity_registry_mod.async_get = MagicMock(return_value=_EntityRegistry())
+
     # homeassistant.helpers.issue_registry
     issue_registry_mod = _make_module("homeassistant.helpers.issue_registry")
     helpers.issue_registry = issue_registry_mod

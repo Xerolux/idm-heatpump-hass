@@ -59,13 +59,31 @@ async def async_unload_services(hass: HomeAssistant) -> None:
 async def _get_coordinator(hass: HomeAssistant, call: ServiceCall):
     """Return the first loaded IDM coordinator."""
     from .coordinator import IdmCoordinator
+    from homeassistant.helpers import entity_registry as er
 
     call_data = call.data if isinstance(call.data, Mapping) else {}
-    requested_entry_id = call_data.get("entry_id")
-    if requested_entry_id is not None:
-        requested_entry_id = str(requested_entry_id).strip()
-        if not requested_entry_id:
-            requested_entry_id = None
+
+    requested_entry_id = None
+    entity_ids = call_data.get("entity_id")
+    if isinstance(entity_ids, list) and len(entity_ids) > 0:
+        registry = er.async_get(hass)
+        for entity_id in entity_ids:
+            entity_entry = registry.async_get(entity_id)
+            if entity_entry and entity_entry.config_entry_id:
+                requested_entry_id = entity_entry.config_entry_id
+                break
+    elif isinstance(entity_ids, str):
+        registry = er.async_get(hass)
+        entity_entry = registry.async_get(entity_ids)
+        if entity_entry and entity_entry.config_entry_id:
+            requested_entry_id = entity_entry.config_entry_id
+
+    if requested_entry_id is None:
+        requested_entry_id = call_data.get("entry_id")
+        if requested_entry_id is not None:
+            requested_entry_id = str(requested_entry_id).strip()
+            if not requested_entry_id:
+                requested_entry_id = None
 
     loaded_entries = [
         entry
