@@ -246,11 +246,11 @@ SYSTEM_SENSORS = [
     _sensor(1210, "Kaskade Gemittelte VL-Temp Warmwasser", "cascade_avg_flow_dhw",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS,
             entity_category=EntityCategory.DIAGNOSTIC, disabled=True),
-    _sensor(1392, "Feuchtesensor", "humidity",
+    _sensor(1392, "Feuchtesensor", "humidity", datatype=DataType.UINT16,
             unit=PERCENTAGE, device_class="humidity"),
     _sensor(1690, "Externe Aussentemperatur", "outdoor_temp_ext",
             unit=UnitOfTemperature.CELSIUS, device_class=UnitOfTemperature.CELSIUS),
-    _sensor(1692, "Externe Feuchte", "humidity_ext",
+    _sensor(1692, "Externe Feuchte", "humidity_ext", datatype=DataType.UINT16,
             unit=PERCENTAGE, device_class="humidity"),
     # --- Waermemengen (lt. offiziellem IDM-YAML: 1750 = Gesamt!) ---
     _sensor(1748, "Waermemenge Heizen", "energy_heat_heating",
