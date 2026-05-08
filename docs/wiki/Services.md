@@ -1,59 +1,59 @@
-# Services Referenz
+# Services Reference
 
-In dieser Integration gibt es mehrere Möglichkeiten, Werte auf die Wärmepumpe zu schreiben:
-1. **Über die regulären Entitäten (Empfohlen):**
-   Viele Werte (wie Temperaturen, Sollwerte oder Modi) werden als `number`, `select` oder `switch` Entitäten in Home Assistant abgebildet. Diese kannst du direkt in Dashboards verändern oder in Automatisierungen mit den Standard-Diensten (z.B. `number.set_value` oder `select.select_option`) nutzen. Eine Liste aller verstellbaren Entitäten findest du unter [Entities](Entities).
-2. **Über spezifische Dienste:**
-   Für spezielle Aktionen wie das Quittieren von Fehlern oder das Setzen des Systemmodus gibt es dedizierte Dienste (z.B. `idm_heatpump.set_system_mode`).
-3. **Direkter Modbus-Zugriff (Fortgeschritten / Alternative):**
-   Fehlt eine Entität für ein bestimmtes Register oder möchtest du gezielt Register ansprechen, kannst du mit dem Dienst `idm_heatpump.write_register` direkt Werte in beliebige Modbus-Register schreiben. Eine Übersicht der Register findest du unter [Modbus-Register](Modbus-Register). **Achtung: Dies geschieht auf eigene Gefahr.**
+There are several ways to write values to the heat pump in this integration:
+1. **Via regular entities (recommended):**
+   Many values (such as temperatures, setpoints, or modes) are represented as `number`, `select`, or `switch` entities in Home Assistant. You can change them directly in dashboards or use them in automations with standard services (e.g., `number.set_value` or `select.select_option`). A list of all adjustable entities can be found at [Entities](Entities).
+2. **Via specific services:**
+   For special actions like acknowledging errors or setting the system mode, there are dedicated services (e.g., `idm_heatpump.set_system_mode`).
+3. **Direct Modbus access (advanced / alternative):**
+   If an entity for a specific register is missing or you want to target registers directly, you can use the `idm_heatpump.write_register` service to write values directly to any Modbus register. An overview of registers can be found at [Modbus Registers](Modbus-Register). **Warning: Use at your own risk.**
 
-### Welche Werte können geschrieben werden?
-Mit dieser Integration kannst du im Wesentlichen folgende Werte verändern (siehe [Entities](Entities)):
-- **Temperaturen & Sollwerte** über `number`-Entitäten (z. B. Warmwasser-Sollwert, Heizkreis-Sollwert, Heizgrenze).
-- **Betriebsmodi** über `select`-Entitäten (z. B. System-Betriebsmodus, Heizkreis-Modus, Raum-Modus).
-- **GLT-Temperaturanforderungen** über `switch`-Entitäten (zyklisches Beschreiben der GLT-Register wird automatisch von der Integration gehandhabt).
+### Which values can be written?
+With this integration you can essentially change the following values (see [Entities](Entities)):
+- **Temperatures & setpoints** via `number` entities (e.g., DHW setpoint, circuit setpoint, heating limit).
+- **Operating modes** via `select` entities (e.g., system operating mode, circuit mode, room mode).
+- **BMS temperature requests** via `switch` entities (cyclic writing of BMS registers is handled automatically by the integration).
 
 ---
 
 ## set_system_mode
 
-Setzt den Betriebsmodus der Warmepumpe.
+Sets the operating mode of the heat pump.
 
 **Service:** `idm_heatpump.set_system_mode`
 
-**Target:** Entity der Integration
+**Target:** Entity of the integration
 
-| Feld | Typ | Beschreibung |
-|------|-----|-------------|
-| `mode` | select | System-Betriebsmodus |
+| Field | Type | Description |
+|-------|------|-------------|
+| `mode` | select | System operating mode |
 
-**Verfugbare Modi:**
+**Available modes:**
 - `Standby`
-- `Automatik`
-- `Abwesend`
-- `Urlaub`
-- `Nur Warmwasser`
-- `Nur Heizung/Kuehlung`
+- `Auto`
+- `Away`
+- `Holiday`
+- `DHW Only`
+- `Heating/Cooling Only`
 
-**Beispiel:**
+**Example:**
 ```yaml
 service: idm_heatpump.set_system_mode
 target:
   entity_id: sensor.idm_navigator_system_mode
 data:
-  mode: "Urlaub"
+  mode: "Holiday"
 ```
 
 ## acknowledge_errors
 
-Quittiert/loscht aktive Fehlermeldungen auf der Warmepumpe.
+Acknowledges/clears active error messages on the heat pump.
 
 **Service:** `idm_heatpump.acknowledge_errors`
 
-**Target:** Gerat der Integration
+**Target:** Device of the integration
 
-**Beispiel:**
+**Example:**
 ```yaml
 service: idm_heatpump.acknowledge_errors
 target:
@@ -62,21 +62,21 @@ target:
 
 ## write_register
 
-Schreibt einen Wert direkt in ein Modbus-Register (Fortgeschritten).
+Writes a value directly to a Modbus register (advanced).
 
 **Service:** `idm_heatpump.write_register`
 
-**Target:** Gerat der Integration
+**Target:** Device of the integration
 
-| Feld | Typ | Beschreibung |
-|------|-----|-------------|
-| `address` | number | Modbus-Register-Adresse (0-10000) |
-| `value` | text | Zu schreibender Wert |
-| `acknowledge_risk` | constant | Muss auf `true` gesetzt werden |
+| Field | Type | Description |
+|-------|------|-------------|
+| `address` | number | Modbus register address (0–10000) |
+| `value` | text | Value to write |
+| `acknowledge_risk` | constant | Must be set to `true` |
 
-> **WARNUNG:** Direktes Schreiben in Register kann deine Warmepumpe beschadigen. Verwende diesen Service nur wenn du genau weisst was du tust!
+> **WARNING:** Direct register writing can damage your heat pump. Only use this service if you know exactly what you are doing!
 
-**Beispiel:**
+**Example:**
 ```yaml
 service: idm_heatpump.write_register
 target:
@@ -87,33 +87,33 @@ data:
   acknowledge_risk: true
 ```
 
-## Automatisierungs-Beispiele (Werte schreiben)
+## Automation Examples (Writing Values)
 
-Hier sind einige Beispiele, wie du Werte über Automatisierungen schreiben kannst. Weitere praxisnahe Beispiele findest du auf der Seite [Examples](Examples).
+Here are some examples of how to write values via automations. For more practical examples, see the [Examples](Examples) page.
 
-### Reguläre Entität ändern (Empfohlene Methode)
-Möchtest du z.B. eine Solltemperatur anpassen, nutze den Standard-Dienst `number.set_value`:
+### Change a regular entity (recommended method)
+If you want to adjust a target temperature, for example, use the standard service `number.set_value`:
 ```yaml
 action:
   - service: number.set_value
     target:
-      entity_id: number.idm_navigator_warmwasser_solltemperatur
+      entity_id: number.idm_navigator_dhw_setpoint
     data:
       value: "50"
 ```
 
-Oder um einen Modus anzupassen (`select.select_option`):
+Or to adjust a mode (`select.select_option`):
 ```yaml
 action:
   - service: select.select_option
     target:
-      entity_id: select.idm_navigator_betriebsart_hk_a
+      entity_id: select.idm_navigator_circuit_a_mode
     data:
       option: "Eco"
 ```
 
-### Direkter Modbus-Schreibzugriff (write_register)
-Um ein beliebiges Register (hier Register 1005 für die Betriebsart) über eine Automatisierung zu beschreiben, nutzt du den Dienst `idm_heatpump.write_register`:
+### Direct Modbus write access (write_register)
+To write to any register (here register 1005 for the operating mode) via an automation, use the `idm_heatpump.write_register` service:
 ```yaml
 action:
   - service: idm_heatpump.write_register
@@ -124,47 +124,47 @@ action:
       value: "1"
       acknowledge_risk: true
 ```
-*Hinweis: Beachte, dass manche Register spezielle Formatierungen (Float, Int etc.) erwarten. Du musst sicherstellen, dass der geschriebene Wert im Modbus-Kontext gültig ist.*
+*Note: Some registers expect special formatting (Float, Int, etc.). You must ensure that the written value is valid in the Modbus context.*
 
-### Warmepumpe bei Abwesenheit auf Standby
+### Heat pump standby when away
 
 ```yaml
 automation:
-  - alias: "Warmepumpe Standby bei Abwesenheit"
+  - alias: "Heat pump standby when away"
     trigger:
       - platform: state
-        entity_id: input_boolean.zuhause
+        entity_id: input_boolean.home
         to: "off"
     action:
       - service: idm_heatpump.set_system_mode
         target:
           entity_id: sensor.idm_navigator_system_mode
         data:
-          mode: "Abwesend"
+          mode: "Away"
 ```
 
-### Warmepumpe bei Urlaub
+### Heat pump holiday mode
 
 ```yaml
 automation:
-  - alias: "Warmepumpe Urlaubsmodus"
+  - alias: "Heat pump holiday mode"
     trigger:
       - platform: input_boolean
-        entity_id: input_boolean.urlaub
+        entity_id: input_boolean.holiday
         to: "on"
     action:
       - service: idm_heatpump.set_system_mode
         target:
           entity_id: sensor.idm_navigator_system_mode
         data:
-          mode: "Urlaub"
+          mode: "Holiday"
 ```
 
-### Fehler automatisch quittieren (Vorsicht!)
+### Auto-acknowledge errors (use with caution!)
 
 ```yaml
 automation:
-  - alias: "Fehler quittieren"
+  - alias: "Acknowledge errors"
     trigger:
       - platform: state
         entity_id: binary_sensor.idm_navigator_error_active

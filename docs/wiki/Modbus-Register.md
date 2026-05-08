@@ -1,54 +1,54 @@
-# Modbus-Register
+# Modbus Registers
 
-## Uberblick
+## Overview
 
-Die IDM Navigator 2.0 Warmepumpe stellt **663 Register** uber Modbus TCP zur Verfugung:
+The IDM Navigator 2.0 heat pump provides **663 registers** via Modbus TCP:
 
-| Typ | Anzahl |
-|-----|--------|
-| Schreibgeschutzt (RO) | 215 |
-| Lesen/Schreiben (RW) | 266 |
-| Nur Schreiben (W) | 16 |
-| Kontextabhangig | 166 |
+| Type | Count |
+|------|-------|
+| Read-only (RO) | 215 |
+| Read/Write (RW) | 266 |
+| Write-only (W) | 16 |
+| Context-dependent | 166 |
 
-## Adressbereiche
+## Address Ranges
 
-| Bereich | Adressen | Beschreibung |
-|---------|----------|-------------|
-| PV/Batterie | 74-86 | Photovoltaik und Batterie |
-| System | 1000-1199 | Systemparameter, Temperaturen, Drucke |
-| Kaskade/Bivalenz | 1200-1349 | Mehrfach-WP, Heizstab |
-| Heizkreise A-G | 1350-1699 | Einzelne Heizkreise |
-| GLT/Energie | 1700-1799 | Fernwartung, Energiemessung |
-| Zonen 1-10 | 2000-2999 | Zonenmodule mit Raumsteuerung |
+| Range | Addresses | Description |
+|-------|-----------|-------------|
+| PV/Battery | 74-86 | Photovoltaics and battery |
+| System | 1000-1199 | System parameters, temperatures, pressures |
+| Cascade/Bivalence | 1200-1349 | Multi-HP, heating element |
+| Heating Circuits A-G | 1350-1699 | Individual heating circuits |
+| BMS/Energy | 1700-1799 | Remote maintenance, energy measurement |
+| Zones 1-10 | 2000-2999 | Zone modules with room control |
 
-## Datentypen
+## Data Types
 
-| Typ | Beschreibung | Register |
-|-----|-------------|----------|
-| **FLOAT** | IEEE 754 Gleitkomma (2 Register, Little Endian `<f` / `<HH`) | 2 |
-| **UCHAR** | 8-Bit vorzeichenlos (in 16-Bit Register, oft mit Multiplikator) | 1 |
-| **INT8** | 8-Bit vorzeichenbehaftet (für negative Werte wie Parallelverschiebung) | 1 |
-| **UINT16** | 16-Bit vorzeichenlos (z.B. für Leistungsbegrenzungen) | 1 |
-| **INT16** | 16-Bit vorzeichenbehaftet (z.B. für Bivalenzpunkte bis -20°C) | 1 |
+| Type | Description | Registers |
+|------|-------------|-----------|
+| **FLOAT** | IEEE 754 floating point (2 registers, Little Endian `<f` / `<HH`) | 2 |
+| **UCHAR** | 8-bit unsigned (in 16-bit register, often with multiplier) | 1 |
+| **INT8** | 8-bit signed (for negative values like parallel shift) | 1 |
+| **UINT16** | 16-bit unsigned (e.g., for power limits) | 1 |
+| **INT16** | 16-bit signed (e.g., for bivalence points down to -20°C) | 1 |
 | **BOOL** | Boolean (0/1) | 1 |
 
-> **Wichtig:** Beim Schreiben von Integer-Werten (`UCHAR`, `INT8`, `INT16`, `UINT16`) wendet die Integration automatisch den im Code hinterlegten `multiplier` an und rundet den Wert passend.
+> **Important:** When writing integer values (`UCHAR`, `INT8`, `INT16`, `UINT16`), the integration automatically applies the `multiplier` stored in the code and rounds the value accordingly.
 
-## Modbus-Parameter
+## Modbus Parameters
 
-| Parameter | Wert |
-|-----------|------|
-| Protokoll | Modbus TCP |
-| Standard-Port | 502 |
+| Parameter | Value |
+|-----------|-------|
+| Protocol | Modbus TCP |
+| Default Port | 502 |
 | Slave ID | 1 |
-| FC Lesen | 03 (Read Input Registers) |
-| FC Schreiben | 16 (Write Multiple Registers) |
+| FC Read | 03 (Read Input Registers) |
+| FC Write | 16 (Write Multiple Registers) |
 
-## Zonen-Base-Adressen
+## Zone Base Addresses
 
-| Zone | Base-Adresse | Modus-Adresse |
-|------|-------------|---------------|
+| Zone | Base Address | Mode Address |
+|------|-------------|--------------|
 | Zone 1 | 2000 | 2059 |
 | Zone 2 | 2067 | 2126 |
 | Zone 3 | 2130 | 2189 |
@@ -60,14 +60,14 @@ Die IDM Navigator 2.0 Warmepumpe stellt **663 Register** uber Modbus TCP zur Ver
 | Zone 9 | 2508 | 2567 |
 | Zone 10 | 2571 | 2630 |
 
-## Besondere Register
+## Special Registers
 
-| Adresse | Beschreibung | Besonderheit |
+| Address | Description | Special Note |
 |---------|-------------|-------------|
-| 1999 | Fehler-Quittierung | Darf NICHT permanent beschrieben werden |
-| 1696 | GLT Warmeanforderung | Muss zyklisch alle 10 Min beschrieben werden |
-| 1698 | GLT Kuhlanforderung | Muss zyklisch alle 10 Min beschrieben werden |
+| 1999 | Error acknowledgment | Must NOT be written permanently |
+| 1696 | BMS heat request | Must be written cyclically every 10 min |
+| 1698 | BMS cooling request | Must be written cyclically every 10 min |
 
-## EEPROM-sensitive Register
+## EEPROM-sensitive Registers
 
-88 Register sind EEPROM-sensitive und haben eine beschrankte Anzahl an Schreibzyklen. Die Integration warnt automatisch vor haufigem Schreiben dieser Register.
+88 registers are EEPROM-sensitive and have a limited number of write cycles. The integration automatically warns about frequent writing of these registers.

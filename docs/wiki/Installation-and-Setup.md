@@ -1,63 +1,63 @@
 # Installation & Setup
 
-## Voraussetzungen
+## Requirements
 
-- **Home Assistant** 2025.12.0 oder neuer (getestet bis 2026.3)
-- **HACS** ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
-- **IDM Navigator 2.0** Warmepumpe mit aktiviertem Modbus TCP
-- Modbus TCP muss in der Navigator-Steuerung aktiviert sein (Port 502, Slave ID 1)
+- **Home Assistant** 2025.12.0 or newer (tested up to 2026.5)
+- **HACS** ([Installation guide](https://hacs.xyz/docs/setup/download))
+- **IDM Navigator 2.0** heat pump with Modbus TCP enabled
+- Modbus TCP must be enabled in the Navigator controller (Port 502, Slave ID 1)
 
-## Modbus TCP auf dem Navigator aktivieren
+## Enable Modbus TCP on the Navigator
 
-1. Offne das Navigator-Webinterface (ip-des-navigators)
-2. Gehe zu **Einstellungen → Kommunikation → Modbus TCP**
-3. Aktiviere Modbus TCP
-4. Notiere dir die **IP-Adresse** und den **Port** (Standard: 502)
-5. Slave ID ist in der Regel **1**
+1. Open the Navigator web interface (ip-of-your-navigator)
+2. Go to **Settings → Communication → Modbus TCP**
+3. Enable Modbus TCP
+4. Note the **IP address** and **port** (default: 502)
+5. Slave ID is usually **1**
 
-## Installation uber HACS (empfohlen)
+## Installation via HACS (recommended)
 
-1. Offne HACS in Home Assistant
-2. Gehe zu **Integrationen**
-3. Klicke auf **⋮ (Drei Punkte)** → **Benutzerdefinierte Repositories**
-4. Gib die URL ein: `https://github.com/Xerolux/idm-heatpump-hass`
-5. Wahle **Kategorie: Integration**
-6. Klicke auf **Hinzufugen**
-7. Suche nach **"IDM Heatpump"**
-8. Klicke auf **Herunterladen**
-9. **Starte Home Assistant neu**
+1. Open HACS in Home Assistant
+2. Go to **Integrations**
+3. Click **⋮ (Three Dots)** → **Custom Repositories**
+4. Enter the URL: `https://github.com/Xerolux/idm-heatpump-hass`
+5. Select **Category: Integration**
+6. Click **Add**
+7. Search for **"IDM Heatpump"**
+8. Click **Download**
+9. **Restart Home Assistant**
 
-## Manuelle Installation
+## Manual Installation
 
-1. Lade die neueste [Release](https://github.com/Xerolux/idm-heatpump-hass/releases) herunter (`idm_heatpump.zip`)
-2. Entpacke die ZIP-Datei
-3. Kopiere den Ordner `idm_heatpump` in dein `custom_components/` Verzeichnis:
+1. Download the latest [release](https://github.com/Xerolux/idm-heatpump-hass/releases) (`idm_heatpump.zip`)
+2. Extract the ZIP file
+3. Copy the `idm_heatpump` folder to your `custom_components/` directory:
    ```
    <ha-config>/custom_components/idm_heatpump/
    ```
-4. Starte Home Assistant neu
+4. Restart Home Assistant
 
-## Einrichtung
+## Setup
 
-1. Gehe zu **Einstellungen → Gerate & Dienste**
-2. Klicke auf **Integration hinzufugen**
-3. Suche nach **"IDM Heatpump"**
-4. Folge dem Konfigurationsassistenten:
-   - **Schritt 1**: IP-Adresse, Port (502) und Name eingeben
-   - **Schritt 2**: Scan-Intervall, Heizkreise (A-G), Zonenanzahl
-   - **Schritt 3**: Raumnamen fur Zonen konfigurieren
-5. Klicke auf **Fertig stellen**
+1. Go to **Settings → Devices & Services**
+2. Click **Add Integration**
+3. Search for **"IDM Heatpump"**
+4. Follow the configuration wizard:
+   - **Step 1**: Enter IP address, port (502), and name
+   - **Step 2**: Scan interval, heating circuits (A-G), number of zones
+   - **Step 3**: Configure room names for zones
+5. Click **Finish**
 
-## Deinstallation
+## Uninstallation
 
-1. Gehe zu **Einstellungen → Gerate & Dienste**
-2. Finde die **IDM Heatpump** Integration
-3. Klicke auf die drei Punkte → **Loschen**
-4. (Optional) Losche den Ordner `custom_components/idm_heatpump/`
-5. Starte Home Assistant neu
+1. Go to **Settings → Devices & Services**
+2. Find the **IDM Heatpump** integration
+3. Click the three dots → **Delete**
+4. (Optional) Delete the `custom_components/idm_heatpump/` folder
+5. Restart Home Assistant
 
 ## Upgrade
 
-Uber HACS: Gehe zu HACS → Integrationen → IDM Heatpump → "Aktualisieren" → HA neu starten.
+Via HACS: Go to HACS → Integrations → IDM Heatpump → "Update" → Restart HA.
 
-Manuell: Wiederhole die manuelle Installation (uberschreibt die alten Dateien).
+Manually: Repeat the manual installation (overwrites the old files).

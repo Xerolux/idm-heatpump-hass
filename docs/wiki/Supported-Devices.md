@@ -1,48 +1,48 @@
-# Unterstützte Geräte
+# Supported Devices
 
-## Vollständig unterstützt
+## Fully Supported
 
-| Gerät | Firmware | Heizkreise | Zonenmodule | Status |
-|-------|----------|------------|-------------|--------|
-| IDM Navigator 2.0 | alle Versionen | bis zu 7 (A–G) | nein | ✅ Bestätigt |
-| IDM Navigator Pro | alle Versionen | bis zu 7 (A–G) | bis zu 10 (je 8 Räume) | ✅ Bestätigt |
+| Device | Firmware | Heating Circuits | Zone Modules | Status |
+|--------|----------|------------------|--------------|--------|
+| IDM Navigator 2.0 | all versions | up to 7 (A–G) | no | ✅ Confirmed |
+| IDM Navigator Pro | all versions | up to 7 (A–G) | up to 10 (8 rooms each) | ✅ Confirmed |
 
-## Voraussetzungen
+## Requirements
 
-- **Modbus TCP** muss in der Navigator-Steuerung aktiviert sein
-  - Einstellung: *Fachmannebene → Kommunikation → Modbus TCP*
-  - Standard-Port: **502**
-  - Standard Slave-ID: **1**
+- **Modbus TCP** must be enabled in the Navigator controller
+  - Setting: *Technician level → Communication → Modbus TCP*
+  - Default port: **502**
+  - Default Slave ID: **1**
 
-## Nicht unterstützte Geräte
+## Unsupported Devices
 
-| Gerät | Grund |
-|-------|-------|
-| IDM ältere Steuerungen (vor Navigator 2.0) | Anderes Register-Mapping |
-| IDM Geräte ohne Netzwerkanschluss | Kein Modbus TCP |
-| Andere Wärmepumpen-Hersteller | Anderes Modbus-Protokoll / Register-Layout |
+| Device | Reason |
+|--------|--------|
+| IDM older controllers (pre Navigator 2.0) | Different register mapping |
+| IDM devices without network connection | No Modbus TCP |
+| Other heat pump manufacturers | Different Modbus protocol / register layout |
 
-## Nicht getestete Geräte (möglicherweise kompatibel)
+## Untested Devices (possibly compatible)
 
-Folgende Geräte nutzen möglicherweise das gleiche Register-Mapping wie der Navigator 2.0, wurden aber nicht offiziell getestet:
+The following devices may use the same register mapping as the Navigator 2.0, but have not been officially tested:
 
-- IDM Terra SW (mit Navigator 2.0 Steuerung)
-- IDM Terra HT (mit Navigator 2.0 Steuerung)
-- IDM Aero SLM (mit Navigator 2.0 Steuerung)
+- IDM Terra SW (with Navigator 2.0 controller)
+- IDM Terra HT (with Navigator 2.0 controller)
+- IDM Aero SLM (with Navigator 2.0 controller)
 
-> **Hinweis:** Wenn du ein nicht aufgeführtes IDM-Gerät erfolgreich verwendest, erstelle bitte ein [GitHub Issue](https://github.com/Xerolux/idm-heatpump-hass/issues) damit wir die Liste erweitern können!
+> **Note:** If you successfully use an unlisted IDM device, please create a [GitHub Issue](https://github.com/Xerolux/idm-heatpump-hass/issues) so we can expand the list!
 
-## Modbus Register-Kompatibilität
+## Modbus Register Compatibility
 
-Die Integration liest **663 Modbus-Register** basierend auf der IDM Navigator 2.0 Dokumentation:
+The integration reads **663 Modbus registers** based on the IDM Navigator 2.0 documentation:
 
-- **Lesespeicher** (Input Registers): Temperaturen, Status, Energie, Leistung
-- **Schreib-/Lesespeicher** (Holding Registers): Betriebsmodi, Sollwerte, Konfiguration
+- **Read memory** (Input Registers): Temperatures, status, energy, power
+- **Read/Write memory** (Holding Registers): Operating modes, setpoints, configuration
 
-Details zu allen Registern: [Modbus-Register Wiki](Modbus-Register)
+Details on all registers: [Modbus Register Wiki](Modbus-Register)
 
-## Bekannte Firmware-spezifische Unterschiede
+## Known Firmware-specific Differences
 
-- Register 1048 (`current_energy_price`) ist ab Navigator 2.0 Firmware 2.x verfügbar
-- Zonenmodul-Register (ab 2000) erfordern das IDM Navigator Pro Hardware-Modul
-- PV-Register (74–86) erfordern das optionale PV-Modul
+- Register 1048 (`current_energy_price`) is available from Navigator 2.0 firmware 2.x
+- Zone module registers (from 2000) require the IDM Navigator Pro hardware module
+- PV registers (74–86) require the optional PV module
