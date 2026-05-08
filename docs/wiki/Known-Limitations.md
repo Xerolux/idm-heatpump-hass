@@ -1,48 +1,48 @@
-# Bekannte Einschränkungen
+# Known Limitations
 
-## Gerätekompatibilität
+## Device Compatibility
 
-- **Nur IDM Navigator 2.0 / Navigator Pro** werden offiziell unterstützt
-- Ältere IDM-Steuerungen ohne Navigator-Firmware werden **nicht** unterstützt
-- Das Modbus-Register-Mapping kann zwischen Firmware-Versionen leicht abweichen
+- **Only IDM Navigator 2.0 / Navigator Pro** are officially supported
+- Older IDM controllers without Navigator firmware are **not** supported
+- Modbus register mapping may vary slightly between firmware versions
 
 ## Modbus TCP
 
-- Ausschließlich **Modbus TCP** wird unterstützt (kein serielles Modbus RTU)
-- Port und Slave-ID müssen korrekt konfiguriert sein
-- Gleichzeitige Verbindungen von mehreren Clients (z.B. IDM-Webinterface + HA) können zu Timeout-Fehlern führen
-- Empfehlung: Anderen Modbus-Clients während des Betriebs deaktivieren oder das Abfrageintervall erhöhen
+- Only **Modbus TCP** is supported (no serial Modbus RTU)
+- Port and Slave ID must be configured correctly
+- Simultaneous connections from multiple clients (e.g., IDM web interface + HA) can cause timeout errors
+- Recommendation: Disable other Modbus clients during operation or increase the polling interval
 
-## EEPROM-Schutz
+## EEPROM Protection
 
-- **88 Register** sind EEPROM-geschützt und können nur **einmal pro Minute** beschrieben werden
-- Häufigere Schreibvorgänge auf diese Register können zu Hardwareverschleiß führen
-- Die Integration erzwingt dieses Limit automatisch
+- **88 registers** are EEPROM-protected and can only be written **once per minute**
+- More frequent write operations to these registers can cause hardware wear
+- The integration enforces this limit automatically
 
-## Einzelgerät pro Konfigurationseintrag
+## Single Device per Configuration Entry
 
-- Pro Home Assistant Instanz kann **nur eine** IDM Wärmepumpe über Modbus TCP konfiguriert werden (aufgrund der IP-basierten Unique-ID)
-- Für mehrere Wärmepumpen am gleichen Bus: separate Slave-IDs verwenden und für jede einen eigenen Eintrag anlegen
+- Only **one** IDM heat pump can be configured per Home Assistant instance via Modbus TCP (due to IP-based unique ID)
+- For multiple heat pumps on the same bus: use separate Slave IDs and create a separate entry for each
 
-## Nur Lesezugriff auf bestimmte Register
+## Read-only Access to Certain Registers
 
-- Einige Register sind **schreibgeschützt** (z.B. Energiezähler, Temperatursensoren)
-- Der Schreibversuch auf read-only Register kann einen Modbus-Fehler zurückgeben
-- Der `write_register`-Service umgeht diese Schutzmaßnahme – **nur für erfahrene Nutzer**
+- Some registers are **read-only** (e.g., energy meters, temperature sensors)
+- Attempting to write to read-only registers may return a Modbus error
+- The `write_register` service bypasses this protection — **for experienced users only**
 
-## Zonenmodule
+## Zone Modules
 
-- Maximal **10 Zonenmodule** mit je bis zu **8 Räumen** werden unterstützt
-- Zonenmodul-Konfiguration ist nach der Ersteinrichtung über die Optionen anpassbar
-- Räume ohne physischen Sensor liefern ggf. `-1.0` als Wert (werden als unavailable markiert)
+- A maximum of **10 zone modules** with up to **8 rooms** each are supported
+- Zone module configuration is adjustable via options after initial setup
+- Rooms without a physical sensor may return `-1.0` as a value (marked as unavailable)
 
-## Keine Push-Benachrichtigungen
+## No Push Notifications
 
-- Die Integration ist ein **Polling-Client** – die Wärmepumpe sendet keine Änderungsbenachrichtigungen
-- Änderungen am Gerät (z.B. über das Navigator-Webinterface) sind erst nach dem nächsten Polling-Zyklus in HA sichtbar
+- The integration is a **polling client** — the heat pump does not send change notifications
+- Changes made on the device (e.g., via the Navigator web interface) are only visible in HA after the next polling cycle
 
-## Firmware-Version
+## Firmware Version
 
-- Die aktuelle Firmware-Version wird als Diagnose-Sensor (`firmware_version`) ausgelesen
-- Firmware-Updates direkt aus Home Assistant sind **nicht** möglich
-- Updates erfolgen über das IDM-Webinterface oder per USB
+- The current firmware version is read as a diagnostic sensor (`firmware_version`)
+- Firmware updates directly from Home Assistant are **not** possible
+- Updates are done via the IDM web interface or USB

@@ -1,89 +1,89 @@
-# Beispiel-Automatisierungen
+# Example Automations
 
-Hier findest du praktische Beispiele für den Einsatz der IDM Heatpump Integration, insbesondere wie man Werte über Automatisierungen schreiben kann.
-
----
-
-## Werte schreiben per Automatisierung (Übersicht)
-
-In Home Assistant werden schreibbare Werte der Wärmepumpe als **Entitäten** dargestellt. Um diese Werte in Automatisierungen zu ändern, verwendest du nicht `idm_heatpump.write_register`, sondern die Standard-Dienste von Home Assistant:
-
-- Für Temperaturen, Heizkurven oder Sollwerte (Typ `number`): Dienst `number.set_value`
-- Für Betriebsmodi (Typ `select`): Dienst `select.select_option`
-- Für Schalter (Typ `switch`): Dienst `switch.turn_on` oder `switch.turn_off`
-
-**Alternative (Fortgeschritten):** Wenn ein Register nicht als Entität existiert, kannst du den Dienst `idm_heatpump.write_register` verwenden (siehe [Services Referenz](Services)).
-
-Hier sind einige konkrete Anwendungsfälle:
+Here you'll find practical examples for using the IDM Heatpump integration, especially how to write values via automations.
 
 ---
 
-## Urlaubsmodus automatisch aktivieren
+## Writing Values via Automation (Overview)
 
-Schaltet die Wärmepumpe in den Urlaubsmodus wenn du das Haus verlässt:
+In Home Assistant, writable values of the heat pump are represented as **entities**. To change these values in automations, you don't use `idm_heatpump.write_register`, but the standard Home Assistant services:
+
+- For temperatures, heating curves, or setpoints (type `number`): service `number.set_value`
+- For operating modes (type `select`): service `select.select_option`
+- For switches (type `switch`): service `switch.turn_on` or `switch.turn_off`
+
+**Alternative (advanced):** If a register doesn't exist as an entity, you can use the `idm_heatpump.write_register` service (see [Services Reference](Services)).
+
+Here are some concrete use cases:
+
+---
+
+## Auto-activate holiday mode
+
+Switches the heat pump to holiday mode when you leave the house:
 
 ```yaml
 automation:
-  - alias: "Wärmepumpe: Urlaubsmodus bei Abwesenheit"
+  - alias: "Heat pump: Holiday mode when away"
     trigger:
       - platform: state
-        entity_id: person.ich
+        entity_id: person.me
         to: "not_home"
         for:
           hours: 2
     action:
       - service: idm_heatpump.set_system_mode
         data:
-          mode: "urlaub"
+          mode: "holiday"
 ```
 
 ---
 
-## Normalbetrieb bei Heimkehr
+## Normal operation on return
 
 ```yaml
 automation:
-  - alias: "Wärmepumpe: Automatik bei Heimkehr"
+  - alias: "Heat pump: Auto mode on return"
     trigger:
       - platform: state
-        entity_id: person.ich
+        entity_id: person.me
         to: "home"
     action:
       - service: idm_heatpump.set_system_mode
         data:
-          mode: "automatik"
+          mode: "auto"
 ```
 
 ---
 
-## Benachrichtigung bei Störung
+## Fault notification
 
-Sendet eine Push-Benachrichtigung wenn eine Störung auftritt:
+Sends a push notification when a fault occurs:
 
 ```yaml
 automation:
-  - alias: "Wärmepumpe: Störungsbenachrichtigung"
+  - alias: "Heat pump: Fault notification"
     trigger:
       - platform: state
-        entity_id: binary_sensor.idm_heatpump_stoerung
+        entity_id: binary_sensor.idm_heatpump_fault
         to: "on"
     action:
       - service: notify.mobile_app
         data:
-          title: "⚠️ Wärmepumpe Störung"
+          title: "⚠️ Heat Pump Fault"
           message: >
-            IDM Störung aktiv. Fehlercode: {{ states('sensor.idm_heatpump_fehlercode') }}
+            IDM fault active. Error code: {{ states('sensor.idm_heatpump_error_code') }}
 ```
 
 ---
 
-## Warmwasser-Boost bei PV-Überschuss
+## DHW boost on PV surplus
 
-Erhöht die Warmwasser-Solltemperatur wenn PV-Überschuss vorhanden ist:
+Increases the DHW target temperature when PV surplus is available:
 
 ```yaml
 automation:
-  - alias: "Wärmepumpe: WW-Boost bei PV-Überschuss"
+  - alias: "Heat pump: DHW boost on PV surplus"
     trigger:
       - platform: numeric_state
         entity_id: sensor.idm_heatpump_pv_surplus
@@ -93,10 +93,10 @@ automation:
     action:
       - service: number.set_value
         target:
-          entity_id: number.idm_heatpump_warmwasser_solltemperatur
+          entity_id: number.idm_heatpump_dhw_setpoint
         data:
           value: 60
-  - alias: "Wärmepumpe: WW-Boost beenden"
+  - alias: "Heat pump: End DHW boost"
     trigger:
       - platform: numeric_state
         entity_id: sensor.idm_heatpump_pv_surplus
@@ -106,66 +106,66 @@ automation:
     action:
       - service: number.set_value
         target:
-          entity_id: number.idm_heatpump_warmwasser_solltemperatur
+          entity_id: number.idm_heatpump_dhw_setpoint
         data:
           value: 48
 ```
 
 ---
 
-## Heizkreis-Modus per Zeitplan
+## Heating circuit mode by schedule
 
-Wechselt den Heizkreis A täglich nach Zeitplan:
+Switches heating circuit A daily on a schedule:
 
 ```yaml
 automation:
-  - alias: "Wärmepumpe: Heizkreis A – Zeitprogramm"
+  - alias: "Heat pump: Circuit A – Schedule"
     trigger:
       - platform: time
         at: "22:00:00"
     action:
       - service: select.select_option
         target:
-          entity_id: select.idm_heatpump_betriebsart_hk_a
+          entity_id: select.idm_heatpump_circuit_a_mode
         data:
           option: "Eco"
-  - alias: "Wärmepumpe: Heizkreis A – Normalbetrieb"
+  - alias: "Heat pump: Circuit A – Normal operation"
     trigger:
       - platform: time
         at: "06:00:00"
     action:
       - service: select.select_option
         target:
-          entity_id: select.idm_heatpump_betriebsart_hk_a
+          entity_id: select.idm_heatpump_circuit_a_mode
         data:
           option: "Normal"
 ```
 
 ---
 
-## Energie-Dashboard
+## Energy Dashboard
 
-Für ein Energie-Dashboard in Home Assistant:
+For an energy dashboard in Home Assistant:
 
 ```yaml
-# Tägliche Heizenergie (in configuration.yaml oder helpers)
+# Daily heating energy (in configuration.yaml or helpers)
 sensor:
   - platform: integration
-    source: sensor.idm_heatpump_aktuelle_leistung_heizen
-    name: Tagesenergie Heizen
+    source: sensor.idm_heatpump_current_heating_power
+    name: Daily energy heating
     unit_prefix: k
     round: 2
 ```
 
 ---
 
-## Smart-Grid-Steuerung
+## Smart Grid Control
 
-Reagiert auf Smart-Grid-Status der Wärmepumpe:
+Reacts to the heat pump's Smart Grid status:
 
 ```yaml
 automation:
-  - alias: "SmartGrid: Wärmepumpe Status auslesen"
+  - alias: "SmartGrid: Read heat pump status"
     trigger:
       - platform: state
         entity_id: sensor.idm_heatpump_smart_grid_status
@@ -173,12 +173,12 @@ automation:
       - service: notify.persistent_notification
         data:
           title: "Smart Grid Status"
-          message: "Aktueller Smart-Grid-Status: {{ states('sensor.idm_heatpump_smart_grid_status') }}"
+          message: "Current Smart Grid status: {{ states('sensor.idm_heatpump_smart_grid_status') }}"
 ```
 
 ---
 
-## Fehler quittieren (manuell via Button-Helper)
+## Acknowledge errors (manually via button helper)
 
 ```yaml
 # button-helper in configuration.yaml
@@ -186,7 +186,7 @@ button:
   - platform: template
     buttons:
       idm_acknowledge_errors:
-        friendly_name: "IDM Störungen quittieren"
+        friendly_name: "Acknowledge IDM faults"
         press:
           service: idm_heatpump.acknowledge_errors
 ```

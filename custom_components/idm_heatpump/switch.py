@@ -13,6 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
 
@@ -47,7 +48,9 @@ class IdmSwitch(IdmEntity, SwitchEntity):
         except Exception as err:
             _LOGGER.error("Failed to turn on %s: %s", self._register.name, err)
             raise HomeAssistantError(
-                f"Failed to turn on {self.entity_description.name}: {err}"
+                translation_domain=DOMAIN,
+                translation_key="write_failed",
+                translation_placeholders={"error": str(err)},
             ) from err
 
     async def async_turn_off(self, **kwargs) -> None:
@@ -56,5 +59,7 @@ class IdmSwitch(IdmEntity, SwitchEntity):
         except Exception as err:
             _LOGGER.error("Failed to turn off %s: %s", self._register.name, err)
             raise HomeAssistantError(
-                f"Failed to turn off {self.entity_description.name}: {err}"
+                translation_domain=DOMAIN,
+                translation_key="write_failed",
+                translation_placeholders={"error": str(err)},
             ) from err

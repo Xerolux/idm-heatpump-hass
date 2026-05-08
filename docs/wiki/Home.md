@@ -2,89 +2,89 @@
 
 <p align="center">
   <img src="../images/heatpump.png" alt="IDM Heatpump" width="300"><br>
-  <small><i>KI generiert</i></small>
+  <small><i>AI generated</i></small>
 </p>
 
-> **Die komplette Dokumentation** fur das IDM Heatpump Addon.
-> Von der Installation bis zur Fehlerbehebung - mit allen Features, Entities und Services.
+> **The complete documentation** for the IDM Heatpump integration.
+> From installation to troubleshooting — with all features, entities, and services.
 
 ---
 
-## Was ist das IDM Heatpump Addon?
+## What is the IDM Heatpump Integration?
 
-Das **IDM Heatpump Home Assistant Integration** verbindet [Home Assistant](https://www.home-assistant.io/) mit dem [IDM Navigator 2.0](https://www.idm-energiesysteme.de/) von IDM EnergieSysteme GmbH. Es ermoglicht vollstandige lokale Steuerung und Uberwachung deiner Warmepumpe uber **Modbus TCP - ohne Cloud, ohne Abonnement**.
+The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https://www.home-assistant.io/) with the [IDM Navigator 2.0](https://www.idm-energiesysteme.de/) by IDM EnergieSysteme GmbH. It enables complete local control and monitoring of your heat pump via **Modbus TCP — no cloud, no subscription**.
 
 | Feature | Details |
 |---------|---------|
-| **Protokoll** | Modbus TCP (Port 502, Slave ID 1) |
-| **HA-Mindestversion** | 2025.12.0 |
-| **Getestet bis** | 2026.3 |
+| **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
+| **Min HA Version** | 2025.12.0 |
+| **Tested up to** | 2026.5 |
 | **Python** | 3.13+ (HA 2026.3: 3.14.2) |
 | **pymodbus** | ≥3.7.0 (HA 2026.3: 3.11.2) |
-| **Lizenz** | MIT |
-| **Sprachen** | DE, EN |
-| **Register** | 663 (215 RO, 266 RW, 16 W-only, 166 kontextabhangig) |
+| **License** | MIT |
+| **Languages** | DE, EN |
+| **Registers** | 663 (215 RO, 266 RW, 16 W-only, 166 context-dependent) |
 
 ---
 
-## Kernfunktionen
+## Core Features
 
-- **System-Uberwachung**: Vorlauf, Rucklauf, Warmwasser, Aussentemperatur, Druck, Durchfluss
-- **Heizkreise A-G**: Bis zu 7 Heizkreise mit individueller Sollwert- und Modussteuerung
-- **Zonen-Module**: Bis zu 10 Zonen mit je 8 Raumen (Raumthermostat-Funktion)
-- **Solar & PV**: Solare Warmwasserbereitung, PV-Uberschussnutzung, Batteriemonitoring
-- **Energiemonitoring**: Warmemenge, Laufzeiten, Energiezahler
-- **Kaskade & Bivalenz**: Mehrfach-Warmepumpen-Steuerung, Heizstab-Integration
-- **GLT Fernwartung**: GLT-Temperaturanforderungen (zyklisches Schreiben)
-- **Fehlermanagement**: Fehlererkennung, Fehlerquittierung, Diagnosedaten-Export
-
----
-
-## Plattformen & Entities
-
-| Plattform | Entities | Beschreibung |
-|-----------|----------|--------------|
-| **Sensor** | 100+ | Temperaturen, Drucke, Durchflusse, Energie, Laufzeiten |
-| **Binary Sensor** | 9 | Fehlerstatus, Schaltzustande |
-| **Number** | ~30 | Sollwerte, beschreibbare Parameter |
-| **Select** | ~15 | Betriebsmodi (System, Heizkreis, Raum, Solar) |
-| **Switch** | 4 | GLT-Temperaturanforderungen |
+- **System Monitoring**: Flow, return, hot water, outdoor temperature, pressure, flow rate
+- **Heating Circuits A–G**: Up to 7 heating circuits with individual setpoint and mode control
+- **Zone Modules**: Up to 10 zones with 8 rooms each (room thermostat function)
+- **Solar & PV**: Solar hot water heating, PV surplus utilization, battery monitoring
+- **Energy Monitoring**: Heat quantity, runtimes, energy meters
+- **Cascade & Bivalence**: Multi-heat pump control, heating element integration
+- **BMS Remote Maintenance**: BMS temperature requests (cyclic writing)
+- **Error Management**: Error detection, error acknowledgment, diagnostics export
 
 ---
 
-## Schnell-Navigation
+## Platforms & Entities
 
-### Ich bin neu hier
+| Platform | Entities | Description |
+|----------|----------|-------------|
+| **Sensor** | 100+ | Temperatures, pressures, flow rates, energy, runtimes |
+| **Binary Sensor** | 9 | Error status, switch states |
+| **Number** | ~30 | Setpoints, writable parameters |
+| **Select** | ~15 | Operating modes (system, circuit, room, solar) |
+| **Switch** | 4 | BMS temperature requests |
+
+---
+
+## Quick Navigation
+
+### I'm new here
 1. [Installation & Setup](Installation-and-Setup)
-2. [Konfiguration](Configuration)
+2. [Configuration](Configuration)
 3. [Entities](Entities)
 
-### Ich will automatisieren
-1. [Services Referenz](Services)
+### I want to automate
+1. [Services Reference](Services)
 
-### Ich habe ein Problem
+### I have a problem
 1. [Troubleshooting](Troubleshooting)
-2. [Modbus-Register](Modbus-Register)
+2. [Modbus Registers](Modbus-Register)
 
-### Ich will beitragen
+### I want to contribute
 - [Contributing Guide](Contributing)
 
 ---
 
-## Technische Details
+## Technical Details
 
-- **Batch-Lesung**: Zusammenhangende Register werden gruppiert (max. 30 pro Batch)
-- **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
-- **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu haufigem Schreiben geschutzt
-- **Auto-Recovery**: Exponentielles Backoff bei Verbindungsfehlern
-- **Adressbereiche**: 74-86 (PV/Battery), 1000-1199 (System), 1200-1349 (Kaskade), 1350-1699 (Heizkreise A-G), 1700-1799 (GLT/Energie), 2000-2999 (Zonen)
+- **Batch reading**: Consecutive registers are grouped (max. 30 per batch)
+- **Data types**: FLOAT (IEEE 754, 2 registers), UCHAR (8-bit), WORD (16-bit), BOOL
+- **EEPROM protection**: 88 EEPROM-sensitive registers are protected from excessive writing
+- **Auto-recovery**: Exponential backoff on connection errors
+- **Address ranges**: 74-86 (PV/Battery), 1000-1199 (System), 1200-1349 (Cascade), 1350-1699 (Heating Circuits A-G), 1700-1799 (BMS/Energy), 2000-2999 (Zones)
 
 ---
 
-## Links & Ressourcen
+## Links & Resources
 
-| Ressource | Link |
-|-----------|------|
+| Resource | Link |
+|----------|------|
 | GitHub Repository | https://github.com/Xerolux/idm-heatpump-hass |
 | Issues & Bugs | https://github.com/Xerolux/idm-heatpump-hass/issues |
 | HACS | https://hacs.xyz/ |
@@ -94,5 +94,5 @@ Das **IDM Heatpump Home Assistant Integration** verbindet [Home Assistant](https
 
 ---
 
-*Diese Wiki dokumentiert das IDM Heatpump Addon.*
-*Entwickelt von [Xerolux](https://github.com/Xerolux)*
+*This wiki documents the IDM Heatpump integration.*
+*Developed by [Xerolux](https://github.com/Xerolux)*

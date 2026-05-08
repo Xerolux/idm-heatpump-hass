@@ -1,58 +1,58 @@
-# Konfiguration
+# Configuration
 
-## Verbindungsparameter
+## Connection Parameters
 
-| Parameter | Beschreibung | Standard |
-|-----------|-------------|----------|
-| **Host (IP)** | IP-Adresse des IDM Navigators | - (erforderlich) |
-| **Port** | Modbus TCP Port | 502 |
-| **Name** | Name der Integration (zur Unterscheidung bei mehreren) | IDM Navigator |
+| Parameter | Description | Default |
+|-----------|-------------|---------|
+| **Host (IP)** | IP address of the IDM Navigator | - (required) |
+| **Port** | Modbus TCP port | 502 |
+| **Name** | Integration name (to distinguish multiple instances) | IDM Navigator |
 
-## Optionen
+## Options
 
-### Scan-Intervall
+### Scan Interval
 
-Das Scan-Intervall bestimmt, wie haufig die Register ausgelesen werden.
+The scan interval determines how often registers are polled.
 
-| Wert | Empfehlung |
-|------|-----------|
-| 10 Sekunden | Fur aktive Uberwachung (Standard) |
-| 30 Sekunden | Ausgewogen |
-| 60 Sekunden | Fuer ruhigere Systeme |
+| Value | Recommendation |
+|-------|---------------|
+| 10 seconds | For active monitoring (default) |
+| 30 seconds | Balanced |
+| 60 seconds | For quieter systems |
 
-### Heizkreise
+### Heating Circuits
 
-Wahle die aktiven Heizkreise (A bis G). Nur aktivierte Heizkreise erstellen Entities in Home Assistant.
+Select the active heating circuits (A through G). Only enabled circuits create entities in Home Assistant.
 
-### Zonen
+### Zones
 
-Gib die Anzahl der Zonen-Module an (0-10). Jedes Zonen-Modul unterstutzt bis zu 8 Raume.
+Specify the number of zone modules (0–10). Each zone module supports up to 8 rooms.
 
-### Fachmann-Ebene Codes
+### Technician Level Codes
 
-Aktiviere diese Option, um zwei zusätzliche Sensor-Entities zu erhalten, die die aktuellen Fachmann-Ebene-Zugriffscodes anzeigen:
+Enable this option to get two additional sensor entities that display the current technician level access codes:
 
-| Sensor | Beschreibung |
+| Sensor | Description |
 |--------|-------------|
-| `sensor.{name}_fachmann_ebene_1` | 4-stelliger Code: Tag + Monat (`TTMM`) |
-| `sensor.{name}_fachmann_ebene_2` | 5-stelliger Code aus Stunde, Jahr, Monat, Tag |
+| `sensor.{name}_fachmann_ebene_1` | 4-digit code: day + month (`DDMM`) |
+| `sensor.{name}_fachmann_ebene_2` | 5-digit code derived from hour, year, month, day |
 
-Die Codes werden automatisch jede Minute aktualisiert und können z. B. in einer HA-Dashboard-Karte oder Benachrichtigung angezeigt werden. Sie entsprechen den Codes, die am IDM Navigator-Display unter *Fachmannebene* eingegeben werden müssen.
+The codes are automatically updated every minute and can be displayed in a HA dashboard card or notification. They correspond to the codes that must be entered on the IDM Navigator display under *Technician Level*.
 
-### Raumnamen
+### Room Names
 
-Fur jeden Raum in jeder Zone kannst du einen individuellen Namen vergeben. Diese Namen werden als Entity-Namen in Home Assistant verwendet.
+For each room in each zone, you can assign a custom name. These names are used as entity names in Home Assistant.
 
-## Rekonfiguration
+## Reconfiguration
 
-1. Gehe zu **Einstellungen → Gerate & Dienste**
-2. Klicke auf **IDM Heatpump**
-3. Klicke auf **Rekonfigurieren**
-4. Anderungen am Scan-Intervall, Heizkreisen und Zonen werden ubernommen
+1. Go to **Settings → Devices & Services**
+2. Click **IDM Heatpump**
+3. Click **Reconfigure**
+4. Changes to scan interval, heating circuits, and zones will be applied
 
-## Debug-Logging
+## Debug Logging
 
-Aktiviere erweitertes Logging zur Fehlerbehebung:
+Enable extended logging for troubleshooting:
 
 ```yaml
 logger:
@@ -61,10 +61,10 @@ logger:
     custom_components.idm_heatpump: debug
 ```
 
-## EEPROM-Hinweis
+## EEPROM Notice
 
-Bestimmte Register sind **EEPROM-sensitive** (88 insgesamt). Diese Register werden beim Schreiben in den EEPROM gespeichert und haben eine beschrankte Anzahl an Schreibzyklen. Die Integration warnt vor zu haufigem Schreiben dieser Register.
+Certain registers are **EEPROM-sensitive** (88 total). These registers are stored in EEPROM when written and have a limited number of write cycles. The integration warns about excessive writing of these registers.
 
-## GLT-Zyklisches Schreiben
+## BMS Cyclic Writing
 
-Die Register 1696 und 1698 (GLT-Temperaturanforderungen) mussen alle 10 Minuten zyklisch beschrieben werden, um aktiv zu bleiben. Die Switch-Entities fur GLT-Anforderungen handhaben dies automatisch.
+Registers 1696 and 1698 (BMS temperature requests) must be written cyclically every 10 minutes to remain active. The switch entities for BMS requests handle this automatically.

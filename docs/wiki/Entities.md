@@ -1,123 +1,123 @@
 # Entities
 
-## Sensoren
+## Sensors
 
-Die Integration erstellt uber 100 Sensor-Entities fur verschiedene Messwerte.
+The integration creates over 100 sensor entities for various measurements.
 
-### System-Sensoren
+### System Sensors
 
-| Entity | Beschreibung | Adresse |
+| Entity | Description | Address |
 |--------|-------------|---------|
-| `sensor.{name}_outdoor_temp` | Aussentemperatur | 1000 |
-| `sensor.{name}_flow_temp` | Vorlauftemperatur | 1001 |
-| `sensor.{name}_return_temp` | Rucklauftemperatur | 1002 |
-| `sensor.{name}_dhw_temp` | Warmwassertemperatur | 1003 |
-| `sensor.{name}_dhw_setpoint` | Warmwasser-Sollwert | 1004 |
-| `sensor.{name}_system_mode` | System-Betriebsmodus | 1005 |
-| `sensor.{name}_system_state` | System-Zustand | 1006 |
-| `sensor.{name}_heat_request` | Warmeanforderung | 1008 |
-| `sensor.{name}_flow_rate` | Durchfluss | 1010 |
-| `sensor.{name}_system_pressure` | Systemdruck | 1011 |
-| `sensor.{name}_compressor_runtime` | Kompressor-Laufzeit | 1012 |
-| `sensor.{name}_heat_quantity` | Warmemenge | 1013 |
+| `sensor.{name}_outdoor_temp` | Outdoor temperature | 1000 |
+| `sensor.{name}_flow_temp` | Flow temperature | 1001 |
+| `sensor.{name}_return_temp` | Return temperature | 1002 |
+| `sensor.{name}_dhw_temp` | DHW temperature | 1003 |
+| `sensor.{name}_dhw_setpoint` | DHW setpoint | 1004 |
+| `sensor.{name}_system_mode` | System operating mode | 1005 |
+| `sensor.{name}_system_state` | System state | 1006 |
+| `sensor.{name}_heat_request` | Heat request | 1008 |
+| `sensor.{name}_flow_rate` | Flow rate | 1010 |
+| `sensor.{name}_system_pressure` | System pressure | 1011 |
+| `sensor.{name}_compressor_runtime` | Compressor runtime | 1012 |
+| `sensor.{name}_heat_quantity` | Heat quantity | 1013 |
 
-### Heizkreis-Sensoren
+### Heating Circuit Sensors
 
-Fur jeden aktivierten Heizkreis (A-G):
+For each enabled heating circuit (A–G):
 
-| Entity | Beschreibung |
+| Entity | Description |
 |--------|-------------|
-| `sensor.{name}_circuit_{x}_flow_temp` | Heizkreis-Vorlauftemperatur |
-| `sensor.{name}_circuit_{x}_return_temp` | Heizkreis-Rucklauftemperatur |
-| `sensor.{name}_circuit_{x}_setpoint` | Heizkreis-Sollwert |
-| `sensor.{name}_circuit_{x}_mode` | Heizkreis-Modus |
-| `sensor.{name}_circuit_{x}_state` | Heizkreis-Zustand |
-| `sensor.{name}_circuit_{x}_curve` | Heizkurve |
-| `sensor.{name}_circuit_{x}_room_temp` | Raumtemperatur |
-| `sensor.{name}_circuit_{x}_mixer_pos` | Mischerstellung |
+| `sensor.{name}_circuit_{x}_flow_temp` | Circuit flow temperature |
+| `sensor.{name}_circuit_{x}_return_temp` | Circuit return temperature |
+| `sensor.{name}_circuit_{x}_setpoint` | Circuit setpoint |
+| `sensor.{name}_circuit_{x}_mode` | Circuit mode |
+| `sensor.{name}_circuit_{x}_state` | Circuit state |
+| `sensor.{name}_circuit_{x}_curve` | Heating curve |
+| `sensor.{name}_circuit_{x}_room_temp` | Room temperature |
+| `sensor.{name}_circuit_{x}_mixer_pos` | Mixer position |
 
-### Zonen-Sensoren
+### Zone Sensors
 
-Fur jede aktivierte Zone und jeden Raum:
+For each enabled zone and room:
 
-| Entity | Beschreibung |
+| Entity | Description |
 |--------|-------------|
-| `sensor.{name}_zone_{z}_room_{r}_temp` | Raumtemperatur |
-| `sensor.{name}_zone_{z}_room_{r}_humidity` | Raumfeuchte |
-| `sensor.{name}_zone_{z}_room_{r}_mode` | Raum-Modus |
-| `sensor.{name}_zone_{z}_mode` | Zonen-Modus |
+| `sensor.{name}_zone_{z}_room_{r}_temp` | Room temperature |
+| `sensor.{name}_zone_{z}_room_{r}_humidity` | Room humidity |
+| `sensor.{name}_zone_{z}_room_{r}_mode` | Room mode |
+| `sensor.{name}_zone_{z}_mode` | Zone mode |
 
-### Energie & Solar
+### Energy & Solar
 
-| Entity | Beschreibung |
+| Entity | Description |
 |--------|-------------|
-| `sensor.{name}_energy_heating` | Energie Heizung |
-| `sensor.{name}_energy_dhw` | Energie Warmwasser |
-| `sensor.{name}_energy_total` | Energie gesamt |
-| `sensor.{name}_solar_temp_in` | Solar-Temperatur Vorlauf |
-| `sensor.{name}_solar_temp_out` | Solar-Temperatur Rucklauf |
-| `sensor.{name}_pv_power` | PV-Leistung |
-| `sensor.{name}_battery_soc` | Batterie-Ladezustand |
+| `sensor.{name}_energy_heating` | Energy heating |
+| `sensor.{name}_energy_dhw` | Energy DHW |
+| `sensor.{name}_energy_total` | Energy total |
+| `sensor.{name}_solar_temp_in` | Solar temperature flow |
+| `sensor.{name}_solar_temp_out` | Solar temperature return |
+| `sensor.{name}_pv_power` | PV power |
+| `sensor.{name}_battery_soc` | Battery state of charge |
 
-### Fachmann-Ebene Sensoren
+### Technician Level Sensors
 
-Nur verfügbar wenn die Option **Fachmann-Ebene Codes anzeigen** im Config Flow aktiviert ist:
+Only available when the **Show Technician Level Codes** option is enabled in the config flow:
 
-| Entity | Beschreibung |
+| Entity | Description |
 |--------|-------------|
-| `sensor.{name}_fachmann_ebene_1` | Aktueller Fachmann Ebene 1 Code (`TTMM`) |
-| `sensor.{name}_fachmann_ebene_2` | Aktueller Fachmann Ebene 2 Code (zeitbasiert) |
+| `sensor.{name}_fachmann_ebene_1` | Current technician level 1 code (`DDMM`) |
+| `sensor.{name}_fachmann_ebene_2` | Current technician level 2 code (time-based) |
 
-### Fehler-Sensoren
+### Error Sensors
 
-| Entity | Beschreibung |
+| Entity | Description |
 |--------|-------------|
-| `sensor.{name}_error_1` | Fehlercode 1 |
-| `sensor.{name}_error_2` | Fehlercode 2 |
-| `sensor.{name}_error_3` | Fehlercode 3 |
+| `sensor.{name}_error_1` | Error code 1 |
+| `sensor.{name}_error_2` | Error code 2 |
+| `sensor.{name}_error_3` | Error code 3 |
 
 ## Numbers
 
-Beschreibbare Parameter mit Number-Entities:
+Writable parameters via Number entities:
 
-### System-Numbers
+### System Numbers
 
-| Entity | Beschreibung | Bereich |
-|--------|-------------|---------|
-| `number.{name}_dhw_setpoint` | Warmwasser-Sollwert | 10-60 C |
-| `number.{name}_heating_limit` | Heizgrenze | -20-30 C |
+| Entity | Description | Range |
+|--------|-------------|-------|
+| `number.{name}_dhw_setpoint` | DHW setpoint | 10-60 °C |
+| `number.{name}_heating_limit` | Heating limit | -20-30 °C |
 
-### Heizkreis-Numbers
+### Heating Circuit Numbers
 
-| Entity | Beschreibung |
+| Entity | Description |
 |--------|-------------|
-| `number.{name}_circuit_{x}_setpoint` | Heizkreis-Sollwert |
-| `number.{name}_circuit_{x}_room_setpoint` | Raum-Sollwert |
-| `number.{name}_circuit_{x}_curve_offset` | Heizkurven-Versatz |
+| `number.{name}_circuit_{x}_setpoint` | Circuit setpoint |
+| `number.{name}_circuit_{x}_room_setpoint` | Room setpoint |
+| `number.{name}_circuit_{x}_curve_offset` | Heating curve offset |
 
 ## Selects
 
-Auswahlfelder fur Betriebsmodi:
+Selection fields for operating modes:
 
-| Entity | Beschreibung | Optionen |
-|--------|-------------|----------|
-| `select.{name}_system_mode` | System-Betriebsmodus | Standby, Automatik, Abwesend, Urlaub, Nur Warmwasser, Nur Heizung |
-| `select.{name}_circuit_{x}_mode` | Heizkreis-Modus | Automatik, Dauerbetrieb, Abschalt, Zeitprogramm |
-| `select.{name}_zone_{z}_room_{r}_mode` | Raum-Modus | Komfort, Normal, Eco, Frostschutz |
-| `select.{name}_solar_mode` | Solar-Modus | Automatik, Dauerbetrieb, Aus |
+| Entity | Description | Options |
+|--------|-------------|---------|
+| `select.{name}_system_mode` | System operating mode | Standby, Auto, Away, Holiday, DHW Only, Heating Only |
+| `select.{name}_circuit_{x}_mode` | Circuit mode | Auto, Continuous, Off, Schedule |
+| `select.{name}_zone_{z}_room_{r}_mode` | Room mode | Comfort, Normal, Eco, Frost Protection |
+| `select.{name}_solar_mode` | Solar mode | Auto, Continuous, Off |
 
-## Schalter (Switch)
+## Switches
 
-| Entity | Beschreibung |
+| Entity | Description |
 |--------|-------------|
-| `switch.{name}_glt_heat_request` | GLT-Warmeanforderung |
-| `switch.{name}_glt_cool_request` | GLT-Kuhlanforderung |
+| `switch.{name}_glt_heat_request` | BMS heat request |
+| `switch.{name}_glt_cool_request` | BMS cooling request |
 
 ## Binary Sensors
 
-| Entity | Beschreibung |
+| Entity | Description |
 |--------|-------------|
-| `binary_sensor.{name}_error_active` | Fehler aktiv |
-| `binary_sensor.{name}_heating_active` | Heizung aktiv |
-| `binary_sensor.{name}_dhw_active` | Warmwasser aktiv |
-| `binary_sensor.{name}_compressor_running` | Kompressor lauft |
+| `binary_sensor.{name}_error_active` | Error active |
+| `binary_sensor.{name}_heating_active` | Heating active |
+| `binary_sensor.{name}_dhw_active` | DHW active |
+| `binary_sensor.{name}_compressor_running` | Compressor running |

@@ -1,4 +1,6 @@
-# 🔥 IDM Heatpump für Home Assistant
+**English** | **[Deutsch](README_de.md)**
+
+# 🔥 IDM Heatpump for Home Assistant
 
 [![GitHub Release][releases-shield]][releases]
 [![Downloads][downloads-shield]][releases]
@@ -14,101 +16,101 @@
 
 [![Release Management](https://github.com/Xerolux/idm-heatpump-hass/actions/workflows/release.yml/badge.svg)](https://github.com/Xerolux/idm-heatpump-hass/actions/workflows/release.yml)
 
-> **Steuerung und Überwachung deiner IDM Navigator Wärmepumpe direkt in Home Assistant – 100% lokal über Modbus TCP.**
+> **Control and monitor your IDM Navigator heat pump directly in Home Assistant – 100% local via Modbus TCP.**
 
 <p align="center">
   <img src="docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
-  <small><i>KI generiertes Bild</i></small>
+  <small><i>AI generated image</i></small>
 </p>
 
 ---
 
 ## 🌟 Features
 
-| Kategorie | Was ist enthalten |
-|-----------|-------------------|
-| **🌡️ System-Überwachung** | Vorlauf, Rücklauf, Warmwasser, Außentemperatur, Druck, Durchfluss |
-| **🔧 Heizkreise A–G** | Bis zu 7 Heizkreise mit individueller Sollwert- und Modussteuerung |
-| **🏠 Zonen-Module** | Bis zu 10 Zonen mit je 8 Räumen (Raumthermostat-Funktion) |
-| **💧 Warmwasser** | Warmwasser-Sollwert und Prioritätssteuerung |
-| **☀️ Solar & PV** | Solare Warmwasserbereitung, PV-Überschussnutzung |
-| **⚡ Energiemonitoring** | Wärmemenge, Laufzeiten, Energiezähler |
-| **❄️ Kaskade & Bivalenz** | Mehrfach-Wärmepumpen-Steuerung, Heizstab-Integration |
-| **📡 GLT Fernwartung** | GLT-Temperaturanforderungen (zyklisches Schreiben) |
-| **🛡️ Fehlermanagement** | Fehlererkennung, Fehlerquittierung, Diagnosedaten-Export |
-| **🔑 Fachmann-Ebene** | Optionale Sensoren für Fachmann Ebene 1 & 2 Codes (zeitbasiert, minütlich aktualisiert) |
-| **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
+| Category | What's Included |
+|----------|----------------|
+| **🌡️ System Monitoring** | Flow, return, hot water, outdoor temperature, pressure, flow rate |
+| **🔧 Heating Circuits A–G** | Up to 7 heating circuits with individual setpoint and mode control |
+| **🏠 Zone Modules** | Up to 10 zones with 8 rooms each (room thermostat function) |
+| **💧 Hot Water** | DHW setpoint and priority control |
+| **☀️ Solar & PV** | Solar hot water heating, PV surplus utilization |
+| **⚡ Energy Monitoring** | Heat quantity, runtime, energy meters |
+| **❄️ Cascade & Bivalence** | Multi-heat pump control, heating element integration |
+| **📡 BMS Remote Maintenance** | BMS temperature requests (cyclic writing) |
+| **🛡️ Error Management** | Error detection, error acknowledgment, diagnostics export |
+| **🔑 Technician Level** | Optional sensors for technician level 1 & 2 codes (time-based, updated every minute) |
+| **🔒 Security** | 100% local, Modbus TCP, EEPROM protection, EEPROM-sensitive registers |
 
 ---
 
-## ⚡ Schnellstart
+## ⚡ Quick Start
 
-**1. HACS – Integration hinzufügen**
+**1. HACS – Add Integration**
 
 <a href="https://my.home-assistant.io/redirect/hacs_repository/?repository=https%3A%2F%2Fgithub.com%2FXerolux%2Fidm-heatpump-hass&owner=Xerolux&category=Integration" target="_blank" rel="noopener noreferrer"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store." /></a>
 
 ```
-HACS → Integrationen → ⋮ → Benutzerdefinierte Repositories
-URL: https://github.com/Xerolux/idm-heatpump-hass  |  Kategorie: Integration
-→ "IDM Heatpump" herunterladen → HA neu starten
+HACS → Integrations → ⋮ → Custom Repositories
+URL: https://github.com/Xerolux/idm-heatpump-hass  |  Category: Integration
+→ Download "IDM Heatpump" → Restart HA
 ```
 
-**2. Integration einrichten**
+**2. Set Up Integration**
 ```
-Einstellungen → Geräte & Dienste → Integration hinzufügen → "IDM Heatpump"
-IP-Adresse & Port eingeben → Heizkreise & Zonen konfigurieren → Fertig!
+Settings → Devices & Services → Add Integration → "IDM Heatpump"
+Enter IP address & port → Configure heating circuits & zones → Done!
 ```
 
-**3. Fertig!** 🎉 Deine Wärmepumpe ist jetzt smart.
+**3. Done!** 🎉 Your heat pump is now smart.
 
-> Detaillierte Anleitung → **[Installation & Setup][wiki-install]**
-
----
-
-## 📖 Dokumentation (Wiki)
-
-Die vollständige Dokumentation befindet sich im **[Wiki][wiki]**:
-
-| Bereich | Seiten |
-|---------|--------|
-| 🚀 **Erste Schritte** | [Installation & Setup][wiki-install] · [Konfiguration][wiki-config] |
-| 📊 **Entities** | [Alle Entities][wiki-entities] · [Sensoren][wiki-sensors] · [Schalter][wiki-switches] · [Selects][wiki-selects] · [Numbers][wiki-numbers] |
-| ⚙️ **Automatisierung** | [Services Referenz][wiki-services] |
-| 🔧 **Betrieb** | [Troubleshooting][wiki-trouble] · [Modbus-Register][wiki-registers] |
-| 👩‍💻 **Entwicklung** | [Contributing][wiki-contributing] · [Changelog][wiki-changelog] |
+> Detailed guide → **[Installation & Setup][wiki-install]**
 
 ---
 
-## 🔑 Voraussetzungen
+## 📖 Documentation (Wiki)
 
-- Home Assistant **2025.12.0+** (getestet bis 2026.3)
-- HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
-- IDM Navigator 2.0 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
-- Python 3.13+ (HA 2026.3 nutzt Python 3.14.2)
-- pymodbus ≥3.7.0 (HA 2026.3 nutzt pymodbus 3.11.2)
+The full documentation is available in the **[Wiki][wiki]**:
 
----
-
-## 📋 Unterstützte Plattformen
-
-| Plattform | Entities | Beschreibung |
-|-----------|----------|--------------|
-| **Sensor** | 100+ | Temperaturen, Drücke, Durchflüsse, Energie, Laufzeiten, Fehlercodes |
-| **Binary Sensor** | 9 | Fehlerstatus, Schaltzustände, Alarme |
-| **Number** | ~30 | Sollwerte, Temperaturen, Parameter (beschreibbar) |
-| **Select** | ~15 | Betriebsmodi, Heizkreis-Modi, Raum-Modi, Solar-Modi |
-| **Switch** | 4 | GLT-Temperaturanforderungen, Fernwartung |
+| Section | Pages |
+|---------|-------|
+| 🚀 **Getting Started** | [Installation & Setup][wiki-install] · [Configuration][wiki-config] |
+| 📊 **Entities** | [All Entities][wiki-entities] · [Sensors][wiki-sensors] · [Switches][wiki-switches] · [Selects][wiki-selects] · [Numbers][wiki-numbers] |
+| ⚙️ **Automation** | [Services Reference][wiki-services] |
+| 🔧 **Operation** | [Troubleshooting][wiki-trouble] · [Modbus Registers][wiki-registers] |
+| 👩‍💻 **Development** | [Contributing][wiki-contributing] · [Changelog][wiki-changelog] |
 
 ---
 
-## 🏗️ Architektur
+## 🔑 Requirements
+
+- Home Assistant **2025.12.0+** (tested up to 2026.5)
+- HACS ([Installation guide](https://hacs.xyz/docs/setup/download))
+- IDM Navigator 2.0 heat pump with Modbus TCP enabled (port 502)
+- Python 3.13+ (HA 2026.3 uses Python 3.14.2)
+- pymodbus ≥3.7.0 (HA 2026.3 uses pymodbus 3.11.2)
+
+---
+
+## 📋 Supported Platforms
+
+| Platform | Entities | Description |
+|----------|----------|-------------|
+| **Sensor** | 100+ | Temperatures, pressures, flow rates, energy, runtimes, error codes |
+| **Binary Sensor** | 9 | Error status, switch states, alarms |
+| **Number** | ~30 | Setpoints, temperatures, parameters (writable) |
+| **Select** | ~15 | Operating modes, circuit modes, room modes, solar modes |
+| **Switch** | 4 | BMS temperature requests, remote maintenance |
+
+---
+
+## 🏗️ Architecture
 
 ```
 Home Assistant
     │
-    ├── IdmCoordinator (DataUpdateCoordinator, konfigurierbares Polling)
+    ├── IdmCoordinator (DataUpdateCoordinator, configurable polling)
     │       │
-    │       ├── IdmModbusClient (pymodbus, async, Batch-Lesung)
+    │       ├── IdmModbusClient (pymodbus, async, batch reading)
     │       │       │
     │       │       └── IDM Navigator 2.0 (Modbus TCP, Port 502, Slave ID 1)
     │       │               FC 03: Read Input Registers
@@ -118,22 +120,22 @@ Home Assistant
     │
     ├── Services (set_system_mode, acknowledge_errors, write_register)
     │
-    └── Diagnostics (JSON-Export via HA UI)
+    └── Diagnostics (JSON export via HA UI)
 ```
 
-### Technische Details
+### Technical Details
 
-- **663 Register** insgesamt (215 RO, 266 RW, 16 W-only, 166 kontextabhängig)
-- **Batch-Lesung**: Zusammenhängende Register werden gruppiert (max. 30 pro Batch)
-- **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
-- **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
-- **Auto-Recovery**: Exponentielles Backoff bei Verbindungsfehlern
+- **663 registers** total (215 RO, 266 RW, 16 W-only, 166 context-dependent)
+- **Batch reading**: Consecutive registers are grouped (max. 30 per batch)
+- **Data types**: FLOAT (IEEE 754, 2 registers), UCHAR (8-bit), WORD (16-bit), BOOL
+- **EEPROM protection**: 88 EEPROM-sensitive registers are protected from excessive writing
+- **Auto-recovery**: Exponential backoff on connection errors
 
 ---
 
-## 💝 Unterstützung
+## 💝 Support
 
-Diese Integration wird in meiner Freizeit entwickelt:
+This integration is developed in my spare time:
 
 [![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
 [![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
@@ -141,38 +143,36 @@ Diese Integration wird in meiner Freizeit entwickelt:
 [![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
 [![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
 
-- ⭐ Repository auf GitHub sternen
-- 🐛 [Bugs melden][issues]
-- 📢 Mit anderen Wärmepumpen-Besitzern teilen
-- 💬 Anderen in der [Community][forum] helfen
+- ⭐ Star this repository on GitHub
+- 🐛 [Report bugs][issues]
+- 📢 Share with other heat pump owners
+- 💬 Help others in the [community][forum]
 
 ---
 
-## 🔥 Über IDM Navigator
+## 🔥 About IDM Navigator
 
-Der **IDM Navigator 2.0** von [IDM EnergieSysteme GmbH](https://www.idm-energiesysteme.de/) ist ein modulares Wärmepumpen-Steuerungssystem mit Modbus TCP-Schnittstelle für nahtlose Home Assistant Integration.
+The **IDM Navigator 2.0** by [IDM EnergieSysteme GmbH](https://www.idm-energiesysteme.de/) is a modular heat pump control system with a Modbus TCP interface for seamless Home Assistant integration.
 
-- **Offizieller Shop:** [idm-energiesysteme.de](https://www.idm-energiesysteme.de/)
-- **Modbus-Dokumentation:** Navigator 2.0 Modbus TCP Registerbeschreibung
+- **Official Shop:** [idm-energiesysteme.de](https://www.idm-energiesysteme.de/)
+- **Modbus Documentation:** Navigator 2.0 Modbus TCP register description
 
 ---
 
-## ⚠️ Haftungsausschluss / Disclaimer
+## ⚠️ Disclaimer
 
-Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner Verbindung** zu IDM Energiesysteme GmbH.
+This project is an **unofficial community project** and is **not affiliated with, endorsed by, or connected to** IDM Energiesysteme GmbH.
 
-- Alle Marken, Logos und Produktnamen (z.B. „IDM", „Navigator") sind Eigentum ihrer jeweiligen Inhaber.
-- Die verwendeten Logos und Bilder dienen ausschließlich der Identifikation des kompatiblen Geräts und werden nicht kommerziell genutzt.
-- Dieses Projekt wird ohne jegliche Garantie bereitgestellt. Die Nutzung erfolgt auf eigene Gefahr — insbesondere beim Schreiben von Modbus-Registern.
-- IDM Energiesysteme GmbH hat dieses Projekt weder autorisiert noch unterstützt.
-
-> This project is an **unofficial community integration** and is **not affiliated with, endorsed by, or connected to IDM Energiesysteme GmbH** in any way. All trademarks and product names belong to their respective owners.
+- All trademarks, logos, and product names (e.g., "IDM", "Navigator") are property of their respective owners.
+- The logos and images used are solely for identifying the compatible device and are not used commercially.
+- This project is provided without any warranty. Use at your own risk — especially when writing Modbus registers.
+- IDM Energiesysteme GmbH has neither authorized nor endorsed this project.
 
 ---
 
 <div align="center">
 
-**Made with ❤️ for the Home Assistant & Wärmepumpen Community**
+**Made with ❤️ for the Home Assistant & Heat Pump Community**
 
 [![GitHub][github-shield]][github]
 
@@ -186,8 +186,8 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [wiki-install]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-and-Setup
 [wiki-config]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Configuration
 [wiki-entities]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities
-[wiki-sensors]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#sensoren
-[wiki-switches]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#schalter-switch
+[wiki-sensors]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#sensors
+[wiki-switches]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#switches
 [wiki-selects]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#selects
 [wiki-numbers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#numbers
 [wiki-services]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Services

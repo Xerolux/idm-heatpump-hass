@@ -1,59 +1,59 @@
 # Troubleshooting
 
-## Verbindungsprobleme
+## Connection Problems
 
-### "Verbindung fehlgeschlagen"
+### "Connection failed"
 
-- Prufe die **IP-Adresse** des IDM Navigators
-- Stelle sicher, dass **Modbus TCP** auf dem Navigator aktiviert ist
-- Prufe ob der **Port 502** erreichbar ist (Firewall)
-- Pinge die IP-Adresse: `ping <ip-des-navigators>`
+- Check the **IP address** of the IDM Navigator
+- Make sure **Modbus TCP** is enabled on the Navigator
+- Check if **port 502** is reachable (firewall)
+- Ping the IP address: `ping <ip-of-navigator>`
 
-### Verbindungsabbrüche
+### Connection drops
 
-- Prüfe die Netzwerkverbindung (LAN-Kabel empfohlen)
-- Erhöhe das Scan-Intervall (z.B. auf 30 Sekunden)
-- Aktiviere Debug-Logging (siehe [Konfiguration](Configuration))
-- Die Integration optimiert Modbus-Verbindungen automatisch, um ständige Neuverbindungen zu vermeiden (`self._client.connected` Checks). Wenn trotzdem Abbrüche passieren, prüfe die Stabilität des lokalen Netzwerks oder des WLANs.
+- Check the network connection (LAN cable recommended)
+- Increase the scan interval (e.g., to 30 seconds)
+- Enable debug logging (see [Configuration](Configuration))
+- The integration automatically optimizes Modbus connections to avoid constant reconnections (`self._client.connected` checks). If drops still occur, check the stability of your local network or WiFi.
 
-### "Keine Daten empfangen"
+### "No data received"
 
-- Prufe die **Slave ID** (Standard: 1)
-- Prufe ob andere Modbus-Clients gleichzeitig auf demselben Port zugreifen
-- Restart des IDM Navigators kann helfen
+- Check the **Slave ID** (default: 1)
+- Check if other Modbus clients are accessing the same port simultaneously
+- Restarting the IDM Navigator may help
 
-## Entity-Probleme
+## Entity Problems
 
-### Entities fehlen
+### Missing entities
 
-- Stelle sicher, dass die entsprechenden **Heizkreise** und **Zonen** in der Konfiguration aktiviert sind
-- Rekonfiguriere die Integration
-- Starte Home Assistant neu
+- Make sure the corresponding **heating circuits** and **zones** are enabled in the configuration
+- Reconfigure the integration
+- Restart Home Assistant
 
-### Falsche oder absurde Werte (z.B. -3276.8°C)
+### Incorrect or absurd values (e.g., -3276.8°C)
 
-- Prüfe, ob die Register-Adressen für dein Navigator-Modell korrekt sind.
-- Extreme oder falsche Zahlen deuten meist auf falsch deklarierte Datentypen (Float, Word, Vorzeichen) hin. Bitte melde uns solche Werte über GitHub Issues, damit wir das Register in `registers.py` auf `INT8`, `INT16` oder `FLOAT` anpassen können.
-- Aktiviere Debug-Logging und prüfe die rohen Register-Werte in den Logs.
-- Melde falsche Register-Zuordnungen als [Bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md).
+- Check if the register addresses are correct for your Navigator model.
+- Extreme or incorrect numbers usually indicate incorrectly declared data types (Float, Word, sign). Please report such values via GitHub Issues so we can adjust the register in `registers.py` to `INT8`, `INT16`, or `FLOAT`.
+- Enable debug logging and check the raw register values in the logs.
+- Report incorrect register mappings as a [bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md).
 
-### Werte aktualisieren sich nicht
+### Values not updating
 
-- Prufe das **Scan-Intervall** in den Optionen
-- Prufe die Home Assistant Logs auf Fehlermeldungen
-- Rekonfiguriere die Integration
+- Check the **scan interval** in the options
+- Check the Home Assistant logs for error messages
+- Reconfigure the integration
 
-## EEPROM-Warnungen
+## EEPROM Warnings
 
-Wenn du beim Schreiben von Werten eine Warnung bezuglich EEPROM erhaltst:
+If you receive a warning about EEPROM when writing values:
 
-- Diese Register haben eine beschrankte Anzahl an Schreibzyklen
-- Anderungen an diesen Werten sollten **sparsam** vorgenommen werden
-- Die Integration warnt automatisch vor EEPROM-Sensitivitat
+- These registers have a limited number of write cycles
+- Changes to these values should be made **sparingly**
+- The integration automatically warns about EEPROM sensitivity
 
-## Debug-Logging
+## Debug Logging
 
-Aktiviere erweitertes Logging:
+Enable extended logging:
 
 ```yaml
 logger:
@@ -63,29 +63,29 @@ logger:
     pymodbus: debug
 ```
 
-Suche in den Logs nach:
-- `idm_heatpump` - Integration-spezifische Meldungen
-- `Modbus read error` - Modbus-Lesefehler
-- `Modbus write error` - Modbus-Schreibfehler
-- `Decode failed` - Register-Dekodierungsfehler
+Look for in the logs:
+- `idm_heatpump` - integration-specific messages
+- `Modbus read error` - Modbus read errors
+- `Modbus write error` - Modbus write errors
+- `Decode failed` - Register decoding errors
 
-## Diagnosedaten exportieren
+## Export Diagnostics Data
 
-1. Gehe zu **Einstellungen → Geräte & Dienste**
-2. Klicke auf **IDM Heatpump**
-3. Klicke auf **Diagnosedaten herunterladen**
-4. Hänge die Datei an deinen [Bug-Report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md) an
+1. Go to **Settings → Devices & Services**
+2. Click **IDM Heatpump**
+3. Click **Download diagnostics**
+4. Attach the file to your [bug report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 
-## 👩‍💻 Für Entwickler (Mock Tests)
+## 👩‍💻 For Developers (Mock Tests)
 
-Bitte führe Schreiboperationen auf dem Modbus (`write_register`) **niemals live gegen eine echte Wärmepumpe** aus, wenn du Code-Änderungen an der Basislogik testest. Nutze stattdessen unsere Mock-Tests in `custom_components/idm_heatpump/tests/test_modbus_client.py` via `pytest`, um das Decodieren (`decode_value`) und Encodieren (`encode_value`) ohne Risiko zu testen.
+Please **never** run write operations on Modbus (`write_register`) live against a real heat pump when testing code changes to the base logic. Instead, use our mock tests in `custom_components/idm_heatpump/tests/test_modbus_client.py` via `pytest` to test decoding (`decode_value`) and encoding (`encode_value`) without risk.
 
-## Haufige Fehler und Losungen
+## Common Errors and Solutions
 
-| Problem | Losung |
-|---------|--------|
-| Integration startet nicht | HA neu starten, Logs prufen |
-| Keine Verbindung | IP, Port, Firewall prufen |
-| Falsche Temperaturen | Register-Zuordnung prufen, Bug melden |
-| Schreiben fehlgeschlagen | Register beschreibbar? EEPROM-Warnung beachten |
-| Alle Entities "unavailable" | Navigator erreichbar? Modbus TCP aktiv? |
+| Problem | Solution |
+|---------|----------|
+| Integration won't start | Restart HA, check logs |
+| No connection | Check IP, port, firewall |
+| Incorrect temperatures | Check register mapping, report bug |
+| Write failed | Register writable? Note EEPROM warning |
+| All entities "unavailable" | Navigator reachable? Modbus TCP enabled? |
