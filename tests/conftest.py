@@ -58,6 +58,7 @@ def _stub_pymodbus() -> None:
 
         def close(self):
             self.connected = False
+            return None
 
         async def read_input_registers(self, address, count, **kwargs):
             raise NotImplementedError("use mock in tests")
@@ -407,7 +408,15 @@ def _stub_homeassistant() -> None:
         CONFIG = "config"
         DIAGNOSTIC = "diagnostic"
 
+    class _EntityDescription:
+        def __init__(self, key="", name="", **kwargs):
+            self.key = key
+            self.name = name
+            for k, v in kwargs.items():
+                setattr(self, k, v)
+
     entity_mod.EntityCategory = _EntityCategory
+    entity_mod.EntityDescription = _EntityDescription
 
     # homeassistant.helpers.device_registry
     device_registry_mod = _make_module("homeassistant.helpers.device_registry")

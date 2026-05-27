@@ -1,18 +1,26 @@
+"""Service handlers for IDM Heatpump integration."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-from __future__ import annotations
-"""Service handlers for IDM Heatpump integration."""
 
 import logging
 from collections.abc import Mapping
 
 from homeassistant.config_entries import ConfigEntryState
-from homeassistant.core import HomeAssistant, ServiceCall, ServiceResponse, SupportsResponse
+from homeassistant.core import (
+    HomeAssistant,
+    ServiceCall,
+    ServiceResponse,
+    SupportsResponse,
+)
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from .const import DOMAIN
+from .coordinator import IdmCoordinator
 from .modbus_client import DataType, RegisterDef
 
 _LOGGER = logging.getLogger(__name__)
@@ -56,9 +64,8 @@ async def async_unload_services(hass: HomeAssistant) -> None:
         hass.services.async_remove(DOMAIN, service)
 
 
-async def _get_coordinator(hass: HomeAssistant, call: ServiceCall):
+async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordinator:
     """Return the first loaded IDM coordinator."""
-    from .coordinator import IdmCoordinator
     from homeassistant.helpers import entity_registry as er
 
     call_data = call.data if isinstance(call.data, Mapping) else {}

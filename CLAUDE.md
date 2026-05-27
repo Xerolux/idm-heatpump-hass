@@ -7,10 +7,10 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 heat pumps via Modbus TCP. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.2.9` (defined in `custom_components/idm_heatpump/manifest.json`)
+- **Current Version**: `0.3.0` (defined in `custom_components/idm_heatpump/manifest.json`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
-- **Min HA Version**: 2025.12.0
+- **Min HA Version**: 2026.5.0
 - **Python**: 3.13+
 - **Key Dependency**: `pymodbus >= 3.12.1`
 

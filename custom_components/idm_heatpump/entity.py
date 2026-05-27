@@ -1,11 +1,14 @@
+"""Base entity for IDM Heatpump integration."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-from __future__ import annotations
-"""Base entity for IDM Heatpump integration."""
 
 from homeassistant.helpers.device_registry import DeviceInfo
+from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
@@ -19,7 +22,10 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
     _attr_has_entity_name = True
 
     def __init__(
-        self, coordinator: IdmCoordinator, reg: RegisterDef, entity_desc
+        self,
+        coordinator: IdmCoordinator,
+        reg: RegisterDef,
+        entity_desc: EntityDescription,
     ) -> None:
         super().__init__(coordinator)
         self._register = reg
@@ -38,7 +44,10 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
     def available(self) -> bool:
         if not super().available:
             return False
-        if not self.coordinator.data or self._register.name not in self.coordinator.data:
+        if (
+            not self.coordinator.data
+            or self._register.name not in self.coordinator.data
+        ):
             return False
         if self.coordinator.hide_unused:
             value = self.coordinator.data.get(self._register.name)

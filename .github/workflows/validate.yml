@@ -23,42 +23,39 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.14"]
-        home-assistant-version: 
-          - "2026.3.1"
+        python-version: ["3.13"]
+        home-assistant-version:
           - "2026.5.0"
-    
+
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-          
+
       - name: Install Home Assistant ${{ matrix.home-assistant-version }}
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install homeassistant==${{ matrix.home-assistant-version }}
           pip install aiohttp>=3.8.0
-          
+
       - name: Install dev dependencies
         run: |
           pip install ruff mypy pytest pytest-cov pytest-asyncio
           pip install pytest-homeassistant-custom-component>=0.13.317
-          
+
       - name: Lint with Ruff
         run: |
           ruff check custom_components/idm_heatpump/ \
             --line-length=120 \
             --output-format=github
-        continue-on-error: true
-        
+
       - name: Format check with Ruff
         run: |
           ruff format custom_components/idm_heatpump/ --check
-        continue-on-error: true
-        
+
       - name: Type check with mypy
         run: |
           mypy custom_components/idm_heatpump/ \
@@ -66,8 +63,7 @@ jobs:
             --ignore-missing-imports \
             --allow-untyped-globals \
             --allow-subclassing-any
-        continue-on-error: true
-      
+
       - name: Run Unit Tests
         run: |
           pytest tests/ \
@@ -76,8 +72,7 @@ jobs:
             --cov=custom_components/idm_heatpump \
             --cov-report=xml \
             --cov-report=term-missing
-        continue-on-error: true
-        
+
       - name: Create validation summary
         if: always()
         run: |
@@ -101,7 +96,7 @@ jobs:
           echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Validation | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          
+
           if [[ "${{ needs.validate.result }}" == "success" ]]; then
             echo "All checks passed!" >> $GITHUB_STEP_SUMMARY
           else

@@ -1,9 +1,11 @@
+"""Async Modbus TCP client for IDM Navigator heat pumps."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-from __future__ import annotations
-"""Async Modbus TCP client for IDM Navigator heat pumps."""
 
 import asyncio
 import logging
@@ -19,6 +21,7 @@ from pymodbus.client import AsyncModbusTcpClient
 from pymodbus.exceptions import ConnectionException, ModbusException
 
 _LOGGER = logging.getLogger(__name__)
+
 
 # pymodbus >= 3.10 uses device_id (previously called slave)
 def _get_slave_param() -> str:
@@ -38,6 +41,7 @@ def _get_slave_param() -> str:
         except (ValueError, IndexError):
             pass
         return "slave"
+
 
 _PMODBUS_SLAVE_PARAM = _get_slave_param()
 
@@ -103,9 +107,9 @@ class IdmModbusClient:
 
     async def disconnect(self) -> None:
         if self._client is not None:
-            maybe_coro = self._client.close()
-            if inspect.isawaitable(maybe_coro):
-                await maybe_coro
+            close_result = self._client.close()
+            if asyncio.iscoroutine(close_result):
+                await close_result
             self._client = None
             _LOGGER.debug("Disconnected from %s:%d", self._host, self._port)
 
@@ -120,21 +124,31 @@ class IdmModbusClient:
             addr = int(address)
             cnt = int(count)
             slave = int(self._slave_id)
-            _LOGGER.debug("Calling read_input_registers address=%s count=%s %s=%s", addr, cnt, _PMODBUS_SLAVE_PARAM, slave)
+            _LOGGER.debug(
+                "Calling read_input_registers address=%s count=%s %s=%s",
+                addr,
+                cnt,
+                _PMODBUS_SLAVE_PARAM,
+                slave,
+            )
             kwargs = {_PMODBUS_SLAVE_PARAM: slave}
             try:
                 result = await client.read_input_registers(
-                    address=addr, count=cnt, **kwargs
+                    address=addr,
+                    count=cnt,
+                    **kwargs,  # type: ignore[arg-type]
                 )
             except Exception as e:
                 _LOGGER.error("Exception during read_input_registers: %s", e)
                 raise
-            
-            _LOGGER.debug("Result type: %s, isError: %s", type(result).__name__, result.isError())
+
+            _LOGGER.debug(
+                "Result type: %s, isError: %s", type(result).__name__, result.isError()
+            )
 
             if result.isError():
                 raise ModbusException(f"Modbus error reading address {address}")
-            
+
             _LOGGER.debug("Registers: %s", result.registers)
 
             return list(result.registers)
@@ -147,7 +161,9 @@ class IdmModbusClient:
             vals = [int(v) for v in values]
             kwargs = {_PMODBUS_SLAVE_PARAM: slave}
             result = await client.write_registers(
-                address=addr, values=vals, **kwargs
+                address=addr,
+                values=vals,
+                **kwargs,  # type: ignore[arg-type]
             )
 
             if result.isError():
@@ -166,7 +182,11 @@ class IdmModbusClient:
             return round(value * reg.multiplier, 2)
 
         elif reg.datatype == DataType.UCHAR:
-            return round((registers[0] & 0xFF) * reg.multiplier, 2) if reg.multiplier != 1.0 else (registers[0] & 0xFF)
+            return (
+                round((registers[0] & 0xFF) * reg.multiplier, 2)
+                if reg.multiplier != 1.0
+                else (registers[0] & 0xFF)
+            )
 
         elif reg.datatype == DataType.INT8:
             val = registers[0] & 0xFF
@@ -181,7 +201,11 @@ class IdmModbusClient:
             return round(val * reg.multiplier, 2) if reg.multiplier != 1.0 else val
 
         elif reg.datatype == DataType.UINT16:
-            return round(registers[0] * reg.multiplier, 2) if reg.multiplier != 1.0 else registers[0]
+            return (
+                round(registers[0] * reg.multiplier, 2)
+                if reg.multiplier != 1.0
+                else registers[0]
+            )
 
         elif reg.datatype == DataType.BOOL:
             return bool(registers[0] & 0x01)
@@ -234,7 +258,9 @@ class IdmModbusClient:
             registers = await self._read_registers(reg.address, reg.size)
             return self.decode_value(registers, reg)
         except (ConnectionException, ModbusException) as err:
-            _LOGGER.warning("Failed to read register %s (%d): %s", reg.name, reg.address, err)
+            _LOGGER.warning(
+                "Failed to read register %s (%d): %s", reg.name, reg.address, err
+            )
             raise
 
     async def write_register(self, reg: RegisterDef, value: Any) -> None:
@@ -253,12 +279,12 @@ class IdmModbusClient:
             await self._write_registers(reg.address, encoded)
             _LOGGER.debug("Wrote %s = %s to address %d", reg.name, value, reg.address)
         except (ConnectionException, ModbusException) as err:
-            _LOGGER.error("Failed to write register %s (%d): %s", reg.name, reg.address, err)
+            _LOGGER.error(
+                "Failed to write register %s (%d): %s", reg.name, reg.address, err
+            )
             raise
 
-    async def read_batch(
-        self, register_list: list[RegisterDef]
-    ) -> dict[str, Any]:
+    async def read_batch(self, register_list: list[RegisterDef]) -> dict[str, Any]:
         if not register_list:
             return {}
 
@@ -322,9 +348,7 @@ class IdmModbusClient:
                     reg_names,
                 )
             else:
-                _LOGGER.warning(
-                    "Failed to read group starting at %d: %s", start, err
-                )
+                _LOGGER.warning("Failed to read group starting at %d: %s", start, err)
             return {}
 
         data: dict[str, Any] = {}
@@ -345,33 +369,36 @@ class IdmModbusClient:
                     individual = await self.read_register(reg)
                     data[reg.name] = individual
                 except Exception as fallback_err:  # noqa: BLE001
-                    _LOGGER.debug("Fallback read for %s also failed: %s", reg.name, fallback_err)
+                    _LOGGER.debug(
+                        "Fallback read for %s also failed: %s", reg.name, fallback_err
+                    )
             offset += reg.size
 
         return data
 
     async def test_connection(self) -> bool:
         from pymodbus.client import AsyncModbusTcpClient as FreshClient
+
         test_client = FreshClient(
-            host=str(self._host), 
-            port=int(self._port), 
-            timeout=10
+            host=str(self._host), port=int(self._port), timeout=10
         )
         try:
             await test_client.connect()
             if not test_client.connected:
                 _LOGGER.warning("Test connection failed: not connected")
                 return False
-            
+
             kwargs = {_PMODBUS_SLAVE_PARAM: int(self._slave_id)}
             result = await test_client.read_input_registers(
-                address=1350, count=2, **kwargs
+                address=1350,
+                count=2,
+                **kwargs,  # type: ignore[arg-type]
             )
-            
+
             if result.isError():
                 _LOGGER.warning("Test connection failed: Modbus error %s", result)
                 return False
-            
+
             registers = list(result.registers)
             _LOGGER.debug("Test connection successful, registers: %s", registers)
             return True
@@ -379,5 +406,5 @@ class IdmModbusClient:
             _LOGGER.warning("Test connection failed: %s", err)
             return False
         finally:
-            if hasattr(test_client, 'close'):
+            if hasattr(test_client, "close"):
                 test_client.close()

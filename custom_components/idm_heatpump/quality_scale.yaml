@@ -46,7 +46,7 @@ rules:
   dependency-transparency:
     status: done
     comment: >
-      pymodbus>=3.6.0 is declared in manifest.json requirements.
+      pymodbus>=3.12.1 is declared in manifest.json requirements.
 
   docs-actions:
     status: done

@@ -1,11 +1,15 @@
+"""Switch platform for IDM Heatpump."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-from __future__ import annotations
-"""Switch platform for IDM Heatpump."""
 
 import logging
+
+from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
@@ -36,13 +40,12 @@ async def async_setup_entry(
 
 
 class IdmSwitch(IdmEntity, SwitchEntity):
-
     @property
     def is_on(self) -> bool:
         value = self.coordinator.data.get(self._register.name)
         return bool(value) if value is not None else False
 
-    async def async_turn_on(self, **kwargs) -> None:
+    async def async_turn_on(self, **kwargs: Any) -> None:
         try:
             await self.coordinator.async_write_register(self._register, True)
         except Exception as err:
@@ -53,7 +56,7 @@ class IdmSwitch(IdmEntity, SwitchEntity):
                 translation_placeholders={"error": str(err)},
             ) from err
 
-    async def async_turn_off(self, **kwargs) -> None:
+    async def async_turn_off(self, **kwargs: Any) -> None:
         try:
             await self.coordinator.async_write_register(self._register, False)
         except Exception as err:
