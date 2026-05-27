@@ -1,9 +1,11 @@
+"""Number platform for IDM Heatpump."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-from __future__ import annotations
-"""Number platform for IDM Heatpump."""
 
 import logging
 
@@ -36,7 +38,6 @@ async def async_setup_entry(
 
 
 class IdmNumber(IdmEntity, NumberEntity):
-
     @property
     def native_value(self) -> float | None:
         value = self.coordinator.data.get(self._register.name)
@@ -46,7 +47,9 @@ class IdmNumber(IdmEntity, NumberEntity):
         try:
             await self.coordinator.async_write_register(self._register, value)
         except Exception as err:
-            _LOGGER.error("Failed to write %s = %s: %s", self._register.name, value, err)
+            _LOGGER.error(
+                "Failed to write %s = %s: %s", self._register.name, value, err
+            )
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="write_failed",

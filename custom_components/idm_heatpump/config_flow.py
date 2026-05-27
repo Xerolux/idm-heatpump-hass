@@ -1,10 +1,11 @@
+"""Config flow for IDM Heatpump integration."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-"""Config flow for IDM Heatpump integration."""
-
-from __future__ import annotations
 
 import logging
 from typing import Any
@@ -143,8 +144,8 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
 
 
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
-    existing_rooms: dict = options.get(CONF_ZONE_ROOMS, {})
-    schema_dict: dict = {}
+    existing_rooms: dict[int, int] = options.get(CONF_ZONE_ROOMS, {})
+    schema_dict: dict[Any, Any] = {}
     for z in range(zone_count):
         schema_dict[
             vol.Required(
@@ -170,7 +171,9 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._options: dict[str, Any] = {}
 
-    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_user(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -202,7 +205,9 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_reconfigure(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         """Handle a reconfiguration flow initialized by the user."""
         errors: dict[str, str] = {}
         entry = self._get_reconfigure_entry()
@@ -239,12 +244,14 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             description_placeholders={
                 "name": entry.title,
                 "host": entry.data[CONF_HOST],
-                "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
+                "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki",
             },
             errors=errors,
         )
 
-    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_options(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         errors: dict[str, str] = {}
         schema = _build_options_schema(self._options)
 
@@ -266,15 +273,16 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_zones(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_zones(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         errors: dict[str, str] = {}
         zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         schema = _build_zones_schema(self._options, zone_count)
 
         if user_input is not None:
             zone_rooms: dict[int, int] = {
-                z: int(user_input.get(f"zone_{z}_rooms", 1))
-                for z in range(zone_count)
+                z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)
             }
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             return self.async_create_entry(
@@ -316,11 +324,15 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
     def __init__(self) -> None:
         self._options: dict[str, Any] = {}
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_init(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         self._options = dict(self.config_entry.options)
         return await self.async_step_options()
 
-    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_options(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         errors: dict[str, str] = {}
         schema = _build_options_schema(self._options)
 
@@ -338,15 +350,16 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
             errors=errors,
         )
 
-    async def async_step_zones(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_zones(
+        self, user_input: dict[str, Any] | None = None
+    ) -> dict[str, Any]:
         errors: dict[str, str] = {}
         zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         schema = _build_zones_schema(self._options, zone_count)
 
         if user_input is not None:
             zone_rooms: dict[int, int] = {
-                z: int(user_input.get(f"zone_{z}_rooms", 1))
-                for z in range(zone_count)
+                z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)
             }
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             return self.async_create_entry(data=self._options)

@@ -1,9 +1,11 @@
+"""Binary sensor platform for IDM Heatpump."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-from __future__ import annotations
-"""Binary sensor platform for IDM Heatpump."""
 
 from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
@@ -30,7 +32,6 @@ async def async_setup_entry(
 
 
 class IdmBinarySensor(IdmEntity, BinarySensorEntity):
-
     @property
     def is_on(self) -> bool:
         value = self.coordinator.data.get(self._register.name)

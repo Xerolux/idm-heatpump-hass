@@ -1,9 +1,11 @@
+"""Data update coordinator for IDM Navigator heat pump."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-from __future__ import annotations
-"""Data update coordinator for IDM Navigator heat pump."""
 
 import logging
 from datetime import timedelta
@@ -62,7 +64,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         zone_rooms: dict[int, int],
         enable_cascade: bool = False,
     ) -> None:
-        self._registers = collect_all_registers(circuits, zone_count, zone_rooms, enable_cascade)
+        self._registers = collect_all_registers(
+            circuits, zone_count, zone_rooms, enable_cascade
+        )
 
     @property
     def sensor_descriptions(self) -> list[dict[str, Any]]:

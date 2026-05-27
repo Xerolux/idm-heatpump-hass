@@ -1,9 +1,11 @@
+"""IDM Heatpump integration for Home Assistant."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-from __future__ import annotations
-"""IDM Heatpump integration for Home Assistant."""
 
 import logging
 from dataclasses import dataclass
@@ -103,11 +105,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         _LOGGER.error("Failed to connect to %s:%d - %s", host, port, err)
         raise ConfigEntryNotReady(f"Cannot connect to {host}:{port}") from err
 
-    sensor_descs = get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-    binary_descs = get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-    number_descs = get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-    select_descs = get_all_select_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-    switch_descs = get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+    sensor_descs = get_all_sensor_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
+    binary_descs = get_all_binary_sensor_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
+    number_descs = get_all_number_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
+    select_descs = get_all_select_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
+    switch_descs = get_all_switch_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
 
     coordinator = IdmCoordinator(
         hass=hass,

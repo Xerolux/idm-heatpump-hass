@@ -1,10 +1,11 @@
+"""Sensor platform for IDM Heatpump."""
+
+from __future__ import annotations
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-"""Sensor platform for IDM Heatpump."""
-
-from __future__ import annotations
 
 from datetime import timedelta
 
@@ -23,12 +24,16 @@ from .entity import IdmEntity
 from .modbus_client import DataType
 from .technician_codes import calculate_codes
 
+
 def _decode_bitflag(value: int, options: dict[int, str]) -> str:
     """Decode a bitfield value into a human-readable 'Flag1|Flag2' string."""
     if value == 0:
         return options.get(0, "Aus")
-    active = [label for bit, label in options.items() if bit != 0 and (value & bit) == bit]
+    active = [
+        label for bit, label in options.items() if bit != 0 and (value & bit) == bit
+    ]
     return "|".join(active) if active else f"Unbekannt ({value})"
+
 
 PARALLEL_UPDATES = 0
 
@@ -57,7 +62,6 @@ async def async_setup_entry(
 
 
 class IdmSensor(IdmEntity, SensorEntity):
-
     @property
     def native_value(self) -> str | float | int | None:
         if not self.coordinator.data:
