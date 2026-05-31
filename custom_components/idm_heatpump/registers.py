@@ -38,7 +38,8 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
-    # Many of these are legacy and will be removed once the migration is complete
+    # These are kept only for the remaining legacy generator functions that are no longer called in production paths.
+    # They will be removed once the full migration is complete.
     CIRCUIT_MODE_OPTIONS,
     HP_STATUS_OPTIONS,
     ISC_MODE_OPTIONS,
@@ -47,9 +48,12 @@ from .const import (
     SYSTEM_MODE_OPTIONS,
 )
 from .library_adapter import (
+    get_library_binary_sensors,
     get_library_heating_circuit_sensors,
     get_library_numbers,
+    get_library_selects,
     get_library_sensors,
+    get_library_switches,
     get_library_zone_sensors,
 )
 from .modbus_client import DataType, RegisterDef
@@ -1775,28 +1779,23 @@ def get_all_sensor_descriptions(
     """
     descriptions = []
 
-    # 1. Library first (this is the migration direction)
+    # Library + Adapter is now the primary and preferred source
     try:
         descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
     except Exception:
         pass
 
-    # 2. Starke Library-Generatoren (bevorzugt)
-    descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
-
-    # 3. Spezialisierte Generatoren für Heizkreise und Zonen
+    # Spezialisierte Generatoren für Heizkreise und Zonen aus dem Adapter
     for circuit in circuits:
         descriptions.extend(get_library_heating_circuit_sensors(circuit))
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_sensors(z, rooms))
 
-    # 4. Legacy komplett deaktiviert für Sensoren (Migration weit fortgeschritten)
-    # Alle alten Listen und Generatoren werden nicht mehr aktiv genutzt.
-    # Bei Bedarf können sie später vollständig entfernt werden.
-    pass  # Keine Legacy-Erweiterung mehr für Sensoren
+    # Legacy old generators are fully disabled for sensors.
+    # The migration to library + adapter is the goal.
 
-    # Deduplicate by key (library first wins in case of overlap)
+    # Deduplicate
     seen_keys: set[str] = set()
     unique: list[dict[str, Any]] = []
     for desc in descriptions:
@@ -1814,10 +1813,12 @@ def get_all_binary_sensor_descriptions(
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
-    descriptions = list(BINARY_SENSORS)
-    for z in range(zone_count):
-        rooms = zone_rooms.get(z, 1)
-        descriptions.extend(_zone_binary_sensors(z, rooms))
+    descriptions = []
+    try:
+        descriptions.extend(get_library_binary_sensors(circuits=circuits, zone_modules=zone_count))
+    except Exception:
+        pass
+    # Old local binary sensors disabled during migration
     return descriptions
 
 
@@ -1845,12 +1846,12 @@ def get_all_select_descriptions(
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
-    descriptions = list(SYSTEM_SELECTS) + list(SOLAR_SELECTS)
-    for circuit in circuits:
-        descriptions.extend(_hk_selects(circuit))
-    for z in range(zone_count):
-        rooms = zone_rooms.get(z, 1)
-        descriptions.extend(_zone_selects(z, rooms))
+    descriptions = []
+    try:
+        descriptions.extend(get_library_selects(circuits=circuits, zone_modules=zone_count))
+    except Exception:
+        pass
+    # Old local selects disabled during migration
     return descriptions
 
 
@@ -1860,7 +1861,13 @@ def get_all_switch_descriptions(
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
-    return list(GLT_SWITCHES)
+    descriptions = []
+    try:
+        descriptions.extend(get_library_switches())
+    except Exception:
+        pass
+    # Old local switches disabled during migration
+    return descriptions
 
 
 def _build_alias_map(
