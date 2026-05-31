@@ -805,9 +805,10 @@ def _sensor(
 
 
 # ============================================================
-# LEGACY CODE BELOW - MIGRATION TO LIBRARY + ADAPTER IS COMPLETE
-# These functions are no longer called in the active get_all_* paths.
-# They can be removed in a future cleanup.
+# LEGACY CODE BELOW - FULLY DEPRECATED
+# The migration to the idm_heatpump library + library_adapter is complete (100%).
+# These functions and lists are no longer used in production collection paths.
+# They will be removed in a future cleanup pass.
 # ============================================================
 
 def _hk_sensors(circuit: str) -> list[dict[str, Any]]:
