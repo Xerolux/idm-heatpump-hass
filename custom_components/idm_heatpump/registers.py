@@ -703,6 +703,97 @@ SYSTEM_SENSORS = [
         entity_category=EntityCategory.DIAGNOSTIC,
         disabled=True,
     ),
+
+    # ============================================================
+    # NAVIGATOR 10 / WÄRMESENKE (Trennwärmetauscher / Hydrauliktrennung)
+    # Besonders nützlich bei ALM-Geräten mit Plattenwärmetauscher.
+    # Adresse 1072 (Durchfluss) ist hervorragend zur Sieb-Überwachung geeignet.
+    # ============================================================
+    _sensor(
+        1068,
+        "Rücklauftemperatur Wärmesenke (B124)",
+        "heat_sink_return_temp",
+        unit=UnitOfTemperature.CELSIUS,
+        device_class=UnitOfTemperature.CELSIUS,
+        icon="mdi:thermometer",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _sensor(
+        1070,
+        "Vorlauftemperatur Wärmesenke (B125)",
+        "heat_sink_flow_temp",
+        unit=UnitOfTemperature.CELSIUS,
+        device_class=UnitOfTemperature.CELSIUS,
+        icon="mdi:thermometer",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _sensor(
+        1072,
+        "Durchfluss Wärmesenke (B2)",
+        "heat_sink_flow_rate",
+        datatype=DataType.UCHAR,
+        unit="l/min",
+        icon="mdi:water-pump",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _sensor(
+        1074,
+        "Steuersignal Ladepumpe Wärmesenke (M73)",
+        "heat_sink_charging_pump_signal",
+        datatype=DataType.INT16,
+        unit=PERCENTAGE,
+        icon="mdi:pump",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
+
+    # Zusätzliche Störungen (Navigator 10 / erweiterte Diagnose)
+    _sensor(
+        1680,
+        "Störung Wärmequellenkreis",
+        "fault_heat_source_circuit",
+        datatype=DataType.UCHAR,
+        icon="mdi:alert-circle",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
+    _sensor(
+        1681,
+        "Störung Druckschalter Wärmequellenkreis",
+        "fault_heat_source_pressure",
+        datatype=DataType.UCHAR,
+        icon="mdi:alert-circle",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
+
+    # Booster A/B (Zusatzheizung / 2. Wärmeerzeuger) - Status
+    _sensor(
+        4001,
+        "Booster Störung",
+        "booster_fault",
+        datatype=DataType.UCHAR,
+        icon="mdi:alert",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _sensor(
+        4022,
+        "Booster A Verdichter",
+        "booster_a_compressor",
+        datatype=DataType.UCHAR,
+        icon="mdi:engine",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
+    _sensor(
+        4052,
+        "Booster B Verdichter",
+        "booster_b_compressor",
+        datatype=DataType.UCHAR,
+        icon="mdi:engine",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
 ]
 
 
@@ -1260,6 +1351,32 @@ EXTERNAL_NUMBERS = [
         1,
         device_class=UnitOfTemperature.CELSIUS,
     ),
+
+    # ============================================================
+    # NAVIGATOR 10 - Leistungsbegrenzung (sehr nützlich für Netzdienstleistungen)
+    # ============================================================
+    _number(
+        4108,
+        "Leistungsbegrenzung Wärmepumpe",
+        "power_limit_hp",
+        -1,
+        50,
+        DataType.FLOAT,
+        UnitOfPower.KILO_WATT,
+        0.1,
+        icon="mdi:flash-alert",
+    ),
+    _number(
+        4112,
+        "Leistungsbegrenzung Kaskade",
+        "power_limit_cascade",
+        -1,
+        200,
+        DataType.FLOAT,
+        UnitOfPower.KILO_WATT,
+        0.1,
+        icon="mdi:flash-alert",
+    ),
 ]
 
 
@@ -1647,13 +1764,36 @@ def get_all_sensor_descriptions(
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
-    descriptions = list(SYSTEM_SENSORS) + list(PV_SENSORS)
+    """
+    Assembles all sensor descriptions.
+
+    During the migration to the idm_heatpump library (Option B), we prefer
+    definitions coming from the library + adapter where available.
+    Legacy definitions in this file are kept for stability.
+    """
+    # Legacy definitions are the primary source for now.
+    # Library sensors are skipped to avoid duplicates and writable-register
+    # leaks into the sensor platform. The library migration will be completed
+    # once the adapter properly separates read-only from writable registers.
+    descriptions = []
+    descriptions.extend(list(SYSTEM_SENSORS))
+    descriptions.extend(list(PV_SENSORS))
+
     for circuit in circuits:
         descriptions.extend(_hk_sensors(circuit))
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_sensors(z, rooms))
-    return descriptions
+
+    seen_keys: set[str] = set()
+    unique: list[dict[str, Any]] = []
+    for desc in descriptions:
+        key = desc["description"].key
+        if key not in seen_keys:
+            seen_keys.add(key)
+            unique.append(desc)
+
+    return unique
 
 
 def get_all_binary_sensor_descriptions(
@@ -1675,7 +1815,10 @@ def get_all_number_descriptions(
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
-    descriptions = list(DHW_NUMBERS) + list(BIVALENCY_NUMBERS)
+    descriptions = []
+
+    descriptions.extend(list(DHW_NUMBERS))
+    descriptions.extend(list(BIVALENCY_NUMBERS))
     if enable_cascade:
         descriptions.extend(CASCADE_NUMBERS)
     descriptions.extend(EXTERNAL_NUMBERS)
@@ -1684,6 +1827,7 @@ def get_all_number_descriptions(
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_numbers(z, rooms))
+
     return descriptions
 
 
@@ -1711,14 +1855,31 @@ def get_all_switch_descriptions(
     return list(GLT_SWITCHES)
 
 
-def collect_all_registers(
+def _build_alias_map(
+    all_descriptions: list[dict[str, Any]],
+) -> dict[int, list[str]]:
+    """Build a mapping from register address to all register names sharing that address.
+
+    Sensors and numbers often share the same Modbus address (e.g. a temperature
+    sensor shows the current value, while a number entity allows setting it).
+    Since ``read_batch`` returns data keyed by *register name*, we need to
+    ensure that every entity can find its value under the name it expects.
+    """
+    addr_to_names: dict[int, list[str]] = {}
+    for desc in all_descriptions:
+        reg: RegisterDef = desc["register"]
+        addr_to_names.setdefault(reg.address, []).append(reg.name)
+    return addr_to_names
+
+
+def _collect_all_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
-) -> list[RegisterDef]:
-    """Collect all unique registers for batch reading."""
-    all_descriptions = (
+) -> list[dict[str, Any]]:
+    """Collect all entity descriptions across all platforms."""
+    return (
         get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
         + get_all_binary_sensor_descriptions(
             circuits, zone_count, zone_rooms, enable_cascade
@@ -1728,6 +1889,18 @@ def collect_all_registers(
         + get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     )
 
+
+def collect_all_registers(
+    circuits: list[str],
+    zone_count: int,
+    zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
+) -> list[RegisterDef]:
+    """Collect all unique registers for batch reading."""
+    all_descriptions = _collect_all_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
+
     seen: dict[int, RegisterDef] = {}
     for desc in all_descriptions:
         reg: RegisterDef = desc["register"]
@@ -1735,3 +1908,21 @@ def collect_all_registers(
             seen[reg.address] = reg
 
     return list(seen.values())
+
+
+def collect_alias_map(
+    circuits: list[str],
+    zone_count: int,
+    zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
+) -> dict[int, list[str]]:
+    """Collect address -> [register_names] alias mapping.
+
+    Multiple entity types (sensor + number) can share the same Modbus address
+    but use different register names. ``read_batch`` returns data keyed by one
+    name per address.  This map lets the coordinator populate the other names.
+    """
+    all_descriptions = _collect_all_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
+    return _build_alias_map(all_descriptions)

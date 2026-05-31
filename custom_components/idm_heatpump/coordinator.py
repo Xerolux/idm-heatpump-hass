@@ -17,8 +17,9 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, UNUSED_VALUE
-from .modbus_client import IdmModbusClient, RegisterDef
-from .registers import collect_all_registers
+from .library_adapter import get_idm_client  # preferred way
+from .modbus_client import IdmModbusClient, RegisterDef  # compatibility during full migration
+from .registers import collect_all_registers, collect_alias_map
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._registers: list[RegisterDef] = []
         self._hide_unused = hide_unused
         self._unused_registers: set[str] = set()
+        self._alias_map: dict[int, list[str]] = {}
 
         super().__init__(
             hass,
@@ -65,6 +67,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         enable_cascade: bool = False,
     ) -> None:
         self._registers = collect_all_registers(
+            circuits, zone_count, zone_rooms, enable_cascade
+        )
+        self._alias_map = collect_alias_map(
             circuits, zone_count, zone_rooms, enable_cascade
         )
 
@@ -118,7 +123,6 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             data = await self._client.read_batch(self._registers)
         except Exception as err:
-            # Only create a repair issue for actual communication failures
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -130,11 +134,24 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             raise UpdateFailed(f"Error communicating with heat pump: {err}") from err
 
-        # Successful read – clear any previous connectivity repair issue
         ir.async_delete_issue(self.hass, DOMAIN, "cannot_connect")
 
         if not data:
             raise UpdateFailed("No data received from heat pump")
+
+        # Apply aliases: when multiple register names share an address,
+        # ensure all names appear in the data dict.
+        if self._alias_map:
+            addr_to_name: dict[int, str] = {
+                reg.address: reg.name for reg in self._registers
+            }
+            for addr, names in self._alias_map.items():
+                primary = addr_to_name.get(addr)
+                if primary and primary in data:
+                    val = data[primary]
+                    for alias in names:
+                        if alias != primary and alias not in data:
+                            data[alias] = val
 
         new_unused_registers: set[str] = set()
         for reg_name, value in data.items():

@@ -611,11 +611,12 @@ def mock_config_entry():
 @pytest.fixture
 def mock_modbus_client():
     with patch(
-        "custom_components.idm_heatpump.modbus_client.AsyncModbusTcpClient"
+        "idm_heatpump.client.AsyncModbusTcpClient"
     ) as mock_class:
         mock_instance = AsyncMock()
         mock_instance.connected = True
         mock_instance.isError = MagicMock(return_value=False)
+        mock_instance.close = MagicMock()
         mock_class.return_value = mock_instance
 
         from custom_components.idm_heatpump.modbus_client import IdmModbusClient
