@@ -658,12 +658,50 @@ def get_library_binary_sensors(circuits=None, zone_modules=0) -> list[dict[str, 
 
 def get_library_selects(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
     """Select entities (modes) from the library."""
-    return []
+    from homeassistant.components.select import SelectEntityDescription
+
+    reg_map = build_register_map(
+        circuits=circuits or [],
+        zone_modules=zone_modules or 0,
+    )
+    selects = []
+    for name, reg in reg_map.items():
+        if not reg.writable or not reg.enum_options:
+            continue
+        desc = SelectEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            options=list(reg.enum_options.values()),
+            icon=get_icon_for_register(name),
+            entity_category=EntityCategory.CONFIG,
+        )
+        selects.append({
+            "register": reg,
+            "description": desc,
+        })
+    return selects
 
 
 def get_library_switches() -> list[dict[str, Any]]:
     """Switch entities (GLT demands etc.) from the library."""
-    return []
+    from homeassistant.components.switch import SwitchEntityDescription
+
+    reg_map = build_register_map(circuits=[], zone_modules=0)
+    switches = []
+    for name, reg in reg_map.items():
+        if reg.datatype.value != "BOOL" or not reg.writable:
+            continue
+        desc = SwitchEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            icon=get_icon_for_register(name),
+            entity_category=EntityCategory.CONFIG,
+        )
+        switches.append({
+            "register": reg,
+            "description": desc,
+        })
+    return switches
 
 
 def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:
@@ -703,17 +741,35 @@ def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0)
 
 def get_library_numbers(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
-    reg_map = build_register_map(model_info=model_info, circuits=circuits, zone_modules=zone_modules)
+    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
     numbers = []
 
-    for key, meta in NUMBER_METADATA.items():
-        if key in reg_map:
-            reg = reg_map[key]
-            desc = _make_number_description(reg, meta)
-            numbers.append({
-                "register": reg,
-                "description": desc,
-            })
+    for name, reg in reg_map.items():
+        if not reg.writable or reg.enum_options:
+            continue
+        if reg.datatype.value == "BOOL":
+            continue
+
+        meta = NUMBER_METADATA.get(name, {})
+        min_val = meta.get("min", reg.min_val if reg.min_val is not None else -999)
+        max_val = meta.get("max", reg.max_val if reg.max_val is not None else 999)
+
+        desc = NumberEntityDescription(
+            key=name,
+            name=meta.get("name", _get_german_name(name)),
+            native_min_value=min_val,
+            native_max_value=max_val,
+            native_step=meta.get("step", 0.5),
+            native_unit_of_measurement=meta.get("unit") or reg.unit,
+            device_class=meta.get("device_class"),
+            icon=meta.get("icon", get_icon_for_register(name, reg.unit)),
+            mode=NumberMode.BOX,
+            entity_category=EntityCategory.CONFIG,
+        )
+        numbers.append({
+            "register": reg,
+            "description": desc,
+        })
 
     return numbers
 

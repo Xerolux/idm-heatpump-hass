@@ -114,8 +114,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return False
         if value is None:
             return True
-        if isinstance(value, (int, float)) and abs(value - UNUSED_VALUE) < 0.01:
-            return True
+        if isinstance(value, (int, float)):
+            if abs(value - UNUSED_VALUE) < 0.01:
+                return True
+            if value == 65535 or value == 255:
+                return True
         return False
 
     async def _async_update_data(self) -> dict[str, Any]:
