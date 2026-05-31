@@ -440,6 +440,27 @@ def get_library_glt_sensors() -> list[dict[str, Any]]:
     return []
 
 
+# ============================================================
+# Platform-specific generators for full migration coverage
+# ============================================================
+
+def get_library_binary_sensors(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
+    """Binary sensors (pumps, valves, demands, etc.) from the library."""
+    # For now, return empty — these can be expanded later with specific metadata.
+    # The general get_library_readonly_sensors will catch most of them.
+    return []
+
+
+def get_library_selects(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
+    """Select entities (modes) from the library."""
+    return []
+
+
+def get_library_switches() -> list[dict[str, Any]]:
+    """Switch entities (GLT demands etc.) from the library."""
+    return []
+
+
 def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:
     """
     Gibt nur lesbare Sensoren aus der Library zurück.
