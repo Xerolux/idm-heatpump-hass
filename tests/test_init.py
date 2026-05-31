@@ -93,7 +93,7 @@ class TestAsyncSetupEntry:
         mock_coordinator.setup_registers = MagicMock()
 
         with patch(
-            "custom_components.idm_heatpump.IdmModbusClient",
+            "custom_components.idm_heatpump.get_idm_client",
             return_value=mock_client,
         ), patch(
             "custom_components.idm_heatpump.IdmCoordinator",
@@ -133,7 +133,7 @@ class TestAsyncSetupEntry:
         mock_client.connect = AsyncMock(side_effect=Exception("connection refused"))
 
         with patch(
-            "custom_components.idm_heatpump.IdmModbusClient",
+            "custom_components.idm_heatpump.get_idm_client",
             return_value=mock_client,
         ), patch(
             "custom_components.idm_heatpump.async_get_integration",
@@ -151,7 +151,7 @@ class TestAsyncSetupEntry:
         mock_coordinator.setup_registers = MagicMock()
 
         with patch(
-            "custom_components.idm_heatpump.IdmModbusClient",
+            "custom_components.idm_heatpump.get_idm_client",
             return_value=mock_client,
         ), patch(
             "custom_components.idm_heatpump.IdmCoordinator",
@@ -263,7 +263,7 @@ class TestAsyncSetupEntryOptions:
 
     def _common_patches(self, mock_client, mock_coordinator):
         return [
-            patch("custom_components.idm_heatpump.IdmModbusClient", return_value=mock_client),
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
             patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
             patch("custom_components.idm_heatpump.async_get_integration",
                   return_value=MagicMock(manifest={"version": "0.2.1"})),
@@ -293,7 +293,7 @@ class TestAsyncSetupEntryOptions:
             return mock_client
 
         patches = self._common_patches(mock_client, mock_coordinator)
-        patches[0] = patch("custom_components.idm_heatpump.IdmModbusClient", side_effect=_capture_client)
+        patches[0] = patch("custom_components.idm_heatpump.get_idm_client", side_effect=_capture_client)
 
         ctx = __import__("contextlib").ExitStack()
         for p in patches:
@@ -321,7 +321,7 @@ class TestAsyncSetupEntryOptions:
             return mock_client
 
         patches = self._common_patches(mock_client, mock_coordinator)
-        patches[0] = patch("custom_components.idm_heatpump.IdmModbusClient", side_effect=_capture_client)
+        patches[0] = patch("custom_components.idm_heatpump.get_idm_client", side_effect=_capture_client)
 
         ctx = __import__("contextlib").ExitStack()
         for p in patches:

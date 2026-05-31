@@ -45,7 +45,6 @@ from .const import (
     SOLAR_MODE_OPTIONS,
     SYSTEM_MODE_OPTIONS,
 )
-from .library_adapter import get_idm_client, get_library_numbers, get_library_sensors
 from .modbus_client import DataType, RegisterDef
 
 HK_OFFSET = {"a": 0, "b": 2, "c": 4, "d": 6, "e": 8, "f": 10, "g": 12}
@@ -1361,12 +1360,11 @@ EXTERNAL_NUMBERS = [
         "Leistungsbegrenzung Wärmepumpe",
         "power_limit_hp",
         -1,
-        50,  # realistischer obere Grenze für die meisten Geräte
+        50,
         DataType.FLOAT,
         UnitOfPower.KILO_WATT,
         0.1,
         icon="mdi:flash-alert",
-        entity_category=EntityCategory.CONFIG,
     ),
     _number(
         4112,
@@ -1378,7 +1376,6 @@ EXTERNAL_NUMBERS = [
         UnitOfPower.KILO_WATT,
         0.1,
         icon="mdi:flash-alert",
-        entity_category=EntityCategory.CONFIG,
     ),
 ]
 
@@ -1774,14 +1771,11 @@ def get_all_sensor_descriptions(
     definitions coming from the library + adapter where available.
     Legacy definitions in this file are kept for stability.
     """
-    # Prefer library + adapter as the primary source going forward
+    # Legacy definitions are the primary source for now.
+    # Library sensors are skipped to avoid duplicates and writable-register
+    # leaks into the sensor platform. The library migration will be completed
+    # once the adapter properly separates read-only from writable registers.
     descriptions = []
-    try:
-        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
-    except Exception:
-        pass
-
-    # Legacy fallbacks / additional HA-specific sensors not yet fully migrated
     descriptions.extend(list(SYSTEM_SENSORS))
     descriptions.extend(list(PV_SENSORS))
 
@@ -1791,7 +1785,15 @@ def get_all_sensor_descriptions(
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_sensors(z, rooms))
 
-    return descriptions
+    seen_keys: set[str] = set()
+    unique: list[dict[str, Any]] = []
+    for desc in descriptions:
+        key = desc["description"].key
+        if key not in seen_keys:
+            seen_keys.add(key)
+            unique.append(desc)
+
+    return unique
 
 
 def get_all_binary_sensor_descriptions(
@@ -1815,13 +1817,6 @@ def get_all_number_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
 
-    # Prefer library for numbers where possible
-    try:
-        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
-    except Exception:
-        pass
-
-    # Legacy
     descriptions.extend(list(DHW_NUMBERS))
     descriptions.extend(list(BIVALENCY_NUMBERS))
     if enable_cascade:
@@ -1860,14 +1855,31 @@ def get_all_switch_descriptions(
     return list(GLT_SWITCHES)
 
 
-def collect_all_registers(
+def _build_alias_map(
+    all_descriptions: list[dict[str, Any]],
+) -> dict[int, list[str]]:
+    """Build a mapping from register address to all register names sharing that address.
+
+    Sensors and numbers often share the same Modbus address (e.g. a temperature
+    sensor shows the current value, while a number entity allows setting it).
+    Since ``read_batch`` returns data keyed by *register name*, we need to
+    ensure that every entity can find its value under the name it expects.
+    """
+    addr_to_names: dict[int, list[str]] = {}
+    for desc in all_descriptions:
+        reg: RegisterDef = desc["register"]
+        addr_to_names.setdefault(reg.address, []).append(reg.name)
+    return addr_to_names
+
+
+def _collect_all_descriptions(
     circuits: list[str],
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
-) -> list[RegisterDef]:
-    """Collect all unique registers for batch reading."""
-    all_descriptions = (
+) -> list[dict[str, Any]]:
+    """Collect all entity descriptions across all platforms."""
+    return (
         get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
         + get_all_binary_sensor_descriptions(
             circuits, zone_count, zone_rooms, enable_cascade
@@ -1877,6 +1889,18 @@ def collect_all_registers(
         + get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     )
 
+
+def collect_all_registers(
+    circuits: list[str],
+    zone_count: int,
+    zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
+) -> list[RegisterDef]:
+    """Collect all unique registers for batch reading."""
+    all_descriptions = _collect_all_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
+
     seen: dict[int, RegisterDef] = {}
     for desc in all_descriptions:
         reg: RegisterDef = desc["register"]
@@ -1884,3 +1908,21 @@ def collect_all_registers(
             seen[reg.address] = reg
 
     return list(seen.values())
+
+
+def collect_alias_map(
+    circuits: list[str],
+    zone_count: int,
+    zone_rooms: dict[int, int],
+    enable_cascade: bool = False,
+) -> dict[int, list[str]]:
+    """Collect address -> [register_names] alias mapping.
+
+    Multiple entity types (sensor + number) can share the same Modbus address
+    but use different register names. ``read_batch`` returns data keyed by one
+    name per address.  This map lets the coordinator populate the other names.
+    """
+    all_descriptions = _collect_all_descriptions(
+        circuits, zone_count, zone_rooms, enable_cascade
+    )
+    return _build_alias_map(all_descriptions)
