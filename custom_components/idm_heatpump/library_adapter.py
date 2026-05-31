@@ -18,17 +18,30 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.number import NumberDeviceClass, NumberEntityDescription, NumberMode
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription, SensorStateClass
-from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTemperature
+from homeassistant.components.number import (
+    NumberDeviceClass,
+    NumberEntityDescription,
+    NumberMode,
+)
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntityDescription,
+    SensorStateClass,
+)
+from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.helpers.entity import EntityCategory
 
 from idm_heatpump import (
-    DataType,
     RegisterDef,
     build_register_map,
     get_heating_circuit_registers,
     get_zone_module_registers,
+)
+from idm_heatpump import IdmModbusClient as LibIdmModbusClient
+from idm_heatpump.const import (
+    MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_20,
+    MODEL_NAVIGATOR_PRO,
 )
 
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
@@ -38,6 +51,7 @@ from idm_heatpump import (
 # Wenn die Library später ha_metadata direkt mitliefert, können wir das hier nutzen.
 # ============================================================
 
+
 def _apply_ha_metadata(reg: RegisterDef, base_meta: dict[str, Any]) -> dict[str, Any]:
     """Kann später erweitert werden, wenn RegisterDef ha_metadata enthält."""
     # Placeholder für zukünftige Library-Unterstützung
@@ -45,12 +59,12 @@ def _apply_ha_metadata(reg: RegisterDef, base_meta: dict[str, Any]) -> dict[str,
     #     base_meta.update(reg.ha_metadata)
     return base_meta
 
+
 # ============================================================
 # Deutsche Namen für wichtige Register (wird sukzessive erweitert)
 # ============================================================
 
 _GERMAN_NAMES: dict[str, str] = {
-    # === System ===
     "outdoor_temp": "Außentemperatur",
     "outdoor_temp_avg": "Gemittelte Außentemperatur",
     "storage_temp": "Wärmespeichertemperatur",
@@ -67,49 +81,35 @@ _GERMAN_NAMES: dict[str, str] = {
     "power_consumption_hp": "Elektrische Leistungsaufnahme Wärmepumpe",
     "evu_lock": "EVU Sperre",
     "hp_sum_alarm": "Summenstörung",
-    
-    # === Heat Sink / Trennwärmetauscher (Navigator 10) ===
     "heat_sink_flow_rate": "Durchfluss Wärmesenke (B2)",
     "heat_sink_flow_temp": "Vorlauftemperatur Wärmesenke",
     "heat_sink_return_temp": "Rücklauftemperatur Wärmesenke",
     "heat_sink_charging_pump_signal": "Ladepumpe Wärmesenke",
-    
-    # === Pumpen Status ===
     "charge_pump_status": "Ladepumpe",
     "brine_pump_status": "Sole-/Zwischenkreispumpe",
     "source_pump_status": "Wärmequellenpumpe",
     "isc_cold_pump_status": "ISC Kältespeicherpumpe",
     "isc_recool_pump_status": "ISC Rückkühlpumpe",
     "circulation_pump_status": "Zirkulationspumpe",
-    
-    # === Ventile ===
     "valve_hc_heat_cool": "Umschaltventil Heizkreis Heizen/Kühlen",
     "valve_storage_heat_cool": "Umschaltventil Speicher Heizen/Kühlen",
     "valve_heat_dhw": "Umschaltventil Heizen/Warmwasser",
-    
-    # === Solar ===
     "solar_collector_temp": "Solar Kollektortemperatur",
     "solar_return_temp": "Solar Rücklauftemperatur",
     "solar_charging_temp": "Solar Ladetemperatur",
     "solar_mode": "Solar Betriebsart",
-    
-    # === PV / Smartfox ===
     "pv_surplus": "PV Überschuss",
     "pv_production": "PV Produktion",
     "house_consumption": "Hausverbrauch",
     "battery_discharge": "Batterie Entladung",
     "battery_soc": "Batterie SOC",
     "electric_heater_power": "E-Heizstab Leistung",
-    
-    # === Cascade ===
     "cascade_available_heating": "Kaskade verfügbar Heizen",
     "cascade_available_cooling": "Kaskade verfügbar Kühlen",
     "cascade_available_dhw": "Kaskade verfügbar Warmwasser",
     "cascade_running_heating": "Kaskade in Betrieb Heizen",
     "cascade_running_cooling": "Kaskade in Betrieb Kühlen",
     "cascade_running_dhw": "Kaskade in Betrieb Warmwasser",
-    
-    # === Energie ===
     "energy_heating": "Wärmemenge Heizen",
     "energy_cooling": "Wärmemenge Kühlen",
     "energy_dhw": "Wärmemenge Warmwasser",
@@ -117,14 +117,10 @@ _GERMAN_NAMES: dict[str, str] = {
     "energy_defrost": "Wärmemenge Abtauen",
     "energy_solar": "Wärmemenge Solar",
     "energy_electric_heater": "Wärmemenge E-Heizstab",
-    
-    # === GLT / Externe Ansteuerung ===
     "ext_outdoor_temp": "Externe Außentemperatur (GLT)",
     "ext_humidity": "Externe Feuchte (GLT)",
     "glt_temp_demand_heating": "GLT Temperaturanforderung Heizen",
     "glt_temp_demand_cooling": "GLT Temperaturanforderung Kühlen",
-    
-    # === Sonstiges ===
     "bivalence_state": "Bivalenz Betriebszustand",
     "smart_grid_status": "Smart Grid Status",
     "internal_message": "Interne Meldung",
@@ -157,7 +153,7 @@ _GERMAN_NAMES: dict[str, str] = {
     "air_intake_temp_2": "Luftansaugtemperatur 2",
     "valve_solar_storage_heat_source": "Solar Speicher/Wärmequelle Ventil",
     "valve_isc_heat_source_cold_storage": "ISC Umschaltventil",
-    "valve_isc_storage_bypass": "ISC Bypass Ventil",
+    "valve_isc_storage_bypass": "Umschaltventil ISC Speicher/Bypass",
     "isc_charging_temp_cooling": "ISC Ladetemperatur Kühlen",
     "isc_recooling_temp": "ISC Rückkühltemperatur",
     "isc_mode": "ISC Modus",
@@ -173,48 +169,6 @@ _GERMAN_NAMES: dict[str, str] = {
     "power_limit_cascade": "Leistungsbegrenzung Kaskade",
     "dhw_draw_temp": "Warmwasserzapftemperatur",
     "current_energy_price": "Aktueller Strompreis",
-    "hgl_flow_temp": "HGL Vorlauftemperatur",
-    "air_hx_temp": "Luftwärmetauschertemperatur",
-    "charge_sensor_temp": "Ladefühler Temperatur",
-    "heatpump_status": "Betriebsart Wärmepumpe",
-    "valve_source_heat_cool": "Umschaltventil Wärmequelle Heizen/Kühlen",
-    "valve_solar_storage_source": "Umschaltventil Solar Speicher/Wärmequelle",
-    "valve_isc_source_cold": "Umschaltventil ISC Wärmequelle/Kältespeicher",
-    "valve_isc_storage_bypass": "Umschaltventil ISC Speicher/Bypass",
-    "cascade_avail_stages_heat": "Kaskade Verfügbare Stufen Heizen",
-    "cascade_avail_stages_cool": "Kaskade Verfügbare Stufen Kühlen",
-    "cascade_avail_stages_dhw": "Kaskade Verfügbare Stufen Warmwasser",
-    "cascade_running_stages_heat": "Kaskade Laufende Stufen Heizen",
-    "cascade_running_stages_cool": "Kaskade Laufende Stufen Kühlen",
-    "cascade_running_stages_dhw": "Kaskade Laufende Stufen Warmwasser",
-    "cascade_req_heat_temp": "Kaskade Angeforderte Heiztemperatur",
-    "cascade_req_cool_temp": "Kaskade Angeforderte Kühltemperatur",
-    "cascade_req_dhw_temp": "Kaskade Angeforderte WW-Temperatur",
-    "cascade_avg_flow_heat": "Kaskade Gemittelte VL-Temp Heizen",
-    "cascade_avg_flow_cool": "Kaskade Gemittelte VL-Temp Kühlen",
-    "cascade_avg_flow_dhw": "Kaskade Gemittelte VL-Temp Warmwasser",
-    "humidity": "Feuchtesensor",
-    "outdoor_temp_ext": "Externe Außentemperatur",
-    "humidity_ext": "Externe Feuchte",
-    "energy_heat_heating": "Wärmemenge Heizen",
-    "energy_heat_total": "Wärmemenge Gesamt",
-    "energy_heat_cooling": "Wärmemenge Kühlen",
-    "energy_heat_dhw": "Wärmemenge Warmwasser",
-    "energy_heat_defrost": "Wärmemenge Abtauung",
-    "energy_heat_passive_cooling": "Wärmemenge Passive Kühlen",
-    "energy_heat_solar": "Wärmemenge Solar",
-    "energy_heat_electric": "Wärmemenge Elektroheizeinsatz",
-    "current_power_draw": "Momentanleistung",
-    "solar_collector_return_temp": "Solar Kollektorrücklauftemperatur",
-    "solar_charge_temp": "Solar Ladetemperatur",
-    "solar_reference_temp": "Solar WQ-Referenztemperatur/Pooltemperatur",
-    "isc_charge_cooling_temp": "ISC Ladetemperatur Kühlen",
-    "firmware_version": "Firmware Version Navigator",
-    "power_draw_total": "Aktuelle Leistungsaufnahme Wärmepumpe",
-    "thermal_power": "Thermische Leistung",
-    "energy_total_flow_sensor": "Wärmemenge Gesamt (Durchflusssensor)",
-    "dhw_draw_temp": "Warmwasserzapftemperatur",
-    "current_energy_price": "Aktueller Strompreis",
     "hgl_flow_temp": "HGL Vorlauftemperatur B35",
     "air_hx_temp": "Luftwärmetauschertemperatur B72",
     "charge_sensor_temp": "Ladefühler B45",
@@ -222,7 +176,6 @@ _GERMAN_NAMES: dict[str, str] = {
     "valve_source_heat_cool": "Umschaltventil Wärmequelle Heizen/Kühlen",
     "valve_solar_storage_source": "Umschaltventil Solar Speicher/Wärmequelle",
     "valve_isc_source_cold": "Umschaltventil ISC Wärmequelle/Kältespeicher",
-    "valve_isc_storage_bypass": "Umschaltventil ISC Speicher/Bypass",
     "cascade_avail_stages_heat": "Kaskade Verfügbare Stufen Heizen",
     "cascade_avail_stages_cool": "Kaskade Verfügbare Stufen Kühlen",
     "cascade_avail_stages_dhw": "Kaskade Verfügbare Stufen Warmwasser",
@@ -255,7 +208,6 @@ _GERMAN_NAMES: dict[str, str] = {
     "power_draw_total": "Aktuelle Leistungsaufnahme Wärmepumpe",
     "thermal_power": "Thermische Leistung",
     "energy_total_flow_sensor": "Wärmemenge Gesamt (Durchflusssensor)",
-    # Heizkreis allgemein (werden dynamisch ergänzt)
     "flow_temp_hk": "Vorlauftemperatur Heizkreis",
     "room_temp_hk": "Raumtemperatur Heizkreis",
     "target_flow_temp_hk": "Sollvorlauftemperatur Heizkreis",
@@ -268,7 +220,6 @@ _GERMAN_NAMES: dict[str, str] = {
     "cooling_limit": "Kühlgrenze",
     "parallel_shift": "Parallelverschiebung",
     "active_mode": "Aktive Betriebsart",
-    # Zonen allgemein
     "zone_mode": "Zonenmodus",
     "zone_room_temp": "Raumtemperatur Zone",
     "zone_room_target": "Raumsolltemperatur Zone",
@@ -276,13 +227,6 @@ _GERMAN_NAMES: dict[str, str] = {
     "zone_room_mode": "Raumbetriebsart Zone",
 }
 
-# Re-export the real client and models from the library
-from idm_heatpump import IdmModbusClient as LibIdmModbusClient
-from idm_heatpump.const import (
-    MODEL_NAVIGATOR_10,
-    MODEL_NAVIGATOR_20,
-    MODEL_NAVIGATOR_PRO,
-)
 
 # ============================================================
 # HA Metadata Overlay
@@ -438,10 +382,12 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
     return "mdi:information-outline"
 
 
-def _make_sensor_description(reg: RegisterDef, meta: dict[str, Any]) -> SensorEntityDescription:
+def _make_sensor_description(
+    reg: RegisterDef, meta: dict[str, Any]
+) -> SensorEntityDescription:
     """Create a rich HA SensorEntityDescription from a library RegisterDef + metadata."""
     german_name = meta.get("name") or _get_german_name(reg.name)
-    
+
     return SensorEntityDescription(
         key=reg.name,
         name=german_name,
@@ -454,7 +400,9 @@ def _make_sensor_description(reg: RegisterDef, meta: dict[str, Any]) -> SensorEn
     )
 
 
-def _make_number_description(reg: RegisterDef, meta: dict[str, Any]) -> NumberEntityDescription:
+def _make_number_description(
+    reg: RegisterDef, meta: dict[str, Any]
+) -> NumberEntityDescription:
     """Create a rich HA NumberEntityDescription from a library RegisterDef + metadata."""
     return NumberEntityDescription(
         key=reg.name,
@@ -470,12 +418,16 @@ def _make_number_description(reg: RegisterDef, meta: dict[str, Any]) -> NumberEn
     )
 
 
-def get_library_sensors(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:
+def get_library_sensors(
+    model_info=None, circuits=None, zone_modules=0
+) -> list[dict[str, Any]]:
     """
     Returns sensor descriptions primarily sourced from the idm_heatpump library.
     This is intended to become the main source over time.
     """
-    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
+    reg_map = build_register_map(
+        model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0
+    )
     sensors = []
 
     # Explicitly mapped sensors (best quality)
@@ -483,11 +435,13 @@ def get_library_sensors(model_info=None, circuits=None, zone_modules=0) -> list[
         if key in reg_map:
             reg = reg_map[key]
             desc = _make_sensor_description(reg, meta)
-            sensors.append({
-                "register": reg,
-                "description": desc,
-                "category": "system",
-            })
+            sensors.append(
+                {
+                    "register": reg,
+                    "description": desc,
+                    "category": "system",
+                }
+            )
 
     # Fallback: Generate basic but usable descriptions for everything else from the library
     # This helps during the migration so we don't have to duplicate every register manually.
@@ -506,15 +460,19 @@ def get_library_sensors(model_info=None, circuits=None, zone_modules=0) -> list[
             key=name,
             name=name.replace("_", " ").title(),
             native_unit_of_measurement=reg.unit,
-            device_class=SensorDeviceClass.TEMPERATURE if reg.unit and "°C" in (reg.unit or "") else None,
+            device_class=SensorDeviceClass.TEMPERATURE
+            if reg.unit and "°C" in (reg.unit or "")
+            else None,
             icon=icon,
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        sensors.append({
-            "register": reg,
-            "description": desc,
-            "category": "library",
-        })
+        sensors.append(
+            {
+                "register": reg,
+                "description": desc,
+                "category": "library",
+            }
+        )
 
     return sensors
 
@@ -528,6 +486,7 @@ def get_library_system_sensors() -> list[dict[str, Any]]:
 # ============================================================
 # Spezialisierte Generatoren für Heizkreise und Zonen (stark verbessert)
 # ============================================================
+
 
 def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
     """Erzeugt Sensor-Beschreibungen für einen Heizkreis direkt aus der Library."""
@@ -545,19 +504,25 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
             key=name,
             name=_get_german_name(name),
             native_unit_of_measurement=reg.unit,
-            device_class=SensorDeviceClass.TEMPERATURE if reg.unit and "°C" in reg.unit else None,
+            device_class=SensorDeviceClass.TEMPERATURE
+            if reg.unit and "°C" in reg.unit
+            else None,
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        sensors.append({
-            "register": reg,
-            "description": desc,
-            "category": f"heating_circuit_{circuit.lower()}",
-        })
+        sensors.append(
+            {
+                "register": reg,
+                "description": desc,
+                "category": f"heating_circuit_{circuit.lower()}",
+            }
+        )
     return sensors
 
 
-def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
+def get_library_zone_sensors(
+    zone_idx: int, room_count: int = 6
+) -> list[dict[str, Any]]:
     """Erzeugt Sensor-Beschreibungen für ein Zonenmodul direkt aus der Library."""
     try:
         zone_regs = get_zone_module_registers(zone_idx, room_count)
@@ -577,11 +542,13 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        sensors.append({
-            "register": reg,
-            "description": desc,
-            "category": f"zone_{zone_idx}",
-        })
+        sensors.append(
+            {
+                "register": reg,
+                "description": desc,
+                "category": f"zone_{zone_idx}",
+            }
+        )
     return sensors
 
 
@@ -589,21 +556,26 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
 # Weitere Generatoren für umfassende Abdeckung (System, Energy, Pumps, Solar, PV, Cascade, GLT)
 # ============================================================
 
+
 def get_library_energy_sensors() -> list[dict[str, Any]]:
     """Energie- und Leistungssensoren aus der Library."""
     return []
+
 
 def get_library_pump_valve_sensors() -> list[dict[str, Any]]:
     """Pumpen- und Ventilstatus aus der Library."""
     return []
 
+
 def get_library_solar_pv_sensors() -> list[dict[str, Any]]:
     """Solar- und PV-bezogene Sensoren."""
     return []
 
+
 def get_library_cascade_sensors() -> list[dict[str, Any]]:
     """Kaskaden-spezifische Sensoren."""
     return []
+
 
 def get_library_glt_sensors() -> list[dict[str, Any]]:
     """GLT / externe Ansteuerung Sensoren."""
@@ -637,17 +609,23 @@ def get_ha_entity_descriptions(
 # Hilfsfunktion für icons.json Generierung (Empfehlung)
 # ============================================================
 
-def generate_icons_json_entries(model_info=None, circuits=None, zone_modules=0) -> dict[str, dict]:
+
+def generate_icons_json_entries(
+    model_info=None, circuits=None, zone_modules=0
+) -> dict[str, dict]:
     """
     Hilfsfunktion, die Icons für alle bekannten Register vorschlägt.
     Kann genutzt werden, um icons.json teilweise zu generieren.
     """
-    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
+    reg_map = build_register_map(
+        model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0
+    )
     icons = {}
     for name, reg in reg_map.items():
         icon = get_icon_for_register(name, reg.unit)
         icons[name] = {"default": icon}
     return icons
+
 
 def get_library_binary_sensors(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
     """Binary sensors (pumps, valves, demands, etc.) from the library."""
@@ -675,10 +653,12 @@ def get_library_selects(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
             icon=get_icon_for_register(name),
             entity_category=EntityCategory.CONFIG,
         )
-        selects.append({
-            "register": reg,
-            "description": desc,
-        })
+        selects.append(
+            {
+                "register": reg,
+                "description": desc,
+            }
+        )
     return selects
 
 
@@ -697,19 +677,25 @@ def get_library_switches() -> list[dict[str, Any]]:
             icon=get_icon_for_register(name),
             entity_category=EntityCategory.CONFIG,
         )
-        switches.append({
-            "register": reg,
-            "description": desc,
-        })
+        switches.append(
+            {
+                "register": reg,
+                "description": desc,
+            }
+        )
     return switches
 
 
-def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:
+def get_library_readonly_sensors(
+    model_info=None, circuits=None, zone_modules=0
+) -> list[dict[str, Any]]:
     """
     Gibt nur lesbare Sensoren aus der Library zurück.
     Diese Funktion ist der bevorzugte Weg, um Sensoren aus der Library zu bekommen.
     """
-    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
+    reg_map = build_register_map(
+        model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0
+    )
     sensors = []
 
     for name, reg in reg_map.items():
@@ -730,7 +716,9 @@ def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0)
             key=name,
             name=_get_german_name(name),
             native_unit_of_measurement=reg.unit,
-            device_class=SensorDeviceClass.TEMPERATURE if (reg.unit and "°C" in reg.unit) else None,
+            device_class=SensorDeviceClass.TEMPERATURE
+            if (reg.unit and "°C" in reg.unit)
+            else None,
             icon=icon,
             entity_category=EntityCategory.DIAGNOSTIC,
         )
@@ -739,9 +727,13 @@ def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0)
     return sensors
 
 
-def get_library_numbers(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:
+def get_library_numbers(
+    model_info=None, circuits=None, zone_modules=0
+) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
-    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
+    reg_map = build_register_map(
+        model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0
+    )
     numbers = []
 
     for name, reg in reg_map.items():
@@ -766,10 +758,12 @@ def get_library_numbers(model_info=None, circuits=None, zone_modules=0) -> list[
             mode=NumberMode.BOX,
             entity_category=EntityCategory.CONFIG,
         )
-        numbers.append({
-            "register": reg,
-            "description": desc,
-        })
+        numbers.append(
+            {
+                "register": reg,
+                "description": desc,
+            }
+        )
 
     return numbers
 
