@@ -35,7 +35,7 @@ The following devices may use the same register mapping as the Navigator 2.0, bu
 
 ## Modbus Register Compatibility
 
-The integration reads **663 Modbus registers** based on the IDM Navigator 2.0 documentation:
+The integration reads **168+ Modbus registers** dynamically generated from the [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) library:
 
 - **Read memory** (Input Registers): Temperatures, status, energy, power
 - **Read/Write memory** (Holding Registers): Operating modes, setpoints, configuration

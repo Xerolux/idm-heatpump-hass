@@ -17,13 +17,13 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | Feature | Details |
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
-| **Min HA Version** | 2025.12.0 |
-| **Tested up to** | 2026.5 |
-| **Python** | 3.13+ (HA 2026.3: 3.14.2) |
-| **pymodbus** | ≥3.7.0 (HA 2026.3: 3.11.2) |
+| **Min HA Version** | 2026.5.0 |
+| **Python** | 3.13+ |
+| **pymodbus** | >=3.7.0 |
+| **Library** | idm-heatpump >=0.2.1 |
 | **License** | MIT |
 | **Languages** | DE, EN |
-| **Registers** | 663 (215 RO, 266 RW, 16 W-only, 166 context-dependent) |
+| **Entities** | 169+ (109 sensors, 8 binary, 44 numbers, 4 selects, 4 switches) |
 
 ---
 
@@ -44,11 +44,11 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 | Platform | Entities | Description |
 |----------|----------|-------------|
-| **Sensor** | 100+ | Temperatures, pressures, flow rates, energy, runtimes |
-| **Binary Sensor** | 9 | Error status, switch states |
-| **Number** | ~30 | Setpoints, writable parameters |
-| **Select** | ~15 | Operating modes (system, circuit, room, solar) |
-| **Switch** | 4 | BMS temperature requests |
+| **Sensor** | 109+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster |
+| **Binary Sensor** | 8+ | Fault alarms, compressor status, heating/cooling/DHW demand |
+| **Number** | 44+ | Writable setpoints, limits, GLT parameters, power limits |
+| **Select** | 4+ | System mode, circuit modes, solar/ISC mode |
+| **Switch** | 4 | External heating/cooling/DHW demand |
 
 ---
 
@@ -74,10 +74,11 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 ## Technical Details
 
 - **Batch reading**: Consecutive registers are grouped (max. 30 per batch)
-- **Data types**: FLOAT (IEEE 754, 2 registers), UCHAR (8-bit), WORD (16-bit), BOOL
-- **EEPROM protection**: 88 EEPROM-sensitive registers are protected from excessive writing
+- **Library-powered**: All registers from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api)
+- **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
+- **EEPROM protection**: Sensitive registers tracked and protected
 - **Auto-recovery**: Exponential backoff on connection errors
-- **Address ranges**: 74-86 (PV/Battery), 1000-1199 (System), 1200-1349 (Cascade), 1350-1699 (Heating Circuits A-G), 1700-1799 (BMS/Energy), 2000-2999 (Zones)
+- **Navigator 10**: Heat sink sensors, flow rate (Sieb monitoring), groundwater temps, booster A/B
 
 ---
 
