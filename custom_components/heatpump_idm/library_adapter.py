@@ -729,11 +729,13 @@ def get_library_binary_sensors(circuits=None, zone_modules=0) -> list[dict[str, 
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
         )
-        sensors.append({
-            "register": reg,
-            "description": desc,
-            "category": "binary",
-        })
+        sensors.append(
+            {
+                "register": reg,
+                "description": desc,
+                "category": "binary",
+            }
+        )
     return sensors
 
 
@@ -754,7 +756,8 @@ def get_library_selects(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
         options = list(reg.enum_options.values())
         if reg.exclude_from_write:
             options = [
-                v for k, v in reg.enum_options.items()
+                v
+                for k, v in reg.enum_options.items()
                 if k not in reg.exclude_from_write
             ]
         desc = SelectEntityDescription(
