@@ -727,6 +727,9 @@ def get_library_readonly_sensors(
     return sensors
 
 
+_WRITE_ONLY_COMMANDS = {"error_acknowledge"}
+
+
 def get_library_numbers(
     model_info=None, circuits=None, zone_modules=0
 ) -> list[dict[str, Any]]:
@@ -740,6 +743,8 @@ def get_library_numbers(
         if not reg.writable or reg.enum_options:
             continue
         if reg.datatype.value == "BOOL":
+            continue
+        if name in _WRITE_ONLY_COMMANDS:
             continue
 
         meta = NUMBER_METADATA.get(name, {})
