@@ -14,21 +14,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.binary_sensor import (
-    BinarySensorEntityDescription,
-)
-from homeassistant.components.number import (
-    NumberDeviceClass,
-    NumberEntityDescription,
-    NumberMode,
-)
-from homeassistant.components.select import SelectEntityDescription
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.components.switch import SwitchEntityDescription
 from homeassistant.const import (
     PERCENTAGE,
     UnitOfEnergy,
@@ -106,670 +96,825 @@ def _sensor(
         "category": category,
     }
 
-
-# SYSTEM_SENSORS is deprecated and no longer the primary source.
-# Kept temporarily for reference during migration.
-# SYSTEM_SENSORS = [
-#     _sensor(
-#         1000,
-#         "Aussentemperatur",
-#         "outdoor_temp",
-#         unit=UnitOfTemperature.CELSIUS,
-#         device_class=UnitOfTemperature.CELSIUS,
-#     ),
-    _sensor(
-        1002,
-        "Gemittelte Aussentemperatur",
-        "outdoor_temp_avg",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1004,
-        "Interne Meldung",
-        "internal_message",
-        datatype=DataType.UCHAR,
-        icon="mdi:message-alert",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1006,
-        "Smart Grid Status",
-        "smart_grid_status",
-        datatype=DataType.UCHAR,
-        icon="mdi:transmission-tower",
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    _sensor(
-        1008,
-        "Waermespeichertemperatur",
-        "storage_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1010,
-        "Kaeltetespeichertemperatur",
-        "cold_storage_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1012,
-        "Trinkwassererwaermer unten",
-        "dhw_temp_bottom",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1014,
-        "Trinkwassererwaermer oben",
-        "dhw_temp_top",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1030,
-        "Warmwasserzapftemperatur",
-        "dhw_draw_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1048,
-        "Aktueller Strompreis",
-        "current_energy_price",
-        unit="€",
-        device_class="monetary",
-        multiplier=0.001,
-    ),
+    # SYSTEM_SENSORS is deprecated and no longer the primary source.
+    # Kept temporarily for reference during migration.
+    # SYSTEM_SENSORS = [
+    #     _sensor(
+    #         1000,
+    #         "Aussentemperatur",
+    #         "outdoor_temp",
+    #         unit=UnitOfTemperature.CELSIUS,
+    #         device_class=UnitOfTemperature.CELSIUS,
+    #     ),
+    (
+        _sensor(
+            1002,
+            "Gemittelte Aussentemperatur",
+            "outdoor_temp_avg",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1004,
+            "Interne Meldung",
+            "internal_message",
+            datatype=DataType.UCHAR,
+            icon="mdi:message-alert",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1006,
+            "Smart Grid Status",
+            "smart_grid_status",
+            datatype=DataType.UCHAR,
+            icon="mdi:transmission-tower",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    )
+    (
+        _sensor(
+            1008,
+            "Waermespeichertemperatur",
+            "storage_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1010,
+            "Kaeltetespeichertemperatur",
+            "cold_storage_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1012,
+            "Trinkwassererwaermer unten",
+            "dhw_temp_bottom",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1014,
+            "Trinkwassererwaermer oben",
+            "dhw_temp_top",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1030,
+            "Warmwasserzapftemperatur",
+            "dhw_draw_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1048,
+            "Aktueller Strompreis",
+            "current_energy_price",
+            unit="€",
+            device_class="monetary",
+            multiplier=0.001,
+        ),
+    )
     # --- Waermepumpen-Temperaturen B33–B46 (FLOAT, je 2 Register) ---
-    _sensor(
-        1050,
-        "WP Vorlauftemperatur B33",
-        "hp_flow_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1052,
-        "WP Ruecklauftemperatur B34",
-        "hp_return_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1054,
-        "HGL Vorlauftemperatur B35",
-        "hgl_flow_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1056,
-        "Waermequelleneintrittstemperatur B43",
-        "heat_source_inlet_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1058,
-        "Waermequellenaustrittstemperatur B36",
-        "heat_source_outlet_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1060,
-        "Luftansaugtemperatur B37",
-        "air_intake_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1062,
-        "Luftwaermetauschertemperatur B72",
-        "air_hx_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1064,
-        "Luftansaugtemperatur 2 B46",
-        "air_intake_temp_2",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1066,
-        "Ladefuehler B45",
-        "charge_sensor_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1050,
+            "WP Vorlauftemperatur B33",
+            "hp_flow_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1052,
+            "WP Ruecklauftemperatur B34",
+            "hp_return_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1054,
+            "HGL Vorlauftemperatur B35",
+            "hgl_flow_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1056,
+            "Waermequelleneintrittstemperatur B43",
+            "heat_source_inlet_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1058,
+            "Waermequellenaustrittstemperatur B36",
+            "heat_source_outlet_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1060,
+            "Luftansaugtemperatur B37",
+            "air_intake_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1062,
+            "Luftwaermetauschertemperatur B72",
+            "air_hx_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1064,
+            "Luftansaugtemperatur 2 B46",
+            "air_intake_temp_2",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1066,
+            "Ladefuehler B45",
+            "charge_sensor_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
     # --- Betriebsstatus ---
-    _sensor(
-        1090,
-        "Betriebsart Waermepumpe",
-        "heatpump_status",
-        datatype=DataType.BITFLAG,
-        icon="mdi:heat-pump",
-        enum_options=HP_STATUS_OPTIONS,
-    ),
-    _sensor(
-        1098,
-        "EVU-Sperrkontakt",
-        "evu_lock",
-        datatype=DataType.UCHAR,
-        icon="mdi:lock",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1090,
+            "Betriebsart Waermepumpe",
+            "heatpump_status",
+            datatype=DataType.BITFLAG,
+            icon="mdi:heat-pump",
+            # enum_options moved to library_adapter during migration
+        ),
+    )
+    (
+        _sensor(
+            1098,
+            "EVU-Sperrkontakt",
+            "evu_lock",
+            datatype=DataType.UCHAR,
+            icon="mdi:lock",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
     # --- Pumpenstatus ---
-    _sensor(
-        1104,
-        "Status Ladepumpe M73",
-        "charge_pump_status",
-        datatype=DataType.INT16,
-        unit=PERCENTAGE,
-        icon="mdi:pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1105,
-        "Status Sole-/Zwischenkreispumpe M16",
-        "brine_pump_status",
-        datatype=DataType.INT16,
-        unit=PERCENTAGE,
-        icon="mdi:pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1106,
-        "Status Waermequellen-/Grundwasserpumpe M15",
-        "source_pump_status",
-        datatype=DataType.INT16,
-        unit=PERCENTAGE,
-        icon="mdi:pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1108,
-        "Status ISC Kaeltespeicherpumpe M84",
-        "isc_cold_pump_status",
-        datatype=DataType.INT16,
-        unit=PERCENTAGE,
-        icon="mdi:pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1109,
-        "Status ISC Rueckkuehlpumpe M17",
-        "isc_recool_pump_status",
-        datatype=DataType.INT16,
-        unit=PERCENTAGE,
-        icon="mdi:pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1118,
-        "Zirkulationspumpe M64",
-        "circulation_pump_status",
-        datatype=DataType.INT16,
-        icon="mdi:pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1104,
+            "Status Ladepumpe M73",
+            "charge_pump_status",
+            datatype=DataType.INT16,
+            unit=PERCENTAGE,
+            icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1105,
+            "Status Sole-/Zwischenkreispumpe M16",
+            "brine_pump_status",
+            datatype=DataType.INT16,
+            unit=PERCENTAGE,
+            icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1106,
+            "Status Waermequellen-/Grundwasserpumpe M15",
+            "source_pump_status",
+            datatype=DataType.INT16,
+            unit=PERCENTAGE,
+            icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1108,
+            "Status ISC Kaeltespeicherpumpe M84",
+            "isc_cold_pump_status",
+            datatype=DataType.INT16,
+            unit=PERCENTAGE,
+            icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1109,
+            "Status ISC Rueckkuehlpumpe M17",
+            "isc_recool_pump_status",
+            datatype=DataType.INT16,
+            unit=PERCENTAGE,
+            icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1118,
+            "Zirkulationspumpe M64",
+            "circulation_pump_status",
+            datatype=DataType.INT16,
+            icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
     # --- Umschaltventile (korrekte Bezeichnungen lt. IDM-Dokumentation) ---
-    _sensor(
-        1110,
-        "Umschaltventil Heizkreis Heizen/Kuehlen M61",
-        "valve_hc_heat_cool",
-        datatype=DataType.INT16,
-        icon="mdi:valve",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-        enum_options={0: "Heizen", 1: "Kuehlen"},
-    ),
-    _sensor(
-        1111,
-        "Umschaltventil Speicher Heizen/Kuehlen M62",
-        "valve_storage_heat_cool",
-        datatype=DataType.INT16,
-        icon="mdi:valve",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-        enum_options={0: "Heizen", 1: "Kuehlen"},
-    ),
-    _sensor(
-        1112,
-        "Umschaltventil Heizen/Warmwasser M63",
-        "valve_heat_dhw",
-        datatype=DataType.INT16,
-        icon="mdi:valve",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-        enum_options={0: "Heizen", 1: "Warmwasser"},
-    ),
-    _sensor(
-        1113,
-        "Umschaltventil Waermequelle Heizen/Kuehlen M74",
-        "valve_source_heat_cool",
-        datatype=DataType.INT16,
-        icon="mdi:valve",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-        enum_options={0: "Heizen", 1: "Kuehlen"},
-    ),
-    _sensor(
-        1114,
-        "Umschaltventil Solar Heizen/Warmwasser M78",
-        "valve_solar_heat_dhw",
-        datatype=DataType.INT16,
-        icon="mdi:valve",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-        enum_options={0: "Heizen", 1: "Warmwasser"},
-    ),
-    _sensor(
-        1115,
-        "Umschaltventil Solar Speicher/Waermequelle M79",
-        "valve_solar_storage_source",
-        datatype=DataType.INT16,
-        icon="mdi:valve",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-        enum_options={0: "Speicher", 1: "Waermequelle"},
-    ),
-    _sensor(
-        1116,
-        "Umschaltventil ISC Waermequelle/Kaeltespeicher M89",
-        "valve_isc_source_cold",
-        datatype=DataType.INT16,
-        icon="mdi:valve",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-        enum_options={0: "Waermequelle", 1: "Kaeltespeicher"},
-    ),
-    _sensor(
-        1117,
-        "Umschaltventil ISC Speicher/Bypass M99",
-        "valve_isc_storage_bypass",
-        datatype=DataType.INT16,
-        icon="mdi:valve",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-        enum_options={0: "Speicher", 1: "Bypass"},
-    ),
+    (
+        _sensor(
+            1110,
+            "Umschaltventil Heizkreis Heizen/Kuehlen M61",
+            "valve_hc_heat_cool",
+            datatype=DataType.INT16,
+            icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+            enum_options={0: "Heizen", 1: "Kuehlen"},
+        ),
+    )
+    (
+        _sensor(
+            1111,
+            "Umschaltventil Speicher Heizen/Kuehlen M62",
+            "valve_storage_heat_cool",
+            datatype=DataType.INT16,
+            icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+            enum_options={0: "Heizen", 1: "Kuehlen"},
+        ),
+    )
+    (
+        _sensor(
+            1112,
+            "Umschaltventil Heizen/Warmwasser M63",
+            "valve_heat_dhw",
+            datatype=DataType.INT16,
+            icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+            enum_options={0: "Heizen", 1: "Warmwasser"},
+        ),
+    )
+    (
+        _sensor(
+            1113,
+            "Umschaltventil Waermequelle Heizen/Kuehlen M74",
+            "valve_source_heat_cool",
+            datatype=DataType.INT16,
+            icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+            enum_options={0: "Heizen", 1: "Kuehlen"},
+        ),
+    )
+    (
+        _sensor(
+            1114,
+            "Umschaltventil Solar Heizen/Warmwasser M78",
+            "valve_solar_heat_dhw",
+            datatype=DataType.INT16,
+            icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+            enum_options={0: "Heizen", 1: "Warmwasser"},
+        ),
+    )
+    (
+        _sensor(
+            1115,
+            "Umschaltventil Solar Speicher/Waermequelle M79",
+            "valve_solar_storage_source",
+            datatype=DataType.INT16,
+            icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+            enum_options={0: "Speicher", 1: "Waermequelle"},
+        ),
+    )
+    (
+        _sensor(
+            1116,
+            "Umschaltventil ISC Waermequelle/Kaeltespeicher M89",
+            "valve_isc_source_cold",
+            datatype=DataType.INT16,
+            icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+            enum_options={0: "Waermequelle", 1: "Kaeltespeicher"},
+        ),
+    )
+    (
+        _sensor(
+            1117,
+            "Umschaltventil ISC Speicher/Bypass M99",
+            "valve_isc_storage_bypass",
+            datatype=DataType.INT16,
+            icon="mdi:valve",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+            enum_options={0: "Speicher", 1: "Bypass"},
+        ),
+    )
     # --- Bivalenz ---
-    _sensor(
-        1124,
-        "Bivalenz Betriebszustand",
-        "bivalency_state",
-        datatype=DataType.UCHAR,
-        icon="mdi:heat-pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1124,
+            "Bivalenz Betriebszustand",
+            "bivalency_state",
+            datatype=DataType.UCHAR,
+            icon="mdi:heat-pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
     # --- Kaskade: verfuegbare Stufen (neu) ---
-    _sensor(
-        1147,
-        "Kaskade Verfuegbare Stufen Heizen",
-        "cascade_avail_stages_heat",
-        datatype=DataType.UCHAR,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1148,
-        "Kaskade Verfuegbare Stufen Kuehlen",
-        "cascade_avail_stages_cool",
-        datatype=DataType.UCHAR,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1149,
-        "Kaskade Verfuegbare Stufen Warmwasser",
-        "cascade_avail_stages_dhw",
-        datatype=DataType.UCHAR,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1147,
+            "Kaskade Verfuegbare Stufen Heizen",
+            "cascade_avail_stages_heat",
+            datatype=DataType.UCHAR,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1148,
+            "Kaskade Verfuegbare Stufen Kuehlen",
+            "cascade_avail_stages_cool",
+            datatype=DataType.UCHAR,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1149,
+            "Kaskade Verfuegbare Stufen Warmwasser",
+            "cascade_avail_stages_dhw",
+            datatype=DataType.UCHAR,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
     # --- Kaskade: laufende Stufen ---
-    _sensor(
-        1150,
-        "Kaskade Laufende Stufen Heizen",
-        "cascade_running_stages_heat",
-        datatype=DataType.UCHAR,
-        icon="mdi:engine",
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    _sensor(
-        1151,
-        "Kaskade Laufende Stufen Kuehlen",
-        "cascade_running_stages_cool",
-        datatype=DataType.UCHAR,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1152,
-        "Kaskade Laufende Stufen Warmwasser",
-        "cascade_running_stages_dhw",
-        datatype=DataType.UCHAR,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1150,
+            "Kaskade Laufende Stufen Heizen",
+            "cascade_running_stages_heat",
+            datatype=DataType.UCHAR,
+            icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    )
+    (
+        _sensor(
+            1151,
+            "Kaskade Laufende Stufen Kuehlen",
+            "cascade_running_stages_cool",
+            datatype=DataType.UCHAR,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1152,
+            "Kaskade Laufende Stufen Warmwasser",
+            "cascade_running_stages_dhw",
+            datatype=DataType.UCHAR,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
     # --- Kaskade: Temperaturen (read-only, Mehrkesselanlagen) ---
-    _sensor(
-        1200,
-        "Kaskade Angeforderte Heiztemperatur",
-        "cascade_req_heat_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1202,
-        "Kaskade Angeforderte Kuehltemperatur",
-        "cascade_req_cool_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1204,
-        "Kaskade Angeforderte WW-Temperatur",
-        "cascade_req_dhw_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1206,
-        "Kaskade Gemittelte VL-Temp Heizen",
-        "cascade_avg_flow_heat",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1208,
-        "Kaskade Gemittelte VL-Temp Kuehlen",
-        "cascade_avg_flow_cool",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1210,
-        "Kaskade Gemittelte VL-Temp Warmwasser",
-        "cascade_avg_flow_dhw",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1392,
-        "Feuchtesensor",
-        "humidity",
-        datatype=DataType.UINT16,
-        unit=PERCENTAGE,
-        device_class="humidity",
-    ),
-    _sensor(
-        1690,
-        "Externe Aussentemperatur",
-        "outdoor_temp_ext",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1692,
-        "Externe Feuchte",
-        "humidity_ext",
-        datatype=DataType.UINT16,
-        unit=PERCENTAGE,
-        device_class="humidity",
-    ),
+    (
+        _sensor(
+            1200,
+            "Kaskade Angeforderte Heiztemperatur",
+            "cascade_req_heat_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1202,
+            "Kaskade Angeforderte Kuehltemperatur",
+            "cascade_req_cool_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1204,
+            "Kaskade Angeforderte WW-Temperatur",
+            "cascade_req_dhw_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1206,
+            "Kaskade Gemittelte VL-Temp Heizen",
+            "cascade_avg_flow_heat",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1208,
+            "Kaskade Gemittelte VL-Temp Kuehlen",
+            "cascade_avg_flow_cool",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1210,
+            "Kaskade Gemittelte VL-Temp Warmwasser",
+            "cascade_avg_flow_dhw",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1392,
+            "Feuchtesensor",
+            "humidity",
+            datatype=DataType.UINT16,
+            unit=PERCENTAGE,
+            device_class="humidity",
+        ),
+    )
+    (
+        _sensor(
+            1690,
+            "Externe Aussentemperatur",
+            "outdoor_temp_ext",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1692,
+            "Externe Feuchte",
+            "humidity_ext",
+            datatype=DataType.UINT16,
+            unit=PERCENTAGE,
+            device_class="humidity",
+        ),
+    )
     # --- Waermemengen (lt. offiziellem IDM-YAML: 1750 = Gesamt!) ---
-    _sensor(
-        1748,
-        "Waermemenge Heizen",
-        "energy_heat_heating",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-    ),
-    _sensor(
-        1750,
-        "Waermemenge Gesamt",
-        "energy_heat_total",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-    ),
-    _sensor(
-        1752,
-        "Waermemenge Kuehlen",
-        "energy_heat_cooling",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-    ),
-    _sensor(
-        1754,
-        "Waermemenge Warmwasser",
-        "energy_heat_dhw",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-    ),
-    _sensor(
-        1756,
-        "Waermemenge Abtauung",
-        "energy_heat_defrost",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-    ),
-    _sensor(
-        1758,
-        "Waermemenge Passive Kuehlung",
-        "energy_heat_passive_cooling",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-    ),
-    _sensor(
-        1760,
-        "Waermemenge Solar",
-        "energy_heat_solar",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-    ),
-    _sensor(
-        1762,
-        "Waermemenge Elektroheizeinsatz",
-        "energy_heat_electric",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-    ),
+    (
+        _sensor(
+            1748,
+            "Waermemenge Heizen",
+            "energy_heat_heating",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+        ),
+    )
+    (
+        _sensor(
+            1750,
+            "Waermemenge Gesamt",
+            "energy_heat_total",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+        ),
+    )
+    (
+        _sensor(
+            1752,
+            "Waermemenge Kuehlen",
+            "energy_heat_cooling",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+        ),
+    )
+    (
+        _sensor(
+            1754,
+            "Waermemenge Warmwasser",
+            "energy_heat_dhw",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+        ),
+    )
+    (
+        _sensor(
+            1756,
+            "Waermemenge Abtauung",
+            "energy_heat_defrost",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+        ),
+    )
+    (
+        _sensor(
+            1758,
+            "Waermemenge Passive Kuehlung",
+            "energy_heat_passive_cooling",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+        ),
+    )
+    (
+        _sensor(
+            1760,
+            "Waermemenge Solar",
+            "energy_heat_solar",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+        ),
+    )
+    (
+        _sensor(
+            1762,
+            "Waermemenge Elektroheizeinsatz",
+            "energy_heat_electric",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+        ),
+    )
     # --- Momentanleistung (war faelschlicherweise als "Maximale Leistung" deklariert) ---
-    _sensor(
-        1790,
-        "Momentanleistung",
-        "current_power_draw",
-        unit=UnitOfPower.KILO_WATT,
-        device_class=UnitOfPower.KILO_WATT,
-    ),
-    _sensor(
-        1850,
-        "Solar Kollektortemperatur",
-        "solar_collector_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1852,
-        "Solar Kollektorruecklauftemperatur",
-        "solar_collector_return_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1854,
-        "Solar Ladetemperatur",
-        "solar_charge_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1857,
-        "Solar WQ-Referenztemperatur/Pooltemperatur",
-        "solar_reference_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1870,
-        "ISC Ladetemperatur Kuehlen",
-        "isc_charge_cooling_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        1872,
-        "ISC Rueckkuehltemperatur",
-        "isc_recooling_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
-    _sensor(
-        4120,
-        "Firmware Version Navigator",
-        "firmware_version",
-        datatype=DataType.UCHAR,
-        icon="mdi:information",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        4122,
-        "Aktuelle Leistungsaufnahme Waermepumpe",
-        "power_draw_total",
-        unit=UnitOfPower.KILO_WATT,
-        device_class=UnitOfPower.KILO_WATT,
-    ),
-    _sensor(
-        4126,
-        "Thermische Leistung",
-        "thermal_power",
-        unit=UnitOfPower.KILO_WATT,
-        device_class=UnitOfPower.KILO_WATT,
-    ),
-    _sensor(
-        4128,
-        "Waermemenge Gesamt (Durchflusssensor)",
-        "energy_total_flow_sensor",
-        unit=UnitOfEnergy.KILO_WATT_HOUR,
-        device_class=UnitOfEnergy.KILO_WATT_HOUR,
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1790,
+            "Momentanleistung",
+            "current_power_draw",
+            unit=UnitOfPower.KILO_WATT,
+            device_class=UnitOfPower.KILO_WATT,
+        ),
+    )
+    (
+        _sensor(
+            1850,
+            "Solar Kollektortemperatur",
+            "solar_collector_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1852,
+            "Solar Kollektorruecklauftemperatur",
+            "solar_collector_return_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1854,
+            "Solar Ladetemperatur",
+            "solar_charge_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1857,
+            "Solar WQ-Referenztemperatur/Pooltemperatur",
+            "solar_reference_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1870,
+            "ISC Ladetemperatur Kuehlen",
+            "isc_charge_cooling_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            1872,
+            "ISC Rueckkuehltemperatur",
+            "isc_recooling_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+        ),
+    )
+    (
+        _sensor(
+            4120,
+            "Firmware Version Navigator",
+            "firmware_version",
+            datatype=DataType.UCHAR,
+            icon="mdi:information",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            4122,
+            "Aktuelle Leistungsaufnahme Waermepumpe",
+            "power_draw_total",
+            unit=UnitOfPower.KILO_WATT,
+            device_class=UnitOfPower.KILO_WATT,
+        ),
+    )
+    (
+        _sensor(
+            4126,
+            "Thermische Leistung",
+            "thermal_power",
+            unit=UnitOfPower.KILO_WATT,
+            device_class=UnitOfPower.KILO_WATT,
+        ),
+    )
+    (
+        _sensor(
+            4128,
+            "Waermemenge Gesamt (Durchflusssensor)",
+            "energy_total_flow_sensor",
+            unit=UnitOfEnergy.KILO_WATT_HOUR,
+            device_class=UnitOfEnergy.KILO_WATT_HOUR,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
 
     # ============================================================
     # NAVIGATOR 10 / WÄRMESENKE (Trennwärmetauscher / Hydrauliktrennung)
     # Besonders nützlich bei ALM-Geräten mit Plattenwärmetauscher.
     # Adresse 1072 (Durchfluss) ist hervorragend zur Sieb-Überwachung geeignet.
     # ============================================================
-    _sensor(
-        1068,
-        "Rücklauftemperatur Wärmesenke (B124)",
-        "heat_sink_return_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        icon="mdi:thermometer",
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    _sensor(
-        1070,
-        "Vorlauftemperatur Wärmesenke (B125)",
-        "heat_sink_flow_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-        icon="mdi:thermometer",
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    _sensor(
-        1072,
-        "Durchfluss Wärmesenke (B2)",
-        "heat_sink_flow_rate",
-        datatype=DataType.UCHAR,
-        unit="l/min",
-        icon="mdi:water-pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    _sensor(
-        1074,
-        "Steuersignal Ladepumpe Wärmesenke (M73)",
-        "heat_sink_charging_pump_signal",
-        datatype=DataType.INT16,
-        unit=PERCENTAGE,
-        icon="mdi:pump",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1068,
+            "Rücklauftemperatur Wärmesenke (B124)",
+            "heat_sink_return_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            icon="mdi:thermometer",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    )
+    (
+        _sensor(
+            1070,
+            "Vorlauftemperatur Wärmesenke (B125)",
+            "heat_sink_flow_temp",
+            unit=UnitOfTemperature.CELSIUS,
+            device_class=UnitOfTemperature.CELSIUS,
+            icon="mdi:thermometer",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    )
+    (
+        _sensor(
+            1072,
+            "Durchfluss Wärmesenke (B2)",
+            "heat_sink_flow_rate",
+            datatype=DataType.UCHAR,
+            unit="l/min",
+            icon="mdi:water-pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    )
+    (
+        _sensor(
+            1074,
+            "Steuersignal Ladepumpe Wärmesenke (M73)",
+            "heat_sink_charging_pump_signal",
+            datatype=DataType.INT16,
+            unit=PERCENTAGE,
+            icon="mdi:pump",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
 
     # Zusätzliche Störungen (Navigator 10 / erweiterte Diagnose)
-    _sensor(
-        1680,
-        "Störung Wärmequellenkreis",
-        "fault_heat_source_circuit",
-        datatype=DataType.UCHAR,
-        icon="mdi:alert-circle",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-    _sensor(
-        1681,
-        "Störung Druckschalter Wärmequellenkreis",
-        "fault_heat_source_pressure",
-        datatype=DataType.UCHAR,
-        icon="mdi:alert-circle",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            1680,
+            "Störung Wärmequellenkreis",
+            "fault_heat_source_circuit",
+            datatype=DataType.UCHAR,
+            icon="mdi:alert-circle",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
+    (
+        _sensor(
+            1681,
+            "Störung Druckschalter Wärmequellenkreis",
+            "fault_heat_source_pressure",
+            datatype=DataType.UCHAR,
+            icon="mdi:alert-circle",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
 
     # Booster A/B (Zusatzheizung / 2. Wärmeerzeuger) - Status
-    _sensor(
-        4001,
-        "Booster Störung",
-        "booster_fault",
-        datatype=DataType.UCHAR,
-        icon="mdi:alert",
-        entity_category=EntityCategory.DIAGNOSTIC,
-    ),
-    _sensor(
-        4022,
-        "Booster A Verdichter",
-        "booster_a_compressor",
-        datatype=DataType.UCHAR,
-        icon="mdi:engine",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
+    (
+        _sensor(
+            4001,
+            "Booster Störung",
+            "booster_fault",
+            datatype=DataType.UCHAR,
+            icon="mdi:alert",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        ),
+    )
+    (
+        _sensor(
+            4022,
+            "Booster A Verdichter",
+            "booster_a_compressor",
+            datatype=DataType.UCHAR,
+            icon="mdi:engine",
+            entity_category=EntityCategory.DIAGNOSTIC,
+            disabled=True,
+        ),
+    )
     # _sensor(4052, "Booster B Verdichter", "booster_b_compressor", ... ),
     # ... (rest of old SYSTEM_SENSORS list removed during aggressive migration)
+
+
 # ]
 # Old SYSTEM_SENSORS list dismantled - now served by library_adapter
 
@@ -797,7 +942,9 @@ def get_all_sensor_descriptions(
 
     # Library + Adapter is now the primary and preferred source
     try:
-        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
+        descriptions.extend(
+            get_library_sensors(circuits=circuits, zone_modules=zone_count)
+        )
     except Exception:
         pass
 
@@ -831,7 +978,9 @@ def get_all_binary_sensor_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
     try:
-        descriptions.extend(get_library_binary_sensors(circuits=circuits, zone_modules=zone_count))
+        descriptions.extend(
+            get_library_binary_sensors(circuits=circuits, zone_modules=zone_count)
+        )
     except Exception:
         pass
     # Old local binary sensors disabled during migration
@@ -848,7 +997,9 @@ def get_all_number_descriptions(
 
     # Library numbers (preferred)
     try:
-        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
+        descriptions.extend(
+            get_library_numbers(circuits=circuits, zone_modules=zone_count)
+        )
     except Exception:
         pass
 
@@ -864,7 +1015,9 @@ def get_all_select_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
     try:
-        descriptions.extend(get_library_selects(circuits=circuits, zone_modules=zone_count))
+        descriptions.extend(
+            get_library_selects(circuits=circuits, zone_modules=zone_count)
+        )
     except Exception:
         pass
     # Old local selects disabled during migration
