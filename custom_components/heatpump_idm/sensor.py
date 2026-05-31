@@ -16,12 +16,13 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 
-from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER, MODEL
+from idm_heatpump.client import DataType
+
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER, MODEL
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
-from .modbus_client import DataType
 from .technician_codes import calculate_codes
 
 

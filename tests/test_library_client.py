@@ -6,11 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pymodbus.exceptions import ConnectionException, ModbusException
 
-from custom_components.idm_heatpump.modbus_client import (
-    DataType,
-    IdmModbusClient,
-    RegisterDef,
-)
+from idm_heatpump import IdmModbusClient, RegisterDef
+from idm_heatpump.client import DataType
 
 
 # ---------------------------------------------------------------------------
@@ -359,54 +356,6 @@ class TestConnectDisconnect:
         with pytest.raises(ConnectionException):
             client._require_client()
 
-
-# ---------------------------------------------------------------------------
-# test_connection
-# ---------------------------------------------------------------------------
-
-class TestTestConnection:
-    async def test_successful_connection(self):
-        client = IdmModbusClient("192.168.1.1")
-        with patch.object(client, "connect", new_callable=AsyncMock), \
-             patch.object(client, "probe_register", new_callable=AsyncMock, return_value=[0, 0]):
-            client._client = MagicMock(connected=True)
-            result = await client.test_connection()
-            assert result is True
-
-    async def test_connection_fails_not_connected(self):
-        client = IdmModbusClient("192.168.1.1")
-        with patch.object(client, "connect", new_callable=AsyncMock):
-            client._client = None
-            result = await client.test_connection()
-            assert result is False
-
-    async def test_connection_fails_on_exception(self):
-        client = IdmModbusClient("192.168.1.1")
-        with patch.object(
-            client, "connect", new_callable=AsyncMock,
-            side_effect=ConnectionException("refused"),
-        ):
-            result = await client.test_connection()
-            assert result is False
-
-    async def test_connection_fails_when_modbus_error(self):
-        """test_connection returns False when probe_register returns None."""
-        client = IdmModbusClient("192.168.1.1")
-        with patch.object(client, "connect", new_callable=AsyncMock), \
-             patch.object(client, "probe_register", new_callable=AsyncMock, return_value=None):
-            client._client = MagicMock(connected=True)
-            result = await client.test_connection()
-            assert result is False
-
-    async def test_test_connection_leaves_connection_open(self):
-        """test_connection leaves the connection open for normal lifecycle."""
-        client = IdmModbusClient("192.168.1.1")
-        mock_tcp = MagicMock(connected=True)
-        with patch.object(client, "connect", new_callable=AsyncMock), \
-             patch.object(client, "probe_register", new_callable=AsyncMock, return_value=[0, 0]):
-            client._client = mock_tcp
-            await client.test_connection()
-            assert client._client is mock_tcp
 
 
 # ---------------------------------------------------------------------------

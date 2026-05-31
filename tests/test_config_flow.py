@@ -4,13 +4,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.idm_heatpump.config_flow import (
+from custom_components.heatpump_idm.config_flow import (
     IdmHeatpumpConfigFlow,
     IdmHeatpumpOptionsFlow,
     _build_options_schema,
     _build_zones_schema,
 )
-from custom_components.idm_heatpump.const import (
+from custom_components.heatpump_idm.const import (
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
@@ -244,9 +244,10 @@ class TestTestConnection:
     async def test_returns_true_on_success(self):
         flow = _make_flow()
         mock_client = AsyncMock()
-        mock_client.test_connection = AsyncMock(return_value=True)
+        mock_client.is_connected = True
+        mock_client.probe_register = AsyncMock(return_value=[0, 0])
         with patch(
-            "custom_components.idm_heatpump.modbus_client.IdmModbusClient",
+            "idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ):
             result = await flow._test_connection({
@@ -259,9 +260,9 @@ class TestTestConnection:
     async def test_returns_false_on_exception(self):
         flow = _make_flow()
         mock_client = AsyncMock()
-        mock_client.test_connection = AsyncMock(side_effect=Exception("connection refused"))
+        mock_client.connect = AsyncMock(side_effect=Exception("connection refused"))
         with patch(
-            "custom_components.idm_heatpump.modbus_client.IdmModbusClient",
+            "idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ):
             result = await flow._test_connection({
@@ -274,9 +275,10 @@ class TestTestConnection:
     async def test_returns_false_on_test_failure(self):
         flow = _make_flow()
         mock_client = AsyncMock()
-        mock_client.test_connection = AsyncMock(return_value=False)
+        mock_client.is_connected = True
+        mock_client.probe_register = AsyncMock(return_value=None)
         with patch(
-            "custom_components.idm_heatpump.modbus_client.IdmModbusClient",
+            "idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ):
             result = await flow._test_connection({

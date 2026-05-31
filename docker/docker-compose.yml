@@ -4,10 +4,9 @@ services:
     image: ghcr.io/home-assistant/home-assistant:stable
     volumes:
       - ha_config:/config
-      - ../custom_components/idm_heatpump:/config/custom_components/idm_heatpump:ro
+      - ../custom_components/heatpump_idm:/config/custom_components/heatpump_idm:ro
     ports:
       - "8123:8123"
-    network_mode: "host"
     environment:
       - TZ=Europe/Berlin
     restart: unless-stopped

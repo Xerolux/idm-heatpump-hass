@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.idm_heatpump.registers import (
+from custom_components.heatpump_idm.registers import (
     collect_all_registers,
     get_all_binary_sensor_descriptions,
     get_all_number_descriptions,
@@ -10,7 +10,8 @@ from custom_components.idm_heatpump.registers import (
     get_all_sensor_descriptions,
     get_all_switch_descriptions,
 )
-from custom_components.idm_heatpump.modbus_client import DataType, RegisterDef
+from idm_heatpump import RegisterDef
+from idm_heatpump.client import DataType
 
 
 class TestCollectAllRegisters:

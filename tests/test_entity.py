@@ -4,9 +4,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.idm_heatpump.entity import IdmEntity
-from custom_components.idm_heatpump.modbus_client import DataType, RegisterDef
-from custom_components.idm_heatpump.const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
+from custom_components.heatpump_idm.entity import IdmEntity
+from idm_heatpump import RegisterDef
+from idm_heatpump.client import DataType
+from custom_components.heatpump_idm.const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
 
 
 def _make_register(name="temp", address=100):

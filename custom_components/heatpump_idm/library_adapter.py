@@ -366,14 +366,6 @@ SENSOR_METADATA: dict[str, dict[str, Any]] = {
         "entity_category": EntityCategory.DIAGNOSTIC,
         "enabled_by_default": False,
     },
-    # Power limitation (writable via numbers, but also useful as sensor)
-    "power_limit_hp": {
-        "name": "Leistungsbegrenzung Wärmepumpe",
-        "icon": "mdi:flash-alert",
-        "unit": UnitOfPower.KILO_WATT,
-        "device_class": SensorDeviceClass.POWER,
-        "entity_category": EntityCategory.DIAGNOSTIC,
-    },
 }
 
 

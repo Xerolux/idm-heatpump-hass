@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import enum
 
-DOMAIN: str = "idm_heatpump"
+DOMAIN: str = "heatpump_idm"
 NAME: str = "IDM Heatpump"
 MANUFACTURER: str = "iDM Energiesysteme"
 MODEL: str = "Navigator 2.0"

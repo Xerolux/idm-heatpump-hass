@@ -11,9 +11,10 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from idm_heatpump import RegisterDef
+
 from .const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
 from .coordinator import IdmCoordinator
-from .modbus_client import RegisterDef
 
 
 class IdmEntity(CoordinatorEntity[IdmCoordinator]):

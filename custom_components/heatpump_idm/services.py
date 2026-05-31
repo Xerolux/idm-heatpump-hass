@@ -19,9 +19,11 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
+from idm_heatpump import RegisterDef
+from idm_heatpump.client import DataType
+
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
-from .modbus_client import DataType, RegisterDef
 
 _LOGGER = logging.getLogger(__name__)
 

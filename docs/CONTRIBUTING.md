@@ -29,7 +29,7 @@ Please report bugs by [opening a new issue](../../issues/new?template=bug_report
   logger:
     default: info
     logs:
-      custom_components.idm_heatpump: debug
+      custom_components.heatpump_idm: debug
   ```
 - **Diagnostics:** Download diagnostics data from the integration page
 

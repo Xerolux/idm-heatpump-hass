@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
-from custom_components.idm_heatpump.services import (
+from custom_components.heatpump_idm.services import (
     async_setup_services,
     async_unload_services,
     _get_coordinator,
@@ -13,12 +13,12 @@ from custom_components.idm_heatpump.services import (
     _handle_acknowledge_errors,
     _handle_write_register,
 )
-from custom_components.idm_heatpump.const import DOMAIN
+from custom_components.heatpump_idm.const import DOMAIN
 
 
 def _make_coordinator_in_hass(mock_hass, entry_id: str = "entry-1"):
     from homeassistant.config_entries import ConfigEntryState
-    from custom_components.idm_heatpump.coordinator import IdmCoordinator
+    from custom_components.heatpump_idm.coordinator import IdmCoordinator
 
     coord = MagicMock(spec=IdmCoordinator)
     coord.async_write_register = AsyncMock()
@@ -128,7 +128,7 @@ class TestGetCoordinator:
 
     async def test_uses_entry_id_when_multiple_entries_loaded(self, mock_hass):
         from homeassistant.config_entries import ConfigEntryState
-        from custom_components.idm_heatpump.coordinator import IdmCoordinator
+        from custom_components.heatpump_idm.coordinator import IdmCoordinator
 
         coord1 = MagicMock(spec=IdmCoordinator)
         coord2 = MagicMock(spec=IdmCoordinator)
@@ -169,7 +169,7 @@ class TestGetCoordinator:
 
     async def test_uses_first_loaded_when_multiple_entries_without_entry_id(self, mock_hass):
         from homeassistant.config_entries import ConfigEntryState
-        from custom_components.idm_heatpump.coordinator import IdmCoordinator
+        from custom_components.heatpump_idm.coordinator import IdmCoordinator
 
         coord1 = MagicMock(spec=IdmCoordinator)
         entry1 = MagicMock()
@@ -350,7 +350,7 @@ class TestGetCoordinatorMultipleDevices:
     async def test_first_loaded_entry_used(self, mock_hass):
         """With multiple entries, the first LOADED one is used."""
         from homeassistant.config_entries import ConfigEntryState
-        from custom_components.idm_heatpump.coordinator import IdmCoordinator
+        from custom_components.heatpump_idm.coordinator import IdmCoordinator
 
         coord1 = MagicMock(spec=IdmCoordinator)
         coord1.async_write_register = AsyncMock()
@@ -376,7 +376,7 @@ class TestGetCoordinatorMultipleDevices:
     async def test_skips_not_loaded_entries(self, mock_hass):
         """NOT_LOADED entries are skipped; uses next LOADED entry."""
         from homeassistant.config_entries import ConfigEntryState
-        from custom_components.idm_heatpump.coordinator import IdmCoordinator
+        from custom_components.heatpump_idm.coordinator import IdmCoordinator
 
         coord2 = MagicMock(spec=IdmCoordinator)
         coord2.async_write_register = AsyncMock()
