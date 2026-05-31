@@ -45,6 +45,7 @@ from .const import (
     SOLAR_MODE_OPTIONS,
     SYSTEM_MODE_OPTIONS,
 )
+from .library_adapter import get_library_sensors, get_library_numbers
 from .modbus_client import DataType, RegisterDef
 
 HK_OFFSET = {"a": 0, "b": 2, "c": 4, "d": 6, "e": 8, "f": 10, "g": 12}
@@ -1772,6 +1773,13 @@ def get_all_sensor_descriptions(
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_sensors(z, rooms))
+
+    # --- Library-provided sensors (Navigator 10 migration path) ---
+    try:
+        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
+    except Exception:
+        pass  # Fail gracefully during migration
+
     return descriptions
 
 
@@ -1803,6 +1811,13 @@ def get_all_number_descriptions(
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_numbers(z, rooms))
+
+    # --- Library-provided numbers (Navigator 10 migration path) ---
+    try:
+        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
+    except Exception:
+        pass
+
     return descriptions
 
 
