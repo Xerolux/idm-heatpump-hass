@@ -26,7 +26,7 @@ Select the active heating circuits (A through G). Only enabled circuits create e
 
 ### Zones
 
-Specify the number of zone modules (0–10). Each zone module supports up to 8 rooms.
+Specify the number of zone modules (0–10). Each zone module supports up to 6 rooms on current hardware (Navigator 10). Older systems may support 8 rooms.
 
 ### Technician Level Codes
 

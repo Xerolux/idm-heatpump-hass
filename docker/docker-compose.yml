@@ -1,0 +1,22 @@
+services:
+  homeassistant:
+    container_name: homeassistant-idm-test
+    image: ghcr.io/home-assistant/home-assistant:stable
+    volumes:
+      - ha_config:/config
+      - ../custom_components/idm_heatpump:/config/custom_components/idm_heatpump:ro
+    ports:
+      - "8123:8123"
+    network_mode: "host"
+    environment:
+      - TZ=Europe/Berlin
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8123/api/"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 60s
+
+volumes:
+  ha_config:

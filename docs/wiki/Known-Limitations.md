@@ -32,7 +32,7 @@
 
 ## Zone Modules
 
-- A maximum of **10 zone modules** with up to **8 rooms** each are supported
+- A maximum of **10 zone modules** with up to **6 rooms** each are supported on current hardware (Navigator 10 and newer). Some older installations may have used 8 rooms per module.
 - Zone module configuration is adjustable via options after initial setup
 - Rooms without a physical sensor may return `-1.0` as a value (marked as unavailable)
 
