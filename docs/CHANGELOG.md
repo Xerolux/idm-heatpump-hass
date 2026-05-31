@@ -10,6 +10,21 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [Unreleased] - Navigator 10 Support
+
+### Major Features
+- Full support for the official iDM "MODBUS TCP NAVIGATOR 10" register set (June 2025 documentation)
+- Added heat sink / plate heat exchanger sensors (addresses 1068–1074), including **Durchfluss Wärmesenke (B2) at 1072** — excellent for strainer/filter monitoring on ALM units
+- Added power limitation registers (4108 / 4112) as writable numbers — ideal for demand response and peak shaving
+- Added Booster A/B monitoring (4001–4052)
+- Added additional fault registers and groundwater temperatures
+- Zone modules now correctly default to 6 rooms per module (Navigator 10 / current hardware). Legacy 8-room configurations remain supported via manual setting.
+- Improved model detection to recognize Navigator 10 controllers
+- All new descriptions and documentation updated to English + German
+
+This work was driven by user feedback (especially from owners of ALM 2-8 with Navigator 10).
+
 ## [0.2.9] - 2026-03-23
 
 ## v0.2.9 - IDM Heatpump

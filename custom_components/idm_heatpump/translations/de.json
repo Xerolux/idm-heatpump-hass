@@ -53,7 +53,7 @@
       },
       "zones": {
         "title": "Zonenmodule konfigurieren",
-        "description": "Gib an, wie viele Räume pro Zonenmodul aktiv sind (maximal 8 Räume pro Zone). Es werden {zone_count} Zonenmodule konfiguriert.",
+        "description": "Gib an, wie viele Räume pro Zonenmodul aktiv sind (auf Navigator 10 / aktueller Hardware typisch 6 Räume; ältere Systeme manchmal 8). Es werden {zone_count} Zonenmodule konfiguriert.",
         "data": {
           "zone_0_rooms": "Zone 1 – Räume",
           "zone_1_rooms": "Zone 2 – Räume",
@@ -114,7 +114,7 @@
       },
       "zones": {
         "title": "Zonenmodule konfigurieren",
-        "description": "Gib an, wie viele Räume pro Zonenmodul aktiv sind (maximal 8 Räume pro Zone). Es werden {zone_count} Zonenmodule konfiguriert.",
+        "description": "Gib an, wie viele Räume pro Zonenmodul aktiv sind (auf Navigator 10 / aktueller Hardware typisch 6 Räume; ältere Systeme manchmal 8). Es werden {zone_count} Zonenmodule konfiguriert.",
         "data": {
           "zone_0_rooms": "Zone 1 – Räume",
           "zone_1_rooms": "Zone 2 – Räume",

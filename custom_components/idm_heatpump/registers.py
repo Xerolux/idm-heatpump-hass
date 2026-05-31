@@ -703,6 +703,97 @@ SYSTEM_SENSORS = [
         entity_category=EntityCategory.DIAGNOSTIC,
         disabled=True,
     ),
+
+    # ============================================================
+    # NAVIGATOR 10 / WÄRMESENKE (Trennwärmetauscher / Hydrauliktrennung)
+    # Besonders nützlich bei ALM-Geräten mit Plattenwärmetauscher.
+    # Adresse 1072 (Durchfluss) ist hervorragend zur Sieb-Überwachung geeignet.
+    # ============================================================
+    _sensor(
+        1068,
+        "Rücklauftemperatur Wärmesenke (B124)",
+        "heat_sink_return_temp",
+        unit=UnitOfTemperature.CELSIUS,
+        device_class=UnitOfTemperature.CELSIUS,
+        icon="mdi:thermometer",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _sensor(
+        1070,
+        "Vorlauftemperatur Wärmesenke (B125)",
+        "heat_sink_flow_temp",
+        unit=UnitOfTemperature.CELSIUS,
+        device_class=UnitOfTemperature.CELSIUS,
+        icon="mdi:thermometer",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _sensor(
+        1072,
+        "Durchfluss Wärmesenke (B2)",
+        "heat_sink_flow_rate",
+        datatype=DataType.UCHAR,
+        unit="l/min",
+        icon="mdi:water-pump",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _sensor(
+        1074,
+        "Steuersignal Ladepumpe Wärmesenke (M73)",
+        "heat_sink_charging_pump_signal",
+        datatype=DataType.INT16,
+        unit=PERCENTAGE,
+        icon="mdi:pump",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
+
+    # Zusätzliche Störungen (Navigator 10 / erweiterte Diagnose)
+    _sensor(
+        1680,
+        "Störung Wärmequellenkreis",
+        "fault_heat_source_circuit",
+        datatype=DataType.UCHAR,
+        icon="mdi:alert-circle",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
+    _sensor(
+        1681,
+        "Störung Druckschalter Wärmequellenkreis",
+        "fault_heat_source_pressure",
+        datatype=DataType.UCHAR,
+        icon="mdi:alert-circle",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
+
+    # Booster A/B (Zusatzheizung / 2. Wärmeerzeuger) - Status
+    _sensor(
+        4001,
+        "Booster Störung",
+        "booster_fault",
+        datatype=DataType.UCHAR,
+        icon="mdi:alert",
+        entity_category=EntityCategory.DIAGNOSTIC,
+    ),
+    _sensor(
+        4022,
+        "Booster A Verdichter",
+        "booster_a_compressor",
+        datatype=DataType.UCHAR,
+        icon="mdi:engine",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
+    _sensor(
+        4052,
+        "Booster B Verdichter",
+        "booster_b_compressor",
+        datatype=DataType.UCHAR,
+        icon="mdi:engine",
+        entity_category=EntityCategory.DIAGNOSTIC,
+        disabled=True,
+    ),
 ]
 
 
@@ -1259,6 +1350,34 @@ EXTERNAL_NUMBERS = [
         UnitOfTemperature.CELSIUS,
         1,
         device_class=UnitOfTemperature.CELSIUS,
+    ),
+
+    # ============================================================
+    # NAVIGATOR 10 - Leistungsbegrenzung (sehr nützlich für Netzdienstleistungen)
+    # ============================================================
+    _number(
+        4108,
+        "Leistungsbegrenzung Wärmepumpe",
+        "power_limit_hp",
+        -1,
+        50,  # realistischer obere Grenze für die meisten Geräte
+        DataType.FLOAT,
+        UnitOfPower.KILO_WATT,
+        0.1,
+        icon="mdi:flash-alert",
+        entity_category=EntityCategory.CONFIG,
+    ),
+    _number(
+        4112,
+        "Leistungsbegrenzung Kaskade",
+        "power_limit_cascade",
+        -1,
+        200,
+        DataType.FLOAT,
+        UnitOfPower.KILO_WATT,
+        0.1,
+        icon="mdi:flash-alert",
+        entity_category=EntityCategory.CONFIG,
     ),
 ]
 
