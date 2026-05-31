@@ -14,10 +14,12 @@ All notable changes to this project will be documented in this file.
 ## [Unreleased] - Navigator 10 Support
 
 ### Major Features
+- **Major architectural change (Option B)**: The integration now uses the official `idm-heatpump` Python library (published on PyPI) as its core for Modbus communication and register definitions. The addon is a thin HA-specific layer on top (via `library_adapter.py`).
 - Full support for the official iDM "MODBUS TCP NAVIGATOR 10" register set (June 2025 documentation)
 - Added heat sink / plate heat exchanger sensors (addresses 1068–1074), including **Durchfluss Wärmesenke (B2) at 1072** — excellent for strainer/filter monitoring on ALM units
 - Added power limitation registers (4108 / 4112) as writable numbers — ideal for demand response and peak shaving
 - Added Booster A/B monitoring (4001–4052)
+- `modbus_client.py` is now a minimal compatibility wrapper around the library's `IdmModbusClient` (massive code deduplication)
 - Added additional fault registers and groundwater temperatures
 - Zone modules now correctly default to 6 rooms per module (Navigator 10 / current hardware). Legacy 8-room configurations remain supported via manual setting.
 - Improved model detection to recognize Navigator 10 controllers

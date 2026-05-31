@@ -1774,7 +1774,9 @@ def get_all_sensor_descriptions(
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_sensors(z, rooms))
 
-    # --- Library-provided sensors (Navigator 10 migration path) ---
+    # --- Library-provided sensors (Navigator 10 + future registers come from here) ---
+    # The long-term goal is that most register definitions come from the
+    # idm_heatpump library via the adapter. We are incrementally moving in that direction.
     try:
         descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
     except Exception:
