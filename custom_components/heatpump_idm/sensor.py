@@ -7,6 +7,7 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
+from collections.abc import Callable
 from datetime import timedelta
 
 from homeassistant.components.sensor import SensorEntity
@@ -45,7 +46,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities = [
+    entities: list[IdmSensor | IdmTechnicianCodeSensor] = [
         IdmSensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in coordinator.sensor_descriptions
         if not (
@@ -97,12 +98,12 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
         )
         self._attr_name = self._NAMES[level]
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
-            name=coordinator.config_entry.title,
+            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
+            name=coordinator.config_entry.title,  # type: ignore[union-attr]
             manufacturer=MANUFACTURER,
             model=MODEL,
         )
-        self._cancel_timer: callback | None = None
+        self._cancel_timer: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

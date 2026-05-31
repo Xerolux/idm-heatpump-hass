@@ -29,7 +29,7 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import (
     RegisterDef,
@@ -493,7 +493,7 @@ def _make_number_description(
 
 
 def get_library_sensors(
-    model_info=None, circuits=None, zone_modules=0
+    model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
 ) -> list[dict[str, Any]]:
     """
     Returns sensor descriptions primarily sourced from the idm_heatpump library.
@@ -668,7 +668,7 @@ def get_library_glt_sensors() -> list[dict[str, Any]]:
 
 def get_ha_entity_descriptions(
     platform: str,
-    model_info=None,
+    model_info: Any = None,
     circuits: list[str] | None = None,
     zone_modules: int = 0,
 ) -> list[dict[str, Any]]:
@@ -695,8 +695,8 @@ def get_ha_entity_descriptions(
 
 
 def generate_icons_json_entries(
-    model_info=None, circuits=None, zone_modules=0
-) -> dict[str, dict]:
+    model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
+) -> dict[str, dict[str, Any]]:
     """
     Hilfsfunktion, die Icons für alle bekannten Register vorschlägt.
     Kann genutzt werden, um icons.json teilweise zu generieren.
@@ -711,7 +711,9 @@ def generate_icons_json_entries(
     return icons
 
 
-def get_library_binary_sensors(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
+def get_library_binary_sensors(
+    circuits: list[str] | None = None, zone_modules: int = 0
+) -> list[dict[str, Any]]:
     """Binary sensors from library registers with binary=True flag."""
     from homeassistant.components.binary_sensor import BinarySensorEntityDescription
 
@@ -739,7 +741,9 @@ def get_library_binary_sensors(circuits=None, zone_modules=0) -> list[dict[str, 
     return sensors
 
 
-def get_library_selects(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
+def get_library_selects(
+    circuits: list[str] | None = None, zone_modules: int = 0
+) -> list[dict[str, Any]]:
     """Select entities (modes) from the library."""
     from homeassistant.components.select import SelectEntityDescription
 
@@ -801,7 +805,7 @@ def get_library_switches() -> list[dict[str, Any]]:
 
 
 def get_library_readonly_sensors(
-    model_info=None, circuits=None, zone_modules=0
+    model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
 ) -> list[dict[str, Any]]:
     """
     Gibt nur lesbare Sensoren aus der Library zurück.
@@ -846,7 +850,7 @@ def get_library_readonly_sensors(
 
 
 def get_library_numbers(
-    model_info=None, circuits=None, zone_modules=0
+    model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
 ) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
     reg_map = build_register_map(
