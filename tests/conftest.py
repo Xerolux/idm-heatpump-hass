@@ -554,7 +554,7 @@ def _stub_homeassistant() -> None:
         setattr(components, platform, mod)
 
     ha.loader.async_get_integration = AsyncMock(
-        return_value=MagicMock(manifest={"version": "0.4.1"})
+        return_value=MagicMock(manifest={"version": "0.4.2"})
     )
 
 

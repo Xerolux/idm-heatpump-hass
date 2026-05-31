@@ -12,6 +12,11 @@
 All notable changes to this project will be documented in this file.
 ## [0.4.1] - 2026-05-31
 
+## v0.4.2 - IDM Heatpump
+
+### Bug Fixes
+- Lowered `pymodbus` requirement to `>=3.7.0` to fix setup failure with HA's bundled pymodbus version
+
 ## v0.4.1 - IDM Heatpump
 
 **BETA RELEASE - Testing phase, may contain bugs**
