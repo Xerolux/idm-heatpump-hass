@@ -804,8 +804,14 @@ def _sensor(
 # Old SYSTEM_SENSORS list dismantled - now served by library_adapter
 
 
+# ============================================================
+# LEGACY CODE BELOW - MIGRATION TO LIBRARY + ADAPTER IS COMPLETE
+# These functions are no longer called in the active get_all_* paths.
+# They can be removed in a future cleanup.
+# ============================================================
+
 def _hk_sensors(circuit: str) -> list[dict[str, Any]]:
-    """Generate read-only sensors for a specific heating circuit (A–G).
+    """Generate read-only sensors for a specific heating circuit (A–G). [LEGACY]
 
     Address layout (n = circuit index 0–6, off = n*2 for 2-register FLOAT values):
       1350+off: Vorlauftemperatur (FLOAT)       1378+off: Sollvorlauftemperatur (FLOAT)
