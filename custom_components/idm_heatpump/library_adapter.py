@@ -243,6 +243,25 @@ _GERMAN_NAMES: dict[str, str] = {
     "power_draw_total": "Aktuelle Leistungsaufnahme Wärmepumpe",
     "thermal_power": "Thermische Leistung",
     "energy_total_flow_sensor": "Wärmemenge Gesamt (Durchflusssensor)",
+    # Heizkreis allgemein (werden dynamisch ergänzt)
+    "flow_temp_hk": "Vorlauftemperatur Heizkreis",
+    "room_temp_hk": "Raumtemperatur Heizkreis",
+    "target_flow_temp_hk": "Sollvorlauftemperatur Heizkreis",
+    "room_target_heat_normal": "Raumsoll Heizen Normal",
+    "room_target_heat_eco": "Raumsoll Heizen Eco",
+    "room_target_cool_normal": "Raumsoll Kühlen Normal",
+    "room_target_cool_eco": "Raumsoll Kühlen Eco",
+    "heating_curve": "Heizkurve",
+    "heating_limit": "Heizgrenze",
+    "cooling_limit": "Kühlgrenze",
+    "parallel_shift": "Parallelverschiebung",
+    "active_mode": "Aktive Betriebsart",
+    # Zonen allgemein
+    "zone_mode": "Zonenmodus",
+    "zone_room_temp": "Raumtemperatur Zone",
+    "zone_room_target": "Raumsolltemperatur Zone",
+    "zone_room_humidity": "Raumfeuchte Zone",
+    "zone_room_mode": "Raumbetriebsart Zone",
 }
 
 # Re-export the real client and models from the library
@@ -349,6 +368,56 @@ def _get_german_name(name: str) -> str:
     return name.replace("_", " ").title()
 
 
+def get_icon_for_register(name: str, unit: str | None = None) -> str:
+    """Gibt ein passendes Icon für ein Register zurück (besser als simple Fallbacks)."""
+    name_lower = name.lower()
+
+    # Temperaturen
+    if "temp" in name_lower or unit == "°C":
+        return "mdi:thermometer"
+    if "humidity" in name_lower or "%rF" in (unit or ""):
+        return "mdi:water-percent"
+
+    # Leistung & Energie
+    if any(x in name_lower for x in ["power", "energy", "consumption", "leistung"]):
+        return "mdi:flash"
+    if "soc" in name_lower or "battery" in name_lower:
+        return "mdi:battery"
+
+    # Pumpen
+    if "pump" in name_lower:
+        return "mdi:pump"
+
+    # Ventile
+    if "valve" in name_lower:
+        return "mdi:valve"
+
+    # Solar
+    if "solar" in name_lower:
+        return "mdi:solar-power"
+
+    # PV
+    if "pv" in name_lower:
+        return "mdi:solar-panel"
+
+    # Kaskade
+    if "cascade" in name_lower:
+        return "mdi:heat-pump"
+
+    # Störungen / Alarme
+    if any(x in name_lower for x in ["fault", "alarm", "error", "störung"]):
+        return "mdi:alert-circle"
+
+    # Modus / Status
+    if any(x in name_lower for x in ["mode", "status", "betriebsart", "demand"]):
+        return "mdi:cog"
+
+    # Standard
+    if unit and "%" in unit:
+        return "mdi:gauge"
+    return "mdi:information-outline"
+
+
 def _make_sensor_description(reg: RegisterDef, meta: dict[str, Any]) -> SensorEntityDescription:
     """Create a rich HA SensorEntityDescription from a library RegisterDef + metadata."""
     german_name = meta.get("name") or _get_german_name(reg.name)
@@ -411,9 +480,7 @@ def get_library_sensors(model_info=None, circuits=None, zone_modules=0) -> list[
         if reg.writable:
             continue
 
-        icon = "mdi:thermometer" if reg.unit and "°C" in reg.unit else "mdi:gauge"
-        if "power" in name or "energy" in name:
-            icon = "mdi:flash"
+        icon = get_icon_for_register(name, reg.unit)
 
         desc = SensorEntityDescription(
             key=name,
@@ -459,7 +526,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
             name=_get_german_name(name),
             native_unit_of_measurement=reg.unit,
             device_class=SensorDeviceClass.TEMPERATURE if reg.unit and "°C" in reg.unit else None,
-            icon="mdi:thermometer" if "temp" in name else "mdi:thermostat",
+            icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
         )
         sensors.append({
@@ -482,13 +549,12 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
         if reg.writable:
             continue
 
-        icon = "mdi:thermometer" if "temp" in name else "mdi:water-percent"
         desc = SensorEntityDescription(
             key=name,
             name=_get_german_name(name),
             native_unit_of_measurement=reg.unit,
             device_class=SensorDeviceClass.TEMPERATURE if "temp" in name else None,
-            icon=icon,
+            icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
         )
         sensors.append({
@@ -565,9 +631,7 @@ def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0)
             continue
 
         # Ansonsten generiere vernünftige Defaults
-        icon = "mdi:thermometer" if (reg.unit and "°C" in reg.unit) else "mdi:gauge"
-        if any(x in name for x in ["power", "energy", "consumption"]):
-            icon = "mdi:flash"
+        icon = get_icon_for_register(name, reg.unit)
 
         desc = SensorEntityDescription(
             key=name,
