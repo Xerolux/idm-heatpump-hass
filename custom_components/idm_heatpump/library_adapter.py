@@ -34,6 +34,18 @@ from idm_heatpump import (
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
 
 # ============================================================
+# Future-proofing: Unterstützung für ha_metadata im RegisterDef
+# Wenn die Library später ha_metadata direkt mitliefert, können wir das hier nutzen.
+# ============================================================
+
+def _apply_ha_metadata(reg: RegisterDef, base_meta: dict[str, Any]) -> dict[str, Any]:
+    """Kann später erweitert werden, wenn RegisterDef ha_metadata enthält."""
+    # Placeholder für zukünftige Library-Unterstützung
+    # if hasattr(reg, "ha_metadata") and reg.ha_metadata:
+    #     base_meta.update(reg.ha_metadata)
+    return base_meta
+
+# ============================================================
 # Deutsche Namen für wichtige Register (wird sukzessive erweitert)
 # ============================================================
 
@@ -374,12 +386,20 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
 
     # Temperaturen
     if "temp" in name_lower or unit == "°C":
+        if "dhw" in name_lower or "warmwasser" in name_lower:
+            return "mdi:water-boiler"
+        if "cold" in name_lower or "kühl" in name_lower:
+            return "mdi:snowflake"
+        if "heat_sink" in name_lower or "wärmesenke" in name_lower:
+            return "mdi:heat-pump"
         return "mdi:thermometer"
     if "humidity" in name_lower or "%rF" in (unit or ""):
         return "mdi:water-percent"
 
     # Leistung & Energie
     if any(x in name_lower for x in ["power", "energy", "consumption", "leistung"]):
+        if "thermal" in name_lower:
+            return "mdi:heat-wave"
         return "mdi:flash"
     if "soc" in name_lower or "battery" in name_lower:
         return "mdi:battery"
@@ -402,7 +422,7 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
 
     # Kaskade
     if "cascade" in name_lower:
-        return "mdi:heat-pump"
+        return "mdi:heat-pump-multiple"
 
     # Störungen / Alarme
     if any(x in name_lower for x in ["fault", "alarm", "error", "störung"]):
@@ -590,9 +610,44 @@ def get_library_glt_sensors() -> list[dict[str, Any]]:
     return []
 
 
+def get_ha_entity_descriptions(
+    platform: str,
+    model_info=None,
+    circuits: list[str] | None = None,
+    zone_modules: int = 0,
+) -> list[dict[str, Any]]:
+    """
+    Zentrale Funktion, die für eine Plattform (sensor, number, select, binary_sensor, switch)
+    fertige HA-EntityDescriptions aus der Library generiert.
+
+    Das ist der empfohlene Weg für zukünftige Erweiterungen.
+    """
+    if platform in ("sensor", "binary_sensor"):
+        return get_library_readonly_sensors(model_info, circuits, zone_modules)
+    if platform == "number":
+        return get_library_numbers(model_info, circuits, zone_modules)
+    if platform == "select":
+        return get_library_selects(circuits, zone_modules)
+    if platform == "switch":
+        return get_library_switches()
+    return []
+
+
 # ============================================================
-# Platform-specific generators for full migration coverage
+# Hilfsfunktion für icons.json Generierung (Empfehlung)
 # ============================================================
+
+def generate_icons_json_entries(model_info=None, circuits=None, zone_modules=0) -> dict[str, dict]:
+    """
+    Hilfsfunktion, die Icons für alle bekannten Register vorschlägt.
+    Kann genutzt werden, um icons.json teilweise zu generieren.
+    """
+    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
+    icons = {}
+    for name, reg in reg_map.items():
+        icon = get_icon_for_register(name, reg.unit)
+        icons[name] = {"default": icon}
+    return icons
 
 def get_library_binary_sensors(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
     """Binary sensors (pumps, valves, demands, etc.) from the library."""
