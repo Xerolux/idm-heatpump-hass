@@ -196,6 +196,11 @@ def get_library_numbers(model_info=None, circuits=None, zone_modules=0) -> list[
     return numbers
 
 
+def get_idm_client(host: str, port: int = 502, slave_id: int = 1) -> LibIdmModbusClient:
+    """Factory that returns a properly typed client from the library."""
+    return LibIdmModbusClient(host=host, port=port, slave_id=slave_id)
+
+
 __all__ = [
     "LibIdmModbusClient",
     "MODEL_NAVIGATOR_10",
@@ -203,4 +208,5 @@ __all__ = [
     "MODEL_NAVIGATOR_PRO",
     "get_library_sensors",
     "get_library_numbers",
+    "get_idm_client",
 ]

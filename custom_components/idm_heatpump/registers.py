@@ -45,7 +45,7 @@ from .const import (
     SOLAR_MODE_OPTIONS,
     SYSTEM_MODE_OPTIONS,
 )
-from .library_adapter import get_library_sensors, get_library_numbers
+from .library_adapter import get_idm_client, get_library_numbers, get_library_sensors
 from .modbus_client import DataType, RegisterDef
 
 HK_OFFSET = {"a": 0, "b": 2, "c": 4, "d": 6, "e": 8, "f": 10, "g": 12}
