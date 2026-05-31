@@ -10,6 +10,21 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+---
+
+## v0.6.1 - CI Fixes & Type Safety
+
+### Bug Fixes
+
+- Fix CI: install `idm-heatpump-api` in GitHub Actions for tests and mypy
+- Fix mypy strict type errors across 6 files (library_adapter, config_flow, registers, services, entity, sensor)
+- Fix Ruff formatting in library_adapter.py
+- Add proper type annotations to all library_adapter.py functions
+- Use `ConfigFlowResult` in config_flow.py (with backward-compatible fallback)
+
+---
+
 ## [0.6.0] - 2026-05-31
 
 ## v0.6.0 - IDM Heatpump
