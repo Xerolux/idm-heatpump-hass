@@ -19,7 +19,7 @@
 > **Control and monitor your IDM Navigator heat pump directly in Home Assistant – 100% local via Modbus TCP.**
 
 <p align="center">
-  <img src="docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
+  <img src="https://raw.githubusercontent.com/Xerolux/idm-heatpump-hass/main/docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
   <small><i>AI generated image</i></small>
 </p>
 

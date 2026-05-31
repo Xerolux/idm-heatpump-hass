@@ -19,7 +19,7 @@
 > **Steuerung und Überwachung deiner IDM Navigator Wärmepumpe direkt in Home Assistant – 100% lokal über Modbus TCP.**
 
 <p align="center">
-  <img src="docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
+  <img src="https://raw.githubusercontent.com/Xerolux/idm-heatpump-hass/main/docs/images/heatpump.png" alt="IDM Heatpump" width="300"><br>
   <small><i>KI generiertes Bild</i></small>
 </p>
 
