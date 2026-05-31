@@ -45,7 +45,12 @@ from .const import (
     SOLAR_MODE_OPTIONS,
     SYSTEM_MODE_OPTIONS,
 )
-from .library_adapter import get_library_numbers, get_library_sensors
+from .library_adapter import (
+    get_library_heating_circuit_sensors,
+    get_library_numbers,
+    get_library_sensors,
+    get_library_zone_sensors,
+)
 from .modbus_client import DataType, RegisterDef
 
 HK_OFFSET = {"a": 0, "b": 2, "c": 4, "d": 6, "e": 8, "f": 10, "g": 12}
@@ -1783,11 +1788,12 @@ def get_all_sensor_descriptions(
     descriptions.extend(list(SYSTEM_SENSORS))
     descriptions.extend(list(PV_SENSORS))
 
+    # 3. Stark verbesserte Library-Generatoren für Heizkreise und Zonen
     for circuit in circuits:
-        descriptions.extend(_hk_sensors(circuit))
+        descriptions.extend(get_library_heating_circuit_sensors(circuit))
     for z in range(zone_count):
-        rooms = zone_rooms.get(z, 1)
-        descriptions.extend(_zone_sensors(z, rooms))
+        rooms = zone_rooms.get(z, 6)  # Default 6 Räume für Navigator 10
+        descriptions.extend(get_library_zone_sensors(z, rooms))
 
     # Deduplicate by key (library first wins in case of overlap)
     seen_keys: set[str] = set()

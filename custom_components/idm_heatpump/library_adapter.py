@@ -33,6 +33,44 @@ from idm_heatpump import (
 
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
 
+# ============================================================
+# Deutsche Namen für wichtige Register (wird sukzessive erweitert)
+# ============================================================
+
+_GERMAN_NAMES: dict[str, str] = {
+    # System
+    "outdoor_temp": "Außentemperatur",
+    "outdoor_temp_avg": "Gemittelte Außentemperatur",
+    "storage_temp": "Wärmespeichertemperatur",
+    "cold_storage_temp": "Kältespeichertemperatur",
+    "dhw_temp_bottom": "Trinkwassererwärmer unten",
+    "dhw_temp_top": "Trinkwassererwärmer oben",
+    "dhw_tapping_temp": "Warmwasser Zapftemperatur",
+    "hp_flow_temp": "Wärmepumpen Vorlauftemperatur",
+    "hp_return_temp": "Wärmepumpen Rücklauftemperatur",
+    "current_power": "Thermische Momentanleistung",
+    "power_consumption_hp": "Elektrische Leistungsaufnahme Wärmepumpe",
+    
+    # Heat Sink (Navigator 10)
+    "heat_sink_flow_rate": "Durchfluss Wärmesenke (B2)",
+    "heat_sink_flow_temp": "Vorlauftemperatur Wärmesenke",
+    "heat_sink_return_temp": "Rücklauftemperatur Wärmesenke",
+    
+    # Solar
+    "solar_collector_temp": "Solar Kollektortemperatur",
+    "solar_return_temp": "Solar Rücklauftemperatur",
+    
+    # PV
+    "pv_surplus": "PV Überschuss",
+    "pv_production": "PV Produktion",
+    "house_consumption": "Hausverbrauch",
+    "battery_soc": "Batterie SOC",
+    
+    # Cascade
+    "cascade_available_heating": "Kaskade verfügbar Heizen",
+    "cascade_running_heating": "Kaskade in Betrieb Heizen",
+}
+
 # Re-export the real client and models from the library
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
 from idm_heatpump.const import (
@@ -130,11 +168,20 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
 }
 
 
+def _get_german_name(name: str) -> str:
+    """Liefert einen schönen deutschen Namen, falls bekannt, sonst eine formatierte Version."""
+    if name in _GERMAN_NAMES:
+        return _GERMAN_NAMES[name]
+    return name.replace("_", " ").title()
+
+
 def _make_sensor_description(reg: RegisterDef, meta: dict[str, Any]) -> SensorEntityDescription:
     """Create a rich HA SensorEntityDescription from a library RegisterDef + metadata."""
+    german_name = meta.get("name") or _get_german_name(reg.name)
+    
     return SensorEntityDescription(
         key=reg.name,
-        name=meta.get("name", reg.name),
+        name=german_name,
         native_unit_of_measurement=meta.get("unit") or reg.unit,
         device_class=meta.get("device_class"),
         state_class=SensorStateClass.MEASUREMENT if meta.get("device_class") else None,
@@ -207,6 +254,104 @@ def get_library_sensors(model_info=None, circuits=None, zone_modules=0) -> list[
             "description": desc,
             "category": "library",
         })
+
+    return sensors
+
+
+# ============================================================
+# Spezialisierte Generatoren für Heizkreise und Zonen (stark verbessert)
+# ============================================================
+
+def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
+    """Erzeugt Sensor-Beschreibungen für einen Heizkreis direkt aus der Library."""
+    try:
+        circuit_regs = get_heating_circuit_registers(circuit)
+    except Exception:
+        return []
+
+    sensors = []
+    for name, reg in circuit_regs.items():
+        if reg.writable:
+            continue
+
+        desc = SensorEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            native_unit_of_measurement=reg.unit,
+            device_class=SensorDeviceClass.TEMPERATURE if reg.unit and "°C" in reg.unit else None,
+            icon="mdi:thermometer" if "temp" in name else "mdi:thermostat",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+        sensors.append({
+            "register": reg,
+            "description": desc,
+            "category": f"heating_circuit_{circuit.lower()}",
+        })
+    return sensors
+
+
+def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
+    """Erzeugt Sensor-Beschreibungen für ein Zonenmodul direkt aus der Library."""
+    try:
+        zone_regs = get_zone_module_registers(zone_idx, room_count)
+    except Exception:
+        return []
+
+    sensors = []
+    for name, reg in zone_regs.items():
+        if reg.writable:
+            continue
+
+        icon = "mdi:thermometer" if "temp" in name else "mdi:water-percent"
+        desc = SensorEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            native_unit_of_measurement=reg.unit,
+            device_class=SensorDeviceClass.TEMPERATURE if "temp" in name else None,
+            icon=icon,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+        sensors.append({
+            "register": reg,
+            "description": desc,
+            "category": f"zone_{zone_idx}",
+        })
+    return sensors
+
+
+def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:
+    """
+    Gibt nur lesbare Sensoren aus der Library zurück.
+    Diese Funktion ist der bevorzugte Weg, um Sensoren aus der Library zu bekommen.
+    """
+    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
+    sensors = []
+
+    for name, reg in reg_map.items():
+        if reg.writable:
+            continue
+
+        # Bevorzuge explizite Metadaten
+        if name in SENSOR_METADATA:
+            meta = SENSOR_METADATA[name]
+            desc = _make_sensor_description(reg, meta)
+            sensors.append({"register": reg, "description": desc, "category": "system"})
+            continue
+
+        # Ansonsten generiere vernünftige Defaults
+        icon = "mdi:thermometer" if (reg.unit and "°C" in reg.unit) else "mdi:gauge"
+        if any(x in name for x in ["power", "energy", "consumption"]):
+            icon = "mdi:flash"
+
+        desc = SensorEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            native_unit_of_measurement=reg.unit,
+            device_class=SensorDeviceClass.TEMPERATURE if (reg.unit and "°C" in reg.unit) else None,
+            icon=icon,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+        sensors.append({"register": reg, "description": desc, "category": "library"})
 
     return sensors
 
