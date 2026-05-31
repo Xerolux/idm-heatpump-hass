@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 heat pumps via Modbus TCP. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.3.0` (defined in `custom_components/idm_heatpump/manifest.json`)
+- **Current Version**: `0.4.0` (defined in `custom_components/idm_heatpump/manifest.json`) - Navigator 10 support added
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.5.0
@@ -201,7 +201,7 @@ The config flow has 5 steps (defined in `config_flow.py`):
 
 1. **user**: Host, port, slave ID, integration name
 2. **options**: Scan interval, number of circuits/zones, cascade support, technician codes
-3. **zones**: Room count per zone (up to 10 zones × 8 rooms)
+3. **zones**: Room count per zone (up to 10 zones × 6 rooms on current hardware)
 4. **reconfigure**: Update connection settings without removing integration
 5. **options_flow**: Re-run options after setup
 
@@ -213,7 +213,7 @@ The config flow has 5 steps (defined in `config_flow.py`):
 |---------|------|-------|
 | Technician codes | `technician_codes.py` | Time-based Fachmann Ebene L1/L2 codes, updated every 60s |
 | Cascade support | `registers.py`, `coordinator.py` | Optional registers for multi-heatpump setups |
-| Zone management | `config_flow.py`, `registers.py` | Up to 10 zones × 8 rooms |
+| Zone management | `config_flow.py`, `registers.py` | Up to 10 zones × 6 rooms (current hardware) |
 | EEPROM protection | `registers.py`, `modbus_client.py` | Tracks write-sensitive registers |
 | Bitflag decoding | `modbus_client.py` | Renders human-readable strings like "Heating\|Water\|Defrosting" |
 | Diagnostics export | `diagnostics.py` | Redacts host/port for privacy |

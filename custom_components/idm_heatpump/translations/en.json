@@ -53,7 +53,7 @@
       },
       "zones": {
         "title": "Configure zone modules",
-        "description": "Enter the number of active rooms per zone module (maximum 8 rooms per zone). Configuring {zone_count} zone module(s).",
+        "description": "Enter the number of active rooms per zone module (typically 6 rooms on Navigator 10 / current hardware; some older systems use 8). Configuring {zone_count} zone module(s).",
         "data": {
           "zone_0_rooms": "Zone 1 – Rooms",
           "zone_1_rooms": "Zone 2 – Rooms",
@@ -114,7 +114,7 @@
       },
       "zones": {
         "title": "Configure zone modules",
-        "description": "Enter the number of active rooms per zone module (maximum 8 rooms per zone). Configuring {zone_count} zone module(s).",
+        "description": "Enter the number of active rooms per zone module (typically 6 rooms on Navigator 10 / current hardware; some older systems use 8). Configuring {zone_count} zone module(s).",
         "data": {
           "zone_0_rooms": "Zone 1 – Rooms",
           "zone_1_rooms": "Zone 2 – Rooms",

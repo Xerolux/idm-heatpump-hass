@@ -5,7 +5,8 @@
 | Device | Firmware | Heating Circuits | Zone Modules | Status |
 |--------|----------|------------------|--------------|--------|
 | IDM Navigator 2.0 | all versions | up to 7 (A–G) | no | ✅ Confirmed |
-| IDM Navigator Pro | all versions | up to 7 (A–G) | up to 10 (8 rooms each) | ✅ Confirmed |
+| IDM Navigator 10 | 2025+ (NAV10_20.23+) | up to 7 (A–G) | up to 10 (6 rooms each) | ✅ Confirmed |
+| IDM Navigator Pro | all versions | up to 7 (A–G) | up to 10 (6 rooms each) | ✅ Confirmed |
 
 ## Requirements
 

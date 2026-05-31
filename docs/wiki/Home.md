@@ -31,7 +31,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 - **System Monitoring**: Flow, return, hot water, outdoor temperature, pressure, flow rate
 - **Heating Circuits A–G**: Up to 7 heating circuits with individual setpoint and mode control
-- **Zone Modules**: Up to 10 zones with 8 rooms each (room thermostat function)
+- **Zone Modules**: Up to 10 zones with 6 rooms each (room thermostat function). Current Navigator 10 hardware uses 6 rooms per module.
 - **Solar & PV**: Solar hot water heating, PV surplus utilization, battery monitoring
 - **Energy Monitoring**: Heat quantity, runtimes, energy meters
 - **Cascade & Bivalence**: Multi-heat pump control, heating element integration

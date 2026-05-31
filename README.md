@@ -31,7 +31,7 @@
 |----------|----------------|
 | **🌡️ System Monitoring** | Flow, return, hot water, outdoor temperature, pressure, flow rate |
 | **🔧 Heating Circuits A–G** | Up to 7 heating circuits with individual setpoint and mode control |
-| **🏠 Zone Modules** | Up to 10 zones with 8 rooms each (room thermostat function) |
+| **🏠 Zone Modules** | Up to 10 zones with 6 rooms each (room thermostat function). Navigator 10 / current hardware uses 6 rooms per module. |
 | **💧 Hot Water** | DHW setpoint and priority control |
 | **☀️ Solar & PV** | Solar hot water heating, PV surplus utilization |
 | **⚡ Energy Monitoring** | Heat quantity, runtime, energy meters |
