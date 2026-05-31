@@ -36,7 +36,8 @@ from .const import (
     NAME,
 )
 from .coordinator import IdmCoordinator
-from .modbus_client import IdmModbusClient
+from .library_adapter import get_idm_client
+from .modbus_client import IdmModbusClient  # still re-exported for compatibility during migration
 from .registers import (
     get_all_binary_sensor_descriptions,
     get_all_number_descriptions,
@@ -97,7 +98,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
     enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
 
-    client = IdmModbusClient(host=host, port=port, slave_id=slave_id)
+    # Use the library via the adapter (migration Option B)
+    client = get_idm_client(host=host, port=port, slave_id=slave_id)
 
     try:
         await client.connect()
