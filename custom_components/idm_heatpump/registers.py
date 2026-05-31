@@ -806,7 +806,7 @@ def get_all_sensor_descriptions(
         descriptions.extend(get_library_heating_circuit_sensors(circuit))
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
-        descriptions.extend(get_library_zone_sensors(z, rooms))
+        descriptions.extend(get_library_zone_sensors(z + 1, rooms))
 
     # Legacy old generators are fully disabled for sensors.
     # The migration to library + adapter is the goal.
