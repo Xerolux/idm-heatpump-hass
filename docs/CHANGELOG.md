@@ -10,6 +10,16 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [0.4.4] - 2026-05-31
+
+### Improvements
+- Major cleanup of legacy register code (removal of ~900 lines of old local definitions)
+- Full migration to `idm-heatpump` library as core (100% Option B)
+- Significantly expanded German register names and improved icon handling in the adapter
+- All public entity description functions now delegate to the library adapter
+- Ruff formatting fixes and lint cleanup
+
 ## [0.4.3] - 2026-05-31
 
 ## v0.4.3 - IDM Heatpump
