@@ -78,6 +78,7 @@ CIRCUIT_MODE_OPTIONS: dict[int, str] = {
     3: "Eco",
     4: "Manuell Heizen",
     5: "Manuell Kuehlen",
+    255: "Nicht konfiguriert / Nicht verfügbar",
 }
 
 
@@ -120,6 +121,7 @@ ISC_MODE_OPTIONS: dict[int, str] = {
     1: "Heizung",
     4: "Warmwasser",
     8: "Quelle",
+    255: "Nicht konfiguriert / Nicht verfügbar",
 }
 
 
