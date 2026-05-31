@@ -225,6 +225,67 @@ _GERMAN_NAMES: dict[str, str] = {
     "zone_room_target": "Raumsolltemperatur Zone",
     "zone_room_humidity": "Raumfeuchte Zone",
     "zone_room_mode": "Raumbetriebsart Zone",
+    # === System mode ===
+    "system_mode": "Systembetriebsart",
+    "error_acknowledge": "Fehlerquittierung",
+    # === Booster detailed ===
+    "booster_a_charging_pump": "Booster A Ladepumpe",
+    "booster_a_return_temp": "Booster A Rücklauftemperatur",
+    "booster_a_source_outlet_temp": "Booster A Wärmequellenaustritt",
+    "booster_a_source_pump": "Booster A Wärmequellenpumpe",
+    "booster_a_storage_temp": "Booster A Speichertemperatur",
+    "booster_b_charging_pump": "Booster B Ladepumpe",
+    "booster_b_flow_temp": "Booster B Vorlauftemperatur",
+    "booster_b_return_temp": "Booster B Rücklauftemperatur",
+    "booster_b_source_inlet_temp": "Booster B Wärmequelleneintritt",
+    "booster_b_source_outlet_temp": "Booster B Wärmequellenaustritt",
+    "booster_b_source_pump": "Booster B Wärmequellenpumpe",
+    "booster_b_storage_temp": "Booster B Speichertemperatur",
+    "booster_interlock": "Booster Verriegelung",
+    # === Pumpen ===
+    "charging_pump_status": "Ladepumpe M73",
+    "heat_source_pump_status": "Wärmequellenpumpe M15",
+    "circulation_pump": "Zirkulationspumpe M64",
+    "isc_cold_storage_pump_status": "ISC Kältespeicherpumpe M84",
+    "isc_recooling_pump_status": "ISC Rückkühlpumpe M17",
+    # === DHW detail ===
+    "dhw_charge_on_temp": "WW Einchargetemperatur",
+    "dhw_charge_off_temp": "WW Ausschalttemperatur",
+    "current_electricity_price": "Aktueller Strompreis",
+    "current_power_solar": "Aktuelle Solarleistung",
+    "energy_passive_cooling": "Wärmemenge Passive Kühlung",
+    # === Bivalenz 3. Gen ===
+    "bivalence_point_1_3rd_gen": "Bivalenzpunkt 1 (3. WE)",
+    "bivalence_point_2_3rd_gen": "Bivalenzpunkt 2 (3. WE)",
+    # === Fehler / Diagnose ===
+    "fault_heat_source_pressure_switch": "Störung Druckschalter Wärmequellenkreis",
+    "fault_charging_pump_1_intermediate": "Störung Ladepumpe 1 Zwischenkreis",
+    "fault_charging_pump_2_intermediate": "Störung Ladepumpe 2 Zwischenkreis",
+    # === Grundwasser ===
+    "groundwater_inlet_temp_1": "Grundwassereintrittstemperatur 1",
+    "groundwater_inlet_temp_2": "Grundwassereintrittstemperatur 2",
+    # === GLT / Extern ===
+    "ext_demand_groundwater_pump_m15": "Externe Anforderung Grundwasserpumpe M15",
+    "ext_demand_brine_pump_m16": "Externe Anforderung Solepumpe M16",
+    "demand_onetime_dhw": "Einmalige WW-Anforderung",
+    "power_consumption_hp_smartfox": "Elektrische Leistungsaufnahme Smartfox",
+    # === Heizkreis A ===
+    "hc_a_flow_temp": "Vorlauftemperatur HK A",
+    "hc_a_room_temp": "Raumtemperatur HK A",
+    "hc_a_setpoint_flow_temp": "Sollvorlauftemperatur HK A",
+    "hc_a_active_mode": "Aktive Betriebsart HK A",
+    "hc_a_mode": "Betriebsart HK A",
+    "hc_a_room_setpoint_heat_normal": "Raumsoll Heizen Normal HK A",
+    "hc_a_room_setpoint_heat_eco": "Raumsoll Heizen Eco HK A",
+    "hc_a_room_setpoint_cool_normal": "Raumsoll Kühlen Normal HK A",
+    "hc_a_room_setpoint_cool_eco": "Raumsoll Kühlen Eco HK A",
+    "hc_a_heating_curve": "Heizkurve HK A",
+    "hc_a_heating_limit": "Heizgrenze HK A",
+    "hc_a_cooling_limit": "Kühlgrenze HK A",
+    "hc_a_setpoint_flow_constant": "Festwertvorlauf HK A",
+    "hc_a_setpoint_flow_cooling": "Kühlvorlauf HK A",
+    "hc_a_parallel_shift": "Parallelverschiebung HK A",
+    "hc_a_ext_room_temp": "Externe Raumtemperatur HK A",
 }
 
 
@@ -458,7 +519,7 @@ def get_library_sensors(
 
         desc = SensorEntityDescription(
             key=name,
-            name=name.replace("_", " ").title(),
+            name=_get_german_name(name),
             native_unit_of_measurement=reg.unit,
             device_class=SensorDeviceClass.TEMPERATURE
             if reg.unit and "°C" in (reg.unit or "")

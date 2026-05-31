@@ -1,67 +1,105 @@
-# API Issues (idm-heatpump library)
+# API Issues — idm-heatpump Library (v0.2.1)
 
-Issues found during live testing against IDM Navigator 10 at 192.168.178.103.
-
-## 1. firmware_version Register (Address 4120) - Permanently Fails
-
-**Severity**: Low (cosmetic)
-
-The library's register map includes `firmware_version` at address 4120. On our Navigator 10 device, this register fails to read every time and gets marked as permanently failed after 3 attempts.
-
-```
-WARNING [idm_heatpump.client] Register firmware_version (address 4120) has failed 3 times. Marking as permanently failed.
-```
-
-This may be a Navigator-10-specific address that differs from Navigator 2.0, or the register simply doesn't exist on this firmware version. The HA integration already has this entity disabled by default, so it's not user-facing.
-
-**Possible fix**: Consider making this register optional or adjusting the address for Navigator 10.
+Diese Register fehlen in der Library oder haben falsche Typen.  
+Nach Fix: neue Library-Version taggen, dann im HA-Integration `manifest.json` bumpen.
 
 ---
 
-## 2. ISC_MODE_OPTIONS Missing Value 255
+## 1. Fehlende Register (komplett absent)
 
-**Severity**: Low
+### 1.1 PV / Energiemanagement (Adressen 74–86)
 
-`ISC_MODE_OPTIONS` in the library maps:
-```python
-{0: 'No Waste Heat', 1: 'Heating', 4: 'DHW', 8: 'Heat Source'}
-```
+| Adresse | Name | Datentyp | Einheit | Beschreibung |
+|---------|------|----------|---------|--------------|
+| 74 | `pv_surplus` | FLOAT | kW | PV-Überschuss |
+| 76 | `electric_heater_power` | FLOAT | kW | Leistung E-Heizstab |
+| 78 | `pv_production` | FLOAT | kW | PV Produktion |
+| 82 | `home_consumption` | FLOAT | kW | Hausverbrauch |
+| 84 | `battery_discharge` | FLOAT | kW | Batterie Entladung |
+| 86 | `battery_level` | FLOAT | % | Batteriefüllstand |
 
-Our Navigator 10 returns `255` for the ISC mode register (address 1874). This likely means "not configured" or "no ISC hardware installed". The value 255 is not in the options map, causing the HA select entity to show "unknown".
+### 1.2 Solarthermie (Adressen 1850–1857)
 
-The HA integration handles this gracefully (entity shows "unknown"), but adding `255: 'Not configured'` (or similar) to the options would be cleaner.
+| Adresse | Name | Datentyp | Einheit | Schreibbar | Beschreibung |
+|---------|------|----------|---------|------------|--------------|
+| 1850 | `solar_collector_temp` | FLOAT | °C | nein | Solar Kollektortemperatur |
+| 1852 | `solar_return_temp` | FLOAT | °C | nein | Solar Kollektorrücklauftemperatur |
+| 1854 | `solar_charge_temp` | FLOAT | °C | nein | Solar Ladetemperatur |
+| 1856 | `solar_mode` | UCHAR | – | **ja** | Solar Betriebsart (enum: 0=Aus, 1=Automatik, 2=Manuell) |
+| 1857 | `solar_reference_temp` | FLOAT | °C | nein | Solar WQ-Referenztemperatur / Pooltemperatur |
 
-**Same issue applies to**: `CIRCUIT_MODE_OPTIONS` / `ACTIVE_HC_MODE_OPTIONS` - heating circuits B-G return 255 for `active_mode_hk_X` which decodes as "Unbekannt (255)".
+### 1.3 ISC — Intelligent Surface Cooling (Adressen 1870–1874)
+
+| Adresse | Name | Datentyp | Einheit | Schreibbar | Beschreibung |
+|---------|------|----------|---------|------------|--------------|
+| 1870 | `isc_charge_cooling_temp` | FLOAT | °C | nein | ISC Ladetemperatur Kühlen |
+| 1872 | `isc_recooling_temp` | FLOAT | °C | nein | ISC Rückkühltemperatur |
+| 1874 | `isc_mode` | UCHAR | – | **ja** | ISC Modus (enum: 0=Aus, 1=Automatik, 2=Manuell) |
+
+### 1.4 Kaskade Temperaturen (Adressen 1200–1210)
+
+| Adresse | Name | Datentyp | Einheit | Beschreibung |
+|---------|------|----------|---------|--------------|
+| 1200 | `cascade_req_heat_temp` | FLOAT | °C | Kaskade angeforderte Heiztemperatur |
+| 1202 | `cascade_req_cool_temp` | FLOAT | °C | Kaskade angeforderte Kühltemperatur |
+| 1204 | `cascade_req_dhw_temp` | FLOAT | °C | Kaskade angeforderte WW-Temperatur |
+| 1206 | `cascade_avg_flow_heat` | FLOAT | °C | Kaskade gemittelte VL-Temp Heizen |
+| 1208 | `cascade_avg_flow_cool` | FLOAT | °C | Kaskade gemittelte VL-Temp Kühlen |
+| 1210 | `cascade_avg_flow_dhw` | FLOAT | °C | Kaskade gemittelte VL-Temp Warmwasser |
+
+**Summe: 20 fehlende Register-Adressen**
 
 ---
 
-## 3. Library Public API Surface
+## 2. Falscher Datentyp — Binary Sensors
 
-**Severity**: Info (design observation)
+Folgende Register sind in der Library als `UCHAR` definiert, sollten aber als `BOOL`  
+oder zumindest mit einem `is_binary=True` Flag markiert werden, damit die HA-Integration  
+korrekte `BinarySensor` Entities erzeugen kann:
 
-During testing we noted:
-- `build_register_map()` returns `dict[str, RegisterDef]` (keyed by name), not by address
-- `get_all_registers()` takes no arguments and returns all core registers
-- `IdmModelInfo` uses `active_heating_circuits: list[str]` (e.g. `["a", "b", ...]`)
-- `read_batch()` accepts `list[RegisterDef]` and returns `dict[str, Any]` keyed by register name
-- No `read_all_registers(model_info)` convenience method - callers must build the register list themselves
+| Adresse | Aktueller Name | Aktueller Typ | Soll | Beschreibung |
+|---------|---------------|---------------|------|--------------|
+| 1099 | `hp_sum_alarm` | UCHAR | BOOL | Summenstörung Wärmepumpe |
+| 1100 | `compressor_status_1` | UCHAR/INT16 | BOOL | Verdichter 1 läuft |
+| 1101 | `compressor_status_2` | UCHAR/INT16 | BOOL | Verdichter 2 läuft |
+| 1102 | `compressor_status_3` | UCHAR/INT16 | BOOL | Verdichter 3 läuft |
+| 1103 | `compressor_status_4` | UCHAR/INT16 | BOOL | Verdichter 4 läuft |
+| 1091 | `heating_demand` | UCHAR | BOOL | Heizanforderung aktiv |
+| 1092 | `cooling_demand` | UCHAR | BOOL | Kühlanforderung aktiv |
+| 1093 | `dhw_demand` | UCHAR | BOOL | Warmwasseranforderung aktiv |
 
-This is all fine, just documenting for reference.
+**Alternative:** Ein neues Feld `binary: bool = False` im `RegisterDef` dataclass,  
+das von der HA-Integration ausgewertet werden kann, ohne den Datentyp zu ändern.
 
 ---
 
-## 4. Device Detection Results (for reference)
+## 3. Fehlende Metadaten im RegisterDef
 
-Our Navigator 10 at 192.168.178.103 reports:
-- **Model**: Navigator 10
-- **Active heating circuits**: 7 (A through G)
-- **Zone modules**: 0
-- **has_solar**: True
-- **has_isc**: True  
-- **has_pv**: True
-- **has_cascade**: True
-- **Total registers read successfully**: 263/264 (firmware_version fails)
-- **ISC mode raw value**: 255 (not installed/configured)
-- **Solar mode**: returns valid data (Automatik)
-- **HK B-G sensors**: return 255 / unavailable (registered but no physical hardware connected)
-- **HK A sensors**: all working with live temperature data
+Für eine saubere HA-Integration wären folgende Felder im `RegisterDef` hilfreich:
+
+| Feld | Typ | Default | Beschreibung |
+|------|-----|---------|--------------|
+| `binary` | `bool` | `False` | Wenn True → BinarySensor in HA |
+| `enabled_by_default` | `bool` | `True` | Diagnostic entities standardmäßig deaktivieren |
+| `state_class` | `str | None` | `None` | "measurement", "total", "total_increasing" |
+| `icon` | `str | None` | `None` | Standard-Icon für HA |
+
+---
+
+## 4. Bekannte Bugs
+
+| Problem | Details |
+|---------|---------|
+| `firmware_version` Adresse 4120 | Liefert Wert 4120 statt der tatsächlichen Firmware-Version. Adresse evtl. falsch oder Datenformat inkorrekt. |
+| `hc_X_mode` enum_options enthält 255 | 255 = "Not configured / Unavailable" taucht als wählbare Option im Select auf. Sollte gefiltert werden (nur Anzeige, nicht wählbar). |
+| `build_register_map(zone_modules=N)` | Generiert immer 6 Räume pro Zone, ignoriert Raumzahl. `get_zone_module_registers(idx, rooms)` funktioniert korrekt, aber `build_register_map` nicht. |
+| `error_acknowledge` | Ist als `writable=True, UCHAR` definiert, wird aber beim Lesen immer fehlschlagen (write-only command). Braucht ein `write_only: bool` Flag. |
+
+---
+
+## 5. Zusammenfassung
+
+- **20 fehlende Register-Adressen** (PV, Solar, ISC Mode, ISC Temps, Kaskade Temps)
+- **8 Register brauchen Binary-Flag** (Störungen, Verdichter, Anforderungen)
+- **4 Metadaten-Felder** fehlen im RegisterDef (binary, enabled_by_default, state_class, icon)
+- **4 bekannte Bugs** (firmware_version, 255 in enum, zone rooms, write_only)
