@@ -11,11 +11,36 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.4.4] - 2026-05-31
+## [0.4.5] - 2026-05-31
 
 ### Improvements
+- Implemented `get_library_selects()`, `get_library_switches()`, `get_library_numbers()` from library registers
+- Numbers now auto-generate from all writable library registers (was only 2 hardcoded before)
+- Selects auto-generate from library registers with enum_options (system_mode, hc_X_mode)
+- Switches auto-generate from library BOOL writable registers (demand_heating/cooling/dhw/onetime_dhw)
+- Rewrote test_registers.py to use correct library naming (hc_ prefix, zm prefix for zones)
+- Extended `is_register_unused()` to treat 65535 and 255 as unused sentinel values
+
+### Bug Fixes
+- Exclude write-only command registers (error_acknowledge) from polling - fixes "permanently failed" error
+- Zone index fix: pass 1-based index to library's `get_zone_module_registers()`
+
+## [0.4.4] - 2026-05-31
+
+## v0.4.4 - IDM Heatpump
+
+**STABLE RELEASE**
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+### Improvements
+
 - Major cleanup of legacy register code (removal of ~900 lines of old local definitions)
-- Full migration to `idm-heatpump` library as core (100% Option B)
+- Full migration to `idm_heatpump` library as core (100% Option B)
 - Significantly expanded German register names and improved icon handling in the adapter
 - All public entity description functions now delegate to the library adapter
 - Ruff formatting fixes and lint cleanup
