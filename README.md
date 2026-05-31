@@ -83,11 +83,11 @@ The full documentation is available in the **[Wiki][wiki]**:
 
 ## 🔑 Requirements
 
-- Home Assistant **2025.12.0+** (tested up to 2026.5)
+- Home Assistant **2026.5.0+**
 - HACS ([Installation guide](https://hacs.xyz/docs/setup/download))
-- IDM Navigator 2.0 heat pump with Modbus TCP enabled (port 502)
-- Python 3.13+ (HA 2026.3 uses Python 3.14.2)
-- pymodbus ≥3.7.0 (HA 2026.3 uses pymodbus 3.11.2)
+- IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502)
+- Python 3.13+
+- `pymodbus >=3.7.0` · `idm-heatpump >=0.2.1` (installed automatically via HACS)
 
 ---
 
@@ -95,11 +95,11 @@ The full documentation is available in the **[Wiki][wiki]**:
 
 | Platform | Entities | Description |
 |----------|----------|-------------|
-| **Sensor** | 100+ | Temperatures, pressures, flow rates, energy, runtimes, error codes |
-| **Binary Sensor** | 9 | Error status, switch states, alarms |
-| **Number** | ~30 | Setpoints, temperatures, parameters (writable) |
-| **Select** | ~15 | Operating modes, circuit modes, room modes, solar modes |
-| **Switch** | 4 | BMS temperature requests, remote maintenance |
+| **Sensor** | 109+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, diagnostics |
+| **Binary Sensor** | 8+ | Fault alarms, compressor status, heating/cooling/DHW demand |
+| **Number** | 44+ | Setpoints, temperatures, limits, GLT parameters, power limits (writable) |
+| **Select** | 4+ | System mode, heating circuit modes, solar mode, ISC mode |
+| **Switch** | 4 | External heating/cooling/DHW demand, one-time DHW charge |
 
 ---
 
@@ -107,29 +107,29 @@ The full documentation is available in the **[Wiki][wiki]**:
 
 ```
 Home Assistant
-    │
-    ├── IdmCoordinator (DataUpdateCoordinator, configurable polling)
-    │       │
-    │       ├── IdmModbusClient (pymodbus, async, batch reading)
-    │       │       │
-    │       │       └── IDM Navigator 2.0 (Modbus TCP, Port 502, Slave ID 1)
-    │       │               FC 03: Read Input Registers
-    │       │               FC 16: Write Multiple Registers
-    │       │
-    │       └── Entities (sensor, binary_sensor, number, select, switch)
-    │
-    ├── Services (set_system_mode, acknowledge_errors, write_register)
-    │
-    └── Diagnostics (JSON export via HA UI)
+    |
+    +-- IdmCoordinator (DataUpdateCoordinator, configurable polling)
+    |       |
+    |       +-- IdmModbusClient (pymodbus via idm-heatpump library)
+    |       |       |
+    |       |       +-- IDM Navigator 2.0/10 (Modbus TCP, Port 502)
+    |       |
+    |       +-- Entities (sensor, binary_sensor, number, select, switch)
+    |
+    +-- Services (set_system_mode, acknowledge_errors, write_register)
+    |
+    +-- Diagnostics (JSON export via HA UI)
 ```
 
 ### Technical Details
 
-- **663 registers** total (215 RO, 266 RW, 16 W-only, 166 context-dependent)
+- **169+ entities** generated dynamically from the `idm-heatpump` library register map
 - **Batch reading**: Consecutive registers are grouped (max. 30 per batch)
-- **Data types**: FLOAT (IEEE 754, 2 registers), UCHAR (8-bit), WORD (16-bit), BOOL
-- **EEPROM protection**: 88 EEPROM-sensitive registers are protected from excessive writing
+- **Data types**: FLOAT (IEEE 754), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
+- **EEPROM protection**: Sensitive registers are tracked and protected from excessive writing
 - **Auto-recovery**: Exponential backoff on connection errors
+- **Library-powered**: All register definitions sourced from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools
+- **Navigator 10 support**: Heat sink (Trennwärmetauscher) sensors, flow rate monitoring (Sieb detection), groundwater temperatures, booster A/B diagnostics
 
 ---
 
