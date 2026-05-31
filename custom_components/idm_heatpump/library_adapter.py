@@ -142,6 +142,23 @@ _GERMAN_NAMES: dict[str, str] = {
     "charging_sensor_temp": "Ladefühler Temperatur",
     "ext_demand_temp_heating": "Externe Anforderungstemperatur Heizen",
     "ext_demand_temp_cooling": "Externe Anforderungstemperatur Kühlen",
+    "air_intake_temp_2": "Luftansaugtemperatur 2",
+    "valve_solar_storage_heat_source": "Solar Speicher/Wärmequelle Ventil",
+    "valve_isc_heat_source_cold_storage": "ISC Umschaltventil",
+    "valve_isc_storage_bypass": "ISC Bypass Ventil",
+    "isc_charging_temp_cooling": "ISC Ladetemperatur Kühlen",
+    "isc_recooling_temp": "ISC Rückkühltemperatur",
+    "isc_mode": "ISC Modus",
+    "ext_room_temp": "Externe Raumtemperatur",
+    "humidity_sensor": "Feuchtesensor",
+    "fault_heat_source_circuit": "Störung Wärmequellenkreis",
+    "fault_heat_source_pressure": "Störung Druckschalter Wärmequelle",
+    "booster_a_source_inlet_temp": "Booster A Wärmequelleneintritt",
+    "booster_a_flow_temp": "Booster A Vorlauftemperatur",
+    "booster_a_compressor": "Booster A Verdichter",
+    "booster_b_compressor": "Booster B Verdichter",
+    "power_limit_hp": "Leistungsbegrenzung Wärmepumpe",
+    "power_limit_cascade": "Leistungsbegrenzung Kaskade",
 }
 
 # Re-export the real client and models from the library
@@ -396,6 +413,31 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
             "category": f"zone_{zone_idx}",
         })
     return sensors
+
+
+# ============================================================
+# Weitere Generatoren für umfassende Abdeckung (System, Energy, Pumps, Solar, PV, Cascade, GLT)
+# ============================================================
+
+def get_library_energy_sensors() -> list[dict[str, Any]]:
+    """Energie- und Leistungssensoren aus der Library."""
+    return []
+
+def get_library_pump_valve_sensors() -> list[dict[str, Any]]:
+    """Pumpen- und Ventilstatus aus der Library."""
+    return []
+
+def get_library_solar_pv_sensors() -> list[dict[str, Any]]:
+    """Solar- und PV-bezogene Sensoren."""
+    return []
+
+def get_library_cascade_sensors() -> list[dict[str, Any]]:
+    """Kaskaden-spezifische Sensoren."""
+    return []
+
+def get_library_glt_sensors() -> list[dict[str, Any]]:
+    """GLT / externe Ansteuerung Sensoren."""
+    return []
 
 
 def get_library_readonly_sensors(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:

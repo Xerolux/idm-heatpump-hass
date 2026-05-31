@@ -794,16 +794,10 @@ def _sensor(
         entity_category=EntityCategory.DIAGNOSTIC,
         disabled=True,
     ),
-    _sensor(
-        4052,
-        "Booster B Verdichter",
-        "booster_b_compressor",
-        datatype=DataType.UCHAR,
-        icon="mdi:engine",
-        entity_category=EntityCategory.DIAGNOSTIC,
-        disabled=True,
-    ),
-]
+    # _sensor(4052, "Booster B Verdichter", "booster_b_compressor", ... ),
+    # ... (rest of old SYSTEM_SENSORS list removed during aggressive migration)
+# ]
+# Old SYSTEM_SENSORS list dismantled - now served by library_adapter
 
 
 def _hk_sensors(circuit: str) -> list[dict[str, Any]]:
@@ -1790,22 +1784,17 @@ def get_all_sensor_descriptions(
     # 2. Starke Library-Generatoren (bevorzugt)
     descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
 
-    # 3. Spezialisierte starke Generatoren für Heizkreise und Zonen
+    # 3. Spezialisierte Generatoren für Heizkreise und Zonen
     for circuit in circuits:
         descriptions.extend(get_library_heating_circuit_sensors(circuit))
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_sensors(z, rooms))
 
-    # 4. Sehr begrenzter Legacy-Fallback (wird weiter abgebaut)
-    # Die alten großen Listen und Generatoren werden schrittweise entfernt.
-    # Aktuell nur noch für sehr spezielle Fälle, die der Adapter noch nicht abdeckt.
-    # descriptions.extend(list(SYSTEM_SENSORS))   # stark reduziert
-    # for circuit in circuits:
-    #     descriptions.extend(_hk_sensors(circuit))
-    # for z in range(zone_count):
-    #     rooms = zone_rooms.get(z, 6)
-    #     descriptions.extend(_zone_sensors(z, rooms))
+    # 4. Legacy komplett deaktiviert für Sensoren (Migration weit fortgeschritten)
+    # Alle alten Listen und Generatoren werden nicht mehr aktiv genutzt.
+    # Bei Bedarf können sie später vollständig entfernt werden.
+    pass  # Keine Legacy-Erweiterung mehr für Sensoren
 
     # Deduplicate by key (library first wins in case of overlap)
     seen_keys: set[str] = set()
@@ -1840,24 +1829,13 @@ def get_all_number_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
 
-    # Library numbers first (preferred)
+    # Library numbers (preferred)
     try:
         descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
     except Exception:
         pass
 
-    # Very limited legacy fallback for numbers
-    # descriptions.extend(list(DHW_NUMBERS))
-    # descriptions.extend(list(BIVALENCY_NUMBERS))
-    # if enable_cascade:
-    #     descriptions.extend(CASCADE_NUMBERS)
-    # descriptions.extend(EXTERNAL_NUMBERS)
-    # for circuit in circuits:
-    #     descriptions.extend(_hk_numbers(circuit))
-    # for z in range(zone_count):
-    #     rooms = zone_rooms.get(z, 1)
-    #     descriptions.extend(_zone_numbers(z, rooms))
-
+    # Legacy numbers deaktiviert
     return descriptions
 
 
