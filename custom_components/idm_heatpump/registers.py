@@ -45,6 +45,7 @@ from .const import (
     SOLAR_MODE_OPTIONS,
     SYSTEM_MODE_OPTIONS,
 )
+from .library_adapter import get_library_numbers, get_library_sensors
 from .modbus_client import DataType, RegisterDef
 
 HK_OFFSET = {"a": 0, "b": 2, "c": 4, "d": 6, "e": 8, "f": 10, "g": 12}
@@ -1767,15 +1768,18 @@ def get_all_sensor_descriptions(
     """
     Assembles all sensor descriptions.
 
-    During the migration to the idm_heatpump library (Option B), we prefer
-    definitions coming from the library + adapter where available.
-    Legacy definitions in this file are kept for stability.
+    The library + adapter is now the preferred source.
+    Local definitions are kept for rich German names and specific icons.
     """
-    # Legacy definitions are the primary source for now.
-    # Library sensors are skipped to avoid duplicates and writable-register
-    # leaks into the sensor platform. The library migration will be completed
-    # once the adapter properly separates read-only from writable registers.
     descriptions = []
+
+    # 1. Library first (this is the migration direction)
+    try:
+        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
+    except Exception:
+        pass
+
+    # 2. Local definitions (rich German names, specific icons, etc.)
     descriptions.extend(list(SYSTEM_SENSORS))
     descriptions.extend(list(PV_SENSORS))
 
@@ -1785,6 +1789,7 @@ def get_all_sensor_descriptions(
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_sensors(z, rooms))
 
+    # Deduplicate by key (library first wins in case of overlap)
     seen_keys: set[str] = set()
     unique: list[dict[str, Any]] = []
     for desc in descriptions:
@@ -1817,6 +1822,13 @@ def get_all_number_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
 
+    # Library numbers first
+    try:
+        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
+    except Exception:
+        pass
+
+    # Local definitions
     descriptions.extend(list(DHW_NUMBERS))
     descriptions.extend(list(BIVALENCY_NUMBERS))
     if enable_cascade:
