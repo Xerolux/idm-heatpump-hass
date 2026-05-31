@@ -11,8 +11,6 @@ from __future__ import annotations
 
 import logging
 
-from pymodbus.exceptions import ConnectionException
-
 from idm_heatpump import IdmModbusClient as _LibIdmModbusClient
 from idm_heatpump.client import DataType as LibDataType, RegisterDef as LibRegisterDef
 

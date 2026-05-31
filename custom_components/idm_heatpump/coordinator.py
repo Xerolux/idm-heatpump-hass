@@ -17,7 +17,10 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from .const import DOMAIN, UNUSED_VALUE
-from .modbus_client import IdmModbusClient, RegisterDef  # compatibility during full migration
+from .modbus_client import (
+    IdmModbusClient,
+    RegisterDef,
+)  # compatibility during full migration
 from .registers import collect_all_registers, collect_alias_map
 
 _LOGGER = logging.getLogger(__name__)
