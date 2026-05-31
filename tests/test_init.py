@@ -100,7 +100,7 @@ class TestAsyncSetupEntry:
             return_value=mock_coordinator,
         ), patch(
             "custom_components.idm_heatpump.async_get_integration",
-            return_value=MagicMock(manifest={"version": "0.2.1"}),
+            return_value=MagicMock(manifest={"version": "0.4.1"}),
         ), patch(
             "custom_components.idm_heatpump.get_all_sensor_descriptions",
             return_value=[],
@@ -137,7 +137,7 @@ class TestAsyncSetupEntry:
             return_value=mock_client,
         ), patch(
             "custom_components.idm_heatpump.async_get_integration",
-            return_value=MagicMock(manifest={"version": "0.2.1"}),
+            return_value=MagicMock(manifest={"version": "0.4.1"}),
         ), pytest.raises(ConfigEntryNotReady):
             await async_setup_entry(mock_hass, entry)
 
@@ -158,7 +158,7 @@ class TestAsyncSetupEntry:
             return_value=mock_coordinator,
         ), patch(
             "custom_components.idm_heatpump.async_get_integration",
-            return_value=MagicMock(manifest={"version": "0.2.1"}),
+            return_value=MagicMock(manifest={"version": "0.4.1"}),
         ), patch(
             "custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]
         ), patch(
@@ -266,7 +266,7 @@ class TestAsyncSetupEntryOptions:
             patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
             patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
             patch("custom_components.idm_heatpump.async_get_integration",
-                  return_value=MagicMock(manifest={"version": "0.2.1"})),
+                  return_value=MagicMock(manifest={"version": "0.4.1"})),
             patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
             patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
             patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),

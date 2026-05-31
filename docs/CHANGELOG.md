@@ -11,7 +11,18 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased] - Navigator 10 Support
+## [0.4.1] - 2026-05-31
+
+### Bug Fixes
+- Fixed register alias mapping: sensor and number entities sharing the same Modbus address now both receive data (was causing number entities for HK A to show unavailable)
+- Updated library dependency to `idm-heatpump>=0.2.1` (adds 255 "Not configured" handling for mode options, firmware_version fix)
+
+### Improvements
+- Added `collect_alias_map()` for proper multi-name register resolution in coordinator
+- Docker test setup added (`docker/`, `run_docker_test.ps1`, `run_docker_test.sh`)
+- Live-tested on Navigator 10 with 7 heating circuits, solar, ISC, PV, cascade
+
+## [0.4.0] - 2026-05-31
 
 ### Major Features
 - **Major architectural change (Option B)**: The integration now uses the official `idm-heatpump` Python library (published on PyPI) as its core for Modbus communication and register definitions. The addon is a thin HA-specific layer on top (via `library_adapter.py`).
