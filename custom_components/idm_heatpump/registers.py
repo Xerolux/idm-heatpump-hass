@@ -1767,20 +1767,29 @@ def get_all_sensor_descriptions(
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
-    descriptions = list(SYSTEM_SENSORS) + list(PV_SENSORS)
+    """
+    Assembles all sensor descriptions.
+
+    During the migration to the idm_heatpump library (Option B), we prefer
+    definitions coming from the library + adapter where available.
+    Legacy definitions in this file are kept for stability.
+    """
+    # Prefer library + adapter as the primary source going forward
+    descriptions = []
+    try:
+        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
+    except Exception:
+        pass
+
+    # Legacy fallbacks / additional HA-specific sensors not yet fully migrated
+    descriptions.extend(list(SYSTEM_SENSORS))
+    descriptions.extend(list(PV_SENSORS))
+
     for circuit in circuits:
         descriptions.extend(_hk_sensors(circuit))
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_sensors(z, rooms))
-
-    # --- Library-provided sensors (Navigator 10 + future registers come from here) ---
-    # The long-term goal is that most register definitions come from the
-    # idm_heatpump library via the adapter. We are incrementally moving in that direction.
-    try:
-        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
-    except Exception:
-        pass  # Fail gracefully during migration
 
     return descriptions
 
@@ -1804,7 +1813,17 @@ def get_all_number_descriptions(
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
-    descriptions = list(DHW_NUMBERS) + list(BIVALENCY_NUMBERS)
+    descriptions = []
+
+    # Prefer library for numbers where possible
+    try:
+        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
+    except Exception:
+        pass
+
+    # Legacy
+    descriptions.extend(list(DHW_NUMBERS))
+    descriptions.extend(list(BIVALENCY_NUMBERS))
     if enable_cascade:
         descriptions.extend(CASCADE_NUMBERS)
     descriptions.extend(EXTERNAL_NUMBERS)
@@ -1813,12 +1832,6 @@ def get_all_number_descriptions(
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 1)
         descriptions.extend(_zone_numbers(z, rooms))
-
-    # --- Library-provided numbers (Navigator 10 migration path) ---
-    try:
-        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
-    except Exception:
-        pass
 
     return descriptions
 

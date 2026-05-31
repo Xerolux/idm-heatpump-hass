@@ -31,6 +31,8 @@ from idm_heatpump import (
     get_zone_module_registers,
 )
 
+# Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
+
 # Re-export the real client and models from the library
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
 from idm_heatpump.const import (
@@ -160,21 +162,59 @@ def _make_number_description(reg: RegisterDef, meta: dict[str, Any]) -> NumberEn
 
 def get_library_sensors(model_info=None, circuits=None, zone_modules=0) -> list[dict[str, Any]]:
     """
-    Returns sensor descriptions for registers that come from the library
-    and have explicit HA metadata defined above.
+    Returns sensor descriptions primarily sourced from the idm_heatpump library.
+    This is the future central place for register-to-HA-entity mapping.
     """
-    reg_map = build_register_map(model_info=model_info, circuits=circuits, zone_modules=zone_modules)
+    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
     sensors = []
 
+    # Base system + special sensors with explicit metadata
     for key, meta in SENSOR_METADATA.items():
         if key in reg_map:
             reg = reg_map[key]
             desc = _make_sensor_description(reg, meta)
             sensors.append({
-                "register": reg,           # library RegisterDef
+                "register": reg,
                 "description": desc,
-                "category": "system",      # or "heat_sink", "booster", etc.
+                "category": "system",
             })
+
+    # Heating circuits - source from library, use basic HA presentation
+    for circuit in (circuits or []):
+        try:
+            circuit_regs = get_heating_circuit_registers(circuit)
+            for name, reg in circuit_regs.items():
+                # Only add if not already handled by old system or if we want library priority
+                if "temp" in name or "mode" in name or "setpoint" in name:
+                    desc = SensorEntityDescription(
+                        key=name,
+                        name=name.replace("_", " ").title(),
+                        native_unit_of_measurement=reg.unit,
+                        device_class=SensorDeviceClass.TEMPERATURE if reg.unit == "°C" else None,
+                        icon="mdi:thermometer" if "temp" in name else "mdi:thermostat",
+                        entity_category=EntityCategory.DIAGNOSTIC if "ext" in name else None,
+                    )
+                    sensors.append({"register": reg, "description": desc, "category": "heating_circuit"})
+        except Exception:
+            continue
+
+    # Zone modules - source from library
+    for z in range(1, (zone_modules or 0) + 1):
+        try:
+            zone_regs = get_zone_module_registers(z)
+            for name, reg in zone_regs.items():
+                if "temp" in name or "humidity" in name:
+                    desc = SensorEntityDescription(
+                        key=name,
+                        name=name.replace("_", " ").title(),
+                        native_unit_of_measurement=reg.unit,
+                        device_class=SensorDeviceClass.TEMPERATURE if "temp" in name else None,
+                        icon="mdi:thermometer" if "temp" in name else "mdi:water-percent",
+                        entity_category=EntityCategory.DIAGNOSTIC,
+                    )
+                    sensors.append({"register": reg, "description": desc, "category": "zone"})
+        except Exception:
+            continue
 
     return sensors
 
