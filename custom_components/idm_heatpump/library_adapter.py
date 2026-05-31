@@ -511,21 +511,31 @@ def get_library_sensors(
         if name in known_keys:
             continue  # already handled above
 
-        # Skip things that are clearly numbers/writables for now
         if reg.writable:
             continue
+        if reg.write_only:
+            continue
+        if reg.binary:
+            continue
 
-        icon = get_icon_for_register(name, reg.unit)
+        icon = reg.icon or get_icon_for_register(name, reg.unit)
+        is_temp = reg.unit and "°C" in (reg.unit or "")
+        dc = SensorDeviceClass.TEMPERATURE if is_temp else None
+        sc = None
+        if reg.state_class:
+            sc = reg.state_class
+        elif is_temp:
+            sc = SensorStateClass.MEASUREMENT
 
         desc = SensorEntityDescription(
             key=name,
             name=_get_german_name(name),
             native_unit_of_measurement=reg.unit,
-            device_class=SensorDeviceClass.TEMPERATURE
-            if reg.unit and "°C" in (reg.unit or "")
-            else None,
+            device_class=dc,
+            state_class=sc,
             icon=icon,
             entity_category=EntityCategory.DIAGNOSTIC,
+            entity_registry_enabled_default=reg.enabled_by_default,
         )
         sensors.append(
             {
@@ -689,10 +699,29 @@ def generate_icons_json_entries(
 
 
 def get_library_binary_sensors(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
-    """Binary sensors (pumps, valves, demands, etc.) from the library."""
-    # For now, return empty — these can be expanded later with specific metadata.
-    # The general get_library_readonly_sensors will catch most of them.
-    return []
+    """Binary sensors from library registers with binary=True flag."""
+    from homeassistant.components.binary_sensor import BinarySensorEntityDescription
+
+    reg_map = build_register_map(
+        circuits=circuits or [], zone_modules=zone_modules or 0
+    )
+    sensors = []
+    for name, reg in reg_map.items():
+        if not reg.binary or reg.writable:
+            continue
+        desc = BinarySensorEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            device_class=None,
+            icon=get_icon_for_register(name, reg.unit),
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+        sensors.append({
+            "register": reg,
+            "description": desc,
+            "category": "binary",
+        })
+    return sensors
 
 
 def get_library_selects(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
@@ -707,11 +736,19 @@ def get_library_selects(circuits=None, zone_modules=0) -> list[dict[str, Any]]:
     for name, reg in reg_map.items():
         if not reg.writable or not reg.enum_options:
             continue
+        if reg.write_only:
+            continue
+        options = list(reg.enum_options.values())
+        if reg.exclude_from_write:
+            options = [
+                v for k, v in reg.enum_options.items()
+                if k not in reg.exclude_from_write
+            ]
         desc = SelectEntityDescription(
             key=name,
             name=_get_german_name(name),
-            options=list(reg.enum_options.values()),
-            icon=get_icon_for_register(name),
+            options=options,
+            icon=reg.icon or get_icon_for_register(name),
             entity_category=EntityCategory.CONFIG,
         )
         selects.append(
@@ -762,6 +799,10 @@ def get_library_readonly_sensors(
     for name, reg in reg_map.items():
         if reg.writable:
             continue
+        if reg.write_only:
+            continue
+        if reg.binary:
+            continue
 
         # Bevorzuge explizite Metadaten
         if name in SENSOR_METADATA:
@@ -788,9 +829,6 @@ def get_library_readonly_sensors(
     return sensors
 
 
-_WRITE_ONLY_COMMANDS = {"error_acknowledge"}
-
-
 def get_library_numbers(
     model_info=None, circuits=None, zone_modules=0
 ) -> list[dict[str, Any]]:
@@ -805,7 +843,7 @@ def get_library_numbers(
             continue
         if reg.datatype.value == "BOOL":
             continue
-        if name in _WRITE_ONLY_COMMANDS:
+        if reg.write_only:
             continue
 
         meta = NUMBER_METADATA.get(name, {})
