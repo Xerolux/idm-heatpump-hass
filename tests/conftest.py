@@ -619,7 +619,7 @@ def mock_modbus_client():
         mock_instance.close = MagicMock()
         mock_class.return_value = mock_instance
 
-        from custom_components.idm_heatpump.modbus_client import IdmModbusClient
+        from idm_heatpump import IdmModbusClient
         client = IdmModbusClient(host="192.168.1.100", port=502, slave_id=1)
         client._client = mock_instance
         yield client, mock_instance

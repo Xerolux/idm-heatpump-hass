@@ -171,7 +171,7 @@ rules:
     status: done
     comment: >
       247 tests covering 97% of integration code. All main modules at 100%.
-      Remaining 3%: modbus_client.py low-level byte parsing edge cases (91%)
+      Remaining 3%: idm_heatpump library edge cases and registers.py (97%).
       and registers.py (97%). All platform files, coordinator, config_flow,
       entity, services, diagnostics, init, and technician_codes at 100%.
 
@@ -338,7 +338,7 @@ rules:
   #   status: todo
   #   comment: >
   #     Integration documentation page must be created at
-  #     homeassistant.io/integrations/idm_heatpump/
+  #     homeassistant.io/integrations/heatpump_idm/
   #
   # config-flow-test-coverage-100:
   #   status: done

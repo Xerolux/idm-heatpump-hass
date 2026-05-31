@@ -306,7 +306,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return IdmHeatpumpOptionsFlow()
 
     async def _test_connection(self, data: dict[str, Any]) -> bool:
-        from .modbus_client import IdmModbusClient
+        from idm_heatpump import IdmModbusClient
 
         client = IdmModbusClient(
             host=str(data[CONF_HOST]).strip(),
@@ -314,7 +314,14 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             slave_id=int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
         )
         try:
-            return await client.test_connection()
+            await client.connect()
+            if not client.is_connected:
+                return False
+            value = await client.probe_register(1000, 2)
+            if value is not None:
+                return True
+            _LOGGER.warning("Connection test: could not read test register")
+            return False
         except Exception as err:
             _LOGGER.debug("Connection test failed: %s", err)
             return False

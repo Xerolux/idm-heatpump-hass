@@ -5,8 +5,8 @@ from datetime import timedelta
 
 import pytest
 
-from custom_components.idm_heatpump.diagnostics import async_get_config_entry_diagnostics
-from custom_components.idm_heatpump.const import DOMAIN
+from custom_components.heatpump_idm.diagnostics import async_get_config_entry_diagnostics
+from custom_components.heatpump_idm.const import DOMAIN
 
 
 def _make_hass_with_coordinator(mock_hass, mock_config_entry):

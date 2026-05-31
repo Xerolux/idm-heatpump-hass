@@ -36,10 +36,9 @@ from .const import (
     NAME,
 )
 from .coordinator import IdmCoordinator
+from idm_heatpump import IdmModbusClient
+
 from .library_adapter import get_idm_client
-from .modbus_client import (
-    IdmModbusClient,
-)  # still re-exported for compatibility during migration
 from .registers import (
     get_all_binary_sensor_descriptions,
     get_all_number_descriptions,

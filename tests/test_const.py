@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.idm_heatpump.const import (
+from custom_components.heatpump_idm.const import (
     DOMAIN,
     HEATING_CIRCUITS,
     MAX_ROOM_COUNT,
@@ -19,7 +19,7 @@ from custom_components.idm_heatpump.const import (
 
 class TestDomain:
     def test_domain_value(self):
-        assert DOMAIN == "idm_heatpump"
+        assert DOMAIN == "heatpump_idm"
 
     def test_unused_value(self):
         assert UNUSED_VALUE == -1.0

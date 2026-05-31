@@ -5,11 +5,58 @@
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Spendier%20mir%20einen%20Kaffee!-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
 [![PayPal](https://img.shields.io/badge/PayPal-Danke%20f%C3%BCr%20deine%20Unterst%C3%BCtzung!-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
-[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral%20Link%20nutzen-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+[Tesla Referral](https://ts.la/sebastian564489)
 
 ---
 
 All notable changes to this project will be documented in this file.
+
+---
+
+## v0.6.0 - Domain Rename & Library Integration
+
+---
+
+> ### :rotating_light: :rotating_light: :rotating_light: **BREAKING CHANGE** :rotating_light: :rotating_light: :rotating_light:
+>
+> **Die Integration-Domain wurde von `idm_heatpump` auf `heatpump_idm` geändert.**
+>
+> **Das ist KEIN In-Place-Upgrade. Du musst die Integration neu einrichten.**
+>
+> #### Warum?
+> Der PyPI-Library-Name (`idm-heatpump-api`) installiert als Python-Package `idm_heatpump/`.
+> Die alte Integration hieß ebenfalls `idm_heatpump/` → Namenskollision unter Home Assistant.
+> Deshalb wurde die Integration in `heatpump_idm` umbenannt.
+>
+> #### Migrationsschritte (zwingend erforderlich):
+>
+> 1. **Home Assistant öffnen** → Einstellungen → Geräte & Dienste
+> 2. **Alte Integration "IDM Heatpump" entfernen** (die alte Domain `idm_heatpump`)
+> 3. **Home Assistant stoppen**
+> 4. **Alten Ordner löschen:** `custom_components/idm_heatpump/` (manuell über die Konsole/FTP)
+> 5. **Neue Version installieren** (HACS Update oder manuell entpacken)
+> 6. **Home Assistant starten**
+> 7. **Integration neu hinzufügen:** Einstellungen → Geräte & Dienste → Integration hinzufügen → "IDM Heatpump"
+> 8. **Verbindungsdaten eingeben:** Host, Port, Slave ID (wie bisher)
+>
+> :warning: **Entity-IDs basieren auf dem Geräte-Namen ("IDM Heatpump"), nicht auf der Domain.** Die meisten Entity-IDs sollten gleich bleiben (z.B. `sensor.idm_heatpump_aussentemperatur`). Prüfe trotzdem alle Automatisierungen, Scripts und Dashboards nach dem Update!
+>
+> :bulb: **Tipp:** Vor dem Update ein **Backup** von Home Assistant machen!
+>
+> ---
+
+### Changes
+
+- **Domain-Rename:** `idm_heatpump` → `heatpump_idm` (vermeidet Namenskollision mit PyPI-Library)
+- **modbus_client.py entfernt:** Direkte Imports aus der PyPI-Library `idm-heatpump-api` statt lokalem Wrapper
+- **PyPI-Library als Requirement:** `idm-heatpump-api>=0.3.0` wird automatisch von HA installiert
+- **Duplikat `power_limit_hp` behoben:** War fälschlicherweise als Sensor UND Number registriert
+- **Test-Datei umbenannt:** `test_modbus_client.py` → `test_library_client.py`
+- **Dokumentation aktualisiert:** Alle Logger-Pfade auf `custom_components.heatpump_idm` korrigiert
+- **328 Tests bestanden**, Docker Live-Test gegen echte Wärmepumpe erfolgreich (168 Entities, 106 Register gelesen)
+
+---
+
 ## [0.5.0] - 2026-05-31
 
 ## v0.5.0 - IDM Heatpump

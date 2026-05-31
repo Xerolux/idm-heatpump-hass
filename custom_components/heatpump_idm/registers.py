@@ -27,6 +27,9 @@ from homeassistant.const import (
 )
 from homeassistant.helpers.entity import EntityCategory
 
+from idm_heatpump import RegisterDef
+from idm_heatpump.client import DataType
+
 from .library_adapter import (
     get_library_binary_sensors,
     get_library_heating_circuit_sensors,
@@ -36,7 +39,6 @@ from .library_adapter import (
     get_library_switches,
     get_library_zone_sensors,
 )
-from .modbus_client import DataType, RegisterDef
 
 # ============================================================
 # READ-ONLY SENSORS (now mostly served by library_adapter)
