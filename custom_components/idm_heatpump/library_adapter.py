@@ -286,6 +286,27 @@ _GERMAN_NAMES: dict[str, str] = {
     "hc_a_setpoint_flow_cooling": "Kühlvorlauf HK A",
     "hc_a_parallel_shift": "Parallelverschiebung HK A",
     "hc_a_ext_room_temp": "Externe Raumtemperatur HK A",
+    # === Kaskade Detail ===
+    "cascade_req_heating_temp": "Kaskade Angeforderte Heiztemperatur",
+    "cascade_req_cooling_temp": "Kaskade Angeforderte Kühltemperatur",
+    "cascade_avg_flow_heating": "Kaskade Gemittelte VL-Temp Heizen",
+    "cascade_avg_flow_cooling": "Kaskade Gemittelte VL-Temp Kühlen",
+    "cascade_min_power_heating": "Kaskade Mindestleistung Heizen",
+    "cascade_min_power_cooling": "Kaskade Mindestleistung Kühlen",
+    "cascade_min_power_dhw": "Kaskade Mindestleistung Warmwasser",
+    "cascade_max_power_heating": "Kaskade Maximalleistung Heizen",
+    "cascade_max_power_cooling": "Kaskade Maximalleistung Kühlen",
+    "cascade_max_power_dhw": "Kaskade Maximalleistung Warmwasser",
+    "cascade_bivalence_heating_parallel": "Kaskade Bivalenz Heizen Parallel",
+    "cascade_bivalence_heating_alternative": "Kaskade Bivalenz Heizen Alternativ",
+    "cascade_bivalence_cooling_parallel": "Kaskade Bivalenz Kühlen Parallel",
+    "cascade_bivalence_cooling_alternative": "Kaskade Bivalenz Kühlen Alternativ",
+    "cascade_bivalence_dhw_parallel": "Kaskade Bivalenz WW Parallel",
+    "cascade_bivalence_dhw_alternative": "Kaskade Bivalenz WW Alternativ",
+    # === Solar Detail ===
+    "solar_wq_pool_temp": "Solar WQ-Referenztemperatur/Pooltemperatur",
+    # === Booster (bereits teilweise vorhanden) ===
+    "booster_fault": "Booster Störung",
 }
 
 
