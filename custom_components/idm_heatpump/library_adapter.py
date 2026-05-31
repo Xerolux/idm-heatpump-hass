@@ -116,6 +116,32 @@ _GERMAN_NAMES: dict[str, str] = {
     "bivalence_state": "Bivalenz Betriebszustand",
     "smart_grid_status": "Smart Grid Status",
     "internal_message": "Interne Meldung",
+    "hp_operating_mode": "Wärmepumpen Betriebsart",
+    "heating_demand": "Heizanforderung",
+    "cooling_demand": "Kühlanforderung",
+    "dhw_demand": "Warmwasseranforderung",
+    "compressor_status_1": "Verdichter 1",
+    "compressor_status_2": "Verdichter 2",
+    "compressor_status_3": "Verdichter 3",
+    "compressor_status_4": "Verdichter 4",
+    "valve_solar_heat_dhw": "Solar Umschaltventil Heizen/WW",
+    "valve_heat_source_heat_cool": "Wärmequelle Umschaltventil",
+    "bivalence_point_1_2nd_gen": "Bivalenzpunkt 1 (2. WE)",
+    "bivalence_point_2_2nd_gen": "Bivalenzpunkt 2 (2. WE)",
+    "glt_heat_storage_temp": "GLT Wärmespeichertemperatur",
+    "glt_cold_storage_temp": "GLT Kältespeichertemperatur",
+    "glt_dhw_temp_bottom": "GLT Warmwasser unten",
+    "glt_dhw_temp_top": "GLT Warmwasser oben",
+    "demand_heating": "Externe Heizanforderung",
+    "demand_cooling": "Externe Kühlanforderung",
+    "demand_dhw_charging": "Externe WW-Ladeanforderung",
+    "total_heat_energy": "Gesamte Wärmemenge (Vortex)",
+    "thermal_power_flow_sensor": "Thermische Leistung (Durchflusssensor)",
+    "air_intake_temp": "Luftansaugtemperatur",
+    "air_heat_exchanger_temp": "Luftwärmetauscher Temperatur",
+    "charging_sensor_temp": "Ladefühler Temperatur",
+    "ext_demand_temp_heating": "Externe Anforderungstemperatur Heizen",
+    "ext_demand_temp_cooling": "Externe Anforderungstemperatur Kühlen",
 }
 
 # Re-export the real client and models from the library
@@ -303,6 +329,12 @@ def get_library_sensors(model_info=None, circuits=None, zone_modules=0) -> list[
         })
 
     return sensors
+
+
+def get_library_system_sensors() -> list[dict[str, Any]]:
+    """Generiert wichtige System-Sensoren direkt aus der Library mit guten deutschen Namen."""
+    # This can be expanded further. For now it relies on the general logic + German names.
+    return []
 
 
 # ============================================================

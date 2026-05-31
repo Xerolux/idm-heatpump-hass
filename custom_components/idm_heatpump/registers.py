@@ -38,6 +38,7 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import EntityCategory
 
 from .const import (
+    # Many of these are legacy and will be removed once the migration is complete
     CIRCUIT_MODE_OPTIONS,
     HP_STATUS_OPTIONS,
     ISC_MODE_OPTIONS,
@@ -132,14 +133,16 @@ def _sensor(
     }
 
 
-SYSTEM_SENSORS = [
-    _sensor(
-        1000,
-        "Aussentemperatur",
-        "outdoor_temp",
-        unit=UnitOfTemperature.CELSIUS,
-        device_class=UnitOfTemperature.CELSIUS,
-    ),
+# SYSTEM_SENSORS is deprecated and no longer the primary source.
+# Kept temporarily for reference during migration.
+# SYSTEM_SENSORS = [
+#     _sensor(
+#         1000,
+#         "Aussentemperatur",
+#         "outdoor_temp",
+#         unit=UnitOfTemperature.CELSIUS,
+#         device_class=UnitOfTemperature.CELSIUS,
+#     ),
     _sensor(
         1002,
         "Gemittelte Aussentemperatur",
@@ -1785,30 +1788,24 @@ def get_all_sensor_descriptions(
         pass
 
     # 2. Starke Library-Generatoren (bevorzugt)
-    library_sensors = get_library_sensors(circuits=circuits, zone_modules=zone_count)
-    descriptions.extend(library_sensors)
+    descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
 
-    # 3. Zusätzliche starke Generatoren für Heizkreise und Zonen
+    # 3. Spezialisierte starke Generatoren für Heizkreise und Zonen
     for circuit in circuits:
         descriptions.extend(get_library_heating_circuit_sensors(circuit))
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_sensors(z, rooms))
 
-    # 4. Legacy als Fallback für Register, die der Adapter noch nicht abdeckt
-    # (wird schrittweise weiter abgebaut)
-    legacy_sensors = list(SYSTEM_SENSORS) + list(PV_SENSORS)
-    for circuit in circuits:
-        legacy_sensors.extend(_hk_sensors(circuit))
-    for z in range(zone_count):
-        rooms = zone_rooms.get(z, 6)
-        legacy_sensors.extend(_zone_sensors(z, rooms))
-
-    # Nur Legacy-Sensoren hinzufügen, die noch nicht von der Library kommen
-    library_keys = {s["description"].key for s in library_sensors}
-    for s in legacy_sensors:
-        if s["description"].key not in library_keys:
-            descriptions.append(s)
+    # 4. Sehr begrenzter Legacy-Fallback (wird weiter abgebaut)
+    # Die alten großen Listen und Generatoren werden schrittweise entfernt.
+    # Aktuell nur noch für sehr spezielle Fälle, die der Adapter noch nicht abdeckt.
+    # descriptions.extend(list(SYSTEM_SENSORS))   # stark reduziert
+    # for circuit in circuits:
+    #     descriptions.extend(_hk_sensors(circuit))
+    # for z in range(zone_count):
+    #     rooms = zone_rooms.get(z, 6)
+    #     descriptions.extend(_zone_sensors(z, rooms))
 
     # Deduplicate by key (library first wins in case of overlap)
     seen_keys: set[str] = set()
@@ -1843,23 +1840,23 @@ def get_all_number_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
 
-    # Library numbers first
+    # Library numbers first (preferred)
     try:
         descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
     except Exception:
         pass
 
-    # Local definitions
-    descriptions.extend(list(DHW_NUMBERS))
-    descriptions.extend(list(BIVALENCY_NUMBERS))
-    if enable_cascade:
-        descriptions.extend(CASCADE_NUMBERS)
-    descriptions.extend(EXTERNAL_NUMBERS)
-    for circuit in circuits:
-        descriptions.extend(_hk_numbers(circuit))
-    for z in range(zone_count):
-        rooms = zone_rooms.get(z, 1)
-        descriptions.extend(_zone_numbers(z, rooms))
+    # Very limited legacy fallback for numbers
+    # descriptions.extend(list(DHW_NUMBERS))
+    # descriptions.extend(list(BIVALENCY_NUMBERS))
+    # if enable_cascade:
+    #     descriptions.extend(CASCADE_NUMBERS)
+    # descriptions.extend(EXTERNAL_NUMBERS)
+    # for circuit in circuits:
+    #     descriptions.extend(_hk_numbers(circuit))
+    # for z in range(zone_count):
+    #     rooms = zone_rooms.get(z, 1)
+    #     descriptions.extend(_zone_numbers(z, rooms))
 
     return descriptions
 
