@@ -10,6 +10,100 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.4.1] - 2026-05-31
+
+## v0.4.1 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+### New Features
+
+- fix: Add 255 handling to German mode options in const.py for consistency during testing (50fb2de)
+- fix: Add safe read-only test_connection() method to the HA client wrapper (9877e5d)
+- feat: Navigator 10 support + start of migration to idm_heatpump library (9e92c8f)
+- feat: HA 2026.5 compatibility, fix all lint/type errors, upgrade deps (bfb3006)
+- feat: translate all docs to English, ensure HA 2026.5 compatibility (5943a9f)
+- docs: update wiki and add wiki link to config flow (9b586c2)
+
+### Improvements
+
+- release: v0.4.1 - fix register alias mapping, update CI HA version (0ba2564)
+- Refactor: optimize code, fix modbus datatypes and update service target definitions (75e1218)
+- Release v0.2.9 - Update changelog and version files (4194b26)
+- Release v0.2.9 - Update changelog and version files (3047597)
+- update-wiki-writing-values (717ba28)
+- docs: update wiki and add wiki link to config flow (9b586c2)
+- Release v0.2.9 - Update changelog and version files (ad3b675)
+
+### Bug Fixes
+
+- release: v0.4.1 - fix register alias mapping, update CI HA version (0ba2564)
+- fix: Add 255 handling to German mode options in const.py for consistency during testing (50fb2de)
+- fix: Add safe read-only test_connection() method to the HA client wrapper (9877e5d)
+- feat: HA 2026.5 compatibility, fix all lint/type errors, upgrade deps (bfb3006)
+- Refactor: optimize code, fix modbus datatypes and update service target definitions (75e1218)
+- fix modbus batching and harden service targeting (d808ca6)
+- fix-pymodbus-slave-param-issue (660f02e)
+- Fix ModbusClientMixin slave/device_id parameter issue (a682ccc)
+- fix-pymodbus-version-requirement (e7df2dc)
+- Fix: Lower pymodbus requirement to 3.11.2 and support both device_id and slave (12b5177)
+
+---
+
+### Installation
+
+**HACS (Recommended):**
+1. Add custom repository: `Xerolux/idm-heatpump-hass`
+2. Search for "IDM Heatpump"
+3. Click Install
+
+**Manual:**
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
+3. Restart Home Assistant
+
+---
+
+[Full changelog: v0.2.9...v0.4.1](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.2.9...v0.4.1)
+
+---
+
+### Support
+
+Diese Integration wird in meiner Freizeit entwickelt – deine Unterstützung erhöht die Motivation für weitere Features und Updates! 🚀
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+_Jede Unterstützung ist eine große Motivation! Vielen Dank!_
+
+---
+
+### Feedback & Contributions
+
+- [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
+- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CONTRIBUTING.md)
+
+---
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-05-31 15:04:29 UTC_
+
+---
+
 
 ## [0.4.1] - 2026-05-31
 
