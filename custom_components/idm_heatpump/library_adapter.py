@@ -38,7 +38,7 @@ from idm_heatpump import (
 # ============================================================
 
 _GERMAN_NAMES: dict[str, str] = {
-    # System
+    # === System ===
     "outdoor_temp": "Außentemperatur",
     "outdoor_temp_avg": "Gemittelte Außentemperatur",
     "storage_temp": "Wärmespeichertemperatur",
@@ -46,29 +46,76 @@ _GERMAN_NAMES: dict[str, str] = {
     "dhw_temp_bottom": "Trinkwassererwärmer unten",
     "dhw_temp_top": "Trinkwassererwärmer oben",
     "dhw_tapping_temp": "Warmwasser Zapftemperatur",
+    "dhw_setpoint": "Warmwasser Sollwert",
     "hp_flow_temp": "Wärmepumpen Vorlauftemperatur",
     "hp_return_temp": "Wärmepumpen Rücklauftemperatur",
+    "heat_source_inlet_temp": "Wärmequelleneintritt",
+    "heat_source_outlet_temp": "Wärmequellenaustritt",
     "current_power": "Thermische Momentanleistung",
     "power_consumption_hp": "Elektrische Leistungsaufnahme Wärmepumpe",
+    "evu_lock": "EVU Sperre",
+    "hp_sum_alarm": "Summenstörung",
     
-    # Heat Sink (Navigator 10)
+    # === Heat Sink / Trennwärmetauscher (Navigator 10) ===
     "heat_sink_flow_rate": "Durchfluss Wärmesenke (B2)",
     "heat_sink_flow_temp": "Vorlauftemperatur Wärmesenke",
     "heat_sink_return_temp": "Rücklauftemperatur Wärmesenke",
+    "heat_sink_charging_pump_signal": "Ladepumpe Wärmesenke",
     
-    # Solar
+    # === Pumpen Status ===
+    "charge_pump_status": "Ladepumpe",
+    "brine_pump_status": "Sole-/Zwischenkreispumpe",
+    "source_pump_status": "Wärmequellenpumpe",
+    "isc_cold_pump_status": "ISC Kältespeicherpumpe",
+    "isc_recool_pump_status": "ISC Rückkühlpumpe",
+    "circulation_pump_status": "Zirkulationspumpe",
+    
+    # === Ventile ===
+    "valve_hc_heat_cool": "Umschaltventil Heizkreis Heizen/Kühlen",
+    "valve_storage_heat_cool": "Umschaltventil Speicher Heizen/Kühlen",
+    "valve_heat_dhw": "Umschaltventil Heizen/Warmwasser",
+    
+    # === Solar ===
     "solar_collector_temp": "Solar Kollektortemperatur",
     "solar_return_temp": "Solar Rücklauftemperatur",
+    "solar_charging_temp": "Solar Ladetemperatur",
+    "solar_mode": "Solar Betriebsart",
     
-    # PV
+    # === PV / Smartfox ===
     "pv_surplus": "PV Überschuss",
     "pv_production": "PV Produktion",
     "house_consumption": "Hausverbrauch",
+    "battery_discharge": "Batterie Entladung",
     "battery_soc": "Batterie SOC",
+    "electric_heater_power": "E-Heizstab Leistung",
     
-    # Cascade
+    # === Cascade ===
     "cascade_available_heating": "Kaskade verfügbar Heizen",
+    "cascade_available_cooling": "Kaskade verfügbar Kühlen",
+    "cascade_available_dhw": "Kaskade verfügbar Warmwasser",
     "cascade_running_heating": "Kaskade in Betrieb Heizen",
+    "cascade_running_cooling": "Kaskade in Betrieb Kühlen",
+    "cascade_running_dhw": "Kaskade in Betrieb Warmwasser",
+    
+    # === Energie ===
+    "energy_heating": "Wärmemenge Heizen",
+    "energy_cooling": "Wärmemenge Kühlen",
+    "energy_dhw": "Wärmemenge Warmwasser",
+    "energy_total": "Wärmemenge Gesamt",
+    "energy_defrost": "Wärmemenge Abtauen",
+    "energy_solar": "Wärmemenge Solar",
+    "energy_electric_heater": "Wärmemenge E-Heizstab",
+    
+    # === GLT / Externe Ansteuerung ===
+    "ext_outdoor_temp": "Externe Außentemperatur (GLT)",
+    "ext_humidity": "Externe Feuchte (GLT)",
+    "glt_temp_demand_heating": "GLT Temperaturanforderung Heizen",
+    "glt_temp_demand_cooling": "GLT Temperaturanforderung Kühlen",
+    
+    # === Sonstiges ===
+    "bivalence_state": "Bivalenz Betriebszustand",
+    "smart_grid_status": "Smart Grid Status",
+    "internal_message": "Interne Meldung",
 }
 
 # Re-export the real client and models from the library
