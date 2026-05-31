@@ -1,4 +1,9 @@
-"""Async Modbus TCP client for IDM Navigator heat pumps."""
+"""Async Modbus TCP client for IDM Navigator heat pumps.
+
+This module now delegates the heavy lifting to the official idm_heatpump library
+while maintaining backward compatibility for the existing HA integration code
+during the migration (Option B).
+"""
 
 from __future__ import annotations
 
@@ -7,20 +12,18 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
-import asyncio
 import logging
-import inspect
-import math
-import struct
-from dataclasses import dataclass, field
-from enum import Enum
-from typing import Any
 
-import pymodbus
-from pymodbus.client import AsyncModbusTcpClient
-from pymodbus.exceptions import ConnectionException, ModbusException
+from pymodbus.exceptions import ConnectionException
+
+from idm_heatpump import IdmModbusClient as _LibIdmModbusClient
+from idm_heatpump.client import DataType as LibDataType, RegisterDef as LibRegisterDef
 
 _LOGGER = logging.getLogger(__name__)
+
+# Re-export so the rest of the integration can continue importing from here
+DataType = LibDataType
+RegisterDef = LibRegisterDef
 
 
 # pymodbus >= 3.10 uses device_id (previously called slave)
@@ -76,47 +79,19 @@ class RegisterDef:
 _MAX_GROUP_FAILURES = 3
 
 
-class IdmModbusClient:
+class IdmModbusClient(_LibIdmModbusClient):
+    """
+    Compatibility subclass of the official library client.
+
+    The real implementation lives in the idm_heatpump package.
+    This class exists only to keep the existing import paths in the HA
+    integration working during the migration.
+    """
+
     def __init__(self, host: str, port: int = 502, slave_id: int = 1) -> None:
-        self._host = host
-        self._port = int(port)
-        self._slave_id = int(slave_id)
-        self._client: AsyncModbusTcpClient | None = None
-        self._lock = asyncio.Lock()
-        self._group_failure_counts: dict[int, int] = {}
-        self._permanently_failed_addresses: set[int] = set()
-
-    @property
-    def host(self) -> str:
-        return self._host
-
-    @property
-    def port(self) -> int:
-        return self._port
-
-    async def connect(self) -> None:
-        async with self._lock:
-            if self._client is None or not self._client.connected:
-                self._client = AsyncModbusTcpClient(
-                    host=str(self._host),
-                    port=int(self._port),
-                    timeout=10,
-                )
-                await self._client.connect()
-                _LOGGER.debug("Connected to %s:%d", self._host, self._port)
-
-    async def disconnect(self) -> None:
-        if self._client is not None:
-            close_result = self._client.close()
-            if asyncio.iscoroutine(close_result):
-                await close_result
-            self._client = None
-            _LOGGER.debug("Disconnected from %s:%d", self._host, self._port)
-
-    def _get_client(self) -> AsyncModbusTcpClient:
-        if self._client is None or not self._client.connected:
-            raise ConnectionException(f"Not connected to {self._host}:{self._port}")
-        return self._client
+        # Delegate initialization to the library client
+        super().__init__(host=host, port=port, slave_id=slave_id)
+        _LOGGER.debug("IdmModbusClient (HA wrapper) initialized using idm_heatpump library")
 
     async def _read_registers(self, address: int, count: int) -> list[int]:
         async with self._lock:
@@ -382,29 +357,5 @@ class IdmModbusClient:
         test_client = FreshClient(
             host=str(self._host), port=int(self._port), timeout=10
         )
-        try:
-            await test_client.connect()
-            if not test_client.connected:
-                _LOGGER.warning("Test connection failed: not connected")
-                return False
-
-            kwargs = {_PMODBUS_SLAVE_PARAM: int(self._slave_id)}
-            result = await test_client.read_input_registers(
-                address=1350,
-                count=2,
-                **kwargs,  # type: ignore[arg-type]
-            )
-
-            if result.isError():
-                _LOGGER.warning("Test connection failed: Modbus error %s", result)
-                return False
-
-            registers = list(result.registers)
-            _LOGGER.debug("Test connection successful, registers: %s", registers)
-            return True
-        except Exception as err:
-            _LOGGER.warning("Test connection failed: %s", err)
-            return False
-        finally:
-            if hasattr(test_client, "close"):
-                test_client.close()
+# All legacy implementation has been removed.
+# The real functionality is provided by inheriting from idm_heatpump.IdmModbusClient.

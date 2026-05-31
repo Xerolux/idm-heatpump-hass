@@ -31,8 +31,8 @@ from idm_heatpump import (
     get_zone_module_registers,
 )
 
-# Re-export useful things so the rest of the integration can import from here
-from idm_heatpump import IdmModbusClient as LibIdmModbusClient  # noqa: F401
+# Re-export the real client and models from the library
+from idm_heatpump import IdmModbusClient as LibIdmModbusClient
 from idm_heatpump.const import (
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
