@@ -40,6 +40,7 @@ jobs:
         run: |
           pip install ruff mypy pytest pytest-cov pytest-asyncio
           pip install pytest-homeassistant-custom-component>=0.13.317
+          pip install idm-heatpump-api>=0.3.0
 
       - name: Lint with Ruff
         run: |
