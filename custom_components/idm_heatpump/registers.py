@@ -1784,16 +1784,31 @@ def get_all_sensor_descriptions(
     except Exception:
         pass
 
-    # 2. Local definitions (rich German names, specific icons, etc.)
-    descriptions.extend(list(SYSTEM_SENSORS))
-    descriptions.extend(list(PV_SENSORS))
+    # 2. Starke Library-Generatoren (bevorzugt)
+    library_sensors = get_library_sensors(circuits=circuits, zone_modules=zone_count)
+    descriptions.extend(library_sensors)
 
-    # 3. Stark verbesserte Library-Generatoren für Heizkreise und Zonen
+    # 3. Zusätzliche starke Generatoren für Heizkreise und Zonen
     for circuit in circuits:
         descriptions.extend(get_library_heating_circuit_sensors(circuit))
     for z in range(zone_count):
-        rooms = zone_rooms.get(z, 6)  # Default 6 Räume für Navigator 10
+        rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_sensors(z, rooms))
+
+    # 4. Legacy als Fallback für Register, die der Adapter noch nicht abdeckt
+    # (wird schrittweise weiter abgebaut)
+    legacy_sensors = list(SYSTEM_SENSORS) + list(PV_SENSORS)
+    for circuit in circuits:
+        legacy_sensors.extend(_hk_sensors(circuit))
+    for z in range(zone_count):
+        rooms = zone_rooms.get(z, 6)
+        legacy_sensors.extend(_zone_sensors(z, rooms))
+
+    # Nur Legacy-Sensoren hinzufügen, die noch nicht von der Library kommen
+    library_keys = {s["description"].key for s in library_sensors}
+    for s in legacy_sensors:
+        if s["description"].key not in library_keys:
+            descriptions.append(s)
 
     # Deduplicate by key (library first wins in case of overlap)
     seen_keys: set[str] = set()
