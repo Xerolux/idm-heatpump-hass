@@ -12,6 +12,13 @@ from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
+
+try:
+    from homeassistant.config_entries import ConfigFlowResult
+except ImportError:
+    from typing import Any
+
+    ConfigFlowResult = dict[str, Any]  # type: ignore[misc]
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
@@ -173,7 +180,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -207,7 +214,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_reconfigure(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> ConfigFlowResult:
         """Handle a reconfiguration flow initialized by the user."""
         errors: dict[str, str] = {}
         entry = self._get_reconfigure_entry()
@@ -251,7 +258,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_options(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         schema = _build_options_schema(self._options)
 
@@ -275,7 +282,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_zones(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         schema = _build_zones_schema(self._options, zone_count)
@@ -333,13 +340,13 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> ConfigFlowResult:
         self._options = dict(self.config_entry.options)
         return await self.async_step_options()
 
     async def async_step_options(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         schema = _build_options_schema(self._options)
 
@@ -359,7 +366,7 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
 
     async def async_step_zones(
         self, user_input: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
+    ) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         schema = _build_zones_schema(self._options, zone_count)
