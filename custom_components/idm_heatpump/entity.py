@@ -35,8 +35,8 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
             f"{coordinator.client.host}:{coordinator.client.port}_{reg.name}"
         )
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
-            name=coordinator.config_entry.title,  # type: ignore[union-attr]
+            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
+            name=coordinator.config_entry.title,
             manufacturer=MANUFACTURER,
             model=MODEL,
         )
