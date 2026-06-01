@@ -74,8 +74,8 @@ check_prerequisites() {
         exit 1
     fi
 
-    if [ ! -d "$PROJECT_ROOT/custom_components/heatpump_idm" ]; then
-        log_error "Integration source not found at $PROJECT_ROOT/custom_components/heatpump_idm"
+    if [ ! -d "$PROJECT_ROOT/custom_components/idm_heatpump" ]; then
+        log_error "Integration source not found at $PROJECT_ROOT/custom_components/idm_heatpump"
         exit 1
     fi
     log_success "Integration source found"
@@ -230,7 +230,7 @@ install_integration() {
     flow_id=$(curl -sf -X POST "${HA_URL}/api/config/config_entries/flow" \
         "${headers[@]}" \
         -d "{
-            \"handler\": \"heatpump_idm\",
+            \"handler\": \"idm_heatpump\",
             \"show_advanced_options\": false
         }" 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('flow_id',''))" 2>/dev/null || echo "")
 
@@ -244,7 +244,7 @@ install_integration() {
         flow_id=$(curl -sf -X POST "${HA_URL}/api/config/config_entries/flow" \
             "${headers[@]}" \
             -d "{
-                \"handler\": \"heatpump_idm\",
+                \"handler\": \"idm_heatpump\",
                 \"show_advanced_options\": false
             }" 2>/dev/null | python3 -c "import sys,json; print(json.load(sys.stdin).get('flow_id',''))" 2>/dev/null || echo "")
     fi
@@ -297,7 +297,7 @@ test_integration_in_logs() {
 
     if echo "$logs" | grep -q "Setting up IDM Heatpump"; then
         log_success "Integration setup initiated"
-    elif echo "$logs" | grep -q "heatpump_idm"; then
+    elif echo "$logs" | grep -q "idm_heatpump"; then
         log_success "Integration referenced in logs"
     else
         log_warn "Integration not found in logs yet"
@@ -305,7 +305,7 @@ test_integration_in_logs() {
         return 1
     fi
 
-    if echo "$logs" | grep -q "heatpump_idm.*Connected"; then
+    if echo "$logs" | grep -q "idm_heatpump.*Connected"; then
         log_success "Modbus connection established"
     fi
 
@@ -319,7 +319,7 @@ test_no_critical_errors() {
     logs=$(docker logs "$CONTAINER_NAME" 2>&1)
 
     local idm_errors
-    idm_errors=$(echo "$logs" | grep -i "heatpump_idm" | grep -iE "error|exception|traceback" | grep -v "ConfigEntryNotReady" | tail -20)
+    idm_errors=$(echo "$logs" | grep -i "idm_heatpump" | grep -iE "error|exception|traceback" | grep -v "ConfigEntryNotReady" | tail -20)
 
     if [ -z "$idm_errors" ]; then
         log_success "No IDM-related errors found"
@@ -336,13 +336,13 @@ test_entities_via_api() {
 
     if [ -z "${HA_TOKEN:-}" ]; then
         log_warn "No HA token, skipping API-based entity check"
-        log_info "Check manually at: ${HA_URL}/config/integrations/integration/heatpump_idm"
+        log_info "Check manually at: ${HA_URL}/config/integrations/integration/idm_heatpump"
         return 0
     fi
 
     local headers=(-H "Authorization: Bearer ${HA_TOKEN}")
 
-    # Check states for heatpump_idm entities
+    # Check states for idm_heatpump entities
     local entity_count
     entity_count=$(curl -sf "${HA_URL}/api/states" \
         "${headers[@]}" 2>/dev/null | \
@@ -483,8 +483,8 @@ test_error_handling() {
 
     # Check for known bad patterns
     local bad_patterns=(
-        "ImportError.*heatpump_idm"
-        "ModuleNotFoundError.*heatpump_idm"
+        "ImportError.*idm_heatpump"
+        "ModuleNotFoundError.*idm_heatpump"
         "TypeError.*entity_category"
         "TypeError.*_number"
     )
@@ -555,7 +555,7 @@ run_full_tests() {
         log_success "ALL TESTS PASSED!"
         echo ""
         log_info "Home Assistant: ${HA_URL}"
-        log_info "Integration:    ${HA_URL}/config/integrations/integration/heatpump_idm"
+        log_info "Integration:    ${HA_URL}/config/integrations/integration/idm_heatpump"
         log_info "IDM Heat Pump:  ${IDM_IP}:${IDM_PORT}"
     else
         log_warn "${failures} test(s) failed - check logs above"

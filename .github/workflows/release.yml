@@ -107,7 +107,7 @@ jobs:
       - name: Update version in manifest
         run: |
           VERSION="${{ steps.version.outputs.version }}"
-          MANIFEST_FILE="custom_components/heatpump_idm/manifest.json"
+          MANIFEST_FILE="custom_components/idm_heatpump/manifest.json"
 
           sed -i "s|\"version\": \"[^\"]*\"|\"version\": \"$VERSION\"|" "$MANIFEST_FILE"
 
@@ -207,8 +207,8 @@ jobs:
             echo "3. Click Install"
             echo ""
             echo "**Manual:**"
-            echo "1. Download \`heatpump_idm.zip\`"
-            echo "2. Extract to \`custom_components/heatpump_idm\`"
+            echo "1. Download \`idm_heatpump.zip\`"
+            echo "2. Extract to \`custom_components/idm_heatpump\`"
             echo "3. Restart Home Assistant"
             echo ""
             echo "---"
@@ -252,20 +252,20 @@ jobs:
 
       - name: Create ZIP artifact
         run: |
-          cd custom_components/heatpump_idm
-          zip -r ../../heatpump_idm.zip . \
+          cd custom_components/idm_heatpump
+          zip -r ../../idm_heatpump.zip . \
             -x "*.pyc" -x "__pycache__/*" -x "*.git*" -x "test_*.py" -x ".DS_Store"
           cd ../..
-          SIZE=$(du -h heatpump_idm.zip | cut -f1)
-          echo "Created heatpump_idm.zip ($SIZE)"
-          sha256sum heatpump_idm.zip > heatpump_idm.zip.sha256
+          SIZE=$(du -h idm_heatpump.zip | cut -f1)
+          echo "Created idm_heatpump.zip ($SIZE)"
+          sha256sum idm_heatpump.zip > idm_heatpump.zip.sha256
 
       - name: Upload ZIP to release
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            heatpump_idm.zip
-            heatpump_idm.zip.sha256
+            idm_heatpump.zip
+            idm_heatpump.zip.sha256
           tag_name: ${{ steps.version.outputs.tag }}
           body: ${{ steps.generate.outputs.release-notes }}
           draft: ${{ steps.version.outputs.is_draft == 'true' }}
@@ -286,7 +286,7 @@ jobs:
       - name: Update version in manifest
         run: |
           VERSION="${{ needs.prepare-release.outputs.version }}"
-          MANIFEST_FILE="custom_components/heatpump_idm/manifest.json"
+          MANIFEST_FILE="custom_components/idm_heatpump/manifest.json"
           sed -i "s|\"version\": \"[^\"]*\"|\"version\": \"$VERSION\"|" "$MANIFEST_FILE"
           echo "Updated version files"
 
@@ -321,7 +321,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           git add docs/CHANGELOG.md \
-            custom_components/heatpump_idm/manifest.json
+            custom_components/idm_heatpump/manifest.json
 
           if git diff --cached --quiet; then
             echo "No changes to commit"
@@ -355,6 +355,6 @@ jobs:
             echo "| **Release** | [View Release](https://github.com/${{ github.repository }}/releases/tag/$TAG) |"
             echo ""
             echo "### Artifacts"
-            echo "- \`heatpump_idm.zip\` - Integration package"
-            echo "- \`heatpump_idm.zip.sha256\` - Checksum file"
+            echo "- \`idm_heatpump.zip\` - Integration package"
+            echo "- \`idm_heatpump.zip.sha256\` - Checksum file"
           } >> $GITHUB_STEP_SUMMARY
