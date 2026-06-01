@@ -60,8 +60,8 @@ function Start-HAContainer {
         return $false
     }
 
-    if (-not (Test-Path "$ProjectRoot\custom_components\heatpump_idm")) {
-        Write-Err "Integration not found at $ProjectRoot\custom_components\heatpump_idm"
+    if (-not (Test-Path "$ProjectRoot\custom_components\idm_heatpump")) {
+        Write-Err "Integration not found at $ProjectRoot\custom_components\idm_heatpump"
         return $false
     }
 
@@ -139,7 +139,7 @@ function Test-IntegrationLoaded {
     if ($logs -match "Setting up IDM Heatpump") {
         Write-Ok "Integration setup initiated"
         $found = $true
-    } elseif ($logs -match "heatpump_idm") {
+    } elseif ($logs -match "idm_heatpump") {
         Write-Ok "Integration referenced in logs"
         $found = $true
     } else {
@@ -162,7 +162,7 @@ function Test-NoCriticalErrors {
     $badPatterns = @(
         "TypeError.*entity_category"
         "TypeError.*_number"
-        "ImportError.*heatpump_idm"
+        "ImportError.*idm_heatpump"
         "ModuleNotFoundError.*idm"
     )
 
@@ -335,7 +335,7 @@ function Invoke-FullTests {
     if ($failures -eq 0) {
         Write-Ok "ALL TESTS PASSED!"
         Write-Info "HA:          $HaUrl"
-        Write-Info "Integration: $HaUrl/config/integrations/integration/heatpump_idm"
+        Write-Info "Integration: $HaUrl/config/integrations/integration/idm_heatpump"
         Write-Info "IDM:         ${IdmIp}:${IdmPort}"
     } else {
         Write-Warn "$failures test(s) failed"

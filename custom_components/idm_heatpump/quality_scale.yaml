@@ -338,7 +338,7 @@ rules:
   #   status: todo
   #   comment: >
   #     Integration documentation page must be created at
-  #     homeassistant.io/integrations/heatpump_idm/
+  #     homeassistant.io/integrations/idm_heatpump/
   #
   # config-flow-test-coverage-100:
   #   status: done

@@ -4,13 +4,13 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.heatpump_idm.config_flow import (
+from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpConfigFlow,
     IdmHeatpumpOptionsFlow,
     _build_options_schema,
     _build_zones_schema,
 )
-from custom_components.heatpump_idm.const import (
+from custom_components.idm_heatpump.const import (
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
