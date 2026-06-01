@@ -25,7 +25,7 @@ from homeassistant.const import (
     UnitOfPower,
     UnitOfTemperature,
 )
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
@@ -74,8 +74,8 @@ def _sensor(
     multiplier: float = 1.0,
     enum_options: dict[int, str] | None = None,
 ) -> dict[str, Any]:
-    resolved_dc = _SENSOR_DC_MAP.get(device_class, device_class)
-    state_class = _SENSOR_STATE_CLASS_MAP.get(resolved_dc)
+    resolved_dc = _SENSOR_DC_MAP.get(device_class, device_class)  # type: ignore[arg-type]
+    state_class = _SENSOR_STATE_CLASS_MAP.get(resolved_dc)  # type: ignore[arg-type]
     return {
         "register": RegisterDef(
             address=address,
