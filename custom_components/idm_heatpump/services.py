@@ -38,17 +38,17 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN,
         "set_system_mode",
-        _handle_set_system_mode,
+        _handle_set_system_mode,  # type: ignore[arg-type]
     )
     hass.services.async_register(
         DOMAIN,
         "acknowledge_errors",
-        _handle_acknowledge_errors,
+        _handle_acknowledge_errors,  # type: ignore[arg-type]
     )
     hass.services.async_register(
         DOMAIN,
         "write_register",
-        _handle_write_register,
+        _handle_write_register,  # type: ignore[arg-type]
         supports_response=SupportsResponse.OPTIONAL,
     )
 

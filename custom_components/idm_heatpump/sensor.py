@@ -98,8 +98,8 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
         )
         self._attr_name = self._NAMES[level]
         self._attr_device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},
-            name=coordinator.config_entry.title,
+            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
+            name=coordinator.config_entry.title,  # type: ignore[union-attr]
             manufacturer=MANUFACTURER,
             model=MODEL,
         )
