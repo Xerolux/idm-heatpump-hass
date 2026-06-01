@@ -59,7 +59,7 @@ Enable extended logging:
 logger:
   default: info
   logs:
-    custom_components.heatpump_idm: debug
+    custom_components.idm_heatpump: debug
     pymodbus: debug
 ```
 

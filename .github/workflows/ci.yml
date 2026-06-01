@@ -44,17 +44,17 @@ jobs:
 
       - name: Lint with Ruff
         run: |
-          ruff check custom_components/heatpump_idm/ \
+          ruff check custom_components/idm_heatpump/ \
             --line-length=120 \
             --output-format=github
 
       - name: Format check with Ruff
         run: |
-          ruff format custom_components/heatpump_idm/ --check
+          ruff format custom_components/idm_heatpump/ --check
 
       - name: Type check with mypy
         run: |
-          mypy custom_components/heatpump_idm/ \
+          mypy custom_components/idm_heatpump/ \
             --strict \
             --ignore-missing-imports \
             --allow-untyped-globals \
@@ -65,7 +65,7 @@ jobs:
           pytest tests/ \
             -v \
             --tb=short \
-            --cov=custom_components/heatpump_idm \
+            --cov=custom_components/idm_heatpump \
             --cov-report=xml \
             --cov-report=term-missing
 

@@ -58,7 +58,7 @@ Enable extended logging for troubleshooting:
 logger:
   default: info
   logs:
-    custom_components.heatpump_idm: debug
+    custom_components.idm_heatpump: debug
 ```
 
 ## EEPROM Notice
