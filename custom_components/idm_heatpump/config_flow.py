@@ -18,7 +18,7 @@ try:
 except ImportError:
     from typing import Any
 
-    ConfigFlowResult = dict[str, Any]  # type: ignore[assignment]
+    ConfigFlowResult = dict[str, Any]
 from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
