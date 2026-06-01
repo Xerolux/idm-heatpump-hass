@@ -2,7 +2,7 @@
 
 import pytest
 
-from custom_components.heatpump_idm.registers import (
+from custom_components.idm_heatpump.registers import (
     collect_all_registers,
     get_all_binary_sensor_descriptions,
     get_all_number_descriptions,

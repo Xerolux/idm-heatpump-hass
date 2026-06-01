@@ -4,7 +4,7 @@ services:
     image: ghcr.io/home-assistant/home-assistant:stable
     volumes:
       - ha_config:/config
-      - ../custom_components/heatpump_idm:/config/custom_components/heatpump_idm:ro
+      - ../custom_components/idm_heatpump:/config/custom_components/idm_heatpump:ro
     ports:
       - "8123:8123"
     environment:

@@ -3,7 +3,7 @@ set_system_mode:
   description: "Set the operating mode of the heat pump system"
   target:
     entity:
-      integration: heatpump_idm
+      integration: idm_heatpump
   fields:
     mode:
       name: "Mode"
@@ -29,14 +29,14 @@ acknowledge_errors:
   description: "Acknowledge/clear active error messages on the heat pump"
   target:
     entity:
-      integration: heatpump_idm
+      integration: idm_heatpump
 
 write_register:
   name: "Write Register"
   description: "Write a value directly to a Modbus register (advanced use only)"
   target:
     entity:
-      integration: heatpump_idm
+      integration: idm_heatpump
   fields:
     address:
       name: "Address"

@@ -10,6 +10,48 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [0.6.2] - 2026-06-01
+
+## v0.6.2 - Domain Revert: idm_heatpump
+
+**STABLE RELEASE**
+
+> ### ℹ️ Wichtige Änderung für v0.6.x-Nutzer
+>
+> **Die Integration-Domain wurde von `heatpump_idm` zurück auf `idm_heatpump` geändert.**
+>
+> Der Domain-Rename in v0.6.0 war unnötig — Python trennt `custom_components.idm_heatpump` (HA-Integration) und `idm_heatpump` (PyPI-Library) sauber voneinander. Es gab keinen echten Namenskonflikt.
+>
+> **Wenn du von v0.5.x aktualisierst:** Normales Update, keine manuelle Aktion erforderlich.
+>
+> **Wenn du bereits v0.6.x nutzt:** Integration einmal entfernen und neu hinzufügen (Einstellungen → Geräte & Dienste).
+
+### Changes
+
+- **Domain-Revert:** `heatpump_idm` → `idm_heatpump` (kein echter Namenskonflikt mit PyPI-Library vorhanden)
+- **Brand-Images korrigiert:** `icon.png` 256×256, `logo.png` 512×512 (hassfest-Anforderung)
+
+---
+
+### Installation
+
+**HACS (Recommended):**
+1. Add custom repository: `Xerolux/idm-heatpump-hass`
+2. Search for "IDM Heatpump"
+3. Click Install
+
+**Manual:**
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
+3. Restart Home Assistant
+
+---
+
+[Full changelog: v0.6.1...v0.6.2](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.6.1...v0.6.2)
+
+---
+
 ## [0.6.1] - 2026-05-31
 
 ## v0.6.1 - IDM Heatpump
@@ -48,8 +90,8 @@ All notable changes to this project will be documented in this file.
 3. Click Install
 
 **Manual:**
-1. Download `heatpump_idm.zip`
-2. Extract to `custom_components/heatpump_idm`
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
 3. Restart Home Assistant
 
 ---
@@ -137,8 +179,8 @@ _Generated automatically by GitHub Actions on 2026-05-31 22:06:08 UTC_
 3. Click Install
 
 **Manual:**
-1. Download `heatpump_idm.zip`
-2. Extract to `custom_components/heatpump_idm`
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
 3. Restart Home Assistant
 
 ---
@@ -184,42 +226,22 @@ _Generated automatically by GitHub Actions on 2026-05-31 21:04:55 UTC_
 
 ---
 
-> ### :rotating_light: :rotating_light: :rotating_light: **BREAKING CHANGE** :rotating_light: :rotating_light: :rotating_light:
+> ~~### ⚠️ BREAKING CHANGE~~
 >
-> **Die Integration-Domain wurde von `idm_heatpump` auf `heatpump_idm` geändert.**
+> ~~**Die Integration-Domain wurde von `idm_heatpump` auf `heatpump_idm` geändert.**~~
 >
-> **Das ist KEIN In-Place-Upgrade. Du musst die Integration neu einrichten.**
->
-> #### Warum?
-> Der PyPI-Library-Name (`idm-heatpump-api`) installiert als Python-Package `idm_heatpump/`.
-> Die alte Integration hieß ebenfalls `idm_heatpump/` → Namenskollision unter Home Assistant.
-> Deshalb wurde die Integration in `heatpump_idm` umbenannt.
->
-> #### Migrationsschritte (zwingend erforderlich):
->
-> 1. **Home Assistant öffnen** → Einstellungen → Geräte & Dienste
-> 2. **Alte Integration "IDM Heatpump" entfernen** (die alte Domain `idm_heatpump`)
-> 3. **Home Assistant stoppen**
-> 4. **Alten Ordner löschen:** `custom_components/idm_heatpump/` (manuell über die Konsole/FTP)
-> 5. **Neue Version installieren** (HACS Update oder manuell entpacken)
-> 6. **Home Assistant starten**
-> 7. **Integration neu hinzufügen:** Einstellungen → Geräte & Dienste → Integration hinzufügen → "IDM Heatpump"
-> 8. **Verbindungsdaten eingeben:** Host, Port, Slave ID (wie bisher)
->
-> :warning: **Entity-IDs basieren auf dem Geräte-Namen ("IDM Heatpump"), nicht auf der Domain.** Die meisten Entity-IDs sollten gleich bleiben (z.B. `sensor.idm_heatpump_aussentemperatur`). Prüfe trotzdem alle Automatisierungen, Scripts und Dashboards nach dem Update!
->
-> :bulb: **Tipp:** Vor dem Update ein **Backup** von Home Assistant machen!
+> **Hinweis:** Dieser Domain-Rename wurde in v0.6.2 rückgängig gemacht. Die Domain lautet wieder `idm_heatpump`.
 >
 > ---
 
 ### Changes
 
-- **Domain-Rename:** `idm_heatpump` → `heatpump_idm` (vermeidet Namenskollision mit PyPI-Library)
+- ~~**Domain-Rename:** `idm_heatpump` → `heatpump_idm`~~ (in v0.6.2 wieder rückgängig gemacht)
 - **modbus_client.py entfernt:** Direkte Imports aus der PyPI-Library `idm-heatpump-api` statt lokalem Wrapper
 - **PyPI-Library als Requirement:** `idm-heatpump-api>=0.3.0` wird automatisch von HA installiert
 - **Duplikat `power_limit_hp` behoben:** War fälschlicherweise als Sensor UND Number registriert
 - **Test-Datei umbenannt:** `test_modbus_client.py` → `test_library_client.py`
-- **Dokumentation aktualisiert:** Alle Logger-Pfade auf `custom_components.heatpump_idm` korrigiert
+- **Dokumentation aktualisiert:** Alle Logger-Pfade auf `custom_components.idm_heatpump`
 - **328 Tests bestanden**, Docker Live-Test gegen echte Wärmepumpe erfolgreich (168 Entities, 106 Register gelesen)
 
 ---
