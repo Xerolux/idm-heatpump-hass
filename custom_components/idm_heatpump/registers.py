@@ -944,9 +944,7 @@ def get_all_sensor_descriptions(
 
     # Library + Adapter is now the primary and preferred source
     try:
-        descriptions.extend(
-            get_library_sensors(circuits=circuits, zone_modules=zone_count)
-        )
+        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
     except Exception:
         pass
 
@@ -980,9 +978,7 @@ def get_all_binary_sensor_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
     try:
-        descriptions.extend(
-            get_library_binary_sensors(circuits=circuits, zone_modules=zone_count)
-        )
+        descriptions.extend(get_library_binary_sensors(circuits=circuits, zone_modules=zone_count))
     except Exception:
         pass
     # Old local binary sensors disabled during migration
@@ -999,9 +995,7 @@ def get_all_number_descriptions(
 
     # Library numbers (preferred)
     try:
-        descriptions.extend(
-            get_library_numbers(circuits=circuits, zone_modules=zone_count)
-        )
+        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
     except Exception:
         pass
 
@@ -1017,9 +1011,7 @@ def get_all_select_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
     try:
-        descriptions.extend(
-            get_library_selects(circuits=circuits, zone_modules=zone_count)
-        )
+        descriptions.extend(get_library_selects(circuits=circuits, zone_modules=zone_count))
     except Exception:
         pass
     # Old local selects disabled during migration
@@ -1067,9 +1059,7 @@ def _collect_all_descriptions(
     """Collect all entity descriptions across all platforms."""
     return (
         get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-        + get_all_binary_sensor_descriptions(
-            circuits, zone_count, zone_rooms, enable_cascade
-        )
+        + get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
         + get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
         + get_all_select_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
         + get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
@@ -1083,9 +1073,7 @@ def collect_all_registers(
     enable_cascade: bool = False,
 ) -> list[RegisterDef]:
     """Collect all unique registers for batch reading."""
-    all_descriptions = _collect_all_descriptions(
-        circuits, zone_count, zone_rooms, enable_cascade
-    )
+    all_descriptions = _collect_all_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
 
     seen: dict[int, RegisterDef] = {}
     for desc in all_descriptions:
@@ -1108,7 +1096,5 @@ def collect_alias_map(
     but use different register names. ``read_batch`` returns data keyed by one
     name per address.  This map lets the coordinator populate the other names.
     """
-    all_descriptions = _collect_all_descriptions(
-        circuits, zone_count, zone_rooms, enable_cascade
-    )
+    all_descriptions = _collect_all_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     return _build_alias_map(all_descriptions)

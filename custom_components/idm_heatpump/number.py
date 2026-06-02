@@ -47,9 +47,7 @@ class IdmNumber(IdmEntity, NumberEntity):
         try:
             await self.coordinator.async_write_register(self._register, value)
         except Exception as err:
-            _LOGGER.error(
-                "Failed to write %s = %s: %s", self._register.name, value, err
-            )
+            _LOGGER.error("Failed to write %s = %s: %s", self._register.name, value, err)
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="write_failed",

@@ -31,9 +31,7 @@ def _decode_bitflag(value: int, options: dict[int, str]) -> str:
     """Decode a bitfield value into a human-readable 'Flag1|Flag2' string."""
     if value == 0:
         return options.get(0, "Aus")
-    active = [
-        label for bit, label in options.items() if bit != 0 and (value & bit) == bit
-    ]
+    active = [label for bit, label in options.items() if bit != 0 and (value & bit) == bit]
     return "|".join(active) if active else f"Unbekannt ({value})"
 
 
@@ -93,9 +91,7 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
     def __init__(self, coordinator: IdmCoordinator, level: str) -> None:
         super().__init__(coordinator)
         self._level = level
-        self._attr_unique_id = (
-            f"{coordinator.client.host}:{coordinator.client.port}_technician_{level}"
-        )
+        self._attr_unique_id = f"{coordinator.client.host}:{coordinator.client.port}_technician_{level}"
         self._attr_name = self._NAMES[level]
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
@@ -107,9 +103,7 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        self._cancel_timer = async_track_time_interval(
-            self.hass, self._async_refresh, timedelta(seconds=60)
-        )
+        self._cancel_timer = async_track_time_interval(self.hass, self._async_refresh, timedelta(seconds=60))
 
     async def async_will_remove_from_hass(self) -> None:
         if self._cancel_timer:

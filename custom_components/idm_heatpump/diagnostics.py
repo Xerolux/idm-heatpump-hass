@@ -18,9 +18,7 @@ from .const import CONF_HOST, CONF_PORT
 TO_REDACT = {CONF_HOST, CONF_PORT}
 
 
-async def async_get_config_entry_diagnostics(
-    hass: HomeAssistant, entry: ConfigEntry
-) -> dict[str, Any]:
+async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     coordinator = entry.runtime_data.coordinator
 
     return {

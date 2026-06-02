@@ -55,11 +55,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
 
 async def async_unload_services(hass: HomeAssistant) -> None:
     """Remove services when no more IDM entries are loaded."""
-    loaded = [
-        entry
-        for entry in hass.config_entries.async_entries(DOMAIN)
-        if entry.state == ConfigEntryState.LOADED
-    ]
+    loaded = [entry for entry in hass.config_entries.async_entries(DOMAIN) if entry.state == ConfigEntryState.LOADED]
     if len(loaded) > 1:
         return
     for service in _SERVICES:
@@ -95,9 +91,7 @@ async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordin
                 requested_entry_id = None
 
     loaded_entries = [
-        entry
-        for entry in hass.config_entries.async_entries(DOMAIN)
-        if entry.state == ConfigEntryState.LOADED
+        entry for entry in hass.config_entries.async_entries(DOMAIN) if entry.state == ConfigEntryState.LOADED
     ]
 
     if requested_entry_id is not None:
@@ -184,9 +178,7 @@ async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> 
     await coordinator.async_write_register(reg, 1)
 
 
-async def _handle_write_register(
-    hass: HomeAssistant, call: ServiceCall
-) -> ServiceResponse:
+async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
     coordinator = await _get_coordinator(hass, call)
 
     if call.data.get("acknowledge_risk") is not True:

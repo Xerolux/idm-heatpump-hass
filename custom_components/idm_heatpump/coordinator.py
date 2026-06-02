@@ -66,12 +66,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         zone_rooms: dict[int, int],
         enable_cascade: bool = False,
     ) -> None:
-        self._registers = collect_all_registers(
-            circuits, zone_count, zone_rooms, enable_cascade
-        )
-        self._alias_map = collect_alias_map(
-            circuits, zone_count, zone_rooms, enable_cascade
-        )
+        self._registers = collect_all_registers(circuits, zone_count, zone_rooms, enable_cascade)
+        self._alias_map = collect_alias_map(circuits, zone_count, zone_rooms, enable_cascade)
 
     @property
     def sensor_descriptions(self) -> list[dict[str, Any]]:
@@ -145,9 +141,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Apply aliases: when multiple register names share an address,
         # ensure all names appear in the data dict.
         if self._alias_map:
-            addr_to_name: dict[int, str] = {
-                reg.address: reg.name for reg in self._registers
-            }
+            addr_to_name: dict[int, str] = {reg.address: reg.name for reg in self._registers}
             for addr, names in self._alias_map.items():
                 primary = addr_to_name.get(addr)
                 if primary and primary in data:
