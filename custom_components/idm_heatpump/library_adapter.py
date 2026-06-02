@@ -28,7 +28,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
+from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTemperature
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import (
@@ -58,6 +58,26 @@ def _apply_ha_metadata(reg: RegisterDef, base_meta: dict[str, Any]) -> dict[str,
     # if hasattr(reg, "ha_metadata") and reg.ha_metadata:
     #     base_meta.update(reg.ha_metadata)
     return base_meta
+
+
+# Maps unit strings to (device_class, state_class) tuples for automatic sensor classification.
+_UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
+    UnitOfEnergy.KILO_WATT_HOUR: (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
+    "kWh": (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
+    UnitOfPower.KILO_WATT: (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
+    "kW": (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
+    UnitOfTemperature.CELSIUS: (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
+    "°C": (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
+}
+
+# Maps device_class to the correct state_class.
+_DC_STATE_CLASS_MAP: dict[SensorDeviceClass, SensorStateClass] = {
+    SensorDeviceClass.ENERGY: SensorStateClass.TOTAL_INCREASING,
+    SensorDeviceClass.POWER: SensorStateClass.MEASUREMENT,
+    SensorDeviceClass.TEMPERATURE: SensorStateClass.MEASUREMENT,
+    SensorDeviceClass.HUMIDITY: SensorStateClass.MEASUREMENT,
+    SensorDeviceClass.BATTERY: SensorStateClass.MEASUREMENT,
+}
 
 
 # ============================================================
@@ -462,12 +482,18 @@ def _make_sensor_description(
     """Create a rich HA SensorEntityDescription from a library RegisterDef + metadata."""
     german_name = meta.get("name") or _get_german_name(reg.name)
 
+    dc: SensorDeviceClass | None = meta.get("device_class")
+    if dc is None:
+        unit = meta.get("unit") or reg.unit
+        if unit and unit in _UNIT_DC_SC_MAP:
+            dc, _ = _UNIT_DC_SC_MAP[unit]
+    sc = _DC_STATE_CLASS_MAP.get(dc) if dc else None  # type: ignore[arg-type]
     return SensorEntityDescription(
         key=reg.name,
         name=german_name,
         native_unit_of_measurement=meta.get("unit") or reg.unit,
-        device_class=meta.get("device_class"),
-        state_class=SensorStateClass.MEASUREMENT if meta.get("device_class") else None,
+        device_class=dc,
+        state_class=sc,
         icon=meta.get("icon"),
         entity_category=meta.get("entity_category"),
         entity_registry_enabled_default=meta.get("enabled_by_default", True),
@@ -532,13 +558,12 @@ def get_library_sensors(
             continue
 
         icon = reg.icon or get_icon_for_register(name, reg.unit)
-        is_temp = reg.unit and "°C" in (reg.unit or "")
-        dc = SensorDeviceClass.TEMPERATURE if is_temp else None
-        sc = None
+        dc: SensorDeviceClass | None = None
+        sc: SensorStateClass | None = None
+        if reg.unit and reg.unit in _UNIT_DC_SC_MAP:
+            dc, sc = _UNIT_DC_SC_MAP[reg.unit]
         if reg.state_class:
             sc = reg.state_class
-        elif is_temp:
-            sc = SensorStateClass.MEASUREMENT
 
         desc = SensorEntityDescription(
             key=name,
@@ -833,14 +858,19 @@ def get_library_readonly_sensors(
 
         # Ansonsten generiere vernünftige Defaults
         icon = get_icon_for_register(name, reg.unit)
+        ro_dc: SensorDeviceClass | None = None
+        ro_sc: SensorStateClass | None = None
+        if reg.unit and reg.unit in _UNIT_DC_SC_MAP:
+            ro_dc, ro_sc = _UNIT_DC_SC_MAP[reg.unit]
+        if reg.state_class:
+            ro_sc = reg.state_class
 
         desc = SensorEntityDescription(
             key=name,
             name=_get_german_name(name),
             native_unit_of_measurement=reg.unit,
-            device_class=SensorDeviceClass.TEMPERATURE
-            if (reg.unit and "°C" in reg.unit)
-            else None,
+            device_class=ro_dc,
+            state_class=ro_sc,
             icon=icon,
             entity_category=EntityCategory.DIAGNOSTIC,
         )
