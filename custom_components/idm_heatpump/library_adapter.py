@@ -428,9 +428,7 @@ def _get_german_name(name: str) -> str:
     return name.replace("_", " ").title()
 
 
-def _infer_dc_sc(
-    name: str, unit: str | None
-) -> tuple[SensorDeviceClass | None, SensorStateClass | None]:
+def _infer_dc_sc(name: str, unit: str | None) -> tuple[SensorDeviceClass | None, SensorStateClass | None]:
     """Infer device_class and state_class from unit and register name.
 
     Unit takes priority; for ambiguous units like % we fall back to name matching.
@@ -525,9 +523,7 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
     return "mdi:information-outline"
 
 
-def _make_sensor_description(
-    reg: RegisterDef, meta: dict[str, Any]
-) -> SensorEntityDescription:
+def _make_sensor_description(reg: RegisterDef, meta: dict[str, Any]) -> SensorEntityDescription:
     """Create a rich HA SensorEntityDescription from a library RegisterDef + metadata."""
     german_name = meta.get("name") or _get_german_name(reg.name)
 
@@ -548,9 +544,7 @@ def _make_sensor_description(
     )
 
 
-def _make_number_description(
-    reg: RegisterDef, meta: dict[str, Any]
-) -> NumberEntityDescription:
+def _make_number_description(reg: RegisterDef, meta: dict[str, Any]) -> NumberEntityDescription:
     """Create a rich HA NumberEntityDescription from a library RegisterDef + metadata."""
     return NumberEntityDescription(
         key=reg.name,
@@ -573,9 +567,7 @@ def get_library_sensors(
     Returns sensor descriptions primarily sourced from the idm_heatpump library.
     This is intended to become the main source over time.
     """
-    reg_map = build_register_map(
-        model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0
-    )
+    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
     sensors = []
 
     # Explicitly mapped sensors (best quality)
@@ -676,9 +668,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
     return sensors
 
 
-def get_library_zone_sensors(
-    zone_idx: int, room_count: int = 6
-) -> list[dict[str, Any]]:
+def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
     """Erzeugt Sensor-Beschreibungen für ein Zonenmodul direkt aus der Library."""
     try:
         zone_regs = get_zone_module_registers(zone_idx, room_count)
@@ -777,9 +767,7 @@ def generate_icons_json_entries(
     Hilfsfunktion, die Icons für alle bekannten Register vorschlägt.
     Kann genutzt werden, um icons.json teilweise zu generieren.
     """
-    reg_map = build_register_map(
-        model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0
-    )
+    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
     icons = {}
     for name, reg in reg_map.items():
         icon = get_icon_for_register(name, reg.unit)
@@ -787,15 +775,11 @@ def generate_icons_json_entries(
     return icons
 
 
-def get_library_binary_sensors(
-    circuits: list[str] | None = None, zone_modules: int = 0
-) -> list[dict[str, Any]]:
+def get_library_binary_sensors(circuits: list[str] | None = None, zone_modules: int = 0) -> list[dict[str, Any]]:
     """Binary sensors from library registers with binary=True flag."""
     from homeassistant.components.binary_sensor import BinarySensorEntityDescription
 
-    reg_map = build_register_map(
-        circuits=circuits or [], zone_modules=zone_modules or 0
-    )
+    reg_map = build_register_map(circuits=circuits or [], zone_modules=zone_modules or 0)
     sensors = []
     for name, reg in reg_map.items():
         if not reg.binary or reg.writable:
@@ -817,9 +801,7 @@ def get_library_binary_sensors(
     return sensors
 
 
-def get_library_selects(
-    circuits: list[str] | None = None, zone_modules: int = 0
-) -> list[dict[str, Any]]:
+def get_library_selects(circuits: list[str] | None = None, zone_modules: int = 0) -> list[dict[str, Any]]:
     """Select entities (modes) from the library."""
     from homeassistant.components.select import SelectEntityDescription
 
@@ -835,11 +817,7 @@ def get_library_selects(
             continue
         options = list(reg.enum_options.values())
         if reg.exclude_from_write:
-            options = [
-                v
-                for k, v in reg.enum_options.items()
-                if k not in reg.exclude_from_write
-            ]
+            options = [v for k, v in reg.enum_options.items() if k not in reg.exclude_from_write]
         desc = SelectEntityDescription(
             key=name,
             name=_get_german_name(name),
@@ -887,9 +865,7 @@ def get_library_readonly_sensors(
     Gibt nur lesbare Sensoren aus der Library zurück.
     Diese Funktion ist der bevorzugte Weg, um Sensoren aus der Library zu bekommen.
     """
-    reg_map = build_register_map(
-        model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0
-    )
+    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
     sensors = []
 
     for name, reg in reg_map.items():
@@ -931,9 +907,7 @@ def get_library_numbers(
     model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
 ) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
-    reg_map = build_register_map(
-        model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0
-    )
+    reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
     numbers = []
 
     for name, reg in reg_map.items():

@@ -31,9 +31,7 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
         super().__init__(coordinator)
         self._register = reg
         self.entity_description = entity_desc
-        self._attr_unique_id = (
-            f"{coordinator.client.host}:{coordinator.client.port}_{reg.name}"
-        )
+        self._attr_unique_id = f"{coordinator.client.host}:{coordinator.client.port}_{reg.name}"
         self._attr_device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
             name=coordinator.config_entry.title,  # type: ignore[union-attr]
@@ -45,10 +43,7 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
     def available(self) -> bool:
         if not super().available:
             return False
-        if (
-            not self.coordinator.data
-            or self._register.name not in self.coordinator.data
-        ):
+        if not self.coordinator.data or self._register.name not in self.coordinator.data:
             return False
         if self.coordinator.hide_unused:
             value = self.coordinator.data.get(self._register.name)

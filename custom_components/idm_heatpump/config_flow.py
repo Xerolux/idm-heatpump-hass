@@ -60,12 +60,8 @@ _LOGGER = logging.getLogger(__name__)
 # Schema for initial setup – no defaults so add_suggested_values_to_schema fills them
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_NAME): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
-        vol.Required(CONF_HOST): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
+        vol.Required(CONF_NAME): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+        vol.Required(CONF_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
         vol.Required(CONF_PORT, default=DEFAULT_PORT): NumberSelector(
             NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
         ),
@@ -78,9 +74,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
 # Schema for reconfigure – values are injected via add_suggested_values_to_schema
 STEP_RECONFIGURE_SCHEMA = vol.Schema(
     {
-        vol.Required(CONF_HOST): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
+        vol.Required(CONF_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
         vol.Required(CONF_PORT, default=DEFAULT_PORT): NumberSelector(
             NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
         ),
@@ -178,9 +172,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._data: dict[str, Any] = {}
         self._options: dict[str, Any] = {}
 
-    async def async_step_user(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
 
         if user_input is not None:
@@ -203,18 +195,12 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="user",
-            data_schema=self.add_suggested_values_to_schema(
-                STEP_USER_DATA_SCHEMA, user_input or {}
-            ),
-            description_placeholders={
-                "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
-            },
+            data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, user_input or {}),
+            description_placeholders={"wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"},
             errors=errors,
         )
 
-    async def async_step_reconfigure(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Handle a reconfiguration flow initialized by the user."""
         errors: dict[str, str] = {}
         entry = self._get_reconfigure_entry()
@@ -231,9 +217,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     data_updates={
                         CONF_HOST: host,
                         CONF_PORT: int(user_input.get(CONF_PORT, DEFAULT_PORT)),
-                        CONF_SLAVE_ID: int(
-                            user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)
-                        ),
+                        CONF_SLAVE_ID: int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
                     },
                 )
 
@@ -245,9 +229,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         return self.async_show_form(
             step_id="reconfigure",
-            data_schema=self.add_suggested_values_to_schema(
-                STEP_RECONFIGURE_SCHEMA, suggested
-            ),
+            data_schema=self.add_suggested_values_to_schema(STEP_RECONFIGURE_SCHEMA, suggested),
             description_placeholders={
                 "name": entry.title,
                 "host": entry.data[CONF_HOST],
@@ -256,9 +238,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_options(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         schema = _build_options_schema(self._options)
 
@@ -280,17 +260,13 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_zones(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_zones(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         schema = _build_zones_schema(self._options, zone_count)
 
         if user_input is not None:
-            zone_rooms: dict[int, int] = {
-                z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)
-            }
+            zone_rooms: dict[int, int] = {z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)}
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             return self.async_create_entry(
                 title=self._data[CONF_NAME],
@@ -338,15 +314,11 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
     def __init__(self) -> None:
         self._options: dict[str, Any] = {}
 
-    async def async_step_init(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         self._options = dict(self.config_entry.options)
         return await self.async_step_options()
 
-    async def async_step_options(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         schema = _build_options_schema(self._options)
 
@@ -364,17 +336,13 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
             errors=errors,
         )
 
-    async def async_step_zones(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_zones(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         schema = _build_zones_schema(self._options, zone_count)
 
         if user_input is not None:
-            zone_rooms: dict[int, int] = {
-                z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)
-            }
+            zone_rooms: dict[int, int] = {z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)}
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             return self.async_create_entry(data=self._options)
 

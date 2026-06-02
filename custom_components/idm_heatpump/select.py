@@ -74,9 +74,7 @@ class IdmSelect(IdmEntity, SelectEntity):
             value = self._option_to_value(option)
             await self.coordinator.async_write_register(self._register, value)
         except Exception as err:
-            _LOGGER.error(
-                "Failed to select %s = %s: %s", self._register.name, option, err
-            )
+            _LOGGER.error("Failed to select %s = %s: %s", self._register.name, option, err)
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="write_failed",
