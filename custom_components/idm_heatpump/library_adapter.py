@@ -34,7 +34,6 @@ from homeassistant.const import (
     UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
-    UnitOfVolumeFlowRate,
 )
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
@@ -75,7 +74,6 @@ _UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
     "kW": (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
     UnitOfTemperature.CELSIUS: (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
     "°C": (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
-    UnitOfVolumeFlowRate.LITERS_PER_MINUTE: (SensorDeviceClass.VOLUME_FLOW_RATE, SensorStateClass.MEASUREMENT),
     "L/min": (SensorDeviceClass.VOLUME_FLOW_RATE, SensorStateClass.MEASUREMENT),
 }
 
