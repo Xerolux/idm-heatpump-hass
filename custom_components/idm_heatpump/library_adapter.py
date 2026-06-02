@@ -29,7 +29,13 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTemperature
+from homeassistant.const import (
+    PERCENTAGE,
+    UnitOfEnergy,
+    UnitOfPower,
+    UnitOfTemperature,
+    UnitOfVolumeFlowRate,
+)
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import (
@@ -69,6 +75,8 @@ _UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
     "kW": (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
     UnitOfTemperature.CELSIUS: (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
     "°C": (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
+    UnitOfVolumeFlowRate.LITERS_PER_MINUTE: (SensorDeviceClass.VOLUME_FLOW_RATE, SensorStateClass.MEASUREMENT),
+    "L/min": (SensorDeviceClass.VOLUME_FLOW_RATE, SensorStateClass.MEASUREMENT),
 }
 
 # Maps device_class to the correct state_class.
@@ -78,6 +86,7 @@ _DC_STATE_CLASS_MAP: dict[SensorDeviceClass, SensorStateClass] = {
     SensorDeviceClass.TEMPERATURE: SensorStateClass.MEASUREMENT,
     SensorDeviceClass.HUMIDITY: SensorStateClass.MEASUREMENT,
     SensorDeviceClass.BATTERY: SensorStateClass.MEASUREMENT,
+    SensorDeviceClass.VOLUME_FLOW_RATE: SensorStateClass.MEASUREMENT,
 }
 
 
