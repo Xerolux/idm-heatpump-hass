@@ -8,6 +8,7 @@ from custom_components.idm_heatpump.entity import IdmEntity
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
 from custom_components.idm_heatpump.const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
+from custom_components.idm_heatpump.coordinator import IdmCoordinator
 
 
 def _make_register(name="temp", address=100):
@@ -20,7 +21,7 @@ def _make_register(name="temp", address=100):
 
 
 def _make_coordinator(hide_unused=True, data=None, last_update_success=True):
-    coord = MagicMock()
+    coord = MagicMock(spec=IdmCoordinator)
     coord.hide_unused = hide_unused
     coord.data = data if data is not None else {}
     coord.last_update_success = last_update_success
@@ -30,6 +31,24 @@ def _make_coordinator(hide_unused=True, data=None, last_update_success=True):
     coord.config_entry = MagicMock()
     coord.config_entry.entry_id = "test_entry_id"
     coord.config_entry.title = "IDM Test"
+
+    def _is_unused(register_name, value):
+        if not hide_unused:
+            return False
+        if value is None:
+            return True
+        if isinstance(value, (int, float)):
+            if abs(value - UNUSED_VALUE) < 0.01:
+                return True
+            if value == 65535 or value == 255:
+                return True
+            if value == -32768:
+                return True
+            if isinstance(value, float) and (value != value or abs(value) == float("inf")):
+                return True
+        return False
+
+    coord.is_register_unused = MagicMock(side_effect=_is_unused)
     return coord
 
 
@@ -177,3 +196,28 @@ class TestIdmEntityAvailable:
         entity = _make_entity(coordinator=coord, reg=_make_register("temp"))
         # Empty dict – key "temp" is not in it
         assert entity.available is False
+
+    def test_unavailable_when_value_is_65535(self):
+        coord = _make_coordinator(data={"sensor": 65535}, last_update_success=True, hide_unused=True)
+        entity = _make_entity(coordinator=coord, reg=_make_register("sensor"))
+        assert entity.available is False
+
+    def test_unavailable_when_value_is_255(self):
+        coord = _make_coordinator(data={"sensor": 255}, last_update_success=True, hide_unused=True)
+        entity = _make_entity(coordinator=coord, reg=_make_register("sensor"))
+        assert entity.available is False
+
+    def test_unavailable_when_value_is_minus_32768(self):
+        coord = _make_coordinator(data={"sensor": -32768}, last_update_success=True, hide_unused=True)
+        entity = _make_entity(coordinator=coord, reg=_make_register("sensor"))
+        assert entity.available is False
+
+    def test_available_when_hide_unused_false_and_65535(self):
+        coord = _make_coordinator(data={"sensor": 65535}, last_update_success=True, hide_unused=False)
+        entity = _make_entity(coordinator=coord, reg=_make_register("sensor"))
+        assert entity.available is True
+
+    def test_normal_positive_value_available(self):
+        coord = _make_coordinator(data={"sensor": 42.5}, last_update_success=True, hide_unused=True)
+        entity = _make_entity(coordinator=coord, reg=_make_register("sensor"))
+        assert entity.available is True

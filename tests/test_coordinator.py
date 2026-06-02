@@ -111,6 +111,30 @@ class TestIsRegisterUnused:
         # UNUSED_VALUE is -1.0
         assert coord.is_register_unused("x", -1.0) is True
 
+    def test_65535_is_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("x", 65535) is True
+
+    def test_255_is_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("x", 255) is True
+
+    def test_minus_32768_is_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("x", -32768) is True
+
+    def test_nan_is_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("x", float("nan")) is True
+
+    def test_inf_is_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("x", float("inf")) is True
+
+    def test_normal_int_is_not_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("x", 42) is False
+
 
 class TestAsyncUpdateData:
     async def test_successful_update(self, mock_hass, mock_config_entry):

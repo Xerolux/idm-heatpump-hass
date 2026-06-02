@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import RegisterDef
 
-from .const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
+from .const import DOMAIN, MANUFACTURER, MODEL
 from .coordinator import IdmCoordinator
 
 
@@ -45,8 +45,7 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
             return False
         if not self.coordinator.data or self._register.name not in self.coordinator.data:
             return False
-        if self.coordinator.hide_unused:
-            value = self.coordinator.data.get(self._register.name)
-            if isinstance(value, (int, float)) and abs(value - UNUSED_VALUE) < 0.01:
-                return False
+        value = self.coordinator.data.get(self._register.name)
+        if self.coordinator.is_register_unused(self._register.name, value):
+            return False
         return True
