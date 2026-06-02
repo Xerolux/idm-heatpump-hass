@@ -480,7 +480,7 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
         if "heat_sink" in name_lower or "wärmesenke" in name_lower:
             return "mdi:heat-pump"
         return "mdi:thermometer"
-    if "humidity" in name_lower or "%rF" in (unit or ""):
+    if "humidity" in name_lower or "feuchte" in name_lower:
         return "mdi:water-percent"
 
     # Leistung & Energie
