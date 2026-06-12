@@ -2,7 +2,6 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 
 from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpConfigFlow,
@@ -17,8 +16,6 @@ from custom_components.idm_heatpump.const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONF_TECHNICIAN_CODES,
-    DEFAULT_SCAN_INTERVAL,
-    DEFAULT_HIDE_UNUSED,
 )
 
 

@@ -1,6 +1,5 @@
 """Tests for constants and enums in const.py."""
 
-import pytest
 
 from custom_components.idm_heatpump.const import (
     DOMAIN,

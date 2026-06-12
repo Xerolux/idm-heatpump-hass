@@ -13,7 +13,6 @@ from custom_components.idm_heatpump.services import (
     _handle_acknowledge_errors,
     _handle_write_register,
 )
-from custom_components.idm_heatpump.const import DOMAIN
 
 
 def _make_coordinator_in_hass(mock_hass, entry_id: str = "entry-1"):
@@ -285,7 +284,7 @@ class TestWriteRegister:
             await _handle_write_register(mock_hass, call)
 
     async def test_returns_value_in_result(self, mock_hass):
-        coord = _make_coordinator_in_hass(mock_hass)
+        _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
         call.data = {"address": 2000, "value": "100", "acknowledge_risk": True}
         result = await _handle_write_register(mock_hass, call)
@@ -293,7 +292,7 @@ class TestWriteRegister:
         assert result["address"] == 2000
 
     async def test_non_numeric_string_passes_as_is(self, mock_hass):
-        coord = _make_coordinator_in_hass(mock_hass)
+        _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
         call.data = {"address": 1000, "value": "not_a_number", "acknowledge_risk": True}
         result = await _handle_write_register(mock_hass, call)
@@ -311,7 +310,7 @@ class TestWriteRegister:
         ("bool", "BOOL"),
     ])
     async def test_all_valid_datatypes(self, mock_hass, datatype_str, expected_type):
-        coord = _make_coordinator_in_hass(mock_hass)
+        _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
         call.data = {
             "address": 1000,
@@ -335,7 +334,7 @@ class TestWriteRegister:
             await _handle_write_register(mock_hass, call)
 
     async def test_default_datatype_is_uint16(self, mock_hass):
-        coord = _make_coordinator_in_hass(mock_hass)
+        _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
         # Use a MagicMock that supports .get() naturally
         data = MagicMock()

@@ -8,25 +8,15 @@ from __future__ import annotations
 import asyncio
 import logging
 import sys
-import struct
-import math
 
 from idm_heatpump import (
     DataType,
     IdmModbusClient,
     RegisterDef,
     build_register_map,
-    get_all_registers,
-    get_detection_registers,
     get_heating_circuit_registers,
-    get_zone_module_registers,
 )
 from idm_heatpump.client import RegisterType
-from idm_heatpump.const import (
-    HEATING_CIRCUIT_LETTERS,
-    MAX_HEATING_CIRCUITS,
-    MAX_ZONE_MODULES,
-)
 
 logging.basicConfig(
     level=logging.DEBUG,
