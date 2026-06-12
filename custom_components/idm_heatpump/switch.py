@@ -42,6 +42,8 @@ async def async_setup_entry(
 class IdmSwitch(IdmEntity, SwitchEntity):
     @property
     def is_on(self) -> bool:
+        if not self.coordinator.data:
+            return False
         value = self.coordinator.data.get(self._register.name)
         return bool(value) if value is not None else False
 
