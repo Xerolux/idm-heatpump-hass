@@ -460,6 +460,25 @@ class TestIdmNumber:
         with pytest.raises(HomeAssistantError):
             await num.async_set_native_value(55.0)
 
+    def test_glt_measurement_number_gets_unique_id_suffix(self):
+        # GLT-Messwerte existieren zusätzlich als Sensor — die Number braucht
+        # ein "_set"-Suffix, damit die unique_ids nicht kollidieren.
+        from custom_components.idm_heatpump.number import IdmNumber
+
+        coord = _make_coordinator(data={"pv_surplus": 1.5})
+        reg = _make_register("pv_surplus", writable=True)
+        num = IdmNumber(coord, reg, _make_desc("pv_surplus"))
+        assert num._attr_unique_id.endswith("pv_surplus_set")
+
+    def test_regular_number_keeps_unique_id(self):
+        from custom_components.idm_heatpump.number import IdmNumber
+
+        coord = _make_coordinator(data={"dhw_target": 48.0})
+        reg = _make_register("dhw_target", writable=True)
+        num = IdmNumber(coord, reg, _make_desc("dhw_target"))
+        assert num._attr_unique_id.endswith("dhw_target")
+        assert not num._attr_unique_id.endswith("_set")
+
 
 class TestNumberAsyncSetupEntry:
     async def test_creates_entities(self):

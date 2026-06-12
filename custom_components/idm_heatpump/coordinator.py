@@ -18,7 +18,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from idm_heatpump import IdmModbusClient, RegisterDef
 
-from .const import DOMAIN, UNUSED_VALUE
+from .const import DOMAIN, NEGATIVE_ONE_VALID_REGISTERS, UNUSED_VALUE
 from .registers import collect_all_registers, collect_alias_map
 
 _LOGGER = logging.getLogger(__name__)
@@ -112,7 +112,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if value is None:
             return True
         if isinstance(value, (int, float)):
-            if abs(value - UNUSED_VALUE) < 0.01:
+            # Pumpenstatus: -1 bedeutet "Aus" — nur den Unused-Check überspringen,
+            # alle übrigen Sentinel-Prüfungen bleiben aktiv.
+            if register_name not in NEGATIVE_ONE_VALID_REGISTERS and abs(value - UNUSED_VALUE) < 0.01:
                 return True
             if value == 65535 or value == 255:
                 return True

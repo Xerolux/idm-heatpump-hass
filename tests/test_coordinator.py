@@ -135,6 +135,36 @@ class TestIsRegisterUnused:
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("x", 42) is False
 
+    def test_pump_status_negative_one_means_off(self, mock_hass, mock_config_entry):
+        # Bei Pumpen-Statusregistern bedeutet -1 laut iDM-Doku "Aus" — gültig.
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        for name in (
+            "charging_pump_status",
+            "brine_pump_status",
+            "heat_source_pump_status",
+            "isc_cold_storage_pump_status",
+            "isc_recooling_pump_status",
+            "heat_sink_charging_pump_signal",
+            "booster_a_source_pump",
+            "booster_a_charging_pump",
+            "booster_b_source_pump",
+            "booster_b_charging_pump",
+        ):
+            assert coord.is_register_unused(name, -1) is False, name
+            assert coord.is_register_unused(name, -1.0) is False, name
+            assert coord.is_register_unused(name, 50) is False, name
+
+    def test_pump_status_real_sentinels_still_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("charging_pump_status", -32768) is True
+        assert coord.is_register_unused("charging_pump_status", float("nan")) is True
+        assert coord.is_register_unused("charging_pump_status", None) is True
+
+    def test_battery_soc_negative_one_is_unused(self, mock_hass, mock_config_entry):
+        # battery_soc: -1 bedeutet "nicht verfügbar" → weiterhin unused.
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("battery_soc", -1) is True
+
 
 class TestAsyncUpdateData:
     async def test_successful_update(self, mock_hass, mock_config_entry):

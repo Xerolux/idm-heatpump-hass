@@ -130,6 +130,69 @@ class TestZoneAddresses:
         assert len(room_temps) > 0
 
 
+class TestGltDualExposure:
+    """GLT-Messwerte (Library 0.3.2): beschreibbare Messwert-Register
+    erscheinen sowohl als Sensor als auch als Number (Vorgabe)."""
+
+    PV_BLOCK = [
+        "pv_surplus",
+        "pv_production",
+        "house_consumption",
+        "battery_discharge",
+        "battery_soc",
+        "electric_heater_power",
+    ]
+
+    def test_pv_block_dual_exposed(self):
+        sensor_names = {
+            d["register"].name for d in get_all_sensor_descriptions(["a"], 0, {})
+        }
+        number_names = {
+            d["register"].name for d in get_all_number_descriptions(["a"], 0, {})
+        }
+        for name in self.PV_BLOCK:
+            assert name in sensor_names, f"{name} fehlt als Sensor"
+            assert name in number_names, f"{name} fehlt als Number"
+
+    def test_zone_room_measurements_dual_exposed(self):
+        sensor_names = {
+            d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 2})
+        }
+        number_names = {
+            d["register"].name for d in get_all_number_descriptions(["a"], 1, {0: 2})
+        }
+        for name in ("zm1_room1_temp", "zm1_room1_humidity"):
+            assert name in sensor_names, f"{name} fehlt als Sensor"
+            assert name in number_names, f"{name} fehlt als Number"
+
+    def test_setpoints_are_number_only(self):
+        sensor_names = {
+            d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 2})
+        }
+        number_names = {
+            d["register"].name for d in get_all_number_descriptions(["a"], 1, {0: 2})
+        }
+        for name in ("pv_target_value", "zm1_room1_setpoint"):
+            assert name not in sensor_names, f"{name} sollte kein Sensor sein"
+            assert name in number_names, f"{name} fehlt als Number"
+
+    def test_dual_number_names_are_marked_as_vorgabe(self):
+        numbers = get_all_number_descriptions(["a"], 0, {})
+        for d in numbers:
+            if d["register"].name in self.PV_BLOCK:
+                assert d["description"].name.endswith("(Vorgabe)"), (
+                    f"Number {d['register'].name} braucht den Suffix '(Vorgabe)': "
+                    f"{d['description'].name}"
+                )
+
+    def test_register_changes_from_doc_update(self):
+        names = {r.name for r in collect_all_registers(["a"], 0, {})}
+        assert "ext_demand_brine_pump_m16" not in names
+        assert "ext_demand_groundwater_pump_m15_sw_max" in names
+        assert "variable_input" in names
+        assert "pv_target_value" in names
+
+
 class TestRegisterIntegrity:
     """Validate structural integrity of all register definitions."""
 

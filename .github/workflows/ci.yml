@@ -34,13 +34,18 @@ jobs:
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install homeassistant==${{ matrix.home-assistant-version }}
-          pip install aiohttp>=3.8.0
+          pip install "aiohttp>=3.8.0"
 
       - name: Install dev dependencies
         run: |
           pip install ruff mypy pytest pytest-cov pytest-asyncio
-          pip install pytest-homeassistant-custom-component>=0.13.317
-          pip install idm-heatpump-api>=0.3.1
+          # Kein Versions-Pin: Releases >=0.13.317 verlangen Python >=3.14,
+          # die Matrix testet aber auch 3.13 — pip wählt die passende Version.
+          pip install pytest-homeassistant-custom-component
+          # idm-heatpump-api 0.3.2 ist noch nicht auf PyPI — bis zum Release
+          # Fallback auf den 0.3.2-Stand im Library-Repo (Commit-Pin).
+          # TODO: Fallback entfernen, sobald 0.3.2 auf PyPI veröffentlicht ist.
+          pip install "idm-heatpump-api>=0.3.2" || pip install "idm-heatpump-api @ git+https://github.com/Xerolux/idm-heatpump-api.git@9f091ebaa2a072bbc010428bc946b2f55ac39abd"
 
       - name: Lint with Ruff
         run: |
