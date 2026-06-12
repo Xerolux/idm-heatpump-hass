@@ -40,6 +40,8 @@ async def async_setup_entry(
 class IdmNumber(IdmEntity, NumberEntity):
     @property
     def native_value(self) -> float | None:
+        if not self.coordinator.data:
+            return None
         value = self.coordinator.data.get(self._register.name)
         return float(value) if value is not None else None
 
