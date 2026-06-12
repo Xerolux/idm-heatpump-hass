@@ -36,6 +36,23 @@ DEFAULT_ENABLE_CASCADE: bool = False
 
 UNUSED_VALUE: float = -1.0
 
+# Pumpen-Statusregister (INT16, %), bei denen -1 laut iDM-Doku "Aus" bedeutet.
+# Für diese Register ist -1 ein gültiger Wert und NICHT der Unused-Sentinel.
+NEGATIVE_ONE_VALID_REGISTERS: frozenset[str] = frozenset(
+    {
+        "heat_sink_charging_pump_signal",
+        "charging_pump_status",
+        "brine_pump_status",
+        "heat_source_pump_status",
+        "isc_cold_storage_pump_status",
+        "isc_recooling_pump_status",
+        "booster_a_source_pump",
+        "booster_a_charging_pump",
+        "booster_b_source_pump",
+        "booster_b_charging_pump",
+    }
+)
+
 MAX_ZONE_COUNT: int = 10
 MAX_ROOM_COUNT: int = 8
 HEATING_CIRCUITS: list[str] = ["a", "b", "c", "d", "e", "f", "g"]
