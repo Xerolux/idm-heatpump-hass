@@ -2,7 +2,6 @@
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import pytest
 
 from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpConfigFlow,
@@ -17,8 +16,6 @@ from custom_components.idm_heatpump.const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONF_TECHNICIAN_CODES,
-    DEFAULT_SCAN_INTERVAL,
-    DEFAULT_HIDE_UNUSED,
 )
 
 
@@ -287,6 +284,37 @@ class TestTestConnection:
                 "slave_id": 1,
             })
         assert result is False
+
+    async def test_disconnects_after_success(self):
+        flow = _make_flow()
+        mock_client = AsyncMock()
+        mock_client.is_connected = True
+        mock_client.probe_register = AsyncMock(return_value=[0, 0])
+        with patch(
+            "idm_heatpump.IdmModbusClient",
+            return_value=mock_client,
+        ):
+            await flow._test_connection({
+                "host": "192.168.1.100",
+                "port": 502,
+                "slave_id": 1,
+            })
+        mock_client.disconnect.assert_awaited_once()
+
+    async def test_disconnects_after_exception(self):
+        flow = _make_flow()
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock(side_effect=Exception("connection refused"))
+        with patch(
+            "idm_heatpump.IdmModbusClient",
+            return_value=mock_client,
+        ):
+            await flow._test_connection({
+                "host": "192.168.1.100",
+                "port": 502,
+                "slave_id": 1,
+            })
+        mock_client.disconnect.assert_awaited_once()
 
 
 class TestOptionsFlow:

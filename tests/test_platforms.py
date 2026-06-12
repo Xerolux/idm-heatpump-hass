@@ -6,7 +6,6 @@ import pytest
 
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
-from custom_components.idm_heatpump.const import DOMAIN, UNUSED_VALUE
 
 
 def _make_register(name="temp", address=100, writable=False, enum_options=None, datatype=DataType.FLOAT):
@@ -362,6 +361,14 @@ class TestIdmBinarySensor:
         sensor = IdmBinarySensor(coord, reg, _make_desc("fault"))
         assert sensor.is_on is False
 
+    def test_is_on_false_when_data_is_none(self):
+        from custom_components.idm_heatpump.binary_sensor import IdmBinarySensor
+
+        coord = _make_coordinator(data=None)
+        reg = _make_register("fault")
+        sensor = IdmBinarySensor(coord, reg, _make_desc("fault"))
+        assert sensor.is_on is False
+
 
 class TestBinarySensorAsyncSetupEntry:
     async def test_creates_entities(self):
@@ -407,6 +414,14 @@ class TestIdmNumber:
         reg = _make_register("dhw_target", writable=True)
         num = IdmNumber(coord, reg, _make_desc("dhw_target"))
         assert num.native_value == 48.0
+
+    def test_native_value_none_when_data_is_none(self):
+        from custom_components.idm_heatpump.number import IdmNumber
+
+        coord = _make_coordinator(data=None)
+        reg = _make_register("dhw_target", writable=True)
+        num = IdmNumber(coord, reg, _make_desc("dhw_target"))
+        assert num.native_value is None
 
     def test_native_value_none_when_missing(self):
         from custom_components.idm_heatpump.number import IdmNumber
@@ -610,6 +625,14 @@ class TestIdmSwitch:
         from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator(data={})
+        reg = _make_register("heating_request", writable=True)
+        sw = IdmSwitch(coord, reg, _make_desc("heating_request"))
+        assert sw.is_on is False
+
+    def test_is_on_false_when_data_is_none(self):
+        from custom_components.idm_heatpump.switch import IdmSwitch
+
+        coord = _make_coordinator(data=None)
         reg = _make_register("heating_request", writable=True)
         sw = IdmSwitch(coord, reg, _make_desc("heating_request"))
         assert sw.is_on is False

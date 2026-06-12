@@ -2,7 +2,6 @@
 
 from unittest.mock import MagicMock
 
-import pytest
 
 from custom_components.idm_heatpump.entity import IdmEntity
 from idm_heatpump import RegisterDef
@@ -123,7 +122,6 @@ class TestIdmEntityAvailable:
 
         # Patch the super().available call via the parent class
         from homeassistant.helpers.update_coordinator import CoordinatorEntity
-        original_available = CoordinatorEntity.available.fget
 
         import unittest.mock as mock
         with mock.patch.object(

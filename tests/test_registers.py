@@ -1,6 +1,5 @@
 """Tests for register definitions and description builders."""
 
-import pytest
 
 from custom_components.idm_heatpump.registers import (
     collect_all_registers,

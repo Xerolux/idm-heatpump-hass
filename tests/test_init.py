@@ -1,7 +1,5 @@
 """Tests for __init__.py (async_setup, async_setup_entry, async_unload_entry)."""
 
-from dataclasses import dataclass
-from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -13,7 +11,6 @@ from custom_components.idm_heatpump import (
     async_unload_entry,
     async_reload_entry,
 )
-from custom_components.idm_heatpump.const import DOMAIN
 
 
 class TestIdmHeatpumpData:
@@ -31,16 +28,6 @@ class TestIdmHeatpumpData:
 
 class TestAsyncSetup:
     async def test_calls_setup_services(self, mock_hass):
-        with patch(
-            "custom_components.idm_heatpump.services.async_setup_services",
-            new_callable=lambda: lambda: AsyncMock(return_value=None),
-        ) as mock_setup:
-            with patch(
-                "custom_components.idm_heatpump.async_setup.__wrapped__",
-                create=True,
-            ):
-                pass
-        # Simpler: patch the import inside async_setup
         mock_setup_services = AsyncMock()
         with patch(
             "custom_components.idm_heatpump.services.async_setup_services",
@@ -333,7 +320,6 @@ class TestAsyncSetupEntryOptions:
 
     async def test_coordinator_first_refresh_failure_raises_not_ready(self, mock_hass):
         """If coordinator.async_config_entry_first_refresh() fails, ConfigEntryNotReady is raised."""
-        from homeassistant.exceptions import ConfigEntryNotReady
 
         entry = self._make_entry()
         mock_client = AsyncMock()
