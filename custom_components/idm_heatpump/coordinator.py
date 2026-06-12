@@ -112,12 +112,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if value is None:
             return True
         if isinstance(value, (int, float)):
-            if register_name in NEGATIVE_ONE_VALID_REGISTERS:
-                # Pumpenstatus: -1 bedeutet "Aus" — nur echte Sentinels prüfen
-                if value == -32768:
-                    return True
-                return isinstance(value, float) and (value != value or abs(value) == float("inf"))
-            if abs(value - UNUSED_VALUE) < 0.01:
+            # Pumpenstatus: -1 bedeutet "Aus" — nur den Unused-Check überspringen,
+            # alle übrigen Sentinel-Prüfungen bleiben aktiv.
+            if register_name not in NEGATIVE_ONE_VALID_REGISTERS and abs(value - UNUSED_VALUE) < 0.01:
                 return True
             if value == 65535 or value == 255:
                 return True
