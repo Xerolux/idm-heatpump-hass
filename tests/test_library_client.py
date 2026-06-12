@@ -197,7 +197,7 @@ class TestReadRegister:
         tcp.connected = False
         tcp.read_input_registers.return_value = _mock_read_result([42])
         reg = _make_reg(1000, DataType.UCHAR)
-        with patch.object(client, "connect", new=AsyncMock()) as mock_connect:
+        with patch.object(client, "connect", new=AsyncMock()):
             tcp.connected = True
             client._client = tcp
             await client.read_register(reg)
@@ -421,7 +421,7 @@ class TestReadBatchGrouping:
         client, tcp = client_and_tcp
         tcp.read_input_registers.return_value = _mock_read_result([0] * 41)
         regs = [_make_reg(1000 + i, DataType.UCHAR, f"r{i}") for i in range(41)]
-        result = await client.read_batch(regs)
+        await client.read_batch(regs)
         # First group: 40, second group: 1 → two calls
         assert tcp.read_input_registers.call_count == 2
 
@@ -432,7 +432,7 @@ class TestReadBatchGrouping:
         low, high = struct.unpack("<HH", raw)
         tcp.read_input_registers.return_value = _mock_read_result([low, high] * 15)
         regs = [_make_reg(1000 + i * 2, DataType.FLOAT, f"f{i}") for i in range(15)]
-        result = await client.read_batch(regs)
+        await client.read_batch(regs)
         assert tcp.read_input_registers.call_count == 1
 
     async def test_twenty_one_float_registers_are_split_into_two_groups(self, client_and_tcp):

@@ -6,7 +6,6 @@ import pytest
 
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
-from custom_components.idm_heatpump.const import DOMAIN, UNUSED_VALUE
 
 
 def _make_register(name="temp", address=100, writable=False, enum_options=None, datatype=DataType.FLOAT):

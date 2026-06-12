@@ -6,3 +6,9 @@ htmlcov/
 # Test Home Assistant environment
 test_ha/
 .claude/
+
+# Tool output logs
+mypy.log
+mypy_errors.txt
+.ruff_cache/
+.mypy_cache/
