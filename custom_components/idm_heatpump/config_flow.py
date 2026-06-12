@@ -308,6 +308,11 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         except Exception as err:
             _LOGGER.debug("Connection test failed: %s", err)
             return False
+        finally:
+            try:
+                await client.disconnect()
+            except Exception:
+                _LOGGER.debug("Error closing connection test client", exc_info=True)
 
 
 class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
