@@ -16,6 +16,7 @@ adapter relatively thin.
 
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from homeassistant.components.number import (
@@ -89,6 +90,37 @@ _DC_STATE_CLASS_MAP: dict[SensorDeviceClass, SensorStateClass] = {
 
 
 # ============================================================
+# GLT-Messwert-Register: beschreibbare Register, die physikalische Messwerte
+# abbilden (PV-Block, Zonenraum-Temperatur/-Feuchte). Seit Library 0.3.2 sind
+# diese laut iDM-Doku per GLT beschreibbar. Sie werden doppelt exponiert:
+# als Sensor (Anzeige/Historie) UND als Number (externe Vorgabe).
+# ============================================================
+
+_GLT_MEASUREMENT_NAMES: frozenset[str] = frozenset(
+    {
+        "pv_surplus",
+        "pv_production",
+        "house_consumption",
+        "battery_discharge",
+        "battery_soc",
+        "electric_heater_power",
+    }
+)
+
+_ZONE_ROOM_MEASUREMENT_RE = re.compile(r"zm\d+_room\d+_(temp|humidity)$")
+
+
+def is_glt_measurement(name: str) -> bool:
+    """True, wenn ein beschreibbares Register einen Messwert abbildet (GLT-Eingabe).
+
+    Solche Register werden sowohl als Sensor als auch als Number angelegt.
+    Sollwerte (z.B. pv_target_value, Raum-Setpoints) zählen nicht dazu —
+    die bleiben reine Number-Entities.
+    """
+    return name in _GLT_MEASUREMENT_NAMES or _ZONE_ROOM_MEASUREMENT_RE.match(name) is not None
+
+
+# ============================================================
 # Deutsche Namen für wichtige Register (wird sukzessive erweitert)
 # ============================================================
 
@@ -132,6 +164,8 @@ _GERMAN_NAMES: dict[str, str] = {
     "battery_discharge": "Batterie Entladung",
     "battery_soc": "Batterie SOC",
     "electric_heater_power": "E-Heizstab Leistung",
+    "pv_target_value": "PV Zielwert",
+    "variable_input": "Variabler Eingang",
     "cascade_available_heating": "Kaskade verfügbar Heizen",
     "cascade_available_cooling": "Kaskade verfügbar Kühlen",
     "cascade_available_dhw": "Kaskade verfügbar Warmwasser",
@@ -294,7 +328,7 @@ _GERMAN_NAMES: dict[str, str] = {
     "groundwater_inlet_temp_2": "Grundwassereintrittstemperatur 2",
     # === GLT / Extern ===
     "ext_demand_groundwater_pump_m15": "Externe Anforderung Grundwasserpumpe M15",
-    "ext_demand_brine_pump_m16": "Externe Anforderung Solepumpe M16",
+    "ext_demand_groundwater_pump_m15_sw_max": "Externe Anforderung Grundwasserpumpe M15 (SW max)",
     "demand_onetime_dhw": "Einmalige WW-Anforderung",
     "power_consumption_hp_smartfox": "Elektrische Leistungsaufnahme Smartfox",
     # === Heizkreis A ===
@@ -419,10 +453,25 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
 }
 
 
+_ZONE_ROOM_NAME_RE = re.compile(r"zm(\d+)_room(\d+)_(temp|setpoint|humidity|mode|relay)$")
+
+_ZONE_ROOM_NAME_SUFFIX: dict[str, str] = {
+    "temp": "Raumtemperatur",
+    "setpoint": "Raumsolltemperatur",
+    "humidity": "Raumfeuchte",
+    "mode": "Raumbetriebsart",
+    "relay": "Relais",
+}
+
+
 def _get_german_name(name: str) -> str:
     """Liefert einen schönen deutschen Namen, falls bekannt, sonst eine formatierte Version."""
     if name in _GERMAN_NAMES:
         return _GERMAN_NAMES[name]
+    zone_match = _ZONE_ROOM_NAME_RE.match(name)
+    if zone_match:
+        zone, room, kind = zone_match.groups()
+        return f"Zone {zone} Raum {room} {_ZONE_ROOM_NAME_SUFFIX[kind]}"
     return name.replace("_", " ").title()
 
 
@@ -588,7 +637,7 @@ def get_library_sensors(
         if name in known_keys:
             continue  # already handled above
 
-        if reg.writable:
+        if reg.writable and not is_glt_measurement(name):
             continue
         if reg.write_only:
             continue
@@ -675,7 +724,7 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
 
     sensors = []
     for name, reg in zone_regs.items():
-        if reg.writable:
+        if reg.writable and not is_glt_measurement(name):
             continue
 
         z_dc, z_sc = _infer_dc_sc(name, reg.unit)
@@ -867,7 +916,7 @@ def get_library_readonly_sensors(
     sensors = []
 
     for name, reg in reg_map.items():
-        if reg.writable:
+        if reg.writable and not is_glt_measurement(name):
             continue
         if reg.write_only:
             continue
@@ -920,9 +969,15 @@ def get_library_numbers(
         min_val = meta.get("min", reg.min_val if reg.min_val is not None else -999)
         max_val = meta.get("max", reg.max_val if reg.max_val is not None else 999)
 
+        number_name = meta.get("name", _get_german_name(name))
+        if is_glt_measurement(name):
+            # Das Register existiert zusätzlich als Sensor — die Number ist die
+            # externe GLT-Vorgabe und braucht einen unterscheidbaren Namen.
+            number_name = f"{number_name} (Vorgabe)"
+
         desc = NumberEntityDescription(
             key=name,
-            name=meta.get("name", _get_german_name(name)),
+            name=number_name,
             native_min_value=min_val,
             native_max_value=max_val,
             native_step=meta.get("step", 0.5),
@@ -955,4 +1010,5 @@ __all__ = [
     "get_library_sensors",
     "get_library_numbers",
     "get_idm_client",
+    "is_glt_measurement",
 ]

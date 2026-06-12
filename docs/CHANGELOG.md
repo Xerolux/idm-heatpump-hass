@@ -10,6 +10,20 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.6.5] - 2026-06-12
+
+### Changed
+
+- Update auf `idm-heatpump-api >= 0.3.2` (Registerstand laut aktueller iDM Navigator Doku)
+- GLT-Messwert-Register (PV-Überschuss, PV-Produktion, Hausverbrauch, Batterie-Entladung, Batterie-SOC, E-Heizstab-Leistung sowie Zonenraum-Temperatur und -Feuchte) sind jetzt beschreibbar und werden doppelt angelegt: als Sensor (Anzeige/Historie, bestehende Entity-IDs bleiben erhalten) und als Number „… (Vorgabe)" für die externe GLT-Eingabe
+- Neue Register: `pv_target_value` (PV Zielwert, 88), `variable_input` (Variabler Eingang, 1006), `ext_demand_groundwater_pump_m15_sw_max` (1715)
+- Entfernt: `ext_demand_brine_pump_m16` (in aktueller Doku nicht mehr vorhanden)
+
+### Fixed
+
+- Pumpen-Statusregister (M73, M15, Sole-/Zwischenkreis, ISC, Booster): −1 bedeutet laut Doku „Aus" und wird nicht mehr fälschlich als „unbenutzt" (Entity unavailable) interpretiert
+- `battery_soc` −1 („nicht verfügbar") wird weiterhin korrekt als unbenutzt erkannt
+
 ## [0.6.4] - 2026-06-02
 
 ## v0.6.4 - IDM Heatpump

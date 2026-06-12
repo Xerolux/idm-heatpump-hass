@@ -9,15 +9,18 @@ from __future__ import annotations
 
 import logging
 
-from homeassistant.components.number import NumberEntity
+from homeassistant.components.number import NumberEntity, NumberEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from idm_heatpump import RegisterDef
+
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
+from .library_adapter import is_glt_measurement
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -38,6 +41,18 @@ async def async_setup_entry(
 
 
 class IdmNumber(IdmEntity, NumberEntity):
+    def __init__(
+        self,
+        coordinator: IdmCoordinator,
+        reg: RegisterDef,
+        entity_desc: NumberEntityDescription,
+    ) -> None:
+        super().__init__(coordinator, reg, entity_desc)
+        if is_glt_measurement(self._register.name):
+            # GLT-Messwerte existieren zusätzlich als Sensor mit derselben
+            # unique_id-Basis — die Number (Vorgabe) braucht ein Suffix.
+            self._attr_unique_id = f"{self._attr_unique_id}_set"
+
     @property
     def native_value(self) -> float | None:
         if not self.coordinator.data:
