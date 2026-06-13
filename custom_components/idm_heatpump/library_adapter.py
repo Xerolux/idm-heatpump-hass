@@ -984,7 +984,11 @@ def get_library_selects(circuits: list[str] | None = None, zone_modules: int = 0
         if slug_map is not None:
             options = [v for k, v in slug_map.items() if k not in excluded]
         else:
-            options = [v for k, v in reg.enum_options.items() if k not in excluded] if excluded else list(reg.enum_options.values())
+            options = (
+                [v for k, v in reg.enum_options.items() if k not in excluded]
+                if excluded
+                else list(reg.enum_options.values())
+            )
 
         desc = SelectEntityDescription(
             key=name,
