@@ -20,6 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
+from .library_adapter import get_slug_map_and_key
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,9 +42,20 @@ async def async_setup_entry(
 
 
 class IdmSelect(IdmEntity, SelectEntity):
+    _enum_slug_map: dict[int, str] | None
+    _enum_slug_reverse: dict[str, int] | None
+
     def __init__(self, coordinator: IdmCoordinator, reg: Any, entity_desc: Any) -> None:
         super().__init__(coordinator, reg, entity_desc)
-        if reg.enum_options is not None:
+        slug_map, t_key = get_slug_map_and_key(reg.name)
+        self._enum_slug_map = slug_map
+        self._enum_slug_reverse = {v: k for k, v in slug_map.items()} if slug_map is not None else None
+
+        if slug_map is not None:
+            excluded: set[int] = set(getattr(reg, "exclude_from_write", None) or [])
+            self._attr_options = [v for k, v in slug_map.items() if k not in excluded]
+            self._attr_translation_key = t_key
+        elif reg.enum_options is not None:
             self._attr_options = list(reg.enum_options.values())
         else:
             self._attr_options = []
@@ -55,12 +67,18 @@ class IdmSelect(IdmEntity, SelectEntity):
         raw = self.coordinator.data.get(self._register.name)
         if raw is None:
             return None
+        if self._enum_slug_map is not None:
+            return self._enum_slug_map.get(int(raw))
         options = self._register.enum_options
         if options is None:
             return None
         return options.get(int(raw))
 
     def _option_to_value(self, option: str) -> int:
+        if self._enum_slug_reverse is not None:
+            if option not in self._enum_slug_reverse:
+                raise ValueError(f"Unknown option: {option}")
+            return self._enum_slug_reverse[option]
         options = self._register.enum_options
         if options is None:
             raise ValueError(f"No options defined: {option}")
