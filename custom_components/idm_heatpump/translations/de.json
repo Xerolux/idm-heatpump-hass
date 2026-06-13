@@ -142,6 +142,71 @@
       }
     }
   },
+  "entity": {
+    "select": {
+      "system_mode": {
+        "state": {
+          "standby": "Standby",
+          "automatic": "Automatik",
+          "absent": "Abwesend",
+          "holiday": "Urlaub",
+          "hot_water_only": "Nur Warmwasser",
+          "heating_cooling_only": "Nur Heizung/Kühlung"
+        }
+      },
+      "circuit_mode": {
+        "state": {
+          "off": "Aus",
+          "timed_program": "Zeitprogramm",
+          "normal": "Normal",
+          "eco": "Eco",
+          "manual_heating": "Manuell Heizen",
+          "manual_cooling": "Manuell Kühlen",
+          "not_configured": "Nicht konfiguriert"
+        }
+      },
+      "room_mode": {
+        "state": {
+          "off": "Aus",
+          "automatic": "Automatik",
+          "eco": "Eco",
+          "normal": "Normal",
+          "comfort": "Komfort"
+        }
+      },
+      "solar_mode": {
+        "state": {
+          "automatic": "Automatik",
+          "hot_water": "Warmwasser",
+          "heating": "Heizung",
+          "hot_water_and_heating": "Warmwasser + Heizung",
+          "heat_source_pool": "Wärmequelle/Pool"
+        }
+      }
+    },
+    "sensor": {
+      "circuit_mode": {
+        "state": {
+          "off": "Aus",
+          "timed_program": "Zeitprogramm",
+          "normal": "Normal",
+          "eco": "Eco",
+          "manual_heating": "Manuell Heizen",
+          "manual_cooling": "Manuell Kühlen",
+          "not_configured": "Nicht konfiguriert"
+        }
+      },
+      "room_mode": {
+        "state": {
+          "off": "Aus",
+          "automatic": "Automatik",
+          "eco": "Eco",
+          "normal": "Normal",
+          "comfort": "Komfort"
+        }
+      }
+    }
+  },
   "selector": {
     "heating_circuit": {
       "options": {

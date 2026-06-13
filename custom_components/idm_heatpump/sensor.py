@@ -24,6 +24,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER, MODEL
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
+from .library_adapter import get_bitflag_de_labels, get_slug_map_and_key
 from .technician_codes import calculate_codes
 
 
@@ -71,7 +72,11 @@ class IdmSensor(IdmEntity, SensorEntity):
             return None
         if self._register.enum_options:
             if self._register.datatype == DataType.BITFLAG:
-                return _decode_bitflag(int(value), self._register.enum_options)
+                de_labels = get_bitflag_de_labels(self._register.name)
+                return _decode_bitflag(int(value), de_labels or self._register.enum_options)
+            slug_map, _ = get_slug_map_and_key(self._register.name)
+            if slug_map is not None:
+                return slug_map.get(int(value))
             return self._register.enum_options.get(value, f"Unbekannt ({value})")
         return value
 
