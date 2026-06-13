@@ -10,6 +10,16 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.6.7] - 2026-06-13
+
+### Fixed
+
+- Service-Handler (`set_system_mode`, `acknowledge_errors`, `write_register`) funktionierten nie: Handler waren mit `(hass, call)` signiert, wurden aber ohne `hass` aufgerufen. Fix via `functools.partial` beim Registrieren. (Gemeldet & Patch von @ascha191, #33)
+
+### Changed
+
+- Abhängigkeit auf `idm-heatpump-api >= 0.3.2` (PV-Überschuss-Register 74/76/78/82/84/86 jetzt korrekt als beschreibbar markiert, passend zur iDM-Doku 812170 Rev. 10 Kap. 4.3.9)
+
 ## [0.6.5] - 2026-06-12
 
 ### Changed
