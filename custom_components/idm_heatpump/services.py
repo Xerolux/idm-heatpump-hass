@@ -10,6 +10,7 @@ from __future__ import annotations
 import logging
 from functools import partial
 from collections.abc import Mapping
+from functools import partial
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import (
