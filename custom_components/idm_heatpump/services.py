@@ -8,7 +8,6 @@ from __future__ import annotations
 # Lizenz: MIT
 
 import logging
-from functools import partial
 from collections.abc import Mapping
 from functools import partial
 
