@@ -2,8 +2,10 @@
 
 import asyncio
 import sys
+from dataclasses import dataclass, field
 from enum import Enum
 from types import ModuleType
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -515,6 +517,8 @@ def _stub_homeassistant() -> None:
         mod.SensorDeviceClass.POWER = "power"
         mod.SensorDeviceClass.ENERGY = "energy"
         mod.SensorDeviceClass.HUMIDITY = "humidity"
+        mod.SensorDeviceClass.ENUM = "enum"
+        mod.SensorDeviceClass.VOLUME_FLOW_RATE = "volume_flow_rate"
         mod.SensorStateClass = MagicMock()
         mod.SensorStateClass.MEASUREMENT = "measurement"
         mod.SensorStateClass.TOTAL_INCREASING = "total_increasing"
@@ -559,6 +563,184 @@ def _stub_homeassistant() -> None:
 
 
 _stub_homeassistant()
+
+
+# ---------------------------------------------------------------------------
+# Stub idm_heatpump library (only when real library is not installed)
+# ---------------------------------------------------------------------------
+
+def _stub_idm_heatpump() -> None:
+    """Stub for idm_heatpump library when the real package is not available."""
+    try:
+        import idm_heatpump  # noqa: F401
+        return  # Real library installed — don't override
+    except ImportError:
+        pass
+
+    class DataType(Enum):
+        FLOAT = "FLOAT"
+        UCHAR = "UCHAR"
+        INT8 = "INT8"
+        INT16 = "INT16"
+        UINT16 = "UINT16"
+        BOOL = "BOOL"
+        BITFLAG = "BITFLAG"
+
+    @dataclass
+    class RegisterDef:
+        address: int
+        datatype: DataType
+        name: str
+        unit: str | None = None
+        multiplier: float = 1.0
+        enum_options: dict[int, str] | None = None
+        writable: bool = False
+        binary: bool = False
+        write_only: bool = False
+        exclude_from_write: set[int] | None = None
+        icon: str | None = None
+        min_val: float | None = None
+        max_val: float | None = None
+        enabled_by_default: bool = True
+        state_class: Any = None
+
+        @property
+        def size(self) -> int:
+            return 2 if self.datatype == DataType.FLOAT else 1
+
+    class IdmModbusClient:
+        def __init__(self, host: str = "", port: int = 502, slave_id: int = 1) -> None:
+            self.host = host
+            self.port = port
+            self.slave_id = slave_id
+
+        async def connect(self) -> None: pass
+        async def disconnect(self) -> None: pass
+        async def read_batch(self, regs: Any) -> dict[str, Any]: return {}
+        async def write_register(self, reg: Any, value: Any) -> None: pass
+
+    _SYS_MODE = {0: "Standby", 1: "Automatic", 2: "Absent", 4: "Hot Water Only", 5: "Heating/Cooling Only"}
+    _CIRCUIT_MODE = {0: "Off", 1: "Time Program", 2: "Normal", 3: "Eco", 4: "Manual Heat", 5: "Manual Cool", 255: "Not Configured"}
+    _ROOM_MODE = {0: "Off", 1: "Automatic", 2: "Eco", 3: "Normal", 4: "Comfort"}
+    _SOLAR_MODE = {0: "Automatic", 1: "Hot Water", 2: "Heating", 3: "Hot Water + Heating", 4: "Source/Pool"}
+    _HP_STATUS = {0: "Off", 1: "Heating", 2: "Cooling", 4: "DHW", 8: "Defrost"}
+
+    _BASE: list[RegisterDef] = [
+        RegisterDef(1000, DataType.FLOAT, "outdoor_temp", unit="°C"),
+        RegisterDef(1002, DataType.FLOAT, "outdoor_temp_avg", unit="°C"),
+        RegisterDef(1005, DataType.UCHAR, "system_mode", writable=True, enum_options=_SYS_MODE),
+        RegisterDef(1006, DataType.UCHAR, "smart_grid_status"),
+        RegisterDef(1008, DataType.FLOAT, "storage_temp", unit="°C"),
+        RegisterDef(1010, DataType.FLOAT, "cold_storage_temp", unit="°C"),
+        RegisterDef(1012, DataType.FLOAT, "dhw_temp_bottom", unit="°C"),
+        RegisterDef(1014, DataType.FLOAT, "dhw_temp_top", unit="°C"),
+        RegisterDef(1050, DataType.FLOAT, "hp_flow_temp", unit="°C"),
+        RegisterDef(1052, DataType.FLOAT, "hp_return_temp", unit="°C"),
+        RegisterDef(1068, DataType.FLOAT, "heat_sink_return_temp", unit="°C"),
+        RegisterDef(1070, DataType.FLOAT, "heat_sink_flow_temp", unit="°C"),
+        RegisterDef(1072, DataType.UCHAR, "heat_sink_flow_rate", unit="L/min"),
+        RegisterDef(1074, DataType.INT16, "heat_sink_charging_pump_signal", unit="%"),
+        RegisterDef(1090, DataType.BITFLAG, "hp_operating_mode", enum_options=_HP_STATUS),
+        RegisterDef(1098, DataType.BOOL, "evu_lock", binary=True),
+        RegisterDef(1099, DataType.BOOL, "hp_sum_alarm", binary=True),
+        RegisterDef(1250, DataType.FLOAT, "dhw_setpoint", unit="°C", writable=True, min_val=45.0, max_val=65.0),
+        RegisterDef(1300, DataType.FLOAT, "bivalence_point_1_2nd_gen", unit="°C", writable=True),
+        RegisterDef(1352, DataType.UCHAR, "solar_mode", writable=True, enum_options=_SOLAR_MODE),
+        RegisterDef(1650, DataType.FLOAT, "pv_surplus", unit="kW", writable=True),
+        RegisterDef(1652, DataType.FLOAT, "pv_production", unit="kW", writable=True),
+        RegisterDef(1654, DataType.FLOAT, "house_consumption", unit="kW", writable=True),
+        RegisterDef(1656, DataType.FLOAT, "battery_discharge", unit="kW", writable=True),
+        RegisterDef(1658, DataType.UINT16, "battery_soc", unit="%", writable=True),
+        RegisterDef(1660, DataType.FLOAT, "electric_heater_power", unit="kW", writable=True),
+        RegisterDef(1662, DataType.FLOAT, "pv_target_value", unit="kW", writable=True),
+        RegisterDef(1670, DataType.FLOAT, "variable_input"),
+        RegisterDef(1680, DataType.UCHAR, "ext_demand_groundwater_pump_m15_sw_max", writable=True),
+        RegisterDef(1690, DataType.FLOAT, "ext_outdoor_temp", unit="°C"),
+        RegisterDef(1692, DataType.FLOAT, "ext_humidity", unit="%"),
+        RegisterDef(1710, DataType.BOOL, "demand_heating", writable=True),
+        RegisterDef(1711, DataType.BOOL, "demand_cooling", writable=True),
+        RegisterDef(1712, DataType.BOOL, "demand_dhw_charging", writable=True),
+        RegisterDef(1713, DataType.BOOL, "demand_onetime_dhw", writable=True),
+        RegisterDef(1748, DataType.FLOAT, "energy_heating", unit="kWh"),
+        RegisterDef(1750, DataType.FLOAT, "energy_total", unit="kWh"),
+        RegisterDef(1752, DataType.FLOAT, "energy_cooling", unit="kWh"),
+        RegisterDef(1754, DataType.FLOAT, "energy_dhw", unit="kWh"),
+        RegisterDef(1756, DataType.FLOAT, "energy_defrost", unit="kWh"),
+        RegisterDef(1790, DataType.FLOAT, "current_power", unit="kW"),
+        RegisterDef(1850, DataType.FLOAT, "solar_collector_temp", unit="°C"),
+        RegisterDef(4120, DataType.FLOAT, "power_consumption_hp", unit="kW"),
+        RegisterDef(4126, DataType.FLOAT, "thermal_power", unit="kW"),
+    ]
+
+    def _circuit_regs(circuit: str) -> list[RegisterDef]:
+        base = {"a": 1400, "b": 1420, "c": 1440, "d": 1460, "e": 1480, "f": 1500, "g": 1520}.get(circuit, 1400)
+        return [
+            RegisterDef(base, DataType.FLOAT, f"hc_{circuit}_flow_temp", unit="°C"),
+            RegisterDef(base + 2, DataType.FLOAT, f"hc_{circuit}_room_temp", unit="°C"),
+            RegisterDef(base + 4, DataType.UCHAR, f"hc_{circuit}_active_mode", enum_options=dict(_CIRCUIT_MODE)),
+            RegisterDef(base + 5, DataType.UCHAR, f"hc_{circuit}_mode", writable=True, enum_options=dict(_CIRCUIT_MODE), exclude_from_write={255}),
+            RegisterDef(base + 6, DataType.FLOAT, f"hc_{circuit}_room_setpoint_heat_normal", unit="°C", writable=True, min_val=16.0, max_val=28.0),
+            RegisterDef(base + 8, DataType.FLOAT, f"hc_{circuit}_room_setpoint_heat_eco", unit="°C", writable=True, min_val=10.0, max_val=22.0),
+            RegisterDef(base + 10, DataType.FLOAT, f"hc_{circuit}_heating_curve", writable=True, min_val=0.1, max_val=3.0),
+            RegisterDef(base + 12, DataType.FLOAT, f"hc_{circuit}_ext_room_temp", unit="°C", writable=True),
+        ]
+
+    def _zone_regs(zone_idx: int, room_count: int) -> list[RegisterDef]:
+        regs = []
+        base = 2000 + (zone_idx - 1) * 100
+        for r in range(1, room_count + 1):
+            off = base + (r - 1) * 10
+            regs += [
+                RegisterDef(off, DataType.FLOAT, f"zm{zone_idx}_room{r}_temp", unit="°C", writable=True),
+                RegisterDef(off + 2, DataType.FLOAT, f"zm{zone_idx}_room{r}_setpoint", unit="°C", writable=True),
+                RegisterDef(off + 4, DataType.UINT16, f"zm{zone_idx}_room{r}_humidity", unit="%", writable=True),
+                RegisterDef(off + 5, DataType.UCHAR, f"zm{zone_idx}_room{r}_mode", writable=True, enum_options=dict(_ROOM_MODE)),
+            ]
+        return regs
+
+    def build_register_map(
+        model_info: Any = None,
+        circuits: list[str] | None = None,
+        zone_modules: int = 0,
+    ) -> dict[str, RegisterDef]:
+        regs = list(_BASE)
+        for c in (circuits or []):
+            regs.extend(_circuit_regs(c))
+        result: dict[str, RegisterDef] = {}
+        for r in regs:
+            if r.name not in result:
+                result[r.name] = r
+        return result
+
+    def get_heating_circuit_registers(circuit: str) -> dict[str, RegisterDef]:
+        return {r.name: r for r in _circuit_regs(circuit)}
+
+    def get_zone_module_registers(zone_idx: int, room_count: int = 6) -> dict[str, RegisterDef]:
+        return {r.name: r for r in _zone_regs(zone_idx, room_count)}
+
+    idm_mod = ModuleType("idm_heatpump")
+    idm_mod.RegisterDef = RegisterDef  # type: ignore[attr-defined]
+    idm_mod.IdmModbusClient = IdmModbusClient  # type: ignore[attr-defined]
+    idm_mod.build_register_map = build_register_map  # type: ignore[attr-defined]
+    idm_mod.get_heating_circuit_registers = get_heating_circuit_registers  # type: ignore[attr-defined]
+    idm_mod.get_zone_module_registers = get_zone_module_registers  # type: ignore[attr-defined]
+    sys.modules["idm_heatpump"] = idm_mod
+
+    client_mod = ModuleType("idm_heatpump.client")
+    client_mod.DataType = DataType  # type: ignore[attr-defined]
+    client_mod.AsyncModbusTcpClient = MagicMock  # type: ignore[attr-defined]
+    sys.modules["idm_heatpump.client"] = client_mod
+    idm_mod.client = client_mod  # type: ignore[attr-defined]
+
+    const_mod = ModuleType("idm_heatpump.const")
+    const_mod.MODEL_NAVIGATOR_10 = "navigator_10"  # type: ignore[attr-defined]
+    const_mod.MODEL_NAVIGATOR_20 = "navigator_20"  # type: ignore[attr-defined]
+    const_mod.MODEL_NAVIGATOR_PRO = "navigator_pro"  # type: ignore[attr-defined]
+    sys.modules["idm_heatpump.const"] = const_mod
+    idm_mod.const = const_mod  # type: ignore[attr-defined]
+
+
+_stub_idm_heatpump()
 
 
 # ---------------------------------------------------------------------------
