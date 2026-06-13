@@ -45,6 +45,7 @@ from idm_heatpump import (
     get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
+from idm_heatpump.client import DataType
 from idm_heatpump.const import (
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
@@ -52,6 +53,81 @@ from idm_heatpump.const import (
 )
 
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
+
+# ============================================================
+# Enum slug maps — stable translation keys per register
+# ============================================================
+
+_SYSTEM_MODE_SLUGS: dict[int, str] = {
+    0: "standby",
+    1: "automatic",
+    2: "absent",
+    3: "holiday",
+    4: "hot_water_only",
+    5: "heating_cooling_only",
+}
+
+_CIRCUIT_MODE_SLUGS: dict[int, str] = {
+    0: "off",
+    1: "timed_program",
+    2: "normal",
+    3: "eco",
+    4: "manual_heating",
+    5: "manual_cooling",
+    255: "not_configured",
+}
+
+_ROOM_MODE_SLUGS: dict[int, str] = {
+    0: "off",
+    1: "automatic",
+    2: "eco",
+    3: "normal",
+    4: "comfort",
+}
+
+_SOLAR_MODE_SLUGS: dict[int, str] = {
+    0: "automatic",
+    1: "hot_water",
+    2: "heating",
+    3: "hot_water_and_heating",
+    4: "heat_source_pool",
+}
+
+# German display labels for BITFLAG sensors (replaces library's English strings)
+_HP_OPERATING_MODE_DE: dict[int, str] = {
+    0: "Aus",
+    1: "Heizbetrieb",
+    2: "Kühlbetrieb",
+    4: "Warmwasser",
+    8: "Abtauen",
+}
+
+_BITFLAG_DE_LABELS: dict[str, dict[int, str]] = {
+    "hp_operating_mode": _HP_OPERATING_MODE_DE,
+}
+
+_CIRCUIT_MODE_RE = re.compile(r"^hc_[a-g]_mode$")
+_CIRCUIT_ACTIVE_MODE_RE = re.compile(r"^hc_[a-g]_active_mode$")
+_ROOM_MODE_RE = re.compile(r"^zm\d+_room\d+_mode$")
+
+
+def get_slug_map_and_key(name: str) -> tuple[dict[int, str] | None, str | None]:
+    """Return (int→slug map, translation_key) for a known enum register."""
+    if name == "system_mode":
+        return _SYSTEM_MODE_SLUGS, "system_mode"
+    if _CIRCUIT_MODE_RE.match(name) or _CIRCUIT_ACTIVE_MODE_RE.match(name):
+        return _CIRCUIT_MODE_SLUGS, "circuit_mode"
+    if _ROOM_MODE_RE.match(name):
+        return _ROOM_MODE_SLUGS, "room_mode"
+    if name == "solar_mode":
+        return _SOLAR_MODE_SLUGS, "solar_mode"
+    return None, None
+
+
+def get_bitflag_de_labels(name: str) -> dict[int, str] | None:
+    """Return German label override for BITFLAG registers."""
+    return _BITFLAG_DE_LABELS.get(name)
+
 
 # ============================================================
 # Future-proofing: Unterstützung für ha_metadata im RegisterDef
@@ -649,16 +725,30 @@ def get_library_sensors(
         if reg.state_class:
             sc = reg.state_class
 
-        desc = SensorEntityDescription(
-            key=name,
-            name=_get_german_name(name),
-            native_unit_of_measurement=reg.unit,
-            device_class=dc,
-            state_class=sc,
-            icon=icon,
-            entity_category=EntityCategory.DIAGNOSTIC,
-            entity_registry_enabled_default=reg.enabled_by_default,
-        )
+        # For non-BITFLAG enum sensors with a known slug map, use ENUM device class
+        slug_map, t_key = get_slug_map_and_key(name)
+        if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
+            desc = SensorEntityDescription(
+                key=name,
+                name=_get_german_name(name),
+                device_class=SensorDeviceClass.ENUM,
+                options=list(slug_map.values()),
+                translation_key=t_key,
+                icon=icon,
+                entity_category=EntityCategory.DIAGNOSTIC,
+                entity_registry_enabled_default=reg.enabled_by_default,
+            )
+        else:
+            desc = SensorEntityDescription(
+                key=name,
+                name=_get_german_name(name),
+                native_unit_of_measurement=reg.unit,
+                device_class=dc,
+                state_class=sc,
+                icon=icon,
+                entity_category=EntityCategory.DIAGNOSTIC,
+                entity_registry_enabled_default=reg.enabled_by_default,
+            )
         sensors.append(
             {
                 "register": reg,
@@ -693,18 +783,31 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
         if reg.writable:
             continue
 
-        hc_dc, hc_sc = _infer_dc_sc(name, reg.unit)
-        if reg.state_class:
-            hc_sc = reg.state_class
-        desc = SensorEntityDescription(
-            key=name,
-            name=_get_german_name(name),
-            native_unit_of_measurement=reg.unit,
-            device_class=hc_dc,
-            state_class=hc_sc,
-            icon=get_icon_for_register(name, reg.unit),
-            entity_category=EntityCategory.DIAGNOSTIC,
-        )
+        icon = get_icon_for_register(name, reg.unit)
+        slug_map, t_key = get_slug_map_and_key(name)
+        if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
+            desc = SensorEntityDescription(
+                key=name,
+                name=_get_german_name(name),
+                device_class=SensorDeviceClass.ENUM,
+                options=list(slug_map.values()),
+                translation_key=t_key,
+                icon=icon,
+                entity_category=EntityCategory.DIAGNOSTIC,
+            )
+        else:
+            hc_dc, hc_sc = _infer_dc_sc(name, reg.unit)
+            if reg.state_class:
+                hc_sc = reg.state_class
+            desc = SensorEntityDescription(
+                key=name,
+                name=_get_german_name(name),
+                native_unit_of_measurement=reg.unit,
+                device_class=hc_dc,
+                state_class=hc_sc,
+                icon=icon,
+                entity_category=EntityCategory.DIAGNOSTIC,
+            )
         sensors.append(
             {
                 "register": reg,
@@ -727,18 +830,31 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
         if reg.writable and not is_glt_measurement(name):
             continue
 
-        z_dc, z_sc = _infer_dc_sc(name, reg.unit)
-        if reg.state_class:
-            z_sc = reg.state_class
-        desc = SensorEntityDescription(
-            key=name,
-            name=_get_german_name(name),
-            native_unit_of_measurement=reg.unit,
-            device_class=z_dc,
-            state_class=z_sc,
-            icon=get_icon_for_register(name, reg.unit),
-            entity_category=EntityCategory.DIAGNOSTIC,
-        )
+        icon = get_icon_for_register(name, reg.unit)
+        slug_map, t_key = get_slug_map_and_key(name)
+        if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
+            desc = SensorEntityDescription(
+                key=name,
+                name=_get_german_name(name),
+                device_class=SensorDeviceClass.ENUM,
+                options=list(slug_map.values()),
+                translation_key=t_key,
+                icon=icon,
+                entity_category=EntityCategory.DIAGNOSTIC,
+            )
+        else:
+            z_dc, z_sc = _infer_dc_sc(name, reg.unit)
+            if reg.state_class:
+                z_sc = reg.state_class
+            desc = SensorEntityDescription(
+                key=name,
+                name=_get_german_name(name),
+                native_unit_of_measurement=reg.unit,
+                device_class=z_dc,
+                state_class=z_sc,
+                icon=icon,
+                entity_category=EntityCategory.DIAGNOSTIC,
+            )
         sensors.append(
             {
                 "register": reg,
@@ -862,15 +978,22 @@ def get_library_selects(circuits: list[str] | None = None, zone_modules: int = 0
             continue
         if reg.write_only:
             continue
-        options = list(reg.enum_options.values())
-        if reg.exclude_from_write:
-            options = [v for k, v in reg.enum_options.items() if k not in reg.exclude_from_write]
+
+        slug_map, t_key = get_slug_map_and_key(name)
+        excluded: set[int] = set(reg.exclude_from_write or [])
+
+        if slug_map is not None:
+            options = [v for k, v in slug_map.items() if k not in excluded]
+        else:
+            options = [v for k, v in reg.enum_options.items() if k not in excluded] if excluded else list(reg.enum_options.values())
+
         desc = SelectEntityDescription(
             key=name,
             name=_get_german_name(name),
             options=options,
             icon=reg.icon or get_icon_for_register(name),
             entity_category=EntityCategory.CONFIG,
+            translation_key=t_key,
         )
         selects.append(
             {
@@ -932,19 +1055,30 @@ def get_library_readonly_sensors(
 
         # Ansonsten generiere vernünftige Defaults
         icon = get_icon_for_register(name, reg.unit)
-        ro_dc, ro_sc = _infer_dc_sc(name, reg.unit)
-        if reg.state_class:
-            ro_sc = reg.state_class
-
-        desc = SensorEntityDescription(
-            key=name,
-            name=_get_german_name(name),
-            native_unit_of_measurement=reg.unit,
-            device_class=ro_dc,
-            state_class=ro_sc,
-            icon=icon,
-            entity_category=EntityCategory.DIAGNOSTIC,
-        )
+        slug_map, t_key = get_slug_map_and_key(name)
+        if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
+            desc = SensorEntityDescription(
+                key=name,
+                name=_get_german_name(name),
+                device_class=SensorDeviceClass.ENUM,
+                options=list(slug_map.values()),
+                translation_key=t_key,
+                icon=icon,
+                entity_category=EntityCategory.DIAGNOSTIC,
+            )
+        else:
+            ro_dc, ro_sc = _infer_dc_sc(name, reg.unit)
+            if reg.state_class:
+                ro_sc = reg.state_class
+            desc = SensorEntityDescription(
+                key=name,
+                name=_get_german_name(name),
+                native_unit_of_measurement=reg.unit,
+                device_class=ro_dc,
+                state_class=ro_sc,
+                icon=icon,
+                entity_category=EntityCategory.DIAGNOSTIC,
+            )
         sensors.append({"register": reg, "description": desc, "category": "library"})
 
     return sensors
@@ -1010,5 +1144,7 @@ __all__ = [
     "get_library_sensors",
     "get_library_numbers",
     "get_idm_client",
+    "get_slug_map_and_key",
+    "get_bitflag_de_labels",
     "is_glt_measurement",
 ]

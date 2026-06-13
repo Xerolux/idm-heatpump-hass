@@ -511,7 +511,8 @@ class TestIdmSelect:
         coord = _make_coordinator()
         reg = _make_register("system_mode", writable=True, enum_options=enum_opts)
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
-        assert set(sel._attr_options) == {"Standby", "Automatic", "Away"}
+        # system_mode uses slug map, so options are slug keys
+        assert set(sel._attr_options) == {"standby", "automatic", "absent", "holiday", "hot_water_only", "heating_cooling_only"}
 
     def test_current_option_found(self):
         from custom_components.idm_heatpump.select import IdmSelect
@@ -520,7 +521,8 @@ class TestIdmSelect:
         coord = _make_coordinator(data={"system_mode": 1})
         reg = _make_register("system_mode", enum_options=enum_opts)
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
-        assert sel.current_option == "Automatic"
+        # system_mode uses slug map, so current_option returns slug key
+        assert sel.current_option == "automatic"
 
     def test_current_option_none_when_missing(self):
         from custom_components.idm_heatpump.select import IdmSelect
@@ -547,7 +549,8 @@ class TestIdmSelect:
         coord = _make_coordinator()
         reg = _make_register("system_mode", enum_options=enum_opts)
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
-        assert sel._option_to_value("Automatic") == 1
+        # system_mode uses slug map, so option key is the slug
+        assert sel._option_to_value("automatic") == 1
 
     def test_option_to_value_raises_on_unknown(self):
         from custom_components.idm_heatpump.select import IdmSelect
@@ -566,7 +569,8 @@ class TestIdmSelect:
         coord = _make_coordinator(data={"system_mode": 0})
         reg = _make_register("system_mode", writable=True, enum_options=enum_opts)
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
-        await sel.async_select_option("Automatic")
+        # system_mode uses slug map, so option key is the slug
+        await sel.async_select_option("automatic")
         coord.async_write_register.assert_called_once_with(reg, 1)
 
     async def test_async_select_option_raises_on_error(self):
@@ -579,7 +583,7 @@ class TestIdmSelect:
         reg = _make_register("system_mode", writable=True, enum_options=enum_opts)
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
         with pytest.raises(HomeAssistantError):
-            await sel.async_select_option("Automatic")
+            await sel.async_select_option("automatic")
 
 
 class TestSelectAsyncSetupEntry:
