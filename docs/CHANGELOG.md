@@ -12,6 +12,91 @@
 All notable changes to this project will be documented in this file.
 ## [0.6.7] - 2026-06-13
 
+## v0.6.7 - IDM Heatpump
+
+**STABLE RELEASE**
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+### New Features
+
+- feat: update to idm-heatpump-api 0.3.2 with dual-exposed GLT measurement registers (04a9b41)
+
+### Improvements
+
+- feat: update to idm-heatpump-api 0.3.2 with dual-exposed GLT measurement registers (04a9b41)
+- Release v0.6.4 - Update changelog and version files (b5bc60b)
+
+### Bug Fixes
+
+- Merge pull request #38 from Xerolux/hotfix/duplicate-partial-import (c67ac20)
+- fix: remove duplicate functools.partial import in services.py (8ccb568)
+- Merge pull request #33 from ascha191/fix-service-handler-signatures (8c456e8)
+- fix: bind hass via partial so service handlers receive ServiceCall correctly (517becc)
+- fix: remove unused DataType import in library_adapter, bump version to 0.6.6 (56a536b)
+- fix(#31): use slug keys for enum entity states with HA translation support (303f2c7)
+- fix: simplify pump sentinel check and quote pip version specs in CI (5c2f482)
+- fix: service handlers never received the ServiceCall (wrong registration signature) (6a4453f)
+- Fix (a499027)
+- fix: guard against missing coordinator data and connection leak in config flow (75ba7e1)
+- chore: fix all ruff lint errors and remove committed log files (d6825cb)
+
+---
+
+### Installation
+
+**HACS (Recommended):**
+1. Add custom repository: `Xerolux/idm-heatpump-hass`
+2. Search for "IDM Heatpump"
+3. Click Install
+
+**Manual:**
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
+3. Restart Home Assistant
+
+---
+
+[Full changelog: v0.6.4...v0.6.7](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.6.4...v0.6.7)
+
+---
+
+### Support
+
+Diese Integration wird in meiner Freizeit entwickelt – deine Unterstützung erhöht die Motivation für weitere Features und Updates! 🚀
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+_Jede Unterstützung ist eine große Motivation! Vielen Dank!_
+
+---
+
+### Feedback & Contributions
+
+- [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
+- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CONTRIBUTING.md)
+
+---
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-06-13 23:06:16 UTC_
+
+---
+
+## [0.6.7] - 2026-06-13
+
 ### Fixed
 
 - Service-Handler (`set_system_mode`, `acknowledge_errors`, `write_register`) funktionierten nie: Handler waren mit `(hass, call)` signiert, wurden aber ohne `hass` aufgerufen. Fix via `functools.partial` beim Registrieren. (Gemeldet & Patch von @ascha191, #33)
