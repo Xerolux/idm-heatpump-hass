@@ -45,7 +45,6 @@ from idm_heatpump import (
     get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
-from idm_heatpump.client import DataType
 from idm_heatpump.const import (
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
