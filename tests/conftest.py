@@ -1,8 +1,10 @@
 """Shared fixtures and HA mocks for IDM Heatpump tests."""
 
 import asyncio
+import math
+import struct
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from types import ModuleType
 from typing import Any
@@ -613,11 +615,167 @@ def _stub_idm_heatpump() -> None:
             self.host = host
             self.port = port
             self.slave_id = slave_id
+            self._client = None
+            self._max_retries = 3
+            self._register_failures: dict[str, int] = {}
+            self._permanently_failed_registers: set[str] = set()
 
-        async def connect(self) -> None: pass
-        async def disconnect(self) -> None: pass
-        async def read_batch(self, regs: Any) -> dict[str, Any]: return {}
-        async def write_register(self, reg: Any, value: Any) -> None: pass
+        async def connect(self) -> None:
+            if self._client is not None and getattr(self._client, "connected", False):
+                return
+            from idm_heatpump.client import AsyncModbusTcpClient
+
+            self._client = AsyncModbusTcpClient(self.host, port=self.port)
+            await self._client.connect()
+
+        async def disconnect(self) -> None:
+            if self._client is not None:
+                self._client.close()
+                self._client = None
+
+        def _require_client(self) -> Any:
+            from pymodbus.exceptions import ConnectionException
+
+            if self._client is None or not getattr(self._client, "connected", False):
+                raise ConnectionException("Modbus client is not connected")
+            return self._client
+
+        def decode_value(self, registers: list[int], reg: RegisterDef) -> Any:
+            if reg.datatype == DataType.FLOAT:
+                if len(registers) < 2:
+                    raise ValueError("not enough registers for float")
+                raw = struct.pack("<HH", registers[0], registers[1])
+                value = struct.unpack("<f", raw)[0]
+                if math.isnan(value):
+                    return None
+                return value * reg.multiplier
+            if reg.datatype in (DataType.UCHAR, DataType.BITFLAG):
+                return registers[0] & 0xFF
+            if reg.datatype == DataType.INT8:
+                value = registers[0] & 0xFF
+                return value - 0x100 if value & 0x80 else value
+            if reg.datatype == DataType.INT16:
+                value = registers[0] & 0xFFFF
+                return value - 0x10000 if value & 0x8000 else value
+            if reg.datatype == DataType.UINT16:
+                return registers[0] & 0xFFFF
+            if reg.datatype == DataType.BOOL:
+                return bool(registers[0])
+            return registers[0]
+
+        def encode_value(self, value: Any, reg: RegisterDef) -> list[int]:
+            numeric = float(value) / reg.multiplier if reg.multiplier else float(value)
+            if reg.datatype == DataType.FLOAT:
+                return list(struct.unpack("<HH", struct.pack("<f", numeric)))
+            if reg.datatype in (DataType.UCHAR, DataType.INT8, DataType.BITFLAG):
+                return [int(value) & 0xFF]
+            if reg.datatype in (DataType.INT16, DataType.UINT16):
+                return [int(value) & 0xFFFF]
+            if reg.datatype == DataType.BOOL:
+                return [1 if value else 0]
+            return [int(value)]
+
+        async def read_register(self, reg: RegisterDef) -> Any:
+            client = self._require_client()
+            result = await client.read_input_registers(reg.address, reg.size, slave=self.slave_id)
+            if result.isError():
+                from pymodbus.exceptions import ModbusException
+
+                raise ModbusException("Modbus read error")
+            return self.decode_value(result.registers, reg)
+
+        async def write_register(self, reg: RegisterDef, value: Any) -> None:
+            if not reg.writable:
+                raise ValueError(f"Register {reg.name} is read-only")
+            if reg.min_val is not None and value < reg.min_val:
+                raise ValueError(f"Value below minimum {reg.min_val}")
+            if reg.max_val is not None and value > reg.max_val:
+                raise ValueError(f"Value above maximum {reg.max_val}")
+
+            client = self._require_client()
+            result = await client.write_registers(
+                reg.address,
+                self.encode_value(value, reg),
+                slave=self.slave_id,
+            )
+            if result.isError():
+                from pymodbus.exceptions import ModbusException
+
+                raise ModbusException("Modbus write error")
+
+        def _group_registers(self, regs: list[RegisterDef]) -> list[list[RegisterDef]]:
+            groups: list[list[RegisterDef]] = []
+            current: list[RegisterDef] = []
+            current_end = 0
+            for reg in sorted(regs, key=lambda item: item.address):
+                if not current:
+                    current = [reg]
+                    current_end = reg.address + reg.size
+                    continue
+                group_start = current[0].address
+                proposed_end = max(current_end, reg.address + reg.size)
+                if reg.address > current_end + 10 or proposed_end - group_start > 40:
+                    groups.append(current)
+                    current = [reg]
+                    current_end = reg.address + reg.size
+                else:
+                    current.append(reg)
+                    current_end = proposed_end
+            if current:
+                groups.append(current)
+            return groups
+
+        async def _read_group(self, regs: list[RegisterDef]) -> dict[str, Any]:
+            if not regs:
+                return {}
+            client = self._require_client()
+            start = min(reg.address for reg in regs)
+            end = max(reg.address + reg.size for reg in regs)
+            result = None
+            for attempt in range(self._max_retries + 1):
+                try:
+                    result = await client.read_input_registers(
+                        start, end - start, slave=self.slave_id
+                    )
+                    if result.isError():
+                        from pymodbus.exceptions import ModbusException
+
+                        raise ModbusException("Modbus read error")
+                    break
+                except Exception:
+                    if attempt < self._max_retries:
+                        continue
+                    for reg in regs:
+                        failures = self._register_failures.get(reg.name, 0) + 1
+                        self._register_failures[reg.name] = failures
+                        if failures >= 3:
+                            self._permanently_failed_registers.add(reg.name)
+                    return {}
+
+            data = {}
+            for reg in regs:
+                offset = reg.address - start
+                raw = result.registers[offset : offset + reg.size]
+                if len(raw) < reg.size:
+                    continue
+                data[reg.name] = self.decode_value(raw, reg)
+                self._register_failures.pop(reg.name, None)
+            return data
+
+        async def read_batch(self, regs: Any) -> dict[str, Any]:
+            readable = [
+                reg
+                for reg in regs
+                if reg.name not in self._permanently_failed_registers
+            ]
+            data: dict[str, Any] = {}
+            for group in self._group_registers(readable):
+                data.update(await self._read_group(group))
+            return data
+
+        def reset_failed_registers(self) -> None:
+            self._register_failures.clear()
+            self._permanently_failed_registers.clear()
 
     _SYS_MODE = {0: "Standby", 1: "Automatic", 2: "Absent", 4: "Hot Water Only", 5: "Heating/Cooling Only"}
     _CIRCUIT_MODE = {0: "Off", 1: "Time Program", 2: "Normal", 3: "Eco", 4: "Manual Heat", 5: "Manual Cool", 255: "Not Configured"}
