@@ -1092,6 +1092,20 @@ def get_library_numbers(
 ) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
     reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
+    return _numbers_from_register_map(reg_map)
+
+
+def get_library_zone_numbers(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
+    """Returns number descriptions for writable room registers in one zone module."""
+    try:
+        zone_regs = get_zone_module_registers(zone_idx, room_count)
+    except Exception:
+        return []
+    return _numbers_from_register_map(zone_regs)
+
+
+def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str, Any]]:
+    """Build HA number descriptions from writable non-enum library registers."""
     numbers = []
 
     for name, reg in reg_map.items():
@@ -1146,6 +1160,7 @@ __all__ = [
     "MODEL_NAVIGATOR_PRO",
     "get_library_sensors",
     "get_library_numbers",
+    "get_library_zone_numbers",
     "get_idm_client",
     "get_slug_map_and_key",
     "get_bitflag_de_labels",
