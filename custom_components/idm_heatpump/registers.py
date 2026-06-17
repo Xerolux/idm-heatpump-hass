@@ -37,6 +37,7 @@ from .library_adapter import (
     get_library_selects,
     get_library_sensors,
     get_library_switches,
+    get_library_zone_numbers,
     get_library_zone_sensors,
 )
 
@@ -998,6 +999,9 @@ def get_all_number_descriptions(
         descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
     except Exception:
         pass
+    for z in range(zone_count):
+        rooms = zone_rooms.get(z, 6)
+        descriptions.extend(get_library_zone_numbers(z + 1, rooms))
 
     # Legacy numbers deaktiviert
     return descriptions
