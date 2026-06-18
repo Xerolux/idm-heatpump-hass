@@ -20,7 +20,7 @@ jobs:
       matrix:
         python-version: ["3.13"]
         home-assistant-version:
-          - "2026.5.0"
+          - "2026.2.3"
 
     steps:
       - uses: actions/checkout@v4
