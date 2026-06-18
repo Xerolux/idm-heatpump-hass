@@ -7,12 +7,12 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 heat pumps via Modbus TCP. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.5.0` (defined in `custom_components/idm_heatpump/manifest.json`) - Library renamed to idm-heatpump-api
+- **Current Version**: `0.6.7` (defined in `custom_components/idm_heatpump/manifest.json`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.5.0
 - **Python**: 3.13+
-- **Key Dependency**: `pymodbus >= 3.12.1`
+- **Key Dependency**: `pymodbus >= 3.7.0`, `idm-heatpump-api >= 0.3.3`
 
 ---
 
@@ -24,9 +24,9 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── __init__.py                   # Setup, platform loading, entry lifecycle
 │   ├── manifest.json                 # Integration metadata & HA version requirements
 │   ├── const.py                      # Constants & enums (SystemMode, CircuitMode, etc.)
-│   ├── coordinator.py                # DataUpdateCoordinator (polling logic)
-│   ├── modbus_client.py              # Async Modbus TCP client (pymodbus wrapper)
-│   ├── registers.py                  # 663 Modbus register definitions (959 lines)
+│   ├── coordinator.py                # DataUpdateCoordinator (polling logic, optimistic updates)
+│   ├── library_adapter.py            # idm-heatpump library → Home Assistant entity descriptions
+│   ├── registers.py                  # Register metadata & entity description collectors
 │   ├── config_flow.py                # UI config flow (5 steps)
 │   ├── entity.py                     # Base entity class (IdmEntity)
 │   ├── sensor.py                     # Sensor platform (100+ entities)
