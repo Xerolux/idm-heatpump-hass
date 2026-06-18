@@ -7,6 +7,7 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
+import asyncio
 import logging
 from datetime import timedelta
 from typing import Any
@@ -164,11 +165,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return data
 
+    async def _delayed_refresh(self, delay: float = 0.5) -> None:
+        await asyncio.sleep(delay)
+        await self.async_request_refresh()
+
     async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
         await self._client.write_register(reg, value)
         # Optimistic update so entities reflect the new value immediately
         if self.data is not None:
             self.data[reg.name] = value
         self.async_update_listeners()
-        # Schedule a full refresh so dependent registers are also updated promptly
-        await self.async_request_refresh()
+        # Delayed refresh: wait for device to confirm write before re-polling.
+        # Without delay, read-back may return stale value before device processes write,
+        # causing optimistic update to be overwritten.
+        asyncio.create_task(self._delayed_refresh())
