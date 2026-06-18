@@ -129,6 +129,25 @@ class TestZoneAddresses:
         ]
         assert len(room_temps) > 0
 
+    def test_zone_room_count_respected_in_numbers(self):
+        """Regression test: zone room count must be respected. PR #40 fix."""
+        # Configure zone 0 with only 2 rooms
+        descs = get_all_number_descriptions(["a"], 1, {0: 2})
+        room_regs = {d["register"].name for d in descs if d["register"].name.startswith("zm1_room")}
+        # Extract room indices from names like "zm1_room1_temp"
+        import re
+        room_idxs = sorted({int(re.search(r"room(\d+)", r).group(1)) for r in room_regs})
+        # Must contain only rooms 1 and 2 (not 3-6, which library defaults to)
+        assert room_idxs == [1, 2], f"Expected rooms [1,2], got {room_idxs}"
+
+    def test_zone_room_count_respected_in_sensors(self):
+        """Regression test: sensor room count must also respect zone config. PR #40 fix."""
+        descs = get_all_sensor_descriptions(["a"], 1, {0: 3})
+        room_regs = {d["register"].name for d in descs if d["register"].name.startswith("zm1_room")}
+        import re
+        room_idxs = sorted({int(re.search(r"room(\d+)", r).group(1)) for r in room_regs})
+        assert room_idxs == [1, 2, 3], f"Expected rooms [1,2,3], got {room_idxs}"
+
 
 class TestGltDualExposure:
     """GLT-Messwerte (Library 0.3.2): beschreibbare Messwert-Register

@@ -943,9 +943,13 @@ def get_all_sensor_descriptions(
     """
     descriptions = []
 
-    # Library + Adapter is now the primary and preferred source
+    # Library + Adapter is now the primary and preferred source.
+    # zone_modules=0: zone registers are added below via the per-zone loop,
+    # which respects each zone's configured room count (zone_rooms). The
+    # library's bulk zone handling only supports one uniform room count for
+    # all zones, so it must not also generate zone registers here.
     try:
-        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=zone_count))
+        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=0))
     except Exception:
         pass
 
@@ -994,9 +998,10 @@ def get_all_number_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
 
-    # Library numbers (preferred)
+    # Library numbers (preferred).
+    # zone_modules=0: see comment in get_all_sensor_descriptions above.
     try:
-        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=zone_count))
+        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=0))
     except Exception:
         pass
     for z in range(zone_count):
