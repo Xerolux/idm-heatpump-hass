@@ -30,6 +30,7 @@ def _make_coordinator(hide_unused=True, data=None, last_update_success=True):
     coord.config_entry = MagicMock()
     coord.config_entry.entry_id = "test_entry_id"
     coord.config_entry.title = "IDM Test"
+    coord.model_name = MODEL
 
     def _is_unused(register_name, value):
         if not hide_unused:

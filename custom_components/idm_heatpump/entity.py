@@ -13,7 +13,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import RegisterDef
 
-from .const import DOMAIN, MANUFACTURER, MODEL
+from .const import DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
 
 
@@ -36,7 +36,7 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
             identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
             name=coordinator.config_entry.title,  # type: ignore[union-attr]
             manufacturer=MANUFACTURER,
-            model=MODEL,
+            model=coordinator.model_name,
         )
 
     @property
