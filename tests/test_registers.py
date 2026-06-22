@@ -204,6 +204,25 @@ class TestGltDualExposure:
                     f"{d['description'].name}"
                 )
 
+    def test_zone_room_numbers_disabled_by_default(self):
+        """Raum-Vorgabe (Vorgabe) ist nur wirksam mit externem/GLT-Raumsensor;
+        da der aktive Sensortyp nicht per Modbus auslesbar ist, muss die Number
+        standardmäßig deaktiviert sein (PR: entity permissions audit)."""
+        numbers = get_all_number_descriptions(["a"], 1, {0: 2})
+        for d in numbers:
+            if d["register"].name in ("zm1_room1_temp", "zm1_room1_humidity"):
+                assert d["description"].entity_registry_enabled_default is False, (
+                    f"{d['register'].name} sollte standardmäßig deaktiviert sein"
+                )
+
+    def test_pv_block_numbers_enabled_by_default(self):
+        numbers = get_all_number_descriptions(["a"], 0, {})
+        for d in numbers:
+            if d["register"].name in self.PV_BLOCK:
+                assert d["description"].entity_registry_enabled_default is True, (
+                    f"{d['register'].name} sollte standardmäßig aktiviert sein"
+                )
+
     def test_register_changes_from_doc_update(self):
         names = {r.name for r in collect_all_registers(["a"], 0, {})}
         assert "ext_demand_brine_pump_m16" not in names
