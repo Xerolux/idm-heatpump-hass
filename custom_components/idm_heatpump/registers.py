@@ -100,7 +100,7 @@ def get_all_number_descriptions(
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
 ) -> list[dict[str, Any]]:
-    descriptions = []
+    descriptions: list[dict[str, Any]] = []
 
     # Library numbers (preferred).
     # zone_modules=0: see comment in get_all_sensor_descriptions above.
@@ -112,8 +112,16 @@ def get_all_number_descriptions(
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_numbers(z + 1, rooms))
 
-    # Legacy numbers deaktiviert
-    return descriptions
+    # Deduplicate: zone registers may appear from both get_library_numbers
+    # (when zone_modules > 0) and get_library_zone_numbers.
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for d in descriptions:
+        key = d["description"].key
+        if key not in seen:
+            seen.add(key)
+            deduped.append(d)
+    return deduped
 
 
 def get_all_select_descriptions(
