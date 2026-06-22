@@ -436,6 +436,8 @@ def _stub_homeassistant() -> None:
                 model=model,
                 **kwargs,
             )
+            if sw_version is not None:
+                self["sw_version"] = sw_version
 
     device_registry_mod.DeviceInfo = _DeviceInfo
 

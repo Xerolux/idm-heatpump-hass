@@ -73,24 +73,35 @@ class IdmHeatpumpData:
 IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
 
 
-async def _detect_model_name(client: IdmModbusClient) -> str:
-    """Probe the heat pump to determine its real model, falling back to MODEL.
+async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None]:
+    """Probe the heat pump for its model and firmware version.
 
-    detect_model() reads a handful of registers to distinguish Navigator 2.0,
-    Navigator 10 and Navigator Pro. If detection fails (e.g. older firmware,
-    transient Modbus error) we keep showing the generic default model name
-    instead of failing setup.
+    Returns (model_name, firmware_version). detect_model() reads a handful of
+    registers to distinguish Navigator 2.0, Navigator 10 and Navigator Pro;
+    model_name falls back to the generic MODEL constant if detection fails
+    (e.g. older firmware, transient Modbus error) or is inconclusive, so
+    setup never fails because of this.
+
+    firmware_version is read via getattr defensively: idm-heatpump-api 0.3.4
+    does not expose it on IdmModelInfo yet, but a future release is expected
+    to add it. This picks it up automatically once available, without a
+    version bump here or raising on the current release.
     """
     try:
         model_info = await client.detect_model()
     except Exception:
         _LOGGER.debug("Heat pump model auto-detection failed", exc_info=True)
-        return MODEL
+        return MODEL, None
 
     model_name = getattr(model_info, "model_name", None)
-    if isinstance(model_name, str) and model_name and model_name != MODEL_UNKNOWN:
-        return model_name
-    return MODEL
+    if not (isinstance(model_name, str) and model_name and model_name != MODEL_UNKNOWN):
+        model_name = MODEL
+
+    firmware_version = getattr(model_info, "firmware_version", None)
+    if not (isinstance(firmware_version, str) and firmware_version):
+        firmware_version = None
+
+    return model_name, firmware_version
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -128,7 +139,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         _LOGGER.error("Failed to connect to %s:%d - %s", host, port, err)
         raise ConfigEntryNotReady(f"Cannot connect to {host}:{port}") from err
 
-    model_name = await _detect_model_name(client)
+    model_name, firmware_version = await _detect_model_info(client)
 
     sensor_descs = get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     binary_descs = get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
@@ -148,6 +159,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         switch_descriptions=switch_descs,
         hide_unused=hide_unused,
         model_name=model_name,
+        firmware_version=firmware_version,
     )
     coordinator.setup_registers(circuits, zone_count, zone_rooms, enable_cascade)
 
