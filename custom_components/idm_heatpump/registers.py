@@ -15,8 +15,6 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-_LOGGER = logging.getLogger(__name__)
-
 from idm_heatpump import RegisterDef
 
 from .library_adapter import (
@@ -29,6 +27,8 @@ from .library_adapter import (
     get_library_zone_numbers,
     get_library_zone_sensors,
 )
+
+_LOGGER = logging.getLogger(__name__)
 
 # ============================================================
 # PUBLIC FUNCTIONS - Collect all register descriptions
