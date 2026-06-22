@@ -45,6 +45,7 @@ from idm_heatpump import (
     get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
+from idm_heatpump.client import IdmModelInfo
 from idm_heatpump.const import (
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
@@ -682,13 +683,36 @@ def _make_number_description(reg: RegisterDef, meta: dict[str, Any]) -> NumberEn
     )
 
 
+def _model_info_from_flags(circuits: list[str], zone_modules: int, enable_cascade: bool) -> IdmModelInfo:
+    """Construct an IdmModelInfo for use with build_register_map.
+
+    When all capabilities are enabled except cascade, this tells the library to
+    exclude cascade-specific registers. Without model_info, the library includes
+    all optional register blocks unconditionally.
+    """
+    return IdmModelInfo(
+        model_name="Navigator 2.0",
+        active_heating_circuits=circuits,
+        zone_modules=zone_modules,
+        has_solar=True,
+        has_isc=True,
+        has_pv=True,
+        has_cascade=enable_cascade,
+    )
+
+
 def get_library_sensors(
-    model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
+    model_info: Any = None,
+    circuits: list[str] | None = None,
+    zone_modules: int = 0,
+    enable_cascade: bool = True,
 ) -> list[dict[str, Any]]:
     """
     Returns sensor descriptions primarily sourced from the idm_heatpump library.
     This is intended to become the main source over time.
     """
+    if model_info is None and not enable_cascade:
+        model_info = _model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
     reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
     sensors = []
 
@@ -1088,9 +1112,14 @@ def get_library_readonly_sensors(
 
 
 def get_library_numbers(
-    model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
+    model_info: Any = None,
+    circuits: list[str] | None = None,
+    zone_modules: int = 0,
+    enable_cascade: bool = True,
 ) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
+    if model_info is None and not enable_cascade:
+        model_info = _model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
     reg_map = build_register_map(model_info=model_info, circuits=circuits or [], zone_modules=zone_modules or 0)
     return _numbers_from_register_map(reg_map)
 

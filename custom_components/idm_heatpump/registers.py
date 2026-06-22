@@ -12,7 +12,10 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
+import logging
 from typing import Any
+
+_LOGGER = logging.getLogger(__name__)
 
 from idm_heatpump import RegisterDef
 
@@ -53,9 +56,9 @@ def get_all_sensor_descriptions(
     # library's bulk zone handling only supports one uniform room count for
     # all zones, so it must not also generate zone registers here.
     try:
-        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=0))
+        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=0, enable_cascade=enable_cascade))
     except Exception:
-        pass
+        _LOGGER.warning("Failed to load library sensor descriptions", exc_info=True)
 
     # Spezialisierte Generatoren für Heizkreise und Zonen aus dem Adapter
     for circuit in circuits:
@@ -89,7 +92,7 @@ def get_all_binary_sensor_descriptions(
     try:
         descriptions.extend(get_library_binary_sensors(circuits=circuits, zone_modules=zone_count))
     except Exception:
-        pass
+        _LOGGER.warning("Failed to load library binary sensor descriptions", exc_info=True)
     # Old local binary sensors disabled during migration
     return descriptions
 
@@ -105,9 +108,9 @@ def get_all_number_descriptions(
     # Library numbers (preferred).
     # zone_modules=0: see comment in get_all_sensor_descriptions above.
     try:
-        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=0))
+        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=0, enable_cascade=enable_cascade))
     except Exception:
-        pass
+        _LOGGER.warning("Failed to load library number descriptions", exc_info=True)
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_numbers(z + 1, rooms))
@@ -134,7 +137,7 @@ def get_all_select_descriptions(
     try:
         descriptions.extend(get_library_selects(circuits=circuits, zone_modules=zone_count))
     except Exception:
-        pass
+        _LOGGER.warning("Failed to load library select descriptions", exc_info=True)
     # Old local selects disabled during migration
     return descriptions
 
@@ -149,7 +152,7 @@ def get_all_switch_descriptions(
     try:
         descriptions.extend(get_library_switches())
     except Exception:
-        pass
+        _LOGGER.warning("Failed to load library switch descriptions", exc_info=True)
     # Old local switches disabled during migration
     return descriptions
 
