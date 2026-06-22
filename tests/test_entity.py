@@ -19,7 +19,7 @@ def _make_register(name="temp", address=100):
     )
 
 
-def _make_coordinator(hide_unused=True, data=None, last_update_success=True):
+def _make_coordinator(hide_unused=True, data=None, last_update_success=True, firmware_version=None):
     coord = MagicMock(spec=IdmCoordinator)
     coord.hide_unused = hide_unused
     coord.data = data if data is not None else {}
@@ -31,6 +31,7 @@ def _make_coordinator(hide_unused=True, data=None, last_update_success=True):
     coord.config_entry.entry_id = "test_entry_id"
     coord.config_entry.title = "IDM Test"
     coord.model_name = MODEL
+    coord.firmware_version = firmware_version
 
     def _is_unused(register_name, value):
         if not hide_unused:
@@ -95,6 +96,22 @@ class TestIdmEntityInit:
         coord.config_entry.title = "My Heat Pump"
         entity = _make_entity(coordinator=coord)
         assert entity._attr_device_info["name"] == "My Heat Pump"
+
+    def test_device_info_uses_detected_model(self):
+        coord = _make_coordinator()
+        coord.model_name = "Navigator 10"
+        entity = _make_entity(coordinator=coord)
+        assert entity._attr_device_info["model"] == "Navigator 10"
+
+    def test_device_info_has_sw_version_when_firmware_known(self):
+        coord = _make_coordinator(firmware_version="1.2.3")
+        entity = _make_entity(coordinator=coord)
+        assert entity._attr_device_info["sw_version"] == "1.2.3"
+
+    def test_device_info_omits_sw_version_when_firmware_unknown(self):
+        coord = _make_coordinator(firmware_version=None)
+        entity = _make_entity(coordinator=coord)
+        assert "sw_version" not in entity._attr_device_info
 
     def test_entity_description_set(self):
         desc = MagicMock()
