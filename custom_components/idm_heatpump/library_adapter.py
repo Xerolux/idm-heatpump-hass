@@ -1155,6 +1155,14 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
             # externe GLT-Vorgabe und braucht einen unterscheidbaren Namen.
             number_name = f"{number_name} (Vorgabe)"
 
+        # Raumtemperatur/-feuchte ist laut iDM-Doku (812170) nur beschreibbar,
+        # wenn für den jeweiligen Raum ein externer/GLT-Raumsensor konfiguriert
+        # ist; bei Verwendung der iDM-eigenen Raumsensoren ist das Register RO
+        # und ein Schreibversuch wird vom Gerät ignoriert. Welcher Sensortyp je
+        # Raum aktiv ist, lässt sich nicht über Modbus auslesen, daher wird die
+        # Number standardmäßig deaktiviert statt sie unwirksam anzubieten.
+        enabled_by_default = _ZONE_ROOM_MEASUREMENT_RE.match(name) is None
+
         desc = NumberEntityDescription(
             key=name,
             name=number_name,
@@ -1166,6 +1174,7 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
             icon=meta.get("icon", get_icon_for_register(name, reg.unit)),
             mode=NumberMode.BOX,
             entity_category=EntityCategory.CONFIG,
+            entity_registry_enabled_default=enabled_by_default,
         )
         numbers.append(
             {
