@@ -33,10 +33,12 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DOMAIN,
+    MODEL,
     NAME,
 )
 from .coordinator import IdmCoordinator
 from idm_heatpump import IdmModbusClient
+from idm_heatpump.const import MODEL_UNKNOWN
 
 from .library_adapter import get_idm_client
 from .registers import (
@@ -69,6 +71,26 @@ class IdmHeatpumpData:
 
 
 IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
+
+
+async def _detect_model_name(client: IdmModbusClient) -> str:
+    """Probe the heat pump to determine its real model, falling back to MODEL.
+
+    detect_model() reads a handful of registers to distinguish Navigator 2.0,
+    Navigator 10 and Navigator Pro. If detection fails (e.g. older firmware,
+    transient Modbus error) we keep showing the generic default model name
+    instead of failing setup.
+    """
+    try:
+        model_info = await client.detect_model()
+    except Exception:
+        _LOGGER.debug("Heat pump model auto-detection failed", exc_info=True)
+        return MODEL
+
+    model_name = getattr(model_info, "model_name", None)
+    if isinstance(model_name, str) and model_name and model_name != MODEL_UNKNOWN:
+        return model_name
+    return MODEL
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -106,6 +128,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         _LOGGER.error("Failed to connect to %s:%d - %s", host, port, err)
         raise ConfigEntryNotReady(f"Cannot connect to {host}:{port}") from err
 
+    model_name = await _detect_model_name(client)
+
     sensor_descs = get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     binary_descs = get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     number_descs = get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
@@ -123,6 +147,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         select_descriptions=select_descs,
         switch_descriptions=switch_descs,
         hide_unused=hide_unused,
+        model_name=model_name,
     )
     coordinator.setup_registers(circuits, zone_count, zone_rooms, enable_cascade)
 
