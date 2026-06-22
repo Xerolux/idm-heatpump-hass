@@ -10,6 +10,17 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.7.1] - 2026-06-22
+
+### Bug Fixes
+- Fix duplicate zone registers in number entities via description key deduplication
+- Replace silent `except:pass` with `_LOGGER.warning(exc_info=True)` in all register description loaders
+
+### Improvements
+- Wire up `enable_cascade` config option to library `IdmModelInfo` — previously ignored, now properly excludes 18 writable cascade configuration registers when disabled
+
+---
+
 ## [0.7.0] - 2026-06-18
 
 ## v0.7.0 - IDM Heatpump
