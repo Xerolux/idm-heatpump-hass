@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
+# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
@@ -12,7 +12,7 @@ import enum
 DOMAIN: str = "idm_heatpump"
 NAME: str = "IDM Heatpump"
 MANUFACTURER: str = "iDM Energiesysteme"
-MODEL: str = "Navigator 2.0"
+MODEL: str = "Navigator 2.0 / 10"
 MODEL_ZONE: str = "Navigator Pro Einzelraumregelung"
 
 CONF_HOST: str = "host"

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The IDM Navigator 2.0 heat pump provides **663 registers** via Modbus TCP:
+The IDM Navigator 2.0 / 10 heat pump provides **663 registers** via Modbus TCP:
 
 | Type | Count |
 |------|-------|

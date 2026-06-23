@@ -691,7 +691,7 @@ def _model_info_from_flags(circuits: list[str], zone_modules: int, enable_cascad
     all optional register blocks unconditionally.
     """
     return IdmModelInfo(
-        model_name="Navigator 2.0",
+        model_name="Navigator 2.0 / 10",
         active_heating_circuits=circuits,
         zone_modules=zone_modules,
         has_solar=True,

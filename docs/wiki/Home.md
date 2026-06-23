@@ -12,7 +12,7 @@
 
 ## What is the IDM Heatpump Integration?
 
-The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https://www.home-assistant.io/) with the [IDM Navigator 2.0](https://www.idm-energiesysteme.de/) by IDM EnergieSysteme GmbH. It enables complete local control and monitoring of your heat pump via **Modbus TCP — no cloud, no subscription**.
+The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https://www.home-assistant.io/) with the [IDM Navigator 2.0 / 10](https://www.idm-energiesysteme.de/) by IDM EnergieSysteme GmbH. It enables complete local control and monitoring of your heat pump via **Modbus TCP — no cloud, no subscription**.
 
 | Feature | Details |
 |---------|---------|

@@ -27,7 +27,7 @@ If applicable, add screenshots to help explain your problem.
  - Home Assistant version: [e.g. 2025.8.0]
  - Integration version: [e.g. 0.1.0]
  - IDM Navigator firmware version: [e.g. 2.x.x]
- - Heat pump model: [e.g. IDM Navigator 2.0]
+ - Heat pump model: [e.g. IDM Navigator 2.0 / 10]
  - Python version: [e.g. 3.14]
  - Operating System: [e.g. HA OS, Docker, Supervised]
 

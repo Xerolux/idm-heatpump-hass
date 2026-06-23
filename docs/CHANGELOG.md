@@ -82,7 +82,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-23 03:09:46 UTC_
@@ -160,7 +160,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-23 03:07:46 UTC_
@@ -235,7 +235,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-22 19:13:05 UTC_
@@ -326,7 +326,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-18 11:55:32 UTC_
@@ -406,7 +406,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-18 11:52:04 UTC_
@@ -491,7 +491,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-13 23:06:16 UTC_
@@ -589,7 +589,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-02 10:26:05 UTC_
@@ -669,7 +669,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-02 10:03:07 UTC_
@@ -747,7 +747,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-06-01 09:47:54 UTC_
@@ -867,7 +867,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-05-31 22:06:08 UTC_
@@ -956,7 +956,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-05-31 21:04:55 UTC_
@@ -1060,7 +1060,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-05-31 19:32:55 UTC_
@@ -1169,7 +1169,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-05-31 16:17:12 UTC_
@@ -1243,7 +1243,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-05-31 15:11:25 UTC_
@@ -1342,7 +1342,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-05-31 15:04:29 UTC_
@@ -1470,7 +1470,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-23 18:12:22 UTC_
@@ -1567,7 +1567,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-23 16:45:49 UTC_
@@ -1658,7 +1658,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-23 16:05:39 UTC_
@@ -1737,7 +1737,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 16:59:16 UTC_
@@ -1814,7 +1814,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 14:11:50 UTC_
@@ -1889,7 +1889,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 12:04:21 UTC_
@@ -1969,7 +1969,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 12:01:52 UTC_
@@ -2047,7 +2047,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 11:57:43 UTC_
@@ -2107,7 +2107,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 ---
@@ -2175,7 +2175,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 11:51:16 UTC_
@@ -2253,7 +2253,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 11:49:36 UTC_
@@ -2323,7 +2323,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 11:47:48 UTC_
@@ -2397,7 +2397,7 @@ Every contribution is a huge motivation! Thank you!
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-22 08:03:14 UTC_
@@ -2489,7 +2489,7 @@ Every contribution is a huge motivation! Thank you!
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-21 19:01:43 UTC_
@@ -2575,7 +2575,7 @@ Every contribution is a huge motivation! Thank you!
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-21 18:27:56 UTC_
@@ -2673,7 +2673,7 @@ Every contribution is a huge motivation! Thank you!
 ---
 
 **Developed by:** [Xerolux](https://github.com/Xerolux)
-**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
 **License:** MIT
 
 _Generated automatically by GitHub Actions on 2026-03-21 12:18:05 UTC_
