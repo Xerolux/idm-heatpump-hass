@@ -14,6 +14,81 @@ All notable changes to this project will be documented in this file.
 
 ## v0.7.1 - IDM Heatpump
 
+**STABLE RELEASE**
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+### New Features
+
+- feat: wire up enable_cascade and add error logging (0179e4b)
+
+### Improvements
+
+- Release v0.7.0 - Update changelog and version files (518a8f1)
+- Release v0.7.0 - Update changelog and version files (0d265e2)
+
+### Bug Fixes
+
+- fix: deduplicate zone registers in number entities (bcb85e9)
+
+---
+
+### Installation
+
+**HACS (Recommended):**
+1. Add custom repository: `Xerolux/idm-heatpump-hass`
+2. Search for "IDM Heatpump"
+3. Click Install
+
+**Manual:**
+1. Download `idm_heatpump.zip`
+2. Extract to `custom_components/idm_heatpump`
+3. Restart Home Assistant
+
+---
+
+[Full changelog: v0.7.0...v0.7.1](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.7.0...v0.7.1)
+
+---
+
+### Support
+
+Diese Integration wird in meiner Freizeit entwickelt – deine Unterstützung erhöht die Motivation für weitere Features und Updates! 🚀
+
+[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
+[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+
+_Jede Unterstützung ist eine große Motivation! Vielen Dank!_
+
+---
+
+### Feedback & Contributions
+
+- [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
+- [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
+- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CONTRIBUTING.md)
+
+---
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-06-23 04:18:39 UTC_
+
+---
+
+## [0.7.1] - 2026-06-23
+
+## v0.7.1 - IDM Heatpump
+
 **BETA RELEASE - Testing phase, may contain bugs**
 
 [![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
