@@ -21,7 +21,7 @@ from idm_heatpump.client import DataType
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER, MODEL
+from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
 from .library_adapter import get_bitflag_de_labels, get_slug_map_and_key
@@ -98,12 +98,15 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
         self._level = level
         self._attr_unique_id = f"{coordinator.client.host}:{coordinator.client.port}_technician_{level}"
         self._attr_name = self._NAMES[level]
-        self._attr_device_info = DeviceInfo(
+        device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
             name=coordinator.config_entry.title,  # type: ignore[union-attr]
             manufacturer=MANUFACTURER,
-            model=MODEL,
+            model=coordinator.model_name,
         )
+        if coordinator.firmware_version:
+            device_info["sw_version"] = coordinator.firmware_version
+        self._attr_device_info = device_info
         self._cancel_timer: Callable[[], None] | None = None
 
     async def async_added_to_hass(self) -> None:

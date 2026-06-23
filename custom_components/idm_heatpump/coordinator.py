@@ -19,7 +19,7 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from idm_heatpump import IdmModbusClient, RegisterDef
 
-from .const import DOMAIN, NEGATIVE_ONE_VALID_REGISTERS, UNUSED_VALUE
+from .const import DOMAIN, MODEL, NEGATIVE_ONE_VALID_REGISTERS, UNUSED_VALUE
 from .registers import collect_all_registers, collect_alias_map
 
 _LOGGER = logging.getLogger(__name__)
@@ -40,6 +40,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         select_descriptions: list[dict[str, Any]],
         switch_descriptions: list[dict[str, Any]],
         hide_unused: bool = True,
+        model_name: str = MODEL,
+        firmware_version: str | None = None,
     ) -> None:
         self._client = client
         self._sensor_descs = sensor_descriptions
@@ -49,6 +51,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._switch_descs = switch_descriptions
         self._registers: list[RegisterDef] = []
         self._hide_unused = hide_unused
+        self._model_name = model_name
+        self._firmware_version = firmware_version
         self._unused_registers: set[str] = set()
         self._alias_map: dict[int, list[str]] = {}
 
@@ -97,6 +101,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def hide_unused(self) -> bool:
         return self._hide_unused
+
+    @property
+    def model_name(self) -> str:
+        return self._model_name
+
+    @property
+    def firmware_version(self) -> str | None:
+        return self._firmware_version
 
     @property
     def unused_registers(self) -> set[str]:

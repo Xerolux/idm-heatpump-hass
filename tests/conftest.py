@@ -436,6 +436,8 @@ def _stub_homeassistant() -> None:
                 model=model,
                 **kwargs,
             )
+            if sw_version is not None:
+                self["sw_version"] = sw_version
 
     device_registry_mod.DeviceInfo = _DeviceInfo
 
@@ -894,6 +896,7 @@ def _stub_idm_heatpump() -> None:
     const_mod.MODEL_NAVIGATOR_10 = "navigator_10"  # type: ignore[attr-defined]
     const_mod.MODEL_NAVIGATOR_20 = "navigator_20"  # type: ignore[attr-defined]
     const_mod.MODEL_NAVIGATOR_PRO = "navigator_pro"  # type: ignore[attr-defined]
+    const_mod.MODEL_UNKNOWN = "unknown"  # type: ignore[attr-defined]
     sys.modules["idm_heatpump.const"] = const_mod
     idm_mod.const = const_mod  # type: ignore[attr-defined]
 

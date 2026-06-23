@@ -10,7 +10,10 @@ from custom_components.idm_heatpump import (
     async_setup_entry,
     async_unload_entry,
     async_reload_entry,
+    _detect_model_info,
 )
+from custom_components.idm_heatpump.const import MODEL
+from idm_heatpump.const import MODEL_UNKNOWN
 
 
 class TestIdmHeatpumpData:
@@ -395,3 +398,185 @@ class TestAsyncSetupEntryOptions:
         if len(setup_regs_args) >= 4:
             assert setup_regs_args[3] is False
         # If not passed at all, that's also fine (default=False)
+
+
+class TestDetectModelInfo:
+    """detect_model() result should drive the displayed device model and
+    firmware version, with a safe fallback when detection is unreliable."""
+
+    async def test_returns_detected_model_name(self):
+        client = AsyncMock()
+        client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10"))
+        model_name, _ = await _detect_model_info(client)
+        assert model_name == "Navigator 10"
+
+    async def test_falls_back_when_model_unknown(self):
+        client = AsyncMock()
+        client.detect_model = AsyncMock(return_value=MagicMock(model_name=MODEL_UNKNOWN))
+        model_name, _ = await _detect_model_info(client)
+        assert model_name == MODEL
+
+    async def test_falls_back_on_detection_exception(self):
+        client = AsyncMock()
+        client.detect_model = AsyncMock(side_effect=Exception("modbus timeout"))
+        model_name, firmware_version = await _detect_model_info(client)
+        assert model_name == MODEL
+        assert firmware_version is None
+
+    async def test_falls_back_on_non_string_model_name(self):
+        """A plain AsyncMock client (no detect_model patched) must not leak a
+        mock object into the device info model field."""
+        client = AsyncMock()
+        model_name, _ = await _detect_model_info(client)
+        assert model_name == MODEL
+
+    async def test_returns_firmware_version_when_present(self):
+        client = AsyncMock()
+        client.detect_model = AsyncMock(
+            return_value=MagicMock(model_name="Navigator 10", firmware_version="1.4.2")
+        )
+        _, firmware_version = await _detect_model_info(client)
+        assert firmware_version == "1.4.2"
+
+    async def test_firmware_version_none_when_not_exposed_by_library(self):
+        """idm-heatpump-api 0.3.4's IdmModelInfo has no firmware_version field;
+        getattr must not surface a mock/garbage value in that case."""
+        client = AsyncMock()
+        client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10", spec=["model_name"]))
+        _, firmware_version = await _detect_model_info(client)
+        assert firmware_version is None
+
+
+class TestAsyncSetupEntryModelDetection:
+    def _make_entry(self):
+        entry = MagicMock()
+        entry.entry_id = "model_test_id"
+        entry.title = "IDM Model Test"
+        entry.data = {"host": "10.0.0.9", "port": 502, "slave_id": 1}
+        entry.options = {
+            "scan_interval": 10,
+            "heating_circuits": ["a"],
+            "zone_count": 0,
+            "zone_rooms": {},
+            "hide_unused_registers": True,
+        }
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    async def test_coordinator_receives_detected_model_name(self, mock_hass):
+        entry = self._make_entry()
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10"))
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_coordinator
+
+        with patch(
+            "custom_components.idm_heatpump.get_idm_client", return_value=mock_client
+        ), patch(
+            "custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator
+        ), patch(
+            "custom_components.idm_heatpump.async_get_integration",
+            return_value=MagicMock(manifest={"version": "0.5.0"}),
+        ), patch(
+            "custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs.get("model_name") == "Navigator 10"
+
+    async def test_coordinator_receives_detected_firmware_version(self, mock_hass):
+        entry = self._make_entry()
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(
+            return_value=MagicMock(model_name="Navigator 10", firmware_version="2.0.1")
+        )
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_coordinator
+
+        with patch(
+            "custom_components.idm_heatpump.get_idm_client", return_value=mock_client
+        ), patch(
+            "custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator
+        ), patch(
+            "custom_components.idm_heatpump.async_get_integration",
+            return_value=MagicMock(manifest={"version": "0.5.0"}),
+        ), patch(
+            "custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs.get("firmware_version") == "2.0.1"
+
+    async def test_coordinator_falls_back_to_default_model(self, mock_hass):
+        entry = self._make_entry()
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(side_effect=Exception("no response"))
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_coordinator
+
+        with patch(
+            "custom_components.idm_heatpump.get_idm_client", return_value=mock_client
+        ), patch(
+            "custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator
+        ), patch(
+            "custom_components.idm_heatpump.async_get_integration",
+            return_value=MagicMock(manifest={"version": "0.5.0"}),
+        ), patch(
+            "custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]
+        ), patch(
+            "custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs.get("model_name") == MODEL
