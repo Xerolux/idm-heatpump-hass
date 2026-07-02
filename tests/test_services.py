@@ -1,6 +1,6 @@
 """Tests for service handlers."""
 
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -191,19 +191,22 @@ class TestGetCoordinator:
 
 
 class TestSetSystemMode:
-    @pytest.mark.parametrize("mode_str,expected_val", [
-        ("standby", 0),
-        ("automatik", 1),
-        ("automatic", 1),
-        ("abwesend", 2),
-        ("away", 2),
-        ("urlaub", 3),
-        ("holiday", 3),
-        ("nur warmwasser", 4),
-        ("hot water only", 4),
-        ("nur heizung/kuehlung", 5),
-        ("heating/cooling only", 5),
-    ])
+    @pytest.mark.parametrize(
+        "mode_str,expected_val",
+        [
+            ("standby", 0),
+            ("automatik", 1),
+            ("automatic", 1),
+            ("abwesend", 2),
+            ("away", 2),
+            ("urlaub", 3),
+            ("holiday", 3),
+            ("nur warmwasser", 4),
+            ("hot water only", 4),
+            ("nur heizung/kuehlung", 5),
+            ("heating/cooling only", 5),
+        ],
+    )
     async def test_valid_modes(self, mock_hass, mode_str, expected_val):
         coord = _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
@@ -283,6 +286,26 @@ class TestWriteRegister:
         with pytest.raises(HomeAssistantError):
             await _handle_write_register(mock_hass, call)
 
+    async def test_write_error_creates_write_rejected_issue(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.client.write_register = AsyncMock(side_effect=Exception("write failed"))
+        call = MagicMock()
+        call.data = {"address": 1000, "value": 1, "acknowledge_risk": True}
+
+        with patch("custom_components.idm_heatpump.services.ir") as mock_ir:
+            with pytest.raises(HomeAssistantError):
+                await _handle_write_register(mock_hass, call)
+
+        mock_ir.async_create_issue.assert_called_once_with(
+            mock_hass,
+            "idm_heatpump",
+            "write_rejected",
+            is_fixable=False,
+            severity=mock_ir.IssueSeverity.WARNING,
+            translation_key="write_rejected",
+            translation_placeholders={"register": "manual_1000", "address": "1000"},
+        )
+
     async def test_returns_value_in_result(self, mock_hass):
         _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
@@ -299,16 +322,19 @@ class TestWriteRegister:
         assert result["success"] is True
         assert result["value"] == "not_a_number"
 
-    @pytest.mark.parametrize("datatype_str,expected_type", [
-        ("uint16", "UINT16"),
-        ("UINT16", "UINT16"),  # case-insensitive
-        ("int16", "INT16"),
-        ("INT16", "INT16"),
-        ("float", "FLOAT"),
-        ("FLOAT", "FLOAT"),
-        ("uchar", "UCHAR"),
-        ("bool", "BOOL"),
-    ])
+    @pytest.mark.parametrize(
+        "datatype_str,expected_type",
+        [
+            ("uint16", "UINT16"),
+            ("UINT16", "UINT16"),  # case-insensitive
+            ("int16", "INT16"),
+            ("INT16", "INT16"),
+            ("float", "FLOAT"),
+            ("FLOAT", "FLOAT"),
+            ("uchar", "UCHAR"),
+            ("bool", "BOOL"),
+        ],
+    )
     async def test_all_valid_datatypes(self, mock_hass, datatype_str, expected_type):
         _make_coordinator_in_hass(mock_hass)
         call = MagicMock()

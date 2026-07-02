@@ -19,6 +19,7 @@ from homeassistant.core import (
     SupportsResponse,
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import issue_registry as ir
 
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
@@ -224,6 +225,15 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
         _LOGGER.warning("Manual register write: address=%d value=%s", address, value)
         return {"success": True, "address": address, "value": str(value)}
     except Exception as err:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            "write_rejected",
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="write_rejected",
+            translation_placeholders={"register": reg.name, "address": str(reg.address)},
+        )
         raise HomeAssistantError(
             translation_domain=DOMAIN,
             translation_key="write_failed",

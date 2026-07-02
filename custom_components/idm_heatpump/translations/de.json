@@ -247,6 +247,22 @@
     "cannot_connect": {
       "title": "Verbindung zur IDM-Wärmepumpe nicht möglich",
       "description": "Home Assistant kann die IDM-Wärmepumpe unter **{host}** nicht erreichen.\n\nBitte prüfen:\n- Netzwerkverbindung zum Gerät\n- Modbus TCP ist in der Steuerung aktiviert (*Fachmannebene → Kommunikation → Modbus*)\n- IP-Adresse und Port sind in den Integrationseinstellungen korrekt"
+    },
+    "wrong_slave_id": {
+      "title": "Keine Modbus-Antwort der IDM-Wärmepumpe",
+      "description": "Home Assistant erreicht den Modbus-Endpunkt unter **{host}**, aber die Steuerung antwortet nicht wie erwartet.\n\nBitte prüfen:\n- Die konfigurierte Slave-ID passt zum Modbus-Proxy oder zur Steuerung\n- Der Proxy leitet an das richtige IDM-Gerät weiter\n- Kein anderer Modbus-Client blockiert die Verbindung"
+    },
+    "incompatible_firmware": {
+      "title": "IDM-Firmware oder Modbus-Funktion nicht unterstützt",
+      "description": "Die Wärmepumpe antwortet, lehnt aber eine Modbus-Funktion ab, die diese Integration benötigt.\n\nBitte prüfen:\n- Die Navigator-Firmware unterstützt Modbus TCP\n- Integration und API sind aktuell\n- Das Gerätemodell ist für den verwendeten Funktionsumfang als unterstützt dokumentiert"
+    },
+    "register_not_supported": {
+      "title": "IDM-Register wird von diesem Gerät nicht unterstützt",
+      "description": "Die Wärmepumpe hat Register **{register}** an Adresse **{address}** abgelehnt. Die Integration überspringt dieses Register und liest unterstützte Werte weiter aus.\n\nMeist bedeutet das, dass die Funktion auf diesem Modell, dieser Firmware oder dieser Hardwareausstattung nicht verfügbar ist."
+    },
+    "write_rejected": {
+      "title": "IDM-Registerschreibvorgang abgelehnt",
+      "description": "Die Wärmepumpe hat einen Schreibvorgang auf Register **{register}** an Adresse **{address}** abgelehnt.\n\nBitte prüfen:\n- Der Wert liegt im dokumentierten Bereich\n- Die Funktion ist auf diesem Gerät aktiviert\n- Die Steuerung erlaubt diesen Schreibvorgang aktuell"
     }
   },
   "services": {

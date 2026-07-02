@@ -25,12 +25,31 @@ from .registers import collect_all_registers, collect_alias_map
 
 _LOGGER = logging.getLogger(__name__)
 _ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
+_CONNECTIVITY_REPAIR_ISSUES = (
+    "cannot_connect",
+    "wrong_slave_id",
+    "incompatible_firmware",
+)
 
 
 def _is_illegal_address_error(err: ModbusException) -> bool:
     """Return whether a Modbus exception reports an unsupported address."""
     message = str(err).casefold()
     return any(marker in message for marker in _ILLEGAL_ADDRESS_MARKERS)
+
+
+def _repair_issue_for_error(err: Exception) -> str:
+    """Map communication errors to actionable repair issue translations."""
+    message = str(err).casefold()
+    if isinstance(err, ConnectionException):
+        return "cannot_connect"
+    if any(marker in message for marker in ("slave", "unit id", "device id", "no response", "no reply")):
+        return "wrong_slave_id"
+    if any(
+        marker in message for marker in ("exception_code=1", "illegal function", "unsupported function", "firmware")
+    ):
+        return "incompatible_firmware"
+    return "cannot_connect"
 
 
 class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -187,6 +206,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if len(readable) == 1:
                 reg = readable[0]
                 self._unsupported_registers.add(reg.name)
+                ir.async_create_issue(
+                    self.hass,
+                    DOMAIN,
+                    "register_not_supported",
+                    is_fixable=False,
+                    severity=ir.IssueSeverity.WARNING,
+                    translation_key="register_not_supported",
+                    translation_placeholders={"register": reg.name, "address": str(reg.address)},
+                )
                 _LOGGER.warning(
                     "Register %s (address %d) is not supported by this heat pump; skipping it",
                     reg.name,
@@ -203,18 +231,20 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         try:
             data = await self._async_read_registers_resilient(self._registers)
         except Exception as err:
+            issue_id = _repair_issue_for_error(err)
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                "cannot_connect",
+                issue_id,
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
-                translation_key="cannot_connect",
+                translation_key=issue_id,
                 translation_placeholders={"host": self._client.host},
             )
             raise UpdateFailed(f"Error communicating with heat pump: {err}") from err
 
-        ir.async_delete_issue(self.hass, DOMAIN, "cannot_connect")
+        for issue_id in _CONNECTIVITY_REPAIR_ISSUES:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
 
         if not data:
             raise UpdateFailed("No data received from heat pump")
@@ -244,7 +274,19 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await self.async_request_refresh()
 
     async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
-        await self._client.write_register(reg, value)
+        try:
+            await self._client.write_register(reg, value)
+        except Exception:
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                "write_rejected",
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key="write_rejected",
+                translation_placeholders={"register": reg.name, "address": str(reg.address)},
+            )
+            raise
         # Optimistic update so entities reflect the new value immediately
         if self.data is not None:
             self.data[reg.name] = value
