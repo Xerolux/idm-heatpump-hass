@@ -7,6 +7,8 @@ import pytest
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
 
+from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
+
 
 def _make_register(name="temp", address=100, writable=False, enum_options=None, datatype=DataType.FLOAT):
     return RegisterDef(
@@ -270,6 +272,64 @@ class TestSensorAsyncSetupEntry:
 
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added_entities) == 2  # level_1 and level_2
+
+    async def test_adds_web_only_sensors_when_web_enabled(self):
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = True
+        coord.model_name = "Navigator 10"
+        coord.firmware_version = "NAV10_20.23"
+        coord._registers = [_make_register("outdoor_temp"), _make_register("heat_sink_flow_rate")]
+        coord.web_supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.23",
+            sensor_values={
+                "hotgas_temperature": IdmWebSensorValue("72.5°C", 72.5, "°C"),
+                "software_version": IdmWebSensorValue("NAV10_20.23", "NAV10_20.23"),
+                "outside_air_temperature": IdmWebSensorValue("7.0°C", 7.0, "°C"),
+            },
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        web_entities = [entity for entity in added_entities if isinstance(entity, IdmWebSensor)]
+        web_keys = {entity.entity_description.key for entity in web_entities}
+        assert "web_hotgas_temperature" in web_keys
+        assert "web_software_version" in web_keys
+        assert "web_outside_air_temperature" not in web_keys
+        hotgas = next(entity for entity in web_entities if entity.entity_description.key == "web_hotgas_temperature")
+        assert hotgas.native_value == 72.5
+        assert hotgas.available is True
+
+    async def test_does_not_add_web_sensors_when_web_disabled(self):
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = False
+        coord.web_supplement = IdmWebSupplement(
+            sensor_values={"hotgas_temperature": IdmWebSensorValue("72.5°C", 72.5, "°C")}
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        assert not any(isinstance(entity, IdmWebSensor) for entity in added_entities)
 
 
 class TestIdmTechnicianCodeSensor:

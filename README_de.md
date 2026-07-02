@@ -89,8 +89,9 @@ Maintainer sollten vor einem stabilen Release den
 - Home Assistant **2026.5.0+**
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
+- Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.14.2+ (wird von Home Assistant 2026.5 bereitgestellt)
-- `pymodbus ==3.12.1` · `idm-heatpump-api ==0.3.7` (automatisch installiert)
+- `pymodbus ==3.12.1` · `idm-heatpump-api[web] ==0.3.8` (automatisch installiert)
 
 ---
 
@@ -119,6 +120,8 @@ Home Assistant
     │       │               FC 03: Read Input Registers
     │       │               FC 16: Write Multiple Registers
     │       │
+    │       ├── Optionale lokale Web-Zusatzdaten (PIN, read-only, eigenes Intervall)
+    │       │
     │       └── Entities (sensor, binary_sensor, number, select, switch)
     │
     ├── Services (set_system_mode, acknowledge_errors, write_register)
@@ -133,6 +136,7 @@ Home Assistant
 - **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
 - **Auto-Recovery**: Exponentielles Backoff bei Verbindungsfehlern
+- **Optionale Web-Zusatzdaten**: lokale read-only Erkennung von Navigator-Generation, Softwareversion, Modell und Webdiagnosen; Modbus bleibt führend
 
 ---
 

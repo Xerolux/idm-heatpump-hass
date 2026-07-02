@@ -8,13 +8,15 @@
           "name": "Name",
           "host": "IP-Adresse / Hostname",
           "port": "Port",
-          "slave_id": "Slave-ID"
+          "slave_id": "Slave-ID",
+          "web_pin": "Lokale Web-PIN"
         },
         "data_description": {
           "name": "Anzeigename des Geräts in Home Assistant, z. B. \"IDM Wärmepumpe\".",
           "host": "IP-Adresse oder Hostname deines IDM Navigator 2.0 / 10, z. B. `192.168.1.100`.",
           "port": "Modbus-TCP-Port der Steuerung. Standard ist `502`.",
-          "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen."
+          "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen.",
+          "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, um nur Modbus zu verwenden."
         }
       },
       "reconfigure": {
@@ -23,12 +25,14 @@
         "data": {
           "host": "IP-Adresse / Hostname",
           "port": "Port",
-          "slave_id": "Slave-ID"
+          "slave_id": "Slave-ID",
+          "web_pin": "Lokale Web-PIN"
         },
         "data_description": {
           "host": "Neue IP-Adresse oder neuer Hostname des IDM Navigator 2.0 / 10.",
           "port": "Modbus-TCP-Port. Standard ist `502`.",
-          "slave_id": "Modbus-Slave-ID. Standard ist `1`."
+          "slave_id": "Modbus-Slave-ID. Standard ist `1`.",
+          "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, damit die Integration nur Modbus verwendet."
         }
       },
       "options": {
@@ -40,7 +44,9 @@
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
           "technician_codes": "Fachmann-Ebene Codes anzeigen",
-          "enable_cascade": "Kaskaden-Register aktivieren"
+          "enable_cascade": "Kaskaden-Register aktivieren",
+          "web_extra_data": "Web-Zusatzdaten aktivieren",
+          "web_scan_interval": "Web-Zusatzdaten-Intervall"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -48,7 +54,9 @@
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
           "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
-          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind."
+          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind.",
+          "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten wie Navigator-Generation und Softwareversion, wenn eine PIN hinterlegt ist.",
+          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten."
         }
       },
       "zones": {
@@ -83,6 +91,7 @@
     "error": {
       "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfe IP-Adresse, Port und ob Modbus TCP in der Steuerung aktiviert ist.",
       "host_required": "Bitte eine gültige IP-Adresse oder einen Hostnamen eingeben.",
+      "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt. Bitte gib die korrekte PIN ein oder lasse das Feld leer, um nur Modbus zu verwenden.",
       "name_required": "Bitte einen Namen für das Gerät eingeben."
     },
     "abort": {
@@ -101,7 +110,9 @@
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
           "technician_codes": "Fachmann-Ebene Codes anzeigen",
-          "enable_cascade": "Kaskaden-Register aktivieren"
+          "enable_cascade": "Kaskaden-Register aktivieren",
+          "web_extra_data": "Web-Zusatzdaten aktivieren",
+          "web_scan_interval": "Web-Zusatzdaten-Intervall"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -109,7 +120,9 @@
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
           "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
-          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind."
+          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind.",
+          "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten wie Navigator-Generation und Softwareversion, wenn eine PIN hinterlegt ist.",
+          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten."
         }
       },
       "zones": {
@@ -244,6 +257,10 @@
     }
   },
   "issues": {
+    "web_pin_missing": {
+      "title": "IDM Web-PIN nicht konfiguriert",
+      "description": "Die Integration für **{name}** läuft im reinen Modbus-Modus, weil keine lokale Navigator-Web-PIN konfiguriert ist.\n\nSetze die PIN im Reconfigure-Flow der Integration, wenn zusätzliche Webdaten wie Navigator-Generation und Softwareversion gelesen werden sollen."
+    },
     "cannot_connect": {
       "title": "Verbindung zur IDM-Wärmepumpe nicht möglich",
       "description": "Home Assistant kann die IDM-Wärmepumpe unter **{host}** nicht erreichen.\n\nBitte prüfen:\n- Netzwerkverbindung zum Gerät\n- Modbus TCP ist in der Steuerung aktiviert (*Fachmannebene → Kommunikation → Modbus*)\n- IP-Adresse und Port sind in den Integrationseinstellungen korrekt"

@@ -22,6 +22,7 @@ from pymodbus.exceptions import ConnectionException, ModbusException
 
 from .const import DOMAIN, MODEL, NEGATIVE_ONE_VALID_REGISTERS, UNUSED_VALUE
 from .registers import collect_all_registers, collect_alias_map
+from .web_data import IdmWebSupplement, async_read_web_supplement
 
 _LOGGER = logging.getLogger(__name__)
 _ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
@@ -70,6 +71,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         model_name: str = MODEL,
         firmware_version: str | None = None,
         model_info: IdmModelInfo | None = None,
+        web_pin: str | None = None,
+        web_supplement: IdmWebSupplement | None = None,
     ) -> None:
         self._client = client
         self._sensor_descs = sensor_descriptions
@@ -82,6 +85,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._model_name = model_name
         self._firmware_version = firmware_version
         self._model_info = model_info
+        self._web_pin = web_pin
+        self._web_supplement = web_supplement
         self._unused_registers: set[str] = set()
         self._unsupported_registers: set[str] = set()
         self._alias_map: dict[int, list[str]] = {}
@@ -149,6 +154,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def model_info(self) -> IdmModelInfo | None:
         return self._model_info
+
+    @property
+    def web_supplement(self) -> IdmWebSupplement | None:
+        return self._web_supplement
+
+    @property
+    def web_enabled(self) -> bool:
+        return bool(self._web_pin)
 
     @property
     def unused_registers(self) -> set[str]:
@@ -272,6 +285,35 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._unused_registers = new_unused_registers
 
         return data
+
+    async def async_refresh_web_supplement(self) -> None:
+        """Refresh optional local web data without affecting Modbus updates."""
+        if not self._web_pin:
+            return
+
+        try:
+            web_supplement = await async_read_web_supplement(self._client.host, self._web_pin)
+        except Exception:
+            _LOGGER.debug("Optional IDM web supplement refresh failed", exc_info=True)
+            return
+
+        if web_supplement is None:
+            return
+
+        self._web_supplement = web_supplement
+        if web_supplement.model_name:
+            self._model_name = web_supplement.model_name
+        if web_supplement.software_version:
+            self._firmware_version = web_supplement.software_version
+
+        if self.data is not None:
+            if web_supplement.navigator_version:
+                self.data["web_navigator_version"] = web_supplement.navigator_version
+            if web_supplement.software_version:
+                self.data["web_software_version"] = web_supplement.software_version
+            if web_supplement.heatpump_model:
+                self.data["web_heatpump_model"] = web_supplement.heatpump_model
+        self.async_update_listeners()
 
     async def _delayed_refresh(self, delay: float = 0.5) -> None:
         await asyncio.sleep(delay)

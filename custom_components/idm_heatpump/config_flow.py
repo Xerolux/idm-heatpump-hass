@@ -7,6 +7,7 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
+import asyncio
 import logging
 from typing import Any
 
@@ -37,11 +38,16 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     CONF_ENABLE_CASCADE,
+    CONF_DETECTED_NAVIGATOR_VERSION,
+    CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     CONF_TECHNICIAN_CODES,
+    CONF_WEB_ENABLED,
+    CONF_WEB_PIN,
+    CONF_WEB_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     DEFAULT_ENABLE_CASCADE,
@@ -49,11 +55,14 @@ from .const import (
     DEFAULT_PORT,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
+    DEFAULT_WEB_ENABLED,
+    DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     HEATING_CIRCUITS,
     MAX_ROOM_COUNT,
     MAX_ZONE_COUNT,
 )
+from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,6 +77,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): NumberSelector(
             NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
         ),
+        vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
     }
 )
 
@@ -81,6 +91,7 @@ STEP_RECONFIGURE_SCHEMA = vol.Schema(
         vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): NumberSelector(
             NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
         ),
+        vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
     }
 )
 
@@ -140,8 +151,29 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                 CONF_ENABLE_CASCADE,
                 default=options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE),
             ): BooleanSelector(BooleanSelectorConfig()),
+            vol.Required(
+                CONF_WEB_ENABLED,
+                default=options.get(CONF_WEB_ENABLED, DEFAULT_WEB_ENABLED),
+            ): BooleanSelector(BooleanSelectorConfig()),
+            vol.Required(
+                CONF_WEB_SCAN_INTERVAL,
+                default=int(options.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL)),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=30,
+                    max=1800,
+                    step=10,
+                    mode=NumberSelectorMode.SLIDER,
+                    unit_of_measurement="s",
+                )
+            ),
         }
     )
+
+
+def _clean_pin(value: Any) -> str:
+    """Normalize an optional local web PIN from flow input."""
+    return str(value or "").strip()
 
 
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
@@ -197,8 +229,21 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if not await self._test_connection(user_input):
                     errors["base"] = "cannot_connect"
                 else:
-                    self._data = {**user_input, CONF_HOST: host, CONF_NAME: name}
-                    return await self.async_step_options()
+                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
+                    try:
+                        detected = await self._async_detect_web_supplement(host, web_pin)
+                    except IdmWebAuthenticationFailed:
+                        _LOGGER.warning("IDM Navigator web PIN was rejected during setup for host %s", host)
+                        errors[CONF_WEB_PIN] = "invalid_web_pin"
+                    else:
+                        self._data = {
+                            **user_input,
+                            CONF_HOST: host,
+                            CONF_NAME: name,
+                            CONF_WEB_PIN: web_pin,
+                            **detected,
+                        }
+                        return await self.async_step_options()
 
         return self.async_show_form(
             step_id="user",
@@ -219,19 +264,29 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             elif not await self._test_connection(user_input):
                 errors["base"] = "cannot_connect"
             else:
-                return self.async_update_and_abort(
-                    entry,
-                    data_updates={
-                        CONF_HOST: host,
-                        CONF_PORT: int(user_input.get(CONF_PORT, DEFAULT_PORT)),
-                        CONF_SLAVE_ID: int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
-                    },
-                )
+                web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
+                try:
+                    detected = await self._async_detect_web_supplement(host, web_pin)
+                except IdmWebAuthenticationFailed:
+                    _LOGGER.warning("IDM Navigator web PIN was rejected during reconfiguration for host %s", host)
+                    errors[CONF_WEB_PIN] = "invalid_web_pin"
+                else:
+                    return self.async_update_and_abort(
+                        entry,
+                        data_updates={
+                            CONF_HOST: host,
+                            CONF_PORT: int(user_input.get(CONF_PORT, DEFAULT_PORT)),
+                            CONF_SLAVE_ID: int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
+                            CONF_WEB_PIN: web_pin,
+                            **detected,
+                        },
+                    )
 
         suggested = {
             CONF_HOST: entry.data[CONF_HOST],
             CONF_PORT: entry.data.get(CONF_PORT, DEFAULT_PORT),
             CONF_SLAVE_ID: entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID),
+            CONF_WEB_PIN: entry.data.get(CONF_WEB_PIN, ""),
         }
 
         return self.async_show_form(
@@ -320,6 +375,32 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 await client.disconnect()
             except Exception:
                 _LOGGER.debug("Error closing connection test client", exc_info=True)
+
+    async def _async_detect_web_supplement(self, host: str, pin: str) -> dict[str, str]:
+        """Detect optional web metadata during setup/reconfigure."""
+        if not web_pin_configured(pin):
+            return {}
+
+        # Keep Modbus test and local web access slightly offset.
+        await asyncio.sleep(0.3)
+        try:
+            web_supplement = await async_read_web_supplement(host, pin)
+        except IdmWebAuthenticationFailed:
+            _LOGGER.error("IDM Navigator web PIN was rejected for %s; please re-enter the PIN", host)
+            raise
+        except Exception:
+            _LOGGER.debug("Optional web supplement detection failed during config flow", exc_info=True)
+            return {}
+
+        if web_supplement is None:
+            return {}
+
+        detected: dict[str, str] = {}
+        if web_supplement.navigator_version:
+            detected[CONF_DETECTED_NAVIGATOR_VERSION] = web_supplement.navigator_version
+        if web_supplement.software_version:
+            detected[CONF_DETECTED_SOFTWARE_VERSION] = web_supplement.software_version
+        return detected
 
 
 class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):

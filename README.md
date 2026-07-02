@@ -89,8 +89,9 @@ before publishing a stable release.
 - Home Assistant **2026.5.0+**
 - HACS ([Installation guide](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502)
+- Optional local Navigator web PIN for additional read-only web diagnostics
 - Python 3.14.2+ (provided by Home Assistant 2026.5)
-- `pymodbus ==3.12.1` · `idm-heatpump-api ==0.3.7` (installed automatically)
+- `pymodbus ==3.12.1` · `idm-heatpump-api[web] ==0.3.8` (installed automatically)
 
 ---
 
@@ -117,6 +118,8 @@ Home Assistant
     |       |       |
     |       |       +-- IDM Navigator 2.0 / 10 (Modbus TCP, Port 502)
     |       |
+    |       +-- Optional local web supplement (PIN, read-only, separate interval)
+    |       |
     |       +-- Entities (sensor, binary_sensor, number, select, switch)
     |
     +-- Services (set_system_mode, acknowledge_errors, write_register)
@@ -133,6 +136,7 @@ Home Assistant
 - **Auto-recovery**: Exponential backoff on connection errors
 - **Library-powered**: All register definitions sourced from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools
 - **Navigator 10 support**: Heat sink (Trennwärmetauscher) sensors, flow rate monitoring (Sieb detection), groundwater temperatures, booster A/B diagnostics
+- **Optional web supplement**: local read-only Navigator generation, software version, model and web-only diagnostics; Modbus remains authoritative
 
 ---
 

@@ -26,6 +26,11 @@ CONF_ZONE_ROOMS: str = "zone_rooms"
 CONF_HIDE_UNUSED: str = "hide_unused_registers"
 CONF_TECHNICIAN_CODES: str = "technician_codes"
 CONF_ENABLE_CASCADE: str = "enable_cascade"
+CONF_WEB_PIN: str = "web_pin"
+CONF_WEB_ENABLED: str = "web_extra_data"
+CONF_WEB_SCAN_INTERVAL: str = "web_scan_interval"
+CONF_DETECTED_NAVIGATOR_VERSION: str = "detected_navigator_version"
+CONF_DETECTED_SOFTWARE_VERSION: str = "detected_software_version"
 
 DEFAULT_HOST: str = ""
 DEFAULT_PORT: int = 502
@@ -33,6 +38,8 @@ DEFAULT_SLAVE_ID: int = 1
 DEFAULT_SCAN_INTERVAL: int = 10
 DEFAULT_HIDE_UNUSED: bool = True
 DEFAULT_ENABLE_CASCADE: bool = False
+DEFAULT_WEB_ENABLED: bool = False
+DEFAULT_WEB_SCAN_INTERVAL: int = 60
 
 UNUSED_VALUE: float = -1.0
 

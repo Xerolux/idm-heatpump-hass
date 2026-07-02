@@ -22,7 +22,7 @@ ha_integration_type: device
 ha_quality_scale: gold
 ha_requirements:
   - pymodbus==3.12.1
-  - idm-heatpump-api==0.3.7
+  - idm-heatpump-api[web]==0.3.8
 ---
 
 > Draft for a possible future Home Assistant Core documentation page. The
@@ -56,10 +56,13 @@ The integration is set up via the UI. During setup you will configure:
 | Port | Modbus TCP port | `502` |
 | Slave ID | Modbus slave ID | `1` |
 | Name | Display name for the device | `IDM Navigator` |
+| Local web PIN | Optional PIN for read-only local web supplement data | empty |
 | Scan interval | How often registers are read (5–300 s) | `10` |
 | Heating circuits | Which circuits (A–G) are active | — |
 | Zone modules | Number of zone modules (0–10) | `0` |
 | Technician codes | Show technician-level access code sensors | `false` |
+| Web supplement data | Enable optional local web diagnostics when a PIN is configured | `false` |
+| Web supplement interval | Separate interval for optional web data | `60` |
 
 ### Options
 
@@ -69,10 +72,11 @@ After initial setup, options can be changed via **Settings → Devices & Service
 - **Active heating circuits** – Enable/disable individual heating circuits A through G
 - **Zone modules** – Number of connected zone modules (each supports up to 8 rooms)
 - **Room names** – Custom names for rooms in each zone module
+- **Web supplement data** – Optional read-only local web poll for Navigator generation, software version, model, web-only diagnostics, and Navigator 10 infosystem notifications
 
 ### Reconfiguration
 
-Host, port, and Slave ID can be updated without deleting the integration entry via **Settings → Devices & Services → IDM Heatpump → Reconfigure**.
+Host, port, Slave ID, and the optional local web PIN can be updated without deleting the integration entry via **Settings → Devices & Services → IDM Heatpump → Reconfigure**. If the PIN is wrong, the form shows the PIN error immediately and Modbus-only operation remains available when the PIN is left empty.
 
 ## Platforms
 
@@ -96,8 +100,10 @@ Over 100 sensors are available, including:
 | Firmware version | Navigator firmware version (diagnostic) |
 | Error code | Current error code (diagnostic) |
 | Technician code level 1/2 | Time-based technician access codes (if enabled) |
+| Web supplement sensors | Optional Navigator generation, software version, model, web-only diagnostics, and Navigator 10 infosystem notification summary |
 
 Temperature sensors use `SensorDeviceClass.TEMPERATURE`, energy sensors use `ENERGY`, power sensors use `POWER`. Technical and diagnostic sensors are **disabled by default** and can be enabled individually.
+When a web value duplicates a Modbus entity, the web entity is skipped so Modbus remains the authoritative source.
 
 ### Binary sensor
 

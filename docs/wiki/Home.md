@@ -17,10 +17,11 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | Feature | Details |
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
+| **Optional supplement** | Local Navigator web API, read-only, PIN optional |
 | **Min HA Version** | 2026.5.0 |
 | **Python** | 3.14.2+ |
 | **pymodbus** | ==3.12.1 |
-| **Library** | idm-heatpump-api ==0.3.7 |
+| **Library** | idm-heatpump-api[web] ==0.3.8 |
 | **License** | MIT |
 | **Languages** | DE, EN |
 | **Entities** | 169+ (109 sensors, 8 binary, 44 numbers, 4 selects, 4 switches) |
@@ -37,6 +38,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **Cascade & Bivalence**: Multi-heat pump control, heating element integration
 - **BMS Remote Maintenance**: BMS temperature requests (cyclic writing)
 - **Error Management**: Error detection, error acknowledgment, diagnostics export
+- **Optional Web Supplement**: Navigator generation, software version, heat pump model, web-only diagnostics, and Navigator 10 infosystem notifications without replacing Modbus values
 
 ---
 
@@ -79,6 +81,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **EEPROM protection**: Sensitive registers tracked and protected
 - **Auto-recovery**: Exponential backoff on connection errors
 - **Navigator 10**: Heat sink sensors, flow rate (Sieb monitoring), groundwater temps, booster A/B
+- **Web supplement**: Separate interval, slightly delayed from Modbus polling, and non-fatal when unavailable or disabled
 
 ---
 

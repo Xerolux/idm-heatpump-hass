@@ -10,13 +10,17 @@ from custom_components.idm_heatpump.config_flow import (
     _build_zones_schema,
 )
 from custom_components.idm_heatpump.const import (
+    CONF_DETECTED_NAVIGATOR_VERSION,
+    CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONF_TECHNICIAN_CODES,
+    CONF_WEB_PIN,
 )
+from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed
 
 
 def _make_flow():
@@ -135,6 +139,51 @@ class TestAsyncStepUser:
                 )
         assert result["step_id"] == "options"
         flow._async_abort_entries_match.assert_called_once_with({"host": "192.168.1.100", "port": 502, "slave_id": 1})
+
+    async def test_successful_connection_stores_detected_web_metadata(self):
+        flow = _make_flow()
+        detected = {
+            CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10",
+            CONF_DETECTED_SOFTWARE_VERSION: "NAV10_20.23",
+        }
+        with patch.object(flow, "_test_connection", return_value=True):
+            with patch.object(flow, "_async_detect_web_supplement", return_value=detected):
+                with patch.object(
+                    flow,
+                    "async_step_options",
+                    return_value={"type": "form", "step_id": "options", "errors": {}},
+                ):
+                    result = await flow.async_step_user({
+                        "name": "IDM Test",
+                        "host": "192.168.1.100",
+                        "port": 502,
+                        "slave_id": 1,
+                        CONF_WEB_PIN: " 1234 ",
+                    })
+
+        assert result["step_id"] == "options"
+        assert flow._data[CONF_WEB_PIN] == "1234"
+        assert flow._data[CONF_DETECTED_NAVIGATOR_VERSION] == "Navigator 10"
+        assert flow._data[CONF_DETECTED_SOFTWARE_VERSION] == "NAV10_20.23"
+
+    async def test_invalid_web_pin_shows_field_error(self):
+        flow = _make_flow()
+        with patch.object(flow, "_test_connection", return_value=True):
+            with patch.object(
+                flow,
+                "_async_detect_web_supplement",
+                side_effect=IdmWebAuthenticationFailed("bad pin"),
+            ):
+                result = await flow.async_step_user({
+                    "name": "IDM Test",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "0000",
+                })
+
+        assert result["type"] == "form"
+        assert result["errors"][CONF_WEB_PIN] == "invalid_web_pin"
 
 
 class TestAsyncStepOptions:
@@ -294,6 +343,7 @@ class TestAsyncStepReconfigure:
                 "host": "idm.local",
                 "port": 5020,
                 "slave_id": 2,
+                "web_pin": "",
             },
         )
 
@@ -322,8 +372,34 @@ class TestAsyncStepReconfigure:
                 "host": "idm.local",
                 "port": 5020,
                 "slave_id": 1,
+                "web_pin": "",
             },
         )
+
+    async def test_reconfigure_invalid_web_pin_shows_field_error(self):
+        flow = _make_flow()
+        entry = MagicMock()
+        entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
+        entry.title = "IDM"
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(
+                flow,
+                "_async_detect_web_supplement",
+                side_effect=IdmWebAuthenticationFailed("bad pin"),
+            ),
+        ):
+            result = await flow.async_step_reconfigure({
+                "host": "idm.local",
+                "port": 502,
+                "slave_id": 1,
+                CONF_WEB_PIN: "0000",
+            })
+
+        assert result["type"] == "form"
+        assert result["errors"][CONF_WEB_PIN] == "invalid_web_pin"
 
 
 class TestTestConnection:

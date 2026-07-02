@@ -10,6 +10,31 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## Unreleased
+
+### Added
+
+- Integrated the optional local web supplement from `idm-heatpump-api[web]==0.3.8`.
+- Added optional local web PIN handling in setup and reconfiguration.
+- Added web supplement options for enabling the web poll and configuring a
+  separate web interval.
+- Added read-only web sensors for Navigator generation, software version, heat
+  pump model, web-only diagnostic values, and Navigator 10 infosystem
+  notification count/summary.
+
+### Changed
+
+- Web polling runs separately from Modbus and starts slightly delayed.
+- Modbus remains the authoritative data path; duplicate web values are skipped.
+- Missing PIN, unavailable web API, and runtime web failures no longer affect
+  Modbus polling.
+
+### Fixed
+
+- Wrong local web PINs are rejected immediately in setup/reconfiguration and
+  logged without disabling Modbus-only operation.
+
 ## [0.7.3] - 2026-07-02
 
 ## v0.7.3 - IDM Heatpump
