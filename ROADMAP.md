@@ -142,14 +142,15 @@ Ziel: Home Assistant enthält nur HA-spezifische Logik; Register- und Gerätewis
 
 ### Dünner Adapter
 
-- [ ] Verantwortlichkeiten von `library_adapter.py` inventarisieren und in kleine Module zerlegen:
+- [x] Verantwortlichkeiten von `library_adapter.py` inventarisieren und in kleine Module zerlegen:
   - Register -> EntityDescription;
   - Übersetzungsschlüssel und Enum-Slugs;
   - Einheiten, Device Classes und State Classes;
   - modellabhängige Entity-Auswahl.
-- [ ] Neutrale Metadaten wie Einheit, Schreibbarkeit, Grenzen, Standardaktivierung und Messsemantik in der API vervollständigen.
-- [ ] HA-spezifische Typen und Übersetzungen in der Integration belassen.
-- [ ] Zielgröße festlegen: Adapter deutlich unter dem heutigen Umfang; keine langen manuellen Namenslisten, wenn Translation Keys reichen.
+- [x] Neutrale Metadaten wie Einheit, Schreibbarkeit, Grenzen, Standardaktivierung und Messsemantik in der API vervollständigen.
+- [x] HA-spezifische Typen und Übersetzungen in der Integration belassen.
+- [x] Zielgröße festlegen: Adapter deutlich unter dem heutigen Umfang; keine langen manuellen Namenslisten, wenn Translation Keys reichen.
+  - Stand 2026-07-02: `library_adapter.py` ist in Enum-, GLT-, Registerauswahl- und EntityDescription-Helfer zerlegt. Nächstes Ziel: Kernadapter unter 800 Zeilen, indem verbleibende Namens-/Metadaten-Overlays weiter ausgelagert werden.
 
 ### Cross-Repo-Vertragstests
 
