@@ -22,9 +22,7 @@ try:
 
     # Stub homeassistant.runner to prevent HassEventLoopPolicy from overriding ours
     _runner_mod = ModuleType("homeassistant.runner")
-    _runner_mod.HassEventLoopPolicy = type(
-        "HassEventLoopPolicy", (asyncio.WindowsSelectorEventLoopPolicy,), {}
-    )
+    _runner_mod.HassEventLoopPolicy = type("HassEventLoopPolicy", (asyncio.WindowsSelectorEventLoopPolicy,), {})
     sys.modules["homeassistant.runner"] = _runner_mod
 
     @pytest.fixture(scope="session")
@@ -39,6 +37,7 @@ except AttributeError:
 # ---------------------------------------------------------------------------
 # Stub pymodbus so tests run without the real package installed
 # ---------------------------------------------------------------------------
+
 
 def _stub_pymodbus() -> None:
     if "pymodbus" in sys.modules:
@@ -106,6 +105,7 @@ _stub_pymodbus()
 # Stub voluptuous
 # ---------------------------------------------------------------------------
 
+
 def _stub_voluptuous() -> None:
     if "voluptuous" in sys.modules:
         return
@@ -170,6 +170,7 @@ _stub_voluptuous()
 # Stub out the entire homeassistant package tree so tests run without HA
 # ---------------------------------------------------------------------------
 
+
 def _make_module(name: str) -> ModuleType:
     mod = ModuleType(name)
     sys.modules[name] = mod
@@ -226,8 +227,9 @@ def _stub_homeassistant() -> None:
 
     # homeassistant.exceptions
     class _HomeAssistantError(Exception):
-        def __init__(self, *args, translation_domain=None, translation_key=None,
-                     translation_placeholders=None, **kwargs):
+        def __init__(
+            self, *args, translation_domain=None, translation_key=None, translation_placeholders=None, **kwargs
+        ):
             super().__init__(*args)
             self.translation_domain = translation_domain
             self.translation_key = translation_key
@@ -291,13 +293,11 @@ def _stub_homeassistant() -> None:
             self._options = {}
             self.hass = None
 
-        def async_show_form(self, *, step_id, data_schema=None, errors=None,
-                            description_placeholders=None):
+        def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
             return {"type": "form", "step_id": step_id, "errors": errors or {}}
 
         def async_create_entry(self, title="", data=None, options=None):
-            return {"type": "create_entry", "title": title,
-                    "data": data or {}, "options": options or {}}
+            return {"type": "create_entry", "title": title, "data": data or {}, "options": options or {}}
 
         def async_abort(self, reason):
             return {"type": "abort", "reason": reason}
@@ -332,8 +332,7 @@ def _stub_homeassistant() -> None:
             self._options = {}
             self.config_entry = MagicMock()
 
-        def async_show_form(self, *, step_id, data_schema=None, errors=None,
-                            description_placeholders=None):
+        def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
             return {"type": "form", "step_id": step_id, "errors": errors or {}}
 
         def async_create_entry(self, data=None):
@@ -406,10 +405,17 @@ def _stub_homeassistant() -> None:
     selector_mod = _make_module("homeassistant.helpers.selector")
     helpers.selector = selector_mod
     for cls_name in [
-        "BooleanSelector", "BooleanSelectorConfig",
-        "NumberSelector", "NumberSelectorConfig", "NumberSelectorMode",
-        "SelectSelector", "SelectSelectorConfig", "SelectSelectorMode",
-        "TextSelector", "TextSelectorConfig", "TextSelectorType",
+        "BooleanSelector",
+        "BooleanSelectorConfig",
+        "NumberSelector",
+        "NumberSelectorConfig",
+        "NumberSelectorMode",
+        "SelectSelector",
+        "SelectSelectorConfig",
+        "SelectSelectorMode",
+        "TextSelector",
+        "TextSelectorConfig",
+        "TextSelectorType",
     ]:
         setattr(selector_mod, cls_name, MagicMock())
 
@@ -436,8 +442,7 @@ def _stub_homeassistant() -> None:
     helpers.device_registry = device_registry_mod
 
     class _DeviceInfo(dict):
-        def __init__(self, identifiers=None, name=None, manufacturer=None, model=None,
-                     sw_version=None, **kwargs):
+        def __init__(self, identifiers=None, name=None, manufacturer=None, model=None, sw_version=None, **kwargs):
             super().__init__(
                 identifiers=identifiers or set(),
                 name=name,
@@ -518,21 +523,13 @@ def _stub_homeassistant() -> None:
                 for k, v in kwargs.items():
                     setattr(self, k, v)
 
-        mod.SensorEntityDescription = type(
-            "SensorEntityDescription", (), {"__init__": _FakeEntityDescription.__init__}
-        )
+        mod.SensorEntityDescription = type("SensorEntityDescription", (), {"__init__": _FakeEntityDescription.__init__})
         mod.BinarySensorEntityDescription = type(
             "BinarySensorEntityDescription", (), {"__init__": _FakeEntityDescription.__init__}
         )
-        mod.NumberEntityDescription = type(
-            "NumberEntityDescription", (), {"__init__": _FakeEntityDescription.__init__}
-        )
-        mod.SelectEntityDescription = type(
-            "SelectEntityDescription", (), {"__init__": _FakeEntityDescription.__init__}
-        )
-        mod.SwitchEntityDescription = type(
-            "SwitchEntityDescription", (), {"__init__": _FakeEntityDescription.__init__}
-        )
+        mod.NumberEntityDescription = type("NumberEntityDescription", (), {"__init__": _FakeEntityDescription.__init__})
+        mod.SelectEntityDescription = type("SelectEntityDescription", (), {"__init__": _FakeEntityDescription.__init__})
+        mod.SwitchEntityDescription = type("SwitchEntityDescription", (), {"__init__": _FakeEntityDescription.__init__})
 
         # Device/state class enums
         mod.SensorDeviceClass = MagicMock()
@@ -577,12 +574,11 @@ def _stub_homeassistant() -> None:
             if not isinstance(data, dict):
                 return data
             return {k: _redact(v, keys) for k, v in data.items() if k not in keys}
+
         mod.async_redact_data = _redact
         setattr(components, platform, mod)
 
-    ha.loader.async_get_integration = AsyncMock(
-        return_value=MagicMock(manifest={"version": "0.5.0"})
-    )
+    ha.loader.async_get_integration = AsyncMock(return_value=MagicMock(manifest={"version": "0.5.0"}))
 
 
 _stub_homeassistant()
@@ -592,10 +588,12 @@ _stub_homeassistant()
 # Stub idm_heatpump library (only when real library is not installed)
 # ---------------------------------------------------------------------------
 
+
 def _stub_idm_heatpump() -> None:
     """Stub for idm_heatpump library when the real package is not available."""
     try:
         import idm_heatpump  # noqa: F401
+
         return  # Real library installed — don't override
     except ImportError:
         pass
@@ -769,9 +767,7 @@ def _stub_idm_heatpump() -> None:
             result = None
             for attempt in range(self._max_retries + 1):
                 try:
-                    result = await client.read_input_registers(
-                        start, end - start, slave=self.slave_id
-                    )
+                    result = await client.read_input_registers(start, end - start, slave=self.slave_id)
                     if result.isError():
                         from pymodbus.exceptions import ModbusException
 
@@ -798,11 +794,7 @@ def _stub_idm_heatpump() -> None:
             return data
 
         async def read_batch(self, regs: Any) -> dict[str, Any]:
-            readable = [
-                reg
-                for reg in regs
-                if reg.name not in self._permanently_failed_registers
-            ]
+            readable = [reg for reg in regs if reg.name not in self._permanently_failed_registers]
             data: dict[str, Any] = {}
             for group in self._group_registers(readable):
                 data.update(await self._read_group(group))
@@ -813,7 +805,15 @@ def _stub_idm_heatpump() -> None:
             self._permanently_failed_registers.clear()
 
     _SYS_MODE = {0: "Standby", 1: "Automatic", 2: "Absent", 4: "Hot Water Only", 5: "Heating/Cooling Only"}
-    _CIRCUIT_MODE = {0: "Off", 1: "Time Program", 2: "Normal", 3: "Eco", 4: "Manual Heat", 5: "Manual Cool", 255: "Not Configured"}
+    _CIRCUIT_MODE = {
+        0: "Off",
+        1: "Time Program",
+        2: "Normal",
+        3: "Eco",
+        4: "Manual Heat",
+        5: "Manual Cool",
+        255: "Not Configured",
+    }
     _ROOM_MODE = {0: "Off", 1: "Automatic", 2: "Eco", 3: "Normal", 4: "Comfort"}
     _SOLAR_MODE = {0: "Automatic", 1: "Hot Water", 2: "Heating", 3: "Hot Water + Heating", 4: "Source/Pool"}
     _HP_STATUS = {0: "Off", 1: "Heating", 2: "Cooling", 4: "DHW", 8: "Defrost"}
@@ -871,10 +871,35 @@ def _stub_idm_heatpump() -> None:
             RegisterDef(base, DataType.FLOAT, f"hc_{circuit}_flow_temp", unit="°C"),
             RegisterDef(base + 2, DataType.FLOAT, f"hc_{circuit}_room_temp", unit="°C"),
             RegisterDef(base + 4, DataType.UCHAR, f"hc_{circuit}_active_mode", enum_options=dict(_CIRCUIT_MODE)),
-            RegisterDef(base + 5, DataType.UCHAR, f"hc_{circuit}_mode", writable=True, enum_options=dict(_CIRCUIT_MODE), exclude_from_write={255}),
-            RegisterDef(base + 6, DataType.FLOAT, f"hc_{circuit}_room_setpoint_heat_normal", unit="°C", writable=True, min_val=16.0, max_val=28.0),
-            RegisterDef(base + 8, DataType.FLOAT, f"hc_{circuit}_room_setpoint_heat_eco", unit="°C", writable=True, min_val=10.0, max_val=22.0),
-            RegisterDef(base + 10, DataType.FLOAT, f"hc_{circuit}_heating_curve", writable=True, min_val=0.1, max_val=3.0),
+            RegisterDef(
+                base + 5,
+                DataType.UCHAR,
+                f"hc_{circuit}_mode",
+                writable=True,
+                enum_options=dict(_CIRCUIT_MODE),
+                exclude_from_write={255},
+            ),
+            RegisterDef(
+                base + 6,
+                DataType.FLOAT,
+                f"hc_{circuit}_room_setpoint_heat_normal",
+                unit="°C",
+                writable=True,
+                min_val=16.0,
+                max_val=28.0,
+            ),
+            RegisterDef(
+                base + 8,
+                DataType.FLOAT,
+                f"hc_{circuit}_room_setpoint_heat_eco",
+                unit="°C",
+                writable=True,
+                min_val=10.0,
+                max_val=22.0,
+            ),
+            RegisterDef(
+                base + 10, DataType.FLOAT, f"hc_{circuit}_heating_curve", writable=True, min_val=0.1, max_val=3.0
+            ),
             RegisterDef(base + 12, DataType.FLOAT, f"hc_{circuit}_ext_room_temp", unit="°C", writable=True),
         ]
 
@@ -887,7 +912,9 @@ def _stub_idm_heatpump() -> None:
                 RegisterDef(off, DataType.FLOAT, f"zm{zone_idx}_room{r}_temp", unit="°C", writable=True),
                 RegisterDef(off + 2, DataType.FLOAT, f"zm{zone_idx}_room{r}_setpoint", unit="°C", writable=True),
                 RegisterDef(off + 4, DataType.UINT16, f"zm{zone_idx}_room{r}_humidity", unit="%", writable=True),
-                RegisterDef(off + 5, DataType.UCHAR, f"zm{zone_idx}_room{r}_mode", writable=True, enum_options=dict(_ROOM_MODE)),
+                RegisterDef(
+                    off + 5, DataType.UCHAR, f"zm{zone_idx}_room{r}_mode", writable=True, enum_options=dict(_ROOM_MODE)
+                ),
             ]
         return regs
 
@@ -897,7 +924,7 @@ def _stub_idm_heatpump() -> None:
         zone_modules: int = 0,
     ) -> dict[str, RegisterDef]:
         regs = list(_BASE)
-        for c in (circuits or []):
+        for c in circuits or []:
             regs.extend(_circuit_regs(c))
         result: dict[str, RegisterDef] = {}
         for r in regs:
@@ -941,6 +968,7 @@ _stub_idm_heatpump()
 # ---------------------------------------------------------------------------
 # Shared fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def mock_hass():
@@ -987,9 +1015,7 @@ def mock_config_entry():
 
 @pytest.fixture
 def mock_modbus_client():
-    with patch(
-        "idm_heatpump.client.AsyncModbusTcpClient"
-    ) as mock_class:
+    with patch("idm_heatpump.client.AsyncModbusTcpClient") as mock_class:
         mock_instance = AsyncMock()
         mock_instance.connected = True
         mock_instance.isError = MagicMock(return_value=False)
@@ -997,6 +1023,7 @@ def mock_modbus_client():
         mock_class.return_value = mock_instance
 
         from idm_heatpump import IdmModbusClient
+
         client = IdmModbusClient(host="192.168.1.100", port=502, slave_id=1)
         client._client = mock_instance
         yield client, mock_instance

@@ -79,10 +79,11 @@ Ziel: Der aktuelle Stand ist reproduzierbar, dokumentiert und auf betroffener Ha
   - Deployment-Concurrency, veraltete Deployments und Environment-Schutz prüfen.
   - Akzeptanz: zwei aufeinanderfolgende manuelle Deployments sind grün; URL enthält den aktuellen Stand.
 - [x] **API / P0:** `ruff format` anwenden und `ruff format --check` in CI aufnehmen.
-- [ ] **beide / P0:** Versions-, Support- und Statusaussagen synchronisieren.
+- [x] **beide / P0:** Versions-, Support- und Statusaussagen synchronisieren.
   - HASS-README, deutsche README, Manifest, Changelog, Wiki und API-README prüfen.
   - „Official“ bis zu einer Core-Aufnahme durch „inoffizielle Home-Assistant-Custom-Integration“ ersetzen.
   - Testzahlen und Qualitätsstatus nicht als manuell gepflegte Momentaufnahme ausgeben oder automatisch erzeugen.
+  - Stand 2026-07-02: Aktuelle README-/Wiki-/Manifest-Aussagen sind auf Home Assistant 2026.5.0, `pymodbus==3.12.1`, `idm-heatpump-api==0.3.7` und inoffiziellen HACS-Status ausgerichtet; historische Changelog-Einträge bleiben unverändert.
 - [x] **HASS / P0:** Einen Release-Smoke-Test dokumentieren: Installation aus Release-Artefakt, Config Flow, erster Poll, ein sicherer Write, Reload, Unload und Upgrade vom vorherigen Release.
 
 Abschlusskriterium: v0.7.x läuft auf mindestens Navigator 2.0 und Navigator 10 ohne bekannte P0-Regression; Dokumentation und veröffentlichte Abhängigkeiten stimmen überein.
@@ -268,7 +269,15 @@ Vor einer Core-Einreichung klären:
 
 Falls diese Punkte nicht erfüllt sind, bleibt HACS ein legitimes Ziel; die technische Qualität soll trotzdem gehalten werden.
 
+### Aktuelle Entscheidung
+
+- [x] HACS-first-Strategie dokumentiert: Stabilisierung, Hardware-Matrix, API-Vertrag, Releaseprozess und Write-Safety sammeln zuerst reale Wartungserfahrung.
+- [x] Kleinen späteren Core-Erstumfang festgelegt: Config Flow, Modellkennung, Coordinator, redigierte Diagnose und essenzielle read-only Sensoren.
+- [x] Core-spezifische Anpassungen dokumentiert: Manifest-Felder, HA-Core-Testframework, `home-assistant.io`-Dokumentation, Brands-Assets und HACS-zu-Core-Migration.
+
 ### Schritte für Home Assistant Core
+
+Diese Schritte sind bewusst spätere Core-Port-Arbeit und werden erst nach der HACS-Stabilisierungsphase umgesetzt.
 
 - [ ] Core-Integration aus aktuellem `dev`-Branch scaffolden und nur den minimalen, reviewbaren Umfang übernehmen.
 - [ ] Kommunikation ausschließlich über eine veröffentlichte, exakt gepinnte API-Version führen.
@@ -292,30 +301,34 @@ Ziel: Releases sind wiederholbar, sicher und auch nach Monaten noch wartbar.
 ### GitHub und Lieferkette
 
 - [ ] `main` in beiden Repositories schützen: Pull Request, grüne Pflichtchecks, keine Force-Pushes, keine gelöschte Historie.
-- [ ] `CODEOWNERS` ergänzen und mindestens einen Reviewpfad für sicherheitskritische Schreib-/Registeränderungen definieren.
-- [ ] Dependabot oder Renovate für Python und GitHub Actions aktivieren.
+  - Stand 2026-07-02: Erforderliche Repository-Settings in `docs/MAINTENANCE.md` dokumentiert; Aktivierung bleibt GitHub-Repository-Einstellung.
+- [x] `CODEOWNERS` ergänzen und mindestens einen Reviewpfad für sicherheitskritische Schreib-/Registeränderungen definieren.
+- [x] Dependabot oder Renovate für Python und GitHub Actions aktivieren.
 - [ ] CodeQL und `pip-audit`/OSV-Scan ergänzen; Ergebnisse als Pflichtcheck behandeln.
-- [ ] Drittanbieter-Actions auf vollständige Commit-SHAs pinnen und planmäßig aktualisieren.
+  - Stand 2026-07-02: Security-Workflows ergänzt; Pflichtcheck-Aktivierung bleibt GitHub-Repository-Einstellung.
+- [x] Drittanbieter-Actions auf vollständige Commit-SHAs pinnen und planmäßig aktualisieren.
 - [ ] Minimale Workflow-Berechtigungen und geschützte PyPI-/Release-Environments verwenden.
+  - Stand 2026-07-02: Workflow-Berechtigungen minimiert und Release-Environments dokumentiert; Environment-Schutz bleibt GitHub-Repository-Einstellung.
 - [ ] Automatisches Löschen gemergter Branches und Auto-Merge für grüne Dependency-PRs erwägen.
+  - Stand 2026-07-02: In `docs/MAINTENANCE.md` als Repository-Setting dokumentiert.
 
 ### Gemeinsamer Releaseprozess
 
-- [ ] Release-Reihenfolge festschreiben: API ändern -> API-CI/Vertragstests -> API-Release -> HASS-Pin-PR -> HASS-CI/Smoke-Test -> HASS-Release.
-- [ ] Release-Workflow soll vor Tag/Upload alle Tests, Format-, Typ-, Build- und Artefaktprüfungen erzwingen.
-- [ ] Tag und Paketversion vor Veröffentlichung auf Gleichheit prüfen; keine still tolerierten `git commit || true` / `git tag || true`-Fehler.
-- [ ] Vorabkanal für Beta-/RC-Releases und echte Gerätekandidaten nutzen.
-- [ ] Rollback-Anleitung für fehlerhafte PyPI- und HACS-Releases dokumentieren.
-- [ ] Changelog aus kuratierten Einträgen erzeugen; Breaking Changes und Migrationsschritte dürfen nicht nur aus Commit-Schlagwörtern geraten werden.
-- [ ] HASS-Release-Artefakt nach dem Packen entzippen, Manifest/Abhängigkeiten prüfen und importieren.
+- [x] Release-Reihenfolge festschreiben: API ändern -> API-CI/Vertragstests -> API-Release -> HASS-Pin-PR -> HASS-CI/Smoke-Test -> HASS-Release.
+- [x] Release-Workflow soll vor Tag/Upload alle Tests, Format-, Typ-, Build- und Artefaktprüfungen erzwingen.
+- [x] Tag und Paketversion vor Veröffentlichung auf Gleichheit prüfen; keine still tolerierten `git commit || true` / `git tag || true`-Fehler.
+- [x] Vorabkanal für Beta-/RC-Releases und echte Gerätekandidaten nutzen.
+- [x] Rollback-Anleitung für fehlerhafte PyPI- und HACS-Releases dokumentieren.
+- [x] Changelog aus kuratierten Einträgen erzeugen; Breaking Changes und Migrationsschritte dürfen nicht nur aus Commit-Schlagwörtern geraten werden.
+- [x] HASS-Release-Artefakt nach dem Packen entzippen, Manifest/Abhängigkeiten prüfen und importieren.
 
 ### Community und Wartung
 
-- [ ] Issue-Templates beider Repositories angleichen und Modell, Firmware, Versionen, Diagnose sowie Reproduktionsschritte abfragen.
-- [ ] Feature-Request-, Registerfehler- und Hardware-Kompatibilitäts-Templates ergänzen.
-- [ ] Support-, Security- und Release-SLA realistisch dokumentieren.
-- [ ] Roadmap quartalsweise prüfen; erledigte Punkte in Changelog/Issues verlinken statt historische Details zu löschen.
-- [ ] Bus-Faktor senken: Architekturentscheidungen, Releasezugänge und Notfallabläufe dokumentieren; keine Secrets im Repository.
+- [x] Issue-Templates beider Repositories angleichen und Modell, Firmware, Versionen, Diagnose sowie Reproduktionsschritte abfragen.
+- [x] Feature-Request-, Registerfehler- und Hardware-Kompatibilitäts-Templates ergänzen.
+- [x] Support-, Security- und Release-SLA realistisch dokumentieren.
+- [x] Roadmap quartalsweise prüfen; erledigte Punkte in Changelog/Issues verlinken statt historische Details zu löschen.
+- [x] Bus-Faktor senken: Architekturentscheidungen, Releasezugänge und Notfallabläufe dokumentieren; keine Secrets im Repository.
 
 Abschlusskriterium: Kein Produktionsrelease umgeht Pflichtchecks, und ein neuer Maintainer kann Test, Release und Rollback ausschließlich anhand der Dokumentation durchführen.
 
