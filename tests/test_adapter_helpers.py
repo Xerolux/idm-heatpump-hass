@@ -1,5 +1,8 @@
 """Tests for small Home Assistant adapter helper modules."""
 
+import json
+from pathlib import Path
+
 from custom_components.idm_heatpump.adapter_enums import (
     get_bitflag_de_labels,
     get_slug_map_and_key,
@@ -11,6 +14,8 @@ from custom_components.idm_heatpump.adapter_registers import (
 )
 
 from idm_heatpump.const import MODEL_NAVIGATOR_20
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_enum_slug_helpers_keep_stable_translation_keys() -> None:
@@ -27,6 +32,22 @@ def test_enum_slug_helpers_keep_stable_translation_keys() -> None:
     assert circuit_key == "circuit_mode"
     assert circuit_slugs is not None
     assert circuit_slugs[255] == "not_configured"
+
+
+def test_enum_translation_keys_are_present_in_english_and_german() -> None:
+    strings = json.loads((ROOT / "custom_components" / "idm_heatpump" / "strings.json").read_text(encoding="utf-8"))
+    english = json.loads(
+        (ROOT / "custom_components" / "idm_heatpump" / "translations" / "en.json").read_text(encoding="utf-8")
+    )
+    german = json.loads(
+        (ROOT / "custom_components" / "idm_heatpump" / "translations" / "de.json").read_text(encoding="utf-8")
+    )
+
+    for platform in ("select", "sensor"):
+        for key, payload in strings["entity"][platform].items():
+            states = set(payload["state"])
+            assert set(english["entity"][platform][key]["state"]) == states
+            assert set(german["entity"][platform][key]["state"]) == states
 
 
 def test_bitflag_label_helper_returns_german_operating_mode_labels() -> None:

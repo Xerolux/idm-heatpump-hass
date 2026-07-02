@@ -76,6 +76,20 @@ Look for in the logs:
 3. Click **Download diagnostics**
 4. Attach the file to your [bug report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 
+## Bug Report Checklist
+
+Please include:
+
+- Heat pump model and Navigator/controller model.
+- Firmware version from the diagnostics export.
+- Home Assistant version, integration version and `idm-heatpump-api` version.
+- Active heating circuits, zone modules, PV, Solar, ISC and Cascade flags.
+- The redacted diagnostics export.
+- Relevant log lines around the first error.
+- Whether the problem is read-only, a failed write, an unavailable register or an unexpected value.
+
+Do not include private IP addresses, hostnames, serial numbers, installer/customer data or unredacted network details.
+
 ## 👩‍💻 For Developers (Mock Tests)
 
 Please **never** run write operations on Modbus (`write_register`) live against a real heat pump when testing code changes to the base logic. Instead, use our mock tests in `custom_components/idm_heatpump/tests/test_modbus_client.py` via `pytest` to test decoding (`decode_value`) and encoding (`encode_value`) without risk.

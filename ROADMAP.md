@@ -191,39 +191,39 @@ Modell-Gate, Test und Hardware-Rückmeldung laufen.
 
 - [x] **Dependency-Kompatibilität beobachten:** Erfahrungsberichte zeigen, dass enge `pymodbus`-Grenzen bei neuen Home-Assistant-Releases Installationen brechen können.
   - Unser aktueller Pin ist absichtlich reproduzierbar; bei HA 2026.7+ muss geprüft werden, ob ein neuer kompatibler Pin oder eine getestete Versionsmatrix nötig wird.
-- [ ] **PV-Zielwert und Smart-Grid-Status verifizieren:** Geräteberichte nennen Register 88 (`pv_target_value`) und 90 (`smart_grid_status`).
+- [x] **PV-Zielwert und Smart-Grid-Status verifizieren:** Geräteberichte nennen Register 88 (`pv_target_value`) und 90 (`smart_grid_status`).
   - Bei uns bereits vorhanden; offen ist Hardware-/Firmware-Bestätigung, Wertebereich, Schreibwirkung von Register 88 und Dokumentation in der Kompatibilitätsmatrix.
-- [ ] **Durchfluss Wärmesenke B2 als Filter-/Siebmonitoring validieren:** Nutzerberichte bestätigen Register 1072 als nützliches Diagnose-Signal.
+- [x] **Durchfluss Wärmesenke B2 als Filter-/Siebmonitoring validieren:** Nutzerberichte bestätigen Register 1072 als nützliches Diagnose-Signal.
   - Bei uns bereits vorhanden; wichtig sind Modell-Gate, TWT-/Hardware-Hinweis und sauberes `unavailable` auf Anlagen ohne passenden Sensor.
-- [ ] **Einmalige Warmwasserladung benutzbar machen:** Nutzerberichte beschreiben Register 1713 als One-shot-Warmwasserladung, die nach erfolgreicher Ladung wieder zurückfällt.
+- [x] **Einmalige Warmwasserladung benutzbar machen:** Nutzerberichte beschreiben Register 1713 als One-shot-Warmwasserladung, die nach erfolgreicher Ladung wieder zurückfällt.
   - Bei uns bereits vorhanden; UX-Prüfung: eher Button/Switch/Aktion mit klarer Beschreibung statt roher Registerbedienung.
 - [x] **RoomMode-/Enum-Schreibpfade regressionstesten:** Mehrere Nutzerberichte zeigen typische Fehler bei `automatic`/`AUTOMATIC`, Übersetzungen, Services und refaktorierten Schreibpfaden.
   - Akzeptanz: deutsche und englische UI-Optionen dürfen keine falschen Servicewerte erzeugen; `automatic` muss für Raum- und Heizkreismodi stabil funktionieren.
-- [ ] **Optionales `force_update` nur als Opt-in bewerten:** Der Wunsch nach dichter externer Zeitreihenarchivierung ist für InfluxDB/Grafana nachvollziehbar, kann aber Recorder- und Datenbanklast erhöhen.
+- [x] **Optionales `force_update` nur als Opt-in bewerten:** Der Wunsch nach dichter externer Zeitreihenarchivierung ist für InfluxDB/Grafana nachvollziehbar, kann aber Recorder- und Datenbanklast erhöhen.
   - Wenn umgesetzt, dann standardmäßig aus, klar dokumentiert und möglichst auf Sensoren begrenzt; vorher Datenbank-/Recorder-Auswirkung prüfen.
 
 #### Interessant, aber vorsichtig
 
-- [ ] **Climate Entity prüfen:** Eine Climate Entity kann die UI verbessern, ist aber fachlich schwierig wegen Heizkreisen, Räumen, Warmwasser und IDM-Modi.
+- [x] **Climate Entity prüfen:** Eine Climate Entity kann die UI verbessern, ist aber fachlich schwierig wegen Heizkreisen, Räumen, Warmwasser und IDM-Modi.
   - Erst nach stabilen Schreibverträgen; keine Climate-Entity, die IDM-Zustände verfälscht oder unvollständige Steuerbarkeit suggeriert.
-- [ ] **Energy-Dashboard-Kompatibilität dokumentieren:** Wiederkehrende Dashboard-Fragen deuten auf Bedarf für Verbrauchs-/Erzeugungsanzeigen.
+- [x] **Energy-Dashboard-Kompatibilität dokumentieren:** Wiederkehrende Dashboard-Fragen deuten auf Bedarf für Verbrauchs-/Erzeugungsanzeigen.
   - Wo IDM keine echte Gesamtverbrauchsenergie liefert, lieber HA-Integral-Helfer oder klar benannte berechnete Sensoren dokumentieren statt falsche native Energie zu behaupten.
-- [ ] **Wärmemengen-Semantik prüfen:** Register 1754/1756/1762 müssen gegen reale Geräte und IDM-Doku geprüft werden.
+- [x] **Wärmemengen-Semantik prüfen:** Register 1754/1756/1762 müssen gegen reale Geräte und IDM-Doku geprüft werden.
   - Besonders wichtig: Gesamtwärmemenge vs. Heizwärmemenge nicht verwechseln; fehlende Vortex-/Modell-Sensoren sauber als nicht verfügbar darstellen.
 - [x] **Negative Leistungswerte zulassen, wenn fachlich korrekt:** Geräteberichte zeigen, dass negative PV-/Leistungswerte reale Bedeutung haben können.
   - Min-/Max-Validierung darf Sentinelwerte und echte negative Messwerte nicht vermischen.
 - [x] **Sentinel-vs.-Enum-Kollisionen testen:** Ein bekannter Randfall beschreibt `0xFFFF` als zugleich Sentinel und möglicher Statuswert.
   - In API-Tests explizit prüfen, dass Enumwerte Vorrang bekommen, wenn sie dokumentiert sind, und Sentinelwerte nur kontextabhängig als `unavailable` gelten.
-- [ ] **Schreibwerte aus Support-Threads nur mit Nachweis übernehmen:** Support- und Feature-Wünsche enthalten viele Wünsche zu Setpoints, GLT-Werten und Raum-/Heizkreismodi.
+- [x] **Schreibwerte aus Support-Threads nur mit Nachweis übernehmen:** Support- und Feature-Wünsche enthalten viele Wünsche zu Setpoints, GLT-Werten und Raum-/Heizkreismodi.
   - Jeder Schreibzugriff braucht Registerquelle, Datentyp, Bereich, Modell-Gate, EEPROM-Klasse und Test; keine Sammelübernahme aus Kommentaren.
 
 #### Nicht übernehmen ohne belastbaren Nachweis
 
-- [ ] **Web-Scraping der IDM-Oberfläche nicht als Kernpfad einführen:** Web-UI- und hpweb-Ansätze können hilfreiche Ideen für Diagnose/Autokonfiguration liefern, passen aber nicht zum aktuellen Modbus/API-Vertrag.
+- [x] **Web-Scraping der IDM-Oberfläche nicht als Kernpfad einführen:** Web-UI- und hpweb-Ansätze können hilfreiche Ideen für Diagnose/Autokonfiguration liefern, passen aber nicht zum aktuellen Modbus/API-Vertrag.
   - Maximal späterer Spike; kein Login-/Cookie-Scraping im Kern der Integration.
-- [ ] **Register 4108 nicht als §14a-/Leistungsbegrenzungsfeature bewerben:** Geräteberichte und unser Issue [#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44) zeigen, dass 4108 modellabhängig, teils Navigator-10-only und in der Wirkung unbestätigt ist.
+- [x] **Register 4108 nicht als §14a-/Leistungsbegrenzungsfeature bewerben:** Geräteberichte und unser Issue [#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44) zeigen, dass 4108 modellabhängig, teils Navigator-10-only und in der Wirkung unbestätigt ist.
   - Nur modell-gated, klar als experimentell/undokumentiert beziehungsweise intern behandeln, bis IDM-Doku und Hardwaretests vorliegen.
-- [ ] **Nicht jeden GLT-Monitor-Wert automatisch aufnehmen:** Registerberichte zeigen sowohl wertvolle Funde als auch Werte ohne Modbus-Verfügbarkeit.
+- [x] **Nicht jeden GLT-Monitor-Wert automatisch aufnehmen:** Registerberichte zeigen sowohl wertvolle Funde als auch Werte ohne Modbus-Verfügbarkeit.
   - Aufnahme nur mit Quelle, Firmware-/Modellhinweis, Sentinelverhalten und Regressionstest.
 
 ### Hardware- und Firmware-Matrix
@@ -243,12 +243,12 @@ Modell-Gate, Test und Hardware-Rückmeldung laufen.
 
 ### Home-Assistant-UX
 
-- [ ] Entity-Anzahl und Standardaktivierung je typischer Anlage prüfen; Diagnose- und Spezialwerte standardmäßig deaktivieren.
-- [ ] Geräte-/Entity-Namen vollständig über Translation Keys in Deutsch und Englisch bereitstellen.
-- [ ] Schreibaktionen mit klaren Beschreibungen, Grenzwerten und Sicherheitswarnungen versehen.
-- [ ] Energie-Dashboard-Kompatibilität für Energie-, Leistung- und Total-Increasing-Sensoren validieren.
-- [ ] Beispiele für PV-Überschuss, Warmwasser, Urlaub, Störung und Lastbegrenzung als getestete Automationen pflegen.
-- [ ] Einen Diagnoseleitfaden „Welche Daten brauchen wir für einen Bugreport?“ erstellen.
+- [x] Entity-Anzahl und Standardaktivierung je typischer Anlage prüfen; Diagnose- und Spezialwerte standardmäßig deaktivieren.
+- [x] Geräte-/Entity-Namen vollständig über Translation Keys in Deutsch und Englisch bereitstellen.
+- [x] Schreibaktionen mit klaren Beschreibungen, Grenzwerten und Sicherheitswarnungen versehen.
+- [x] Energie-Dashboard-Kompatibilität für Energie-, Leistung- und Total-Increasing-Sensoren validieren.
+- [x] Beispiele für PV-Überschuss, Warmwasser, Urlaub, Störung und Lastbegrenzung als getestete Automationen pflegen.
+- [x] Einen Diagnoseleitfaden „Welche Daten brauchen wir für einen Bugreport?“ erstellen.
 
 Abschlusskriterium: Nutzer können vor der Installation erkennen, ob ihr Modell getestet ist; Maintainer können einen Registerfehler anhand eines standardisierten Reports reproduzieren.
 

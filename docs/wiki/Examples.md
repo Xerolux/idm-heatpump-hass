@@ -51,7 +51,7 @@ automation:
     action:
       - service: idm_heatpump.set_system_mode
         data:
-          mode: "auto"
+          mode: "automatic"
 ```
 
 ---
@@ -145,7 +145,7 @@ automation:
 
 ## Energy Dashboard
 
-For an energy dashboard in Home Assistant:
+Use native IDM energy sensors when your device exposes them with stable values. Where the device only exposes power, use Home Assistant helpers to integrate power over time instead of treating a power sensor as a native energy meter.
 
 ```yaml
 # Daily heating energy (in configuration.yaml or helpers)
@@ -156,6 +156,8 @@ sensor:
     unit_prefix: k
     round: 2
 ```
+
+For dashboard cards, prefer sensors with `kWh` and `total_increasing` semantics. If a model does not expose a reliable total energy register, create an HA integration helper and name it clearly as a calculated value.
 
 ---
 
@@ -174,6 +176,38 @@ automation:
         data:
           title: "Smart Grid Status"
           message: "Current Smart Grid status: {{ states('sensor.idm_heatpump_smart_grid_status') }}"
+```
+
+---
+
+## Temporary Load Limitation
+
+Power limit registers are model-dependent and disabled by default. Only enable and automate them after confirming support for your exact model and firmware.
+
+```yaml
+automation:
+  - alias: "Heat pump: temporary power limit"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.grid_limit_active
+        to: "on"
+    action:
+      - service: number.set_value
+        target:
+          entity_id: number.idm_heatpump_power_limit_hp
+        data:
+          value: 3.5
+  - alias: "Heat pump: clear temporary power limit"
+    trigger:
+      - platform: state
+        entity_id: binary_sensor.grid_limit_active
+        to: "off"
+    action:
+      - service: number.set_value
+        target:
+          entity_id: number.idm_heatpump_power_limit_hp
+        data:
+          value: -1
 ```
 
 ---

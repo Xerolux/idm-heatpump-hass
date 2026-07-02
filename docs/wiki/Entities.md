@@ -188,6 +188,8 @@ Adding more heating circuits, zones, or enabling cascade increases the counts.
 
 ### Power Limits
 
+These registers are model-dependent and disabled by default. Do not use them for legal or contractual load control until the behavior is verified for your exact hardware and firmware.
+
 | Entity | Register |
 |--------|----------|
 | `power_limit_hp` | 4108 |

@@ -1,6 +1,5 @@
 """Tests for register definitions and description builders."""
 
-
 from custom_components.idm_heatpump.registers import (
     collect_all_registers,
     get_all_binary_sensor_descriptions,
@@ -110,9 +109,7 @@ class TestHkAddresses:
         assert len(matches) == 1
 
     def test_all_seven_circuit_selects_exist(self):
-        descs = get_all_select_descriptions(
-            ["a", "b", "c", "d", "e", "f", "g"], 0, {}
-        )
+        descs = get_all_select_descriptions(["a", "b", "c", "d", "e", "f", "g"], 0, {})
         for c in ["a", "b", "c", "d", "e", "f", "g"]:
             name = f"hc_{c}_mode"
             matches = [d for d in descs if d["register"].name == name]
@@ -135,15 +132,13 @@ class TestZoneAddresses:
     def test_zone_count_zero_no_zone_registers(self):
         base_regs = collect_all_registers(["a"], 0, {})
         zone_regs = [r for r in base_regs if r.name.startswith("zm")]
-        assert len(zone_regs) == 0, \
+        assert len(zone_regs) == 0, (
             f"No zone registers expected when zone_count=0, found: {[r.name for r in zone_regs]}"
+        )
 
     def test_zone_sensors_include_room_temps(self):
         descs = get_all_sensor_descriptions(["a"], 1, {0: 2})
-        room_temps = [
-            d for d in descs
-            if d["register"].name.startswith("zm1_room") and "temp" in d["register"].name
-        ]
+        room_temps = [d for d in descs if d["register"].name.startswith("zm1_room") and "temp" in d["register"].name]
         assert len(room_temps) > 0
 
     def test_zone_room_count_respected_in_numbers(self):
@@ -153,6 +148,7 @@ class TestZoneAddresses:
         room_regs = {d["register"].name for d in descs if d["register"].name.startswith("zm1_room")}
         # Extract room indices from names like "zm1_room1_temp"
         import re
+
         room_idxs = sorted({int(re.search(r"room(\d+)", r).group(1)) for r in room_regs})
         # Must contain only rooms 1 and 2 (not 3-6, which library defaults to)
         assert room_idxs == [1, 2], f"Expected rooms [1,2], got {room_idxs}"
@@ -162,6 +158,7 @@ class TestZoneAddresses:
         descs = get_all_sensor_descriptions(["a"], 1, {0: 3})
         room_regs = {d["register"].name for d in descs if d["register"].name.startswith("zm1_room")}
         import re
+
         room_idxs = sorted({int(re.search(r"room(\d+)", r).group(1)) for r in room_regs})
         assert room_idxs == [1, 2, 3], f"Expected rooms [1,2,3], got {room_idxs}"
 
@@ -180,34 +177,22 @@ class TestGltDualExposure:
     ]
 
     def test_pv_block_dual_exposed(self):
-        sensor_names = {
-            d["register"].name for d in get_all_sensor_descriptions(["a"], 0, {})
-        }
-        number_names = {
-            d["register"].name for d in get_all_number_descriptions(["a"], 0, {})
-        }
+        sensor_names = {d["register"].name for d in get_all_sensor_descriptions(["a"], 0, {})}
+        number_names = {d["register"].name for d in get_all_number_descriptions(["a"], 0, {})}
         for name in self.PV_BLOCK:
             assert name in sensor_names, f"{name} fehlt als Sensor"
             assert name in number_names, f"{name} fehlt als Number"
 
     def test_zone_room_measurements_dual_exposed(self):
-        sensor_names = {
-            d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 2})
-        }
-        number_names = {
-            d["register"].name for d in get_all_number_descriptions(["a"], 1, {0: 2})
-        }
+        sensor_names = {d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 2})}
+        number_names = {d["register"].name for d in get_all_number_descriptions(["a"], 1, {0: 2})}
         for name in ("zm1_room1_temp", "zm1_room1_humidity"):
             assert name in sensor_names, f"{name} fehlt als Sensor"
             assert name in number_names, f"{name} fehlt als Number"
 
     def test_setpoints_are_number_only(self):
-        sensor_names = {
-            d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 2})
-        }
-        number_names = {
-            d["register"].name for d in get_all_number_descriptions(["a"], 1, {0: 2})
-        }
+        sensor_names = {d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 2})}
+        number_names = {d["register"].name for d in get_all_number_descriptions(["a"], 1, {0: 2})}
         for name in ("pv_target_value", "zm1_room1_setpoint"):
             assert name not in sensor_names, f"{name} sollte kein Sensor sein"
             assert name in number_names, f"{name} fehlt als Number"
@@ -217,8 +202,7 @@ class TestGltDualExposure:
         for d in numbers:
             if d["register"].name in self.PV_BLOCK:
                 assert d["description"].name.endswith("(Vorgabe)"), (
-                    f"Number {d['register'].name} braucht den Suffix '(Vorgabe)': "
-                    f"{d['description'].name}"
+                    f"Number {d['register'].name} braucht den Suffix '(Vorgabe)': {d['description'].name}"
                 )
 
     def test_zone_room_numbers_disabled_by_default(self):
@@ -245,6 +229,17 @@ class TestGltDualExposure:
                 )
                 checked.add(d["register"].name)
         assert checked == set(self.PV_BLOCK)
+
+    def test_power_limit_numbers_disabled_by_default(self):
+        numbers = get_all_number_descriptions(["a"], 0, {})
+        checked = set()
+        for d in numbers:
+            if d["register"].name in {"power_limit_hp", "power_limit_cascade"}:
+                assert d["description"].entity_registry_enabled_default is False, (
+                    f"{d['register'].name} is model-dependent and must not be advertised by default"
+                )
+                checked.add(d["register"].name)
+        assert checked == {"power_limit_hp", "power_limit_cascade"}
 
     def test_register_changes_from_doc_update(self):
         names = {r.name for r in collect_all_registers(["a"], 0, {})}
@@ -284,8 +279,7 @@ class TestRegisterIntegrity:
         descs = get_all_select_descriptions(["a"], 0, {})
         for desc in descs:
             reg = desc["register"]
-            assert reg.enum_options is not None, \
-                f"Select register {reg.name} must have enum_options"
+            assert reg.enum_options is not None, f"Select register {reg.name} must have enum_options"
 
     def test_description_keys_unique_per_platform(self):
         """Each platform's description keys must be unique."""
@@ -298,8 +292,9 @@ class TestRegisterIntegrity:
         ]:
             descs = getter(["a", "b"], 1, {0: 2})
             keys = [d["description"].key for d in descs]
-            assert len(keys) == len(set(keys)), \
+            assert len(keys) == len(set(keys)), (
                 f"Duplicate description keys in {name} platform: {[k for k in keys if keys.count(k) > 1]}"
+            )
 
 
 class TestGetAllSensorDescriptions:

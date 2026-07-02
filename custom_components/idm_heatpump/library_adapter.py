@@ -396,6 +396,8 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
     "power_limit_hp": {
         "name": "Leistungsbegrenzung Wärmepumpe",
         "icon": "mdi:flash-alert",
+        "entity_category": EntityCategory.CONFIG,
+        "enabled_by_default": False,
         "min": -1,
         "max": 50,
         "step": 0.1,
@@ -405,6 +407,8 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
     "power_limit_cascade": {
         "name": "Leistungsbegrenzung Kaskade",
         "icon": "mdi:flash-alert",
+        "entity_category": EntityCategory.CONFIG,
+        "enabled_by_default": False,
         "min": -1,
         "max": 200,
         "step": 0.1,
@@ -901,7 +905,7 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
         # und ein Schreibversuch wird vom Gerät ignoriert. Welcher Sensortyp je
         # Raum aktiv ist, lässt sich nicht über Modbus auslesen, daher wird die
         # Number standardmäßig deaktiviert statt sie unwirksam anzubieten.
-        enabled_by_default = not is_zone_room_measurement(name)
+        enabled_by_default = meta.get("enabled_by_default", not is_zone_room_measurement(name))
 
         desc = NumberEntityDescription(
             key=name,
@@ -913,7 +917,7 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
             device_class=meta.get("device_class"),
             icon=meta.get("icon", get_icon_for_register(name, reg.unit)),
             mode=NumberMode.BOX,
-            entity_category=EntityCategory.CONFIG,
+            entity_category=meta.get("entity_category", EntityCategory.CONFIG),
             entity_registry_enabled_default=enabled_by_default,
         )
         numbers.append(

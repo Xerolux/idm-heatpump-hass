@@ -145,5 +145,6 @@ def make_number_description(
         device_class=meta.get("device_class"),
         icon=meta.get("icon"),
         mode=NumberMode.BOX,
-        entity_category=EntityCategory.CONFIG,
+        entity_category=meta.get("entity_category", EntityCategory.CONFIG),
+        entity_registry_enabled_default=meta.get("enabled_by_default", True),
     )
