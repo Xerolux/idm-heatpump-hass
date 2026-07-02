@@ -24,7 +24,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, build_entity_unique_id
-from .library_adapter import get_bitflag_de_labels, get_slug_map_and_key
+from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .technician_codes import calculate_codes
 
 

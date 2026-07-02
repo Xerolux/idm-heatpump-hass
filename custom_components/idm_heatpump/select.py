@@ -20,7 +20,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
-from .library_adapter import get_slug_map_and_key
+from .adapter_enums import get_slug_map_and_key
 
 _LOGGER = logging.getLogger(__name__)
 
