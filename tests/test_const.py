@@ -1,6 +1,5 @@
 """Tests for constants and enums in const.py."""
 
-
 from custom_components.idm_heatpump.const import (
     DOMAIN,
     HEATING_CIRCUITS,
@@ -45,6 +44,7 @@ class TestSystemMode:
 
     def test_is_int_enum(self):
         import enum
+
         assert issubclass(SystemMode, enum.IntEnum)
 
 
@@ -94,6 +94,7 @@ class TestHeatPumpStatus:
 
     def test_is_int_flag(self):
         import enum
+
         assert issubclass(HeatPumpStatus, enum.IntFlag)
 
     def test_flag_combination(self):

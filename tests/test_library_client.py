@@ -14,13 +14,13 @@ from idm_heatpump.client import DataType
 # Fixtures
 # ---------------------------------------------------------------------------
 
+
 @pytest.fixture
 def client_and_tcp(mock_modbus_client):
     return mock_modbus_client
 
 
-def _make_reg(address, datatype, name="reg", writable=False, multiplier=1.0,
-              min_val=None, max_val=None):
+def _make_reg(address, datatype, name="reg", writable=False, multiplier=1.0, min_val=None, max_val=None):
     return RegisterDef(
         address=address,
         datatype=datatype,
@@ -43,6 +43,7 @@ def _mock_read_result(registers):
 # RegisterDef
 # ---------------------------------------------------------------------------
 
+
 class TestRegisterDef:
     def test_float_size(self):
         reg = _make_reg(1000, DataType.FLOAT, "f")
@@ -57,6 +58,7 @@ class TestRegisterDef:
 # ---------------------------------------------------------------------------
 # decode_value
 # ---------------------------------------------------------------------------
+
 
 class TestDecodeValue:
     def setup_method(self):
@@ -130,6 +132,7 @@ class TestDecodeValue:
 # encode_value
 # ---------------------------------------------------------------------------
 
+
 class TestEncodeValue:
     def setup_method(self):
         self.client = IdmModbusClient("127.0.0.1")
@@ -173,6 +176,7 @@ class TestEncodeValue:
 # ---------------------------------------------------------------------------
 # read_register
 # ---------------------------------------------------------------------------
+
 
 class TestReadRegister:
     async def test_read_float(self, client_and_tcp):
@@ -218,6 +222,7 @@ class TestReadRegister:
 # write_register
 # ---------------------------------------------------------------------------
 
+
 class TestWriteRegister:
     async def test_write_float(self, client_and_tcp):
         client, tcp = client_and_tcp
@@ -260,6 +265,7 @@ class TestWriteRegister:
 # ---------------------------------------------------------------------------
 # read_batch
 # ---------------------------------------------------------------------------
+
 
 class TestReadBatch:
     async def test_empty_batch(self, client_and_tcp):
@@ -319,11 +325,10 @@ class TestReadBatch:
 # connect / disconnect
 # ---------------------------------------------------------------------------
 
+
 class TestConnectDisconnect:
     async def test_connect(self):
-        with patch(
-            "idm_heatpump.client.AsyncModbusTcpClient"
-        ) as mock_class:
+        with patch("idm_heatpump.client.AsyncModbusTcpClient") as mock_class:
             mock_tcp = AsyncMock()
             mock_tcp.connected = True
             mock_class.return_value = mock_tcp
@@ -333,9 +338,7 @@ class TestConnectDisconnect:
             mock_tcp.connect.assert_called_once()
 
     async def test_connect_skips_if_already_connected(self):
-        with patch(
-            "idm_heatpump.client.AsyncModbusTcpClient"
-        ) as mock_class:
+        with patch("idm_heatpump.client.AsyncModbusTcpClient") as mock_class:
             mock_tcp = AsyncMock()
             mock_tcp.connected = True
             mock_class.return_value = mock_tcp
@@ -357,10 +360,10 @@ class TestConnectDisconnect:
             client._require_client()
 
 
-
 # ---------------------------------------------------------------------------
 # host / port properties
 # ---------------------------------------------------------------------------
+
 
 class TestClientProperties:
     def test_host_property(self):
@@ -379,6 +382,7 @@ class TestClientProperties:
 # ---------------------------------------------------------------------------
 # BITFLAG decode / encode
 # ---------------------------------------------------------------------------
+
 
 class TestBitflagCodec:
     def setup_method(self):
@@ -406,6 +410,7 @@ class TestBitflagCodec:
 # Batch grouping (30-register limit)
 # ---------------------------------------------------------------------------
 
+
 class TestReadBatchGrouping:
     async def test_registers_within_30_limit_form_one_group(self, client_and_tcp):
         """30 contiguous UCHAR registers => single read_input_registers call."""
@@ -419,9 +424,7 @@ class TestReadBatchGrouping:
     async def test_registers_exceeding_40_limit_form_two_groups(self, client_and_tcp):
         """41 contiguous UCHAR registers => two read_input_registers calls."""
         client, tcp = client_and_tcp
-        tcp.read_input_registers.side_effect = lambda *args, **kwargs: _mock_read_result(
-            [0] * kwargs["count"]
-        )
+        tcp.read_input_registers.side_effect = lambda *args, **kwargs: _mock_read_result([0] * kwargs["count"])
         regs = [_make_reg(1000 + i, DataType.UCHAR, f"r{i}") for i in range(41)]
         await client.read_batch(regs)
         # First group: 40, second group: 1 → two calls
@@ -464,6 +467,7 @@ class TestReadBatchGrouping:
 # ---------------------------------------------------------------------------
 # _read_group permanent failure tracking
 # ---------------------------------------------------------------------------
+
 
 class TestReadGroupFailureTracking:
     async def test_first_failure_increments_count(self, client_and_tcp):

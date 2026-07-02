@@ -44,6 +44,7 @@ def _make_desc(key="temp"):
 # Sensor platform
 # ---------------------------------------------------------------------------
 
+
 class TestDecodeBitflag:
     def test_zero_returns_aus(self):
         from custom_components.idm_heatpump.sensor import _decode_bitflag
@@ -182,6 +183,29 @@ class TestSensorAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added_entities) == 2
 
+    async def test_unused_sensor_is_registered_but_unavailable(self):
+        from custom_components.idm_heatpump.sensor import async_setup_entry
+
+        coord = _make_coordinator(data={"room_temp": -9999.0}, hide_unused=True)
+        coord.is_register_unused = MagicMock(return_value=True)
+        reg = _make_register("room_temp", 100)
+        coord.sensor_descriptions = [
+            {"register": reg, "description": _make_desc("room_temp")},
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        assert len(added_entities) == 1
+        assert added_entities[0].available is False
+        assert added_entities[0]._attr_unique_id == "test_entry_room_temp"
+
     async def test_excludes_writable_enum_uchar_sensors(self):
         """Writable UCHAR enum registers are select entities, not sensors -> excluded."""
         from custom_components.idm_heatpump.sensor import async_setup_entry
@@ -189,9 +213,9 @@ class TestSensorAsyncSetupEntry:
         coord = _make_coordinator()
         reg_normal = _make_register("temp", 100)
         # writable=True UCHAR enum -> this is a select entity, should be excluded from sensor
-        reg_enum_uchar = _make_register("mode", 200, datatype=DataType.UCHAR,
-                                        writable=True,
-                                        enum_options={0: "off", 1: "on"})
+        reg_enum_uchar = _make_register(
+            "mode", 200, datatype=DataType.UCHAR, writable=True, enum_options={0: "off", 1: "on"}
+        )
         coord.sensor_descriptions = [
             {"register": reg_normal, "description": _make_desc("temp")},
             {"register": reg_enum_uchar, "description": _make_desc("mode")},
@@ -213,9 +237,9 @@ class TestSensorAsyncSetupEntry:
 
         coord = _make_coordinator()
         # writable=False UCHAR enum -> read-only status sensor, should be included
-        reg_enum_uchar = _make_register("status", 200, datatype=DataType.UCHAR,
-                                        writable=False,
-                                        enum_options={0: "off", 1: "on"})
+        reg_enum_uchar = _make_register(
+            "status", 200, datatype=DataType.UCHAR, writable=False, enum_options={0: "off", 1: "on"}
+        )
         coord.sensor_descriptions = [
             {"register": reg_enum_uchar, "description": _make_desc("status")},
         ]
@@ -336,6 +360,7 @@ class TestIdmTechnicianCodeSensor:
 # Binary sensor platform
 # ---------------------------------------------------------------------------
 
+
 class TestIdmBinarySensor:
     def test_is_on_true(self):
         from custom_components.idm_heatpump.binary_sensor import IdmBinarySensor
@@ -405,6 +430,7 @@ class TestBinarySensorAsyncSetupEntry:
 # ---------------------------------------------------------------------------
 # Number platform
 # ---------------------------------------------------------------------------
+
 
 class TestIdmNumber:
     def test_native_value(self):
@@ -486,8 +512,7 @@ class TestNumberAsyncSetupEntry:
 
         coord = _make_coordinator()
         coord.number_descriptions = [
-            {"register": _make_register("dhw_target", writable=True),
-             "description": _make_desc("dhw_target")},
+            {"register": _make_register("dhw_target", writable=True), "description": _make_desc("dhw_target")},
         ]
 
         entry = MagicMock()
@@ -503,6 +528,7 @@ class TestNumberAsyncSetupEntry:
 # Select platform
 # ---------------------------------------------------------------------------
 
+
 class TestIdmSelect:
     def test_init_sets_options(self):
         from custom_components.idm_heatpump.select import IdmSelect
@@ -512,7 +538,14 @@ class TestIdmSelect:
         reg = _make_register("system_mode", writable=True, enum_options=enum_opts)
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
         # system_mode uses slug map, so options are slug keys
-        assert set(sel._attr_options) == {"standby", "automatic", "absent", "holiday", "hot_water_only", "heating_cooling_only"}
+        assert set(sel._attr_options) == {
+            "standby",
+            "automatic",
+            "absent",
+            "holiday",
+            "hot_water_only",
+            "heating_cooling_only",
+        }
 
     def test_current_option_found(self):
         from custom_components.idm_heatpump.select import IdmSelect
@@ -551,6 +584,25 @@ class TestIdmSelect:
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
         # system_mode uses slug map, so option key is the slug
         assert sel._option_to_value("automatic") == 1
+
+    def test_option_to_value_accepts_uppercase_slug(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        enum_opts = {0: "Standby", 1: "Automatic"}
+        coord = _make_coordinator()
+        reg = _make_register("system_mode", enum_options=enum_opts)
+        sel = IdmSelect(coord, reg, _make_desc("system_mode"))
+        assert sel._option_to_value("AUTOMATIC") == 1
+
+    def test_room_mode_automatic_uses_stable_slug_value(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        enum_opts = {0: "Off", 1: "Automatic", 2: "Eco"}
+        coord = _make_coordinator()
+        reg = _make_register("zm0_room1_mode", enum_options=enum_opts)
+        sel = IdmSelect(coord, reg, _make_desc("zm0_room1_mode"))
+        assert sel._option_to_value("automatic") == 1
+        assert sel._option_to_value("AUTOMATIC") == 1
 
     def test_option_to_value_raises_on_unknown(self):
         from custom_components.idm_heatpump.select import IdmSelect
@@ -593,8 +645,7 @@ class TestSelectAsyncSetupEntry:
         coord = _make_coordinator()
         enum_opts = {0: "Standby", 1: "Auto"}
         coord.select_descriptions = [
-            {"register": _make_register("mode", enum_options=enum_opts),
-             "description": _make_desc("mode")},
+            {"register": _make_register("mode", enum_options=enum_opts), "description": _make_desc("mode")},
         ]
 
         entry = MagicMock()
@@ -626,6 +677,7 @@ class TestSelectAsyncSetupEntry:
 # ---------------------------------------------------------------------------
 # Switch platform
 # ---------------------------------------------------------------------------
+
 
 class TestIdmSwitch:
     def test_is_on_true(self):
@@ -707,8 +759,7 @@ class TestSwitchAsyncSetupEntry:
 
         coord = _make_coordinator()
         coord.switch_descriptions = [
-            {"register": _make_register("glt_heating", writable=True),
-             "description": _make_desc("glt_heating")},
+            {"register": _make_register("glt_heating", writable=True), "description": _make_desc("glt_heating")},
         ]
 
         entry = MagicMock()
@@ -723,6 +774,7 @@ class TestSwitchAsyncSetupEntry:
 # ---------------------------------------------------------------------------
 # Technician codes
 # ---------------------------------------------------------------------------
+
 
 class TestTechnicianCodes:
     def test_returns_dict_with_two_keys(self):

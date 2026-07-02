@@ -1,0 +1,95 @@
+name: API Dependency Update
+
+on:
+  repository_dispatch:
+    types: [idm_heatpump_api_release]
+  workflow_dispatch:
+    inputs:
+      api_version:
+        description: idm-heatpump-api version to pin
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - name: Resolve API version
+        id: api
+        run: |
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            VERSION="${{ github.event.client_payload.version }}"
+          else
+            VERSION="${{ inputs.api_version }}"
+          fi
+          if [ -z "$VERSION" ]; then
+            echo "Missing API version" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Update pinned API dependency
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          import re
+          from pathlib import Path
+
+          version = "${{ steps.api.outputs.version }}"
+          root = Path(".")
+          requirement = f"idm-heatpump-api=={version}"
+
+          manifest_path = root / "custom_components" / "idm_heatpump" / "manifest.json"
+          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          manifest["requirements"] = [
+              requirement if req.startswith("idm-heatpump-api==") else req
+              for req in manifest["requirements"]
+          ]
+          manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+
+          release_contract = root / "tests" / "test_release_contract.py"
+          text = release_contract.read_text(encoding="utf-8")
+          text = re.sub(r'idm-heatpump-api==[0-9]+\.[0-9]+\.[0-9]+', requirement, text)
+          release_contract.write_text(text, encoding="utf-8")
+
+          docs = [
+              root / "README.md",
+              root / "README_de.md",
+              root / "docs" / "wiki" / "Home.md",
+              root / "docs" / "wiki" / "_Sidebar.md",
+          ]
+          for path in docs:
+              text = path.read_text(encoding="utf-8")
+              text = re.sub(r'idm-heatpump-api==[0-9]+\.[0-9]+\.[0-9]+', requirement, text)
+              path.write_text(text, encoding="utf-8")
+          PY
+
+      - name: Run dependency contract tests
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest pytest-asyncio
+          pytest tests/test_release_contract.py tests/test_cross_repo_contract.py -q
+
+      - name: Create dependency update PR
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676
+        with:
+          branch: automation/idm-heatpump-api-${{ steps.api.outputs.version }}
+          title: "chore: update idm-heatpump-api to ${{ steps.api.outputs.version }}"
+          commit-message: "chore: update idm-heatpump-api to ${{ steps.api.outputs.version }}"
+          body: |
+            Updates the pinned `idm-heatpump-api` dependency to `${{ steps.api.outputs.version }}`.
+
+            Review the API changelog before merging:
+            https://github.com/Xerolux/idm-heatpump-api/blob/main/CHANGELOG.md
+
+            Contract tests run in this workflow:
+            - `tests/test_release_contract.py`
+            - `tests/test_cross_repo_contract.py`

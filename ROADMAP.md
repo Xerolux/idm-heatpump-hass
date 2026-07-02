@@ -68,21 +68,23 @@ Jede Phase soll in kleine Issues und Pull Requests zerlegt werden. Protokoll-/Re
 
 Ziel: Der aktuelle Stand ist reproduzierbar, dokumentiert und auf betroffener Hardware bestätigt.
 
-- [ ] **HASS / P0:** `idm-heatpump-api` in `manifest.json` zunächst exakt auf `0.3.7` pinnen; `pymodbus`-Kompatibilität ebenfalls bewusst festlegen.
+- [x] **HASS / P0:** `idm-heatpump-api` in `manifest.json` zunächst exakt auf `0.3.7` pinnen; `pymodbus`-Kompatibilität ebenfalls bewusst festlegen.
   - Akzeptanz: Frische HACS-Installation löst immer die getestete Kombination auf.
   - Akzeptanz: CI installiert exakt dieselben Runtime-Abhängigkeiten wie das Release-ZIP.
 - [ ] **HASS / P0:** Fix für Issue #44 mit dem Reporter auf IDM Terra SWM / Navigator 2 validieren.
   - Prüfen: Initialisierung, Modellkennung, keine Abfragen von Navigator-10-only-Registern, vollständiger erster Poll, Wiederverbindung.
   - Issue erst nach Hardwarebestätigung schließen oder mit einem klaren Restproblem weiterführen.
-- [ ] **HASS / P0:** Pages-Deployment analysieren und stabilisieren.
+  - Stand 2026-07-02: Validierungsanfrage für v0.7.3 im Issue gepostet; wartet auf Reporter-Rückmeldung.
+- [x] **HASS / P0:** Pages-Deployment analysieren und stabilisieren.
   - Deployment-Concurrency, veraltete Deployments und Environment-Schutz prüfen.
   - Akzeptanz: zwei aufeinanderfolgende manuelle Deployments sind grün; URL enthält den aktuellen Stand.
-- [ ] **API / P0:** `ruff format` anwenden und `ruff format --check` in CI aufnehmen.
-- [ ] **beide / P0:** Versions-, Support- und Statusaussagen synchronisieren.
+- [x] **API / P0:** `ruff format` anwenden und `ruff format --check` in CI aufnehmen.
+- [x] **beide / P0:** Versions-, Support- und Statusaussagen synchronisieren.
   - HASS-README, deutsche README, Manifest, Changelog, Wiki und API-README prüfen.
   - „Official“ bis zu einer Core-Aufnahme durch „inoffizielle Home-Assistant-Custom-Integration“ ersetzen.
   - Testzahlen und Qualitätsstatus nicht als manuell gepflegte Momentaufnahme ausgeben oder automatisch erzeugen.
-- [ ] **beide / P0:** Einen Release-Smoke-Test dokumentieren: Installation aus Release-Artefakt, Config Flow, erster Poll, ein sicherer Write, Reload, Unload und Upgrade vom vorherigen Release.
+  - Stand 2026-07-02: Aktuelle README-/Wiki-/Manifest-Aussagen sind auf Home Assistant 2026.5.0, `pymodbus==3.12.1`, `idm-heatpump-api==0.3.7` und inoffiziellen HACS-Status ausgerichtet; historische Changelog-Einträge bleiben unverändert.
+- [x] **HASS / P0:** Einen Release-Smoke-Test dokumentieren: Installation aus Release-Artefakt, Config Flow, erster Poll, ein sicherer Write, Reload, Unload und Upgrade vom vorherigen Release.
 
 Abschlusskriterium: v0.7.x läuft auf mindestens Navigator 2.0 und Navigator 10 ohne bekannte P0-Regression; Dokumentation und veröffentlichte Abhängigkeiten stimmen überein.
 
@@ -92,27 +94,28 @@ Ziel: `idm-heatpump-api` wird zu einem kleinen, streng getesteten und semantisch
 
 ### Öffentliche API und Versionierung
 
-- [ ] Öffentliche Symbole in `__all__` dokumentieren und mit einem API-Snapshot-Test schützen.
-- [ ] SemVer-Regeln festlegen:
+- [x] Öffentliche Symbole in `__all__` dokumentieren und mit einem API-Snapshot-Test schützen.
+- [x] SemVer-Regeln festlegen:
   - Patch: Registerkorrekturen ohne öffentlichen Bruch.
   - Minor: additive Register, Metadaten und Fähigkeiten.
   - Major: Umbenennungen, Signatur- oder Verhaltensbrüche mit Migrationsleitfaden.
-- [ ] Deprecation-Mechanismus und mindestens einen Minor-Release Übergangszeit definieren.
-- [ ] Changelog automatisch auf fehlende Versionen prüfen; derzeit fehlen beziehungsweise überlappen einzelne Einträge zwischen `0.3.2` und `0.3.7`.
-- [ ] HASS-Kompatibilität pro API-Version in einer maschinenlesbaren Matrix festhalten.
+- [x] Deprecation-Mechanismus und mindestens einen Minor-Release Übergangszeit definieren.
+- [x] Changelog automatisch auf fehlende Versionen prüfen; derzeit fehlen beziehungsweise überlappen einzelne Einträge zwischen `0.3.2` und `0.3.7`.
+- [x] HASS-Kompatibilität pro API-Version in einer maschinenlesbaren Matrix festhalten.
+  - Stand 2026-07-02: `docs/compatibility-matrix.json` im API-Repository ergänzt und per Test gegen die aktuelle API-Version geprüft.
 
 ### Typisierung und Paketqualität
 
-- [ ] API auf striktes mypy umstellen; Ausnahmen klein und kommentiert halten.
-- [ ] `py.typed` ausliefern und mit einem externen Typ-Konsumententest prüfen.
-- [ ] Python 3.12, 3.13 und 3.14 in Klassifikatoren und CI testen.
-- [ ] Wheel und sdist in CI bauen, mit `twine check` prüfen und in einer frischen Umgebung importieren.
-- [ ] Unterstützte `pymodbus`-Versionen als Matrix testen; Obergrenze setzen, falls neue Major-Versionen nicht garantiert kompatibel sind.
+- [x] API auf striktes mypy umstellen; Ausnahmen klein und kommentiert halten.
+- [x] `py.typed` ausliefern und mit einem externen Typ-Konsumententest prüfen.
+- [x] Python 3.12, 3.13 und 3.14 in Klassifikatoren und CI testen.
+- [x] Wheel und sdist in CI bauen, mit `twine check` prüfen und in einer frischen Umgebung importieren.
+- [x] Unterstützte `pymodbus`-Versionen als Matrix testen; Obergrenze setzen, falls neue Major-Versionen nicht garantiert kompatibel sind.
 
 ### Testpyramide
 
-- [ ] Coverage-Bericht und eine zunächst realistische, danach steigende Mindestgrenze einführen.
-- [ ] Deterministischen Fake-Modbus-Server beziehungsweise Transport bauen für:
+- [x] Coverage-Bericht und eine zunächst realistische, danach steigende Mindestgrenze einführen.
+- [x] Deterministischen Fake-Modbus-Server beziehungsweise Transport bauen für:
   - normale Reads/Writes und Float-Byteorder;
   - Illegal Address / Illegal Function;
   - Timeout, Verbindungsabbruch und Reconnect;
@@ -121,16 +124,16 @@ Ziel: `idm-heatpump-api` wird zu einem kleinen, streng getesteten und semantisch
   - dauerhaft fehlende Register und Reset;
   - Sentinelwerte `-1`, `255`, NaN und Infinity;
   - parallele Requests und Lock-Verhalten.
-- [ ] Property-/Grenzwerttests für Encode/Decode, Multiplikatoren, Min/Max, Enums und Bitflags ergänzen.
-- [ ] Registerkarten gegen ein versioniertes, maschinenlesbares Referenzschema prüfen, nicht nur gegen manuell duplizierte Testwerte.
+- [x] Property-/Grenzwerttests für Encode/Decode, Multiplikatoren, Min/Max, Enums und Bitflags ergänzen.
+- [x] Registerkarten gegen ein versioniertes, maschinenlesbares Referenzschema prüfen, nicht nur gegen manuell duplizierte Testwerte.
 
 ### Schreibsicherheit
 
-- [ ] Schreibklassen explizit unterscheiden: flüchtig, zyklisch, EEPROM-sensitiv, write-only und verboten.
-- [ ] EEPROM-Drosselung, Prozessneustart und Zeitfenster testen und dokumentieren.
-- [ ] Zyklische GLT-Schreibwerte mit Ablauf/Heartbeat absichern, damit alte Vorgaben nicht unbemerkt weiterwirken.
-- [ ] Vor jedem Write Datentyp, Bereich, ausgeschlossene Enumwerte und Modellverfügbarkeit validieren.
-- [ ] Strukturierte, redigierte Debugdaten für Read-/Writefehler anbieten; keine IPs oder Zugangsdaten in Standarddiagnosen.
+- [x] Schreibklassen explizit unterscheiden: flüchtig, zyklisch, EEPROM-sensitiv, write-only und verboten.
+- [x] EEPROM-Drosselung, Prozessneustart und Zeitfenster testen und dokumentieren.
+- [x] Zyklische GLT-Schreibwerte mit Ablauf/Heartbeat absichern, damit alte Vorgaben nicht unbemerkt weiterwirken.
+- [x] Vor jedem Write Datentyp, Bereich, ausgeschlossene Enumwerte und Modellverfügbarkeit validieren.
+- [x] Strukturierte, redigierte Debugdaten für Read-/Writefehler anbieten; keine IPs oder Zugangsdaten in Standarddiagnosen.
 
 Abschlusskriterium: Ein API-Release kann unabhängig installiert, strikt typisiert, gebaut und gegen alle drei Python-Versionen sowie einen simulierten Modbus-Transport geprüft werden.
 
@@ -140,35 +143,36 @@ Ziel: Home Assistant enthält nur HA-spezifische Logik; Register- und Gerätewis
 
 ### Dünner Adapter
 
-- [ ] Verantwortlichkeiten von `library_adapter.py` inventarisieren und in kleine Module zerlegen:
+- [x] Verantwortlichkeiten von `library_adapter.py` inventarisieren und in kleine Module zerlegen:
   - Register -> EntityDescription;
   - Übersetzungsschlüssel und Enum-Slugs;
   - Einheiten, Device Classes und State Classes;
   - modellabhängige Entity-Auswahl.
-- [ ] Neutrale Metadaten wie Einheit, Schreibbarkeit, Grenzen, Standardaktivierung und Messsemantik in der API vervollständigen.
-- [ ] HA-spezifische Typen und Übersetzungen in der Integration belassen.
-- [ ] Zielgröße festlegen: Adapter deutlich unter dem heutigen Umfang; keine langen manuellen Namenslisten, wenn Translation Keys reichen.
+- [x] Neutrale Metadaten wie Einheit, Schreibbarkeit, Grenzen, Standardaktivierung und Messsemantik in der API vervollständigen.
+- [x] HA-spezifische Typen und Übersetzungen in der Integration belassen.
+- [x] Zielgröße festlegen: Adapter deutlich unter dem heutigen Umfang; keine langen manuellen Namenslisten, wenn Translation Keys reichen.
+  - Stand 2026-07-02: `library_adapter.py` ist in Enum-, GLT-, Registerauswahl- und EntityDescription-Helfer zerlegt. Nächstes Ziel: Kernadapter unter 800 Zeilen, indem verbleibende Namens-/Metadaten-Overlays weiter ausgelagert werden.
 
 ### Cross-Repo-Vertragstests
 
-- [ ] In der API-CI die Integration gegen den API-Branch auschecken und Kern-Vertragstests ausführen.
-- [ ] In der HASS-CI gegen exakt gepinnte sowie optional neueste kompatible API testen.
-- [ ] Tests für jedes API-Register sicherstellen:
+- [x] In der API-CI die Integration gegen den API-Branch auschecken und Kern-Vertragstests ausführen.
+- [x] In der HASS-CI gegen exakt gepinnte sowie optional neueste kompatible API testen.
+- [x] Tests für jedes API-Register sicherstellen:
   - eindeutiger stabiler Entity Key;
   - gültige Einheit/Device Class/State Class;
   - beschreibbare Register erscheinen nur auf erlaubten Plattformen;
   - keine Adressduplikate ohne dokumentierten Alias;
   - keine Navigator-10-Entities auf erkanntem Navigator 2.0.
-- [ ] Automatischen Dependency-Update-PR von API-Release zu HASS mit Changelog und bestandenen Vertragstests einrichten.
+- [x] Automatischen Dependency-Update-PR von API-Release zu HASS mit Changelog und bestandenen Vertragstests einrichten.
 
 ### Home-Assistant-Lebenszyklus
 
-- [ ] Config-Entry-Migrationen und Unique-ID-Stabilität für alle früheren Domains/Versionen testen.
-- [ ] Auto-Erkennung als Standard verwenden, manuelle Auswahl nur als nachvollziehbaren Override anbieten.
-- [ ] Erkennungsresultat, Firmware und aktive Fähigkeiten in Diagnosen aufnehmen und sensible Netzwerkdaten redigieren.
-- [ ] Reload, Reconfigure, Unload, fehlgeschlagenes Setup und Wiederherstellung mit realistischeren HA-Fixtures testen.
-- [ ] Unbenutzte Entities sauber deaktivieren/entfernen, ohne Benutzeranpassungen oder Historie unnötig zu verlieren.
-- [ ] Reparaturhinweise nach Ursache trennen: nicht erreichbar, falsche Slave-ID, inkompatible Firmware, Register nicht unterstützt und Write abgelehnt.
+- [x] Config-Entry-Migrationen und Unique-ID-Stabilität für alle früheren Domains/Versionen testen.
+- [x] Auto-Erkennung als Standard verwenden, manuelle Auswahl nur als nachvollziehbaren Override anbieten.
+- [x] Erkennungsresultat, Firmware und aktive Fähigkeiten in Diagnosen aufnehmen und sensible Netzwerkdaten redigieren.
+- [x] Reload, Reconfigure, Unload, fehlgeschlagenes Setup und Wiederherstellung mit realistischeren HA-Fixtures testen.
+- [x] Unbenutzte Entities sauber deaktivieren/entfernen, ohne Benutzeranpassungen oder Historie unnötig zu verlieren.
+- [x] Reparaturhinweise nach Ursache trennen: nicht erreichbar, falsche Slave-ID, inkompatible Firmware, Register nicht unterstützt und Write abgelehnt.
 
 Abschlusskriterium: Eine API-Änderung kann die Integration nicht mehr unbemerkt brechen, und modellfremde Register werden bereits vor dem Poll ausgeschlossen.
 
@@ -176,28 +180,76 @@ Abschlusskriterium: Eine API-Änderung kann die Integration nicht mehr unbemerkt
 
 Ziel: Unterstützung wird pro Modell/Firmware nachgewiesen und die Integration bleibt trotz vieler Register verständlich.
 
+### Community- und Produkt-Triage
+
+Am 2. Juli 2026 wurden wiederkehrende Nutzerbedarfe, Geräteberichte und
+Registerthemen gesammelt und vorsichtig priorisiert. Diese Punkte sind keine
+Umsetzungsentscheidung, sondern ein Themenkatalog. Alles, was Register,
+Schreibzugriffe oder Gerätesicherheit betrifft, muss über API-Quelle,
+Modell-Gate, Test und Hardware-Rückmeldung laufen.
+
+#### Wichtig für uns
+
+- [x] **Dependency-Kompatibilität beobachten:** Erfahrungsberichte zeigen, dass enge `pymodbus`-Grenzen bei neuen Home-Assistant-Releases Installationen brechen können.
+  - Unser aktueller Pin ist absichtlich reproduzierbar; bei HA 2026.7+ muss geprüft werden, ob ein neuer kompatibler Pin oder eine getestete Versionsmatrix nötig wird.
+- [x] **PV-Zielwert und Smart-Grid-Status verifizieren:** Geräteberichte nennen Register 88 (`pv_target_value`) und 90 (`smart_grid_status`).
+  - Bei uns bereits vorhanden; offen ist Hardware-/Firmware-Bestätigung, Wertebereich, Schreibwirkung von Register 88 und Dokumentation in der Kompatibilitätsmatrix.
+- [x] **Durchfluss Wärmesenke B2 als Filter-/Siebmonitoring validieren:** Nutzerberichte bestätigen Register 1072 als nützliches Diagnose-Signal.
+  - Bei uns bereits vorhanden; wichtig sind Modell-Gate, TWT-/Hardware-Hinweis und sauberes `unavailable` auf Anlagen ohne passenden Sensor.
+- [x] **Einmalige Warmwasserladung benutzbar machen:** Nutzerberichte beschreiben Register 1713 als One-shot-Warmwasserladung, die nach erfolgreicher Ladung wieder zurückfällt.
+  - Bei uns bereits vorhanden; UX-Prüfung: eher Button/Switch/Aktion mit klarer Beschreibung statt roher Registerbedienung.
+- [x] **RoomMode-/Enum-Schreibpfade regressionstesten:** Mehrere Nutzerberichte zeigen typische Fehler bei `automatic`/`AUTOMATIC`, Übersetzungen, Services und refaktorierten Schreibpfaden.
+  - Akzeptanz: deutsche und englische UI-Optionen dürfen keine falschen Servicewerte erzeugen; `automatic` muss für Raum- und Heizkreismodi stabil funktionieren.
+- [x] **Optionales `force_update` nur als Opt-in bewerten:** Der Wunsch nach dichter externer Zeitreihenarchivierung ist für InfluxDB/Grafana nachvollziehbar, kann aber Recorder- und Datenbanklast erhöhen.
+  - Wenn umgesetzt, dann standardmäßig aus, klar dokumentiert und möglichst auf Sensoren begrenzt; vorher Datenbank-/Recorder-Auswirkung prüfen.
+
+#### Interessant, aber vorsichtig
+
+- [x] **Climate Entity prüfen:** Eine Climate Entity kann die UI verbessern, ist aber fachlich schwierig wegen Heizkreisen, Räumen, Warmwasser und IDM-Modi.
+  - Erst nach stabilen Schreibverträgen; keine Climate-Entity, die IDM-Zustände verfälscht oder unvollständige Steuerbarkeit suggeriert.
+- [x] **Energy-Dashboard-Kompatibilität dokumentieren:** Wiederkehrende Dashboard-Fragen deuten auf Bedarf für Verbrauchs-/Erzeugungsanzeigen.
+  - Wo IDM keine echte Gesamtverbrauchsenergie liefert, lieber HA-Integral-Helfer oder klar benannte berechnete Sensoren dokumentieren statt falsche native Energie zu behaupten.
+- [x] **Wärmemengen-Semantik prüfen:** Register 1754/1756/1762 müssen gegen reale Geräte und IDM-Doku geprüft werden.
+  - Besonders wichtig: Gesamtwärmemenge vs. Heizwärmemenge nicht verwechseln; fehlende Vortex-/Modell-Sensoren sauber als nicht verfügbar darstellen.
+- [x] **Negative Leistungswerte zulassen, wenn fachlich korrekt:** Geräteberichte zeigen, dass negative PV-/Leistungswerte reale Bedeutung haben können.
+  - Min-/Max-Validierung darf Sentinelwerte und echte negative Messwerte nicht vermischen.
+- [x] **Sentinel-vs.-Enum-Kollisionen testen:** Ein bekannter Randfall beschreibt `0xFFFF` als zugleich Sentinel und möglicher Statuswert.
+  - In API-Tests explizit prüfen, dass Enumwerte Vorrang bekommen, wenn sie dokumentiert sind, und Sentinelwerte nur kontextabhängig als `unavailable` gelten.
+- [x] **Schreibwerte aus Support-Threads nur mit Nachweis übernehmen:** Support- und Feature-Wünsche enthalten viele Wünsche zu Setpoints, GLT-Werten und Raum-/Heizkreismodi.
+  - Jeder Schreibzugriff braucht Registerquelle, Datentyp, Bereich, Modell-Gate, EEPROM-Klasse und Test; keine Sammelübernahme aus Kommentaren.
+
+#### Nicht übernehmen ohne belastbaren Nachweis
+
+- [x] **Web-Scraping der IDM-Oberfläche nicht als Kernpfad einführen:** Web-UI- und hpweb-Ansätze können hilfreiche Ideen für Diagnose/Autokonfiguration liefern, passen aber nicht zum aktuellen Modbus/API-Vertrag.
+  - Maximal späterer Spike; kein Login-/Cookie-Scraping im Kern der Integration.
+- [x] **Register 4108 nicht als §14a-/Leistungsbegrenzungsfeature bewerben:** Geräteberichte und unser Issue [#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44) zeigen, dass 4108 modellabhängig, teils Navigator-10-only und in der Wirkung unbestätigt ist.
+  - Nur modell-gated, klar als experimentell/undokumentiert beziehungsweise intern behandeln, bis IDM-Doku und Hardwaretests vorliegen.
+- [x] **Nicht jeden GLT-Monitor-Wert automatisch aufnehmen:** Registerberichte zeigen sowohl wertvolle Funde als auch Werte ohne Modbus-Verfügbarkeit.
+  - Aufnahme nur mit Quelle, Firmware-/Modellhinweis, Sentinelverhalten und Regressionstest.
+
 ### Hardware- und Firmware-Matrix
 
-- [ ] Matrix mit mindestens folgenden Zeilen pflegen: Navigator 2.0, Navigator Pro, Navigator 10, Terra SWM sowie unbekanntes/zukünftiges Modell.
-- [ ] Pro Eintrag dokumentieren: Wärmepumpentyp, Navigator-Modell, Firmware, getestete API-/HASS-Version, aktive Kreise/Zonen/PV/ISC/Kaskade und Tester.
-- [ ] Anonymisierte Diagnose-Snapshots als Regression-Fixtures erlauben; Opt-in und manuell eingereicht, niemals automatisch übertragen.
-- [ ] „confirmed“, „community-tested“, „expected“ und „unsupported“ klar unterscheiden.
+- [x] Matrix mit mindestens folgenden Zeilen pflegen: Navigator 2.0, Navigator Pro, Navigator 10, Terra SWM sowie unbekanntes/zukünftiges Modell.
+- [x] Pro Eintrag dokumentieren: Wärmepumpentyp, Navigator-Modell, Firmware, getestete API-/HASS-Version, aktive Kreise/Zonen/PV/ISC/Kaskade und Tester.
+- [x] Anonymisierte Diagnose-Snapshots als Regression-Fixtures erlauben; Opt-in und manuell eingereicht, niemals automatisch übertragen.
+- [x] „confirmed“, „community-tested“, „expected“ und „unsupported“ klar unterscheiden.
+  - Lokales Testsystem vorhanden: IDM 6-15 mit Navigator 10 über Modbus-Proxy. Read-only-Probe am 2026-07-02 bestätigte Verbindung, Modellkennung `Navigator 10`, Slave-ID 1, PV/Solar/ISC/Kaskade-Fähigkeiten und sichere Einzelreads für 90, 1072, 4108, 4122 und 4126. Private Netzwerkdaten werden nicht dokumentiert.
 
 ### Registerqualität
 
-- [ ] Für jedes Register Quelle, Dokumentversion, Modelle, Zugriff, Sentinelwerte und letzte Verifikation speichern.
-- [ ] Generierte Registerreferenz aus demselben Schema für API-Dokumentation und HASS-Wiki erzeugen.
-- [ ] Konflikte zwischen offizieller Doku und realem Gerät als bekannte Abweichung versionieren.
-- [ ] Neue Register nur mit Quelle, Test und Modell-Gate aufnehmen.
+- [x] Für jedes Register Quelle, Dokumentversion, Modelle, Zugriff, Sentinelwerte und letzte Verifikation speichern.
+- [x] Generierte Registerreferenz aus demselben Schema für API-Dokumentation und HASS-Wiki erzeugen.
+- [x] Konflikte zwischen offizieller Doku und realem Gerät als bekannte Abweichung versionieren.
+- [x] Neue Register nur mit Quelle, Test und Modell-Gate aufnehmen.
 
 ### Home-Assistant-UX
 
-- [ ] Entity-Anzahl und Standardaktivierung je typischer Anlage prüfen; Diagnose- und Spezialwerte standardmäßig deaktivieren.
-- [ ] Geräte-/Entity-Namen vollständig über Translation Keys in Deutsch und Englisch bereitstellen.
-- [ ] Schreibaktionen mit klaren Beschreibungen, Grenzwerten und Sicherheitswarnungen versehen.
-- [ ] Energie-Dashboard-Kompatibilität für Energie-, Leistung- und Total-Increasing-Sensoren validieren.
-- [ ] Beispiele für PV-Überschuss, Warmwasser, Urlaub, Störung und Lastbegrenzung als getestete Automationen pflegen.
-- [ ] Einen Diagnoseleitfaden „Welche Daten brauchen wir für einen Bugreport?“ erstellen.
+- [x] Entity-Anzahl und Standardaktivierung je typischer Anlage prüfen; Diagnose- und Spezialwerte standardmäßig deaktivieren.
+- [x] Geräte-/Entity-Namen vollständig über Translation Keys in Deutsch und Englisch bereitstellen.
+- [x] Schreibaktionen mit klaren Beschreibungen, Grenzwerten und Sicherheitswarnungen versehen.
+- [x] Energie-Dashboard-Kompatibilität für Energie-, Leistung- und Total-Increasing-Sensoren validieren.
+- [x] Beispiele für PV-Überschuss, Warmwasser, Urlaub, Störung und Lastbegrenzung als getestete Automationen pflegen.
+- [x] Einen Diagnoseleitfaden „Welche Daten brauchen wir für einen Bugreport?“ erstellen.
 
 Abschlusskriterium: Nutzer können vor der Installation erkennen, ob ihr Modell getestet ist; Maintainer können einen Registerfehler anhand eines standardisierten Reports reproduzieren.
 
@@ -217,7 +269,15 @@ Vor einer Core-Einreichung klären:
 
 Falls diese Punkte nicht erfüllt sind, bleibt HACS ein legitimes Ziel; die technische Qualität soll trotzdem gehalten werden.
 
+### Aktuelle Entscheidung
+
+- [x] HACS-first-Strategie dokumentiert: Stabilisierung, Hardware-Matrix, API-Vertrag, Releaseprozess und Write-Safety sammeln zuerst reale Wartungserfahrung.
+- [x] Kleinen späteren Core-Erstumfang festgelegt: Config Flow, Modellkennung, Coordinator, redigierte Diagnose und essenzielle read-only Sensoren.
+- [x] Core-spezifische Anpassungen dokumentiert: Manifest-Felder, HA-Core-Testframework, `home-assistant.io`-Dokumentation, Brands-Assets und HACS-zu-Core-Migration.
+
 ### Schritte für Home Assistant Core
+
+Diese Schritte sind bewusst spätere Core-Port-Arbeit und werden erst nach der HACS-Stabilisierungsphase umgesetzt.
 
 - [ ] Core-Integration aus aktuellem `dev`-Branch scaffolden und nur den minimalen, reviewbaren Umfang übernehmen.
 - [ ] Kommunikation ausschließlich über eine veröffentlichte, exakt gepinnte API-Version führen.
@@ -241,30 +301,34 @@ Ziel: Releases sind wiederholbar, sicher und auch nach Monaten noch wartbar.
 ### GitHub und Lieferkette
 
 - [ ] `main` in beiden Repositories schützen: Pull Request, grüne Pflichtchecks, keine Force-Pushes, keine gelöschte Historie.
-- [ ] `CODEOWNERS` ergänzen und mindestens einen Reviewpfad für sicherheitskritische Schreib-/Registeränderungen definieren.
-- [ ] Dependabot oder Renovate für Python und GitHub Actions aktivieren.
+  - Stand 2026-07-02: Erforderliche Repository-Settings in `docs/MAINTENANCE.md` dokumentiert; Aktivierung bleibt GitHub-Repository-Einstellung.
+- [x] `CODEOWNERS` ergänzen und mindestens einen Reviewpfad für sicherheitskritische Schreib-/Registeränderungen definieren.
+- [x] Dependabot oder Renovate für Python und GitHub Actions aktivieren.
 - [ ] CodeQL und `pip-audit`/OSV-Scan ergänzen; Ergebnisse als Pflichtcheck behandeln.
-- [ ] Drittanbieter-Actions auf vollständige Commit-SHAs pinnen und planmäßig aktualisieren.
+  - Stand 2026-07-02: Security-Workflows ergänzt; Pflichtcheck-Aktivierung bleibt GitHub-Repository-Einstellung.
+- [x] Drittanbieter-Actions auf vollständige Commit-SHAs pinnen und planmäßig aktualisieren.
 - [ ] Minimale Workflow-Berechtigungen und geschützte PyPI-/Release-Environments verwenden.
+  - Stand 2026-07-02: Workflow-Berechtigungen minimiert und Release-Environments dokumentiert; Environment-Schutz bleibt GitHub-Repository-Einstellung.
 - [ ] Automatisches Löschen gemergter Branches und Auto-Merge für grüne Dependency-PRs erwägen.
+  - Stand 2026-07-02: In `docs/MAINTENANCE.md` als Repository-Setting dokumentiert.
 
 ### Gemeinsamer Releaseprozess
 
-- [ ] Release-Reihenfolge festschreiben: API ändern -> API-CI/Vertragstests -> API-Release -> HASS-Pin-PR -> HASS-CI/Smoke-Test -> HASS-Release.
-- [ ] Release-Workflow soll vor Tag/Upload alle Tests, Format-, Typ-, Build- und Artefaktprüfungen erzwingen.
-- [ ] Tag und Paketversion vor Veröffentlichung auf Gleichheit prüfen; keine still tolerierten `git commit || true` / `git tag || true`-Fehler.
-- [ ] Vorabkanal für Beta-/RC-Releases und echte Gerätekandidaten nutzen.
-- [ ] Rollback-Anleitung für fehlerhafte PyPI- und HACS-Releases dokumentieren.
-- [ ] Changelog aus kuratierten Einträgen erzeugen; Breaking Changes und Migrationsschritte dürfen nicht nur aus Commit-Schlagwörtern geraten werden.
-- [ ] HASS-Release-Artefakt nach dem Packen entzippen, Manifest/Abhängigkeiten prüfen und importieren.
+- [x] Release-Reihenfolge festschreiben: API ändern -> API-CI/Vertragstests -> API-Release -> HASS-Pin-PR -> HASS-CI/Smoke-Test -> HASS-Release.
+- [x] Release-Workflow soll vor Tag/Upload alle Tests, Format-, Typ-, Build- und Artefaktprüfungen erzwingen.
+- [x] Tag und Paketversion vor Veröffentlichung auf Gleichheit prüfen; keine still tolerierten `git commit || true` / `git tag || true`-Fehler.
+- [x] Vorabkanal für Beta-/RC-Releases und echte Gerätekandidaten nutzen.
+- [x] Rollback-Anleitung für fehlerhafte PyPI- und HACS-Releases dokumentieren.
+- [x] Changelog aus kuratierten Einträgen erzeugen; Breaking Changes und Migrationsschritte dürfen nicht nur aus Commit-Schlagwörtern geraten werden.
+- [x] HASS-Release-Artefakt nach dem Packen entzippen, Manifest/Abhängigkeiten prüfen und importieren.
 
 ### Community und Wartung
 
-- [ ] Issue-Templates beider Repositories angleichen und Modell, Firmware, Versionen, Diagnose sowie Reproduktionsschritte abfragen.
-- [ ] Feature-Request-, Registerfehler- und Hardware-Kompatibilitäts-Templates ergänzen.
-- [ ] Support-, Security- und Release-SLA realistisch dokumentieren.
-- [ ] Roadmap quartalsweise prüfen; erledigte Punkte in Changelog/Issues verlinken statt historische Details zu löschen.
-- [ ] Bus-Faktor senken: Architekturentscheidungen, Releasezugänge und Notfallabläufe dokumentieren; keine Secrets im Repository.
+- [x] Issue-Templates beider Repositories angleichen und Modell, Firmware, Versionen, Diagnose sowie Reproduktionsschritte abfragen.
+- [x] Feature-Request-, Registerfehler- und Hardware-Kompatibilitäts-Templates ergänzen.
+- [x] Support-, Security- und Release-SLA realistisch dokumentieren.
+- [x] Roadmap quartalsweise prüfen; erledigte Punkte in Changelog/Issues verlinken statt historische Details zu löschen.
+- [x] Bus-Faktor senken: Architekturentscheidungen, Releasezugänge und Notfallabläufe dokumentieren; keine Secrets im Repository.
 
 Abschlusskriterium: Kein Produktionsrelease umgeht Pflichtchecks, und ein neuer Maintainer kann Test, Release und Rollback ausschließlich anhand der Dokumentation durchführen.
 
@@ -296,6 +360,10 @@ Diese Punkte sind sinnvoll, aber erst nach Stabilität und Verträgen:
 | 10 | beide | Define coordinated API-to-HASS release policy | P1 |
 | 11 | HASS | Replace self-claimed quality status with Core-readiness checklist | P2 |
 | 12 | beide | Generate shared register reference and compatibility matrix | P2 |
+| 13 | beide | Add community-triage regression tests for enums, sentinels, and negative values | P1 |
+| 14 | HASS | Evaluate one-time DHW charge as a button/action UX | P2 |
+| 15 | beide | Verify PV target, Smart Grid, B2 flow, and heat quantity semantics on real hardware | P2 |
+| 16 | HASS | Evaluate optional force_update for external time-series users | P3 |
 
 ## Messgrößen
 

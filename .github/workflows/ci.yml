@@ -12,6 +12,9 @@ on:
     - cron: "0 0 * * *"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   validate:
     runs-on: ubuntu-latest
@@ -21,12 +24,15 @@ jobs:
         python-version: ["3.14"]
         home-assistant-version:
           - "2026.5.0"
+        api-dependency-mode:
+          - manifest-pinned
+          - api-branch-compatible
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -40,7 +46,23 @@ jobs:
         run: |
           pip install ruff mypy pytest pytest-cov pytest-asyncio
           pip install pytest-homeassistant-custom-component
-          pip install "idm-heatpump-api>=0.3.3"
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
+              requirements = json.load(manifest_file)["requirements"]
+
+          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
+          PY
+
+      - name: Install compatible API branch dependencies
+        if: matrix.api-dependency-mode == 'api-branch-compatible'
+        run: |
+          pip install --upgrade \
+            "pymodbus>=3.12.1,<4.0" \
+            "git+https://github.com/Xerolux/idm-heatpump-api.git@Codex/roadmap-phase0-api"
 
       - name: Lint with Ruff
         run: |
@@ -73,9 +95,9 @@ jobs:
     runs-on: ubuntu-latest
     name: HACS Validation
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - name: HACS Action
-        uses: hacs/action@main
+        uses: hacs/action@1ebf01c408f29afcb6406bd431bc98fd8cbb15aa
         with:
           category: integration
           ignore: description topics
@@ -84,6 +106,6 @@ jobs:
     runs-on: ubuntu-latest
     name: Hassfest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - name: Hassfest Action
-        uses: home-assistant/actions/hassfest@master
+        uses: home-assistant/actions/hassfest@f4ca6f671bd429efb108c0f2fa0ae8af0215986c

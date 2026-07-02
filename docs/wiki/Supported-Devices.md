@@ -1,12 +1,16 @@
 # Supported Devices
 
-## Fully Supported
+## Compatibility Status
+
+The detailed model and firmware status is maintained in the [Compatibility Matrix](Compatibility-Matrix). The table below is a short installation-oriented summary.
+
+## Supported Device Families
 
 | Device | Firmware | Heating Circuits | Zone Modules | Status |
 |--------|----------|------------------|--------------|--------|
-| IDM Navigator 2.0 | all versions | up to 7 (A–G) | no | ✅ Confirmed |
-| IDM Navigator 10 | 2025+ (NAV10_20.23+) | up to 7 (A–G) | up to 10 (6 rooms each) | ✅ Confirmed |
-| IDM Navigator Pro | all versions | up to 7 (A–G) | up to 10 (6 rooms each) | ✅ Confirmed |
+| IDM Navigator 10 | 2025+ (NAV10_20.23+) | up to 7 (A–G) | up to 10 (6 rooms each) | Confirmed on one maintainer test system; broader reports welcome |
+| IDM Navigator 2.0 | 2.x expected | up to 7 (A–G) | no | Expected; Navigator-10-only registers are filtered |
+| IDM Navigator Pro | unknown | up to 7 (A–G) | up to 10 (6 rooms each) | Expected; needs complete diagnostics report |
 
 ## Requirements
 
@@ -25,7 +29,7 @@
 
 ## Untested Devices (possibly compatible)
 
-The following devices may use the same register mapping as the Navigator 2.0, but have not been officially tested:
+The following devices may use the same register mapping as the Navigator 2.0, but are not yet confirmed in the public community test matrix:
 
 - IDM Terra SW (with Navigator 2.0 controller)
 - IDM Terra HT (with Navigator 2.0 controller)
@@ -41,6 +45,8 @@ The integration reads **168+ Modbus registers** dynamically generated from the [
 - **Read/Write memory** (Holding Registers): Operating modes, setpoints, configuration
 
 Details on all registers: [Modbus Register Wiki](Modbus-Register)
+
+Compatibility evidence and report fields: [Compatibility Matrix](Compatibility-Matrix)
 
 ## Known Firmware-specific Differences
 

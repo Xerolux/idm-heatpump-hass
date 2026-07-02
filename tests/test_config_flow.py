@@ -82,33 +82,39 @@ class TestAsyncStepUser:
 
     async def test_empty_name_shows_error(self):
         flow = _make_flow()
-        result = await flow.async_step_user({
-            "name": "",
-            "host": "192.168.1.100",
-            "port": 502,
-        })
+        result = await flow.async_step_user(
+            {
+                "name": "",
+                "host": "192.168.1.100",
+                "port": 502,
+            }
+        )
         assert result["type"] == "form"
         assert "name" in result["errors"]
 
     async def test_empty_host_shows_error(self):
         flow = _make_flow()
-        result = await flow.async_step_user({
-            "name": "IDM",
-            "host": "",
-            "port": 502,
-        })
+        result = await flow.async_step_user(
+            {
+                "name": "IDM",
+                "host": "",
+                "port": 502,
+            }
+        )
         assert result["type"] == "form"
         assert "host" in result["errors"]
 
     async def test_connection_failure_shows_error(self):
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=False):
-            result = await flow.async_step_user({
-                "name": "IDM",
-                "host": "192.168.1.100",
-                "port": 502,
-                "slave_id": 1,
-            })
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         assert result["type"] == "form"
         assert result["errors"].get("base") == "cannot_connect"
 
@@ -116,17 +122,19 @@ class TestAsyncStepUser:
         flow = _make_flow()
         flow._async_abort_entries_match = MagicMock()
         with patch.object(flow, "_test_connection", return_value=True):
-            with patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}):
-                result = await flow.async_step_user({
-                    "name": "IDM Test",
-                    "host": "192.168.1.100",
-                    "port": 502,
-                    "slave_id": 1,
-                })
+            with patch.object(
+                flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}
+            ):
+                result = await flow.async_step_user(
+                    {
+                        "name": "IDM Test",
+                        "host": "192.168.1.100",
+                        "port": 502,
+                        "slave_id": 1,
+                    }
+                )
         assert result["step_id"] == "options"
-        flow._async_abort_entries_match.assert_called_once_with(
-            {"host": "192.168.1.100", "port": 502, "slave_id": 1}
-        )
+        flow._async_abort_entries_match.assert_called_once_with({"host": "192.168.1.100", "port": 502, "slave_id": 1})
 
 
 class TestAsyncStepOptions:
@@ -140,28 +148,31 @@ class TestAsyncStepOptions:
     async def test_no_zones_creates_entry(self):
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
-        result = await flow.async_step_options({
-            CONF_SCAN_INTERVAL: 10,
-            CONF_HIDE_UNUSED: True,
-            CONF_HEATING_CIRCUITS: ["a"],
-            CONF_ZONE_COUNT: 0,
-            CONF_TECHNICIAN_CODES: False,
-        })
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+            }
+        )
         assert result["type"] == "create_entry"
         assert result["title"] == "IDM Test"
 
     async def test_with_zones_goes_to_zones_step(self):
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
-        with patch.object(flow, "async_step_zones",
-                          return_value={"type": "form", "step_id": "zones", "errors": {}}):
-            result = await flow.async_step_options({
-                CONF_SCAN_INTERVAL: 10,
-                CONF_HIDE_UNUSED: True,
-                CONF_HEATING_CIRCUITS: ["a"],
-                CONF_ZONE_COUNT: 2,
-                CONF_TECHNICIAN_CODES: False,
-            })
+        with patch.object(flow, "async_step_zones", return_value={"type": "form", "step_id": "zones", "errors": {}}):
+            result = await flow.async_step_options(
+                {
+                    CONF_SCAN_INTERVAL: 10,
+                    CONF_HIDE_UNUSED: True,
+                    CONF_HEATING_CIRCUITS: ["a"],
+                    CONF_ZONE_COUNT: 2,
+                    CONF_TECHNICIAN_CODES: False,
+                }
+            )
         assert result["step_id"] == "zones"
 
 
@@ -182,10 +193,12 @@ class TestAsyncStepZones:
             CONF_HEATING_CIRCUITS: ["a"],
             CONF_ZONE_COUNT: 2,
         }
-        result = await flow.async_step_zones({
-            "zone_0_rooms": 3,
-            "zone_1_rooms": 4,
-        })
+        result = await flow.async_step_zones(
+            {
+                "zone_0_rooms": 3,
+                "zone_1_rooms": 4,
+            }
+        )
         assert result["type"] == "create_entry"
         assert result["options"][CONF_ZONE_ROOMS] == {0: 3, 1: 4}
 
@@ -207,10 +220,12 @@ class TestAsyncStepReconfigure:
         entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
         entry.title = "IDM"
         with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
-            result = await flow.async_step_reconfigure({
-                "host": "",
-                "port": 502,
-            })
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "",
+                    "port": 502,
+                }
+            )
         assert result["type"] == "form"
         assert "host" in result["errors"]
 
@@ -221,10 +236,12 @@ class TestAsyncStepReconfigure:
         entry.title = "IDM"
         with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
             with patch.object(flow, "_test_connection", return_value=False):
-                result = await flow.async_step_reconfigure({
-                    "host": "10.0.0.1",
-                    "port": 502,
-                })
+                result = await flow.async_step_reconfigure(
+                    {
+                        "host": "10.0.0.1",
+                        "port": 502,
+                    }
+                )
         assert result["errors"].get("base") == "cannot_connect"
 
     async def test_successful_reconfigure(self):
@@ -234,12 +251,79 @@ class TestAsyncStepReconfigure:
         entry.title = "IDM"
         with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
             with patch.object(flow, "_test_connection", return_value=True):
-                result = await flow.async_step_reconfigure({
-                    "host": "10.0.0.1",
-                    "port": 502,
-                    "slave_id": 1,
-                })
+                result = await flow.async_step_reconfigure(
+                    {
+                        "host": "10.0.0.1",
+                        "port": 502,
+                        "slave_id": 1,
+                    }
+                )
         assert result["type"] in ("abort", "create_entry")
+
+    async def test_successful_reconfigure_updates_network_fields(self):
+        flow = _make_flow()
+        entry = MagicMock()
+        entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
+        entry.title = "IDM"
+        update_and_abort = MagicMock(return_value={"type": "abort", "reason": "reconfigure_successful"})
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=True) as test_connection,
+            patch.object(flow, "async_update_and_abort", update_and_abort),
+        ):
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "idm.local",
+                    "port": 5020,
+                    "slave_id": 2,
+                }
+            )
+
+        assert result == {"type": "abort", "reason": "reconfigure_successful"}
+        test_connection.assert_awaited_once_with(
+            {
+                "host": "idm.local",
+                "port": 5020,
+                "slave_id": 2,
+            }
+        )
+        update_and_abort.assert_called_once_with(
+            entry,
+            data_updates={
+                "host": "idm.local",
+                "port": 5020,
+                "slave_id": 2,
+            },
+        )
+
+    async def test_reconfigure_defaults_missing_slave_id(self):
+        flow = _make_flow()
+        entry = MagicMock()
+        entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 7}
+        entry.title = "IDM"
+        update_and_abort = MagicMock(return_value={"type": "abort", "reason": "reconfigure_successful"})
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "async_update_and_abort", update_and_abort),
+        ):
+            await flow.async_step_reconfigure(
+                {
+                    "host": "idm.local",
+                    "port": 5020,
+                }
+            )
+
+        update_and_abort.assert_called_once_with(
+            entry,
+            data_updates={
+                "host": "idm.local",
+                "port": 5020,
+                "slave_id": 1,
+            },
+        )
 
 
 class TestTestConnection:
@@ -252,11 +336,13 @@ class TestTestConnection:
             "idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ):
-            result = await flow._test_connection({
-                "host": "192.168.1.100",
-                "port": 502,
-                "slave_id": 1,
-            })
+            result = await flow._test_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         assert result is True
 
     async def test_returns_false_on_exception(self):
@@ -267,11 +353,13 @@ class TestTestConnection:
             "idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ):
-            result = await flow._test_connection({
-                "host": "192.168.1.100",
-                "port": 502,
-                "slave_id": 1,
-            })
+            result = await flow._test_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         assert result is False
 
     async def test_returns_false_on_test_failure(self):
@@ -283,11 +371,13 @@ class TestTestConnection:
             "idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ):
-            result = await flow._test_connection({
-                "host": "192.168.1.100",
-                "port": 502,
-                "slave_id": 1,
-            })
+            result = await flow._test_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         assert result is False
 
     async def test_disconnects_after_success(self):
@@ -299,11 +389,13 @@ class TestTestConnection:
             "idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ):
-            await flow._test_connection({
-                "host": "192.168.1.100",
-                "port": 502,
-                "slave_id": 1,
-            })
+            await flow._test_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         mock_client.disconnect.assert_awaited_once()
 
     async def test_disconnects_after_exception(self):
@@ -314,11 +406,13 @@ class TestTestConnection:
             "idm_heatpump.IdmModbusClient",
             return_value=mock_client,
         ):
-            await flow._test_connection({
-                "host": "192.168.1.100",
-                "port": 502,
-                "slave_id": 1,
-            })
+            await flow._test_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         mock_client.disconnect.assert_awaited_once()
 
 
@@ -344,13 +438,15 @@ class TestOptionsFlow:
         flow.config_entry = MagicMock()
         flow.config_entry.options = {}
         flow._options = {}
-        result = await flow.async_step_options({
-            CONF_SCAN_INTERVAL: 15,
-            CONF_HIDE_UNUSED: True,
-            CONF_HEATING_CIRCUITS: ["a"],
-            CONF_ZONE_COUNT: 0,
-            CONF_TECHNICIAN_CODES: False,
-        })
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 15,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+            }
+        )
         assert result["type"] == "create_entry"
 
     async def test_step_options_with_zones_goes_to_zones(self):
@@ -358,15 +454,16 @@ class TestOptionsFlow:
         flow.config_entry = MagicMock()
         flow.config_entry.options = {}
         flow._options = {}
-        with patch.object(flow, "async_step_zones",
-                          return_value={"type": "form", "step_id": "zones", "errors": {}}):
-            result = await flow.async_step_options({
-                CONF_SCAN_INTERVAL: 15,
-                CONF_HIDE_UNUSED: True,
-                CONF_HEATING_CIRCUITS: ["a"],
-                CONF_ZONE_COUNT: 1,
-                CONF_TECHNICIAN_CODES: False,
-            })
+        with patch.object(flow, "async_step_zones", return_value={"type": "form", "step_id": "zones", "errors": {}}):
+            result = await flow.async_step_options(
+                {
+                    CONF_SCAN_INTERVAL: 15,
+                    CONF_HIDE_UNUSED: True,
+                    CONF_HEATING_CIRCUITS: ["a"],
+                    CONF_ZONE_COUNT: 1,
+                    CONF_TECHNICIAN_CODES: False,
+                }
+            )
         assert result["step_id"] == "zones"
 
     async def test_step_zones_no_input_shows_form(self):
@@ -409,26 +506,30 @@ class TestConfigFlowZoneBoundaries:
         """zone_count=0 creates entry directly from options step."""
         flow = _make_flow()
         flow._data = {"name": "IDM", "host": "10.0.0.1"}
-        result = await flow.async_step_options({
-            CONF_SCAN_INTERVAL: 10,
-            CONF_HIDE_UNUSED: True,
-            CONF_HEATING_CIRCUITS: ["a"],
-            CONF_ZONE_COUNT: 0,
-            CONF_TECHNICIAN_CODES: False,
-        })
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+            }
+        )
         assert result["type"] == "create_entry"
 
     async def test_all_seven_heating_circuits(self):
         """Selecting all 7 circuits proceeds to entry creation."""
         flow = _make_flow()
         flow._data = {"name": "IDM", "host": "10.0.0.1"}
-        result = await flow.async_step_options({
-            CONF_SCAN_INTERVAL: 10,
-            CONF_HIDE_UNUSED: True,
-            CONF_HEATING_CIRCUITS: ["a", "b", "c", "d", "e", "f", "g"],
-            CONF_ZONE_COUNT: 0,
-            CONF_TECHNICIAN_CODES: False,
-        })
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a", "b", "c", "d", "e", "f", "g"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+            }
+        )
         assert result["type"] == "create_entry"
         assert result["options"][CONF_HEATING_CIRCUITS] == ["a", "b", "c", "d", "e", "f", "g"]
 
@@ -440,11 +541,13 @@ class TestConfigFlowZoneBoundaries:
             CONF_HEATING_CIRCUITS: ["a"],
             CONF_ZONE_COUNT: 3,
         }
-        result = await flow.async_step_zones({
-            "zone_0_rooms": 1,
-            "zone_1_rooms": 4,
-            "zone_2_rooms": 8,
-        })
+        result = await flow.async_step_zones(
+            {
+                "zone_0_rooms": 1,
+                "zone_1_rooms": 4,
+                "zone_2_rooms": 8,
+            }
+        )
         assert result["type"] == "create_entry"
         assert result["options"][CONF_ZONE_ROOMS] == {0: 1, 1: 4, 2: 8}
 
@@ -455,23 +558,27 @@ class TestConfigFlowFullFlow:
         flow = _make_flow()
         # Step 1: user
         with patch.object(flow, "_test_connection", return_value=True):
-            step1 = await flow.async_step_user({
-                "name": "IDM Heat",
-                "host": "192.168.1.100",
-                "port": 502,
-                "slave_id": 1,
-            })
+            step1 = await flow.async_step_user(
+                {
+                    "name": "IDM Heat",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         assert step1["type"] == "form"
         assert step1["step_id"] == "options"
 
         # Step 2: options (no zones)
-        step2 = await flow.async_step_options({
-            CONF_SCAN_INTERVAL: 10,
-            CONF_HIDE_UNUSED: True,
-            CONF_HEATING_CIRCUITS: ["a"],
-            CONF_ZONE_COUNT: 0,
-            CONF_TECHNICIAN_CODES: False,
-        })
+        step2 = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+            }
+        )
         assert step2["type"] == "create_entry"
         assert step2["title"] == "IDM Heat"
 
@@ -479,27 +586,33 @@ class TestConfigFlowFullFlow:
         """Full happy path with zones: user → options → zones → create_entry."""
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=True):
-            await flow.async_step_user({
-                "name": "IDM Zone",
-                "host": "192.168.1.200",
-                "port": 502,
-                "slave_id": 1,
-            })
+            await flow.async_step_user(
+                {
+                    "name": "IDM Zone",
+                    "host": "192.168.1.200",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
 
-        step2 = await flow.async_step_options({
-            CONF_SCAN_INTERVAL: 10,
-            CONF_HIDE_UNUSED: False,
-            CONF_HEATING_CIRCUITS: ["a"],
-            CONF_ZONE_COUNT: 2,
-            CONF_TECHNICIAN_CODES: False,
-        })
+        step2 = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: False,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 2,
+                CONF_TECHNICIAN_CODES: False,
+            }
+        )
         assert step2["type"] == "form"
         assert step2["step_id"] == "zones"
 
-        step3 = await flow.async_step_zones({
-            "zone_0_rooms": 3,
-            "zone_1_rooms": 5,
-        })
+        step3 = await flow.async_step_zones(
+            {
+                "zone_0_rooms": 3,
+                "zone_1_rooms": 5,
+            }
+        )
         assert step3["type"] == "create_entry"
         assert step3["options"][CONF_ZONE_ROOMS] == {0: 3, 1: 5}
         assert step3["options"][CONF_ZONE_COUNT] == 2
@@ -514,13 +627,15 @@ class TestOptionsFlowFull:
             CONF_HEATING_CIRCUITS: ["a"],
             CONF_ZONE_COUNT: 0,
         }
-        result = await flow.async_step_options({
-            CONF_SCAN_INTERVAL: 30,
-            CONF_HIDE_UNUSED: False,
-            CONF_HEATING_CIRCUITS: ["a"],
-            CONF_ZONE_COUNT: 0,
-            CONF_TECHNICIAN_CODES: True,
-        })
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 30,
+                CONF_HIDE_UNUSED: False,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: True,
+            }
+        )
         assert result["type"] == "create_entry"
         assert result["data"][CONF_SCAN_INTERVAL] == 30
         assert result["data"][CONF_TECHNICIAN_CODES] is True

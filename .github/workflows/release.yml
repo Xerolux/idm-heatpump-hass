@@ -30,12 +30,49 @@ on:
         required: false
         type: boolean
         default: true
+      release_notes:
+        description: 'Curated release notes. Required for manual stable releases.'
+        required: false
+        type: string
+        default: ''
 
 permissions:
   contents: write
 
 jobs:
+  validate-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
+
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.14"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install ruff mypy pytest pytest-cov pytest-asyncio
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
+              requirements = json.load(manifest_file)["requirements"]
+
+          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
+          PY
+
+      - name: Validate integration
+        run: |
+          ruff check custom_components/idm_heatpump tests --line-length=120
+          ruff format custom_components/idm_heatpump tests --check
+          mypy custom_components/idm_heatpump
+          pytest tests/ -v --tb=short --cov=custom_components/idm_heatpump --cov-report=term-missing
+
   prepare-release:
+    needs: validate-release
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version.outputs.version }}
@@ -46,7 +83,7 @@ jobs:
       release-notes: ${{ steps.generate.outputs.release-notes }}
       previous-tag: ${{ steps.commits.outputs.previous-tag }}
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           fetch-depth: 0
 
@@ -101,6 +138,11 @@ jobs:
           TAG="${{ steps.version.outputs.tag }}"
           if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
             echo "Invalid tag format: $TAG"
+            exit 1
+          fi
+          VERSION="${{ steps.version.outputs.version }}"
+          if [ "$TAG" != "v$VERSION" ]; then
+            echo "Tag $TAG does not match version $VERSION"
             exit 1
           fi
 
@@ -159,6 +201,7 @@ jobs:
           NEW_FEATURES: ${{ steps.commits.outputs.new-features }}
           BREAKING_CHANGES: ${{ steps.commits.outputs.breaking-changes }}
           PREVIOUS_TAG: ${{ steps.commits.outputs.previous-tag }}
+          CURATED_RELEASE_NOTES: ${{ inputs.release_notes }}
         run: |
           case "$RELEASE_TYPE" in
             alpha) TYPE_BADGE="ALPHA RELEASE - Experimental features, use with caution!" ;;
@@ -179,6 +222,15 @@ jobs:
             CHANGELOG_LINK="[Full changelog: $PREVIOUS_TAG...$TAG]($CHANGELOG_URL)"
           fi
 
+          if [ -n "$CURATED_RELEASE_NOTES" ]; then
+            {
+              echo "$CURATED_RELEASE_NOTES"
+              echo ""
+              echo "---"
+              echo ""
+              echo "$CHANGELOG_LINK"
+            } > temp_release_notes.md
+          else
           {
             echo "## $TAG - IDM Heatpump"
             echo ""
@@ -223,6 +275,7 @@ jobs:
             echo ""
             echo "_Generated automatically by GitHub Actions on $(date +'%Y-%m-%d %H:%M:%S UTC')_"
           } > temp_release_notes.md
+          fi
 
           echo "release-notes<<EOFNOTES" >> $GITHUB_OUTPUT
           cat temp_release_notes.md >> $GITHUB_OUTPUT
@@ -238,8 +291,24 @@ jobs:
           echo "Created idm_heatpump.zip ($SIZE)"
           sha256sum idm_heatpump.zip > idm_heatpump.zip.sha256
 
+      - name: Inspect ZIP artifact
+        run: |
+          rm -rf /tmp/idm_heatpump_release
+          mkdir -p /tmp/idm_heatpump_release/custom_components/idm_heatpump
+          unzip -q idm_heatpump.zip -d /tmp/idm_heatpump_release/custom_components/idm_heatpump
+          test -f /tmp/idm_heatpump_release/custom_components/idm_heatpump/manifest.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          manifest = json.loads(Path("/tmp/idm_heatpump_release/custom_components/idm_heatpump/manifest.json").read_text())
+          assert manifest["version"] == "${{ steps.version.outputs.version }}"
+          requirements = manifest["requirements"]
+          assert any(req.startswith("idm-heatpump-api==") for req in requirements), requirements
+          PY
+
       - name: Upload ZIP to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65
         with:
           files: |
             idm_heatpump.zip
@@ -255,7 +324,7 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.prepare-release.outputs.is_draft != 'true'
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0

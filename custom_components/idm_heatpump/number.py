@@ -20,7 +20,7 @@ from idm_heatpump import RegisterDef
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
-from .library_adapter import is_glt_measurement
+from .adapter_glt import is_glt_measurement
 
 _LOGGER = logging.getLogger(__name__)
 

@@ -24,3 +24,10 @@ If this feature involves a specific Modbus register, please provide:
 - Register address: [e.g. 1005]
 - Data type: [e.g. UCHAR, FLOAT, WORD]
 - Description from the IDM documentation
+- Heat-pump model:
+- Controller or Navigator version:
+- Firmware version:
+- Whether this needs read-only monitoring or write support:
+
+**Compatibility**
+If this changes entities, services, options, or write behavior, describe the expected migration path.

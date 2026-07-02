@@ -247,6 +247,22 @@
     "cannot_connect": {
       "title": "Cannot connect to IDM heat pump",
       "description": "Home Assistant cannot reach the IDM heat pump at **{host}**.\n\nPlease check:\n- Network connectivity to the device\n- Modbus TCP is enabled in the controller (*Installer level → Communication → Modbus*)\n- The IP address and port are correct in the integration settings"
+    },
+    "wrong_slave_id": {
+      "title": "No Modbus response from IDM heat pump",
+      "description": "Home Assistant can reach the Modbus endpoint at **{host}**, but the controller does not answer as expected.\n\nPlease check:\n- The configured slave ID matches the Modbus proxy or controller\n- The proxy forwards to the correct IDM device\n- No other Modbus client is blocking the connection"
+    },
+    "incompatible_firmware": {
+      "title": "IDM firmware or Modbus function not supported",
+      "description": "The heat pump answered, but rejected a Modbus function needed by this integration.\n\nPlease check:\n- The Navigator firmware supports Modbus TCP access\n- The integration and API versions are current\n- The device model is listed as supported for the used feature set"
+    },
+    "register_not_supported": {
+      "title": "IDM register not supported by this device",
+      "description": "The heat pump rejected register **{register}** at address **{address}**. The integration will skip this register and continue polling supported values.\n\nThis usually means the feature is not available on this model, firmware, or installed hardware configuration."
+    },
+    "write_rejected": {
+      "title": "IDM register write rejected",
+      "description": "The heat pump rejected a write to register **{register}** at address **{address}**.\n\nPlease check:\n- The value is within the documented range\n- The feature is enabled on this device\n- The controller currently allows this write operation"
     }
   },
   "services": {

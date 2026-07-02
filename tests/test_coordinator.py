@@ -5,7 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.idm_heatpump.coordinator import IdmCoordinator
+from custom_components.idm_heatpump.coordinator import IdmCoordinator, _repair_issue_for_error
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
 from pymodbus.exceptions import ConnectionException, ModbusException
@@ -35,7 +35,8 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
 class TestCoordinatorInit:
     def test_properties_match_init(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(
-            mock_hass, mock_config_entry,
+            mock_hass,
+            mock_config_entry,
             sensor_descriptions=[{"key": "s1"}],
             binary_sensor_descriptions=[{"key": "b1"}],
             number_descriptions=[{"key": "n1"}, {"key": "n2"}],
@@ -65,6 +66,20 @@ class TestCoordinatorInit:
         assert coord.config_entry is mock_config_entry
 
 
+class TestRepairIssueClassification:
+    @pytest.mark.parametrize(
+        ("error", "issue_id"),
+        [
+            (ConnectionException("connection lost"), "cannot_connect"),
+            (ModbusException("no response from slave 2"), "wrong_slave_id"),
+            (ModbusException("ExceptionResponse(exception_code=1) illegal function"), "incompatible_firmware"),
+            (Exception("timeout"), "cannot_connect"),
+        ],
+    )
+    def test_classifies_communication_errors(self, error, issue_id):
+        assert _repair_issue_for_error(error) == issue_id
+
+
 class TestSetupRegisters:
     def test_registers_count(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry)
@@ -84,9 +99,7 @@ class TestSetupRegisters:
             coord.setup_registers(["a"], 0, {})
         assert coord.registers_count == 0
 
-    def test_detected_model_is_forwarded_to_register_collection(
-        self, mock_hass, mock_config_entry
-    ):
+    def test_detected_model_is_forwarded_to_register_collection(self, mock_hass, mock_config_entry):
         model_info = MagicMock()
         coord, _ = _make_coordinator(mock_hass, mock_config_entry)
         with (
@@ -101,12 +114,8 @@ class TestSetupRegisters:
         ):
             coord.setup_registers(["a"], 0, {}, model_info=model_info)
 
-        mock_collect.assert_called_once_with(
-            ["a"], 0, {}, False, model_info=model_info
-        )
-        mock_aliases.assert_called_once_with(
-            ["a"], 0, {}, False, model_info=model_info
-        )
+        mock_collect.assert_called_once_with(["a"], 0, {}, False, model_info=model_info)
+        mock_aliases.assert_called_once_with(["a"], 0, {}, False, model_info=model_info)
 
 
 class TestIsRegisterUnused:
@@ -144,6 +153,18 @@ class TestIsRegisterUnused:
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("x", 255) is True
 
+    def test_documented_enum_value_255_is_not_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        coord._registers = [
+            RegisterDef(
+                address=1200,
+                datatype=DataType.UCHAR,
+                name="hc_a_mode",
+                enum_options={0: "Off", 1: "Automatic", 255: "Not configured"},
+            )
+        ]
+        assert coord.is_register_unused("hc_a_mode", 255) is False
+
     def test_minus_32768_is_unused(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("x", -32768) is True
@@ -159,6 +180,10 @@ class TestIsRegisterUnused:
     def test_normal_int_is_not_unused(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("x", 42) is False
+
+    def test_negative_power_value_is_not_unused_when_not_sentinel(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("pv_power", -42.5) is False
 
     def test_pump_status_negative_one_means_off(self, mock_hass, mock_config_entry):
         # Bei Pumpen-Statusregistern bedeutet -1 laut iDM-Doku "Aus" — gültig.
@@ -202,7 +227,7 @@ class TestAsyncUpdateData:
 
         assert data["temp"] == 22.5
         assert data["mode"] == 1
-        mock_ir.async_delete_issue.assert_called_once()
+        assert mock_ir.async_delete_issue.call_count == 3
 
     async def test_empty_data_raises_update_failed(self, mock_hass, mock_config_entry):
         from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -257,6 +282,30 @@ class TestAsyncUpdateData:
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
         assert calls == [["good_a", "good_b"]]
+
+    async def test_illegal_address_creates_register_not_supported_issue(self, mock_hass, mock_config_entry):
+        unsupported = RegisterDef(address=4108, datatype=DataType.FLOAT, name="power_limit_hp")
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(
+            side_effect=ModbusException("Modbus error reading address 4108: ExceptionResponse(exception_code=2)")
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord._registers = [unsupported]
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            with pytest.raises(Exception):
+                await coord._async_update_data()
+
+        mock_ir.async_create_issue.assert_any_call(
+            mock_hass,
+            "idm_heatpump",
+            "register_not_supported",
+            is_fixable=False,
+            severity=mock_ir.IssueSeverity.WARNING,
+            translation_key="register_not_supported",
+            translation_placeholders={"register": "power_limit_hp", "address": "4108"},
+        )
 
     @pytest.mark.parametrize(
         "error",
@@ -314,9 +363,19 @@ class TestAsyncUpdateData:
 
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             await coord._async_update_data()
-        mock_ir.async_delete_issue.assert_called_once_with(
-            mock_hass, "idm_heatpump", "cannot_connect"
-        )
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "cannot_connect")
+
+    async def test_connectivity_issues_deleted_on_success(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 20.0})
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            await coord._async_update_data()
+
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "cannot_connect")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "wrong_slave_id")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "incompatible_firmware")
 
     async def test_issue_created_on_failure(self, mock_hass, mock_config_entry):
         client = MagicMock()
@@ -329,6 +388,30 @@ class TestAsyncUpdateData:
         mock_ir.async_create_issue.assert_called_once()
         call_kwargs = mock_ir.async_create_issue.call_args
         assert call_kwargs is not None
+
+    async def test_wrong_slave_id_issue_created_on_no_response(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=ModbusException("no response from slave 3"))
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            with pytest.raises(Exception):
+                await coord._async_update_data()
+
+        assert mock_ir.async_create_issue.call_args.args[2] == "wrong_slave_id"
+        assert mock_ir.async_create_issue.call_args.kwargs["translation_key"] == "wrong_slave_id"
+
+    async def test_incompatible_firmware_issue_created_on_illegal_function(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=ModbusException("ExceptionResponse(exception_code=1)"))
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            with pytest.raises(Exception):
+                await coord._async_update_data()
+
+        assert mock_ir.async_create_issue.call_args.args[2] == "incompatible_firmware"
+        assert mock_ir.async_create_issue.call_args.kwargs["translation_key"] == "incompatible_firmware"
 
 
 class TestAsyncWriteRegister:
@@ -346,6 +429,7 @@ class TestAsyncWriteRegister:
 
     async def test_write_triggers_delayed_refresh(self, mock_hass, mock_config_entry):
         import asyncio
+
         client = MagicMock()
         client.write_register = AsyncMock()
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
@@ -361,6 +445,7 @@ class TestAsyncWriteRegister:
 
     async def test_write_no_data_initializes(self, mock_hass, mock_config_entry):
         import asyncio
+
         client = MagicMock()
         client.write_register = AsyncMock()
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
@@ -386,6 +471,26 @@ class TestAsyncWriteRegister:
         reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="val", writable=True)
         await coord.async_write_register(reg, 5)
         coord.async_update_listeners.assert_called_once()
+
+    async def test_write_failure_creates_write_rejected_issue(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.write_register = AsyncMock(side_effect=Exception("write rejected"))
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        reg = RegisterDef(address=1005, datatype=DataType.UCHAR, name="system_mode", writable=True)
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            with pytest.raises(Exception, match="write rejected"):
+                await coord.async_write_register(reg, 1)
+
+        mock_ir.async_create_issue.assert_called_once_with(
+            mock_hass,
+            "idm_heatpump",
+            "write_rejected",
+            is_fixable=False,
+            severity=mock_ir.IssueSeverity.WARNING,
+            translation_key="write_rejected",
+            translation_placeholders={"register": "system_mode", "address": "1005"},
+        )
 
     async def test_multiple_writes_update_data_and_listeners(self, mock_hass, mock_config_entry):
         """Multiple consecutive writes each update data and notify listeners."""
@@ -469,10 +574,12 @@ class TestUnusedRegistersAccumulation:
     async def test_unused_registers_accumulate_across_updates(self, mock_hass, mock_config_entry):
         """Unused registers from different updates accumulate in the set."""
         client = MagicMock()
-        client.read_batch = AsyncMock(side_effect=[
-            {"x": UNUSED_VALUE, "y": 5.0},
-            {"x": UNUSED_VALUE, "z": UNUSED_VALUE},
-        ])
+        client.read_batch = AsyncMock(
+            side_effect=[
+                {"x": UNUSED_VALUE, "y": 5.0},
+                {"x": UNUSED_VALUE, "z": UNUSED_VALUE},
+            ]
+        )
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, hide_unused=True)
 
         with patch("custom_components.idm_heatpump.coordinator.ir"):

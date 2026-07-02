@@ -1,0 +1,10 @@
+* @Xerolux
+
+custom_components/idm_heatpump/modbus_client.py @Xerolux
+custom_components/idm_heatpump/registers.py @Xerolux
+custom_components/idm_heatpump/services.py @Xerolux
+custom_components/idm_heatpump/library_adapter.py @Xerolux
+custom_components/idm_heatpump/adapter_descriptions.py @Xerolux
+custom_components/idm_heatpump/number.py @Xerolux
+custom_components/idm_heatpump/select.py @Xerolux
+custom_components/idm_heatpump/switch.py @Xerolux

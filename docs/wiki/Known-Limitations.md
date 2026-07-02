@@ -2,7 +2,7 @@
 
 ## Device Compatibility
 
-- **Only IDM Navigator 2.0 / Navigator Pro** are officially supported
+- **Only IDM Navigator 2.0 / Navigator Pro** are confirmed in the current community test matrix
 - Older IDM controllers without Navigator firmware are **not** supported
 - Modbus register mapping may vary slightly between firmware versions
 
@@ -46,3 +46,9 @@
 - The current firmware version is read as a diagnostic sensor (`firmware_version`)
 - Firmware updates directly from Home Assistant are **not** possible
 - Updates are done via the IDM web interface or USB
+
+## Deliberately Not Implemented
+
+- **Climate entity:** Not exposed yet because IDM modes combine heating circuits, rooms, cooling and hot water in ways that do not map cleanly to one Home Assistant climate entity.
+- **Web UI scraping:** Not used as a core path. The integration stays on the documented local Modbus/API contract and does not depend on Navigator web-login cookies.
+- **Global `force_update`:** Not enabled by default. External time-series systems should use recorder/InfluxDB configuration or selected helper sensors to avoid unnecessary Home Assistant database load.

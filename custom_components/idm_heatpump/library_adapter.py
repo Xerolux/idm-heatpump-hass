@@ -24,15 +24,12 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
-    SensorStateClass,
 )
 from homeassistant.const import (
     PERCENTAGE,
-    UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
 )
@@ -40,93 +37,27 @@ from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-def
 
 from idm_heatpump import (
     RegisterDef,
-    build_register_map,
     get_heating_circuit_registers,
     get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
-from idm_heatpump.client import IdmModelInfo
-from idm_heatpump.const import (
-    MODEL_NAVIGATOR_10,
-    MODEL_NAVIGATOR_20,
-    MODEL_NAVIGATOR_PRO,
+from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO
+
+from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
+from .adapter_descriptions import (
+    get_icon_for_register,
+    infer_binary_device_class,
+    infer_sensor_classes,
+    make_sensor_description,
 )
+from .adapter_glt import is_glt_measurement, is_zone_room_measurement
+from .adapter_registers import build_filtered_register_map, model_info_from_flags
 
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
 
 # ============================================================
 # Enum slug maps — stable translation keys per register
 # ============================================================
-
-_SYSTEM_MODE_SLUGS: dict[int, str] = {
-    0: "standby",
-    1: "automatic",
-    2: "absent",
-    3: "holiday",
-    4: "hot_water_only",
-    5: "heating_cooling_only",
-}
-
-_CIRCUIT_MODE_SLUGS: dict[int, str] = {
-    0: "off",
-    1: "timed_program",
-    2: "normal",
-    3: "eco",
-    4: "manual_heating",
-    5: "manual_cooling",
-    255: "not_configured",
-}
-
-_ROOM_MODE_SLUGS: dict[int, str] = {
-    0: "off",
-    1: "automatic",
-    2: "eco",
-    3: "normal",
-    4: "comfort",
-}
-
-_SOLAR_MODE_SLUGS: dict[int, str] = {
-    0: "automatic",
-    1: "hot_water",
-    2: "heating",
-    3: "hot_water_and_heating",
-    4: "heat_source_pool",
-}
-
-# German display labels for BITFLAG sensors (replaces library's English strings)
-_HP_OPERATING_MODE_DE: dict[int, str] = {
-    0: "Aus",
-    1: "Heizbetrieb",
-    2: "Kühlbetrieb",
-    4: "Warmwasser",
-    8: "Abtauen",
-}
-
-_BITFLAG_DE_LABELS: dict[str, dict[int, str]] = {
-    "hp_operating_mode": _HP_OPERATING_MODE_DE,
-}
-
-_CIRCUIT_MODE_RE = re.compile(r"^hc_[a-g]_mode$")
-_CIRCUIT_ACTIVE_MODE_RE = re.compile(r"^hc_[a-g]_active_mode$")
-_ROOM_MODE_RE = re.compile(r"^zm\d+_room\d+_mode$")
-
-
-def get_slug_map_and_key(name: str) -> tuple[dict[int, str] | None, str | None]:
-    """Return (int→slug map, translation_key) for a known enum register."""
-    if name == "system_mode":
-        return _SYSTEM_MODE_SLUGS, "system_mode"
-    if _CIRCUIT_MODE_RE.match(name) or _CIRCUIT_ACTIVE_MODE_RE.match(name):
-        return _CIRCUIT_MODE_SLUGS, "circuit_mode"
-    if _ROOM_MODE_RE.match(name):
-        return _ROOM_MODE_SLUGS, "room_mode"
-    if name == "solar_mode":
-        return _SOLAR_MODE_SLUGS, "solar_mode"
-    return None, None
-
-
-def get_bitflag_de_labels(name: str) -> dict[int, str] | None:
-    """Return German label override for BITFLAG registers."""
-    return _BITFLAG_DE_LABELS.get(name)
 
 
 # ============================================================
@@ -143,58 +74,12 @@ def _apply_ha_metadata(reg: RegisterDef, base_meta: dict[str, Any]) -> dict[str,
     return base_meta
 
 
-# Maps unit strings to (device_class, state_class) tuples for automatic sensor classification.
-_UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
-    UnitOfEnergy.KILO_WATT_HOUR: (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
-    "kWh": (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
-    UnitOfPower.KILO_WATT: (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
-    "kW": (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
-    UnitOfTemperature.CELSIUS: (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
-    "°C": (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
-    "L/min": (SensorDeviceClass.VOLUME_FLOW_RATE, SensorStateClass.MEASUREMENT),
-}
-
-# Maps device_class to the correct state_class.
-_DC_STATE_CLASS_MAP: dict[SensorDeviceClass, SensorStateClass] = {
-    SensorDeviceClass.ENERGY: SensorStateClass.TOTAL_INCREASING,
-    SensorDeviceClass.POWER: SensorStateClass.MEASUREMENT,
-    SensorDeviceClass.TEMPERATURE: SensorStateClass.MEASUREMENT,
-    SensorDeviceClass.HUMIDITY: SensorStateClass.MEASUREMENT,
-    SensorDeviceClass.BATTERY: SensorStateClass.MEASUREMENT,
-    SensorDeviceClass.VOLUME_FLOW_RATE: SensorStateClass.MEASUREMENT,
-}
-
-
 # ============================================================
 # GLT-Messwert-Register: beschreibbare Register, die physikalische Messwerte
 # abbilden (PV-Block, Zonenraum-Temperatur/-Feuchte). Seit Library 0.3.2 sind
 # diese laut iDM-Doku per GLT beschreibbar. Sie werden doppelt exponiert:
 # als Sensor (Anzeige/Historie) UND als Number (externe Vorgabe).
 # ============================================================
-
-_GLT_MEASUREMENT_NAMES: frozenset[str] = frozenset(
-    {
-        "pv_surplus",
-        "pv_production",
-        "house_consumption",
-        "battery_discharge",
-        "battery_soc",
-        "electric_heater_power",
-    }
-)
-
-_ZONE_ROOM_MEASUREMENT_RE = re.compile(r"zm\d+_room\d+_(temp|humidity)$")
-
-
-def is_glt_measurement(name: str) -> bool:
-    """True, wenn ein beschreibbares Register einen Messwert abbildet (GLT-Eingabe).
-
-    Solche Register werden sowohl als Sensor als auch als Number angelegt.
-    Sollwerte (z.B. pv_target_value, Raum-Setpoints) zählen nicht dazu —
-    die bleiben reine Number-Entities.
-    """
-    return name in _GLT_MEASUREMENT_NAMES or _ZONE_ROOM_MEASUREMENT_RE.match(name) is not None
-
 
 # ============================================================
 # Deutsche Namen für wichtige Register (wird sukzessive erweitert)
@@ -511,6 +396,8 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
     "power_limit_hp": {
         "name": "Leistungsbegrenzung Wärmepumpe",
         "icon": "mdi:flash-alert",
+        "entity_category": EntityCategory.CONFIG,
+        "enabled_by_default": False,
         "min": -1,
         "max": 50,
         "step": 0.1,
@@ -520,6 +407,8 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
     "power_limit_cascade": {
         "name": "Leistungsbegrenzung Kaskade",
         "icon": "mdi:flash-alert",
+        "entity_category": EntityCategory.CONFIG,
+        "enabled_by_default": False,
         "min": -1,
         "max": 200,
         "step": 0.1,
@@ -551,174 +440,6 @@ def _get_german_name(name: str) -> str:
     return name.replace("_", " ").title()
 
 
-def _infer_dc_sc(name: str, unit: str | None) -> tuple[SensorDeviceClass | None, SensorStateClass | None]:
-    """Infer device_class and state_class from unit and register name.
-
-    Unit takes priority; for ambiguous units like % we fall back to name matching.
-    """
-    if unit and unit in _UNIT_DC_SC_MAP:
-        return _UNIT_DC_SC_MAP[unit]
-    if unit == PERCENTAGE:
-        name_lower = name.lower()
-        if "humidity" in name_lower or "feuchte" in name_lower:
-            return SensorDeviceClass.HUMIDITY, SensorStateClass.MEASUREMENT
-        if "soc" in name_lower or "battery" in name_lower:
-            return SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT
-    return None, None
-
-
-# Keyword fragments → BinarySensorDeviceClass for auto-classification.
-_BINARY_DC_KEYWORDS: list[tuple[str, BinarySensorDeviceClass]] = [
-    ("fault", BinarySensorDeviceClass.PROBLEM),
-    ("alarm", BinarySensorDeviceClass.PROBLEM),
-    ("störung", BinarySensorDeviceClass.PROBLEM),
-    ("lock", BinarySensorDeviceClass.LOCK),
-    ("pump", BinarySensorDeviceClass.RUNNING),
-    ("compressor", BinarySensorDeviceClass.RUNNING),
-    ("demand", BinarySensorDeviceClass.RUNNING),
-]
-
-
-def _infer_binary_dc(name: str) -> BinarySensorDeviceClass | None:
-    """Infer BinarySensorDeviceClass from register name keywords."""
-    name_lower = name.lower()
-    for keyword, dc in _BINARY_DC_KEYWORDS:
-        if keyword in name_lower:
-            return dc
-    return None
-
-
-def get_icon_for_register(name: str, unit: str | None = None) -> str:
-    """Gibt ein passendes Icon für ein Register zurück (besser als simple Fallbacks)."""
-    name_lower = name.lower()
-
-    # Temperaturen
-    if "temp" in name_lower or unit == "°C":
-        if "dhw" in name_lower or "warmwasser" in name_lower:
-            return "mdi:water-boiler"
-        if "cold" in name_lower or "kühl" in name_lower:
-            return "mdi:snowflake"
-        if "heat_sink" in name_lower or "wärmesenke" in name_lower:
-            return "mdi:heat-pump"
-        return "mdi:thermometer"
-    if "humidity" in name_lower or "feuchte" in name_lower:
-        return "mdi:water-percent"
-
-    # Leistung & Energie
-    if any(x in name_lower for x in ["power", "energy", "consumption", "leistung"]):
-        if "thermal" in name_lower:
-            return "mdi:heat-wave"
-        return "mdi:flash"
-    if "soc" in name_lower or "battery" in name_lower:
-        return "mdi:battery"
-
-    # Pumpen
-    if "pump" in name_lower:
-        return "mdi:pump"
-
-    # Ventile
-    if "valve" in name_lower:
-        return "mdi:valve"
-
-    # Solar
-    if "solar" in name_lower:
-        return "mdi:solar-power"
-
-    # PV
-    if "pv" in name_lower:
-        return "mdi:solar-panel"
-
-    # Kaskade
-    if "cascade" in name_lower:
-        return "mdi:heat-pump-multiple"
-
-    # Störungen / Alarme
-    if any(x in name_lower for x in ["fault", "alarm", "error", "störung"]):
-        return "mdi:alert-circle"
-
-    # Modus / Status
-    if any(x in name_lower for x in ["mode", "status", "betriebsart", "demand"]):
-        return "mdi:cog"
-
-    # Standard
-    if unit and "%" in unit:
-        return "mdi:gauge"
-    return "mdi:information-outline"
-
-
-def _make_sensor_description(reg: RegisterDef, meta: dict[str, Any]) -> SensorEntityDescription:
-    """Create a rich HA SensorEntityDescription from a library RegisterDef + metadata."""
-    german_name = meta.get("name") or _get_german_name(reg.name)
-
-    dc: SensorDeviceClass | None = meta.get("device_class")
-    unit = meta.get("unit") or reg.unit
-    if dc is None:
-        dc, _ = _infer_dc_sc(reg.name, unit)
-    sc = _DC_STATE_CLASS_MAP.get(dc) if dc else None  # type: ignore[arg-type]
-    return SensorEntityDescription(
-        key=reg.name,
-        name=german_name,
-        native_unit_of_measurement=meta.get("unit") or reg.unit,
-        device_class=dc,
-        state_class=sc,
-        icon=meta.get("icon"),
-        entity_category=meta.get("entity_category"),
-        entity_registry_enabled_default=meta.get("enabled_by_default", True),
-    )
-
-
-def _make_number_description(reg: RegisterDef, meta: dict[str, Any]) -> NumberEntityDescription:
-    """Create a rich HA NumberEntityDescription from a library RegisterDef + metadata."""
-    return NumberEntityDescription(
-        key=reg.name,
-        name=meta.get("name", reg.name),
-        native_min_value=meta.get("min", reg.min_val or -999),
-        native_max_value=meta.get("max", reg.max_val or 999),
-        native_step=meta.get("step", 0.1),
-        native_unit_of_measurement=meta.get("unit") or reg.unit,
-        device_class=meta.get("device_class"),
-        icon=meta.get("icon"),
-        mode=NumberMode.BOX,
-        entity_category=EntityCategory.CONFIG,
-    )
-
-
-def _model_info_from_flags(circuits: list[str], zone_modules: int, enable_cascade: bool) -> IdmModelInfo:
-    """Construct an IdmModelInfo for use with build_register_map.
-
-    When all capabilities are enabled except cascade, this tells the library to
-    exclude cascade-specific registers. Without model_info, the library includes
-    all optional register blocks unconditionally.
-    """
-    return IdmModelInfo(
-        model_name=MODEL_NAVIGATOR_10,
-        active_heating_circuits=circuits,
-        zone_modules=zone_modules,
-        has_solar=True,
-        has_isc=True,
-        has_pv=True,
-        has_cascade=enable_cascade,
-    )
-
-
-def _build_filtered_register_map(
-    model_info: Any = None,
-    circuits: list[str] | None = None,
-    zone_modules: int = 0,
-) -> dict[str, RegisterDef]:
-    """Build the register map and drop locally known model-incompatible entries."""
-    reg_map = build_register_map(
-        model_info=model_info,
-        circuits=circuits or [],
-        zone_modules=zone_modules or 0,
-    )
-
-    if getattr(model_info, "model_name", None) == MODEL_NAVIGATOR_20:
-        reg_map.pop("power_limit_hp", None)
-
-    return reg_map
-
-
 def get_library_sensors(
     model_info: Any = None,
     circuits: list[str] | None = None,
@@ -730,15 +451,15 @@ def get_library_sensors(
     This is intended to become the main source over time.
     """
     if model_info is None and not enable_cascade:
-        model_info = _model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+        model_info = model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     sensors = []
 
     # Explicitly mapped sensors (best quality)
     for key, meta in SENSOR_METADATA.items():
         if key in reg_map:
             reg = reg_map[key]
-            desc = _make_sensor_description(reg, meta)
+            desc = make_sensor_description(reg, meta, _get_german_name(reg.name))
             sensors.append(
                 {
                     "register": reg,
@@ -762,7 +483,7 @@ def get_library_sensors(
             continue
 
         icon = reg.icon or get_icon_for_register(name, reg.unit)
-        dc, sc = _infer_dc_sc(name, reg.unit)
+        dc, sc = infer_sensor_classes(name, reg.unit)
         if reg.state_class:
             sc = reg.state_class
 
@@ -837,7 +558,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
                 entity_category=EntityCategory.DIAGNOSTIC,
             )
         else:
-            hc_dc, hc_sc = _infer_dc_sc(name, reg.unit)
+            hc_dc, hc_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
                 hc_sc = reg.state_class
             desc = SensorEntityDescription(
@@ -884,7 +605,7 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
                 entity_category=EntityCategory.DIAGNOSTIC,
             )
         else:
-            z_dc, z_sc = _infer_dc_sc(name, reg.unit)
+            z_dc, z_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
                 z_sc = reg.state_class
             desc = SensorEntityDescription(
@@ -971,7 +692,7 @@ def generate_icons_json_entries(
     Hilfsfunktion, die Icons für alle bekannten Register vorschlägt.
     Kann genutzt werden, um icons.json teilweise zu generieren.
     """
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     icons = {}
     for name, reg in reg_map.items():
         icon = get_icon_for_register(name, reg.unit)
@@ -987,7 +708,7 @@ def get_library_binary_sensors(
     """Binary sensors from library registers with binary=True flag."""
     from homeassistant.components.binary_sensor import BinarySensorEntityDescription
 
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     sensors = []
     for name, reg in reg_map.items():
         if not reg.binary or reg.writable:
@@ -995,7 +716,7 @@ def get_library_binary_sensors(
         desc = BinarySensorEntityDescription(
             key=name,
             name=_get_german_name(name),
-            device_class=_infer_binary_dc(name),
+            device_class=infer_binary_device_class(name),
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
         )
@@ -1017,7 +738,7 @@ def get_library_selects(
     """Select entities (modes) from the library."""
     from homeassistant.components.select import SelectEntityDescription
 
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     selects = []
     for name, reg in reg_map.items():
         if not reg.writable or not reg.enum_options:
@@ -1058,7 +779,7 @@ def get_library_switches(model_info: Any = None) -> list[dict[str, Any]]:
     """Switch entities (GLT demands etc.) from the library."""
     from homeassistant.components.switch import SwitchEntityDescription
 
-    reg_map = _build_filtered_register_map(model_info, [], 0)
+    reg_map = build_filtered_register_map(model_info, [], 0)
     switches = []
     for name, reg in reg_map.items():
         if reg.datatype.value != "BOOL" or not reg.writable:
@@ -1085,7 +806,7 @@ def get_library_readonly_sensors(
     Gibt nur lesbare Sensoren aus der Library zurück.
     Diese Funktion ist der bevorzugte Weg, um Sensoren aus der Library zu bekommen.
     """
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     sensors = []
 
     for name, reg in reg_map.items():
@@ -1099,7 +820,7 @@ def get_library_readonly_sensors(
         # Bevorzuge explizite Metadaten
         if name in SENSOR_METADATA:
             meta = SENSOR_METADATA[name]
-            desc = _make_sensor_description(reg, meta)
+            desc = make_sensor_description(reg, meta, _get_german_name(reg.name))
             sensors.append({"register": reg, "description": desc, "category": "system"})
             continue
 
@@ -1117,7 +838,7 @@ def get_library_readonly_sensors(
                 entity_category=EntityCategory.DIAGNOSTIC,
             )
         else:
-            ro_dc, ro_sc = _infer_dc_sc(name, reg.unit)
+            ro_dc, ro_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
                 ro_sc = reg.state_class
             desc = SensorEntityDescription(
@@ -1142,8 +863,8 @@ def get_library_numbers(
 ) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
     if model_info is None and not enable_cascade:
-        model_info = _model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+        model_info = model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     return _numbers_from_register_map(reg_map)
 
 
@@ -1184,7 +905,7 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
         # und ein Schreibversuch wird vom Gerät ignoriert. Welcher Sensortyp je
         # Raum aktiv ist, lässt sich nicht über Modbus auslesen, daher wird die
         # Number standardmäßig deaktiviert statt sie unwirksam anzubieten.
-        enabled_by_default = _ZONE_ROOM_MEASUREMENT_RE.match(name) is None
+        enabled_by_default = meta.get("enabled_by_default", not is_zone_room_measurement(name))
 
         desc = NumberEntityDescription(
             key=name,
@@ -1196,7 +917,7 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
             device_class=meta.get("device_class"),
             icon=meta.get("icon", get_icon_for_register(name, reg.unit)),
             mode=NumberMode.BOX,
-            entity_category=EntityCategory.CONFIG,
+            entity_category=meta.get("entity_category", EntityCategory.CONFIG),
             entity_registry_enabled_default=enabled_by_default,
         )
         numbers.append(
