@@ -132,6 +132,7 @@ jobs:
           BUG_FIXES=$(echo "$COMMITS" | grep -iE "(\bfix\b|\bbug\b|\bpatch\b|hotfix|bugfix)" || echo "")
           IMPROVEMENTS=$(echo "$COMMITS" | grep -iE "(\bimprove\b|\benhance\b|\bupdate\b|\brefactor\b|\boptimize\b)" || echo "")
           NEW_FEATURES=$(echo "$COMMITS" | grep -iE "(\badd\b|\bfeat\b|\bfeature\b|\bnew\b)" || echo "")
+          BREAKING_CHANGES=$(echo "$COMMITS" | grep -iE "(\bbreaking\b|\bmigration\b|\bdeprecat)" || echo "")
 
           echo "previous-tag=$PREV_TAG" >> $GITHUB_OUTPUT
           echo "bug-fixes<<EOF" >> $GITHUB_OUTPUT
@@ -143,6 +144,9 @@ jobs:
           echo "new-features<<EOF" >> $GITHUB_OUTPUT
           echo "$NEW_FEATURES" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+          echo "breaking-changes<<EOF" >> $GITHUB_OUTPUT
+          echo "$BREAKING_CHANGES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Generate release notes
         id: generate
@@ -153,6 +157,7 @@ jobs:
           BUG_FIXES: ${{ steps.commits.outputs.bug-fixes }}
           IMPROVEMENTS: ${{ steps.commits.outputs.improvements }}
           NEW_FEATURES: ${{ steps.commits.outputs.new-features }}
+          BREAKING_CHANGES: ${{ steps.commits.outputs.breaking-changes }}
           PREVIOUS_TAG: ${{ steps.commits.outputs.previous-tag }}
         run: |
           case "$RELEASE_TYPE" in
@@ -179,65 +184,38 @@ jobs:
             echo ""
             echo "**$TYPE_BADGE**"
             echo ""
-            echo "[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)"
-            echo "[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)"
-            echo "[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)"
-            echo "[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)"
-            echo "[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)"
-            echo ""
-            echo "### New Features"
-            echo ""
-            echo "$NEW_FEATURES"
-            echo ""
-            echo "### Improvements"
-            echo ""
-            echo "$IMPROVEMENTS"
-            echo ""
-            echo "### Bug Fixes"
+            echo "### What changed"
             echo ""
             echo "$BUG_FIXES"
             echo ""
-            echo "---"
+            echo "$IMPROVEMENTS"
             echo ""
-            echo "### Installation"
+            echo "$NEW_FEATURES"
             echo ""
-            echo "**HACS (Recommended):**"
-            echo "1. Add custom repository: \`${{ github.repository }}\`"
-            echo "2. Search for \"IDM Heatpump\""
-            echo "3. Click Install"
+            echo "### Why it matters"
             echo ""
-            echo "**Manual:**"
-            echo "1. Download \`idm_heatpump.zip\`"
-            echo "2. Extract to \`custom_components/idm_heatpump\`"
-            echo "3. Restart Home Assistant"
+            echo "- Keeps update notes short and readable directly inside Home Assistant / HACS."
+            echo "- Highlights the most important fixes and improvements without forcing users into the full changelog."
+            echo "- Preserves a clean path to the full compare view when deeper details are needed."
+            echo ""
+            if [ -n "$BREAKING_CHANGES" ]; then
+              echo "### Breaking changes / Migration"
+              echo ""
+              echo "$BREAKING_CHANGES"
+              echo ""
+            fi
+            echo "### Support"
+            echo ""
+            echo "Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:"
+            echo ""
+            echo "- [GitHub Sponsors](https://github.com/sponsors/xerolux)"
+            echo "- [Ko-Fi](https://ko-fi.com/xerolux)"
+            echo "- [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)"
+            echo "- [PayPal](https://paypal.me/xerolux)"
             echo ""
             echo "---"
             echo ""
             echo "$CHANGELOG_LINK"
-            echo ""
-            echo "---"
-            echo ""
-            echo "### Support"
-            echo ""
-            echo "Diese Integration wird in meiner Freizeit entwickelt – deine Unterstützung erhöht die Motivation für weitere Features und Updates! 🚀"
-            echo ""
-            echo "[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)"
-            echo "[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)"
-            echo "[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)"
-            echo "[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)"
-            echo "[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)"
-            echo ""
-            echo "_Jede Unterstützung ist eine große Motivation! Vielen Dank!_"
-            echo ""
-            echo "---"
-            echo ""
-            echo "### Feedback & Contributions"
-            echo ""
-            echo "- [Report a bug](https://github.com/${{ github.repository }}/issues/new?template=bug_report.md)"
-            echo "- [Request a feature](https://github.com/${{ github.repository }}/issues/new?template=feature_request.md)"
-            echo "- [Contribute](https://github.com/${{ github.repository }}/blob/main/docs/CONTRIBUTING.md)"
-            echo ""
-            echo "---"
             echo ""
             echo "**Developed by:** [Xerolux](https://github.com/Xerolux)"
             echo "**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH"
