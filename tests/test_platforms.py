@@ -585,6 +585,25 @@ class TestIdmSelect:
         # system_mode uses slug map, so option key is the slug
         assert sel._option_to_value("automatic") == 1
 
+    def test_option_to_value_accepts_uppercase_slug(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        enum_opts = {0: "Standby", 1: "Automatic"}
+        coord = _make_coordinator()
+        reg = _make_register("system_mode", enum_options=enum_opts)
+        sel = IdmSelect(coord, reg, _make_desc("system_mode"))
+        assert sel._option_to_value("AUTOMATIC") == 1
+
+    def test_room_mode_automatic_uses_stable_slug_value(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        enum_opts = {0: "Off", 1: "Automatic", 2: "Eco"}
+        coord = _make_coordinator()
+        reg = _make_register("zm0_room1_mode", enum_options=enum_opts)
+        sel = IdmSelect(coord, reg, _make_desc("zm0_room1_mode"))
+        assert sel._option_to_value("automatic") == 1
+        assert sel._option_to_value("AUTOMATIC") == 1
+
     def test_option_to_value_raises_on_unknown(self):
         from custom_components.idm_heatpump.select import IdmSelect
 

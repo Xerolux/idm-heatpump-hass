@@ -75,15 +75,18 @@ class IdmSelect(IdmEntity, SelectEntity):
         return options.get(int(raw))
 
     def _option_to_value(self, option: str) -> int:
+        normalized_option = option.casefold()
         if self._enum_slug_reverse is not None:
-            if option not in self._enum_slug_reverse:
+            if option in self._enum_slug_reverse:
+                return self._enum_slug_reverse[option]
+            if normalized_option not in self._enum_slug_reverse:
                 raise ValueError(f"Unknown option: {option}")
-            return self._enum_slug_reverse[option]
+            return self._enum_slug_reverse[normalized_option]
         options = self._register.enum_options
         if options is None:
             raise ValueError(f"No options defined: {option}")
         for key, val in options.items():
-            if val == option:
+            if val == option or str(val).casefold() == normalized_option:
                 return key
         raise ValueError(f"Unknown option: {option}")
 

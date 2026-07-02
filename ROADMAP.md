@@ -189,7 +189,7 @@ Modell-Gate, Test und Hardware-Rückmeldung laufen.
 
 #### Wichtig für uns
 
-- [ ] **Dependency-Kompatibilität beobachten:** Erfahrungsberichte zeigen, dass enge `pymodbus`-Grenzen bei neuen Home-Assistant-Releases Installationen brechen können.
+- [x] **Dependency-Kompatibilität beobachten:** Erfahrungsberichte zeigen, dass enge `pymodbus`-Grenzen bei neuen Home-Assistant-Releases Installationen brechen können.
   - Unser aktueller Pin ist absichtlich reproduzierbar; bei HA 2026.7+ muss geprüft werden, ob ein neuer kompatibler Pin oder eine getestete Versionsmatrix nötig wird.
 - [ ] **PV-Zielwert und Smart-Grid-Status verifizieren:** Geräteberichte nennen Register 88 (`pv_target_value`) und 90 (`smart_grid_status`).
   - Bei uns bereits vorhanden; offen ist Hardware-/Firmware-Bestätigung, Wertebereich, Schreibwirkung von Register 88 und Dokumentation in der Kompatibilitätsmatrix.
@@ -197,7 +197,7 @@ Modell-Gate, Test und Hardware-Rückmeldung laufen.
   - Bei uns bereits vorhanden; wichtig sind Modell-Gate, TWT-/Hardware-Hinweis und sauberes `unavailable` auf Anlagen ohne passenden Sensor.
 - [ ] **Einmalige Warmwasserladung benutzbar machen:** Nutzerberichte beschreiben Register 1713 als One-shot-Warmwasserladung, die nach erfolgreicher Ladung wieder zurückfällt.
   - Bei uns bereits vorhanden; UX-Prüfung: eher Button/Switch/Aktion mit klarer Beschreibung statt roher Registerbedienung.
-- [ ] **RoomMode-/Enum-Schreibpfade regressionstesten:** Mehrere Nutzerberichte zeigen typische Fehler bei `automatic`/`AUTOMATIC`, Übersetzungen, Services und refaktorierten Schreibpfaden.
+- [x] **RoomMode-/Enum-Schreibpfade regressionstesten:** Mehrere Nutzerberichte zeigen typische Fehler bei `automatic`/`AUTOMATIC`, Übersetzungen, Services und refaktorierten Schreibpfaden.
   - Akzeptanz: deutsche und englische UI-Optionen dürfen keine falschen Servicewerte erzeugen; `automatic` muss für Raum- und Heizkreismodi stabil funktionieren.
 - [ ] **Optionales `force_update` nur als Opt-in bewerten:** Der Wunsch nach dichter externer Zeitreihenarchivierung ist für InfluxDB/Grafana nachvollziehbar, kann aber Recorder- und Datenbanklast erhöhen.
   - Wenn umgesetzt, dann standardmäßig aus, klar dokumentiert und möglichst auf Sensoren begrenzt; vorher Datenbank-/Recorder-Auswirkung prüfen.
@@ -210,9 +210,9 @@ Modell-Gate, Test und Hardware-Rückmeldung laufen.
   - Wo IDM keine echte Gesamtverbrauchsenergie liefert, lieber HA-Integral-Helfer oder klar benannte berechnete Sensoren dokumentieren statt falsche native Energie zu behaupten.
 - [ ] **Wärmemengen-Semantik prüfen:** Register 1754/1756/1762 müssen gegen reale Geräte und IDM-Doku geprüft werden.
   - Besonders wichtig: Gesamtwärmemenge vs. Heizwärmemenge nicht verwechseln; fehlende Vortex-/Modell-Sensoren sauber als nicht verfügbar darstellen.
-- [ ] **Negative Leistungswerte zulassen, wenn fachlich korrekt:** Geräteberichte zeigen, dass negative PV-/Leistungswerte reale Bedeutung haben können.
+- [x] **Negative Leistungswerte zulassen, wenn fachlich korrekt:** Geräteberichte zeigen, dass negative PV-/Leistungswerte reale Bedeutung haben können.
   - Min-/Max-Validierung darf Sentinelwerte und echte negative Messwerte nicht vermischen.
-- [ ] **Sentinel-vs.-Enum-Kollisionen testen:** Ein bekannter Randfall beschreibt `0xFFFF` als zugleich Sentinel und möglicher Statuswert.
+- [x] **Sentinel-vs.-Enum-Kollisionen testen:** Ein bekannter Randfall beschreibt `0xFFFF` als zugleich Sentinel und möglicher Statuswert.
   - In API-Tests explizit prüfen, dass Enumwerte Vorrang bekommen, wenn sie dokumentiert sind, und Sentinelwerte nur kontextabhängig als `unavailable` gelten.
 - [ ] **Schreibwerte aus Support-Threads nur mit Nachweis übernehmen:** Support- und Feature-Wünsche enthalten viele Wünsche zu Setpoints, GLT-Werten und Raum-/Heizkreismodi.
   - Jeder Schreibzugriff braucht Registerquelle, Datentyp, Bereich, Modell-Gate, EEPROM-Klasse und Test; keine Sammelübernahme aus Kommentaren.

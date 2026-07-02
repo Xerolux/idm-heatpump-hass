@@ -169,6 +169,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return False
         if value is None:
             return True
+        register = next((reg for reg in self._registers if reg.name == register_name), None)
+        enum_options = getattr(register, "enum_options", None)
+        if isinstance(enum_options, dict) and value in enum_options:
+            return False
         if isinstance(value, (int, float)):
             # Pumpenstatus: -1 bedeutet "Aus" — nur den Unused-Check überspringen,
             # alle übrigen Sentinel-Prüfungen bleiben aktiv.

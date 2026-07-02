@@ -153,6 +153,18 @@ class TestIsRegisterUnused:
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("x", 255) is True
 
+    def test_documented_enum_value_255_is_not_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        coord._registers = [
+            RegisterDef(
+                address=1200,
+                datatype=DataType.UCHAR,
+                name="hc_a_mode",
+                enum_options={0: "Off", 1: "Automatic", 255: "Not configured"},
+            )
+        ]
+        assert coord.is_register_unused("hc_a_mode", 255) is False
+
     def test_minus_32768_is_unused(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("x", -32768) is True
@@ -168,6 +180,10 @@ class TestIsRegisterUnused:
     def test_normal_int_is_not_unused(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("x", 42) is False
+
+    def test_negative_power_value_is_not_unused_when_not_sentinel(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+        assert coord.is_register_unused("pv_power", -42.5) is False
 
     def test_pump_status_negative_one_means_off(self, mock_hass, mock_config_entry):
         # Bei Pumpen-Statusregistern bedeutet -1 laut iDM-Doku "Aus" — gültig.
