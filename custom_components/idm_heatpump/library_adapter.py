@@ -24,15 +24,12 @@ from homeassistant.components.number import (
     NumberEntityDescription,
     NumberMode,
 )
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
-    SensorStateClass,
 )
 from homeassistant.const import (
     PERCENTAGE,
-    UnitOfEnergy,
     UnitOfPower,
     UnitOfTemperature,
 )
@@ -47,6 +44,12 @@ from idm_heatpump import IdmModbusClient as LibIdmModbusClient
 from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO
 
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
+from .adapter_descriptions import (
+    get_icon_for_register,
+    infer_binary_device_class,
+    infer_sensor_classes,
+    make_sensor_description,
+)
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
 from .adapter_registers import build_filtered_register_map, model_info_from_flags
 
@@ -69,28 +72,6 @@ def _apply_ha_metadata(reg: RegisterDef, base_meta: dict[str, Any]) -> dict[str,
     # if hasattr(reg, "ha_metadata") and reg.ha_metadata:
     #     base_meta.update(reg.ha_metadata)
     return base_meta
-
-
-# Maps unit strings to (device_class, state_class) tuples for automatic sensor classification.
-_UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
-    UnitOfEnergy.KILO_WATT_HOUR: (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
-    "kWh": (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
-    UnitOfPower.KILO_WATT: (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
-    "kW": (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
-    UnitOfTemperature.CELSIUS: (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
-    "°C": (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
-    "L/min": (SensorDeviceClass.VOLUME_FLOW_RATE, SensorStateClass.MEASUREMENT),
-}
-
-# Maps device_class to the correct state_class.
-_DC_STATE_CLASS_MAP: dict[SensorDeviceClass, SensorStateClass] = {
-    SensorDeviceClass.ENERGY: SensorStateClass.TOTAL_INCREASING,
-    SensorDeviceClass.POWER: SensorStateClass.MEASUREMENT,
-    SensorDeviceClass.TEMPERATURE: SensorStateClass.MEASUREMENT,
-    SensorDeviceClass.HUMIDITY: SensorStateClass.MEASUREMENT,
-    SensorDeviceClass.BATTERY: SensorStateClass.MEASUREMENT,
-    SensorDeviceClass.VOLUME_FLOW_RATE: SensorStateClass.MEASUREMENT,
-}
 
 
 # ============================================================
@@ -455,138 +436,6 @@ def _get_german_name(name: str) -> str:
     return name.replace("_", " ").title()
 
 
-def _infer_dc_sc(name: str, unit: str | None) -> tuple[SensorDeviceClass | None, SensorStateClass | None]:
-    """Infer device_class and state_class from unit and register name.
-
-    Unit takes priority; for ambiguous units like % we fall back to name matching.
-    """
-    if unit and unit in _UNIT_DC_SC_MAP:
-        return _UNIT_DC_SC_MAP[unit]
-    if unit == PERCENTAGE:
-        name_lower = name.lower()
-        if "humidity" in name_lower or "feuchte" in name_lower:
-            return SensorDeviceClass.HUMIDITY, SensorStateClass.MEASUREMENT
-        if "soc" in name_lower or "battery" in name_lower:
-            return SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT
-    return None, None
-
-
-# Keyword fragments → BinarySensorDeviceClass for auto-classification.
-_BINARY_DC_KEYWORDS: list[tuple[str, BinarySensorDeviceClass]] = [
-    ("fault", BinarySensorDeviceClass.PROBLEM),
-    ("alarm", BinarySensorDeviceClass.PROBLEM),
-    ("störung", BinarySensorDeviceClass.PROBLEM),
-    ("lock", BinarySensorDeviceClass.LOCK),
-    ("pump", BinarySensorDeviceClass.RUNNING),
-    ("compressor", BinarySensorDeviceClass.RUNNING),
-    ("demand", BinarySensorDeviceClass.RUNNING),
-]
-
-
-def _infer_binary_dc(name: str) -> BinarySensorDeviceClass | None:
-    """Infer BinarySensorDeviceClass from register name keywords."""
-    name_lower = name.lower()
-    for keyword, dc in _BINARY_DC_KEYWORDS:
-        if keyword in name_lower:
-            return dc
-    return None
-
-
-def get_icon_for_register(name: str, unit: str | None = None) -> str:
-    """Gibt ein passendes Icon für ein Register zurück (besser als simple Fallbacks)."""
-    name_lower = name.lower()
-
-    # Temperaturen
-    if "temp" in name_lower or unit == "°C":
-        if "dhw" in name_lower or "warmwasser" in name_lower:
-            return "mdi:water-boiler"
-        if "cold" in name_lower or "kühl" in name_lower:
-            return "mdi:snowflake"
-        if "heat_sink" in name_lower or "wärmesenke" in name_lower:
-            return "mdi:heat-pump"
-        return "mdi:thermometer"
-    if "humidity" in name_lower or "feuchte" in name_lower:
-        return "mdi:water-percent"
-
-    # Leistung & Energie
-    if any(x in name_lower for x in ["power", "energy", "consumption", "leistung"]):
-        if "thermal" in name_lower:
-            return "mdi:heat-wave"
-        return "mdi:flash"
-    if "soc" in name_lower or "battery" in name_lower:
-        return "mdi:battery"
-
-    # Pumpen
-    if "pump" in name_lower:
-        return "mdi:pump"
-
-    # Ventile
-    if "valve" in name_lower:
-        return "mdi:valve"
-
-    # Solar
-    if "solar" in name_lower:
-        return "mdi:solar-power"
-
-    # PV
-    if "pv" in name_lower:
-        return "mdi:solar-panel"
-
-    # Kaskade
-    if "cascade" in name_lower:
-        return "mdi:heat-pump-multiple"
-
-    # Störungen / Alarme
-    if any(x in name_lower for x in ["fault", "alarm", "error", "störung"]):
-        return "mdi:alert-circle"
-
-    # Modus / Status
-    if any(x in name_lower for x in ["mode", "status", "betriebsart", "demand"]):
-        return "mdi:cog"
-
-    # Standard
-    if unit and "%" in unit:
-        return "mdi:gauge"
-    return "mdi:information-outline"
-
-
-def _make_sensor_description(reg: RegisterDef, meta: dict[str, Any]) -> SensorEntityDescription:
-    """Create a rich HA SensorEntityDescription from a library RegisterDef + metadata."""
-    german_name = meta.get("name") or _get_german_name(reg.name)
-
-    dc: SensorDeviceClass | None = meta.get("device_class")
-    unit = meta.get("unit") or reg.unit
-    if dc is None:
-        dc, _ = _infer_dc_sc(reg.name, unit)
-    sc = _DC_STATE_CLASS_MAP.get(dc) if dc else None  # type: ignore[arg-type]
-    return SensorEntityDescription(
-        key=reg.name,
-        name=german_name,
-        native_unit_of_measurement=meta.get("unit") or reg.unit,
-        device_class=dc,
-        state_class=sc,
-        icon=meta.get("icon"),
-        entity_category=meta.get("entity_category"),
-        entity_registry_enabled_default=meta.get("enabled_by_default", True),
-    )
-
-
-def _make_number_description(reg: RegisterDef, meta: dict[str, Any]) -> NumberEntityDescription:
-    """Create a rich HA NumberEntityDescription from a library RegisterDef + metadata."""
-    return NumberEntityDescription(
-        key=reg.name,
-        name=meta.get("name", reg.name),
-        native_min_value=meta.get("min", reg.min_val or -999),
-        native_max_value=meta.get("max", reg.max_val or 999),
-        native_step=meta.get("step", 0.1),
-        native_unit_of_measurement=meta.get("unit") or reg.unit,
-        device_class=meta.get("device_class"),
-        icon=meta.get("icon"),
-        mode=NumberMode.BOX,
-        entity_category=EntityCategory.CONFIG,
-    )
-
-
 def get_library_sensors(
     model_info: Any = None,
     circuits: list[str] | None = None,
@@ -606,7 +455,7 @@ def get_library_sensors(
     for key, meta in SENSOR_METADATA.items():
         if key in reg_map:
             reg = reg_map[key]
-            desc = _make_sensor_description(reg, meta)
+            desc = make_sensor_description(reg, meta, _get_german_name(reg.name))
             sensors.append(
                 {
                     "register": reg,
@@ -630,7 +479,7 @@ def get_library_sensors(
             continue
 
         icon = reg.icon or get_icon_for_register(name, reg.unit)
-        dc, sc = _infer_dc_sc(name, reg.unit)
+        dc, sc = infer_sensor_classes(name, reg.unit)
         if reg.state_class:
             sc = reg.state_class
 
@@ -705,7 +554,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
                 entity_category=EntityCategory.DIAGNOSTIC,
             )
         else:
-            hc_dc, hc_sc = _infer_dc_sc(name, reg.unit)
+            hc_dc, hc_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
                 hc_sc = reg.state_class
             desc = SensorEntityDescription(
@@ -752,7 +601,7 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
                 entity_category=EntityCategory.DIAGNOSTIC,
             )
         else:
-            z_dc, z_sc = _infer_dc_sc(name, reg.unit)
+            z_dc, z_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
                 z_sc = reg.state_class
             desc = SensorEntityDescription(
@@ -863,7 +712,7 @@ def get_library_binary_sensors(
         desc = BinarySensorEntityDescription(
             key=name,
             name=_get_german_name(name),
-            device_class=_infer_binary_dc(name),
+            device_class=infer_binary_device_class(name),
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
         )
@@ -967,7 +816,7 @@ def get_library_readonly_sensors(
         # Bevorzuge explizite Metadaten
         if name in SENSOR_METADATA:
             meta = SENSOR_METADATA[name]
-            desc = _make_sensor_description(reg, meta)
+            desc = make_sensor_description(reg, meta, _get_german_name(reg.name))
             sensors.append({"register": reg, "description": desc, "category": "system"})
             continue
 
@@ -985,7 +834,7 @@ def get_library_readonly_sensors(
                 entity_category=EntityCategory.DIAGNOSTIC,
             )
         else:
-            ro_dc, ro_sc = _infer_dc_sc(name, reg.unit)
+            ro_dc, ro_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
                 ro_sc = reg.state_class
             desc = SensorEntityDescription(
