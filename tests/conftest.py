@@ -4,7 +4,7 @@ import asyncio
 import math
 import struct
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from types import ModuleType
 from typing import Any
@@ -612,6 +612,20 @@ def _stub_idm_heatpump() -> None:
         def size(self) -> int:
             return 2 if self.datatype == DataType.FLOAT else 1
 
+    @dataclass
+    class IdmModelInfo:
+        """Minimal model information compatible with idm-heatpump-api."""
+
+        model_name: str
+        active_heating_circuits: list[str]
+        zone_modules: int
+        has_solar: bool
+        has_isc: bool
+        has_pv: bool
+        has_cascade: bool
+        features: set[str] = field(default_factory=set)
+        firmware_version: float | None = None
+
     class IdmModbusClient:
         def __init__(self, host: str = "", port: int = 502, slave_id: int = 1) -> None:
             self.host = host
@@ -888,6 +902,7 @@ def _stub_idm_heatpump() -> None:
 
     client_mod = ModuleType("idm_heatpump.client")
     client_mod.DataType = DataType  # type: ignore[attr-defined]
+    client_mod.IdmModelInfo = IdmModelInfo  # type: ignore[attr-defined]
     client_mod.AsyncModbusTcpClient = MagicMock  # type: ignore[attr-defined]
     sys.modules["idm_heatpump.client"] = client_mod
     idm_mod.client = client_mod  # type: ignore[attr-defined]
