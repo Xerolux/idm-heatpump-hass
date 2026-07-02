@@ -23,10 +23,10 @@ jobs:
           - "2026.5.0"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -73,7 +73,7 @@ jobs:
     runs-on: ubuntu-latest
     name: HACS Validation
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: HACS Action
         uses: hacs/action@main
         with:
@@ -84,6 +84,6 @@ jobs:
     runs-on: ubuntu-latest
     name: Hassfest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Hassfest Action
         uses: home-assistant/actions/hassfest@master
