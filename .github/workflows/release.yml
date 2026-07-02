@@ -246,9 +246,9 @@ jobs:
             echo ""
             echo "### Why it matters"
             echo ""
-            echo "- Shows the most relevant changes directly in Home Assistant and HACS."
-            echo "- Keeps release notes short enough for the update dialog, while still linking to the full changelog."
-            echo "- Makes it easier to spot user impact, fixes, and important follow-up steps at a glance."
+            echo "- Keeps update notes short and readable directly inside Home Assistant / HACS."
+            echo "- Highlights the most important fixes and improvements without forcing users into the full changelog."
+            echo "- Preserves a clean path to the full compare view when deeper details are needed."
             echo ""
             if [ -n "$BREAKING_CHANGES" ]; then
               echo "### Breaking changes / Migration"
@@ -258,7 +258,7 @@ jobs:
             fi
             echo "### Support"
             echo ""
-            echo "Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft und du die Weiterentwicklung unterstützen möchtest:"
+            echo "Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:"
             echo ""
             echo "- [GitHub Sponsors](https://github.com/sponsors/xerolux)"
             echo "- [Ko-Fi](https://ko-fi.com/xerolux)"
