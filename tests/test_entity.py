@@ -142,8 +142,11 @@ class TestIdmEntityAvailable:
         from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
         import unittest.mock as mock
+
         with mock.patch.object(
-            CoordinatorEntity, "available", new_callable=lambda: property(lambda self: self.coordinator.last_update_success)
+            CoordinatorEntity,
+            "available",
+            new_callable=lambda: property(lambda self: self.coordinator.last_update_success),
         ):
             assert entity.available is False
 
@@ -179,6 +182,33 @@ class TestIdmEntityAvailable:
         )
         entity = _make_entity(coordinator=coord, reg=_make_register("temp"))
         assert entity.available is True
+        assert entity._attr_unique_id == "test_entry_id_temp"
+
+    def test_unused_entity_keeps_stable_unique_id_for_history(self):
+        coord = _make_coordinator(
+            data={"room_temp": UNUSED_VALUE},
+            last_update_success=True,
+            hide_unused=True,
+        )
+        entity = _make_entity(coordinator=coord, reg=_make_register("room_temp"))
+
+        assert entity.available is False
+        assert entity._attr_unique_id == "test_entry_id_room_temp"
+
+    def test_unused_entity_becomes_available_again_without_unique_id_change(self):
+        coord = _make_coordinator(
+            data={"room_temp": UNUSED_VALUE},
+            last_update_success=True,
+            hide_unused=True,
+        )
+        entity = _make_entity(coordinator=coord, reg=_make_register("room_temp"))
+        original_unique_id = entity._attr_unique_id
+
+        assert entity.available is False
+        coord.data = {"room_temp": 21.5}
+
+        assert entity.available is True
+        assert entity._attr_unique_id == original_unique_id
 
     def test_available_normal_value_with_hide_unused(self):
         coord = _make_coordinator(

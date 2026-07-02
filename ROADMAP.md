@@ -170,7 +170,7 @@ Ziel: Home Assistant enthält nur HA-spezifische Logik; Register- und Gerätewis
 - [x] Auto-Erkennung als Standard verwenden, manuelle Auswahl nur als nachvollziehbaren Override anbieten.
 - [x] Erkennungsresultat, Firmware und aktive Fähigkeiten in Diagnosen aufnehmen und sensible Netzwerkdaten redigieren.
 - [x] Reload, Reconfigure, Unload, fehlgeschlagenes Setup und Wiederherstellung mit realistischeren HA-Fixtures testen.
-- [ ] Unbenutzte Entities sauber deaktivieren/entfernen, ohne Benutzeranpassungen oder Historie unnötig zu verlieren.
+- [x] Unbenutzte Entities sauber deaktivieren/entfernen, ohne Benutzeranpassungen oder Historie unnötig zu verlieren.
 - [ ] Reparaturhinweise nach Ursache trennen: nicht erreichbar, falsche Slave-ID, inkompatible Firmware, Register nicht unterstützt und Write abgelehnt.
 
 Abschlusskriterium: Eine API-Änderung kann die Integration nicht mehr unbemerkt brechen, und modellfremde Register werden bereits vor dem Poll ausgeschlossen.
