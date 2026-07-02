@@ -168,7 +168,7 @@ Ziel: Home Assistant enthält nur HA-spezifische Logik; Register- und Gerätewis
 
 - [ ] Config-Entry-Migrationen und Unique-ID-Stabilität für alle früheren Domains/Versionen testen.
 - [ ] Auto-Erkennung als Standard verwenden, manuelle Auswahl nur als nachvollziehbaren Override anbieten.
-- [ ] Erkennungsresultat, Firmware und aktive Fähigkeiten in Diagnosen aufnehmen und sensible Netzwerkdaten redigieren.
+- [x] Erkennungsresultat, Firmware und aktive Fähigkeiten in Diagnosen aufnehmen und sensible Netzwerkdaten redigieren.
 - [ ] Reload, Reconfigure, Unload, fehlgeschlagenes Setup und Wiederherstellung mit realistischeren HA-Fixtures testen.
 - [ ] Unbenutzte Entities sauber deaktivieren/entfernen, ohne Benutzeranpassungen oder Historie unnötig zu verlieren.
 - [ ] Reparaturhinweise nach Ursache trennen: nicht erreichbar, falsche Slave-ID, inkompatible Firmware, Register nicht unterstützt und Write abgelehnt.

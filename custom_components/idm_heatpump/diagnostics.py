@@ -13,9 +13,33 @@ from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import CONF_HOST, CONF_PORT
+from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID
 
-TO_REDACT = {CONF_HOST, CONF_PORT}
+TO_REDACT = {CONF_HOST, CONF_PORT, CONF_SLAVE_ID}
+
+
+def _model_info_diagnostics(model_info: Any) -> dict[str, Any]:
+    if model_info is None:
+        return {
+            "detected": False,
+            "active_heating_circuits": [],
+            "zone_modules": 0,
+            "features": [],
+            "capabilities": {},
+        }
+
+    return {
+        "detected": True,
+        "active_heating_circuits": list(getattr(model_info, "active_heating_circuits", []) or []),
+        "zone_modules": int(getattr(model_info, "zone_modules", 0) or 0),
+        "features": sorted(getattr(model_info, "features", set()) or []),
+        "capabilities": {
+            "solar": bool(getattr(model_info, "has_solar", False)),
+            "isc": bool(getattr(model_info, "has_isc", False)),
+            "pv": bool(getattr(model_info, "has_pv", False)),
+            "cascade": bool(getattr(model_info, "has_cascade", False)),
+        },
+    }
 
 
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
@@ -28,6 +52,11 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "scan_interval": coordinator.update_interval.total_seconds(),
                 "registers_count": coordinator.registers_count,
                 "last_update_success": coordinator.last_update_success,
+                "model_name": coordinator.model_name,
+                "firmware_version": coordinator.firmware_version,
+                "model_info": _model_info_diagnostics(coordinator.model_info),
+                "unused_registers": sorted(coordinator.unused_registers),
+                "unsupported_registers": sorted(coordinator.unsupported_registers),
                 "sensor_count": len(coordinator.sensor_descriptions),
                 "binary_sensor_count": len(coordinator.binary_sensor_descriptions),
                 "number_count": len(coordinator.number_descriptions),

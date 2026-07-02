@@ -50,6 +50,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         hide_unused: bool = True,
         model_name: str = MODEL,
         firmware_version: str | None = None,
+        model_info: IdmModelInfo | None = None,
     ) -> None:
         self._client = client
         self._sensor_descs = sensor_descriptions
@@ -61,6 +62,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._hide_unused = hide_unused
         self._model_name = model_name
         self._firmware_version = firmware_version
+        self._model_info = model_info
         self._unused_registers: set[str] = set()
         self._unsupported_registers: set[str] = set()
         self._alias_map: dict[int, list[str]] = {}
@@ -124,6 +126,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def firmware_version(self) -> str | None:
         return self._firmware_version
+
+    @property
+    def model_info(self) -> IdmModelInfo | None:
+        return self._model_info
 
     @property
     def unused_registers(self) -> set[str]:

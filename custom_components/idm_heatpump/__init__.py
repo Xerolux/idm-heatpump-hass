@@ -100,8 +100,9 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None]:
     if not (isinstance(model_name, str) and model_name and model_name != MODEL_UNKNOWN):
         model_name = MODEL
 
-    firmware_version = getattr(model_info, "firmware_version", None)
-    if not (isinstance(firmware_version, str) and firmware_version):
+    firmware_value = getattr(model_info, "firmware_version", None)
+    firmware_version = str(firmware_value) if firmware_value is not None else None
+    if not firmware_version:
         firmware_version = None
 
     return model_name, firmware_version
@@ -203,6 +204,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             hide_unused=hide_unused,
             model_name=model_name,
             firmware_version=firmware_version,
+            model_info=detected_model_info,
         )
         coordinator.setup_registers(
             circuits,
