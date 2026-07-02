@@ -11,6 +11,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.3] - 2026-07-02
+
+### Fixed
+
+- Keep setup and polling operational when a firmware rejects an optional
+  register with Modbus exception code 2 (illegal data address).
+- Isolate the unsupported register with recursive batch splitting, skip it on
+  later polls, and leave all supported entities available ([#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44)).
+- Build entity and polling register lists from the detected model, preventing
+  Navigator 10-only addresses such as 4108 from being scheduled on Navigator 2.0.
+- Continue treating connection failures and other Modbus errors as fatal update
+  failures instead of silently hiding them.
+
 ## [0.7.2] - 2026-07-02
 
 ### Fixed

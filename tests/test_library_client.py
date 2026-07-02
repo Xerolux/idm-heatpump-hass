@@ -419,7 +419,9 @@ class TestReadBatchGrouping:
     async def test_registers_exceeding_40_limit_form_two_groups(self, client_and_tcp):
         """41 contiguous UCHAR registers => two read_input_registers calls."""
         client, tcp = client_and_tcp
-        tcp.read_input_registers.return_value = _mock_read_result([0] * 41)
+        tcp.read_input_registers.side_effect = lambda *args, **kwargs: _mock_read_result(
+            [0] * kwargs["count"]
+        )
         regs = [_make_reg(1000 + i, DataType.UCHAR, f"r{i}") for i in range(41)]
         await client.read_batch(regs)
         # First group: 40, second group: 1 → two calls
@@ -440,7 +442,9 @@ class TestReadBatchGrouping:
         client, tcp = client_and_tcp
         raw = struct.pack("<f", 1.0)
         low, high = struct.unpack("<HH", raw)
-        tcp.read_input_registers.return_value = _mock_read_result([low, high] * 21)
+        tcp.read_input_registers.side_effect = lambda *args, **kwargs: _mock_read_result(
+            ([low, high] * 21)[: kwargs["count"]]
+        )
         regs = [_make_reg(1000 + i * 2, DataType.FLOAT, f"f{i}") for i in range(21)]
         await client.read_batch(regs)
         assert tcp.read_input_registers.call_count == 2

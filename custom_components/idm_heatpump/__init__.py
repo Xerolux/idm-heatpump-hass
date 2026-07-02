@@ -39,7 +39,7 @@ from .const import (
     NAME,
 )
 from .coordinator import IdmCoordinator
-from idm_heatpump import IdmModbusClient
+from idm_heatpump import IdmModbusClient, IdmModelInfo
 from idm_heatpump.const import MODEL_UNKNOWN
 
 from .library_adapter import get_idm_client
@@ -158,12 +158,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     # Use the library via the adapter (migration Option B)
     client = get_idm_client(host=host, port=port, slave_id=slave_id)
 
-    sensor_descs = get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-    binary_descs = get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-    number_descs = get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-    select_descs = get_all_select_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-    switch_descs = get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-
     try:
         await client.connect()
     except Exception as err:
@@ -176,6 +170,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
     try:
         model_name, firmware_version = await _detect_model_info(client)
+        detected_model_info = client.model_info
+        if not isinstance(detected_model_info, IdmModelInfo):
+            detected_model_info = None
+
+        sensor_descs = get_all_sensor_descriptions(
+            circuits, zone_count, zone_rooms, enable_cascade, detected_model_info
+        )
+        binary_descs = get_all_binary_sensor_descriptions(
+            circuits, zone_count, zone_rooms, enable_cascade, detected_model_info
+        )
+        number_descs = get_all_number_descriptions(
+            circuits, zone_count, zone_rooms, enable_cascade, detected_model_info
+        )
+        select_descs = get_all_select_descriptions(
+            circuits, zone_count, zone_rooms, enable_cascade, detected_model_info
+        )
+        switch_descs = get_all_switch_descriptions(
+            circuits, zone_count, zone_rooms, enable_cascade, detected_model_info
+        )
 
         coordinator = IdmCoordinator(
             hass=hass,
@@ -191,7 +204,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             model_name=model_name,
             firmware_version=firmware_version,
         )
-        coordinator.setup_registers(circuits, zone_count, zone_rooms, enable_cascade)
+        coordinator.setup_registers(
+            circuits,
+            zone_count,
+            zone_rooms,
+            enable_cascade,
+            model_info=detected_model_info,
+        )
 
         entry.runtime_data = IdmHeatpumpData(coordinator=coordinator, client=client)
 

@@ -14,6 +14,7 @@ from custom_components.idm_heatpump import (
     _detect_model_info,
 )
 from custom_components.idm_heatpump.const import MODEL
+from idm_heatpump import IdmModelInfo
 from idm_heatpump.const import MODEL_UNKNOWN
 
 
@@ -575,6 +576,62 @@ class TestAsyncSetupEntryModelDetection:
             await async_setup_entry(mock_hass, entry)
 
         assert captured_kwargs.get("model_name") == "Navigator 10"
+
+    async def test_detected_model_info_drives_register_generation(self, mock_hass):
+        entry = self._make_entry()
+        model_info = IdmModelInfo(
+            model_name="Navigator 2.0",
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(return_value=model_info)
+        mock_client.model_info = model_info
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.7.2"}),
+            ),
+            patch(
+                "custom_components.idm_heatpump.get_all_sensor_descriptions",
+                return_value=[],
+            ) as mock_sensors,
+            patch(
+                "custom_components.idm_heatpump.get_all_binary_sensor_descriptions",
+                return_value=[],
+            ),
+            patch(
+                "custom_components.idm_heatpump.get_all_number_descriptions",
+                return_value=[],
+            ),
+            patch(
+                "custom_components.idm_heatpump.get_all_select_descriptions",
+                return_value=[],
+            ),
+            patch(
+                "custom_components.idm_heatpump.get_all_switch_descriptions",
+                return_value=[],
+            ),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        mock_sensors.assert_called_once_with(
+            ["a"], 0, {}, False, model_info
+        )
+        mock_coordinator.setup_registers.assert_called_once_with(
+            ["a"], 0, {}, False, model_info=model_info
+        )
 
     async def test_coordinator_receives_detected_firmware_version(self, mock_hass):
         entry = self._make_entry()
