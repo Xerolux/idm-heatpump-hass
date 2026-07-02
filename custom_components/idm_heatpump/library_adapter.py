@@ -40,20 +40,15 @@ from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-def
 
 from idm_heatpump import (
     RegisterDef,
-    build_register_map,
     get_heating_circuit_registers,
     get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
-from idm_heatpump.client import IdmModelInfo
-from idm_heatpump.const import (
-    MODEL_NAVIGATOR_10,
-    MODEL_NAVIGATOR_20,
-    MODEL_NAVIGATOR_PRO,
-)
+from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO
 
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
+from .adapter_registers import build_filtered_register_map, model_info_from_flags
 
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
 
@@ -592,42 +587,6 @@ def _make_number_description(reg: RegisterDef, meta: dict[str, Any]) -> NumberEn
     )
 
 
-def _model_info_from_flags(circuits: list[str], zone_modules: int, enable_cascade: bool) -> IdmModelInfo:
-    """Construct an IdmModelInfo for use with build_register_map.
-
-    When all capabilities are enabled except cascade, this tells the library to
-    exclude cascade-specific registers. Without model_info, the library includes
-    all optional register blocks unconditionally.
-    """
-    return IdmModelInfo(
-        model_name=MODEL_NAVIGATOR_10,
-        active_heating_circuits=circuits,
-        zone_modules=zone_modules,
-        has_solar=True,
-        has_isc=True,
-        has_pv=True,
-        has_cascade=enable_cascade,
-    )
-
-
-def _build_filtered_register_map(
-    model_info: Any = None,
-    circuits: list[str] | None = None,
-    zone_modules: int = 0,
-) -> dict[str, RegisterDef]:
-    """Build the register map and drop locally known model-incompatible entries."""
-    reg_map = build_register_map(
-        model_info=model_info,
-        circuits=circuits or [],
-        zone_modules=zone_modules or 0,
-    )
-
-    if getattr(model_info, "model_name", None) == MODEL_NAVIGATOR_20:
-        reg_map.pop("power_limit_hp", None)
-
-    return reg_map
-
-
 def get_library_sensors(
     model_info: Any = None,
     circuits: list[str] | None = None,
@@ -639,8 +598,8 @@ def get_library_sensors(
     This is intended to become the main source over time.
     """
     if model_info is None and not enable_cascade:
-        model_info = _model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+        model_info = model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     sensors = []
 
     # Explicitly mapped sensors (best quality)
@@ -880,7 +839,7 @@ def generate_icons_json_entries(
     Hilfsfunktion, die Icons für alle bekannten Register vorschlägt.
     Kann genutzt werden, um icons.json teilweise zu generieren.
     """
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     icons = {}
     for name, reg in reg_map.items():
         icon = get_icon_for_register(name, reg.unit)
@@ -896,7 +855,7 @@ def get_library_binary_sensors(
     """Binary sensors from library registers with binary=True flag."""
     from homeassistant.components.binary_sensor import BinarySensorEntityDescription
 
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     sensors = []
     for name, reg in reg_map.items():
         if not reg.binary or reg.writable:
@@ -926,7 +885,7 @@ def get_library_selects(
     """Select entities (modes) from the library."""
     from homeassistant.components.select import SelectEntityDescription
 
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     selects = []
     for name, reg in reg_map.items():
         if not reg.writable or not reg.enum_options:
@@ -967,7 +926,7 @@ def get_library_switches(model_info: Any = None) -> list[dict[str, Any]]:
     """Switch entities (GLT demands etc.) from the library."""
     from homeassistant.components.switch import SwitchEntityDescription
 
-    reg_map = _build_filtered_register_map(model_info, [], 0)
+    reg_map = build_filtered_register_map(model_info, [], 0)
     switches = []
     for name, reg in reg_map.items():
         if reg.datatype.value != "BOOL" or not reg.writable:
@@ -994,7 +953,7 @@ def get_library_readonly_sensors(
     Gibt nur lesbare Sensoren aus der Library zurück.
     Diese Funktion ist der bevorzugte Weg, um Sensoren aus der Library zu bekommen.
     """
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     sensors = []
 
     for name, reg in reg_map.items():
@@ -1051,8 +1010,8 @@ def get_library_numbers(
 ) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
     if model_info is None and not enable_cascade:
-        model_info = _model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
-    reg_map = _build_filtered_register_map(model_info, circuits, zone_modules)
+        model_info = model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     return _numbers_from_register_map(reg_map)
 
 
