@@ -33,6 +33,16 @@ def test_ci_installs_runtime_dependencies_from_manifest() -> None:
     assert 'pip", "install", *requirements' in ci
 
 
+def test_ci_tests_pinned_and_compatible_api_dependencies() -> None:
+    ci = _read(ROOT / ".github" / "workflows" / "ci.yml")
+
+    assert "api-dependency-mode" in ci
+    assert "manifest-pinned" in ci
+    assert "api-branch-compatible" in ci
+    assert "pymodbus>=3.12.1,<4.0" in ci
+    assert "idm-heatpump-api.git@Codex/roadmap-phase0-api" in ci
+
+
 def test_release_artifact_is_built_from_manifest_directory() -> None:
     release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
 

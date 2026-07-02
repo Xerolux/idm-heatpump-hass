@@ -21,6 +21,9 @@ jobs:
         python-version: ["3.14"]
         home-assistant-version:
           - "2026.5.0"
+        api-dependency-mode:
+          - manifest-pinned
+          - api-branch-compatible
 
     steps:
       - uses: actions/checkout@v7
@@ -50,6 +53,13 @@ jobs:
 
           subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
           PY
+
+      - name: Install compatible API branch dependencies
+        if: matrix.api-dependency-mode == 'api-branch-compatible'
+        run: |
+          pip install --upgrade \
+            "pymodbus>=3.12.1,<4.0" \
+            "git+https://github.com/Xerolux/idm-heatpump-api.git@Codex/roadmap-phase0-api"
 
       - name: Lint with Ruff
         run: |
