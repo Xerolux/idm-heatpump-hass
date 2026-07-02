@@ -22,6 +22,7 @@
 ## Operation & Maintenance
 - [Data Update](Data-Update)
 - [Supported Devices](Supported-Devices)
+- [Compatibility Matrix](Compatibility-Matrix)
 - [Known Limitations](Known-Limitations)
 - [Troubleshooting](Troubleshooting)
 - [Modbus Registers](Modbus-Register)

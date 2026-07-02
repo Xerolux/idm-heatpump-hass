@@ -228,10 +228,10 @@ Modell-Gate, Test und Hardware-Rückmeldung laufen.
 
 ### Hardware- und Firmware-Matrix
 
-- [ ] Matrix mit mindestens folgenden Zeilen pflegen: Navigator 2.0, Navigator Pro, Navigator 10, Terra SWM sowie unbekanntes/zukünftiges Modell.
-- [ ] Pro Eintrag dokumentieren: Wärmepumpentyp, Navigator-Modell, Firmware, getestete API-/HASS-Version, aktive Kreise/Zonen/PV/ISC/Kaskade und Tester.
-- [ ] Anonymisierte Diagnose-Snapshots als Regression-Fixtures erlauben; Opt-in und manuell eingereicht, niemals automatisch übertragen.
-- [ ] „confirmed“, „community-tested“, „expected“ und „unsupported“ klar unterscheiden.
+- [x] Matrix mit mindestens folgenden Zeilen pflegen: Navigator 2.0, Navigator Pro, Navigator 10, Terra SWM sowie unbekanntes/zukünftiges Modell.
+- [x] Pro Eintrag dokumentieren: Wärmepumpentyp, Navigator-Modell, Firmware, getestete API-/HASS-Version, aktive Kreise/Zonen/PV/ISC/Kaskade und Tester.
+- [x] Anonymisierte Diagnose-Snapshots als Regression-Fixtures erlauben; Opt-in und manuell eingereicht, niemals automatisch übertragen.
+- [x] „confirmed“, „community-tested“, „expected“ und „unsupported“ klar unterscheiden.
   - Lokales Testsystem vorhanden: IDM 6-15 mit Navigator 10 über Modbus-Proxy. Read-only-Probe am 2026-07-02 bestätigte Verbindung, Modellkennung `Navigator 10`, Slave-ID 1, PV/Solar/ISC/Kaskade-Fähigkeiten und sichere Einzelreads für 90, 1072, 4108, 4122 und 4126. Private Netzwerkdaten werden nicht dokumentiert.
 
 ### Registerqualität
