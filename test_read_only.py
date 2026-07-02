@@ -3,11 +3,14 @@
 Connects to the IDM heat pump and reads ALL registers.
 No writes are performed. Reports all errors and data.
 """
+
 from __future__ import annotations
 
+import argparse
 import asyncio
 import logging
 import sys
+from typing import Any
 
 from idm_heatpump import (
     DataType,
@@ -16,7 +19,7 @@ from idm_heatpump import (
     build_register_map,
     get_heating_circuit_registers,
 )
-from idm_heatpump.client import RegisterType
+from idm_heatpump.client import IdmModelInfo, RegisterType
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -24,12 +27,8 @@ logging.basicConfig(
 )
 _LOGGER = logging.getLogger("idm_test")
 
-HOST = "192.168.178.103"
-PORT = 502
-SLAVE_ID = 1
 
-
-async def test_basic_connection(client: IdmModbusClient) -> bool:
+async def _check_basic_connection(client: IdmModbusClient) -> bool:
     """Test basic Modbus TCP connection."""
     _LOGGER.info("=" * 60)
     _LOGGER.info("PHASE 1: Basic Connection Test")
@@ -37,7 +36,7 @@ async def test_basic_connection(client: IdmModbusClient) -> bool:
     try:
         await client.connect()
         if client.is_connected:
-            _LOGGER.info("SUCCESS: Connected to %s:%d", HOST, PORT)
+            _LOGGER.info("SUCCESS: Connected to %s:%d", client.host, client.port)
             return True
         _LOGGER.error("FAILED: connect() returned but not connected")
         return False
@@ -46,7 +45,7 @@ async def test_basic_connection(client: IdmModbusClient) -> bool:
         return False
 
 
-async def test_model_detection(client: IdmModbusClient) -> dict | None:
+async def _check_model_detection(client: IdmModbusClient) -> IdmModelInfo | None:
     """Detect model and capabilities."""
     _LOGGER.info("=" * 60)
     _LOGGER.info("PHASE 2: Model Detection")
@@ -67,7 +66,10 @@ async def test_model_detection(client: IdmModbusClient) -> dict | None:
         return None
 
 
-async def test_read_library_registers(client: IdmModbusClient, model_info: dict | None) -> dict[str, any]:
+async def _check_library_registers(
+    client: IdmModbusClient,
+    model_info: IdmModelInfo | None,
+) -> dict[str, Any]:
     """Read all registers from the idm_heatpump library."""
     _LOGGER.info("=" * 60)
     _LOGGER.info("PHASE 3: Reading Library Registers")
@@ -101,7 +103,7 @@ async def test_read_library_registers(client: IdmModbusClient, model_info: dict 
     return data
 
 
-async def test_individual_register_reads(client: IdmModbusClient) -> dict[str, any]:
+async def _check_individual_registers(client: IdmModbusClient) -> dict[str, Any]:
     """Test reading key registers individually."""
     _LOGGER.info("=" * 60)
     _LOGGER.info("PHASE 4: Individual Register Reads (Key System Registers)")
@@ -147,7 +149,7 @@ async def test_individual_register_reads(client: IdmModbusClient) -> dict[str, a
     return results
 
 
-async def test_heating_circuits(client: IdmModbusClient) -> dict[str, any]:
+async def _check_heating_circuits(client: IdmModbusClient) -> dict[str, Any]:
     """Test reading all heating circuit registers."""
     _LOGGER.info("=" * 60)
     _LOGGER.info("PHASE 5: Heating Circuit Registers (A-G)")
@@ -174,7 +176,7 @@ async def test_heating_circuits(client: IdmModbusClient) -> dict[str, any]:
     return results
 
 
-async def test_raw_register_scan(client: IdmModbusClient) -> None:
+async def _check_raw_register_scan(client: IdmModbusClient) -> None:
     """Scan raw register ranges to find which addresses respond."""
     _LOGGER.info("=" * 60)
     _LOGGER.info("PHASE 6: Raw Register Range Scan")
@@ -218,39 +220,39 @@ async def test_raw_register_scan(client: IdmModbusClient) -> None:
             pass
 
 
-async def main() -> int:
+async def main(host: str, port: int, slave_id: int) -> int:
     _LOGGER.info("IDM Heatpump Read-Only Integration Test")
-    _LOGGER.info("Target: %s:%d (slave_id=%d)", HOST, PORT, SLAVE_ID)
+    _LOGGER.info("Target: %s:%d (slave_id=%d)", host, port, slave_id)
     _LOGGER.info("")
 
-    client = IdmModbusClient(host=HOST, port=PORT, slave_id=SLAVE_ID)
+    client = IdmModbusClient(host=host, port=port, slave_id=slave_id)
     exit_code = 0
 
     try:
         # Phase 1: Connection
-        if not await test_basic_connection(client):
+        if not await _check_basic_connection(client):
             _LOGGER.error("Cannot connect. Aborting.")
             return 1
 
         # Phase 2: Model Detection
-        model_info = await test_model_detection(client)
+        model_info = await _check_model_detection(client)
         if model_info is None:
             _LOGGER.warning("Model detection failed, continuing with manual config")
 
         # Phase 3: Library registers
-        lib_data = await test_read_library_registers(client, model_info)
+        lib_data = await _check_library_registers(client, model_info)
         _LOGGER.info("Library data summary: %d values read", len(lib_data))
         for name, val in sorted(lib_data.items()):
             _LOGGER.debug("  %s = %s", name, val)
 
         # Phase 4: Individual key registers
-        await test_individual_register_reads(client)
+        await _check_individual_registers(client)
 
         # Phase 5: Heating circuits
-        await test_heating_circuits(client)
+        await _check_heating_circuits(client)
 
         # Phase 6: Raw scan
-        await test_raw_register_scan(client)
+        await _check_raw_register_scan(client)
 
         _LOGGER.info("=" * 60)
         _LOGGER.info("TEST COMPLETE - All phases finished")
@@ -269,5 +271,14 @@ async def main() -> int:
     return exit_code
 
 
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run read-only diagnostics against an IDM heat pump")
+    parser.add_argument("host", help="Heat pump hostname or IP address")
+    parser.add_argument("--port", type=int, default=502, help="Modbus TCP port (default: 502)")
+    parser.add_argument("--slave-id", type=int, default=1, help="Modbus slave ID (default: 1)")
+    return parser.parse_args()
+
+
 if __name__ == "__main__":
-    sys.exit(asyncio.run(main()))
+    args = _parse_args()
+    sys.exit(asyncio.run(main(args.host, args.port, args.slave_id)))
