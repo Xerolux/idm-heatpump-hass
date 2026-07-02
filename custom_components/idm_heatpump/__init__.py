@@ -133,40 +133,51 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     # Use the library via the adapter (migration Option B)
     client = get_idm_client(host=host, port=port, slave_id=slave_id)
 
-    try:
-        await client.connect()
-    except Exception as err:
-        _LOGGER.error("Failed to connect to %s:%d - %s", host, port, err)
-        raise ConfigEntryNotReady(f"Cannot connect to {host}:{port}") from err
-
-    model_name, firmware_version = await _detect_model_info(client)
-
     sensor_descs = get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     binary_descs = get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     number_descs = get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     select_descs = get_all_select_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
     switch_descs = get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
 
-    coordinator = IdmCoordinator(
-        hass=hass,
-        config_entry=entry,
-        client=client,
-        scan_interval=timedelta(seconds=scan_interval),
-        sensor_descriptions=sensor_descs,
-        binary_sensor_descriptions=binary_descs,
-        number_descriptions=number_descs,
-        select_descriptions=select_descs,
-        switch_descriptions=switch_descs,
-        hide_unused=hide_unused,
-        model_name=model_name,
-        firmware_version=firmware_version,
-    )
-    coordinator.setup_registers(circuits, zone_count, zone_rooms, enable_cascade)
+    try:
+        await client.connect()
+    except Exception as err:
+        try:
+            await client.disconnect()
+        except Exception:
+            _LOGGER.warning("Failed to clean up client for %s:%d", host, port, exc_info=True)
+        _LOGGER.error("Failed to connect to %s:%d - %s", host, port, err)
+        raise ConfigEntryNotReady(f"Cannot connect to {host}:{port}") from err
 
-    entry.runtime_data = IdmHeatpumpData(coordinator=coordinator, client=client)
+    try:
+        model_name, firmware_version = await _detect_model_info(client)
 
-    await coordinator.async_config_entry_first_refresh()
-    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        coordinator = IdmCoordinator(
+            hass=hass,
+            config_entry=entry,
+            client=client,
+            scan_interval=timedelta(seconds=scan_interval),
+            sensor_descriptions=sensor_descs,
+            binary_sensor_descriptions=binary_descs,
+            number_descriptions=number_descs,
+            select_descriptions=select_descs,
+            switch_descriptions=switch_descs,
+            hide_unused=hide_unused,
+            model_name=model_name,
+            firmware_version=firmware_version,
+        )
+        coordinator.setup_registers(circuits, zone_count, zone_rooms, enable_cascade)
+
+        entry.runtime_data = IdmHeatpumpData(coordinator=coordinator, client=client)
+
+        await coordinator.async_config_entry_first_refresh()
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    except BaseException:
+        try:
+            await client.disconnect()
+        except Exception:
+            _LOGGER.warning("Failed to clean up client for %s:%d", host, port, exc_info=True)
+        raise
 
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 

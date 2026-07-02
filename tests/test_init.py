@@ -131,6 +131,34 @@ class TestAsyncSetupEntry:
         ), pytest.raises(ConfigEntryNotReady):
             await async_setup_entry(mock_hass, entry)
 
+        mock_client.disconnect.assert_awaited_once()
+
+    async def test_disconnects_client_when_first_refresh_fails(self, mock_hass):
+        entry = self._make_entry()
+        mock_client = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock(side_effect=RuntimeError("refresh failed"))
+        mock_coordinator.setup_registers = MagicMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+            pytest.raises(RuntimeError, match="refresh failed"),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        mock_client.disconnect.assert_awaited_once()
+        mock_hass.config_entries.async_forward_entry_setups.assert_not_awaited()
+
     async def test_forwards_entry_setups(self, mock_hass):
         entry = self._make_entry()
 
