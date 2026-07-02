@@ -33,6 +33,6 @@
 ---
 
 **HA:** 2026.5.0+
-**Python:** 3.14.2+ · **pymodbus:** >=3.12.1
+**Python:** 3.14.2+ · **pymodbus:** ==3.12.1 · **idm-heatpump-api:** ==0.3.7
 
 [GitHub](https://github.com/Xerolux/idm-heatpump-hass) · [Issues](https://github.com/Xerolux/idm-heatpump-hass/issues) · [HACS](https://hacs.xyz/)

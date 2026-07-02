@@ -40,7 +40,16 @@ jobs:
         run: |
           pip install ruff mypy pytest pytest-cov pytest-asyncio
           pip install pytest-homeassistant-custom-component
-          pip install "idm-heatpump-api>=0.3.3"
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
+              requirements = json.load(manifest_file)["requirements"]
+
+          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
+          PY
 
       - name: Lint with Ruff
         run: |

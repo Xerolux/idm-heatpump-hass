@@ -79,6 +79,9 @@ Die vollständige Dokumentation befindet sich im **[Wiki][wiki]**:
 | 🔧 **Betrieb** | [Troubleshooting][wiki-trouble] · [Modbus-Register][wiki-registers] |
 | 👩‍💻 **Entwicklung** | [Contributing][wiki-contributing] · [Changelog][wiki-changelog] |
 
+Maintainer sollten vor einem stabilen Release den
+**[Release-Smoke-Test](docs/RELEASE_SMOKE_TEST.md)** ausführen.
+
 ---
 
 ## 🔑 Voraussetzungen
@@ -87,7 +90,7 @@ Die vollständige Dokumentation befindet sich im **[Wiki][wiki]**:
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Python 3.14.2+ (wird von Home Assistant 2026.5 bereitgestellt)
-- `pymodbus >=3.12.1` · `idm-heatpump-api >=0.3.3` (automatisch installiert)
+- `pymodbus ==3.12.1` · `idm-heatpump-api ==0.3.7` (automatisch installiert)
 
 ---
 

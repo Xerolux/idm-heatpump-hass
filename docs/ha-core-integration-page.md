@@ -21,8 +21,13 @@ ha_platforms:
 ha_integration_type: device
 ha_quality_scale: gold
 ha_requirements:
-  - pymodbus>=3.6.0
+  - pymodbus==3.12.1
+  - idm-heatpump-api==0.3.7
 ---
+
+> Draft for a possible future Home Assistant Core documentation page. The
+> current project is an unofficial HACS custom integration and is not yet part
+> of Home Assistant Core.
 
 The **IDM Heatpump** integration allows you to monitor and control your [IDM Navigator 2.0](https://www.idm-energiesysteme.de/) heat pump directly from Home Assistant using the Modbus TCP protocol. All communication is local — no cloud, no account required.
 
@@ -197,7 +202,9 @@ data:
 
 ## Known limitations
 
-- **Only IDM Navigator 2.0 / Navigator Pro** are officially supported. Older IDM controllers without Navigator firmware are not supported.
+- **Only IDM Navigator 2.0 / Navigator Pro** are confirmed by the current
+  community test matrix. Older IDM controllers without Navigator firmware are
+  not supported.
 - **Modbus TCP only** — serial Modbus RTU is not supported.
 - **EEPROM-protected registers** (88 total) can only be written once per minute. The integration enforces this limit automatically.
 - **Polling only** — the heat pump does not push updates. Changes made via the Navigator web interface are visible only after the next polling cycle.

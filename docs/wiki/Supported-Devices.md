@@ -1,12 +1,12 @@
 # Supported Devices
 
-## Fully Supported
+## Confirmed Devices
 
 | Device | Firmware | Heating Circuits | Zone Modules | Status |
 |--------|----------|------------------|--------------|--------|
-| IDM Navigator 2.0 | all versions | up to 7 (A–G) | no | ✅ Confirmed |
-| IDM Navigator 10 | 2025+ (NAV10_20.23+) | up to 7 (A–G) | up to 10 (6 rooms each) | ✅ Confirmed |
-| IDM Navigator Pro | all versions | up to 7 (A–G) | up to 10 (6 rooms each) | ✅ Confirmed |
+| IDM Navigator 2.0 | all versions | up to 7 (A–G) | no | Confirmed |
+| IDM Navigator 10 | 2025+ (NAV10_20.23+) | up to 7 (A–G) | up to 10 (6 rooms each) | Confirmed |
+| IDM Navigator Pro | all versions | up to 7 (A–G) | up to 10 (6 rooms each) | Confirmed |
 
 ## Requirements
 
@@ -25,7 +25,7 @@
 
 ## Untested Devices (possibly compatible)
 
-The following devices may use the same register mapping as the Navigator 2.0, but have not been officially tested:
+The following devices may use the same register mapping as the Navigator 2.0, but are not yet confirmed in the public community test matrix:
 
 - IDM Terra SW (with Navigator 2.0 controller)
 - IDM Terra HT (with Navigator 2.0 controller)

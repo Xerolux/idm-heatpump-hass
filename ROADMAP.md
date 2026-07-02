@@ -68,21 +68,22 @@ Jede Phase soll in kleine Issues und Pull Requests zerlegt werden. Protokoll-/Re
 
 Ziel: Der aktuelle Stand ist reproduzierbar, dokumentiert und auf betroffener Hardware bestätigt.
 
-- [ ] **HASS / P0:** `idm-heatpump-api` in `manifest.json` zunächst exakt auf `0.3.7` pinnen; `pymodbus`-Kompatibilität ebenfalls bewusst festlegen.
+- [x] **HASS / P0:** `idm-heatpump-api` in `manifest.json` zunächst exakt auf `0.3.7` pinnen; `pymodbus`-Kompatibilität ebenfalls bewusst festlegen.
   - Akzeptanz: Frische HACS-Installation löst immer die getestete Kombination auf.
   - Akzeptanz: CI installiert exakt dieselben Runtime-Abhängigkeiten wie das Release-ZIP.
 - [ ] **HASS / P0:** Fix für Issue #44 mit dem Reporter auf IDM Terra SWM / Navigator 2 validieren.
   - Prüfen: Initialisierung, Modellkennung, keine Abfragen von Navigator-10-only-Registern, vollständiger erster Poll, Wiederverbindung.
   - Issue erst nach Hardwarebestätigung schließen oder mit einem klaren Restproblem weiterführen.
-- [ ] **HASS / P0:** Pages-Deployment analysieren und stabilisieren.
+  - Stand 2026-07-02: Validierungsanfrage für v0.7.3 im Issue gepostet; wartet auf Reporter-Rückmeldung.
+- [x] **HASS / P0:** Pages-Deployment analysieren und stabilisieren.
   - Deployment-Concurrency, veraltete Deployments und Environment-Schutz prüfen.
   - Akzeptanz: zwei aufeinanderfolgende manuelle Deployments sind grün; URL enthält den aktuellen Stand.
-- [ ] **API / P0:** `ruff format` anwenden und `ruff format --check` in CI aufnehmen.
+- [x] **API / P0:** `ruff format` anwenden und `ruff format --check` in CI aufnehmen.
 - [ ] **beide / P0:** Versions-, Support- und Statusaussagen synchronisieren.
   - HASS-README, deutsche README, Manifest, Changelog, Wiki und API-README prüfen.
   - „Official“ bis zu einer Core-Aufnahme durch „inoffizielle Home-Assistant-Custom-Integration“ ersetzen.
   - Testzahlen und Qualitätsstatus nicht als manuell gepflegte Momentaufnahme ausgeben oder automatisch erzeugen.
-- [ ] **beide / P0:** Einen Release-Smoke-Test dokumentieren: Installation aus Release-Artefakt, Config Flow, erster Poll, ein sicherer Write, Reload, Unload und Upgrade vom vorherigen Release.
+- [x] **HASS / P0:** Einen Release-Smoke-Test dokumentieren: Installation aus Release-Artefakt, Config Flow, erster Poll, ein sicherer Write, Reload, Unload und Upgrade vom vorherigen Release.
 
 Abschlusskriterium: v0.7.x läuft auf mindestens Navigator 2.0 und Navigator 10 ohne bekannte P0-Regression; Dokumentation und veröffentlichte Abhängigkeiten stimmen überein.
 
@@ -92,27 +93,28 @@ Ziel: `idm-heatpump-api` wird zu einem kleinen, streng getesteten und semantisch
 
 ### Öffentliche API und Versionierung
 
-- [ ] Öffentliche Symbole in `__all__` dokumentieren und mit einem API-Snapshot-Test schützen.
-- [ ] SemVer-Regeln festlegen:
+- [x] Öffentliche Symbole in `__all__` dokumentieren und mit einem API-Snapshot-Test schützen.
+- [x] SemVer-Regeln festlegen:
   - Patch: Registerkorrekturen ohne öffentlichen Bruch.
   - Minor: additive Register, Metadaten und Fähigkeiten.
   - Major: Umbenennungen, Signatur- oder Verhaltensbrüche mit Migrationsleitfaden.
-- [ ] Deprecation-Mechanismus und mindestens einen Minor-Release Übergangszeit definieren.
-- [ ] Changelog automatisch auf fehlende Versionen prüfen; derzeit fehlen beziehungsweise überlappen einzelne Einträge zwischen `0.3.2` und `0.3.7`.
-- [ ] HASS-Kompatibilität pro API-Version in einer maschinenlesbaren Matrix festhalten.
+- [x] Deprecation-Mechanismus und mindestens einen Minor-Release Übergangszeit definieren.
+- [x] Changelog automatisch auf fehlende Versionen prüfen; derzeit fehlen beziehungsweise überlappen einzelne Einträge zwischen `0.3.2` und `0.3.7`.
+- [x] HASS-Kompatibilität pro API-Version in einer maschinenlesbaren Matrix festhalten.
+  - Stand 2026-07-02: `docs/compatibility-matrix.json` im API-Repository ergänzt und per Test gegen die aktuelle API-Version geprüft.
 
 ### Typisierung und Paketqualität
 
-- [ ] API auf striktes mypy umstellen; Ausnahmen klein und kommentiert halten.
-- [ ] `py.typed` ausliefern und mit einem externen Typ-Konsumententest prüfen.
-- [ ] Python 3.12, 3.13 und 3.14 in Klassifikatoren und CI testen.
-- [ ] Wheel und sdist in CI bauen, mit `twine check` prüfen und in einer frischen Umgebung importieren.
-- [ ] Unterstützte `pymodbus`-Versionen als Matrix testen; Obergrenze setzen, falls neue Major-Versionen nicht garantiert kompatibel sind.
+- [x] API auf striktes mypy umstellen; Ausnahmen klein und kommentiert halten.
+- [x] `py.typed` ausliefern und mit einem externen Typ-Konsumententest prüfen.
+- [x] Python 3.12, 3.13 und 3.14 in Klassifikatoren und CI testen.
+- [x] Wheel und sdist in CI bauen, mit `twine check` prüfen und in einer frischen Umgebung importieren.
+- [x] Unterstützte `pymodbus`-Versionen als Matrix testen; Obergrenze setzen, falls neue Major-Versionen nicht garantiert kompatibel sind.
 
 ### Testpyramide
 
-- [ ] Coverage-Bericht und eine zunächst realistische, danach steigende Mindestgrenze einführen.
-- [ ] Deterministischen Fake-Modbus-Server beziehungsweise Transport bauen für:
+- [x] Coverage-Bericht und eine zunächst realistische, danach steigende Mindestgrenze einführen.
+- [x] Deterministischen Fake-Modbus-Server beziehungsweise Transport bauen für:
   - normale Reads/Writes und Float-Byteorder;
   - Illegal Address / Illegal Function;
   - Timeout, Verbindungsabbruch und Reconnect;
@@ -121,16 +123,16 @@ Ziel: `idm-heatpump-api` wird zu einem kleinen, streng getesteten und semantisch
   - dauerhaft fehlende Register und Reset;
   - Sentinelwerte `-1`, `255`, NaN und Infinity;
   - parallele Requests und Lock-Verhalten.
-- [ ] Property-/Grenzwerttests für Encode/Decode, Multiplikatoren, Min/Max, Enums und Bitflags ergänzen.
-- [ ] Registerkarten gegen ein versioniertes, maschinenlesbares Referenzschema prüfen, nicht nur gegen manuell duplizierte Testwerte.
+- [x] Property-/Grenzwerttests für Encode/Decode, Multiplikatoren, Min/Max, Enums und Bitflags ergänzen.
+- [x] Registerkarten gegen ein versioniertes, maschinenlesbares Referenzschema prüfen, nicht nur gegen manuell duplizierte Testwerte.
 
 ### Schreibsicherheit
 
-- [ ] Schreibklassen explizit unterscheiden: flüchtig, zyklisch, EEPROM-sensitiv, write-only und verboten.
-- [ ] EEPROM-Drosselung, Prozessneustart und Zeitfenster testen und dokumentieren.
-- [ ] Zyklische GLT-Schreibwerte mit Ablauf/Heartbeat absichern, damit alte Vorgaben nicht unbemerkt weiterwirken.
-- [ ] Vor jedem Write Datentyp, Bereich, ausgeschlossene Enumwerte und Modellverfügbarkeit validieren.
-- [ ] Strukturierte, redigierte Debugdaten für Read-/Writefehler anbieten; keine IPs oder Zugangsdaten in Standarddiagnosen.
+- [x] Schreibklassen explizit unterscheiden: flüchtig, zyklisch, EEPROM-sensitiv, write-only und verboten.
+- [x] EEPROM-Drosselung, Prozessneustart und Zeitfenster testen und dokumentieren.
+- [x] Zyklische GLT-Schreibwerte mit Ablauf/Heartbeat absichern, damit alte Vorgaben nicht unbemerkt weiterwirken.
+- [x] Vor jedem Write Datentyp, Bereich, ausgeschlossene Enumwerte und Modellverfügbarkeit validieren.
+- [x] Strukturierte, redigierte Debugdaten für Read-/Writefehler anbieten; keine IPs oder Zugangsdaten in Standarddiagnosen.
 
 Abschlusskriterium: Ein API-Release kann unabhängig installiert, strikt typisiert, gebaut und gegen alle drei Python-Versionen sowie einen simulierten Modbus-Transport geprüft werden.
 
@@ -176,12 +178,60 @@ Abschlusskriterium: Eine API-Änderung kann die Integration nicht mehr unbemerkt
 
 Ziel: Unterstützung wird pro Modell/Firmware nachgewiesen und die Integration bleibt trotz vieler Register verständlich.
 
+### Community- und Produkt-Triage
+
+Am 2. Juli 2026 wurden wiederkehrende Nutzerbedarfe, Geräteberichte und
+Registerthemen gesammelt und vorsichtig priorisiert. Diese Punkte sind keine
+Umsetzungsentscheidung, sondern ein Themenkatalog. Alles, was Register,
+Schreibzugriffe oder Gerätesicherheit betrifft, muss über API-Quelle,
+Modell-Gate, Test und Hardware-Rückmeldung laufen.
+
+#### Wichtig für uns
+
+- [ ] **Dependency-Kompatibilität beobachten:** Erfahrungsberichte zeigen, dass enge `pymodbus`-Grenzen bei neuen Home-Assistant-Releases Installationen brechen können.
+  - Unser aktueller Pin ist absichtlich reproduzierbar; bei HA 2026.7+ muss geprüft werden, ob ein neuer kompatibler Pin oder eine getestete Versionsmatrix nötig wird.
+- [ ] **PV-Zielwert und Smart-Grid-Status verifizieren:** Geräteberichte nennen Register 88 (`pv_target_value`) und 90 (`smart_grid_status`).
+  - Bei uns bereits vorhanden; offen ist Hardware-/Firmware-Bestätigung, Wertebereich, Schreibwirkung von Register 88 und Dokumentation in der Kompatibilitätsmatrix.
+- [ ] **Durchfluss Wärmesenke B2 als Filter-/Siebmonitoring validieren:** Nutzerberichte bestätigen Register 1072 als nützliches Diagnose-Signal.
+  - Bei uns bereits vorhanden; wichtig sind Modell-Gate, TWT-/Hardware-Hinweis und sauberes `unavailable` auf Anlagen ohne passenden Sensor.
+- [ ] **Einmalige Warmwasserladung benutzbar machen:** Nutzerberichte beschreiben Register 1713 als One-shot-Warmwasserladung, die nach erfolgreicher Ladung wieder zurückfällt.
+  - Bei uns bereits vorhanden; UX-Prüfung: eher Button/Switch/Aktion mit klarer Beschreibung statt roher Registerbedienung.
+- [ ] **RoomMode-/Enum-Schreibpfade regressionstesten:** Mehrere Nutzerberichte zeigen typische Fehler bei `automatic`/`AUTOMATIC`, Übersetzungen, Services und refaktorierten Schreibpfaden.
+  - Akzeptanz: deutsche und englische UI-Optionen dürfen keine falschen Servicewerte erzeugen; `automatic` muss für Raum- und Heizkreismodi stabil funktionieren.
+- [ ] **Optionales `force_update` nur als Opt-in bewerten:** Der Wunsch nach dichter externer Zeitreihenarchivierung ist für InfluxDB/Grafana nachvollziehbar, kann aber Recorder- und Datenbanklast erhöhen.
+  - Wenn umgesetzt, dann standardmäßig aus, klar dokumentiert und möglichst auf Sensoren begrenzt; vorher Datenbank-/Recorder-Auswirkung prüfen.
+
+#### Interessant, aber vorsichtig
+
+- [ ] **Climate Entity prüfen:** Eine Climate Entity kann die UI verbessern, ist aber fachlich schwierig wegen Heizkreisen, Räumen, Warmwasser und IDM-Modi.
+  - Erst nach stabilen Schreibverträgen; keine Climate-Entity, die IDM-Zustände verfälscht oder unvollständige Steuerbarkeit suggeriert.
+- [ ] **Energy-Dashboard-Kompatibilität dokumentieren:** Wiederkehrende Dashboard-Fragen deuten auf Bedarf für Verbrauchs-/Erzeugungsanzeigen.
+  - Wo IDM keine echte Gesamtverbrauchsenergie liefert, lieber HA-Integral-Helfer oder klar benannte berechnete Sensoren dokumentieren statt falsche native Energie zu behaupten.
+- [ ] **Wärmemengen-Semantik prüfen:** Register 1754/1756/1762 müssen gegen reale Geräte und IDM-Doku geprüft werden.
+  - Besonders wichtig: Gesamtwärmemenge vs. Heizwärmemenge nicht verwechseln; fehlende Vortex-/Modell-Sensoren sauber als nicht verfügbar darstellen.
+- [ ] **Negative Leistungswerte zulassen, wenn fachlich korrekt:** Geräteberichte zeigen, dass negative PV-/Leistungswerte reale Bedeutung haben können.
+  - Min-/Max-Validierung darf Sentinelwerte und echte negative Messwerte nicht vermischen.
+- [ ] **Sentinel-vs.-Enum-Kollisionen testen:** Ein bekannter Randfall beschreibt `0xFFFF` als zugleich Sentinel und möglicher Statuswert.
+  - In API-Tests explizit prüfen, dass Enumwerte Vorrang bekommen, wenn sie dokumentiert sind, und Sentinelwerte nur kontextabhängig als `unavailable` gelten.
+- [ ] **Schreibwerte aus Support-Threads nur mit Nachweis übernehmen:** Support- und Feature-Wünsche enthalten viele Wünsche zu Setpoints, GLT-Werten und Raum-/Heizkreismodi.
+  - Jeder Schreibzugriff braucht Registerquelle, Datentyp, Bereich, Modell-Gate, EEPROM-Klasse und Test; keine Sammelübernahme aus Kommentaren.
+
+#### Nicht übernehmen ohne belastbaren Nachweis
+
+- [ ] **Web-Scraping der IDM-Oberfläche nicht als Kernpfad einführen:** Web-UI- und hpweb-Ansätze können hilfreiche Ideen für Diagnose/Autokonfiguration liefern, passen aber nicht zum aktuellen Modbus/API-Vertrag.
+  - Maximal späterer Spike; kein Login-/Cookie-Scraping im Kern der Integration.
+- [ ] **Register 4108 nicht als §14a-/Leistungsbegrenzungsfeature bewerben:** Geräteberichte und unser Issue [#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44) zeigen, dass 4108 modellabhängig, teils Navigator-10-only und in der Wirkung unbestätigt ist.
+  - Nur modell-gated, klar als experimentell/undokumentiert beziehungsweise intern behandeln, bis IDM-Doku und Hardwaretests vorliegen.
+- [ ] **Nicht jeden GLT-Monitor-Wert automatisch aufnehmen:** Registerberichte zeigen sowohl wertvolle Funde als auch Werte ohne Modbus-Verfügbarkeit.
+  - Aufnahme nur mit Quelle, Firmware-/Modellhinweis, Sentinelverhalten und Regressionstest.
+
 ### Hardware- und Firmware-Matrix
 
 - [ ] Matrix mit mindestens folgenden Zeilen pflegen: Navigator 2.0, Navigator Pro, Navigator 10, Terra SWM sowie unbekanntes/zukünftiges Modell.
 - [ ] Pro Eintrag dokumentieren: Wärmepumpentyp, Navigator-Modell, Firmware, getestete API-/HASS-Version, aktive Kreise/Zonen/PV/ISC/Kaskade und Tester.
 - [ ] Anonymisierte Diagnose-Snapshots als Regression-Fixtures erlauben; Opt-in und manuell eingereicht, niemals automatisch übertragen.
 - [ ] „confirmed“, „community-tested“, „expected“ und „unsupported“ klar unterscheiden.
+  - Lokales Testsystem vorhanden: IDM 6-15 mit Navigator 10 über Modbus-Proxy. Read-only-Probe am 2026-07-02 bestätigte Verbindung, Modellkennung `Navigator 10`, Slave-ID 1, PV/Solar/ISC/Kaskade-Fähigkeiten und sichere Einzelreads für 90, 1072, 4108, 4122 und 4126. Private Netzwerkdaten werden nicht dokumentiert.
 
 ### Registerqualität
 
@@ -296,6 +346,10 @@ Diese Punkte sind sinnvoll, aber erst nach Stabilität und Verträgen:
 | 10 | beide | Define coordinated API-to-HASS release policy | P1 |
 | 11 | HASS | Replace self-claimed quality status with Core-readiness checklist | P2 |
 | 12 | beide | Generate shared register reference and compatibility matrix | P2 |
+| 13 | beide | Add community-triage regression tests for enums, sentinels, and negative values | P1 |
+| 14 | HASS | Evaluate one-time DHW charge as a button/action UX | P2 |
+| 15 | beide | Verify PV target, Smart Grid, B2 flow, and heat quantity semantics on real hardware | P2 |
+| 16 | HASS | Evaluate optional force_update for external time-series users | P3 |
 
 ## Messgrößen
 
