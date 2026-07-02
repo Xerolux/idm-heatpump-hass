@@ -7,6 +7,18 @@ from typing import Any
 from idm_heatpump import IdmModelInfo, RegisterDef, build_register_map
 from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20
 
+_NAVIGATOR_10_ONLY_REGISTERS: frozenset[str] = frozenset(
+    {
+        "power_limit_hp",
+        "power_limit_cascade",
+        "heat_sink_return_temp",
+        "heat_sink_flow_temp",
+        "heat_sink_flow_rate",
+        "heat_sink_charging_pump_signal",
+        "booster_fault",
+    }
+)
+
 
 def model_info_from_flags(
     circuits: list[str],
@@ -38,6 +50,7 @@ def build_filtered_register_map(
     )
 
     if getattr(model_info, "model_name", None) == MODEL_NAVIGATOR_20:
-        reg_map.pop("power_limit_hp", None)
+        for name in _NAVIGATOR_10_ONLY_REGISTERS:
+            reg_map.pop(name, None)
 
     return reg_map

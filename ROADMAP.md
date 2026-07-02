@@ -154,9 +154,9 @@ Ziel: Home Assistant enthält nur HA-spezifische Logik; Register- und Gerätewis
 
 ### Cross-Repo-Vertragstests
 
-- [ ] In der API-CI die Integration gegen den API-Branch auschecken und Kern-Vertragstests ausführen.
-- [ ] In der HASS-CI gegen exakt gepinnte sowie optional neueste kompatible API testen.
-- [ ] Tests für jedes API-Register sicherstellen:
+- [x] In der API-CI die Integration gegen den API-Branch auschecken und Kern-Vertragstests ausführen.
+- [x] In der HASS-CI gegen exakt gepinnte sowie optional neueste kompatible API testen.
+- [x] Tests für jedes API-Register sicherstellen:
   - eindeutiger stabiler Entity Key;
   - gültige Einheit/Device Class/State Class;
   - beschreibbare Register erscheinen nur auf erlaubten Plattformen;
