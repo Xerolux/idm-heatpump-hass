@@ -27,7 +27,7 @@ If applicable, add screenshots to help explain your problem.
 - Integration version:
 - `idm-heatpump-api` version:
 - `pymodbus` version, if known:
-- Heat-pump model:
+- Heat-pump model (e.g. IDM Navigator 2.0 / 10 / Pro):
 - Controller or Navigator version:
 - Firmware version:
 - Active heating circuits:

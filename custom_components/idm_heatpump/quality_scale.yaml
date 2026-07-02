@@ -59,7 +59,7 @@ rules:
     status: done
     comment: >
       README.md provides a high-level overview of the integration and the
-      IDM Navigator 2.0 heat pump.
+      IDM Navigator 2.0 / 10 heat pump.
 
   docs-installation-instructions:
     status: done
@@ -226,7 +226,7 @@ rules:
   docs-supported-devices:
     status: done
     comment: >
-      docs/wiki/Supported-Devices.md lists IDM Navigator 2.0 and Navigator Pro
+      docs/wiki/Supported-Devices.md lists IDM Navigator 2.0 / 10 and Navigator Pro
       as confirmed, documents Modbus TCP prerequisites, unsupported devices,
       and untested compatible models.
 

@@ -88,7 +88,7 @@ Maintainer sollten vor einem stabilen Release den
 
 - Home Assistant **2026.5.0+**
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
-- IDM Navigator 2.0 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
+- IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Python 3.14.2+ (wird von Home Assistant 2026.5 bereitgestellt)
 - `pymodbus ==3.12.1` · `idm-heatpump-api ==0.3.7` (automatisch installiert)
 
@@ -115,7 +115,7 @@ Home Assistant
     │       │
     │       ├── IdmModbusClient (pymodbus, async, Batch-Lesung)
     │       │       │
-    │       │       └── IDM Navigator 2.0 (Modbus TCP, Port 502, Slave ID 1)
+    │       │       └── IDM Navigator 2.0 / 10 (Modbus TCP, Port 502, Slave ID 1)
     │       │               FC 03: Read Input Registers
     │       │               FC 16: Write Multiple Registers
     │       │
@@ -155,10 +155,10 @@ Diese Integration wird in meiner Freizeit entwickelt:
 
 ## 🔥 Über IDM Navigator
 
-Der **IDM Navigator 2.0** von [IDM EnergieSysteme GmbH](https://www.idm-energiesysteme.de/) ist ein modulares Wärmepumpen-Steuerungssystem mit Modbus TCP-Schnittstelle für nahtlose Home Assistant Integration.
+Der **IDM Navigator 2.0 / 10** von [IDM EnergieSysteme GmbH](https://www.idm-energiesysteme.de/) ist ein modulares Wärmepumpen-Steuerungssystem mit Modbus TCP-Schnittstelle für nahtlose Home Assistant Integration.
 
 - **Offizieller Shop:** [idm-energiesysteme.de](https://www.idm-energiesysteme.de/)
-- **Modbus-Dokumentation:** Navigator 2.0 Modbus TCP Registerbeschreibung
+- **Modbus-Dokumentation:** Navigator 2.0 / 10 Modbus TCP Registerbeschreibung
 
 ---
 

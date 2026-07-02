@@ -1,4 +1,4 @@
-"""Register definitions for IDM Navigator 2.0 heat pumps.
+"""Register definitions for IDM Navigator 2.0 / 10 heat pumps.
 
 All Modbus register addresses, data types, units, and read/write capabilities
 are defined here. Registers are organized by functional group and provide
@@ -8,7 +8,7 @@ entity descriptions for Home Assistant platforms.
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 Wärmepumpen
+# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 

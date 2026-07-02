@@ -23,17 +23,17 @@ The detailed model and firmware status is maintained in the [Compatibility Matri
 
 | Device | Reason |
 |--------|--------|
-| IDM older controllers (pre Navigator 2.0) | Different register mapping |
+| IDM older controllers (pre Navigator 2.0 / 10) | Different register mapping |
 | IDM devices without network connection | No Modbus TCP |
 | Other heat pump manufacturers | Different Modbus protocol / register layout |
 
 ## Untested Devices (possibly compatible)
 
-The following devices may use the same register mapping as the Navigator 2.0, but are not yet confirmed in the public community test matrix:
+The following devices may use the same register mapping as the Navigator 2.0 / 10, but are not yet confirmed in the public community test matrix:
 
-- IDM Terra SW (with Navigator 2.0 controller)
-- IDM Terra HT (with Navigator 2.0 controller)
-- IDM Aero SLM (with Navigator 2.0 controller)
+- IDM Terra SW (with Navigator 2.0 / 10 controller)
+- IDM Terra HT (with Navigator 2.0 / 10 controller)
+- IDM Aero SLM (with Navigator 2.0 / 10 controller)
 
 > **Note:** If you successfully use an unlisted IDM device, please create a [GitHub Issue](https://github.com/Xerolux/idm-heatpump-hass/issues) so we can expand the list!
 
@@ -50,6 +50,6 @@ Compatibility evidence and report fields: [Compatibility Matrix](Compatibility-M
 
 ## Known Firmware-specific Differences
 
-- Register 1048 (`current_energy_price`) is available from Navigator 2.0 firmware 2.x
+- Register 1048 (`current_energy_price`) is available from Navigator 2.0 / 10 firmware 2.x
 - Zone module registers (from 2000) require the IDM Navigator Pro hardware module
 - PV registers (74–86) require the optional PV module

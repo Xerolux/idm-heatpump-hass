@@ -270,7 +270,7 @@ jobs:
             echo "$CHANGELOG_LINK"
             echo ""
             echo "**Developed by:** [Xerolux](https://github.com/Xerolux)"
-            echo "**Integration for:** IDM Navigator 2.0 by IDM EnergieSysteme GmbH"
+            echo "**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH"
             echo "**License:** MIT"
             echo ""
             echo "_Generated automatically by GitHub Actions on $(date +'%Y-%m-%d %H:%M:%S UTC')_"

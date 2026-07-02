@@ -2,7 +2,7 @@
 
 ## Device Compatibility
 
-- **Only IDM Navigator 2.0 / Navigator Pro** are confirmed in the current community test matrix
+- **Only IDM Navigator 2.0 / 10 / Navigator Pro** are confirmed in the current community test matrix
 - Older IDM controllers without Navigator firmware are **not** supported
 - Modbus register mapping may vary slightly between firmware versions
 

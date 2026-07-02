@@ -115,7 +115,7 @@ Home Assistant
     |       |
     |       +-- IdmModbusClient (pymodbus via idm-heatpump library)
     |       |       |
-    |       |       +-- IDM Navigator 2.0/10 (Modbus TCP, Port 502)
+    |       |       +-- IDM Navigator 2.0 / 10 (Modbus TCP, Port 502)
     |       |
     |       +-- Entities (sensor, binary_sensor, number, select, switch)
     |
@@ -155,10 +155,10 @@ This integration is developed in my spare time:
 
 ## 🔥 About IDM Navigator
 
-The **IDM Navigator 2.0** by [IDM EnergieSysteme GmbH](https://www.idm-energiesysteme.de/) is a modular heat pump control system with a Modbus TCP interface for seamless Home Assistant integration.
+The **IDM Navigator 2.0 / 10** by [IDM EnergieSysteme GmbH](https://www.idm-energiesysteme.de/) is a modular heat pump control system with a Modbus TCP interface for seamless Home Assistant integration.
 
 - **Official Shop:** [idm-energiesysteme.de](https://www.idm-energiesysteme.de/)
-- **Modbus Documentation:** Navigator 2.0 Modbus TCP register description
+- **Modbus Documentation:** Navigator 2.0 / 10 Modbus TCP register description
 
 ---
 

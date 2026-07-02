@@ -12,7 +12,7 @@
         },
         "data_description": {
           "name": "Display name for the device in Home Assistant, e.g. \"IDM Heat Pump\".",
-          "host": "IP address or hostname of your IDM Navigator 2.0, e.g. `192.168.1.100`.",
+          "host": "IP address or hostname of your IDM Navigator 2.0 / 10, e.g. `192.168.1.100`.",
           "port": "Modbus TCP port of the controller. Default is `502`.",
           "slave_id": "Modbus slave ID. Default is `1`. Only change this if multiple devices share the same bus."
         }
@@ -26,7 +26,7 @@
           "slave_id": "Slave ID"
         },
         "data_description": {
-          "host": "New IP address or hostname of the IDM Navigator 2.0.",
+          "host": "New IP address or hostname of the IDM Navigator 2.0 / 10.",
           "port": "Modbus TCP port. Default is `502`.",
           "slave_id": "Modbus slave ID. Default is `1`."
         }

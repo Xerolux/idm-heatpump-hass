@@ -12,7 +12,7 @@
         },
         "data_description": {
           "name": "Anzeigename des Geräts in Home Assistant, z. B. \"IDM Wärmepumpe\".",
-          "host": "IP-Adresse oder Hostname deines IDM Navigator 2.0, z. B. `192.168.1.100`.",
+          "host": "IP-Adresse oder Hostname deines IDM Navigator 2.0 / 10, z. B. `192.168.1.100`.",
           "port": "Modbus-TCP-Port der Steuerung. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen."
         }
@@ -26,7 +26,7 @@
           "slave_id": "Slave-ID"
         },
         "data_description": {
-          "host": "Neue IP-Adresse oder neuer Hostname des IDM Navigator 2.0.",
+          "host": "Neue IP-Adresse oder neuer Hostname des IDM Navigator 2.0 / 10.",
           "port": "Modbus-TCP-Port. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`."
         }
