@@ -9,8 +9,9 @@ from custom_components.idm_heatpump.registers import (
     get_all_sensor_descriptions,
     get_all_switch_descriptions,
 )
-from idm_heatpump import RegisterDef
+from idm_heatpump import IdmModelInfo, RegisterDef
 from idm_heatpump.client import DataType
+from idm_heatpump.const import MODEL_NAVIGATOR_20
 
 
 class TestCollectAllRegisters:
@@ -77,6 +78,22 @@ class TestCollectAllRegisters:
             descs = getter(["a"], 0, {})
             for desc in descs:
                 assert "description" in desc, f"Description missing 'description' key: {desc}"
+
+    def test_detected_navigator_2_excludes_navigator_10_registers(self):
+        model_info = IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_20,
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+
+        regs = collect_all_registers(["a"], 0, {}, model_info=model_info)
+
+        assert all(reg.address != 4108 for reg in regs)
+        assert all(reg.name != "power_limit_hp" for reg in regs)
 
 
 class TestHkAddresses:

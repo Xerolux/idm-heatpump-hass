@@ -8,6 +8,7 @@ import pytest
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
+from pymodbus.exceptions import ConnectionException, ModbusException
 from custom_components.idm_heatpump.const import UNUSED_VALUE
 
 
@@ -82,6 +83,30 @@ class TestSetupRegisters:
         ):
             coord.setup_registers(["a"], 0, {})
         assert coord.registers_count == 0
+
+    def test_detected_model_is_forwarded_to_register_collection(
+        self, mock_hass, mock_config_entry
+    ):
+        model_info = MagicMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.collect_all_registers",
+                return_value=[],
+            ) as mock_collect,
+            patch(
+                "custom_components.idm_heatpump.coordinator.collect_alias_map",
+                return_value={},
+            ) as mock_aliases,
+        ):
+            coord.setup_registers(["a"], 0, {}, model_info=model_info)
+
+        mock_collect.assert_called_once_with(
+            ["a"], 0, {}, False, model_info=model_info
+        )
+        mock_aliases.assert_called_once_with(
+            ["a"], 0, {}, False, model_info=model_info
+        )
 
 
 class TestIsRegisterUnused:
@@ -199,6 +224,60 @@ class TestAsyncUpdateData:
 
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             with pytest.raises(UpdateFailed):
+                await coord._async_update_data()
+        mock_ir.async_create_issue.assert_called_once()
+
+    async def test_illegal_address_is_isolated_and_skipped(self, mock_hass, mock_config_entry):
+        good_a = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a")
+        unsupported = RegisterDef(address=4108, datatype=DataType.FLOAT, name="power_limit_hp")
+        good_b = RegisterDef(address=4122, datatype=DataType.FLOAT, name="good_b")
+        calls: list[list[str]] = []
+
+        async def read_batch(registers):
+            calls.append([reg.name for reg in registers])
+            if any(reg.name == "power_limit_hp" for reg in registers):
+                raise ModbusException(
+                    "Modbus error reading address 4108: "
+                    "ExceptionResponse(dev_id=1, function_code=132, exception_code=2)"
+                )
+            return {reg.name: 1 for reg in registers}
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=read_batch)
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord._registers = [good_a, unsupported, good_b]
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        assert data == {"good_a": 1, "good_b": 1}
+        assert coord.unsupported_registers == {"power_limit_hp"}
+
+        calls.clear()
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            await coord._async_update_data()
+        assert calls == [["good_a", "good_b"]]
+
+    @pytest.mark.parametrize(
+        "error",
+        [
+            ConnectionException("connection lost"),
+            ModbusException("Modbus response CRC error"),
+        ],
+    )
+    async def test_non_address_modbus_errors_remain_fatal(
+        self,
+        mock_hass,
+        mock_config_entry,
+        error,
+    ):
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=error)
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord._registers = [RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")]
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            with pytest.raises(Exception, match=str(error)):
                 await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
 
@@ -359,6 +438,10 @@ class TestCoordinatorProperties:
     def test_unused_registers_initially_empty(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry)
         assert coord.unused_registers == set()
+
+    def test_unsupported_registers_initially_empty(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        assert coord.unsupported_registers == set()
 
 
 class TestSetupRegistersWithCascade:

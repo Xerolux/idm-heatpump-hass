@@ -17,12 +17,20 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
-from idm_heatpump import IdmModbusClient, RegisterDef
+from idm_heatpump import IdmModbusClient, IdmModelInfo, RegisterDef
+from pymodbus.exceptions import ConnectionException, ModbusException
 
 from .const import DOMAIN, MODEL, NEGATIVE_ONE_VALID_REGISTERS, UNUSED_VALUE
 from .registers import collect_all_registers, collect_alias_map
 
 _LOGGER = logging.getLogger(__name__)
+_ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
+
+
+def _is_illegal_address_error(err: ModbusException) -> bool:
+    """Return whether a Modbus exception reports an unsupported address."""
+    message = str(err).casefold()
+    return any(marker in message for marker in _ILLEGAL_ADDRESS_MARKERS)
 
 
 class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -54,6 +62,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._model_name = model_name
         self._firmware_version = firmware_version
         self._unused_registers: set[str] = set()
+        self._unsupported_registers: set[str] = set()
         self._alias_map: dict[int, list[str]] = {}
 
         super().__init__(
@@ -70,9 +79,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         zone_count: int,
         zone_rooms: dict[int, int],
         enable_cascade: bool = False,
+        model_info: IdmModelInfo | None = None,
     ) -> None:
-        self._registers = collect_all_registers(circuits, zone_count, zone_rooms, enable_cascade)
-        self._alias_map = collect_alias_map(circuits, zone_count, zone_rooms, enable_cascade)
+        args = (circuits, zone_count, zone_rooms, enable_cascade)
+        if model_info is None:
+            self._registers = collect_all_registers(*args)
+            self._alias_map = collect_alias_map(*args)
+        else:
+            self._registers = collect_all_registers(*args, model_info=model_info)
+            self._alias_map = collect_alias_map(*args, model_info=model_info)
 
     @property
     def sensor_descriptions(self) -> list[dict[str, Any]]:
@@ -115,6 +130,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return self._unused_registers
 
     @property
+    def unsupported_registers(self) -> set[str]:
+        """Registers rejected by the device with Modbus exception code 2."""
+        return self._unsupported_registers
+
+    @property
     def registers_count(self) -> int:
         return len(self._registers)
 
@@ -137,9 +157,45 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return True
         return False
 
+    async def _async_read_registers_resilient(self, registers: list[RegisterDef]) -> dict[str, Any]:
+        """Read registers while isolating addresses unsupported by this device.
+
+        Some Navigator firmware variants reject optional register blocks with
+        Modbus exception code 2. Bisecting only on that specific response keeps
+        all supported entities available without hiding real connection errors.
+        """
+        if not registers:
+            return await self._client.read_batch(registers)
+
+        readable = [reg for reg in registers if reg.name not in self._unsupported_registers]
+        if not readable:
+            return {}
+
+        try:
+            return await self._client.read_batch(readable)
+        except ConnectionException:
+            raise
+        except ModbusException as err:
+            if not _is_illegal_address_error(err):
+                raise
+            if len(readable) == 1:
+                reg = readable[0]
+                self._unsupported_registers.add(reg.name)
+                _LOGGER.warning(
+                    "Register %s (address %d) is not supported by this heat pump; skipping it",
+                    reg.name,
+                    reg.address,
+                )
+                return {}
+
+            midpoint = len(readable) // 2
+            data = await self._async_read_registers_resilient(readable[:midpoint])
+            data.update(await self._async_read_registers_resilient(readable[midpoint:]))
+            return data
+
     async def _async_update_data(self) -> dict[str, Any]:
         try:
-            data = await self._client.read_batch(self._registers)
+            data = await self._async_read_registers_resilient(self._registers)
         except Exception as err:
             ir.async_create_issue(
                 self.hass,

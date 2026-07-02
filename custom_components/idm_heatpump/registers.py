@@ -15,7 +15,7 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from idm_heatpump import RegisterDef
+from idm_heatpump import IdmModelInfo, RegisterDef
 
 from .library_adapter import (
     get_library_binary_sensors,
@@ -41,6 +41,7 @@ def get_all_sensor_descriptions(
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
+    model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     """
     Assembles all sensor descriptions.
@@ -56,7 +57,14 @@ def get_all_sensor_descriptions(
     # library's bulk zone handling only supports one uniform room count for
     # all zones, so it must not also generate zone registers here.
     try:
-        descriptions.extend(get_library_sensors(circuits=circuits, zone_modules=0, enable_cascade=enable_cascade))
+        descriptions.extend(
+            get_library_sensors(
+                model_info=model_info,
+                circuits=circuits,
+                zone_modules=0,
+                enable_cascade=enable_cascade,
+            )
+        )
     except Exception:
         _LOGGER.warning("Failed to load library sensor descriptions", exc_info=True)
 
@@ -87,10 +95,17 @@ def get_all_binary_sensor_descriptions(
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
+    model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     descriptions = []
     try:
-        descriptions.extend(get_library_binary_sensors(circuits=circuits, zone_modules=zone_count))
+        descriptions.extend(
+            get_library_binary_sensors(
+                circuits=circuits,
+                zone_modules=zone_count,
+                model_info=model_info,
+            )
+        )
     except Exception:
         _LOGGER.warning("Failed to load library binary sensor descriptions", exc_info=True)
     # Old local binary sensors disabled during migration
@@ -102,13 +117,21 @@ def get_all_number_descriptions(
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
+    model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     descriptions: list[dict[str, Any]] = []
 
     # Library numbers (preferred).
     # zone_modules=0: see comment in get_all_sensor_descriptions above.
     try:
-        descriptions.extend(get_library_numbers(circuits=circuits, zone_modules=0, enable_cascade=enable_cascade))
+        descriptions.extend(
+            get_library_numbers(
+                model_info=model_info,
+                circuits=circuits,
+                zone_modules=0,
+                enable_cascade=enable_cascade,
+            )
+        )
     except Exception:
         _LOGGER.warning("Failed to load library number descriptions", exc_info=True)
     for z in range(zone_count):
@@ -132,10 +155,17 @@ def get_all_select_descriptions(
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
+    model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     descriptions = []
     try:
-        descriptions.extend(get_library_selects(circuits=circuits, zone_modules=zone_count))
+        descriptions.extend(
+            get_library_selects(
+                circuits=circuits,
+                zone_modules=zone_count,
+                model_info=model_info,
+            )
+        )
     except Exception:
         _LOGGER.warning("Failed to load library select descriptions", exc_info=True)
     # Old local selects disabled during migration
@@ -147,10 +177,11 @@ def get_all_switch_descriptions(
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
+    model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     descriptions = []
     try:
-        descriptions.extend(get_library_switches())
+        descriptions.extend(get_library_switches(model_info=model_info))
     except Exception:
         _LOGGER.warning("Failed to load library switch descriptions", exc_info=True)
     # Old local switches disabled during migration
@@ -179,14 +210,15 @@ def _collect_all_descriptions(
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
+    model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     """Collect all entity descriptions across all platforms."""
     return (
-        get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-        + get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-        + get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-        + get_all_select_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
-        + get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+        get_all_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade, model_info)
+        + get_all_binary_sensor_descriptions(circuits, zone_count, zone_rooms, enable_cascade, model_info)
+        + get_all_number_descriptions(circuits, zone_count, zone_rooms, enable_cascade, model_info)
+        + get_all_select_descriptions(circuits, zone_count, zone_rooms, enable_cascade, model_info)
+        + get_all_switch_descriptions(circuits, zone_count, zone_rooms, enable_cascade, model_info)
     )
 
 
@@ -195,9 +227,10 @@ def collect_all_registers(
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
+    model_info: IdmModelInfo | None = None,
 ) -> list[RegisterDef]:
     """Collect all unique registers for batch reading."""
-    all_descriptions = _collect_all_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+    all_descriptions = _collect_all_descriptions(circuits, zone_count, zone_rooms, enable_cascade, model_info)
 
     seen: dict[int, RegisterDef] = {}
     for desc in all_descriptions:
@@ -213,6 +246,7 @@ def collect_alias_map(
     zone_count: int,
     zone_rooms: dict[int, int],
     enable_cascade: bool = False,
+    model_info: IdmModelInfo | None = None,
 ) -> dict[int, list[str]]:
     """Collect address -> [register_names] alias mapping.
 
@@ -220,5 +254,5 @@ def collect_alias_map(
     but use different register names. ``read_batch`` returns data keyed by one
     name per address.  This map lets the coordinator populate the other names.
     """
-    all_descriptions = _collect_all_descriptions(circuits, zone_count, zone_rooms, enable_cascade)
+    all_descriptions = _collect_all_descriptions(circuits, zone_count, zone_rooms, enable_cascade, model_info)
     return _build_alias_map(all_descriptions)
