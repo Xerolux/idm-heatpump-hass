@@ -18,9 +18,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.13"]
+        python-version: ["3.14"]
         home-assistant-version:
-          - "2026.2.3"
+          - "2026.5.0"
 
     steps:
       - uses: actions/checkout@v4
@@ -39,8 +39,6 @@ jobs:
       - name: Install dev dependencies
         run: |
           pip install ruff mypy pytest pytest-cov pytest-asyncio
-          # Kein Versions-Pin: Releases >=0.13.317 verlangen Python >=3.14,
-          # die Matrix testet aber auch 3.13 — pip wählt die passende Version.
           pip install pytest-homeassistant-custom-component
           pip install "idm-heatpump-api>=0.3.3"
 

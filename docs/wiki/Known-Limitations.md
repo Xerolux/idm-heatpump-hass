@@ -21,7 +21,7 @@
 
 ## Single Device per Configuration Entry
 
-- Only **one** IDM heat pump can be configured per Home Assistant instance via Modbus TCP (due to IP-based unique ID)
+- Multiple IDM heat pumps are supported. Each connection must have a unique host, port, and slave-ID combination.
 - For multiple heat pumps on the same bus: use separate Slave IDs and create a separate entry for each
 
 ## Read-only Access to Certain Registers

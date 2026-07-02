@@ -2,7 +2,7 @@
 
 ## Requirements
 
-- **Home Assistant** 2025.12.0 or newer (tested up to 2026.5)
+- **Home Assistant** 2026.5.0 or newer
 - **HACS** ([Installation guide](https://hacs.xyz/docs/setup/download))
 - **IDM Navigator 2.0** heat pump with Modbus TCP enabled
 - Modbus TCP must be enabled in the Navigator controller (Port 502, Slave ID 1)
