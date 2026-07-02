@@ -23,7 +23,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
-from .entity import IdmEntity
+from .entity import IdmEntity, build_entity_unique_id
 from .library_adapter import get_bitflag_de_labels, get_slug_map_and_key
 from .technician_codes import calculate_codes
 
@@ -96,7 +96,8 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
     def __init__(self, coordinator: IdmCoordinator, level: str) -> None:
         super().__init__(coordinator)
         self._level = level
-        self._attr_unique_id = f"{coordinator.client.host}:{coordinator.client.port}_technician_{level}"
+        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
+        self._attr_unique_id = build_entity_unique_id(entry_id, f"technician_{level}")
         self._attr_name = self._NAMES[level]
         device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]

@@ -70,6 +70,7 @@ class TestConfigFlowInit:
 
     def test_version(self):
         assert IdmHeatpumpConfigFlow.VERSION == 1
+        assert IdmHeatpumpConfigFlow.MINOR_VERSION == 2
 
 
 class TestAsyncStepUser:
@@ -113,6 +114,7 @@ class TestAsyncStepUser:
 
     async def test_successful_connection_goes_to_options(self):
         flow = _make_flow()
+        flow._async_abort_entries_match = MagicMock()
         with patch.object(flow, "_test_connection", return_value=True):
             with patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}):
                 result = await flow.async_step_user({
@@ -122,6 +124,9 @@ class TestAsyncStepUser:
                     "slave_id": 1,
                 })
         assert result["step_id"] == "options"
+        flow._async_abort_entries_match.assert_called_once_with(
+            {"host": "192.168.1.100", "port": 502, "slave_id": 1}
+        )
 
 
 class TestAsyncStepOptions:

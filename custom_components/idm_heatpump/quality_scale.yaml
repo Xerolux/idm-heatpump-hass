@@ -81,7 +81,8 @@ rules:
   entity-unique-id:
     status: done
     comment: >
-      All entities set _attr_unique_id as "{host}:{port}_{register_name}".
+      All entities use "{config_entry_id}_{register_name}" so IDs remain stable
+      when host, port, or slave settings change. Version 1.2 migrates legacy IDs.
 
   has-entity-name:
     status: done
@@ -109,8 +110,8 @@ rules:
   unique-config-entry:
     status: done
     comment: >
-      async_set_unique_id(host) + _abort_if_unique_id_configured() prevent
-      duplicate entries for the same device.
+      Connection data (host, port, slave ID) is matched before setup to prevent
+      duplicates without using a mutable IP address as the config-entry unique ID.
 
   # ── SILVER ─────────────────────────────────────────────────────────────────
 

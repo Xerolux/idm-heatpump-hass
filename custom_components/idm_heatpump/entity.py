@@ -17,6 +17,11 @@ from .const import DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
 
 
+def build_entity_unique_id(entry_id: str, entity_key: str) -> str:
+    """Build a stable entity unique ID independent of connection settings."""
+    return f"{entry_id}_{entity_key}"
+
+
 class IdmEntity(CoordinatorEntity[IdmCoordinator]):
     """Base class for all IDM Heatpump entities."""
 
@@ -31,7 +36,8 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
         super().__init__(coordinator)
         self._register = reg
         self.entity_description = entity_desc
-        self._attr_unique_id = f"{coordinator.client.host}:{coordinator.client.port}_{reg.name}"
+        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
+        self._attr_unique_id = build_entity_unique_id(entry_id, reg.name)
         device_info = DeviceInfo(
             identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
             name=coordinator.config_entry.title,  # type: ignore[union-attr]

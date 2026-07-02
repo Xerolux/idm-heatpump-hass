@@ -69,15 +69,15 @@ class TestIdmEntityInit:
         coord = _make_coordinator()
         reg = _make_register(name="outdoor_temp", address=100)
         entity = _make_entity(coordinator=coord, reg=reg)
-        assert entity._attr_unique_id == "192.168.1.100:502_outdoor_temp"
+        assert entity._attr_unique_id == "test_entry_id_outdoor_temp"
 
-    def test_unique_id_uses_host_and_port(self):
+    def test_unique_id_ignores_connection_settings(self):
         coord = _make_coordinator()
         coord.client.host = "10.0.0.1"
         coord.client.port = 1502
         reg = _make_register(name="mode", address=200)
         entity = _make_entity(coordinator=coord, reg=reg)
-        assert entity._attr_unique_id == "10.0.0.1:1502_mode"
+        assert entity._attr_unique_id == "test_entry_id_mode"
 
     def test_device_info_has_domain_identifier(self):
         entity = _make_entity()

@@ -166,7 +166,7 @@ def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
 
 class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    MINOR_VERSION = 1
+    MINOR_VERSION = 2
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
@@ -184,8 +184,15 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             elif not host:
                 errors[CONF_HOST] = "host_required"
             else:
-                await self.async_set_unique_id(host)
-                self._abort_if_unique_id_configured()
+                port = int(user_input.get(CONF_PORT, DEFAULT_PORT))
+                slave_id = int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
+                self._async_abort_entries_match(
+                    {
+                        CONF_HOST: host,
+                        CONF_PORT: port,
+                        CONF_SLAVE_ID: slave_id,
+                    }
+                )
 
                 if not await self._test_connection(user_input):
                     errors["base"] = "cannot_connect"
@@ -212,7 +219,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             elif not await self._test_connection(user_input):
                 errors["base"] = "cannot_connect"
             else:
-                return self.async_update_reload_and_abort(
+                return self.async_update_and_abort(
                     entry,
                     data_updates={
                         CONF_HOST: host,

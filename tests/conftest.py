@@ -261,6 +261,9 @@ def _stub_homeassistant() -> None:
             self.title = "Test IDM"
             self.runtime_data = None
             self.state = _ConfigEntryState.LOADED
+            self.unique_id = None
+            self.version = 1
+            self.minor_version = 1
 
         def __class_getitem__(cls, item):
             return cls
@@ -302,10 +305,16 @@ def _stub_homeassistant() -> None:
         def async_update_reload_and_abort(self, entry, data_updates=None, **kwargs):
             return {"type": "abort", "reason": "reconfigure_successful"}
 
+        def async_update_and_abort(self, entry, data_updates=None, **kwargs):
+            return {"type": "abort", "reason": "reconfigure_successful"}
+
         async def async_set_unique_id(self, unique_id):
             pass
 
         def _abort_if_unique_id_configured(self):
+            pass
+
+        def _async_abort_entries_match(self, match_dict=None):
             pass
 
         def _get_reconfigure_entry(self):
@@ -446,7 +455,9 @@ def _stub_homeassistant() -> None:
     helpers.entity_registry = entity_registry_mod
 
     class _RegistryEntry:
-        def __init__(self, config_entry_id=None):
+        def __init__(self, entity_id="sensor.test", unique_id="test", config_entry_id=None):
+            self.entity_id = entity_id
+            self.unique_id = unique_id
             self.config_entry_id = config_entry_id
 
     class _EntityRegistry:
@@ -456,7 +467,15 @@ def _stub_homeassistant() -> None:
         def async_get(self, entity_id):
             return self.entities.get(entity_id)
 
+        def async_update_entity(self, entity_id, *, new_unique_id):
+            entry = self.entities[entity_id]
+            entry.unique_id = new_unique_id
+            return entry
+
     entity_registry_mod.async_get = MagicMock(return_value=_EntityRegistry())
+    entity_registry_mod.async_entries_for_config_entry = lambda registry, entry_id: [
+        entry for entry in registry.entities.values() if entry.config_entry_id == entry_id
+    ]
 
     # homeassistant.helpers.issue_registry
     issue_registry_mod = _make_module("homeassistant.helpers.issue_registry")

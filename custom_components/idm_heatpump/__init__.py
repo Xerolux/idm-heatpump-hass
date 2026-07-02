@@ -8,6 +8,7 @@ from __future__ import annotations
 # Lizenz: MIT
 
 import logging
+import re
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
@@ -18,6 +19,7 @@ from homeassistant.const import CONF_HOST, CONF_PORT, Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
+from homeassistant.helpers import entity_registry as er
 from homeassistant.loader import async_get_integration
 
 from .const import (
@@ -60,6 +62,7 @@ PLATFORMS = [
 ]
 
 _LOGGER = logging.getLogger(__name__)
+_LEGACY_ENTITY_UNIQUE_ID = re.compile(r"^.+:\d+_(?P<entity_key>.+)$")
 
 
 @dataclass
@@ -113,6 +116,28 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     from .services import async_setup_services
 
     await async_setup_services(hass)
+    return True
+
+
+async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
+    """Migrate connection-based IDs to stable config-entry-based IDs."""
+    if entry.version != 1 or entry.minor_version >= 2:
+        return True
+
+    entity_registry = er.async_get(hass)
+    for entity in er.async_entries_for_config_entry(entity_registry, entry.entry_id):
+        match = _LEGACY_ENTITY_UNIQUE_ID.fullmatch(entity.unique_id)
+        if match is None:
+            continue
+        new_unique_id = f"{entry.entry_id}_{match.group('entity_key')}"
+        entity_registry.async_update_entity(entity.entity_id, new_unique_id=new_unique_id)
+
+    hass.config_entries.async_update_entry(
+        entry,
+        unique_id=None,
+        version=1,
+        minor_version=2,
+    )
     return True
 
 

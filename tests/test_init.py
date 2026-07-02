@@ -6,6 +6,7 @@ import pytest
 
 from custom_components.idm_heatpump import (
     IdmHeatpumpData,
+    async_migrate_entry,
     async_setup,
     async_setup_entry,
     async_unload_entry,
@@ -47,6 +48,50 @@ class TestAsyncSetup:
             result = await async_setup(mock_hass, {})
         assert result is True
 
+
+class TestAsyncMigrateEntry:
+    async def test_migrates_legacy_entity_and_config_entry_unique_ids(self, mock_hass):
+        entry = MagicMock()
+        entry.entry_id = "entry-123"
+        entry.version = 1
+        entry.minor_version = 1
+
+        legacy_entity = MagicMock()
+        legacy_entity.entity_id = "sensor.outdoor_temperature"
+        legacy_entity.unique_id = "192.168.1.100:502_outdoor_temp"
+        stable_entity = MagicMock()
+        stable_entity.entity_id = "sensor.system_mode"
+        stable_entity.unique_id = "entry-123_system_mode"
+        registry = MagicMock()
+
+        with (
+            patch("custom_components.idm_heatpump.er.async_get", return_value=registry),
+            patch(
+                "custom_components.idm_heatpump.er.async_entries_for_config_entry",
+                return_value=[legacy_entity, stable_entity],
+            ),
+        ):
+            result = await async_migrate_entry(mock_hass, entry)
+
+        assert result is True
+        registry.async_update_entity.assert_called_once_with(
+            "sensor.outdoor_temperature",
+            new_unique_id="entry-123_outdoor_temp",
+        )
+        mock_hass.config_entries.async_update_entry.assert_called_once_with(
+            entry,
+            unique_id=None,
+            version=1,
+            minor_version=2,
+        )
+
+    async def test_skips_current_config_entry_version(self, mock_hass):
+        entry = MagicMock()
+        entry.version = 1
+        entry.minor_version = 2
+
+        assert await async_migrate_entry(mock_hass, entry) is True
+        mock_hass.config_entries.async_update_entry.assert_not_called()
 
 class TestAsyncSetupEntry:
     def _make_entry(self):

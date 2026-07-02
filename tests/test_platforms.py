@@ -254,7 +254,7 @@ class TestIdmTechnicianCodeSensor:
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
-        assert "level_1" in sensor._attr_unique_id
+        assert sensor._attr_unique_id == "test_entry_technician_level_1"
         assert sensor._attr_name == "Fachmann Ebene 1"
 
     def test_level_2_name(self):
