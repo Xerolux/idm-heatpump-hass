@@ -10,6 +10,18 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [0.7.2] - 2026-07-02
+
+### Fixed
+
+- Migrated entity unique IDs from mutable connection settings to stable config-entry IDs.
+- Removed IP addresses as config-entry unique IDs while retaining duplicate-connection checks.
+- Prevented duplicate reloads during reconfiguration on Home Assistant 2026.6+.
+- Closed Modbus clients when setup, model detection, or the first refresh fails.
+- Repaired the offline `idm-heatpump-api` test stub and the read-only diagnostic script.
+- Aligned CI, dependencies, and documentation with the Home Assistant 2026.5 baseline.
+
 ## [0.7.1] - 2026-06-23
 
 ## v0.7.1 - IDM Heatpump
@@ -2754,4 +2766,3 @@ Every contribution is a huge motivation! Thank you!
 _Generated automatically by GitHub Actions on 2026-03-21 12:18:05 UTC_
 
 ---
-
