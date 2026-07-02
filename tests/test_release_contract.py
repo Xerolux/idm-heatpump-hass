@@ -43,6 +43,15 @@ def test_ci_tests_pinned_and_compatible_api_dependencies() -> None:
     assert "idm-heatpump-api.git@Codex/roadmap-phase0-api" in ci
 
 
+def test_api_dependency_update_workflow_updates_pin_and_runs_contract_tests() -> None:
+    workflow = _read(ROOT / ".github" / "workflows" / "api-dependency-update.yml")
+
+    assert "idm_heatpump_api_release" in workflow
+    assert 'requirement = f"idm-heatpump-api=={version}"' in workflow
+    assert "tests/test_release_contract.py tests/test_cross_repo_contract.py" in workflow
+    assert "peter-evans/create-pull-request" in workflow
+
+
 def test_release_artifact_is_built_from_manifest_directory() -> None:
     release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
 

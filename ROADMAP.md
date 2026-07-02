@@ -162,7 +162,7 @@ Ziel: Home Assistant enthält nur HA-spezifische Logik; Register- und Gerätewis
   - beschreibbare Register erscheinen nur auf erlaubten Plattformen;
   - keine Adressduplikate ohne dokumentierten Alias;
   - keine Navigator-10-Entities auf erkanntem Navigator 2.0.
-- [ ] Automatischen Dependency-Update-PR von API-Release zu HASS mit Changelog und bestandenen Vertragstests einrichten.
+- [x] Automatischen Dependency-Update-PR von API-Release zu HASS mit Changelog und bestandenen Vertragstests einrichten.
 
 ### Home-Assistant-Lebenszyklus
 
