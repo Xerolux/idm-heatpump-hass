@@ -236,10 +236,10 @@ Modell-Gate, Test und Hardware-Rückmeldung laufen.
 
 ### Registerqualität
 
-- [ ] Für jedes Register Quelle, Dokumentversion, Modelle, Zugriff, Sentinelwerte und letzte Verifikation speichern.
-- [ ] Generierte Registerreferenz aus demselben Schema für API-Dokumentation und HASS-Wiki erzeugen.
-- [ ] Konflikte zwischen offizieller Doku und realem Gerät als bekannte Abweichung versionieren.
-- [ ] Neue Register nur mit Quelle, Test und Modell-Gate aufnehmen.
+- [x] Für jedes Register Quelle, Dokumentversion, Modelle, Zugriff, Sentinelwerte und letzte Verifikation speichern.
+- [x] Generierte Registerreferenz aus demselben Schema für API-Dokumentation und HASS-Wiki erzeugen.
+- [x] Konflikte zwischen offizieller Doku und realem Gerät als bekannte Abweichung versionieren.
+- [x] Neue Register nur mit Quelle, Test und Modell-Gate aufnehmen.
 
 ### Home-Assistant-UX
 
