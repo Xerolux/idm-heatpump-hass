@@ -42,6 +42,7 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_MODBUS_PROXY,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     CONF_TECHNICIAN_CODES,
@@ -79,6 +80,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
             NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
         ),
         vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+        vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
         vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
     }
 )
@@ -94,6 +96,7 @@ STEP_RECONFIGURE_SCHEMA = vol.Schema(
             NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
         ),
         vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+        vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
         vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
     }
 )
@@ -179,9 +182,19 @@ def _clean_pin(value: Any) -> str:
     return str(value or "").strip()
 
 
-def _clean_web_host(value: Any, fallback_host: str) -> str:
-    """Normalize an optional local web host from flow input."""
-    return str(value or "").strip() or fallback_host
+def _uses_modbus_proxy(data: dict[str, Any]) -> bool:
+    """Return whether local web access should use a host separate from Modbus."""
+    return bool(data.get(CONF_MODBUS_PROXY))
+
+
+def _web_host_for_input(user_input: dict[str, Any], host: str) -> str:
+    if not _uses_modbus_proxy(user_input):
+        return host
+    return str(user_input.get(CONF_WEB_HOST, "")).strip()
+
+
+def _stored_web_host(web_host: str, host: str) -> str:
+    return "" if web_host == host else web_host
 
 
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
@@ -238,7 +251,15 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors["base"] = "cannot_connect"
                 else:
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
-                    web_host = _clean_web_host(user_input.get(CONF_WEB_HOST), host)
+                    web_host = _web_host_for_input(user_input, host)
+                    if web_pin and _uses_modbus_proxy(user_input) and not web_host:
+                        errors[CONF_WEB_HOST] = "web_host_required"
+                        return self.async_show_form(
+                            step_id="user",
+                            data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, user_input),
+                            description_placeholders={"wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"},
+                            errors=errors,
+                        )
                     try:
                         detected = await self._async_detect_web_supplement(web_host, web_pin)
                     except IdmWebAuthenticationFailed:
@@ -250,7 +271,8 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_HOST: host,
                             CONF_NAME: name,
                             CONF_WEB_PIN: web_pin,
-                            CONF_WEB_HOST: "" if web_host == host else web_host,
+                            CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
+                            CONF_WEB_HOST: _stored_web_host(web_host, host),
                             **detected,
                         }
                         return await self.async_step_options()
@@ -275,7 +297,19 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "cannot_connect"
             else:
                 web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
-                web_host = _clean_web_host(user_input.get(CONF_WEB_HOST), host)
+                web_host = _web_host_for_input(user_input, host)
+                if web_pin and _uses_modbus_proxy(user_input) and not web_host:
+                    errors[CONF_WEB_HOST] = "web_host_required"
+                    return self.async_show_form(
+                        step_id="reconfigure",
+                        data_schema=self.add_suggested_values_to_schema(STEP_RECONFIGURE_SCHEMA, user_input),
+                        description_placeholders={
+                            "name": entry.title,
+                            "host": entry.data[CONF_HOST],
+                            "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki",
+                        },
+                        errors=errors,
+                    )
                 try:
                     detected = await self._async_detect_web_supplement(web_host, web_pin)
                 except IdmWebAuthenticationFailed:
@@ -289,7 +323,8 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_PORT: int(user_input.get(CONF_PORT, DEFAULT_PORT)),
                             CONF_SLAVE_ID: int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
                             CONF_WEB_PIN: web_pin,
-                            CONF_WEB_HOST: "" if web_host == host else web_host,
+                            CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
+                            CONF_WEB_HOST: _stored_web_host(web_host, host),
                             **detected,
                         },
                     )
@@ -299,6 +334,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_PORT: entry.data.get(CONF_PORT, DEFAULT_PORT),
             CONF_SLAVE_ID: entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID),
             CONF_WEB_PIN: entry.data.get(CONF_WEB_PIN, ""),
+            CONF_MODBUS_PROXY: bool(entry.data.get(CONF_MODBUS_PROXY) or entry.data.get(CONF_WEB_HOST)),
             CONF_WEB_HOST: entry.data.get(CONF_WEB_HOST, ""),
         }
 

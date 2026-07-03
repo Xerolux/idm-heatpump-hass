@@ -14,6 +14,7 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_MODBUS_PROXY,
     CONF_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
@@ -198,13 +199,64 @@ class TestAsyncStepUser:
                     "port": 502,
                     "slave_id": 1,
                     CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "192.168.178.103",
                 }
             )
 
         assert result["step_id"] == "options"
         detect_web.assert_awaited_once_with("192.168.178.103", "2634")
+        assert flow._data[CONF_MODBUS_PROXY] is True
         assert flow._data[CONF_WEB_HOST] == "192.168.178.103"
+
+    async def test_successful_connection_ignores_web_host_without_proxy_checkbox(self):
+        flow = _make_flow()
+        flow._async_abort_entries_match = MagicMock()
+
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
+            patch.object(
+                flow,
+                "async_step_options",
+                return_value={"type": "form", "step_id": "options", "errors": {}},
+            ),
+        ):
+            await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.178.196",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: False,
+                    CONF_WEB_HOST: "192.168.178.103",
+                }
+            )
+
+        detect_web.assert_awaited_once_with("192.168.178.196", "2634")
+        assert flow._data[CONF_MODBUS_PROXY] is False
+        assert flow._data[CONF_WEB_HOST] == ""
+
+    async def test_proxy_checkbox_requires_web_host_when_pin_is_set(self):
+        flow = _make_flow()
+        flow._async_abort_entries_match = MagicMock()
+
+        with patch.object(flow, "_test_connection", return_value=True):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.178.196",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: True,
+                    CONF_WEB_HOST: "",
+                }
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"][CONF_WEB_HOST] == "web_host_required"
 
     async def test_invalid_web_pin_shows_field_error(self):
         flow = _make_flow()
@@ -386,6 +438,7 @@ class TestAsyncStepReconfigure:
                 "port": 5020,
                 "slave_id": 2,
                 "web_pin": "",
+                "modbus_proxy": False,
                 "web_host": "",
             },
         )
@@ -416,6 +469,7 @@ class TestAsyncStepReconfigure:
                 "port": 5020,
                 "slave_id": 1,
                 "web_pin": "",
+                "modbus_proxy": False,
                 "web_host": "",
             },
         )
@@ -439,6 +493,7 @@ class TestAsyncStepReconfigure:
                     "port": 502,
                     "slave_id": 1,
                     CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "192.168.178.103",
                 }
             )
@@ -451,6 +506,7 @@ class TestAsyncStepReconfigure:
                 "port": 502,
                 "slave_id": 1,
                 "web_pin": "2634",
+                "modbus_proxy": True,
                 "web_host": "192.168.178.103",
             },
         )

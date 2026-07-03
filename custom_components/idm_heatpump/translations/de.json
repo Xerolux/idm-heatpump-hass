@@ -6,37 +6,41 @@
         "description": "[Hilfe benötigt? Lese die Dokumentation]({wiki_url})\n\nGib die Verbindungsdaten deiner IDM Wärmepumpe ein.\n\n**Voraussetzung:** Modbus TCP muss in der IDM-Steuerung unter *Fachmannebene → Kommunikation → Modbus* aktiviert sein.",
         "data": {
           "name": "Name",
-          "host": "IP-Adresse / Hostname",
+          "host": "Modbus-IP / Hostname",
           "port": "Port",
           "slave_id": "Slave-ID",
           "web_pin": "Lokale Web-PIN",
-          "web_host": "Web-IP / Hostname"
+          "modbus_proxy": "Modbus-Proxy verwenden",
+          "web_host": "Original-IP der Wärmepumpe für Webzugriff"
         },
         "data_description": {
           "name": "Anzeigename des Geräts in Home Assistant, z. B. \"IDM Wärmepumpe\".",
-          "host": "IP-Adresse oder Hostname für Modbus TCP. Das kann auch ein Modbus-Proxy sein.",
+          "host": "IP-Adresse oder Hostname für Modbus TCP. Wenn du einen Modbus-Proxy nutzt, trage hier die Proxy-Adresse ein.",
           "port": "Modbus-TCP-Port der Steuerung. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen.",
           "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, um nur Modbus zu verwenden.",
-          "web_host": "Optionale IP-Adresse oder Hostname der echten Wärmepumpen-Weboberfläche. Leer lassen, um den Modbus-Host zu verwenden."
+          "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
+          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.168.178.103`."
         }
       },
       "reconfigure": {
         "title": "Verbindung anpassen – {name}",
         "description": "[Hilfe benötigt? Lese die Dokumentation]({wiki_url})\n\nAktuelle Verbindung: **{host}**\n\nÄndere hier die Netzwerkdaten deiner Wärmepumpe. Die Integration wird danach automatisch neu gestartet.",
         "data": {
-          "host": "IP-Adresse / Hostname",
+          "host": "Modbus-IP / Hostname",
           "port": "Port",
           "slave_id": "Slave-ID",
           "web_pin": "Lokale Web-PIN",
-          "web_host": "Web-IP / Hostname"
+          "modbus_proxy": "Modbus-Proxy verwenden",
+          "web_host": "Original-IP der Wärmepumpe für Webzugriff"
         },
         "data_description": {
-          "host": "Neue IP-Adresse oder neuer Hostname des IDM Navigator 2.0 / 10.",
+          "host": "IP-Adresse oder Hostname für Modbus TCP. Wenn du einen Modbus-Proxy nutzt, trage hier die Proxy-Adresse ein.",
           "port": "Modbus-TCP-Port. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`.",
           "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, damit die Integration nur Modbus verwendet.",
-          "web_host": "Optionale IP-Adresse oder Hostname der echten Wärmepumpen-Weboberfläche. Nutze das, wenn Modbus über einen Proxy läuft."
+          "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
+          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.168.178.103`."
         }
       },
       "options": {
@@ -96,7 +100,8 @@
       "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfe IP-Adresse, Port und ob Modbus TCP in der Steuerung aktiviert ist.",
       "host_required": "Bitte eine gültige IP-Adresse oder einen Hostnamen eingeben.",
       "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt. Bitte gib die korrekte PIN ein oder lasse das Feld leer, um nur Modbus zu verwenden.",
-      "name_required": "Bitte einen Namen für das Gerät eingeben."
+      "name_required": "Bitte einen Namen für das Gerät eingeben.",
+      "web_host_required": "Gib die originale Wärmepumpen-IP/den Hostnamen für den Webzugriff ein oder deaktiviere die Modbus-Proxy-Option."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
