@@ -30,6 +30,7 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
         switch_descriptions=kwargs.get("switch_descriptions", []),
         hide_unused=kwargs.get("hide_unused", True),
         web_pin=kwargs.get("web_pin"),
+        web_host=kwargs.get("web_host"),
     )
     return coord, client
 
@@ -527,17 +528,23 @@ class TestAsyncWriteRegister:
 
 class TestAsyncRefreshWebSupplement:
     async def test_web_refresh_failure_creates_repair_issue(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="2634",
+            web_host="192.168.178.103",
+        )
 
         with (
             patch(
                 "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
                 side_effect=TimeoutError("websocket timeout"),
-            ),
+            ) as read_web,
             patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
         ):
             await coord.async_refresh_web_supplement()
 
+        read_web.assert_awaited_once_with("192.168.178.103", "2634")
         assert coord.last_web_error == "TimeoutError: websocket timeout"
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
@@ -547,7 +554,7 @@ class TestAsyncRefreshWebSupplement:
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="web_supplement_failed",
             translation_placeholders={
-                "host": coord.client.host,
+                "host": "192.168.178.103",
                 "error": "TimeoutError: websocket timeout",
             },
         )

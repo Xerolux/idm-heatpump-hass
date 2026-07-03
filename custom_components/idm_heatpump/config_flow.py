@@ -46,6 +46,7 @@ from .const import (
     CONF_SLAVE_ID,
     CONF_TECHNICIAN_CODES,
     CONF_WEB_ENABLED,
+    CONF_WEB_HOST,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
@@ -78,6 +79,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
             NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
         ),
         vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+        vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
     }
 )
 
@@ -92,6 +94,7 @@ STEP_RECONFIGURE_SCHEMA = vol.Schema(
             NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
         ),
         vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+        vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
     }
 )
 
@@ -176,6 +179,11 @@ def _clean_pin(value: Any) -> str:
     return str(value or "").strip()
 
 
+def _clean_web_host(value: Any, fallback_host: str) -> str:
+    """Normalize an optional local web host from flow input."""
+    return str(value or "").strip() or fallback_host
+
+
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
     existing_rooms: dict[int, int] = options.get(CONF_ZONE_ROOMS, {})
     schema_dict: dict[Any, Any] = {}
@@ -230,10 +238,11 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     errors["base"] = "cannot_connect"
                 else:
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
+                    web_host = _clean_web_host(user_input.get(CONF_WEB_HOST), host)
                     try:
-                        detected = await self._async_detect_web_supplement(host, web_pin)
+                        detected = await self._async_detect_web_supplement(web_host, web_pin)
                     except IdmWebAuthenticationFailed:
-                        _LOGGER.warning("IDM Navigator web PIN was rejected during setup for host %s", host)
+                        _LOGGER.warning("IDM Navigator web PIN was rejected during setup for host %s", web_host)
                         errors[CONF_WEB_PIN] = "invalid_web_pin"
                     else:
                         self._data = {
@@ -241,6 +250,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_HOST: host,
                             CONF_NAME: name,
                             CONF_WEB_PIN: web_pin,
+                            CONF_WEB_HOST: "" if web_host == host else web_host,
                             **detected,
                         }
                         return await self.async_step_options()
@@ -265,10 +275,11 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors["base"] = "cannot_connect"
             else:
                 web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
+                web_host = _clean_web_host(user_input.get(CONF_WEB_HOST), host)
                 try:
-                    detected = await self._async_detect_web_supplement(host, web_pin)
+                    detected = await self._async_detect_web_supplement(web_host, web_pin)
                 except IdmWebAuthenticationFailed:
-                    _LOGGER.warning("IDM Navigator web PIN was rejected during reconfiguration for host %s", host)
+                    _LOGGER.warning("IDM Navigator web PIN was rejected during reconfiguration for host %s", web_host)
                     errors[CONF_WEB_PIN] = "invalid_web_pin"
                 else:
                     return self.async_update_and_abort(
@@ -278,6 +289,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_PORT: int(user_input.get(CONF_PORT, DEFAULT_PORT)),
                             CONF_SLAVE_ID: int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
                             CONF_WEB_PIN: web_pin,
+                            CONF_WEB_HOST: "" if web_host == host else web_host,
                             **detected,
                         },
                     )
@@ -287,6 +299,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             CONF_PORT: entry.data.get(CONF_PORT, DEFAULT_PORT),
             CONF_SLAVE_ID: entry.data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID),
             CONF_WEB_PIN: entry.data.get(CONF_WEB_PIN, ""),
+            CONF_WEB_HOST: entry.data.get(CONF_WEB_HOST, ""),
         }
 
         return self.async_show_form(

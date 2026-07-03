@@ -33,6 +33,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     CONF_WEB_ENABLED,
+    CONF_WEB_HOST,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
@@ -175,6 +176,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
     enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
     web_pin = str(entry.data.get(CONF_WEB_PIN, "")).strip() or None
+    web_host = str(entry.data.get(CONF_WEB_HOST, "")).strip() or host
     web_enabled = bool(entry.options.get(CONF_WEB_ENABLED, DEFAULT_WEB_ENABLED))
     web_scan_interval = int(entry.options.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL))
 
@@ -219,7 +221,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         web_supplement = None
         if web_enabled and web_pin_configured(web_pin):
             try:
-                web_supplement = await async_read_web_supplement(host, web_pin)
+                web_supplement = await async_read_web_supplement(web_host, web_pin)
             except Exception:
                 _LOGGER.debug("Initial IDM web supplement detection failed", exc_info=True)
             model_name, firmware_version = merge_model_info(
@@ -263,6 +265,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             firmware_version=firmware_version,
             model_info=detected_model_info,
             web_pin=web_pin if web_enabled else None,
+            web_host=web_host,
             web_supplement=web_supplement,
         )
         coordinator.setup_registers(

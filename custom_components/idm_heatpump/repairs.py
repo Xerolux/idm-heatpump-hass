@@ -23,6 +23,7 @@ from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_WEB_ENABLED,
+    CONF_WEB_HOST,
     CONF_WEB_PIN,
     DOMAIN,
 )
@@ -103,7 +104,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             else:
                 try:
                     web_supplement = await async_read_web_supplement(
-                        str(entry.data[CONF_HOST]),
+                        str(entry.data.get(CONF_WEB_HOST) or entry.data[CONF_HOST]),
                         web_pin,
                     )
                 except IdmWebAuthenticationFailed:

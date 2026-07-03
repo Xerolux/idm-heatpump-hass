@@ -73,6 +73,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         firmware_version: str | None = None,
         model_info: IdmModelInfo | None = None,
         web_pin: str | None = None,
+        web_host: str | None = None,
         web_supplement: IdmWebSupplement | None = None,
     ) -> None:
         self._client = client
@@ -87,6 +88,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._firmware_version = firmware_version
         self._model_info = model_info
         self._web_pin = web_pin
+        self._web_host = web_host or client.host
         self._web_supplement = web_supplement
         self._last_web_error: str | None = None
         self._unused_registers: set[str] = set()
@@ -164,6 +166,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def web_enabled(self) -> bool:
         return bool(self._web_pin)
+
+    @property
+    def web_host(self) -> str:
+        return self._web_host
 
     @property
     def last_web_error(self) -> str | None:
@@ -298,11 +304,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
 
         try:
-            web_supplement = await async_read_web_supplement(self._client.host, self._web_pin)
+            web_supplement = await async_read_web_supplement(self._web_host, self._web_pin)
         except Exception as err:
             error = f"{err.__class__.__name__}: {err}"
             if error != self._last_web_error:
-                _LOGGER.warning("Optional IDM web supplement refresh failed for %s: %s", self._client.host, error)
+                _LOGGER.warning("Optional IDM web supplement refresh failed for %s: %s", self._web_host, error)
             self._last_web_error = error
             ir.async_create_issue(
                 self.hass,
@@ -311,7 +317,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=_WEB_SUPPLEMENT_FAILED_ISSUE,
-                translation_placeholders={"host": self._client.host, "error": error},
+                translation_placeholders={"host": self._web_host, "error": error},
             )
             return
 

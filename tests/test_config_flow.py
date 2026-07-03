@@ -19,6 +19,7 @@ from custom_components.idm_heatpump.const import (
     CONF_ZONE_ROOMS,
     CONF_TECHNICIAN_CODES,
     CONF_WEB_ENABLED,
+    CONF_WEB_HOST,
     CONF_WEB_PIN,
     DEFAULT_WEB_ENABLED,
 )
@@ -176,6 +177,34 @@ class TestAsyncStepUser:
         assert flow._data[CONF_WEB_PIN] == "1234"
         assert flow._data[CONF_DETECTED_NAVIGATOR_VERSION] == "Navigator 10"
         assert flow._data[CONF_DETECTED_SOFTWARE_VERSION] == "NAV10_20.23"
+
+    async def test_successful_connection_uses_separate_web_host_for_detection(self):
+        flow = _make_flow()
+        flow._async_abort_entries_match = MagicMock()
+
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
+            patch.object(
+                flow,
+                "async_step_options",
+                return_value={"type": "form", "step_id": "options", "errors": {}},
+            ),
+        ):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.178.196",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_HOST: "192.168.178.103",
+                }
+            )
+
+        assert result["step_id"] == "options"
+        detect_web.assert_awaited_once_with("192.168.178.103", "2634")
+        assert flow._data[CONF_WEB_HOST] == "192.168.178.103"
 
     async def test_invalid_web_pin_shows_field_error(self):
         flow = _make_flow()
@@ -357,6 +386,7 @@ class TestAsyncStepReconfigure:
                 "port": 5020,
                 "slave_id": 2,
                 "web_pin": "",
+                "web_host": "",
             },
         )
 
@@ -386,6 +416,42 @@ class TestAsyncStepReconfigure:
                 "port": 5020,
                 "slave_id": 1,
                 "web_pin": "",
+                "web_host": "",
+            },
+        )
+
+    async def test_reconfigure_updates_separate_web_host(self):
+        flow = _make_flow()
+        entry = MagicMock()
+        entry.data = {"host": "192.168.178.196", "port": 502, "slave_id": 1, "web_pin": "2634"}
+        entry.title = "IDM"
+        update_and_abort = MagicMock(return_value={"type": "abort", "reason": "reconfigure_successful"})
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
+            patch.object(flow, "async_update_and_abort", update_and_abort),
+        ):
+            await flow.async_step_reconfigure(
+                {
+                    "host": "192.168.178.196",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_HOST: "192.168.178.103",
+                }
+            )
+
+        detect_web.assert_awaited_once_with("192.168.178.103", "2634")
+        update_and_abort.assert_called_once_with(
+            entry,
+            data_updates={
+                "host": "192.168.178.196",
+                "port": 502,
+                "slave_id": 1,
+                "web_pin": "2634",
+                "web_host": "192.168.178.103",
             },
         )
 

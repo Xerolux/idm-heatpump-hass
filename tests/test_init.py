@@ -525,6 +525,42 @@ class TestAsyncSetupEntryOptions:
 
         assert captured_kwargs.get("slave_id") == 1
 
+    async def test_separate_web_host_is_used_for_web_supplement(self, mock_hass):
+        """Proxy setups can use one host for Modbus and another for Navigator web."""
+        entry = self._make_entry(
+            data_override={
+                "web_pin": "2634",
+                "web_host": "192.168.178.103",
+            },
+            options_override={"web_extra_data": True},
+        )
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_coordinator
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        patches[1] = patch("custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator)
+
+        ctx = __import__("contextlib").ExitStack()
+        for p in patches:
+            ctx.enter_context(p)
+        with (
+            ctx,
+            patch("custom_components.idm_heatpump.async_read_web_supplement", return_value=None) as read_web,
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        read_web.assert_awaited_once_with("192.168.178.103", "2634")
+        assert captured_kwargs.get("web_host") == "192.168.178.103"
+
     async def test_coordinator_first_refresh_failure_raises_not_ready(self, mock_hass):
         """If coordinator.async_config_entry_first_refresh() fails, ConfigEntryNotReady is raised."""
 

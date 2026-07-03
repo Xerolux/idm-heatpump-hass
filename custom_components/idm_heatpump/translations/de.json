@@ -9,14 +9,16 @@
           "host": "IP-Adresse / Hostname",
           "port": "Port",
           "slave_id": "Slave-ID",
-          "web_pin": "Lokale Web-PIN"
+          "web_pin": "Lokale Web-PIN",
+          "web_host": "Web-IP / Hostname"
         },
         "data_description": {
           "name": "Anzeigename des Geräts in Home Assistant, z. B. \"IDM Wärmepumpe\".",
-          "host": "IP-Adresse oder Hostname deines IDM Navigator 2.0 / 10, z. B. `192.168.1.100`.",
+          "host": "IP-Adresse oder Hostname für Modbus TCP. Das kann auch ein Modbus-Proxy sein.",
           "port": "Modbus-TCP-Port der Steuerung. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen.",
-          "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, um nur Modbus zu verwenden."
+          "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, um nur Modbus zu verwenden.",
+          "web_host": "Optionale IP-Adresse oder Hostname der echten Wärmepumpen-Weboberfläche. Leer lassen, um den Modbus-Host zu verwenden."
         }
       },
       "reconfigure": {
@@ -26,13 +28,15 @@
           "host": "IP-Adresse / Hostname",
           "port": "Port",
           "slave_id": "Slave-ID",
-          "web_pin": "Lokale Web-PIN"
+          "web_pin": "Lokale Web-PIN",
+          "web_host": "Web-IP / Hostname"
         },
         "data_description": {
           "host": "Neue IP-Adresse oder neuer Hostname des IDM Navigator 2.0 / 10.",
           "port": "Modbus-TCP-Port. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`.",
-          "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, damit die Integration nur Modbus verwendet."
+          "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, damit die Integration nur Modbus verwendet.",
+          "web_host": "Optionale IP-Adresse oder Hostname der echten Wärmepumpen-Weboberfläche. Nutze das, wenn Modbus über einen Proxy läuft."
         }
       },
       "options": {
