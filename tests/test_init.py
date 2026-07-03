@@ -647,9 +647,17 @@ class TestDetectModelInfo:
         model_name, _ = await _detect_model_info(client)
         assert model_name == "Navigator 10"
 
-    async def test_falls_back_when_model_unknown(self):
+    async def test_uses_client_model_name_when_model_unknown(self):
         client = AsyncMock()
         client.detect_model = AsyncMock(return_value=MagicMock(model_name=MODEL_UNKNOWN))
+        client.model_name = "Navigator 2.0"
+        model_name, _ = await _detect_model_info(client)
+        assert model_name == "Navigator 2.0"
+
+    async def test_falls_back_when_model_and_client_model_unknown(self):
+        client = AsyncMock()
+        client.detect_model = AsyncMock(return_value=MagicMock(model_name=MODEL_UNKNOWN))
+        client.model_name = MODEL_UNKNOWN
         model_name, _ = await _detect_model_info(client)
         assert model_name == MODEL
 

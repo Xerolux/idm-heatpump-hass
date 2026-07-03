@@ -110,7 +110,15 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None]:
 
     model_name = getattr(model_info, "model_name", None)
     if not (isinstance(model_name, str) and model_name and model_name != MODEL_UNKNOWN):
-        model_name = MODEL
+        fallback_model_name = getattr(client, "model_name", None)
+        if (
+            isinstance(fallback_model_name, str)
+            and fallback_model_name
+            and fallback_model_name != MODEL_UNKNOWN
+        ):
+            model_name = fallback_model_name
+        else:
+            model_name = MODEL
 
     firmware_value = getattr(model_info, "firmware_version", None)
     firmware_version = str(firmware_value) if firmware_value is not None else None
