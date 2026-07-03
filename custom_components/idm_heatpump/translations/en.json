@@ -274,7 +274,6 @@
   "issues": {
     "web_pin_missing": {
       "title": "IDM web PIN not configured",
-      "description": "The integration for **{name}** is running in Modbus-only mode because no local Navigator web PIN is configured.\n\nSet the PIN in the integration reconfiguration flow if you want additional web data such as Navigator generation and software version.",
       "fix_flow": {
         "step": {
           "init": {

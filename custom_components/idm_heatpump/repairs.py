@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Any, TypeAlias
 
 import voluptuous as vol
 from homeassistant.components import repairs
@@ -28,6 +28,11 @@ from .const import (
     DOMAIN,
 )
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
+
+if TYPE_CHECKING:
+    from homeassistant.data_entry_flow import FlowResult
+else:
+    FlowResult: TypeAlias = dict[str, Any]
 
 _ISSUE_WEB_PIN_MISSING = "web_pin_missing"
 _ACTION_SET_PIN = "set_pin"
@@ -63,7 +68,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             self._entry = entries[0]
         return self._entry
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Choose how to resolve the missing PIN."""
         if self._get_entry() is None:
             return self.async_abort(reason="entry_not_found")
@@ -90,7 +95,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             ),
         )
 
-    async def async_step_set_pin(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_set_pin(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Store a valid local Navigator web PIN."""
         entry = self._get_entry()
         if entry is None:
@@ -132,7 +137,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             errors=errors,
         )
 
-    async def async_step_disable_web(self, user_input: dict[str, Any] | None = None) -> dict[str, Any]:
+    async def async_step_disable_web(self, user_input: dict[str, Any] | None = None) -> FlowResult:
         """Disable optional web supplement data and clear the repair issue."""
         entry = self._get_entry()
         if entry is None:
