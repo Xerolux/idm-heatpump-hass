@@ -298,13 +298,9 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities: list[IdmSensor | IdmTechnicianCodeBlockSensor | IdmTechnicianCodeSensor | IdmWebSensor] = []
+    entities: list[IdmSensor | IdmTechnicianCodeSensor | IdmWebSensor] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
-        entities += [
-            IdmTechnicianCodeBlockSensor(coordinator),
-            IdmTechnicianCodeSensor(coordinator, "level_1"),
-            IdmTechnicianCodeSensor(coordinator, "level_2"),
-        ]
+        entities += _technician_code_entities(coordinator)
     entities += [
         IdmSensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in coordinator.sensor_descriptions
@@ -317,6 +313,13 @@ async def async_setup_entry(
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
     async_add_entities(entities)
+
+
+def _technician_code_entities(coordinator: IdmCoordinator) -> list[IdmTechnicianCodeSensor]:
+    return [
+        IdmTechnicianCodeSensor(coordinator, "level_1"),
+        IdmTechnicianCodeSensor(coordinator, "level_2"),
+    ]
 
 
 class IdmSensor(IdmEntity, SensorEntity):
@@ -417,36 +420,6 @@ class IdmTechnicianCodeBaseSensor(CoordinatorEntity[IdmCoordinator], SensorEntit
     @property
     def available(self) -> bool:
         return True
-
-
-class IdmTechnicianCodeBlockSensor(
-    IdmTechnicianCodeBaseSensor,
-):
-    """Sensor that shows both current Fachmann Ebene access codes as one block."""
-
-    _attr_icon = "mdi:key-chain-variant"
-    _attr_name = "Fachmann Codes"
-
-    def __init__(self, coordinator: IdmCoordinator) -> None:
-        super().__init__(coordinator)
-        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
-        self._attr_unique_id = build_entity_unique_id(entry_id, "technician_codes")
-
-    @property
-    def native_value(self) -> str:
-        codes = calculate_codes()
-        return "\n".join(
-            (
-                "Fachmann Ebene 1",
-                codes["level_1"],
-                "Fachmann Ebene 2",
-                codes["level_2"],
-            )
-        )
-
-    @property
-    def extra_state_attributes(self) -> dict[str, str]:
-        return calculate_codes()
 
 
 class IdmTechnicianCodeSensor(

@@ -1,6 +1,6 @@
 """Tests for sensor, binary_sensor, number, select, switch platforms."""
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -271,7 +271,7 @@ class TestSensorAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
 
         await async_setup_entry(MagicMock(), entry, async_add)
-        assert len(added_entities) == 3  # combined block, level_1 and level_2
+        assert len(added_entities) == 2  # level_1 and level_2
 
     async def test_adds_technician_sensors_before_regular_sensors(self):
         from custom_components.idm_heatpump.sensor import async_setup_entry
@@ -294,7 +294,6 @@ class TestSensorAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
 
         assert [entity._attr_unique_id for entity in added_entities] == [
-            "test_entry_technician_codes",
             "test_entry_technician_level_1",
             "test_entry_technician_level_2",
             "test_entry_outside_air_temperature",
@@ -393,21 +392,6 @@ class TestSensorAsyncSetupEntry:
 
 
 class TestIdmTechnicianCodeSensor:
-    def test_block_sensor_native_value_formats_codes_as_top_block(self):
-        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeBlockSensor
-
-        coord = _make_coordinator()
-        sensor = IdmTechnicianCodeBlockSensor(coord)
-
-        with patch(
-            "custom_components.idm_heatpump.sensor.calculate_codes",
-            return_value={"level_1": "0307", "level_2": "31673"},
-        ):
-            assert sensor._attr_unique_id == "test_entry_technician_codes"
-            assert sensor._attr_name == "Fachmann Codes"
-            assert sensor.native_value == "Fachmann Ebene 1\n0307\nFachmann Ebene 2\n31673"
-            assert sensor.extra_state_attributes == {"level_1": "0307", "level_2": "31673"}
-
     def test_init(self):
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
