@@ -139,6 +139,37 @@ async def test_async_read_web_supplement_adds_navigator10_notifications(
     assert result.sensor_values["infosystem_notifications"].native_value == "E123: Fehler | W456: Filter pruefen"
 
 
+async def test_async_read_web_supplement_extracts_myidm_id_local_part(monkeypatch: pytest.MonkeyPatch) -> None:
+    web_data = SimpleNamespace(
+        navigator_version="Navigator 10",
+        software_version="NAV10_20.23-903.iup",
+        heatpump_model="iPump",
+        simple_values={"myidm_id": "m129236@example.invalid"},
+    )
+    nav10 = _FakeWebClient(web_data)
+
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator10_web_client",
+        lambda host, pin: nav10,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: None,
+        raising=False,
+    )
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.myidm_id == "m129236"
+    assert result.values["myidm_id"] == "m129236"
+    assert result.sensor_values["myidm_id"].native_value == "m129236"
+
+
 async def test_async_read_web_supplement_ignores_notification_errors(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

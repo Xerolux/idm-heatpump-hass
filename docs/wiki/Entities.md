@@ -148,6 +148,7 @@ Typical web-only sensors include:
 | Navigator version (Web) | Detected Navigator generation, for example Navigator 2.0 or Navigator 10 |
 | Software Version (Web) | Controller software version reported by the local web interface |
 | Wärmepumpenmodell (Web) | Heat pump model/type reported by the web interface |
+| myIDM ID (Web) | Compact myIDM ID derived from the local web account value before `@` |
 | Infosystem Meldungen Anzahl (Web) | Number of active Navigator 10 infosystem notifications |
 | Infosystem Meldungen (Web) | Summary of active Navigator 10 infosystem notifications |
 | Heißgastemperatur (Web) | Web-only diagnostic temperature when available |

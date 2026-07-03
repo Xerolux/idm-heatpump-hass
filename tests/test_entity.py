@@ -32,6 +32,7 @@ def _make_coordinator(hide_unused=True, data=None, last_update_success=True, fir
     coord.config_entry.title = "IDM Test"
     coord.model_name = MODEL
     coord.firmware_version = firmware_version
+    coord.myidm_id = None
 
     def _is_unused(register_name, value):
         if not hide_unused:
@@ -112,6 +113,12 @@ class TestIdmEntityInit:
         coord = _make_coordinator(firmware_version=None)
         entity = _make_entity(coordinator=coord)
         assert "sw_version" not in entity.device_info
+
+    def test_device_info_has_serial_number_when_myidm_id_known(self):
+        coord = _make_coordinator()
+        coord.myidm_id = "m129236"
+        entity = _make_entity(coordinator=coord)
+        assert entity.device_info["serial_number"] == "m129236"
 
     def test_entity_description_set(self):
         desc = MagicMock()

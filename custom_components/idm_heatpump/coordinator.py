@@ -164,6 +164,13 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return self._web_supplement
 
     @property
+    def myidm_id(self) -> str | None:
+        """Return the latest known compact myIDM ID."""
+        if self._web_supplement is None:
+            return None
+        return self._web_supplement.myidm_id
+
+    @property
     def web_enabled(self) -> bool:
         return bool(self._web_pin)
 
@@ -340,6 +347,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self.data["web_software_version"] = web_supplement.software_version
             if web_supplement.heatpump_model:
                 self.data["web_heatpump_model"] = web_supplement.heatpump_model
+            if web_supplement.myidm_id:
+                self.data["web_myidm_id"] = web_supplement.myidm_id
         self.async_update_listeners()
 
     async def _delayed_refresh(self, delay: float = 0.5) -> None:

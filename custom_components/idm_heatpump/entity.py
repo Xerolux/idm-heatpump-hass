@@ -32,6 +32,8 @@ def build_device_info(coordinator: IdmCoordinator) -> DeviceInfo:
     )
     if coordinator.firmware_version:
         device_info["sw_version"] = coordinator.firmware_version
+    if coordinator.myidm_id:
+        device_info["serial_number"] = coordinator.myidm_id
     return device_info
 
 

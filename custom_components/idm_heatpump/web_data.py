@@ -40,6 +40,7 @@ class IdmWebSupplement:
     navigator_version: str | None = None
     software_version: str | None = None
     heatpump_model: str | None = None
+    myidm_id: str | None = None
     values: dict[str, str] = field(default_factory=dict)
     sensor_values: dict[str, IdmWebSensorValue] = field(default_factory=dict)
 
@@ -55,6 +56,37 @@ def _read_str_attr(source: Any, attr: str) -> str | None:
     value = getattr(source, attr, None)
     if isinstance(value, str) and value.strip():
         return value.strip()
+    return None
+
+
+def _local_part(value: Any) -> str | None:
+    """Return the compact ID part before @ for myIDM account values."""
+    if not isinstance(value, str):
+        return None
+    text = value.strip()
+    if not text:
+        return None
+    if "@" in text:
+        text = text.split("@", 1)[0].strip()
+    return text or None
+
+
+def _read_myidm_id(data: Any, values: dict[Any, Any]) -> str | None:
+    """Read the myIDM ID from common API fields and normalize mail-style IDs."""
+    for attr in ("myidm_id", "myIDMId", "myidmId", "myidm_email", "myidmEmail"):
+        value = _local_part(getattr(data, attr, None))
+        if value is not None:
+            return value
+
+    for key, raw_value in values.items():
+        key_text = str(key).casefold()
+        value = _local_part(raw_value)
+        if value is None:
+            continue
+        if key_text in {"myidm_id", "myidmid"} or "myidm" in key_text:
+            return value
+        if key_text in {"email", "user_email", "username"} and value.casefold().startswith("m"):
+            return value
     return None
 
 
@@ -95,16 +127,20 @@ def _normalize_web_data(data: Any) -> IdmWebSupplement:
         "software_version": _read_str_attr(data, "software_version"),
         "heatpump_model": _read_str_attr(data, "heatpump_model"),
     }
+    myidm_id = _read_myidm_id(data, values)
+    if myidm_id is not None:
+        metadata_values["myidm_id"] = myidm_id
     for name, value in metadata_values.items():
         if value is None:
             continue
-        values.setdefault(name, value)
-        sensor_values.setdefault(name, IdmWebSensorValue(value=value, native_value=value))
+        values[name] = value
+        sensor_values[name] = IdmWebSensorValue(value=value, native_value=value)
 
     return IdmWebSupplement(
         navigator_version=_read_str_attr(data, "navigator_version"),
         software_version=_read_str_attr(data, "software_version"),
         heatpump_model=_read_str_attr(data, "heatpump_model"),
+        myidm_id=myidm_id,
         values={str(key): str(value) for key, value in values.items()},
         sensor_values=sensor_values,
     )
@@ -136,6 +172,7 @@ def _add_web_notifications(
         navigator_version=supplement.navigator_version,
         software_version=supplement.software_version,
         heatpump_model=supplement.heatpump_model,
+        myidm_id=supplement.myidm_id,
         values=values,
         sensor_values=sensor_values,
     )
