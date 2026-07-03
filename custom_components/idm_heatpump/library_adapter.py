@@ -27,6 +27,7 @@ from homeassistant.components.number import (
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
+    SensorStateClass,
 )
 from homeassistant.const import (
     PERCENTAGE,
@@ -54,6 +55,20 @@ from .adapter_glt import is_glt_measurement, is_zone_room_measurement
 from .adapter_registers import build_filtered_register_map, model_info_from_flags
 
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
+
+_SENSOR_STATE_CLASS_MAP: dict[str, SensorStateClass] = {
+    SensorStateClass.MEASUREMENT: SensorStateClass.MEASUREMENT,
+    SensorStateClass.TOTAL: SensorStateClass.TOTAL,
+    SensorStateClass.TOTAL_INCREASING: SensorStateClass.TOTAL_INCREASING,
+}
+
+
+def _coerce_sensor_state_class(value: str | SensorStateClass | None) -> SensorStateClass | None:
+    """Map neutral library state class values to Home Assistant's enum."""
+    if value is None:
+        return None
+    return _SENSOR_STATE_CLASS_MAP.get(str(value))
+
 
 # ============================================================
 # Enum slug maps — stable translation keys per register
@@ -485,7 +500,7 @@ def get_library_sensors(
         icon = reg.icon or get_icon_for_register(name, reg.unit)
         dc, sc = infer_sensor_classes(name, reg.unit)
         if reg.state_class:
-            sc = reg.state_class
+            sc = _coerce_sensor_state_class(reg.state_class)
 
         # For non-BITFLAG enum sensors with a known slug map, use ENUM device class
         slug_map, t_key = get_slug_map_and_key(name)
@@ -560,7 +575,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
         else:
             hc_dc, hc_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
-                hc_sc = reg.state_class
+                hc_sc = _coerce_sensor_state_class(reg.state_class)
             desc = SensorEntityDescription(
                 key=name,
                 name=_get_german_name(name),
@@ -607,7 +622,7 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
         else:
             z_dc, z_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
-                z_sc = reg.state_class
+                z_sc = _coerce_sensor_state_class(reg.state_class)
             desc = SensorEntityDescription(
                 key=name,
                 name=_get_german_name(name),
@@ -840,7 +855,7 @@ def get_library_readonly_sensors(
         else:
             ro_dc, ro_sc = infer_sensor_classes(name, reg.unit)
             if reg.state_class:
-                ro_sc = reg.state_class
+                ro_sc = _coerce_sensor_state_class(reg.state_class)
             desc = SensorEntityDescription(
                 key=name,
                 name=_get_german_name(name),
