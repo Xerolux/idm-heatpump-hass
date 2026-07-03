@@ -42,6 +42,10 @@ def _make_desc(key="temp"):
     return desc
 
 
+def _unique_ids(entities):
+    return [entity._attr_unique_id for entity in entities]
+
+
 # ---------------------------------------------------------------------------
 # Sensor platform
 # ---------------------------------------------------------------------------
@@ -293,11 +297,59 @@ class TestSensorAsyncSetupEntry:
 
         await async_setup_entry(MagicMock(), entry, async_add)
 
-        assert [entity._attr_unique_id for entity in added_entities] == [
+        assert _unique_ids(added_entities) == [
             "test_entry_technician_level_1",
             "test_entry_technician_level_2",
             "test_entry_outside_air_temperature",
         ]
+
+    async def test_sorts_regular_and_web_sensors_into_functional_blocks(self):
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        coord = _make_coordinator(data={"pv_surplus": 1.2, "hotwater_temperature": 48.0, "failure_eheating": 0})
+        coord.sensor_descriptions = [
+            {"register": _make_register("pv_surplus", address=1003), "description": _make_desc("pv_surplus")},
+            {
+                "register": _make_register("hotwater_temperature", address=1002),
+                "description": _make_desc("hotwater_temperature"),
+            },
+            {
+                "register": _make_register("failure_eheating", address=1001),
+                "description": _make_desc("failure_eheating"),
+            },
+        ]
+        coord.web_enabled = True
+        coord._registers = []
+        coord.web_supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.23",
+            sensor_values={
+                "runtime_heating_hours": IdmWebSensorValue("10h", 10.0, "h"),
+                "hotgas_temperature": IdmWebSensorValue("72.5°C", 72.5, "°C"),
+            },
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        modbus_ids = [entity._attr_unique_id for entity in added_entities if not isinstance(entity, IdmWebSensor)]
+        web_ids = [entity._attr_unique_id for entity in added_entities if isinstance(entity, IdmWebSensor)]
+
+        assert modbus_ids == [
+            "test_entry_failure_eheating",
+            "test_entry_hotwater_temperature",
+            "test_entry_pv_surplus",
+        ]
+        assert web_ids.index("test_entry_web_heatpump_model") < web_ids.index("test_entry_web_hotgas_temperature")
+        assert web_ids.index("test_entry_web_hotgas_temperature") < web_ids.index(
+            "test_entry_web_runtime_heating_hours"
+        )
 
     async def test_adds_web_only_sensors_when_web_enabled(self):
         from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
@@ -545,6 +597,34 @@ class TestBinarySensorAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 0
 
+    async def test_sorts_entities_into_functional_blocks(self):
+        from custom_components.idm_heatpump.binary_sensor import async_setup_entry
+
+        coord = _make_coordinator()
+        coord.binary_sensor_descriptions = [
+            {"register": _make_register("pv_surplus", address=1003), "description": _make_desc("pv_surplus")},
+            {
+                "register": _make_register("hotwater_station_flow_switch", address=1002),
+                "description": _make_desc("hotwater_station_flow_switch"),
+            },
+            {
+                "register": _make_register("failure_eheating", address=1001),
+                "description": _make_desc("failure_eheating"),
+            },
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert _unique_ids(added) == [
+            "test_entry_failure_eheating",
+            "test_entry_hotwater_station_flow_switch",
+            "test_entry_pv_surplus",
+        ]
+
 
 # ---------------------------------------------------------------------------
 # Number platform
@@ -641,6 +721,37 @@ class TestNumberAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda e: added.extend(e))
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
+
+    async def test_sorts_entities_into_functional_blocks(self):
+        from custom_components.idm_heatpump.number import async_setup_entry
+
+        coord = _make_coordinator()
+        coord.number_descriptions = [
+            {
+                "register": _make_register("pv_surplus", address=1003, writable=True),
+                "description": _make_desc("pv_surplus"),
+            },
+            {
+                "register": _make_register("hotwater_temperature", address=1002, writable=True),
+                "description": _make_desc("hotwater_temperature"),
+            },
+            {
+                "register": _make_register("enable_cooling", address=1001, writable=True),
+                "description": _make_desc("enable_cooling"),
+            },
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert _unique_ids(added) == [
+            "test_entry_enable_cooling",
+            "test_entry_hotwater_temperature",
+            "test_entry_pv_surplus_set",
+        ]
 
 
 # ---------------------------------------------------------------------------
@@ -792,6 +903,38 @@ class TestSelectAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 0
 
+    async def test_sorts_entities_into_functional_blocks(self):
+        from custom_components.idm_heatpump.select import async_setup_entry
+
+        enum_opts = {0: "Off", 1: "On"}
+        coord = _make_coordinator()
+        coord.select_descriptions = [
+            {
+                "register": _make_register("hc_a_mode", address=1002, enum_options=enum_opts),
+                "description": _make_desc("hc_a_mode"),
+            },
+            {
+                "register": _make_register("system_mode", address=1001, enum_options=enum_opts),
+                "description": _make_desc("system_mode"),
+            },
+            {
+                "register": _make_register("zm1_room1_mode", address=1003, enum_options=enum_opts),
+                "description": _make_desc("zm1_room1_mode"),
+            },
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert _unique_ids(added) == [
+            "test_entry_system_mode",
+            "test_entry_hc_a_mode",
+            "test_entry_zm1_room1_mode",
+        ]
+
 
 # ---------------------------------------------------------------------------
 # Switch platform
@@ -888,6 +1031,37 @@ class TestSwitchAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda e: added.extend(e))
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
+
+    async def test_sorts_entities_into_functional_blocks(self):
+        from custom_components.idm_heatpump.switch import async_setup_entry
+
+        coord = _make_coordinator()
+        coord.switch_descriptions = [
+            {
+                "register": _make_register("pv_surplus", address=1003, writable=True),
+                "description": _make_desc("pv_surplus"),
+            },
+            {
+                "register": _make_register("external_request", address=1001, writable=True),
+                "description": _make_desc("external_request"),
+            },
+            {
+                "register": _make_register("hotwater_circulation_pump", address=1002, writable=True),
+                "description": _make_desc("hotwater_circulation_pump"),
+            },
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert _unique_ids(added) == [
+            "test_entry_external_request",
+            "test_entry_hotwater_circulation_pump",
+            "test_entry_pv_surplus",
+        ]
 
 
 # ---------------------------------------------------------------------------

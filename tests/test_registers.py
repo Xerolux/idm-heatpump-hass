@@ -10,6 +10,7 @@ from custom_components.idm_heatpump.registers import (
     get_all_select_descriptions,
     get_all_sensor_descriptions,
     get_all_switch_descriptions,
+    sort_entity_descriptions,
 )
 from idm_heatpump import IdmModelInfo, RegisterDef
 from idm_heatpump.client import DataType
@@ -118,7 +119,7 @@ class TestCollectAllRegisters:
             _make_order_desc("failure_eheating", 1001),
         ]
 
-        ordered_names = [desc["register"].name for desc in _sort_descriptions(descs)]
+        ordered_names = [desc["register"].name for desc in sort_entity_descriptions(descs)]
 
         assert ordered_names == [
             "failure_eheating",
@@ -132,6 +133,8 @@ class TestCollectAllRegisters:
             "cascade_req_heat_temp",
             "myidm_id",
         ]
+
+        assert _sort_descriptions(descs) == sort_entity_descriptions(descs)
 
 
 class TestHkAddresses:

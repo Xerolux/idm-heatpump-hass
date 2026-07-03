@@ -30,9 +30,9 @@ from .library_adapter import (
 
 _LOGGER = logging.getLogger(__name__)
 
-_ENTITY_ORDER_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
+ENTITY_ORDER_BLOCKS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
-        "system",
+        "system_status",
         (
             "system_",
             "operating_mode",
@@ -46,10 +46,11 @@ _ENTITY_ORDER_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
         ),
     ),
     (
-        "switches",
+        "configuration_controls",
         (
             "enable_",
             "switch_",
+            "system_mode",
             "demand_onetime",
             "external_request",
             "ext_switch",
@@ -132,30 +133,37 @@ _ENTITY_ORDER_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
     ),
 )
 
-_ENTITY_ORDER_INDEX = {group: index for index, (group, _patterns) in enumerate(_ENTITY_ORDER_GROUPS)}
+_ENTITY_ORDER_INDEX = {group: index for index, (group, _patterns) in enumerate(ENTITY_ORDER_BLOCKS)}
 
 
-def _entity_order_group(register_name: str) -> int:
+def entity_order_group(register_name: str) -> int:
     """Return a stable functional ordering group for an entity register."""
     lowered = register_name.casefold()
-    for group, patterns in _ENTITY_ORDER_GROUPS:
+    for group, patterns in ENTITY_ORDER_BLOCKS:
         if any(lowered.startswith(pattern.casefold()) or pattern.casefold() in lowered for pattern in patterns):
             return _ENTITY_ORDER_INDEX[group]
-    return len(_ENTITY_ORDER_GROUPS)
+    return len(ENTITY_ORDER_BLOCKS)
 
 
-def _description_sort_key(desc: dict[str, Any]) -> tuple[int, int, str, int]:
+def description_sort_key(desc: dict[str, Any]) -> tuple[int, int, str, int]:
     """Sort entity descriptions into stable, user-facing functional blocks."""
     reg: RegisterDef = desc["register"]
     name = str(getattr(desc["description"], "name", "") or reg.name)
     entity_category = getattr(desc["description"], "entity_category", None)
     category_value = getattr(entity_category, "value", entity_category)
-    diagnostic_rank = 1 if category_value == "diagnostic" else 0
-    return (_entity_order_group(reg.name), diagnostic_rank, name.casefold(), reg.address)
+    category_rank = {"config": 0, None: 1, "diagnostic": 2}.get(category_value, 1)
+    return (entity_order_group(reg.name), category_rank, name.casefold(), reg.address)
 
 
-def _sort_descriptions(descriptions: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    return sorted(descriptions, key=_description_sort_key)
+def sort_entity_descriptions(descriptions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Return descriptions grouped consistently for Home Assistant entity lists."""
+    return sorted(descriptions, key=description_sort_key)
+
+
+_ENTITY_ORDER_GROUPS = ENTITY_ORDER_BLOCKS
+_entity_order_group = entity_order_group
+_description_sort_key = description_sort_key
+_sort_descriptions = sort_entity_descriptions
 
 
 # ============================================================
@@ -215,7 +223,7 @@ def get_all_sensor_descriptions(
             seen_keys.add(key)
             unique.append(desc)
 
-    return _sort_descriptions(unique)
+    return sort_entity_descriptions(unique)
 
 
 def get_all_binary_sensor_descriptions(
@@ -237,7 +245,7 @@ def get_all_binary_sensor_descriptions(
     except Exception:
         _LOGGER.warning("Failed to load library binary sensor descriptions", exc_info=True)
     # Old local binary sensors disabled during migration
-    return _sort_descriptions(descriptions)
+    return sort_entity_descriptions(descriptions)
 
 
 def get_all_number_descriptions(
@@ -275,7 +283,7 @@ def get_all_number_descriptions(
         if key not in seen:
             seen.add(key)
             deduped.append(d)
-    return _sort_descriptions(deduped)
+    return sort_entity_descriptions(deduped)
 
 
 def get_all_select_descriptions(
@@ -297,7 +305,7 @@ def get_all_select_descriptions(
     except Exception:
         _LOGGER.warning("Failed to load library select descriptions", exc_info=True)
     # Old local selects disabled during migration
-    return _sort_descriptions(descriptions)
+    return sort_entity_descriptions(descriptions)
 
 
 def get_all_switch_descriptions(
@@ -313,7 +321,7 @@ def get_all_switch_descriptions(
     except Exception:
         _LOGGER.warning("Failed to load library switch descriptions", exc_info=True)
     # Old local switches disabled during migration
-    return _sort_descriptions(descriptions)
+    return sort_entity_descriptions(descriptions)
 
 
 def _build_alias_map(

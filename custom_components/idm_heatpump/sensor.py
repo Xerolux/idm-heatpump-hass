@@ -28,6 +28,7 @@ from .coordinator import IdmCoordinator
 from .entity import IdmEntity, build_device_info, build_entity_unique_id
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
+from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 
 
@@ -289,7 +290,12 @@ def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefini
         if key in modbus_register_names or key in _WEB_MODBUS_DUPLICATE_VALUES:
             continue
         definitions.append(_web_sensor_definition(key))
-    return definitions
+    return sorted(definitions, key=_web_sensor_sort_key)
+
+
+def _web_sensor_sort_key(definition: WebSensorDefinition) -> tuple[int, int, str]:
+    category_rank = 2 if definition.entity_category == EntityCategory.DIAGNOSTIC else 1
+    return (entity_order_group(definition.key), category_rank, definition.name.casefold())
 
 
 async def async_setup_entry(
@@ -303,7 +309,7 @@ async def async_setup_entry(
         entities += _technician_code_entities(coordinator)
     entities += [
         IdmSensor(coordinator, desc_info["register"], desc_info["description"])
-        for desc_info in coordinator.sensor_descriptions
+        for desc_info in sort_entity_descriptions(coordinator.sensor_descriptions)
         if not (
             desc_info["register"].enum_options
             and desc_info["register"].datatype == DataType.UCHAR

@@ -21,6 +21,7 @@ from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity
 from .adapter_glt import is_glt_measurement
+from .registers import sort_entity_descriptions
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +36,7 @@ async def async_setup_entry(
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
     entities = [
         IdmNumber(coordinator, desc_info["register"], desc_info["description"])
-        for desc_info in coordinator.number_descriptions
+        for desc_info in sort_entity_descriptions(coordinator.number_descriptions)
     ]
     async_add_entities(entities)
 
