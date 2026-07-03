@@ -10,6 +10,86 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.0-beta.4] - 2026-07-03
+
+## v0.8.0-beta.4 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+- fix: force technician codes to sort first (46cfc40)
+- fix: pin api 0.4.1 and enrich web diagnostics (c21df07)
+- fix: default web polling to 30 seconds (7464de7)
+- fix: group entities by functional blocks (790cdfa)
+- fix: pin technician code entities at top (642e63c)
+- fix: satisfy hassfest repair flow schema (4ee7730)
+- fix: move repair translations under issues (5111d53)
+- fix: order entities by functional groups (b94ed6b)
+- fix: improve model fallback without web (c687aad)
+- fix: clarify modbus proxy web host flow (6ae8fc2)
+- fix: support separate web host (a116c79)
+- fix: surface web supplement failures (3e2b386)
+- fix: expose web metadata sensors (ff3a2a6)
+- fix: enable web supplement by default (f6ecff7)
+- fix: relax pymodbus runtime requirement (a536a9b)
+- Merge remote-tracking branch 'origin/fix-navigator-wording-7490862864351299452' into Codex/branch-cleanup-merge (0372801)
+- fix(hass): harden enum and sentinel handling (49a1a06)
+
+- Release v0.8.0-beta.3 - Update changelog and version files (c86e1df)
+- Release v0.8.0-beta.2 - Update changelog and version files (5e71fc1)
+- docs: update feature documentation (0323076)
+- fix: improve model fallback without web (c687aad)
+- ci(hass): automate api dependency update prs (8259520)
+- refactor(hass): split adapter description helpers (548ba28)
+- refactor(hass): split adapter register selection (ef27276)
+- refactor(hass): split adapter enum and glt helpers (9d23699)
+- chore(release): improve HA release notes (9ed09a1)
+- chore(release): simplify HA update notes (5ac805a)
+- Release v0.7.3 - Update changelog and version files (51e86ec)
+- docs: Update to reflect Navigator 2.0 / 10 support (65c8cf6)
+
+- feat: expose compact myidm id in device info (644fe9c)
+- docs: update feature documentation (0323076)
+- feat: add optional room temperature forwarding (9c44e1b)
+- feat: show internal messages as readable text (8e848f9)
+- feat: add top technician code block sensor (a4ec522)
+- docs: add home assistant install badge (dd6e572)
+- feat: add web pin repair flow (52a08b4)
+- feat: add optional navigator web supplement (1a6cfc9)
+- docs(hass): add compatibility matrix (dff318a)
+- feat(hass): split repair issues by cause (e442030)
+- feat(hass): enrich redacted diagnostics (a5585ba)
+- test(hass): add api register contract coverage (6bd7f8b)
+- docs: add joint HASS and API roadmap (b034613)
+
+### Why it matters
+
+- Keeps update notes short and readable directly inside Home Assistant / HACS.
+- Highlights the most important fixes and improvements without forcing users into the full changelog.
+- Preserves a clean path to the full compare view when deeper details are needed.
+
+### Support
+
+Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:
+
+- [GitHub Sponsors](https://github.com/sponsors/xerolux)
+- [Ko-Fi](https://ko-fi.com/xerolux)
+- [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)
+- [PayPal](https://paypal.me/xerolux)
+
+---
+
+[Full changelog: v0.7.3...v0.8.0-beta.4](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.7.3...v0.8.0-beta.4)
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-07-03 20:34:42 UTC_
+
+---
+
 ## [0.8.0-beta.3] - 2026-07-03
 
 ## v0.8.0-beta.3 - IDM Heatpump
