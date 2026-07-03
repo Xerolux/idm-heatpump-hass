@@ -129,9 +129,7 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "water_temp_top",
 )
 
-_WEB_ONLY_EXTRA_VALUE_NAMES: tuple[str, ...] = (
-    "navigator_version",
-)
+_WEB_ONLY_EXTRA_VALUE_NAMES: tuple[str, ...] = ("navigator_version",)
 
 _WEB_MODBUS_DUPLICATE_VALUES: frozenset[str] = frozenset(
     {
