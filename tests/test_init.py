@@ -3,6 +3,7 @@
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from homeassistant.helpers import issue_registry as ir
 
 from custom_components.idm_heatpump import (
     IdmHeatpumpData,
@@ -410,6 +411,62 @@ class TestAsyncSetupEntryOptions:
             patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
             patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
         ]
+
+    async def test_missing_web_pin_issue_created_only_when_web_enabled(self, mock_hass):
+        """A missing web PIN is actionable only while web supplement data is enabled."""
+        entry = self._make_entry(
+            data_override={"web_pin": ""},
+            options_override={"web_extra_data": True},
+        )
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+        ir.async_create_issue.reset_mock()
+
+        ctx = __import__("contextlib").ExitStack()
+        for p in self._common_patches(mock_client, mock_coordinator):
+            ctx.enter_context(p)
+        with ctx:
+            await async_setup_entry(mock_hass, entry)
+
+        ir.async_create_issue.assert_any_call(
+            mock_hass,
+            "idm_heatpump",
+            "web_pin_missing",
+            is_fixable=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="web_pin_missing",
+            data={"entry_id": entry.entry_id},
+            translation_placeholders={"name": entry.title},
+        )
+
+    async def test_missing_web_pin_issue_not_created_when_web_disabled(self, mock_hass):
+        """Choosing Modbus-only mode keeps the missing web PIN repair closed."""
+        entry = self._make_entry(
+            data_override={"web_pin": ""},
+            options_override={"web_extra_data": False},
+        )
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+        ir.async_create_issue.reset_mock()
+        ir.async_delete_issue.reset_mock()
+
+        ctx = __import__("contextlib").ExitStack()
+        for p in self._common_patches(mock_client, mock_coordinator):
+            ctx.enter_context(p)
+        with ctx:
+            await async_setup_entry(mock_hass, entry)
+
+        assert not any(
+            call.args[:3] == (mock_hass, "idm_heatpump", "web_pin_missing")
+            for call in ir.async_create_issue.call_args_list
+        )
+        ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_pin_missing")
 
     async def test_default_port_used_when_missing(self, mock_hass):
         """When port is absent from entry.data, default 502 is used."""

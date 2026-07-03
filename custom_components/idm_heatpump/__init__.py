@@ -180,7 +180,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
     if web_pin_configured(web_pin):
         ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
-    else:
+    elif web_enabled:
         ir.async_create_issue(
             hass,
             DOMAIN,
@@ -188,8 +188,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="web_pin_missing",
+            data={"entry_id": entry.entry_id},
             translation_placeholders={"name": entry.title},
         )
+    else:
+        ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
 
     # Use the library via the adapter (migration Option B)
     client = get_idm_client(host=host, port=port, slave_id=slave_id)

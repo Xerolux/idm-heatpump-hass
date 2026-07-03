@@ -231,6 +231,12 @@
         "f": "Circuit F",
         "g": "Circuit G"
       }
+    },
+    "web_pin_missing_action": {
+      "options": {
+        "set_pin": "Set PIN now",
+        "disable_web": "Do not use web supplement data"
+      }
     }
   },
   "exceptions": {
@@ -317,6 +323,37 @@
           "name": "Acknowledge risk",
           "description": "Must be set to `true` to allow the write operation."
         }
+      }
+    }
+  },
+  "repairs": {
+    "web_pin_missing": {
+      "step": {
+        "init": {
+          "title": "Resolve missing IDM web PIN",
+          "description": "Choose whether to configure the local Navigator web PIN now or intentionally disable optional web supplement data.",
+          "data": {
+            "action": "Action"
+          }
+        },
+        "set_pin": {
+          "title": "Set local Navigator web PIN",
+          "description": "Enter the PIN for the local Navigator web interface. The integration will verify it before saving.",
+          "data": {
+            "web_pin": "Local web PIN"
+          }
+        },
+        "disable_web": {
+          "title": "Disable optional web supplement data",
+          "description": "Confirm that this heat pump should stay in Modbus-only mode. You can enable web supplement data later from the integration reconfiguration flow."
+        }
+      },
+      "error": {
+        "web_pin_required": "Enter a PIN or choose Modbus-only mode.",
+        "invalid_web_pin": "The local Navigator web interface rejected this PIN."
+      },
+      "abort": {
+        "entry_not_found": "The IDM Heatpump config entry was not found."
       }
     }
   }

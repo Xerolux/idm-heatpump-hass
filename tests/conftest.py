@@ -188,6 +188,8 @@ def _stub_homeassistant() -> None:
     ha.core = _make_module("homeassistant.core")
     ha.exceptions = _make_module("homeassistant.exceptions")
     ha.loader = _make_module("homeassistant.loader")
+    ha.components = _make_module("homeassistant.components")
+    ha.components.repairs = _make_module("homeassistant.components.repairs")
 
     # homeassistant.const values used in the integration
     ha.const.CONF_HOST = "host"
@@ -224,6 +226,18 @@ def _stub_homeassistant() -> None:
     ha.core.ServiceResponse = MagicMock
     ha.core.SupportsResponse = MagicMock()
     ha.core.SupportsResponse.OPTIONAL = "optional"
+
+    class _RepairsFlow:
+        def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
+            return {"type": "form", "step_id": step_id, "errors": errors or {}}
+
+        def async_create_entry(self, title="", data=None):
+            return {"type": "create_entry", "title": title, "data": data or {}}
+
+        def async_abort(self, *, reason):
+            return {"type": "abort", "reason": reason}
+
+    ha.components.repairs.RepairsFlow = _RepairsFlow
 
     # homeassistant.exceptions
     class _HomeAssistantError(Exception):
@@ -983,6 +997,7 @@ def mock_hass():
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
     hass.config_entries.async_reload = AsyncMock()
     hass.config_entries.async_entries = MagicMock(return_value=[])
+    hass.config_entries.async_update_entry = MagicMock()
     return hass
 
 
