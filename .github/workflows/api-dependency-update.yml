@@ -45,19 +45,19 @@ jobs:
 
           version = "${{ steps.api.outputs.version }}"
           root = Path(".")
-          requirement = f"idm-heatpump-api=={version}"
+          requirement = f"idm-heatpump-api[web]=={version}"
 
           manifest_path = root / "custom_components" / "idm_heatpump" / "manifest.json"
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
           manifest["requirements"] = [
-              requirement if req.startswith("idm-heatpump-api==") else req
+              requirement if req.startswith("idm-heatpump-api") else req
               for req in manifest["requirements"]
           ]
           manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
           release_contract = root / "tests" / "test_release_contract.py"
           text = release_contract.read_text(encoding="utf-8")
-          text = re.sub(r'idm-heatpump-api==[0-9]+\.[0-9]+\.[0-9]+', requirement, text)
+          text = re.sub(r'idm-heatpump-api(?:\[web\])?==[0-9]+\.[0-9]+\.[0-9]+', requirement, text)
           release_contract.write_text(text, encoding="utf-8")
 
           docs = [
@@ -68,7 +68,7 @@ jobs:
           ]
           for path in docs:
               text = path.read_text(encoding="utf-8")
-              text = re.sub(r'idm-heatpump-api==[0-9]+\.[0-9]+\.[0-9]+', requirement, text)
+              text = re.sub(r'idm-heatpump-api(?:\[web\])?==[0-9]+\.[0-9]+\.[0-9]+', requirement, text)
               path.write_text(text, encoding="utf-8")
           PY
 

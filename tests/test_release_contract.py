@@ -40,14 +40,14 @@ def test_ci_tests_pinned_and_compatible_api_dependencies() -> None:
     assert "manifest-pinned" in ci
     assert "api-branch-compatible" in ci
     assert "pymodbus>=3.12.1,<4.0" in ci
-    assert "idm-heatpump-api.git@Codex/roadmap-phase0-api" in ci
+    assert "idm-heatpump-api.git@main" in ci
 
 
 def test_api_dependency_update_workflow_updates_pin_and_runs_contract_tests() -> None:
     workflow = _read(ROOT / ".github" / "workflows" / "api-dependency-update.yml")
 
     assert "idm_heatpump_api_release" in workflow
-    assert 'requirement = f"idm-heatpump-api=={version}"' in workflow
+    assert 'requirement = f"idm-heatpump-api[web]=={version}"' in workflow
     assert "tests/test_release_contract.py tests/test_cross_repo_contract.py" in workflow
     assert "peter-evans/create-pull-request" in workflow
 

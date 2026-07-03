@@ -153,13 +153,15 @@ class TestAsyncStepUser:
                     "async_step_options",
                     return_value={"type": "form", "step_id": "options", "errors": {}},
                 ):
-                    result = await flow.async_step_user({
-                        "name": "IDM Test",
-                        "host": "192.168.1.100",
-                        "port": 502,
-                        "slave_id": 1,
-                        CONF_WEB_PIN: " 1234 ",
-                    })
+                    result = await flow.async_step_user(
+                        {
+                            "name": "IDM Test",
+                            "host": "192.168.1.100",
+                            "port": 502,
+                            "slave_id": 1,
+                            CONF_WEB_PIN: " 1234 ",
+                        }
+                    )
 
         assert result["step_id"] == "options"
         assert flow._data[CONF_WEB_PIN] == "1234"
@@ -174,13 +176,15 @@ class TestAsyncStepUser:
                 "_async_detect_web_supplement",
                 side_effect=IdmWebAuthenticationFailed("bad pin"),
             ):
-                result = await flow.async_step_user({
-                    "name": "IDM Test",
-                    "host": "192.168.1.100",
-                    "port": 502,
-                    "slave_id": 1,
-                    CONF_WEB_PIN: "0000",
-                })
+                result = await flow.async_step_user(
+                    {
+                        "name": "IDM Test",
+                        "host": "192.168.1.100",
+                        "port": 502,
+                        "slave_id": 1,
+                        CONF_WEB_PIN: "0000",
+                    }
+                )
 
         assert result["type"] == "form"
         assert result["errors"][CONF_WEB_PIN] == "invalid_web_pin"
@@ -391,12 +395,14 @@ class TestAsyncStepReconfigure:
                 side_effect=IdmWebAuthenticationFailed("bad pin"),
             ),
         ):
-            result = await flow.async_step_reconfigure({
-                "host": "idm.local",
-                "port": 502,
-                "slave_id": 1,
-                CONF_WEB_PIN: "0000",
-            })
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "idm.local",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "0000",
+                }
+            )
 
         assert result["type"] == "form"
         assert result["errors"][CONF_WEB_PIN] == "invalid_web_pin"

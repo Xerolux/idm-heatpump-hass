@@ -11,7 +11,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## [0.8.0-beta.1] - 2026-07-03
+
+**BETA RELEASE**
+
+This beta validates the optional local Navigator WebUI supplement before a
+stable 0.8.x release. Modbus remains the authoritative control and polling
+path.
 
 ### Added
 
@@ -34,6 +40,16 @@ All notable changes to this project will be documented in this file.
 
 - Wrong local web PINs are rejected immediately in setup/reconfiguration and
   logged without disabling Modbus-only operation.
+
+### Validation focus
+
+- Confirm Navigator 10 and Navigator 2.0 detection with optional WebUI access.
+- Confirm software version appears in the Home Assistant device information
+  when the controller exposes it.
+- Confirm Modbus-only installations still set up and poll normally without a
+  WebUI PIN.
+
+---
 
 ## [0.7.3] - 2026-07-02
 

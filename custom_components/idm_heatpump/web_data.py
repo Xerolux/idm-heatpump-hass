@@ -147,12 +147,15 @@ async def _read_optional_notifications(
 
 def _is_authentication_error(err: Exception) -> bool:
     """Return whether an API exception indicates an invalid local web PIN."""
+    auth_error_type: type[Exception] | None
     try:
         from idm_heatpump import IdmWebAuthenticationError
     except ImportError:
-        IdmWebAuthenticationError = ()  # type: ignore[assignment]
+        auth_error_type = None
+    else:
+        auth_error_type = IdmWebAuthenticationError
 
-    if IdmWebAuthenticationError and isinstance(err, IdmWebAuthenticationError):
+    if auth_error_type is not None and isinstance(err, auth_error_type):
         return True
     return err.__class__.__name__ == "IdmWebAuthenticationError"
 
