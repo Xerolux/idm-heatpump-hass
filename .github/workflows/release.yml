@@ -350,6 +350,11 @@ jobs:
             echo "" >> docs/CHANGELOG.md
           fi
 
+          if grep -q "^## \\[$VERSION\\]" docs/CHANGELOG.md; then
+            echo "Changelog already contains an entry for $VERSION"
+            exit 0
+          fi
+
           {
             echo "## [$VERSION] - $(date +'%Y-%m-%d')"
             echo ""
