@@ -126,11 +126,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
         return self.async_show_form(
             step_id="set_pin",
             data_schema=vol.Schema(
-                {
-                    vol.Required(CONF_WEB_PIN): TextSelector(
-                        TextSelectorConfig(type=TextSelectorType.PASSWORD)
-                    )
-                }
+                {vol.Required(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD))}
             ),
             errors=errors,
         )
