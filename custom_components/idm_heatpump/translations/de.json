@@ -274,7 +274,36 @@
   "issues": {
     "web_pin_missing": {
       "title": "IDM Web-PIN nicht konfiguriert",
-      "description": "Die Integration für **{name}** läuft im reinen Modbus-Modus, weil keine lokale Navigator-Web-PIN konfiguriert ist.\n\nSetze die PIN im Reconfigure-Flow der Integration, wenn zusätzliche Webdaten wie Navigator-Generation und Softwareversion gelesen werden sollen."
+      "description": "Die Integration für **{name}** läuft im reinen Modbus-Modus, weil keine lokale Navigator-Web-PIN konfiguriert ist.\n\nSetze die PIN im Reconfigure-Flow der Integration, wenn zusätzliche Webdaten wie Navigator-Generation und Softwareversion gelesen werden sollen.",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Fehlende IDM Web-PIN beheben",
+            "description": "Wähle aus, ob du die lokale Navigator-Web-PIN jetzt setzen oder optionale Web-Zusatzdaten bewusst deaktivieren möchtest.",
+            "data": {
+              "action": "Aktion"
+            }
+          },
+          "set_pin": {
+            "title": "Lokale Navigator-Web-PIN setzen",
+            "description": "Gib die PIN für die lokale Navigator-Weboberfläche ein. Die Integration prüft sie vor dem Speichern.",
+            "data": {
+              "web_pin": "Lokale Web-PIN"
+            }
+          },
+          "disable_web": {
+            "title": "Optionale Web-Zusatzdaten deaktivieren",
+            "description": "Bestätige, dass diese Wärmepumpe im reinen Modbus-Modus bleiben soll. Du kannst Web-Zusatzdaten später im Reconfigure-Flow wieder aktivieren."
+          }
+        },
+        "error": {
+          "web_pin_required": "Gib eine PIN ein oder wähle den reinen Modbus-Modus.",
+          "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt."
+        },
+        "abort": {
+          "entry_not_found": "Der IDM-Heatpump-Konfigurationseintrag wurde nicht gefunden."
+        }
+      }
     },
     "web_supplement_failed": {
       "title": "IDM-Web-Zusatzdaten nicht verfügbar",
@@ -336,37 +365,6 @@
           "name": "Risiko bestätigen",
           "description": "Muss auf `true` gesetzt sein, um den Schreibvorgang zu erlauben."
         }
-      }
-    }
-  },
-  "repairs": {
-    "web_pin_missing": {
-      "step": {
-        "init": {
-          "title": "Fehlende IDM Web-PIN beheben",
-          "description": "Wähle aus, ob du die lokale Navigator-Web-PIN jetzt setzen oder optionale Web-Zusatzdaten bewusst deaktivieren möchtest.",
-          "data": {
-            "action": "Aktion"
-          }
-        },
-        "set_pin": {
-          "title": "Lokale Navigator-Web-PIN setzen",
-          "description": "Gib die PIN für die lokale Navigator-Weboberfläche ein. Die Integration prüft sie vor dem Speichern.",
-          "data": {
-            "web_pin": "Lokale Web-PIN"
-          }
-        },
-        "disable_web": {
-          "title": "Optionale Web-Zusatzdaten deaktivieren",
-          "description": "Bestätige, dass diese Wärmepumpe im reinen Modbus-Modus bleiben soll. Du kannst Web-Zusatzdaten später im Reconfigure-Flow wieder aktivieren."
-        }
-      },
-      "error": {
-        "web_pin_required": "Gib eine PIN ein oder wähle den reinen Modbus-Modus.",
-        "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt."
-      },
-      "abort": {
-        "entry_not_found": "Der IDM-Heatpump-Konfigurationseintrag wurde nicht gefunden."
       }
     }
   }
