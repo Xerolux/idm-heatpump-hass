@@ -13,6 +13,11 @@ def _make_hass_with_coordinator(mock_hass, mock_config_entry):
     coord.last_update_success = True
     coord.model_name = "Navigator 10"
     coord.firmware_version = "2.34"
+    coord.web_enabled = True
+    coord.web_supplement = MagicMock()
+    coord.last_web_error = None
+    coord.web_value_keys = ("navigator_version", "software_version")
+    coord.missing_web_core_values = ("heatpump_model",)
     coord.model_info = IdmModelInfo(
         model_name="Navigator 10",
         active_heating_circuits=["A", "B"],
@@ -62,6 +67,13 @@ class TestDiagnostics:
         assert data["last_update_success"] is True
         assert data["model_name"] == "Navigator 10"
         assert data["firmware_version"] == "2.34"
+        assert data["web_supplement"] == {
+            "enabled": True,
+            "available": True,
+            "last_error": None,
+            "available_values": ["navigator_version", "software_version"],
+            "missing_core_values": ["heatpump_model"],
+        }
         assert data["sensor_count"] == 3
         assert data["binary_sensor_count"] == 1
         assert data["number_count"] == 2

@@ -583,10 +583,31 @@ class TestAsyncRefreshWebSupplement:
         assert coord.web_supplement is supplement
         assert coord.model_name == "Navigator 10"
         assert coord.firmware_version == "NAV10_20.24"
+        assert coord.web_value_keys == ("hotgas_temperature",)
+        assert coord.missing_web_core_values == ("navigator_version", "software_version", "heatpump_model")
         assert coord.data["web_navigator_version"] == "Navigator 10"
         assert coord.data["web_software_version"] == "NAV10_20.24"
         mock_ir.async_delete_issue.assert_called_once_with(mock_hass, "idm_heatpump", "web_supplement_failed")
         coord.async_update_listeners.assert_called_once()
+
+    async def test_web_refresh_success_reports_missing_core_values(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            sensor_values={"navigator_version": IdmWebSensorValue("Navigator 10", "Navigator 10")},
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.web_value_keys == ("navigator_version",)
+        assert coord.missing_web_core_values == ("software_version", "heatpump_model")
 
 
 class TestCoordinatorProperties:

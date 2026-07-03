@@ -10,6 +10,14 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [Unreleased]
+
+- Pin `idm-heatpump-api[web]==0.4.1` for faster Modbus model probes over proxies,
+  improved transient socket reconnect handling, and lower Navigator 10 web poll latency.
+- Add web supplement diagnostics for reachable web interfaces with missing core values,
+  including available web keys, missing metadata keys, and the last web error.
+
 ## [0.8.0-beta.2] - 2026-07-03
 
 ## v0.8.0-beta.2 - IDM Heatpump

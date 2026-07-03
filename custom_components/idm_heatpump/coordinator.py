@@ -32,6 +32,7 @@ _CONNECTIVITY_REPAIR_ISSUES = (
     "incompatible_firmware",
 )
 _WEB_SUPPLEMENT_FAILED_ISSUE = "web_supplement_failed"
+_WEB_CORE_VALUE_KEYS = ("navigator_version", "software_version", "heatpump_model")
 
 
 def _is_illegal_address_error(err: ModbusException) -> bool:
@@ -181,6 +182,21 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def last_web_error(self) -> str | None:
         return self._last_web_error
+
+    @property
+    def web_value_keys(self) -> tuple[str, ...]:
+        """Return currently available optional web value keys."""
+        if self._web_supplement is None:
+            return ()
+        return tuple(sorted(self._web_supplement.sensor_values))
+
+    @property
+    def missing_web_core_values(self) -> tuple[str, ...]:
+        """Return core web metadata keys missing from the latest successful snapshot."""
+        if self._web_supplement is None:
+            return ()
+        values = self._web_supplement.sensor_values
+        return tuple(key for key in _WEB_CORE_VALUE_KEYS if key not in values)
 
     @property
     def unused_registers(self) -> set[str]:

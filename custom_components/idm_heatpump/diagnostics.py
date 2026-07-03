@@ -42,6 +42,16 @@ def _model_info_diagnostics(model_info: Any) -> dict[str, Any]:
     }
 
 
+def _web_supplement_diagnostics(coordinator: Any) -> dict[str, Any]:
+    return {
+        "enabled": bool(getattr(coordinator, "web_enabled", False)),
+        "available": getattr(coordinator, "web_supplement", None) is not None,
+        "last_error": getattr(coordinator, "last_web_error", None),
+        "available_values": list(getattr(coordinator, "web_value_keys", ()) or ()),
+        "missing_core_values": list(getattr(coordinator, "missing_web_core_values", ()) or ()),
+    }
+
+
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     coordinator = entry.runtime_data.coordinator
 
@@ -55,6 +65,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "model_name": coordinator.model_name,
                 "firmware_version": coordinator.firmware_version,
                 "model_info": _model_info_diagnostics(coordinator.model_info),
+                "web_supplement": _web_supplement_diagnostics(coordinator),
                 "unused_registers": sorted(coordinator.unused_registers),
                 "unsupported_registers": sorted(coordinator.unsupported_registers),
                 "sensor_count": len(coordinator.sensor_descriptions),
