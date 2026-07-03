@@ -62,7 +62,7 @@ jobs:
         run: |
           pip install --upgrade \
             "pymodbus>=3.12.1,<4.0" \
-            "git+https://github.com/Xerolux/idm-heatpump-api.git@Codex/roadmap-phase0-api"
+            "git+https://github.com/Xerolux/idm-heatpump-api.git@main"
 
       - name: Lint with Ruff
         run: |
