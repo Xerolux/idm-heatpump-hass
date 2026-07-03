@@ -30,6 +30,134 @@ from .library_adapter import (
 
 _LOGGER = logging.getLogger(__name__)
 
+_ENTITY_ORDER_GROUPS: tuple[tuple[str, tuple[str, ...]], ...] = (
+    (
+        "system",
+        (
+            "system_",
+            "operating_mode",
+            "failure",
+            "error",
+            "infosystem",
+            "software",
+            "firmware",
+            "navigator",
+            "heatpump_model",
+        ),
+    ),
+    (
+        "switches",
+        (
+            "enable_",
+            "switch_",
+            "demand_onetime",
+            "external_request",
+            "ext_switch",
+            "evu",
+        ),
+    ),
+    (
+        "heating_circuits",
+        (
+            "hc_",
+            "flow_temp_hk",
+            "flow_temp_HK",
+            "mixer_heating_circuit",
+            "pump_heating_circuit",
+            "room_temperature_HK",
+        ),
+    ),
+    (
+        "domestic_hot_water",
+        (
+            "dhw",
+            "hotwater",
+            "water_temp",
+            "loading_temperature",
+            "valve_heating_hotwater",
+        ),
+    ),
+    (
+        "heat_pump_core",
+        (
+            "outside_air",
+            "airsource",
+            "flow_",
+            "return_",
+            "heat_sink",
+            "heat_source",
+            "heatstore",
+            "compressor",
+            "condenser",
+            "evapor",
+            "hotgas",
+            "liquid_line",
+            "brine",
+            "ventilator",
+        ),
+    ),
+    (
+        "zones",
+        (
+            "zm",
+            "zone_",
+        ),
+    ),
+    (
+        "energy_pv_glt",
+        (
+            "pv_",
+            "glt_",
+            "current_electrical_power",
+            "current_expected_power",
+            "heating_demand",
+            "cooling_demand",
+            "ext_demand",
+            "electric_",
+            "battery_",
+            "house_",
+        ),
+    ),
+    (
+        "runtime_energy",
+        (
+            "runtime_",
+            "switch_cycles",
+            "heat_quantity",
+        ),
+    ),
+    (
+        "cascade",
+        ("cascade",),
+    ),
+)
+
+_ENTITY_ORDER_INDEX = {group: index for index, (group, _patterns) in enumerate(_ENTITY_ORDER_GROUPS)}
+
+
+def _entity_order_group(register_name: str) -> int:
+    """Return a stable functional ordering group for an entity register."""
+    lowered = register_name.casefold()
+    for group, patterns in _ENTITY_ORDER_GROUPS:
+        if any(lowered.startswith(pattern.casefold()) or pattern.casefold() in lowered for pattern in patterns):
+            return _ENTITY_ORDER_INDEX[group]
+    return len(_ENTITY_ORDER_GROUPS)
+
+
+def _description_sort_key(desc: dict[str, Any]) -> tuple[int, int, str, int]:
+    """Sort entity descriptions into stable, user-facing functional blocks."""
+    reg: RegisterDef = desc["register"]
+    name = str(getattr(desc["description"], "name", "") or reg.name)
+    entity_category = getattr(desc["description"], "entity_category", None)
+    category_value = getattr(entity_category, "value", entity_category)
+    diagnostic_rank = 1 if category_value == "diagnostic" else 0
+    return (_entity_order_group(reg.name), diagnostic_rank, name.casefold(), reg.address)
+
+
+def _sort_descriptions(descriptions: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return sorted(descriptions, key=_description_sort_key)
+
+
 # ============================================================
 # PUBLIC FUNCTIONS - Collect all register descriptions
 # All registers are sourced from the idm_heatpump library via library_adapter.
@@ -87,7 +215,7 @@ def get_all_sensor_descriptions(
             seen_keys.add(key)
             unique.append(desc)
 
-    return unique
+    return _sort_descriptions(unique)
 
 
 def get_all_binary_sensor_descriptions(
@@ -109,7 +237,7 @@ def get_all_binary_sensor_descriptions(
     except Exception:
         _LOGGER.warning("Failed to load library binary sensor descriptions", exc_info=True)
     # Old local binary sensors disabled during migration
-    return descriptions
+    return _sort_descriptions(descriptions)
 
 
 def get_all_number_descriptions(
@@ -147,7 +275,7 @@ def get_all_number_descriptions(
         if key not in seen:
             seen.add(key)
             deduped.append(d)
-    return deduped
+    return _sort_descriptions(deduped)
 
 
 def get_all_select_descriptions(
@@ -169,7 +297,7 @@ def get_all_select_descriptions(
     except Exception:
         _LOGGER.warning("Failed to load library select descriptions", exc_info=True)
     # Old local selects disabled during migration
-    return descriptions
+    return _sort_descriptions(descriptions)
 
 
 def get_all_switch_descriptions(
@@ -185,7 +313,7 @@ def get_all_switch_descriptions(
     except Exception:
         _LOGGER.warning("Failed to load library switch descriptions", exc_info=True)
     # Old local switches disabled during migration
-    return descriptions
+    return _sort_descriptions(descriptions)
 
 
 def _build_alias_map(

@@ -298,7 +298,13 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities: list[IdmSensor | IdmTechnicianCodeSensor | IdmWebSensor] = [
+    entities: list[IdmSensor | IdmTechnicianCodeSensor | IdmWebSensor] = []
+    if entry.options.get(CONF_TECHNICIAN_CODES, False):
+        entities += [
+            IdmTechnicianCodeSensor(coordinator, "level_1"),
+            IdmTechnicianCodeSensor(coordinator, "level_2"),
+        ]
+    entities += [
         IdmSensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in coordinator.sensor_descriptions
         if not (
@@ -307,11 +313,6 @@ async def async_setup_entry(
             and desc_info["register"].writable
         )
     ]
-    if entry.options.get(CONF_TECHNICIAN_CODES, False):
-        entities += [
-            IdmTechnicianCodeSensor(coordinator, "level_1"),
-            IdmTechnicianCodeSensor(coordinator, "level_2"),
-        ]
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
     async_add_entities(entities)

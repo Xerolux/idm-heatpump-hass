@@ -1,6 +1,9 @@
 """Tests for register definitions and description builders."""
 
+from types import SimpleNamespace
+
 from custom_components.idm_heatpump.registers import (
+    _sort_descriptions,
     collect_all_registers,
     get_all_binary_sensor_descriptions,
     get_all_number_descriptions,
@@ -11,6 +14,13 @@ from custom_components.idm_heatpump.registers import (
 from idm_heatpump import IdmModelInfo, RegisterDef
 from idm_heatpump.client import DataType
 from idm_heatpump.const import MODEL_NAVIGATOR_20
+
+
+def _make_order_desc(name: str, address: int) -> dict:
+    return {
+        "register": RegisterDef(address=address, datatype=DataType.FLOAT, name=name),
+        "description": SimpleNamespace(key=name, name=name, entity_category=None),
+    }
 
 
 class TestCollectAllRegisters:
@@ -93,6 +103,35 @@ class TestCollectAllRegisters:
 
         assert all(reg.address != 4108 for reg in regs)
         assert all(reg.name != "power_limit_hp" for reg in regs)
+
+    def test_description_sorting_uses_functional_blocks(self):
+        descs = [
+            _make_order_desc("runtime_heating_hours", 1008),
+            _make_order_desc("zm1_room1_temp", 1006),
+            _make_order_desc("hc_a_flow_temp", 1003),
+            _make_order_desc("myidm_id", 1010),
+            _make_order_desc("pv_surplus", 1007),
+            _make_order_desc("outside_air_temperature", 1005),
+            _make_order_desc("cascade_req_heat_temp", 1009),
+            _make_order_desc("enable_cooling", 1002),
+            _make_order_desc("hotwater_temperature", 1004),
+            _make_order_desc("failure_eheating", 1001),
+        ]
+
+        ordered_names = [desc["register"].name for desc in _sort_descriptions(descs)]
+
+        assert ordered_names == [
+            "failure_eheating",
+            "enable_cooling",
+            "hc_a_flow_temp",
+            "hotwater_temperature",
+            "outside_air_temperature",
+            "zm1_room1_temp",
+            "pv_surplus",
+            "runtime_heating_hours",
+            "cascade_req_heat_temp",
+            "myidm_id",
+        ]
 
 
 class TestHkAddresses:

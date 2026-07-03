@@ -273,6 +273,32 @@ class TestSensorAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added_entities) == 2  # level_1 and level_2
 
+    async def test_adds_technician_sensors_before_regular_sensors(self):
+        from custom_components.idm_heatpump.sensor import async_setup_entry
+
+        coord = _make_coordinator(data={"outside_air_temperature": 12.3})
+        coord.sensor_descriptions = [
+            {
+                "register": _make_register("outside_air_temperature", address=1000),
+                "description": _make_desc("outside_air_temperature"),
+            }
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options.get = MagicMock(side_effect=lambda k, d=None: True if k == "technician_codes" else d)
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        assert [entity._attr_unique_id for entity in added_entities] == [
+            "test_entry_technician_level_1",
+            "test_entry_technician_level_2",
+            "test_entry_outside_air_temperature",
+        ]
+
     async def test_adds_web_only_sensors_when_web_enabled(self):
         from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
 
