@@ -21,7 +21,7 @@ Nicht vorgesehen sind Cloud-Zwang, Telemetrie, Fernzugriff, Firmware-Updates ode
 
 ### Was bereits gut ist
 
-- Aktuelle Releases: HASS `v0.7.3`, API `v0.3.8`.
+- Aktuelle Releases: HASS `v0.7.3`, API `v0.4.0`.
 - Die Integration nutzt die eigenständige API-Bibliothek und hat die alten lokalen Registergeneratoren weitgehend entfernt.
 - Lokale Prüfung der Integration: pytest und striktes mypy sind grün.
 - Lokale Prüfung der API: 46 Tests und mypy bestanden; GitHub Actions sind für die letzten Änderungen grün.
@@ -33,7 +33,7 @@ Nicht vorgesehen sind Cloud-Zwang, Telemetrie, Fernzugriff, Firmware-Updates ode
 
 | Priorität | Befund | Auswirkung |
 |---|---|---|
-| P0 | Die Integration ist für `idm-heatpump-api[web]==0.3.8` vorbereitet; das API-Release muss vor dem HASS-Release veröffentlicht sein. | HACS kann die neue Web-API erst installieren, wenn das Paket auf PyPI verfügbar ist. |
+| P0 | Die Integration ist für `idm-heatpump-api[web]==0.4.0` vorbereitet; das API-Release muss vor dem HASS-Release veröffentlicht sein. | HACS kann die neue Web-API erst installieren, wenn das Paket auf PyPI verfügbar ist. |
 | P0 | Issue [#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44) ist trotz gemergtem Fix und Release noch offen. | Der Fix ist ohne Bestätigung auf echter Terra-SWM-/Navigator-2-Hardware nicht abgeschlossen. |
 | P0 | Der HASS-Pages-Workflow lief zuletzt in einen Deployment-Timeout. | Dokumentation kann trotz grüner Code-CI veraltet bleiben. |
 | P0 | API-Code besteht `ruff check`, aber vier Dateien bestehen `ruff format --check` nicht; CI prüft das Format nicht. | Der lokale Qualitätsstandard und CI widersprechen sich. |
@@ -68,7 +68,7 @@ Jede Phase soll in kleine Issues und Pull Requests zerlegt werden. Protokoll-/Re
 
 Ziel: Der aktuelle Stand ist reproduzierbar, dokumentiert und auf betroffener Hardware bestätigt.
 
-- [x] **HASS / P0:** `idm-heatpump-api` in `manifest.json` zunächst exakt auf `0.3.8` pinnen; `pymodbus`-Kompatibilität ebenfalls bewusst festlegen.
+- [x] **HASS / P0:** `idm-heatpump-api` in `manifest.json` zunächst exakt auf `0.4.0` pinnen; `pymodbus`-Kompatibilität ebenfalls bewusst festlegen.
   - Akzeptanz: Frische HACS-Installation löst immer die getestete Kombination auf.
   - Akzeptanz: CI installiert exakt dieselben Runtime-Abhängigkeiten wie das Release-ZIP.
 - [ ] **HASS / P0:** Fix für Issue #44 mit dem Reporter auf IDM Terra SWM / Navigator 2 validieren.
@@ -83,7 +83,7 @@ Ziel: Der aktuelle Stand ist reproduzierbar, dokumentiert und auf betroffener Ha
   - HASS-README, deutsche README, Manifest, Changelog, Wiki und API-README prüfen.
   - „Official“ bis zu einer Core-Aufnahme durch „inoffizielle Home-Assistant-Custom-Integration“ ersetzen.
   - Testzahlen und Qualitätsstatus nicht als manuell gepflegte Momentaufnahme ausgeben oder automatisch erzeugen.
-  - Stand 2026-07-02: Aktuelle README-/Wiki-/Manifest-Aussagen sind auf Home Assistant 2026.5.0, `pymodbus==3.12.1`, `idm-heatpump-api[web]==0.3.8` und inoffiziellen HACS-Status ausgerichtet; historische Changelog-Einträge bleiben unverändert.
+  - Stand 2026-07-02: Aktuelle README-/Wiki-/Manifest-Aussagen sind auf Home Assistant 2026.5.0, `pymodbus==3.12.1`, `idm-heatpump-api[web]==0.4.0` und inoffiziellen HACS-Status ausgerichtet; historische Changelog-Einträge bleiben unverändert.
 - [x] **HASS / P0:** Optionale lokale Web-Zusatzdaten aus der API einbinden.
   - Akzeptanz: PIN ist im Config- und Reconfigure-Flow optional.
   - Akzeptanz: Ohne PIN bleibt die Integration vollständig im Modbus-only-Betrieb.
@@ -354,7 +354,7 @@ Diese Punkte sind sinnvoll, aber erst nach Stabilität und Verträgen:
 
 | Reihenfolge | Repository | Titel | Priorität |
 |---:|---|---|---|
-| 1 | HASS | Pin idm-heatpump-api 0.3.8 and add release dependency smoke test | P0 |
+| 1 | HASS | Pin idm-heatpump-api 0.4.0 and add release dependency smoke test | P0 |
 | 2 | HASS | Verify v0.7.3 on Terra SWM / Navigator 2 and close #44 | P0 |
 | 3 | HASS | Stabilize GitHub Pages deployment after queued timeout | P0 |
 | 4 | API | Enforce Ruff formatting in CI | P0 |

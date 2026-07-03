@@ -21,7 +21,7 @@ path.
 
 ### Added
 
-- Integrated the optional local web supplement from `idm-heatpump-api[web]==0.3.8`.
+- Integrated the optional local web supplement from `idm-heatpump-api[web]==0.4.0`.
 - Added optional local web PIN handling in setup and reconfiguration.
 - Added web supplement options for enabling the web poll and configuring a
   separate web interval.
@@ -35,6 +35,9 @@ path.
 - Modbus remains the authoritative data path; duplicate web values are skipped.
 - Missing PIN, unavailable web API, and runtime web failures no longer affect
   Modbus polling.
+- Runtime library updated to `idm-heatpump-api[web]==0.4.0`, which keeps the
+  Modbus `firmware_version` register disabled by default for safer Navigator 10
+  polling.
 
 ### Fixed
 
