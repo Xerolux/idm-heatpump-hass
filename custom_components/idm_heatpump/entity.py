@@ -22,6 +22,19 @@ def build_entity_unique_id(entry_id: str, entity_key: str) -> str:
     return f"{entry_id}_{entity_key}"
 
 
+def build_device_info(coordinator: IdmCoordinator) -> DeviceInfo:
+    """Build device info from the latest coordinator model metadata."""
+    device_info = DeviceInfo(
+        identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
+        name=coordinator.config_entry.title,  # type: ignore[union-attr]
+        manufacturer=MANUFACTURER,
+        model=coordinator.model_name,
+    )
+    if coordinator.firmware_version:
+        device_info["sw_version"] = coordinator.firmware_version
+    return device_info
+
+
 class IdmEntity(CoordinatorEntity[IdmCoordinator]):
     """Base class for all IDM Heatpump entities."""
 
@@ -38,15 +51,10 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
         self.entity_description = entity_desc
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, reg.name)
-        device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
-            name=coordinator.config_entry.title,  # type: ignore[union-attr]
-            manufacturer=MANUFACTURER,
-            model=coordinator.model_name,
-        )
-        if coordinator.firmware_version:
-            device_info["sw_version"] = coordinator.firmware_version
-        self._attr_device_info = device_info
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self.coordinator)
 
     @property
     def available(self) -> bool:

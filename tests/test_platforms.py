@@ -310,6 +310,39 @@ class TestSensorAsyncSetupEntry:
         assert hotgas.native_value == 72.5
         assert hotgas.available is True
 
+    async def test_web_sensor_device_info_uses_latest_firmware_metadata(self):
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = True
+        coord.model_name = "Navigator 2.0 / 10"
+        coord.firmware_version = None
+        coord._registers = []
+        coord.web_supplement = None
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        software = next(
+            entity
+            for entity in added_entities
+            if isinstance(entity, IdmWebSensor) and entity.entity_description.key == "web_software_version"
+        )
+        assert "sw_version" not in software.device_info
+
+        coord.model_name = "Navigator 10"
+        coord.firmware_version = "NAV10_20.24-880-g265e09c4a"
+
+        assert software.device_info["model"] == "Navigator 10"
+        assert software.device_info["sw_version"] == "NAV10_20.24-880-g265e09c4a"
+
     async def test_does_not_add_web_sensors_when_web_disabled(self):
         from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
 

@@ -90,6 +90,17 @@ def _normalize_web_data(data: Any) -> IdmWebSupplement:
         if isinstance(raw_values, dict)
         else {str(name): _normalize_sensor_value(value) for name, value in values.items()}
     )
+    metadata_values = {
+        "navigator_version": _read_str_attr(data, "navigator_version"),
+        "software_version": _read_str_attr(data, "software_version"),
+        "heatpump_model": _read_str_attr(data, "heatpump_model"),
+    }
+    for name, value in metadata_values.items():
+        if value is None:
+            continue
+        values.setdefault(name, value)
+        sensor_values.setdefault(name, IdmWebSensorValue(value=value, native_value=value))
+
     return IdmWebSupplement(
         navigator_version=_read_str_attr(data, "navigator_version"),
         software_version=_read_str_attr(data, "software_version"),

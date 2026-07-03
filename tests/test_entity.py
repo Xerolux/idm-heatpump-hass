@@ -81,37 +81,37 @@ class TestIdmEntityInit:
 
     def test_device_info_has_domain_identifier(self):
         entity = _make_entity()
-        assert (DOMAIN, "test_entry_id") in entity._attr_device_info["identifiers"]
+        assert (DOMAIN, "test_entry_id") in entity.device_info["identifiers"]
 
     def test_device_info_has_manufacturer(self):
         entity = _make_entity()
-        assert entity._attr_device_info["manufacturer"] == MANUFACTURER
+        assert entity.device_info["manufacturer"] == MANUFACTURER
 
     def test_device_info_has_model(self):
         entity = _make_entity()
-        assert entity._attr_device_info["model"] == MODEL
+        assert entity.device_info["model"] == MODEL
 
     def test_device_info_uses_entry_title(self):
         coord = _make_coordinator()
         coord.config_entry.title = "My Heat Pump"
         entity = _make_entity(coordinator=coord)
-        assert entity._attr_device_info["name"] == "My Heat Pump"
+        assert entity.device_info["name"] == "My Heat Pump"
 
     def test_device_info_uses_detected_model(self):
         coord = _make_coordinator()
         coord.model_name = "Navigator 10"
         entity = _make_entity(coordinator=coord)
-        assert entity._attr_device_info["model"] == "Navigator 10"
+        assert entity.device_info["model"] == "Navigator 10"
 
     def test_device_info_has_sw_version_when_firmware_known(self):
         coord = _make_coordinator(firmware_version="1.2.3")
         entity = _make_entity(coordinator=coord)
-        assert entity._attr_device_info["sw_version"] == "1.2.3"
+        assert entity.device_info["sw_version"] == "1.2.3"
 
     def test_device_info_omits_sw_version_when_firmware_unknown(self):
         coord = _make_coordinator(firmware_version=None)
         entity = _make_entity(coordinator=coord)
-        assert "sw_version" not in entity._attr_device_info
+        assert "sw_version" not in entity.device_info
 
     def test_entity_description_set(self):
         desc = MagicMock()

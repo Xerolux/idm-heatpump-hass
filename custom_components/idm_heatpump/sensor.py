@@ -14,18 +14,18 @@ from datetime import timedelta
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from idm_heatpump.client import DataType
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
+from .const import CONF_TECHNICIAN_CODES
 from .coordinator import IdmCoordinator
-from .entity import IdmEntity, build_entity_unique_id
+from .entity import IdmEntity, build_device_info, build_entity_unique_id
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .technician_codes import calculate_codes
@@ -357,15 +357,10 @@ class IdmWebSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
             entity_category=definition.entity_category,
             entity_registry_enabled_default=definition.enabled_by_default,
         )
-        device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
-            name=coordinator.config_entry.title,  # type: ignore[union-attr]
-            manufacturer=MANUFACTURER,
-            model=coordinator.model_name,
-        )
-        if coordinator.firmware_version:
-            device_info["sw_version"] = coordinator.firmware_version
-        self._attr_device_info = device_info
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self.coordinator)
 
     @property
     def available(self) -> bool:
@@ -411,16 +406,11 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, f"technician_{level}")
         self._attr_name = self._NAMES[level]
-        device_info = DeviceInfo(
-            identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
-            name=coordinator.config_entry.title,  # type: ignore[union-attr]
-            manufacturer=MANUFACTURER,
-            model=coordinator.model_name,
-        )
-        if coordinator.firmware_version:
-            device_info["sw_version"] = coordinator.firmware_version
-        self._attr_device_info = device_info
         self._cancel_timer: Callable[[], None] | None = None
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self.coordinator)
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

@@ -89,8 +89,16 @@ async def test_async_read_web_supplement_reads_navigator10(monkeypatch: pytest.M
         navigator_version="Navigator 10",
         software_version="NAV10_20.23-903.iup",
         heatpump_model="iPump",
-        values={"software_version": "NAV10_20.23-903.iup"},
-        sensor_values={"software_version": IdmWebSensorValue("NAV10_20.23-903.iup", "NAV10_20.23-903.iup")},
+        values={
+            "software_version": "NAV10_20.23-903.iup",
+            "navigator_version": "Navigator 10",
+            "heatpump_model": "iPump",
+        },
+        sensor_values={
+            "software_version": IdmWebSensorValue("NAV10_20.23-903.iup", "NAV10_20.23-903.iup"),
+            "navigator_version": IdmWebSensorValue("Navigator 10", "Navigator 10"),
+            "heatpump_model": IdmWebSensorValue("iPump", "iPump"),
+        },
     )
     assert nav10.closed
     assert not nav20.closed
@@ -195,7 +203,8 @@ async def test_async_read_web_supplement_falls_back_to_navigator20(
     assert result is not None
     assert result.navigator_version == "Navigator 2.0"
     assert result.software_version == "2.35"
-    assert result.sensor_values == {}
+    assert result.sensor_values["navigator_version"].native_value == "Navigator 2.0"
+    assert result.sensor_values["software_version"].native_value == "2.35"
     assert nav10.closed
     assert nav20.closed
 
