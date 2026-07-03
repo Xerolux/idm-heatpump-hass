@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 
 EXPECTED_RUNTIME_REQUIREMENTS = [
-    "pymodbus==3.12.1",
+    "pymodbus>=3.12.1,<4.0",
     "idm-heatpump-api[web]==0.4.0",
 ]
 
@@ -76,5 +76,4 @@ def test_user_facing_dependency_docs_match_manifest() -> None:
     ]
 
     for requirement in EXPECTED_RUNTIME_REQUIREMENTS:
-        package, version = requirement.split("==", maxsplit=1)
-        assert all(package in _read(path) and f"=={version}" in _read(path) for path in docs)
+        assert all(requirement in _read(path) for path in docs)

@@ -21,7 +21,7 @@ ha_platforms:
 ha_integration_type: device
 ha_quality_scale: gold
 ha_requirements:
-  - pymodbus==3.12.1
+  - pymodbus>=3.12.1,<4.0
   - idm-heatpump-api[web]==0.4.0
 ---
 
