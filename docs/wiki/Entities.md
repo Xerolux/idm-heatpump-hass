@@ -12,7 +12,8 @@ The integration dynamically generates entities based on your heat pump configura
 | **Select** | 4+ | System mode, heating circuit modes, solar mode, ISC mode |
 | **Switch** | 4 | External heating/cooling/DHW demand, one-time DHW charge |
 
-Adding more heating circuits, zones, or enabling cascade increases the counts.
+Adding more heating circuits, zones, cascade, or optional web supplement data
+increases the counts.
 
 ---
 
@@ -129,6 +130,29 @@ Adding more heating circuits, zones, or enabling cascade increases the counts.
 | `hc_{x}_room_temp` | Room temperature |
 | `hc_{x}_setpoint_flow_temp` | Current setpoint flow temp |
 | `hc_{x}_active_mode` | Active operating mode |
+
+### Optional Web Supplement Sensors
+
+When **Web supplement data** is enabled and a local Navigator web PIN is
+configured, the integration adds read-only diagnostic sensors from the local web
+API. These sensors are additive; Modbus entities remain the primary data source.
+
+Typical web-only sensors include:
+
+| Entity | Description |
+|--------|-------------|
+| Navigator version (Web) | Detected Navigator generation, for example Navigator 2.0 or Navigator 10 |
+| Software Version (Web) | Controller software version reported by the local web interface |
+| Wärmepumpenmodell (Web) | Heat pump model/type reported by the web interface |
+| Infosystem Meldungen Anzahl (Web) | Number of active Navigator 10 infosystem notifications |
+| Infosystem Meldungen (Web) | Summary of active Navigator 10 infosystem notifications |
+| Heißgastemperatur (Web) | Web-only diagnostic temperature when available |
+| Verdampfer Druck (Web) | Web-only refrigerant pressure when available |
+| Platinentemperatur (Web) | Controller board temperature when available |
+
+If a web value duplicates an existing Modbus entity, the web entity is skipped.
+This prevents duplicate dashboard values and keeps Modbus as the authoritative
+source for register-backed data.
 
 ---
 

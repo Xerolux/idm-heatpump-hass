@@ -172,10 +172,10 @@ rules:
   test-coverage:
     status: done
     comment: >
-      247 tests covering 97% of integration code. All main modules at 100%.
-      Remaining 3%: idm_heatpump library edge cases and registers.py (97%).
-      and registers.py (97%). All platform files, coordinator, config_flow,
-      entity, services, diagnostics, init, and technician_codes at 100%.
+      The integration is covered by the pytest suite and strict mypy checks.
+      Coverage-sensitive areas include setup/unload, config and reconfigure
+      flows, coordinator polling, platforms, services, diagnostics, API
+      contracts, and optional web supplement handling.
 
   # ── GOLD ───────────────────────────────────────────────────────────────────
 
@@ -317,9 +317,12 @@ rules:
       pymodbus provides AsyncModbusTcpClient. All I/O is non-blocking async.
 
   inject-websession:
-    status: exempt
+    status: done
     comment: >
-      Modbus TCP does not use HTTP/websessions. Not applicable.
+      Modbus remains the baseline data path. Optional local web supplement
+      clients are created only when a PIN is configured and close their
+      sessions after each read; future API releases can accept an injected
+      session through their public factories.
 
   strict-typing:
     status: done
@@ -350,4 +353,5 @@ rules:
   # test-coverage-95:
   #   status: done
   #   comment: >
-  #     97% overall test coverage achieved (247 tests).
+  #     Overall test coverage is tracked by the pytest suite and CI rather than
+  #     by manually maintained test counts in this file.

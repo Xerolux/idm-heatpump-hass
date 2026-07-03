@@ -7,6 +7,7 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
+import asyncio
 import logging
 import re
 from dataclasses import dataclass
@@ -20,24 +21,33 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers import issue_registry as ir
 from homeassistant.loader import async_get_integration
 
 from .const import (
     CONF_ENABLE_CASCADE,
+    CONF_DETECTED_NAVIGATOR_VERSION,
+    CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
+    CONF_WEB_ENABLED,
+    CONF_WEB_PIN,
+    CONF_WEB_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
+    DEFAULT_WEB_ENABLED,
+    DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     MODEL,
     NAME,
 )
+from .web_data import async_read_web_supplement, merge_model_info, web_pin_configured
 from .coordinator import IdmCoordinator
 from idm_heatpump import IdmModbusClient, IdmModelInfo
 from idm_heatpump.const import MODEL_UNKNOWN
@@ -71,6 +81,7 @@ class IdmHeatpumpData:
 
     coordinator: IdmCoordinator
     client: IdmModbusClient
+    web_task: asyncio.Task[None] | None = None
 
 
 IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
@@ -106,6 +117,14 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None]:
         firmware_version = None
 
     return model_name, firmware_version
+
+
+async def _web_poll_loop(coordinator: IdmCoordinator, interval: int) -> None:
+    """Poll optional web supplement data independently from Modbus."""
+    await asyncio.sleep(0.3)
+    while True:
+        await coordinator.async_refresh_web_supplement()
+        await asyncio.sleep(interval)
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -155,6 +174,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     zone_rooms = entry.options.get(CONF_ZONE_ROOMS, {})
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
     enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
+    web_pin = str(entry.data.get(CONF_WEB_PIN, "")).strip() or None
+    web_enabled = bool(entry.options.get(CONF_WEB_ENABLED, DEFAULT_WEB_ENABLED))
+    web_scan_interval = int(entry.options.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL))
+
+    if web_pin_configured(web_pin):
+        ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+    else:
+        ir.async_create_issue(
+            hass,
+            DOMAIN,
+            "web_pin_missing",
+            is_fixable=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="web_pin_missing",
+            translation_placeholders={"name": entry.title},
+        )
 
     # Use the library via the adapter (migration Option B)
     client = get_idm_client(host=host, port=port, slave_id=slave_id)
@@ -171,6 +206,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
     try:
         model_name, firmware_version = await _detect_model_info(client)
+        detected_model_name = entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION)
+        if isinstance(detected_model_name, str) and detected_model_name.strip():
+            model_name = detected_model_name.strip()
+        detected_firmware_version = entry.data.get(CONF_DETECTED_SOFTWARE_VERSION)
+        if isinstance(detected_firmware_version, str) and detected_firmware_version.strip():
+            firmware_version = detected_firmware_version.strip()
+
+        web_supplement = None
+        if web_enabled and web_pin_configured(web_pin):
+            try:
+                web_supplement = await async_read_web_supplement(host, web_pin)
+            except Exception:
+                _LOGGER.debug("Initial IDM web supplement detection failed", exc_info=True)
+            model_name, firmware_version = merge_model_info(
+                model_name,
+                firmware_version,
+                web_supplement,
+            )
+
         detected_model_info = client.model_info
         if not isinstance(detected_model_info, IdmModelInfo):
             detected_model_info = None
@@ -205,6 +259,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             model_name=model_name,
             firmware_version=firmware_version,
             model_info=detected_model_info,
+            web_pin=web_pin if web_enabled else None,
+            web_supplement=web_supplement,
         )
         coordinator.setup_registers(
             circuits,
@@ -214,7 +270,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             model_info=detected_model_info,
         )
 
-        entry.runtime_data = IdmHeatpumpData(coordinator=coordinator, client=client)
+        web_task = None
+        if web_enabled and web_pin_configured(web_pin):
+            web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
+
+        entry.runtime_data = IdmHeatpumpData(
+            coordinator=coordinator,
+            client=client,
+            web_task=web_task,
+        )
 
         await coordinator.async_config_entry_first_refresh()
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
@@ -233,6 +297,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+        web_task = getattr(entry.runtime_data, "web_task", None)
+        if isinstance(web_task, asyncio.Future):
+            web_task.cancel()
+            try:
+                await web_task
+            except asyncio.CancelledError:
+                pass
         await entry.runtime_data.client.disconnect()
         from .services import async_unload_services
 

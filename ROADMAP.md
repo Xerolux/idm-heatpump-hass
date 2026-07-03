@@ -21,9 +21,9 @@ Nicht vorgesehen sind Cloud-Zwang, Telemetrie, Fernzugriff, Firmware-Updates ode
 
 ### Was bereits gut ist
 
-- Aktuelle Releases: HASS `v0.7.3`, API `v0.3.7`.
+- Aktuelle Releases: HASS `v0.7.3`, API `v0.3.8`.
 - Die Integration nutzt die eigenständige API-Bibliothek und hat die alten lokalen Registergeneratoren weitgehend entfernt.
-- Lokale Prüfung der Integration: 373 Tests bestanden; Ruff, Ruff-Format und striktes mypy sind grün.
+- Lokale Prüfung der Integration: pytest und striktes mypy sind grün.
 - Lokale Prüfung der API: 46 Tests und mypy bestanden; GitHub Actions sind für die letzten Änderungen grün.
 - Asynchroner Modbus-Client, Batch-Reads, Wiederverbindung, Modell-/Fähigkeitserkennung, Registergrenzen und EEPROM-Schutz existieren.
 - HACS-, Hassfest-, Release-, Pages- und Wiki-Workflows sind vorhanden.
@@ -33,7 +33,7 @@ Nicht vorgesehen sind Cloud-Zwang, Telemetrie, Fernzugriff, Firmware-Updates ode
 
 | Priorität | Befund | Auswirkung |
 |---|---|---|
-| P0 | Die Integration erlaubt `idm-heatpump-api>=0.3.3`, benötigt für die aktuellen Modellfilter aber faktisch die Korrekturen aus `0.3.7`. | Nicht reproduzierbare Installationen und Rückfall auf bekannte Registerfehler. |
+| P0 | Die Integration ist für `idm-heatpump-api[web]==0.3.8` vorbereitet; das API-Release muss vor dem HASS-Release veröffentlicht sein. | HACS kann die neue Web-API erst installieren, wenn das Paket auf PyPI verfügbar ist. |
 | P0 | Issue [#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44) ist trotz gemergtem Fix und Release noch offen. | Der Fix ist ohne Bestätigung auf echter Terra-SWM-/Navigator-2-Hardware nicht abgeschlossen. |
 | P0 | Der HASS-Pages-Workflow lief zuletzt in einen Deployment-Timeout. | Dokumentation kann trotz grüner Code-CI veraltet bleiben. |
 | P0 | API-Code besteht `ruff check`, aber vier Dateien bestehen `ruff format --check` nicht; CI prüft das Format nicht. | Der lokale Qualitätsstandard und CI widersprechen sich. |
@@ -46,7 +46,7 @@ Nicht vorgesehen sind Cloud-Zwang, Telemetrie, Fernzugriff, Firmware-Updates ode
 | P1 | Release-Automation erzeugt und pusht Versionscommits/Tags selbst; Integration und API werden getrennt veröffentlicht. | Teilreleases, falsche Tags und schweres Rollback sind möglich. |
 | P2 | `quality_scale.yaml` bezeichnet Gold und Platinum als erledigt. Eine offizielle Einstufung gibt es aber erst nach Aufnahme und Review in Home Assistant Core. | Außenwirkung und tatsächlicher HA-Status können verwechselt werden. |
 | P2 | Die API-README nennt die HASS-Integration „official“. Das Projekt ist aktuell eine inoffizielle Custom-Integration. | Missverständliche Kommunikation und unnötiges Marken-/Support-Risiko. |
-| P2 | Qualitätsangaben sind veraltet (zum Beispiel 247 statt aktuell 373 Tests) und mehrere Dokumentationsquellen werden separat gepflegt. | Dokumentationsdrift und unzuverlässige Statusaussagen. |
+| P2 | Manuell gepflegte Qualitätsangaben und mehrere Dokumentationsquellen können auseinanderlaufen. | Dokumentationsdrift und unzuverlässige Statusaussagen. |
 | P2 | Die API unterstützt laut Paketmetadaten nur Python 3.12/3.13-Klassifikatoren, wird aber durch HASS mit 3.14 genutzt. | PyPI-Metadaten und reale Nutzung widersprechen sich. |
 | P2 | Dependabot/Renovate, CodeQL, Dependency-Audit und verpflichtende Coverage-Grenzen fehlen. | Abhängigkeiten und Lieferkette werden nur manuell gepflegt. |
 | P2 | Für reale Geräte gibt es keine öffentlich dokumentierte Modell-/Firmware-Testmatrix. | „Unterstützt“ ist nicht präzise genug messbar. |
@@ -68,7 +68,7 @@ Jede Phase soll in kleine Issues und Pull Requests zerlegt werden. Protokoll-/Re
 
 Ziel: Der aktuelle Stand ist reproduzierbar, dokumentiert und auf betroffener Hardware bestätigt.
 
-- [x] **HASS / P0:** `idm-heatpump-api` in `manifest.json` zunächst exakt auf `0.3.7` pinnen; `pymodbus`-Kompatibilität ebenfalls bewusst festlegen.
+- [x] **HASS / P0:** `idm-heatpump-api` in `manifest.json` zunächst exakt auf `0.3.8` pinnen; `pymodbus`-Kompatibilität ebenfalls bewusst festlegen.
   - Akzeptanz: Frische HACS-Installation löst immer die getestete Kombination auf.
   - Akzeptanz: CI installiert exakt dieselben Runtime-Abhängigkeiten wie das Release-ZIP.
 - [ ] **HASS / P0:** Fix für Issue #44 mit dem Reporter auf IDM Terra SWM / Navigator 2 validieren.
@@ -83,7 +83,13 @@ Ziel: Der aktuelle Stand ist reproduzierbar, dokumentiert und auf betroffener Ha
   - HASS-README, deutsche README, Manifest, Changelog, Wiki und API-README prüfen.
   - „Official“ bis zu einer Core-Aufnahme durch „inoffizielle Home-Assistant-Custom-Integration“ ersetzen.
   - Testzahlen und Qualitätsstatus nicht als manuell gepflegte Momentaufnahme ausgeben oder automatisch erzeugen.
-  - Stand 2026-07-02: Aktuelle README-/Wiki-/Manifest-Aussagen sind auf Home Assistant 2026.5.0, `pymodbus==3.12.1`, `idm-heatpump-api==0.3.7` und inoffiziellen HACS-Status ausgerichtet; historische Changelog-Einträge bleiben unverändert.
+  - Stand 2026-07-02: Aktuelle README-/Wiki-/Manifest-Aussagen sind auf Home Assistant 2026.5.0, `pymodbus==3.12.1`, `idm-heatpump-api[web]==0.3.8` und inoffiziellen HACS-Status ausgerichtet; historische Changelog-Einträge bleiben unverändert.
+- [x] **HASS / P0:** Optionale lokale Web-Zusatzdaten aus der API einbinden.
+  - Akzeptanz: PIN ist im Config- und Reconfigure-Flow optional.
+  - Akzeptanz: Ohne PIN bleibt die Integration vollständig im Modbus-only-Betrieb.
+  - Akzeptanz: Falsche PIN wird direkt im Flow angezeigt und geloggt.
+  - Akzeptanz: Web-Poll läuft mit separatem Intervall, leicht verzögert zum Modbus-Poll, und Web-Fehler brechen Modbus nie ab.
+  - Akzeptanz: Modbus-Registerwerte bleiben führend; Web-Sensoren werden nur für zusätzliche Werte angelegt oder wenn kein Modbus-Duplikat existiert.
 - [x] **HASS / P0:** Einen Release-Smoke-Test dokumentieren: Installation aus Release-Artefakt, Config Flow, erster Poll, ein sicherer Write, Reload, Unload und Upgrade vom vorherigen Release.
 
 Abschlusskriterium: v0.7.x läuft auf mindestens Navigator 2.0 und Navigator 10 ohne bekannte P0-Regression; Dokumentation und veröffentlichte Abhängigkeiten stimmen überein.
@@ -220,8 +226,8 @@ Modell-Gate, Test und Hardware-Rückmeldung laufen.
 
 #### Nicht übernehmen ohne belastbaren Nachweis
 
-- [x] **Web-Scraping der IDM-Oberfläche nicht als Kernpfad einführen:** Web-UI- und hpweb-Ansätze können hilfreiche Ideen für Diagnose/Autokonfiguration liefern, passen aber nicht zum aktuellen Modbus/API-Vertrag.
-  - Maximal späterer Spike; kein Login-/Cookie-Scraping im Kern der Integration.
+- [x] **Web-Oberfläche nur als optionalen Zusatzpfad verwenden:** Die neue API-Web-Schicht liefert Diagnose- und Autokonfigurationsdaten, bleibt aber strikt read-only und additiv.
+  - Kein Web-Wert ersetzt einen vorhandenen Modbus-Registerwert. Ohne PIN, bei falscher PIN oder bei Web-Fehlern läuft Modbus weiter.
 - [x] **Register 4108 nicht als §14a-/Leistungsbegrenzungsfeature bewerben:** Geräteberichte und unser Issue [#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44) zeigen, dass 4108 modellabhängig, teils Navigator-10-only und in der Wirkung unbestätigt ist.
   - Nur modell-gated, klar als experimentell/undokumentiert beziehungsweise intern behandeln, bis IDM-Doku und Hardwaretests vorliegen.
 - [x] **Nicht jeden GLT-Monitor-Wert automatisch aufnehmen:** Registerberichte zeigen sowohl wertvolle Funde als auch Werte ohne Modbus-Verfügbarkeit.
@@ -348,7 +354,7 @@ Diese Punkte sind sinnvoll, aber erst nach Stabilität und Verträgen:
 
 | Reihenfolge | Repository | Titel | Priorität |
 |---:|---|---|---|
-| 1 | HASS | Pin idm-heatpump-api 0.3.7 and add release dependency smoke test | P0 |
+| 1 | HASS | Pin idm-heatpump-api 0.3.8 and add release dependency smoke test | P0 |
 | 2 | HASS | Verify v0.7.3 on Terra SWM / Navigator 2 and close #44 | P0 |
 | 3 | HASS | Stabilize GitHub Pages deployment after queued timeout | P0 |
 | 4 | API | Enforce Ruff formatting in CI | P0 |
