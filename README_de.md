@@ -6,6 +6,7 @@
 [![Downloads][downloads-shield]][releases]
 [![GitHub Activity][commits-shield]][commits]
 [![License][license-shield]](LICENSE)
+[![hainstall][hainstallbadge]][hainstall]
 [![HACS][hacs-badge]][hacs]
 
 [![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
@@ -213,6 +214,8 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [commits-shield]: https://img.shields.io/github/commit-activity/y/Xerolux/idm-heatpump-hass.svg?style=for-the-badge
 [commits]: https://github.com/Xerolux/idm-heatpump-hass/commits/main
 [license-shield]: https://img.shields.io/github/license/Xerolux/idm-heatpump-hass.svg?style=for-the-badge
+[hainstall]: https://my.home-assistant.io/redirect/config_flow_start/?domain=idm_heatpump
+[hainstallbadge]: https://img.shields.io/badge/dynamic/json?style=for-the-badge&logo=home-assistant&logoColor=ccc&label=usage&suffix=%20installs&cacheSeconds=15600&url=https://analytics.home-assistant.io/custom_integrations.json&query=$.idm_heatpump.total
 [hacs]: https://hacs.xyz
 [hacs-badge]: https://img.shields.io/badge/HACS-Custom-orange.svg?style=for-the-badge
 [github-sponsors]: https://github.com/sponsors/xerolux
