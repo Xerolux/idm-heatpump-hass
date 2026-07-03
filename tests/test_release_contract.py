@@ -60,6 +60,13 @@ def test_release_artifact_is_built_from_manifest_directory() -> None:
     assert "manifest.json" not in release_workflow.partition("zip -r ../../idm_heatpump.zip .")[2].partition("\n\n")[0]
 
 
+def test_release_workflow_does_not_duplicate_existing_changelog_entries() -> None:
+    release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+
+    assert 'grep -q "^## \\\\[$VERSION\\\\]" docs/CHANGELOG.md' in release_workflow
+    assert "Changelog already contains an entry for $VERSION" in release_workflow
+
+
 def test_user_facing_dependency_docs_match_manifest() -> None:
     docs = [
         ROOT / "README.md",
