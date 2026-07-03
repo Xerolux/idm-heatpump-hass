@@ -30,6 +30,10 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_ROOM_TEMP_FORWARDING,
+    CONF_ROOM_TEMP_FORWARDING_ENTITIES,
+    CONF_ROOM_TEMP_FORWARDING_INTERVAL,
+    CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     CONF_WEB_ENABLED,
@@ -40,6 +44,9 @@ from .const import (
     CONF_ZONE_ROOMS,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
+    DEFAULT_ROOM_TEMP_FORWARDING,
+    DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
+    DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
@@ -50,6 +57,7 @@ from .const import (
 )
 from .web_data import async_read_web_supplement, merge_model_info, web_pin_configured
 from .coordinator import IdmCoordinator
+from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
 from idm_heatpump import IdmModbusClient, IdmModelInfo
 from idm_heatpump.const import MODEL_UNKNOWN
 
@@ -83,6 +91,7 @@ class IdmHeatpumpData:
     coordinator: IdmCoordinator
     client: IdmModbusClient
     web_task: asyncio.Task[None] | None = None
+    room_temp_forwarding_task: asyncio.Task[None] | None = None
 
 
 IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
@@ -183,6 +192,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     web_host = str(entry.data.get(CONF_WEB_HOST, "")).strip() or host
     web_enabled = bool(entry.options.get(CONF_WEB_ENABLED, DEFAULT_WEB_ENABLED))
     web_scan_interval = int(entry.options.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL))
+    room_temp_forwarding_enabled = bool(entry.options.get(CONF_ROOM_TEMP_FORWARDING, DEFAULT_ROOM_TEMP_FORWARDING))
+    room_temp_forwarding_entities = entry.options.get(CONF_ROOM_TEMP_FORWARDING_ENTITIES, {})
+    room_temp_forwarding_interval = int(
+        entry.options.get(CONF_ROOM_TEMP_FORWARDING_INTERVAL, DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL)
+    )
+    room_temp_forwarding_tolerance = float(
+        entry.options.get(CONF_ROOM_TEMP_FORWARDING_TOLERANCE, DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE)
+    )
 
     if web_pin_configured(web_pin):
         ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
@@ -280,18 +297,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             model_info=detected_model_info,
         )
 
-        web_task = None
-        if web_enabled and web_pin_configured(web_pin):
-            web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
-
         entry.runtime_data = IdmHeatpumpData(
             coordinator=coordinator,
             client=client,
-            web_task=web_task,
         )
 
         await coordinator.async_config_entry_first_refresh()
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+
+        if web_enabled and web_pin_configured(web_pin):
+            entry.runtime_data.web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
+
+        if room_temp_forwarding_enabled and isinstance(room_temp_forwarding_entities, dict):
+            forwarding_entities = {
+                str(circuit): str(entity_id)
+                for circuit, entity_id in room_temp_forwarding_entities.items()
+                if str(entity_id).strip()
+            }
+            if forwarding_entities:
+                forwarder = RoomTempForwarder(
+                    hass,
+                    coordinator,
+                    RoomTempForwardingConfig(
+                        entities=forwarding_entities,
+                        interval=room_temp_forwarding_interval,
+                        tolerance=room_temp_forwarding_tolerance,
+                    ),
+                )
+                entry.runtime_data.room_temp_forwarding_task = asyncio.create_task(forwarder.async_run())
     except BaseException:
         try:
             await client.disconnect()
@@ -312,6 +345,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
             web_task.cancel()
             try:
                 await web_task
+            except asyncio.CancelledError:
+                pass
+        room_temp_forwarding_task = getattr(entry.runtime_data, "room_temp_forwarding_task", None)
+        if isinstance(room_temp_forwarding_task, asyncio.Future):
+            room_temp_forwarding_task.cancel()
+            try:
+                await room_temp_forwarding_task
             except asyncio.CancelledError:
                 pass
         await entry.runtime_data.client.disconnect()

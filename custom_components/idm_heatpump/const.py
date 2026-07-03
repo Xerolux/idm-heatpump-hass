@@ -33,6 +33,10 @@ CONF_WEB_ENABLED: str = "web_extra_data"
 CONF_WEB_SCAN_INTERVAL: str = "web_scan_interval"
 CONF_DETECTED_NAVIGATOR_VERSION: str = "detected_navigator_version"
 CONF_DETECTED_SOFTWARE_VERSION: str = "detected_software_version"
+CONF_ROOM_TEMP_FORWARDING: str = "room_temp_forwarding"
+CONF_ROOM_TEMP_FORWARDING_INTERVAL: str = "room_temp_forwarding_interval"
+CONF_ROOM_TEMP_FORWARDING_TOLERANCE: str = "room_temp_forwarding_tolerance"
+CONF_ROOM_TEMP_FORWARDING_ENTITIES: str = "room_temp_forwarding_entities"
 
 DEFAULT_HOST: str = ""
 DEFAULT_PORT: int = 502
@@ -42,6 +46,9 @@ DEFAULT_HIDE_UNUSED: bool = True
 DEFAULT_ENABLE_CASCADE: bool = False
 DEFAULT_WEB_ENABLED: bool = True
 DEFAULT_WEB_SCAN_INTERVAL: int = 30
+DEFAULT_ROOM_TEMP_FORWARDING: bool = False
+DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL: int = 300
+DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE: float = 0.2
 
 UNUSED_VALUE: float = -1.0
 

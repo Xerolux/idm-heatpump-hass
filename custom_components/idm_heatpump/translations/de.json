@@ -54,7 +54,10 @@
           "technician_codes": "Fachmann-Ebene Codes anzeigen",
           "enable_cascade": "Kaskaden-Register aktivieren",
           "web_extra_data": "Web-Zusatzdaten aktivieren",
-          "web_scan_interval": "Web-Zusatzdaten-Intervall"
+          "web_scan_interval": "Web-Zusatzdaten-Intervall",
+          "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
+          "room_temp_forwarding_interval": "Intervall Raumtemperatur-Weitergabe",
+          "room_temp_forwarding_tolerance": "Toleranz Raumtemperatur-Weitergabe"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -64,7 +67,10 @@
           "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
           "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind.",
           "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten wie Navigator-Generation und Softwareversion, wenn eine PIN hinterlegt ist.",
-          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten."
+          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten.",
+          "room_temp_forwarding": "Optional: schreibt ausgewählte Home-Assistant-Temperatursensoren in die externen IDM-Raumtemperaturregister der aktiven Heizkreise.",
+          "room_temp_forwarding_interval": "Wie oft die ausgewählten Raumtemperaturen geprüft und weitergegeben werden. Zustandsänderungen werden zusätzlich sofort weitergegeben.",
+          "room_temp_forwarding_tolerance": "Schreibt erst erneut, wenn sich der Wert seit der letzten Weitergabe mindestens um diesen Betrag geändert hat."
         }
       },
       "zones": {
@@ -93,6 +99,28 @@
           "zone_7_rooms": "Anzahl der aktiven Raumfühler in Zone 8 (1–8).",
           "zone_8_rooms": "Anzahl der aktiven Raumfühler in Zone 9 (1–8).",
           "zone_9_rooms": "Anzahl der aktiven Raumfühler in Zone 10 (1–8)."
+        }
+      },
+      "room_temp_forwarding": {
+        "title": "Externe Raumtemperaturen weitergeben – {name}",
+        "description": "Wähle pro Heizkreis einen Home-Assistant-Temperatursensor aus. Die Integration schreibt diese Werte in die IDM-GLT-Raumtemperaturregister. Leere Heizkreise werden übersprungen.",
+        "data": {
+          "room_temp_forwarding_a": "Temperatursensor Heizkreis A",
+          "room_temp_forwarding_b": "Temperatursensor Heizkreis B",
+          "room_temp_forwarding_c": "Temperatursensor Heizkreis C",
+          "room_temp_forwarding_d": "Temperatursensor Heizkreis D",
+          "room_temp_forwarding_e": "Temperatursensor Heizkreis E",
+          "room_temp_forwarding_f": "Temperatursensor Heizkreis F",
+          "room_temp_forwarding_g": "Temperatursensor Heizkreis G"
+        },
+        "data_description": {
+          "room_temp_forwarding_a": "Gibt diesen Sensor an hc_a_ext_room_temp weiter.",
+          "room_temp_forwarding_b": "Gibt diesen Sensor an hc_b_ext_room_temp weiter.",
+          "room_temp_forwarding_c": "Gibt diesen Sensor an hc_c_ext_room_temp weiter.",
+          "room_temp_forwarding_d": "Gibt diesen Sensor an hc_d_ext_room_temp weiter.",
+          "room_temp_forwarding_e": "Gibt diesen Sensor an hc_e_ext_room_temp weiter.",
+          "room_temp_forwarding_f": "Gibt diesen Sensor an hc_f_ext_room_temp weiter.",
+          "room_temp_forwarding_g": "Gibt diesen Sensor an hc_g_ext_room_temp weiter."
         }
       }
     },
@@ -121,7 +149,10 @@
           "technician_codes": "Fachmann-Ebene Codes anzeigen",
           "enable_cascade": "Kaskaden-Register aktivieren",
           "web_extra_data": "Web-Zusatzdaten aktivieren",
-          "web_scan_interval": "Web-Zusatzdaten-Intervall"
+          "web_scan_interval": "Web-Zusatzdaten-Intervall",
+          "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
+          "room_temp_forwarding_interval": "Intervall Raumtemperatur-Weitergabe",
+          "room_temp_forwarding_tolerance": "Toleranz Raumtemperatur-Weitergabe"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -131,7 +162,10 @@
           "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
           "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind.",
           "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten wie Navigator-Generation und Softwareversion, wenn eine PIN hinterlegt ist.",
-          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten."
+          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten.",
+          "room_temp_forwarding": "Optional: schreibt ausgewählte Home-Assistant-Temperatursensoren in die externen IDM-Raumtemperaturregister der aktiven Heizkreise.",
+          "room_temp_forwarding_interval": "Wie oft die ausgewählten Raumtemperaturen geprüft und weitergegeben werden. Zustandsänderungen werden zusätzlich sofort weitergegeben.",
+          "room_temp_forwarding_tolerance": "Schreibt erst erneut, wenn sich der Wert seit der letzten Weitergabe mindestens um diesen Betrag geändert hat."
         }
       },
       "zones": {
@@ -160,6 +194,28 @@
           "zone_7_rooms": "Anzahl der aktiven Raumfühler in Zone 8 (1–8).",
           "zone_8_rooms": "Anzahl der aktiven Raumfühler in Zone 9 (1–8).",
           "zone_9_rooms": "Anzahl der aktiven Raumfühler in Zone 10 (1–8)."
+        }
+      },
+      "room_temp_forwarding": {
+        "title": "Externe Raumtemperaturen weitergeben – {name}",
+        "description": "Wähle pro Heizkreis einen Home-Assistant-Temperatursensor aus. Die Integration schreibt diese Werte in die IDM-GLT-Raumtemperaturregister. Leere Heizkreise werden übersprungen.",
+        "data": {
+          "room_temp_forwarding_a": "Temperatursensor Heizkreis A",
+          "room_temp_forwarding_b": "Temperatursensor Heizkreis B",
+          "room_temp_forwarding_c": "Temperatursensor Heizkreis C",
+          "room_temp_forwarding_d": "Temperatursensor Heizkreis D",
+          "room_temp_forwarding_e": "Temperatursensor Heizkreis E",
+          "room_temp_forwarding_f": "Temperatursensor Heizkreis F",
+          "room_temp_forwarding_g": "Temperatursensor Heizkreis G"
+        },
+        "data_description": {
+          "room_temp_forwarding_a": "Gibt diesen Sensor an hc_a_ext_room_temp weiter.",
+          "room_temp_forwarding_b": "Gibt diesen Sensor an hc_b_ext_room_temp weiter.",
+          "room_temp_forwarding_c": "Gibt diesen Sensor an hc_c_ext_room_temp weiter.",
+          "room_temp_forwarding_d": "Gibt diesen Sensor an hc_d_ext_room_temp weiter.",
+          "room_temp_forwarding_e": "Gibt diesen Sensor an hc_e_ext_room_temp weiter.",
+          "room_temp_forwarding_f": "Gibt diesen Sensor an hc_f_ext_room_temp weiter.",
+          "room_temp_forwarding_g": "Gibt diesen Sensor an hc_g_ext_room_temp weiter."
         }
       }
     }

@@ -421,6 +421,8 @@ def _stub_homeassistant() -> None:
     for cls_name in [
         "BooleanSelector",
         "BooleanSelectorConfig",
+        "EntitySelector",
+        "EntitySelectorConfig",
         "NumberSelector",
         "NumberSelectorConfig",
         "NumberSelectorMode",
@@ -518,6 +520,7 @@ def _stub_homeassistant() -> None:
     event_mod = _make_module("homeassistant.helpers.event")
     helpers.event = event_mod
     event_mod.async_track_time_interval = MagicMock(return_value=MagicMock())
+    event_mod.async_track_state_change_event = MagicMock(return_value=MagicMock())
 
     # homeassistant.helpers.config_validation
     cv_mod = _make_module("homeassistant.helpers.config_validation")

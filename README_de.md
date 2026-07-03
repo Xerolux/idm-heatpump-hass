@@ -33,6 +33,7 @@
 | **🌡️ System-Überwachung** | Vorlauf, Rücklauf, Warmwasser, Außentemperatur, Druck, Durchfluss |
 | **🔧 Heizkreise A–G** | Bis zu 7 Heizkreise mit individueller Sollwert- und Modussteuerung |
 | **🏠 Zonen-Module** | Bis zu 10 Zonen mit je 6 Räumen (Raumthermostat-Funktion). Navigator 10 / aktuelle Hardware verwendet 6 Räume pro Modul. |
+| **🌡️ Raumtemperatur-Weitergabe** | Optionale Weitergabe von Home-Assistant-Temperatursensoren an die externen IDM-Raumtemperaturregister pro Heizkreis |
 | **💧 Warmwasser** | Warmwasser-Sollwert und Prioritätssteuerung |
 | **☀️ Solar & PV** | Solare Warmwasserbereitung, PV-Überschussnutzung |
 | **⚡ Energiemonitoring** | Wärmemenge, Laufzeiten, Energiezähler |

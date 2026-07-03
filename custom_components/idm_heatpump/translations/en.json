@@ -54,7 +54,10 @@
           "technician_codes": "Show Installer Level codes",
           "enable_cascade": "Enable Cascade Registers",
           "web_extra_data": "Enable web supplement data",
-          "web_scan_interval": "Web supplement interval"
+          "web_scan_interval": "Web supplement interval",
+          "room_temp_forwarding": "Forward external room temperatures",
+          "room_temp_forwarding_interval": "Room temperature forwarding interval",
+          "room_temp_forwarding_tolerance": "Room temperature forwarding tolerance"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -64,7 +67,10 @@
           "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
           "enable_cascade": "Enables reading and writing cascade operation registers. Only enable this if you have a cascaded heat pump setup.",
           "web_extra_data": "Reads additional local Navigator web data such as Navigator generation and software version when a PIN is configured.",
-          "web_scan_interval": "How often to read optional web data. Default: 30 seconds. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time."
+          "web_scan_interval": "How often to read optional web data. Default: 30 seconds. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time.",
+          "room_temp_forwarding": "Optional: write selected Home Assistant temperature sensors to the IDM external room temperature registers for the active heating circuits.",
+          "room_temp_forwarding_interval": "How often the selected room temperatures are checked and forwarded. State changes are also forwarded immediately.",
+          "room_temp_forwarding_tolerance": "Only write again when the value changed by at least this amount since the last forwarded value."
         }
       },
       "zones": {
@@ -93,6 +99,28 @@
           "zone_7_rooms": "Number of active room sensors in Zone 8 (1–8).",
           "zone_8_rooms": "Number of active room sensors in Zone 9 (1–8).",
           "zone_9_rooms": "Number of active room sensors in Zone 10 (1–8)."
+        }
+      },
+      "room_temp_forwarding": {
+        "title": "External room temperature forwarding – {name}",
+        "description": "Select one Home Assistant temperature sensor per heating circuit. The integration writes these values to the IDM GLT room temperature registers. Leave a circuit empty to skip it.",
+        "data": {
+          "room_temp_forwarding_a": "Heating circuit A temperature sensor",
+          "room_temp_forwarding_b": "Heating circuit B temperature sensor",
+          "room_temp_forwarding_c": "Heating circuit C temperature sensor",
+          "room_temp_forwarding_d": "Heating circuit D temperature sensor",
+          "room_temp_forwarding_e": "Heating circuit E temperature sensor",
+          "room_temp_forwarding_f": "Heating circuit F temperature sensor",
+          "room_temp_forwarding_g": "Heating circuit G temperature sensor"
+        },
+        "data_description": {
+          "room_temp_forwarding_a": "Forward this sensor to hc_a_ext_room_temp.",
+          "room_temp_forwarding_b": "Forward this sensor to hc_b_ext_room_temp.",
+          "room_temp_forwarding_c": "Forward this sensor to hc_c_ext_room_temp.",
+          "room_temp_forwarding_d": "Forward this sensor to hc_d_ext_room_temp.",
+          "room_temp_forwarding_e": "Forward this sensor to hc_e_ext_room_temp.",
+          "room_temp_forwarding_f": "Forward this sensor to hc_f_ext_room_temp.",
+          "room_temp_forwarding_g": "Forward this sensor to hc_g_ext_room_temp."
         }
       }
     },
@@ -121,7 +149,10 @@
           "technician_codes": "Show Installer Level codes",
           "enable_cascade": "Enable Cascade Registers",
           "web_extra_data": "Enable web supplement data",
-          "web_scan_interval": "Web supplement interval"
+          "web_scan_interval": "Web supplement interval",
+          "room_temp_forwarding": "Forward external room temperatures",
+          "room_temp_forwarding_interval": "Room temperature forwarding interval",
+          "room_temp_forwarding_tolerance": "Room temperature forwarding tolerance"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -131,7 +162,10 @@
           "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
           "enable_cascade": "Enables reading and writing cascade operation registers. Only enable this if you have a cascaded heat pump setup.",
           "web_extra_data": "Reads additional local Navigator web data such as Navigator generation and software version when a PIN is configured.",
-          "web_scan_interval": "How often to read optional web data. Default: 30 seconds. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time."
+          "web_scan_interval": "How often to read optional web data. Default: 30 seconds. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time.",
+          "room_temp_forwarding": "Optional: write selected Home Assistant temperature sensors to the IDM external room temperature registers for the active heating circuits.",
+          "room_temp_forwarding_interval": "How often the selected room temperatures are checked and forwarded. State changes are also forwarded immediately.",
+          "room_temp_forwarding_tolerance": "Only write again when the value changed by at least this amount since the last forwarded value."
         }
       },
       "zones": {
@@ -160,6 +194,28 @@
           "zone_7_rooms": "Number of active room sensors in Zone 8 (1–8).",
           "zone_8_rooms": "Number of active room sensors in Zone 9 (1–8).",
           "zone_9_rooms": "Number of active room sensors in Zone 10 (1–8)."
+        }
+      },
+      "room_temp_forwarding": {
+        "title": "External room temperature forwarding – {name}",
+        "description": "Select one Home Assistant temperature sensor per heating circuit. The integration writes these values to the IDM GLT room temperature registers. Leave a circuit empty to skip it.",
+        "data": {
+          "room_temp_forwarding_a": "Heating circuit A temperature sensor",
+          "room_temp_forwarding_b": "Heating circuit B temperature sensor",
+          "room_temp_forwarding_c": "Heating circuit C temperature sensor",
+          "room_temp_forwarding_d": "Heating circuit D temperature sensor",
+          "room_temp_forwarding_e": "Heating circuit E temperature sensor",
+          "room_temp_forwarding_f": "Heating circuit F temperature sensor",
+          "room_temp_forwarding_g": "Heating circuit G temperature sensor"
+        },
+        "data_description": {
+          "room_temp_forwarding_a": "Forward this sensor to hc_a_ext_room_temp.",
+          "room_temp_forwarding_b": "Forward this sensor to hc_b_ext_room_temp.",
+          "room_temp_forwarding_c": "Forward this sensor to hc_c_ext_room_temp.",
+          "room_temp_forwarding_d": "Forward this sensor to hc_d_ext_room_temp.",
+          "room_temp_forwarding_e": "Forward this sensor to hc_e_ext_room_temp.",
+          "room_temp_forwarding_f": "Forward this sensor to hc_f_ext_room_temp.",
+          "room_temp_forwarding_g": "Forward this sensor to hc_g_ext_room_temp."
         }
       }
     }

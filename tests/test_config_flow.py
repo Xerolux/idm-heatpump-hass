@@ -15,6 +15,10 @@ from custom_components.idm_heatpump.const import (
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_MODBUS_PROXY,
+    CONF_ROOM_TEMP_FORWARDING,
+    CONF_ROOM_TEMP_FORWARDING_ENTITIES,
+    CONF_ROOM_TEMP_FORWARDING_INTERVAL,
+    CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
@@ -22,6 +26,7 @@ from custom_components.idm_heatpump.const import (
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
     CONF_WEB_PIN,
+    CONF_WEB_SCAN_INTERVAL,
     DEFAULT_WEB_ENABLED,
 )
 from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed
@@ -302,6 +307,38 @@ class TestAsyncStepOptions:
         )
         assert result["type"] == "create_entry"
         assert result["title"] == "IDM Test"
+        assert result["options"][CONF_ROOM_TEMP_FORWARDING_ENTITIES] == {}
+
+    async def test_room_temp_forwarding_goes_to_sensor_mapping_step(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a", "b"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_WEB_ENABLED: True,
+                CONF_WEB_SCAN_INTERVAL: 30,
+                CONF_ROOM_TEMP_FORWARDING: True,
+                CONF_ROOM_TEMP_FORWARDING_INTERVAL: 300,
+                CONF_ROOM_TEMP_FORWARDING_TOLERANCE: 0.2,
+            }
+        )
+        assert result["type"] == "form"
+        assert result["step_id"] == "room_temp_forwarding"
+
+        result = await flow.async_step_room_temp_forwarding(
+            {
+                "room_temp_forwarding_a": "sensor.living_room_temperature",
+                "room_temp_forwarding_b": "",
+            }
+        )
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_ROOM_TEMP_FORWARDING_ENTITIES] == {
+            "a": "sensor.living_room_temperature",
+        }
 
     async def test_with_zones_goes_to_zones_step(self):
         flow = _make_flow()
@@ -344,6 +381,20 @@ class TestAsyncStepZones:
         )
         assert result["type"] == "create_entry"
         assert result["options"][CONF_ZONE_ROOMS] == {0: 3, 1: 4}
+
+    async def test_zones_then_room_temp_forwarding_step(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 1,
+            CONF_ROOM_TEMP_FORWARDING: True,
+        }
+        result = await flow.async_step_zones({"zone_0_rooms": 3})
+        assert result["type"] == "form"
+        assert result["step_id"] == "room_temp_forwarding"
+        assert flow._options[CONF_ZONE_ROOMS] == {0: 3}
 
 
 class TestAsyncStepReconfigure:
@@ -852,6 +903,7 @@ class TestOptionsFlowFull:
         assert result["type"] == "create_entry"
         assert result["data"][CONF_SCAN_INTERVAL] == 30
         assert result["data"][CONF_TECHNICIAN_CODES] is True
+        assert result["data"][CONF_ROOM_TEMP_FORWARDING_ENTITIES] == {}
 
     async def test_options_defaults_loaded_from_entry(self):
         """async_step_init loads existing options as defaults."""

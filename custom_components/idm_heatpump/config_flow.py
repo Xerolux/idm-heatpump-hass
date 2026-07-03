@@ -25,6 +25,8 @@ from homeassistant.core import callback
 from homeassistant.helpers.selector import (
     BooleanSelector,
     BooleanSelectorConfig,
+    EntitySelector,
+    EntitySelectorConfig,
     NumberSelector,
     NumberSelectorConfig,
     NumberSelectorMode,
@@ -43,6 +45,10 @@ from .const import (
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_MODBUS_PROXY,
+    CONF_ROOM_TEMP_FORWARDING,
+    CONF_ROOM_TEMP_FORWARDING_ENTITIES,
+    CONF_ROOM_TEMP_FORWARDING_INTERVAL,
+    CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
     CONF_SLAVE_ID,
     CONF_TECHNICIAN_CODES,
@@ -55,6 +61,9 @@ from .const import (
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_PORT,
+    DEFAULT_ROOM_TEMP_FORWARDING,
+    DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
+    DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
@@ -107,6 +116,13 @@ _CIRCUIT_SELECTOR: SelectSelector = SelectSelector(
         multiple=True,
         mode=SelectSelectorMode.LIST,
         translation_key="heating_circuit",
+    )
+)
+
+_ROOM_TEMPERATURE_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        domain="sensor",
+        device_class="temperature",
     )
 )
 
@@ -173,6 +189,34 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                     unit_of_measurement="s",
                 )
             ),
+            vol.Required(
+                CONF_ROOM_TEMP_FORWARDING,
+                default=options.get(CONF_ROOM_TEMP_FORWARDING, DEFAULT_ROOM_TEMP_FORWARDING),
+            ): BooleanSelector(BooleanSelectorConfig()),
+            vol.Required(
+                CONF_ROOM_TEMP_FORWARDING_INTERVAL,
+                default=int(options.get(CONF_ROOM_TEMP_FORWARDING_INTERVAL, DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL)),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=30,
+                    max=3600,
+                    step=30,
+                    mode=NumberSelectorMode.SLIDER,
+                    unit_of_measurement="s",
+                )
+            ),
+            vol.Required(
+                CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
+                default=float(options.get(CONF_ROOM_TEMP_FORWARDING_TOLERANCE, DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE)),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=0.1,
+                    max=2.0,
+                    step=0.1,
+                    mode=NumberSelectorMode.SLIDER,
+                    unit_of_measurement="°C",
+                )
+            ),
         }
     )
 
@@ -215,6 +259,33 @@ def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
             )
         )
     return vol.Schema(schema_dict)
+
+
+def _room_temp_forwarding_enabled(options: dict[str, Any]) -> bool:
+    return bool(options.get(CONF_ROOM_TEMP_FORWARDING, DEFAULT_ROOM_TEMP_FORWARDING))
+
+
+def _build_room_temp_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
+    configured_entities = options.get(CONF_ROOM_TEMP_FORWARDING_ENTITIES, {})
+    circuits = options.get(CONF_HEATING_CIRCUITS, ["a"])
+    schema_dict: dict[Any, Any] = {}
+    for circuit in circuits:
+        schema_dict[
+            vol.Optional(
+                f"room_temp_forwarding_{circuit}",
+                default=str(configured_entities.get(circuit, "")),
+            )
+        ] = _ROOM_TEMPERATURE_SELECTOR
+    return vol.Schema(schema_dict)
+
+
+def _store_room_temp_forwarding_entities(options: dict[str, Any], user_input: dict[str, Any]) -> None:
+    circuits = options.get(CONF_HEATING_CIRCUITS, ["a"])
+    options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {
+        circuit: str(user_input.get(f"room_temp_forwarding_{circuit}", "")).strip()
+        for circuit in circuits
+        if str(user_input.get(f"room_temp_forwarding_{circuit}", "")).strip()
+    }
 
 
 class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -358,11 +429,9 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if int(user_input.get(CONF_ZONE_COUNT, 0)) > 0:
                 return await self.async_step_zones()
             self._options[CONF_ZONE_ROOMS] = {}
-            return self.async_create_entry(
-                title=self._data[CONF_NAME],
-                data=self._data,
-                options=self._options,
-            )
+            if _room_temp_forwarding_enabled(self._options):
+                return await self.async_step_room_temp_forwarding()
+            return self._async_create_config_entry()
 
         return self.async_show_form(
             step_id="options",
@@ -379,17 +448,39 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             zone_rooms: dict[int, int] = {z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)}
             self._options[CONF_ZONE_ROOMS] = zone_rooms
-            return self.async_create_entry(
-                title=self._data[CONF_NAME],
-                data=self._data,
-                options=self._options,
-            )
+            if _room_temp_forwarding_enabled(self._options):
+                return await self.async_step_room_temp_forwarding()
+            return self._async_create_config_entry()
 
         return self.async_show_form(
             step_id="zones",
             data_schema=schema,
             description_placeholders={"zone_count": str(zone_count)},
             errors=errors,
+        )
+
+    async def async_step_room_temp_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        schema = _build_room_temp_forwarding_schema(self._options)
+
+        if user_input is not None:
+            _store_room_temp_forwarding_entities(self._options, user_input)
+            return self._async_create_config_entry()
+
+        return self.async_show_form(
+            step_id="room_temp_forwarding",
+            data_schema=schema,
+            description_placeholders={"name": self._data.get(CONF_NAME, "")},
+            errors=errors,
+        )
+
+    def _async_create_config_entry(self) -> ConfigFlowResult:
+        if not _room_temp_forwarding_enabled(self._options):
+            self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
+        return self.async_create_entry(
+            title=self._data[CONF_NAME],
+            data=self._data,
+            options=self._options,
         )
 
     @staticmethod
@@ -469,7 +560,9 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
             if int(user_input.get(CONF_ZONE_COUNT, 0)) > 0:
                 return await self.async_step_zones()
             self._options[CONF_ZONE_ROOMS] = {}
-            return self.async_create_entry(data=self._options)
+            if _room_temp_forwarding_enabled(self._options):
+                return await self.async_step_room_temp_forwarding()
+            return self._async_create_options_entry()
 
         return self.async_show_form(
             step_id="options",
@@ -486,7 +579,9 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
         if user_input is not None:
             zone_rooms: dict[int, int] = {z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)}
             self._options[CONF_ZONE_ROOMS] = zone_rooms
-            return self.async_create_entry(data=self._options)
+            if _room_temp_forwarding_enabled(self._options):
+                return await self.async_step_room_temp_forwarding()
+            return self._async_create_options_entry()
 
         return self.async_show_form(
             step_id="zones",
@@ -494,3 +589,23 @@ class IdmHeatpumpOptionsFlow(config_entries.OptionsFlow):
             description_placeholders={"zone_count": str(zone_count)},
             errors=errors,
         )
+
+    async def async_step_room_temp_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        schema = _build_room_temp_forwarding_schema(self._options)
+
+        if user_input is not None:
+            _store_room_temp_forwarding_entities(self._options, user_input)
+            return self._async_create_options_entry()
+
+        return self.async_show_form(
+            step_id="room_temp_forwarding",
+            data_schema=schema,
+            description_placeholders={"name": self.config_entry.title},
+            errors=errors,
+        )
+
+    def _async_create_options_entry(self) -> ConfigFlowResult:
+        if not _room_temp_forwarding_enabled(self._options):
+            self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
+        return self.async_create_entry(data=self._options)
