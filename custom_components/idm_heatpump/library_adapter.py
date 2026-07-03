@@ -356,6 +356,12 @@ _GERMAN_NAMES: dict[str, str] = {
 
 
 SENSOR_METADATA: dict[str, dict[str, Any]] = {
+    "internal_message": {
+        "name": "Interne Meldung",
+        "icon": "mdi:message-alert",
+        "device_class": None,
+        "entity_category": EntityCategory.DIAGNOSTIC,
+    },
     # Heat sink / Trennwärmetauscher (Navigator 10 highlight)
     "heat_sink_flow_rate": {
         "name": "Durchfluss Wärmesenke (B2)",

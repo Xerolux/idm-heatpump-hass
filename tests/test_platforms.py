@@ -166,6 +166,42 @@ class TestIdmSensor:
         assert "Heizen" in result
         assert "Kuehlen" in result
 
+    def test_internal_message_native_value_formats_known_code(self):
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        coord = _make_coordinator(data={"internal_message": 20})
+        reg = _make_register("internal_message", datatype=DataType.UINT16)
+        sensor = IdmSensor(coord, reg, _make_desc("internal_message"))
+        assert sensor.native_value == "020 - Waermepumpenvorlauf Maximaltemperatur"
+        assert sensor.extra_state_attributes == {
+            "message_code": 20,
+            "message_text": "Waermepumpenvorlauf Maximaltemperatur",
+        }
+
+    def test_internal_message_native_value_formats_range_code(self):
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        coord = _make_coordinator(data={"internal_message": 150})
+        reg = _make_register("internal_message", datatype=DataType.UINT16)
+        sensor = IdmSensor(coord, reg, _make_desc("internal_message"))
+        assert sensor.native_value == "150 - Fuehlerstoerung"
+        assert sensor.extra_state_attributes == {
+            "message_code": 150,
+            "message_text": "Fuehlerstoerung",
+        }
+
+    def test_internal_message_native_value_formats_unknown_code(self):
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        coord = _make_coordinator(data={"internal_message": 999})
+        reg = _make_register("internal_message", datatype=DataType.UINT16)
+        sensor = IdmSensor(coord, reg, _make_desc("internal_message"))
+        assert sensor.native_value == "999 - Unbekannte Meldung - siehe Navigator-Handbuch"
+        assert sensor.extra_state_attributes == {
+            "message_code": 999,
+            "message_text": "Unbekannte Meldung - siehe Navigator-Handbuch",
+        }
+
 
 class TestSensorAsyncSetupEntry:
     async def test_creates_sensors_from_coordinator(self):

@@ -28,6 +28,7 @@ from .coordinator import IdmCoordinator
 from .entity import IdmEntity, build_device_info, build_entity_unique_id
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
+from .internal_messages import format_internal_message, internal_message_text
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 
@@ -336,6 +337,8 @@ class IdmSensor(IdmEntity, SensorEntity):
         value = self.coordinator.data.get(self._register.name)
         if value is None:
             return None
+        if self._register.name == "internal_message":
+            return format_internal_message(value)
         if self._register.enum_options:
             if self._register.datatype == DataType.BITFLAG:
                 de_labels = get_bitflag_de_labels(self._register.name)
@@ -345,6 +348,24 @@ class IdmSensor(IdmEntity, SensorEntity):
                 return slug_map.get(int(value))
             return self._register.enum_options.get(value, f"Unbekannt ({value})")
         return value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str | int] | None:
+        if self._register.name != "internal_message":
+            return None
+        if not self.coordinator.data:
+            return None
+        value = self.coordinator.data.get(self._register.name)
+        if value is None:
+            return None
+        message_text = internal_message_text(value)
+        if message_text is None:
+            return None
+        message_code = int(value)
+        return {
+            "message_code": message_code,
+            "message_text": message_text,
+        }
 
 
 class IdmWebSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
