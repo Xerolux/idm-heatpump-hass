@@ -298,9 +298,10 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities: list[IdmSensor | IdmTechnicianCodeSensor | IdmWebSensor] = []
+    entities: list[IdmSensor | IdmTechnicianCodeBlockSensor | IdmTechnicianCodeSensor | IdmWebSensor] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
         entities += [
+            IdmTechnicianCodeBlockSensor(coordinator),
             IdmTechnicianCodeSensor(coordinator, "level_1"),
             IdmTechnicianCodeSensor(coordinator, "level_2"),
         ]
@@ -389,25 +390,12 @@ class IdmWebSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
         return value.native_value
 
 
-class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
-    """Sensor that shows the current Fachmann Ebene access code."""
+class IdmTechnicianCodeBaseSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
+    """Refresh technician-code entities on the minute without coordinator polling."""
 
     _attr_has_entity_name = True
-    _attr_icon = "mdi:key-variant"
     _attr_entity_registry_enabled_default = True
-
-    _NAMES = {
-        "level_1": "Fachmann Ebene 1",
-        "level_2": "Fachmann Ebene 2",
-    }
-
-    def __init__(self, coordinator: IdmCoordinator, level: str) -> None:
-        super().__init__(coordinator)
-        self._level = level
-        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
-        self._attr_unique_id = build_entity_unique_id(entry_id, f"technician_{level}")
-        self._attr_name = self._NAMES[level]
-        self._cancel_timer: Callable[[], None] | None = None
+    _cancel_timer: Callable[[], None] | None = None
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -427,9 +415,59 @@ class IdmTechnicianCodeSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
         self.async_write_ha_state()
 
     @property
-    def native_value(self) -> str:
-        return calculate_codes()[self._level]
-
-    @property
     def available(self) -> bool:
         return True
+
+
+class IdmTechnicianCodeBlockSensor(
+    IdmTechnicianCodeBaseSensor,
+):
+    """Sensor that shows both current Fachmann Ebene access codes as one block."""
+
+    _attr_icon = "mdi:key-chain-variant"
+    _attr_name = "Fachmann Codes"
+
+    def __init__(self, coordinator: IdmCoordinator) -> None:
+        super().__init__(coordinator)
+        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
+        self._attr_unique_id = build_entity_unique_id(entry_id, "technician_codes")
+
+    @property
+    def native_value(self) -> str:
+        codes = calculate_codes()
+        return "\n".join(
+            (
+                "Fachmann Ebene 1",
+                codes["level_1"],
+                "Fachmann Ebene 2",
+                codes["level_2"],
+            )
+        )
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        return calculate_codes()
+
+
+class IdmTechnicianCodeSensor(
+    IdmTechnicianCodeBaseSensor,
+):
+    """Sensor that shows one current Fachmann Ebene access code."""
+
+    _attr_icon = "mdi:key-variant"
+
+    _NAMES = {
+        "level_1": "Fachmann Ebene 1",
+        "level_2": "Fachmann Ebene 2",
+    }
+
+    def __init__(self, coordinator: IdmCoordinator, level: str) -> None:
+        super().__init__(coordinator)
+        self._level = level
+        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
+        self._attr_unique_id = build_entity_unique_id(entry_id, f"technician_{level}")
+        self._attr_name = self._NAMES[level]
+
+    @property
+    def native_value(self) -> str:
+        return calculate_codes()[self._level]
