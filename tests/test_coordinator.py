@@ -6,6 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 
 from custom_components.idm_heatpump.coordinator import IdmCoordinator, _repair_issue_for_error
+from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
 from pymodbus.exceptions import ConnectionException, ModbusException
@@ -28,6 +29,7 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
         select_descriptions=kwargs.get("select_descriptions", []),
         switch_descriptions=kwargs.get("switch_descriptions", []),
         hide_unused=kwargs.get("hide_unused", True),
+        web_pin=kwargs.get("web_pin"),
     )
     return coord, client
 
@@ -521,6 +523,63 @@ class TestAsyncWriteRegister:
         reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="x", writable=True)
         with pytest.raises(Exception, match="write error"):
             await coord.async_write_register(reg, 1)
+
+
+class TestAsyncRefreshWebSupplement:
+    async def test_web_refresh_failure_creates_repair_issue(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                side_effect=TimeoutError("websocket timeout"),
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.last_web_error == "TimeoutError: websocket timeout"
+        mock_ir.async_create_issue.assert_called_once_with(
+            mock_hass,
+            "idm_heatpump",
+            "web_supplement_failed",
+            is_fixable=False,
+            severity=mock_ir.IssueSeverity.WARNING,
+            translation_key="web_supplement_failed",
+            translation_placeholders={
+                "host": coord.client.host,
+                "error": "TimeoutError: websocket timeout",
+            },
+        )
+
+    async def test_web_refresh_success_updates_data_and_deletes_repair_issue(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.24",
+            heatpump_model="iPump",
+            sensor_values={"hotgas_temperature": IdmWebSensorValue("44.7°C", 44.7, "°C")},
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.last_web_error is None
+        assert coord.web_supplement is supplement
+        assert coord.model_name == "Navigator 10"
+        assert coord.firmware_version == "NAV10_20.24"
+        assert coord.data["web_navigator_version"] == "Navigator 10"
+        assert coord.data["web_software_version"] == "NAV10_20.24"
+        mock_ir.async_delete_issue.assert_called_once_with(mock_hass, "idm_heatpump", "web_supplement_failed")
+        coord.async_update_listeners.assert_called_once()
 
 
 class TestCoordinatorProperties:

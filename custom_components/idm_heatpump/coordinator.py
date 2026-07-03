@@ -31,6 +31,7 @@ _CONNECTIVITY_REPAIR_ISSUES = (
     "wrong_slave_id",
     "incompatible_firmware",
 )
+_WEB_SUPPLEMENT_FAILED_ISSUE = "web_supplement_failed"
 
 
 def _is_illegal_address_error(err: ModbusException) -> bool:
@@ -87,6 +88,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._model_info = model_info
         self._web_pin = web_pin
         self._web_supplement = web_supplement
+        self._last_web_error: str | None = None
         self._unused_registers: set[str] = set()
         self._unsupported_registers: set[str] = set()
         self._alias_map: dict[int, list[str]] = {}
@@ -162,6 +164,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def web_enabled(self) -> bool:
         return bool(self._web_pin)
+
+    @property
+    def last_web_error(self) -> str | None:
+        return self._last_web_error
 
     @property
     def unused_registers(self) -> set[str]:
@@ -293,13 +299,28 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         try:
             web_supplement = await async_read_web_supplement(self._client.host, self._web_pin)
-        except Exception:
-            _LOGGER.debug("Optional IDM web supplement refresh failed", exc_info=True)
+        except Exception as err:
+            error = f"{err.__class__.__name__}: {err}"
+            if error != self._last_web_error:
+                _LOGGER.warning("Optional IDM web supplement refresh failed for %s: %s", self._client.host, error)
+            self._last_web_error = error
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                _WEB_SUPPLEMENT_FAILED_ISSUE,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=_WEB_SUPPLEMENT_FAILED_ISSUE,
+                translation_placeholders={"host": self._client.host, "error": error},
+            )
             return
 
         if web_supplement is None:
+            self._last_web_error = "No web supplement data returned"
             return
 
+        self._last_web_error = None
+        ir.async_delete_issue(self.hass, DOMAIN, _WEB_SUPPLEMENT_FAILED_ISSUE)
         self._web_supplement = web_supplement
         if web_supplement.model_name:
             self._model_name = web_supplement.model_name

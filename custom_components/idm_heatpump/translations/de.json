@@ -267,6 +267,10 @@
       "title": "IDM Web-PIN nicht konfiguriert",
       "description": "Die Integration für **{name}** läuft im reinen Modbus-Modus, weil keine lokale Navigator-Web-PIN konfiguriert ist.\n\nSetze die PIN im Reconfigure-Flow der Integration, wenn zusätzliche Webdaten wie Navigator-Generation und Softwareversion gelesen werden sollen."
     },
+    "web_supplement_failed": {
+      "title": "IDM-Web-Zusatzdaten nicht verfügbar",
+      "description": "Home Assistant konnte keine lokalen Navigator-Webdaten von **{host}** lesen.\n\nLetzter Fehler: `{error}`\n\nModbus-Daten laufen weiter. Bitte prüfe, ob der Home-Assistant-Host die Navigator-Weboberfläche erreichen kann und ob die konfigurierte PIN korrekt ist."
+    },
     "cannot_connect": {
       "title": "Verbindung zur IDM-Wärmepumpe nicht möglich",
       "description": "Home Assistant kann die IDM-Wärmepumpe unter **{host}** nicht erreichen.\n\nBitte prüfen:\n- Netzwerkverbindung zum Gerät\n- Modbus TCP ist in der Steuerung aktiviert (*Fachmannebene → Kommunikation → Modbus*)\n- IP-Adresse und Port sind in den Integrationseinstellungen korrekt"
