@@ -18,7 +18,9 @@ from custom_components.idm_heatpump.const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONF_TECHNICIAN_CODES,
+    CONF_WEB_ENABLED,
     CONF_WEB_PIN,
+    DEFAULT_WEB_ENABLED,
 )
 from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed
 
@@ -49,6 +51,13 @@ class TestBuildOptionsSchema:
         opts = {CONF_HEATING_CIRCUITS: ["a", "b"]}
         schema = _build_options_schema(opts)
         assert schema is not None
+
+    def test_web_supplement_enabled_by_default(self):
+        schema = _build_options_schema({})
+        defaults = {key.key: key.default for key in schema._schema}
+
+        assert DEFAULT_WEB_ENABLED is True
+        assert defaults[CONF_WEB_ENABLED] is True
 
 
 class TestBuildZonesSchema:
