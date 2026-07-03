@@ -457,8 +457,8 @@ class IdmTechnicianCodeSensor(
     _attr_icon = "mdi:key-variant"
 
     _NAMES = {
-        "level_1": "Fachmann Ebene 1",
-        "level_2": "Fachmann Ebene 2",
+        "level_1": "00 Fachmann Ebene 1",
+        "level_2": "00 Fachmann Ebene 2",
     }
 
     def __init__(self, coordinator: IdmCoordinator, level: str) -> None:

@@ -486,14 +486,14 @@ class TestIdmTechnicianCodeSensor:
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
         assert sensor._attr_unique_id == "test_entry_technician_level_1"
-        assert sensor._attr_name == "Fachmann Ebene 1"
+        assert sensor._attr_name == "00 Fachmann Ebene 1"
 
     def test_level_2_name(self):
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_2")
-        assert sensor._attr_name == "Fachmann Ebene 2"
+        assert sensor._attr_name == "00 Fachmann Ebene 2"
 
     def test_available_always_true(self):
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
