@@ -64,7 +64,7 @@
           "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
           "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind.",
           "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten wie Navigator-Generation und Softwareversion, wenn eine PIN hinterlegt ist.",
-          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten."
+          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten."
         }
       },
       "zones": {
@@ -131,7 +131,7 @@
           "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
           "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind.",
           "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten wie Navigator-Generation und Softwareversion, wenn eine PIN hinterlegt ist.",
-          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten."
+          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten."
         }
       },
       "zones": {

@@ -64,7 +64,7 @@
           "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
           "enable_cascade": "Enables reading and writing cascade operation registers. Only enable this if you have a cascaded heat pump setup.",
           "web_extra_data": "Reads additional local Navigator web data such as Navigator generation and software version when a PIN is configured.",
-          "web_scan_interval": "How often to read optional web data. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time."
+          "web_scan_interval": "How often to read optional web data. Default: 30 seconds. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time."
         }
       },
       "zones": {
@@ -131,7 +131,7 @@
           "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
           "enable_cascade": "Enables reading and writing cascade operation registers. Only enable this if you have a cascaded heat pump setup.",
           "web_extra_data": "Reads additional local Navigator web data such as Navigator generation and software version when a PIN is configured.",
-          "web_scan_interval": "How often to read optional web data. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time."
+          "web_scan_interval": "How often to read optional web data. Default: 30 seconds. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time."
         }
       },
       "zones": {
