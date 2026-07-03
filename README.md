@@ -39,8 +39,8 @@
 | **⚡ Energy Monitoring** | Heat quantity, runtime, energy meters |
 | **❄️ Cascade & Bivalence** | Multi-heat pump control, heating element integration |
 | **📡 BMS Remote Maintenance** | BMS temperature requests (cyclic writing) |
-| **🛡️ Error Management** | Error detection, error acknowledgment, diagnostics export |
-| **🔑 Technician Level** | Optional sensors for technician level 1 & 2 codes (time-based, updated every minute) |
+| **🛡️ Error Management** | Error detection, readable internal messages, error acknowledgment, diagnostics export |
+| **🔑 Technician Level** | Optional sensors for technician level 1 & 2 codes (time-based, updated every minute and pinned first) |
 | **🔒 Security** | 100% local, Modbus TCP, EEPROM protection, EEPROM-sensitive registers |
 
 ---
@@ -121,6 +121,8 @@ Home Assistant
     |       |       +-- IDM Navigator 2.0 / 10 (Modbus TCP, Port 502)
     |       |
     |       +-- Optional local web supplement (PIN, read-only, separate interval)
+    |
+    |       +-- Optional RoomTempForwarder (HA sensors -> external room temp registers)
     |       |
     |       +-- Entities (sensor, binary_sensor, number, select, switch)
     |
@@ -138,7 +140,10 @@ Home Assistant
 - **Auto-recovery**: Exponential backoff on connection errors
 - **Library-powered**: All register definitions sourced from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools
 - **Navigator 10 support**: Heat sink (Trennwärmetauscher) sensors, flow rate monitoring (Sieb detection), groundwater temperatures, booster A/B diagnostics
-- **Optional web supplement**: local read-only Navigator generation, software version, model and web-only diagnostics; Modbus remains authoritative
+- **Optional web supplement**: local read-only Navigator generation, software version, model and web-only diagnostics; default interval is 30 seconds and Modbus remains authoritative
+- **Room temperature forwarding**: disabled by default; can forward selected Home Assistant temperature sensors to the IDM external room temperature registers per heating circuit with a 300 second default interval, immediate updates on state change, 0.2 °C default tolerance and range validation
+- **Readable diagnostics**: the `internal_message` sensor shows clear message text and exposes `message_code` / `message_text` attributes instead of a bare numeric code
+- **Entity organization**: technician code sensors are pinned at the top, followed by functional groups for configuration, switches, writable values and diagnostics
 
 ---
 

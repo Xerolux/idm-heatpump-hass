@@ -39,8 +39,8 @@
 | **⚡ Energiemonitoring** | Wärmemenge, Laufzeiten, Energiezähler |
 | **❄️ Kaskade & Bivalenz** | Mehrfach-Wärmepumpen-Steuerung, Heizstab-Integration |
 | **📡 GLT Fernwartung** | GLT-Temperaturanforderungen (zyklisches Schreiben) |
-| **🛡️ Fehlermanagement** | Fehlererkennung, Fehlerquittierung, Diagnosedaten-Export |
-| **🔑 Fachmann-Ebene** | Optionale Sensoren für Fachmann Ebene 1 & 2 Codes (zeitbasiert, minütlich aktualisiert) |
+| **🛡️ Fehlermanagement** | Fehlererkennung, lesbare interne Meldungen, Fehlerquittierung, Diagnosedaten-Export |
+| **🔑 Fachmann-Ebene** | Optionale Sensoren für Fachmann Ebene 1 & 2 Codes (zeitbasiert, minütlich aktualisiert und ganz oben angeheftet) |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
 
 ---
@@ -124,6 +124,8 @@ Home Assistant
     │       │
     │       ├── Optionale lokale Web-Zusatzdaten (PIN, read-only, eigenes Intervall)
     │       │
+    │       ├── Optionaler RoomTempForwarder (HA-Sensoren -> externe Raumtemperaturregister)
+    │       │
     │       └── Entities (sensor, binary_sensor, number, select, switch)
     │
     ├── Services (set_system_mode, acknowledge_errors, write_register)
@@ -138,7 +140,10 @@ Home Assistant
 - **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
 - **Auto-Recovery**: Exponentielles Backoff bei Verbindungsfehlern
-- **Optionale Web-Zusatzdaten**: lokale read-only Erkennung von Navigator-Generation, Softwareversion, Modell und Webdiagnosen; Modbus bleibt führend
+- **Optionale Web-Zusatzdaten**: lokale read-only Erkennung von Navigator-Generation, Softwareversion, Modell und Webdiagnosen; Standardintervall 30 Sekunden, Modbus bleibt führend
+- **Raumtemperatur-Weitergabe**: standardmäßig deaktiviert; kann ausgewählte Home-Assistant-Temperatursensoren pro Heizkreis an die externen IDM-Raumtemperaturregister weitergeben, mit 300 Sekunden Standardintervall, sofortiger Weitergabe bei Zustandsänderung, 0,2 °C Standardtoleranz und Bereichsprüfung
+- **Lesbare Diagnose**: der Sensor `internal_message` zeigt Klartext und liefert zusätzlich die Attribute `message_code` und `message_text` statt nur einer nackten Nummer
+- **Entity-Ordnung**: Fachmann-Code-Sensoren sind ganz oben angeheftet, danach folgen sinnvolle Funktionsgruppen für Konfiguration, Schalter, schreibbare Werte und Diagnose
 
 ---
 

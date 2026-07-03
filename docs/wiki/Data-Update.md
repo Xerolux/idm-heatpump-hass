@@ -23,9 +23,14 @@ The polling interval is **freely configurable** (5–300 seconds, default: 10 se
 - Shorter intervals provide faster updates but generate more network traffic
 - Recommendation: 10–30 seconds for normal operation
 
-Optional web supplement data has its own interval (default: 60 seconds). It is
+Optional web supplement data has its own interval (default: 30 seconds). It is
 only used when web supplement data is enabled and a local Navigator web PIN is
 configured.
+
+Room temperature forwarding, when enabled, is handled outside the normal read
+poll. Selected Home Assistant temperature sensors are written to the matching
+external room temperature registers on state changes and refreshed periodically
+(default: 300 seconds).
 
 ## Entity Availability
 
@@ -49,6 +54,17 @@ Number, Select, and Switch entities can write values to the heat pump:
 - The DataUpdateCoordinator logs connection errors once (not on every failed cycle)
 - Web supplement errors are logged separately and never abort the Modbus update
   path. A wrong PIN is reported directly during setup/reconfiguration.
+
+## Room Temperature Forwarding
+
+The optional room temperature forwarder writes Home Assistant sensor values to
+the IDM external room temperature registers per active heating circuit. It uses
+a default tolerance of 0.2 °C to avoid unnecessary repeated writes and skips
+invalid, unavailable, non-numeric or out-of-range values.
+
+Forwarding is disabled by default and only starts after at least one heating
+circuit has a selected Home Assistant temperature entity in the integration
+options.
 
 ## Technician Code Sensors
 

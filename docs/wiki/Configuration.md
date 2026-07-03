@@ -34,8 +34,9 @@ diagnostics, and Navigator 10 infosystem notifications.
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| Web supplement data | Enables the optional local web poll when a PIN is configured | off |
-| Web supplement interval | Separate polling interval for web data | 60 seconds |
+| Web supplement data | Enables the optional local web poll when a PIN is configured | on when a PIN is configured |
+| Web supplement interval | Separate polling interval for web data | 30 seconds |
+| Web host | Optional separate host for the Navigator web interface, useful when Modbus goes through a proxy | Modbus host |
 
 Important behavior:
 
@@ -48,6 +49,31 @@ Important behavior:
   protocols do not hit the controller at the exact same moment.
 - Modbus values always have priority. Web sensors are only created for extra
   values or for values that are not already represented by Modbus entities.
+- If a Modbus proxy is used, enter the proxy IP as **Host** and the original
+  heat pump IP as **Web host** so the local Navigator web interface can still
+  be reached.
+
+### Room Temperature Forwarding
+
+Room temperature forwarding is optional and disabled by default. When enabled,
+the integration can forward selected Home Assistant temperature sensors to the
+IDM external room temperature registers of the active heating circuits, for
+example `hc_a_ext_room_temp`.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Room temperature forwarding | Enables forwarding for selected circuits | off |
+| Forwarding interval | Periodic refresh interval for selected room temperatures | 300 seconds |
+| Forwarding tolerance | Minimum change before a repeated value is written again | 0.2 °C |
+| Sensor per heating circuit | Home Assistant temperature entity to forward | empty |
+
+Important behavior:
+
+- Values are written on sensor state changes and also refreshed periodically.
+- Invalid, unavailable, non-numeric or out-of-range values are skipped.
+- Leaving a circuit without a selected sensor keeps that circuit untouched.
+- This feature writes Modbus values. Use sensors that represent the actual room
+  temperature you want the heat pump to see.
 
 ### Heating Circuits
 
@@ -82,7 +108,7 @@ For each room in each zone, you can assign a custom name. These names are used a
    entry in Modbus-only mode.
 
 Use **Configure** for scan interval, heating circuits, zones, technician codes,
-and the optional web supplement interval.
+optional web supplement settings, and optional room temperature forwarding.
 
 ## Debug Logging
 

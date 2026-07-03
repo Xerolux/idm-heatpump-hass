@@ -12,8 +12,12 @@ The integration dynamically generates entities based on your heat pump configura
 | **Select** | 4+ | System mode, heating circuit modes, solar mode, ISC mode |
 | **Switch** | 4 | External heating/cooling/DHW demand, one-time DHW charge |
 
-Adding more heating circuits, zones, cascade, or optional web supplement data
-increases the counts.
+Adding more heating circuits, zones, cascade, optional technician codes, or
+optional web supplement data increases the counts.
+
+Entities are grouped by function in Home Assistant where possible. The optional
+technician code sensors are pinned at the top, followed by configuration
+entities, switches, writable values, live measurements and diagnostics.
 
 ---
 
@@ -154,6 +158,14 @@ If a web value duplicates an existing Modbus entity, the web entity is skipped.
 This prevents duplicate dashboard values and keeps Modbus as the authoritative
 source for register-backed data.
 
+### Internal Message Sensor
+
+The `internal_message` diagnostic sensor exposes the active IDM internal
+message as readable text, for example a code plus message description. It also
+provides the structured attributes `message_code` and `message_text` so
+automations can react either to the numeric code or to the human-readable
+description.
+
 ---
 
 ## Binary Sensors
@@ -194,6 +206,12 @@ source for register-backed data.
 | `hc_{x}_cooling_limit` | 1484+ | 0–36 °C |
 | `hc_{x}_parallel_shift` | 1505+ | 0–30 |
 | `hc_{x}_ext_room_temp` | 1650+ | 15–30 °C |
+
+`hc_{x}_ext_room_temp` can be controlled manually like any other number entity
+or filled automatically by optional room temperature forwarding. When
+forwarding is enabled, selected Home Assistant temperature sensors are written
+to these external room temperature registers on state changes and periodically
+with a 300 second default interval.
 
 ### GLT / External Control
 

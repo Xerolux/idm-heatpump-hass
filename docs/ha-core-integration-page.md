@@ -61,8 +61,12 @@ The integration is set up via the UI. During setup you will configure:
 | Heating circuits | Which circuits (A–G) are active | — |
 | Zone modules | Number of zone modules (0–10) | `0` |
 | Technician codes | Show technician-level access code sensors | `false` |
-| Web supplement data | Enable optional local web diagnostics when a PIN is configured | `false` |
-| Web supplement interval | Separate interval for optional web data | `60` |
+| Web supplement data | Enable optional local web diagnostics when a PIN is configured | `true` |
+| Web supplement interval | Separate interval for optional web data | `30` |
+| Web host | Optional separate Navigator web host, useful with a Modbus proxy | Host |
+| Room temperature forwarding | Forward selected Home Assistant temperature sensors to external room temperature registers | `false` |
+| Room temperature forwarding interval | Periodic refresh interval for forwarded room temperatures | `300` |
+| Room temperature forwarding tolerance | Minimum change before writing a repeated value again | `0.2` |
 
 ### Options
 
@@ -70,9 +74,10 @@ After initial setup, options can be changed via **Settings → Devices & Service
 
 - **Scan interval** – Polling frequency (5–300 seconds)
 - **Active heating circuits** – Enable/disable individual heating circuits A through G
-- **Zone modules** – Number of connected zone modules (each supports up to 8 rooms)
+- **Zone modules** – Number of connected zone modules (each supports up to 6 rooms on current Navigator 10 hardware)
 - **Room names** – Custom names for rooms in each zone module
 - **Web supplement data** – Optional read-only local web poll for Navigator generation, software version, model, web-only diagnostics, and Navigator 10 infosystem notifications
+- **Room temperature forwarding** – Optional write path that maps selected Home Assistant temperature sensors to the IDM external room temperature registers per heating circuit
 
 ### Reconfiguration
 
@@ -99,6 +104,7 @@ Over 100 sensors are available, including:
 | Power consumption | Current electrical consumption |
 | Firmware version | Navigator firmware version (diagnostic) |
 | Error code | Current error code (diagnostic) |
+| Internal message | Readable IDM internal message with `message_code` and `message_text` attributes |
 | Technician code level 1/2 | Time-based technician access codes (if enabled) |
 | Web supplement sensors | Optional Navigator generation, software version, model, web-only diagnostics, and Navigator 10 infosystem notification summary |
 

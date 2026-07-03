@@ -66,16 +66,31 @@ Run this only on a system where the local Navigator web PIN is known.
 3. Clear the PIN and confirm setup/reconfigure still succeeds in Modbus-only
    mode.
 4. Enter the correct PIN, enable web supplement data, and set the web interval.
-5. Confirm the integration reports Navigator generation and software version
+5. Confirm the default web interval is 30 seconds unless deliberately changed.
+6. Confirm the integration reports Navigator generation and software version
    after the web poll.
-6. On Navigator 10, confirm infosystem notification count/summary sensors are
+7. On Navigator 10, confirm infosystem notification count/summary sensors are
    created when the API returns notifications.
-7. Temporarily block the web interface or use a bad web endpoint and confirm
+8. Temporarily block the web interface or use a bad web endpoint and confirm
    Modbus polling continues.
-8. Confirm web values that duplicate Modbus entities are not created as
+9. Confirm web values that duplicate Modbus entities are not created as
    duplicate entities.
 
-## 5. Safe Write Path
+## 5. Optional Room Temperature Forwarding
+
+Run this only with a safe test sensor and a heating circuit where external room
+temperature input is intended.
+
+1. Confirm room temperature forwarding is disabled by default after setup.
+2. Enable forwarding in the integration options and select one Home Assistant
+   temperature sensor for one active heating circuit.
+3. Confirm the options flow exposes interval and tolerance settings.
+4. Change the source sensor value inside the valid range and confirm the
+   matching `hc_<circuit>_ext_room_temp` register is written.
+5. Confirm unavailable, non-numeric, or out-of-range source states are skipped.
+6. Disable forwarding again unless the test system should keep using it.
+
+## 6. Safe Write Path
 
 Use only a reversible, documented register on a test system.
 
@@ -88,7 +103,7 @@ Use only a reversible, documented register on a test system.
 Do not use EEPROM-sensitive registers for this smoke test unless the release
 specifically changes EEPROM protection.
 
-## 6. Reload, Unload, and Upgrade
+## 7. Reload, Unload, and Upgrade
 
 1. Reload the config entry and confirm entities return to `available`.
 2. Unload the config entry and confirm the Modbus client disconnects cleanly.
@@ -97,13 +112,15 @@ specifically changes EEPROM protection.
 5. Confirm entity unique IDs, device registry entries, and user customizations
    are preserved.
 
-## 7. Evidence to Attach to the Release
+## 8. Evidence to Attach to the Release
 
 - Home Assistant version.
 - Integration version and artifact checksum.
 - Detected heat pump model, firmware if available, and active capabilities.
 - Web supplement enabled/disabled state, detected Navigator generation,
   software version, and PIN-validation result if tested.
+- Room temperature forwarding enabled/disabled state and write result if
+  tested.
 - Confirmation of first poll, safe write, reload, unload, and upgrade.
 - Any unsupported-register, timeout, or reconnect logs with IP addresses
   redacted.

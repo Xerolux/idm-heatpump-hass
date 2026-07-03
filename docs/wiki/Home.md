@@ -38,7 +38,9 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **Cascade & Bivalence**: Multi-heat pump control, heating element integration
 - **BMS Remote Maintenance**: BMS temperature requests (cyclic writing)
 - **Error Management**: Error detection, error acknowledgment, diagnostics export
-- **Optional Web Supplement**: Navigator generation, software version, heat pump model, web-only diagnostics, and Navigator 10 infosystem notifications without replacing Modbus values
+- **Optional Web Supplement**: Navigator generation, software version, heat pump model, web-only diagnostics, and Navigator 10 infosystem notifications without replacing Modbus values; default interval 30 seconds
+- **Room Temperature Forwarding**: Optional forwarding of Home Assistant temperature sensors to IDM external room temperature registers per heating circuit
+- **Readable Diagnostics**: Internal IDM messages are shown with text plus structured code/text attributes
 
 ---
 
@@ -82,6 +84,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **Auto-recovery**: Exponential backoff on connection errors
 - **Navigator 10**: Heat sink sensors, flow rate (Sieb monitoring), groundwater temps, booster A/B
 - **Web supplement**: Separate interval, slightly delayed from Modbus polling, and non-fatal when unavailable or disabled
+- **Room forwarding**: Optional write path with state-change updates, periodic refresh, tolerance and range checks
 
 ---
 
