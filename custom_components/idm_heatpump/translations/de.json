@@ -125,14 +125,14 @@
       },
       "modbus_failed": {
         "title": "Modbus-Verbindung fehlgeschlagen",
-        "description": "**Keine Modbus-TCP-Verbindung zur Wärmepumpe unter {host} möglich.**\n\nDie lokale Navigator-Weboberfläche ist verfügbar (PIN konfiguriert) — du kannst mit reinen Web-Daten fortfahren.\n\n**Einschränkungen im Web-Only-Modus:**\n- Nur Sensorwerte aus der Weboberfläche (Temperaturen, Drücke, Durchfluss etc.)\n- Keine Modbus-Register: keine Heizkreise, keine Zonen, keine schreibbaren Entitäten\n- Keine Betriebsartensteuerung, keine Störungsquittierung\n- Für vollen Funktionsumfang muss Modbus TCP vom iDM-Serviceteam freigeschaltet werden",
+        "description": "**Keine Modbus-TCP-Verbindung zur Wärmepumpe unter {host} möglich.**\n\nDa eine lokale Navigator-Web-PIN eingegeben wurde, kannst du mit **nur Web-Daten** fortfahren (eingeschränkte Funktionalität). Falls Modbus funktionieren sollte, wähle **Modbus erneut versuchen** und prüfe zuerst IP-Adresse, Port und Slave-ID.\n\n**Einschränkungen im Web-Only-Modus:**\n- Nur Sensorwerte aus der Weboberfläche (Temperaturen, Drücke, Durchfluss etc.)\n- Keine Modbus-Register: keine Heizkreise, keine Zonen, keine schreibbaren Entitäten\n- Keine Betriebsartensteuerung, keine Störungsquittierung\n- Für vollen Funktionsumfang muss Modbus TCP vom iDM-Serviceteam freigeschaltet werden",
         "data": {
           "action": "Aktion"
         }
       },
       "web_only_options": {
         "title": "Web-Daten Einstellungen – {name}",
-        "description": "Konfiguriere, wie oft optionale Web-Zusatzdaten von der Navigator-Weboberfläche gelesen werden.",
+        "description": "Web-Only-Modus ist aktiv. Konfiguriere, wie oft die Integration Sensordaten von der Navigator-Weboberfläche liest. Modbus-basierte Entitäten (Heizkreise, Zonen, schreibbare Steuerungen) sind in diesem Modus nicht verfügbar.",
         "data": {
           "web_scan_interval": "Web-Zusatzdaten-Intervall"
         },
@@ -145,6 +145,7 @@
       "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfe IP-Adresse, Port und ob Modbus TCP in der Steuerung aktiviert ist. Falls Modbus nicht verfügbar ist, kannst du mit reinen Web-Daten fortfahren (zuvor deine lokale Navigator-PIN eingeben).",
       "host_required": "Bitte eine gültige IP-Adresse oder einen Hostnamen eingeben.",
       "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt. Bitte gib die korrekte PIN ein oder lasse das Feld leer, um nur Modbus zu verwenden.",
+      "invalid_web_pin_web_only": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt. Wähle \"Modbus erneut versuchen\", um IP/Port/Slave-ID zu korrigieren, oder gib die korrekte PIN ein, um nur mit Web-Daten fortzufahren.",
       "name_required": "Bitte einen Namen für das Gerät eingeben.",
       "web_host_required": "Gib die originale Wärmepumpen-IP/den Hostnamen für den Webzugriff ein oder deaktiviere die Modbus-Proxy-Option."
     },
