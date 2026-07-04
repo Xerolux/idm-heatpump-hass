@@ -760,6 +760,14 @@ class TestDetectModelInfo:
         assert model_name == "Navigator 2.0"
         assert detected_model_info is model_info
 
+    async def test_skips_unreliable_firmware_register_probe(self):
+        client = AsyncMock()
+        client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10"))
+
+        await _detect_model_info(client)
+
+        client.detect_model.assert_awaited_once_with(read_firmware=False)
+
     def test_builds_navigator_20_model_info_from_detected_name(self):
         model_info = _model_info_from_detected_name("Navigator 2.0", ["a", "b"], 0, False)
 

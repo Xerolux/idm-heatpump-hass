@@ -444,6 +444,63 @@ class TestSensorAsyncSetupEntry:
         assert hotgas.native_value == 72.5
         assert hotgas.available is True
 
+    async def test_web_sensor_uses_api_metadata_when_available(self, monkeypatch):
+        import custom_components.idm_heatpump.sensor as sensor_module
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        monkeypatch.setattr(
+            sensor_module,
+            "WEB_VALUE_DESCRIPTIONS",
+            {
+                "hotgas_temperature": {
+                    "preferred_unit": "K",
+                    "device_class": "temperature",
+                    "state_class": "measurement",
+                    "enabled_by_default": False,
+                }
+            },
+        )
+
+        class _SensorDeviceClass:
+            def __call__(self, value):
+                return value
+
+        class _SensorStateClass:
+            TOTAL_INCREASING = "total_increasing"
+
+            def __call__(self, value):
+                return value
+
+        monkeypatch.setattr(sensor_module, "SensorDeviceClass", _SensorDeviceClass())
+        monkeypatch.setattr(sensor_module, "SensorStateClass", _SensorStateClass())
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = True
+        coord._registers = []
+        coord.web_supplement = IdmWebSupplement(
+            sensor_values={"hotgas_temperature": IdmWebSensorValue("345K", 345.0, "K")}
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        hotgas = next(
+            entity
+            for entity in added_entities
+            if isinstance(entity, IdmWebSensor) and entity.entity_description.key == "web_hotgas_temperature"
+        )
+        assert hotgas.entity_description.native_unit_of_measurement == "K"
+        assert hotgas.entity_description.device_class == "temperature"
+        assert hotgas.entity_description.state_class == "measurement"
+        assert hotgas.entity_description.entity_registry_enabled_default is False
+
     async def test_web_sensor_device_info_uses_latest_firmware_metadata(self):
         from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
 

@@ -68,7 +68,6 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
-    DEFAULT_WEB_ONLY,
     DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     HEATING_CIRCUITS,
@@ -536,9 +535,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             options=self._options,
         )
 
-    async def async_step_modbus_failed(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_modbus_failed(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         host = str(self._data.get(CONF_HOST, ""))
 
@@ -547,12 +544,8 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if action == "retry":
                 return self.async_show_form(
                     step_id="user",
-                    data_schema=self.add_suggested_values_to_schema(
-                        STEP_USER_DATA_SCHEMA, self._data
-                    ),
-                    description_placeholders={
-                        "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
-                    },
+                    data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, self._data),
+                    description_placeholders={"wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"},
                 )
             if action == "web_only":
                 web_pin = str(self._data.get(CONF_WEB_PIN, "")).strip()
@@ -613,9 +606,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_web_only_options(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_web_only_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             self._options = {
                 CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
@@ -626,9 +617,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_TECHNICIAN_CODES: False,
                 CONF_ENABLE_CASCADE: False,
                 CONF_WEB_ENABLED: True,
-                CONF_WEB_SCAN_INTERVAL: int(
-                    user_input.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL)
-                ),
+                CONF_WEB_SCAN_INTERVAL: int(user_input.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL)),
                 CONF_ROOM_TEMP_FORWARDING: False,
                 CONF_ROOM_TEMP_FORWARDING_ENTITIES: {},
                 CONF_ROOM_TEMP_FORWARDING_INTERVAL: DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,

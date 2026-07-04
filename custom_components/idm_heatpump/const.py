@@ -9,6 +9,11 @@ from __future__ import annotations
 
 import enum
 
+try:
+    from idm_heatpump import RECOMMENDED_WEB_SCAN_INTERVAL
+except ImportError:
+    RECOMMENDED_WEB_SCAN_INTERVAL = 30.0
+
 DOMAIN: str = "idm_heatpump"
 NAME: str = "IDM Heatpump"
 MANUFACTURER: str = "iDM Energiesysteme"
@@ -47,7 +52,7 @@ DEFAULT_SCAN_INTERVAL: int = 10
 DEFAULT_HIDE_UNUSED: bool = True
 DEFAULT_ENABLE_CASCADE: bool = False
 DEFAULT_WEB_ENABLED: bool = True
-DEFAULT_WEB_SCAN_INTERVAL: int = 30
+DEFAULT_WEB_SCAN_INTERVAL: int = int(RECOMMENDED_WEB_SCAN_INTERVAL)
 DEFAULT_ROOM_TEMP_FORWARDING: bool = False
 DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE: float = 0.2
