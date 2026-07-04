@@ -122,10 +122,27 @@
           "room_temp_forwarding_f": "Gibt diesen Sensor an hc_f_ext_room_temp weiter.",
           "room_temp_forwarding_g": "Gibt diesen Sensor an hc_g_ext_room_temp weiter."
         }
+      },
+      "modbus_failed": {
+        "title": "Modbus-Verbindung fehlgeschlagen",
+        "description": "**Keine Modbus-TCP-Verbindung zur Wärmepumpe unter {host} möglich.**\n\nDie lokale Navigator-Weboberfläche ist verfügbar (PIN konfiguriert) — du kannst mit reinen Web-Daten fortfahren.\n\n**Einschränkungen im Web-Only-Modus:**\n- Nur Sensorwerte aus der Weboberfläche (Temperaturen, Drücke, Durchfluss etc.)\n- Keine Modbus-Register: keine Heizkreise, keine Zonen, keine schreibbaren Entitäten\n- Keine Betriebsartensteuerung, keine Störungsquittierung\n- Für vollen Funktionsumfang muss Modbus TCP vom iDM-Serviceteam freigeschaltet werden",
+        "data": {
+          "action": "Aktion"
+        }
+      },
+      "web_only_options": {
+        "title": "Web-Daten Einstellungen – {name}",
+        "description": "Konfiguriere, wie oft optionale Web-Zusatzdaten von der Navigator-Weboberfläche gelesen werden.",
+        "data": {
+          "web_scan_interval": "Web-Zusatzdaten-Intervall"
+        },
+        "data_description": {
+          "web_scan_interval": "Wie oft Webdaten gelesen werden. Standard: 30 Sekunden. Kürzere Intervalle erzeugen mehr Netzwerklast."
+        }
       }
     },
     "error": {
-      "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfe IP-Adresse, Port und ob Modbus TCP in der Steuerung aktiviert ist.",
+      "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfe IP-Adresse, Port und ob Modbus TCP in der Steuerung aktiviert ist. Falls Modbus nicht verfügbar ist, kannst du mit reinen Web-Daten fortfahren (zuvor deine lokale Navigator-PIN eingeben).",
       "host_required": "Bitte eine gültige IP-Adresse oder einen Hostnamen eingeben.",
       "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt. Bitte gib die korrekte PIN ein oder lasse das Feld leer, um nur Modbus zu verwenden.",
       "name_required": "Bitte einen Namen für das Gerät eingeben.",
@@ -301,6 +318,12 @@
       "options": {
         "set_pin": "PIN jetzt setzen",
         "disable_web": "Web-Zusatzdaten nicht nutzen"
+      }
+    },
+    "modbus_failed_action": {
+      "options": {
+        "retry": "Modbus erneut versuchen",
+        "web_only": "Nur Web-Daten (eingeschränkt)"
       }
     }
   },

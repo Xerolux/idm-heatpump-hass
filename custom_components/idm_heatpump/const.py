@@ -37,8 +37,10 @@ CONF_ROOM_TEMP_FORWARDING: str = "room_temp_forwarding"
 CONF_ROOM_TEMP_FORWARDING_INTERVAL: str = "room_temp_forwarding_interval"
 CONF_ROOM_TEMP_FORWARDING_TOLERANCE: str = "room_temp_forwarding_tolerance"
 CONF_ROOM_TEMP_FORWARDING_ENTITIES: str = "room_temp_forwarding_entities"
+CONF_WEB_ONLY: str = "web_only_mode"
 
 DEFAULT_HOST: str = ""
+DEFAULT_WEB_ONLY: bool = False
 DEFAULT_PORT: int = 502
 DEFAULT_SLAVE_ID: int = 1
 DEFAULT_SCAN_INTERVAL: int = 10
