@@ -13,7 +13,7 @@ from custom_components.idm_heatpump.adapter_registers import (
     model_info_from_flags,
 )
 
-from idm_heatpump.const import MODEL_NAVIGATOR_20
+from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -68,15 +68,36 @@ def test_glt_measurement_classification() -> None:
 
 
 def test_model_flag_helper_builds_cascade_aware_navigator_10_info() -> None:
-    model_info = model_info_from_flags(["A"], 0, enable_cascade=False)
+    model_info = model_info_from_flags(["A"], 0, enable_cascade=False, model_name=MODEL_NAVIGATOR_10)
 
     assert model_info.active_heating_circuits == ["A"]
     assert model_info.has_cascade is False
+    assert model_info.model_name == MODEL_NAVIGATOR_10
     assert "power_limit_hp" in build_filtered_register_map(model_info, ["A"], 0)
 
 
-def test_filtered_register_map_excludes_navigator_10_only_registers_for_navigator_20() -> None:
-    model_info = model_info_from_flags(["A"], 0, enable_cascade=False)
-    model_info.model_name = MODEL_NAVIGATOR_20
+def test_model_flag_helper_builds_navigator_20_info_from_explicit_model_name() -> None:
+    model_info = model_info_from_flags(["A", "B"], 2, enable_cascade=False, model_name=MODEL_NAVIGATOR_20)
 
-    assert "power_limit_hp" not in build_filtered_register_map(model_info, ["A"], 0)
+    assert model_info.model_name == MODEL_NAVIGATOR_20
+    assert model_info.active_heating_circuits == ["A", "B"]
+    assert model_info.zone_modules == 2
+    assert model_info.has_cascade is False
+    reg_map = build_filtered_register_map(model_info, ["A", "B"], 2)
+    assert "power_limit_hp" not in reg_map
+    assert "booster_b_source_inlet_temp" not in reg_map
+
+
+def test_model_flag_helper_accepts_default_model_name() -> None:
+    model_info = model_info_from_flags(["A"], 0, enable_cascade=False)
+
+    assert model_info.model_name == MODEL_NAVIGATOR_10
+
+
+def test_filtered_register_map_excludes_navigator_10_only_registers_for_navigator_20() -> None:
+    model_info = model_info_from_flags(["A"], 0, enable_cascade=False, model_name=MODEL_NAVIGATOR_20)
+
+    reg_map = build_filtered_register_map(model_info, ["A"], 0)
+
+    assert "power_limit_hp" not in reg_map
+    assert "booster_b_source_inlet_temp" not in reg_map

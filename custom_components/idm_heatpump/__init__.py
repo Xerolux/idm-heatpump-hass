@@ -56,7 +56,7 @@ from .const import (
     NAME,
 )
 from .web_data import async_read_web_supplement, merge_model_info, web_pin_configured
-from .coordinator import IdmCoordinator
+from .coordinator import IdmCoordinator, navigator_family
 from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
 from idm_heatpump import IdmModbusClient, IdmModelInfo
 from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO, MODEL_UNKNOWN
@@ -114,7 +114,11 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, 
     try:
         model_info = await client.detect_model()
     except Exception:
-        _LOGGER.debug("Heat pump model auto-detection failed", exc_info=True)
+        _LOGGER.warning(
+            "IDM Modbus model detection failed; using generic model %s and isolating unsupported registers during polling",
+            MODEL,
+            exc_info=True,
+        )
         return MODEL, None, None
 
     model_name = getattr(model_info, "model_name", None)
@@ -142,9 +146,15 @@ def _model_info_from_detected_name(
 ) -> IdmModelInfo | None:
     """Build fallback model info from trusted web/config metadata."""
     normalized = model_name.casefold()
-    if "navigator 2" in normalized:
+    has_navigator_20 = "navigator 2" in normalized
+    has_navigator_10 = "navigator 10" in normalized
+    if has_navigator_20 and has_navigator_10:
+        return None
+    if normalized == MODEL.casefold():
+        return None
+    if has_navigator_20:
         detected_model = MODEL_NAVIGATOR_20
-    elif "navigator 10" in normalized:
+    elif has_navigator_10:
         detected_model = MODEL_NAVIGATOR_10
     elif "navigator pro" in normalized:
         detected_model = MODEL_NAVIGATOR_PRO
@@ -162,18 +172,6 @@ def _model_info_from_detected_name(
     )
 
 
-def _navigator_family(model_name: str | None) -> str | None:
-    """Return a coarse Navigator generation identifier for conflict checks."""
-    if not isinstance(model_name, str):
-        return None
-    normalized = model_name.casefold()
-    if "navigator 2" in normalized:
-        return "navigator_20"
-    if "navigator 10" in normalized:
-        return "navigator_10"
-    if "navigator pro" in normalized:
-        return "navigator_pro"
-    return None
 
 
 async def _web_poll_loop(coordinator: IdmCoordinator, interval: int) -> None:
@@ -276,34 +274,61 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     try:
         model_name, firmware_version, detected_model_info = await _detect_model_info(client)
         modbus_model_name = model_name
+        _LOGGER.info(
+            "IDM Modbus model detection result: model=%s firmware=%s model_info=%s",
+            modbus_model_name,
+            firmware_version or "unknown",
+            "available" if detected_model_info is not None else "unavailable",
+        )
         stale_detected_data: dict[str, Any] = {}
+        stored_model_conflict = False
         detected_model_name = entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION)
         if (
             isinstance(detected_model_name, str)
             and detected_model_name.strip()
             and (
                 detected_model_info is None
-                or _navigator_family(detected_model_name) == _navigator_family(modbus_model_name)
+                or navigator_family(detected_model_name) == navigator_family(modbus_model_name)
             )
         ):
             model_name = detected_model_name.strip()
+            _LOGGER.info(
+                "Using stored IDM Navigator model %s because it matches fresh Modbus detection",
+                model_name,
+            )
         elif isinstance(detected_model_name, str) and detected_model_name.strip():
             stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = detected_model_name
+            stored_model_conflict = True
+            _LOGGER.warning(
+                "Stored IDM Navigator model %s conflicts with fresh Modbus detection %s; correcting stored data",
+                detected_model_name,
+                modbus_model_name,
+            )
         detected_firmware_version = entry.data.get(CONF_DETECTED_SOFTWARE_VERSION)
-        if isinstance(detected_firmware_version, str) and detected_firmware_version.strip():
+        if (
+            isinstance(detected_firmware_version, str)
+            and detected_firmware_version.strip()
+            and not stored_model_conflict
+        ):
             firmware_version = detected_firmware_version.strip()
 
         web_supplement = None
         if web_enabled and web_pin_configured(web_pin):
             try:
                 web_supplement = await async_read_web_supplement(web_host, web_pin)
-            except Exception:
-                _LOGGER.debug("Initial IDM web supplement detection failed", exc_info=True)
+            except Exception as err:
+                _LOGGER.warning(
+                    "Initial IDM web supplement read failed for %s: %s: %s; Modbus setup continues",
+                    web_host,
+                    err.__class__.__name__,
+                    err,
+                    exc_info=True,
+                )
             if (
                 web_supplement is not None
                 and detected_model_info is not None
                 and web_supplement.model_name
-                and _navigator_family(web_supplement.model_name) != _navigator_family(modbus_model_name)
+                and navigator_family(web_supplement.model_name) != navigator_family(modbus_model_name)
             ):
                 stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = web_supplement.model_name
                 _LOGGER.warning(
@@ -324,7 +349,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 data_updates[CONF_DETECTED_NAVIGATOR_VERSION] = modbus_model_name
             if firmware_version:
                 data_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
-            hass.config_entries.async_update_entry(entry, data={**entry.data, **data_updates})
+            updated_data = {**entry.data, **data_updates}
+            if stored_model_conflict and CONF_DETECTED_SOFTWARE_VERSION not in data_updates:
+                updated_data.pop(CONF_DETECTED_SOFTWARE_VERSION, None)
+                _LOGGER.info(
+                    "Removed stale stored IDM software version because the stored Navigator model was corrected"
+                )
+            _LOGGER.info("Persisting corrected IDM detection data: %s", sorted(data_updates))
+            hass.config_entries.async_update_entry(entry, data=updated_data)
 
         client_model_info = getattr(client, "model_info", None)
         if isinstance(client_model_info, IdmModelInfo):

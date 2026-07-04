@@ -304,6 +304,34 @@ async def test_async_read_web_supplement_raises_authentication_failure(
     assert nav10.closed
 
 
+async def test_async_read_web_supplement_prefers_nav20_auth_error_over_nav10_connection_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    nav10 = _FakeWebClient(error=RuntimeError("Cannot connect to host 192.0.2.10:61220"))
+    nav20 = _FakeWebClient(error=IdmWebAuthenticationError("bad pin"))
+
+    monkeypatch.setattr(idm_heatpump, "IdmWebAuthenticationError", IdmWebAuthenticationError, raising=False)
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator10_web_client",
+        lambda host, pin: nav10,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: nav20,
+        raising=False,
+    )
+
+    with pytest.raises(IdmWebAuthenticationFailed):
+        await async_read_web_supplement("192.0.2.10", "0000")
+
+    assert nav10.closed
+    assert nav20.closed
+
+
 def test_merge_model_info_prefers_web_supplement() -> None:
     model_name, firmware_version = merge_model_info(
         MODEL,

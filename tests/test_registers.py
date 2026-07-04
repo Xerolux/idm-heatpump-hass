@@ -119,7 +119,9 @@ class TestCollectAllRegisters:
         regs = collect_all_registers(["a"], 0, {}, model_info=model_info)
 
         assert all(reg.address != 4108 for reg in regs)
+        assert all(reg.address != 4040 for reg in regs)
         assert all(reg.name != "power_limit_hp" for reg in regs)
+        assert all(reg.name != "booster_b_source_inlet_temp" for reg in regs)
 
     def test_description_sorting_uses_functional_blocks(self):
         descs = [

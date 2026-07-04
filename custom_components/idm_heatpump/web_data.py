@@ -270,10 +270,10 @@ async def async_read_web_supplement(host: str, pin: str | None) -> IdmWebSupplem
             except Exception:
                 _LOGGER.debug("Error closing IDM web supplement client", exc_info=True)
 
-    if last_error is not None:
-        raise last_error
     if last_auth_error is not None:
         raise IdmWebAuthenticationFailed("IDM Navigator web PIN was rejected") from last_auth_error
+    if last_error is not None:
+        raise last_error
     _LOGGER.debug("IDM web supplement is unavailable; idm-heatpump-api has no web API")
     return None
 

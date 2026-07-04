@@ -642,10 +642,6 @@ class TestAsyncSetupEntryOptions:
         for mock_builder in (mock_sensors, mock_binary, mock_numbers, mock_selects, mock_switches):
             mock_builder.assert_called_once()
             assert mock_builder.call_args.args[:4] == expected_args
-            model_info = mock_builder.call_args.args[4]
-            assert model_info.active_heating_circuits == ["A", "C"]
-            assert model_info.zone_modules == 2
-            assert model_info.has_cascade is True
         mock_coordinator.setup_registers.assert_called_once_with(
             ["a", "c"],
             2,
@@ -1043,14 +1039,16 @@ class TestAsyncSetupEntryModelDetection:
             await async_setup_entry(mock_hass, entry)
 
         assert captured_kwargs["model_name"] == "Navigator 2.0"
+        assert captured_kwargs["firmware_version"] is None
         assert captured_kwargs["model_info"] is model_info
         assert mock_coordinator.setup_registers.call_args.kwargs["model_info"] is model_info
         mock_hass.config_entries.async_update_entry.assert_any_call(
             entry,
             data={
-                **entry.data,
+                "host": "10.0.0.9",
+                "port": 502,
+                "slave_id": 1,
                 "detected_navigator_version": "Navigator 2.0",
-                "detected_software_version": "NAV10_20.23",
             },
         )
 
@@ -1175,3 +1173,84 @@ class TestAsyncSetupEntryModelDetection:
             await async_setup_entry(mock_hass, entry)
 
         assert captured_kwargs.get("model_name") == MODEL
+
+    async def test_detection_failure_passes_none_model_info_to_platforms(self, mock_hass):
+        """When detect_model fails and no stored data exists, platform
+        functions must receive model_info=None so they include all registers
+        rather than incorrectly assuming Navigator 10."""
+        entry = self._make_entry()
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(side_effect=Exception("no response"))
+        mock_client.model_info = None
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_model_info: list[object | None] = []
+
+        def _capture_sensors(*args, **_kwargs):
+            captured_model_info.append(_kwargs.get("model_info") if _kwargs else args[-1] if args else None)
+            return []
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.8.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", side_effect=_capture_sensors),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_model_info
+        assert captured_model_info[0] is None
+
+    async def test_detection_failure_with_stored_navigator_version_builds_fallback_model_info(self, mock_hass):
+        """When detect_model fails but stored detected_navigator_version is
+        "Navigator 2.0", platform functions must receive a Navigator 2.0
+        model_info via _model_info_from_detected_name()."""
+        entry = self._make_entry()
+        entry.data = {
+            **entry.data,
+            "detected_navigator_version": "Navigator 2.0",
+        }
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(side_effect=Exception("probe timeout"))
+        mock_client.model_info = None
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_model_info: list[object | None] = []
+
+        def _capture_sensors(*args, **_kwargs):
+            captured_model_info.append(_kwargs.get("model_info") if _kwargs else args[-1] if args else None)
+            return []
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.8.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", side_effect=_capture_sensors),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_model_info
+        model_info = captured_model_info[0]
+        assert model_info is not None
+        assert model_info.model_name == "Navigator 2.0"
+        assert model_info.has_cascade is False

@@ -5,10 +5,11 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.idm_heatpump.coordinator import IdmCoordinator, _repair_issue_for_error
+from custom_components.idm_heatpump.coordinator import IdmCoordinator, _repair_issue_for_error, navigator_family
 from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
-from idm_heatpump import RegisterDef
+from idm_heatpump import IdmModelInfo, RegisterDef
 from idm_heatpump.client import DataType
+from idm_heatpump.const import MODEL_NAVIGATOR_20
 from pymodbus.exceptions import ConnectionException, ModbusException
 from custom_components.idm_heatpump.const import UNUSED_VALUE
 
@@ -29,10 +30,42 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
         select_descriptions=kwargs.get("select_descriptions", []),
         switch_descriptions=kwargs.get("switch_descriptions", []),
         hide_unused=kwargs.get("hide_unused", True),
+        model_name=kwargs.get("model_name", "Navigator 2.0 / 10"),
+        firmware_version=kwargs.get("firmware_version"),
+        model_info=kwargs.get("model_info"),
         web_pin=kwargs.get("web_pin"),
         web_host=kwargs.get("web_host"),
     )
     return coord, client
+
+
+class TestNavigatorFamily:
+    def test_returns_none_for_non_string(self):
+        assert navigator_family(None) is None
+        assert navigator_family(123) is None
+
+    def test_returns_none_for_generic_model(self):
+        assert navigator_family("Navigator 2.0 / 10") is None
+
+    def test_detects_navigator_20(self):
+        assert navigator_family("Navigator 2.0") == "navigator_20"
+        assert navigator_family("IDM Navigator 2.0") == "navigator_20"
+        assert navigator_family("navigator 2.0") == "navigator_20"
+
+    def test_detects_navigator_10(self):
+        assert navigator_family("Navigator 10") == "navigator_10"
+        assert navigator_family("IDM Navigator 10") == "navigator_10"
+        assert navigator_family("NAVIGATOR 10") == "navigator_10"
+
+    def test_detects_navigator_pro(self):
+        assert navigator_family("Navigator Pro") == "navigator_pro"
+
+    def test_returns_none_when_both_20_and_10_mentioned(self):
+        assert navigator_family("Navigator 2.0 vs Navigator 10") is None
+
+    def test_returns_none_for_unknown_model(self):
+        assert navigator_family("Terra SWM") is None
+        assert navigator_family("SomeOther Model") is None
 
 
 class TestCoordinatorInit:
@@ -589,6 +622,48 @@ class TestAsyncRefreshWebSupplement:
         assert coord.data["web_software_version"] == "NAV10_20.24"
         mock_ir.async_delete_issue.assert_called_once_with(mock_hass, "idm_heatpump", "web_supplement_failed")
         coord.async_update_listeners.assert_called_once()
+
+    async def test_web_refresh_does_not_override_modbus_detected_navigator_20(
+        self, mock_hass, mock_config_entry
+    ):
+        model_info = IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_20,
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0",
+            firmware_version=None,
+            model_info=model_info,
+            web_pin="2634",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.24",
+            sensor_values={"navigator_version": IdmWebSensorValue("Navigator 10", "Navigator 10")},
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.model_name == "Navigator 2.0"
+        assert coord.firmware_version is None
+        assert coord.web_supplement is supplement
+        assert coord.data["web_navigator_version"] == "Navigator 10"
 
     async def test_web_refresh_success_reports_missing_core_values(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")

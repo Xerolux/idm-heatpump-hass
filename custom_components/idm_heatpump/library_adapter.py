@@ -52,7 +52,7 @@ from .adapter_descriptions import (
     make_sensor_description,
 )
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
-from .adapter_registers import build_filtered_register_map, model_info_from_flags
+from .adapter_registers import build_filtered_register_map
 
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
 
@@ -471,8 +471,6 @@ def get_library_sensors(
     Returns sensor descriptions primarily sourced from the idm_heatpump library.
     This is intended to become the main source over time.
     """
-    if model_info is None and not enable_cascade:
-        model_info = model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
     reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     sensors = []
 
@@ -883,8 +881,6 @@ def get_library_numbers(
     enable_cascade: bool = True,
 ) -> list[dict[str, Any]]:
     """Returns number descriptions for writable library registers with HA metadata."""
-    if model_info is None and not enable_cascade:
-        model_info = model_info_from_flags(circuits or [], zone_modules or 0, enable_cascade)
     reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     return _numbers_from_register_map(reg_map)
 
