@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass, field
 import re
-from typing import Any, Protocol
+from typing import Any, Callable, Protocol
 
 from .const import MODEL
 
@@ -237,12 +237,75 @@ def _create_nav20_client(host: str, pin: str) -> _IdmWebClient | None:
     return client
 
 
-async def async_read_web_supplement(host: str, pin: str | None) -> IdmWebSupplement | None:
+# Type alias for a web client factory function.
+_WebClientFactory = Callable[[str, str], "_IdmWebClient | None"]
+
+_NAV10_VARIANTS = {"nav10", "navigator_10", "navigator_pro"}
+_NAV20_VARIANTS = {"nav20", "navigator_20"}
+
+
+def _preferred_web_variant(model_hint: str | None) -> str | None:
+    """Return 'nav10' or 'nav20' when the hint identifies a definite Navigator family.
+
+    Navigator 10 uses a local WebSocket login (port 61220, auth_code query
+    parameter). Navigator 2.0 uses an HTTP POST login with a CSRF token.
+    Trying the wrong variant wastes up to the full connect timeout on every
+    poll, so we use the Modbus-detected model to pick the right one first.
+    """
+    if not isinstance(model_hint, str) or not model_hint.strip():
+        return None
+    normalized = model_hint.casefold()
+    if normalized == MODEL.casefold():
+        return None
+    has_nav20 = "navigator 2" in normalized
+    has_nav10 = "navigator 10" in normalized
+    if has_nav20 and has_nav10:
+        return None
+    if has_nav10:
+        return "nav10"
+    if has_nav20:
+        return "nav20"
+    if "navigator pro" in normalized:
+        return "nav10"
+    return None
+
+
+def _ordered_web_factories(
+    model_hint: str | None,
+    preferred_variant: str | None = None,
+) -> tuple[_WebClientFactory, ...]:
+    """Return web client factories ordered so the most likely variant is first.
+
+    Priority:
+      1. ``preferred_variant`` — cached from a previous successful read.
+      2. ``model_hint`` — Modbus-detected model name.
+      3. Default: Navigator 10 WebSocket first (current generation).
+    """
+    nav10 = _create_nav10_client
+    nav20 = _create_nav20_client
+
+    variant = preferred_variant or _preferred_web_variant(model_hint)
+    if variant in _NAV20_VARIANTS:
+        return (nav20, nav10)
+    # nav10 or unknown → Nav 10 WebSocket first
+    return (nav10, nav20)
+
+
+async def async_read_web_supplement(
+    host: str,
+    pin: str | None,
+    model_hint: str | None = None,
+    preferred_variant: str | None = None,
+) -> IdmWebSupplement | None:
     """Read one optional local web supplement snapshot.
 
-    Navigator 10 is tried first because it uses the dedicated local WebSocket
-    port. Navigator 2.0 is tried afterwards via the HTTP web UI. Callers should
-    treat every exception as non-fatal to Modbus operation.
+    Navigator 10 and Navigator 2.0 use fundamentally different login
+    mechanisms (WebSocket auth_code vs. HTTP CSRF token). The
+    ``model_hint`` (Modbus-detected model) and ``preferred_variant``
+    (cached from a previous successful read) determine which client is
+    tried first to avoid wasting the connect timeout on the wrong
+    variant every poll cycle. Callers should treat every exception as
+    non-fatal to Modbus operation.
     """
     if not web_pin_configured(pin):
         return None
@@ -250,7 +313,8 @@ async def async_read_web_supplement(host: str, pin: str | None) -> IdmWebSupplem
     clean_pin = pin.strip() if pin is not None else ""
     last_error: Exception | None = None
     last_auth_error: Exception | None = None
-    for factory in (_create_nav10_client, _create_nav20_client):
+    factories = _ordered_web_factories(model_hint, preferred_variant)
+    for factory in factories:
         client = factory(host, clean_pin)
         if client is None:
             continue

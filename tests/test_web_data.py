@@ -11,6 +11,7 @@ from custom_components.idm_heatpump.web_data import (
     IdmWebAuthenticationFailed,
     IdmWebSensorValue,
     IdmWebSupplement,
+    _preferred_web_variant,
     async_read_web_supplement,
     merge_model_info,
     web_pin_configured,
@@ -341,3 +342,157 @@ def test_merge_model_info_prefers_web_supplement() -> None:
 
     assert model_name == "Navigator 10"
     assert firmware_version == "NAV10_20.23"
+
+
+# ---------------------------------------------------------------------------
+# Model-aware web client selection
+# ---------------------------------------------------------------------------
+
+
+def _patch_web_factories(monkeypatch: pytest.MonkeyPatch, nav10: _FakeWebClient, nav20: _FakeWebClient) -> None:
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator10_web_client",
+        lambda host, pin: nav10,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: nav20,
+        raising=False,
+    )
+
+
+def test_preferred_web_variant_detects_navigator_20() -> None:
+    assert _preferred_web_variant("Navigator 2.0") == "nav20"
+    assert _preferred_web_variant("IDM Navigator 2.0") == "nav20"
+
+
+def test_preferred_web_variant_detects_navigator_10() -> None:
+    assert _preferred_web_variant("Navigator 10") == "nav10"
+    assert _preferred_web_variant("IDM Navigator 10") == "nav10"
+
+
+def test_preferred_web_variant_detects_navigator_pro() -> None:
+    assert _preferred_web_variant("Navigator Pro") == "nav10"
+
+
+def test_preferred_web_variant_returns_none_for_generic_or_unknown() -> None:
+    assert _preferred_web_variant(MODEL) is None
+    assert _preferred_web_variant("Navigator 2.0 / 10") is None
+    assert _preferred_web_variant(None) is None
+    assert _preferred_web_variant("") is None
+    assert _preferred_web_variant("Terra SWM") is None
+
+
+async def test_model_hint_navigator20_tries_nav20_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With a Nav 2.0 model hint, the HTTP client must be tried first."""
+    nav10 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 10", software_version=None, heatpump_model=None, simple_values={})
+    )
+    nav20 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+    )
+    _patch_web_factories(monkeypatch, nav10, nav20)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234", model_hint="Navigator 2.0")
+
+    assert result is not None
+    assert result.navigator_version == "Navigator 2.0"
+    assert nav20.closed  # Nav 20 was tried (and succeeded)
+    assert not nav10.closed  # Nav 10 WebSocket was never attempted
+
+
+async def test_model_hint_navigator10_tries_nav10_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    """With a Nav 10 model hint, the WebSocket client must be tried first."""
+    nav10 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 10", software_version="NAV10_1.0", heatpump_model=None, simple_values={})
+    )
+    nav20 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+    )
+    _patch_web_factories(monkeypatch, nav10, nav20)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234", model_hint="Navigator 10")
+
+    assert result is not None
+    assert result.navigator_version == "Navigator 10"
+    assert nav10.closed  # Nav 10 was tried (and succeeded)
+    assert not nav20.closed  # Nav 20 HTTP was never attempted
+
+
+async def test_preferred_variant_overrides_model_hint(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Cached preferred_variant takes priority over model_hint."""
+    nav10 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 10", software_version=None, heatpump_model=None, simple_values={})
+    )
+    nav20 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+    )
+    _patch_web_factories(monkeypatch, nav10, nav20)
+
+    # model_hint says Nav 10 but cached variant says Nav 20
+    result = await async_read_web_supplement(
+        "192.0.2.10", "1234", model_hint="Navigator 10", preferred_variant="nav20"
+    )
+
+    assert result is not None
+    assert result.navigator_version == "Navigator 2.0"
+    assert nav20.closed
+    assert not nav10.closed
+
+
+async def test_preferred_variant_accepts_family_name(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Preferred variant also accepts the internal navigator family name."""
+    nav10 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 10", software_version=None, heatpump_model=None, simple_values={})
+    )
+    nav20 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+    )
+    _patch_web_factories(monkeypatch, nav10, nav20)
+
+    result = await async_read_web_supplement(
+        "192.0.2.10", "1234", model_hint="Navigator 10", preferred_variant="navigator_20"
+    )
+
+    assert result is not None
+    assert result.navigator_version == "Navigator 2.0"
+    assert nav20.closed
+    assert not nav10.closed
+
+
+async def test_no_hint_keeps_default_nav10_first(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Without any hint, Nav 10 WebSocket is tried first (current generation)."""
+    nav10 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 10", software_version=None, heatpump_model=None, simple_values={})
+    )
+    nav20 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+    )
+    _patch_web_factories(monkeypatch, nav10, nav20)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.navigator_version == "Navigator 10"
+    assert nav10.closed
+    assert not nav20.closed
+
+
+async def test_nav20_hint_falls_back_to_nav10_on_failure(monkeypatch: pytest.MonkeyPatch) -> None:
+    """If the preferred Nav 20 client fails, we still fall back to Nav 10."""
+    nav10 = _FakeWebClient(
+        SimpleNamespace(navigator_version="Navigator 10", software_version="NAV10_1.0", heatpump_model=None, simple_values={})
+    )
+    nav20 = _FakeWebClient(error=RuntimeError("HTTP 500"))
+    _patch_web_factories(monkeypatch, nav10, nav20)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234", model_hint="Navigator 2.0")
+
+    assert result is not None
+    assert result.navigator_version == "Navigator 10"
+    assert nav20.closed  # Nav 20 was tried first (and failed)
+    assert nav10.closed  # Nav 10 was tried as fallback (and succeeded)

@@ -315,7 +315,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         web_supplement = None
         if web_enabled and web_pin_configured(web_pin):
             try:
-                web_supplement = await async_read_web_supplement(web_host, web_pin)
+                web_supplement = await async_read_web_supplement(
+                    web_host,
+                    web_pin,
+                    model_hint=modbus_model_name,
+                )
             except Exception as err:
                 _LOGGER.warning(
                     "Initial IDM web supplement read failed for %s: %s: %s; Modbus setup continues",

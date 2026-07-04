@@ -560,7 +560,7 @@ class TestAsyncSetupEntryOptions:
         ):
             await async_setup_entry(mock_hass, entry)
 
-        read_web.assert_awaited_once_with("192.168.178.103", "2634")
+        read_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint="Navigator 2.0 / 10")
         assert captured_kwargs.get("web_host") == "192.168.178.103"
 
     async def test_coordinator_first_refresh_failure_raises_not_ready(self, mock_hass):

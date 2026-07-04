@@ -35,6 +35,7 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
         model_info=kwargs.get("model_info"),
         web_pin=kwargs.get("web_pin"),
         web_host=kwargs.get("web_host"),
+        web_supplement=kwargs.get("web_supplement"),
     )
     return coord, client
 
@@ -100,6 +101,18 @@ class TestCoordinatorInit:
     def test_config_entry_stored(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry)
         assert coord.config_entry is mock_config_entry
+
+    def test_initial_web_supplement_caches_navigator_pro_variant(self, mock_hass, mock_config_entry):
+        supplement = IdmWebSupplement(navigator_version="Navigator Pro")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_supplement=supplement)
+
+        assert coord.web_variant == "nav10"
+
+    def test_initial_web_supplement_uses_heatpump_model_for_variant(self, mock_hass, mock_config_entry):
+        supplement = IdmWebSupplement(heatpump_model="Navigator 2.0")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_supplement=supplement)
+
+        assert coord.web_variant == "nav20"
 
 
 class TestRepairIssueClassification:
@@ -577,7 +590,9 @@ class TestAsyncRefreshWebSupplement:
         ):
             await coord.async_refresh_web_supplement()
 
-        read_web.assert_awaited_once_with("192.168.178.103", "2634")
+        read_web.assert_awaited_once_with(
+            "192.168.178.103", "2634", model_hint="Navigator 2.0 / 10", preferred_variant=None
+        )
         assert coord.last_web_error == "TimeoutError: websocket timeout"
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
@@ -683,6 +698,243 @@ class TestAsyncRefreshWebSupplement:
 
         assert coord.web_value_keys == ("navigator_version",)
         assert coord.missing_web_core_values == ("software_version", "heatpump_model")
+
+    async def test_web_refresh_persists_retroactive_navigator_detection(self, mock_hass, mock_config_entry):
+        """Retroactively detected model/firmware must be persisted for reloads."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.24",
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        mock_hass.config_entries.async_update_entry.assert_called_once()
+        _, kwargs = mock_hass.config_entries.async_update_entry.call_args
+        assert kwargs["data"]["detected_navigator_version"] == "Navigator 10"
+        assert kwargs["data"]["detected_software_version"] == "NAV10_20.24"
+
+    async def test_web_refresh_does_not_persist_on_conflict(self, mock_hass, mock_config_entry):
+        """No persistence when web model conflicts with Modbus detection."""
+        model_info = IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_20,
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0",
+            model_info=model_info,
+            web_pin="2634",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.24",
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        mock_hass.config_entries.async_update_entry.assert_not_called()
+
+    async def test_web_refresh_does_not_persist_unchanged_values(self, mock_hass, mock_config_entry):
+        """No persistence when stored values already match the web detection."""
+        mock_config_entry.data = {
+            **mock_config_entry.data,
+            "detected_navigator_version": "Navigator 10",
+            "detected_software_version": "NAV10_20.24",
+        }
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.24",
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        mock_hass.config_entries.async_update_entry.assert_not_called()
+
+    async def test_web_refresh_updates_model_info_when_undetected(self, mock_hass, mock_config_entry):
+        """model_info with a generic/unknown name gets updated from web detection."""
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0 / 10",
+            model_info=None,
+            web_pin="2634",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(navigator_version="Navigator 10")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        # model_info stays None (nothing to update), but model_name is set
+        assert coord.model_name == "Navigator 10"
+        assert coord.model_info is None
+
+    async def test_web_refresh_updates_generic_model_info_name(self, mock_hass, mock_config_entry):
+        """model_info with a non-definitive name is updated to the web-detected model."""
+        from idm_heatpump.const import MODEL_UNKNOWN
+
+        model_info = IdmModelInfo(
+            model_name=MODEL_UNKNOWN,
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0 / 10",
+            model_info=model_info,
+            web_pin="2634",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(navigator_version="Navigator 10")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.model_name == "Navigator 10"
+        assert coord.model_info is not None
+        assert coord.model_info.model_name == "Navigator 10"
+
+    async def test_web_refresh_caches_navigator20_variant(self, mock_hass, mock_config_entry):
+        """After a successful Nav 2.0 web read, the variant is cached for future polls."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(navigator_version="Navigator 2.0", software_version="2.35")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ) as read_web,
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.web_variant == "nav20"
+        # First call: no cached variant
+        _, kwargs = read_web.call_args
+        assert kwargs.get("preferred_variant") is None
+
+        # Second poll: cached variant is passed
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ) as read_web2,
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        _, kwargs2 = read_web2.call_args
+        assert kwargs2.get("preferred_variant") == "nav20"
+
+    async def test_web_refresh_caches_navigator10_variant(self, mock_hass, mock_config_entry):
+        """After a successful Nav 10 web read, the variant is cached for future polls."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(navigator_version="Navigator 10")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.web_variant == "nav10"
+
+    async def test_web_refresh_caches_navigator_pro_variant(self, mock_hass, mock_config_entry):
+        """Navigator Pro uses the Nav 10 WebSocket web access variant."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(navigator_version="Navigator Pro")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.web_variant == "nav10"
+
+    async def test_web_refresh_uses_heatpump_model_for_variant(self, mock_hass, mock_config_entry):
+        """The cache also works when the web API exposes heatpump_model only."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(heatpump_model="Navigator 2.0")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.web_variant == "nav20"
 
 
 class TestCoordinatorProperties:
