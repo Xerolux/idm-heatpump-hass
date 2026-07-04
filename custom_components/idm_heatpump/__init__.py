@@ -172,8 +172,6 @@ def _model_info_from_detected_name(
     )
 
 
-
-
 async def _web_poll_loop(coordinator: IdmCoordinator, interval: int) -> None:
     """Poll optional web supplement data independently from Modbus."""
     await asyncio.sleep(0.3)

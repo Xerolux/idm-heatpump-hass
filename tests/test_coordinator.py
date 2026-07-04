@@ -638,9 +638,7 @@ class TestAsyncRefreshWebSupplement:
         mock_ir.async_delete_issue.assert_called_once_with(mock_hass, "idm_heatpump", "web_supplement_failed")
         coord.async_update_listeners.assert_called_once()
 
-    async def test_web_refresh_does_not_override_modbus_detected_navigator_20(
-        self, mock_hass, mock_config_entry
-    ):
+    async def test_web_refresh_does_not_override_modbus_detected_navigator_20(self, mock_hass, mock_config_entry):
         model_info = IdmModelInfo(
             model_name=MODEL_NAVIGATOR_20,
             active_heating_circuits=["A"],

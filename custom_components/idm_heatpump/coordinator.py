@@ -476,6 +476,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if model_conflicts:
             return
         entry = self.config_entry
+        if entry is None:
+            return
         data = getattr(entry, "data", None)
         if not isinstance(data, dict):
             return
