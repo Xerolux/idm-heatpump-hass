@@ -38,6 +38,7 @@ from .const import (
     CONF_SLAVE_ID,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
+    CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
@@ -50,6 +51,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
+    DEFAULT_WEB_ONLY,
     DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     MODEL,
@@ -192,6 +194,74 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     return True
 
 
+async def _async_setup_web_only_entry(
+    hass: HomeAssistant,
+    entry: IdmConfigEntry,
+    host: str,
+    port: int,
+    slave_id: int,
+    scan_interval: int,
+    web_pin: str | None,
+    web_host: str,
+    web_scan_interval: int,
+) -> bool:
+    """Set up a web-only integration entry (no Modbus)."""
+    ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+
+    web_supplement = None
+    model_name: str = MODEL
+    firmware_version: str | None = None
+
+    try:
+        web_supplement = await async_read_web_supplement(web_host, web_pin)
+    except Exception as err:
+        _LOGGER.warning(
+            "Initial IDM web supplement read failed for %s: %s; continuing with generic model",
+            web_host,
+            err,
+        )
+
+    if web_supplement is not None:
+        model_name = web_supplement.model_name or MODEL
+        firmware_version = web_supplement.software_version
+
+    client = get_idm_client(host=host, port=port, slave_id=slave_id)
+
+    empty_descriptions: list[dict[str, Any]] = []
+    coordinator = IdmCoordinator(
+        hass=hass,
+        config_entry=entry,
+        client=client,
+        scan_interval=timedelta(seconds=scan_interval),
+        sensor_descriptions=empty_descriptions,
+        binary_sensor_descriptions=empty_descriptions,
+        number_descriptions=empty_descriptions,
+        select_descriptions=empty_descriptions,
+        switch_descriptions=empty_descriptions,
+        hide_unused=False,
+        model_name=model_name,
+        firmware_version=firmware_version,
+        model_info=None,
+        web_pin=web_pin,
+        web_host=web_host,
+        web_supplement=web_supplement,
+    )
+    coordinator.setup_registers(["a"], 0, {}, False)
+    coordinator.data = {}
+
+    entry.runtime_data = IdmHeatpumpData(
+        coordinator=coordinator,
+        client=client,
+    )
+
+    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+
+    entry.runtime_data.web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
+
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    return True
+
+
 async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     """Migrate connection-based IDs to stable config-entry-based IDs."""
     if entry.version != 1 or entry.minor_version >= 2:
@@ -255,6 +325,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         )
     else:
         ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+
+    web_only = bool(entry.data.get(CONF_WEB_ONLY, DEFAULT_WEB_ONLY))
+
+    if web_only:
+        return await _async_setup_web_only_entry(
+            hass, entry, host, port, slave_id, scan_interval, web_pin, web_host, web_scan_interval
+        )
 
     # Use the library via the adapter (migration Option B)
     client = get_idm_client(host=host, port=port, slave_id=slave_id)
@@ -470,7 +547,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
                 await room_temp_forwarding_task
             except asyncio.CancelledError:
                 pass
-        await entry.runtime_data.client.disconnect()
+        try:
+            await entry.runtime_data.client.disconnect()
+        except Exception:
+            _LOGGER.debug("Error disconnecting client for %s", entry.title, exc_info=True)
         from .services import async_unload_services
 
         await async_unload_services(hass)

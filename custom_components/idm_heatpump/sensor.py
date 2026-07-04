@@ -286,9 +286,12 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
 
 def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefinition]:
     modbus_register_names = {reg.name for reg in getattr(coordinator, "_registers", [])}
+    has_modbus = len(modbus_register_names) > 0
     definitions = []
     for key in (*_WEB_VALUE_NAMES, *_WEB_ONLY_EXTRA_VALUE_NAMES):
-        if key in modbus_register_names or key in _WEB_MODBUS_DUPLICATE_VALUES:
+        if key in modbus_register_names:
+            continue
+        if has_modbus and key in _WEB_MODBUS_DUPLICATE_VALUES:
             continue
         definitions.append(_web_sensor_definition(key))
     return sorted(definitions, key=_web_sensor_sort_key)
@@ -341,13 +344,17 @@ class IdmSensor(IdmEntity, SensorEntity):
         if self._register.name == "internal_message":
             return format_internal_message(value)
         if self._register.enum_options:
+            try:
+                int_value = int(value)
+            except (TypeError, ValueError):
+                return value
             if self._register.datatype == DataType.BITFLAG:
                 de_labels = get_bitflag_de_labels(self._register.name)
-                return _decode_bitflag(int(value), de_labels or self._register.enum_options)
+                return _decode_bitflag(int_value, de_labels or self._register.enum_options)
             slug_map, _ = get_slug_map_and_key(self._register.name)
             if slug_map is not None:
-                return slug_map.get(int(value))
-            return self._register.enum_options.get(value, f"Unbekannt ({value})")
+                return slug_map.get(int_value)
+            return self._register.enum_options.get(int_value, f"Unbekannt ({value})")
         return value
 
     @property
@@ -362,7 +369,10 @@ class IdmSensor(IdmEntity, SensorEntity):
         message_text = internal_message_text(value)
         if message_text is None:
             return None
-        message_code = int(value)
+        try:
+            message_code = int(value)
+        except (TypeError, ValueError):
+            return None
         return {
             "message_code": message_code,
             "message_text": message_text,

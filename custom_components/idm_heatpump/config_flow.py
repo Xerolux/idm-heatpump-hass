@@ -54,6 +54,7 @@ from .const import (
     CONF_TECHNICIAN_CODES,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
+    CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
@@ -67,6 +68,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
+    DEFAULT_WEB_ONLY,
     DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     HEATING_CIRCUITS,
@@ -348,6 +350,18 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 )
 
                 if not await self._test_connection(user_input):
+                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
+                    if web_pin_configured(web_pin):
+                        web_host = _web_host_for_input(user_input, host)
+                        self._data = {
+                            **user_input,
+                            CONF_HOST: host,
+                            CONF_NAME: name,
+                            CONF_WEB_PIN: web_pin,
+                            CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
+                            CONF_WEB_HOST: _stored_web_host(web_host, host),
+                        }
+                        return await self.async_step_modbus_failed()
                     errors["base"] = "cannot_connect"
                 else:
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
@@ -512,6 +526,116 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             title=self._data[CONF_NAME],
             data=self._data,
             options=self._options,
+        )
+
+    async def async_step_modbus_failed(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        host = str(self._data.get(CONF_HOST, ""))
+
+        if user_input is not None:
+            action = user_input.get("action")
+            if action == "retry":
+                return self.async_show_form(
+                    step_id="user",
+                    data_schema=self.add_suggested_values_to_schema(
+                        STEP_USER_DATA_SCHEMA, self._data
+                    ),
+                    description_placeholders={
+                        "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
+                    },
+                )
+            if action == "web_only":
+                web_pin = str(self._data.get(CONF_WEB_PIN, "")).strip()
+                web_host = str(self._data.get(CONF_WEB_HOST) or host).strip()
+                try:
+                    detected = await self._async_detect_web_supplement(web_host, web_pin)
+                except IdmWebAuthenticationFailed:
+                    _LOGGER.warning(
+                        "IDM Navigator web PIN was rejected during web-only setup for host %s", web_host
+                    )
+                    errors["web_pin"] = "invalid_web_pin"
+                    return self.async_show_form(
+                        step_id="modbus_failed",
+                        data_schema=vol.Schema(
+                            {
+                                vol.Required("action"): SelectSelector(
+                                    SelectSelectorConfig(
+                                        options=["retry", "web_only"],
+                                        mode=SelectSelectorMode.DROPDOWN,
+                                        translation_key="modbus_failed_action",
+                                    )
+                                )
+                            }
+                        ),
+                        description_placeholders={"host": host},
+                        errors=errors,
+                    )
+                self._data[CONF_WEB_ONLY] = True
+                if detected:
+                    self._data.update(detected)
+                return await self.async_step_web_only_options()
+
+        return self.async_show_form(
+            step_id="modbus_failed",
+            data_schema=vol.Schema(
+                {
+                    vol.Required("action"): SelectSelector(
+                        SelectSelectorConfig(
+                            options=["retry", "web_only"],
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key="modbus_failed_action",
+                        )
+                    )
+                }
+            ),
+            description_placeholders={"host": host},
+            errors=errors,
+        )
+
+    async def async_step_web_only_options(
+        self, user_input: dict[str, Any] | None = None
+    ) -> ConfigFlowResult:
+        if user_input is not None:
+            self._options = {
+                CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+                CONF_HIDE_UNUSED: DEFAULT_HIDE_UNUSED,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_ZONE_ROOMS: {},
+                CONF_TECHNICIAN_CODES: False,
+                CONF_ENABLE_CASCADE: False,
+                CONF_WEB_ENABLED: True,
+                CONF_WEB_SCAN_INTERVAL: int(
+                    user_input.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL)
+                ),
+                CONF_ROOM_TEMP_FORWARDING: False,
+                CONF_ROOM_TEMP_FORWARDING_ENTITIES: {},
+                CONF_ROOM_TEMP_FORWARDING_INTERVAL: DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
+                CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
+            }
+            return self._async_create_config_entry()
+
+        return self.async_show_form(
+            step_id="web_only_options",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(
+                        CONF_WEB_SCAN_INTERVAL,
+                        default=DEFAULT_WEB_SCAN_INTERVAL,
+                    ): NumberSelector(
+                        NumberSelectorConfig(
+                            min=30,
+                            max=1800,
+                            step=10,
+                            mode=NumberSelectorMode.SLIDER,
+                            unit_of_measurement="s",
+                        )
+                    ),
+                }
+            ),
+            description_placeholders={"name": self._data.get(CONF_NAME, "")},
         )
 
     @staticmethod

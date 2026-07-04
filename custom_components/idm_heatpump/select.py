@@ -68,12 +68,16 @@ class IdmSelect(IdmEntity, SelectEntity):
         raw = self.coordinator.data.get(self._register.name)
         if raw is None:
             return None
+        try:
+            int_raw = int(raw)
+        except (TypeError, ValueError):
+            return None
         if self._enum_slug_map is not None:
-            return self._enum_slug_map.get(int(raw))
+            return self._enum_slug_map.get(int_raw)
         options = self._register.enum_options
         if options is None:
             return None
-        return options.get(int(raw))
+        return options.get(int_raw)
 
     def _option_to_value(self, option: str) -> int:
         normalized_option = option.casefold()

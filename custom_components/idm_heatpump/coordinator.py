@@ -140,6 +140,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._unused_registers: set[str] = set()
         self._unsupported_registers: set[str] = set()
         self._alias_map: dict[int, list[str]] = {}
+        self._delayed_refresh_task: asyncio.Task[None] | None = None
 
         super().__init__(
             hass,
@@ -528,7 +529,6 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self.data is not None:
             self.data[reg.name] = value
         self.async_update_listeners()
-        # Delayed refresh: wait for device to confirm write before re-polling.
-        # Without delay, read-back may return stale value before device processes write,
-        # causing optimistic update to be overwritten.
-        asyncio.create_task(self._delayed_refresh())
+        if self._delayed_refresh_task is not None and not self._delayed_refresh_task.done():
+            self._delayed_refresh_task.cancel()
+        self._delayed_refresh_task = asyncio.create_task(self._delayed_refresh())
