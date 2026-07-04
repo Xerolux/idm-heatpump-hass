@@ -92,6 +92,7 @@ jobs:
             --cov-report=term-missing
 
   hacs:
+    if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     name: HACS Validation
     steps:
