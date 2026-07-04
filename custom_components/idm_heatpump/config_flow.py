@@ -352,6 +352,10 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 if not await self._test_connection(user_input):
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
                     if web_pin_configured(web_pin):
+                        _LOGGER.info(
+                            "IDM Modbus connection to %s failed, but web PIN is configured; offering web-only fallback",
+                            host,
+                        )
                         web_host = _web_host_for_input(user_input, host)
                         self._data = {
                             **user_input,
@@ -362,6 +366,10 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             CONF_WEB_HOST: _stored_web_host(web_host, host),
                         }
                         return await self.async_step_modbus_failed()
+                    _LOGGER.warning(
+                        "IDM Modbus connection to %s failed and no web PIN configured; cannot set up integration",
+                        host,
+                    )
                     errors["base"] = "cannot_connect"
                 else:
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
@@ -549,13 +557,19 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if action == "web_only":
                 web_pin = str(self._data.get(CONF_WEB_PIN, "")).strip()
                 web_host = str(self._data.get(CONF_WEB_HOST) or host).strip()
+                _LOGGER.info(
+                    "Attempting IDM web-only setup for %s via %s; auto-detecting Navigator web variant",
+                    host,
+                    web_host,
+                )
                 try:
                     detected = await self._async_detect_web_supplement(web_host, web_pin)
                 except IdmWebAuthenticationFailed:
                     _LOGGER.warning(
-                        "IDM Navigator web PIN was rejected during web-only setup for host %s", web_host
+                        "IDM Navigator web interface at %s rejected the PIN during web-only setup",
+                        web_host,
                     )
-                    errors["web_pin"] = "invalid_web_pin"
+                    errors["base"] = "invalid_web_pin_web_only"
                     return self.async_show_form(
                         step_id="modbus_failed",
                         data_schema=vol.Schema(
@@ -572,6 +586,11 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         description_placeholders={"host": host},
                         errors=errors,
                     )
+                _LOGGER.info(
+                    "IDM web-only setup for %s succeeded; detected=%s",
+                    host,
+                    sorted(detected.keys()) if detected else "none",
+                )
                 self._data[CONF_WEB_ONLY] = True
                 if detected:
                     self._data.update(detected)
@@ -656,14 +675,38 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         try:
             await client.connect()
             if not client.is_connected:
+                _LOGGER.warning(
+                    "IDM Modbus connection test to %s:%d (slave %s) failed: not connected after connect()",
+                    client.host,
+                    client.port,
+                    client.slave_id,
+                )
                 return False
             value = await client.probe_register(1000, 2)
             if value is not None:
+                _LOGGER.info(
+                    "IDM Modbus connection test to %s:%d (slave %s) succeeded",
+                    client.host,
+                    client.port,
+                    client.slave_id,
+                )
                 return True
-            _LOGGER.warning("Connection test: could not read test register")
+            _LOGGER.warning(
+                "IDM Modbus connection test to %s:%d (slave %s) failed: probe register returned no data",
+                client.host,
+                client.port,
+                client.slave_id,
+            )
             return False
         except Exception as err:
-            _LOGGER.debug("Connection test failed: %s", err)
+            _LOGGER.warning(
+                "IDM Modbus connection test to %s:%d (slave %s) failed: %s: %s",
+                client.host,
+                client.port,
+                client.slave_id,
+                err.__class__.__name__,
+                err,
+            )
             return False
         finally:
             try:

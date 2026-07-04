@@ -125,14 +125,14 @@
       },
       "modbus_failed": {
         "title": "Modbus connection failed",
-        "description": "**Could not connect to the heat pump via Modbus TCP at {host}.**\n\nThe local Navigator web interface is available (PIN configured) — you can continue with web data only.\n\n**Web-Only mode limitations:**\n- Only sensor values from the web interface (temperatures, pressures, flow rate, etc.)\n- No Modbus registers: no heating circuits, no zones, no writable entities\n- No system mode control, no error acknowledgement\n- Installer-level Modbus activation by your iDM service team is required for full functionality",
+        "description": "**Could not connect to the heat pump via Modbus TCP at {host}.**\n\nBecause a local Navigator web PIN was entered, you can choose to continue with **web data only** (limited functionality). If Modbus should work, choose **Retry Modbus connection** and check the IP address, port and slave ID first.\n\n**Web-Only mode limitations:**\n- Only sensor values from the web interface (temperatures, pressures, flow rate, etc.)\n- No Modbus registers: no heating circuits, no zones, no writable entities\n- No system mode control, no error acknowledgement\n- Installer-level Modbus activation by your iDM service team is required for full functionality",
         "data": {
           "action": "Action"
         }
       },
       "web_only_options": {
         "title": "Web data settings – {name}",
-        "description": "Configure how often optional web supplement data is read from the Navigator web interface.",
+        "description": "Web-Only mode is active. Configure how often the integration reads sensor data from the Navigator web interface. Modbus-based entities (heating circuits, zones, writable controls) are not available in this mode.",
         "data": {
           "web_scan_interval": "Web supplement interval"
         },
@@ -145,6 +145,7 @@
       "cannot_connect": "Failed to connect to the heat pump. Check the IP address, port, and whether Modbus TCP is enabled in the controller. If Modbus is not available, you can continue with web data only (enter your local Navigator PIN first).",
       "host_required": "Please enter a valid IP address or hostname.",
       "invalid_web_pin": "The local Navigator web interface rejected this PIN. Please enter the correct PIN or leave the field empty to use Modbus only.",
+      "invalid_web_pin_web_only": "The local Navigator web interface rejected this PIN. Choose Retry to correct the IP/port/slave and try Modbus again, or enter the correct PIN to use web data only.",
       "name_required": "Please enter a name for the device.",
       "web_host_required": "Enter the original heat pump IP/hostname for web access, or disable the Modbus proxy option."
     },

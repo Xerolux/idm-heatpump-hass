@@ -206,6 +206,11 @@ async def _async_setup_web_only_entry(
     web_scan_interval: int,
 ) -> bool:
     """Set up a web-only integration entry (no Modbus)."""
+    _LOGGER.info(
+        "Setting up IDM heat pump %s in web-only mode via %s (Modbus will not be used)",
+        entry.title,
+        web_host,
+    )
     ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
 
     web_supplement = None
@@ -216,14 +221,28 @@ async def _async_setup_web_only_entry(
         web_supplement = await async_read_web_supplement(web_host, web_pin)
     except Exception as err:
         _LOGGER.warning(
-            "Initial IDM web supplement read failed for %s: %s; continuing with generic model",
+            "IDM web supplement initial read failed for %s during web-only setup: %s: %s. "
+            "Continuing with generic model; the web polling loop will retry automatically.",
             web_host,
+            err.__class__.__name__,
             err,
         )
 
     if web_supplement is not None:
         model_name = web_supplement.model_name or MODEL
         firmware_version = web_supplement.software_version
+        _LOGGER.info(
+            "IDM web-only setup for %s detected model=%s firmware=%s",
+            web_host,
+            model_name,
+            firmware_version or "unknown",
+        )
+    else:
+        _LOGGER.warning(
+            "IDM web-only setup for %s could not detect the heat pump model; using generic %s",
+            web_host,
+            MODEL,
+        )
 
     client = get_idm_client(host=host, port=port, slave_id=slave_id)
 
@@ -246,7 +265,8 @@ async def _async_setup_web_only_entry(
         web_host=web_host,
         web_supplement=web_supplement,
     )
-    coordinator.setup_registers(["a"], 0, {}, False)
+    coordinator._registers = []
+    coordinator._alias_map = {}
     coordinator.data = {}
 
     entry.runtime_data = IdmHeatpumpData(
