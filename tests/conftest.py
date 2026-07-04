@@ -961,6 +961,8 @@ def _stub_idm_heatpump() -> None:
     idm_mod.build_register_map = build_register_map  # type: ignore[attr-defined]
     idm_mod.get_heating_circuit_registers = get_heating_circuit_registers  # type: ignore[attr-defined]
     idm_mod.get_zone_module_registers = get_zone_module_registers  # type: ignore[attr-defined]
+    idm_mod.RECOMMENDED_WEB_SCAN_INTERVAL = 30.0  # type: ignore[attr-defined]
+    idm_mod.WEB_VALUE_DESCRIPTIONS = {}  # type: ignore[attr-defined]
     sys.modules["idm_heatpump"] = idm_mod
 
     client_mod = ModuleType("idm_heatpump.client")

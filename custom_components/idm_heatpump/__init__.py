@@ -102,11 +102,13 @@ IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
 async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, IdmModelInfo | None]:
     """Probe the heat pump for its model and firmware version.
 
-    Returns (model_name, firmware_version, model_info). detect_model() reads a
-    handful of registers to distinguish Navigator 2.0, Navigator 10 and
-    Navigator Pro; model_name falls back to the generic MODEL constant if
-    detection fails (e.g. older firmware, transient Modbus error) or is
-    inconclusive, so setup never fails because of this.
+    Returns (model_name, firmware_version, model_info). detect_model() reads
+    only the model-probe registers to distinguish Navigator 2.0, Navigator 10
+    and Navigator Pro. It intentionally skips the optional firmware register
+    probe because register 4120 is unreliable on some Navigator 10 firmwares.
+    model_name falls back to the generic MODEL constant if detection fails
+    (e.g. older firmware, transient Modbus error) or is inconclusive, so setup
+    never fails because of this.
 
     firmware_version is read via getattr defensively: idm-heatpump-api 0.3.4
     does not expose it on IdmModelInfo yet, but a future release is expected
@@ -114,7 +116,10 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, 
     version bump here or raising on the current release.
     """
     try:
-        model_info = await client.detect_model()
+        try:
+            model_info = await client.detect_model(read_firmware=False)
+        except TypeError:
+            model_info = await client.detect_model()
     except Exception:
         _LOGGER.warning(
             "IDM Modbus model detection failed; using generic model %s and isolating unsupported registers during polling",
