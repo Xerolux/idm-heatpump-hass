@@ -173,7 +173,7 @@ class TestAsyncStepUser:
                     "port": 1502,
                     "slave_id": 2,
                 }
-        )
+            )
 
         assert result["type"] == "form"
         assert result["errors"]["host"] == "already_configured"
@@ -482,7 +482,7 @@ class TestAsyncStepReconfigure:
                     "port": 1502,
                     "slave_id": 2,
                 }
-        )
+            )
 
         assert result["type"] == "form"
         assert result["errors"]["host"] == "already_configured"
