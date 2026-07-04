@@ -52,6 +52,25 @@ All notable changes to this project will be documented in this file.
 
 - Full local test suite: `491 passed`
 
+### Support
+
+Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:
+
+- [GitHub Sponsors](https://github.com/sponsors/xerolux)
+- [Ko-Fi](https://ko-fi.com/xerolux)
+- [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)
+- [PayPal](https://paypal.me/xerolux)
+
+---
+
+[Full changelog: v0.7.3...v0.8.0-beta.5](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.7.3...v0.8.0-beta.5)
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+_Generated automatically by GitHub Actions on 2026-07-04 05:30:39 UTC_
+
 ---
 
 ## [0.8.0-beta.4] - 2026-07-03
