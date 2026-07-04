@@ -393,7 +393,9 @@ async def test_model_hint_navigator20_tries_nav20_first(monkeypatch: pytest.Monk
         SimpleNamespace(navigator_version="Navigator 10", software_version=None, heatpump_model=None, simple_values={})
     )
     nav20 = _FakeWebClient(
-        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+        SimpleNamespace(
+            navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={}
+        )
     )
     _patch_web_factories(monkeypatch, nav10, nav20)
 
@@ -408,10 +410,14 @@ async def test_model_hint_navigator20_tries_nav20_first(monkeypatch: pytest.Monk
 async def test_model_hint_navigator10_tries_nav10_first(monkeypatch: pytest.MonkeyPatch) -> None:
     """With a Nav 10 model hint, the WebSocket client must be tried first."""
     nav10 = _FakeWebClient(
-        SimpleNamespace(navigator_version="Navigator 10", software_version="NAV10_1.0", heatpump_model=None, simple_values={})
+        SimpleNamespace(
+            navigator_version="Navigator 10", software_version="NAV10_1.0", heatpump_model=None, simple_values={}
+        )
     )
     nav20 = _FakeWebClient(
-        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+        SimpleNamespace(
+            navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={}
+        )
     )
     _patch_web_factories(monkeypatch, nav10, nav20)
 
@@ -429,14 +435,14 @@ async def test_preferred_variant_overrides_model_hint(monkeypatch: pytest.Monkey
         SimpleNamespace(navigator_version="Navigator 10", software_version=None, heatpump_model=None, simple_values={})
     )
     nav20 = _FakeWebClient(
-        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+        SimpleNamespace(
+            navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={}
+        )
     )
     _patch_web_factories(monkeypatch, nav10, nav20)
 
     # model_hint says Nav 10 but cached variant says Nav 20
-    result = await async_read_web_supplement(
-        "192.0.2.10", "1234", model_hint="Navigator 10", preferred_variant="nav20"
-    )
+    result = await async_read_web_supplement("192.0.2.10", "1234", model_hint="Navigator 10", preferred_variant="nav20")
 
     assert result is not None
     assert result.navigator_version == "Navigator 2.0"
@@ -450,7 +456,9 @@ async def test_preferred_variant_accepts_family_name(monkeypatch: pytest.MonkeyP
         SimpleNamespace(navigator_version="Navigator 10", software_version=None, heatpump_model=None, simple_values={})
     )
     nav20 = _FakeWebClient(
-        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+        SimpleNamespace(
+            navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={}
+        )
     )
     _patch_web_factories(monkeypatch, nav10, nav20)
 
@@ -470,7 +478,9 @@ async def test_no_hint_keeps_default_nav10_first(monkeypatch: pytest.MonkeyPatch
         SimpleNamespace(navigator_version="Navigator 10", software_version=None, heatpump_model=None, simple_values={})
     )
     nav20 = _FakeWebClient(
-        SimpleNamespace(navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={})
+        SimpleNamespace(
+            navigator_version="Navigator 2.0", software_version="2.35", heatpump_model=None, simple_values={}
+        )
     )
     _patch_web_factories(monkeypatch, nav10, nav20)
 
@@ -485,7 +495,9 @@ async def test_no_hint_keeps_default_nav10_first(monkeypatch: pytest.MonkeyPatch
 async def test_nav20_hint_falls_back_to_nav10_on_failure(monkeypatch: pytest.MonkeyPatch) -> None:
     """If the preferred Nav 20 client fails, we still fall back to Nav 10."""
     nav10 = _FakeWebClient(
-        SimpleNamespace(navigator_version="Navigator 10", software_version="NAV10_1.0", heatpump_model=None, simple_values={})
+        SimpleNamespace(
+            navigator_version="Navigator 10", software_version="NAV10_1.0", heatpump_model=None, simple_values={}
+        )
     )
     nav20 = _FakeWebClient(error=RuntimeError("HTTP 500"))
     _patch_web_factories(monkeypatch, nav10, nav20)
