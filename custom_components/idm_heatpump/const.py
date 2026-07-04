@@ -10,9 +10,11 @@ from __future__ import annotations
 import enum
 
 try:
-    from idm_heatpump import RECOMMENDED_WEB_SCAN_INTERVAL
+    import idm_heatpump as idm_api
 except ImportError:
     RECOMMENDED_WEB_SCAN_INTERVAL = 30.0
+else:
+    RECOMMENDED_WEB_SCAN_INTERVAL = float(getattr(idm_api, "RECOMMENDED_WEB_SCAN_INTERVAL", 30.0))
 
 DOMAIN: str = "idm_heatpump"
 NAME: str = "IDM Heatpump"

@@ -656,43 +656,46 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def _test_connection(self, data: dict[str, Any]) -> bool:
         from idm_heatpump import IdmModbusClient
 
+        host = str(data[CONF_HOST]).strip()
+        port = int(data.get(CONF_PORT, DEFAULT_PORT))
+        slave_id = int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
         client = IdmModbusClient(
-            host=str(data[CONF_HOST]).strip(),
-            port=int(data.get(CONF_PORT, DEFAULT_PORT)),
-            slave_id=int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
+            host=host,
+            port=port,
+            slave_id=slave_id,
         )
         try:
             await client.connect()
             if not client.is_connected:
                 _LOGGER.warning(
                     "IDM Modbus connection test to %s:%d (slave %s) failed: not connected after connect()",
-                    client.host,
-                    client.port,
-                    client.slave_id,
+                    host,
+                    port,
+                    slave_id,
                 )
                 return False
             value = await client.probe_register(1000, 2)
             if value is not None:
                 _LOGGER.info(
                     "IDM Modbus connection test to %s:%d (slave %s) succeeded",
-                    client.host,
-                    client.port,
-                    client.slave_id,
+                    host,
+                    port,
+                    slave_id,
                 )
                 return True
             _LOGGER.warning(
                 "IDM Modbus connection test to %s:%d (slave %s) failed: probe register returned no data",
-                client.host,
-                client.port,
-                client.slave_id,
+                host,
+                port,
+                slave_id,
             )
             return False
         except Exception as err:
             _LOGGER.warning(
                 "IDM Modbus connection test to %s:%d (slave %s) failed: %s: %s",
-                client.host,
-                client.port,
-                client.slave_id,
+                host,
+                port,
+                slave_id,
                 err.__class__.__name__,
                 err,
             )
