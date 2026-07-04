@@ -10,6 +10,46 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.0-beta.6] - 2026-07-04
+
+## v0.8.0-beta.6 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+- Harden Navigator 2.0 / Navigator 10 detection so ambiguous generic metadata no longer poisons the selected register map.
+- Keep Modbus-detected Navigator generation authoritative when stored or web-detected metadata conflicts with it.
+- Prefer the Navigator 2.0 HTTP/CSRF local web client for NAV2 and the Navigator 10 WebSocket client for NAV10 / Navigator Pro.
+- Cache the successful local web variant so optional web supplement polling does not repeatedly try the wrong access method.
+- Persist retroactively detected web model and software metadata only when it does not conflict with Modbus detection.
+- Keep unsupported Modbus registers isolated so Navigator 2.0 devices do not get polluted by Navigator-10-only registers.
+- Fix the follow-up CI issues from #61: Ruff formatting and Home Assistant typed mypy handling for config entry persistence.
+
+### Why it matters
+
+- Navigator 2.0 users should get clean NAV2 register filtering and NAV2 web access instead of repeated Navigator 10 WebSocket attempts.
+- Stale stored Navigator 10 metadata on a Navigator 2.0 installation should be corrected instead of being trusted forever.
+- Modbus remains the source of truth for model generation when web metadata disagrees.
+
+### Validation
+
+- GitHub PR #62: CI validate matrix passed, Hassfest passed, CodeQL passed, pip-audit passed.
+- Local: `ruff check custom_components/idm_heatpump/ --line-length=120`
+- Local: `ruff format custom_components/idm_heatpump/ tests --check`
+- Local: `mypy custom_components/idm_heatpump/ --strict --ignore-missing-imports --allow-untyped-globals --allow-subclassing-any`
+- Local: `pytest -s tests/` (`525 passed`)
+
+### Tester note
+
+This beta specifically needs real Navigator 2.0 confirmation for the optional local web supplement path. The code now selects the NAV2 HTTP path from NAV2 model hints and caches that successful variant.
+
+---
+
+[Full changelog: v0.7.3...v0.8.0-beta.6](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.7.3...v0.8.0-beta.6)
+
+---
+
 ## [0.8.0-beta.5] - 2026-07-04
 
 ## v0.8.0-beta.5 - IDM Heatpump
