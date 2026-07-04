@@ -22,9 +22,11 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from idm_heatpump.client import DataType
 
 try:
-    from idm_heatpump import WEB_VALUE_DESCRIPTIONS
+    import idm_heatpump as idm_api
 except ImportError:
     WEB_VALUE_DESCRIPTIONS = {}
+else:
+    WEB_VALUE_DESCRIPTIONS = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
 
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
