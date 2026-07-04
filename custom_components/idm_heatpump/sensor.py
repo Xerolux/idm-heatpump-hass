@@ -25,7 +25,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_TECHNICIAN_CODES
 from .coordinator import IdmCoordinator
-from .entity import IdmEntity, build_device_info, build_entity_unique_id
+from .entity import IdmEntity, build_device_info, build_entity_unique_id, should_add_entity
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .internal_messages import format_internal_message, internal_message_text
@@ -311,7 +311,8 @@ async def async_setup_entry(
     entities += [
         IdmSensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.sensor_descriptions)
-        if not (
+        if should_add_entity(coordinator, desc_info["register"])
+        and not (
             desc_info["register"].enum_options
             and desc_info["register"].datatype == DataType.UCHAR
             and desc_info["register"].writable

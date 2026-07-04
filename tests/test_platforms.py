@@ -225,7 +225,7 @@ class TestSensorAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added_entities) == 2
 
-    async def test_unused_sensor_is_registered_but_unavailable(self):
+    async def test_unused_sensor_is_not_registered_when_hide_unused_enabled(self):
         from custom_components.idm_heatpump.sensor import async_setup_entry
 
         coord = _make_coordinator(data={"room_temp": -9999.0}, hide_unused=True)
@@ -244,8 +244,28 @@ class TestSensorAsyncSetupEntry:
 
         await async_setup_entry(MagicMock(), entry, async_add)
 
+        assert added_entities == []
+
+    async def test_unused_sensor_is_registered_when_hide_unused_disabled(self):
+        from custom_components.idm_heatpump.sensor import async_setup_entry
+
+        coord = _make_coordinator(data={"room_temp": -9999.0}, hide_unused=False)
+        coord.is_register_unused = MagicMock(return_value=False)
+        reg = _make_register("room_temp", 100)
+        coord.sensor_descriptions = [
+            {"register": reg, "description": _make_desc("room_temp")},
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
         assert len(added_entities) == 1
-        assert added_entities[0].available is False
         assert added_entities[0]._attr_unique_id == "test_entry_room_temp"
 
     async def test_excludes_writable_enum_uchar_sensors(self):
@@ -619,6 +639,22 @@ class TestBinarySensorAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
 
+    async def test_skips_missing_entities_when_hide_unused_enabled(self):
+        from custom_components.idm_heatpump.binary_sensor import async_setup_entry
+
+        coord = _make_coordinator(data={"other_fault": 0}, hide_unused=True)
+        coord.binary_sensor_descriptions = [
+            {"register": _make_register("fault"), "description": _make_desc("fault")},
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert added == []
+
     async def test_empty_descriptions(self):
         from custom_components.idm_heatpump.binary_sensor import async_setup_entry
 
@@ -757,6 +793,23 @@ class TestNumberAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda e: added.extend(e))
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
+
+    async def test_skips_unused_entities_when_hide_unused_enabled(self):
+        from custom_components.idm_heatpump.number import async_setup_entry
+
+        coord = _make_coordinator(data={"dhw_target": 65535}, hide_unused=True)
+        coord.is_register_unused = MagicMock(return_value=True)
+        coord.number_descriptions = [
+            {"register": _make_register("dhw_target", writable=True), "description": _make_desc("dhw_target")},
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert added == []
 
     async def test_sorts_entities_into_functional_blocks(self):
         from custom_components.idm_heatpump.number import async_setup_entry
@@ -922,6 +975,23 @@ class TestSelectAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
 
+    async def test_skips_missing_entities_when_hide_unused_enabled(self):
+        from custom_components.idm_heatpump.select import async_setup_entry
+
+        coord = _make_coordinator(data={"system_mode": 1}, hide_unused=True)
+        enum_opts = {0: "Standby", 1: "Auto"}
+        coord.select_descriptions = [
+            {"register": _make_register("missing_mode", enum_options=enum_opts), "description": _make_desc("mode")},
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert added == []
+
     async def test_excludes_entries_without_enum(self):
         from custom_components.idm_heatpump.select import async_setup_entry
 
@@ -1067,6 +1137,23 @@ class TestSwitchAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda e: added.extend(e))
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
+
+    async def test_skips_unused_entities_when_hide_unused_enabled(self):
+        from custom_components.idm_heatpump.switch import async_setup_entry
+
+        coord = _make_coordinator(data={"glt_heating": 255}, hide_unused=True)
+        coord.is_register_unused = MagicMock(return_value=True)
+        coord.switch_descriptions = [
+            {"register": _make_register("glt_heating", writable=True), "description": _make_desc("glt_heating")},
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert added == []
 
     async def test_sorts_entities_into_functional_blocks(self):
         from custom_components.idm_heatpump.switch import async_setup_entry

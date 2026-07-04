@@ -35,6 +35,22 @@ class TestCollectAllRegisters:
         regs_two = collect_all_registers(["a", "b"], 0, {})
         assert len(regs_two) > len(regs_one)
 
+    def test_unselected_heating_circuits_are_not_exposed_or_polled(self):
+        platform_descriptions = (
+            get_all_sensor_descriptions(["a"], 0, {})
+            + get_all_binary_sensor_descriptions(["a"], 0, {})
+            + get_all_number_descriptions(["a"], 0, {})
+            + get_all_select_descriptions(["a"], 0, {})
+            + get_all_switch_descriptions(["a"], 0, {})
+        )
+        entity_names = {desc["register"].name for desc in platform_descriptions}
+        register_names = {reg.name for reg in collect_all_registers(["a"], 0, {})}
+
+        for names in (entity_names, register_names):
+            assert any(name.startswith("hc_a_") for name in names)
+            assert not any(name.startswith("hc_b_") for name in names)
+            assert not any(name.startswith("hc_c_") for name in names)
+
     def test_zones_add_registers(self):
         regs_no_zone = collect_all_registers(["a"], 0, {})
         regs_with_zone = collect_all_registers(["a"], 1, {0: 2})

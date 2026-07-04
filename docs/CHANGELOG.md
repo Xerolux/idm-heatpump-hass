@@ -18,57 +18,39 @@ All notable changes to this project will be documented in this file.
 
 ### What changed
 
-- fix: force technician codes to sort first (46cfc40)
-- fix: pin api 0.4.1 and enrich web diagnostics (c21df07)
-- fix: default web polling to 30 seconds (7464de7)
-- fix: group entities by functional blocks (790cdfa)
-- fix: pin technician code entities at top (642e63c)
-- fix: satisfy hassfest repair flow schema (4ee7730)
-- fix: move repair translations under issues (5111d53)
-- fix: order entities by functional groups (b94ed6b)
-- fix: improve model fallback without web (c687aad)
-- fix: clarify modbus proxy web host flow (6ae8fc2)
-- fix: support separate web host (a116c79)
-- fix: surface web supplement failures (3e2b386)
-- fix: expose web metadata sensors (ff3a2a6)
-- fix: enable web supplement by default (f6ecff7)
-- fix: relax pymodbus runtime requirement (a536a9b)
-- Merge remote-tracking branch 'origin/fix-navigator-wording-7490862864351299452' into Codex/branch-cleanup-merge (0372801)
-- fix(hass): harden enum and sentinel handling (49a1a06)
-
-- Release v0.8.0-beta.4 - Update changelog and version files (d738aae)
-- Release v0.8.0-beta.3 - Update changelog and version files (c86e1df)
-- Release v0.8.0-beta.2 - Update changelog and version files (5e71fc1)
-- docs: update feature documentation (0323076)
-- fix: improve model fallback without web (c687aad)
-- ci(hass): automate api dependency update prs (8259520)
-- refactor(hass): split adapter description helpers (548ba28)
-- refactor(hass): split adapter register selection (ef27276)
-- refactor(hass): split adapter enum and glt helpers (9d23699)
-- chore(release): improve HA release notes (9ed09a1)
-- chore(release): simplify HA update notes (5ac805a)
-- Release v0.7.3 - Update changelog and version files (51e86ec)
-- docs: Update to reflect Navigator 2.0 / 10 support (65c8cf6)
-
-- feat: expose compact myidm id in device info (644fe9c)
-- docs: update feature documentation (0323076)
-- feat: add optional room temperature forwarding (9c44e1b)
-- feat: show internal messages as readable text (8e848f9)
-- feat: add top technician code block sensor (a4ec522)
-- docs: add home assistant install badge (dd6e572)
-- feat: add web pin repair flow (52a08b4)
-- feat: add optional navigator web supplement (1a6cfc9)
-- docs(hass): add compatibility matrix (dff318a)
-- feat(hass): split repair issues by cause (e442030)
-- feat(hass): enrich redacted diagnostics (a5585ba)
-- test(hass): add api register contract coverage (6bd7f8b)
-- docs: add joint HASS and API roadmap (b034613)
+- Fix Navigator 2.0 systems that still had a stale stored `Navigator 10` value:
+  fresh Modbus model detection now wins over conflicting stored or web metadata
+  and corrects the config entry back to the Modbus-detected generation.
+- Improve local web fallback: when the Navigator 10 web client rejects the PIN
+  during probing, the Navigator 2.0 web client is still tried with the same PIN
+  before reporting `invalid_web_pin`.
+- Prevent Navigator-10-only registers such as `4108` (`power_limit_hp`) from
+  being scheduled on Navigator 2.0 after updates or reconfiguration.
+- Keep setup/polling resilient when optional registers are rejected with Modbus
+  `exception_code=2` by isolating and skipping unsupported addresses.
+- Block duplicate IDM integrations for the same Modbus host/IP, even when a
+  different port or slave ID is entered.
+- Make `Hide unused sensors` stricter: when enabled, unused or unsupported
+  entities are not created after the first poll instead of merely being shown
+  as unavailable.
+- Preserve selected heating circuits, zone modules, room counts, and cascade
+  options through setup/reconfigure so only selected hardware is exposed and
+  polled.
 
 ### Why it matters
 
-- Keeps update notes short and readable directly inside Home Assistant / HACS.
-- Highlights the most important fixes and improvements without forcing users into the full changelog.
-- Preserves a clean path to the full compare view when deeper details are needed.
+- Navigator 2.0 users affected by issue #44 should not need to delete and
+  recreate the integration after updating. If Modbus detects Navigator 2.0, the
+  stale Navigator 10 metadata is corrected automatically.
+- The entity list should now follow the user's selected heating circuits and
+  zones more closely, with unused hardware kept out of Home Assistant when the
+  hide-unused option is enabled.
+- Duplicate integration entries for one heat pump are blocked before they can
+  create competing Modbus connections.
+
+### Validation
+
+- Full local test suite: `491 passed`
 
 ### Support
 

@@ -241,6 +241,33 @@ def _stored_web_host(web_host: str, host: str) -> str:
     return "" if web_host == host else web_host
 
 
+def _host_key(host: str) -> str:
+    """Return a stable key for duplicate host checks."""
+    return host.strip().casefold()
+
+
+def _entry_host(entry: Any) -> str:
+    data = getattr(entry, "data", {})
+    if not isinstance(data, dict):
+        return ""
+    return str(data.get(CONF_HOST, "")).strip()
+
+
+def _has_duplicate_host(hass: Any, host: str, current_entry_id: str | None = None) -> bool:
+    """Return whether another IDM entry already uses this Modbus host."""
+    target = _host_key(host)
+    if not target:
+        return False
+
+    entries = hass.config_entries.async_entries(DOMAIN)
+    for entry in entries:
+        if current_entry_id is not None and getattr(entry, "entry_id", None) == current_entry_id:
+            continue
+        if _host_key(_entry_host(entry)) == target:
+            return True
+    return False
+
+
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
     existing_rooms: dict[int, int] = options.get(CONF_ZONE_ROOMS, {})
     schema_dict: dict[Any, Any] = {}
@@ -307,6 +334,8 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 errors[CONF_NAME] = "name_required"
             elif not host:
                 errors[CONF_HOST] = "host_required"
+            elif _has_duplicate_host(self.hass, host):
+                errors[CONF_HOST] = "already_configured"
             else:
                 port = int(user_input.get(CONF_PORT, DEFAULT_PORT))
                 slave_id = int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
@@ -364,6 +393,8 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             host = user_input.get(CONF_HOST, "").strip()
             if not host:
                 errors[CONF_HOST] = "host_required"
+            elif _has_duplicate_host(self.hass, host, entry.entry_id):
+                errors[CONF_HOST] = "already_configured"
             elif not await self._test_connection(user_input):
                 errors["base"] = "cannot_connect"
             else:

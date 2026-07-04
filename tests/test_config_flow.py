@@ -8,6 +8,7 @@ from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpOptionsFlow,
     _build_options_schema,
     _build_zones_schema,
+    _has_duplicate_host,
 )
 from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -35,7 +36,16 @@ from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed
 def _make_flow():
     flow = IdmHeatpumpConfigFlow()
     flow.hass = MagicMock()
+    flow.hass.config_entries.async_entries = MagicMock(return_value=[])
     return flow
+
+
+def _make_entry(entry_id: str, host: str, port: int = 502, slave_id: int = 1):
+    entry = MagicMock()
+    entry.entry_id = entry_id
+    entry.data = {"host": host, "port": port, "slave_id": slave_id}
+    entry.title = "IDM"
+    return entry
 
 
 class TestBuildOptionsSchema:
@@ -92,6 +102,17 @@ class TestConfigFlowInit:
         assert IdmHeatpumpConfigFlow.VERSION == 1
         assert IdmHeatpumpConfigFlow.MINOR_VERSION == 2
 
+    def test_duplicate_host_detection_ignores_port_and_slave_id(self):
+        hass = MagicMock()
+        hass.config_entries.async_entries = MagicMock(
+            return_value=[_make_entry("entry-1", "192.168.1.100", port=502, slave_id=1)]
+        )
+
+        assert _has_duplicate_host(hass, " 192.168.1.100 ", current_entry_id=None)
+        assert _has_duplicate_host(hass, "192.168.1.100", current_entry_id="other-entry")
+        assert not _has_duplicate_host(hass, "192.168.1.100", current_entry_id="entry-1")
+        hass.config_entries.async_entries.assert_called_with("idm_heatpump")
+
 
 class TestAsyncStepUser:
     async def test_shows_form_without_input(self):
@@ -137,6 +158,26 @@ class TestAsyncStepUser:
             )
         assert result["type"] == "form"
         assert result["errors"].get("base") == "cannot_connect"
+
+    async def test_duplicate_host_blocks_second_entry_even_with_different_port_or_slave(self):
+        flow = _make_flow()
+        flow.hass.config_entries.async_entries.return_value = [
+            _make_entry("entry-1", "192.168.1.100", port=502, slave_id=1)
+        ]
+
+        with patch.object(flow, "_test_connection", return_value=True) as test_connection:
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM Duplicate",
+                    "host": "192.168.1.100",
+                    "port": 1502,
+                    "slave_id": 2,
+                }
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["host"] == "already_configured"
+        test_connection.assert_not_awaited()
 
     async def test_successful_connection_goes_to_options(self):
         flow = _make_flow()
@@ -422,6 +463,30 @@ class TestAsyncStepReconfigure:
             )
         assert result["type"] == "form"
         assert "host" in result["errors"]
+
+    async def test_duplicate_host_blocks_reconfigure_to_other_entry_host(self):
+        flow = _make_flow()
+        entry = _make_entry("entry-1", "192.168.1.100")
+        flow.hass.config_entries.async_entries.return_value = [
+            entry,
+            _make_entry("entry-2", "192.168.1.101"),
+        ]
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=True) as test_connection,
+        ):
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "192.168.1.101",
+                    "port": 1502,
+                    "slave_id": 2,
+                }
+            )
+
+        assert result["type"] == "form"
+        assert result["errors"]["host"] == "already_configured"
+        test_connection.assert_not_awaited()
 
     async def test_connection_failure_shows_error(self):
         flow = _make_flow()

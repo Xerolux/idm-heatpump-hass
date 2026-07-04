@@ -13,7 +13,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .coordinator import IdmCoordinator
-from .entity import IdmEntity
+from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
 
 PARALLEL_UPDATES = 0
@@ -28,6 +28,7 @@ async def async_setup_entry(
     entities = [
         IdmBinarySensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.binary_sensor_descriptions)
+        if should_add_entity(coordinator, desc_info["register"])
     ]
     async_add_entities(entities)
 

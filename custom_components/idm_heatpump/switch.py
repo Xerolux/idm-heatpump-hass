@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
-from .entity import IdmEntity
+from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
 
 _LOGGER = logging.getLogger(__name__)
@@ -36,6 +36,7 @@ async def async_setup_entry(
     entities = [
         IdmSwitch(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.switch_descriptions)
+        if should_add_entity(coordinator, desc_info["register"])
     ]
     async_add_entities(entities)
 
