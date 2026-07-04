@@ -20,7 +20,14 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 from idm_heatpump import IdmModbusClient, IdmModelInfo, RegisterDef
 from pymodbus.exceptions import ConnectionException, ModbusException
 
-from .const import DOMAIN, MODEL, NEGATIVE_ONE_VALID_REGISTERS, UNUSED_VALUE
+from .const import (
+    CONF_DETECTED_NAVIGATOR_VERSION,
+    CONF_DETECTED_SOFTWARE_VERSION,
+    DOMAIN,
+    MODEL,
+    NEGATIVE_ONE_VALID_REGISTERS,
+    UNUSED_VALUE,
+)
 from .registers import collect_all_registers, collect_alias_map
 from .web_data import IdmWebSupplement, async_read_web_supplement
 
@@ -75,6 +82,21 @@ def navigator_family(model_name: str | None) -> str | None:
     return None
 
 
+def _web_variant_from_family(family: str | None) -> str | None:
+    """Return the local web access variant for a Navigator family."""
+    if family == "navigator_20":
+        return "nav20"
+    if family in ("navigator_10", "navigator_pro"):
+        return "nav10"
+    return None
+
+
+def _web_variant_from_supplement(supplement: IdmWebSupplement) -> str | None:
+    """Return the best web access variant detected from a web supplement."""
+    family = navigator_family(supplement.navigator_version) or navigator_family(supplement.heatpump_model)
+    return _web_variant_from_family(family)
+
+
 class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator to manage data fetching from IDM heat pump."""
 
@@ -111,6 +133,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._web_pin = web_pin
         self._web_host = web_host or client.host
         self._web_supplement = web_supplement
+        self._web_variant: str | None = None
+        if web_supplement is not None:
+            self._web_variant = _web_variant_from_supplement(web_supplement)
         self._last_web_error: str | None = None
         self._unused_registers: set[str] = set()
         self._unsupported_registers: set[str] = set()
@@ -198,6 +223,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def web_host(self) -> str:
         return self._web_host
+
+    @property
+    def web_variant(self) -> str | None:
+        """Return the cached web client variant ('nav10' or 'nav20')."""
+        return self._web_variant
 
     @property
     def last_web_error(self) -> str | None:
@@ -296,7 +326,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return {}
 
             midpoint = len(readable) // 2
-            _LOGGER.info(
+            _LOGGER.debug(
                 "IDM Modbus Illegal Data Address while reading %d registers; isolating unsupported register",
                 len(readable),
             )
@@ -359,7 +389,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
 
         try:
-            web_supplement = await async_read_web_supplement(self._web_host, self._web_pin)
+            web_supplement = await async_read_web_supplement(
+                self._web_host,
+                self._web_pin,
+                model_hint=getattr(self._model_info, "model_name", None) or self._model_name,
+                preferred_variant=self._web_variant,
+            )
         except Exception as err:
             error = f"{err.__class__.__name__}: {err}"
             if error != self._last_web_error:
@@ -387,12 +422,26 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_web_error = None
         ir.async_delete_issue(self.hass, DOMAIN, _WEB_SUPPLEMENT_FAILED_ISSUE)
         self._web_supplement = web_supplement
+        # Cache which web variant succeeded so the next poll skips the other
+        # (WebSocket vs. HTTP have completely different login mechanisms).
+        if web_variant := _web_variant_from_supplement(web_supplement):
+            self._web_variant = web_variant
         web_model_name = web_supplement.model_name
         modbus_family = navigator_family(getattr(self._model_info, "model_name", None) or self._model_name)
-        web_family = navigator_family(web_model_name)
-        model_conflicts = modbus_family is not None and web_family is not None and modbus_family != web_family
+        web_model_family = navigator_family(web_model_name)
+        model_conflicts = (
+            modbus_family is not None and web_model_family is not None and modbus_family != web_model_family
+        )
         if web_model_name and not model_conflicts:
             self._model_name = web_model_name
+            # Keep model_info consistent so future conflict checks and
+            # diagnostics reflect the retroactively detected model.
+            if (
+                self._model_info is not None
+                and web_model_family is not None
+                and navigator_family(self._model_info.model_name) is None
+            ):
+                self._model_info.model_name = web_model_name
         elif web_model_name:
             _LOGGER.warning(
                 "Ignoring conflicting IDM web Navigator model %s because Modbus detected %s",
@@ -401,6 +450,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
         if web_supplement.software_version and not model_conflicts:
             self._firmware_version = web_supplement.software_version
+
+        # Persist retroactively detected model/firmware so it survives reloads.
+        self._persist_web_detection(web_supplement, model_conflicts)
 
         if self.data is not None:
             if web_supplement.navigator_version:
@@ -412,6 +464,45 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if web_supplement.myidm_id:
                 self.data["web_myidm_id"] = web_supplement.myidm_id
         self.async_update_listeners()
+
+    def _persist_web_detection(self, supplement: IdmWebSupplement, model_conflicts: bool) -> None:
+        """Persist web-detected model/firmware so retroactive detection survives reloads.
+
+        When the optional web supplement detects a definitive Navigator version
+        that does not conflict with Modbus detection, we store it in the config
+        entry data. This ensures a later HA reload can reuse the detection even
+        when Modbus probing or web access is temporarily unavailable at setup.
+        """
+        if model_conflicts:
+            return
+        entry = self.config_entry
+        data = getattr(entry, "data", None)
+        if not isinstance(data, dict):
+            return
+
+        updates: dict[str, Any] = {}
+        web_nav = supplement.navigator_version
+        if web_nav and data.get(CONF_DETECTED_NAVIGATOR_VERSION) != web_nav:
+            updates[CONF_DETECTED_NAVIGATOR_VERSION] = web_nav
+        web_sw = supplement.software_version
+        if web_sw and data.get(CONF_DETECTED_SOFTWARE_VERSION) != web_sw:
+            updates[CONF_DETECTED_SOFTWARE_VERSION] = web_sw
+
+        if not updates:
+            return
+
+        try:
+            self.hass.config_entries.async_update_entry(
+                entry,
+                data={**data, **updates},
+            )
+        except Exception:
+            _LOGGER.debug("Failed to persist retroactive IDM web detection", exc_info=True)
+        else:
+            _LOGGER.info(
+                "Persisted retroactive IDM Navigator detection from web supplement: %s",
+                ", ".join(sorted(updates)),
+            )
 
     async def _delayed_refresh(self, delay: float = 0.5) -> None:
         await asyncio.sleep(delay)
