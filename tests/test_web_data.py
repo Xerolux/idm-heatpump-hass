@@ -240,6 +240,44 @@ async def test_async_read_web_supplement_falls_back_to_navigator20(
     assert nav20.closed
 
 
+async def test_async_read_web_supplement_falls_back_to_navigator20_after_nav10_auth_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    nav10 = _FakeWebClient(error=IdmWebAuthenticationError("not navigator 10"))
+    nav20 = _FakeWebClient(
+        SimpleNamespace(
+            navigator_version="Navigator 2.0",
+            software_version="2.35",
+            heatpump_model="TERRA SWM 6-17 HGL",
+            simple_values={},
+        )
+    )
+
+    monkeypatch.setattr(idm_heatpump, "IdmWebAuthenticationError", IdmWebAuthenticationError, raising=False)
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator10_web_client",
+        lambda host, pin: nav10,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: nav20,
+        raising=False,
+    )
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.navigator_version == "Navigator 2.0"
+    assert result.software_version == "2.35"
+    assert result.heatpump_model == "TERRA SWM 6-17 HGL"
+    assert nav10.closed
+    assert nav20.closed
+
+
 async def test_async_read_web_supplement_raises_authentication_failure(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

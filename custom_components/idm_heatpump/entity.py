@@ -37,6 +37,19 @@ def build_device_info(coordinator: IdmCoordinator) -> DeviceInfo:
     return device_info
 
 
+def should_add_entity(coordinator: IdmCoordinator, register: RegisterDef) -> bool:
+    """Return whether a register should be exposed as an entity."""
+    if not coordinator.hide_unused:
+        return True
+
+    data = coordinator.data
+    if not data:
+        return True
+    if register.name not in data:
+        return False
+    return not coordinator.is_register_unused(register.name, data.get(register.name))
+
+
 class IdmEntity(CoordinatorEntity[IdmCoordinator]):
     """Base class for all IDM Heatpump entities."""
 

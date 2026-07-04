@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
-from .entity import IdmEntity
+from .entity import IdmEntity, should_add_entity
 from .adapter_enums import get_slug_map_and_key
 from .registers import sort_entity_descriptions
 
@@ -37,7 +37,7 @@ async def async_setup_entry(
     entities = [
         IdmSelect(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.select_descriptions)
-        if desc_info["register"].enum_options
+        if should_add_entity(coordinator, desc_info["register"]) and desc_info["register"].enum_options
     ]
     async_add_entities(entities)
 

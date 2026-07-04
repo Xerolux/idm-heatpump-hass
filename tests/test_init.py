@@ -13,8 +13,10 @@ from custom_components.idm_heatpump import (
     async_unload_entry,
     async_reload_entry,
     _detect_model_info,
+    _model_info_from_detected_name,
 )
 from custom_components.idm_heatpump.const import MODEL
+from custom_components.idm_heatpump.web_data import IdmWebSupplement
 from idm_heatpump import IdmModelInfo
 from idm_heatpump.const import MODEL_UNKNOWN
 
@@ -605,6 +607,53 @@ class TestAsyncSetupEntryOptions:
 
         assert captured_kwargs.get("hide_unused") is False
 
+    async def test_selected_circuits_zones_and_cascade_drive_description_builders(self, mock_hass):
+        entry = self._make_entry(
+            options_override={
+                "heating_circuits": ["a", "c"],
+                "zone_count": 2,
+                "zone_rooms": {0: 1, 1: 3},
+                "enable_cascade": True,
+            }
+        )
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]) as mock_sensors,
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]) as mock_binary,
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]) as mock_numbers,
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]) as mock_selects,
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]) as mock_switches,
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        expected_args = (["a", "c"], 2, {0: 1, 1: 3}, True)
+        for mock_builder in (mock_sensors, mock_binary, mock_numbers, mock_selects, mock_switches):
+            mock_builder.assert_called_once()
+            assert mock_builder.call_args.args[:4] == expected_args
+            model_info = mock_builder.call_args.args[4]
+            assert model_info.active_heating_circuits == ["A", "C"]
+            assert model_info.zone_modules == 2
+            assert model_info.has_cascade is True
+        mock_coordinator.setup_registers.assert_called_once_with(
+            ["a", "c"],
+            2,
+            {0: 1, 1: 3},
+            True,
+            model_info=mock_sensors.call_args.args[4],
+        )
+
     async def test_enable_cascade_defaults_false(self, mock_hass):
         """enable_cascade defaults to False when not in options."""
         entry = self._make_entry()
@@ -644,47 +693,49 @@ class TestDetectModelInfo:
     async def test_returns_detected_model_name(self):
         client = AsyncMock()
         client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10"))
-        model_name, _ = await _detect_model_info(client)
+        model_name, _, model_info = await _detect_model_info(client)
         assert model_name == "Navigator 10"
+        assert model_info is None
 
     async def test_uses_client_model_name_when_model_unknown(self):
         client = AsyncMock()
         client.detect_model = AsyncMock(return_value=MagicMock(model_name=MODEL_UNKNOWN))
         client.model_name = "Navigator 2.0"
-        model_name, _ = await _detect_model_info(client)
+        model_name, _, _ = await _detect_model_info(client)
         assert model_name == "Navigator 2.0"
 
     async def test_falls_back_when_model_and_client_model_unknown(self):
         client = AsyncMock()
         client.detect_model = AsyncMock(return_value=MagicMock(model_name=MODEL_UNKNOWN))
         client.model_name = MODEL_UNKNOWN
-        model_name, _ = await _detect_model_info(client)
+        model_name, _, _ = await _detect_model_info(client)
         assert model_name == MODEL
 
     async def test_falls_back_on_detection_exception(self):
         client = AsyncMock()
         client.detect_model = AsyncMock(side_effect=Exception("modbus timeout"))
-        model_name, firmware_version = await _detect_model_info(client)
+        model_name, firmware_version, model_info = await _detect_model_info(client)
         assert model_name == MODEL
         assert firmware_version is None
+        assert model_info is None
 
     async def test_falls_back_on_non_string_model_name(self):
         """A plain AsyncMock client (no detect_model patched) must not leak a
         mock object into the device info model field."""
         client = AsyncMock()
-        model_name, _ = await _detect_model_info(client)
+        model_name, _, _ = await _detect_model_info(client)
         assert model_name == MODEL
 
     async def test_returns_firmware_version_when_present(self):
         client = AsyncMock()
         client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10", firmware_version="1.4.2"))
-        _, firmware_version = await _detect_model_info(client)
+        _, firmware_version, _ = await _detect_model_info(client)
         assert firmware_version == "1.4.2"
 
     async def test_returns_numeric_firmware_version_as_string(self):
         client = AsyncMock()
         client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10", firmware_version=2.34))
-        _, firmware_version = await _detect_model_info(client)
+        _, firmware_version, _ = await _detect_model_info(client)
         assert firmware_version == "2.34"
 
     async def test_firmware_version_none_when_not_exposed_by_library(self):
@@ -692,8 +743,34 @@ class TestDetectModelInfo:
         getattr must not surface a mock/garbage value in that case."""
         client = AsyncMock()
         client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10", spec=["model_name"]))
-        _, firmware_version = await _detect_model_info(client)
+        _, firmware_version, _ = await _detect_model_info(client)
         assert firmware_version is None
+
+    async def test_returns_detected_model_info_object(self):
+        model_info = IdmModelInfo(
+            model_name="Navigator 2.0",
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        client = AsyncMock()
+        client.detect_model = AsyncMock(return_value=model_info)
+
+        model_name, _, detected_model_info = await _detect_model_info(client)
+
+        assert model_name == "Navigator 2.0"
+        assert detected_model_info is model_info
+
+    def test_builds_navigator_20_model_info_from_detected_name(self):
+        model_info = _model_info_from_detected_name("Navigator 2.0", ["a", "b"], 0, False)
+
+        assert model_info is not None
+        assert model_info.model_name == "Navigator 2.0"
+        assert model_info.active_heating_circuits == ["A", "B"]
+        assert model_info.has_cascade is False
 
 
 class TestAsyncSetupEntryModelDetection:
@@ -841,6 +918,195 @@ class TestAsyncSetupEntryModelDetection:
 
         mock_sensors.assert_called_once_with(["a"], 0, {}, False, model_info)
         mock_coordinator.setup_registers.assert_called_once_with(["a"], 0, {}, False, model_info=model_info)
+
+    async def test_detect_model_result_drives_register_generation_without_client_cache(self, mock_hass):
+        entry = self._make_entry()
+        model_info = IdmModelInfo(
+            model_name="Navigator 2.0",
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(return_value=model_info)
+        mock_client.model_info = None
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.8.0-beta.4"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]) as mock_sensors,
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        mock_sensors.assert_called_once_with(["a"], 0, {}, False, model_info)
+        mock_coordinator.setup_registers.assert_called_once_with(["a"], 0, {}, False, model_info=model_info)
+
+    async def test_stored_detected_navigator_20_name_drives_register_generation(self, mock_hass):
+        entry = self._make_entry()
+        entry.data = {
+            **entry.data,
+            "detected_navigator_version": "Navigator 2.0",
+        }
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(side_effect=Exception("probe timeout"))
+        mock_client.model_info = None
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_model_info: list[IdmModelInfo | None] = []
+
+        def _capture_sensors(*args):
+            captured_model_info.append(args[-1])
+            return []
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.8.0-beta.4"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", side_effect=_capture_sensors),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_model_info
+        assert captured_model_info[0] is not None
+        assert captured_model_info[0].model_name == "Navigator 2.0"
+        mock_coordinator.setup_registers.assert_called_once()
+        assert mock_coordinator.setup_registers.call_args.kwargs["model_info"].model_name == "Navigator 2.0"
+
+    async def test_modbus_detected_navigator_20_overrides_stale_stored_navigator_10(self, mock_hass):
+        entry = self._make_entry()
+        entry.data = {
+            **entry.data,
+            "detected_navigator_version": "Navigator 10",
+            "detected_software_version": "NAV10_20.23",
+        }
+        model_info = IdmModelInfo(
+            model_name="Navigator 2.0",
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(return_value=model_info)
+        mock_client.model_info = model_info
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_coordinator
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.8.0-beta.4"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs["model_name"] == "Navigator 2.0"
+        assert captured_kwargs["model_info"] is model_info
+        assert mock_coordinator.setup_registers.call_args.kwargs["model_info"] is model_info
+        mock_hass.config_entries.async_update_entry.assert_any_call(
+            entry,
+            data={
+                **entry.data,
+                "detected_navigator_version": "Navigator 2.0",
+                "detected_software_version": "NAV10_20.23",
+            },
+        )
+
+    async def test_modbus_detected_navigator_20_overrides_conflicting_web_navigator_10(self, mock_hass):
+        entry = self._make_entry()
+        entry.data = {**entry.data, "web_pin": "2634"}
+        entry.options = {**entry.options, "web_extra_data": True}
+        model_info = IdmModelInfo(
+            model_name="Navigator 2.0",
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(return_value=model_info)
+        mock_client.model_info = model_info
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_coordinator
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.8.0-beta.4"}),
+            ),
+            patch(
+                "custom_components.idm_heatpump.async_read_web_supplement",
+                return_value=IdmWebSupplement(navigator_version="Navigator 10", software_version="NAV10_20.23"),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs["model_name"] == "Navigator 2.0"
+        assert captured_kwargs["firmware_version"] is None
+        assert captured_kwargs["model_info"] is model_info
+        mock_hass.config_entries.async_update_entry.assert_any_call(
+            entry,
+            data={**entry.data, "detected_navigator_version": "Navigator 2.0"},
+        )
 
     async def test_coordinator_receives_detected_firmware_version(self, mock_hass):
         entry = self._make_entry()

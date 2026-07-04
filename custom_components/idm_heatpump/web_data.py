@@ -249,6 +249,7 @@ async def async_read_web_supplement(host: str, pin: str | None) -> IdmWebSupplem
 
     clean_pin = pin.strip() if pin is not None else ""
     last_error: Exception | None = None
+    last_auth_error: Exception | None = None
     for factory in (_create_nav10_client, _create_nav20_client):
         client = factory(host, clean_pin)
         if client is None:
@@ -258,7 +259,9 @@ async def async_read_web_supplement(host: str, pin: str | None) -> IdmWebSupplem
             return await _read_optional_notifications(client, supplement)
         except Exception as err:
             if _is_authentication_error(err):
-                raise IdmWebAuthenticationFailed("IDM Navigator web PIN was rejected") from err
+                last_auth_error = err
+                _LOGGER.debug("IDM web supplement rejected PIN for one Navigator web variant at %s", host)
+                continue
             last_error = err
             _LOGGER.debug("IDM web supplement read failed for %s", host, exc_info=True)
         finally:
@@ -269,6 +272,8 @@ async def async_read_web_supplement(host: str, pin: str | None) -> IdmWebSupplem
 
     if last_error is not None:
         raise last_error
+    if last_auth_error is not None:
+        raise IdmWebAuthenticationFailed("IDM Navigator web PIN was rejected") from last_auth_error
     _LOGGER.debug("IDM web supplement is unavailable; idm-heatpump-api has no web API")
     return None
 

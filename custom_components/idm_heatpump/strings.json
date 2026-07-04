@@ -61,7 +61,7 @@
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
-          "hide_unused_registers": "Keeps unused or unsupported registers out of the active entity view by marking sentinel values such as −1.0, 255, 65535 or −32768 as *unavailable*. Normal 0 values stay visible.",
+          "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
           "zone_count": "Number of IDM zone modules installed (0 if none).",
           "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
@@ -156,7 +156,7 @@
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
-          "hide_unused_registers": "Keeps unused or unsupported registers out of the active entity view by marking sentinel values such as −1.0, 255, 65535 or −32768 as *unavailable*. Normal 0 values stay visible.",
+          "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
           "zone_count": "Number of IDM zone modules installed (0 if none).",
           "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",

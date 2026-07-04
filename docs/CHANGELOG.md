@@ -10,6 +10,50 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.0-beta.5] - 2026-07-04
+
+## v0.8.0-beta.5 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+- Fix Navigator 2.0 systems that still had a stale stored `Navigator 10` value:
+  fresh Modbus model detection now wins over conflicting stored or web metadata
+  and corrects the config entry back to the Modbus-detected generation.
+- Improve local web fallback: when the Navigator 10 web client rejects the PIN
+  during probing, the Navigator 2.0 web client is still tried with the same PIN
+  before reporting `invalid_web_pin`.
+- Prevent Navigator-10-only registers such as `4108` (`power_limit_hp`) from
+  being scheduled on Navigator 2.0 after updates or reconfiguration.
+- Keep setup/polling resilient when optional registers are rejected with Modbus
+  `exception_code=2` by isolating and skipping unsupported addresses.
+- Block duplicate IDM integrations for the same Modbus host/IP, even when a
+  different port or slave ID is entered.
+- Make `Hide unused sensors` stricter: when enabled, unused or unsupported
+  entities are not created after the first poll instead of merely being shown
+  as unavailable.
+- Preserve selected heating circuits, zone modules, room counts, and cascade
+  options through setup/reconfigure so only selected hardware is exposed and
+  polled.
+
+### Why it matters
+
+- Navigator 2.0 users affected by issue #44 should not need to delete and
+  recreate the integration after updating. If Modbus detects Navigator 2.0, the
+  stale Navigator 10 metadata is corrected automatically.
+- The entity list should now follow the user's selected heating circuits and
+  zones more closely, with unused hardware kept out of Home Assistant when the
+  hide-unused option is enabled.
+- Duplicate integration entries for one heat pump are blocked before they can
+  create competing Modbus connections.
+
+### Validation
+
+- Full local test suite: `491 passed`
+
+---
+
 ## [0.8.0-beta.4] - 2026-07-03
 
 ## v0.8.0-beta.4 - IDM Heatpump

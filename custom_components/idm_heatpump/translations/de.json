@@ -61,7 +61,7 @@
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
-          "hide_unused_registers": "Hält unbenutzte oder nicht unterstützte Register aus der aktiven Entity-Ansicht heraus, indem Sentinel-Werte wie −1,0, 255, 65535 oder −32768 als *nicht verfügbar* markiert werden. Normale 0-Werte bleiben sichtbar.",
+          "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
           "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
@@ -156,7 +156,7 @@
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
-          "hide_unused_registers": "Hält unbenutzte oder nicht unterstützte Register aus der aktiven Entity-Ansicht heraus, indem Sentinel-Werte wie −1,0, 255, 65535 oder −32768 als *nicht verfügbar* markiert werden. Normale 0-Werte bleiben sichtbar.",
+          "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
           "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
