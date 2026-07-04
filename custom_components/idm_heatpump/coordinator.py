@@ -55,6 +55,26 @@ def _repair_issue_for_error(err: Exception) -> str:
     return "cannot_connect"
 
 
+def navigator_family(model_name: str | None) -> str | None:
+    """Return a coarse Navigator generation identifier for conflict checks."""
+    if not isinstance(model_name, str):
+        return None
+    normalized = model_name.casefold()
+    if normalized == MODEL.casefold():
+        return None
+    has_navigator_20 = "navigator 2" in normalized
+    has_navigator_10 = "navigator 10" in normalized
+    if has_navigator_20 and has_navigator_10:
+        return None
+    if has_navigator_20:
+        return "navigator_20"
+    if has_navigator_10:
+        return "navigator_10"
+    if "navigator pro" in normalized:
+        return "navigator_pro"
+    return None
+
+
 class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator to manage data fetching from IDM heat pump."""
 
@@ -268,13 +288,18 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     translation_placeholders={"register": reg.name, "address": str(reg.address)},
                 )
                 _LOGGER.warning(
-                    "Register %s (address %d) is not supported by this heat pump; skipping it",
+                    "IDM Modbus register %s at address %d is not supported by this heat pump "
+                    "(Illegal Data Address); skipping it and continuing with supported registers",
                     reg.name,
                     reg.address,
                 )
                 return {}
 
             midpoint = len(readable) // 2
+            _LOGGER.info(
+                "IDM Modbus Illegal Data Address while reading %d registers; isolating unsupported register",
+                len(readable),
+            )
             data = await self._async_read_registers_resilient(readable[:midpoint])
             data.update(await self._async_read_registers_resilient(readable[midpoint:]))
             return data
@@ -292,6 +317,13 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
                 translation_placeholders={"host": self._client.host},
+            )
+            _LOGGER.error(
+                "IDM Modbus polling failed for %s: %s: %s; created repair issue %s",
+                self._client.host,
+                err.__class__.__name__,
+                err,
+                issue_id,
             )
             raise UpdateFailed(f"Error communicating with heat pump: {err}") from err
 
@@ -331,7 +363,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except Exception as err:
             error = f"{err.__class__.__name__}: {err}"
             if error != self._last_web_error:
-                _LOGGER.warning("Optional IDM web supplement refresh failed for %s: %s", self._web_host, error)
+                _LOGGER.warning(
+                    "Optional IDM web supplement refresh failed for %s: %s; Modbus polling continues",
+                    self._web_host,
+                    error,
+                )
             self._last_web_error = error
             ir.async_create_issue(
                 self.hass,
@@ -351,9 +387,19 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_web_error = None
         ir.async_delete_issue(self.hass, DOMAIN, _WEB_SUPPLEMENT_FAILED_ISSUE)
         self._web_supplement = web_supplement
-        if web_supplement.model_name:
-            self._model_name = web_supplement.model_name
-        if web_supplement.software_version:
+        web_model_name = web_supplement.model_name
+        modbus_family = navigator_family(getattr(self._model_info, "model_name", None) or self._model_name)
+        web_family = navigator_family(web_model_name)
+        model_conflicts = modbus_family is not None and web_family is not None and modbus_family != web_family
+        if web_model_name and not model_conflicts:
+            self._model_name = web_model_name
+        elif web_model_name:
+            _LOGGER.warning(
+                "Ignoring conflicting IDM web Navigator model %s because Modbus detected %s",
+                web_model_name,
+                getattr(self._model_info, "model_name", None) or self._model_name,
+            )
+        if web_supplement.software_version and not model_conflicts:
             self._firmware_version = web_supplement.software_version
 
         if self.data is not None:

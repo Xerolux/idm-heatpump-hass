@@ -16,6 +16,23 @@ _NAVIGATOR_10_ONLY_REGISTERS: frozenset[str] = frozenset(
         "heat_sink_flow_rate",
         "heat_sink_charging_pump_signal",
         "booster_fault",
+        "booster_interlock",
+        "booster_a_source_inlet_temp",
+        "booster_a_source_outlet_temp",
+        "booster_a_storage_temp",
+        "booster_a_flow_temp",
+        "booster_a_return_temp",
+        "booster_a_source_pump",
+        "booster_a_charging_pump",
+        "booster_a_compressor",
+        "booster_b_source_inlet_temp",
+        "booster_b_source_outlet_temp",
+        "booster_b_storage_temp",
+        "booster_b_flow_temp",
+        "booster_b_return_temp",
+        "booster_b_source_pump",
+        "booster_b_charging_pump",
+        "booster_b_compressor",
     }
 )
 
@@ -24,10 +41,16 @@ def model_info_from_flags(
     circuits: list[str],
     zone_modules: int,
     enable_cascade: bool,
+    model_name: str = MODEL_NAVIGATOR_10,
 ) -> IdmModelInfo:
-    """Construct model information from manual HA configuration flags."""
+    """Construct model information from manual HA configuration flags.
+
+    model_name defaults to Navigator 10 for backward compatibility but
+    callers should supply the actually detected model name whenever
+    possible to avoid polluting the register map with wrong entries.
+    """
     return IdmModelInfo(
-        model_name=MODEL_NAVIGATOR_10,
+        model_name=model_name,
         active_heating_circuits=circuits,
         zone_modules=zone_modules,
         has_solar=True,
