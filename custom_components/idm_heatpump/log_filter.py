@@ -69,7 +69,6 @@ def install_pymodbus_log_filter() -> None:
     logger.addFilter(_PymodbusNoiseFilter())
     _INSTALLED = True
     _LOGGER.debug(
-        "Installed pymodbus noise filter on logger %s (suppressing routine "
-        "connection-drop ERROR records)",
+        "Installed pymodbus noise filter on logger %s (suppressing routine connection-drop ERROR records)",
         PYMODBUS_LOGGER_NAME,
     )
