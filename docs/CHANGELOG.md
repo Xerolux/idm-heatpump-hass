@@ -10,6 +10,56 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.0-beta.12] - 2026-07-05
+
+## v0.8.0-beta.12 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+- Harden local web supplement discovery: if the Navigator 10 web client fails
+  with a wrong-variant / unrecognised response, the integration now explicitly
+  falls back to the Navigator 2.0 web client (and vice-versa). Both variants are
+  closed cleanly after the attempt. This mirrors hacs-idm-hpweb behaviour and
+  reduces misleading "web PIN rejected" errors when the wrong generation was
+  probed first.
+- Config flow now forwards the Modbus-detected Navigator model as a `model_hint`
+  to the local web supplement detection. This avoids probing the wrong web
+  variant first during setup and reconfiguration, saving a full connect timeout.
+- Reconfigure flow now offers a web-only fallback when the Modbus connection
+  test fails but a valid web PIN is configured (matching the behaviour already
+  present in the first-time setup flow).
+- Web-only setup now reuses the stored Navigator version as a `model_hint` so
+  subsequent reloads skip the wrong-variant timeout.
+
+### Why it matters
+
+- Issue #44 follow-up: the web supplement hardening ensures both Navigator
+  generations are probed before a PIN-rejected error is shown. Combined with the
+  `model_hint` forwarding, misdirected auth errors are virtually eliminated.
+- Reconfigure without a working Modbus connection (e.g. after an IP change) no
+  longer dead-ends; users with a configured web PIN can switch to web-only mode.
+
+### Support
+
+Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:
+
+- [GitHub Sponsors](https://github.com/sponsors/xerolux)
+- [Ko-Fi](https://ko-fi.com/xerolux)
+- [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)
+- [PayPal](https://paypal.me/xerolux)
+
+---
+
+[Full changelog: v0.8.0-beta.11...v0.8.0-beta.12](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.8.0-beta.11...v0.8.0-beta.12)
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+---
+
 ## [0.8.0-beta.11] - 2026-07-05
 
 ## v0.8.0-beta.11 - IDM Heatpump
@@ -25,12 +75,6 @@ All notable changes to this project will be documented in this file.
   This prevents Navigator-10-only registers such as `4108` (`power_limit_hp`)
   and `4001` (`booster_fault`) from being polled on Navigator 2.0 controllers,
   which previously caused first-setup failures with `exception_code=2`.
-- Harden local web supplement discovery: if the Navigator 10 web client fails
-  with a wrong-variant / unrecognised response, the integration now explicitly
-  falls back to the Navigator 2.0 web client (and vice-versa). Both variants are
-  closed cleanly after the attempt. This mirrors hacs-idm-hpweb behaviour and
-  reduces misleading "web PIN rejected" errors when the wrong generation was
-  probed first.
 
 ### Why it matters
 

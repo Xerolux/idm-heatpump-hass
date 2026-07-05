@@ -413,7 +413,11 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             errors=errors,
                         )
                     try:
-                        detected = await self._async_detect_web_supplement(web_host, web_pin)
+                        detected = await self._async_detect_web_supplement(
+                            web_host,
+                            web_pin,
+                            model_hint=self._data.get(CONF_DETECTED_NAVIGATOR_VERSION),
+                        )
                     except IdmWebAuthenticationFailed:
                         _LOGGER.warning("IDM Navigator web PIN was rejected during setup for host %s", web_host)
                         errors[CONF_WEB_PIN] = "invalid_web_pin"
@@ -448,6 +452,22 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             elif _has_duplicate_host(self.hass, host, entry.entry_id):
                 errors[CONF_HOST] = "already_configured"
             elif not await self._test_connection(user_input):
+                web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
+                if web_pin_configured(web_pin):
+                    _LOGGER.info(
+                        "IDM Modbus connection to %s failed during reconfigure, but web PIN is configured; offering web-only fallback",
+                        host,
+                    )
+                    web_host = _web_host_for_input(user_input, host)
+                    self._data = {
+                        **user_input,
+                        CONF_HOST: host,
+                        CONF_NAME: entry.title,
+                        CONF_WEB_PIN: web_pin,
+                        CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
+                        CONF_WEB_HOST: _stored_web_host(web_host, host),
+                    }
+                    return await self.async_step_modbus_failed()
                 errors["base"] = "cannot_connect"
             else:
                 web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
@@ -465,7 +485,11 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                         errors=errors,
                     )
                 try:
-                    detected = await self._async_detect_web_supplement(web_host, web_pin)
+                    detected = await self._async_detect_web_supplement(
+                        web_host,
+                        web_pin,
+                        model_hint=entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION),
+                    )
                 except IdmWebAuthenticationFailed:
                     _LOGGER.warning("IDM Navigator web PIN was rejected during reconfiguration for host %s", web_host)
                     errors[CONF_WEB_PIN] = "invalid_web_pin"
@@ -587,7 +611,11 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     web_host,
                 )
                 try:
-                    detected = await self._async_detect_web_supplement(web_host, web_pin)
+                    detected = await self._async_detect_web_supplement(
+                        web_host,
+                        web_pin,
+                        model_hint=self._data.get(CONF_DETECTED_NAVIGATOR_VERSION),
+                    )
                 except IdmWebAuthenticationFailed:
                     _LOGGER.warning(
                         "IDM Navigator web interface at %s rejected the PIN during web-only setup",
@@ -739,7 +767,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception:
                 _LOGGER.debug("Error closing connection test client", exc_info=True)
 
-    async def _async_detect_web_supplement(self, host: str, pin: str) -> dict[str, str]:
+    async def _async_detect_web_supplement(self, host: str, pin: str, model_hint: str | None = None) -> dict[str, str]:
         """Detect optional web metadata during setup/reconfigure."""
         if not web_pin_configured(pin):
             return {}
@@ -747,7 +775,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         # Keep Modbus test and local web access slightly offset.
         await asyncio.sleep(0.3)
         try:
-            web_supplement = await async_read_web_supplement(host, pin)
+            web_supplement = await async_read_web_supplement(host, pin, model_hint=model_hint)
         except IdmWebAuthenticationFailed:
             _LOGGER.error("IDM Navigator web PIN was rejected for %s; please re-enter the PIN", host)
             raise

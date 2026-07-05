@@ -255,7 +255,7 @@ class TestAsyncStepUser:
             )
 
         assert result["step_id"] == "options"
-        detect_web.assert_awaited_once_with("192.168.178.103", "2634")
+        detect_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint=None)
         assert flow._data[CONF_MODBUS_PROXY] is True
         assert flow._data[CONF_WEB_HOST] == "192.168.178.103"
 
@@ -284,7 +284,7 @@ class TestAsyncStepUser:
                 }
             )
 
-        detect_web.assert_awaited_once_with("192.168.178.196", "2634")
+        detect_web.assert_awaited_once_with("192.168.178.196", "2634", model_hint=None)
         assert flow._data[CONF_MODBUS_PROXY] is False
         assert flow._data[CONF_WEB_HOST] == ""
 
@@ -632,7 +632,7 @@ class TestAsyncStepReconfigure:
                 }
             )
 
-        detect_web.assert_awaited_once_with("192.168.178.103", "2634")
+        detect_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint=None)
         update_and_abort.assert_called_once_with(
             entry,
             data_updates={
@@ -671,6 +671,88 @@ class TestAsyncStepReconfigure:
 
         assert result["type"] == "form"
         assert result["errors"][CONF_WEB_PIN] == "invalid_web_pin"
+
+    async def test_reconfigure_passes_stored_model_hint_to_web_detection(self) -> None:
+        """When a stored Navigator version exists, it must be forwarded as
+        a model_hint to the web supplement detection so the correct web
+        variant is tried first."""
+        flow = _make_flow()
+        entry = MagicMock()
+        entry.data = {
+            "host": "192.168.1.100",
+            "port": 502,
+            "slave_id": 1,
+            "web_pin": "2634",
+            CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 2.0",
+        }
+        entry.title = "IDM"
+        update_and_abort = MagicMock(return_value={"type": "abort", "reason": "reconfigure_successful"})
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
+            patch.object(flow, "async_update_and_abort", update_and_abort),
+        ):
+            await flow.async_step_reconfigure(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "2634",
+                }
+            )
+
+        detect_web.assert_awaited_once_with("192.168.1.100", "2634", model_hint="Navigator 2.0")
+
+    async def test_reconfigure_modbus_failure_offers_web_only_fallback(self) -> None:
+        """When Modbus fails during reconfigure but a web PIN is set, the
+        integration must route to the modbus_failed step (web-only fallback)
+        instead of showing a dead-end 'cannot_connect' error."""
+        flow = _make_flow()
+        entry = MagicMock()
+        entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
+        entry.title = "IDM"
+        entry.entry_id = "test-id"
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=False),
+            patch.object(flow, "async_step_modbus_failed", return_value={"type": "form", "step_id": "modbus_failed"}),
+        ):
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "2634",
+                }
+            )
+
+        assert result["step_id"] == "modbus_failed"
+
+    async def test_reconfigure_modbus_failure_without_pin_shows_error(self) -> None:
+        """Without a web PIN, a failed Modbus connection during reconfigure
+        must still show 'cannot_connect' (no web-only fallback)."""
+        flow = _make_flow()
+        entry = MagicMock()
+        entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
+        entry.title = "IDM"
+        entry.entry_id = "test-id"
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=False),
+        ):
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
+
+        assert result["errors"]["base"] == "cannot_connect"
 
 
 class TestTestConnection:

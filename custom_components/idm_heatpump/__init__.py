@@ -239,7 +239,11 @@ async def _async_setup_web_only_entry(
     firmware_version: str | None = None
 
     try:
-        web_supplement = await async_read_web_supplement(web_host, web_pin)
+        web_supplement = await async_read_web_supplement(
+            web_host,
+            web_pin,
+            model_hint=entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION),
+        )
     except Exception as err:
         _LOGGER.warning(
             "IDM web supplement initial read failed for %s during web-only setup: %s: %s. "
