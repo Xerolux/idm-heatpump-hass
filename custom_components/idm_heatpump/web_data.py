@@ -244,6 +244,36 @@ _NAV10_VARIANTS = {"nav10", "navigator_10", "navigator_pro"}
 _NAV20_VARIANTS = {"nav20", "navigator_20"}
 
 
+def _is_wrong_variant_error(err: Exception) -> bool:
+    """Return whether an API exception likely means we picked the wrong variant.
+
+    Navigator 10 speaks WebSocket on port 61220; Navigator 2.0 speaks plain
+    HTTP with a CSRF token. Connecting the wrong client to a controller
+    typically yields response-format errors (e.g. missing CSRF token, unknown
+    authorization frame) or transport errors (wrong port, connection refused,
+    timeout). Authentication errors are handled separately.
+    """
+    wrong_variant_types: tuple[type[Exception], ...]
+    try:
+        from idm_heatpump import IdmWebResponseError
+    except ImportError:
+        wrong_variant_types = ()
+    else:
+        wrong_variant_types = (IdmWebResponseError,)
+
+    if wrong_variant_types and isinstance(err, wrong_variant_types):
+        return True
+    return err.__class__.__name__ in {
+        "IdmWebResponseError",
+        "ClientError",
+        "ClientConnectorError",
+        "ServerDisconnectedError",
+        "OSError",
+        "TimeoutError",
+        "asyncio.exceptions.TimeoutError",
+    }
+
+
 def _preferred_web_variant(model_hint: str | None) -> str | None:
     """Return 'nav10' or 'nav20' when the hint identifies a definite Navigator family.
 
@@ -273,16 +303,19 @@ def _preferred_web_variant(model_hint: str | None) -> str | None:
 def _ordered_web_factories(
     model_hint: str | None,
     preferred_variant: str | None = None,
-) -> tuple[_WebClientFactory, ...]:
+) -> tuple[tuple[str, _WebClientFactory], ...]:
     """Return web client factories ordered so the most likely variant is first.
 
     Priority:
       1. ``preferred_variant`` — cached from a previous successful read.
       2. ``model_hint`` — Modbus-detected model name.
       3. Default: Navigator 10 WebSocket first (current generation).
+
+    Each entry is a (variant_name, factory) tuple so callers can log which
+    Navigator web client is being attempted.
     """
-    nav10 = _create_nav10_client
-    nav20 = _create_nav20_client
+    nav10: tuple[str, _WebClientFactory] = ("nav10", _create_nav10_client)
+    nav20: tuple[str, _WebClientFactory] = ("nav20", _create_nav20_client)
 
     variant = preferred_variant or _preferred_web_variant(model_hint)
     if variant in _NAV20_VARIANTS:
@@ -306,6 +339,12 @@ async def async_read_web_supplement(
     tried first to avoid wasting the connect timeout on the wrong
     variant every poll cycle. Callers should treat every exception as
     non-fatal to Modbus operation.
+
+    If the first client looks like the wrong variant (response format or
+    transport error), or even reports an authentication failure, the other
+    variant is still attempted before giving up. This mirrors the behaviour
+    of the hacs-idm-hpweb integration: try the likely variant, and fall
+    back to the other one on ``unknown_response``-like failures.
     """
     if not web_pin_configured(pin):
         return None
@@ -313,32 +352,64 @@ async def async_read_web_supplement(
     clean_pin = pin.strip() if pin is not None else ""
     last_error: Exception | None = None
     last_auth_error: Exception | None = None
+    tried_variants: list[str] = []
     factories = _ordered_web_factories(model_hint, preferred_variant)
-    for factory in factories:
+    for variant_name, factory in factories:
+        tried_variants.append(variant_name)
         client = factory(host, clean_pin)
         if client is None:
             continue
         try:
             supplement = _normalize_web_data(await client.read_data())
+            _LOGGER.debug(
+                "IDM web supplement succeeded with %s variant at %s",
+                variant_name,
+                host,
+            )
             return await _read_optional_notifications(client, supplement)
         except Exception as err:
             if _is_authentication_error(err):
                 last_auth_error = err
-                _LOGGER.debug("IDM web supplement rejected PIN for one Navigator web variant at %s", host)
+                _LOGGER.debug(
+                    "IDM web %s variant rejected PIN at %s",
+                    variant_name,
+                    host,
+                )
                 continue
+            if _is_wrong_variant_error(err):
+                _LOGGER.debug(
+                    "IDM web %s variant appears to be the wrong variant at %s: %s",
+                    variant_name,
+                    host,
+                    err,
+                )
+            else:
+                _LOGGER.debug(
+                    "IDM web %s variant failed at %s",
+                    variant_name,
+                    host,
+                    exc_info=True,
+                )
             last_error = err
-            _LOGGER.debug("IDM web supplement read failed for %s", host, exc_info=True)
         finally:
             try:
                 await client.close()
             except Exception:
                 _LOGGER.debug("Error closing IDM web supplement client", exc_info=True)
 
+    # If any attempted variant explicitly rejected the PIN, report it. This
+    # keeps the existing behaviour: a genuine bad PIN fails fast, while an
+    # auth error from the wrong variant is still retried on the other variant
+    # by the loop above. If the other variant succeeds we never reach here.
     if last_auth_error is not None:
         raise IdmWebAuthenticationFailed("IDM Navigator web PIN was rejected") from last_auth_error
     if last_error is not None:
         raise last_error
-    _LOGGER.debug("IDM web supplement is unavailable; idm-heatpump-api has no web API")
+    _LOGGER.debug(
+        "IDM web supplement unavailable at %s (tried %s); idm-heatpump-api has no web API",
+        host,
+        ", ".join(tried_variants),
+    )
     return None
 
 

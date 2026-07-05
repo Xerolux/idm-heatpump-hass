@@ -10,6 +10,56 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.0-beta.11] - 2026-07-05
+
+## v0.8.0-beta.11 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+- Pin `idm-heatpump-api` to `>=0.5.1,<0.6` to pick up the fixed Modbus model
+  detection (see API changelog).
+- When Modbus model detection is inconclusive or the generic fallback name
+  "Navigator 2.0 / 10" is used, default to Navigator 2.0 for register selection.
+  This prevents Navigator-10-only registers such as `4108` (`power_limit_hp`)
+  and `4001` (`booster_fault`) from being polled on Navigator 2.0 controllers,
+  which previously caused first-setup failures with `exception_code=2`.
+- Harden local web supplement discovery: if the Navigator 10 web client fails
+  with a wrong-variant / unrecognised response, the integration now explicitly
+  falls back to the Navigator 2.0 web client (and vice-versa). Both variants are
+  closed cleanly after the attempt. This mirrors hacs-idm-hpweb behaviour and
+  reduces misleading "web PIN rejected" errors when the wrong generation was
+  probed first.
+
+### Why it matters
+
+- Issue #44 reported that IDM Terra SWM / Navigator 2.0 setups failed on the
+  first refresh and only worked after manually disabling and re-enabling the
+  integration. The root cause was a false Navigator-10 detection signal
+  (address 1072) that scheduled unsupported Navigator-10-only registers.
+- With this beta, fresh installations and upgrades on Navigator 2.0 should
+  complete on the first attempt without the disable/enable workaround.
+
+### Support
+
+Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:
+
+- [GitHub Sponsors](https://github.com/sponsors/xerolux)
+- [Ko-Fi](https://ko-fi.com/xerolux)
+- [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)
+- [PayPal](https://paypal.me/xerolux)
+
+---
+
+[Full changelog: v0.8.0-beta.10...v0.8.0-beta.11](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.8.0-beta.10...v0.8.0-beta.11)
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+---
+
 ## [0.8.0-beta.10] - 2026-07-04
 
 ## v0.8.0-beta.10 - IDM Heatpump

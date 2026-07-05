@@ -333,6 +333,76 @@ async def test_async_read_web_supplement_prefers_nav20_auth_error_over_nav10_con
     assert nav20.closed
 
 
+async def test_async_read_web_supplement_switches_on_wrong_variant_response_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A response-format error on the first variant must trigger the other variant."""
+
+    class IdmWebResponseError(Exception):
+        """Fake API response error (wrong variant signal)."""
+
+    nav10 = _FakeWebClient(error=IdmWebResponseError("Navigator 10 authorization response was not recognized"))
+    nav20 = _FakeWebClient(
+        SimpleNamespace(
+            navigator_version="Navigator 2.0",
+            software_version="2.35",
+            heatpump_model="TERRA SWM 6-17 HGL",
+            simple_values={},
+        )
+    )
+
+    monkeypatch.setattr(idm_heatpump, "IdmWebResponseError", IdmWebResponseError, raising=False)
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator10_web_client",
+        lambda host, pin: nav10,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: nav20,
+        raising=False,
+    )
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.navigator_version == "Navigator 2.0"
+    assert nav10.closed
+    assert nav20.closed
+
+
+async def test_async_read_web_supplement_tries_both_variants_before_invalid_pin(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An auth error on the first variant does not stop us from trying the other one."""
+    nav10 = _FakeWebClient(error=IdmWebAuthenticationError("not navigator 10"))
+    nav20 = _FakeWebClient(error=IdmWebAuthenticationError("bad pin"))
+
+    monkeypatch.setattr(idm_heatpump, "IdmWebAuthenticationError", IdmWebAuthenticationError, raising=False)
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator10_web_client",
+        lambda host, pin: nav10,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: nav20,
+        raising=False,
+    )
+
+    with pytest.raises(IdmWebAuthenticationFailed):
+        await async_read_web_supplement("192.0.2.10", "0000")
+
+    assert nav10.closed
+    assert nav20.closed
+
+
 def test_merge_model_info_prefers_web_supplement() -> None:
     model_name, firmware_version = merge_model_info(
         MODEL,
