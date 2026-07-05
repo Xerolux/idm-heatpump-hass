@@ -24,10 +24,13 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.loader import async_get_integration
 
+from idm_heatpump import IdmModbusClient, IdmModelInfo
+from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO, MODEL_UNKNOWN
+
 from .const import (
-    CONF_ENABLE_CASCADE,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
+    CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_MODBUS_MAX_RETRIES,
@@ -61,12 +64,7 @@ from .const import (
     MODEL,
     NAME,
 )
-from .web_data import async_read_web_supplement, merge_model_info, web_pin_configured
 from .coordinator import IdmCoordinator, navigator_family
-from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
-from idm_heatpump import IdmModbusClient, IdmModelInfo
-from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO, MODEL_UNKNOWN
-
 from .library_adapter import get_idm_client
 from .registers import (
     get_all_binary_sensor_descriptions,
@@ -75,6 +73,8 @@ from .registers import (
     get_all_sensor_descriptions,
     get_all_switch_descriptions,
 )
+from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
+from .web_data import async_read_web_supplement, merge_model_info, web_pin_configured
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -562,7 +562,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     ),
                 )
                 entry.runtime_data.room_temp_forwarding_task = asyncio.create_task(forwarder.async_run())
-    except BaseException:
+    except Exception:
         try:
             await client.disconnect()
         except Exception:
@@ -578,14 +578,14 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         web_task = getattr(entry.runtime_data, "web_task", None)
-        if isinstance(web_task, asyncio.Future):
+        if isinstance(web_task, asyncio.Task):
             web_task.cancel()
             try:
                 await web_task
             except asyncio.CancelledError:
                 pass
         room_temp_forwarding_task = getattr(entry.runtime_data, "room_temp_forwarding_task", None)
-        if isinstance(room_temp_forwarding_task, asyncio.Future):
+        if isinstance(room_temp_forwarding_task, asyncio.Task):
             room_temp_forwarding_task.cancel()
             try:
                 await room_temp_forwarding_task

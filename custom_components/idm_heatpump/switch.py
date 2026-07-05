@@ -49,24 +49,19 @@ class IdmSwitch(IdmEntity, SwitchEntity):
         value = self.coordinator.data.get(self._register.name)
         return bool(value) if value is not None else False
 
-    async def async_turn_on(self, **kwargs: Any) -> None:
+    async def _async_turn(self, state: bool) -> None:
         try:
-            await self.coordinator.async_write_register(self._register, True)
+            await self.coordinator.async_write_register(self._register, state)
         except Exception as err:
-            _LOGGER.error("Failed to turn on %s: %s", self._register.name, err)
+            _LOGGER.error("Failed to turn %s %s: %s", "on" if state else "off", self._register.name, err)
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="write_failed",
                 translation_placeholders={"error": str(err)},
             ) from err
 
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        await self._async_turn(True)
+
     async def async_turn_off(self, **kwargs: Any) -> None:
-        try:
-            await self.coordinator.async_write_register(self._register, False)
-        except Exception as err:
-            _LOGGER.error("Failed to turn off %s: %s", self._register.name, err)
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key="write_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_turn(False)
