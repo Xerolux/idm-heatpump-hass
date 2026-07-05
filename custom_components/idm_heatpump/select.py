@@ -84,9 +84,9 @@ class IdmSelect(IdmEntity, SelectEntity):
         if self._enum_slug_reverse is not None:
             if option in self._enum_slug_reverse:
                 return self._enum_slug_reverse[option]
-            if normalized_option not in self._enum_slug_reverse:
-                raise ValueError(f"Unknown option: {option}")
-            return self._enum_slug_reverse[normalized_option]
+            if normalized_option in self._enum_slug_reverse:
+                return self._enum_slug_reverse[normalized_option]
+            raise ValueError(f"Unknown option: {option}")
         options = self._register.enum_options
         if options is None:
             raise ValueError(f"No options defined: {option}")

@@ -24,7 +24,7 @@ from homeassistant.helpers import issue_registry as ir
 from idm_heatpump import RegisterDef
 from idm_heatpump.client import DataType
 
-from .const import DOMAIN
+from .const import DOMAIN, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
 from .coordinator import IdmCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -161,7 +161,7 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
         )
 
     reg = RegisterDef(
-        address=1005,
+        address=REGISTER_ADDRESS_SYSTEM_MODE,
         datatype=DataType.UCHAR,
         name="system_mode",
         writable=True,
@@ -172,7 +172,7 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
 async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = await _get_coordinator(hass, call)
     reg = RegisterDef(
-        address=1999,
+        address=REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
         datatype=DataType.UCHAR,
         name="error_acknowledge",
         writable=True,

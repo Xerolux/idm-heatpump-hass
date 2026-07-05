@@ -67,6 +67,10 @@ MAX_MODBUS_TIMEOUT: float = 30.0
 MIN_MODBUS_MAX_RETRIES: int = 1
 MAX_MODBUS_MAX_RETRIES: int = 5
 
+# Service-spezifische Register-Adressen (werden in services.py verwendet)
+REGISTER_ADDRESS_SYSTEM_MODE: int = 1005
+REGISTER_ADDRESS_ERROR_ACKNOWLEDGE: int = 1999
+
 UNUSED_VALUE: float = -1.0
 
 # Pumpen-Statusregister (INT16, %), bei denen -1 laut iDM-Doku "Aus" bedeutet.

@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 from datetime import timedelta
 from typing import Any
 
@@ -281,7 +282,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return True
             if value == -32768:
                 return True
-            if isinstance(value, float) and (value != value or abs(value) == float("inf")):
+            if isinstance(value, float) and (math.isnan(value) or abs(value) == float("inf")):
                 return True
         return False
 
@@ -293,7 +294,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         all supported entities available without hiding real connection errors.
         """
         if not registers:
-            return await self._client.read_batch(registers)
+            return {}
 
         readable = [reg for reg in registers if reg.name not in self._unsupported_registers]
         if not readable:

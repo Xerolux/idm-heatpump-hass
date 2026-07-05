@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
@@ -32,7 +33,7 @@ def _coerce_temperature(value: Any) -> float | None:
         temperature = float(value)
     except (TypeError, ValueError):
         return None
-    if temperature != temperature or abs(temperature) == float("inf"):
+    if math.isnan(temperature) or abs(temperature) == float("inf"):
         return None
     return temperature
 
