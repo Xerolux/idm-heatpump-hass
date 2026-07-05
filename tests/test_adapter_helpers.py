@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 from custom_components.idm_heatpump.adapter_enums import (
     get_bitflag_de_labels,
@@ -12,6 +13,7 @@ from custom_components.idm_heatpump.adapter_registers import (
     build_filtered_register_map,
     model_info_from_flags,
 )
+from custom_components.idm_heatpump.library_adapter import get_idm_client
 
 from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20
 
@@ -101,3 +103,31 @@ def test_filtered_register_map_excludes_navigator_10_only_registers_for_navigato
 
     assert "power_limit_hp" not in reg_map
     assert "booster_b_source_inlet_temp" not in reg_map
+
+
+def test_get_idm_client_forwards_timeout_and_max_retries() -> None:
+    """Optional timeout/max_retries must be handed through to the library client."""
+    captured: dict = {}
+
+    def _fake_client(*args: object, **kwargs: object) -> None:
+        captured.update(kwargs)
+
+    with patch("custom_components.idm_heatpump.library_adapter.LibIdmModbusClient", side_effect=_fake_client):
+        get_idm_client(host="10.0.0.5", port=502, slave_id=1, timeout=15.0, max_retries=2)
+
+    assert captured["timeout"] == 15.0
+    assert captured["max_retries"] == 2
+
+
+def test_get_idm_client_omits_unset_optional_params() -> None:
+    """When optional params are None, they must not be forwarded (library defaults take over)."""
+    captured: dict = {}
+
+    def _fake_client(*args: object, **kwargs: object) -> None:
+        captured.update(kwargs)
+
+    with patch("custom_components.idm_heatpump.library_adapter.LibIdmModbusClient", side_effect=_fake_client):
+        get_idm_client(host="10.0.0.5")
+
+    assert "timeout" not in captured
+    assert "max_retries" not in captured

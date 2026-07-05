@@ -57,7 +57,9 @@
           "web_scan_interval": "Web-Zusatzdaten-Intervall",
           "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
           "room_temp_forwarding_interval": "Intervall Raumtemperatur-Weitergabe",
-          "room_temp_forwarding_tolerance": "Toleranz Raumtemperatur-Weitergabe"
+          "room_temp_forwarding_tolerance": "Toleranz Raumtemperatur-Weitergabe",
+          "modbus_timeout": "Modbus-Timeout",
+          "modbus_retries": "Modbus-Wiederholungen"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -70,7 +72,9 @@
           "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten.",
           "room_temp_forwarding": "Optional: schreibt ausgewählte Home-Assistant-Temperatursensoren in die externen IDM-Raumtemperaturregister der aktiven Heizkreise.",
           "room_temp_forwarding_interval": "Wie oft die ausgewählten Raumtemperaturen geprüft und weitergegeben werden. Zustandsänderungen werden zusätzlich sofort weitergegeben.",
-          "room_temp_forwarding_tolerance": "Schreibt erst erneut, wenn sich der Wert seit der letzten Weitergabe mindestens um diesen Betrag geändert hat."
+          "room_temp_forwarding_tolerance": "Schreibt erst erneut, wenn sich der Wert seit der letzten Weitergabe mindestens um diesen Betrag geändert hat.",
+          "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-TCP-Antwort, bevor der Versuch abgebrochen wird. Niedrigere Werte erkennen tote Verbindungen schneller, können aber bei langsamen Reglern zu früh abbrechen.",
+          "modbus_retries": "Anzahl Wiederholungen für eine fehlgeschlagene Modbus-Anfrage (mit exponentiellem Backoff), bevor der Polling-Zyklus scheitert. Niedrigere Werte führen bei dauerhaft instabilen Verbindungen schneller zu einem Fehler."
         }
       },
       "zones": {
@@ -170,7 +174,9 @@
           "web_scan_interval": "Web-Zusatzdaten-Intervall",
           "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
           "room_temp_forwarding_interval": "Intervall Raumtemperatur-Weitergabe",
-          "room_temp_forwarding_tolerance": "Toleranz Raumtemperatur-Weitergabe"
+          "room_temp_forwarding_tolerance": "Toleranz Raumtemperatur-Weitergabe",
+          "modbus_timeout": "Modbus-Timeout",
+          "modbus_retries": "Modbus-Wiederholungen"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -183,7 +189,9 @@
           "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten.",
           "room_temp_forwarding": "Optional: schreibt ausgewählte Home-Assistant-Temperatursensoren in die externen IDM-Raumtemperaturregister der aktiven Heizkreise.",
           "room_temp_forwarding_interval": "Wie oft die ausgewählten Raumtemperaturen geprüft und weitergegeben werden. Zustandsänderungen werden zusätzlich sofort weitergegeben.",
-          "room_temp_forwarding_tolerance": "Schreibt erst erneut, wenn sich der Wert seit der letzten Weitergabe mindestens um diesen Betrag geändert hat."
+          "room_temp_forwarding_tolerance": "Schreibt erst erneut, wenn sich der Wert seit der letzten Weitergabe mindestens um diesen Betrag geändert hat.",
+          "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-TCP-Antwort, bevor der Versuch abgebrochen wird. Niedrigere Werte erkennen tote Verbindungen schneller, können aber bei langsamen Reglern zu früh abbrechen.",
+          "modbus_retries": "Anzahl Wiederholungen für eine fehlgeschlagene Modbus-Anfrage (mit exponentiellem Backoff), bevor der Polling-Zyklus scheitert. Niedrigere Werte führen bei dauerhaft instabilen Verbindungen schneller zu einem Fehler."
         }
       },
       "zones": {

@@ -527,6 +527,64 @@ class TestAsyncSetupEntryOptions:
 
         assert captured_kwargs.get("slave_id") == 1
 
+    async def test_modbus_timeout_and_retries_passed_to_client(self, mock_hass):
+        """Configured modbus_timeout / modbus_retries must reach get_idm_client."""
+        entry = self._make_entry(
+            options_override={"modbus_timeout": 20.0, "modbus_retries": 4}
+        )
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_client(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_client
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        patches[0] = patch("custom_components.idm_heatpump.get_idm_client", side_effect=_capture_client)
+
+        ctx = __import__("contextlib").ExitStack()
+        for p in patches:
+            ctx.enter_context(p)
+        with ctx:
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs.get("timeout") == 20.0
+        assert captured_kwargs.get("max_retries") == 4
+
+    async def test_modbus_timeout_and_retries_default_when_missing(self, mock_hass):
+        """Without explicit options, default timeout/retries are forwarded."""
+        entry = self._make_entry()
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured_kwargs: dict = {}
+
+        def _capture_client(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_client
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        patches[0] = patch("custom_components.idm_heatpump.get_idm_client", side_effect=_capture_client)
+
+        ctx = __import__("contextlib").ExitStack()
+        for p in patches:
+            ctx.enter_context(p)
+        with ctx:
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured_kwargs.get("timeout") == 10.0
+        assert captured_kwargs.get("max_retries") == 3
+
     async def test_separate_web_host_is_used_for_web_supplement(self, mock_hass):
         """Proxy setups can use one host for Modbus and another for Navigator web."""
         entry = self._make_entry(

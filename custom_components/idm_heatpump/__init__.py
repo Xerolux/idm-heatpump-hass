@@ -30,6 +30,8 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_MODBUS_MAX_RETRIES,
+    CONF_MODBUS_TIMEOUT,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -45,6 +47,8 @@ from .const import (
     CONF_ZONE_ROOMS,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
+    DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
@@ -193,7 +197,14 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     Services are registered here (action-setup rule) so they are available
     as soon as the domain loads, independently of config entries.
     """
+    from .log_filter import install_pymodbus_log_filter
     from .services import async_setup_services
+
+    # pymodbus logs routine connection drops at ERROR level and appends up
+    # to 20 buffered raw frame dumps to each record. The coordinator already
+    # converts these failures into a single UpdateFailed warning, so the
+    # pymodbus records are redundant and would otherwise flood the HA log.
+    install_pymodbus_log_filter()
 
     await async_setup_services(hass)
     return True
@@ -334,6 +345,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     room_temp_forwarding_tolerance = float(
         entry.options.get(CONF_ROOM_TEMP_FORWARDING_TOLERANCE, DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE)
     )
+    modbus_timeout = float(
+        entry.options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT)
+    )
+    modbus_max_retries = int(
+        entry.options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES)
+    )
 
     if web_pin_configured(web_pin):
         ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
@@ -359,7 +376,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         )
 
     # Use the library via the adapter (migration Option B)
-    client = get_idm_client(host=host, port=port, slave_id=slave_id)
+    client = get_idm_client(
+        host=host,
+        port=port,
+        slave_id=slave_id,
+        timeout=modbus_timeout,
+        max_retries=modbus_max_retries,
+    )
 
     try:
         await client.connect()

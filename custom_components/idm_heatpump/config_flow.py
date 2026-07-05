@@ -44,7 +44,9 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
+    CONF_MODBUS_TIMEOUT,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -61,6 +63,8 @@ from .const import (
     CONF_ZONE_ROOMS,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
+    DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_PORT,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -71,8 +75,12 @@ from .const import (
     DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     HEATING_CIRCUITS,
+    MAX_MODBUS_MAX_RETRIES,
+    MAX_MODBUS_TIMEOUT,
     MAX_ROOM_COUNT,
     MAX_ZONE_COUNT,
+    MIN_MODBUS_MAX_RETRIES,
+    MIN_MODBUS_TIMEOUT,
 )
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
@@ -216,6 +224,29 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                     step=0.1,
                     mode=NumberSelectorMode.SLIDER,
                     unit_of_measurement="°C",
+                )
+            ),
+            vol.Required(
+                CONF_MODBUS_TIMEOUT,
+                default=float(options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT)),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=MIN_MODBUS_TIMEOUT,
+                    max=MAX_MODBUS_TIMEOUT,
+                    step=1.0,
+                    mode=NumberSelectorMode.SLIDER,
+                    unit_of_measurement="s",
+                )
+            ),
+            vol.Required(
+                CONF_MODBUS_MAX_RETRIES,
+                default=int(options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES)),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=MIN_MODBUS_MAX_RETRIES,
+                    max=MAX_MODBUS_MAX_RETRIES,
+                    step=1,
+                    mode=NumberSelectorMode.SLIDER,
                 )
             ),
         }
@@ -622,6 +653,8 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_ROOM_TEMP_FORWARDING_ENTITIES: {},
                 CONF_ROOM_TEMP_FORWARDING_INTERVAL: DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
                 CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
+                CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
+                CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
             }
             return self._async_create_config_entry()
 
