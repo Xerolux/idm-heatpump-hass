@@ -44,7 +44,9 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
+    CONF_MODBUS_TIMEOUT,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -61,6 +63,8 @@ from .const import (
     CONF_ZONE_ROOMS,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
+    DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_PORT,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -68,12 +72,15 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
-    DEFAULT_WEB_ONLY,
     DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     HEATING_CIRCUITS,
+    MAX_MODBUS_MAX_RETRIES,
+    MAX_MODBUS_TIMEOUT,
     MAX_ROOM_COUNT,
     MAX_ZONE_COUNT,
+    MIN_MODBUS_MAX_RETRIES,
+    MIN_MODBUS_TIMEOUT,
 )
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
@@ -217,6 +224,29 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                     step=0.1,
                     mode=NumberSelectorMode.SLIDER,
                     unit_of_measurement="°C",
+                )
+            ),
+            vol.Required(
+                CONF_MODBUS_TIMEOUT,
+                default=float(options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT)),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=MIN_MODBUS_TIMEOUT,
+                    max=MAX_MODBUS_TIMEOUT,
+                    step=1.0,
+                    mode=NumberSelectorMode.SLIDER,
+                    unit_of_measurement="s",
+                )
+            ),
+            vol.Required(
+                CONF_MODBUS_MAX_RETRIES,
+                default=int(options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES)),
+            ): NumberSelector(
+                NumberSelectorConfig(
+                    min=MIN_MODBUS_MAX_RETRIES,
+                    max=MAX_MODBUS_MAX_RETRIES,
+                    step=1,
+                    mode=NumberSelectorMode.SLIDER,
                 )
             ),
         }
@@ -536,9 +566,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             options=self._options,
         )
 
-    async def async_step_modbus_failed(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_modbus_failed(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
         host = str(self._data.get(CONF_HOST, ""))
 
@@ -547,12 +575,8 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             if action == "retry":
                 return self.async_show_form(
                     step_id="user",
-                    data_schema=self.add_suggested_values_to_schema(
-                        STEP_USER_DATA_SCHEMA, self._data
-                    ),
-                    description_placeholders={
-                        "wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"
-                    },
+                    data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, self._data),
+                    description_placeholders={"wiki_url": "https://github.com/Xerolux/idm-heatpump-hass/wiki"},
                 )
             if action == "web_only":
                 web_pin = str(self._data.get(CONF_WEB_PIN, "")).strip()
@@ -613,9 +637,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             errors=errors,
         )
 
-    async def async_step_web_only_options(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_web_only_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             self._options = {
                 CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
@@ -626,13 +648,13 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_TECHNICIAN_CODES: False,
                 CONF_ENABLE_CASCADE: False,
                 CONF_WEB_ENABLED: True,
-                CONF_WEB_SCAN_INTERVAL: int(
-                    user_input.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL)
-                ),
+                CONF_WEB_SCAN_INTERVAL: int(user_input.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL)),
                 CONF_ROOM_TEMP_FORWARDING: False,
                 CONF_ROOM_TEMP_FORWARDING_ENTITIES: {},
                 CONF_ROOM_TEMP_FORWARDING_INTERVAL: DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
                 CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
+                CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
+                CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
             }
             return self._async_create_config_entry()
 
@@ -667,43 +689,46 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     async def _test_connection(self, data: dict[str, Any]) -> bool:
         from idm_heatpump import IdmModbusClient
 
+        host = str(data[CONF_HOST]).strip()
+        port = int(data.get(CONF_PORT, DEFAULT_PORT))
+        slave_id = int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
         client = IdmModbusClient(
-            host=str(data[CONF_HOST]).strip(),
-            port=int(data.get(CONF_PORT, DEFAULT_PORT)),
-            slave_id=int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
+            host=host,
+            port=port,
+            slave_id=slave_id,
         )
         try:
             await client.connect()
             if not client.is_connected:
                 _LOGGER.warning(
                     "IDM Modbus connection test to %s:%d (slave %s) failed: not connected after connect()",
-                    client.host,
-                    client.port,
-                    client.slave_id,
+                    host,
+                    port,
+                    slave_id,
                 )
                 return False
             value = await client.probe_register(1000, 2)
             if value is not None:
                 _LOGGER.info(
                     "IDM Modbus connection test to %s:%d (slave %s) succeeded",
-                    client.host,
-                    client.port,
-                    client.slave_id,
+                    host,
+                    port,
+                    slave_id,
                 )
                 return True
             _LOGGER.warning(
                 "IDM Modbus connection test to %s:%d (slave %s) failed: probe register returned no data",
-                client.host,
-                client.port,
-                client.slave_id,
+                host,
+                port,
+                slave_id,
             )
             return False
         except Exception as err:
             _LOGGER.warning(
                 "IDM Modbus connection test to %s:%d (slave %s) failed: %s: %s",
-                client.host,
-                client.port,
-                client.slave_id,
+                host,
+                port,
+                slave_id,
                 err.__class__.__name__,
                 err,
             )

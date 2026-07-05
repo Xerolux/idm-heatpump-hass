@@ -15,7 +15,9 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
+    CONF_MODBUS_TIMEOUT,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -28,6 +30,8 @@ from custom_components.idm_heatpump.const import (
     CONF_WEB_HOST,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
+    DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_WEB_ENABLED,
 )
 from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed
@@ -333,6 +337,20 @@ class TestAsyncStepOptions:
         result = await flow.async_step_options(None)
         assert result["type"] == "form"
         assert result["step_id"] == "options"
+
+    def test_options_schema_exposes_modbus_timeout_and_retries(self):
+        """Timeout/retries must be user-tunable in the options step."""
+        schema = _build_options_schema({})
+        schema_dict = dict(schema._schema)
+        assert CONF_MODBUS_TIMEOUT in schema_dict
+        assert CONF_MODBUS_MAX_RETRIES in schema_dict
+
+    def test_options_schema_applies_defaults_for_timeout_and_retries(self):
+        schema = _build_options_schema({})
+        # The dict keys are _Required markers; extract their defaults by key name.
+        markers = {marker.key: marker for marker in schema._schema.keys()}
+        assert markers[CONF_MODBUS_TIMEOUT].default == DEFAULT_MODBUS_TIMEOUT
+        assert markers[CONF_MODBUS_MAX_RETRIES].default == DEFAULT_MODBUS_MAX_RETRIES
 
     async def test_no_zones_creates_entry(self):
         flow = _make_flow()

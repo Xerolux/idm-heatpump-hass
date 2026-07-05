@@ -947,9 +947,25 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
     return numbers
 
 
-def get_idm_client(host: str, port: int = 502, slave_id: int = 1) -> LibIdmModbusClient:
-    """Factory that returns a properly typed client from the library."""
-    return LibIdmModbusClient(host=host, port=port, slave_id=slave_id)
+def get_idm_client(
+    host: str,
+    port: int = 502,
+    slave_id: int = 1,
+    timeout: float | None = None,
+    max_retries: int | None = None,
+) -> LibIdmModbusClient:
+    """Factory that returns a properly typed client from the library.
+
+    ``timeout`` and ``max_retries`` are passed through when supplied so the
+    HA integration can tune them per config entry. They default to the
+    library's own defaults (10 s and 3 retries) when ``None``.
+    """
+    kwargs: dict[str, Any] = {}
+    if timeout is not None:
+        kwargs["timeout"] = float(timeout)
+    if max_retries is not None:
+        kwargs["max_retries"] = int(max_retries)
+    return LibIdmModbusClient(host=host, port=port, slave_id=slave_id, **kwargs)
 
 
 __all__ = [

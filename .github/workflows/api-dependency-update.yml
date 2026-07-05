@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       api_version:
-        description: idm-heatpump-api version to pin
+        description: idm-heatpump-api version to set as compatible lower bound
         required: true
         type: string
 
@@ -34,7 +34,7 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Update pinned API dependency
+      - name: Update compatible API dependency
         run: |
           python - <<'PY'
           from __future__ import annotations
@@ -45,7 +45,10 @@ jobs:
 
           version = "${{ steps.api.outputs.version }}"
           root = Path(".")
-          requirement = f"idm-heatpump-api[web]=={version}"
+          major, minor, *_ = version.split(".")
+          major_minor = f"{major}.{minor}"
+          next_major_minor = f"{major}.{int(minor) + 1}"
+          requirement = f"idm-heatpump-api[web]>={major_minor},<{next_major_minor}"
 
           manifest_path = root / "custom_components" / "idm_heatpump" / "manifest.json"
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -57,7 +60,7 @@ jobs:
 
           release_contract = root / "tests" / "test_release_contract.py"
           text = release_contract.read_text(encoding="utf-8")
-          text = re.sub(r'idm-heatpump-api(?:\[web\])?==[0-9]+\.[0-9]+\.[0-9]+', requirement, text)
+          text = re.sub(r'idm-heatpump-api(?:\[web\])?(?:==[0-9]+\.[0-9]+\.[0-9]+|>=[0-9]+\.[0-9]+,<[0-9]+\.[0-9]+)', requirement, text)
           release_contract.write_text(text, encoding="utf-8")
 
           docs = [
@@ -68,7 +71,7 @@ jobs:
           ]
           for path in docs:
               text = path.read_text(encoding="utf-8")
-              text = re.sub(r'idm-heatpump-api(?:\[web\])?==[0-9]+\.[0-9]+\.[0-9]+', requirement, text)
+              text = re.sub(r'idm-heatpump-api(?:\[web\])?(?:==[0-9]+\.[0-9]+\.[0-9]+|>=[0-9]+\.[0-9]+,<[0-9]+\.[0-9]+)', requirement, text)
               path.write_text(text, encoding="utf-8")
           PY
 
@@ -85,7 +88,7 @@ jobs:
           title: "chore: update idm-heatpump-api to ${{ steps.api.outputs.version }}"
           commit-message: "chore: update idm-heatpump-api to ${{ steps.api.outputs.version }}"
           body: |
-            Updates the pinned `idm-heatpump-api` dependency to `${{ steps.api.outputs.version }}`.
+            Updates the compatible `idm-heatpump-api` dependency range for `${{ steps.api.outputs.version }}`.
 
             Review the API changelog before merging:
             https://github.com/Xerolux/idm-heatpump-api/blob/main/CHANGELOG.md

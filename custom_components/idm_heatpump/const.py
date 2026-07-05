@@ -9,6 +9,13 @@ from __future__ import annotations
 
 import enum
 
+try:
+    import idm_heatpump as idm_api
+except ImportError:
+    RECOMMENDED_WEB_SCAN_INTERVAL = 30.0
+else:
+    RECOMMENDED_WEB_SCAN_INTERVAL = float(getattr(idm_api, "RECOMMENDED_WEB_SCAN_INTERVAL", 30.0))
+
 DOMAIN: str = "idm_heatpump"
 NAME: str = "IDM Heatpump"
 MANUFACTURER: str = "iDM Energiesysteme"
@@ -38,6 +45,8 @@ CONF_ROOM_TEMP_FORWARDING_INTERVAL: str = "room_temp_forwarding_interval"
 CONF_ROOM_TEMP_FORWARDING_TOLERANCE: str = "room_temp_forwarding_tolerance"
 CONF_ROOM_TEMP_FORWARDING_ENTITIES: str = "room_temp_forwarding_entities"
 CONF_WEB_ONLY: str = "web_only_mode"
+CONF_MODBUS_TIMEOUT: str = "modbus_timeout"
+CONF_MODBUS_MAX_RETRIES: str = "modbus_retries"
 
 DEFAULT_HOST: str = ""
 DEFAULT_WEB_ONLY: bool = False
@@ -47,10 +56,16 @@ DEFAULT_SCAN_INTERVAL: int = 10
 DEFAULT_HIDE_UNUSED: bool = True
 DEFAULT_ENABLE_CASCADE: bool = False
 DEFAULT_WEB_ENABLED: bool = True
-DEFAULT_WEB_SCAN_INTERVAL: int = 30
+DEFAULT_WEB_SCAN_INTERVAL: int = int(RECOMMENDED_WEB_SCAN_INTERVAL)
 DEFAULT_ROOM_TEMP_FORWARDING: bool = False
 DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE: float = 0.2
+DEFAULT_MODBUS_TIMEOUT: float = 10.0
+DEFAULT_MODBUS_MAX_RETRIES: int = 3
+MIN_MODBUS_TIMEOUT: float = 3.0
+MAX_MODBUS_TIMEOUT: float = 30.0
+MIN_MODBUS_MAX_RETRIES: int = 1
+MAX_MODBUS_MAX_RETRIES: int = 5
 
 UNUSED_VALUE: float = -1.0
 

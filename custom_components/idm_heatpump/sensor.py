@@ -21,6 +21,13 @@ from homeassistant.helpers.device_registry import DeviceInfo
 
 from idm_heatpump.client import DataType
 
+try:
+    import idm_heatpump as idm_api
+except ImportError:
+    WEB_VALUE_DESCRIPTIONS = {}
+else:
+    WEB_VALUE_DESCRIPTIONS = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
+
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from .const import CONF_TECHNICIAN_CODES
@@ -252,13 +259,43 @@ def _humanize_web_name(key: str) -> str:
     return _WEB_VALUE_NAMES_DE.get(key, key.replace("_", " ").title())
 
 
+def _web_metadata_value(metadata: object, attr: str) -> object:
+    if isinstance(metadata, dict):
+        return metadata.get(attr)
+    return getattr(metadata, attr, None)
+
+
+def _coerce_web_device_class(value: object) -> SensorDeviceClass | None:
+    if value is None:
+        return None
+    try:
+        return SensorDeviceClass(str(value))
+    except ValueError:
+        return None
+
+
+def _coerce_web_state_class(value: object) -> SensorStateClass | None:
+    if value is None:
+        return None
+    try:
+        return SensorStateClass(str(value))
+    except ValueError:
+        return None
+
+
 def _web_sensor_definition(key: str) -> WebSensorDefinition:
-    unit = _WEB_VALUE_UNITS.get(key)
-    device_class, state_class = infer_sensor_classes(key, unit)
+    metadata = WEB_VALUE_DESCRIPTIONS.get(key) if isinstance(WEB_VALUE_DESCRIPTIONS, dict) else None
+    preferred_unit = _web_metadata_value(metadata, "preferred_unit")
+    unit = str(preferred_unit) if preferred_unit else _WEB_VALUE_UNITS.get(key)
+    device_class = _coerce_web_device_class(_web_metadata_value(metadata, "device_class"))
+    state_class = _coerce_web_state_class(_web_metadata_value(metadata, "state_class"))
+    if device_class is None and state_class is None:
+        device_class, state_class = infer_sensor_classes(key, unit)
     if unit == "h":
         state_class = SensorStateClass.TOTAL_INCREASING
     if key.startswith("switch_cycles"):
         state_class = SensorStateClass.TOTAL_INCREASING
+    enabled_by_default = _web_metadata_value(metadata, "enabled_by_default")
     entity_category = (
         EntityCategory.DIAGNOSTIC
         if key
@@ -280,7 +317,7 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
         state_class=state_class,
         icon=get_icon_for_register(key, unit),
         entity_category=entity_category,
-        enabled_by_default=True,
+        enabled_by_default=bool(enabled_by_default) if enabled_by_default is not None else True,
     )
 
 

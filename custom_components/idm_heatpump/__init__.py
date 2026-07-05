@@ -30,6 +30,8 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_MODBUS_MAX_RETRIES,
+    CONF_MODBUS_TIMEOUT,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -45,6 +47,8 @@ from .const import (
     CONF_ZONE_ROOMS,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
+    DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
@@ -102,11 +106,13 @@ IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
 async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, IdmModelInfo | None]:
     """Probe the heat pump for its model and firmware version.
 
-    Returns (model_name, firmware_version, model_info). detect_model() reads a
-    handful of registers to distinguish Navigator 2.0, Navigator 10 and
-    Navigator Pro; model_name falls back to the generic MODEL constant if
-    detection fails (e.g. older firmware, transient Modbus error) or is
-    inconclusive, so setup never fails because of this.
+    Returns (model_name, firmware_version, model_info). detect_model() reads
+    only the model-probe registers to distinguish Navigator 2.0, Navigator 10
+    and Navigator Pro. It intentionally skips the optional firmware register
+    probe because register 4120 is unreliable on some Navigator 10 firmwares.
+    model_name falls back to the generic MODEL constant if detection fails
+    (e.g. older firmware, transient Modbus error) or is inconclusive, so setup
+    never fails because of this.
 
     firmware_version is read via getattr defensively: idm-heatpump-api 0.3.4
     does not expose it on IdmModelInfo yet, but a future release is expected
@@ -114,7 +120,10 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, 
     version bump here or raising on the current release.
     """
     try:
-        model_info = await client.detect_model()
+        try:
+            model_info = await client.detect_model(read_firmware=False)
+        except TypeError:
+            model_info = await client.detect_model()
     except Exception:
         _LOGGER.warning(
             "IDM Modbus model detection failed; using generic model %s and isolating unsupported registers during polling",
@@ -188,7 +197,14 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     Services are registered here (action-setup rule) so they are available
     as soon as the domain loads, independently of config entries.
     """
+    from .log_filter import install_pymodbus_log_filter
     from .services import async_setup_services
+
+    # pymodbus logs routine connection drops at ERROR level and appends up
+    # to 20 buffered raw frame dumps to each record. The coordinator already
+    # converts these failures into a single UpdateFailed warning, so the
+    # pymodbus records are redundant and would otherwise flood the HA log.
+    install_pymodbus_log_filter()
 
     await async_setup_services(hass)
     return True
@@ -329,6 +345,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     room_temp_forwarding_tolerance = float(
         entry.options.get(CONF_ROOM_TEMP_FORWARDING_TOLERANCE, DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE)
     )
+    modbus_timeout = float(entry.options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT))
+    modbus_max_retries = int(entry.options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES))
 
     if web_pin_configured(web_pin):
         ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
@@ -354,7 +372,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         )
 
     # Use the library via the adapter (migration Option B)
-    client = get_idm_client(host=host, port=port, slave_id=slave_id)
+    client = get_idm_client(
+        host=host,
+        port=port,
+        slave_id=slave_id,
+        timeout=modbus_timeout,
+        max_retries=modbus_max_retries,
+    )
 
     try:
         await client.connect()
