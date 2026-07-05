@@ -834,6 +834,25 @@ class TestDetectModelInfo:
         assert model_info.active_heating_circuits == ["A", "B"]
         assert model_info.has_cascade is False
 
+    def test_generic_model_name_defaults_to_navigator_20(self):
+        """Inconclusive/generic names must default to Nav 2.0 to avoid Nav-10-only crashes."""
+        model_info = _model_info_from_detected_name(MODEL, ["a"], 0, False)
+
+        assert model_info is not None
+        assert model_info.model_name == "Navigator 2.0"
+
+    def test_navigator_10_model_name_returns_navigator_10(self):
+        model_info = _model_info_from_detected_name("Navigator 10", ["a"], 0, False)
+
+        assert model_info is not None
+        assert model_info.model_name == "Navigator 10"
+
+    def test_unknown_model_name_defaults_to_navigator_20(self):
+        model_info = _model_info_from_detected_name("Some Unknown Controller", ["a"], 0, False)
+
+        assert model_info is not None
+        assert model_info.model_name == "Navigator 2.0"
+
 
 class TestAsyncSetupEntryModelDetection:
     def _make_entry(self):
@@ -1240,10 +1259,11 @@ class TestAsyncSetupEntryModelDetection:
 
         assert captured_kwargs.get("model_name") == MODEL
 
-    async def test_detection_failure_passes_none_model_info_to_platforms(self, mock_hass):
+    async def test_detection_failure_passes_navigator_20_model_info_to_platforms(self, mock_hass):
         """When detect_model fails and no stored data exists, platform
-        functions must receive model_info=None so they include all registers
-        rather than incorrectly assuming Navigator 10."""
+        functions must receive a Navigator 2.0 fallback model_info so that
+        Navigator-10-only registers (e.g. 4108 / 4001) are not polled on
+        older controllers."""
         entry = self._make_entry()
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock()
@@ -1275,7 +1295,9 @@ class TestAsyncSetupEntryModelDetection:
             await async_setup_entry(mock_hass, entry)
 
         assert captured_model_info
-        assert captured_model_info[0] is None
+        model_info = captured_model_info[0]
+        assert model_info is not None
+        assert model_info.model_name == "Navigator 2.0"
 
     async def test_detection_failure_with_stored_navigator_version_builds_fallback_model_info(self, mock_hass):
         """When detect_model fails but stored detected_navigator_version is

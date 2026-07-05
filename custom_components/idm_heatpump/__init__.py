@@ -154,23 +154,28 @@ def _model_info_from_detected_name(
     circuits: list[str],
     zone_count: int,
     enable_cascade: bool,
-) -> IdmModelInfo | None:
-    """Build fallback model info from trusted web/config metadata."""
+) -> IdmModelInfo:
+    """Build fallback model info from trusted web/config metadata.
+
+    When the name is generic ("Navigator 2.0 / 10"), inconclusive, or unknown,
+    default to Navigator 2.0. That is the safer baseline: Navigator-10-only
+    registers such as 4108 / 4001 cause "Illegal Data Address" errors on older
+    controllers, whereas a Navigator 10 controller simply won't expose a few
+    Navigator-2.0-specific registers.
+    """
     normalized = model_name.casefold()
     has_navigator_20 = "navigator 2" in normalized
     has_navigator_10 = "navigator 10" in normalized
-    if has_navigator_20 and has_navigator_10:
-        return None
-    if normalized == MODEL.casefold():
-        return None
-    if has_navigator_20:
-        detected_model = MODEL_NAVIGATOR_20
-    elif has_navigator_10:
+    has_navigator_pro = "navigator pro" in normalized
+
+    if has_navigator_10 and not has_navigator_20:
         detected_model = MODEL_NAVIGATOR_10
-    elif "navigator pro" in normalized:
+    elif has_navigator_pro and not has_navigator_20 and not has_navigator_10:
         detected_model = MODEL_NAVIGATOR_PRO
     else:
-        return None
+        # Generic "Navigator 2.0 / 10", both generations mentioned, or
+        # completely unknown: prefer Navigator 2.0 to avoid first-setup crashes.
+        detected_model = MODEL_NAVIGATOR_20
 
     return IdmModelInfo(
         model_name=detected_model,
