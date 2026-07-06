@@ -11,6 +11,7 @@ from custom_components.idm_heatpump.web_data import (
     IdmWebAuthenticationFailed,
     IdmWebSensorValue,
     IdmWebSupplement,
+    _is_wrong_variant_error,
     _preferred_web_variant,
     async_read_web_supplement,
     merge_model_info,
@@ -54,6 +55,12 @@ def test_web_pin_configured_without_api_symbol() -> None:
     assert web_pin_configured(" 1234 ")
     assert not web_pin_configured("")
     assert not web_pin_configured(None)
+
+
+def test_wrong_variant_detection_handles_os_error_subclasses() -> None:
+    """Transport subclasses should trigger fallback to the other web variant."""
+    assert _is_wrong_variant_error(ConnectionRefusedError("connection refused"))
+    assert _is_wrong_variant_error(ConnectionResetError("connection reset"))
 
 
 async def test_async_read_web_supplement_returns_none_without_pin() -> None:
