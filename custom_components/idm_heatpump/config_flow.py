@@ -83,6 +83,7 @@ from .const import (
     MIN_MODBUS_TIMEOUT,
 )
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
+from .registers import normalize_zone_rooms
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -301,7 +302,7 @@ def _has_duplicate_host(hass: Any, host: str, current_entry_id: str | None = Non
 
 
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
-    existing_rooms: dict[int, int] = options.get(CONF_ZONE_ROOMS, {})
+    existing_rooms = normalize_zone_rooms(options.get(CONF_ZONE_ROOMS, {}))
     schema_dict: dict[Any, Any] = {}
     for z in range(zone_count):
         schema_dict[

@@ -21,8 +21,7 @@ from homeassistant.core import (
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
 
-from idm_heatpump import RegisterDef
-from idm_heatpump.client import DataType
+from idm_heatpump import DataType, RegisterDef
 
 from .const import DOMAIN, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
 from .coordinator import IdmCoordinator

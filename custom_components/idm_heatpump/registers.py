@@ -25,10 +25,25 @@ from .library_adapter import (
     get_library_sensors,
     get_library_switches,
     get_library_zone_numbers,
+    get_library_zone_selects,
     get_library_zone_sensors,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def normalize_zone_rooms(zone_rooms: dict[Any, Any] | None) -> dict[int, int]:
+    """Return zone room counts with integer keys from HA JSON options."""
+    if not isinstance(zone_rooms, dict):
+        return {}
+
+    normalized: dict[int, int] = {}
+    for key, value in zone_rooms.items():
+        try:
+            normalized[int(key)] = int(value)
+        except (TypeError, ValueError):
+            _LOGGER.debug("Ignoring invalid zone room option %r=%r", key, value)
+    return normalized
 
 ENTITY_ORDER_BLOCKS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
@@ -186,6 +201,7 @@ def get_all_sensor_descriptions(
     Local definitions are kept for rich German names and specific icons.
     """
     descriptions = []
+    zone_rooms = normalize_zone_rooms(zone_rooms)
 
     # Library + Adapter is now the primary and preferred source.
     # zone_modules=0: zone registers are added below via the per-zone loop,
@@ -234,6 +250,7 @@ def get_all_binary_sensor_descriptions(
     model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     descriptions = []
+    zone_rooms = normalize_zone_rooms(zone_rooms)
     try:
         descriptions.extend(
             get_library_binary_sensors(
@@ -256,6 +273,7 @@ def get_all_number_descriptions(
     model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     descriptions: list[dict[str, Any]] = []
+    zone_rooms = normalize_zone_rooms(zone_rooms)
 
     # Library numbers (preferred).
     # zone_modules=0: see comment in get_all_sensor_descriptions above.
@@ -294,16 +312,20 @@ def get_all_select_descriptions(
     model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     descriptions = []
+    zone_rooms = normalize_zone_rooms(zone_rooms)
     try:
         descriptions.extend(
             get_library_selects(
                 circuits=circuits,
-                zone_modules=zone_count,
+                zone_modules=0,
                 model_info=model_info,
             )
         )
     except Exception:
         _LOGGER.warning("Failed to load library select descriptions", exc_info=True)
+    for z in range(zone_count):
+        rooms = zone_rooms.get(z, 6)
+        descriptions.extend(get_library_zone_selects(z + 1, rooms))
     # Old local selects disabled during migration
     return sort_entity_descriptions(descriptions)
 
@@ -316,6 +338,7 @@ def get_all_switch_descriptions(
     model_info: IdmModelInfo | None = None,
 ) -> list[dict[str, Any]]:
     descriptions = []
+    zone_rooms = normalize_zone_rooms(zone_rooms)
     try:
         descriptions.extend(get_library_switches(model_info=model_info))
     except Exception:

@@ -12,3 +12,6 @@ mypy.log
 mypy_errors.txt
 .ruff_cache/
 .mypy_cache/
+
+# Release artifacts
+idm_heatpump.zip

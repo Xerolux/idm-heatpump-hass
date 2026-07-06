@@ -19,7 +19,7 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from idm_heatpump.client import DataType
+from idm_heatpump import DataType
 
 try:
     import idm_heatpump as idm_api

@@ -24,8 +24,14 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.loader import async_get_integration
 
-from idm_heatpump import IdmModbusClient, IdmModelInfo
-from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO, MODEL_UNKNOWN
+from idm_heatpump import (
+    MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_20,
+    MODEL_NAVIGATOR_PRO,
+    MODEL_UNKNOWN,
+    IdmModbusClient,
+    IdmModelInfo,
+)
 
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -72,6 +78,7 @@ from .registers import (
     get_all_select_descriptions,
     get_all_sensor_descriptions,
     get_all_switch_descriptions,
+    normalize_zone_rooms,
 )
 from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
 from .web_data import async_read_web_supplement, merge_model_info, web_pin_configured
@@ -339,7 +346,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     circuits = entry.options.get(CONF_HEATING_CIRCUITS, ["a"])
     zone_count = int(entry.options.get(CONF_ZONE_COUNT, 0))
-    zone_rooms = entry.options.get(CONF_ZONE_ROOMS, {})
+    zone_rooms = normalize_zone_rooms(entry.options.get(CONF_ZONE_ROOMS, {}))
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
     enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
     web_pin = str(entry.data.get(CONF_WEB_PIN, "")).strip() or None

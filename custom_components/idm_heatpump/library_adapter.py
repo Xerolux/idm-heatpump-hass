@@ -37,12 +37,15 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import (
+    DataType,
+    MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_20,
+    MODEL_NAVIGATOR_PRO,
     RegisterDef,
     get_heating_circuit_registers,
     get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
-from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO
 
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_descriptions import (
@@ -62,12 +65,87 @@ _SENSOR_STATE_CLASS_MAP: dict[str, SensorStateClass] = {
     SensorStateClass.TOTAL_INCREASING: SensorStateClass.TOTAL_INCREASING,
 }
 
+_ROOM_MODE_OPTIONS: dict[int, str] = {
+    0: "off",
+    1: "automatic",
+    2: "eco",
+    3: "normal",
+    4: "comfort",
+}
+
 
 def _coerce_sensor_state_class(value: str | SensorStateClass | None) -> SensorStateClass | None:
     """Map neutral library state class values to Home Assistant's enum."""
     if value is None:
         return None
     return _SENSOR_STATE_CLASS_MAP.get(str(value))
+
+
+def _get_zone_module_registers_compat(zone_idx: int, room_count: int = 6) -> dict[str, RegisterDef]:
+    """Return zone registers, including 8-room modules with older API releases."""
+    try:
+        return get_zone_module_registers(zone_idx, room_count)
+    except ValueError:
+        if not (1 <= zone_idx <= 10 and 1 <= room_count <= 8):
+            raise
+
+    base = 2000 + (zone_idx - 1) * 65
+    regs: dict[str, RegisterDef] = {
+        f"zm{zone_idx}_mode_heat_cool": RegisterDef(
+            address=base,
+            datatype=DataType.UCHAR,
+            name=f"zm{zone_idx}_mode_heat_cool",
+        ),
+        f"zm{zone_idx}_dehumidification": RegisterDef(
+            address=base + 1,
+            datatype=DataType.UCHAR,
+            name=f"zm{zone_idx}_dehumidification",
+        ),
+    }
+
+    for room in range(1, room_count + 1):
+        room_base = base + 2 + (room - 1) * 7
+        regs[f"zm{zone_idx}_room{room}_temp"] = RegisterDef(
+            address=room_base,
+            datatype=DataType.FLOAT,
+            name=f"zm{zone_idx}_room{room}_temp",
+            unit="°C",
+            writable=True,
+            min_val=15,
+            max_val=30,
+        )
+        regs[f"zm{zone_idx}_room{room}_setpoint"] = RegisterDef(
+            address=room_base + 2,
+            datatype=DataType.FLOAT,
+            name=f"zm{zone_idx}_room{room}_setpoint",
+            unit="°C",
+            writable=True,
+        )
+        regs[f"zm{zone_idx}_room{room}_humidity"] = RegisterDef(
+            address=room_base + 4,
+            datatype=DataType.UCHAR,
+            name=f"zm{zone_idx}_room{room}_humidity",
+            unit="%",
+            writable=True,
+            min_val=0,
+            max_val=100,
+        )
+        regs[f"zm{zone_idx}_room{room}_mode"] = RegisterDef(
+            address=room_base + 5,
+            datatype=DataType.UCHAR,
+            name=f"zm{zone_idx}_room{room}_mode",
+            writable=True,
+            min_val=0,
+            max_val=4,
+            enum_options=_ROOM_MODE_OPTIONS,
+        )
+        regs[f"zm{zone_idx}_room{room}_relay"] = RegisterDef(
+            address=room_base + 6,
+            datatype=DataType.UCHAR,
+            name=f"zm{zone_idx}_room{room}_relay",
+        )
+
+    return regs
 
 
 # ============================================================
@@ -602,7 +680,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
 def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
     """Erzeugt Sensor-Beschreibungen für ein Zonenmodul direkt aus der Library."""
     try:
-        zone_regs = get_zone_module_registers(zone_idx, room_count)
+        zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
         return []
 
@@ -794,6 +872,46 @@ def get_library_selects(
     return selects
 
 
+def get_library_zone_selects(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
+    """Returns select descriptions for one zone module with its configured room count."""
+    from homeassistant.components.select import SelectEntityDescription
+
+    try:
+        zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
+    except Exception:
+        return []
+
+    selects = []
+    for name, reg in zone_regs.items():
+        if not reg.writable or not reg.enum_options:
+            continue
+        if reg.write_only:
+            continue
+
+        slug_map, t_key = get_slug_map_and_key(name)
+        excluded: set[int] = set(reg.exclude_from_write or [])
+
+        if slug_map is not None:
+            options = [v for k, v in slug_map.items() if k not in excluded]
+        else:
+            options = (
+                [v for k, v in reg.enum_options.items() if k not in excluded]
+                if excluded
+                else list(reg.enum_options.values())
+            )
+
+        desc = SelectEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            options=options,
+            icon=reg.icon or get_icon_for_register(name),
+            entity_category=EntityCategory.CONFIG,
+            translation_key=t_key,
+        )
+        selects.append({"register": reg, "description": desc})
+    return selects
+
+
 def get_library_switches(model_info: Any = None) -> list[dict[str, Any]]:
     """Switch entities (GLT demands etc.) from the library."""
     from homeassistant.components.switch import SwitchEntityDescription
@@ -888,7 +1006,7 @@ def get_library_numbers(
 def get_library_zone_numbers(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
     """Returns number descriptions for writable room registers in one zone module."""
     try:
-        zone_regs = get_zone_module_registers(zone_idx, room_count)
+        zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
         return []
     return _numbers_from_register_map(zone_regs)

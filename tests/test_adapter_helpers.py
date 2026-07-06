@@ -15,7 +15,7 @@ from custom_components.idm_heatpump.adapter_registers import (
 )
 from custom_components.idm_heatpump.library_adapter import get_idm_client
 
-from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20
+from idm_heatpump import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20
 
 ROOT = Path(__file__).resolve().parents[1]
 

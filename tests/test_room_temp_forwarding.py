@@ -5,8 +5,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from idm_heatpump import RegisterDef
-from idm_heatpump.client import DataType
+from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.room_temp_forwarding import (
     RoomTempForwarder,

@@ -14,12 +14,13 @@ from typing import Any
 
 from idm_heatpump import (
     DataType,
+    IdmModelInfo,
     IdmModbusClient,
     RegisterDef,
+    RegisterType,
     build_register_map,
     get_heating_circuit_registers,
 )
-from idm_heatpump.client import IdmModelInfo, RegisterType
 
 logging.basicConfig(
     level=logging.DEBUG,

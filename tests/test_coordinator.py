@@ -7,9 +7,12 @@ import pytest
 
 from custom_components.idm_heatpump.coordinator import IdmCoordinator, _repair_issue_for_error, navigator_family
 from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
-from idm_heatpump import IdmModelInfo, RegisterDef
-from idm_heatpump.client import DataType
-from idm_heatpump.const import MODEL_NAVIGATOR_20
+from idm_heatpump import (
+    MODEL_NAVIGATOR_20,
+    DataType,
+    IdmModelInfo,
+    RegisterDef,
+)
 from pymodbus.exceptions import ConnectionException, ModbusException
 from custom_components.idm_heatpump.const import UNUSED_VALUE
 
@@ -870,7 +873,7 @@ class TestAsyncRefreshWebSupplement:
 
     async def test_web_refresh_updates_generic_model_info_name(self, mock_hass, mock_config_entry):
         """model_info with a non-definitive name is updated to the web-detected model."""
-        from idm_heatpump.const import MODEL_UNKNOWN
+        from idm_heatpump import MODEL_UNKNOWN
 
         model_info = IdmModelInfo(
             model_name=MODEL_UNKNOWN,

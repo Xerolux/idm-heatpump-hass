@@ -10,6 +10,41 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.0-beta.15] - 2026-07-06
+
+## v0.8.0-beta.15 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+- Bump the bundled runtime requirement to `idm-heatpump-api[web]>=0.6.2,<0.7`.
+- Fix configured per-zone room counts loaded from Home Assistant options by
+  normalizing JSON string keys back to integer zone indexes.
+- Generate zone room selects per configured zone module, so mixed setups such as
+  5 rooms on zone module 1 and 8 rooms on zone module 2 expose the correct
+  entities.
+- Add an integration-side compatibility fallback for 8-room zone modules when
+  an older installed API still rejects `room_count > 6`.
+- Keep the API-side room-mode batch-read recovery from `0.6.2`, which re-reads
+  out-of-range enum values individually to avoid `unknown`/`unavailable`
+  room-mode selects.
+
+### Support
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Spendier%20mir%20einen%20Kaffee!-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-Danke%20f%C3%BCr%20deine%20Unterst%C3%BCtzung!-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+
+---
+
+[Full changelog: v0.8.0-beta.13...v0.8.0-beta.15](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.8.0-beta.13...v0.8.0-beta.15)
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+---
+
 ## [0.8.0-beta.13] - 2026-07-05
 
 ## v0.8.0-beta.13 - IDM Heatpump
@@ -18,11 +53,14 @@ All notable changes to this project will be documented in this file.
 
 ### What changed
 
-- Bump `idm-heatpump-api` to `>=0.6.0,<0.7`. The library now disables
-  pymodbus-internal retries (0.6.0) and handles all retries via its own
-  exponential-backoff loop, eliminating doubled/time-squared retry delays. Also
-  picks up heating-circuit register address fixes, web-client session-leak
-  fixes, and async-lock guards for concurrent Navigator web access.
+- Bump `idm-heatpump-api` to `>=0.6.2,<0.7`. The library now disables
+  pymodbus-internal retries (0.6.0), handles all retries via its own
+  exponential-backoff loop, adds post-batch validation to re-read registers
+  individually when a batch response contains out-of-range values, and supports
+  older 8-room zone modules.
+  Also picks up heating-circuit register address fixes, web-client session-leak
+  fixes, async-lock guards for concurrent Navigator web access, and improved
+  Navigator 2.0 web-login robustness.
 - **No integration-level API changes** — all 0.6.0 improvements are
   transparent behind the library boundary.
 

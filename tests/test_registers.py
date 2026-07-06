@@ -10,11 +10,10 @@ from custom_components.idm_heatpump.registers import (
     get_all_select_descriptions,
     get_all_sensor_descriptions,
     get_all_switch_descriptions,
+    normalize_zone_rooms,
     sort_entity_descriptions,
 )
-from idm_heatpump import IdmModelInfo, RegisterDef
-from idm_heatpump.client import DataType
-from idm_heatpump.const import MODEL_NAVIGATOR_20
+from idm_heatpump import MODEL_NAVIGATOR_20, DataType, IdmModelInfo, RegisterDef
 
 
 def _make_order_desc(name: str, address: int) -> dict:
@@ -55,6 +54,17 @@ class TestCollectAllRegisters:
         regs_no_zone = collect_all_registers(["a"], 0, {})
         regs_with_zone = collect_all_registers(["a"], 1, {0: 2})
         assert len(regs_with_zone) > len(regs_no_zone)
+
+    def test_zone_room_string_keys_are_normalized(self):
+        regs = collect_all_registers(["a"], 2, {"0": 5, "1": 8})
+        names = {reg.name for reg in regs}
+
+        assert "zm1_room5_temp" in names
+        assert "zm1_room6_temp" not in names
+        assert "zm2_room8_temp" in names
+
+    def test_normalize_zone_rooms_ignores_invalid_values(self):
+        assert normalize_zone_rooms({"0": "5", 1: 8, "bad": "x"}) == {0: 5, 1: 8}
 
     def test_unique_addresses(self):
         regs = collect_all_registers(["a", "b", "c"], 0, {})
@@ -401,6 +411,14 @@ class TestGetAllSelectDescriptions:
         one = get_all_select_descriptions(["a"], 0, {})
         two = get_all_select_descriptions(["a", "b"], 0, {})
         assert len(two) > len(one)
+
+    def test_zone_room_count_respected_in_selects(self):
+        descs = get_all_select_descriptions(["a"], 2, {"0": 5, "1": 8})
+        room_modes = {d["register"].name for d in descs if "_room" in d["register"].name and d["register"].name.endswith("_mode")}
+
+        assert "zm1_room5_mode" in room_modes
+        assert "zm1_room6_mode" not in room_modes
+        assert "zm2_room8_mode" in room_modes
 
 
 class TestGetAllSwitchDescriptions:
