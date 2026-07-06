@@ -90,6 +90,20 @@ _LOGGER = logging.getLogger(__name__)
 _LEGACY_ENTITY_UNIQUE_ID = re.compile(r"^.+:\d+_(?P<entity_key>.+)$")
 
 
+def _normalize_zone_rooms(raw_zone_rooms: Any) -> dict[int, int]:
+    """Return zone room counts with integer keys after JSON persistence."""
+    if not isinstance(raw_zone_rooms, dict):
+        return {}
+
+    zone_rooms: dict[int, int] = {}
+    for zone, rooms in raw_zone_rooms.items():
+        try:
+            zone_rooms[int(zone)] = int(rooms)
+        except (TypeError, ValueError):
+            _LOGGER.debug("Ignoring invalid zone room option %r=%r", zone, rooms)
+    return zone_rooms
+
+
 @dataclass
 class IdmHeatpumpData:
     """Runtime data stored in ConfigEntry.runtime_data."""
@@ -335,7 +349,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     scan_interval = int(entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL))
     circuits = entry.options.get(CONF_HEATING_CIRCUITS, ["a"])
     zone_count = int(entry.options.get(CONF_ZONE_COUNT, 0))
-    zone_rooms = entry.options.get(CONF_ZONE_ROOMS, {})
+    zone_rooms = _normalize_zone_rooms(entry.options.get(CONF_ZONE_ROOMS, {}))
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
     enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
     web_pin = str(entry.data.get(CONF_WEB_PIN, "")).strip() or None

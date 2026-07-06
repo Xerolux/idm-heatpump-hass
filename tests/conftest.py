@@ -958,6 +958,7 @@ def _stub_idm_heatpump() -> None:
     idm_mod = ModuleType("idm_heatpump")
     idm_mod.RegisterDef = RegisterDef  # type: ignore[attr-defined]
     idm_mod.IdmModbusClient = IdmModbusClient  # type: ignore[attr-defined]
+    idm_mod.IdmModelInfo = IdmModelInfo  # type: ignore[attr-defined]
     idm_mod.build_register_map = build_register_map  # type: ignore[attr-defined]
     idm_mod.get_heating_circuit_registers = get_heating_circuit_registers  # type: ignore[attr-defined]
     idm_mod.get_zone_module_registers = get_zone_module_registers  # type: ignore[attr-defined]

@@ -301,7 +301,10 @@ def _has_duplicate_host(hass: Any, host: str, current_entry_id: str | None = Non
 
 
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
-    existing_rooms: dict[int, int] = options.get(CONF_ZONE_ROOMS, {})
+    raw_existing_rooms = options.get(CONF_ZONE_ROOMS, {})
+    existing_rooms: dict[int, int] = {}
+    if isinstance(raw_existing_rooms, dict):
+        existing_rooms = {int(zone): int(rooms) for zone, rooms in raw_existing_rooms.items()}
     schema_dict: dict[Any, Any] = {}
     for z in range(zone_count):
         schema_dict[

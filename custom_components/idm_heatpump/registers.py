@@ -25,6 +25,7 @@ from .library_adapter import (
     get_library_sensors,
     get_library_switches,
     get_library_zone_numbers,
+    get_library_zone_selects,
     get_library_zone_sensors,
 )
 
@@ -295,17 +296,21 @@ def get_all_select_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
     try:
-        descriptions.extend(
-            get_library_selects(
-                circuits=circuits,
-                zone_modules=zone_count,
-                model_info=model_info,
-            )
-        )
+        descriptions.extend(get_library_selects(circuits=circuits, zone_modules=0, model_info=model_info))
     except Exception:
         _LOGGER.warning("Failed to load library select descriptions", exc_info=True)
-    # Old local selects disabled during migration
-    return sort_entity_descriptions(descriptions)
+    for z in range(zone_count):
+        rooms = zone_rooms.get(z, 6)
+        descriptions.extend(get_library_zone_selects(z + 1, rooms))
+
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for d in descriptions:
+        key = d["description"].key
+        if key not in seen:
+            seen.add(key)
+            deduped.append(d)
+    return sort_entity_descriptions(deduped)
 
 
 def get_all_switch_descriptions(
