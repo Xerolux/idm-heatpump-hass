@@ -41,12 +41,30 @@ _CONNECTIVITY_REPAIR_ISSUES = (
 )
 _WEB_SUPPLEMENT_FAILED_ISSUE = "web_supplement_failed"
 _WEB_CORE_VALUE_KEYS = ("navigator_version", "software_version", "heatpump_model")
+_ZONE_ROOM_MODE_PREFIX = "zm"
+_ZONE_ROOM_MODE_MARKER = "_room"
+_ZONE_ROOM_MODE_SUFFIX = "_mode"
 
 
 def _is_illegal_address_error(err: ModbusException) -> bool:
     """Return whether a Modbus exception reports an unsupported address."""
     message = str(err).casefold()
     return any(marker in message for marker in _ILLEGAL_ADDRESS_MARKERS)
+
+
+def _is_zone_room_mode_register(reg: RegisterDef) -> bool:
+    """Return whether a register stores a zone-room operating mode.
+
+    Navigator 2.0 systems have been observed to return invalid decoded values
+    for these UCHAR registers when they are read as part of larger batches,
+    while direct single-register reads remain stable.
+    """
+    name = reg.name
+    return (
+        name.startswith(_ZONE_ROOM_MODE_PREFIX)
+        and _ZONE_ROOM_MODE_MARKER in name
+        and name.endswith(_ZONE_ROOM_MODE_SUFFIX)
+    )
 
 
 def _repair_issue_for_error(err: Exception) -> str:
@@ -336,6 +354,16 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data.update(await self._async_read_registers_resilient(readable[midpoint:]))
             return data
 
+    async def _async_refresh_zone_room_modes(self, data: dict[str, Any]) -> None:
+        """Refresh room mode registers individually to avoid faulty batch values."""
+        room_mode_registers = [
+            reg
+            for reg in self._registers
+            if reg.name not in self._unsupported_registers and _is_zone_room_mode_register(reg)
+        ]
+        for reg in room_mode_registers:
+            data[reg.name] = await self._client.read_register(reg)
+
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             data = await self._async_read_registers_resilient(self._registers)
@@ -364,6 +392,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if not data:
             raise UpdateFailed("No data received from heat pump")
+
+        await self._async_refresh_zone_room_modes(data)
 
         # Apply aliases: when multiple register names share an address,
         # ensure all names appear in the data dict.

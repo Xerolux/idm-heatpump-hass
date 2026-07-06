@@ -395,6 +395,39 @@ class TestAsyncUpdateData:
                 await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
 
+
+    async def test_zone_room_modes_are_refreshed_individually(self, mock_hass, mock_config_entry):
+        room_mode = RegisterDef(
+            address=2025,
+            datatype=DataType.UCHAR,
+            name="zm1_room3_mode",
+            enum_options={0: "off", 1: "automatic", 2: "eco", 3: "normal", 4: "comfort"},
+        )
+        room_temp = RegisterDef(address=2020, datatype=DataType.FLOAT, name="zm1_room3_temp")
+        system_mode = RegisterDef(address=1005, datatype=DataType.UCHAR, name="system_mode")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={
+            "zm1_room3_temp": 21.5,
+            "zm1_room3_mode": 255,
+            "system_mode": 1,
+        })
+        client.read_register = AsyncMock(return_value=3)
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[room_temp, room_mode, system_mode],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        assert data["zm1_room3_mode"] == 3
+        assert data["zm1_room3_temp"] == 21.5
+        assert data["system_mode"] == 1
+        client.read_register.assert_awaited_once_with(room_mode)
+        assert "zm1_room3_mode" not in coord.unused_registers
+
     async def test_unused_registers_tracked(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={"dead": UNUSED_VALUE, "alive": 5.0})
