@@ -395,7 +395,6 @@ class TestAsyncUpdateData:
                 await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
 
-
     async def test_zone_room_modes_are_refreshed_individually(self, mock_hass, mock_config_entry):
         room_mode = RegisterDef(
             address=2025,
@@ -406,11 +405,13 @@ class TestAsyncUpdateData:
         room_temp = RegisterDef(address=2020, datatype=DataType.FLOAT, name="zm1_room3_temp")
         system_mode = RegisterDef(address=1005, datatype=DataType.UCHAR, name="system_mode")
         client = MagicMock()
-        client.read_batch = AsyncMock(return_value={
-            "zm1_room3_temp": 21.5,
-            "zm1_room3_mode": 255,
-            "system_mode": 1,
-        })
+        client.read_batch = AsyncMock(
+            return_value={
+                "zm1_room3_temp": 21.5,
+                "zm1_room3_mode": 255,
+                "system_mode": 1,
+            }
+        )
         client.read_register = AsyncMock(return_value=3)
         coord, _ = _make_coordinator(
             mock_hass,
