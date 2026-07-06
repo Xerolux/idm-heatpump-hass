@@ -215,6 +215,8 @@ ruff check custom_components tests
 ### Versioning
 - Version is defined **only** in `custom_components/idm_heatpump/manifest.json`
 - Bump version there before creating a release and update `CHANGELOG.md`
+- Pin the `idm-heatpump-api` requirement for every released integration version to the exact PyPI version that is current at release time or has been explicitly tested for that release. Do not publish a release with an open-ended API lower bound such as `idm-heatpump-api>=x.y.z`; the integration release and API version must remain a reproducible pair.
+- When updating to a newer `idm-heatpump-api`, verify compatibility before widening or changing the pin, then document the tested API version in the changelog/release notes.
 
 ---
 
