@@ -11,6 +11,7 @@ import asyncio
 import logging
 import math
 from datetime import timedelta
+from collections.abc import Mapping
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -41,12 +42,30 @@ _CONNECTIVITY_REPAIR_ISSUES = (
 )
 _WEB_SUPPLEMENT_FAILED_ISSUE = "web_supplement_failed"
 _WEB_CORE_VALUE_KEYS = ("navigator_version", "software_version", "heatpump_model")
+_ZONE_ROOM_MODE_PREFIX = "zm"
+_ZONE_ROOM_MODE_MARKER = "_room"
+_ZONE_ROOM_MODE_SUFFIX = "_mode"
 
 
 def _is_illegal_address_error(err: ModbusException) -> bool:
     """Return whether a Modbus exception reports an unsupported address."""
     message = str(err).casefold()
     return any(marker in message for marker in _ILLEGAL_ADDRESS_MARKERS)
+
+
+def _is_zone_room_mode_register(reg: RegisterDef) -> bool:
+    """Return whether a register stores a zone-room operating mode.
+
+    Navigator 2.0 systems have been observed to return invalid decoded values
+    for these UCHAR registers when they are read as part of larger batches,
+    while direct single-register reads remain stable.
+    """
+    name = reg.name
+    return (
+        name.startswith(_ZONE_ROOM_MODE_PREFIX)
+        and _ZONE_ROOM_MODE_MARKER in name
+        and name.endswith(_ZONE_ROOM_MODE_SUFFIX)
+    )
 
 
 def _repair_issue_for_error(err: Exception) -> str:
@@ -336,6 +355,16 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data.update(await self._async_read_registers_resilient(readable[midpoint:]))
             return data
 
+    async def _async_refresh_zone_room_modes(self, data: dict[str, Any]) -> None:
+        """Refresh room mode registers individually to avoid faulty batch values."""
+        room_mode_registers = [
+            reg
+            for reg in self._registers
+            if reg.name not in self._unsupported_registers and _is_zone_room_mode_register(reg)
+        ]
+        for reg in room_mode_registers:
+            data[reg.name] = await self._client.read_register(reg)
+
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             data = await self._async_read_registers_resilient(self._registers)
@@ -364,6 +393,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if not data:
             raise UpdateFailed("No data received from heat pump")
+
+        await self._async_refresh_zone_room_modes(data)
 
         # Apply aliases: when multiple register names share an address,
         # ensure all names appear in the data dict.
@@ -512,8 +543,35 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await asyncio.sleep(delay)
         await self.async_request_refresh()
 
+    def simulate_write(self, reg: RegisterDef, value: Any, *, dry_run: bool = True) -> Any:
+        """Validate a write using idm-heatpump-api write-safety hooks when available."""
+        simulator = getattr(self._client, "simulate_write", None)
+        if callable(simulator):
+            return simulator(reg, value, dry_run=dry_run)
+        # idm-heatpump-api < 0.6 has no dry-run safety result; keep compatibility
+        # by falling back to encoding, which still validates datatype/range locally.
+        encoder = getattr(self._client, "encode_value", None)
+        if callable(encoder):
+            return {"encoded_registers": encoder(value, reg)}
+        return None
+
+    def client_diagnostics(self) -> Mapping[str, Any]:
+        """Return redaction-safe diagnostics exposed by newer idm-heatpump-api versions."""
+        getter = getattr(self._client, "get_diagnostics", None)
+        if not callable(getter):
+            return {}
+        diagnostics = getter()
+        if hasattr(diagnostics, "to_dict"):
+            diagnostics = diagnostics.to_dict()
+        if isinstance(diagnostics, Mapping):
+            return diagnostics
+        if hasattr(diagnostics, "__dict__"):
+            return dict(vars(diagnostics))
+        return {}
+
     async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
         try:
+            self.simulate_write(reg, value)
             await self._client.write_register(reg, value)
         except Exception:
             ir.async_create_issue(

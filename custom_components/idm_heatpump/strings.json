@@ -20,7 +20,7 @@
           "slave_id": "Modbus slave ID. Default is `1`. Only change this if multiple devices share the same bus.",
           "web_pin": "Optional PIN for the local Navigator web interface. Leave empty to use Modbus only.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
-          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.168.178.103`."
+          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
         }
       },
       "reconfigure": {
@@ -40,7 +40,7 @@
           "slave_id": "Modbus slave ID. Default is `1`.",
           "web_pin": "Optional PIN for the local Navigator web interface. Leave empty to keep Modbus-only operation.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
-          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.168.178.103`."
+          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
         }
       },
       "options": {

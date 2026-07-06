@@ -8,7 +8,7 @@ from __future__ import annotations
 # Lizenz: MIT
 
 import logging
-from collections.abc import Mapping
+from collections.abc import Mapping, Sequence
 from functools import partial
 
 from homeassistant.config_entries import ConfigEntryState
@@ -20,6 +20,7 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.util.json import JsonValueType
 
 from idm_heatpump import DataType, RegisterDef
 
@@ -29,6 +30,19 @@ from .coordinator import IdmCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 _SERVICES = ["set_system_mode", "acknowledge_errors", "write_register"]
+
+
+def _encoded_registers_from_safety_result(safety_result: object) -> list[JsonValueType] | None:
+    """Extract dry-run encoded registers from idm-heatpump-api write-safety results."""
+    if safety_result is None:
+        return None
+    if isinstance(safety_result, Mapping):
+        encoded = safety_result.get("encoded_registers")
+    else:
+        encoded = getattr(safety_result, "encoded_registers", None)
+    if not isinstance(encoded, Sequence) or isinstance(encoded, (str, bytes, bytearray)):
+        return None
+    return [int(value) for value in encoded]
 
 
 async def async_setup_services(hass: HomeAssistant) -> None:
@@ -220,9 +234,14 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
     )
 
     try:
+        safety_result = coordinator.simulate_write(reg, value, dry_run=True)
         await coordinator.client.write_register(reg, value)
         _LOGGER.warning("Manual register write: address=%d value=%s", address, value)
-        return {"success": True, "address": address, "value": str(value)}
+        response: dict[str, JsonValueType] = {"success": True, "address": address, "value": str(value)}
+        encoded_registers = _encoded_registers_from_safety_result(safety_result)
+        if encoded_registers is not None:
+            response["encoded_registers"] = encoded_registers
+        return response
     except Exception as err:
         ir.async_create_issue(
             hass,

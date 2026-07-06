@@ -45,6 +45,7 @@ def normalize_zone_rooms(zone_rooms: dict[Any, Any] | None) -> dict[int, int]:
             _LOGGER.debug("Ignoring invalid zone room option %r=%r", key, value)
     return normalized
 
+
 ENTITY_ORDER_BLOCKS: tuple[tuple[str, tuple[str, ...]], ...] = (
     (
         "system_status",
@@ -326,8 +327,15 @@ def get_all_select_descriptions(
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_selects(z + 1, rooms))
-    # Old local selects disabled during migration
-    return sort_entity_descriptions(descriptions)
+
+    seen: set[str] = set()
+    deduped: list[dict[str, Any]] = []
+    for d in descriptions:
+        key = d["description"].key
+        if key not in seen:
+            seen.add(key)
+            deduped.append(d)
+    return sort_entity_descriptions(deduped)
 
 
 def get_all_switch_descriptions(

@@ -17,6 +17,7 @@ adapter relatively thin.
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from typing import Any
 
 from homeassistant.components.number import (
@@ -37,13 +38,12 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import (
-    DataType,
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
     MODEL_NAVIGATOR_PRO,
     RegisterDef,
     get_heating_circuit_registers,
-    get_zone_module_registers,
+    get_zone_module_registers as _library_get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
 
@@ -73,6 +73,8 @@ _ROOM_MODE_OPTIONS: dict[int, str] = {
     4: "comfort",
 }
 
+_ZONE_ROOM_REGISTER = re.compile(r"^(?P<prefix>zm(?P<zone>\d+)_room)(?P<room>\d+)(?P<suffix>_.+)$")
+
 
 def _coerce_sensor_state_class(value: str | SensorStateClass | None) -> SensorStateClass | None:
     """Map neutral library state class values to Home Assistant's enum."""
@@ -81,71 +83,63 @@ def _coerce_sensor_state_class(value: str | SensorStateClass | None) -> SensorSt
     return _SENSOR_STATE_CLASS_MAP.get(str(value))
 
 
-def _get_zone_module_registers_compat(zone_idx: int, room_count: int = 6) -> dict[str, RegisterDef]:
-    """Return zone registers, including 8-room modules with older API releases."""
+def _clone_register_for_room(reg: RegisterDef, room: int, address: int) -> RegisterDef:
+    """Clone a library room register for older 8-room zone modules."""
+    match = _ZONE_ROOM_REGISTER.fullmatch(reg.name)
+    if match is None:
+        msg = f"Register {reg.name!r} is not a zone room register"
+        raise ValueError(msg)
+    name = f"{match.group('prefix')}{room}{match.group('suffix')}"
     try:
-        return get_zone_module_registers(zone_idx, room_count)
+        return replace(reg, address=address, name=name)
+    except TypeError:
+        return RegisterDef(
+            address,
+            reg.datatype,
+            name,
+            unit=reg.unit,
+            multiplier=reg.multiplier,
+            enum_options=reg.enum_options,
+            writable=reg.writable,
+            binary=reg.binary,
+            write_only=reg.write_only,
+            exclude_from_write=reg.exclude_from_write,
+            icon=reg.icon,
+            min_val=reg.min_val,
+            max_val=reg.max_val,
+            enabled_by_default=reg.enabled_by_default,
+            state_class=reg.state_class,
+        )
+
+
+def _get_zone_module_registers(zone_idx: int, room_count: int = 6) -> dict[str, RegisterDef]:
+    """Return zone module registers, extending 6-room library maps to 8 rooms."""
+    try:
+        return _library_get_zone_module_registers(zone_idx, room_count)
     except ValueError:
-        if not (1 <= zone_idx <= 10 and 1 <= room_count <= 8):
+        if room_count <= 6:
             raise
 
-    base = 2000 + (zone_idx - 1) * 65
-    regs: dict[str, RegisterDef] = {
-        f"zm{zone_idx}_mode_heat_cool": RegisterDef(
-            address=base,
-            datatype=DataType.UCHAR,
-            name=f"zm{zone_idx}_mode_heat_cool",
-        ),
-        f"zm{zone_idx}_dehumidification": RegisterDef(
-            address=base + 1,
-            datatype=DataType.UCHAR,
-            name=f"zm{zone_idx}_dehumidification",
-        ),
-    }
+    base_regs = _library_get_zone_module_registers(zone_idx, 6)
+    extended = dict(base_regs)
+    for room in range(7, room_count + 1):
+        previous_room = room - 1
+        template_room = previous_room - 1
+        for reg in list(extended.values()):
+            previous_match = _ZONE_ROOM_REGISTER.fullmatch(reg.name)
+            if previous_match is None or int(previous_match.group("room")) != previous_room:
+                continue
+            template_name = f"{previous_match.group('prefix')}{template_room}{previous_match.group('suffix')}"
+            template_reg = extended.get(template_name)
+            stride = reg.address - template_reg.address if template_reg is not None else 10
+            cloned = _clone_register_for_room(reg, room, reg.address + stride)
+            extended[cloned.name] = cloned
+    return extended
 
-    for room in range(1, room_count + 1):
-        room_base = base + 2 + (room - 1) * 7
-        regs[f"zm{zone_idx}_room{room}_temp"] = RegisterDef(
-            address=room_base,
-            datatype=DataType.FLOAT,
-            name=f"zm{zone_idx}_room{room}_temp",
-            unit="°C",
-            writable=True,
-            min_val=15,
-            max_val=30,
-        )
-        regs[f"zm{zone_idx}_room{room}_setpoint"] = RegisterDef(
-            address=room_base + 2,
-            datatype=DataType.FLOAT,
-            name=f"zm{zone_idx}_room{room}_setpoint",
-            unit="°C",
-            writable=True,
-        )
-        regs[f"zm{zone_idx}_room{room}_humidity"] = RegisterDef(
-            address=room_base + 4,
-            datatype=DataType.UCHAR,
-            name=f"zm{zone_idx}_room{room}_humidity",
-            unit="%",
-            writable=True,
-            min_val=0,
-            max_val=100,
-        )
-        regs[f"zm{zone_idx}_room{room}_mode"] = RegisterDef(
-            address=room_base + 5,
-            datatype=DataType.UCHAR,
-            name=f"zm{zone_idx}_room{room}_mode",
-            writable=True,
-            min_val=0,
-            max_val=4,
-            enum_options=_ROOM_MODE_OPTIONS,
-        )
-        regs[f"zm{zone_idx}_room{room}_relay"] = RegisterDef(
-            address=room_base + 6,
-            datatype=DataType.UCHAR,
-            name=f"zm{zone_idx}_room{room}_relay",
-        )
 
-    return regs
+def _get_zone_module_registers_compat(zone_idx: int, room_count: int = 6) -> dict[str, RegisterDef]:
+    """Return zone registers, including 8-room modules with older API releases."""
+    return _get_zone_module_registers(zone_idx, room_count)
 
 
 # ============================================================

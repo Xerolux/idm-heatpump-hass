@@ -188,6 +188,8 @@ def _stub_homeassistant() -> None:
     ha.core = _make_module("homeassistant.core")
     ha.exceptions = _make_module("homeassistant.exceptions")
     ha.loader = _make_module("homeassistant.loader")
+    ha.util = _make_module("homeassistant.util")
+    ha.util.json = _make_module("homeassistant.util.json")
     ha.components = _make_module("homeassistant.components")
     ha.components.repairs = _make_module("homeassistant.components.repairs")
 
@@ -226,6 +228,7 @@ def _stub_homeassistant() -> None:
     ha.core.ServiceResponse = MagicMock
     ha.core.SupportsResponse = MagicMock()
     ha.core.SupportsResponse.OPTIONAL = "optional"
+    ha.util.json.JsonValueType = object
 
     class _RepairsFlow:
         def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
@@ -660,6 +663,26 @@ def _stub_idm_heatpump() -> None:
         features: set[str] = field(default_factory=set)
         firmware_version: float | None = None
 
+    @dataclass(frozen=True)
+    class WriteSafetyResult:
+        """Validated write plan before any Modbus packet is sent."""
+
+        register: RegisterDef
+        requested_value: Any
+        encoded_registers: tuple[int, ...]
+        dry_run: bool = False
+
+    @dataclass(frozen=True)
+    class IdmClientDiagnostics:
+        """Sanitized diagnostics for the Modbus backend."""
+
+        navigator_type: str
+        modbus_connected: bool
+        firmware: str | None = None
+        last_error: str | None = None
+        permanently_failed_registers: tuple[str, ...] = ()
+        connection_suspect: bool = False
+
     class IdmModbusClient:
         def __init__(self, host: str = "", port: int = 502, slave_id: int = 1) -> None:
             self.host = host
@@ -734,18 +757,28 @@ def _stub_idm_heatpump() -> None:
                 raise ModbusException("Modbus read error")
             return self.decode_value(result.registers, reg)
 
-        async def write_register(self, reg: RegisterDef, value: Any) -> None:
+        def simulate_write(self, reg: RegisterDef, value: Any, *, dry_run: bool = True) -> WriteSafetyResult:
             if not reg.writable:
                 raise ValueError(f"Register {reg.name} is read-only")
             if reg.min_val is not None and value < reg.min_val:
                 raise ValueError(f"Value below minimum {reg.min_val}")
             if reg.max_val is not None and value > reg.max_val:
                 raise ValueError(f"Value above maximum {reg.max_val}")
+            return WriteSafetyResult(reg, value, tuple(self.encode_value(value, reg)), dry_run=dry_run)
 
+        def get_diagnostics(self) -> IdmClientDiagnostics:
+            return IdmClientDiagnostics(
+                navigator_type="unknown",
+                modbus_connected=bool(self._client and getattr(self._client, "connected", False)),
+                permanently_failed_registers=tuple(sorted(self._permanently_failed_registers)),
+            )
+
+        async def write_register(self, reg: RegisterDef, value: Any) -> None:
+            plan = self.simulate_write(reg, value, dry_run=False)
             client = self._require_client()
             result = await client.write_registers(
                 reg.address,
-                self.encode_value(value, reg),
+                list(plan.encoded_registers),
                 slave=self.slave_id,
             )
             if result.isError():
@@ -878,6 +911,8 @@ def _stub_idm_heatpump() -> None:
         RegisterDef(1756, DataType.FLOAT, "energy_defrost", unit="kWh"),
         RegisterDef(1790, DataType.FLOAT, "current_power", unit="kW"),
         RegisterDef(1850, DataType.FLOAT, "solar_collector_temp", unit="°C"),
+        RegisterDef(4108, DataType.FLOAT, "power_limit_hp", unit="kW", writable=True, enabled_by_default=False),
+        RegisterDef(4112, DataType.FLOAT, "power_limit_cascade", unit="kW", writable=True, enabled_by_default=False),
         RegisterDef(4120, DataType.FLOAT, "power_consumption_hp", unit="kW"),
         RegisterDef(4126, DataType.FLOAT, "thermal_power", unit="kW"),
     ]
@@ -958,6 +993,9 @@ def _stub_idm_heatpump() -> None:
     idm_mod = ModuleType("idm_heatpump")
     idm_mod.RegisterDef = RegisterDef  # type: ignore[attr-defined]
     idm_mod.IdmModbusClient = IdmModbusClient  # type: ignore[attr-defined]
+    idm_mod.IdmModelInfo = IdmModelInfo  # type: ignore[attr-defined]
+    idm_mod.WriteSafetyResult = WriteSafetyResult  # type: ignore[attr-defined]
+    idm_mod.IdmClientDiagnostics = IdmClientDiagnostics  # type: ignore[attr-defined]
     idm_mod.build_register_map = build_register_map  # type: ignore[attr-defined]
     idm_mod.get_heating_circuit_registers = get_heating_circuit_registers  # type: ignore[attr-defined]
     idm_mod.get_zone_module_registers = get_zone_module_registers  # type: ignore[attr-defined]

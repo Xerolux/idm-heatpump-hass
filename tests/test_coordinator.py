@@ -398,6 +398,40 @@ class TestAsyncUpdateData:
                 await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
 
+    async def test_zone_room_modes_are_refreshed_individually(self, mock_hass, mock_config_entry):
+        room_mode = RegisterDef(
+            address=2025,
+            datatype=DataType.UCHAR,
+            name="zm1_room3_mode",
+            enum_options={0: "off", 1: "automatic", 2: "eco", 3: "normal", 4: "comfort"},
+        )
+        room_temp = RegisterDef(address=2020, datatype=DataType.FLOAT, name="zm1_room3_temp")
+        system_mode = RegisterDef(address=1005, datatype=DataType.UCHAR, name="system_mode")
+        client = MagicMock()
+        client.read_batch = AsyncMock(
+            return_value={
+                "zm1_room3_temp": 21.5,
+                "zm1_room3_mode": 255,
+                "system_mode": 1,
+            }
+        )
+        client.read_register = AsyncMock(return_value=3)
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[room_temp, room_mode, system_mode],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        assert data["zm1_room3_mode"] == 3
+        assert data["zm1_room3_temp"] == 21.5
+        assert data["system_mode"] == 1
+        client.read_register.assert_awaited_once_with(room_mode)
+        assert "zm1_room3_mode" not in coord.unused_registers
+
     async def test_unused_registers_tracked(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={"dead": UNUSED_VALUE, "alive": 5.0})
@@ -639,8 +673,8 @@ class TestAsyncRefreshWebSupplement:
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
-            web_pin="2634",
-            web_host="192.168.178.103",
+            web_pin="1234",
+            web_host="192.0.2.103",
         )
 
         with (
@@ -653,7 +687,7 @@ class TestAsyncRefreshWebSupplement:
             await coord.async_refresh_web_supplement()
 
         read_web.assert_awaited_once_with(
-            "192.168.178.103", "2634", model_hint="Navigator 2.0 / 10", preferred_variant=None
+            "192.0.2.103", "1234", model_hint="Navigator 2.0 / 10", preferred_variant=None
         )
         assert coord.last_web_error == "TimeoutError: websocket timeout"
         mock_ir.async_create_issue.assert_called_once_with(
@@ -664,13 +698,13 @@ class TestAsyncRefreshWebSupplement:
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="web_supplement_failed",
             translation_placeholders={
-                "host": "192.168.178.103",
+                "host": "192.0.2.103",
                 "error": "TimeoutError: websocket timeout",
             },
         )
 
     async def test_web_refresh_success_updates_data_and_deletes_repair_issue(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(
@@ -716,7 +750,7 @@ class TestAsyncRefreshWebSupplement:
             model_name="Navigator 2.0",
             firmware_version=None,
             model_info=model_info,
-            web_pin="2634",
+            web_pin="1234",
         )
         coord.data = {}
         coord.async_update_listeners = MagicMock()
@@ -741,7 +775,7 @@ class TestAsyncRefreshWebSupplement:
         assert coord.data["web_navigator_version"] == "Navigator 10"
 
     async def test_web_refresh_success_reports_missing_core_values(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         supplement = IdmWebSupplement(
             navigator_version="Navigator 10",
             sensor_values={"navigator_version": IdmWebSensorValue("Navigator 10", "Navigator 10")},
@@ -761,7 +795,7 @@ class TestAsyncRefreshWebSupplement:
 
     async def test_web_refresh_persists_retroactive_navigator_detection(self, mock_hass, mock_config_entry):
         """Retroactively detected model/firmware must be persisted for reloads."""
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(
@@ -799,7 +833,7 @@ class TestAsyncRefreshWebSupplement:
             mock_config_entry,
             model_name="Navigator 2.0",
             model_info=model_info,
-            web_pin="2634",
+            web_pin="1234",
         )
         coord.data = {}
         coord.async_update_listeners = MagicMock()
@@ -826,7 +860,7 @@ class TestAsyncRefreshWebSupplement:
             "detected_navigator_version": "Navigator 10",
             "detected_software_version": "NAV10_20.24",
         }
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(
@@ -852,7 +886,7 @@ class TestAsyncRefreshWebSupplement:
             mock_config_entry,
             model_name="Navigator 2.0 / 10",
             model_info=None,
-            web_pin="2634",
+            web_pin="1234",
         )
         coord.data = {}
         coord.async_update_listeners = MagicMock()
@@ -889,7 +923,7 @@ class TestAsyncRefreshWebSupplement:
             mock_config_entry,
             model_name="Navigator 2.0 / 10",
             model_info=model_info,
-            web_pin="2634",
+            web_pin="1234",
         )
         coord.data = {}
         coord.async_update_listeners = MagicMock()
@@ -910,7 +944,7 @@ class TestAsyncRefreshWebSupplement:
 
     async def test_web_refresh_caches_navigator20_variant(self, mock_hass, mock_config_entry):
         """After a successful Nav 2.0 web read, the variant is cached for future polls."""
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(navigator_version="Navigator 2.0", software_version="2.35")
@@ -944,7 +978,7 @@ class TestAsyncRefreshWebSupplement:
 
     async def test_web_refresh_caches_navigator10_variant(self, mock_hass, mock_config_entry):
         """After a successful Nav 10 web read, the variant is cached for future polls."""
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(navigator_version="Navigator 10")
@@ -962,7 +996,7 @@ class TestAsyncRefreshWebSupplement:
 
     async def test_web_refresh_caches_navigator_pro_variant(self, mock_hass, mock_config_entry):
         """Navigator Pro uses the Nav 10 WebSocket web access variant."""
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(navigator_version="Navigator Pro")
@@ -980,7 +1014,7 @@ class TestAsyncRefreshWebSupplement:
 
     async def test_web_refresh_uses_heatpump_model_for_variant(self, mock_hass, mock_config_entry):
         """The cache also works when the web API exposes heatpump_model only."""
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="2634")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(heatpump_model="Navigator 2.0")

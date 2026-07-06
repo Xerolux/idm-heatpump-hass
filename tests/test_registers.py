@@ -232,6 +232,44 @@ class TestZoneAddresses:
         room_idxs = sorted({int(re.search(r"room(\d+)", r).group(1)) for r in room_regs})
         assert room_idxs == [1, 2, 3], f"Expected rooms [1,2,3], got {room_idxs}"
 
+    def test_zone_room_count_eight_extends_library_six_room_limit(self, monkeypatch):
+        """Regression test for issue #68: 8-room legacy zone modules are supported."""
+        import custom_components.idm_heatpump.library_adapter as adapter
+
+        def reject_more_than_six(zone_idx: int, room_count: int = 6):
+            if room_count > 6:
+                raise ValueError(f"Room count must be 1-6, got {room_count}")
+            base = 2000 + (zone_idx - 1) * 100
+            registers = {}
+            for room in range(1, room_count + 1):
+                offset = base + (room - 1) * 10
+                for reg in (
+                    RegisterDef(offset, DataType.FLOAT, f"zm{zone_idx}_room{room}_temp", unit="°C", writable=True),
+                    RegisterDef(
+                        offset + 2, DataType.FLOAT, f"zm{zone_idx}_room{room}_setpoint", unit="°C", writable=True
+                    ),
+                    RegisterDef(offset + 4, DataType.UINT16, f"zm{zone_idx}_room{room}_humidity", unit="%"),
+                    RegisterDef(
+                        offset + 5,
+                        DataType.UCHAR,
+                        f"zm{zone_idx}_room{room}_mode",
+                        writable=True,
+                        enum_options={0: "Off", 1: "Auto"},
+                    ),
+                ):
+                    registers[reg.name] = reg
+            return registers
+
+        monkeypatch.setattr(adapter, "_library_get_zone_module_registers", reject_more_than_six)
+
+        sensor_names = {d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 8})}
+        number_names = {d["register"].name for d in get_all_number_descriptions(["a"], 1, {0: 8})}
+        select_names = {d["register"].name for d in get_all_select_descriptions(["a"], 1, {0: 8})}
+
+        assert "zm1_room8_temp" in sensor_names
+        assert "zm1_room8_setpoint" in number_names
+        assert "zm1_room8_mode" in select_names
+
 
 class TestGltDualExposure:
     """GLT-Messwerte (Library 0.3.2): beschreibbare Messwert-Register

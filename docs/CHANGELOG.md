@@ -45,6 +45,35 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [0.8.0-beta.14] - 2026-07-06
+
+## v0.8.0-beta.14 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+- fix: normalize web detection test expectations (#78) (af2ee31)
+- fix: update API dependency range for release CI (#77) (df6a5b9)
+- Fix web-only reconfigure fallback (#76) (7abb8a9)
+- Fix zone room mode batch reads (#75) (b648fed)
+- Fix zone room count handling (#73) (ba7c845)
+
+### Support
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Spendier%20mir%20einen%20Kaffee!-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-Danke%20f%C3%BCr%20deine%20Unterst%C3%BCtzung!-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
+
+---
+
+[Full changelog: v0.8.0-beta.13...v0.8.0-beta.14](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.8.0-beta.13...v0.8.0-beta.14)
+
+**Developed by:** [Xerolux](https://github.com/Xerolux)
+**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH
+**License:** MIT
+
+---
+
 ## [0.8.0-beta.13] - 2026-07-05
 
 ## v0.8.0-beta.13 - IDM Heatpump

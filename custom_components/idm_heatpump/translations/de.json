@@ -20,7 +20,7 @@
           "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen.",
           "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, um nur Modbus zu verwenden.",
           "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
-          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.168.178.103`."
+          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`."
         }
       },
       "reconfigure": {
@@ -40,7 +40,7 @@
           "slave_id": "Modbus-Slave-ID. Standard ist `1`.",
           "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, damit die Integration nur Modbus verwendet.",
           "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
-          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.168.178.103`."
+          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`."
         }
       },
       "options": {

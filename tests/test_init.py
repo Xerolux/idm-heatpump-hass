@@ -528,9 +528,7 @@ class TestAsyncSetupEntryOptions:
 
     async def test_modbus_timeout_and_retries_passed_to_client(self, mock_hass):
         """Configured modbus_timeout / modbus_retries must reach get_idm_client."""
-        entry = self._make_entry(
-            options_override={"modbus_timeout": 20.0, "modbus_retries": 4}
-        )
+        entry = self._make_entry(options_override={"modbus_timeout": 20.0, "modbus_retries": 4})
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock()
@@ -588,8 +586,8 @@ class TestAsyncSetupEntryOptions:
         """Proxy setups can use one host for Modbus and another for Navigator web."""
         entry = self._make_entry(
             data_override={
-                "web_pin": "2634",
-                "web_host": "192.168.178.103",
+                "web_pin": "1234",
+                "web_host": "192.0.2.103",
             },
             options_override={"web_extra_data": True},
         )
@@ -617,8 +615,8 @@ class TestAsyncSetupEntryOptions:
         ):
             await async_setup_entry(mock_hass, entry)
 
-        read_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint="Navigator 2.0 / 10")
-        assert captured_kwargs.get("web_host") == "192.168.178.103"
+        read_web.assert_awaited_once_with("192.0.2.103", "1234", model_hint="Navigator 2.0 / 10")
+        assert captured_kwargs.get("web_host") == "192.0.2.103"
 
     async def test_coordinator_first_refresh_failure_raises_not_ready(self, mock_hass):
         """If coordinator.async_config_entry_first_refresh() fails, ConfigEntryNotReady is raised."""
@@ -706,6 +704,40 @@ class TestAsyncSetupEntryOptions:
             True,
             model_info=mock_sensors.call_args.args[4],
         )
+
+    async def test_setup_entry_normalizes_persisted_zone_room_keys(self, mock_hass):
+        """Home Assistant persists option dict keys as strings in JSON."""
+        entry = self._make_entry(
+            options_override={
+                "zone_count": 2,
+                "zone_rooms": {"0": 5, "1": 8},
+            }
+        )
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]) as mock_sensors,
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]) as mock_binary,
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]) as mock_numbers,
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]) as mock_selects,
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]) as mock_switches,
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        for mock_builder in (mock_sensors, mock_binary, mock_numbers, mock_selects, mock_switches):
+            assert mock_builder.call_args.args[2] == {0: 5, 1: 8}
+        assert mock_coordinator.setup_registers.call_args.args[2] == {0: 5, 1: 8}
 
     async def test_enable_cascade_defaults_false(self, mock_hass):
         """enable_cascade defaults to False when not in options."""
@@ -1138,7 +1170,7 @@ class TestAsyncSetupEntryModelDetection:
 
     async def test_modbus_detected_navigator_20_overrides_conflicting_web_navigator_10(self, mock_hass):
         entry = self._make_entry()
-        entry.data = {**entry.data, "web_pin": "2634"}
+        entry.data = {**entry.data, "web_pin": "1234"}
         entry.options = {**entry.options, "web_extra_data": True}
         model_info = IdmModelInfo(
             model_name="Navigator 2.0",

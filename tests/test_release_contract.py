@@ -47,7 +47,7 @@ def test_api_dependency_update_workflow_updates_pin_and_runs_contract_tests() ->
     workflow = _read(ROOT / ".github" / "workflows" / "api-dependency-update.yml")
 
     assert "idm_heatpump_api_release" in workflow
-    assert 'requirement = f"idm-heatpump-api[web]>={major_minor},<{next_major_minor}"' in workflow
+    assert 'requirement = f"idm-heatpump-api[web]>={version},<{next_major_minor}"' in workflow
     assert "tests/test_release_contract.py tests/test_cross_repo_contract.py" in workflow
     assert "peter-evans/create-pull-request" in workflow
 
