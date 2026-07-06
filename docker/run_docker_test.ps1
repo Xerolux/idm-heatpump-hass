@@ -13,7 +13,7 @@ param(
     [ValidateSet("all", "smoke", "start", "stop", "restart", "logs", "status", "clean", "test", "install")]
     [string]$Test = "all",
 
-    [string]$IdmIp = "192.168.178.103",
+    [string]$IdmIp = "192.0.2.103",
     [int]$IdmPort = 502,
     [int]$IdmSlaveId = 1,
     [int]$HaPort = 8123,

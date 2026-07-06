@@ -246,19 +246,19 @@ class TestAsyncStepUser:
             result = await flow.async_step_user(
                 {
                     "name": "IDM Test",
-                    "host": "192.168.178.196",
+                    "host": "192.0.2.196",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
-                    CONF_WEB_HOST: "192.168.178.103",
+                    CONF_WEB_HOST: "192.0.2.103",
                 }
             )
 
         assert result["step_id"] == "options"
-        detect_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint=None)
+        detect_web.assert_awaited_once_with("192.0.2.103", "1234", model_hint=None)
         assert flow._data[CONF_MODBUS_PROXY] is True
-        assert flow._data[CONF_WEB_HOST] == "192.168.178.103"
+        assert flow._data[CONF_WEB_HOST] == "192.0.2.103"
 
     async def test_successful_connection_ignores_web_host_without_proxy_checkbox(self):
         flow = _make_flow()
@@ -276,16 +276,16 @@ class TestAsyncStepUser:
             await flow.async_step_user(
                 {
                     "name": "IDM Test",
-                    "host": "192.168.178.196",
+                    "host": "192.0.2.196",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: False,
-                    CONF_WEB_HOST: "192.168.178.103",
+                    CONF_WEB_HOST: "192.0.2.103",
                 }
             )
 
-        detect_web.assert_awaited_once_with("192.168.178.196", "2634")
+        detect_web.assert_awaited_once_with("192.0.2.196", "1234", model_hint=None)
         assert flow._data[CONF_MODBUS_PROXY] is False
         assert flow._data[CONF_WEB_HOST] == ""
 
@@ -297,10 +297,10 @@ class TestAsyncStepUser:
             result = await flow.async_step_user(
                 {
                     "name": "IDM Test",
-                    "host": "192.168.178.196",
+                    "host": "192.0.2.196",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "",
                 }
@@ -647,7 +647,7 @@ class TestAsyncStepReconfigure:
     async def test_reconfigure_updates_separate_web_host(self):
         flow = _make_flow()
         entry = MagicMock()
-        entry.data = {"host": "192.168.178.196", "port": 502, "slave_id": 1, "web_pin": "2634"}
+        entry.data = {"host": "192.0.2.196", "port": 502, "slave_id": 1, "web_pin": "1234"}
         entry.title = "IDM"
         update_and_abort = MagicMock(return_value={"type": "abort", "reason": "reconfigure_successful"})
 
@@ -659,25 +659,25 @@ class TestAsyncStepReconfigure:
         ):
             await flow.async_step_reconfigure(
                 {
-                    "host": "192.168.178.196",
+                    "host": "192.0.2.196",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
-                    CONF_WEB_HOST: "192.168.178.103",
+                    CONF_WEB_HOST: "192.0.2.103",
                 }
             )
 
-        detect_web.assert_awaited_once_with("192.168.178.103", "2634")
+        detect_web.assert_awaited_once_with("192.0.2.103", "1234", model_hint=None)
         update_and_abort.assert_called_once_with(
             entry,
             data_updates={
-                "host": "192.168.178.196",
+                "host": "192.0.2.196",
                 "port": 502,
                 "slave_id": 1,
-                "web_pin": "2634",
+                "web_pin": "1234",
                 "modbus_proxy": True,
-                "web_host": "192.168.178.103",
+                "web_host": "192.0.2.103",
             },
         )
 

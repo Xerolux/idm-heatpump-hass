@@ -27,7 +27,7 @@ NC='\033[0m'
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-IDM_IP="${IDM_IP:-192.168.178.103}"
+IDM_IP="${IDM_IP:-192.0.2.103}"
 IDM_PORT="${IDM_PORT:-502}"
 IDM_SLAVE_ID="${IDM_SLAVE_ID:-1}"
 HA_PORT="${HA_PORT:-8123}"
@@ -626,7 +626,7 @@ usage() {
     echo "  test      Run direct Modbus connection test"
     echo ""
     echo "Environment variables:"
-    echo "  IDM_IP       Heat pump IP (default: 192.168.178.103)"
+    echo "  IDM_IP       Heat pump IP (default: 192.0.2.103)"
     echo "  IDM_PORT     Modbus port (default: 502)"
     echo "  IDM_SLAVE_ID Slave ID (default: 1)"
     echo "  HA_PORT      HA web port (default: 8123)"

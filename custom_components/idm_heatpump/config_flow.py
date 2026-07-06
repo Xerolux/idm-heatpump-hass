@@ -416,7 +416,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             errors=errors,
                         )
                     try:
-                        detected = await self._async_detect_web_supplement(web_host, web_pin)
+                        detected = await self._async_detect_web_supplement(web_host, web_pin, model_hint=None)
                     except IdmWebAuthenticationFailed:
                         _LOGGER.warning("IDM Navigator web PIN was rejected during setup for host %s", web_host)
                         errors[CONF_WEB_PIN] = "invalid_web_pin"
