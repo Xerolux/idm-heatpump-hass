@@ -12,6 +12,7 @@ from custom_components.idm_heatpump.services import (
     _handle_set_system_mode,
     _handle_acknowledge_errors,
     _handle_write_register,
+    _encoded_registers_from_safety_result,
 )
 
 
@@ -32,6 +33,20 @@ def _make_coordinator_in_hass(mock_hass, entry_id: str = "entry-1"):
 
     mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
     return coord
+
+
+class TestWriteSafetyHelpers:
+    def test_extracts_tuple_encoded_registers_from_api_result(self):
+        result = MagicMock()
+        result.encoded_registers = (1, 2, 65535)
+
+        assert _encoded_registers_from_safety_result(result) == [1, 2, 65535]
+
+    def test_extracts_sequence_encoded_registers_from_mapping(self):
+        assert _encoded_registers_from_safety_result({"encoded_registers": (42,)}) == [42]
+
+    def test_ignores_text_encoded_registers(self):
+        assert _encoded_registers_from_safety_result({"encoded_registers": "42"}) is None
 
 
 class TestSetupServices:

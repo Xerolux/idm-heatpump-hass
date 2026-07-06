@@ -42,6 +42,16 @@ def _model_info_diagnostics(model_info: Any) -> dict[str, Any]:
     }
 
 
+def _client_diagnostics(coordinator: Any) -> dict[str, Any]:
+    getter = getattr(coordinator, "client_diagnostics", None)
+    if not callable(getter):
+        return {}
+    diagnostics = getter()
+    if isinstance(diagnostics, dict):
+        return diagnostics
+    return {}
+
+
 def _web_supplement_diagnostics(coordinator: Any) -> dict[str, Any]:
     return {
         "enabled": bool(getattr(coordinator, "web_enabled", False)),
@@ -65,6 +75,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "model_name": coordinator.model_name,
                 "firmware_version": coordinator.firmware_version,
                 "model_info": _model_info_diagnostics(coordinator.model_info),
+                "client_diagnostics": async_redact_data(_client_diagnostics(coordinator), TO_REDACT),
                 "web_supplement": _web_supplement_diagnostics(coordinator),
                 "unused_registers": sorted(coordinator.unused_registers),
                 "unsupported_registers": sorted(coordinator.unsupported_registers),
