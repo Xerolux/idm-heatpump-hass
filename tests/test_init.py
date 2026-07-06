@@ -529,9 +529,7 @@ class TestAsyncSetupEntryOptions:
 
     async def test_modbus_timeout_and_retries_passed_to_client(self, mock_hass):
         """Configured modbus_timeout / modbus_retries must reach get_idm_client."""
-        entry = self._make_entry(
-            options_override={"modbus_timeout": 20.0, "modbus_retries": 4}
-        )
+        entry = self._make_entry(options_override={"modbus_timeout": 20.0, "modbus_retries": 4})
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock()
@@ -589,8 +587,8 @@ class TestAsyncSetupEntryOptions:
         """Proxy setups can use one host for Modbus and another for Navigator web."""
         entry = self._make_entry(
             data_override={
-                "web_pin": "2634",
-                "web_host": "192.168.178.103",
+                "web_pin": "1234",
+                "web_host": "192.0.2.103",
             },
             options_override={"web_extra_data": True},
         )
@@ -618,8 +616,8 @@ class TestAsyncSetupEntryOptions:
         ):
             await async_setup_entry(mock_hass, entry)
 
-        read_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint="Navigator 2.0 / 10")
-        assert captured_kwargs.get("web_host") == "192.168.178.103"
+        read_web.assert_awaited_once_with("192.0.2.103", "1234", model_hint="Navigator 2.0 / 10")
+        assert captured_kwargs.get("web_host") == "192.0.2.103"
 
     async def test_coordinator_first_refresh_failure_raises_not_ready(self, mock_hass):
         """If coordinator.async_config_entry_first_refresh() fails, ConfigEntryNotReady is raised."""
@@ -1173,7 +1171,7 @@ class TestAsyncSetupEntryModelDetection:
 
     async def test_modbus_detected_navigator_20_overrides_conflicting_web_navigator_10(self, mock_hass):
         entry = self._make_entry()
-        entry.data = {**entry.data, "web_pin": "2634"}
+        entry.data = {**entry.data, "web_pin": "1234"}
         entry.options = {**entry.options, "web_extra_data": True}
         model_info = IdmModelInfo(
             model_name="Navigator 2.0",

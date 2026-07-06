@@ -65,12 +65,12 @@ async def test_web_pin_missing_repair_sets_valid_pin(mock_hass, repair_entry) ->
         "custom_components.idm_heatpump.repairs.async_read_web_supplement",
         new=AsyncMock(return_value=supplement),
     ) as read_web:
-        result = await flow.async_step_set_pin({CONF_WEB_PIN: " 2634 "})
+        result = await flow.async_step_set_pin({CONF_WEB_PIN: " 1234 "})
 
     assert result["type"] == "create_entry"
-    read_web.assert_awaited_once_with("192.168.1.100", "2634")
+    read_web.assert_awaited_once_with("192.168.1.100", "1234")
     _, kwargs = mock_hass.config_entries.async_update_entry.call_args
-    assert kwargs["data"][CONF_WEB_PIN] == "2634"
+    assert kwargs["data"][CONF_WEB_PIN] == "1234"
     assert kwargs["data"][CONF_DETECTED_NAVIGATOR_VERSION] == "Navigator 10"
     assert kwargs["data"][CONF_DETECTED_SOFTWARE_VERSION] == "NAV10_20.24"
     assert kwargs["options"][CONF_WEB_ENABLED] is True

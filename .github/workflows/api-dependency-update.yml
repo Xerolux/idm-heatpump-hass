@@ -46,9 +46,8 @@ jobs:
           version = "${{ steps.api.outputs.version }}"
           root = Path(".")
           major, minor, *_ = version.split(".")
-          major_minor = f"{major}.{minor}"
           next_major_minor = f"{major}.{int(minor) + 1}"
-          requirement = f"idm-heatpump-api[web]>={major_minor},<{next_major_minor}"
+          requirement = f"idm-heatpump-api[web]>={version},<{next_major_minor}"
 
           manifest_path = root / "custom_components" / "idm_heatpump" / "manifest.json"
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
@@ -60,7 +59,7 @@ jobs:
 
           release_contract = root / "tests" / "test_release_contract.py"
           text = release_contract.read_text(encoding="utf-8")
-          text = re.sub(r'idm-heatpump-api(?:\[web\])?(?:==[0-9]+\.[0-9]+\.[0-9]+|>=[0-9]+\.[0-9]+,<[0-9]+\.[0-9]+)', requirement, text)
+          text = re.sub(r'idm-heatpump-api(?:\[web\])?(?:==[0-9]+\.[0-9]+\.[0-9]+|>=[0-9]+\.[0-9]+(?:\.[0-9]+)?,<[0-9]+\.[0-9]+)', requirement, text)
           release_contract.write_text(text, encoding="utf-8")
 
           docs = [
@@ -71,7 +70,7 @@ jobs:
           ]
           for path in docs:
               text = path.read_text(encoding="utf-8")
-              text = re.sub(r'idm-heatpump-api(?:\[web\])?(?:==[0-9]+\.[0-9]+\.[0-9]+|>=[0-9]+\.[0-9]+,<[0-9]+\.[0-9]+)', requirement, text)
+              text = re.sub(r'idm-heatpump-api(?:\[web\])?(?:==[0-9]+\.[0-9]+\.[0-9]+|>=[0-9]+\.[0-9]+(?:\.[0-9]+)?,<[0-9]+\.[0-9]+)', requirement, text)
               path.write_text(text, encoding="utf-8")
           PY
 
