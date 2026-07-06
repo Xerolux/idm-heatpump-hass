@@ -11,6 +11,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.7.4] - 2026-07-06
+
+### Fixed
+
+- Pin the runtime dependency to `idm-heatpump-api==0.3.5`, the PyPI version
+  that was current when `v0.7.3` was tagged, so the stable 0.7 integration line
+  does not install newer incompatible API releases.
+
 ## [0.7.3] - 2026-07-02
 
 ### Fixed
