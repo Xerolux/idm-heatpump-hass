@@ -11,6 +11,7 @@ import asyncio
 import logging
 import math
 from datetime import timedelta
+from collections.abc import Mapping
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
@@ -542,8 +543,35 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await asyncio.sleep(delay)
         await self.async_request_refresh()
 
+    def simulate_write(self, reg: RegisterDef, value: Any, *, dry_run: bool = True) -> Any:
+        """Validate a write using idm-heatpump-api write-safety hooks when available."""
+        simulator = getattr(self._client, "simulate_write", None)
+        if callable(simulator):
+            return simulator(reg, value, dry_run=dry_run)
+        # idm-heatpump-api < 0.6 has no dry-run safety result; keep compatibility
+        # by falling back to encoding, which still validates datatype/range locally.
+        encoder = getattr(self._client, "encode_value", None)
+        if callable(encoder):
+            return {"encoded_registers": encoder(value, reg)}
+        return None
+
+    def client_diagnostics(self) -> Mapping[str, Any]:
+        """Return redaction-safe diagnostics exposed by newer idm-heatpump-api versions."""
+        getter = getattr(self._client, "get_diagnostics", None)
+        if not callable(getter):
+            return {}
+        diagnostics = getter()
+        if hasattr(diagnostics, "to_dict"):
+            diagnostics = diagnostics.to_dict()
+        if isinstance(diagnostics, Mapping):
+            return diagnostics
+        if hasattr(diagnostics, "__dict__"):
+            return dict(vars(diagnostics))
+        return {}
+
     async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
         try:
+            self.simulate_write(reg, value)
             await self._client.write_register(reg, value)
         except Exception:
             ir.async_create_issue(
