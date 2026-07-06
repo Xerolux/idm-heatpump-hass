@@ -22,7 +22,7 @@ ha_integration_type: device
 ha_quality_scale: gold
 ha_requirements:
   - pymodbus>=3.12.1,<4.0
-  - idm-heatpump-api[web]>=0.4.1,<0.6
+  - idm-heatpump-api[web]>=0.6.0,<0.7
 ---
 
 > Draft for a possible future Home Assistant Core documentation page. The

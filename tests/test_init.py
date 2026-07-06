@@ -529,9 +529,7 @@ class TestAsyncSetupEntryOptions:
 
     async def test_modbus_timeout_and_retries_passed_to_client(self, mock_hass):
         """Configured modbus_timeout / modbus_retries must reach get_idm_client."""
-        entry = self._make_entry(
-            options_override={"modbus_timeout": 20.0, "modbus_retries": 4}
-        )
+        entry = self._make_entry(options_override={"modbus_timeout": 20.0, "modbus_retries": 4})
 
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock()

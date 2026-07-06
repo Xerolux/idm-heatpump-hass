@@ -878,6 +878,8 @@ def _stub_idm_heatpump() -> None:
         RegisterDef(1756, DataType.FLOAT, "energy_defrost", unit="kWh"),
         RegisterDef(1790, DataType.FLOAT, "current_power", unit="kW"),
         RegisterDef(1850, DataType.FLOAT, "solar_collector_temp", unit="°C"),
+        RegisterDef(4108, DataType.FLOAT, "power_limit_hp", unit="kW", writable=True, enabled_by_default=False),
+        RegisterDef(4112, DataType.FLOAT, "power_limit_cascade", unit="kW", writable=True, enabled_by_default=False),
         RegisterDef(4120, DataType.FLOAT, "power_consumption_hp", unit="kW"),
         RegisterDef(4126, DataType.FLOAT, "thermal_power", unit="kW"),
     ]
