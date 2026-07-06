@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### What changed
 
-- Bump the bundled runtime requirement to `idm-heatpump-api[web]>=0.6.2,<0.7`.
+- Keep the bundled runtime requirement on the published `idm-heatpump-api[web]>=0.6.1,<0.7` range.
 - Fix configured per-zone room counts loaded from Home Assistant options by
   normalizing JSON string keys back to integer zone indexes.
 - Generate zone room selects per configured zone module, so mixed setups such as
@@ -26,7 +26,7 @@ All notable changes to this project will be documented in this file.
   entities.
 - Add an integration-side compatibility fallback for 8-room zone modules when
   an older installed API still rejects `room_count > 6`.
-- Keep the API-side room-mode batch-read recovery from `0.6.2`, which re-reads
+- Keep the API-side room-mode batch-read recovery from `0.6.1`, which re-reads
   out-of-range enum values individually to avoid `unknown`/`unavailable`
   room-mode selects.
 
@@ -53,7 +53,7 @@ All notable changes to this project will be documented in this file.
 
 ### What changed
 
-- Bump `idm-heatpump-api` to `>=0.6.2,<0.7`. The library now disables
+- Bump `idm-heatpump-api` to `>=0.6.1,<0.7`. The library now disables
   pymodbus-internal retries (0.6.0), handles all retries via its own
   exponential-backoff loop, adds post-batch validation to re-read registers
   individually when a batch response contains out-of-range values, and supports
