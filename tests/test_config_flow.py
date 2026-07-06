@@ -28,6 +28,7 @@ from custom_components.idm_heatpump.const import (
     CONF_TECHNICIAN_CODES,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
+    CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
     DEFAULT_MODBUS_MAX_RETRIES,
@@ -255,7 +256,7 @@ class TestAsyncStepUser:
             )
 
         assert result["step_id"] == "options"
-        detect_web.assert_awaited_once_with("192.168.178.103", "2634")
+        detect_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint=None)
         assert flow._data[CONF_MODBUS_PROXY] is True
         assert flow._data[CONF_WEB_HOST] == "192.168.178.103"
 
@@ -520,6 +521,41 @@ class TestAsyncStepReconfigure:
                     }
                 )
         assert result["errors"].get("base") == "cannot_connect"
+
+    async def test_reconfigure_modbus_failure_with_web_pin_offers_web_only_without_duplicate_entry(self):
+        flow = _make_flow()
+        entry = MagicMock()
+        entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
+        entry.title = "IDM"
+        update_and_abort = MagicMock(return_value={"type": "abort", "reason": "reconfigure_successful"})
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=False),
+            patch.object(flow, "_async_detect_web_supplement", return_value={}),
+            patch.object(flow, "async_update_and_abort", update_and_abort),
+        ):
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "10.0.0.1",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "1234",
+                }
+            )
+            assert result["type"] == "form"
+            assert result["step_id"] == "modbus_failed"
+
+            result = await flow.async_step_modbus_failed({"action": "web_only"})
+            assert result["type"] == "form"
+            assert result["step_id"] == "web_only_options"
+
+            result = await flow.async_step_web_only_options({CONF_WEB_SCAN_INTERVAL: 60})
+
+        assert result == {"type": "abort", "reason": "reconfigure_successful"}
+        update_and_abort.assert_called_once()
+        assert update_and_abort.call_args.args[0] is entry
+        assert update_and_abort.call_args.kwargs["data_updates"][CONF_WEB_ONLY] is True
 
     async def test_successful_reconfigure(self):
         flow = _make_flow()

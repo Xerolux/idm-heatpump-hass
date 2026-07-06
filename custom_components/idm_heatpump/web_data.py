@@ -263,14 +263,13 @@ def _is_wrong_variant_error(err: Exception) -> bool:
 
     if wrong_variant_types and isinstance(err, wrong_variant_types):
         return True
+    if isinstance(err, (OSError, TimeoutError)):
+        return True
     return err.__class__.__name__ in {
         "IdmWebResponseError",
         "ClientError",
         "ClientConnectorError",
         "ServerDisconnectedError",
-        "OSError",
-        "TimeoutError",
-        "asyncio.exceptions.TimeoutError",
     }
 
 
