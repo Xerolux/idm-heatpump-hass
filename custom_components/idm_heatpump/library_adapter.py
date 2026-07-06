@@ -38,12 +38,14 @@ from homeassistant.const import (
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import (
+    MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_20,
+    MODEL_NAVIGATOR_PRO,
     RegisterDef,
     get_heating_circuit_registers,
     get_zone_module_registers as _library_get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
-from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO
 
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_descriptions import (
@@ -61,6 +63,14 @@ _SENSOR_STATE_CLASS_MAP: dict[str, SensorStateClass] = {
     SensorStateClass.MEASUREMENT: SensorStateClass.MEASUREMENT,
     SensorStateClass.TOTAL: SensorStateClass.TOTAL,
     SensorStateClass.TOTAL_INCREASING: SensorStateClass.TOTAL_INCREASING,
+}
+
+_ROOM_MODE_OPTIONS: dict[int, str] = {
+    0: "off",
+    1: "automatic",
+    2: "eco",
+    3: "normal",
+    4: "comfort",
 }
 
 _ZONE_ROOM_REGISTER = re.compile(r"^(?P<prefix>zm(?P<zone>\d+)_room)(?P<room>\d+)(?P<suffix>_.+)$")
@@ -125,6 +135,11 @@ def _get_zone_module_registers(zone_idx: int, room_count: int = 6) -> dict[str, 
             cloned = _clone_register_for_room(reg, room, reg.address + stride)
             extended[cloned.name] = cloned
     return extended
+
+
+def _get_zone_module_registers_compat(zone_idx: int, room_count: int = 6) -> dict[str, RegisterDef]:
+    """Return zone registers, including 8-room modules with older API releases."""
+    return _get_zone_module_registers(zone_idx, room_count)
 
 
 # ============================================================
@@ -659,7 +674,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
 def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
     """Erzeugt Sensor-Beschreibungen für ein Zonenmodul direkt aus der Library."""
     try:
-        zone_regs = _get_zone_module_registers(zone_idx, room_count)
+        zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
         return []
 
@@ -852,26 +867,32 @@ def get_library_selects(
 
 
 def get_library_zone_selects(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
-    """Return select descriptions for writable enum registers in one zone module."""
+    """Returns select descriptions for one zone module with its configured room count."""
     from homeassistant.components.select import SelectEntityDescription
 
     try:
-        zone_regs = _get_zone_module_registers(zone_idx, room_count)
+        zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
         return []
 
     selects = []
     for name, reg in zone_regs.items():
-        if not reg.writable or not reg.enum_options or reg.write_only:
+        if not reg.writable or not reg.enum_options:
+            continue
+        if reg.write_only:
             continue
 
         slug_map, t_key = get_slug_map_and_key(name)
         excluded: set[int] = set(reg.exclude_from_write or [])
-        options = (
-            [v for k, v in slug_map.items() if k not in excluded]
-            if slug_map is not None
-            else [v for k, v in reg.enum_options.items() if k not in excluded]
-        )
+
+        if slug_map is not None:
+            options = [v for k, v in slug_map.items() if k not in excluded]
+        else:
+            options = (
+                [v for k, v in reg.enum_options.items() if k not in excluded]
+                if excluded
+                else list(reg.enum_options.values())
+            )
 
         desc = SelectEntityDescription(
             key=name,
@@ -979,7 +1000,7 @@ def get_library_numbers(
 def get_library_zone_numbers(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
     """Returns number descriptions for writable room registers in one zone module."""
     try:
-        zone_regs = _get_zone_module_registers(zone_idx, room_count)
+        zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
         return []
     return _numbers_from_register_map(zone_regs)

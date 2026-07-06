@@ -188,6 +188,8 @@ def _stub_homeassistant() -> None:
     ha.core = _make_module("homeassistant.core")
     ha.exceptions = _make_module("homeassistant.exceptions")
     ha.loader = _make_module("homeassistant.loader")
+    ha.util = _make_module("homeassistant.util")
+    ha.util.json = _make_module("homeassistant.util.json")
     ha.components = _make_module("homeassistant.components")
     ha.components.repairs = _make_module("homeassistant.components.repairs")
 
@@ -226,6 +228,7 @@ def _stub_homeassistant() -> None:
     ha.core.ServiceResponse = MagicMock
     ha.core.SupportsResponse = MagicMock()
     ha.core.SupportsResponse.OPTIONAL = "optional"
+    ha.util.json.JsonValueType = object
 
     class _RepairsFlow:
         def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):

@@ -4,8 +4,7 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
-from idm_heatpump import RegisterDef
-from idm_heatpump.client import DataType
+from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
 

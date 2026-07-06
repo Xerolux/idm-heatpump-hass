@@ -6,8 +6,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from pymodbus.exceptions import ConnectionException, ModbusException
 
-from idm_heatpump import IdmModbusClient, RegisterDef
-from idm_heatpump.client import DataType
+from idm_heatpump import DataType, IdmModbusClient, RegisterDef
 
 
 # ---------------------------------------------------------------------------

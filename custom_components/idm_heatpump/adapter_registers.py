@@ -4,8 +4,13 @@ from __future__ import annotations
 
 from typing import Any
 
-from idm_heatpump import IdmModelInfo, RegisterDef, build_register_map
-from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20
+from idm_heatpump import (
+    MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_20,
+    IdmModelInfo,
+    RegisterDef,
+    build_register_map,
+)
 
 _NAVIGATOR_10_ONLY_REGISTERS: frozenset[str] = frozenset(
     {

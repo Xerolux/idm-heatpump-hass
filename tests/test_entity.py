@@ -4,8 +4,7 @@ from unittest.mock import MagicMock
 
 
 from custom_components.idm_heatpump.entity import IdmEntity
-from idm_heatpump import RegisterDef
-from idm_heatpump.client import DataType
+from idm_heatpump import DataType, RegisterDef
 from custom_components.idm_heatpump.const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
 

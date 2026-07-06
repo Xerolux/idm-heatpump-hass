@@ -17,8 +17,7 @@ from custom_components.idm_heatpump import (
 )
 from custom_components.idm_heatpump.const import MODEL
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
-from idm_heatpump import IdmModelInfo
-from idm_heatpump.const import MODEL_UNKNOWN
+from idm_heatpump import MODEL_UNKNOWN, IdmModelInfo
 
 
 class TestIdmHeatpumpData:
@@ -668,7 +667,7 @@ class TestAsyncSetupEntryOptions:
             options_override={
                 "heating_circuits": ["a", "c"],
                 "zone_count": 2,
-                "zone_rooms": {0: 1, 1: 3},
+                "zone_rooms": {"0": 1, "1": 3},
                 "enable_cascade": True,
             }
         )

@@ -83,6 +83,7 @@ from .const import (
     MIN_MODBUS_TIMEOUT,
 )
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
+from .registers import normalize_zone_rooms
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -301,10 +302,7 @@ def _has_duplicate_host(hass: Any, host: str, current_entry_id: str | None = Non
 
 
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
-    raw_existing_rooms = options.get(CONF_ZONE_ROOMS, {})
-    existing_rooms: dict[int, int] = {}
-    if isinstance(raw_existing_rooms, dict):
-        existing_rooms = {int(zone): int(rooms) for zone, rooms in raw_existing_rooms.items()}
+    existing_rooms = normalize_zone_rooms(options.get(CONF_ZONE_ROOMS, {}))
     schema_dict: dict[Any, Any] = {}
     for z in range(zone_count):
         schema_dict[
@@ -416,7 +414,11 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                             errors=errors,
                         )
                     try:
-                        detected = await self._async_detect_web_supplement(web_host, web_pin, model_hint=None)
+                        detected = await self._async_detect_web_supplement(
+                            web_host,
+                            web_pin,
+                            model_hint=self._data.get(CONF_DETECTED_NAVIGATOR_VERSION),
+                        )
                     except IdmWebAuthenticationFailed:
                         _LOGGER.warning("IDM Navigator web PIN was rejected during setup for host %s", web_host)
                         errors[CONF_WEB_PIN] = "invalid_web_pin"
@@ -454,8 +456,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
                 if web_pin_configured(web_pin):
                     _LOGGER.info(
-                        "IDM Modbus connection to %s failed during reconfigure, but web PIN is configured; "
-                        "offering web-only fallback",
+                        "IDM Modbus connection to %s failed during reconfigure, but web PIN is configured; offering web-only fallback",
                         host,
                     )
                     web_host = _web_host_for_input(user_input, host)
@@ -584,13 +585,6 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     def _async_create_config_entry(self) -> ConfigFlowResult:
         if not _room_temp_forwarding_enabled(self._options):
             self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
-        reconfigure_entry = self._get_reconfigure_entry()
-        if isinstance(getattr(reconfigure_entry, "data", None), dict):
-            return self.async_update_and_abort(
-                reconfigure_entry,
-                data_updates=self._data,
-                options=self._options,
-            )
         return self.async_create_entry(
             title=self._data[CONF_NAME],
             data=self._data,
@@ -774,12 +768,7 @@ class IdmHeatpumpConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             except Exception:
                 _LOGGER.debug("Error closing connection test client", exc_info=True)
 
-    async def _async_detect_web_supplement(
-        self,
-        host: str,
-        pin: str,
-        model_hint: str | None = None,
-    ) -> dict[str, str]:
+    async def _async_detect_web_supplement(self, host: str, pin: str, model_hint: str | None = None) -> dict[str, str]:
         """Detect optional web metadata during setup/reconfigure."""
         if not web_pin_configured(pin):
             return {}

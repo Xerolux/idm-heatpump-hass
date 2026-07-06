@@ -20,9 +20,9 @@ from homeassistant.core import (
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.util.json import JsonValueType
 
-from idm_heatpump import RegisterDef
-from idm_heatpump.client import DataType
+from idm_heatpump import DataType, RegisterDef
 
 from .const import DOMAIN, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
 from .coordinator import IdmCoordinator
@@ -32,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 _SERVICES = ["set_system_mode", "acknowledge_errors", "write_register"]
 
 
-def _encoded_registers_from_safety_result(safety_result: object) -> list[int] | None:
+def _encoded_registers_from_safety_result(safety_result: object) -> list[JsonValueType] | None:
     """Extract dry-run encoded registers from idm-heatpump-api write-safety results."""
     if safety_result is None:
         return None
@@ -237,7 +237,7 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
         safety_result = coordinator.simulate_write(reg, value, dry_run=True)
         await coordinator.client.write_register(reg, value)
         _LOGGER.warning("Manual register write: address=%d value=%s", address, value)
-        response: dict[str, object] = {"success": True, "address": address, "value": str(value)}
+        response: dict[str, JsonValueType] = {"success": True, "address": address, "value": str(value)}
         encoded_registers = _encoded_registers_from_safety_result(safety_result)
         if encoded_registers is not None:
             response["encoded_registers"] = encoded_registers

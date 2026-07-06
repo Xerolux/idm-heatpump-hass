@@ -270,6 +270,7 @@ def _is_wrong_variant_error(err: Exception) -> bool:
         "ClientError",
         "ClientConnectorError",
         "ServerDisconnectedError",
+        "asyncio.exceptions.TimeoutError",
     }
 
 

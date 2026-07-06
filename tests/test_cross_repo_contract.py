@@ -5,8 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
-from idm_heatpump import IdmModelInfo, build_register_map
-from idm_heatpump.const import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20
+from idm_heatpump import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, IdmModelInfo, build_register_map
 
 from custom_components.idm_heatpump.registers import (
     collect_all_registers,
