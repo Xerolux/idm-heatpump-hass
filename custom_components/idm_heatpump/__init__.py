@@ -199,7 +199,10 @@ async def _web_poll_loop(coordinator: IdmCoordinator, interval: int) -> None:
     """Poll optional web supplement data independently from Modbus."""
     await asyncio.sleep(0.3)
     while True:
-        await coordinator.async_refresh_web_supplement()
+        try:
+            await coordinator.async_refresh_web_supplement()
+        except Exception:
+            _LOGGER.exception("Unhandled error in IDM web poll loop; retrying next cycle")
         await asyncio.sleep(interval)
 
 
@@ -594,6 +597,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+        coordinator = getattr(entry.runtime_data, "coordinator", None)
+        shutdown = getattr(coordinator, "async_shutdown", None)
+        if callable(shutdown):
+            try:
+                await shutdown()
+            except TypeError:
+                # Non-awaitable mock or sync cleanup callback; not fatal on unload.
+                pass
         web_task = getattr(entry.runtime_data, "web_task", None)
         if isinstance(web_task, asyncio.Task):
             web_task.cancel()

@@ -30,7 +30,12 @@ from .const import (
     NEGATIVE_ONE_VALID_REGISTERS,
     UNUSED_VALUE,
 )
-from .registers import collect_all_registers, collect_alias_map, collect_registers_from_descriptions, collect_aliases_from_descriptions
+from .registers import (
+    collect_all_registers,
+    collect_alias_map,
+    collect_registers_from_descriptions,
+    collect_aliases_from_descriptions,
+)
 from .web_data import IdmWebSupplement, async_read_web_supplement
 
 _LOGGER = logging.getLogger(__name__)
@@ -160,7 +165,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._unused_registers: set[str] = set()
         self._unsupported_registers: set[str] = set()
         self._alias_map: dict[int, list[str]] = {}
+        self._register_by_name: dict[str, RegisterDef] = {}
+        self._alias_primary_map: dict[int, str] | None = None
+        self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
+        self._room_mode_semaphore = asyncio.Semaphore(8)
 
         super().__init__(
             hass,
@@ -189,9 +198,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._registers = collect_all_registers(
                 circuits, zone_count, zone_rooms, enable_cascade, model_info=model_info
             )
-            self._alias_map = collect_alias_map(
-                circuits, zone_count, zone_rooms, enable_cascade, model_info=model_info
-            )
+            self._alias_map = collect_alias_map(circuits, zone_count, zone_rooms, enable_cascade, model_info=model_info)
+        self._register_by_name = {reg.name: reg for reg in self._registers}
+        self._alias_primary_map = None
+        self._invalidate_device_info_cache()
 
     @property
     def sensor_descriptions(self) -> list[dict[str, Any]]:
@@ -295,7 +305,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return False
         if value is None:
             return True
-        register = next((reg for reg in self._registers if reg.name == register_name), None)
+        register = self._register_by_name.get(register_name)
+        if register is None and self._registers:
+            # Fallback for code paths that mutate _registers directly (e.g. tests)
+            register = next((reg for reg in self._registers if reg.name == register_name), None)
         enum_options = getattr(register, "enum_options", None)
         if isinstance(enum_options, dict) and value in enum_options:
             return False
@@ -363,7 +376,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return data
 
     async def _async_refresh_zone_room_modes(self, data: dict[str, Any]) -> None:
-        """Refresh room mode registers individually to avoid faulty batch values."""
+        """Refresh room mode registers individually to avoid faulty batch values.
+
+        Room mode registers are read one-by-one because Navigator 2.0 firmware
+        has been observed to return corrupt UCHAR values when they are part of
+        larger batch reads. Concurrency is capped with a semaphore so the device
+        is not overwhelmed by dozens of parallel requests on setups with many
+        zones/rooms.
+        """
         room_mode_registers = [
             reg
             for reg in self._registers
@@ -371,7 +391,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         ]
         if not room_mode_registers:
             return
-        tasks = [self._client.read_register(reg) for reg in room_mode_registers]
+
+        async def _read_one(reg: RegisterDef) -> Any:
+            async with self._room_mode_semaphore:
+                return await self._client.read_register(reg)
+
+        tasks = [_read_one(reg) for reg in room_mode_registers]
         results = await asyncio.gather(*tasks)
         for reg, result in zip(room_mode_registers, results):
             data[reg.name] = result
@@ -410,9 +435,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Apply aliases: when multiple register names share an address,
         # ensure all names appear in the data dict.
         if self._alias_map:
-            addr_to_name: dict[int, str] = {reg.address: reg.name for reg in self._registers}
+            if self._alias_primary_map is None:
+                self._alias_primary_map = {reg.address: reg.name for reg in self._registers}
             for addr, names in self._alias_map.items():
-                primary = addr_to_name.get(addr)
+                primary = self._alias_primary_map.get(addr)
                 if primary and primary in data:
                     val = data[primary]
                     for alias in names:
@@ -495,6 +521,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if web_supplement.software_version and not model_conflicts:
             self._firmware_version = web_supplement.software_version
 
+        # Model metadata changed; invalidate cached device info so the next
+        # entity state update publishes the new model/firmware/serial number.
+        self._invalidate_device_info_cache()
+
         # Persist retroactively detected model/firmware so it survives reloads.
         self._persist_web_detection(web_supplement, model_conflicts)
 
@@ -551,8 +581,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
 
     async def _delayed_refresh(self, delay: float = 0.5) -> None:
-        await asyncio.sleep(delay)
-        await self.async_request_refresh()
+        try:
+            await asyncio.sleep(delay)
+            await self.async_request_refresh()
+        except asyncio.CancelledError:
+            pass
 
     def simulate_write(self, reg: RegisterDef, value: Any, *, dry_run: bool = True) -> Any:
         """Validate a write using idm-heatpump-api write-safety hooks when available."""
@@ -599,6 +632,25 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if self.data is not None:
             self.data[reg.name] = value
         self.async_update_listeners()
-        if self._delayed_refresh_task is not None and not self._delayed_refresh_task.done():
-            self._delayed_refresh_task.cancel()
+        old_task = self._delayed_refresh_task
+        if old_task is not None and not old_task.done():
+            old_task.cancel()
         self._delayed_refresh_task = asyncio.create_task(self._delayed_refresh())
+
+    def _invalidate_device_info_cache(self) -> None:
+        """Clear cached DeviceInfo so the next access reflects fresh metadata."""
+        self._device_info_cache = None
+
+    async def async_shutdown(self) -> None:
+        """Cancel pending background tasks and release resources.
+
+        Called during config entry unload to prevent delayed refresh tasks
+        from running after the coordinator is no longer active.
+        """
+        task = self._delayed_refresh_task
+        if task is not None and not task.done():
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass

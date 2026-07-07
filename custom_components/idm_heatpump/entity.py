@@ -23,7 +23,14 @@ def build_entity_unique_id(entry_id: str, entity_key: str) -> str:
 
 
 def build_device_info(coordinator: IdmCoordinator) -> DeviceInfo:
-    """Build device info from the latest coordinator model metadata."""
+    """Build device info from the latest coordinator model metadata.
+
+    The coordinator caches DeviceInfo so this stays cheap even when HA calls
+    it for every entity on every state update.
+    """
+    cache = getattr(coordinator, "_device_info_cache", None)
+    if cache is not None:
+        return cache[1]
     device_info = DeviceInfo(
         identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
         name=coordinator.config_entry.title,  # type: ignore[union-attr]
@@ -34,6 +41,13 @@ def build_device_info(coordinator: IdmCoordinator) -> DeviceInfo:
         device_info["sw_version"] = coordinator.firmware_version
     if coordinator.myidm_id:
         device_info["serial_number"] = coordinator.myidm_id
+    cache_key = (
+        coordinator.model_name,
+        coordinator.firmware_version,
+        coordinator.myidm_id,
+        coordinator.config_entry.title if coordinator.config_entry is not None else None,
+    )
+    coordinator._device_info_cache = (cache_key, device_info)
     return device_info
 
 

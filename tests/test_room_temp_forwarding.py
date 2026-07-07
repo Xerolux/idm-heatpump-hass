@@ -1,5 +1,6 @@
 """Tests for external room temperature forwarding."""
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -118,3 +119,27 @@ async def test_forward_entity_ignores_unconfigured_sensor():
     await forwarder.async_forward_entity("sensor.other_temperature")
 
     coord.async_write_register.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_run_loop_continues_after_forward_all_failure():
+    coord, reg = _make_coordinator()
+    hass = _make_hass("22.0")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(entities={"a": "sensor.living_room_temperature"}, interval=0, tolerance=0.2),
+    )
+    # First forward_all succeeds, subsequent ones raise but the loop must continue.
+    forwarder.async_forward_all = AsyncMock(side_effect=[None, Exception("boom"), None])
+
+    run_task = asyncio.create_task(forwarder.async_run())
+    # Let the initial forward_all and a couple of loop iterations run.
+    await asyncio.sleep(0.05)
+    run_task.cancel()
+    try:
+        await run_task
+    except asyncio.CancelledError:
+        pass
+
+    assert forwarder.async_forward_all.await_count >= 2

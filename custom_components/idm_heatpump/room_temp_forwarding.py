@@ -71,7 +71,10 @@ class RoomTempForwarder:
             await self.async_forward_all()
             while True:
                 await asyncio.sleep(self._config.interval)
-                await self.async_forward_all()
+                try:
+                    await self.async_forward_all()
+                except Exception:
+                    _LOGGER.exception("IDM room temperature forwarding cycle failed; retrying next interval")
         finally:
             for unsub in self._unsub_state:
                 unsub()

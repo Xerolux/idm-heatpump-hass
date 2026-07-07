@@ -172,6 +172,17 @@ class TestSetupRegisters:
         mock_collect.assert_called_once_with(["a"], 0, {}, False, model_info=model_info)
         mock_aliases.assert_called_once_with(["a"], 0, {}, False, model_info=model_info)
 
+    def test_register_by_name_cache_is_built(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        reg_a = RegisterDef(address=1000, datatype=DataType.UCHAR, name="reg_a")
+        reg_b = RegisterDef(address=1001, datatype=DataType.UCHAR, name="reg_b")
+        with patch(
+            "custom_components.idm_heatpump.coordinator.collect_all_registers",
+            return_value=[reg_a, reg_b],
+        ):
+            coord.setup_registers(["a"], 0, {})
+        assert coord._register_by_name == {"reg_a": reg_a, "reg_b": reg_b}
+
 
 class TestIsRegisterUnused:
     def test_unused_value_is_unused(self, mock_hass, mock_config_entry):
@@ -432,6 +443,25 @@ class TestAsyncUpdateData:
         client.read_register.assert_awaited_once_with(room_mode)
         assert "zm1_room3_mode" not in coord.unused_registers
 
+    async def test_alias_primary_map_is_cached(self, mock_hass, mock_config_entry):
+        primary = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 22.5})
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[primary],
+        )
+        # Alias names share the same Modbus address but are not duplicated in _registers.
+        coord._alias_map = {1000: ["temp", "temp_set"]}
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        assert data["temp_set"] == 22.5
+        assert coord._alias_primary_map == {1000: "temp"}
+
     async def test_unused_registers_tracked(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={"dead": UNUSED_VALUE, "alive": 5.0})
@@ -666,6 +696,22 @@ class TestAsyncWriteRegister:
         reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="x", writable=True)
         with pytest.raises(Exception, match="write error"):
             await coord.async_write_register(reg, 1)
+
+    async def test_shutdown_cancels_delayed_refresh_task(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord.data = {}
+        coord.async_request_refresh = AsyncMock()
+
+        reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
+        await coord.async_write_register(reg, 1)
+        assert coord._delayed_refresh_task is not None
+
+        await coord.async_shutdown()
+
+        assert coord._delayed_refresh_task.done()
+        coord.async_request_refresh.assert_not_awaited()
 
 
 class TestAsyncRefreshWebSupplement:

@@ -529,6 +529,8 @@ class TestSensorAsyncSetupEntry:
 
         coord.model_name = "Navigator 10"
         coord.firmware_version = "NAV10_20.24-880-g265e09c4a"
+        # Invalidate the device info cache as the coordinator would after a metadata change.
+        coord._device_info_cache = None
 
         assert software.device_info["model"] == "Navigator 10"
         assert software.device_info["sw_version"] == "NAV10_20.24-880-g265e09c4a"

@@ -368,6 +368,24 @@ class TestAsyncUnloadEntry:
         result = await async_unload_entry(mock_hass, entry)
         assert result is False
 
+    async def test_shuts_down_coordinator_on_unload(self, mock_hass):
+        entry = MagicMock()
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.client = AsyncMock()
+        entry.runtime_data.client.disconnect = AsyncMock()
+        mock_coordinator = AsyncMock()
+        entry.runtime_data.coordinator = mock_coordinator
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        with patch(
+            "custom_components.idm_heatpump.services.async_unload_services",
+            AsyncMock(),
+        ):
+            result = await async_unload_entry(mock_hass, entry)
+
+        assert result is True
+        mock_coordinator.async_shutdown.assert_awaited_once()
+
 
 class TestAsyncReloadEntry:
     async def test_calls_async_reload(self, mock_hass):
