@@ -703,6 +703,7 @@ class TestAsyncSetupEntryOptions:
             {0: 1, 1: 3},
             True,
             model_info=mock_sensors.call_args.args[4],
+            descriptions=[],
         )
 
     async def test_setup_entry_normalizes_persisted_zone_room_keys(self, mock_hass):
@@ -1029,7 +1030,7 @@ class TestAsyncSetupEntryModelDetection:
             await async_setup_entry(mock_hass, entry)
 
         mock_sensors.assert_called_once_with(["a"], 0, {}, False, model_info)
-        mock_coordinator.setup_registers.assert_called_once_with(["a"], 0, {}, False, model_info=model_info)
+        mock_coordinator.setup_registers.assert_called_once_with(["a"], 0, {}, False, model_info=model_info, descriptions=[])
 
     async def test_detect_model_result_drives_register_generation_without_client_cache(self, mock_hass):
         entry = self._make_entry()
@@ -1066,7 +1067,7 @@ class TestAsyncSetupEntryModelDetection:
             await async_setup_entry(mock_hass, entry)
 
         mock_sensors.assert_called_once_with(["a"], 0, {}, False, model_info)
-        mock_coordinator.setup_registers.assert_called_once_with(["a"], 0, {}, False, model_info=model_info)
+        mock_coordinator.setup_registers.assert_called_once_with(["a"], 0, {}, False, model_info=model_info, descriptions=[])
 
     async def test_stored_detected_navigator_20_name_drives_register_generation(self, mock_hass):
         entry = self._make_entry()

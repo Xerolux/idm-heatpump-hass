@@ -408,6 +408,29 @@ def collect_all_registers(
     return list(seen.values())
 
 
+def collect_registers_from_descriptions(
+    descriptions: list[dict[str, Any]],
+) -> list[RegisterDef]:
+    """Extract unique registers from pre-built entity descriptions."""
+    seen: dict[int, RegisterDef] = {}
+    for desc in descriptions:
+        reg: RegisterDef = desc["register"]
+        if reg.address not in seen:
+            seen[reg.address] = reg
+    return list(seen.values())
+
+
+def collect_aliases_from_descriptions(
+    descriptions: list[dict[str, Any]],
+) -> dict[int, list[str]]:
+    """Extract alias map from pre-built entity descriptions."""
+    addr_to_names: dict[int, list[str]] = {}
+    for desc in descriptions:
+        reg: RegisterDef = desc["register"]
+        addr_to_names.setdefault(reg.address, []).append(reg.name)
+    return addr_to_names
+
+
 def collect_alias_map(
     circuits: list[str],
     zone_count: int,
