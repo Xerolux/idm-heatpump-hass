@@ -452,7 +452,9 @@ class TestGetAllSelectDescriptions:
 
     def test_zone_room_count_respected_in_selects(self):
         descs = get_all_select_descriptions(["a"], 2, {"0": 5, "1": 8})
-        room_modes = {d["register"].name for d in descs if "_room" in d["register"].name and d["register"].name.endswith("_mode")}
+        room_modes = {
+            d["register"].name for d in descs if "_room" in d["register"].name and d["register"].name.endswith("_mode")
+        }
 
         assert "zm1_room5_mode" in room_modes
         assert "zm1_room6_mode" not in room_modes

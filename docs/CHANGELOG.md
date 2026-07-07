@@ -10,6 +10,30 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.0-beta.17] - 2026-07-07
+
+## v0.8.0-beta.17 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+- Pin the bundled runtime requirement to `idm-heatpump-api[web]==0.6.3`, pairing
+  this integration release with the stability and performance fixes from API
+  0.6.3 (retryable `TimeoutError`, faster `read_batch` grouping, defensive
+  websocket close — no breaking changes).
+- Improve polling performance: the coordinator now caches register-by-name and
+  alias lookups so unused-register detection and alias resolution run in O(1)
+  per value instead of O(n).
+- Cache `DeviceInfo` on the coordinator and invalidate it when web metadata
+  changes, avoiding repeated rebuilds on every entity state update.
+- Cap zone room-mode read concurrency with a semaphore so setups with many
+  zones/rooms no longer flood the controller with parallel TCP requests.
+- Clean up the coordinator on unload (`async_shutdown`) to cancel pending
+  delayed-refresh tasks and prevent dangling background work.
+- Make the room-temperature forwarding and web supplement poll loops resilient:
+  a single failing cycle is logged and retried instead of killing the loop.
+
 ## [0.8.0-beta.16] - 2026-07-07
 
 ## v0.8.0-beta.16 - IDM Heatpump
