@@ -30,7 +30,7 @@ from .const import (
     NEGATIVE_ONE_VALID_REGISTERS,
     UNUSED_VALUE,
 )
-from .registers import collect_all_registers, collect_alias_map
+from .registers import collect_all_registers, collect_alias_map, collect_registers_from_descriptions, collect_aliases_from_descriptions
 from .web_data import IdmWebSupplement, async_read_web_supplement
 
 _LOGGER = logging.getLogger(__name__)
@@ -177,14 +177,21 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         zone_rooms: dict[int, int],
         enable_cascade: bool = False,
         model_info: IdmModelInfo | None = None,
+        descriptions: list[dict[str, Any]] | None = None,
     ) -> None:
-        args = (circuits, zone_count, zone_rooms, enable_cascade)
-        if model_info is None:
-            self._registers = collect_all_registers(*args)
-            self._alias_map = collect_alias_map(*args)
+        if descriptions is not None:
+            self._registers = collect_registers_from_descriptions(descriptions)
+            self._alias_map = collect_aliases_from_descriptions(descriptions)
+        elif model_info is None:
+            self._registers = collect_all_registers(circuits, zone_count, zone_rooms, enable_cascade)
+            self._alias_map = collect_alias_map(circuits, zone_count, zone_rooms, enable_cascade)
         else:
-            self._registers = collect_all_registers(*args, model_info=model_info)
-            self._alias_map = collect_alias_map(*args, model_info=model_info)
+            self._registers = collect_all_registers(
+                circuits, zone_count, zone_rooms, enable_cascade, model_info=model_info
+            )
+            self._alias_map = collect_alias_map(
+                circuits, zone_count, zone_rooms, enable_cascade, model_info=model_info
+            )
 
     @property
     def sensor_descriptions(self) -> list[dict[str, Any]]:
@@ -362,8 +369,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             for reg in self._registers
             if reg.name not in self._unsupported_registers and _is_zone_room_mode_register(reg)
         ]
-        for reg in room_mode_registers:
-            data[reg.name] = await self._client.read_register(reg)
+        if not room_mode_registers:
+            return
+        tasks = [self._client.read_register(reg) for reg in room_mode_registers]
+        results = await asyncio.gather(*tasks)
+        for reg, result in zip(room_mode_registers, results):
+            data[reg.name] = result
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:

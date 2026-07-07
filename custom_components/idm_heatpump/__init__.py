@@ -548,6 +548,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             zone_rooms,
             enable_cascade,
             model_info=detected_model_info,
+            descriptions=sensor_descs + binary_descs + number_descs + select_descs + switch_descs,
         )
 
         entry.runtime_data = IdmHeatpumpData(
