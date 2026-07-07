@@ -18,7 +18,7 @@ All notable changes to this project will be documented in this file.
 
 ### What changed
 
-- Keep the bundled runtime requirement on the published `idm-heatpump-api[web]>=0.6.1,<0.7` range.
+- Pin the bundled runtime requirement to `idm-heatpump-api[web]==0.6.2` for a reproducible integration/API pair.
 - Fix configured per-zone room counts loaded from Home Assistant options by
   normalizing JSON string keys back to integer zone indexes.
 - Generate zone room selects per configured zone module, so mixed setups such as
