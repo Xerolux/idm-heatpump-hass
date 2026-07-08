@@ -688,8 +688,6 @@ class TestAsyncWriteRegister:
         client.write_register.assert_called_once_with(reg, 22.0)
 
     async def test_write_triggers_delayed_refresh(self, mock_hass, mock_config_entry):
-        import asyncio
-
         client = MagicMock()
         client.write_register = AsyncMock()
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
@@ -699,13 +697,13 @@ class TestAsyncWriteRegister:
         reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
         await coord.async_write_register(reg, 1)
 
-        # Refresh is called asynchronously after delay; give it time to run
-        await asyncio.sleep(0.6)
+        # Await the delayed refresh task directly instead of sleeping 0.6s for a
+        # 0.5s delay (which is flaky on slow CI runners). Deterministic + fast.
+        assert coord._delayed_refresh_task is not None
+        await coord._delayed_refresh_task
         coord.async_request_refresh.assert_called_once()
 
     async def test_write_no_data_initializes(self, mock_hass, mock_config_entry):
-        import asyncio
-
         client = MagicMock()
         client.write_register = AsyncMock()
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
@@ -715,8 +713,9 @@ class TestAsyncWriteRegister:
         reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
         # Should not crash even if data is None
         await coord.async_write_register(reg, 1)
-        # Delayed refresh
-        await asyncio.sleep(0.6)
+        # Await the delayed refresh task directly (see test above for rationale).
+        assert coord._delayed_refresh_task is not None
+        await coord._delayed_refresh_task
         coord.async_request_refresh.assert_called_once()
 
     async def test_write_calls_async_update_listeners(self, mock_hass, mock_config_entry):
