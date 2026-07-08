@@ -329,6 +329,7 @@ async def async_read_web_supplement(
     pin: str | None,
     model_hint: str | None = None,
     preferred_variant: str | None = None,
+    client_pool: IdmWebClientPool | None = None,
 ) -> IdmWebSupplement | None:
     """Read one optional local web supplement snapshot.
 
@@ -345,11 +346,39 @@ async def async_read_web_supplement(
     variant is still attempted before giving up. This mirrors the behaviour
     of the hacs-idm-hpweb integration: try the likely variant, and fall
     back to the other one on ``unknown_response``-like failures.
+
+    When *client_pool* is supplied, a previously successful web client is
+    reused across polls instead of reconnecting (TCP+auth) every cycle.
+    On any failure the cached client is closed and dropped so the next poll
+    rebuilds it from scratch.
     """
     if not web_pin_configured(pin):
         return None
 
     clean_pin = pin.strip() if pin is not None else ""
+
+    # Fast path: reuse the cached client from a previous successful poll.
+    if client_pool is not None:
+        cached = client_pool.get()
+        if cached is not None:
+            cached_client, cached_variant = cached
+            try:
+                supplement = _normalize_web_data(await cached_client.read_data())
+                return await _read_optional_notifications(cached_client, supplement)
+            except Exception as err:
+                _LOGGER.debug(
+                    "IDM web %s cached client failed at %s; rebuilding on next poll",
+                    cached_variant,
+                    host,
+                    exc_info=True,
+                )
+                await client_pool.invalidate()
+                # A genuine PIN rejection is fatal this cycle — re-raise so the
+                # caller reports it. Other errors fall through to the full
+                # variant-probing loop, which rebuilds a fresh client.
+                if _is_authentication_error(err):
+                    raise IdmWebAuthenticationFailed("IDM Navigator web PIN was rejected") from err
+
     last_error: Exception | None = None
     last_auth_error: Exception | None = None
     tried_variants: list[str] = []
@@ -366,7 +395,14 @@ async def async_read_web_supplement(
                 variant_name,
                 host,
             )
-            return await _read_optional_notifications(client, supplement)
+            result = await _read_optional_notifications(client, supplement)
+            # Cache the successful client for reuse on subsequent polls.
+            if client_pool is not None:
+                client_pool.set(client, variant_name)
+            else:
+                # No pool: keep the historical close-after-read behaviour.
+                await _safe_close(client)
+            return result
         except Exception as err:
             if _is_authentication_error(err):
                 last_auth_error = err
@@ -375,6 +411,7 @@ async def async_read_web_supplement(
                     variant_name,
                     host,
                 )
+                await _safe_close(client)
                 continue
             if _is_wrong_variant_error(err):
                 _LOGGER.debug(
@@ -391,11 +428,7 @@ async def async_read_web_supplement(
                     exc_info=True,
                 )
             last_error = err
-        finally:
-            try:
-                await client.close()
-            except Exception:
-                _LOGGER.debug("Error closing IDM web supplement client", exc_info=True)
+            await _safe_close(client)
 
     # If any attempted variant explicitly rejected the PIN, report it. This
     # keeps the existing behaviour: a genuine bad PIN fails fast, while an
@@ -411,6 +444,54 @@ async def async_read_web_supplement(
         ", ".join(tried_variants),
     )
     return None
+
+
+async def _safe_close(client: _IdmWebClient) -> None:
+    """Close a web client, logging but never raising close failures."""
+    try:
+        await client.close()
+    except Exception:
+        _LOGGER.debug("Error closing IDM web supplement client", exc_info=True)
+
+
+class IdmWebClientPool:
+    """Holds a web client across polls so TCP+auth overhead is paid once.
+
+    The optional web supplement polls every 30s. Rebuilding the client each
+    time repeats the TCP handshake, WebSocket/HTTP upgrade and PIN login.
+    This pool keeps the most recently successful client and variant so the
+    coordinator can reuse it. On any failure the caller calls invalidate()
+    and the next poll rebuilds from scratch.
+    """
+
+    __slots__ = ("_client", "_variant")
+
+    def __init__(self) -> None:
+        self._client: _IdmWebClient | None = None
+        self._variant: str | None = None
+
+    def get(self) -> tuple[_IdmWebClient, str] | None:
+        """Return the cached (client, variant) or None when empty."""
+        if self._client is None:
+            return None
+        return self._client, self._variant  # type: ignore[return-value]
+
+    def set(self, client: _IdmWebClient, variant: str) -> None:
+        """Store a successful client for reuse."""
+        self._client = client
+        self._variant = variant
+
+    async def invalidate(self) -> None:
+        """Drop the cached client, closing it best-effort."""
+        client = self._client
+        self._client = None
+        self._variant = None
+        if client is not None:
+            await _safe_close(client)
+
+    async def close(self) -> None:
+        """Close the pool, releasing any held client."""
+        await self.invalidate()
 
 
 def merge_model_info(

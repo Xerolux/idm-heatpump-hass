@@ -36,7 +36,7 @@ from .registers import (
     collect_registers_from_descriptions,
     collect_aliases_from_descriptions,
 )
-from .web_data import IdmWebSupplement, async_read_web_supplement
+from .web_data import IdmWebClientPool, IdmWebSupplement, async_read_web_supplement
 
 _LOGGER = logging.getLogger(__name__)
 _ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
@@ -171,6 +171,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         self._room_mode_semaphore = asyncio.Semaphore(8)
+        # Persistent web client pool: keeps the Navigator web client across
+        # polls so the TCP+auth overhead is paid once per session instead of
+        # every 30s. Invalidated on failure and closed in async_shutdown.
+        self._web_client_pool = IdmWebClientPool()
 
         super().__init__(
             hass,
@@ -475,6 +479,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self._web_pin,
                 model_hint=getattr(self._model_info, "model_name", None) or self._model_name,
                 preferred_variant=self._web_variant,
+                client_pool=self._web_client_pool,
             )
         except Exception as err:
             error = f"{err.__class__.__name__}: {err}"
@@ -665,3 +670,5 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await task
             except asyncio.CancelledError:
                 pass
+        # Release any held web client so the persistent connection is closed.
+        await self._web_client_pool.close()

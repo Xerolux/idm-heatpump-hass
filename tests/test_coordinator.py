@@ -816,9 +816,13 @@ class TestAsyncRefreshWebSupplement:
         ):
             await coord.async_refresh_web_supplement()
 
-        read_web.assert_awaited_once_with(
-            "192.0.2.103", "1234", model_hint="Navigator 2.0 / 10", preferred_variant=None
-        )
+        read_web.assert_awaited_once()
+        # The coordinator now passes a persistent client_pool so TCP+auth
+        # overhead is paid once per session instead of every poll.
+        call_kwargs = read_web.await_args.kwargs
+        assert call_kwargs["model_hint"] == "Navigator 2.0 / 10"
+        assert call_kwargs["preferred_variant"] is None
+        assert call_kwargs["client_pool"] is coord._web_client_pool
         assert coord.last_web_error == "TimeoutError: websocket timeout"
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
