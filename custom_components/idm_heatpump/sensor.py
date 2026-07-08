@@ -17,7 +17,6 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory, EntityDescription  # type: ignore[attr-defined]
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
-from homeassistant.helpers.device_registry import DeviceInfo
 
 from idm_heatpump import DataType, RegisterDef
 
@@ -28,11 +27,14 @@ except ImportError:
 else:
     WEB_VALUE_DESCRIPTIONS = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
 
-from homeassistant.helpers.update_coordinator import CoordinatorEntity
-
 from .const import CONF_TECHNICIAN_CODES
 from .coordinator import IdmCoordinator
-from .entity import IdmEntity, build_device_info, build_entity_unique_id, should_add_entity
+from .entity import (
+    IdmCoordinatorEntityBase,
+    IdmEntity,
+    build_entity_unique_id,
+    should_add_entity,
+)
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .internal_messages import format_internal_message, internal_message_text
@@ -426,10 +428,8 @@ class IdmSensor(IdmEntity, SensorEntity):
         }
 
 
-class IdmWebSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
+class IdmWebSensor(IdmCoordinatorEntityBase, SensorEntity):
     """Sensor backed by optional local Navigator web data."""
-
-    _attr_has_entity_name = True
 
     def __init__(self, coordinator: IdmCoordinator, definition: WebSensorDefinition) -> None:
         super().__init__(coordinator)
@@ -447,10 +447,6 @@ class IdmWebSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
             entity_category=definition.entity_category,
             entity_registry_enabled_default=definition.enabled_by_default,
         )
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return build_device_info(self.coordinator)
 
     @property
     def available(self) -> bool:
@@ -478,16 +474,11 @@ class IdmWebSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
         return value.native_value
 
 
-class IdmTechnicianCodeBaseSensor(CoordinatorEntity[IdmCoordinator], SensorEntity):
+class IdmTechnicianCodeBaseSensor(IdmCoordinatorEntityBase, SensorEntity):
     """Refresh technician-code entities on the minute without coordinator polling."""
 
-    _attr_has_entity_name = True
     _attr_entity_registry_enabled_default = True
     _cancel_timer: Callable[[], None] | None = None
-
-    @property
-    def device_info(self) -> DeviceInfo:
-        return build_device_info(self.coordinator)
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()

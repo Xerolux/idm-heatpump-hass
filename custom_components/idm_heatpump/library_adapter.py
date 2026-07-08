@@ -514,6 +514,46 @@ def _get_german_name(name: str) -> str:
     return name.replace("_", " ").title()
 
 
+def _build_sensor_description(reg: RegisterDef, *, include_enabled_default: bool = False) -> SensorEntityDescription:
+    """Build a SensorEntityDescription from a register using shared icon/enum logic.
+
+    Centralizes the ENUM-vs-default branching duplicated by the per-platform
+    sensor generators. When *include_enabled_default* is set, the register's
+    enabled_by_default flag is propagated (used by the library-wide sensor
+    generator, not the circuit/zone generators).
+    """
+    name = reg.name
+    icon = reg.icon or get_icon_for_register(name, reg.unit)
+    slug_map, t_key = get_slug_map_and_key(name)
+    extra: dict[str, Any] = {}
+    if include_enabled_default:
+        extra["entity_registry_enabled_default"] = reg.enabled_by_default
+    if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
+        return SensorEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            device_class=SensorDeviceClass.ENUM,
+            options=list(slug_map.values()),
+            translation_key=t_key,
+            icon=icon,
+            entity_category=EntityCategory.DIAGNOSTIC,
+            **extra,
+        )
+    dc, sc = infer_sensor_classes(name, reg.unit)
+    if reg.state_class:
+        sc = _coerce_sensor_state_class(reg.state_class)
+    return SensorEntityDescription(
+        key=name,
+        name=_get_german_name(name),
+        native_unit_of_measurement=reg.unit,
+        device_class=dc,
+        state_class=sc,
+        icon=icon,
+        entity_category=EntityCategory.DIAGNOSTIC,
+        **extra,
+    )
+
+
 def get_library_sensors(
     model_info: Any = None,
     circuits: list[str] | None = None,
@@ -554,35 +594,7 @@ def get_library_sensors(
         if reg.binary:
             continue
 
-        icon = reg.icon or get_icon_for_register(name, reg.unit)
-        dc, sc = infer_sensor_classes(name, reg.unit)
-        if reg.state_class:
-            sc = _coerce_sensor_state_class(reg.state_class)
-
-        # For non-BITFLAG enum sensors with a known slug map, use ENUM device class
-        slug_map, t_key = get_slug_map_and_key(name)
-        if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
-            desc = SensorEntityDescription(
-                key=name,
-                name=_get_german_name(name),
-                device_class=SensorDeviceClass.ENUM,
-                options=list(slug_map.values()),
-                translation_key=t_key,
-                icon=icon,
-                entity_category=EntityCategory.DIAGNOSTIC,
-                entity_registry_enabled_default=reg.enabled_by_default,
-            )
-        else:
-            desc = SensorEntityDescription(
-                key=name,
-                name=_get_german_name(name),
-                native_unit_of_measurement=reg.unit,
-                device_class=dc,
-                state_class=sc,
-                icon=icon,
-                entity_category=EntityCategory.DIAGNOSTIC,
-                entity_registry_enabled_default=reg.enabled_by_default,
-            )
+        desc = _build_sensor_description(reg, include_enabled_default=True)
         sensors.append(
             {
                 "register": reg,
@@ -612,31 +624,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
         if reg.writable:
             continue
 
-        icon = get_icon_for_register(name, reg.unit)
-        slug_map, t_key = get_slug_map_and_key(name)
-        if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
-            desc = SensorEntityDescription(
-                key=name,
-                name=_get_german_name(name),
-                device_class=SensorDeviceClass.ENUM,
-                options=list(slug_map.values()),
-                translation_key=t_key,
-                icon=icon,
-                entity_category=EntityCategory.DIAGNOSTIC,
-            )
-        else:
-            hc_dc, hc_sc = infer_sensor_classes(name, reg.unit)
-            if reg.state_class:
-                hc_sc = _coerce_sensor_state_class(reg.state_class)
-            desc = SensorEntityDescription(
-                key=name,
-                name=_get_german_name(name),
-                native_unit_of_measurement=reg.unit,
-                device_class=hc_dc,
-                state_class=hc_sc,
-                icon=icon,
-                entity_category=EntityCategory.DIAGNOSTIC,
-            )
+        desc = _build_sensor_description(reg)
         sensors.append(
             {
                 "register": reg,
@@ -660,31 +648,7 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
         if reg.writable and not is_glt_measurement(name):
             continue
 
-        icon = get_icon_for_register(name, reg.unit)
-        slug_map, t_key = get_slug_map_and_key(name)
-        if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
-            desc = SensorEntityDescription(
-                key=name,
-                name=_get_german_name(name),
-                device_class=SensorDeviceClass.ENUM,
-                options=list(slug_map.values()),
-                translation_key=t_key,
-                icon=icon,
-                entity_category=EntityCategory.DIAGNOSTIC,
-            )
-        else:
-            z_dc, z_sc = infer_sensor_classes(name, reg.unit)
-            if reg.state_class:
-                z_sc = _coerce_sensor_state_class(reg.state_class)
-            desc = SensorEntityDescription(
-                key=name,
-                name=_get_german_name(name),
-                native_unit_of_measurement=reg.unit,
-                device_class=z_dc,
-                state_class=z_sc,
-                icon=icon,
-                entity_category=EntityCategory.DIAGNOSTIC,
-            )
+        desc = _build_sensor_description(reg)
         sensors.append(
             {
                 "register": reg,
@@ -730,15 +694,15 @@ def get_library_binary_sensors(
     return sensors
 
 
-def get_library_selects(
-    circuits: list[str] | None = None,
-    zone_modules: int = 0,
-    model_info: Any = None,
-) -> list[dict[str, Any]]:
-    """Select entities (modes) from the library."""
+def _selects_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str, Any]]:
+    """Build select entity descriptions from a register map.
+
+    Shared by get_library_selects and get_library_zone_selects so the
+    writable/enum/write_only filter, slug-map option resolution and
+    SelectEntityDescription construction stay in lockstep.
+    """
     from homeassistant.components.select import SelectEntityDescription
 
-    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     selects = []
     for name, reg in reg_map.items():
         if not reg.writable or not reg.enum_options:
@@ -766,54 +730,28 @@ def get_library_selects(
             entity_category=EntityCategory.CONFIG,
             translation_key=t_key,
         )
-        selects.append(
-            {
-                "register": reg,
-                "description": desc,
-            }
-        )
+        selects.append({"register": reg, "description": desc})
     return selects
+
+
+def get_library_selects(
+    circuits: list[str] | None = None,
+    zone_modules: int = 0,
+    model_info: Any = None,
+) -> list[dict[str, Any]]:
+    """Select entities (modes) from the library."""
+    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
+    return _selects_from_register_map(reg_map)
 
 
 def get_library_zone_selects(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
     """Returns select descriptions for one zone module with its configured room count."""
-    from homeassistant.components.select import SelectEntityDescription
-
     try:
         zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
         _LOGGER.debug("Failed to load zone %d select registers", zone_idx, exc_info=True)
         return []
-
-    selects = []
-    for name, reg in zone_regs.items():
-        if not reg.writable or not reg.enum_options:
-            continue
-        if reg.write_only:
-            continue
-
-        slug_map, t_key = get_slug_map_and_key(name)
-        excluded: set[int] = set(reg.exclude_from_write or [])
-
-        if slug_map is not None:
-            options = [v for k, v in slug_map.items() if k not in excluded]
-        else:
-            options = (
-                [v for k, v in reg.enum_options.items() if k not in excluded]
-                if excluded
-                else list(reg.enum_options.values())
-            )
-
-        desc = SelectEntityDescription(
-            key=name,
-            name=_get_german_name(name),
-            options=options,
-            icon=reg.icon or get_icon_for_register(name),
-            entity_category=EntityCategory.CONFIG,
-            translation_key=t_key,
-        )
-        selects.append({"register": reg, "description": desc})
-    return selects
+    return _selects_from_register_map(zone_regs)
 
 
 def get_library_switches(model_info: Any = None) -> list[dict[str, Any]]:

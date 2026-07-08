@@ -7,23 +7,17 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
-import logging
-
 from homeassistant.components.number import NumberEntity, NumberEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from idm_heatpump import RegisterDef
 
-from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .adapter_glt import is_glt_measurement
 from .registers import sort_entity_descriptions
-
-_LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
 
@@ -63,12 +57,4 @@ class IdmNumber(IdmEntity, NumberEntity):
         return float(value) if value is not None else None
 
     async def async_set_native_value(self, value: float) -> None:
-        try:
-            await self.coordinator.async_write_register(self._register, value)
-        except Exception as err:
-            _LOGGER.error("Failed to write %s = %s: %s", self._register.name, value, err)
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key="write_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        await self._async_write_register(value, action_label=f"write {self._register.name}={value}")
