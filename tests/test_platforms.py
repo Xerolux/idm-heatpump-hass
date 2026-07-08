@@ -31,6 +31,9 @@ def _make_coordinator(data=None, hide_unused=False, last_update_success=True):
     coord.config_entry.entry_id = "test_entry"
     coord.config_entry.title = "IDM"
     coord.async_write_register = AsyncMock()
+    # Real coordinator precomputes this set on each poll; IdmEntity.available
+    # consumes it directly. Default to empty so entities are available.
+    coord.unused_registers = set()
     return coord
 
 

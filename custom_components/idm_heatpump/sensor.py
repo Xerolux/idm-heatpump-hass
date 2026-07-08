@@ -14,12 +14,12 @@ from datetime import timedelta
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
+from homeassistant.helpers.entity import EntityCategory, EntityDescription  # type: ignore[attr-defined]
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from idm_heatpump import DataType
+from idm_heatpump import DataType, RegisterDef
 
 try:
     import idm_heatpump as idm_api
@@ -371,6 +371,18 @@ def _technician_code_entities(coordinator: IdmCoordinator) -> list[IdmTechnician
 
 
 class IdmSensor(IdmEntity, SensorEntity):
+    def __init__(
+        self,
+        coordinator: IdmCoordinator,
+        reg: RegisterDef,
+        entity_desc: EntityDescription,
+    ) -> None:
+        super().__init__(coordinator, reg, entity_desc)
+        # Cache enum lookups: the register name never changes after setup, so
+        # avoid re-running regex matches on every state update (mirrors IdmSelect).
+        self._enum_slug_map, _ = get_slug_map_and_key(reg.name)
+        self._enum_bitflag_labels = get_bitflag_de_labels(reg.name)
+
     @property
     def native_value(self) -> str | float | int | None:
         if not self.coordinator.data:
@@ -386,11 +398,9 @@ class IdmSensor(IdmEntity, SensorEntity):
             except (TypeError, ValueError):
                 return value
             if self._register.datatype == DataType.BITFLAG:
-                de_labels = get_bitflag_de_labels(self._register.name)
-                return _decode_bitflag(int_value, de_labels or self._register.enum_options)
-            slug_map, _ = get_slug_map_and_key(self._register.name)
-            if slug_map is not None:
-                return slug_map.get(int_value)
+                return _decode_bitflag(int_value, self._enum_bitflag_labels or self._register.enum_options)
+            if self._enum_slug_map is not None:
+                return self._enum_slug_map.get(int_value)
             return self._register.enum_options.get(int_value, f"Unbekannt ({value})")
         return value
 

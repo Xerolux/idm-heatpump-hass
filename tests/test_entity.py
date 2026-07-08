@@ -50,6 +50,16 @@ def _make_coordinator(hide_unused=True, data=None, last_update_success=True, fir
         return False
 
     coord.is_register_unused = MagicMock(side_effect=_is_unused)
+
+    # Mirror the real coordinator: unused_registers is a precomputed set that
+    # _async_update_data populates from is_register_unused(). The IdmEntity
+    # available property consumes this set directly (O(1)) instead of recomputing.
+    unused_set: set[str] = set()
+    if isinstance(coord.data, dict):
+        for register_name, value in coord.data.items():
+            if _is_unused(register_name, value):
+                unused_set.add(register_name)
+    coord.unused_registers = unused_set
     return coord
 
 
@@ -135,6 +145,47 @@ class TestIdmEntityInit:
         assert entity._attr_has_entity_name is True
 
 
+class TestBuildDeviceInfoCache:
+    """Verify build_device_info memoizes DeviceInfo (perf commit 9a6b5ff)."""
+
+    def _make_cacheable_coordinator(self, model_name=MODEL, firmware_version=None, myidm_id=None, title="IDM Test"):
+        coord = MagicMock(spec=IdmCoordinator)
+        coord.model_name = model_name
+        coord.firmware_version = firmware_version
+        coord.myidm_id = myidm_id
+        coord.config_entry = MagicMock()
+        coord.config_entry.entry_id = "test_entry_id"
+        coord.config_entry.title = title
+        # Real attribute (not a MagicMock child) so the cache contract is exercised.
+        coord._device_info_cache = None
+        return coord
+
+    def test_caches_and_returns_same_object_on_second_call(self):
+        from custom_components.idm_heatpump.entity import build_device_info
+
+        coord = self._make_cacheable_coordinator(firmware_version="1.0")
+        first = build_device_info(coord)
+        second = build_device_info(coord)
+        assert first is second
+        # Cache is populated with a key derived from model/firmware/myidm/title.
+        cached_key, cached_info = coord._device_info_cache
+        assert cached_info is first
+        assert cached_key == ("Navigator 2.0 / 10", "1.0", None, "IDM Test")
+
+    def test_cache_invalidated_returns_rebuilt_object(self):
+        from custom_components.idm_heatpump.entity import build_device_info
+
+        coord = self._make_cacheable_coordinator(model_name="Navigator 2.0 / 10")
+        first = build_device_info(coord)
+        # Simulate model metadata change + cache invalidation (as the coordinator
+        # does in _invalidate_device_info_cache after a web supplement update).
+        coord.model_name = "Navigator 10"
+        coord._device_info_cache = None
+        rebuilt = build_device_info(coord)
+        assert rebuilt is not first
+        assert rebuilt["model"] == "Navigator 10"
+
+
 class TestIdmEntityAvailable:
     def test_unavailable_when_coordinator_unavailable(self):
         coord = _make_coordinator(data={"temp": 22.0}, last_update_success=False)
@@ -211,7 +262,12 @@ class TestIdmEntityAvailable:
         original_unique_id = entity._attr_unique_id
 
         assert entity.available is False
+        # Simulate a successful poll that produces a real value. The real
+        # coordinator recomputes unused_registers in _async_update_data, so we
+        # mirror that here: a non-sentinel value means the register leaves the
+        # unused set.
         coord.data = {"room_temp": 21.5}
+        coord.unused_registers = set()
 
         assert entity.available is True
         assert entity._attr_unique_id == original_unique_id

@@ -16,6 +16,7 @@ adapter relatively thin.
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import replace
 from typing import Any
@@ -57,20 +58,14 @@ from .adapter_descriptions import (
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
 from .adapter_registers import build_filtered_register_map
 
+_LOGGER = logging.getLogger(__name__)
+
 # Note: We import the HA helpers only inside functions to avoid circular imports during early migration.
 
 _SENSOR_STATE_CLASS_MAP: dict[str, SensorStateClass] = {
     SensorStateClass.MEASUREMENT: SensorStateClass.MEASUREMENT,
     SensorStateClass.TOTAL: SensorStateClass.TOTAL,
     SensorStateClass.TOTAL_INCREASING: SensorStateClass.TOTAL_INCREASING,
-}
-
-_ROOM_MODE_OPTIONS: dict[int, str] = {
-    0: "off",
-    1: "automatic",
-    2: "eco",
-    3: "normal",
-    4: "comfort",
 }
 
 _ZONE_ROOM_REGISTER = re.compile(r"^(?P<prefix>zm(?P<zone>\d+)_room)(?P<room>\d+)(?P<suffix>_.+)$")
@@ -145,20 +140,6 @@ def _get_zone_module_registers_compat(zone_idx: int, room_count: int = 6) -> dic
 # ============================================================
 # Enum slug maps — stable translation keys per register
 # ============================================================
-
-
-# ============================================================
-# Future-proofing: Unterstützung für ha_metadata im RegisterDef
-# Wenn die Library später ha_metadata direkt mitliefert, können wir das hier nutzen.
-# ============================================================
-
-
-def _apply_ha_metadata(reg: RegisterDef, base_meta: dict[str, Any]) -> dict[str, Any]:
-    """Kann später erweitert werden, wenn RegisterDef ha_metadata enthält."""
-    # Placeholder für zukünftige Library-Unterstützung
-    # if hasattr(reg, "ha_metadata") and reg.ha_metadata:
-    #     base_meta.update(reg.ha_metadata)
-    return base_meta
 
 
 # ============================================================
@@ -613,12 +594,6 @@ def get_library_sensors(
     return sensors
 
 
-def get_library_system_sensors() -> list[dict[str, Any]]:
-    """Generiert wichtige System-Sensoren direkt aus der Library mit guten deutschen Namen."""
-    # This can be expanded further. For now it relies on the general logic + German names.
-    return []
-
-
 # ============================================================
 # Spezialisierte Generatoren für Heizkreise und Zonen (stark verbessert)
 # ============================================================
@@ -629,6 +604,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
     try:
         circuit_regs = get_heating_circuit_registers(circuit)
     except Exception:
+        _LOGGER.debug("Failed to load heating circuit %s sensor registers", circuit, exc_info=True)
         return []
 
     sensors = []
@@ -676,6 +652,7 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
     try:
         zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
+        _LOGGER.debug("Failed to load zone %d sensor registers", zone_idx, exc_info=True)
         return []
 
     sensors = []
@@ -721,74 +698,6 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
 # ============================================================
 # Weitere Generatoren für umfassende Abdeckung (System, Energy, Pumps, Solar, PV, Cascade, GLT)
 # ============================================================
-
-
-def get_library_energy_sensors() -> list[dict[str, Any]]:
-    """Energie- und Leistungssensoren aus der Library."""
-    return []
-
-
-def get_library_pump_valve_sensors() -> list[dict[str, Any]]:
-    """Pumpen- und Ventilstatus aus der Library."""
-    return []
-
-
-def get_library_solar_pv_sensors() -> list[dict[str, Any]]:
-    """Solar- und PV-bezogene Sensoren."""
-    return []
-
-
-def get_library_cascade_sensors() -> list[dict[str, Any]]:
-    """Kaskaden-spezifische Sensoren."""
-    return []
-
-
-def get_library_glt_sensors() -> list[dict[str, Any]]:
-    """GLT / externe Ansteuerung Sensoren."""
-    return []
-
-
-def get_ha_entity_descriptions(
-    platform: str,
-    model_info: Any = None,
-    circuits: list[str] | None = None,
-    zone_modules: int = 0,
-) -> list[dict[str, Any]]:
-    """
-    Zentrale Funktion, die für eine Plattform (sensor, number, select, binary_sensor, switch)
-    fertige HA-EntityDescriptions aus der Library generiert.
-
-    Das ist der empfohlene Weg für zukünftige Erweiterungen.
-    """
-    if platform in ("sensor", "binary_sensor"):
-        return get_library_readonly_sensors(model_info, circuits, zone_modules)
-    if platform == "number":
-        return get_library_numbers(model_info, circuits, zone_modules)
-    if platform == "select":
-        return get_library_selects(circuits, zone_modules, model_info)
-    if platform == "switch":
-        return get_library_switches(model_info)
-    return []
-
-
-# ============================================================
-# Hilfsfunktion für icons.json Generierung (Empfehlung)
-# ============================================================
-
-
-def generate_icons_json_entries(
-    model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
-) -> dict[str, dict[str, Any]]:
-    """
-    Hilfsfunktion, die Icons für alle bekannten Register vorschlägt.
-    Kann genutzt werden, um icons.json teilweise zu generieren.
-    """
-    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
-    icons = {}
-    for name, reg in reg_map.items():
-        icon = get_icon_for_register(name, reg.unit)
-        icons[name] = {"default": icon}
-    return icons
 
 
 def get_library_binary_sensors(
@@ -873,6 +782,7 @@ def get_library_zone_selects(zone_idx: int, room_count: int = 6) -> list[dict[st
     try:
         zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
+        _LOGGER.debug("Failed to load zone %d select registers", zone_idx, exc_info=True)
         return []
 
     selects = []
@@ -930,62 +840,6 @@ def get_library_switches(model_info: Any = None) -> list[dict[str, Any]]:
     return switches
 
 
-def get_library_readonly_sensors(
-    model_info: Any = None, circuits: list[str] | None = None, zone_modules: int = 0
-) -> list[dict[str, Any]]:
-    """
-    Gibt nur lesbare Sensoren aus der Library zurück.
-    Diese Funktion ist der bevorzugte Weg, um Sensoren aus der Library zu bekommen.
-    """
-    reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
-    sensors = []
-
-    for name, reg in reg_map.items():
-        if reg.writable and not is_glt_measurement(name):
-            continue
-        if reg.write_only:
-            continue
-        if reg.binary:
-            continue
-
-        # Bevorzuge explizite Metadaten
-        if name in SENSOR_METADATA:
-            meta = SENSOR_METADATA[name]
-            desc = make_sensor_description(reg, meta, _get_german_name(reg.name))
-            sensors.append({"register": reg, "description": desc, "category": "system"})
-            continue
-
-        # Ansonsten generiere vernünftige Defaults
-        icon = get_icon_for_register(name, reg.unit)
-        slug_map, t_key = get_slug_map_and_key(name)
-        if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
-            desc = SensorEntityDescription(
-                key=name,
-                name=_get_german_name(name),
-                device_class=SensorDeviceClass.ENUM,
-                options=list(slug_map.values()),
-                translation_key=t_key,
-                icon=icon,
-                entity_category=EntityCategory.DIAGNOSTIC,
-            )
-        else:
-            ro_dc, ro_sc = infer_sensor_classes(name, reg.unit)
-            if reg.state_class:
-                ro_sc = _coerce_sensor_state_class(reg.state_class)
-            desc = SensorEntityDescription(
-                key=name,
-                name=_get_german_name(name),
-                native_unit_of_measurement=reg.unit,
-                device_class=ro_dc,
-                state_class=ro_sc,
-                icon=icon,
-                entity_category=EntityCategory.DIAGNOSTIC,
-            )
-        sensors.append({"register": reg, "description": desc, "category": "library"})
-
-    return sensors
-
-
 def get_library_numbers(
     model_info: Any = None,
     circuits: list[str] | None = None,
@@ -1002,6 +856,7 @@ def get_library_zone_numbers(zone_idx: int, room_count: int = 6) -> list[dict[st
     try:
         zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
+        _LOGGER.debug("Failed to load zone %d number registers", zone_idx, exc_info=True)
         return []
     return _numbers_from_register_map(zone_regs)
 

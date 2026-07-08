@@ -26,7 +26,8 @@ def _make_coordinator():
         max_val=30,
     )
     coord = MagicMock()
-    coord.number_descriptions = [{"register": reg, "description": MagicMock(key=reg.name)}]
+    # Forwarder resolves the register by name via the coordinator's cached index.
+    coord.get_register = MagicMock(side_effect=lambda name: reg if name == reg.name else None)
     coord.async_write_register = AsyncMock()
     return coord, reg
 

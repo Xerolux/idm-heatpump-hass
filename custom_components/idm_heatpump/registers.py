@@ -176,12 +176,6 @@ def sort_entity_descriptions(descriptions: list[dict[str, Any]]) -> list[dict[st
     return sorted(descriptions, key=description_sort_key)
 
 
-_ENTITY_ORDER_GROUPS = ENTITY_ORDER_BLOCKS
-_entity_order_group = entity_order_group
-_description_sort_key = description_sort_key
-_sort_descriptions = sort_entity_descriptions
-
-
 # ============================================================
 # PUBLIC FUNCTIONS - Collect all register descriptions
 # All registers are sourced from the idm_heatpump library via library_adapter.

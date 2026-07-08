@@ -91,7 +91,8 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
             return False
         if not self.coordinator.data or self._register.name not in self.coordinator.data:
             return False
-        value = self.coordinator.data.get(self._register.name)
-        if self.coordinator.is_register_unused(self._register.name, value):
-            return False
-        return True
+        # The coordinator precomputes the set of unused registers on every
+        # successful poll (see IdmCoordinator._async_update_data). Reusing that
+        # set here is O(1) and avoids recomputing the unused check for every
+        # entity on every state update.
+        return self._register.name not in self.coordinator.unused_registers
