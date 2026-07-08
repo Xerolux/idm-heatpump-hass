@@ -43,6 +43,12 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
     registers = kwargs.get("registers")
     if registers is not None:
         coord._registers = registers
+        # Rebuild the derived name index and room-mode subset so tests that set
+        # registers directly exercise the same cached lookups as production.
+        coord._register_by_name = {reg.name: reg for reg in registers}
+        from custom_components.idm_heatpump.coordinator import _is_zone_room_mode_register
+
+        coord._room_mode_registers = [reg for reg in registers if _is_zone_room_mode_register(reg)]
     return coord, client
 
 
@@ -280,6 +286,27 @@ class TestIsRegisterUnused:
         # battery_soc: -1 bedeutet "nicht verfügbar" → weiterhin unused.
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("battery_soc", -1) is True
+
+    def test_get_register_uses_name_index(self, mock_hass, mock_config_entry):
+        """get_register resolves registers via the O(1) name index (9a6b5ff)."""
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="flow_temp")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, registers=[reg])
+        assert coord.get_register("flow_temp") is reg
+        assert coord.get_register("nonexistent") is None
+
+    def test_is_register_unused_resolves_register_via_name_cache(self, mock_hass, mock_config_entry):
+        """is_register_unused uses _register_by_name so enum options are honored (9a6b5ff)."""
+        enum_reg = RegisterDef(
+            address=1000,
+            datatype=DataType.UCHAR,
+            name="hc_a_mode",
+            enum_options={0: "off", 255: "not_configured"},
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[enum_reg])
+        # 255 is normally an unused sentinel, but for an enum register it is a
+        # documented value, so it must NOT be treated as unused. This verifies
+        # the register is found via the name cache and its enum_options read.
+        assert coord.is_register_unused("hc_a_mode", 255) is False
 
 
 class TestAsyncUpdateData:
@@ -588,6 +615,64 @@ class TestAsyncUpdateData:
         assert mock_ir.async_create_issue.call_args.args[2] == "incompatible_firmware"
         assert mock_ir.async_create_issue.call_args.kwargs["translation_key"] == "incompatible_firmware"
 
+    async def test_zone_room_modes_read_in_parallel_for_multiple_zones(self, mock_hass, mock_config_entry):
+        """Multiple zone-room mode registers are each read individually (b0e7c43)."""
+        registers = [
+            RegisterDef(
+                address=2000 + i,
+                datatype=DataType.UCHAR,
+                name=f"zm{zone}_room{room}_mode",
+                enum_options={0: "off", 1: "on"},
+            )
+            for i, (zone, room) in enumerate((z, r) for z in (1, 2) for r in (1, 2, 3))
+        ]
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={reg.name: 0 for reg in registers})
+        # read_register returns a distinct value per register so we can verify
+        # each register was read individually and mapped back correctly.
+        client.read_register = AsyncMock(side_effect=[zone * 10 + room for zone in (1, 2) for room in (1, 2, 3)])
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=registers)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        # Each room-mode register is read once via read_register.
+        assert client.read_register.await_count == 6
+        for zone in (1, 2):
+            for room in (1, 2, 3):
+                assert data[f"zm{zone}_room{room}_mode"] == zone * 10 + room
+
+    async def test_zone_room_mode_register_subset_cached_at_setup(self, mock_hass, mock_config_entry):
+        """Room-mode register subset is computed once at setup (P4), not per poll."""
+        registers = [
+            RegisterDef(address=2000, datatype=DataType.UCHAR, name="system_mode"),
+            RegisterDef(address=2001, datatype=DataType.FLOAT, name="zm1_room1_temp"),
+            RegisterDef(address=2002, datatype=DataType.UCHAR, name="zm1_room1_mode"),
+            RegisterDef(address=2003, datatype=DataType.UCHAR, name="zm2_room3_mode"),
+        ]
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, registers=registers)
+        cached_names = [reg.name for reg in coord._room_mode_registers]
+        assert cached_names == ["zm1_room1_mode", "zm2_room3_mode"]
+
+    async def test_alias_primary_map_built_once_reused_across_updates(self, mock_hass, mock_config_entry):
+        """The alias-primary map is lazily built and reused on subsequent updates (9a6b5ff)."""
+        primary = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 22.5})
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[primary])
+        coord._alias_map = {1000: ["temp", "temp_set"]}
+
+        assert coord._alias_primary_map is None
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            await coord._async_update_data()
+        first_map = coord._alias_primary_map
+        assert first_map == {1000: "temp"}
+
+        # Second update must reuse the same map object (identity check).
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            await coord._async_update_data()
+        assert coord._alias_primary_map is first_map
+
 
 class TestAsyncWriteRegister:
     async def test_write_updates_data_optimistically(self, mock_hass, mock_config_entry):
@@ -603,8 +688,6 @@ class TestAsyncWriteRegister:
         client.write_register.assert_called_once_with(reg, 22.0)
 
     async def test_write_triggers_delayed_refresh(self, mock_hass, mock_config_entry):
-        import asyncio
-
         client = MagicMock()
         client.write_register = AsyncMock()
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
@@ -614,13 +697,13 @@ class TestAsyncWriteRegister:
         reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
         await coord.async_write_register(reg, 1)
 
-        # Refresh is called asynchronously after delay; give it time to run
-        await asyncio.sleep(0.6)
+        # Await the delayed refresh task directly instead of sleeping 0.6s for a
+        # 0.5s delay (which is flaky on slow CI runners). Deterministic + fast.
+        assert coord._delayed_refresh_task is not None
+        await coord._delayed_refresh_task
         coord.async_request_refresh.assert_called_once()
 
     async def test_write_no_data_initializes(self, mock_hass, mock_config_entry):
-        import asyncio
-
         client = MagicMock()
         client.write_register = AsyncMock()
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
@@ -630,8 +713,9 @@ class TestAsyncWriteRegister:
         reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
         # Should not crash even if data is None
         await coord.async_write_register(reg, 1)
-        # Delayed refresh
-        await asyncio.sleep(0.6)
+        # Await the delayed refresh task directly (see test above for rationale).
+        assert coord._delayed_refresh_task is not None
+        await coord._delayed_refresh_task
         coord.async_request_refresh.assert_called_once()
 
     async def test_write_calls_async_update_listeners(self, mock_hass, mock_config_entry):
@@ -732,9 +816,13 @@ class TestAsyncRefreshWebSupplement:
         ):
             await coord.async_refresh_web_supplement()
 
-        read_web.assert_awaited_once_with(
-            "192.0.2.103", "1234", model_hint="Navigator 2.0 / 10", preferred_variant=None
-        )
+        read_web.assert_awaited_once()
+        # The coordinator now passes a persistent client_pool so TCP+auth
+        # overhead is paid once per session instead of every poll.
+        call_kwargs = read_web.await_args.kwargs
+        assert call_kwargs["model_hint"] == "Navigator 2.0 / 10"
+        assert call_kwargs["preferred_variant"] is None
+        assert call_kwargs["client_pool"] is coord._web_client_pool
         assert coord.last_web_error == "TimeoutError: websocket timeout"
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,

@@ -40,11 +40,9 @@ def _coerce_temperature(value: Any) -> float | None:
 
 def _register_for_circuit(coordinator: IdmCoordinator, circuit: str) -> RegisterDef | None:
     register_name = f"hc_{circuit}_ext_room_temp"
-    for desc in coordinator.number_descriptions:
-        reg = desc["register"]
-        if reg.name == register_name:
-            return reg
-    return None
+    # O(1) lookup via the coordinator's cached name index instead of a linear
+    # scan over all number descriptions on every forward write.
+    return coordinator.get_register(register_name)
 
 
 class RoomTempForwarder:

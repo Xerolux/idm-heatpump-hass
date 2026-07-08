@@ -9,6 +9,7 @@ import idm_heatpump
 from custom_components.idm_heatpump.const import MODEL
 from custom_components.idm_heatpump.web_data import (
     IdmWebAuthenticationFailed,
+    IdmWebClientPool,
     IdmWebSensorValue,
     IdmWebSupplement,
     _is_wrong_variant_error,
@@ -585,3 +586,98 @@ async def test_nav20_hint_falls_back_to_nav10_on_failure(monkeypatch: pytest.Mon
     assert result.navigator_version == "Navigator 10"
     assert nav20.closed  # Nav 20 was tried first (and failed)
     assert nav10.closed  # Nav 10 was tried as fallback (and succeeded)
+
+
+def _web_data_snapshot(navigator_version="Navigator 10", software_version="NAV10_1.0"):
+    return SimpleNamespace(
+        navigator_version=navigator_version,
+        software_version=software_version,
+        heatpump_model="iPump",
+        simple_values={"software_version": software_version},
+    )
+
+
+class TestWebClientPool:
+    """Cover persistent web client reuse (P1)."""
+
+    async def test_reuses_cached_client_across_polls_without_closing(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A successful client is cached and reused on the next poll (no reconnect)."""
+        creation_count = {"nav10": 0, "nav20": 0}
+
+        def make_nav10(host, pin):
+            creation_count["nav10"] += 1
+            return _FakeWebClient(_web_data_snapshot())
+
+        def make_nav20(host, pin):
+            creation_count["nav20"] += 1
+            return _FakeWebClient(_web_data_snapshot())
+
+        monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+        monkeypatch.setattr(idm_heatpump, "create_optional_navigator10_web_client", make_nav10, raising=False)
+        monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", make_nav20, raising=False)
+        pool = IdmWebClientPool()
+
+        first = await async_read_web_supplement("192.0.2.10", "1234", client_pool=pool)
+        second = await async_read_web_supplement("192.0.2.10", "1234", client_pool=pool)
+
+        assert first is not None and second is not None
+        # The nav10 client was created exactly once (first poll) and reused on
+        # the second poll instead of reconnecting. nav20 was never created.
+        assert creation_count["nav10"] == 1
+        assert creation_count["nav20"] == 0
+        assert pool.get() is not None
+
+    async def test_invalidates_cached_client_on_failure(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """On a read failure the cached client is dropped and the next poll rebuilds."""
+        nav10_first = _FakeWebClient(_web_data_snapshot())
+        nav10_second = _FakeWebClient(_web_data_snapshot())
+        # The factory returns the first client on the first call, the second on
+        # the next call (simulating a reconnect after the cached client failed).
+        clients = [nav10_first, nav10_second]
+
+        def factory(host, pin):
+            return clients.pop(0) if clients else _FakeWebClient(_web_data_snapshot())
+
+        monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+        monkeypatch.setattr(
+            idm_heatpump, "create_optional_navigator10_web_client", factory, raising=False
+        )
+        monkeypatch.setattr(
+            idm_heatpump, "create_optional_navigator20_web_client", lambda host, pin: None, raising=False
+        )
+        pool = IdmWebClientPool()
+
+        first = await async_read_web_supplement("192.0.2.10", "1234", client_pool=pool)
+        assert first is not None
+        assert not nav10_first.closed  # cached after success
+
+        # Force a failure on the cached client by making read_data raise.
+        nav10_first.error = RuntimeError("connection reset")
+        # Retry: cached client fails → invalidated → fresh client built.
+        second = await async_read_web_supplement("192.0.2.10", "1234", client_pool=pool)
+        assert second is not None
+        assert nav10_first.closed  # failed cached client was closed on invalidation
+        assert not nav10_second.closed  # new client cached
+
+    async def test_close_releases_held_client(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        nav10 = _FakeWebClient(_web_data_snapshot())
+        nav20 = _FakeWebClient(_web_data_snapshot())
+        _patch_web_factories(monkeypatch, nav10, nav20)
+        pool = IdmWebClientPool()
+
+        await async_read_web_supplement("192.0.2.10", "1234", client_pool=pool)
+        assert pool.get() is not None
+
+        await pool.close()
+        assert pool.get() is None
+        assert nav10.closed
+
+    async def test_without_pool_keeps_legacy_close_after_read(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """Without a pool, a successful read still closes the client (backward compat)."""
+        nav10 = _FakeWebClient(_web_data_snapshot())
+        nav20 = _FakeWebClient(_web_data_snapshot())
+        _patch_web_factories(monkeypatch, nav10, nav20)
+
+        result = await async_read_web_supplement("192.0.2.10", "1234")
+        assert result is not None
+        assert nav10.closed  # legacy behaviour preserved

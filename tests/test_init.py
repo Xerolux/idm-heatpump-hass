@@ -312,6 +312,107 @@ class TestAsyncSetupEntry:
         mock_hass.config_entries.async_forward_entry_setups.assert_called_once()
 
 
+class TestAsyncSetupWebOnlyEntry:
+    """Cover the web-only fallback setup path (T1)."""
+
+    def _make_web_only_entry(self, *, web_pin="1234", detected_nav=None):
+        entry = MagicMock()
+        entry.entry_id = "web_only_id"
+        entry.title = "IDM Web"
+        entry.data = {
+            "host": "192.168.1.100",
+            "port": 502,
+            "slave_id": 1,
+            "web_pin": web_pin,
+            "web_host": "192.168.1.100",
+            "web_only_mode": True,
+        }
+        if detected_nav is not None:
+            entry.data["detected_navigator_version"] = detected_nav
+        entry.options = {
+            "scan_interval": 10,
+            "web_scan_interval": 30,
+            "web_enabled": True,
+        }
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    async def test_web_only_creates_coordinator_and_starts_web_task(self, mock_hass):
+        from custom_components.idm_heatpump import IdmCoordinator
+
+        entry = self._make_web_only_entry()
+        mock_client = MagicMock()
+        mock_client.host = "192.168.1.100"
+        supplement = MagicMock(spec=IdmWebSupplement)
+        supplement.model_name = "Navigator 10"
+        supplement.software_version = "1.2.3"
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch(
+                "custom_components.idm_heatpump.async_read_web_supplement",
+                AsyncMock(return_value=supplement),
+            ) as read_web,
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+        ):
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        assert isinstance(entry.runtime_data, IdmHeatpumpData)
+        assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
+        # Web-only mode exposes only sensors and runs with an empty register set.
+        assert entry.runtime_data.coordinator._registers == []
+        mock_hass.config_entries.async_forward_entry_setups.assert_called_once()
+        forwarded_platforms = mock_hass.config_entries.async_forward_entry_setups.call_args.args[1]
+        # Web-only mode forwards exactly one platform (sensor). In the test stub
+        # Platform.SENSOR is a MagicMock, so assert on the list length rather
+        # than string equality.
+        assert len(forwarded_platforms) == 1
+        # model_hint comes from the detected navigator version stored in entry data.
+        assert read_web.call_args.kwargs.get("model_hint") is None
+
+    async def test_web_only_uses_detected_navigator_version_as_model_hint(self, mock_hass):
+        entry = self._make_web_only_entry(detected_nav="Navigator 10")
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=MagicMock()),
+            patch(
+                "custom_components.idm_heatpump.async_read_web_supplement",
+                AsyncMock(return_value=None),
+            ) as read_web,
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+        ):
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        assert read_web.call_args.kwargs.get("model_hint") == "Navigator 10"
+
+    async def test_web_only_continues_when_initial_web_read_fails(self, mock_hass):
+        from custom_components.idm_heatpump import IdmCoordinator
+
+        entry = self._make_web_only_entry()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=MagicMock()),
+            patch(
+                "custom_components.idm_heatpump.async_read_web_supplement",
+                AsyncMock(side_effect=RuntimeError("network down")),
+            ),
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+        ):
+            result = await async_setup_entry(mock_hass, entry)
+
+        # Setup must still succeed with the generic model; the web loop retries.
+        assert result is True
+        assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
+        assert entry.runtime_data.coordinator.model_name == MODEL
+
+
 class TestAsyncUnloadEntry:
     async def test_unloads_platforms(self, mock_hass):
         entry = MagicMock()

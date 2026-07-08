@@ -7,22 +7,16 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
-import logging
-
 from typing import Any
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
-
-_LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
 
@@ -50,15 +44,8 @@ class IdmSwitch(IdmEntity, SwitchEntity):
         return bool(value) if value is not None else False
 
     async def _async_turn(self, state: bool) -> None:
-        try:
-            await self.coordinator.async_write_register(self._register, state)
-        except Exception as err:
-            _LOGGER.error("Failed to turn %s %s: %s", "on" if state else "off", self._register.name, err)
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key="write_failed",
-                translation_placeholders={"error": str(err)},
-            ) from err
+        action = "on" if state else "off"
+        await self._async_write_register(state, action_label=f"turn {action} {self._register.name}")
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         await self._async_turn(True)

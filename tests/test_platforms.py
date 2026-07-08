@@ -31,6 +31,9 @@ def _make_coordinator(data=None, hide_unused=False, last_update_success=True):
     coord.config_entry.entry_id = "test_entry"
     coord.config_entry.title = "IDM"
     coord.async_write_register = AsyncMock()
+    # Real coordinator precomputes this set on each poll; IdmEntity.available
+    # consumes it directly. Default to empty so entities are available.
+    coord.unused_registers = set()
     return coord
 
 
@@ -812,8 +815,12 @@ class TestIdmNumber:
         coord.async_write_register = AsyncMock(side_effect=Exception("write failed"))
         reg = _make_register("dhw_target", writable=True)
         num = IdmNumber(coord, reg, _make_desc("dhw_target"))
-        with pytest.raises(HomeAssistantError):
+        with pytest.raises(HomeAssistantError) as exc_info:
             await num.async_set_native_value(55.0)
+        # Centralized write-error helper must raise with the write_failed key
+        # so the UI shows a translated message.
+        assert exc_info.value.translation_key == "write_failed"
+        assert "error" in (exc_info.value.translation_placeholders or {})
 
     def test_glt_measurement_number_gets_unique_id_suffix(self):
         # GLT-Messwerte existieren zusätzlich als Sensor — die Number braucht

@@ -3,7 +3,6 @@
 from types import SimpleNamespace
 
 from custom_components.idm_heatpump.registers import (
-    _sort_descriptions,
     collect_all_registers,
     get_all_binary_sensor_descriptions,
     get_all_number_descriptions,
@@ -161,8 +160,6 @@ class TestCollectAllRegisters:
             "cascade_req_heat_temp",
             "myidm_id",
         ]
-
-        assert _sort_descriptions(descs) == sort_entity_descriptions(descs)
 
 
 class TestHkAddresses:

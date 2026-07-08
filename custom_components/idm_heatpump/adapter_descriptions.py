@@ -5,10 +5,8 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
-from homeassistant.components.number import NumberEntityDescription, NumberMode
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription, SensorStateClass
 from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTemperature
-from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from idm_heatpump import RegisterDef
 
@@ -125,26 +123,5 @@ def make_sensor_description(
         state_class=state_class,
         icon=meta.get("icon"),
         entity_category=meta.get("entity_category"),
-        entity_registry_enabled_default=meta.get("enabled_by_default", True),
-    )
-
-
-def make_number_description(
-    reg: RegisterDef,
-    meta: dict[str, Any],
-    fallback_name: str,
-) -> NumberEntityDescription:
-    """Create a NumberEntityDescription from a library register plus HA metadata."""
-    return NumberEntityDescription(
-        key=reg.name,
-        name=meta.get("name", fallback_name),
-        native_min_value=meta.get("min", reg.min_val or -999),
-        native_max_value=meta.get("max", reg.max_val or 999),
-        native_step=meta.get("step", 0.1),
-        native_unit_of_measurement=meta.get("unit") or reg.unit,
-        device_class=meta.get("device_class"),
-        icon=meta.get("icon"),
-        mode=NumberMode.BOX,
-        entity_category=meta.get("entity_category", EntityCategory.CONFIG),
         entity_registry_enabled_default=meta.get("enabled_by_default", True),
     )

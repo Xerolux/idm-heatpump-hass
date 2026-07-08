@@ -65,15 +65,36 @@ def model_info_from_flags(
     )
 
 
+# During setup, each platform generator (sensor / binary_sensor / number /
+# select / switch) calls build_filtered_register_map with the same arguments.
+# Cache the most recent result so the library map is built only once per setup
+# instead of five times. The cache holds a single entry keyed by the call
+# signature; a different signature simply rebuilds.
+_FILTERED_REGISTER_MAP_CACHE: tuple[Any, dict[str, RegisterDef]] | None = None
+
+
 def build_filtered_register_map(
     model_info: Any = None,
     circuits: list[str] | None = None,
     zone_modules: int = 0,
 ) -> dict[str, RegisterDef]:
-    """Build the library register map and apply local compatibility filters."""
+    """Build the library register map and apply local compatibility filters.
+
+    Memoized: during setup, all five platform generators call this with the
+    same model_info/circuits/zone_modules. The library map is expensive to
+    rebuild, so the most recent result is cached and reused.
+    """
+    global _FILTERED_REGISTER_MAP_CACHE
+    circuits_tuple = tuple(circuits or [])
+    cache_key = (id(model_info), circuits_tuple, zone_modules)
+    if _FILTERED_REGISTER_MAP_CACHE is not None:
+        key, cached = _FILTERED_REGISTER_MAP_CACHE
+        if key == cache_key:
+            return cached
+
     reg_map = build_register_map(
         model_info=model_info,
-        circuits=circuits or [],
+        circuits=list(circuits_tuple),
         zone_modules=zone_modules or 0,
     )
 
@@ -81,4 +102,5 @@ def build_filtered_register_map(
         for name in _NAVIGATOR_10_ONLY_REGISTERS:
             reg_map.pop(name, None)
 
+    _FILTERED_REGISTER_MAP_CACHE = (cache_key, reg_map)
     return reg_map

@@ -7,6 +7,10 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 
+import logging
+from typing import Any
+
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity import EntityDescription
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
@@ -15,6 +19,8 @@ from idm_heatpump import RegisterDef
 
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def build_entity_unique_id(entry_id: str, entity_key: str) -> str:
@@ -64,10 +70,23 @@ def should_add_entity(coordinator: IdmCoordinator, register: RegisterDef) -> boo
     return not coordinator.is_register_unused(register.name, data.get(register.name))
 
 
-class IdmEntity(CoordinatorEntity[IdmCoordinator]):
-    """Base class for all IDM Heatpump entities."""
+class IdmCoordinatorEntityBase(CoordinatorEntity[IdmCoordinator]):
+    """Common base for coordinator entities that are not register-backed.
+
+    Provides the shared device_info so non-Modbus entities (web sensors,
+    technician-code sensors) stay in sync with the device-info contract
+    instead of each re-declaring it.
+    """
 
     _attr_has_entity_name = True
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self.coordinator)
+
+
+class IdmEntity(IdmCoordinatorEntityBase):
+    """Base class for all register-backed IDM Heatpump entities."""
 
     def __init__(
         self,
@@ -81,9 +100,22 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, reg.name)
 
-    @property
-    def device_info(self) -> DeviceInfo:
-        return build_device_info(self.coordinator)
+    async def _async_write_register(self, value: Any, *, action_label: str) -> None:
+        """Write a value to this entity's register with centralized error handling.
+
+        All writable platforms route through here so the write-failed translation
+        contract (log + raise HomeAssistantError with the write_failed key) stays
+        identical across number/select/switch.
+        """
+        try:
+            await self.coordinator.async_write_register(self._register, value)
+        except Exception as err:
+            _LOGGER.error("Failed to %s %s: %s", action_label, self._register.name, err)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="write_failed",
+                translation_placeholders={"error": str(err)},
+            ) from err
 
     @property
     def available(self) -> bool:
@@ -91,7 +123,8 @@ class IdmEntity(CoordinatorEntity[IdmCoordinator]):
             return False
         if not self.coordinator.data or self._register.name not in self.coordinator.data:
             return False
-        value = self.coordinator.data.get(self._register.name)
-        if self.coordinator.is_register_unused(self._register.name, value):
-            return False
-        return True
+        # The coordinator precomputes the set of unused registers on every
+        # successful poll (see IdmCoordinator._async_update_data). Reusing that
+        # set here is O(1) and avoids recomputing the unused check for every
+        # entity on every state update.
+        return self._register.name not in self.coordinator.unused_registers

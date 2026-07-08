@@ -36,7 +36,7 @@ from .registers import (
     collect_registers_from_descriptions,
     collect_aliases_from_descriptions,
 )
-from .web_data import IdmWebSupplement, async_read_web_supplement
+from .web_data import IdmWebClientPool, IdmWebSupplement, async_read_web_supplement
 
 _LOGGER = logging.getLogger(__name__)
 _ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
@@ -167,9 +167,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._alias_map: dict[int, list[str]] = {}
         self._register_by_name: dict[str, RegisterDef] = {}
         self._alias_primary_map: dict[int, str] | None = None
+        self._room_mode_registers: list[RegisterDef] = []
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         self._room_mode_semaphore = asyncio.Semaphore(8)
+        # Persistent web client pool: keeps the Navigator web client across
+        # polls so the TCP+auth overhead is paid once per session instead of
+        # every 30s. Invalidated on failure and closed in async_shutdown.
+        self._web_client_pool = IdmWebClientPool()
 
         super().__init__(
             hass,
@@ -201,6 +206,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._alias_map = collect_alias_map(circuits, zone_count, zone_rooms, enable_cascade, model_info=model_info)
         self._register_by_name = {reg.name: reg for reg in self._registers}
         self._alias_primary_map = None
+        # Room-mode registers only depend on the register set (fixed at setup
+        # time), so precompute them once instead of re-scanning all registers
+        # on every poll.
+        self._room_mode_registers = [
+            reg for reg in self._registers if _is_zone_room_mode_register(reg)
+        ]
         self._invalidate_device_info_cache()
 
     @property
@@ -299,6 +310,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def registers_count(self) -> int:
         return len(self._registers)
 
+    def get_register(self, register_name: str) -> RegisterDef | None:
+        """Return a register by name via the cached name index (O(1))."""
+        return self._register_by_name.get(register_name)
+
     def is_register_unused(self, register_name: str, value: Any) -> bool:
         """Check if a register value indicates an unused/invalid register."""
         if not self._hide_unused:
@@ -384,10 +399,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         is not overwhelmed by dozens of parallel requests on setups with many
         zones/rooms.
         """
+        # Reuse the cached register subset (built once in setup_registers) and
+        # only filter out registers discovered unsupported at runtime.
         room_mode_registers = [
-            reg
-            for reg in self._registers
-            if reg.name not in self._unsupported_registers and _is_zone_room_mode_register(reg)
+            reg for reg in self._room_mode_registers if reg.name not in self._unsupported_registers
         ]
         if not room_mode_registers:
             return
@@ -464,6 +479,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self._web_pin,
                 model_hint=getattr(self._model_info, "model_name", None) or self._model_name,
                 preferred_variant=self._web_variant,
+                client_pool=self._web_client_pool,
             )
         except Exception as err:
             error = f"{err.__class__.__name__}: {err}"
@@ -654,3 +670,5 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 await task
             except asyncio.CancelledError:
                 pass
+        # Release any held web client so the persistent connection is closed.
+        await self._web_client_pool.close()
