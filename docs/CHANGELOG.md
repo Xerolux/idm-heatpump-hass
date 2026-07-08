@@ -10,6 +10,62 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.0-beta.18] - 2026-07-08
+
+## v0.8.0-beta.18 - IDM Heatpump
+
+**BETA RELEASE - Testing phase, may contain bugs**
+
+### What changed
+
+This release is a maintenance and performance pass across all areas of the
+integration. No behavioral changes for users — the same entities, services and
+config flows behave as before, just faster and with less code.
+
+#### Performance
+
+- **Persistent Navigator web client**: the optional web supplement no longer
+  rebuilds its TCP+auth connection every 30s poll. The successful client is
+  held in a pool and reused; on failure it is closed and rebuilt on the next
+  poll. Connection setup and login overhead now happens once per session
+  instead of once per poll.
+- **Per-entity lookup caching**: `IdmSensor` caches its enum slug map and
+  bitflag labels in `__init__` (mirroring `IdmSelect`) instead of re-running
+  regex matches on every state update. `IdmEntity.available` now consumes the
+  coordinator's precomputed `unused_registers` set (O(1)) instead of
+  recomputing the unused check per entity per poll.
+- **Setup-time caches**: the coordinator precomputes the room-mode register
+  subset once at setup instead of re-scanning all registers on every poll. A
+  new `get_register()` method provides O(1) lookups, used by room-temperature
+  forwarding.
+- **Memoized register map**: the library register map is built once per setup
+  signature instead of once per platform (sensors/numbers/selects).
+
+#### Code quality
+
+- **Removed ~120 lines of dead code** from `library_adapter.py` (empty
+  placeholder generators, unused routing/helper functions, stale alias shims).
+- **Extracted duplicated logic**: shared sensor-description and
+  select-description builders; a centralized `_async_write_register` helper for
+  number/select/switch (single `write_failed` translation contract); an
+  `IdmCoordinatorEntityBase` mixin for `device_info`; and a shared
+  `_IdmOptionsStepsMixin` for the config/options flow step handlers
+  (~90 lines of near-verbatim duplication removed).
+- **Split `library_adapter.py`** (888 → 523 lines) into `adapter_names.py`
+  (German display names) and `adapter_metadata.py` (HA metadata overlays),
+  matching the existing `adapter_*.py` module family.
+- Added debug logging to the previously silent `except→[]` swallows in the
+  zone/circuit register generators so failures leave a diagnostic trace.
+
+#### Tests
+
+- Added 11 new tests securing the value of recent performance commits and
+  closing the largest coverage gap: the web-only setup fallback path.
+- Verified `build_device_info` memoization, room-mode parallel reads, the
+  room-mode register subset cache, and alias-primary-map reuse across polls.
+- Replaced flaky timing-dependent tests (`asyncio.sleep(0.6)` for a 0.5s delay)
+  with deterministic task-await assertions.
+
 ## [0.8.0-beta.17] - 2026-07-07
 
 ## v0.8.0-beta.17 - IDM Heatpump
