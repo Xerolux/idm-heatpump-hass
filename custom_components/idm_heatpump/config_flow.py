@@ -698,7 +698,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
                 CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
             }
-            return self._async_create_config_entry()
+            return self._create_flow_entry()
 
         return self.async_show_form(
             step_id="web_only_options",
