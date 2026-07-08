@@ -386,9 +386,7 @@ class _IdmOptionsStepsMixin:
     async def async_step_zones(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         zone_count = int(self._options.get(CONF_ZONE_COUNT, 0))
         if user_input is not None:
-            zone_rooms: dict[int, int] = {
-                z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)
-            }
+            zone_rooms: dict[int, int] = {z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)}
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             if _room_temp_forwarding_enabled(self._options):
                 return await self.async_step_room_temp_forwarding()  # type: ignore[attr-defined]
@@ -401,9 +399,7 @@ class _IdmOptionsStepsMixin:
             errors={},
         )
 
-    async def async_step_room_temp_forwarding(
-        self, user_input: dict[str, Any] | None = None
-    ) -> ConfigFlowResult:
+    async def async_step_room_temp_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             _store_room_temp_forwarding_entities(self._options, user_input)
             return self._create_flow_entry()

@@ -209,9 +209,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Room-mode registers only depend on the register set (fixed at setup
         # time), so precompute them once instead of re-scanning all registers
         # on every poll.
-        self._room_mode_registers = [
-            reg for reg in self._registers if _is_zone_room_mode_register(reg)
-        ]
+        self._room_mode_registers = [reg for reg in self._registers if _is_zone_room_mode_register(reg)]
         self._invalidate_device_info_cache()
 
     @property
@@ -401,9 +399,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         # Reuse the cached register subset (built once in setup_registers) and
         # only filter out registers discovered unsupported at runtime.
-        room_mode_registers = [
-            reg for reg in self._room_mode_registers if reg.name not in self._unsupported_registers
-        ]
+        room_mode_registers = [reg for reg in self._room_mode_registers if reg.name not in self._unsupported_registers]
         if not room_mode_registers:
             return
 

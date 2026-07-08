@@ -149,6 +149,7 @@ def _get_zone_module_registers_compat(zone_idx: int, room_count: int = 6) -> dic
 # Deutsche Namen für wichtige Register (wird sukzessive erweitert)
 # ============================================================
 
+
 def _build_sensor_description(reg: RegisterDef, *, include_enabled_default: bool = False) -> SensorEntityDescription:
     """Build a SensorEntityDescription from a register using shared icon/enum logic.
 

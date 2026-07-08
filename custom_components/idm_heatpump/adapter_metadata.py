@@ -97,4 +97,3 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
         "device_class": NumberDeviceClass.POWER,
     },
 }
-

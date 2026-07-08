@@ -639,9 +639,7 @@ class TestWebClientPool:
             return clients.pop(0) if clients else _FakeWebClient(_web_data_snapshot())
 
         monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
-        monkeypatch.setattr(
-            idm_heatpump, "create_optional_navigator10_web_client", factory, raising=False
-        )
+        monkeypatch.setattr(idm_heatpump, "create_optional_navigator10_web_client", factory, raising=False)
         monkeypatch.setattr(
             idm_heatpump, "create_optional_navigator20_web_client", lambda host, pin: None, raising=False
         )
