@@ -10,6 +10,15 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [0.8.1-beta.19] - 2026-07-09
+
+### Fixed
+
+- Pin `idm-heatpump-api[web]` to the tested current release `0.6.4`.
+- Keep the automated dependency-update workflow, documentation, and release
+  contract aligned with the exact runtime dependency pin.
+
 ## [0.8.0-beta.18] - 2026-07-08
 
 ## v0.8.0-beta.18 - IDM Heatpump
