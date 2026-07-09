@@ -388,6 +388,24 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data.update(await self._async_read_registers_resilient(readable[midpoint:]))
             return data
 
+    def _merge_library_unsupported_registers(self) -> None:
+        """Merge unsupported registers isolated by idm-heatpump-api.
+
+        The API tracks only registers rejected with Modbus ``Illegal Data
+        Address`` (exception code 2). Mirroring that public set prevents this
+        coordinator's direct room-mode path from retrying those addresses.
+        """
+        library_unsupported = self._client.get_unsupported_registers()
+        new_unsupported = set(library_unsupported) - self._unsupported_registers
+        if not new_unsupported:
+            return
+        self._unsupported_registers.update(new_unsupported)
+        _LOGGER.debug(
+            "Merged %d unsupported register(s) reported by idm-heatpump-api: %s",
+            len(new_unsupported),
+            sorted(new_unsupported),
+        )
+
     async def _async_refresh_zone_room_modes(self, data: dict[str, Any]) -> None:
         """Refresh room mode registers individually to avoid faulty batch values.
 
@@ -441,6 +459,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not data:
             raise UpdateFailed("No data received from heat pump")
 
+        self._merge_library_unsupported_registers()
         await self._async_refresh_zone_room_modes(data)
 
         # Apply aliases: when multiple register names share an address,

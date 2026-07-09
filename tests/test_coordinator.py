@@ -413,6 +413,25 @@ class TestAsyncUpdateData:
             translation_placeholders={"register": "power_limit_hp", "address": "4108"},
         )
 
+    async def test_library_unsupported_registers_are_merged_into_skip_list(self, mock_hass, mock_config_entry):
+        """Registers rejected by the API are skipped by coordinator-only paths."""
+        supported = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a")
+        unsupported = RegisterDef(address=4108, datatype=DataType.FLOAT, name="power_limit_hp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"good_a": 1})
+        client.get_unsupported_registers.return_value = ("power_limit_hp",)
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[supported, unsupported],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            await coord._async_update_data()
+
+        assert coord.unsupported_registers == {"power_limit_hp"}
+
     @pytest.mark.parametrize(
         "error",
         [
