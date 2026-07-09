@@ -93,7 +93,7 @@ Maintainer sollten vor einem stabilen Release den
 - IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.14.2+ (wird von Home Assistant 2026.5 bereitgestellt)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.6.4` (automatisch installiert)
+- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.0` (automatisch installiert)
 
 ---
 

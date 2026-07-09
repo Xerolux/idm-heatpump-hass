@@ -11,6 +11,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1-beta.20] - 2026-07-09
+
+### Changed
+
+- Pin `idm-heatpump-api[web]` to `0.7.0` and use its documented
+  `get_unsupported_registers()` API to avoid repeat reads of Modbus-code-2
+  registers in coordinator-only paths.
+
 ## [0.8.1-beta.19] - 2026-07-09
 
 ### Fixed
