@@ -45,9 +45,7 @@ jobs:
 
           version = "${{ steps.api.outputs.version }}"
           root = Path(".")
-          major, minor, *_ = version.split(".")
-          next_major_minor = f"{major}.{int(minor) + 1}"
-          requirement = f"idm-heatpump-api[web]>={version},<{next_major_minor}"
+          requirement = f"idm-heatpump-api[web]=={version}"
 
           manifest_path = root / "custom_components" / "idm_heatpump" / "manifest.json"
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))

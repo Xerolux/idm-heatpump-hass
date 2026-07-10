@@ -10,6 +10,56 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [0.8.1-beta.21] - 2026-07-10
+
+### Added
+
+- Add a read-only connection test under **Reconfigure** for the saved Modbus
+  endpoint and optional local Navigator web access.
+- Add an always-available diagnostic sensor exposing the installed
+  `idm-heatpump-api`, integration and `pymodbus` versions; include the same
+  versions in startup logs and downloaded diagnostics.
+- Add fixable repair handling for rejected local Navigator web PINs.
+
+### Changed
+
+- Pin the tested runtime dependency to `idm-heatpump-api[web]==0.7.1` and keep
+  the coordinator synchronized with the API's public unsupported-register set.
+- Improve setup, reconfiguration, runtime logs and repair messages for unknown
+  hosts, refused connections, timeouts, unreachable endpoints, missing Modbus
+  replies, invalid web PINs and unavailable web interfaces.
+- Explain directly in the flow, README and wiki that Navigator
+  **Gebäudeleittechnik → Modbus TCP → Ein** is required for full operation.
+- Group optional features, room-temperature forwarding and advanced Modbus
+  settings into translated, collapsible configuration sections.
+- Preserve Modbus options during web-only fallback and validate changed web
+  settings before saving.
+- Avoid an extra TCP preflight on successful connection checks; use it only to
+  classify failed Modbus attempts.
+
+### Fixed
+
+- Correct reconfiguration retries and reliably clear web-only mode after a
+  successful Modbus recovery.
+- Keep setup and repair failures actionable without logging secret PIN values.
+
+## [0.8.1-beta.20] - 2026-07-09
+
+### Changed
+
+- Pin `idm-heatpump-api[web]` to `0.7.0` and use its documented
+  `get_unsupported_registers()` API to avoid repeat reads of Modbus-code-2
+  registers in coordinator-only paths.
+
+## [0.8.1-beta.19] - 2026-07-09
+
+### Fixed
+
+- Pin `idm-heatpump-api[web]` to the tested current release `0.6.4`.
+- Keep the automated dependency-update workflow, documentation, and release
+  contract aligned with the exact runtime dependency pin.
+
 ## [0.8.0-beta.18] - 2026-07-08
 
 ## v0.8.0-beta.18 - IDM Heatpump
