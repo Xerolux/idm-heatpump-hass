@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from functools import lru_cache
 from importlib.metadata import PackageNotFoundError, version
@@ -32,3 +33,8 @@ def runtime_versions(integration_version: object) -> RuntimeVersions:
         api=distribution_version("idm-heatpump-api"),
         pymodbus=distribution_version("pymodbus"),
     )
+
+
+async def async_runtime_versions(integration_version: object) -> RuntimeVersions:
+    """Build the version snapshot without blocking the Home Assistant event loop."""
+    return await asyncio.to_thread(runtime_versions, integration_version)

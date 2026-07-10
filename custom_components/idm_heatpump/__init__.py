@@ -87,7 +87,7 @@ from .web_data import (
     merge_model_info,
     web_pin_configured,
 )
-from .versions import runtime_versions
+from .versions import async_runtime_versions
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -347,7 +347,7 @@ async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> boo
 
 async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     integration = await async_get_integration(hass, DOMAIN)
-    versions = runtime_versions(integration.manifest.get("version"))
+    versions = await async_runtime_versions(integration.manifest.get("version"))
     _LOGGER.info(
         "Setting up %s v%s (idm-heatpump-api v%s, pymodbus v%s)",
         NAME,

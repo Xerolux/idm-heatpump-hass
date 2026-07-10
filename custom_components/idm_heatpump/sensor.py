@@ -41,7 +41,7 @@ from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .internal_messages import format_internal_message, internal_message_text
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
-from .versions import RuntimeVersions, runtime_versions
+from .versions import RuntimeVersions, async_runtime_versions
 
 
 def _decode_bitflag(value: int, options: dict[int, str]) -> str:
@@ -350,7 +350,7 @@ async def async_setup_entry(
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
-    versions = runtime_versions(integration.manifest.get("version"))
+    versions = await async_runtime_versions(integration.manifest.get("version"))
     entities: list[IdmSensor | IdmTechnicianCodeSensor | IdmWebSensor | IdmApiVersionSensor] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
         entities += _technician_code_entities(coordinator)
