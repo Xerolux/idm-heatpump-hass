@@ -345,6 +345,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if register is None and self._registers:
             # Fallback for code paths that mutate _registers directly (e.g. tests)
             register = next((reg for reg in self._registers if reg.name == register_name), None)
+        sentinel_values = getattr(register, "sentinel_values", ())
+        if value in sentinel_values:
+            return True
         enum_options = getattr(register, "enum_options", None)
         if isinstance(enum_options, dict) and value in enum_options:
             return False
