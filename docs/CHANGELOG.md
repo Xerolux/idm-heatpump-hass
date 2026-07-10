@@ -11,6 +11,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Route individually validated zone-room mode failures through the normal poll
+  repair flow, isolate unsupported room addresses and omit invalid recovery
+  values without discarding unrelated data.
+- Quarantine room-mode registers when a plausible grouped value differs from
+  the individual read, allowing the API to use one safe individual read on
+  later polls instead of repeating both reads forever.
+- Make the explicitly acknowledged `write_register` service compatible with
+  the API's detected-model safety gate while retaining datatype and numeric
+  validation; reject non-numeric service values before Modbus I/O.
+
+### Documentation
+
+- Correct batch size, Modbus function-code, room-count, sentinel and raw-write
+  documentation and add explicit stable-release readiness criteria.
+
 ## [0.8.1-beta.27] - 2026-07-10
 
 ### Fixed

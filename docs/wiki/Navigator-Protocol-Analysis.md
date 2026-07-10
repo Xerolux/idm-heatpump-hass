@@ -23,6 +23,17 @@ Die validierte Anlage wurde als **Navigator 10** erkannt. Der korrigierte API-
 Detektor erkennt dort nur Heizkreis **A**. Die Register der nicht konfigurierten
 Heizkreise antworten zwar, liefern aber den Sentinelwert `-1.0`.
 
+Der Kaskaden-Probe an Adresse `1147` antwortet auf dieser Anlage mit dem
+Rohwort `FFFF` beziehungsweise UCHAR `255`. Dieser Wert ist „nicht verfügbar“
+und darf die optionale Kaskaden-Registergruppe nicht aktivieren. Dadurch sank
+die erkannte Karte auf dieser Anlage von 170 auf 153 Definitionen.
+
+In 309 lesenden Batch-/Einzelvergleichen über 170 Definitionen und 45 Gruppen
+gab es keine Rohwert-Abweichung. Die gemeldeten Werte `254`, `255` und `-1.0`
+waren registerbezogene Nicht-verfügbar-Sentinels. Raum-Betriebsarten bleiben
+trotzdem einzeln abgesichert, weil andere Navigator-2.0-Berichte plausible,
+aber abweichende Batch-Werte gezeigt haben.
+
 Der lokale Webclient lieferte 60 normalisierte Werte, darunter Temperaturen,
 Drücke, Laufzeiten, Energiemengen, Statuswerte und die Softwareversion. Es
 werden keine PINs, Tokens, IP-Adressen, Seriennummern, Account-IDs oder

@@ -449,6 +449,9 @@
     },
     "invalid_datatype": {
       "message": "Invalid datatype: \"{datatype}\". Valid values: uint16, int16, float, uchar, bool."
+    },
+    "invalid_value": {
+      "message": "Invalid value \"{value}\" for datatype {datatype}."
     }
   },
   "issues": {

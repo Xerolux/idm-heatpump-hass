@@ -540,7 +540,89 @@ class TestAsyncUpdateData:
         assert data["zm1_room3_temp"] == 21.5
         assert data["system_mode"] == 1
         client.read_register.assert_awaited_once_with(room_mode)
+        client.mark_batch_unsafe.assert_called_once_with(room_mode)
         assert "zm1_room3_mode" not in coord.unused_registers
+
+    async def test_batch_unsafe_zone_room_mode_is_not_read_twice(self, mock_hass, mock_config_entry):
+        room_mode = RegisterDef(
+            address=2025,
+            datatype=DataType.UCHAR,
+            name="zm1_room3_mode",
+            enum_options={0: "off", 1: "automatic", 2: "eco", 3: "normal", 4: "comfort"},
+        )
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={room_mode.name: 3})
+        client.get_batch_unsafe_registers = MagicMock(return_value=(room_mode.name,))
+        client.read_register = AsyncMock()
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[room_mode],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        assert data[room_mode.name] == 3
+        client.read_register.assert_not_awaited()
+
+    async def test_unsupported_zone_room_mode_does_not_break_poll(self, mock_hass, mock_config_entry):
+        room_mode = RegisterDef(address=2025, datatype=DataType.UCHAR, name="zm1_room3_mode")
+        good = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={room_mode.name: 2, good.name: 7})
+        client.read_register = AsyncMock(side_effect=ModbusException("Illegal Data Address exception_code=2"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[room_mode, good],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        assert data == {good.name: 7}
+        assert room_mode.name in coord.unsupported_registers
+
+    async def test_zone_room_mode_transport_error_uses_poll_repair_flow(self, mock_hass, mock_config_entry):
+        room_mode = RegisterDef(address=2025, datatype=DataType.UCHAR, name="zm1_room3_mode")
+        later_room_mode = RegisterDef(address=2026, datatype=DataType.UCHAR, name="zm1_room4_mode")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={room_mode.name: 2, later_room_mode.name: 3})
+        client.read_register = AsyncMock(side_effect=ModbusIOException("No response received"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[room_mode, later_room_mode],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            with pytest.raises(Exception, match="No response received"):
+                await coord._async_update_data()
+
+        assert mock_ir.async_create_issue.call_args.args[2] == "modbus_timeout"
+        assert client.read_register.await_count == 1
+
+    async def test_invalid_zone_room_mode_is_omitted_without_losing_other_data(self, mock_hass, mock_config_entry):
+        room_mode = RegisterDef(address=2025, datatype=DataType.UCHAR, name="zm1_room3_mode")
+        good = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={room_mode.name: 2, good.name: 7})
+        client.read_register = AsyncMock(side_effect=ValueError("invalid room mode"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[room_mode, good],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        assert data == {good.name: 7}
 
     async def test_alias_primary_map_is_cached(self, mock_hass, mock_config_entry):
         primary = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
@@ -690,7 +772,7 @@ class TestAsyncUpdateData:
         assert mock_ir.async_create_issue.call_args.args[2] == "incompatible_firmware"
         assert mock_ir.async_create_issue.call_args.kwargs["translation_key"] == "incompatible_firmware"
 
-    async def test_zone_room_modes_read_in_parallel_for_multiple_zones(self, mock_hass, mock_config_entry):
+    async def test_zone_room_modes_read_individually_for_multiple_zones(self, mock_hass, mock_config_entry):
         """Multiple zone-room mode registers are each read individually (b0e7c43)."""
         registers = [
             RegisterDef(
@@ -760,6 +842,7 @@ class TestAsyncWriteRegister:
         await coord.async_write_register(reg, 22.0)
 
         assert coord.data["temp_set"] == 22.0
+        client.simulate_write.assert_called_once_with(reg, 22.0, dry_run=True)
         client.write_register.assert_called_once_with(reg, 22.0)
 
     async def test_write_triggers_delayed_refresh(self, mock_hass, mock_config_entry):

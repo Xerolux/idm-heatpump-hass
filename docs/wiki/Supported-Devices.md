@@ -8,9 +8,9 @@ The detailed model and firmware status is maintained in the [Compatibility Matri
 
 | Device | Firmware | Heating Circuits | Zone Modules | Status |
 |--------|----------|------------------|--------------|--------|
-| IDM Navigator 10 | 2025+ (NAV10_20.23+) | up to 7 (A–G) | up to 10 (6 rooms each) | Confirmed on one maintainer test system; broader reports welcome |
+| IDM Navigator 10 | 2025+ (NAV10_20.23+) | up to 7 (A–G) | up to 10 (6 default, 8 configurable) | Confirmed on one maintainer test system; broader reports welcome |
 | IDM Navigator 2.0 | 2.x expected | up to 7 (A–G) | no | Expected; Navigator-10-only registers are filtered |
-| IDM Navigator Pro | unknown | up to 7 (A–G) | up to 10 (6 rooms each) | Expected; needs complete diagnostics report |
+| IDM Navigator Pro | unknown | up to 7 (A–G) | up to 10 (up to 8 configurable rooms) | Expected; needs complete diagnostics report |
 
 ## Requirements
 

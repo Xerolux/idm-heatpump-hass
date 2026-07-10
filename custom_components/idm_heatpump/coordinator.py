@@ -193,7 +193,6 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._room_mode_registers: list[RegisterDef] = []
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
-        self._room_mode_semaphore = asyncio.Semaphore(8)
         # Persistent web client pool: keeps the Navigator web client across
         # polls so the TCP+auth overhead is paid once per session instead of
         # every 30s. Invalidated on failure and closed in async_shutdown.
@@ -451,28 +450,78 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         Room mode registers are read one-by-one because Navigator 2.0 firmware
         has been observed to return corrupt UCHAR values when they are part of
-        larger batch reads. Concurrency is capped with a semaphore so the device
-        is not overwhelmed by dozens of parallel requests on setups with many
-        zones/rooms.
+        larger batch reads. Reads stay sequential because the API serializes
+        Modbus I/O on one connection; creating many waiting tasks would add no
+        wire-level concurrency and would delay cancellation after a failure.
         """
+        # The API already reads quarantined registers individually. Avoid a
+        # second direct read on every poll once a room-mode register has been
+        # proven batch-unsafe and handed over to that API path.
+        get_batch_unsafe = getattr(self._client, "get_batch_unsafe_registers", None)
+        batch_unsafe = set(get_batch_unsafe()) if callable(get_batch_unsafe) else set()
+
         # Reuse the cached register subset (built once in setup_registers) and
         # only filter out registers discovered unsupported at runtime.
-        room_mode_registers = [reg for reg in self._room_mode_registers if reg.name not in self._unsupported_registers]
+        room_mode_registers = [
+            reg
+            for reg in self._room_mode_registers
+            if reg.name not in self._unsupported_registers and reg.name not in batch_unsafe
+        ]
         if not room_mode_registers:
             return
 
-        async def _read_one(reg: RegisterDef) -> Any:
-            async with self._room_mode_semaphore:
-                return await self._client.read_register(reg)
+        for reg in room_mode_registers:
+            try:
+                result = await self._client.read_register(reg)
+            except asyncio.CancelledError:
+                raise
+            except ModbusException as err:
+                if _is_illegal_address_error(err):
+                    self._unsupported_registers.add(reg.name)
+                    data.pop(reg.name, None)
+                    _LOGGER.debug(
+                        "Zone room mode register %s at address %d is unsupported; skipping it",
+                        reg.name,
+                        reg.address,
+                    )
+                    continue
+                raise
+            except (OSError, TimeoutError):
+                raise
+            except Exception as err:
+                data.pop(reg.name, None)
+                _LOGGER.warning(
+                    "Individual validation of zone room mode register %s at address %d failed; "
+                    "omitting its batch value from this update: %s",
+                    reg.name,
+                    reg.address,
+                    err,
+                )
+                continue
 
-        tasks = [_read_one(reg) for reg in room_mode_registers]
-        results = await asyncio.gather(*tasks)
-        for reg, result in zip(room_mode_registers, results):
+            batch_value = data.get(reg.name)
+            if batch_value != result:
+                mark_batch_unsafe = getattr(self._client, "mark_batch_unsafe", None)
+                if callable(mark_batch_unsafe):
+                    mark_batch_unsafe(reg)
+                _LOGGER.debug(
+                    "Zone room mode register %s differed between batch (%r) and individual (%r) read; "
+                    "quarantining it from future grouped reads",
+                    reg.name,
+                    batch_value,
+                    result,
+                )
             data[reg.name] = result
 
     async def _async_update_data(self) -> dict[str, Any]:
         try:
             data = await self._async_read_registers_resilient(self._registers)
+
+            # Keep the API and coordinator skip-lists synchronized before the
+            # room-mode validation, then perform that validation in the same
+            # communication error boundary as the main batch read.
+            self._merge_unsupported_registers()
+            await self._async_refresh_zone_room_modes(data)
         except Exception as err:
             issue_id = _repair_issue_for_error(err)
             for stale_issue_id in _CONNECTIVITY_REPAIR_ISSUES:
@@ -501,18 +550,6 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if not data:
             raise UpdateFailed("No data received from heat pump")
-
-        # Merge registers the library has flagged as unsupported (Illegal Data
-        # Address / exception code 2) so they are skipped on the next poll.
-        # The library isolates these silently (no retry, no warning); mirroring
-        # the set here keeps the coordinator's own skip-list in sync without
-        # relying on its bisection path, which never triggers because the
-        # library already swallows the exception inside read_batch. Supported
-        # transparently when running against an older library that does not
-        # expose get_unsupported_registers().
-        self._merge_unsupported_registers()
-
-        await self._async_refresh_zone_room_modes(data)
 
         # Apply aliases: when multiple register names share an address,
         # ensure all names appear in the data dict.
@@ -692,10 +729,24 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except asyncio.CancelledError:
             pass
 
-    def simulate_write(self, reg: RegisterDef, value: Any, *, dry_run: bool = True) -> Any:
+    def simulate_write(
+        self,
+        reg: RegisterDef,
+        value: Any,
+        *,
+        dry_run: bool = True,
+        allow_custom_register: bool = False,
+    ) -> Any:
         """Validate a write using idm-heatpump-api write-safety hooks when available."""
         simulator = getattr(self._client, "simulate_write", None)
         if callable(simulator):
+            if allow_custom_register:
+                return simulator(
+                    reg,
+                    value,
+                    dry_run=dry_run,
+                    allow_custom_register=True,
+                )
             return simulator(reg, value, dry_run=dry_run)
         # idm-heatpump-api < 0.6 has no dry-run safety result; keep compatibility
         # by falling back to encoding, which still validates datatype/range locally.

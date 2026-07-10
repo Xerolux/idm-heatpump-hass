@@ -37,7 +37,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 - **System Monitoring**: Flow, return, hot water, outdoor temperature, pressure, flow rate
 - **Heating Circuits A–G**: Up to 7 heating circuits with individual setpoint and mode control
-- **Zone Modules**: Up to 10 zones with 6 rooms each (room thermostat function). Current Navigator 10 hardware uses 6 rooms per module.
+- **Zone Modules**: Up to 10 zones with up to 8 configurable rooms each; current Navigator 10 hardware defaults to 6 rooms per module.
 - **Solar & PV**: Solar hot water heating, PV surplus utilization, battery monitoring
 - **Energy Monitoring**: Heat quantity, runtimes, energy meters
 - **Cascade & Bivalence**: Multi-heat pump control, heating element integration
@@ -74,6 +74,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 ### I have a problem
 1. [Troubleshooting](Troubleshooting)
 2. [Modbus Registers](Modbus-Register)
+3. [Stability & Release Readiness](Stability-and-Release-Readiness)
 
 ### I want to contribute
 - [Contributing Guide](Contributing)
@@ -82,7 +83,8 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 ## Technical Details
 
-- **Batch reading**: Consecutive registers are grouped (max. 30 per batch)
+- **Batch reading**: Only exactly adjacent, non-overlapping ranges are grouped, up to 40 Modbus words per request
+- **Value validation**: Unavailable sentinels are omitted as unused; suspicious grouped values are checked individually and quarantined for the client session
 - **Library-powered**: All registers from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api)
 - **Actionable setup diagnostics**: Separate messages for hostname/DNS errors, refused or disabled Modbus TCP, timeouts, unreachable endpoints, wrong slave IDs, invalid web PINs, and unavailable web interfaces
 - **Runtime version visibility**: Integration, `idm-heatpump-api`, and `pymodbus` versions are available in a diagnostic sensor, diagnostics exports, and startup logs

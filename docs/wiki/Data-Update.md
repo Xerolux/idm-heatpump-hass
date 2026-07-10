@@ -9,7 +9,9 @@ The integration uses Modbus TCP to read register data directly from the IDM heat
 The integration uses Home Assistant's **DataUpdateCoordinator**:
 
 - All entities share **one common query** per polling cycle
-- Modbus registers are read in **batches of up to 30 consecutive addresses** to minimize the number of network requests
+- Modbus registers are grouped only when their ranges are **exactly adjacent and non-overlapping**, up to 40 Modbus words per request
+- Values outside declared enum or numeric metadata are re-read individually; confirmed problem registers stay in the individual-read path for the current client session
+- Known `sentinel_values` such as `-1`, `254` or `255` mean unavailable/unused where declared by register metadata and are not treated as corrupt values
 - The coordinator updates all entities simultaneously after each successful query
 - Optional web supplement data uses a separate poll loop and starts slightly
   after Modbus polling, so both protocols do not hit the controller at exactly
@@ -36,7 +38,7 @@ external room temperature registers on state changes and refreshed periodically
 
 An entity is marked as **unavailable** when:
 - The connection to the heat pump is interrupted
-- The Modbus register value returns the sentinel value `-1.0` (unused/inactive register)
+- The Modbus register returns one of its declared unavailable sentinels (for example `-1.0`, `254` or `255` depending on that register)
 - The "Hide unused sensors" option is enabled
 - A web supplement sensor has no value in the latest successful web snapshot
 
@@ -52,6 +54,8 @@ Number, Select, and Switch entities can write values to the heat pump:
 - On connection errors, a **repair issue** is automatically created in Home Assistant
 - Once the connection is restored, the repair issue disappears automatically
 - The DataUpdateCoordinator logs connection errors once (not on every failed cycle)
+- Exhausted timeout/no-response failures abort the poll and trigger the normal repair flow; they never count as permanent failures of individual registers
+- Unsupported optional addresses are isolated and skipped on later polls instead of failing all supported data
 - Web supplement errors are logged separately and never abort the Modbus update
   path. A wrong PIN is reported directly during setup/reconfiguration.
 

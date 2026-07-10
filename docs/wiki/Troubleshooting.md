@@ -104,10 +104,11 @@ PIN or disable optional web data. The PIN itself is never logged.
 
 ### Incorrect or absurd values (e.g., -3276.8°C)
 
-- Check if the register addresses are correct for your Navigator model.
-- Extreme or incorrect numbers usually indicate incorrectly declared data types (Float, Word, sign). Please report such values via GitHub Issues so we can adjust the register in `registers.py` to `INT8`, `INT16`, or `FLOAT`.
-- Enable debug logging and check the raw register values in the logs.
-- Report incorrect register mappings as a [bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md).
+- Record the entity/register name, displayed value, Navigator model and the time of the observation.
+- Download diagnostics and include the installed integration/API versions and detected capabilities.
+- If possible, state the value shown on the Navigator at the same time. A plausible but different value is as important as an obviously absurd number.
+- Do not assume every `254`, `255` or `-1` is corrupt: these are valid unavailable sentinels only where the register metadata declares them.
+- Report the case as a [bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md). Maintainers should compare the exact FC03/FC04 address/count and raw words in batch and individual reads before changing datatype or address metadata.
 
 ### Values not updating
 
@@ -168,7 +169,7 @@ Do not include private IP addresses, hostnames, serial numbers, installer/custom
 
 ## 👩‍💻 For Developers (Mock Tests)
 
-Please **never** run write operations on Modbus (`write_register`) live against a real heat pump when testing code changes to the base logic. Instead, use our mock tests in `custom_components/idm_heatpump/tests/test_modbus_client.py` via `pytest` to test decoding (`decode_value`) and encoding (`encode_value`) without risk.
+Please **never** run write operations on Modbus (`write_register`) live against a real heat pump when testing code changes to base logic. Use the repository test suite and the API fake transport for decoding, encoding and write-safety tests. Hardware validation for register reads must remain read-only unless the owner explicitly authorizes a specific write.
 
 ## Common Errors and Solutions
 

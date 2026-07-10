@@ -32,7 +32,7 @@
 |----------|----------------|
 | **🌡️ System Monitoring** | Flow, return, hot water, outdoor temperature, pressure, flow rate |
 | **🔧 Heating Circuits A–G** | Up to 7 heating circuits with individual setpoint and mode control |
-| **🏠 Zone Modules** | Up to 10 zones with 6 rooms each (room thermostat function). Navigator 10 / current hardware uses 6 rooms per module. |
+| **🏠 Zone Modules** | Up to 10 zones with up to 8 configurable rooms each (room thermostat function); 6 rooms is the current Navigator 10 default. |
 | **🌡️ Room Temperature Forwarding** | Optional forwarding of Home Assistant temperature sensors to IDM external room temperature registers per heating circuit |
 | **💧 Hot Water** | DHW setpoint and priority control |
 | **☀️ Solar & PV** | Solar hot water heating, PV surplus utilization |
@@ -110,7 +110,7 @@ The full documentation is available in the **[Wiki][wiki]**:
 | 🚀 **Getting Started** | [Installation & Setup][wiki-install] · [Configuration][wiki-config] |
 | 📊 **Entities** | [All Entities][wiki-entities] · [Sensors][wiki-sensors] · [Switches][wiki-switches] · [Selects][wiki-selects] · [Numbers][wiki-numbers] |
 | ⚙️ **Automation** | [Services Reference][wiki-services] |
-| 🔧 **Operation** | [Troubleshooting][wiki-trouble] · [Modbus Registers][wiki-registers] |
+| 🔧 **Operation** | [Troubleshooting][wiki-trouble] · [Modbus Registers][wiki-registers] · [Stability & Release Readiness][wiki-stability] |
 | 👩‍💻 **Development** | [Contributing][wiki-contributing] · [Changelog][wiki-changelog] |
 
 Maintainers should run the **[release smoke test](docs/RELEASE_SMOKE_TEST.md)**
@@ -165,8 +165,9 @@ Home Assistant
 
 ### Technical Details
 
-- **169+ entities** generated dynamically from the `idm-heatpump` library register map
-- **Batch reading**: Consecutive registers are grouped (max. 30 per batch)
+- **Dynamic entities** generated from the detected model, enabled circuits, zones and optional capabilities
+- **Batch reading**: only exactly adjacent, non-overlapping register ranges are grouped, up to 40 Modbus words per request
+- **Value safety**: declared unavailable sentinels are treated as unused; implausible batch values are verified individually and quarantined for the client session
 - **Data types**: FLOAT (IEEE 754), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers are tracked and protected from excessive writing
 - **Auto-recovery**: Exponential backoff on connection errors
@@ -242,6 +243,7 @@ This project is an **unofficial community project** and is **not affiliated with
 [wiki-numbers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#numbers
 [wiki-services]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Services
 [wiki-trouble]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Troubleshooting
+[wiki-stability]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Stability-and-Release-Readiness
 [idm-modbus-source]: https://www.idm-energie.at/wp-content/uploads/2021/04/PV_Nutzung_GLT-Smartfox.pdf
 [wiki-registers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Modbus-Register
 [wiki-contributing]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing

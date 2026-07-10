@@ -24,6 +24,7 @@
 - [Supported Devices](Supported-Devices)
 - [Compatibility Matrix](Compatibility-Matrix)
 - [Known Limitations](Known-Limitations)
+- [Stability & Release Readiness](Stability-and-Release-Readiness)
 - [Troubleshooting](Troubleshooting)
 - [Modbus Registers](Modbus-Register)
 

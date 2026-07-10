@@ -72,9 +72,10 @@ Writes a value directly to a Modbus register (advanced).
 |-------|------|-------------|
 | `address` | number | Modbus register address (0–10000) |
 | `value` | text | Value to write |
+| `datatype` | select | `uint16` (default), `int16`, `float`, `uchar` or `bool` |
 | `acknowledge_risk` | constant | Must be set to `true` |
 
-> **WARNING:** Direct register writing can damage your heat pump. Only use this service if you know exactly what you are doing!
+> **WARNING:** Direct register writing can damage your heat pump. Only use this service if you know exactly what you are doing. The integration validates numeric conversion and encoding, but a custom address has no known range, enum, EEPROM or semantic metadata.
 
 **Example:**
 ```yaml
@@ -84,6 +85,7 @@ target:
 data:
   address: 1005
   value: "1"
+  datatype: uchar
   acknowledge_risk: true
 ```
 
@@ -122,9 +124,10 @@ action:
     data:
       address: 1005
       value: "1"
+      datatype: uchar
       acknowledge_risk: true
 ```
-*Note: Some registers expect special formatting (Float, Int, etc.). You must ensure that the written value is valid in the Modbus context.*
+*The datatype is mandatory whenever the register is not an unsigned 16-bit integer. Non-numeric values and values that cannot be represented by the selected datatype are rejected before network I/O.*
 
 ### Heat pump standby when away
 
