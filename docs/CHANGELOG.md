@@ -10,6 +10,16 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.1-beta.26] - 2026-07-10
+
+## IDM Heatpump v0.8.1-beta.26\n\n- Aktualisiert auf idm-heatpump-api 0.7.4.\n- Korrigiert die dokumentierten Navigator-Register und die Feuchtewert-Dekodierung.\n- Verbessert die Wiederherstellung nach Modbus-Verbindungsabbrüchen.\n\nHinweis: Beta-Release; bitte Rückmeldung zu Navigator 2.0 geben.
+
+---
+
+[Full changelog: v0.7.4...v0.8.1-beta.26](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.7.4...v0.8.1-beta.26)
+
+---
+
 
 ## [0.8.1-beta.25] - 2026-07-10
 
