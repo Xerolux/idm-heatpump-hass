@@ -88,8 +88,9 @@ from .const import (
     REGISTER_ADDRESS_CONNECTION_PROBE,
     REGISTER_COUNT_CONNECTION_PROBE,
 )
-from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
+from .log_filter import install_pymodbus_log_filter
 from .registers import normalize_zone_rooms
+from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -1087,6 +1088,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
     async def _test_connection(self, data: dict[str, Any]) -> _ModbusConnectionStatus:
         from idm_heatpump import IdmModbusClient
 
+        install_pymodbus_log_filter()
         host = str(data[CONF_HOST]).strip()
         port = int(data.get(CONF_PORT, DEFAULT_PORT))
         slave_id = int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
