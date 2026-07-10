@@ -10,6 +10,16 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.1-beta.22] - 2026-07-10
+
+Fix Home Assistant event-loop blocking during runtime version discovery and suppress raw Modbus frame dumps during failed setup probes.
+
+---
+
+[Full changelog: v0.7.4...v0.8.1-beta.22](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.7.4...v0.8.1-beta.22)
+
+---
+
 
 ## [0.8.1-beta.21] - 2026-07-10
 
