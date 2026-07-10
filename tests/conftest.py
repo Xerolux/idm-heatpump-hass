@@ -655,6 +655,7 @@ def _stub_idm_heatpump() -> None:
         icon: str | None = None
         min_val: float | None = None
         max_val: float | None = None
+        sentinel_values: tuple[int | float | str, ...] = ()
         enabled_by_default: bool = True
         state_class: Any = None
 

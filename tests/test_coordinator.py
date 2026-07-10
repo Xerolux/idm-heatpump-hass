@@ -234,6 +234,28 @@ class TestIsRegisterUnused:
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         assert coord.is_register_unused("x", 255) is True
 
+    def test_register_metadata_sentinel_is_unused(self, mock_hass, mock_config_entry):
+        reg = RegisterDef(
+            address=1714,
+            datatype=DataType.UCHAR,
+            name="external_pump_demand",
+        )
+        setattr(reg, "sentinel_values", (254,))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            hide_unused=True,
+            registers=[reg],
+        )
+
+        assert coord.is_register_unused(reg.name, 254) is True
+        assert coord.is_register_unused(reg.name, 50) is False
+
+    def test_undeclared_254_is_not_unused(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
+
+        assert coord.is_register_unused("x", 254) is False
+
     def test_documented_enum_value_255_is_not_unused(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
         coord._registers = [

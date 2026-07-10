@@ -10,6 +10,24 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [0.8.1-beta.27] - 2026-07-10
+
+### Fixed
+
+- Pin `idm-heatpump-api[web]` to hardware-verified release `0.7.5`, which
+  recognizes unavailable optional-register sentinels instead of repeatedly
+  quarantining, individually re-reading and warning about them.
+- Use each API register's `sentinel_values` metadata in the integration's
+  unused-register filter. This includes the observed `254` sentinel returned
+  by unavailable external groundwater-pump demand registers.
+
+### Validation
+
+- Compared 170 Navigator 10 register definitions across 45 API batch groups
+  with individual FC04 reads. No corrupt raw batch value was observed in 309
+  comparisons; the unavailable values were identical in both read modes.
+
 ## [0.8.1-beta.26] - 2026-07-10
 
 ## IDM Heatpump v0.8.1-beta.26\n\n- Aktualisiert auf idm-heatpump-api 0.7.4.\n- Korrigiert die dokumentierten Navigator-Register und die Feuchtewert-Dekodierung.\n- Verbessert die Wiederherstellung nach Modbus-Verbindungsabbrüchen.\n\nHinweis: Beta-Release; bitte Rückmeldung zu Navigator 2.0 geben.
