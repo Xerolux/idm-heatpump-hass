@@ -94,8 +94,12 @@ def _stub_pymodbus() -> None:
     class _ConnectionException(_ModbusException):
         pass
 
+    class _ModbusIOException(_ModbusException):
+        pass
+
     exceptions_mod.ModbusException = _ModbusException
     exceptions_mod.ConnectionException = _ConnectionException
+    exceptions_mod.ModbusIOException = _ModbusIOException
 
 
 _stub_pymodbus()

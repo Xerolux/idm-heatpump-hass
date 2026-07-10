@@ -21,7 +21,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from idm_heatpump import IdmModbusClient, IdmModelInfo, RegisterDef
-from pymodbus.exceptions import ConnectionException, ModbusException
+from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
 
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -93,6 +93,11 @@ def _repair_issue_for_error(err: Exception) -> str:
     if isinstance(err, ConnectionRefusedError) or "connection refused" in message:
         return "modbus_connection_refused"
     if isinstance(err, TimeoutError) or any(marker in message for marker in ("timed out", "timeout")):
+        return "modbus_timeout"
+    if isinstance(err, ModbusIOException):
+        # Pymodbus uses this exception for an established TCP connection that
+        # did not produce a Modbus response. It is a timeout/communication
+        # failure, not evidence of a wrong configured slave ID.
         return "modbus_timeout"
     if isinstance(err, ConnectionException):
         return "cannot_connect"
