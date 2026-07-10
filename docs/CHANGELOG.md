@@ -11,6 +11,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1-beta.22] - 2026-07-10
+
+### Fixed
+
+- Run installed dependency-version discovery outside Home Assistant's event
+  loop, preventing blocking `listdir`, `read_text` and `open` warnings during
+  integration setup, sensor setup and diagnostics.
+- Install the Modbus noise filters before setup-time connection probes so a
+  wrong port or non-responsive endpoint does not flood the Home Assistant log
+  with buffered raw frames and duplicate retry messages.
+
 ## [0.8.1-beta.21] - 2026-07-10
 
 ### Added

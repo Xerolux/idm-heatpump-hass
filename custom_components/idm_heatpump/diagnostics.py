@@ -15,7 +15,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, DOMAIN
-from .versions import runtime_versions
+from .versions import async_runtime_versions
 
 TO_REDACT = {CONF_HOST, CONF_PORT, CONF_SLAVE_ID}
 
@@ -67,7 +67,7 @@ def _web_supplement_diagnostics(coordinator: Any) -> dict[str, Any]:
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     coordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
-    versions = runtime_versions(integration.manifest.get("version"))
+    versions = await async_runtime_versions(integration.manifest.get("version"))
 
     return {
         "entry": async_redact_data(entry.as_dict(), TO_REDACT),
