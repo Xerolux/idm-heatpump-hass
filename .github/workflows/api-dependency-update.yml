@@ -76,6 +76,16 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install pytest pytest-asyncio
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
+              requirements = json.load(manifest_file)["requirements"]
+
+          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
+          PY
           pytest tests/test_release_contract.py tests/test_cross_repo_contract.py -q
 
       - name: Create dependency update PR

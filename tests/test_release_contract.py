@@ -11,7 +11,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "pymodbus>=3.12.1,<4.0",
-    "idm-heatpump-api[web]==0.7.1",
+    "idm-heatpump-api[web]==0.7.2",
 ]
 
 
@@ -48,6 +48,8 @@ def test_api_dependency_update_workflow_updates_pin_and_runs_contract_tests() ->
 
     assert "idm_heatpump_api_release" in workflow
     assert 'requirement = f"idm-heatpump-api[web]=={version}"' in workflow
+    assert 'json.load(manifest_file)["requirements"]' in workflow
+    assert 'pip", "install", *requirements' in workflow
     assert "tests/test_release_contract.py tests/test_cross_repo_contract.py" in workflow
     assert "peter-evans/create-pull-request" in workflow
 

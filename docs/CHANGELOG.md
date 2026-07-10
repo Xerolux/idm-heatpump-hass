@@ -10,6 +10,29 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## [0.8.1-beta.23] - 2026-07-10
+
+### Behoben
+
+- Modbus-Batches lesen nur noch lückenlos zusammenhängende Register. Dadurch
+  können ausgelassene Adressen keine benachbarten Werte mehr verschieben.
+- Unplausible Batch-Werte werden einzeln nachgelesen und erneut geprüft.
+  Auffällige Register bleiben anschließend für die laufende Verbindung im
+  sicheren Einzelabruf.
+- Der Feuchtesensor ist auf den physikalischen Bereich von 0 bis 100 Prozent
+  begrenzt. Dokumentierte Sonderwerte wie `-1` und `65535` bleiben gültig.
+
+### Geändert
+
+- Aktualisiert die fest getestete Laufzeitabhängigkeit auf
+  `idm-heatpump-api[web]==0.7.2`.
+
+### Bitte testen
+
+- Bitte beobachte nach dem Update besonders Feuchte-, Betriebsart- und
+  Pumpenwerte. Rückmeldungen mit Navigator-Modell und einem Screenshot helfen
+  uns sehr – auch dann, wenn jetzt alles korrekt aussieht.
 ## [0.8.1-beta.22] - 2026-07-10
 
 Fix Home Assistant event-loop blocking during runtime version discovery and suppress raw Modbus frame dumps during failed setup probes.
