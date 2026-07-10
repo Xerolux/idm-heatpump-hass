@@ -18,7 +18,7 @@ from idm_heatpump import (
     IdmModelInfo,
     RegisterDef,
 )
-from pymodbus.exceptions import ConnectionException, ModbusException
+from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
 from custom_components.idm_heatpump.const import UNUSED_VALUE
 
 
@@ -140,6 +140,7 @@ class TestRepairIssueClassification:
             (socket.gaierror("name or service not known"), "host_not_found"),
             (ConnectionRefusedError("connection refused"), "modbus_connection_refused"),
             (TimeoutError("timed out"), "modbus_timeout"),
+            (ModbusIOException("No response received after 0 retries"), "modbus_timeout"),
             (ModbusException("no response from slave 2"), "wrong_slave_id"),
             (ModbusException("ExceptionResponse(exception_code=1) illegal function"), "incompatible_firmware"),
             (Exception("timeout"), "modbus_timeout"),
