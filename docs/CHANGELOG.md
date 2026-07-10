@@ -10,6 +10,18 @@
 ---
 
 All notable changes to this project will be documented in this file.
+## [0.8.1-beta.24] - 2026-07-10
+
+Diese Beta übernimmt die fehlenden Kern-Fixes aus PR #89 sauber auf den aktuellen Stand: Paket- und Versionsabfragen blockieren den Home-Assistant-Event-Loop nicht mehr, und der pymodbus-Logfilter ist bereits vor den Verbindungsprüfungen im Einrichtungsdialog aktiv.
+
+Bitte testet besonders Einrichtung, Neukonfiguration und Diagnose sowie die Modbus-Protokollausgaben. Die Batch-Read-Korrekturen aus API 0.7.2 bleiben enthalten – Rückmeldungen zu falschen oder vertauschten Werten bitte weiterhin in Issue #90 posten.
+
+---
+
+[Full changelog: v0.7.4...v0.8.1-beta.24](https://github.com/Xerolux/idm-heatpump-hass/compare/v0.7.4...v0.8.1-beta.24)
+
+---
+
 
 ## [0.8.1-beta.23] - 2026-07-10
 
