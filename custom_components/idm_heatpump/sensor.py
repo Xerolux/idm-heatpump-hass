@@ -17,6 +17,7 @@ from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity import EntityCategory, EntityDescription  # type: ignore[attr-defined]
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
+from homeassistant.loader import async_get_integration
 
 from idm_heatpump import DataType, RegisterDef
 
@@ -27,7 +28,7 @@ except ImportError:
 else:
     WEB_VALUE_DESCRIPTIONS = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
 
-from .const import CONF_TECHNICIAN_CODES
+from .const import CONF_TECHNICIAN_CODES, DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import (
     IdmCoordinatorEntityBase,
@@ -40,6 +41,7 @@ from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .internal_messages import format_internal_message, internal_message_text
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
+from .versions import RuntimeVersions, runtime_versions
 
 
 def _decode_bitflag(value: int, options: dict[int, str]) -> str:
@@ -347,7 +349,9 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities: list[IdmSensor | IdmTechnicianCodeSensor | IdmWebSensor] = []
+    integration = await async_get_integration(hass, DOMAIN)
+    versions = runtime_versions(integration.manifest.get("version"))
+    entities: list[IdmSensor | IdmTechnicianCodeSensor | IdmWebSensor | IdmApiVersionSensor] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
         entities += _technician_code_entities(coordinator)
     entities += [
@@ -362,7 +366,42 @@ async def async_setup_entry(
     ]
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
+    entities.append(IdmApiVersionSensor(coordinator, versions))
     async_add_entities(entities)
+
+
+class IdmApiVersionSensor(IdmCoordinatorEntityBase, SensorEntity):
+    """Diagnostic entity exposing the installed local API/runtime versions."""
+
+    _attr_available = True
+
+    def __init__(self, coordinator: IdmCoordinator, versions: RuntimeVersions) -> None:
+        super().__init__(coordinator)
+        self._versions = versions
+        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
+        self._attr_unique_id = build_entity_unique_id(entry_id, "idm_api_version")
+        self.entity_description = SensorEntityDescription(
+            key="idm_api_version",
+            translation_key="idm_api_version",
+            icon="mdi:package-variant-closed",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+
+    @property
+    def available(self) -> bool:
+        """Version metadata remains available when device polling fails."""
+        return True
+
+    @property
+    def native_value(self) -> str:
+        return self._versions.api
+
+    @property
+    def extra_state_attributes(self) -> dict[str, str]:
+        return {
+            "integration_version": self._versions.integration,
+            "pymodbus_version": self._versions.pymodbus,
+        }
 
 
 def _technician_code_entities(coordinator: IdmCoordinator) -> list[IdmTechnicianCodeSensor]:

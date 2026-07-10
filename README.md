@@ -40,6 +40,9 @@
 | **❄️ Cascade & Bivalence** | Multi-heat pump control, heating element integration |
 | **📡 BMS Remote Maintenance** | BMS temperature requests (cyclic writing) |
 | **🛡️ Error Management** | Error detection, readable internal messages, error acknowledgment, diagnostics export |
+| **🧭 Guided Setup Diagnostics** | Distinguishes unknown hosts, refused/disabled Modbus TCP, timeouts, unreachable networks, wrong slave IDs, invalid web PINs and unavailable web interfaces |
+| **🧪 Read-only Connection Test** | Reconfigure menu can test the saved Modbus and optional local web connection without changing settings or writing registers |
+| **📦 Runtime Versions** | Diagnostic sensor and export show the installed integration, `idm-heatpump-api` and `pymodbus` versions |
 | **🔑 Technician Level** | Optional sensors for technician level 1 & 2 codes (time-based, updated every minute and pinned first) |
 | **🔒 Security** | 100% local, Modbus TCP, EEPROM protection, EEPROM-sensitive registers |
 
@@ -57,13 +60,42 @@ URL: https://github.com/Xerolux/idm-heatpump-hass  |  Category: Integration
 → Download "IDM Heatpump" → Restart HA
 ```
 
-**2. Set Up Integration**
-```
-Settings → Devices & Services → Add Integration → "IDM Heatpump"
-Enter IP address & port → Configure heating circuits & zones → Done!
+**2. Enable Modbus TCP on the IDM heat pump — required for full operation**
+
+On the IDM Navigator/controller open:
+
+```text
+Building management system (BMS / Gebäudeleittechnik)
+→ Modbus TCP
+→ On / Enabled
 ```
 
-**3. Done!** 🎉 Your heat pump is now smart.
+Then connect the Navigator to the local network, note its IP address and keep
+the usual values **port 502** and **slave/unit ID 1**. Depending on the
+Navigator generation, software version and access level, the menu name can
+differ or be available only at installer/technician level. If the option is
+missing or locked, ask your heating installer or iDM service to enable it.
+
+This is the Modbus TCP setting of the **heat pump/Navigator**, not a similarly
+named setting on a PV inverter. See the
+[detailed activation guide][wiki-install-modbus] and the
+[official iDM technical document][idm-modbus-source].
+
+**3. Set Up Integration**
+```
+Settings → Devices & Services → Add Integration → "IDM Heatpump"
+Enter heat pump IP, port 502 and slave ID 1 → Configure heating circuits & zones → Done!
+```
+
+If setup fails, the flow explains whether the hostname is invalid, the TCP
+connection was refused (often Modbus TCP is disabled), the request timed out,
+or the controller did not answer for the selected slave ID. An optional local
+web PIN enables a validated, read-only web-only fallback.
+
+Later, use **Settings → Devices & Services → IDM Heatpump → Reconfigure →
+Test current connection** for a safe repeatable Modbus and optional web test.
+
+**4. Done!** 🎉 Your heat pump is now smart.
 
 > Detailed guide → **[Installation & Setup][wiki-install]**
 
@@ -92,8 +124,8 @@ before publishing a stable release.
 - HACS ([Installation guide](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502)
 - Optional local Navigator web PIN for additional read-only web diagnostics
-- Python 3.14.2+ (provided by Home Assistant 2026.5)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.0` (installed automatically)
+- Python 3.13+ (provided by Home Assistant)
+- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.1` (installed automatically)
 
 ---
 
@@ -101,7 +133,7 @@ before publishing a stable release.
 
 | Platform | Entities | Description |
 |----------|----------|-------------|
-| **Sensor** | 109+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, diagnostics |
+| **Sensor** | 110+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions and diagnostics |
 | **Binary Sensor** | 8+ | Fault alarms, compressor status, heating/cooling/DHW demand |
 | **Number** | 44+ | Setpoints, temperatures, limits, GLT parameters, power limits (writable) |
 | **Select** | 4+ | System mode, heating circuit modes, solar mode, ISC mode |
@@ -143,6 +175,9 @@ Home Assistant
 - **Optional web supplement**: local read-only Navigator generation, software version, model, compact myIDM ID and web-only diagnostics; default interval is 30 seconds and Modbus remains authoritative
 - **Room temperature forwarding**: disabled by default; can forward selected Home Assistant temperature sensors to the IDM external room temperature registers per heating circuit with a 300 second default interval, immediate updates on state change, 0.2 °C default tolerance and range validation
 - **Readable diagnostics**: the `internal_message` sensor shows clear message text and exposes `message_code` / `message_text` attributes instead of a bare numeric code
+- **Actionable connection diagnostics**: setup, reconfigure, logs and repairs distinguish DNS/hostname errors, refused TCP connections, timeouts, unreachable endpoints, missing Modbus replies, wrong web PINs and web-interface failures
+- **Built-in test menu**: Reconfigure offers a non-destructive connection test for a known IDM Modbus register, targeted DNS/TCP failure classification and, when configured, local Navigator web authentication
+- **Visible runtime stack**: the diagnostic `IDM Heatpump API version` sensor exposes the installed API version and includes the integration and `pymodbus` versions as attributes; the same versions are included in diagnostics exports and startup logs
 - **Entity organization**: technician code sensors are pinned at the top, followed by functional groups for configuration, switches, writable values and diagnostics
 
 ---
@@ -198,6 +233,7 @@ This project is an **unofficial community project** and is **not affiliated with
 [paypal]: https://paypal.me/xerolux
 [wiki]: https://github.com/Xerolux/idm-heatpump-hass/wiki
 [wiki-install]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-and-Setup
+[wiki-install-modbus]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-and-Setup#enable-modbus-tcp-on-the-idm-heat-pump
 [wiki-config]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Configuration
 [wiki-entities]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities
 [wiki-sensors]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#sensors
@@ -206,6 +242,7 @@ This project is an **unofficial community project** and is **not affiliated with
 [wiki-numbers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#numbers
 [wiki-services]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Services
 [wiki-trouble]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Troubleshooting
+[idm-modbus-source]: https://www.idm-energie.at/wp-content/uploads/2021/04/PV_Nutzung_GLT-Smartfox.pdf
 [wiki-registers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Modbus-Register
 [wiki-contributing]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing
 [wiki-changelog]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Changelog

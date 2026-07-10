@@ -11,7 +11,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "pymodbus>=3.12.1,<4.0",
-    "idm-heatpump-api[web]==0.7.0",
+    "idm-heatpump-api[web]==0.7.1",
 ]
 
 
@@ -77,3 +77,26 @@ def test_user_facing_dependency_docs_match_manifest() -> None:
 
     for requirement in EXPECTED_RUNTIME_REQUIREMENTS:
         assert all(requirement in _read(path) for path in docs)
+
+
+def test_modbus_activation_guidance_is_consistent_in_ui_and_docs() -> None:
+    paths = [
+        ROOT / "README.md",
+        ROOT / "README_de.md",
+        ROOT / "docs" / "wiki" / "Home.md",
+        ROOT / "docs" / "wiki" / "Installation-and-Setup.md",
+        ROOT / "docs" / "wiki" / "Troubleshooting.md",
+        ROOT / "custom_components" / "idm_heatpump" / "strings.json",
+        ROOT / "custom_components" / "idm_heatpump" / "translations" / "de.json",
+        ROOT / "custom_components" / "idm_heatpump" / "translations" / "en.json",
+    ]
+
+    for path in paths:
+        content = _read(path)
+        assert "Gebäudeleittechnik" in content, path
+        assert "Modbus TCP" in content, path
+
+    installation = _read(ROOT / "docs" / "wiki" / "Installation-and-Setup.md")
+    assert "PV inverter" in installation
+    assert "port 502" in installation
+    assert "slave/unit ID 1" in installation

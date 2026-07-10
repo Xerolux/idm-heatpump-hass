@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import socket
 from datetime import timedelta
 from collections.abc import Mapping
 from typing import Any
@@ -36,16 +37,25 @@ from .registers import (
     collect_registers_from_descriptions,
     collect_aliases_from_descriptions,
 )
-from .web_data import IdmWebClientPool, IdmWebSupplement, async_read_web_supplement
+from .web_data import (
+    IdmWebAuthenticationFailed,
+    IdmWebClientPool,
+    IdmWebSupplement,
+    async_read_web_supplement,
+)
 
 _LOGGER = logging.getLogger(__name__)
 _ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
 _CONNECTIVITY_REPAIR_ISSUES = (
     "cannot_connect",
+    "host_not_found",
+    "modbus_connection_refused",
+    "modbus_timeout",
     "wrong_slave_id",
     "incompatible_firmware",
 )
 _WEB_SUPPLEMENT_FAILED_ISSUE = "web_supplement_failed"
+_WEB_AUTH_FAILED_ISSUE = "web_authentication_failed"
 _WEB_CORE_VALUE_KEYS = ("navigator_version", "software_version", "heatpump_model")
 _ZONE_ROOM_MODE_PREFIX = "zm"
 _ZONE_ROOM_MODE_MARKER = "_room"
@@ -76,6 +86,14 @@ def _is_zone_room_mode_register(reg: RegisterDef) -> bool:
 def _repair_issue_for_error(err: Exception) -> str:
     """Map communication errors to actionable repair issue translations."""
     message = str(err).casefold()
+    if isinstance(err, socket.gaierror) or any(
+        marker in message for marker in ("name or service not known", "nodename nor servname", "dns")
+    ):
+        return "host_not_found"
+    if isinstance(err, ConnectionRefusedError) or "connection refused" in message:
+        return "modbus_connection_refused"
+    if isinstance(err, TimeoutError) or any(marker in message for marker in ("timed out", "timeout")):
+        return "modbus_timeout"
     if isinstance(err, ConnectionException):
         return "cannot_connect"
     if any(marker in message for marker in ("slave", "unit id", "device id", "no response", "no reply")):
@@ -388,22 +406,36 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data.update(await self._async_read_registers_resilient(readable[midpoint:]))
             return data
 
-    def _merge_library_unsupported_registers(self) -> None:
-        """Merge unsupported registers isolated by idm-heatpump-api.
+    def _merge_unsupported_registers(self) -> None:
+        """Mirror the library's unsupported-register set into the coordinator.
 
-        The API tracks only registers rejected with Modbus ``Illegal Data
-        Address`` (exception code 2). Mirroring that public set prevents this
-        coordinator's direct room-mode path from retrying those addresses.
+        idm-heatpump-api marks registers that respond with Modbus ``Illegal Data
+        Address`` (exception code 2) as permanently failed and skips them on
+        subsequent ``read_batch`` calls. The coordinator keeps its own
+        ``_unsupported_registers`` skip-list (used for the zone-room mode path
+        and surfaced via the ``unsupported_registers`` property), so the two
+        sets must stay in sync. Merging after every poll ensures registers
+        isolated by the library are reflected here too, without relying on the
+        coordinator's bisection path (which never runs for these addresses
+        because the library swallows the exception inside ``read_batch``).
+
+        Uses ``getattr`` so this is a no-op against older library versions that
+        do not expose ``get_unsupported_registers()``.
         """
-        library_unsupported = self._client.get_unsupported_registers()
-        new_unsupported = set(library_unsupported) - self._unsupported_registers
+        get_unsupported = getattr(self._client, "get_unsupported_registers", None)
+        if get_unsupported is None:
+            return
+        library_unsupported = get_unsupported()
+        if not library_unsupported:
+            return
+        new_unsupported = [name for name in library_unsupported if name not in self._unsupported_registers]
         if not new_unsupported:
             return
         self._unsupported_registers.update(new_unsupported)
         _LOGGER.debug(
-            "Merged %d unsupported register(s) reported by idm-heatpump-api: %s",
+            "Library reported %d unsupported register(s); merged into coordinator skip-list: %s",
             len(new_unsupported),
-            sorted(new_unsupported),
+            new_unsupported,
         )
 
     async def _async_refresh_zone_room_modes(self, data: dict[str, Any]) -> None:
@@ -435,6 +467,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data = await self._async_read_registers_resilient(self._registers)
         except Exception as err:
             issue_id = _repair_issue_for_error(err)
+            for stale_issue_id in _CONNECTIVITY_REPAIR_ISSUES:
+                if stale_issue_id != issue_id:
+                    ir.async_delete_issue(self.hass, DOMAIN, stale_issue_id)
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -459,7 +494,16 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not data:
             raise UpdateFailed("No data received from heat pump")
 
-        self._merge_library_unsupported_registers()
+        # Merge registers the library has flagged as unsupported (Illegal Data
+        # Address / exception code 2) so they are skipped on the next poll.
+        # The library isolates these silently (no retry, no warning); mirroring
+        # the set here keeps the coordinator's own skip-list in sync without
+        # relying on its bisection path, which never triggers because the
+        # library already swallows the exception inside read_batch. Supported
+        # transparently when running against an older library that does not
+        # expose get_unsupported_registers().
+        self._merge_unsupported_registers()
+
         await self._async_refresh_zone_room_modes(data)
 
         # Apply aliases: when multiple register names share an address,
@@ -496,6 +540,26 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 preferred_variant=self._web_variant,
                 client_pool=self._web_client_pool,
             )
+        except IdmWebAuthenticationFailed as err:
+            error = f"{err.__class__.__name__}: {err}"
+            if error != self._last_web_error:
+                _LOGGER.warning(
+                    "IDM Navigator web authentication failed for %s. Re-enter the local web PIN in reconfigure",
+                    self._web_host,
+                )
+            self._last_web_error = error
+            ir.async_delete_issue(self.hass, DOMAIN, _WEB_SUPPLEMENT_FAILED_ISSUE)
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                _WEB_AUTH_FAILED_ISSUE,
+                is_fixable=True,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=_WEB_AUTH_FAILED_ISSUE,
+                data={"entry_id": self.config_entry.entry_id} if self.config_entry is not None else None,
+                translation_placeholders={"host": self._web_host},
+            )
+            return
         except Exception as err:
             error = f"{err.__class__.__name__}: {err}"
             if error != self._last_web_error:
@@ -505,6 +569,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     error,
                 )
             self._last_web_error = error
+            ir.async_delete_issue(self.hass, DOMAIN, _WEB_AUTH_FAILED_ISSUE)
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -521,6 +586,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
 
         self._last_web_error = None
+        ir.async_delete_issue(self.hass, DOMAIN, _WEB_AUTH_FAILED_ISSUE)
         ir.async_delete_issue(self.hass, DOMAIN, _WEB_SUPPLEMENT_FAILED_ISSUE)
         self._web_supplement = web_supplement
         # Cache which web variant succeeded so the next poll skips the other

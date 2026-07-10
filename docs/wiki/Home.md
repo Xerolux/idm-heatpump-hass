@@ -8,6 +8,11 @@
 > **The complete documentation** for the IDM Heatpump integration.
 > From installation to troubleshooting — with all features, entities, and services.
 
+> **Important prerequisite:** Modbus TCP must be enabled on the IDM
+> Navigator/controller under **Building management system
+> (Gebäudeleittechnik) → Modbus TCP → On (Ein)**. See
+> [Installation & Setup](Installation-and-Setup#enable-modbus-tcp-on-the-idm-heat-pump).
+
 ---
 
 ## What is the IDM Heatpump Integration?
@@ -19,9 +24,9 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
 | **Min HA Version** | 2026.5.0 |
-| **Python** | 3.14.2+ |
+| **Python** | 3.13+ (managed by Home Assistant) |
 | **pymodbus** | pymodbus>=3.12.1,<4.0 |
-| **Library** | idm-heatpump-api[web]==0.7.0 |
+| **Library** | idm-heatpump-api[web]==0.7.1 |
 | **License** | MIT |
 | **Languages** | DE, EN |
 | **Entities** | 169+ (109 sensors, 8 binary, 44 numbers, 4 selects, 4 switches) |
@@ -48,7 +53,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 | Platform | Entities | Description |
 |----------|----------|-------------|
-| **Sensor** | 109+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster |
+| **Sensor** | 110+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions |
 | **Binary Sensor** | 8+ | Fault alarms, compressor status, heating/cooling/DHW demand |
 | **Number** | 44+ | Writable setpoints, limits, GLT parameters, power limits |
 | **Select** | 4+ | System mode, circuit modes, solar/ISC mode |
@@ -79,6 +84,8 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 - **Batch reading**: Consecutive registers are grouped (max. 30 per batch)
 - **Library-powered**: All registers from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api)
+- **Actionable setup diagnostics**: Separate messages for hostname/DNS errors, refused or disabled Modbus TCP, timeouts, unreachable endpoints, wrong slave IDs, invalid web PINs, and unavailable web interfaces
+- **Runtime version visibility**: Integration, `idm-heatpump-api`, and `pymodbus` versions are available in a diagnostic sensor, diagnostics exports, and startup logs
 - **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers tracked and protected
 - **Auto-recovery**: Exponential backoff on connection errors

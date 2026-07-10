@@ -47,6 +47,8 @@ def test_enum_translation_keys_are_present_in_english_and_german() -> None:
 
     for platform in ("select", "sensor"):
         for key, payload in strings["entity"][platform].items():
+            if "state" not in payload:
+                continue
             states = set(payload["state"])
             assert set(english["entity"][platform][key]["state"]) == states
             assert set(german["entity"][platform][key]["state"]) == states

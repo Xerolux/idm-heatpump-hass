@@ -1,12 +1,17 @@
 """Tests for IdmCoordinator."""
 
+import socket
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from custom_components.idm_heatpump.coordinator import IdmCoordinator, _repair_issue_for_error, navigator_family
-from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
+from custom_components.idm_heatpump.web_data import (
+    IdmWebAuthenticationFailed,
+    IdmWebSensorValue,
+    IdmWebSupplement,
+)
 from idm_heatpump import (
     MODEL_NAVIGATOR_20,
     DataType,
@@ -132,9 +137,12 @@ class TestRepairIssueClassification:
         ("error", "issue_id"),
         [
             (ConnectionException("connection lost"), "cannot_connect"),
+            (socket.gaierror("name or service not known"), "host_not_found"),
+            (ConnectionRefusedError("connection refused"), "modbus_connection_refused"),
+            (TimeoutError("timed out"), "modbus_timeout"),
             (ModbusException("no response from slave 2"), "wrong_slave_id"),
             (ModbusException("ExceptionResponse(exception_code=1) illegal function"), "incompatible_firmware"),
-            (Exception("timeout"), "cannot_connect"),
+            (Exception("timeout"), "modbus_timeout"),
         ],
     )
     def test_classifies_communication_errors(self, error, issue_id):
@@ -328,7 +336,7 @@ class TestAsyncUpdateData:
 
         assert data["temp"] == 22.5
         assert data["mode"] == 1
-        assert mock_ir.async_delete_issue.call_count == 3
+        assert mock_ir.async_delete_issue.call_count == 6
 
     async def test_empty_data_raises_update_failed(self, mock_hass, mock_config_entry):
         from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -414,23 +422,45 @@ class TestAsyncUpdateData:
         )
 
     async def test_library_unsupported_registers_are_merged_into_skip_list(self, mock_hass, mock_config_entry):
-        """Registers rejected by the API are skipped by coordinator-only paths."""
-        supported = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a")
+        """Registers flagged unsupported by the library are mirrored after each poll.
+
+        The library isolates Illegal-Data-Address registers inside read_batch
+        and exposes them via get_unsupported_registers(). The coordinator must
+        merge that set into its own _unsupported_registers so they are skipped
+        on the next poll (the zone-room-mode path and the unsupported_registers
+        property both rely on it).
+        """
+        good = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a")
         unsupported = RegisterDef(address=4108, datatype=DataType.FLOAT, name="power_limit_hp")
+
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={"good_a": 1})
-        client.get_unsupported_registers.return_value = ("power_limit_hp",)
-        coord, _ = _make_coordinator(
-            mock_hass,
-            mock_config_entry,
-            client=client,
-            registers=[supported, unsupported],
-        )
+        # The library has already isolated power_limit_hp during read_batch.
+        client.get_unsupported_registers = MagicMock(return_value=("power_limit_hp",))
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[good, unsupported])
 
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
 
         assert coord.unsupported_registers == {"power_limit_hp"}
+
+    async def test_merge_unsupported_is_noop_without_library_support(self, mock_hass, mock_config_entry):
+        """Older library versions without get_unsupported_registers are tolerated.
+
+        _merge_unsupported_registers uses getattr and must be a no-op rather
+        than raising when the method is absent.
+        """
+        good = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"good_a": 1})
+        # Simulate an older library: no get_unsupported_registers attribute.
+        del client.get_unsupported_registers
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[good])
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            await coord._async_update_data()
+
+        assert coord.unsupported_registers == set()
 
     @pytest.mark.parametrize(
         "error",
@@ -580,6 +610,9 @@ class TestAsyncUpdateData:
             await coord._async_update_data()
 
         mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "cannot_connect")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "host_not_found")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "modbus_connection_refused")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "modbus_timeout")
         mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "wrong_slave_id")
         mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "incompatible_firmware")
 
@@ -818,6 +851,35 @@ class TestAsyncWriteRegister:
 
 
 class TestAsyncRefreshWebSupplement:
+    async def test_web_authentication_failure_creates_specific_repair_issue(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="1234",
+            web_host="192.0.2.103",
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                side_effect=IdmWebAuthenticationFailed("PIN rejected"),
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.last_web_error == "IdmWebAuthenticationFailed: PIN rejected"
+        mock_ir.async_create_issue.assert_called_once_with(
+            mock_hass,
+            "idm_heatpump",
+            "web_authentication_failed",
+            is_fixable=True,
+            severity=mock_ir.IssueSeverity.WARNING,
+            translation_key="web_authentication_failed",
+            data={"entry_id": mock_config_entry.entry_id},
+            translation_placeholders={"host": "192.0.2.103"},
+        )
+
     async def test_web_refresh_failure_creates_repair_issue(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(
             mock_hass,
@@ -884,7 +946,8 @@ class TestAsyncRefreshWebSupplement:
         assert coord.missing_web_core_values == ("navigator_version", "software_version", "heatpump_model")
         assert coord.data["web_navigator_version"] == "Navigator 10"
         assert coord.data["web_software_version"] == "NAV10_20.24"
-        mock_ir.async_delete_issue.assert_called_once_with(mock_hass, "idm_heatpump", "web_supplement_failed")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_authentication_failed")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_supplement_failed")
         coord.async_update_listeners.assert_called_once()
 
     async def test_web_refresh_does_not_override_modbus_detected_navigator_20(self, mock_hass, mock_config_entry):

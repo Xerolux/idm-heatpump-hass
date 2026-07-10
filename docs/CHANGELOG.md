@@ -11,6 +11,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1-beta.21] - 2026-07-10
+
+### Added
+
+- Add a read-only connection test under **Reconfigure** for the saved Modbus
+  endpoint and optional local Navigator web access.
+- Add an always-available diagnostic sensor exposing the installed
+  `idm-heatpump-api`, integration and `pymodbus` versions; include the same
+  versions in startup logs and downloaded diagnostics.
+- Add fixable repair handling for rejected local Navigator web PINs.
+
+### Changed
+
+- Pin the tested runtime dependency to `idm-heatpump-api[web]==0.7.1` and keep
+  the coordinator synchronized with the API's public unsupported-register set.
+- Improve setup, reconfiguration, runtime logs and repair messages for unknown
+  hosts, refused connections, timeouts, unreachable endpoints, missing Modbus
+  replies, invalid web PINs and unavailable web interfaces.
+- Explain directly in the flow, README and wiki that Navigator
+  **Gebäudeleittechnik → Modbus TCP → Ein** is required for full operation.
+- Group optional features, room-temperature forwarding and advanced Modbus
+  settings into translated, collapsible configuration sections.
+- Preserve Modbus options during web-only fallback and validate changed web
+  settings before saving.
+- Avoid an extra TCP preflight on successful connection checks; use it only to
+  classify failed Modbus attempts.
+
+### Fixed
+
+- Correct reconfiguration retries and reliably clear web-only mode after a
+  successful Modbus recovery.
+- Keep setup and repair failures actionable without logging secret PIN values.
+
 ## [0.8.1-beta.20] - 2026-07-09
 
 ### Changed
@@ -35,9 +68,33 @@ All notable changes to this project will be documented in this file.
 
 ### What changed
 
-This release is a maintenance and performance pass across all areas of the
-integration. No behavioral changes for users — the same entities, services and
-config flows behave as before, just faster and with less code.
+This release combines a maintenance and performance pass with a clearer,
+safer setup and troubleshooting experience.
+
+#### Configuration and diagnostics
+
+- **Actionable connection errors**: setup, reconfiguration, runtime logs and
+  repair issues now distinguish unknown hostnames, refused connections
+  (commonly disabled Modbus TCP or a wrong port), timeouts, unreachable
+  networks, missing register responses, invalid local web PINs and unavailable
+  Navigator web interfaces.
+- **Verified Modbus activation guidance**: setup, repair messages, README and
+  wiki now point users to Navigator **Gebäudeleittechnik → Modbus TCP → Ein**,
+  explain port 502 / slave ID 1, and identify when installer or iDM service
+  access is required.
+- **Read-only test menu**: **Reconfigure → Test current connection** verifies
+  the saved Modbus endpoint and optional local Navigator web access without
+  changing settings or writing heat-pump registers. DNS/TCP probing is only
+  performed when needed to classify a failed Modbus attempt.
+- **Safer web setup and repair**: supplied PINs are validated before saving,
+  web authentication failures create a fixable repair issue, and PIN values
+  are never logged.
+- **More intuitive options**: optional features, room-temperature forwarding
+  and advanced Modbus settings are grouped into translated, collapsible
+  sections. Web-only fallback preserves the existing Modbus options.
+- **Visible runtime versions**: a diagnostic sensor, downloaded diagnostics
+  and the startup log expose the loaded integration, `idm-heatpump-api` and
+  `pymodbus` versions.
 
 #### Performance
 

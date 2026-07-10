@@ -2,12 +2,52 @@
 
 ## Connection Problems
 
-### "Connection failed"
+### Run the built-in connection test
+
+Open **Settings → Devices & Services → IDM Heatpump → Reconfigure → Test
+current connection**. This performs a read-only test using the saved settings:
+
+1. Read a known IDM Modbus register with the configured slave ID.
+2. If that fails, run a short DNS/TCP check to identify the network cause.
+3. If a local web PIN exists, verify the Navigator web endpoint and PIN.
+
+The test neither changes the config entry nor writes to the heat pump. Its
+translated result identifies the failed stage, and submitting the result form
+runs the test again. The same categorized reason is written to the log without
+exposing the PIN.
+
+### "Hostname could not be resolved"
+
+- Check the spelling of the configured hostname
+- Verify that Home Assistant can use the same local DNS/mDNS server as your browser
+- Reconfigure with the fixed IP address of the heat pump to rule out DNS problems
+
+### "Modbus TCP connection refused"
+
+The target device actively rejected TCP. This is the strongest available
+indication that **Modbus TCP is not enabled** or that the wrong port was used.
+
+- On the Navigator/controller, open **Building management system
+  (Gebäudeleittechnik) → Modbus TCP** and set it to **On / Ein**
+- If this menu is missing or locked, sign in at installer/technician level or
+  ask your heating installer/iDM service to enable it
+- Use TCP port **502** unless the controller or proxy was configured differently
+- Restart the Navigator/controller after enabling Modbus if the setting does not become active immediately
+- If a proxy is used, confirm that it listens on the entered host and port
+
+This setting must be enabled on the **heat pump/Navigator**, not on a PV
+inverter. See [Enable Modbus TCP on the IDM heat pump](Installation-and-Setup#enable-modbus-tcp-on-the-idm-heat-pump)
+for the complete checklist and official iDM references.
+
+### "Modbus TCP connection timed out" or "endpoint is not reachable"
 
 - Check the **IP address** of the IDM Navigator
-- Make sure **Modbus TCP** is enabled on the Navigator
-- Check if **port 502** is reachable (firewall)
+- Verify that the controller is powered on
+- Check whether a firewall, VLAN, subnet, or routing rule blocks port 502
 - Ping the IP address: `ping <ip-of-navigator>`
+
+Timeout means no answer arrived within five seconds. Unreachable means the
+operating system reported a network/routing failure.
 
 ### Connection drops
 
@@ -16,11 +56,43 @@
 - Enable debug logging (see [Configuration](Configuration))
 - The integration automatically optimizes Modbus connections to avoid constant reconnections (`self._client.connected` checks). If drops still occur, check the stability of your local network or WiFi.
 
-### "No data received"
+### "No valid IDM register response"
 
 - Check the **Slave ID** (default: 1)
+- Confirm that Modbus access is enabled or released for external clients
 - Check if other Modbus clients are accessing the same port simultaneously
-- Restarting the IDM Navigator may help
+- Restart the IDM Navigator after enabling Modbus
+
+This message means the TCP endpoint was reached, but the setup probe did not
+receive usable IDM register data. It is therefore different from a network or
+firewall failure.
+
+### Modbus is not available on the heat pump
+
+Enter the local Navigator web PIN during setup. If the web interface can be
+authenticated, the recovery step offers **web data only**. This mode exposes
+read-only web sensors but no Modbus heating-circuit/zone registers, writable
+entities, mode control, or error acknowledgement. Full functionality still
+requires Modbus TCP to be enabled by the installer or iDM service if the local
+controller does not expose the setting.
+
+### "Navigator web PIN rejected"
+
+- Open **Settings → Devices & Services → IDM Heatpump → Reconfigure → Change connection settings**
+- Enter the current local Navigator web PIN again
+- Do not use a cloud account password; the integration needs the local PIN
+- Clear the PIN if you intentionally want Modbus-only operation
+
+The runtime repair notification and log identify authentication failures
+separately from network failures. The repair action can verify a replacement
+PIN or disable optional web data. The PIN itself is never logged.
+
+### "Navigator web interface could not be read"
+
+- With direct Modbus access, the web host is normally the same heat pump IP
+- With a Modbus proxy, enable the proxy option and enter the **original heat pump address** as web host
+- Confirm that Home Assistant can reach the local Navigator web interface
+- Clear the web PIN to continue with Modbus only
 
 ## Entity Problems
 
@@ -76,6 +148,10 @@ Look for in the logs:
 3. Click **Download diagnostics**
 4. Attach the file to your [bug report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 
+The export includes the installed integration, `idm-heatpump-api`, and
+`pymodbus` versions. They are also visible on the **IDM Heatpump API version**
+diagnostic sensor.
+
 ## Bug Report Checklist
 
 Please include:
@@ -98,8 +174,12 @@ Please **never** run write operations on Modbus (`write_register`) live against 
 
 | Problem | Solution |
 |---------|----------|
-| Integration won't start | Restart HA, check logs |
-| No connection | Check IP, port, firewall |
+| Hostname not found | Correct DNS/name or use the heat pump IP |
+| Connection refused | Enable Modbus TCP and verify port 502 |
+| Connection timeout | Check IP, power, firewall, VLAN and routing |
+| No valid register response | Check slave ID, proxy target and Modbus permission |
+| Web PIN rejected | Re-enter the local PIN in Reconfigure or clear it |
+| Integration won't start | Read the categorized log message and download diagnostics |
 | Incorrect temperatures | Check register mapping, report bug |
 | Write failed | Register writable? Note EEPROM warning |
 | All entities "unavailable" | Navigator reachable? Modbus TCP enabled? |

@@ -1,4 +1,26 @@
 {
+  "config": {
+    "step": {
+      "options": {
+        "sections": {
+          "features": "mdi:puzzle-outline",
+          "room_temperature_forwarding": "mdi:home-thermometer-outline",
+          "advanced_modbus": "mdi:tune-variant"
+        }
+      }
+    }
+  },
+  "options": {
+    "step": {
+      "options": {
+        "sections": {
+          "features": "mdi:puzzle-outline",
+          "room_temperature_forwarding": "mdi:home-thermometer-outline",
+          "advanced_modbus": "mdi:tune-variant"
+        }
+      }
+    }
+  },
   "entity": {
     "sensor": {
       "outdoor_temp": { "default": "mdi:thermometer" },

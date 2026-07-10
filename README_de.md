@@ -40,6 +40,9 @@
 | **❄️ Kaskade & Bivalenz** | Mehrfach-Wärmepumpen-Steuerung, Heizstab-Integration |
 | **📡 GLT Fernwartung** | GLT-Temperaturanforderungen (zyklisches Schreiben) |
 | **🛡️ Fehlermanagement** | Fehlererkennung, lesbare interne Meldungen, Fehlerquittierung, Diagnosedaten-Export |
+| **🧭 Geführte Einrichtungsdiagnose** | Unterscheidet unbekannte Hosts, abgelehntes/deaktiviertes Modbus TCP, Timeouts, Netzwerkfehler, falsche Slave-ID, falsche Web-PIN und nicht erreichbare Weboberfläche |
+| **🧪 Schreibgeschützter Verbindungstest** | Das Rekonfigurationsmenü testet die gespeicherte Modbus- und optionale Webverbindung, ohne Einstellungen zu ändern oder Register zu schreiben |
+| **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api` und `pymodbus` |
 | **🔑 Fachmann-Ebene** | Optionale Sensoren für Fachmann Ebene 1 & 2 Codes (zeitbasiert, minütlich aktualisiert und ganz oben angeheftet) |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
 
@@ -57,13 +60,45 @@ URL: https://github.com/Xerolux/idm-heatpump-hass  |  Kategorie: Integration
 → "IDM Heatpump" herunterladen → HA neu starten
 ```
 
-**2. Integration einrichten**
-```
-Einstellungen → Geräte & Dienste → Integration hinzufügen → "IDM Heatpump"
-IP-Adresse & Port eingeben → Heizkreise & Zonen konfigurieren → Fertig!
+**2. Modbus TCP an der IDM-Wärmepumpe aktivieren – für den vollen Betrieb zwingend erforderlich**
+
+Öffne an der IDM-Navigatorregelung:
+
+```text
+Gebäudeleittechnik
+→ Modbus TCP
+→ Ein / Aktiv
 ```
 
-**3. Fertig!** 🎉 Deine Wärmepumpe ist jetzt smart.
+Verbinde den Navigator anschließend mit dem lokalen Netzwerk, notiere seine
+IP-Adresse und verwende normalerweise **Port 502** sowie **Slave-/Unit-ID 1**.
+Je nach Navigator-Generation, Softwarestand und Berechtigungsstufe kann die
+Bezeichnung abweichen oder der Menüpunkt nur in der Fachmann-/Serviceebene
+sichtbar sein. Fehlt der Punkt oder ist er gesperrt, muss dein Heizungsbauer
+oder der iDM-Service Modbus TCP freischalten.
+
+Gemeint ist die Modbus-TCP-Einstellung der **Wärmepumpe/Navigatorregelung**,
+nicht eine ähnlich benannte Einstellung am PV-Wechselrichter. Siehe die
+[ausführliche Aktivierungsanleitung][wiki-install-modbus] und die
+[offizielle technische iDM-Unterlage][idm-modbus-source].
+
+**3. Integration einrichten**
+```
+Einstellungen → Geräte & Dienste → Integration hinzufügen → "IDM Heatpump"
+Wärmepumpen-IP, Port 502 und Slave-ID 1 eingeben → Heizkreise & Zonen konfigurieren → Fertig!
+```
+
+Falls die Einrichtung fehlschlägt, erklärt der Flow, ob der Hostname ungültig
+ist, die TCP-Verbindung abgelehnt wurde (häufig ist Modbus TCP deaktiviert),
+ein Timeout auftrat oder die Steuerung unter der gewählten Slave-ID nicht
+antwortet. Eine optionale lokale Web-PIN ermöglicht einen geprüften,
+schreibgeschützten Web-Only-Fallback.
+
+Später kannst du unter **Einstellungen → Geräte & Dienste → IDM Heatpump →
+Neu konfigurieren → Aktuelle Verbindung testen** jederzeit einen sicheren
+Modbus- und optionalen Webtest wiederholen.
+
+**4. Fertig!** 🎉 Deine Wärmepumpe ist jetzt smart.
 
 > Detaillierte Anleitung → **[Installation & Setup][wiki-install]**
 
@@ -92,8 +127,8 @@ Maintainer sollten vor einem stabilen Release den
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
-- Python 3.14.2+ (wird von Home Assistant 2026.5 bereitgestellt)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.0` (automatisch installiert)
+- Python 3.13+ (wird von Home Assistant bereitgestellt)
+- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.1` (automatisch installiert)
 
 ---
 
@@ -101,11 +136,11 @@ Maintainer sollten vor einem stabilen Release den
 
 | Plattform | Entities | Beschreibung |
 |-----------|----------|--------------|
-| **Sensor** | 100+ | Temperaturen, Drücke, Durchflüsse, Energie, Laufzeiten, Fehlercodes |
-| **Binary Sensor** | 9 | Fehlerstatus, Schaltzustände, Alarme |
-| **Number** | ~30 | Sollwerte, Temperaturen, Parameter (beschreibbar) |
-| **Select** | ~15 | Betriebsmodi, Heizkreis-Modi, Raum-Modi, Solar-Modi |
-| **Switch** | 4 | GLT-Temperaturanforderungen, Fernwartung |
+| **Sensor** | 110+ | Temperaturen, Drücke, Durchflüsse, Energie, PV, Solar, Kaskade, Laufzeitversionen und Diagnose |
+| **Binary Sensor** | 8+ | Störungen, Verdichterstatus sowie Heiz-/Kühl-/Warmwasseranforderung |
+| **Number** | 44+ | Sollwerte, Temperaturgrenzen, GLT-Parameter und Leistungsgrenzen |
+| **Select** | 4+ | Betriebsart, Heizkreis-, Solar- und ISC-Modi |
+| **Switch** | 4 | Externe Heiz-/Kühl-/Warmwasseranforderung und einmalige Warmwasserladung |
 
 ---
 
@@ -141,6 +176,9 @@ Home Assistant
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
 - **Auto-Recovery**: Exponentielles Backoff bei Verbindungsfehlern
 - **Optionale Web-Zusatzdaten**: lokale read-only Erkennung von Navigator-Generation, Softwareversion, Modell, kompakter myIDM ID und Webdiagnosen; Standardintervall 30 Sekunden, Modbus bleibt führend
+- **Verständliche Verbindungsdiagnose**: Setup, Reconfigure, Logs und Reparaturmeldungen unterscheiden DNS-/Hostnamefehler, abgelehnte TCP-Verbindungen, Timeouts, nicht erreichbare Endpunkte, fehlende Modbus-Antworten, falsche Web-PINs und Webfehler
+- **Eingebautes Testmenü**: „Neu konfigurieren“ bietet einen zerstörungsfreien Test eines bekannten IDM-Modbus-Registers, gezielte DNS/TCP-Fehlerklassifizierung und – falls eingerichtet – die lokale Navigator-Webanmeldung
+- **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations- sowie `pymodbus`-Version als Attribute; dieselben Angaben stehen im Diagnoseexport und Startlog
 - **Raumtemperatur-Weitergabe**: standardmäßig deaktiviert; kann ausgewählte Home-Assistant-Temperatursensoren pro Heizkreis an die externen IDM-Raumtemperaturregister weitergeben, mit 300 Sekunden Standardintervall, sofortiger Weitergabe bei Zustandsänderung, 0,2 °C Standardtoleranz und Bereichsprüfung
 - **Lesbare Diagnose**: der Sensor `internal_message` zeigt Klartext und liefert zusätzlich die Attribute `message_code` und `message_text` statt nur einer nackten Nummer
 - **Entity-Ordnung**: Fachmann-Code-Sensoren sind ganz oben angeheftet, danach folgen sinnvolle Funktionsgruppen für Konfiguration, Schalter, schreibbare Werte und Diagnose
@@ -200,6 +238,7 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [paypal]: https://paypal.me/xerolux
 [wiki]: https://github.com/Xerolux/idm-heatpump-hass/wiki
 [wiki-install]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-and-Setup
+[wiki-install-modbus]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-and-Setup#enable-modbus-tcp-on-the-idm-heat-pump
 [wiki-config]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Configuration
 [wiki-entities]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities
 [wiki-sensors]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#sensoren
@@ -208,6 +247,7 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [wiki-numbers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#numbers
 [wiki-services]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Services
 [wiki-trouble]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Troubleshooting
+[idm-modbus-source]: https://www.idm-energie.at/wp-content/uploads/2021/04/PV_Nutzung_GLT-Smartfox.pdf
 [wiki-registers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Modbus-Register
 [wiki-contributing]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing
 [wiki-changelog]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Changelog

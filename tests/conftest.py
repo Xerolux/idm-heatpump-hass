@@ -184,6 +184,7 @@ def _stub_homeassistant() -> None:
     # Top-level
     ha = _make_module("homeassistant")
     ha.config_entries = _make_module("homeassistant.config_entries")
+    ha.data_entry_flow = _make_module("homeassistant.data_entry_flow")
     ha.const = _make_module("homeassistant.const")
     ha.core = _make_module("homeassistant.core")
     ha.exceptions = _make_module("homeassistant.exceptions")
@@ -229,6 +230,7 @@ def _stub_homeassistant() -> None:
     ha.core.SupportsResponse = MagicMock()
     ha.core.SupportsResponse.OPTIONAL = "optional"
     ha.util.json.JsonValueType = object
+    ha.data_entry_flow.section = lambda schema, options=None: schema
 
     class _RepairsFlow:
         def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
@@ -312,6 +314,13 @@ def _stub_homeassistant() -> None:
 
         def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
             return {"type": "form", "step_id": step_id, "errors": errors or {}}
+
+        def async_show_menu(self, *, step_id, menu_options, description_placeholders=None, **kwargs):
+            return {
+                "type": "menu",
+                "step_id": step_id,
+                "menu_options": menu_options,
+            }
 
         def async_create_entry(self, title="", data=None, options=None):
             return {"type": "create_entry", "title": title, "data": data or {}, "options": options or {}}
@@ -853,6 +862,9 @@ def _stub_idm_heatpump() -> None:
         def reset_failed_registers(self) -> None:
             self._register_failures.clear()
             self._permanently_failed_registers.clear()
+
+        def get_unsupported_registers(self) -> tuple[str, ...]:
+            return tuple(sorted(self._permanently_failed_registers))
 
     _SYS_MODE = {0: "Standby", 1: "Automatic", 2: "Absent", 4: "Hot Water Only", 5: "Heating/Cooling Only"}
     _CIRCUIT_MODE = {
