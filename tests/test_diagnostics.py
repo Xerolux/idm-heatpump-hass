@@ -67,6 +67,9 @@ class TestDiagnostics:
         assert data["last_update_success"] is True
         assert data["model_name"] == "Navigator 10"
         assert data["firmware_version"] == "2.34"
+        assert data["versions"]["integration"] == "0.5.0"
+        assert isinstance(data["versions"]["idm_heatpump_api"], str)
+        assert isinstance(data["versions"]["pymodbus"], str)
         assert data["web_supplement"] == {
             "enabled": True,
             "available": True,

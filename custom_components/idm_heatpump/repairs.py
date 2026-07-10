@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING, Any, TypeAlias
 
 import voluptuous as vol
@@ -35,8 +36,10 @@ else:
     FlowResult: TypeAlias = dict[str, Any]
 
 _ISSUE_WEB_PIN_MISSING = "web_pin_missing"
+_ISSUE_WEB_AUTH_FAILED = "web_authentication_failed"
 _ACTION_SET_PIN = "set_pin"
 _ACTION_DISABLE_WEB = "disable_web"
+_LOGGER = logging.getLogger(__name__)
 
 
 async def async_create_fix_flow(
@@ -113,8 +116,33 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
                         web_pin,
                     )
                 except IdmWebAuthenticationFailed:
+                    _LOGGER.warning(
+                        "IDM Navigator web PIN was rejected while repairing entry %s",
+                        entry.entry_id,
+                    )
                     errors[CONF_WEB_PIN] = "invalid_web_pin"
+                except Exception as err:
+                    _LOGGER.warning(
+                        "IDM Navigator web access test failed while repairing entry %s: %s: %s",
+                        entry.entry_id,
+                        err.__class__.__name__,
+                        err,
+                    )
+                    errors["base"] = "web_cannot_connect"
                 else:
+                    if web_supplement is None:
+                        errors["base"] = "web_cannot_connect"
+                        return self.async_show_form(
+                            step_id="set_pin",
+                            data_schema=vol.Schema(
+                                {
+                                    vol.Required(CONF_WEB_PIN): TextSelector(
+                                        TextSelectorConfig(type=TextSelectorType.PASSWORD)
+                                    )
+                                }
+                            ),
+                            errors=errors,
+                        )
                     data = dict(entry.data)
                     data[CONF_WEB_PIN] = web_pin
                     if web_supplement is not None:
@@ -126,6 +154,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
                     options = {**entry.options, CONF_WEB_ENABLED: True}
                     self.hass.config_entries.async_update_entry(entry, data=data, options=options)
                     ir.async_delete_issue(self.hass, DOMAIN, _ISSUE_WEB_PIN_MISSING)
+                    ir.async_delete_issue(self.hass, DOMAIN, _ISSUE_WEB_AUTH_FAILED)
                     await self.hass.config_entries.async_reload(entry.entry_id)
                     return self.async_create_entry(title="", data={})
 
@@ -148,6 +177,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             options = {**entry.options, CONF_WEB_ENABLED: False}
             self.hass.config_entries.async_update_entry(entry, data=data, options=options)
             ir.async_delete_issue(self.hass, DOMAIN, _ISSUE_WEB_PIN_MISSING)
+            ir.async_delete_issue(self.hass, DOMAIN, _ISSUE_WEB_AUTH_FAILED)
             await self.hass.config_entries.async_reload(entry.entry_id)
             return self.async_create_entry(title="", data={})
 

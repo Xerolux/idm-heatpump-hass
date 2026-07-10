@@ -162,7 +162,7 @@ class TestHandleStateChange:
     def test_creates_forward_task_for_string_entity_id(self):
         coord, _reg = _make_coordinator()
         hass = _make_hass("21.0")
-        hass.async_create_task = MagicMock()
+        hass.async_create_task = MagicMock(side_effect=lambda coro: coro.close())
         forwarder = RoomTempForwarder(
             hass,
             coord,

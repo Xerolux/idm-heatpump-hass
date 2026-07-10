@@ -81,7 +81,13 @@ from .registers import (
     normalize_zone_rooms,
 )
 from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
-from .web_data import async_read_web_supplement, merge_model_info, web_pin_configured
+from .web_data import (
+    IdmWebAuthenticationFailed,
+    async_read_web_supplement,
+    merge_model_info,
+    web_pin_configured,
+)
+from .versions import runtime_versions
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -341,7 +347,14 @@ async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> boo
 
 async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     integration = await async_get_integration(hass, DOMAIN)
-    _LOGGER.info("Setting up %s v%s", NAME, integration.manifest.get("version", "unknown"))
+    versions = runtime_versions(integration.manifest.get("version"))
+    _LOGGER.info(
+        "Setting up %s v%s (idm-heatpump-api v%s, pymodbus v%s)",
+        NAME,
+        versions.integration,
+        versions.api,
+        versions.pymodbus,
+    )
 
     host = str(entry.data[CONF_HOST])
     port = int(entry.data.get(CONF_PORT, 502))
@@ -406,8 +419,19 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             await client.disconnect()
         except Exception:
             _LOGGER.warning("Failed to clean up client for %s:%d", host, port, exc_info=True)
-        _LOGGER.error("Failed to connect to %s:%d - %s", host, port, err)
-        raise ConfigEntryNotReady(f"Cannot connect to {host}:{port}") from err
+        _LOGGER.error(
+            "IDM Modbus setup failed for host=%s port=%d slave_id=%d: %s: %s. "
+            "Check the configured address, TCP port, Modbus activation and slave ID",
+            host,
+            port,
+            slave_id,
+            err.__class__.__name__,
+            err,
+        )
+        raise ConfigEntryNotReady(
+            f"IDM Modbus connection failed for {host}:{port} (slave {slave_id}); "
+            "check address, port and Modbus activation"
+        ) from err
 
     try:
         model_name, firmware_version, detected_model_info = await _detect_model_info(client)
@@ -457,6 +481,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     web_host,
                     web_pin,
                     model_hint=modbus_model_name,
+                )
+            except IdmWebAuthenticationFailed:
+                _LOGGER.warning(
+                    "IDM Navigator web PIN was rejected by %s during setup. "
+                    "Modbus setup continues; update or clear the PIN in reconfigure",
+                    web_host,
                 )
             except Exception as err:
                 _LOGGER.warning(

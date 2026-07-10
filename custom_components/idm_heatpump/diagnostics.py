@@ -12,8 +12,10 @@ from typing import Any
 from homeassistant.components.diagnostics import async_redact_data
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.loader import async_get_integration
 
-from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID
+from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, DOMAIN
+from .versions import runtime_versions
 
 TO_REDACT = {CONF_HOST, CONF_PORT, CONF_SLAVE_ID}
 
@@ -64,6 +66,8 @@ def _web_supplement_diagnostics(coordinator: Any) -> dict[str, Any]:
 
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     coordinator = entry.runtime_data.coordinator
+    integration = await async_get_integration(hass, DOMAIN)
+    versions = runtime_versions(integration.manifest.get("version"))
 
     return {
         "entry": async_redact_data(entry.as_dict(), TO_REDACT),
@@ -74,6 +78,11 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "last_update_success": coordinator.last_update_success,
                 "model_name": coordinator.model_name,
                 "firmware_version": coordinator.firmware_version,
+                "versions": {
+                    "integration": versions.integration,
+                    "idm_heatpump_api": versions.api,
+                    "pymodbus": versions.pymodbus,
+                },
                 "model_info": _model_info_diagnostics(coordinator.model_info),
                 "client_diagnostics": async_redact_data(_client_diagnostics(coordinator), TO_REDACT),
                 "web_supplement": _web_supplement_diagnostics(coordinator),

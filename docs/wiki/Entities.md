@@ -6,7 +6,7 @@ The integration dynamically generates entities based on your heat pump configura
 
 | Platform | Count | Description |
 |----------|-------|-------------|
-| **Sensor** | 109+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, diagnostics |
+| **Sensor** | 110+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions, diagnostics |
 | **Binary Sensor** | 8+ | Fault alarms, compressor status, heating/cooling/DHW demand |
 | **Number** | 44+ | Writable setpoints, temperature limits, GLT parameters, power limits |
 | **Select** | 4+ | System mode, heating circuit modes, solar mode, ISC mode |
@@ -22,6 +22,15 @@ entities, switches, writable values, live measurements and diagnostics.
 ---
 
 ## Sensors
+
+### Runtime diagnostics
+
+| Entity | State | Attributes | Category |
+|--------|-------|------------|----------|
+| IDM Heatpump API version | Installed `idm-heatpump-api` version | `integration_version`, `pymodbus_version` | Diagnostic |
+
+This sensor remains available even if heat-pump polling fails, making it useful
+when collecting information for a bug report.
 
 ### System Temperatures & Pressures
 

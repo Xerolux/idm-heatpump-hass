@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "IDM Navigator Wärmepumpe einrichten",
-        "description": "[Hilfe benötigt? Lese die Dokumentation]({wiki_url})\n\nGib die Verbindungsdaten deiner IDM Wärmepumpe ein.\n\n**Voraussetzung:** Modbus TCP muss in der IDM-Steuerung unter *Fachmannebene → Kommunikation → Modbus* aktiviert sein.",
+        "description": "[Hilfe benötigt? Lies die Dokumentation]({wiki_url})\n\nGib die Verbindungsdaten deiner IDM-Wärmepumpe ein.\n\n**Für den vollen Betrieb zwingend erforderlich:** Aktiviere an der IDM-Navigatorregelung *Gebäudeleittechnik → Modbus TCP → Ein*. Verwende normalerweise Port **502** und Slave-ID **1**. Fehlt der Menüpunkt oder ist er gesperrt, muss dein Heizungsbauer oder der iDM-Service Modbus freischalten.",
         "data": {
           "name": "Name",
           "host": "Modbus-IP / Hostname",
@@ -24,8 +24,20 @@
         }
       },
       "reconfigure": {
-        "title": "Verbindung anpassen – {name}",
-        "description": "[Hilfe benötigt? Lese die Dokumentation]({wiki_url})\n\nAktuelle Verbindung: **{host}**\n\nÄndere hier die Netzwerkdaten deiner Wärmepumpe. Die Integration wird danach automatisch neu gestartet.",
+        "title": "Verbindung und Fehlersuche",
+        "description": "Ändere die gespeicherte Verbindung oder teste alle konfigurierten lokalen Endpunkte, ohne etwas zu speichern oder an die Wärmepumpe zu schreiben.",
+        "menu_options": {
+          "connection": "Verbindungseinstellungen ändern",
+          "diagnostics": "Aktuelle Verbindung testen"
+        },
+        "menu_option_descriptions": {
+          "connection": "Modbus-Host, Port, Slave-ID, lokale Web-PIN und Proxy-Einstellungen bearbeiten.",
+          "diagnostics": "Schreibgeschützter Test von DNS/TCP, einem bekannten IDM-Modbus-Register und optionalem Navigator-Webzugriff."
+        }
+      },
+      "connection": {
+        "title": "Verbindung ändern – {name}",
+        "description": "[Hilfe benötigt? Lies die Dokumentation]({wiki_url})\n\nAktuelle Verbindung: **{host}**\n\nDie neuen Daten werden vor dem Speichern geprüft. Danach wird die Integration automatisch neu gestartet. An der Navigatorregelung muss *Gebäudeleittechnik → Modbus TCP → Ein* aktiviert sein.",
         "data": {
           "host": "Modbus-IP / Hostname",
           "port": "Port",
@@ -43,6 +55,18 @@
           "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`."
         }
       },
+      "diagnostics_success": {
+        "title": "Modbus- und Webverbindung erfolgreich",
+        "description": "Der schreibgeschützte Test war für Modbus **{host}:{port}**, Slave-ID **{slave_id}**, und den konfigurierten lokalen Navigator-Webzugriff erfolgreich.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen."
+      },
+      "diagnostics_modbus_success": {
+        "title": "Modbus-Verbindung erfolgreich",
+        "description": "Der schreibgeschützte Modbus-Test war für **{host}:{port}**, Slave-ID **{slave_id}**, erfolgreich. Der Webzugriff wurde übersprungen, weil keine lokale Web-PIN konfiguriert ist.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen."
+      },
+      "diagnostics_failed": {
+        "title": "Verbindungstest fehlgeschlagen",
+        "description": "Der schreibgeschützte Test für **{host}:{port}**, Slave-ID **{slave_id}**, konnte nicht erfolgreich abgeschlossen werden. Die genaue Ursache und empfohlene Prüfungen stehen oben.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen."
+      },
       "options": {
         "title": "Konfiguration – {name}",
         "description": "Passe Abfrageintervall und installierte Komponenten an. Änderungen starten die Integration neu.",
@@ -50,31 +74,57 @@
           "scan_interval": "Abfrageintervall",
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
-          "zone_count": "Anzahl Zonenmodule",
-          "technician_codes": "Fachmann-Ebene Codes anzeigen",
-          "enable_cascade": "Kaskaden-Register aktivieren",
-          "web_extra_data": "Web-Zusatzdaten aktivieren",
-          "web_scan_interval": "Web-Zusatzdaten-Intervall",
-          "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
-          "room_temp_forwarding_interval": "Intervall Raumtemperatur-Weitergabe",
-          "room_temp_forwarding_tolerance": "Toleranz Raumtemperatur-Weitergabe",
-          "modbus_timeout": "Modbus-Timeout",
-          "modbus_retries": "Modbus-Wiederholungen"
+          "zone_count": "Anzahl Zonenmodule"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
-          "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
-          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
-          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind.",
-          "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten wie Navigator-Generation und Softwareversion, wenn eine PIN hinterlegt ist.",
-          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten.",
-          "room_temp_forwarding": "Optional: schreibt ausgewählte Home-Assistant-Temperatursensoren in die externen IDM-Raumtemperaturregister der aktiven Heizkreise.",
-          "room_temp_forwarding_interval": "Wie oft die ausgewählten Raumtemperaturen geprüft und weitergegeben werden. Zustandsänderungen werden zusätzlich sofort weitergegeben.",
-          "room_temp_forwarding_tolerance": "Schreibt erst erneut, wenn sich der Wert seit der letzten Weitergabe mindestens um diesen Betrag geändert hat.",
-          "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-TCP-Antwort, bevor der Versuch abgebrochen wird. Niedrigere Werte erkennen tote Verbindungen schneller, können aber bei langsamen Reglern zu früh abbrechen.",
-          "modbus_retries": "Anzahl Wiederholungen für eine fehlgeschlagene Modbus-Anfrage (mit exponentiellem Backoff), bevor der Polling-Zyklus scheitert. Niedrigere Werte führen bei dauerhaft instabilen Verbindungen schneller zu einem Fehler."
+          "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden)."
+        },
+        "sections": {
+          "features": {
+            "name": "Optionale Funktionen",
+            "description": "Aktiviere nur Funktionen, die in deiner Anlage vorhanden sind.",
+            "data": {
+              "technician_codes": "Fachmann-Ebene-Codes anzeigen",
+              "enable_cascade": "Kaskadenregister aktivieren",
+              "web_extra_data": "Web-Zusatzdaten aktivieren",
+              "web_scan_interval": "Web-Abfrageintervall"
+            },
+            "data_description": {
+              "technician_codes": "Zeigt die aktuellen Codes für Fachmann-Ebene 1 und 2; Aktualisierung jede Minute.",
+              "enable_cascade": "Nur aktivieren, wenn mehrere Wärmepumpen als Kaskade eingerichtet sind.",
+              "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten, wenn eine lokale Web-PIN hinterlegt ist.",
+              "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden."
+            }
+          },
+          "room_temperature_forwarding": {
+            "name": "Externe Raumtemperaturen",
+            "description": "Optionale Weitergabe von Home-Assistant-Temperatursensoren an IDM-GLT-Register.",
+            "data": {
+              "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
+              "room_temp_forwarding_interval": "Prüfintervall",
+              "room_temp_forwarding_tolerance": "Änderungstoleranz"
+            },
+            "data_description": {
+              "room_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die aktiven Heizkreise.",
+              "room_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
+              "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
+            }
+          },
+          "advanced_modbus": {
+            "name": "Erweiterte Modbus-Einstellungen",
+            "description": "Die Standardwerte werden empfohlen. Nur bei langsamen oder instabilen Netzwerken ändern.",
+            "data": {
+              "modbus_timeout": "Antwort-Timeout",
+              "modbus_retries": "Wiederholungen"
+            },
+            "data_description": {
+              "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-Antwort.",
+              "modbus_retries": "Wiederholungen mit exponentiellem Backoff, bevor ein Abfragezyklus fehlschlägt."
+            }
+          }
         }
       },
       "zones": {
@@ -129,9 +179,15 @@
       },
       "modbus_failed": {
         "title": "Modbus-Verbindung fehlgeschlagen",
-        "description": "**Keine Modbus-TCP-Verbindung zur Wärmepumpe unter {host} möglich.**\n\nDa eine lokale Navigator-Web-PIN eingegeben wurde, kannst du mit **nur Web-Daten** fortfahren (eingeschränkte Funktionalität). Falls Modbus funktionieren sollte, wähle **Modbus erneut versuchen** und prüfe zuerst IP-Adresse, Port und Slave-ID.\n\n**Einschränkungen im Web-Only-Modus:**\n- Nur Sensorwerte aus der Weboberfläche (Temperaturen, Drücke, Durchfluss etc.)\n- Keine Modbus-Register: keine Heizkreise, keine Zonen, keine schreibbaren Entitäten\n- Keine Betriebsartensteuerung, keine Störungsquittierung\n- Für vollen Funktionsumfang muss Modbus TCP vom iDM-Serviceteam freigeschaltet werden",
+        "description": "**Die Modbus-Prüfung für {host} ist fehlgeschlagen.**\n\nPrüfe an der Navigatorregelung *Gebäudeleittechnik → Modbus TCP → Ein*. Fehlt der Menüpunkt oder ist er gesperrt, wende dich an deinen Heizungsbauer oder den iDM-Service.\n\nDie Meldung oben unterscheidet, ob der TCP-Endpunkt nicht erreichbar ist oder keine gültigen IDM-Registerdaten liefert. Korrigiere die Verbindungsdaten und versuche es erneut oder fahre mit **nur Web-Daten** fort. Die lokale Web-PIN kannst du direkt unten korrigieren.\n\n**Einschränkungen im Web-Only-Modus:** nur Sensorwerte; keine Heizkreis- oder Zonenregister, schreibbaren Entitäten, Betriebsartensteuerung oder Störungsquittierung.",
         "data": {
-          "action": "Aktion"
+          "action": "Nächster Schritt",
+          "web_pin": "Lokale Web-PIN",
+          "web_host": "Original-IP der Wärmepumpe für Webzugriff"
+        },
+        "data_description": {
+          "web_pin": "Für den Web-Only-Modus erforderlich. Die PIN wird vor dem Anlegen der Integration geprüft.",
+          "web_host": "Bei einem Modbus-Proxy erforderlich. Gib hier die Adresse der Wärmepumpe selbst ein."
         }
       },
       "web_only_options": {
@@ -146,11 +202,18 @@
       }
     },
     "error": {
-      "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfe IP-Adresse, Port und ob Modbus TCP in der Steuerung aktiviert ist. Falls Modbus nicht verfügbar ist, kannst du mit reinen Web-Daten fortfahren (zuvor deine lokale Navigator-PIN eingeben).",
+      "cannot_connect": "Verbindung zur Wärmepumpe fehlgeschlagen. Prüfe IP-Adresse und Port und aktiviere an der Navigatorregelung Gebäudeleittechnik → Modbus TCP → Ein. Falls Modbus nicht verfügbar ist, kannst du mit reinen Web-Daten fortfahren (zuvor deine lokale Navigator-PIN eingeben).",
+      "host_not_found": "Der Hostname konnte nicht aufgelöst werden. Prüfe die Schreibweise, verwende testweise die IP-Adresse der Wärmepumpe und kontrolliere lokales DNS/mDNS.",
+      "modbus_connection_refused": "Das Gerät hat die Verbindung aktiv abgelehnt. Stelle an der Navigatorregelung Gebäudeleittechnik → Modbus TCP auf Ein und verwende Port 502. Fehlt der Menüpunkt oder ist er gesperrt, muss dein Heizungsbauer oder der iDM-Service Modbus freischalten. Starte die Steuerung falls nötig neu und versuche es erneut.",
+      "modbus_timeout": "Der Verbindungsversuch hat das Zeitlimit überschritten. Prüfe, ob die IP wirklich zur Wärmepumpe gehört, das Gerät eingeschaltet ist und kein VLAN, Routing oder eine Firewall Port 502 blockiert.",
+      "modbus_unreachable": "Der Modbus-TCP-Endpunkt ist nicht erreichbar. Prüfe IP/Hostname und Netzwerk, verwende Port 502 und kontrolliere an der Navigatorregelung Gebäudeleittechnik → Modbus TCP → Ein.",
+      "modbus_no_response": "Die TCP-Verbindung wurde geöffnet, aber es kam keine gültige IDM-Registerantwort. Prüfe Slave-ID 1 und ob an der Navigatorregelung Gebäudeleittechnik → Modbus TCP → Ein aktiviert ist. Starte die Steuerung nach dem Aktivieren von Modbus neu.",
       "host_required": "Bitte eine gültige IP-Adresse oder einen Hostnamen eingeben.",
       "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt. Bitte gib die korrekte PIN ein oder lasse das Feld leer, um nur Modbus zu verwenden.",
       "invalid_web_pin_web_only": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt. Wähle \"Modbus erneut versuchen\", um IP/Port/Slave-ID zu korrigieren, oder gib die korrekte PIN ein, um nur mit Web-Daten fortzufahren.",
       "name_required": "Bitte einen Namen für das Gerät eingeben.",
+      "web_pin_required": "Gib die lokale Navigator-Web-PIN ein, um im Web-Only-Modus fortzufahren.",
+      "web_cannot_connect": "Die lokale Navigator-Weboberfläche konnte nicht gelesen werden. Prüfe die Originaladresse der Wärmepumpe und den Netzwerkzugriff oder entferne die Web-PIN, um nur mit Modbus fortzufahren.",
       "web_host_required": "Gib die originale Wärmepumpen-IP/den Hostnamen für den Webzugriff ein oder deaktiviere die Modbus-Proxy-Option."
     },
     "abort": {
@@ -167,31 +230,57 @@
           "scan_interval": "Abfrageintervall",
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
-          "zone_count": "Anzahl Zonenmodule",
-          "technician_codes": "Fachmann-Ebene Codes anzeigen",
-          "enable_cascade": "Kaskaden-Register aktivieren",
-          "web_extra_data": "Web-Zusatzdaten aktivieren",
-          "web_scan_interval": "Web-Zusatzdaten-Intervall",
-          "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
-          "room_temp_forwarding_interval": "Intervall Raumtemperatur-Weitergabe",
-          "room_temp_forwarding_tolerance": "Toleranz Raumtemperatur-Weitergabe",
-          "modbus_timeout": "Modbus-Timeout",
-          "modbus_retries": "Modbus-Wiederholungen"
+          "zone_count": "Anzahl Zonenmodule"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
-          "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden).",
-          "technician_codes": "Zeigt zwei Sensoren mit den aktuellen Fachmann-Ebene-Codes (Ebene 1 und Ebene 2) an. Die Codes werden minütlich aktualisiert.",
-          "enable_cascade": "Aktiviert die Erfassung und Steuerung der Register für den Kaskadenbetrieb. Nur aktivieren, wenn mehrere Wärmepumpen kaskadiert sind.",
-          "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten wie Navigator-Generation und Softwareversion, wenn eine PIN hinterlegt ist.",
-          "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden. Das läuft getrennt von Modbus und leicht verzögert, damit beide Protokolle nicht exakt gleichzeitig starten.",
-          "room_temp_forwarding": "Optional: schreibt ausgewählte Home-Assistant-Temperatursensoren in die externen IDM-Raumtemperaturregister der aktiven Heizkreise.",
-          "room_temp_forwarding_interval": "Wie oft die ausgewählten Raumtemperaturen geprüft und weitergegeben werden. Zustandsänderungen werden zusätzlich sofort weitergegeben.",
-          "room_temp_forwarding_tolerance": "Schreibt erst erneut, wenn sich der Wert seit der letzten Weitergabe mindestens um diesen Betrag geändert hat.",
-          "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-TCP-Antwort, bevor der Versuch abgebrochen wird. Niedrigere Werte erkennen tote Verbindungen schneller, können aber bei langsamen Reglern zu früh abbrechen.",
-          "modbus_retries": "Anzahl Wiederholungen für eine fehlgeschlagene Modbus-Anfrage (mit exponentiellem Backoff), bevor der Polling-Zyklus scheitert. Niedrigere Werte führen bei dauerhaft instabilen Verbindungen schneller zu einem Fehler."
+          "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden)."
+        },
+        "sections": {
+          "features": {
+            "name": "Optionale Funktionen",
+            "description": "Aktiviere nur Funktionen, die in deiner Anlage vorhanden sind.",
+            "data": {
+              "technician_codes": "Fachmann-Ebene-Codes anzeigen",
+              "enable_cascade": "Kaskadenregister aktivieren",
+              "web_extra_data": "Web-Zusatzdaten aktivieren",
+              "web_scan_interval": "Web-Abfrageintervall"
+            },
+            "data_description": {
+              "technician_codes": "Zeigt die aktuellen Codes für Fachmann-Ebene 1 und 2; Aktualisierung jede Minute.",
+              "enable_cascade": "Nur aktivieren, wenn mehrere Wärmepumpen als Kaskade eingerichtet sind.",
+              "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten, wenn eine lokale Web-PIN hinterlegt ist.",
+              "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden."
+            }
+          },
+          "room_temperature_forwarding": {
+            "name": "Externe Raumtemperaturen",
+            "description": "Optionale Weitergabe von Home-Assistant-Temperatursensoren an IDM-GLT-Register.",
+            "data": {
+              "room_temp_forwarding": "Externe Raumtemperaturen weitergeben",
+              "room_temp_forwarding_interval": "Prüfintervall",
+              "room_temp_forwarding_tolerance": "Änderungstoleranz"
+            },
+            "data_description": {
+              "room_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die aktiven Heizkreise.",
+              "room_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
+              "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
+            }
+          },
+          "advanced_modbus": {
+            "name": "Erweiterte Modbus-Einstellungen",
+            "description": "Die Standardwerte werden empfohlen. Nur bei langsamen oder instabilen Netzwerken ändern.",
+            "data": {
+              "modbus_timeout": "Antwort-Timeout",
+              "modbus_retries": "Wiederholungen"
+            },
+            "data_description": {
+              "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-Antwort.",
+              "modbus_retries": "Wiederholungen mit exponentiellem Backoff, bevor ein Abfragezyklus fehlschlägt."
+            }
+          }
         }
       },
       "zones": {
@@ -289,6 +378,9 @@
       }
     },
     "sensor": {
+      "idm_api_version": {
+        "name": "IDM-Heatpump-API-Version"
+      },
       "circuit_mode": {
         "state": {
           "off": "Aus",
@@ -365,8 +457,8 @@
       "fix_flow": {
         "step": {
           "init": {
-            "title": "Fehlende IDM Web-PIN beheben",
-            "description": "Wähle aus, ob du die lokale Navigator-Web-PIN jetzt setzen oder optionale Web-Zusatzdaten bewusst deaktivieren möchtest.",
+            "title": "IDM-Navigator-Webzugriff reparieren",
+            "description": "Wähle, ob du die lokale Navigator-Web-PIN jetzt eingeben beziehungsweise ersetzen oder optionale Web-Zusatzdaten bewusst deaktivieren möchtest.",
             "data": {
               "action": "Aktion"
             }
@@ -385,7 +477,8 @@
         },
         "error": {
           "web_pin_required": "Gib eine PIN ein oder wähle den reinen Modbus-Modus.",
-          "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt."
+          "invalid_web_pin": "Die lokale Navigator-Weboberfläche hat diese PIN abgelehnt.",
+          "web_cannot_connect": "Die lokale Navigator-Weboberfläche konnte nicht gelesen werden. Prüfe den konfigurierten Web-Host und den Netzwerkzugriff und versuche es erneut."
         },
         "abort": {
           "entry_not_found": "Der IDM-Heatpump-Konfigurationseintrag wurde nicht gefunden."
@@ -396,13 +489,29 @@
       "title": "IDM-Web-Zusatzdaten nicht verfügbar",
       "description": "Home Assistant konnte keine lokalen Navigator-Webdaten von **{host}** lesen.\n\nLetzter Fehler: `{error}`\n\nModbus-Daten laufen weiter. Bitte prüfe, ob der Home-Assistant-Host die Navigator-Weboberfläche erreichen kann und ob die konfigurierte PIN korrekt ist."
     },
+    "web_authentication_failed": {
+      "title": "IDM-Navigator-Web-PIN abgelehnt",
+      "description": "Die lokale Navigator-Weboberfläche unter **{host}** hat die konfigurierte PIN abgelehnt.\n\nÖffne **Neu konfigurieren** bei der Integration und gib die aktuelle lokale Web-PIN ein oder entferne die PIN, um nur Modbus zu verwenden. Die Modbus-Abfrage läuft unbeeinflusst weiter."
+    },
     "cannot_connect": {
       "title": "Verbindung zur IDM-Wärmepumpe nicht möglich",
-      "description": "Home Assistant kann die IDM-Wärmepumpe unter **{host}** nicht erreichen.\n\nBitte prüfen:\n- Netzwerkverbindung zum Gerät\n- Modbus TCP ist in der Steuerung aktiviert (*Fachmannebene → Kommunikation → Modbus*)\n- IP-Adresse und Port sind in den Integrationseinstellungen korrekt"
+      "description": "Home Assistant kann die IDM-Wärmepumpe unter **{host}** nicht erreichen.\n\nBitte prüfen:\n- Netzwerkverbindung zum Gerät\n- An der Navigatorregelung steht Gebäudeleittechnik → Modbus TCP auf Ein\n- IP-Adresse und Port sind in den Integrationseinstellungen korrekt\n\nFehlt der Menüpunkt oder ist er gesperrt, muss dein Heizungsbauer oder der iDM-Service Modbus freischalten."
+    },
+    "host_not_found": {
+      "title": "IDM-Hostname nicht gefunden",
+      "description": "Home Assistant kann **{host}** nicht auflösen.\n\nPrüfe den Hostnamen auf Tippfehler, kontrolliere lokales DNS/mDNS oder konfiguriere die Integration mit der IP-Adresse der Wärmepumpe neu."
+    },
+    "modbus_connection_refused": {
+      "title": "IDM-Modbus-TCP-Verbindung abgelehnt",
+      "description": "Das Gerät unter **{host}** hat die TCP-Verbindung aktiv abgelehnt.\n\nStelle an der Navigatorregelung *Gebäudeleittechnik → Modbus TCP* auf *Ein* und verwende Port 502. Fehlt der Menüpunkt oder ist er gesperrt, muss dein Heizungsbauer oder der iDM-Service Modbus freischalten. Starte die Steuerung falls nötig neu und versuche es erneut."
+    },
+    "modbus_timeout": {
+      "title": "Zeitüberschreitung bei IDM Modbus TCP",
+      "description": "Die Modbus-Verbindung zu **{host}** hat das Zeitlimit überschritten.\n\nPrüfe, ob die Adresse zur Wärmepumpe gehört, die Steuerung eingeschaltet ist und keine Firewall, kein VLAN oder Routing TCP-Port 502 blockiert."
     },
     "wrong_slave_id": {
       "title": "Keine Modbus-Antwort der IDM-Wärmepumpe",
-      "description": "Home Assistant erreicht den Modbus-Endpunkt unter **{host}**, aber die Steuerung antwortet nicht wie erwartet.\n\nBitte prüfen:\n- Die konfigurierte Slave-ID passt zum Modbus-Proxy oder zur Steuerung\n- Der Proxy leitet an das richtige IDM-Gerät weiter\n- Kein anderer Modbus-Client blockiert die Verbindung"
+      "description": "Home Assistant erreicht den Modbus-Endpunkt unter **{host}**, aber die Steuerung antwortet nicht wie erwartet.\n\nBitte prüfen:\n- Slave-/Unit-ID ist normalerweise 1\n- An der Navigatorregelung steht Gebäudeleittechnik → Modbus TCP auf Ein\n- Der Proxy leitet an das richtige IDM-Gerät weiter\n- Kein anderer Modbus-Client blockiert die Verbindung"
     },
     "incompatible_firmware": {
       "title": "IDM-Firmware oder Modbus-Funktion nicht unterstützt",

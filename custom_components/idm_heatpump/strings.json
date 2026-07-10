@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Set up IDM Navigator Heat Pump",
-        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nEnter the connection details of your IDM heat pump.\n\n**Prerequisite:** Modbus TCP must be enabled in the IDM controller under *Installer level → Communication → Modbus*.",
+        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nEnter the connection details of your IDM heat pump.\n\n**Required for full operation:** On the IDM Navigator/controller, enable *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Usually use port **502** and slave ID **1**. If the menu is missing or locked, your heating installer or iDM service must enable it.",
         "data": {
           "name": "Name",
           "host": "Modbus IP / Hostname",
@@ -24,8 +24,20 @@
         }
       },
       "reconfigure": {
-        "title": "Reconfigure – {name}",
-        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nCurrent connection: **{host}**\n\nUpdate the network settings of your heat pump. The integration will restart automatically afterwards.",
+        "title": "Connection and diagnostics",
+        "description": "Change the saved connection or test all configured local endpoints without saving or writing to the heat pump.",
+        "menu_options": {
+          "connection": "Change connection settings",
+          "diagnostics": "Test current connection"
+        },
+        "menu_option_descriptions": {
+          "connection": "Edit Modbus host, port, slave ID, local web PIN, and proxy settings.",
+          "diagnostics": "Read-only test of DNS/TCP, a known IDM Modbus register, and optional Navigator web access."
+        }
+      },
+      "connection": {
+        "title": "Change connection – {name}",
+        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nCurrent connection: **{host}**\n\nThe new settings are validated before saving. The integration restarts automatically afterwards. Modbus TCP must be enabled on the Navigator under *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*.",
         "data": {
           "host": "Modbus IP / Hostname",
           "port": "Port",
@@ -43,6 +55,18 @@
           "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
         }
       },
+      "diagnostics_success": {
+        "title": "Modbus and web connection successful",
+        "description": "The read-only test succeeded for Modbus **{host}:{port}**, slave ID **{slave_id}**, and the configured local Navigator web access.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+      },
+      "diagnostics_modbus_success": {
+        "title": "Modbus connection successful",
+        "description": "The read-only Modbus test succeeded for **{host}:{port}**, slave ID **{slave_id}**. Web access was skipped because no local web PIN is configured.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+      },
+      "diagnostics_failed": {
+        "title": "Connection test failed",
+        "description": "The read-only test for **{host}:{port}**, slave ID **{slave_id}**, did not complete successfully. The specific cause and recommended checks are shown above.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+      },
       "options": {
         "title": "Configuration – {name}",
         "description": "Adjust the polling interval and installed components. Changes will restart the integration.",
@@ -50,31 +74,57 @@
           "scan_interval": "Scan interval",
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
-          "zone_count": "Number of zone modules",
-          "technician_codes": "Show Installer Level codes",
-          "enable_cascade": "Enable Cascade Registers",
-          "web_extra_data": "Enable web supplement data",
-          "web_scan_interval": "Web supplement interval",
-          "room_temp_forwarding": "Forward external room temperatures",
-          "room_temp_forwarding_interval": "Room temperature forwarding interval",
-          "room_temp_forwarding_tolerance": "Room temperature forwarding tolerance",
-          "modbus_timeout": "Modbus timeout",
-          "modbus_retries": "Modbus retries"
+          "zone_count": "Number of zone modules"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of IDM zone modules installed (0 if none).",
-          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
-          "enable_cascade": "Enables reading and writing cascade operation registers. Only enable this if you have a cascaded heat pump setup.",
-          "web_extra_data": "Reads additional local Navigator web data such as Navigator generation and software version when a PIN is configured.",
-          "web_scan_interval": "How often to read optional web data. Default: 30 seconds. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time.",
-          "room_temp_forwarding": "Optional: write selected Home Assistant temperature sensors to the IDM external room temperature registers for the active heating circuits.",
-          "room_temp_forwarding_interval": "How often the selected room temperatures are checked and forwarded. State changes are also forwarded immediately.",
-          "room_temp_forwarding_tolerance": "Only write again when the value changed by at least this amount since the last forwarded value.",
-          "modbus_timeout": "Maximum time to wait for a single Modbus TCP response before the attempt is aborted. Lower values detect dead connections faster but may abort on slow controllers.",
-          "modbus_retries": "How many times a failed Modbus request is retried (with exponential backoff) before the poll fails. Lower values fail faster on persistent connection drops."
+          "zone_count": "Number of IDM zone modules installed (0 if none)."
+        },
+        "sections": {
+          "features": {
+            "name": "Optional features",
+            "description": "Enable only features that exist in your installation.",
+            "data": {
+              "technician_codes": "Show Installer Level codes",
+              "enable_cascade": "Enable cascade registers",
+              "web_extra_data": "Enable web supplement data",
+              "web_scan_interval": "Web supplement interval"
+            },
+            "data_description": {
+              "technician_codes": "Exposes two sensors showing the current Installer Level codes. Codes are refreshed every minute.",
+              "enable_cascade": "Only enable this when multiple heat pumps are configured as a cascade.",
+              "web_extra_data": "Reads additional local Navigator web data when a local web PIN is configured.",
+              "web_scan_interval": "How often to read optional web data. Default: 30 seconds."
+            }
+          },
+          "room_temperature_forwarding": {
+            "name": "External room temperatures",
+            "description": "Optional forwarding of Home Assistant temperature sensors to IDM GLT registers.",
+            "data": {
+              "room_temp_forwarding": "Forward external room temperatures",
+              "room_temp_forwarding_interval": "Forwarding interval",
+              "room_temp_forwarding_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
+              "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
+              "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+            }
+          },
+          "advanced_modbus": {
+            "name": "Advanced Modbus settings",
+            "description": "The defaults are recommended. Change these only for slow or unreliable networks.",
+            "data": {
+              "modbus_timeout": "Response timeout",
+              "modbus_retries": "Retries"
+            },
+            "data_description": {
+              "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
+              "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails."
+            }
+          }
         }
       },
       "zones": {
@@ -129,9 +179,15 @@
       },
       "modbus_failed": {
         "title": "Modbus connection failed",
-        "description": "**Could not connect to the heat pump via Modbus TCP at {host}.**\n\nBecause a local Navigator web PIN was entered, you can choose to continue with **web data only** (limited functionality). If Modbus should work, choose **Retry Modbus connection** and check the IP address, port and slave ID first.\n\n**Web-Only mode limitations:**\n- Only sensor values from the web interface (temperatures, pressures, flow rate, etc.)\n- No Modbus registers: no heating circuits, no zones, no writable entities\n- No system mode control, no error acknowledgement\n- Installer-level Modbus activation by your iDM service team is required for full functionality",
+        "description": "**The Modbus check for {host} failed.**\n\nOn the Navigator, verify *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. If this menu is missing or locked, contact your heating installer or iDM service.\n\nThe message above distinguishes whether the TCP endpoint is unreachable or answers without valid IDM register data. Correct the connection details and retry, or continue with **web data only**. You can correct the local web PIN directly below.\n\n**Web-only limitations:** sensor values only; no heating-circuit or zone registers, writable entities, mode control, or error acknowledgement.",
         "data": {
-          "action": "Action"
+          "action": "Next step",
+          "web_pin": "Local web PIN",
+          "web_host": "Original heat pump IP for web access"
+        },
+        "data_description": {
+          "web_pin": "Required for web-only mode. The PIN is checked before the integration is created.",
+          "web_host": "Required when Modbus uses a proxy. Enter the address of the heat pump itself."
         }
       },
       "web_only_options": {
@@ -146,11 +202,18 @@
       }
     },
     "error": {
-      "cannot_connect": "Failed to connect to the heat pump. Check the IP address, port, and whether Modbus TCP is enabled in the controller. If Modbus is not available, you can continue with web data only (enter your local Navigator PIN first).",
+      "cannot_connect": "Failed to connect to the heat pump. Check the IP address and port, and enable Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein) on the Navigator. If Modbus is not available, you can continue with web data only (enter your local Navigator PIN first).",
+      "host_not_found": "The hostname could not be resolved. Check for typing errors, try the heat pump's IP address, and verify local DNS/mDNS.",
+      "modbus_connection_refused": "The device actively refused the connection. On the Navigator, set Building management system (Gebäudeleittechnik) → Modbus TCP to On (Ein) and use port 502. If the menu is missing or locked, ask your heating installer or iDM service to enable it. Restart the controller if required, then retry.",
+      "modbus_timeout": "The connection attempt timed out. Check that the IP belongs to the heat pump, the device is powered on, and no VLAN, route, or firewall blocks port 502.",
+      "modbus_unreachable": "The Modbus TCP endpoint is not reachable. Check the IP/hostname and network, use port 502, and verify Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein) on the Navigator.",
+      "modbus_no_response": "The TCP connection was opened, but no valid IDM register response was received. Check slave ID 1 and that Building management system (Gebäudeleittechnik) → Modbus TCP is On (Ein) on the Navigator. Restart the controller after enabling Modbus.",
       "host_required": "Please enter a valid IP address or hostname.",
       "invalid_web_pin": "The local Navigator web interface rejected this PIN. Please enter the correct PIN or leave the field empty to use Modbus only.",
       "invalid_web_pin_web_only": "The local Navigator web interface rejected this PIN. Choose Retry to correct the IP/port/slave and try Modbus again, or enter the correct PIN to use web data only.",
       "name_required": "Please enter a name for the device.",
+      "web_pin_required": "Enter the local Navigator web PIN to continue in web-only mode.",
+      "web_cannot_connect": "The local Navigator web interface could not be read. Check the original heat pump address and network access, or clear the web PIN to continue with Modbus only.",
       "web_host_required": "Enter the original heat pump IP/hostname for web access, or disable the Modbus proxy option."
     },
     "abort": {
@@ -167,31 +230,57 @@
           "scan_interval": "Scan interval",
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
-          "zone_count": "Number of zone modules",
-          "technician_codes": "Show Installer Level codes",
-          "enable_cascade": "Enable Cascade Registers",
-          "web_extra_data": "Enable web supplement data",
-          "web_scan_interval": "Web supplement interval",
-          "room_temp_forwarding": "Forward external room temperatures",
-          "room_temp_forwarding_interval": "Room temperature forwarding interval",
-          "room_temp_forwarding_tolerance": "Room temperature forwarding tolerance",
-          "modbus_timeout": "Modbus timeout",
-          "modbus_retries": "Modbus retries"
+          "zone_count": "Number of zone modules"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of IDM zone modules installed (0 if none).",
-          "technician_codes": "Exposes two sensors showing the current Installer Level codes (Level 1 and Level 2). Codes are refreshed every minute.",
-          "enable_cascade": "Enables reading and writing cascade operation registers. Only enable this if you have a cascaded heat pump setup.",
-          "web_extra_data": "Reads additional local Navigator web data such as Navigator generation and software version when a PIN is configured.",
-          "web_scan_interval": "How often to read optional web data. Default: 30 seconds. This runs separately from Modbus and is delayed slightly so both protocols do not start at exactly the same time.",
-          "room_temp_forwarding": "Optional: write selected Home Assistant temperature sensors to the IDM external room temperature registers for the active heating circuits.",
-          "room_temp_forwarding_interval": "How often the selected room temperatures are checked and forwarded. State changes are also forwarded immediately.",
-          "room_temp_forwarding_tolerance": "Only write again when the value changed by at least this amount since the last forwarded value.",
-          "modbus_timeout": "Maximum time to wait for a single Modbus TCP response before the attempt is aborted. Lower values detect dead connections faster but may abort on slow controllers.",
-          "modbus_retries": "How many times a failed Modbus request is retried (with exponential backoff) before the poll fails. Lower values fail faster on persistent connection drops."
+          "zone_count": "Number of IDM zone modules installed (0 if none)."
+        },
+        "sections": {
+          "features": {
+            "name": "Optional features",
+            "description": "Enable only features that exist in your installation.",
+            "data": {
+              "technician_codes": "Show Installer Level codes",
+              "enable_cascade": "Enable cascade registers",
+              "web_extra_data": "Enable web supplement data",
+              "web_scan_interval": "Web supplement interval"
+            },
+            "data_description": {
+              "technician_codes": "Exposes two sensors showing the current Installer Level codes. Codes are refreshed every minute.",
+              "enable_cascade": "Only enable this when multiple heat pumps are configured as a cascade.",
+              "web_extra_data": "Reads additional local Navigator web data when a local web PIN is configured.",
+              "web_scan_interval": "How often to read optional web data. Default: 30 seconds."
+            }
+          },
+          "room_temperature_forwarding": {
+            "name": "External room temperatures",
+            "description": "Optional forwarding of Home Assistant temperature sensors to IDM GLT registers.",
+            "data": {
+              "room_temp_forwarding": "Forward external room temperatures",
+              "room_temp_forwarding_interval": "Forwarding interval",
+              "room_temp_forwarding_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
+              "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
+              "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+            }
+          },
+          "advanced_modbus": {
+            "name": "Advanced Modbus settings",
+            "description": "The defaults are recommended. Change these only for slow or unreliable networks.",
+            "data": {
+              "modbus_timeout": "Response timeout",
+              "modbus_retries": "Retries"
+            },
+            "data_description": {
+              "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
+              "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails."
+            }
+          }
         }
       },
       "zones": {
@@ -289,6 +378,9 @@
       }
     },
     "sensor": {
+      "idm_api_version": {
+        "name": "IDM Heatpump API version"
+      },
       "circuit_mode": {
         "state": {
           "off": "Off",
@@ -365,8 +457,8 @@
       "fix_flow": {
         "step": {
           "init": {
-            "title": "Resolve missing IDM web PIN",
-            "description": "Choose whether to configure the local Navigator web PIN now or intentionally disable optional web supplement data.",
+            "title": "Resolve IDM Navigator web access",
+            "description": "Choose whether to enter or replace the local Navigator web PIN now, or intentionally disable optional web supplement data.",
             "data": {
               "action": "Action"
             }
@@ -385,7 +477,8 @@
         },
         "error": {
           "web_pin_required": "Enter a PIN or choose Modbus-only mode.",
-          "invalid_web_pin": "The local Navigator web interface rejected this PIN."
+          "invalid_web_pin": "The local Navigator web interface rejected this PIN.",
+          "web_cannot_connect": "The local Navigator web interface could not be read. Check the configured web host and network access, then retry."
         },
         "abort": {
           "entry_not_found": "The IDM Heatpump config entry was not found."
@@ -396,13 +489,29 @@
       "title": "IDM web supplement data unavailable",
       "description": "Home Assistant could not read local Navigator web data from **{host}**.\n\nLast error: `{error}`\n\nModbus data continues to work. Please check that the Home Assistant host can reach the Navigator web interface and that the configured PIN is correct."
     },
+    "web_authentication_failed": {
+      "title": "IDM Navigator web PIN rejected",
+      "description": "The local Navigator web interface at **{host}** rejected the configured PIN.\n\nOpen the integration's **Reconfigure** flow and enter the current local web PIN, or clear the PIN to use Modbus only. Modbus polling continues unaffected."
+    },
     "cannot_connect": {
       "title": "Cannot connect to IDM heat pump",
-      "description": "Home Assistant cannot reach the IDM heat pump at **{host}**.\n\nPlease check:\n- Network connectivity to the device\n- Modbus TCP is enabled in the controller (*Installer level → Communication → Modbus*)\n- The IP address and port are correct in the integration settings"
+      "description": "Home Assistant cannot reach the IDM heat pump at **{host}**.\n\nPlease check:\n- Network connectivity to the device\n- Building management system (Gebäudeleittechnik) → Modbus TCP is On (Ein) on the Navigator\n- The IP address and port are correct in the integration settings\n\nIf the menu is missing or locked, ask your heating installer or iDM service to enable it."
+    },
+    "host_not_found": {
+      "title": "IDM hostname not found",
+      "description": "Home Assistant cannot resolve **{host}**.\n\nCheck the hostname for typing errors, verify local DNS/mDNS, or reconfigure the integration with the heat pump's IP address."
+    },
+    "modbus_connection_refused": {
+      "title": "IDM Modbus TCP connection refused",
+      "description": "The device at **{host}** actively refused the TCP connection.\n\nOn the Navigator, set *Building management system (Gebäudeleittechnik) → Modbus TCP* to *On (Ein)* and use port 502. If the menu is missing or locked, ask your heating installer or iDM service to enable it. Restart the controller if required, then retry."
+    },
+    "modbus_timeout": {
+      "title": "IDM Modbus TCP connection timed out",
+      "description": "The Modbus connection to **{host}** timed out.\n\nCheck that the address belongs to the heat pump, the controller is powered on, and no firewall, VLAN, or routing rule blocks TCP port 502."
     },
     "wrong_slave_id": {
       "title": "No Modbus response from IDM heat pump",
-      "description": "Home Assistant can reach the Modbus endpoint at **{host}**, but the controller does not answer as expected.\n\nPlease check:\n- The configured slave ID matches the Modbus proxy or controller\n- The proxy forwards to the correct IDM device\n- No other Modbus client is blocking the connection"
+      "description": "Home Assistant can reach the Modbus endpoint at **{host}**, but the controller does not answer as expected.\n\nPlease check:\n- Slave/unit ID is normally 1\n- Building management system (Gebäudeleittechnik) → Modbus TCP is On (Ein) on the Navigator\n- The proxy forwards to the correct IDM device\n- No other Modbus client is blocking the connection"
     },
     "incompatible_firmware": {
       "title": "IDM firmware or Modbus function not supported",
