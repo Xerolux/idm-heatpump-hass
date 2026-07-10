@@ -125,7 +125,7 @@ before publishing a stable release.
 - IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502)
 - Optional local Navigator web PIN for additional read-only web diagnostics
 - Python 3.13+ (provided by Home Assistant)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.2` (installed automatically)
+- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.3` (installed automatically)
 
 ---
 
