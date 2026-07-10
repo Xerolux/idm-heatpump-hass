@@ -11,7 +11,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## Unreleased
+## [0.8.1-beta.25] - 2026-07-10
 
 ### Fixed
 
@@ -22,6 +22,11 @@ All notable changes to this project will be documented in this file.
 
 - Document the validated local Navigator transports, the read-only/cloud
   boundary and the remaining reverse-engineering gaps.
+
+### Bitte testen
+
+- Bitte prüfe besonders die Erkennung der konfigurierten Heizkreise und die
+  lokalen Navigator-Webdaten.
 
 ## [0.8.1-beta.24] - 2026-07-10
 
