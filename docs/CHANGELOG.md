@@ -10,6 +10,19 @@
 ---
 
 All notable changes to this project will be documented in this file.
+
+## Unreleased
+
+### Fixed
+
+- Pin the runtime API to `idm-heatpump-api[web]==0.7.3`, which ignores
+  unavailable `-1.0` heating-circuit flow values during model detection.
+
+### Documentation
+
+- Document the validated local Navigator transports, the read-only/cloud
+  boundary and the remaining reverse-engineering gaps.
+
 ## [0.8.1-beta.24] - 2026-07-10
 
 Diese Beta übernimmt die fehlenden Kern-Fixes aus PR #89 sauber auf den aktuellen Stand: Paket- und Versionsabfragen blockieren den Home-Assistant-Event-Loop nicht mehr, und der pymodbus-Logfilter ist bereits vor den Verbindungsprüfungen im Einrichtungsdialog aktiv.
