@@ -32,7 +32,7 @@
 |-----------|-------------------|
 | **🌡️ System-Überwachung** | Vorlauf, Rücklauf, Warmwasser, Außentemperatur, Druck, Durchfluss |
 | **🔧 Heizkreise A–G** | Bis zu 7 Heizkreise mit individueller Sollwert- und Modussteuerung |
-| **🏠 Zonen-Module** | Bis zu 10 Zonen mit je 6 Räumen (Raumthermostat-Funktion). Navigator 10 / aktuelle Hardware verwendet 6 Räume pro Modul. |
+| **🏠 Zonen-Module** | Bis zu 10 Zonen mit bis zu 8 konfigurierbaren Räumen; beim aktuellen Navigator 10 sind 6 Räume der Standard. |
 | **🌡️ Raumtemperatur-Weitergabe** | Optionale Weitergabe von Home-Assistant-Temperatursensoren an die externen IDM-Raumtemperaturregister pro Heizkreis |
 | **💧 Warmwasser** | Warmwasser-Sollwert und Prioritätssteuerung |
 | **☀️ Solar & PV** | Solare Warmwasserbereitung, PV-Überschussnutzung |
@@ -113,7 +113,7 @@ Die vollständige Dokumentation befindet sich im **[Wiki][wiki]**:
 | 🚀 **Erste Schritte** | [Installation & Setup][wiki-install] · [Konfiguration][wiki-config] |
 | 📊 **Entities** | [Alle Entities][wiki-entities] · [Sensoren][wiki-sensors] · [Schalter][wiki-switches] · [Selects][wiki-selects] · [Numbers][wiki-numbers] |
 | ⚙️ **Automatisierung** | [Services Referenz][wiki-services] |
-| 🔧 **Betrieb** | [Troubleshooting][wiki-trouble] · [Modbus-Register][wiki-registers] |
+| 🔧 **Betrieb** | [Troubleshooting][wiki-trouble] · [Modbus-Register][wiki-registers] · [Stabilität & Release-Reife][wiki-stability] |
 | 👩‍💻 **Entwicklung** | [Contributing][wiki-contributing] · [Changelog][wiki-changelog] |
 
 Maintainer sollten vor einem stabilen Release den
@@ -128,7 +128,7 @@ Maintainer sollten vor einem stabilen Release den
 - IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.13+ (wird von Home Assistant bereitgestellt)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.5` (automatisch installiert)
+- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.7.6` (automatisch installiert)
 
 ---
 
@@ -154,7 +154,8 @@ Home Assistant
     │       ├── IdmModbusClient (pymodbus, async, Batch-Lesung)
     │       │       │
     │       │       └── IDM Navigator 2.0 / 10 (Modbus TCP, Port 502, Slave ID 1)
-    │       │               FC 03: Read Input Registers
+    │       │               FC 04: Read Input Registers
+    │       │               FC 03: Read Holding Registers
     │       │               FC 16: Write Multiple Registers
     │       │
     │       ├── Optionale lokale Web-Zusatzdaten (PIN, read-only, eigenes Intervall)
@@ -170,8 +171,9 @@ Home Assistant
 
 ### Technische Details
 
-- **663 Register** insgesamt (215 RO, 266 RW, 16 W-only, 166 kontextabhängig)
-- **Batch-Lesung**: Zusammenhängende Register werden gruppiert (max. 30 pro Batch)
+- **Dynamische Registerauswahl** passend zu erkanntem Modell, Heizkreisen, Zonen und optionalen Fähigkeiten
+- **Batch-Lesung**: nur exakt benachbarte, nicht überlappende Bereiche werden bis maximal 40 Modbus-Wörter pro Anfrage gruppiert
+- **Werte-Sicherheit**: deklarierte Nicht-verfügbar-Sentinels gelten als unbenutzt; unplausible Batch-Werte werden einzeln geprüft und für die laufende Verbindung aus Batches ausgeschlossen
 - **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
 - **Auto-Recovery**: Exponentielles Backoff bei Verbindungsfehlern
@@ -247,6 +249,7 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [wiki-numbers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Entities#numbers
 [wiki-services]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Services
 [wiki-trouble]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Troubleshooting
+[wiki-stability]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Stability-and-Release-Readiness
 [idm-modbus-source]: https://www.idm-energie.at/wp-content/uploads/2021/04/PV_Nutzung_GLT-Smartfox.pdf
 [wiki-registers]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Modbus-Register
 [wiki-contributing]: https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing

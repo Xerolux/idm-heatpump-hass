@@ -15,9 +15,9 @@ This matrix tracks tested IDM hardware without publishing private network data. 
 
 | Heat pump / controller | Status | Firmware | Active capabilities | Verified with | Notes |
 |------------------------|--------|----------|---------------------|---------------|-------|
-| IDM 6-15 with Navigator 10 | confirmed | reported by diagnostics | Heating circuits, PV, Solar, ISC, Cascade flags | HASS branch tests, API contract tests, read-only Modbus probe | Maintainer test system. Private host, port and network data are intentionally omitted. |
+| IDM 6-15 with Navigator 10 | confirmed | reported by diagnostics | Heating circuit A, PV, Solar, ISC; cascade unavailable sentinel verified | HASS branch tests, API contract tests, repeated read-only Modbus probes | Maintainer test system. Private host, port and network data are intentionally omitted. |
 | Navigator 10 / current hardware | community-tested | NAV10_20.23+ expected | Up to 7 heating circuits, up to 10 zone modules | API register model, diagnostics reports | Heat sink and booster registers are Navigator-10-gated. |
-| Navigator 2.0 | expected | 2.x expected | Heating circuits, optional PV/Solar/ISC/Cascade | API register model, contract tests | Navigator-10-only registers are filtered when the detected model is Navigator 2.0. |
+| Navigator 2.0 | expected | 2.x expected | Heating circuits, optional PV/Solar/ISC/Cascade | API register model, contract tests | A current Terra SWM report still needs a raw model-detection capture before broad compatibility can be confirmed. |
 | Navigator Pro / zone modules | expected | unknown | Zone modules, room sensors and room modes | API register model, contract tests | Needs a complete public diagnostic report before being marked community-tested. |
 | Terra SWM with Navigator controller | expected | unknown | Unknown | no complete report yet | Keep as expected until model, firmware and diagnostic export are available. |
 | Unknown future Navigator model | expected | unknown | Unknown | no complete report yet | Must be treated as expected until auto-detection and diagnostics prove compatibility. |

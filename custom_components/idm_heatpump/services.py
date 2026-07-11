@@ -223,8 +223,12 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
 
     try:
         value = int(value) if datatype != DataType.FLOAT else float(value)
-    except (ValueError, TypeError):
-        _LOGGER.debug("Value %r is not numeric, passing as-is", value)
+    except (ValueError, TypeError, OverflowError) as err:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_value",
+            translation_placeholders={"value": str(value), "datatype": datatype_str},
+        ) from err
 
     reg = RegisterDef(
         address=address,
@@ -234,8 +238,17 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
     )
 
     try:
-        safety_result = coordinator.simulate_write(reg, value, dry_run=True)
-        await coordinator.client.write_register(reg, value)
+        safety_result = coordinator.simulate_write(
+            reg,
+            value,
+            dry_run=True,
+            allow_custom_register=True,
+        )
+        await coordinator.client.write_register(
+            reg,
+            value,
+            allow_custom_register=True,
+        )
         _LOGGER.warning("Manual register write: address=%d value=%s", address, value)
         response: dict[str, JsonValueType] = {"success": True, "address": address, "value": str(value)}
         encoded_registers = _encoded_registers_from_safety_result(safety_result)

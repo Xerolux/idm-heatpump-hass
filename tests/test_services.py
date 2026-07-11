@@ -281,14 +281,30 @@ class TestWriteRegister:
         call = MagicMock()
         call.data = {"address": 1000, "value": "42", "acknowledge_risk": True}
         result = await _handle_write_register(mock_hass, call)
-        coord.client.write_register.assert_called_once()
+        reg = coord.client.write_register.call_args.args[0]
+        coord.client.write_register.assert_called_once_with(
+            reg,
+            42,
+            allow_custom_register=True,
+        )
+        coord.simulate_write.assert_called_once_with(
+            reg,
+            42,
+            dry_run=True,
+            allow_custom_register=True,
+        )
         assert result["success"] is True
         assert result["address"] == 1000
 
     async def test_writes_float_value(self, mock_hass):
         coord = _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
-        call.data = {"address": 1000, "value": "22.5", "acknowledge_risk": True}
+        call.data = {
+            "address": 1000,
+            "value": "22.5",
+            "datatype": "float",
+            "acknowledge_risk": True,
+        }
         result = await _handle_write_register(mock_hass, call)
         coord.client.write_register.assert_called_once()
         assert result["success"] is True
@@ -329,13 +345,12 @@ class TestWriteRegister:
         assert result["value"] == "100"
         assert result["address"] == 2000
 
-    async def test_non_numeric_string_passes_as_is(self, mock_hass):
+    async def test_non_numeric_string_is_rejected(self, mock_hass):
         _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
         call.data = {"address": 1000, "value": "not_a_number", "acknowledge_risk": True}
-        result = await _handle_write_register(mock_hass, call)
-        assert result["success"] is True
-        assert result["value"] == "not_a_number"
+        with pytest.raises(ServiceValidationError):
+            await _handle_write_register(mock_hass, call)
 
     @pytest.mark.parametrize(
         "datatype_str,expected_type",

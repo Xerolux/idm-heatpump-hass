@@ -10,8 +10,7 @@
 
 - Only **Modbus TCP** is supported (no serial Modbus RTU)
 - Port and Slave ID must be configured correctly
-- Simultaneous connections from multiple clients (e.g., IDM web interface + HA) can cause timeout errors
-- Recommendation: Disable other Modbus clients during operation or increase the polling interval
+- Some controller/firmware combinations tolerate only limited parallel Modbus clients. If timeouts correlate with another automation system, test with that client stopped or increase the polling interval
 
 ## EEPROM Protection
 
@@ -28,11 +27,18 @@
 
 - Some registers are **read-only** (e.g., energy meters, temperature sensors)
 - Attempting to write to read-only registers may return a Modbus error
-- The `write_register` service bypasses this protection — **for experienced users only**
+- The `write_register` service deliberately permits an explicitly acknowledged custom address, but still validates datatype and numeric encoding. It cannot infer safe ranges, EEPROM behavior or semantics for unknown addresses — **for experienced users only**
 
 ## Zone Modules
 
-- A maximum of **10 zone modules** with up to **6 rooms** each are supported on current hardware (Navigator 10 and newer). Some older installations may have used 8 rooms per module.
+- A maximum of **10 zone modules** with up to **8 configurable rooms** each is supported. Six rooms is the current Navigator 10 default; only configure physically present rooms.
+
+## Model and Firmware Evidence
+
+- Navigator 10 has direct maintainer hardware coverage.
+- Navigator 2.0 and Navigator Pro remain dependent on complete community diagnostics across firmware variants.
+- A responding probe address alone may not prove an optional feature exists; unavailable sentinels are considered where hardware evidence exists.
+- See [Stability & Release Readiness](Stability-and-Release-Readiness) for the current blockers before removing the beta label.
 - Zone module configuration is adjustable via options after initial setup
 - Rooms without a physical sensor may return `-1.0` as a value (marked as unavailable)
 

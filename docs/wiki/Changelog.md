@@ -1,5 +1,36 @@
 # Changelog
 
+The authoritative, complete history is maintained in
+[`docs/CHANGELOG.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CHANGELOG.md)
+and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
+This page only summarizes recent milestones.
+
+## v0.8.1-beta.28 — 2026-07-11
+
+- Pins the published `idm-heatpump-api` 0.7.6 stability release.
+- Propagates transport failures without disabling valid registers.
+- Quarantines proven room-mode batch mismatches and avoids later double reads.
+- Recognizes the verified cascade-unavailable sentinel.
+- Restores explicitly acknowledged custom-register writes with numeric validation.
+
+## Unreleased stability audit — 2026-07-10
+
+- Transport/no-response failures no longer count as permanent failures of individual registers.
+- Zone-room mode validation isolates unsupported/invalid values and avoids repeated double reads after quarantine.
+- Navigator 10 cascade capability recognizes the hardware-confirmed `255` unavailable sentinel.
+- Advanced raw writes retain numeric/datatype validation and require explicit risk acknowledgement.
+- Added measurable [stable-release gates](Stability-and-Release-Readiness).
+
+## v0.8.1-beta.27 — 2026-07-10
+
+- Pinned the hardware-verified API 0.7.5.
+- Added register-specific unavailable-sentinel handling.
+- Compared 170 definitions across 45 groups in 309 read-only batch/individual checks without a raw mismatch.
+
+---
+
+## Historical summary
+
 ## v0.4.6 — 2026-05-31
 
 - 169+ entities (109 sensors, 8 binary, 44 numbers, 4 selects, 4 switches)
@@ -19,7 +50,7 @@
 
 - Major architectural change
 - Navigator 10 support added
-- 663 register definitions
+- First large library-backed dynamic register map
 
 ## v0.2.0 — 2026-03-22
 

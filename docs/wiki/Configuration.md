@@ -91,7 +91,7 @@ Select the active heating circuits (A through G). Only enabled circuits create e
 
 ### Zones
 
-Specify the number of zone modules (0–10). Each zone module supports up to 6 rooms on current hardware (Navigator 10). Older systems may support 8 rooms.
+Specify the number of zone modules (0–10) and the active rooms per module. The integration supports up to 8 rooms per zone; 6 is the API default for current Navigator 10 hardware. Configure only physically present rooms to avoid unnecessary individual room-mode validation traffic.
 
 ### Technician Level Codes
 

@@ -205,7 +205,7 @@ rules:
     status: done
     comment: >
       docs/wiki/Data-Update.md explains the DataUpdateCoordinator polling mechanism,
-      batch Modbus reads (up to 30 consecutive registers), configurable interval,
+      batch Modbus reads (up to 40 exactly adjacent, non-overlapping words), configurable interval,
       optimistic writes, and repair-issue error handling.
 
   docs-examples:
