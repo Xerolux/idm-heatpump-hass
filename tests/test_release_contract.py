@@ -238,6 +238,44 @@ def test_release_artifact_is_built_from_manifest_directory() -> None:
     assert "manifest.json" not in release_workflow.partition("zip -r ../../idm_heatpump.zip .")[2].partition("\n\n")[0]
 
 
+def test_release_smoke_test_is_candidate_bound_without_stale_version() -> None:
+    smoke = _read(ROOT / "docs" / "RELEASE_SMOKE_TEST.md")
+
+    assert 'export RELEASE_VERSION="${RELEASE_VERSION:?set the candidate version first}"' in smoke
+    assert 'assert manifest["version"] == os.environ["RELEASE_VERSION"]' in smoke
+    assert 'assert manifest["version"] == "0.8.1-beta.' not in smoke
+    assert "docs/release-evidence/TEMPLATE.md" in smoke
+    for result in ("`PASS`", "`FAIL`", "`N/A`"):
+        assert result in smoke
+    assert "A `BLOCKED` result is not a pass" in smoke
+
+
+def test_stable_release_requires_measured_soak_and_signed_smoke_evidence() -> None:
+    process = _read(ROOT / "docs" / "RELEASE_PROCESS.md")
+    stability = _read(ROOT / "docs" / "wiki" / "Stability-and-Release-Readiness.md")
+    template = _read(ROOT / "docs" / "release-evidence" / "TEMPLATE.md")
+
+    for content in (process, stability):
+        normalized = " ".join(content.split())
+        assert "seven consecutive 24-hour periods" in normalized
+        assert "Documentation-only" in normalized
+        assert "restart" in normalized.lower()
+
+    for required_check in ("SMOKE-01", "SMOKE-06", "SMOKE-09", "Overall result", "Signed at (UTC)"):
+        assert required_check in template
+
+
+def test_beta_31_release_evidence_matches_published_candidate() -> None:
+    evidence = _read(ROOT / "docs" / "release-evidence" / "0.8.1-beta.31.md")
+
+    assert "`044115b0bbfecd4086f995612846e27c97c953d6`" in evidence
+    assert "`9789414d9697d0272800537b8c90df331ab5e916da31b3caf463c0f7f1b37c31`" in evidence
+    assert "`2026-07-11T18:59:52Z`" in evidence
+    assert "`2026-07-18T18:59:52Z`" in evidence
+    assert "Status: `BLOCKED`" in evidence
+    assert "Overall result: `BLOCKED`" in evidence
+
+
 def test_release_workflow_validates_prepared_version_and_changelog() -> None:
     release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
 
