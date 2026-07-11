@@ -5,6 +5,14 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.1-beta.28 — 2026-07-11
+
+- Pins the published `idm-heatpump-api` 0.7.6 stability release.
+- Propagates transport failures without disabling valid registers.
+- Quarantines proven room-mode batch mismatches and avoids later double reads.
+- Recognizes the verified cascade-unavailable sentinel.
+- Restores explicitly acknowledged custom-register writes with numeric validation.
+
 ## Unreleased stability audit — 2026-07-10
 
 - Transport/no-response failures no longer count as permanent failures of individual registers.

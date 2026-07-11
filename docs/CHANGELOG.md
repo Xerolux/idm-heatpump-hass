@@ -11,7 +11,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.1-beta.28] - 2026-07-11
 
 ### Fixed
 
@@ -24,6 +24,8 @@ All notable changes to this project will be documented in this file.
 - Make the explicitly acknowledged `write_register` service compatible with
   the API's detected-model safety gate while retaining datatype and numeric
   validation; reject non-numeric service values before Modbus I/O.
+- Pin the integration to the published and hardware-verified
+  `idm-heatpump-api[web]==0.7.6` release.
 
 ### Documentation
 

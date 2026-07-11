@@ -31,8 +31,9 @@ same artifact and runtime dependency set that users install from GitHub.
    manifest = json.loads(Path("/tmp/idm_heatpump_release/manifest.json").read_text())
    assert manifest["requirements"] == [
        "pymodbus>=3.12.1,<4.0",
-       "idm-heatpump-api[web]>=0.6.0,<0.7",
+       "idm-heatpump-api[web]==0.7.6",
    ]
+   assert manifest["version"] == "0.8.1-beta.28"
    print("runtime requirements ok")
    PY
    ```

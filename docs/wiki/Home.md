@@ -26,7 +26,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | **Min HA Version** | 2026.5.0 |
 | **Python** | 3.13+ (managed by Home Assistant) |
 | **pymodbus** | pymodbus>=3.12.1,<4.0 |
-| **Library** | idm-heatpump-api[web]==0.7.5 |
+| **Library** | idm-heatpump-api[web]==0.7.6 |
 | **License** | MIT |
 | **Languages** | DE, EN |
 | **Entities** | 169+ (109 sensors, 8 binary, 44 numbers, 4 selects, 4 switches) |

@@ -6,10 +6,9 @@ normal changelog.
 
 ## Current Status
 
-The released integration remains a beta. The integration and
-`idm-heatpump-api` must be released as a tested, exactly pinned pair; fixes on a
-development branch are not evidence that an installed beta already contains
-them.
+Integration `0.8.1-beta.28` and `idm-heatpump-api` `0.7.6` form the tested,
+exactly pinned pair from this audit. The integration remains a beta while the
+hardware/community and soak gates below are still open.
 
 The July 2026 stability audit verified:
 
