@@ -10,16 +10,11 @@ on:
         description: 'Tag name for the release (e.g. v0.1.0, v0.2.0-beta.1)'
         required: true
         type: string
-      release_type:
-        description: 'Release type'
-        required: true
-        type: choice
-        options:
-          - stable
-          - beta
-          - alpha
-          - draft
-        default: 'stable'
+      draft:
+        description: 'Create the release as a draft'
+        required: false
+        type: boolean
+        default: false
       make_latest:
         description: 'Mark as latest release'
         required: false
@@ -62,64 +57,47 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get version and detect release type
+      - name: Validate tag and detect release type
         id: version
+        env:
+          RELEASE_TAG: ${{ inputs.tag_name || github.ref_name }}
+          RELEASE_DRAFT: ${{ inputs.draft || false }}
         run: |
-          TAG="${{ github.event.release.tag_name || inputs.tag_name || github.ref_name }}"
+          TAG="$RELEASE_TAG"
+          IS_DRAFT="$RELEASE_DRAFT"
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Invalid tag format: $TAG"
+            exit 1
+          fi
+
           VERSION="${TAG#v}"
 
           if [[ "$TAG" =~ -alpha ]]; then
             RELEASE_TYPE="alpha"
             IS_PRERELEASE=true
-            IS_DRAFT=false
           elif [[ "$TAG" =~ -beta ]]; then
             RELEASE_TYPE="beta"
             IS_PRERELEASE=true
-            IS_DRAFT=false
           elif [[ "$TAG" =~ -rc ]]; then
             RELEASE_TYPE="rc"
             IS_PRERELEASE=true
-            IS_DRAFT=false
           else
             RELEASE_TYPE="stable"
             IS_PRERELEASE=false
-            IS_DRAFT=false
           fi
 
-          if [ "${{ inputs.release_type }}" = "draft" ]; then
-            IS_DRAFT=true
-            IS_PRERELEASE=false
-            RELEASE_TYPE="draft"
-          elif [ "${{ inputs.release_type }}" = "alpha" ]; then
-            IS_PRERELEASE=true
-            RELEASE_TYPE="alpha"
-          elif [ "${{ inputs.release_type }}" = "beta" ]; then
-            IS_PRERELEASE=true
-            RELEASE_TYPE="beta"
-          elif [ "${{ inputs.release_type }}" = "stable" ]; then
-            IS_PRERELEASE=false
-            RELEASE_TYPE="stable"
-          fi
-
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
-          echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
-          echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
-
-      - name: Validate tag format
-        run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
-            echo "Invalid tag format: $TAG"
+          if [[ "$IS_DRAFT" != "true" && "$IS_DRAFT" != "false" ]]; then
+            echo "Invalid draft flag: $IS_DRAFT"
             exit 1
           fi
-          VERSION="${{ steps.version.outputs.version }}"
-          if [ "$TAG" != "v$VERSION" ]; then
-            echo "Tag $TAG does not match version $VERSION"
-            exit 1
-          fi
+
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "is_draft=$IS_DRAFT" >> "$GITHUB_OUTPUT"
+          echo "release_type=$RELEASE_TYPE" >> "$GITHUB_OUTPUT"
 
       - name: Validate prepared release metadata
         env:

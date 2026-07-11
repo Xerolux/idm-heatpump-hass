@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
+import subprocess
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -22,6 +24,32 @@ def _read(path: Path) -> str:
 def _workflow_preamble(workflow: str) -> str:
     """Return workflow-level configuration before permissions and jobs."""
     return workflow.partition("\npermissions:\n")[0]
+
+
+def _release_detection_script(workflow: str) -> str:
+    """Extract the release metadata shell script from the workflow."""
+    step = workflow.partition("      - name: Validate tag and detect release type\n")[2].partition(
+        "\n      - name: Validate prepared release metadata"
+    )[0]
+    script = step.partition("        run: |\n")[2]
+    return "\n".join(line[10:] if line else line for line in script.splitlines())
+
+
+def _detect_release(workflow: str, tmp_path: Path, tag: str, *, draft: bool = False) -> dict[str, str]:
+    """Execute release metadata detection with controlled workflow inputs."""
+    tmp_path.mkdir(parents=True, exist_ok=True)
+    output = tmp_path / "github-output"
+    subprocess.run(
+        ["bash", "-euo", "pipefail", "-c", _release_detection_script(workflow)],
+        check=True,
+        env={
+            **os.environ,
+            "GITHUB_OUTPUT": str(output),
+            "RELEASE_DRAFT": str(draft).lower(),
+            "RELEASE_TAG": tag,
+        },
+    )
+    return dict(line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
 
 
 def test_manifest_declares_tested_runtime_dependencies() -> None:
@@ -91,6 +119,49 @@ def test_release_has_one_tag_trigger_and_serializes_each_version() -> None:
     assert "  workflow_dispatch:" in release
     assert "group: release-${{ inputs.tag_name || github.ref_name }}" in release
     assert "cancel-in-progress: false" in release
+
+
+def test_release_type_is_derived_only_from_validated_tag(tmp_path: Path) -> None:
+    workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+
+    expected_types = {
+        "v1.2.3-beta.4": ("beta", "true"),
+        "v1.2.3-rc.2": ("rc", "true"),
+        "v1.2.3": ("stable", "false"),
+    }
+    for tag, (release_type, prerelease) in expected_types.items():
+        result = _detect_release(workflow, tmp_path / tag, tag)
+        assert result["release_type"] == release_type
+        assert result["is_prerelease"] == prerelease
+
+    assert "inputs.release_type" not in workflow
+    assert "github.event.release.tag_name" not in workflow
+
+
+def test_release_draft_is_independent_and_inputs_are_passed_via_env(
+    tmp_path: Path,
+) -> None:
+    workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+    preamble = _workflow_preamble(workflow)
+    detection = workflow.partition("      - name: Validate tag and detect release type\n")[2].partition(
+        "\n      - name: Validate prepared release metadata"
+    )[0]
+
+    assert "      draft:\n" in preamble
+    assert "        type: boolean\n        default: false" in preamble
+    assert "RELEASE_TAG: ${{ inputs.tag_name || github.ref_name }}" in detection
+    assert "RELEASE_DRAFT: ${{ inputs.draft || false }}" in detection
+    assert 'TAG="$RELEASE_TAG"' in detection
+    assert 'IS_DRAFT="$RELEASE_DRAFT"' in detection
+    assert 'TAG="${{' not in detection
+    assert 'IS_DRAFT="${{' not in detection
+    assert 'echo "is_draft=$IS_DRAFT" >> "$GITHUB_OUTPUT"' in detection
+    assert ">> $GITHUB_OUTPUT" not in detection
+
+    draft_beta = _detect_release(workflow, tmp_path, "v1.2.3-beta.4", draft=True)
+    assert draft_beta["release_type"] == "beta"
+    assert draft_beta["is_prerelease"] == "true"
+    assert draft_beta["is_draft"] == "true"
 
 
 def test_api_dependency_update_workflow_updates_pin_and_runs_contract_tests() -> None:
