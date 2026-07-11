@@ -445,7 +445,22 @@
       "message": "Du musst acknowledge_risk auf true setzen, um den Dienst write_register verwenden zu können."
     },
     "write_failed": {
-      "message": "Schreiben des Registers fehlgeschlagen: {error}"
+      "message": "Register {register} konnte nicht geschrieben werden. Prüfe den Wert und versuche es erneut. Aktiviere bei wiederholtem Auftreten das Debug-Protokoll."
+    },
+    "write_connection_failed": {
+      "message": "Register {register} konnte nicht geschrieben werden, weil die Verbindung zur Wärmepumpe unterbrochen ist. Prüfe die Modbus-TCP-Verbindung und versuche es erneut."
+    },
+    "write_read_only": {
+      "message": "Register {register} ist schreibgeschützt oder derzeit von der Steuerung gesperrt und kann nicht geändert werden."
+    },
+    "write_out_of_range": {
+      "message": "Der gewünschte Wert für Register {register} liegt außerhalb des erlaubten Bereichs. Wähle einen Wert innerhalb der Entitätsgrenzen."
+    },
+    "write_not_supported": {
+      "message": "Register {register} wird von diesem Wärmepumpenmodell, dieser Firmware oder der installierten Ausstattung nicht unterstützt."
+    },
+    "write_invalid_value": {
+      "message": "Der gewünschte Wert für Register {register} besitzt ein ungültiges Format oder einen falschen Datentyp."
     },
     "invalid_datatype": {
       "message": "Ungültiger Datentyp: \"{datatype}\". Gültige Werte: uint16, int16, float, uchar, bool."
@@ -490,11 +505,27 @@
     },
     "web_supplement_failed": {
       "title": "IDM-Web-Zusatzdaten nicht verfügbar",
-      "description": "Home Assistant konnte keine lokalen Navigator-Webdaten von **{host}** lesen.\n\nLetzter Fehler: `{error}`\n\nModbus-Daten laufen weiter. Bitte prüfe, ob der Home-Assistant-Host die Navigator-Weboberfläche erreichen kann und ob die konfigurierte PIN korrekt ist."
+      "description": "Home Assistant konnte die optionalen lokalen Navigator-Webdaten von **{host}** nicht lesen. Die Modbus-Daten laufen weiter.\n\nPrüfe den konfigurierten Web-Host und den lokalen Netzwerkzugriff. Aktiviere bei wiederholtem Auftreten das Debug-Protokoll."
     },
     "web_authentication_failed": {
       "title": "IDM-Navigator-Web-PIN abgelehnt",
       "description": "Die lokale Navigator-Weboberfläche unter **{host}** hat die konfigurierte PIN abgelehnt.\n\nÖffne **Neu konfigurieren** bei der Integration und gib die aktuelle lokale Web-PIN ein oder entferne die PIN, um nur Modbus zu verwenden. Die Modbus-Abfrage läuft unbeeinflusst weiter."
+    },
+    "web_host_not_found": {
+      "title": "IDM-Navigator-Webadresse nicht gefunden",
+      "description": "Home Assistant kann die konfigurierte Navigator-Webadresse **{host}** nicht auflösen.\n\nPrüfe den Web-Host auf Tippfehler oder verwende die IP-Adresse der Wärmepumpe. Die Modbus-Daten laufen weiter."
+    },
+    "web_connection_refused": {
+      "title": "IDM-Navigator-Webverbindung abgelehnt",
+      "description": "Das Gerät unter **{host}** hat die lokale Webverbindung abgelehnt.\n\nPrüfe, ob dies die Originaladresse der Wärmepumpe ist und ob deren lokale Navigator-Weboberfläche verfügbar ist. Die Modbus-Daten laufen weiter."
+    },
+    "web_timeout": {
+      "title": "IDM-Navigator-Weboberfläche antwortet nicht",
+      "description": "Die lokale Navigator-Weboberfläche unter **{host}** hat nicht rechtzeitig geantwortet.\n\nPrüfe die Steuerung, Netzwerkverbindung, Firewall und VLAN-Einstellungen. Die Modbus-Daten laufen weiter."
+    },
+    "web_invalid_response": {
+      "title": "IDM-Navigator-Webantwort konnte nicht gelesen werden",
+      "description": "Die lokale Navigator-Weboberfläche unter **{host}** hat Daten geliefert, welche die Integration nicht lesen konnte.\n\nPrüfe, ob Navigator-Modell und Firmware unterstützt werden und die Integration aktuell ist. Die Modbus-Daten laufen weiter."
     },
     "cannot_connect": {
       "title": "Verbindung zur IDM-Wärmepumpe nicht möglich",
@@ -519,6 +550,10 @@
     "incompatible_firmware": {
       "title": "IDM-Firmware oder Modbus-Funktion nicht unterstützt",
       "description": "Die Wärmepumpe antwortet, lehnt aber eine Modbus-Funktion ab, die diese Integration benötigt.\n\nBitte prüfen:\n- Die Navigator-Firmware unterstützt Modbus TCP\n- Integration und API sind aktuell\n- Das Gerätemodell ist für den verwendeten Funktionsumfang als unterstützt dokumentiert"
+    },
+    "no_data_received": {
+      "title": "IDM-Verbindung liefert keine verwertbaren Daten",
+      "description": "Home Assistant konnte **{host}** verbinden, erhielt aber keine verwertbaren Modbus-Registerwerte.\n\nBitte prüfen:\n- Slave-/Unit-ID ist normalerweise 1\n- Der Modbus-Proxy leitet an die richtige Wärmepumpe weiter\n- Navigator-Modell und Heizkreise passen zum Gerät\n- Kein anderer Modbus-Client blockiert die Kommunikation"
     },
     "register_not_supported": {
       "title": "IDM-Register wird von diesem Gerät nicht unterstützt",

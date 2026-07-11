@@ -397,7 +397,7 @@ class TestAsyncUpdateData:
 
         assert data["temp"] == 22.5
         assert data["mode"] == 1
-        assert mock_ir.async_delete_issue.call_count == 6
+        assert mock_ir.async_delete_issue.call_count == 7
 
     async def test_empty_data_raises_update_failed(self, mock_hass, mock_config_entry):
         from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -406,9 +406,11 @@ class TestAsyncUpdateData:
         client.read_batch = AsyncMock(return_value={})
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
-        with patch("custom_components.idm_heatpump.coordinator.ir"):
-            with pytest.raises(UpdateFailed):
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            with pytest.raises(UpdateFailed, match="returned no usable register data"):
                 await coord._async_update_data()
+
+        assert mock_ir.async_create_issue.call_args.args[2] == "no_data_received"
 
     async def test_exception_raises_update_failed(self, mock_hass, mock_config_entry):
         from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -1091,14 +1093,11 @@ class TestAsyncRefreshWebSupplement:
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
             "idm_heatpump",
-            "web_supplement_failed",
+            "web_timeout",
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
-            translation_key="web_supplement_failed",
-            translation_placeholders={
-                "host": "192.0.2.103",
-                "error": "TimeoutError: websocket timeout",
-            },
+            translation_key="web_timeout",
+            translation_placeholders={"host": "192.0.2.103"},
         )
 
     async def test_web_refresh_success_updates_data_and_deletes_repair_issue(self, mock_hass, mock_config_entry):

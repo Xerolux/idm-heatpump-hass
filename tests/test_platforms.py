@@ -845,7 +845,7 @@ class TestIdmNumber:
         # Centralized write-error helper must raise with the write_failed key
         # so the UI shows a translated message.
         assert exc_info.value.translation_key == "write_failed"
-        assert "error" in (exc_info.value.translation_placeholders or {})
+        assert exc_info.value.translation_placeholders == {"register": "dhw_target"}
 
     def test_glt_measurement_number_gets_unique_id_suffix(self):
         # GLT-Messwerte existieren zusätzlich als Sensor — die Number braucht

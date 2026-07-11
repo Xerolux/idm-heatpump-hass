@@ -15,6 +15,7 @@ from homeassistant.helpers.event import async_track_state_change_event
 from idm_heatpump import RegisterDef
 
 from .coordinator import IdmCoordinator
+from .error_messages import classify_write_error, friendly_write_error
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -131,14 +132,17 @@ class RoomTempForwarder:
 
         try:
             await self._coordinator.async_write_register(reg, temperature)
-        except Exception:
+        except Exception as err:
+            error_kind = classify_write_error(err)
             _LOGGER.warning(
-                "Failed to forward room temperature %.2f from %s to %s",
+                "Could not forward room temperature %.2f from %s to %s because %s. "
+                "Check the source sensor and integration configuration",
                 temperature,
                 entity_id,
                 reg.name,
-                exc_info=True,
+                friendly_write_error(error_kind, reg.name),
             )
+            _LOGGER.debug("Technical room temperature forwarding error", exc_info=True)
             return
 
         self._last_written[circuit] = temperature

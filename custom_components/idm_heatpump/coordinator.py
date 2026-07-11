@@ -10,7 +10,6 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
-import socket
 from datetime import timedelta
 from collections.abc import Mapping
 from typing import Any, cast
@@ -21,7 +20,7 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from idm_heatpump import IdmModbusClient, IdmModelInfo, RegisterDef
-from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
+from pymodbus.exceptions import ConnectionException, ModbusException
 
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -31,6 +30,12 @@ from .const import (
     MODEL,
     NEGATIVE_ONE_VALID_REGISTERS,
     UNUSED_VALUE,
+)
+from .error_messages import (
+    classify_communication_error as _repair_issue_for_error,
+    classify_web_error,
+    friendly_communication_error as _friendly_communication_error,
+    friendly_web_error,
 )
 from .registers import (
     collect_all_registers,
@@ -54,9 +59,18 @@ _CONNECTIVITY_REPAIR_ISSUES = (
     "modbus_timeout",
     "wrong_slave_id",
     "incompatible_firmware",
+    "no_data_received",
 )
 _WEB_SUPPLEMENT_FAILED_ISSUE = "web_supplement_failed"
 _WEB_AUTH_FAILED_ISSUE = "web_authentication_failed"
+_WEB_REPAIR_ISSUES = (
+    _WEB_SUPPLEMENT_FAILED_ISSUE,
+    _WEB_AUTH_FAILED_ISSUE,
+    "web_host_not_found",
+    "web_connection_refused",
+    "web_timeout",
+    "web_invalid_response",
+)
 _WEB_CORE_VALUE_KEYS = ("navigator_version", "software_version", "heatpump_model")
 _ZONE_ROOM_MODE_PREFIX = "zm"
 _ZONE_ROOM_MODE_MARKER = "_room"
@@ -81,112 +95,6 @@ def _is_zone_room_mode_register(reg: RegisterDef) -> bool:
         name.startswith(_ZONE_ROOM_MODE_PREFIX)
         and _ZONE_ROOM_MODE_MARKER in name
         and name.endswith(_ZONE_ROOM_MODE_SUFFIX)
-    )
-
-
-def _repair_issue_for_error(err: Exception) -> str:
-    """Map communication errors to actionable repair issue translations."""
-    messages: list[str] = []
-    current: BaseException | None = err
-    while current is not None and len(messages) < 4:
-        messages.append(str(current).casefold())
-        current = current.__cause__ or current.__context__
-    message = " ".join(messages)
-    if isinstance(err, socket.gaierror) or any(
-        marker in message
-        for marker in (
-            "name or service not known",
-            "nodename nor servname",
-            "temporary failure in name resolution",
-            "getaddrinfo failed",
-            "dns",
-        )
-    ):
-        return "host_not_found"
-    if isinstance(err, ConnectionRefusedError) or any(
-        marker in message
-        for marker in (
-            "connection refused",
-            "connect call failed",
-            "actively refused",
-            "errno 111",
-            "winerror 10061",
-        )
-    ):
-        return "modbus_connection_refused"
-    if isinstance(err, TimeoutError) or any(
-        marker in message for marker in ("timed out", "timeout", "errno 110", "winerror 10060")
-    ):
-        return "modbus_timeout"
-    if isinstance(err, ModbusIOException):
-        # Pymodbus uses this exception for an established TCP connection that
-        # did not produce a Modbus response. It is a timeout/communication
-        # failure, not evidence of a wrong configured slave ID.
-        return "modbus_timeout"
-    if isinstance(err, ConnectionException):
-        return "cannot_connect"
-    if any(marker in message for marker in ("slave", "unit id", "device id", "no response", "no reply")):
-        return "wrong_slave_id"
-    if any(
-        marker in message for marker in ("exception_code=1", "illegal function", "unsupported function", "firmware")
-    ):
-        return "incompatible_firmware"
-    return "cannot_connect"
-
-
-def _friendly_communication_error(issue_id: str, host: str, port: int | None, err: Exception) -> str:
-    """Return an actionable communication error for the Home Assistant log."""
-    endpoint = f"{host}:{port}" if port is not None else host
-    technical_message = str(err).casefold()
-    messages = {
-        "host_not_found": (
-            f"The configured IDM address {host} could not be found. "
-            "Check the IP address or hostname in the integration settings"
-        ),
-        "modbus_connection_refused": (
-            f"The IDM device at {endpoint} refused the Modbus TCP connection. "
-            "Check that Building management system -> Modbus TCP is enabled on the Navigator "
-            "and that the configured IP address and port are correct"
-        ),
-        "modbus_timeout": (
-            f"The IDM device at {endpoint} did not respond in time. "
-            "Check that the controller is online and that no firewall or network rule blocks the connection"
-        ),
-        "wrong_slave_id": (
-            f"A Modbus endpoint was reached at {endpoint}, but the IDM controller did not answer as expected. "
-            "Check the slave ID (normally 1) and the Modbus proxy target"
-        ),
-        "incompatible_firmware": (
-            f"The IDM device at {endpoint} does not support the requested Modbus function. "
-            "Check the Navigator firmware and integration compatibility"
-        ),
-    }
-    if issue_id in messages:
-        return messages[issue_id]
-    if any(
-        marker in technical_message
-        for marker in ("network is unreachable", "no route to host", "host is unreachable", "errno 101", "errno 113")
-    ):
-        return (
-            f"There is no working network route from Home Assistant to the IDM device at {endpoint}. "
-            "Check the device address, network connection, VLAN and router settings"
-        )
-    if any(
-        marker in technical_message
-        for marker in ("connection lost", "connection reset", "reset by peer", "broken pipe", "disconnected")
-    ):
-        return (
-            f"The Modbus TCP connection to the IDM device at {endpoint} was interrupted. "
-            "Check the network cable or Wi-Fi connection, the controller and any Modbus proxy"
-        )
-    if any(marker in technical_message for marker in ("crc", "invalid response", "malformed", "decode")):
-        return (
-            f"The IDM device at {endpoint} sent a Modbus response that could not be read. "
-            "Check the network connection, Modbus proxy and whether another Modbus client is interfering"
-        )
-    return (
-        f"The integration could not connect to the IDM device at {endpoint}. "
-        "Check the network connection and the Modbus TCP settings on the Navigator"
     )
 
 
@@ -645,11 +553,24 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             raise UpdateFailed(friendly_error) from err
 
+        if not data:
+            issue_id = "no_data_received"
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                issue_id,
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=issue_id,
+                translation_placeholders={"host": self._client.host},
+            )
+            raise UpdateFailed(
+                "The IDM connection succeeded, but the heat pump returned no usable register data. "
+                "Check the slave ID (normally 1), Modbus proxy target and Navigator model settings"
+            )
+
         for issue_id in _CONNECTIVITY_REPAIR_ISSUES:
             ir.async_delete_issue(self.hass, DOMAIN, issue_id)
-
-        if not data:
-            raise UpdateFailed("No data received from heat pump")
 
         # Apply aliases: when multiple register names share an address,
         # ensure all names appear in the data dict.
@@ -698,7 +619,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self._web_host,
                 )
             self._last_web_error = error
-            ir.async_delete_issue(self.hass, DOMAIN, _WEB_SUPPLEMENT_FAILED_ISSUE)
+            for issue_id in _WEB_REPAIR_ISSUES:
+                if issue_id != _WEB_AUTH_FAILED_ISSUE:
+                    ir.async_delete_issue(self.hass, DOMAIN, issue_id)
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -712,22 +635,26 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
         except Exception as err:
             error = f"{err.__class__.__name__}: {err}"
+            issue_id = classify_web_error(err)
+            friendly_error = friendly_web_error(issue_id, self._web_host)
             if error != self._last_web_error:
                 _LOGGER.warning(
-                    "Optional IDM web supplement refresh failed for %s: %s; Modbus polling continues",
-                    self._web_host,
-                    error,
+                    "%s; Modbus polling continues",
+                    friendly_error,
                 )
+                _LOGGER.debug("Technical Navigator web error", exc_info=True)
             self._last_web_error = error
-            ir.async_delete_issue(self.hass, DOMAIN, _WEB_AUTH_FAILED_ISSUE)
+            for stale_issue_id in _WEB_REPAIR_ISSUES:
+                if stale_issue_id != issue_id:
+                    ir.async_delete_issue(self.hass, DOMAIN, stale_issue_id)
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                _WEB_SUPPLEMENT_FAILED_ISSUE,
+                issue_id,
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
-                translation_key=_WEB_SUPPLEMENT_FAILED_ISSUE,
-                translation_placeholders={"host": self._web_host, "error": error},
+                translation_key=issue_id,
+                translation_placeholders={"host": self._web_host},
             )
             return
 
@@ -736,8 +663,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
 
         self._last_web_error = None
-        ir.async_delete_issue(self.hass, DOMAIN, _WEB_AUTH_FAILED_ISSUE)
-        ir.async_delete_issue(self.hass, DOMAIN, _WEB_SUPPLEMENT_FAILED_ISSUE)
+        for issue_id in _WEB_REPAIR_ISSUES:
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
         self._web_supplement = web_supplement
         # Cache which web variant succeeded so the next poll skips the other
         # (WebSocket vs. HTTP have completely different login mechanisms).

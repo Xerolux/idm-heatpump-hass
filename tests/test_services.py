@@ -257,7 +257,7 @@ class TestSetSystemMode:
         with pytest.raises(HomeAssistantError) as exc_info:
             await _handle_set_system_mode(mock_hass, call)
 
-        assert exc_info.value.translation_key == "write_failed"
+        assert exc_info.value.translation_key == "write_connection_failed"
 
 
 class TestAcknowledgeErrors:
@@ -278,7 +278,7 @@ class TestAcknowledgeErrors:
         with pytest.raises(HomeAssistantError) as exc_info:
             await _handle_acknowledge_errors(mock_hass, call)
 
-        assert exc_info.value.translation_key == "write_failed"
+        assert exc_info.value.translation_key == "write_connection_failed"
 
 
 class TestWriteRegister:
