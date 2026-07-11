@@ -13,7 +13,7 @@ import math
 import socket
 from datetime import timedelta
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -313,6 +313,19 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return ()
         return tuple(sorted(self._web_supplement.sensor_values))
 
+    def _web_metadata_data(self) -> dict[str, str]:
+        """Return web metadata stored alongside the Modbus data snapshot."""
+        supplement = self._web_supplement
+        if supplement is None:
+            return {}
+        values = {
+            "web_navigator_version": supplement.navigator_version,
+            "web_software_version": supplement.software_version,
+            "web_heatpump_model": supplement.heatpump_model,
+            "web_myidm_id": supplement.myidm_id,
+        }
+        return {key: value for key, value in values.items() if value}
+
     @property
     def missing_web_core_values(self) -> tuple[str, ...]:
         """Return core web metadata keys missing from the latest successful snapshot."""
@@ -568,6 +581,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         if alias != primary and alias not in data:
                             data[alias] = val
 
+        # Preserve independently refreshed web metadata when the base
+        # coordinator replaces self.data with this new Modbus snapshot.
+        data.update(self._web_metadata_data())
+
         new_unused_registers: set[str] = set()
         for reg_name, value in data.items():
             if self.is_register_unused(reg_name, value):
@@ -675,15 +692,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Persist retroactively detected model/firmware so it survives reloads.
         self._persist_web_detection(web_supplement, model_conflicts)
 
-        if self.data is not None:
-            if web_supplement.navigator_version:
-                self.data["web_navigator_version"] = web_supplement.navigator_version
-            if web_supplement.software_version:
-                self.data["web_software_version"] = web_supplement.software_version
-            if web_supplement.heatpump_model:
-                self.data["web_heatpump_model"] = web_supplement.heatpump_model
-            if web_supplement.myidm_id:
-                self.data["web_myidm_id"] = web_supplement.myidm_id
+        current_data = cast(dict[str, Any] | None, getattr(self, "data", None))
+        if current_data is not None:
+            self.data = {**current_data, **self._web_metadata_data()}
         self.async_update_listeners()
 
     def _persist_web_detection(self, supplement: IdmWebSupplement, model_conflicts: bool) -> None:
