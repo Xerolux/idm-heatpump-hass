@@ -41,35 +41,11 @@ permissions:
 
 jobs:
   validate-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.14"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install ruff mypy pytest pytest-cov pytest-asyncio
-          python - <<'PY'
-          import json
-          import subprocess
-          import sys
-
-          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
-              requirements = json.load(manifest_file)["requirements"]
-
-          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
-          PY
-
-      - name: Validate integration
-        run: |
-          ruff check custom_components/idm_heatpump tests --line-length=120
-          ruff format custom_components/idm_heatpump tests --check
-          mypy custom_components/idm_heatpump
-          pytest tests/ -v --tb=short --cov=custom_components/idm_heatpump --cov-report=term-missing
+    uses: ./.github/workflows/python-quality.yml
+    with:
+      python-version: "3.14"
+      home-assistant-version: "2026.5.0"
+      api-dependency-mode: manifest-pinned
 
   prepare-release:
     needs: validate-release

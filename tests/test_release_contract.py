@@ -27,20 +27,41 @@ def test_manifest_declares_tested_runtime_dependencies() -> None:
 
 def test_ci_installs_runtime_dependencies_from_manifest() -> None:
     ci = _read(ROOT / ".github" / "workflows" / "ci.yml")
+    quality = _read(ROOT / ".github" / "workflows" / "python-quality.yml")
 
-    assert "manifest.json" in ci
-    assert 'json.load(manifest_file)["requirements"]' in ci
-    assert 'pip", "install", *requirements' in ci
+    assert "./.github/workflows/python-quality.yml" in ci
+    assert "manifest.json" in quality
+    assert 'json.load(manifest_file)["requirements"]' in quality
+    assert 'pip", "install", *requirements' in quality
 
 
 def test_ci_tests_pinned_and_compatible_api_dependencies() -> None:
     ci = _read(ROOT / ".github" / "workflows" / "ci.yml")
+    quality = _read(ROOT / ".github" / "workflows" / "python-quality.yml")
 
     assert "api-dependency-mode" in ci
     assert "manifest-pinned" in ci
-    assert "api-branch-compatible" in ci
-    assert "pymodbus>=3.12.1,<4.0" in ci
-    assert "idm-heatpump-api.git@main" in ci
+    assert "api-main" in ci
+    assert "pymodbus>=3.12.1,<4.0" in quality
+    assert "idm-heatpump-api.git@main" in quality
+
+
+def test_ci_and_release_share_complete_python_quality_workflow() -> None:
+    ci = _read(ROOT / ".github" / "workflows" / "ci.yml")
+    release = _read(ROOT / ".github" / "workflows" / "release.yml")
+    quality = _read(ROOT / ".github" / "workflows" / "python-quality.yml")
+
+    reusable_workflow = "uses: ./.github/workflows/python-quality.yml"
+    assert reusable_workflow in ci
+    assert reusable_workflow in release
+    assert "workflow_call:" in quality
+    assert "ruff check custom_components/idm_heatpump tests" in quality
+    assert "ruff format custom_components/idm_heatpump tests --check" in quality
+    assert "mypy custom_components/idm_heatpump" in quality
+    assert "pytest tests/" in quality
+    assert "--cov=custom_components/idm_heatpump" in quality
+    assert 'home-assistant-version: "2026.5.0"' in release
+    assert "api-dependency-mode: manifest-pinned" in release
 
 
 def test_api_dependency_update_workflow_updates_pin_and_runs_contract_tests() -> None:
