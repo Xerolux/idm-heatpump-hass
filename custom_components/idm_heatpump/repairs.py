@@ -23,6 +23,7 @@ from homeassistant.helpers.selector import (
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
+    CONF_DETECTED_WEB_VARIANT,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
     CONF_WEB_PIN,
@@ -150,6 +151,9 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
                             data[CONF_DETECTED_NAVIGATOR_VERSION] = web_supplement.navigator_version
                         if web_supplement.software_version:
                             data[CONF_DETECTED_SOFTWARE_VERSION] = web_supplement.software_version
+                        web_variant = getattr(web_supplement, "web_variant", None)
+                        if web_variant:
+                            data[CONF_DETECTED_WEB_VARIANT] = web_variant
 
                     options = {**entry.options, CONF_WEB_ENABLED: True}
                     self.hass.config_entries.async_update_entry(entry, data=data, options=options)

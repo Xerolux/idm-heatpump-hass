@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- Auto-detect both local Navigator web protocols only during setup,
+  reconfiguration or repair, persist the actually successful `nav10`/`nav20`
+  client and keep runtime reconnects on that known protocol.
+- Rebuild an expired or failed cached web session with the same Navigator
+  client before reporting authentication or transport failure.
+- Treat local network code `0` as disabled web access instead of a rejected
+  PIN.
 - Route individually validated zone-room mode failures through the normal poll
   repair flow, isolate unsupported room addresses and omit invalid recovery
   values without discarding unrelated data.
@@ -29,6 +36,9 @@ All notable changes to this project will be documented in this file.
 
 ### Documentation
 
+- Explain directly in setup and reconfiguration that the optional web PIN is
+  the Navigator's local network code, not a cloud password or two-factor code,
+  and document the controller menu path and external energy-manager ownership.
 - Correct batch size, Modbus function-code, room-count, sentinel and raw-write
   documentation and add explicit stable-release readiness criteria.
 

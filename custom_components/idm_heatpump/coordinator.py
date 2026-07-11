@@ -26,6 +26,7 @@ from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOEx
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
+    CONF_DETECTED_WEB_VARIANT,
     DOMAIN,
     MODEL,
     NEGATIVE_ONE_VALID_REGISTERS,
@@ -141,6 +142,8 @@ def _web_variant_from_family(family: str | None) -> str | None:
 
 def _web_variant_from_supplement(supplement: IdmWebSupplement) -> str | None:
     """Return the best web access variant detected from a web supplement."""
+    if supplement.web_variant in ("nav10", "nav20"):
+        return supplement.web_variant
     family = navigator_family(supplement.navigator_version) or navigator_family(supplement.heatpump_model)
     return _web_variant_from_family(family)
 
@@ -166,6 +169,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         web_pin: str | None = None,
         web_host: str | None = None,
         web_supplement: IdmWebSupplement | None = None,
+        web_variant: str | None = None,
     ) -> None:
         self._client = client
         self._sensor_descs = sensor_descriptions
@@ -181,9 +185,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._web_pin = web_pin
         self._web_host = web_host or client.host
         self._web_supplement = web_supplement
-        self._web_variant: str | None = None
+        self._web_variant = web_variant if web_variant in ("nav10", "nav20") else None
         if web_supplement is not None:
-            self._web_variant = _web_variant_from_supplement(web_supplement)
+            self._web_variant = _web_variant_from_supplement(web_supplement) or self._web_variant
         self._last_web_error: str | None = None
         self._unused_registers: set[str] = set()
         self._unsupported_registers: set[str] = set()
@@ -584,6 +588,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 model_hint=getattr(self._model_info, "model_name", None) or self._model_name,
                 preferred_variant=self._web_variant,
                 client_pool=self._web_client_pool,
+                allow_variant_fallback=self._web_variant is None,
             )
         except IdmWebAuthenticationFailed as err:
             error = f"{err.__class__.__name__}: {err}"
@@ -705,6 +710,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         web_sw = supplement.software_version
         if web_sw and data.get(CONF_DETECTED_SOFTWARE_VERSION) != web_sw:
             updates[CONF_DETECTED_SOFTWARE_VERSION] = web_sw
+        web_variant = _web_variant_from_supplement(supplement)
+        if web_variant and data.get(CONF_DETECTED_WEB_VARIANT) != web_variant:
+            updates[CONF_DETECTED_WEB_VARIANT] = web_variant
 
         if not updates:
             return

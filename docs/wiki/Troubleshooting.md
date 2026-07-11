@@ -79,8 +79,12 @@ controller does not expose the setting.
 ### "Navigator web PIN rejected"
 
 - Open **Settings → Devices & Services → IDM Heatpump → Reconfigure → Change connection settings**
-- Enter the current local Navigator web PIN again
-- Do not use a cloud account password; the integration needs the local PIN
+- At the Navigator display, verify **Settings → General settings → Network
+  settings → Local network code** (German: **Einstellungen → Allgemeine
+  Einstellungen → Netzwerkeinstellungen → Code lokales Netzwerk**)
+- Enter that local network code in Home Assistant
+- Do not use a cloud/app password or a two-factor authentication code
+- An empty local network code or `0` disables the Navigator's local web access
 - Clear the PIN if you intentionally want Modbus-only operation
 
 The runtime repair notification and log identify authentication failures

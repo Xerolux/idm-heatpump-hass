@@ -88,3 +88,19 @@ Navigator 10 default.
 - Real-device deviations are tracked as compatibility notes and regression tests before being advertised as supported features.
 - Batches contain only exactly adjacent, non-overlapping logical ranges and are limited to 40 Modbus words.
 - A custom raw write can validate encoding but cannot infer safe ranges, EEPROM behavior or meaning for an unknown address.
+
+## External energy-manager ownership
+
+Some GLT/PV input registers are designed to be supplied continuously by an
+external energy manager. For example, official iDM documentation defines
+register 74 as the writable current PV surplus and register 4122 as the
+read-only current heat-pump power consumption. If an inverter, E3DC, Smartfox
+or another controller already writes a GLT/PV value, a Home Assistant write can
+only override it until that controller's next communication cycle.
+
+Avoid multiple writers for the same register. Before creating an automation,
+identify which system owns the value and use the register's library metadata
+for datatype, write class, range and cyclic behavior. Do not infer semantics
+from an address used by a different installation or firmware; for example,
+this integration maps Smart Grid status and the configurable variable input as
+separate registers.
