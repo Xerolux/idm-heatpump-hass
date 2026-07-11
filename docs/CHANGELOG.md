@@ -11,6 +11,40 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1-beta.31] - 2026-07-11
+
+### Fixed
+
+- Replace duplicated low-level pymodbus connection errors with concise,
+  actionable Home Assistant messages while retaining technical details in
+  debug logs.
+- Classify DNS failures, refused connections, timeouts, interrupted network
+  paths, invalid Modbus responses, wrong slave IDs and unsupported firmware
+  into targeted repair guidance.
+- Distinguish Navigator web host, refused connection, timeout, authentication
+  and invalid-response failures without interrupting normal Modbus polling.
+- Explain register write failures caused by connection loss, write protection,
+  invalid ranges, unsupported registers or invalid values.
+- Create a dedicated repair issue when a Modbus connection succeeds but no
+  usable register values are returned.
+- Improve room-temperature forwarding errors with concrete source, range and
+  connection checks.
+
+### Localization
+
+- Add complete German and English messages for the new communication, web and
+  register-write error categories.
+
+### Validation
+
+- Pass all 672 tests, Ruff lint and format checks, strict mypy validation,
+  Hassfest, CodeQL and dependency security checks.
+
+### Dependencies
+
+- Keep the tested `idm-heatpump-api[web]==0.7.6` pin; this release changes only
+  integration-side error classification, diagnostics and translations.
+
 ## [0.8.1-beta.30] - 2026-07-11
 
 ### Fixed
