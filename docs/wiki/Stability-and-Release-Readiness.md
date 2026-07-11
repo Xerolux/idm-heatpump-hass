@@ -6,9 +6,12 @@ normal changelog.
 
 ## Current Status
 
-Integration `0.8.1-beta.29` and `idm-heatpump-api` `0.7.6` form the tested,
-exactly pinned pair from this audit. The integration remains a beta while the
-hardware/community and soak gates below are still open.
+Integration `0.8.1-beta.31` and `idm-heatpump-api` `0.7.6` form the current,
+exactly pinned candidate pair. Automated CI, security, release-artifact, and
+checksum checks passed. The candidate remains blocked for stable release until
+the clean-Home-Assistant hardware smoke test, the minimum soak duration, and
+the hardware/community gates below pass. See the
+[candidate evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.8.1-beta.31.md).
 
 The July 2026 stability audit verified:
 
@@ -51,6 +54,24 @@ All of the following should be satisfied before a non-beta release:
 5. Obtain actionable diagnostics for [the unresolved generic server-error report](https://github.com/Xerolux/idm-heatpump-hass/issues/84) instead of guessing at a code change.
 6. Complete a beta soak period without new confirmed data-corruption, reconnect-loop, unsafe-write or setup-regression reports.
 7. Verify release notes, README, Wiki, dependency pin, manifest version and generated package contents agree.
+
+## Beta Soak Policy
+
+The soak gate means at least **seven consecutive 24-hour periods** on one
+unchanged candidate. For `0.8.1-beta.31`, the clock started at publication on
+`2026-07-11T18:59:52Z`; the earliest possible completion is
+`2026-07-18T18:59:52Z`.
+
+Record observations at publication, around the midpoint, and after the full
+seven days. At each observation, review new and updated issues and hardware
+feedback. A confirmed data-corruption problem, reconnect loop, unsafe write,
+or setup regression fails the soak.
+
+A change to candidate code, runtime dependencies, packaging, config-flow
+behavior, polling, or write behavior starts a new candidate and restarts the
+clock at its publication time. Documentation-only or evidence-only corrections
+do not restart it. Elapsed time alone is insufficient: the candidate evidence
+must also contain a passing clean-HA smoke test and a maintainer sign-off.
 
 ## Reporting Evidence
 

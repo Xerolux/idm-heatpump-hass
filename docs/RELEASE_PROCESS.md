@@ -53,11 +53,35 @@ must be limited to documented safe registers.
 - Hassfest validation.
 - Cross-repo API contract tests.
 - Release smoke test from `docs/RELEASE_SMOKE_TEST.md`.
+- Candidate-specific evidence record under `docs/release-evidence/` with a
+  maintainer-signed result.
 - Unzip the release artifact and verify:
   - `custom_components/idm_heatpump/manifest.json` exists;
   - the manifest version matches the tag;
   - the API dependency pin is exact;
   - the component imports in a clean Python environment.
+
+## Stable Candidate Closure
+
+A successful beta workflow is necessary but not sufficient for a stable tag.
+Before removing the prerelease suffix:
+
+1. Copy `docs/release-evidence/TEMPLATE.md` for the exact candidate.
+2. Complete the clean-Home-Assistant smoke test against the published ZIP, not
+   a source checkout.
+3. Soak the unchanged candidate for at least seven consecutive 24-hour
+   periods. Record observations at publication, around the midpoint, and at
+   the end.
+4. Restart the soak clock when code, runtime dependencies, packaging,
+   config-flow behavior, polling, or write behavior changes. Documentation-only
+   and evidence-only corrections do not restart it.
+5. During every observation, review new and updated issues for confirmed data
+   corruption, reconnect loops, unsafe writes, and setup regressions.
+6. Mark the evidence `PASS` and sign it only after the smoke test, soak, and
+   separate hardware/community gates all pass.
+
+`PENDING`, `BLOCKED`, a failed required smoke step, or an unjustified `N/A` is
+an explicit stable-release blocker.
 
 ## Changelog Rules
 

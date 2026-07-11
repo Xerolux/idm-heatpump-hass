@@ -1,42 +1,81 @@
 # Release Smoke Test
 
-Run this checklist before publishing a stable HACS release. It verifies the
-same artifact and runtime dependency set that users install from GitHub.
+Run this checklist against every stable-release candidate on a clean Home
+Assistant installation connected to real IDM hardware. Automated tests and a
+container that only imports the integration are useful preflight checks, but
+they do not replace this end-to-end test.
+
+Create one evidence record per candidate by copying
+`docs/release-evidence/TEMPLATE.md` to
+`docs/release-evidence/<version>.md`. Record `PASS`, `FAIL`, or `N/A` for every
+check. `N/A` requires a reason. The stable-release gate passes only when all
+required checks are `PASS`, every optional path is either `PASS` or justified
+`N/A`, and a maintainer signs the final verdict.
+
+## 0. Candidate and Test Environment
+
+Record before testing:
+
+- release version, tag, commit SHA, publication timestamp, and artifact URL;
+- artifact SHA-256 and checksum-verification result;
+- Home Assistant version and installation type;
+- heat-pump model, Navigator generation, firmware, and connection path;
+- whether local web data, zone modules, cascade, and room-temperature
+  forwarding are in scope;
+- tester, start time, and end time in UTC.
+
+Use a new Home Assistant instance or remove the existing test instance and its
+configuration volume. Reusing an already configured entry is not a fresh
+installation test.
 
 ## 1. Artifact and Dependency Check
 
-1. Download the release artifact `idm_heatpump.zip` from the draft or tagged
-   GitHub release.
-2. Verify the checksum:
+1. Download both release assets from the draft or tagged GitHub release. For
+   example. Set `RELEASE_VERSION` to the exact candidate version without the
+   leading `v` before running these commands:
+
+   ```bash
+   export RELEASE_VERSION="${RELEASE_VERSION:?set the candidate version first}"
+   export RELEASE_TAG="v${RELEASE_VERSION}"
+   export ARTIFACT_DIR="$(mktemp -d)"
+   gh release download "$RELEASE_TAG" \
+     --repo Xerolux/idm-heatpump-hass \
+     --dir "$ARTIFACT_DIR"
+   cd "$ARTIFACT_DIR"
+   ```
+
+2. Verify the published checksum:
 
    ```bash
    sha256sum -c idm_heatpump.zip.sha256
    ```
 
-3. Unpack the artifact into a temporary directory:
+3. Unpack the artifact into a new temporary directory and confirm the manifest
+   contains the candidate version and tested runtime pins:
 
    ```bash
-   rm -rf /tmp/idm_heatpump_release
-   mkdir -p /tmp/idm_heatpump_release
-   unzip idm_heatpump.zip -d /tmp/idm_heatpump_release
-   ```
-
-4. Confirm the manifest contains the tested runtime pins:
-
-   ```bash
+   export UNPACK_DIR="$(mktemp -d)"
+   unzip -q idm_heatpump.zip -d "$UNPACK_DIR"
    python - <<'PY'
    import json
+   import os
    from pathlib import Path
 
-   manifest = json.loads(Path("/tmp/idm_heatpump_release/manifest.json").read_text())
+   manifest = json.loads(
+       (Path(os.environ["UNPACK_DIR"]) / "manifest.json").read_text(encoding="utf-8")
+   )
    assert manifest["requirements"] == [
        "pymodbus>=3.12.1,<4.0",
        "idm-heatpump-api[web]==0.7.6",
    ]
-   assert manifest["version"] == "0.8.1-beta.29"
-   print("runtime requirements ok")
+   assert manifest["version"] == os.environ["RELEASE_VERSION"]
+   print("artifact metadata ok")
    PY
    ```
+
+4. Confirm the ZIP contains only the integration package contents and does not
+   contain tests, bytecode, caches, repository metadata, or a second nested
+   `idm_heatpump` directory.
 
 ## 2. Fresh Installation
 
@@ -45,6 +84,8 @@ same artifact and runtime dependency set that users install from GitHub.
 2. Restart Home Assistant.
 3. Confirm Home Assistant starts without setup import errors for
    `idm_heatpump`, `idm_heatpump_api`, or `pymodbus`.
+4. Record the installed integration and dependency versions from diagnostics;
+   they must match the candidate and manifest.
 
 ## 3. Config Flow and First Poll
 
@@ -115,7 +156,8 @@ specifically changes EEPROM protection.
 1. Reload the config entry and confirm entities return to `available`.
 2. Unload the config entry and confirm the Modbus client disconnects cleanly.
 3. Re-enable or reload the entry and confirm polling resumes.
-4. Upgrade from the previous stable release to this release through HACS.
+4. In a separate instance or after restoring a snapshot, upgrade from the
+   immediately preceding published release to this candidate through HACS.
 5. Confirm entity unique IDs, device registry entries, and user customizations
    are preserved.
 
@@ -131,3 +173,21 @@ specifically changes EEPROM protection.
 - Confirmation of first poll, safe write, reload, unload, and upgrade.
 - Any unsupported-register, timeout, or reconnect logs with IP addresses
   redacted.
+
+Do not attach raw configuration storage, access tokens, PINs, IP addresses,
+hostnames, serial numbers, or unredacted diagnostics.
+
+## 9. Pass/Fail and Sign-Off
+
+The result is:
+
+- `PASS` only when Sections 1-3 and 6-7 pass, every applicable optional
+  section passes, no privacy leak is found, and the original safe value is
+  restored after the write test;
+- `FAIL` when any required step fails or produces a new setup regression,
+  reconnect loop, corrupted value, unsafe write, or leaked secret;
+- `BLOCKED` when hardware, authorization for one reversible write, the
+  preceding release, or another required test condition is unavailable.
+
+A `BLOCKED` result is not a pass. Link the completed evidence record from
+`docs/wiki/Stability-and-Release-Readiness.md` before approving a stable tag.
