@@ -3,21 +3,21 @@ name: CI
 on:
   push:
     branches: [main]
-    tags: ['v*']
   pull_request:
     branches: [main]
-  release:
-    types: [published, prereleased]
   schedule:
     - cron: "0 0 * * *"
   workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
@@ -26,70 +26,12 @@ jobs:
           - "2026.5.0"
         api-dependency-mode:
           - manifest-pinned
-          - api-branch-compatible
-
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Install Home Assistant ${{ matrix.home-assistant-version }}
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install homeassistant==${{ matrix.home-assistant-version }}
-          pip install "aiohttp>=3.8.0"
-
-      - name: Install dev dependencies
-        run: |
-          pip install ruff mypy pytest pytest-cov pytest-asyncio
-          pip install pytest-homeassistant-custom-component
-          python - <<'PY'
-          import json
-          import subprocess
-          import sys
-
-          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
-              requirements = json.load(manifest_file)["requirements"]
-
-          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
-          PY
-
-      - name: Install compatible API branch dependencies
-        if: matrix.api-dependency-mode == 'api-branch-compatible'
-        run: |
-          pip install --upgrade \
-            "pymodbus>=3.12.1,<4.0" \
-            "git+https://github.com/Xerolux/idm-heatpump-api.git@main"
-
-      - name: Lint with Ruff
-        run: |
-          ruff check custom_components/idm_heatpump/ \
-            --line-length=120 \
-            --output-format=github
-
-      - name: Format check with Ruff
-        run: |
-          ruff format custom_components/idm_heatpump/ --check
-
-      - name: Type check with mypy
-        run: |
-          mypy custom_components/idm_heatpump/ \
-            --strict \
-            --ignore-missing-imports \
-            --allow-untyped-globals \
-            --allow-subclassing-any
-
-      - name: Run Unit Tests
-        run: |
-          pytest tests/ \
-            -v \
-            --tb=short \
-            --cov=custom_components/idm_heatpump \
-            --cov-report=xml \
-            --cov-report=term-missing
+          - api-main
+    uses: ./.github/workflows/python-quality.yml
+    with:
+      python-version: ${{ matrix.python-version }}
+      home-assistant-version: ${{ matrix.home-assistant-version }}
+      api-dependency-mode: ${{ matrix.api-dependency-mode }}
 
   hacs:
     if: github.event_name != 'pull_request'

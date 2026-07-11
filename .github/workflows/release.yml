@@ -3,28 +3,18 @@ name: Release Management
 on:
   push:
     tags:
-      - 'v*.*.*'
-      - 'v*.*.*-alpha.*'
-      - 'v*.*.*-beta.*'
-      - 'v*.*.*-rc.*'
-  release:
-    types: [published, prereleased, released]
+      - 'v*'
   workflow_dispatch:
     inputs:
       tag_name:
         description: 'Tag name for the release (e.g. v0.1.0, v0.2.0-beta.1)'
         required: true
         type: string
-      release_type:
-        description: 'Release type'
-        required: true
-        type: choice
-        options:
-          - stable
-          - beta
-          - alpha
-          - draft
-        default: 'stable'
+      draft:
+        description: 'Create the release as a draft'
+        required: false
+        type: boolean
+        default: false
       make_latest:
         description: 'Mark as latest release'
         required: false
@@ -36,40 +26,20 @@ on:
         type: string
         default: ''
 
+concurrency:
+  group: release-${{ inputs.tag_name || github.ref_name }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
 jobs:
   validate-release:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
-        with:
-          python-version: "3.14"
-
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install ruff mypy pytest pytest-cov pytest-asyncio
-          python - <<'PY'
-          import json
-          import subprocess
-          import sys
-
-          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
-              requirements = json.load(manifest_file)["requirements"]
-
-          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
-          PY
-
-      - name: Validate integration
-        run: |
-          ruff check custom_components/idm_heatpump tests --line-length=120
-          ruff format custom_components/idm_heatpump tests --check
-          mypy custom_components/idm_heatpump
-          pytest tests/ -v --tb=short --cov=custom_components/idm_heatpump --cov-report=term-missing
+    uses: ./.github/workflows/python-quality.yml
+    with:
+      python-version: "3.14"
+      home-assistant-version: "2026.5.0"
+      api-dependency-mode: manifest-pinned
 
   prepare-release:
     needs: validate-release
@@ -87,77 +57,77 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Get version and detect release type
+      - name: Validate tag and detect release type
         id: version
+        env:
+          RELEASE_TAG: ${{ inputs.tag_name || github.ref_name }}
+          RELEASE_DRAFT: ${{ inputs.draft || false }}
         run: |
-          TAG="${{ github.event.release.tag_name || inputs.tag_name || github.ref_name }}"
+          TAG="$RELEASE_TAG"
+          IS_DRAFT="$RELEASE_DRAFT"
+
+          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+            echo "Invalid tag format: $TAG"
+            exit 1
+          fi
+
           VERSION="${TAG#v}"
 
           if [[ "$TAG" =~ -alpha ]]; then
             RELEASE_TYPE="alpha"
             IS_PRERELEASE=true
-            IS_DRAFT=false
           elif [[ "$TAG" =~ -beta ]]; then
             RELEASE_TYPE="beta"
             IS_PRERELEASE=true
-            IS_DRAFT=false
           elif [[ "$TAG" =~ -rc ]]; then
             RELEASE_TYPE="rc"
             IS_PRERELEASE=true
-            IS_DRAFT=false
           else
             RELEASE_TYPE="stable"
             IS_PRERELEASE=false
-            IS_DRAFT=false
           fi
 
-          if [ "${{ inputs.release_type }}" = "draft" ]; then
-            IS_DRAFT=true
-            IS_PRERELEASE=false
-            RELEASE_TYPE="draft"
-          elif [ "${{ inputs.release_type }}" = "alpha" ]; then
-            IS_PRERELEASE=true
-            RELEASE_TYPE="alpha"
-          elif [ "${{ inputs.release_type }}" = "beta" ]; then
-            IS_PRERELEASE=true
-            RELEASE_TYPE="beta"
-          elif [ "${{ inputs.release_type }}" = "stable" ]; then
-            IS_PRERELEASE=false
-            RELEASE_TYPE="stable"
+          if [[ "$IS_DRAFT" != "true" && "$IS_DRAFT" != "false" ]]; then
+            echo "Invalid draft flag: $IS_DRAFT"
+            exit 1
           fi
 
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "tag=$TAG" >> $GITHUB_OUTPUT
-          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
-          echo "is_draft=$IS_DRAFT" >> $GITHUB_OUTPUT
-          echo "release_type=$RELEASE_TYPE" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "date=$(date +'%Y-%m-%d')" >> "$GITHUB_OUTPUT"
+          echo "is_prerelease=$IS_PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "is_draft=$IS_DRAFT" >> "$GITHUB_OUTPUT"
+          echo "release_type=$RELEASE_TYPE" >> "$GITHUB_OUTPUT"
 
-      - name: Validate tag format
+      - name: Validate prepared release metadata
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
-          TAG="${{ steps.version.outputs.tag }}"
-          if [[ ! "$TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
-            echo "Invalid tag format: $TAG"
-            exit 1
-          fi
-          VERSION="${{ steps.version.outputs.version }}"
-          if [ "$TAG" != "v$VERSION" ]; then
-            echo "Tag $TAG does not match version $VERSION"
-            exit 1
-          fi
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
 
-      - name: Update version in manifest
-        run: |
-          VERSION="${{ steps.version.outputs.version }}"
-          MANIFEST_FILE="custom_components/idm_heatpump/manifest.json"
+          version = os.environ["VERSION"]
+          manifest_path = Path("custom_components/idm_heatpump/manifest.json")
+          changelog_path = Path("docs/CHANGELOG.md")
 
-          sed -i "s|\"version\": \"[^\"]*\"|\"version\": \"$VERSION\"|" "$MANIFEST_FILE"
+          manifest_version = json.loads(manifest_path.read_text(encoding="utf-8"))["version"]
+          if manifest_version != version:
+              raise SystemExit(
+                  f"Manifest version {manifest_version!r} does not match tag version {version!r}"
+              )
 
-          if ! grep -q "\"version\": \"$VERSION\"" "$MANIFEST_FILE"; then
-            echo "Failed to update version in $MANIFEST_FILE"
-            exit 1
-          fi
-          echo "Updated version to $VERSION in manifest.json"
+          expected_heading = f"## [{version}]"
+          changelog_lines = changelog_path.read_text(encoding="utf-8").splitlines()
+          if not any(
+              line == expected_heading or line.startswith(f"{expected_heading} ")
+              for line in changelog_lines
+          ):
+              raise SystemExit(
+                  f"docs/CHANGELOG.md has no heading for release {version!r}"
+              )
+          PY
 
       - name: Parse commits since last release
         id: commits
@@ -319,72 +289,8 @@ jobs:
           prerelease: ${{ steps.version.outputs.is_prerelease == 'true' }}
           make_latest: ${{ inputs.make_latest != false && steps.version.outputs.release_type == 'stable' }}
 
-  update-changelog:
-    needs: prepare-release
-    runs-on: ubuntu-latest
-    if: needs.prepare-release.outputs.is_draft != 'true'
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          fetch-depth: 0
-          ref: main
-
-      - name: Update version in manifest
-        run: |
-          VERSION="${{ needs.prepare-release.outputs.version }}"
-          MANIFEST_FILE="custom_components/idm_heatpump/manifest.json"
-          sed -i "s|\"version\": \"[^\"]*\"|\"version\": \"$VERSION\"|" "$MANIFEST_FILE"
-          echo "Updated version files"
-
-      - name: Update CHANGELOG.md
-        env:
-          RELEASE_NOTES: ${{ needs.prepare-release.outputs.release-notes }}
-          VERSION: ${{ needs.prepare-release.outputs.version }}
-          TAG: ${{ needs.prepare-release.outputs.tag }}
-        run: |
-          if [ ! -f docs/CHANGELOG.md ]; then
-            echo "# Changelog" > docs/CHANGELOG.md
-            echo "" >> docs/CHANGELOG.md
-            echo "All notable changes to this project will be documented in this file." >> docs/CHANGELOG.md
-            echo "" >> docs/CHANGELOG.md
-          fi
-
-          if grep -q "^## \\[$VERSION\\]" docs/CHANGELOG.md; then
-            echo "Changelog already contains an entry for $VERSION"
-            exit 0
-          fi
-
-          {
-            echo "## [$VERSION] - $(date +'%Y-%m-%d')"
-            echo ""
-            echo "$RELEASE_NOTES"
-            echo ""
-            echo "---"
-            echo ""
-          } > temp_changelog_entry.md
-
-          sed -i '/^All notable changes/r temp_changelog_entry.md' docs/CHANGELOG.md
-          rm temp_changelog_entry.md
-
-      - name: Commit and push changes
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          git add docs/CHANGELOG.md \
-            custom_components/idm_heatpump/manifest.json
-
-          if git diff --cached --quiet; then
-            echo "No changes to commit"
-            exit 0
-          fi
-
-          git commit -m "Release v${{ needs.prepare-release.outputs.version }} - Update changelog and version files"
-          git push
-
   create-summary:
-    needs: [prepare-release, update-changelog]
+    needs: prepare-release
     runs-on: ubuntu-latest
     if: always()
     steps:

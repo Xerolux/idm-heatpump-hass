@@ -2,17 +2,20 @@ name: Sync Wiki Documentation
 
 on:
   push:
-    branches:
-      - master
-      - main
+    branches: [main]
     paths:
       - 'docs/wiki/**'
   workflow_dispatch:
+
+concurrency:
+  group: wiki-sync
+  cancel-in-progress: true
 
 jobs:
   sync-wiki:
     name: Sync docs/wiki to GitHub Wiki
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     permissions:
       contents: write
 
@@ -26,8 +29,9 @@ jobs:
         env:
           GIT_TERMINAL_PROMPT: 0
 
-      - name: Copy wiki files
+      - name: Mirror wiki files
         run: |
+          find /tmp/wiki -maxdepth 1 -type f -name '*.md' -delete
           cp docs/wiki/*.md /tmp/wiki/
 
       - name: Commit and push to wiki
