@@ -87,8 +87,21 @@ class TestDiagnostics:
         """Network fields should not appear in entry diagnostics."""
         mock_config_entry.as_dict = MagicMock(
             return_value={
-                "data": {"host": "192.168.1.100", "port": 502, "slave_id": 1, "name": "IDM"},
-                "options": {"host": "192.168.1.100", "port": 502, "slave_id": 1},
+                "data": {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    "web_host": "192.168.1.101",
+                    "web_pin": "1234",
+                    "name": "IDM",
+                },
+                "options": {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    "web_host": "192.168.1.101",
+                    "web_pin": "1234",
+                },
             }
         )
         _make_hass_with_coordinator(mock_hass, mock_config_entry)
@@ -98,9 +111,28 @@ class TestDiagnostics:
         assert "host" not in entry_data
         assert "port" not in entry_data
         assert "slave_id" not in entry_data
+        assert "web_host" not in entry_data
+        assert "web_pin" not in entry_data
         assert "host" not in entry_options
         assert "port" not in entry_options
         assert "slave_id" not in entry_options
+        assert "web_host" not in entry_options
+        assert "web_pin" not in entry_options
+
+    async def test_web_error_diagnostics_do_not_expose_connection_details(self, mock_hass, mock_config_entry):
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.last_web_error = (
+            "ClientConnectorError: Cannot connect to "
+            "ws://192.168.1.101:61220/?auth_code=1234"
+        )
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        assert result["data"]["web_supplement"]["last_error"] == "ClientConnectorError"
+
+        coord.last_web_error = "ws://192.168.1.101:61220/?auth_code=1234"
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        assert result["data"]["web_supplement"]["last_error"] == "Web supplement error"
 
     async def test_contains_detected_model_details(self, mock_hass, mock_config_entry):
         _make_hass_with_coordinator(mock_hass, mock_config_entry)

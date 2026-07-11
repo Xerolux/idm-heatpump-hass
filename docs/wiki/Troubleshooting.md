@@ -91,12 +91,28 @@ The runtime repair notification and log identify authentication failures
 separately from network failures. The repair action can verify a replacement
 PIN or disable optional web data. The PIN itself is never logged.
 
+After a protocol has worked once, normal runtime recovery intentionally retries
+only that Navigator 2.0 or Navigator 10/Pro protocol. It closes a failed session
+and rebuilds the same client instead of silently switching controller
+generations. If the controller, firmware behavior or web endpoint has changed,
+run **Reconfigure → Change connection settings** to perform fresh detection.
+
 ### "Navigator web interface could not be read"
 
 - With direct Modbus access, the web host is normally the same heat pump IP
 - With a Modbus proxy, enable the proxy option and enter the **original heat pump address** as web host
 - Confirm that Home Assistant can reach the local Navigator web interface
 - Clear the web PIN to continue with Modbus only
+
+Web authentication and general web connection failures create separate repair
+issues. Neither failure stops working Modbus polling.
+
+### Web-only mode exposes fewer entities than expected
+
+This is intentional. Web-only mode loads only read-only sensors returned by the
+local web interface. It has no Modbus polling, binary sensors, numbers, selects,
+switches, register writes, system-mode action or error acknowledgement. Values
+missing from the latest successful web snapshot remain unavailable.
 
 ## Entity Problems
 

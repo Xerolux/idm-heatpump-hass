@@ -23,7 +23,7 @@ See: .planning/PROJECT.md (updated 2026-07-11)
 Phase: 1 of 4 (Reproducible Release Qualification)
 Plan: 0 of TBD in current phase
 Status: Ready to plan
-Last activity: 2026-07-11 — Ingested 27 project documents and created the brownfield roadmap with full requirement traceability.
+Last activity: 2026-07-11 — Prepared integration beta.29 on API 0.7.6, completed the web-protocol Wiki and hardened diagnostic redaction.
 
 Progress: [░░░░░░░░░░] 0%
 
@@ -54,6 +54,7 @@ Decisions are logged in PROJECT.md Key Decisions table.
 
 - [Project]: HACS first, Core later is proposed and non-locked; Core work remains gated by stability and hardware evidence.
 - [Project]: Modbus remains authoritative, optional local web data stays additive, and register definitions remain library-first.
+- [Project]: Integration beta.29 keeps API 0.7.6 because protocol persistence and diagnostic redaction are integration-owned behavior.
 
 ### Pending Todos
 
@@ -75,5 +76,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-07-11
-Stopped at: Roadmap initialized; Phase 1 is ready for detailed planning.
+Stopped at: Beta.29 version/docs/security changes verified; Phase 1 remains ready for detailed release qualification planning.
 Resume file: None

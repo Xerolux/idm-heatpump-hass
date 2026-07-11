@@ -69,6 +69,12 @@ def test_release_workflow_does_not_duplicate_existing_changelog_entries() -> Non
     assert "Changelog already contains an entry for $VERSION" in release_workflow
 
 
+def test_release_workflow_uses_prerelease_tags_for_previous_release() -> None:
+    release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+
+    assert "(-[0-9A-Za-z.-]+)?$" in release_workflow
+
+
 def test_user_facing_dependency_docs_match_manifest() -> None:
     docs = [
         ROOT / "README.md",

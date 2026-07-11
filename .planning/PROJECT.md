@@ -42,7 +42,7 @@ See `.planning/REQUIREMENTS.md` for the 15 uniquely identified v1 requirements.
 
 ## Context
 
-- Current integration/API pair: `0.8.1-beta.28` with exactly pinned `idm-heatpump-api[web]==0.7.6`.
+- Current integration/API pair: `0.8.1-beta.29` with exactly pinned `idm-heatpump-api[web]==0.7.6`.
 - Navigator 10 has direct maintainer read-only hardware evidence; Navigator 2.0, Terra SWM, and Navigator Pro still depend on stronger community diagnostics.
 - The current stability audit found no raw mismatch in 309 batch-versus-individual comparisons on one Navigator 10 system, but that result is not a universal performance or compatibility guarantee.
 - Remaining stable-release gates include a clean-install smoke test, community confirmations, actionable diagnostics for the generic server error, and a regression-free beta soak.
@@ -66,6 +66,7 @@ See `.planning/REQUIREMENTS.md` for the 15 uniquely identified v1 requirements.
 | Keep the first Core PR central and read-only | A small config/model/coordinator/diagnostics/sensor slice is reviewable and avoids importing every HACS feature at once. | — Pending entry-criteria audit |
 | Keep Modbus as the authoritative baseline and web data optional | Preserves local control and avoids duplicate or cloud-dependent values. | ✓ Good |
 | Keep register definitions library-first | One typed, model-gated contract supports both API and Home Assistant behavior. | ✓ Good |
+| Release integration beta.29 with API 0.7.6 | Sticky web-protocol orchestration and diagnostic redaction are integration-side changes; the pinned API already provides the required clients and register metadata. | ✓ Verified |
 
 ## Evolution
 

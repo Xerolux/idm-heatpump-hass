@@ -6,7 +6,7 @@ normal changelog.
 
 ## Current Status
 
-Integration `0.8.1-beta.28` and `idm-heatpump-api` `0.7.6` form the tested,
+Integration `0.8.1-beta.29` and `idm-heatpump-api` `0.7.6` form the tested,
 exactly pinned pair from this audit. The integration remains a beta while the
 hardware/community and soak gates below are still open.
 
@@ -19,6 +19,11 @@ The July 2026 stability audit verified:
 - zone-room modes are individually checked and moved to the API's safe individual-read path after a mismatch;
 - unsupported optional addresses are isolated without losing unrelated values;
 - advanced raw writes require explicit risk acknowledgement and retain datatype/numeric validation.
+- local web protocol discovery tests both supported Navigator families only
+  while detection is needed, then persists and reconnects the successful
+  protocol without runtime generation switching;
+- diagnostics redact Modbus/web connection settings and the local web PIN, and
+  reduce detailed web failures to a safe error category.
 
 ## Read-only Hardware Evidence
 

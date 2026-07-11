@@ -11,17 +11,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1-beta.29] - 2026-07-11
+
+### Fixed
+
+- Detect both supported local Navigator web protocols during setup,
+  reconfiguration or repair, persist the protocol that actually succeeds and
+  keep normal runtime reconnects on that known protocol.
+- Rebuild an expired or failed cached web session with the same Navigator
+  client before reporting an authentication or transport failure.
+- Treat local network code `0` as disabled web access instead of a rejected
+  PIN.
+- Redact the optional web host and PIN from diagnostics and expose only a safe
+  web-error category without connection URLs or authorization query data.
+- Select prerelease tags when generating the previous-release comparison so
+  beta release notes cover only changes since the preceding beta.
+
+### Documentation
+
+- Explain that the optional web PIN is the Navigator's local network code, not
+  a cloud password or two-factor code, including the controller menu path and
+  protocol-detection lifecycle.
+- Document GLT Monitor diagnosis, writable-control discovery, PV/energy-manager
+  ownership, the signed INT16 battery-SOC exception and guarded external DHW
+  request automation.
+- Consolidate verified technical constraints, release gates and remaining
+  hardware-evidence requirements in the project knowledge base and Wiki.
+
+### Dependencies
+
+- Keep the tested `idm-heatpump-api[web]==0.7.6` pin. No library change is
+  required for this integration-side protocol-selection and documentation
+  release.
+
 ## [0.8.1-beta.28] - 2026-07-11
 
 ### Fixed
 
-- Auto-detect both local Navigator web protocols only during setup,
-  reconfiguration or repair, persist the actually successful `nav10`/`nav20`
-  client and keep runtime reconnects on that known protocol.
-- Rebuild an expired or failed cached web session with the same Navigator
-  client before reporting authentication or transport failure.
-- Treat local network code `0` as disabled web access instead of a rejected
-  PIN.
 - Route individually validated zone-room mode failures through the normal poll
   repair flow, isolate unsupported room addresses and omit invalid recovery
   values without discarding unrelated data.
@@ -36,17 +62,8 @@ All notable changes to this project will be documented in this file.
 
 ### Documentation
 
-- Explain directly in setup and reconfiguration that the optional web PIN is
-  the Navigator's local network code, not a cloud password or two-factor code,
-  and document the controller menu path and external energy-manager ownership.
 - Correct batch size, Modbus function-code, room-count, sentinel and raw-write
   documentation and add explicit stable-release readiness criteria.
-- Document GLT Monitor diagnostics, writable-control discovery, PV/energy
-  manager ownership, the signed INT16 battery-SOC exception and safe external
-  DHW-request automation with explicit stop conditions.
-- Initialize the GSD project knowledge base, requirements, roadmap and state
-  from the verified repository documentation so future work retains technical
-  constraints, release gates and open hardware-evidence requirements.
 
 ## [0.8.1-beta.27] - 2026-07-10
 

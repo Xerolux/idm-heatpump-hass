@@ -2,7 +2,9 @@
 
 ## Device Compatibility
 
-- **Only IDM Navigator 2.0 / 10 / Navigator Pro** are confirmed in the current community test matrix
+- Navigator 10 has direct maintainer hardware confirmation. Navigator 2.0 and
+  Navigator Pro are expected from the typed register model but still need
+  complete diagnostics across current firmware variants.
 - Older IDM controllers without Navigator firmware are **not** supported
 - Modbus register mapping may vary slightly between firmware versions
 
@@ -42,10 +44,12 @@
 - Zone module configuration is adjustable via options after initial setup
 - Rooms without a physical sensor may return `-1.0` as a value (marked as unavailable)
 
-## No Push Notifications
+## Scheduled Updates Rather Than HA Push Updates
 
-- The integration is a **polling client** — the heat pump does not send change notifications
-- Changes made on the device (e.g., via the Navigator web interface) are only visible in HA after the next polling cycle
+- Home Assistant state is updated through scheduled Modbus and optional web
+  refreshes. The integration does not currently expose unsolicited controller
+  events as immediate Home Assistant push updates.
+- Changes made elsewhere become visible after the relevant refresh interval.
 
 ## Firmware Version
 
@@ -56,5 +60,7 @@
 ## Deliberately Not Implemented
 
 - **Climate entity:** Not exposed yet because IDM modes combine heating circuits, rooms, cooling and hot water in ways that do not map cleanly to one Home Assistant climate entity.
-- **Web UI scraping:** Not used as a core path. The integration stays on the documented local Modbus/API contract and does not depend on Navigator web-login cookies.
+- **Web connection as the core path:** Modbus operation does not depend on a web
+  login. The optional read-only supplement uses the supported local Navigator
+  HTTP or WebSocket session and can provide a limited web-only fallback.
 - **Global `force_update`:** Not enabled by default. External time-series systems should use recorder/InfluxDB configuration or selected helper sensors to avoid unnecessary Home Assistant database load.

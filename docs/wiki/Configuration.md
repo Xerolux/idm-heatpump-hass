@@ -43,7 +43,7 @@ diagnostics, and Navigator 10 infosystem notifications.
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| Web supplement data | Enables the optional local web poll when a PIN is configured | on when a PIN is configured |
+| Web supplement data | Enables the optional local web poll; it becomes active only with a valid PIN | on |
 | Web supplement interval | Separate polling interval for web data | 30 seconds |
 | Web host | Optional separate host for the Navigator web interface, useful when Modbus goes through a proxy | Modbus host |
 
@@ -51,17 +51,35 @@ Important behavior:
 
 - If no PIN is configured, no web client is created and the integration stays in
   Modbus-only mode.
+- During setup, reconfiguration and repair, the Modbus model is used only to
+  choose which local web protocol to try first. If that attempt fails, the
+  other supported protocol is also tested. The protocol that actually succeeds
+  is stored with the config entry.
+- During normal polling, the successful authenticated client is reused. If its
+  session expires or the connection fails, the client is closed and the same
+  known protocol is rebuilt immediately. The other Navigator generation is not
+  probed during routine runtime recovery.
+- After replacing the Navigator, changing the web endpoint or making a firmware
+  change that alters the local interface, run **Reconfigure → Change connection
+  settings** so protocol detection can run again.
 - If the PIN is wrong during setup or reconfiguration, the form shows the PIN
   error immediately. After a Modbus failure, the PIN can be corrected directly
   in the recovery form without restarting setup.
 - If the web interface is unreachable later, Modbus polling continues.
 - Web polling runs separately and starts slightly after Modbus polling so both
   protocols do not hit the controller at the exact same moment.
-- Modbus values always have priority. Web sensors are only created for extra
-  values or for values that are not already represented by Modbus entities.
+- Modbus register values always have priority. Web sensors are only created for
+  extra values or values without an existing Modbus entity. Web model/firmware
+  metadata may complete an unknown Modbus result, but a definite family
+  conflict is ignored.
 - If a Modbus proxy is used, enter the proxy IP as **Host** and the original
   heat pump IP as **Web host** so the local Navigator web interface can still
   be reached.
+
+Navigator 2.0 uses a local HTTP/CSRF login; Navigator 10 and Navigator Pro use
+the Navigator-10 WebSocket login family. See [Local Navigator Web
+Interface](Local-Web-Interface) for the complete detection and recovery state
+machine.
 
 ### Room Temperature Forwarding
 
@@ -151,8 +169,23 @@ The integration creates a diagnostic sensor named **IDM Heatpump API version**
 
 The same version set is included in downloaded diagnostics and written to the
 Home Assistant log when the config entry starts. This is the authoritative way
-to check the runtime; the version pinned in `manifest.json` describes what
+to check the runtime; the version pinned in
+`custom_components/idm_heatpump/manifest.json` describes what
 should be installed, while the sensor shows what is actually loaded.
+
+### Integration and API release pairing
+
+This project has two independently versioned packages:
+
+| Package | Current tested version | When it needs a new version |
+|---------|------------------------|-----------------------------|
+| Home Assistant custom integration | `0.8.1-beta.29` | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Python register/web library | `idm-heatpump-api[web]==0.7.6` | Register schema, encoding/decoding, Modbus client or reusable web-client implementation changes |
+
+Every integration release pins the exact API version it was tested with. The
+beta.29 web-protocol persistence and diagnostic redaction are integration-side
+changes and use API 0.7.6 unchanged. IDM Heatpump is a custom integration, not
+a Home Assistant add-on.
 
 ## Debug Logging
 

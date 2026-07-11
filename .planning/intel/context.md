@@ -31,7 +31,7 @@ source: docs/wiki/Changelog.md
 
 source: docs/wiki/Stability-and-Release-Readiness.md
 
-> Integration `0.8.1-beta.28` and `idm-heatpump-api` `0.7.6` form the tested, exactly pinned pair from this audit. The integration remains a beta while the hardware/community and soak gates below are still open.
+> Integration `0.8.1-beta.29` and `idm-heatpump-api` `0.7.6` form the tested, exactly pinned pair from this audit. The integration remains a beta while the hardware/community and soak gates below are still open.
 
 ## 3. Installation, setup, and configuration
 

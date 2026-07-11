@@ -33,7 +33,7 @@ same artifact and runtime dependency set that users install from GitHub.
        "pymodbus>=3.12.1,<4.0",
        "idm-heatpump-api[web]==0.7.6",
    ]
-   assert manifest["version"] == "0.8.1-beta.28"
+   assert manifest["version"] == "0.8.1-beta.29"
    print("runtime requirements ok")
    PY
    ```
@@ -76,6 +76,12 @@ Run this only on a system where the local Navigator web PIN is known.
    Modbus polling continues.
 9. Confirm web values that duplicate Modbus entities are not created as
    duplicate entities.
+10. Confirm the detected Navigator 2.0 or Navigator 10/Pro protocol is stored,
+    then interrupt one web poll and verify runtime recovery reconnects only the
+    same protocol.
+11. Download diagnostics and confirm Modbus/web hosts, port, slave ID and web
+    PIN are absent. A web failure may expose only its error category, never a
+    URL, `auth_code` query or PIN.
 
 ## 5. Optional Room Temperature Forwarding
 
