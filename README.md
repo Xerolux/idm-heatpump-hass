@@ -95,6 +95,11 @@ web PIN enables a validated, read-only web-only fallback.
 Later, use **Settings → Devices & Services → IDM Heatpump → Reconfigure →
 Test current connection** for a safe repeatable Modbus and optional web test.
 
+Writable controls are exposed as `number`, `select` and `switch` entities and
+can also be selected under **Automations → Add action**. For register-level
+diagnosis, the Navigator's **GLT Monitor** can be compared with the integration
+diagnostics without writing test values.
+
 **4. Done!** 🎉 Your heat pump is now smart.
 
 > Detailed guide → **[Installation & Setup][wiki-install]**
@@ -180,6 +185,8 @@ Home Assistant
 - **Built-in test menu**: Reconfigure offers a non-destructive connection test for a known IDM Modbus register, targeted DNS/TCP failure classification and, when configured, local Navigator web authentication
 - **Visible runtime stack**: the diagnostic `IDM Heatpump API version` sensor exposes the installed API version and includes the integration and `pymodbus` versions as attributes; the same versions are included in diagnostics exports and startup logs
 - **Entity organization**: technician code sensors are pinned at the top, followed by functional groups for configuration, switches, writable values and diagnostics
+- **PV/GLT correctness**: float inputs use IDM word order, battery SOC is a single signed 16-bit percentage value, and documentation warns against multiple energy managers writing the same register
+- **Hardware-assisted diagnosis**: troubleshooting explains how to compare Home Assistant values and timestamps with the Navigator GLT Monitor
 
 ---
 

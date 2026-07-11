@@ -1,0 +1,23 @@
+{
+  "source_path": "docs/wiki/Data-Update.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Data Update",
+  "summary": "Explains Modbus and web polling, entity availability, write safeguards, error recovery, room-temperature forwarding, and technician-code refresh behavior.",
+  "scope": [
+    "Modbus TCP polling",
+    "DataUpdateCoordinator",
+    "web supplement polling",
+    "entity availability",
+    "writable entities",
+    "EEPROM-protected registers",
+    "repair issues",
+    "room temperature forwarding",
+    "technician code sensors"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

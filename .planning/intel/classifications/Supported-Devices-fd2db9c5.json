@@ -1,0 +1,26 @@
+{
+  "source_path": "docs/wiki/Supported-Devices.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Supported Devices",
+  "summary": "Compatibility guide for supported, unsupported, and untested IDM Navigator device families, firmware variants, modules, and Modbus requirements.",
+  "scope": [
+    "IDM Navigator 10",
+    "IDM Navigator 2.0",
+    "IDM Navigator Pro",
+    "heat pump compatibility",
+    "firmware versions",
+    "heating circuits",
+    "zone modules",
+    "Modbus TCP",
+    "Modbus registers"
+  ],
+  "cross_refs": [
+    "Compatibility-Matrix",
+    "Modbus-Register"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

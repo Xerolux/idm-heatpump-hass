@@ -114,6 +114,37 @@ PIN or disable optional web data. The PIN itself is never logged.
 - Do not assume every `254`, `255` or `-1` is corrupt: these are valid unavailable sentinels only where the register metadata declares them.
 - Report the case as a [bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md). Maintainers should compare the exact FC03/FC04 address/count and raw words in batch and individual reads before changing datatype or address metadata.
 
+### Compare values with the Navigator GLT Monitor
+
+For difficult register or write problems, open the **GLT Monitor** on the
+Navigator under the building-management/GLT area. Menu wording and access level
+vary by controller and firmware; technician access may be required. The monitor
+shows the values and communication seen by the controller and is therefore the
+best on-device comparison point for Home Assistant diagnostics.
+
+When reporting a discrepancy, capture at the same time:
+
+- Navigator generation, firmware and heat-pump model
+- Entity and library register name, address and datatype
+- Home Assistant value and timestamp
+- Navigator display value and GLT Monitor value
+- Whether the value was read in a batch or individually
+- Every system that can write the register, such as Home Assistant, an inverter,
+  E3DC, Smartfox or another building-management controller
+
+If a writable value alternates between two values, first disable every other
+writer. A repeating change often means two automations or energy managers own
+the same GLT register; it is not evidence that the datatype is wrong.
+
+### Controls or actuators appear to be missing
+
+Writable functions are not all shown as traditional "actuators". Open the IDM
+device and look for `number`, `select` and `switch` entities. In an automation,
+choose **Add action** and select the entity action (`number.set_value`,
+`select.select_option`, `switch.turn_on`/`switch.turn_off`) or an IDM-specific
+action. Advanced raw register writing is intentionally available only through
+the risk-acknowledged IDM action documented under [Services](Services).
+
 ### Values not updating
 
 - Check the **scan interval** in the options

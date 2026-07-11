@@ -41,6 +41,12 @@ All notable changes to this project will be documented in this file.
   and document the controller menu path and external energy-manager ownership.
 - Correct batch size, Modbus function-code, room-count, sentinel and raw-write
   documentation and add explicit stable-release readiness criteria.
+- Document GLT Monitor diagnostics, writable-control discovery, PV/energy
+  manager ownership, the signed INT16 battery-SOC exception and safe external
+  DHW-request automation with explicit stop conditions.
+- Initialize the GSD project knowledge base, requirements, roadmap and state
+  from the verified repository documentation so future work retains technical
+  constraints, release gates and open hardware-evidence requirements.
 
 ## [0.8.1-beta.27] - 2026-07-10
 
@@ -501,9 +507,8 @@ _Generated automatically by GitHub Actions on 2026-07-07 07:06:48 UTC_
 - Harden local web supplement discovery: if the Navigator 10 web client fails
   with a wrong-variant / unrecognised response, the integration now explicitly
   falls back to the Navigator 2.0 web client (and vice-versa). Both variants are
-  closed cleanly after the attempt. This mirrors hacs-idm-hpweb behaviour and
-  reduces misleading "web PIN rejected" errors when the wrong generation was
-  probed first.
+  closed cleanly after the attempt. This symmetric discovery reduces misleading
+  "web PIN rejected" errors when the wrong generation was probed first.
 - Config flow now forwards the Modbus-detected Navigator model as a `model_hint`
   to the local web supplement detection. This avoids probing the wrong web
   variant first during setup and reconfiguration, saving a full connect timeout.

@@ -104,3 +104,21 @@ for datatype, write class, range and cyclic behavior. Do not infer semantics
 from an address used by a different installation or firmware; for example,
 this integration maps Smart Grid status and the configurable variable input as
 separate registers.
+
+### PV/energy-management datatype reference
+
+The addresses in the PV block do not all share the same datatype. In
+particular, battery SOC must not be encoded as a two-register float.
+
+| Address | Entity | Datatype | Unit | Notes |
+|---------|--------|----------|------|-------|
+| 74 | `pv_surplus` | FLOAT, word-swapped | kW | Writable GLT input; not EEPROM |
+| 76 | `electric_heater_power` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 78 | `pv_production` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 82 | `house_consumption` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 84 | `battery_discharge` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 86 | `battery_soc` | signed INT16, one register | % | `0–100`; `-1` means unavailable |
+| 88 | `pv_target_value` | FLOAT, word-swapped | kW | Model/firmware dependent |
+
+Always use the generated entity or library register definition when writing.
+The advanced raw-write action cannot infer the correct datatype from an address.

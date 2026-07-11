@@ -1,0 +1,42 @@
+{
+  "source_path": "docs/wiki/Home.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "IDM Heatpump - Home Assistant Integration",
+  "summary": "Introduces the integration, its prerequisites, supported platforms, core capabilities, technical characteristics, documentation navigation, and project resources.",
+  "scope": [
+    "IDM Heatpump integration",
+    "Home Assistant",
+    "IDM Navigator controllers",
+    "Modbus TCP",
+    "web supplement",
+    "entities",
+    "heating circuits",
+    "zone modules",
+    "diagnostics",
+    "room temperature forwarding"
+  ],
+  "cross_refs": [
+    "Installation-and-Setup#enable-modbus-tcp-on-the-idm-heat-pump",
+    "https://www.home-assistant.io/",
+    "https://www.idm-energiesysteme.de/",
+    "Installation-and-Setup",
+    "Configuration",
+    "Entities",
+    "Services",
+    "Troubleshooting",
+    "Modbus-Register",
+    "Stability-and-Release-Readiness",
+    "Contributing",
+    "https://github.com/Xerolux/idm-heatpump-api",
+    "https://github.com/Xerolux/idm-heatpump-hass",
+    "https://github.com/Xerolux/idm-heatpump-hass/issues",
+    "https://hacs.xyz/",
+    "https://community.home-assistant.io/",
+    "https://github.com/Xerolux"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

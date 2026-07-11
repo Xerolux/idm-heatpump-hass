@@ -1,0 +1,27 @@
+{
+  "source_path": "docs/wiki/Stability-and-Release-Readiness.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Stability & Release Readiness",
+  "summary": "Records verified stability evidence, unresolved risks, release gates, investigation requirements, and candidate improvements needed before removing the beta label.",
+  "scope": [
+    "integration beta release",
+    "idm-heatpump-api",
+    "stability audit",
+    "hardware evidence",
+    "stable-release gates",
+    "diagnostic evidence",
+    "protocol investigation",
+    "candidate improvements"
+  ],
+  "cross_refs": [
+    "https://github.com/Xerolux/idm-heatpump-hass/issues/44",
+    "https://github.com/Xerolux/idm-heatpump-hass/issues/69",
+    "https://github.com/Xerolux/idm-heatpump-hass/issues/68",
+    "https://github.com/Xerolux/idm-heatpump-hass/issues/84"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

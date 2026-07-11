@@ -7,6 +7,10 @@ This page only summarizes recent milestones.
 
 ## v0.8.1-beta.28 — 2026-07-11
 
+- Added GLT Monitor diagnostics, writable-control guidance, exact PV/battery
+  datatypes and guarded examples for PV surplus and external DHW requests.
+- Consolidated project constraints and remaining verification work in a
+  persistent GSD knowledge base and roadmap.
 - Pins the published `idm-heatpump-api` 0.7.6 stability release.
 - Propagates transport failures without disabling valid registers.
 - Quarantines proven room-mode batch mismatches and avoids later double reads.

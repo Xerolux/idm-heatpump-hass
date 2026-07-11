@@ -1,0 +1,28 @@
+{
+  "source_path": "docs/wiki/Troubleshooting.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Troubleshooting",
+  "summary": "Guides users and developers through diagnosing IDM Heatpump connection, web access, entity, register-value, write, logging, diagnostics, and reporting problems.",
+  "scope": [
+    "Modbus TCP connection problems",
+    "Navigator web access",
+    "entity availability and values",
+    "GLT Monitor comparison",
+    "EEPROM warnings",
+    "debug logging",
+    "diagnostics export",
+    "bug reports",
+    "developer hardware safety"
+  ],
+  "cross_refs": [
+    "Installation-and-Setup#enable-modbus-tcp-on-the-idm-heat-pump",
+    "Configuration",
+    "https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md",
+    "Services"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

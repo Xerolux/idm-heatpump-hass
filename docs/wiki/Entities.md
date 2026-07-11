@@ -89,14 +89,18 @@ when collecting information for a bug report.
 
 ### PV / Energy Management
 
-| Entity | Register | Unit |
-|--------|----------|------|
-| PV surplus | 74 | kW |
-| Electric heater power | 76 | kW |
-| PV production | 78 | kW |
-| House consumption | 82 | kW |
-| Battery discharge | 84 | kW |
-| Battery SOC | 86 | % |
+| Entity | Register | Datatype | Unit |
+|--------|----------|----------|------|
+| PV surplus | 74 | FLOAT, word-swapped | kW |
+| Electric heater power | 76 | FLOAT, word-swapped | kW |
+| PV production | 78 | FLOAT, word-swapped | kW |
+| House consumption | 82 | FLOAT, word-swapped | kW |
+| Battery discharge | 84 | FLOAT, word-swapped | kW |
+| Battery SOC | 86 | signed INT16, one register | % |
+
+Battery SOC accepts `0–100`; `-1` means that no battery value is available.
+Treating address 86 like the surrounding two-register FLOAT values produces an
+implausible result.
 
 ### Solar Thermal
 

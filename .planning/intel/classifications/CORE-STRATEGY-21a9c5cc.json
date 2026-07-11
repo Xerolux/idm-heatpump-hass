@@ -1,0 +1,20 @@
+{
+  "source_path": "docs/CORE_STRATEGY.md",
+  "type": "ADR",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Home Assistant Core Strategy",
+  "summary": "Defines the decision to stabilize the HACS integration before pursuing a deliberately limited, read-only initial Home Assistant Core contribution.",
+  "scope": [
+    "HACS custom integration",
+    "Home Assistant Core contribution",
+    "entry criteria",
+    "initial Core scope",
+    "Core port adjustments",
+    "HACS-to-Core migration"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "The document combines a central architectural release-strategy decision with scope and entry criteria; ADR precedence resolves the overlap with PRD signals. No Accepted status is declared."
+}

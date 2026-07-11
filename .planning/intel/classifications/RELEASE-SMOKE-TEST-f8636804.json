@@ -1,0 +1,23 @@
+{
+  "source_path": "docs/RELEASE_SMOKE_TEST.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Release Smoke Test",
+  "summary": "Provides the pre-release checklist for validating a stable HACS artifact, installation, configuration, polling, optional features, safe writes, lifecycle operations, and evidence.",
+  "scope": [
+    "HACS release artifact",
+    "runtime dependency pins",
+    "Home Assistant installation",
+    "config flow and coordinator polling",
+    "Navigator web supplement",
+    "room temperature forwarding",
+    "safe Modbus writes",
+    "reload, unload, and upgrade validation",
+    "release evidence"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}
