@@ -156,7 +156,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         hass: HomeAssistant,
         config_entry: ConfigEntry,
         client: IdmModbusClient,
-        scan_interval: timedelta,
+        scan_interval: timedelta | None,
         sensor_descriptions: list[dict[str, Any]],
         binary_sensor_descriptions: list[dict[str, Any]],
         number_descriptions: list[dict[str, Any]],

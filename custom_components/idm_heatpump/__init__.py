@@ -298,7 +298,10 @@ async def _async_setup_web_only_entry(
         hass=hass,
         config_entry=entry,
         client=client,
-        scan_interval=timedelta(seconds=scan_interval),
+        # Web-only entries are refreshed by _web_poll_loop. Disabling the
+        # DataUpdateCoordinator scheduler prevents empty Modbus polls from
+        # marking all web entities unavailable.
+        scan_interval=None,
         sensor_descriptions=empty_descriptions,
         binary_sensor_descriptions=empty_descriptions,
         number_descriptions=empty_descriptions,

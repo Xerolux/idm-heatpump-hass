@@ -365,6 +365,7 @@ class TestAsyncSetupWebOnlyEntry:
         assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
         # Web-only mode exposes only sensors and runs with an empty register set.
         assert entry.runtime_data.coordinator._registers == []
+        assert entry.runtime_data.coordinator.update_interval is None
         mock_hass.config_entries.async_forward_entry_setups.assert_called_once()
         forwarded_platforms = mock_hass.config_entries.async_forward_entry_setups.call_args.args[1]
         # Web-only mode forwards exactly one platform (sensor). In the test stub
