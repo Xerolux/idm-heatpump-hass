@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       api_version:
-        description: idm-heatpump-api version to set as compatible lower bound
+        description: Stable idm-heatpump-api version to pin exactly (X.Y.Z)
         required: true
         type: string
 
@@ -22,53 +22,86 @@ jobs:
 
       - name: Resolve API version
         id: api
+        env:
+          REQUESTED_API_VERSION: ${{ github.event_name == 'repository_dispatch' && github.event.client_payload.version || inputs.api_version }}
         run: |
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            VERSION="${{ github.event.client_payload.version }}"
-          else
-            VERSION="${{ inputs.api_version }}"
-          fi
-          if [ -z "$VERSION" ]; then
-            echo "Missing API version" >&2
+          VERSION="$REQUESTED_API_VERSION"
+          if [[ ! "$VERSION" =~ ^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$ ]]; then
+            echo "API version must be a stable SemVer in X.Y.Z format" >&2
             exit 1
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Update compatible API dependency
+      - name: Update exact API dependency pin
+        env:
+          API_VERSION: ${{ steps.api.outputs.version }}
         run: |
           python - <<'PY'
           from __future__ import annotations
 
           import json
+          import os
           import re
           from pathlib import Path
 
-          version = "${{ steps.api.outputs.version }}"
+          version = os.environ["API_VERSION"]
           root = Path(".")
           requirement = f"idm-heatpump-api[web]=={version}"
 
           manifest_path = root / "custom_components" / "idm_heatpump" / "manifest.json"
           manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+          api_requirements = [
+              req for req in manifest["requirements"]
+              if req.startswith("idm-heatpump-api")
+          ]
+          if len(api_requirements) != 1:
+              raise RuntimeError("Expected exactly one API requirement in manifest.json")
           manifest["requirements"] = [
               requirement if req.startswith("idm-heatpump-api") else req
               for req in manifest["requirements"]
           ]
           manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
-          release_contract = root / "tests" / "test_release_contract.py"
-          text = release_contract.read_text(encoding="utf-8")
-          text = re.sub(r'idm-heatpump-api(?:\[web\])?(?:==[0-9]+\.[0-9]+\.[0-9]+|>=[0-9]+\.[0-9]+(?:\.[0-9]+)?,<[0-9]+\.[0-9]+)', requirement, text)
-          release_contract.write_text(text, encoding="utf-8")
-
-          docs = [
-              root / "README.md",
-              root / "README_de.md",
-              root / "docs" / "wiki" / "Home.md",
-              root / "docs" / "wiki" / "_Sidebar.md",
+          pin_paths = [
+              "tests/test_release_contract.py",
+              "README.md",
+              "README_de.md",
+              "AGENTS.md",
+              "docs/RELEASE_SMOKE_TEST.md",
+              "docs/wiki/Home.md",
+              "docs/wiki/_Sidebar.md",
+              "docs/wiki/Configuration.md",
+              "docs/wiki/Local-Web-Interface.md",
           ]
-          for path in docs:
+          requirement_pattern = re.compile(
+              r"idm-heatpump-api(?:\[web\])?\s*(?:"
+              r"==\s*[0-9]+\.[0-9]+\.[0-9]+|"
+              r">=\s*[0-9]+\.[0-9]+(?:\.[0-9]+)?\s*,\s*"
+              r"<\s*[0-9]+\.[0-9]+(?:\.[0-9]+)?"
+              r")"
+          )
+          for relative_path in pin_paths:
+              path = root / relative_path
               text = path.read_text(encoding="utf-8")
-              text = re.sub(r'idm-heatpump-api(?:\[web\])?(?:==[0-9]+\.[0-9]+\.[0-9]+|>=[0-9]+\.[0-9]+(?:\.[0-9]+)?,<[0-9]+\.[0-9]+)', requirement, text)
+              text, replacements = requirement_pattern.subn(requirement, text)
+              if replacements == 0:
+                  raise RuntimeError(f"No API pin found in {relative_path}")
+              path.write_text(text, encoding="utf-8")
+
+          bare_version_paths = {
+              "docs/wiki/Configuration.md": re.compile(
+                  r"(?<=\bAPI )[0-9]+\.[0-9]+\.[0-9]+(?= unchanged)"
+              ),
+              "docs/wiki/Stability-and-Release-Readiness.md": re.compile(
+                  r"(?<=`idm-heatpump-api` `)[0-9]+\.[0-9]+\.[0-9]+(?=`)"
+              ),
+          }
+          for relative_path, pattern in bare_version_paths.items():
+              path = root / relative_path
+              text = path.read_text(encoding="utf-8")
+              text, replacements = pattern.subn(version, text)
+              if replacements == 0:
+                  raise RuntimeError(f"No API version statement found in {relative_path}")
               path.write_text(text, encoding="utf-8")
           PY
 
@@ -95,7 +128,7 @@ jobs:
           title: "chore: update idm-heatpump-api to ${{ steps.api.outputs.version }}"
           commit-message: "chore: update idm-heatpump-api to ${{ steps.api.outputs.version }}"
           body: |
-            Updates the compatible `idm-heatpump-api` dependency range for `${{ steps.api.outputs.version }}`.
+            Updates the exact, reproducible `idm-heatpump-api` pin to `${{ steps.api.outputs.version }}`.
 
             Review the API changelog before merging:
             https://github.com/Xerolux/idm-heatpump-api/blob/main/CHANGELOG.md
