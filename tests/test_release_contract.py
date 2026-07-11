@@ -83,11 +83,24 @@ def test_release_artifact_is_built_from_manifest_directory() -> None:
     assert "manifest.json" not in release_workflow.partition("zip -r ../../idm_heatpump.zip .")[2].partition("\n\n")[0]
 
 
-def test_release_workflow_does_not_duplicate_existing_changelog_entries() -> None:
+def test_release_workflow_validates_prepared_version_and_changelog() -> None:
     release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
 
-    assert 'grep -q "^## \\\\[$VERSION\\\\]" docs/CHANGELOG.md' in release_workflow
-    assert "Changelog already contains an entry for $VERSION" in release_workflow
+    assert "Validate prepared release metadata" in release_workflow
+    assert 'manifest_version = json.loads(manifest_path.read_text(encoding="utf-8"))["version"]' in release_workflow
+    assert "if manifest_version != version:" in release_workflow
+    assert 'expected_heading = f"## [{version}]"' in release_workflow
+    assert "docs/CHANGELOG.md has no heading for release" in release_workflow
+
+
+def test_release_workflow_never_mutates_or_pushes_release_metadata() -> None:
+    release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+
+    assert "update-changelog:" not in release_workflow
+    assert "Update version in manifest" not in release_workflow
+    assert "sed -i" not in release_workflow
+    assert "git commit" not in release_workflow
+    assert "git push" not in release_workflow
 
 
 def test_release_workflow_uses_prerelease_tags_for_previous_release() -> None:
