@@ -846,6 +846,19 @@ class TestAsyncWriteRegister:
         client.simulate_write.assert_called_once_with(reg, 22.0, dry_run=True)
         client.write_register.assert_called_once_with(reg, 22.0)
 
+    async def test_write_updates_all_register_aliases_optimistically(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord._alias_map = {1000: ["temp", "temp_set"]}
+        coord.data = {"temp": 20.0, "temp_set": 20.0}
+
+        alias_reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
+        await coord.async_write_register(alias_reg, 22.0)
+
+        assert coord.data["temp"] == 22.0
+        assert coord.data["temp_set"] == 22.0
+
     async def test_write_triggers_delayed_refresh(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.write_register = AsyncMock()

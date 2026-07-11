@@ -794,7 +794,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise
         # Optimistic update so entities reflect the new value immediately
         if self.data is not None:
-            self.data[reg.name] = value
+            alias_names = self._alias_map.get(reg.address)
+            if alias_names:
+                for name in alias_names:
+                    self.data[name] = value
+            else:
+                self.data[reg.name] = value
         self.async_update_listeners()
         old_task = self._delayed_refresh_task
         if old_task is not None and not old_task.done():
