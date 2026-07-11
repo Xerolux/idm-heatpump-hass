@@ -439,7 +439,22 @@
       "message": "You must set acknowledge_risk to true to use the write_register service."
     },
     "write_failed": {
-      "message": "Failed to write register: {error}"
+      "message": "Register {register} could not be written. Check the value and try again. Enable debug logging if the problem continues."
+    },
+    "write_connection_failed": {
+      "message": "Register {register} could not be written because the connection to the heat pump failed. Check the Modbus TCP connection and try again."
+    },
+    "write_read_only": {
+      "message": "Register {register} is read-only or currently locked by the controller and cannot be changed."
+    },
+    "write_out_of_range": {
+      "message": "The requested value for register {register} is outside the permitted range. Choose a value within the entity limits."
+    },
+    "write_not_supported": {
+      "message": "Register {register} is not supported by this heat pump model, firmware or installed equipment."
+    },
+    "write_invalid_value": {
+      "message": "The requested value for register {register} has an invalid format or data type."
     },
     "entry_not_loaded": {
       "message": "The selected IDM heat pump entry is not loaded: {entry_id}"
@@ -490,11 +505,27 @@
     },
     "web_supplement_failed": {
       "title": "IDM web supplement data unavailable",
-      "description": "Home Assistant could not read local Navigator web data from **{host}**.\n\nLast error: `{error}`\n\nModbus data continues to work. Please check that the Home Assistant host can reach the Navigator web interface and that the configured PIN is correct."
+      "description": "Home Assistant could not read optional local Navigator web data from **{host}**. Modbus data continues to work.\n\nCheck the configured web host and local network access. Enable debug logging if the problem continues."
     },
     "web_authentication_failed": {
       "title": "IDM Navigator web PIN rejected",
       "description": "The local Navigator web interface at **{host}** rejected the configured PIN.\n\nOpen the integration's **Reconfigure** flow and enter the current local web PIN, or clear the PIN to use Modbus only. Modbus polling continues unaffected."
+    },
+    "web_host_not_found": {
+      "title": "IDM Navigator web address not found",
+      "description": "Home Assistant cannot resolve the configured Navigator web address **{host}**.\n\nCheck the web host for typing errors or configure the integration with the heat pump's IP address. Modbus data continues to work."
+    },
+    "web_connection_refused": {
+      "title": "IDM Navigator web connection refused",
+      "description": "The device at **{host}** refused the local web connection.\n\nCheck that this is the original heat pump address and that its local Navigator web interface is available. Modbus data continues to work."
+    },
+    "web_timeout": {
+      "title": "IDM Navigator web interface did not respond",
+      "description": "The local Navigator web interface at **{host}** did not respond in time.\n\nCheck the controller, network connection, firewall and VLAN settings. Modbus data continues to work."
+    },
+    "web_invalid_response": {
+      "title": "IDM Navigator web response could not be read",
+      "description": "The local Navigator web interface at **{host}** returned data that the integration could not read.\n\nCheck that the detected Navigator model and firmware are supported and that the integration is current. Modbus data continues to work."
     },
     "cannot_connect": {
       "title": "Cannot connect to IDM heat pump",
@@ -519,6 +550,10 @@
     "incompatible_firmware": {
       "title": "IDM firmware or Modbus function not supported",
       "description": "The heat pump answered, but rejected a Modbus function needed by this integration.\n\nPlease check:\n- The Navigator firmware supports Modbus TCP access\n- The integration and API versions are current\n- The device model is listed as supported for the used feature set"
+    },
+    "no_data_received": {
+      "title": "IDM connection returned no usable data",
+      "description": "Home Assistant connected to **{host}**, but received no usable Modbus register values.\n\nPlease check:\n- Slave/unit ID is normally 1\n- The Modbus proxy forwards to the correct heat pump\n- The configured Navigator model and heating circuits match the device\n- No other Modbus client is blocking communication"
     },
     "register_not_supported": {
       "title": "IDM register not supported by this device",

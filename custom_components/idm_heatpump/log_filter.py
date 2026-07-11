@@ -35,6 +35,9 @@ PYMODBUS_LOGGER_NAME = "pymodbus.logging"
 LIBRARY_LOGGER_NAME = "idm_heatpump.client"
 
 _NOISY_ERROR_PREFIXES: tuple[str, ...] = (
+    # pymodbus transport.py logs the raw socket error before the coordinator
+    # reports the same failure with an actionable message and repair issue.
+    "Failed to connect ",
     # pymodbus transport.py: Log.error("Cancel send, because not connected!")
     "Cancel send, because not connected!",
     # pymodbus transaction.py: Log.error("No response received after N retries, ...")

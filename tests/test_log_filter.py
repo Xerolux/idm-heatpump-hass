@@ -35,6 +35,7 @@ class TestPymodbusNoiseFilter:
     @pytest.mark.parametrize(
         "message",
         [
+            "Failed to connect [Errno 111] Connect call failed ('192.168.178.196', 5020)",
             "Cancel send, because not connected!",
             "No response received after 3 retries, continue with next request",
             # pymodbus appends buffered frame dumps when DEBUG is disabled;

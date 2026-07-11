@@ -72,6 +72,12 @@ from .const import (
     NAME,
 )
 from .coordinator import IdmCoordinator, navigator_family
+from .error_messages import (
+    classify_communication_error,
+    classify_web_error,
+    friendly_communication_error,
+    friendly_web_error,
+)
 from .library_adapter import get_idm_client
 from .registers import (
     get_all_binary_sensor_descriptions,
@@ -267,13 +273,12 @@ async def _async_setup_web_only_entry(
             allow_variant_fallback=stored_web_variant is None,
         )
     except Exception as err:
+        issue_id = classify_web_error(err)
         _LOGGER.warning(
-            "IDM web supplement initial read failed for %s during web-only setup: %s: %s. "
-            "Continuing with generic model; the web polling loop will retry automatically.",
-            web_host,
-            err.__class__.__name__,
-            err,
+            "%s. Continuing with a generic model; the web polling loop will retry automatically",
+            friendly_web_error(issue_id, web_host),
         )
+        _LOGGER.debug("Technical Navigator web-only setup error", exc_info=True)
 
     if web_supplement is not None:
         model_name = web_supplement.model_name or MODEL
@@ -428,23 +433,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     try:
         await client.connect()
     except Exception as err:
+        issue_id = classify_communication_error(err)
+        friendly_error = friendly_communication_error(issue_id, host, port, err)
         try:
             await client.disconnect()
         except Exception:
             _LOGGER.warning("Failed to clean up client for %s:%d", host, port, exc_info=True)
-        _LOGGER.error(
-            "IDM Modbus setup failed for host=%s port=%d slave_id=%d: %s: %s. "
-            "Check the configured address, TCP port, Modbus activation and slave ID",
-            host,
-            port,
-            slave_id,
-            err.__class__.__name__,
-            err,
-        )
-        raise ConfigEntryNotReady(
-            f"IDM Modbus connection failed for {host}:{port} (slave {slave_id}); "
-            "check address, port and Modbus activation"
-        ) from err
+        _LOGGER.error("%s", friendly_error)
+        _LOGGER.debug("Technical IDM Modbus setup error", exc_info=True)
+        raise ConfigEntryNotReady(friendly_error) from err
 
     try:
         model_name, firmware_version, detected_model_info = await _detect_model_info(client)
@@ -505,13 +502,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     web_host,
                 )
             except Exception as err:
+                issue_id = classify_web_error(err)
                 _LOGGER.warning(
-                    "Initial IDM web supplement read failed for %s: %s: %s; Modbus setup continues",
-                    web_host,
-                    err.__class__.__name__,
-                    err,
-                    exc_info=True,
+                    "%s; Modbus setup continues",
+                    friendly_web_error(issue_id, web_host),
                 )
+                _LOGGER.debug("Technical initial Navigator web error", exc_info=True)
             if (
                 web_supplement is not None
                 and detected_model_info is not None

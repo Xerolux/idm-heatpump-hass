@@ -19,6 +19,7 @@ from idm_heatpump import RegisterDef
 
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
+from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -110,11 +111,18 @@ class IdmEntity(IdmCoordinatorEntityBase):
         try:
             await self.coordinator.async_write_register(self._register, value)
         except Exception as err:
-            _LOGGER.error("Failed to %s %s: %s", action_label, self._register.name, err)
+            translation_key = classify_write_error(err)
+            _LOGGER.error(
+                "Could not %s %s; Home Assistant will show the actionable %s message",
+                action_label,
+                self._register.name,
+                translation_key,
+            )
+            _LOGGER.debug("Technical IDM register write error", exc_info=True)
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
-                translation_key="write_failed",
-                translation_placeholders={"error": str(err)},
+                translation_key=translation_key,
+                translation_placeholders=write_error_placeholders(self._register.name),
             ) from err
 
     @property
