@@ -121,10 +121,7 @@ class TestDiagnostics:
 
     async def test_web_error_diagnostics_do_not_expose_connection_details(self, mock_hass, mock_config_entry):
         coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
-        coord.last_web_error = (
-            "ClientConnectorError: Cannot connect to "
-            "ws://192.168.1.101:61220/?auth_code=1234"
-        )
+        coord.last_web_error = "ClientConnectorError: Cannot connect to ws://192.168.1.101:61220/?auth_code=1234"
 
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
 
