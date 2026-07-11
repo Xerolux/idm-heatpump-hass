@@ -248,6 +248,17 @@ class TestSetSystemMode:
         _, val = coord.async_write_register.call_args[0]
         assert val == 1
 
+    async def test_write_error_is_translated(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.async_write_register = AsyncMock(side_effect=Exception("connection lost"))
+        call = MagicMock()
+        call.data = {"mode": "automatic"}
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await _handle_set_system_mode(mock_hass, call)
+
+        assert exc_info.value.translation_key == "write_failed"
+
 
 class TestAcknowledgeErrors:
     async def test_writes_error_register(self, mock_hass):
@@ -258,6 +269,16 @@ class TestAcknowledgeErrors:
         reg, val = coord.async_write_register.call_args[0]
         assert reg.address == 1999
         assert val == 1
+
+    async def test_write_error_is_translated(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.async_write_register = AsyncMock(side_effect=Exception("connection lost"))
+        call = MagicMock()
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await _handle_acknowledge_errors(mock_hass, call)
+
+        assert exc_info.value.translation_key == "write_failed"
 
 
 class TestWriteRegister:

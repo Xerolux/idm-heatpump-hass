@@ -644,6 +644,31 @@ class TestAsyncUpdateData:
         assert data["temp_set"] == 22.5
         assert coord._alias_primary_map == {1000: "temp"}
 
+    async def test_modbus_update_preserves_latest_web_metadata(self, mock_hass, mock_config_entry):
+        register = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 22.5})
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.24",
+        )
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[register],
+            web_supplement=supplement,
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        assert data == {
+            "temp": 22.5,
+            "web_navigator_version": "Navigator 10",
+            "web_software_version": "NAV10_20.24",
+        }
+
     async def test_unused_registers_tracked(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={"dead": UNUSED_VALUE, "alive": 5.0})
@@ -846,6 +871,19 @@ class TestAsyncWriteRegister:
         client.simulate_write.assert_called_once_with(reg, 22.0, dry_run=True)
         client.write_register.assert_called_once_with(reg, 22.0)
 
+    async def test_write_updates_all_register_aliases_optimistically(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord._alias_map = {1000: ["temp", "temp_set"]}
+        coord.data = {"temp": 20.0, "temp_set": 20.0}
+
+        alias_reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
+        await coord.async_write_register(alias_reg, 22.0)
+
+        assert coord.data["temp"] == 22.0
+        assert coord.data["temp_set"] == 22.0
+
     async def test_write_triggers_delayed_refresh(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.write_register = AsyncMock()
@@ -1029,6 +1067,7 @@ class TestAsyncRefreshWebSupplement:
     async def test_web_refresh_success_updates_data_and_deletes_repair_issue(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
+        previous_data = coord.data
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(
             navigator_version="Navigator 10",
@@ -1054,6 +1093,8 @@ class TestAsyncRefreshWebSupplement:
         assert coord.missing_web_core_values == ("navigator_version", "software_version", "heatpump_model")
         assert coord.data["web_navigator_version"] == "Navigator 10"
         assert coord.data["web_software_version"] == "NAV10_20.24"
+        assert coord.data is not previous_data
+        assert previous_data == {}
         mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_authentication_failed")
         mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_supplement_failed")
         coord.async_update_listeners.assert_called_once()

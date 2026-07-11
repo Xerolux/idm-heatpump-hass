@@ -11,6 +11,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1-beta.30] - 2026-07-11
+
+### Fixed
+
+- Keep web-only entries available by disabling empty Modbus coordinator polls;
+  the independent local web polling loop remains responsible for refreshes.
+- Propagate optimistic register writes to every entity alias sharing the same
+  Modbus address so related controls do not remain stale until the next poll.
+- Convert system-mode and error-acknowledgement write failures into translated
+  Home Assistant errors instead of exposing raw Modbus exceptions.
+- Publish web supplement data as atomic coordinator snapshots and preserve its
+  metadata when a concurrent Modbus refresh replaces the main data snapshot.
+
+### Validation
+
+- Pass all 650 tests, Ruff lint and format checks, and strict mypy validation.
+
+### Dependencies
+
+- Keep the tested `idm-heatpump-api[web]==0.7.6` pin; these fixes are contained
+  entirely in the Home Assistant integration.
+
 ## [0.8.1-beta.29] - 2026-07-11
 
 ### Fixed

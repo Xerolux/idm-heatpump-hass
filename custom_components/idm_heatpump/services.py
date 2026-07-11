@@ -144,6 +144,18 @@ async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordin
     )
 
 
+async def _async_write_register(coordinator: IdmCoordinator, reg: RegisterDef, value: object) -> None:
+    """Write a known register and expose communication failures consistently."""
+    try:
+        await coordinator.async_write_register(reg, value)
+    except Exception as err:
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key="write_failed",
+            translation_placeholders={"error": str(err)},
+        ) from err
+
+
 async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = await _get_coordinator(hass, call)
 
@@ -179,7 +191,7 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
         name="system_mode",
         writable=True,
     )
-    await coordinator.async_write_register(reg, mode_val)
+    await _async_write_register(coordinator, reg, mode_val)
 
 
 async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> None:
@@ -190,7 +202,7 @@ async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> 
         name="error_acknowledge",
         writable=True,
     )
-    await coordinator.async_write_register(reg, 1)
+    await _async_write_register(coordinator, reg, 1)
 
 
 async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
