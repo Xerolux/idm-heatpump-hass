@@ -16,9 +16,9 @@ This matrix tracks tested IDM hardware without publishing private network data. 
 | Heat pump / controller | Status | Firmware | Active capabilities | Verified with | Notes |
 |------------------------|--------|----------|---------------------|---------------|-------|
 | IDM 6-15 with Navigator 10 | confirmed | reported by diagnostics | Heating circuit A, PV, Solar, ISC; cascade unavailable sentinel verified | HASS branch tests, API contract tests, repeated read-only Modbus probes | Maintainer test system. Private host, port and network data are intentionally omitted. |
-| Navigator 10 / current hardware | community-tested | NAV10_20.23+ expected | Up to 7 heating circuits, up to 10 zone modules | API register model, diagnostics reports | Heat sink and booster registers are Navigator-10-gated. |
-| Navigator 2.0 | expected | 2.x expected | Heating circuits, optional PV/Solar/ISC/Cascade | API register model, contract tests | A current Terra SWM report still needs a raw model-detection capture before broad compatibility can be confirmed. |
-| Navigator Pro / zone modules | expected | unknown | Zone modules, room sensors and room modes | API register model, contract tests | Needs a complete public diagnostic report before being marked community-tested. |
+| Navigator 10 / current hardware | community-tested | NAV10_20.23 observed; other versions need evidence | Up to 7 heating circuits, detected zone modules | API register model, diagnostics reports | Heat sink and booster registers are Navigator-10-gated; local web uses the Navigator-10 WebSocket client. |
+| Navigator 2.0 | expected | 2.x observed/expected | Heating circuits, optional PV/Solar/ISC/Cascade; zone support not confirmed | API register model, contract tests | A current Terra SWM report still needs a raw model-detection capture; local web uses HTTP/CSRF. |
+| Navigator Pro / zone modules | expected | unknown | Detected zone modules, room sensors and room modes | API register model, contract tests | Needs a complete diagnostic report; local web follows the Navigator-10 WebSocket family. |
 | Terra SWM with Navigator controller | expected | unknown | Unknown | no complete report yet | Keep as expected until model, firmware and diagnostic export are available. |
 | Unknown future Navigator model | expected | unknown | Unknown | no complete report yet | Must be treated as expected until auto-detection and diagnostics prove compatibility. |
 | Pre-Navigator controllers | unsupported | any | none | architecture review | Older controllers use different communication/register models. |
@@ -35,3 +35,7 @@ Please include these fields when reporting compatibility:
 - Whether the report is read-only or includes verified write actions.
 
 Do not publish private IP addresses, hostnames, ports that identify your network, serial numbers or installer/customer data.
+
+Controller generation, heat-pump product name and detected optional
+capabilities are recorded separately. A family name alone does not prove that
+PV, Solar, ISC, Cascade or zone hardware is installed.

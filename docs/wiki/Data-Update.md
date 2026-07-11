@@ -8,7 +8,8 @@ The integration uses Modbus TCP to read register data directly from the IDM heat
 
 The integration uses Home Assistant's **DataUpdateCoordinator**:
 
-- All entities share **one common query** per polling cycle
+- Modbus-backed entities share **one coordinated refresh** composed of multiple
+  grouped Modbus requests
 - Modbus registers are grouped only when their ranges are **exactly adjacent and non-overlapping**, up to 40 Modbus words per request
 - Values outside declared enum or numeric metadata are re-read individually; confirmed problem registers stay in the individual-read path for the current client session
 - Known `sentinel_values` such as `-1`, `254` or `255` mean unavailable/unused where declared by register metadata and are not treated as corrupt values
@@ -29,6 +30,11 @@ Optional web supplement data has its own interval (default: 30 seconds). It is
 only used when web supplement data is enabled and a local Navigator web PIN is
 configured.
 
+The successful Navigator 2.0 or Navigator 10/Pro web client is reused between
+web polls. A failed or expired session is discarded and rebuilt with the same
+known protocol. Both protocols are tested only while the variant is unknown or
+when setup/reconfiguration/repair performs a fresh connection validation.
+
 Room temperature forwarding, when enabled, is handled outside the normal read
 poll. Selected Home Assistant temperature sensors are written to the matching
 external room temperature registers on state changes and refreshed periodically
@@ -39,7 +45,8 @@ external room temperature registers on state changes and refreshed periodically
 An entity is marked as **unavailable** when:
 - The connection to the heat pump is interrupted
 - The Modbus register returns one of its declared unavailable sentinels (for example `-1.0`, `254` or `255` depending on that register)
-- The "Hide unused sensors" option is enabled
+- The "Hide unused sensors" option omits an already known unused entity during
+  setup; an entity that later returns a declared sentinel becomes unavailable
 - A web supplement sensor has no value in the latest successful web snapshot
 
 ## Write Operations (writable entities)

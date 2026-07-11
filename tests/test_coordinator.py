@@ -44,6 +44,7 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
         web_pin=kwargs.get("web_pin"),
         web_host=kwargs.get("web_host"),
         web_supplement=kwargs.get("web_supplement"),
+        web_variant=kwargs.get("web_variant"),
     )
     registers = kwargs.get("registers")
     if registers is not None:
@@ -1010,6 +1011,7 @@ class TestAsyncRefreshWebSupplement:
         assert call_kwargs["model_hint"] == "Navigator 2.0 / 10"
         assert call_kwargs["preferred_variant"] is None
         assert call_kwargs["client_pool"] is coord._web_client_pool
+        assert call_kwargs["allow_variant_fallback"] is True
         assert coord.last_web_error == "TimeoutError: websocket timeout"
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
@@ -1181,6 +1183,7 @@ class TestAsyncRefreshWebSupplement:
             **mock_config_entry.data,
             "detected_navigator_version": "Navigator 10",
             "detected_software_version": "NAV10_20.24",
+            "detected_web_variant": "nav10",
         }
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
         coord.data = {}
@@ -1297,6 +1300,29 @@ class TestAsyncRefreshWebSupplement:
 
         _, kwargs2 = read_web2.call_args
         assert kwargs2.get("preferred_variant") == "nav20"
+        assert kwargs2.get("allow_variant_fallback") is False
+
+    async def test_web_refresh_uses_stored_variant_even_without_snapshot(self, mock_hass, mock_config_entry):
+        """A persisted factory choice remains locked when the initial web read failed."""
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="1234",
+            web_variant="nav20",
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                side_effect=TimeoutError("HTTP timeout"),
+            ) as read_web,
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        kwargs = read_web.await_args.kwargs
+        assert kwargs["preferred_variant"] == "nav20"
+        assert kwargs["allow_variant_fallback"] is False
 
     async def test_web_refresh_caches_navigator10_variant(self, mock_hass, mock_config_entry):
         """After a successful Nav 10 web read, the variant is cached for future polls."""

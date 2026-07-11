@@ -36,6 +36,7 @@ from idm_heatpump import (
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
+    CONF_DETECTED_WEB_VARIANT,
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
@@ -253,12 +254,17 @@ async def _async_setup_web_only_entry(
     web_supplement = None
     model_name: str = MODEL
     firmware_version: str | None = None
+    stored_web_variant = entry.data.get(CONF_DETECTED_WEB_VARIANT)
+    if stored_web_variant not in ("nav10", "nav20"):
+        stored_web_variant = None
 
     try:
         web_supplement = await async_read_web_supplement(
             web_host,
             web_pin,
             model_hint=entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION),
+            preferred_variant=stored_web_variant,
+            allow_variant_fallback=stored_web_variant is None,
         )
     except Exception as err:
         _LOGGER.warning(
@@ -305,6 +311,7 @@ async def _async_setup_web_only_entry(
         web_pin=web_pin,
         web_host=web_host,
         web_supplement=web_supplement,
+        web_variant=stored_web_variant,
     )
     coordinator._registers = []
     coordinator._alias_map = {}
@@ -369,6 +376,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     web_host = str(entry.data.get(CONF_WEB_HOST, "")).strip() or host
     web_enabled = bool(entry.options.get(CONF_WEB_ENABLED, DEFAULT_WEB_ENABLED))
     web_scan_interval = int(entry.options.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL))
+    stored_web_variant = entry.data.get(CONF_DETECTED_WEB_VARIANT)
+    if stored_web_variant not in ("nav10", "nav20"):
+        stored_web_variant = None
     room_temp_forwarding_enabled = bool(entry.options.get(CONF_ROOM_TEMP_FORWARDING, DEFAULT_ROOM_TEMP_FORWARDING))
     room_temp_forwarding_entities = entry.options.get(CONF_ROOM_TEMP_FORWARDING_ENTITIES, {})
     room_temp_forwarding_interval = int(
@@ -466,6 +476,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 detected_model_name,
                 modbus_model_name,
             )
+        runtime_web_variant = None if stored_model_conflict else stored_web_variant
         detected_firmware_version = entry.data.get(CONF_DETECTED_SOFTWARE_VERSION)
         if (
             isinstance(detected_firmware_version, str)
@@ -481,6 +492,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     web_host,
                     web_pin,
                     model_hint=modbus_model_name,
+                    preferred_variant=runtime_web_variant,
+                    allow_variant_fallback=runtime_web_variant is None,
                 )
             except IdmWebAuthenticationFailed:
                 _LOGGER.warning(
@@ -519,6 +532,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             data_updates: dict[str, Any] = {}
             if CONF_DETECTED_NAVIGATOR_VERSION in stale_detected_data:
                 data_updates[CONF_DETECTED_NAVIGATOR_VERSION] = modbus_model_name
+            if web_supplement is not None and web_supplement.web_variant:
+                data_updates[CONF_DETECTED_WEB_VARIANT] = web_supplement.web_variant
             if firmware_version:
                 data_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
             updated_data = {**entry.data, **data_updates}
@@ -527,6 +542,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 _LOGGER.info(
                     "Removed stale stored IDM software version because the stored Navigator model was corrected"
                 )
+            if stored_model_conflict and CONF_DETECTED_WEB_VARIANT not in data_updates:
+                updated_data.pop(CONF_DETECTED_WEB_VARIANT, None)
+                _LOGGER.info("Removed stale stored IDM web variant because the stored Navigator model was corrected")
             _LOGGER.info("Persisting corrected IDM detection data: %s", sorted(data_updates))
             hass.config_entries.async_update_entry(entry, data=updated_data)
 
@@ -574,6 +592,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             web_pin=web_pin if web_enabled else None,
             web_host=web_host,
             web_supplement=web_supplement,
+            web_variant=runtime_web_variant,
         )
         coordinator.setup_registers(
             circuits,

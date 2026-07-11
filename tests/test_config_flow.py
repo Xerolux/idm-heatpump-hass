@@ -17,6 +17,7 @@ from custom_components.idm_heatpump.config_flow import (
 from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
+    CONF_DETECTED_WEB_VARIANT,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_MODBUS_MAX_RETRIES,
@@ -39,7 +40,7 @@ from custom_components.idm_heatpump.const import (
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_WEB_ENABLED,
 )
-from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed
+from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed, IdmWebSupplement
 
 
 def _make_flow():
@@ -294,6 +295,32 @@ class TestAsyncStepUser:
         assert flow._data[CONF_WEB_PIN] == "1234"
         assert flow._data[CONF_DETECTED_NAVIGATOR_VERSION] == "Navigator 10"
         assert flow._data[CONF_DETECTED_SOFTWARE_VERSION] == "NAV10_20.23"
+
+    async def test_web_detection_stores_successful_factory_variant(self):
+        flow = _make_flow()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 2.0",
+            software_version="2.35",
+            web_variant="nav20",
+        )
+
+        with patch(
+            "custom_components.idm_heatpump.config_flow.async_read_web_supplement",
+            return_value=supplement,
+        ) as read_web:
+            detected = await flow._async_detect_web_supplement(
+                "192.168.1.100",
+                "1234",
+                model_hint="Navigator 10",
+                required=True,
+            )
+
+        read_web.assert_awaited_once_with(
+            "192.168.1.100",
+            "1234",
+            model_hint="Navigator 10",
+        )
+        assert detected[CONF_DETECTED_WEB_VARIANT] == "nav20"
 
     async def test_successful_connection_uses_separate_web_host_for_detection(self):
         flow = _make_flow()

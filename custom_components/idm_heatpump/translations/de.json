@@ -3,13 +3,13 @@
     "step": {
       "user": {
         "title": "IDM Navigator Wärmepumpe einrichten",
-        "description": "[Hilfe benötigt? Lies die Dokumentation]({wiki_url})\n\nGib die Verbindungsdaten deiner IDM-Wärmepumpe ein.\n\n**Für den vollen Betrieb zwingend erforderlich:** Aktiviere an der IDM-Navigatorregelung *Gebäudeleittechnik → Modbus TCP → Ein*. Verwende normalerweise Port **502** und Slave-ID **1**. Fehlt der Menüpunkt oder ist er gesperrt, muss dein Heizungsbauer oder der iDM-Service Modbus freischalten.",
+        "description": "[Hilfe benötigt? Lies die Dokumentation]({wiki_url})\n\nGib die Verbindungsdaten deiner IDM-Wärmepumpe ein.\n\n**Für den vollen Betrieb zwingend erforderlich:** Aktiviere an der IDM-Navigatorregelung *Gebäudeleittechnik → Modbus TCP → Ein*. Verwende normalerweise Port **502** und Slave-ID **1**. Fehlt der Menüpunkt oder ist er gesperrt, muss dein Heizungsbauer oder der iDM-Service Modbus freischalten.\n\n**Optionaler lokaler Webzugriff:** Ist an der Navigatorregelung ein *Code lokales Netzwerk* gesetzt? Du findest ihn am Display unter *Einstellungen → Allgemeine Einstellungen → Netzwerkeinstellungen → Code lokales Netzwerk*. Cloud-/App-Passwort und Zwei-Faktor-Code werden hier nicht verwendet; leer oder `0` deaktiviert den lokalen Webzugriff.",
         "data": {
           "name": "Name",
           "host": "Modbus-IP / Hostname",
           "port": "Port",
           "slave_id": "Slave-ID",
-          "web_pin": "Lokale Web-PIN",
+          "web_pin": "Lokale Netzwerk-PIN (Navigator-Webzugriff)",
           "modbus_proxy": "Modbus-Proxy verwenden",
           "web_host": "Original-IP der Wärmepumpe für Webzugriff"
         },
@@ -18,7 +18,7 @@
           "host": "IP-Adresse oder Hostname für Modbus TCP. Wenn du einen Modbus-Proxy nutzt, trage hier die Proxy-Adresse ein.",
           "port": "Modbus-TCP-Port der Steuerung. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen.",
-          "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, um nur Modbus zu verwenden.",
+          "web_pin": "Gib den am Navigator-Display gesetzten Code lokales Netzwerk ein. Verwende weder Cloud-/App-Passwort noch Zwei-Faktor-Code. Leer lassen für reinen Modbus-Betrieb; `0` deaktiviert den lokalen Webzugriff an der Regelung.",
           "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
           "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`."
         }
@@ -37,12 +37,12 @@
       },
       "connection": {
         "title": "Verbindung ändern – {name}",
-        "description": "[Hilfe benötigt? Lies die Dokumentation]({wiki_url})\n\nAktuelle Verbindung: **{host}**\n\nDie neuen Daten werden vor dem Speichern geprüft. Danach wird die Integration automatisch neu gestartet. An der Navigatorregelung muss *Gebäudeleittechnik → Modbus TCP → Ein* aktiviert sein.",
+        "description": "[Hilfe benötigt? Lies die Dokumentation]({wiki_url})\n\nAktuelle Verbindung: **{host}**\n\nDie neuen Daten werden vor dem Speichern geprüft. Danach wird die Integration automatisch neu gestartet. An der Navigatorregelung muss *Gebäudeleittechnik → Modbus TCP → Ein* aktiviert sein. Für den optionalen lokalen Webzugriff verwende den Code unter *Einstellungen → Allgemeine Einstellungen → Netzwerkeinstellungen → Code lokales Netzwerk*, nicht Cloud-Zugangsdaten oder einen Zwei-Faktor-Code.",
         "data": {
           "host": "Modbus-IP / Hostname",
           "port": "Port",
           "slave_id": "Slave-ID",
-          "web_pin": "Lokale Web-PIN",
+          "web_pin": "Lokale Netzwerk-PIN (Navigator-Webzugriff)",
           "modbus_proxy": "Modbus-Proxy verwenden",
           "web_host": "Original-IP der Wärmepumpe für Webzugriff"
         },
@@ -50,7 +50,7 @@
           "host": "IP-Adresse oder Hostname für Modbus TCP. Wenn du einen Modbus-Proxy nutzt, trage hier die Proxy-Adresse ein.",
           "port": "Modbus-TCP-Port. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`.",
-          "web_pin": "Optionale PIN für die lokale Navigator-Weboberfläche. Leer lassen, damit die Integration nur Modbus verwendet.",
+          "web_pin": "Am Navigator-Display gesetzter Code lokales Netzwerk. Cloud-/App-Passwort und Zwei-Faktor-Code funktionieren hier nicht. Leer lassen für reinen Modbus-Betrieb; `0` deaktiviert den lokalen Webzugriff an der Regelung.",
           "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
           "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`."
         }
@@ -186,7 +186,7 @@
           "web_host": "Original-IP der Wärmepumpe für Webzugriff"
         },
         "data_description": {
-          "web_pin": "Für den Web-Only-Modus erforderlich. Die PIN wird vor dem Anlegen der Integration geprüft.",
+          "web_pin": "Für den Web-Only-Modus erforderlich. Verwende den Code lokales Netzwerk der Navigatorregelung, nicht Cloud-/App-Zugangsdaten oder einen Zwei-Faktor-Code. Leer oder `0` bedeutet, dass der lokale Webzugriff deaktiviert ist.",
           "web_host": "Bei einem Modbus-Proxy erforderlich. Gib hier die Adresse der Wärmepumpe selbst ein."
         }
       },
@@ -468,9 +468,9 @@
           },
           "set_pin": {
             "title": "Lokale Navigator-Web-PIN setzen",
-            "description": "Gib die PIN für die lokale Navigator-Weboberfläche ein. Die Integration prüft sie vor dem Speichern.",
+            "description": "Gib den Code lokales Netzwerk ein, der an der Navigatorregelung unter Einstellungen → Allgemeine Einstellungen → Netzwerkeinstellungen gesetzt ist. Verwende weder Cloud-/App-Zugangsdaten noch einen Zwei-Faktor-Code. Leer oder `0` deaktiviert den lokalen Webzugriff.",
             "data": {
-              "web_pin": "Lokale Web-PIN"
+              "web_pin": "Lokale Netzwerk-PIN (Navigator-Webzugriff)"
             }
           },
           "disable_web": {

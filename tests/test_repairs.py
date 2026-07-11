@@ -11,6 +11,7 @@ from homeassistant.helpers import issue_registry as ir
 from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
+    CONF_DETECTED_WEB_VARIANT,
     CONF_WEB_ENABLED,
     CONF_WEB_PIN,
 )
@@ -60,6 +61,7 @@ async def test_web_pin_missing_repair_sets_valid_pin(mock_hass, repair_entry) ->
     supplement = SimpleNamespace(
         navigator_version="Navigator 10",
         software_version="NAV10_20.24",
+        web_variant="nav10",
     )
 
     with patch(
@@ -74,6 +76,7 @@ async def test_web_pin_missing_repair_sets_valid_pin(mock_hass, repair_entry) ->
     assert kwargs["data"][CONF_WEB_PIN] == "1234"
     assert kwargs["data"][CONF_DETECTED_NAVIGATOR_VERSION] == "Navigator 10"
     assert kwargs["data"][CONF_DETECTED_SOFTWARE_VERSION] == "NAV10_20.24"
+    assert kwargs["data"][CONF_DETECTED_WEB_VARIANT] == "nav10"
     assert kwargs["options"][CONF_WEB_ENABLED] is True
     ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_pin_missing")
     ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_authentication_failed")

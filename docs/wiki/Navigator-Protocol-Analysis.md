@@ -10,12 +10,29 @@ Sie ist keine vollständige Protokollspezifikation.
 - Lokale HTTP-Oberfläche: Port `80`.
 - Navigator-10-WebSocket: Port `61220`.
 - WebSocket-Authentifizierung über den lokalen PIN als `auth_code`.
+- Navigator-2.0-Webzugang: lokales HTTP auf Port `80`, Formularanmeldung mit
+  CSRF-Token und lokalem Netzwerkcode.
+- Navigator Pro verwendet für den implementierten Webzugang die
+  Navigator-10-WebSocket-Variante.
 - Webdaten werden als typisierte Werte mit Einheiten oder übersetztem Status
   geliefert.
 
 Die Integration verwendet deshalb weiterhin Modbus als Basispfad und die
 lokale Webschnittstelle nur als optionale Ergänzung beziehungsweise Fallback.
 Es werden keine Cloud-Anmeldungen benötigt.
+
+## Erkennung und Wiederverbindung
+
+Bei Einrichtung, Neukonfiguration und Reparatur wird die durch Modbus
+wahrscheinlichste Variante zuerst getestet und bei Fehlschlag auch die andere
+lokale Variante geprüft. Gespeichert wird ausschließlich der tatsächlich
+erfolgreiche Client. Im normalen Betrieb wird diese Sitzung wiederverwendet.
+Nach Sitzungs- oder Transportfehlern wird derselbe Protokollclient neu
+aufgebaut; die andere Navigator-Generation wird bewusst nicht probeweise
+aktiviert. Eine erneute beidseitige Erkennung erfolgt über Neukonfiguration
+beziehungsweise solange noch keine verlässliche Variante gespeichert ist.
+
+Details: [Local Navigator Web Interface](Local-Web-Interface).
 
 ## Anlagenvalidierung
 
@@ -42,7 +59,7 @@ Rohantworten im Repository gespeichert.
 ## Erkenntnisse aus der EXE-Analyse
 
 Erkannt wurden mehrere Navigator-Generationen, UDP-Discovery für ältere
-Varianten, TCP/TLS für Navigator 2.0, Live-Ereignisse wie `NC_CHANNELDATA`,
+Varianten, weitere TCP/TLS-Kommunikationspfade, Live-Ereignisse wie `NC_CHANNELDATA`,
 typisierte Kanalwerte sowie dynamische Kanäle, Parameter, Räume, Fehler,
 Übersetzungen und virtuelle Kanäle.
 

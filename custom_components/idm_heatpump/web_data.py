@@ -40,6 +40,7 @@ class IdmWebSupplement:
     navigator_version: str | None = None
     software_version: str | None = None
     heatpump_model: str | None = None
+    web_variant: str | None = None
     myidm_id: str | None = None
     values: dict[str, str] = field(default_factory=dict)
     sensor_values: dict[str, IdmWebSensorValue] = field(default_factory=dict)
@@ -113,7 +114,7 @@ def _normalize_sensor_value(value: Any) -> IdmWebSensorValue:
     return IdmWebSensorValue(value=text_value, native_value=text_value, unit=unit)
 
 
-def _normalize_web_data(data: Any) -> IdmWebSupplement:
+def _normalize_web_data(data: Any, web_variant: str | None = None) -> IdmWebSupplement:
     simple_values = getattr(data, "simple_values", None)
     values = dict(simple_values) if isinstance(simple_values, dict) else {}
     raw_values = getattr(data, "values", None)
@@ -140,6 +141,7 @@ def _normalize_web_data(data: Any) -> IdmWebSupplement:
         navigator_version=_read_str_attr(data, "navigator_version"),
         software_version=_read_str_attr(data, "software_version"),
         heatpump_model=_read_str_attr(data, "heatpump_model"),
+        web_variant=web_variant,
         myidm_id=myidm_id,
         values={str(key): str(value) for key, value in values.items()},
         sensor_values=sensor_values,
@@ -172,6 +174,7 @@ def _add_web_notifications(
         navigator_version=supplement.navigator_version,
         software_version=supplement.software_version,
         heatpump_model=supplement.heatpump_model,
+        web_variant=supplement.web_variant,
         myidm_id=supplement.myidm_id,
         values=values,
         sensor_values=sensor_values,
@@ -212,11 +215,17 @@ def web_pin_configured(pin: str | None) -> bool:
     """Return whether optional local web access can be attempted."""
     if not pin:
         return False
+    clean_pin = pin.strip()
+    # Navigator controllers use an empty local-network code or 0 to disable
+    # their local web interface. Treat both as "not configured" so setup does
+    # not report a misleading rejected-PIN error for a disabled endpoint.
+    if not clean_pin or clean_pin == "0":
+        return False
     try:
         from idm_heatpump import web_pin_configured as api_web_pin_configured
     except ImportError:
-        return bool(pin.strip())
-    return bool(api_web_pin_configured(pin))
+        return True
+    return bool(api_web_pin_configured(clean_pin))
 
 
 def _create_nav10_client(host: str, pin: str) -> _IdmWebClient | None:
@@ -303,6 +312,8 @@ def _preferred_web_variant(model_hint: str | None) -> str | None:
 def _ordered_web_factories(
     model_hint: str | None,
     preferred_variant: str | None = None,
+    *,
+    allow_variant_fallback: bool = True,
 ) -> tuple[tuple[str, _WebClientFactory], ...]:
     """Return web client factories ordered so the most likely variant is first.
 
@@ -318,10 +329,10 @@ def _ordered_web_factories(
     nav20: tuple[str, _WebClientFactory] = ("nav20", _create_nav20_client)
 
     variant = preferred_variant or _preferred_web_variant(model_hint)
-    if variant in _NAV20_VARIANTS:
-        return (nav20, nav10)
-    # nav10 or unknown → Nav 10 WebSocket first
-    return (nav10, nav20)
+    ordered = (nav20, nav10) if variant in _NAV20_VARIANTS else (nav10, nav20)
+    if allow_variant_fallback:
+        return ordered
+    return ordered[:1]
 
 
 async def async_read_web_supplement(
@@ -330,6 +341,8 @@ async def async_read_web_supplement(
     model_hint: str | None = None,
     preferred_variant: str | None = None,
     client_pool: IdmWebClientPool | None = None,
+    *,
+    allow_variant_fallback: bool = True,
 ) -> IdmWebSupplement | None:
     """Read one optional local web supplement snapshot.
 
@@ -341,11 +354,11 @@ async def async_read_web_supplement(
     variant every poll cycle. Callers should treat every exception as
     non-fatal to Modbus operation.
 
-    If the first client looks like the wrong variant (response format or
-    transport error), or even reports an authentication failure, the other
-    variant is still attempted before giving up. This mirrors the behaviour
-    of the hacs-idm-hpweb integration: try the likely variant, and fall
-    back to the other one on ``unknown_response``-like failures.
+    During setup, ``allow_variant_fallback`` keeps automatic detection enabled:
+    if the first client fails, the other Navigator protocol is attempted. Once
+    a variant has succeeded, runtime callers disable that fallback and reconnect
+    only the known protocol on later transport, session or authentication
+    failures.
 
     When *client_pool* is supplied, a previously successful web client is
     reused across polls instead of reconnecting (TCP+auth) every cycle.
@@ -356,6 +369,8 @@ async def async_read_web_supplement(
         return None
 
     clean_pin = pin.strip() if pin is not None else ""
+    last_error: Exception | None = None
+    last_auth_error: Exception | None = None
 
     # Fast path: reuse the cached client from a previous successful poll.
     if client_pool is not None:
@@ -363,33 +378,34 @@ async def async_read_web_supplement(
         if cached is not None:
             cached_client, cached_variant = cached
             try:
-                supplement = _normalize_web_data(await cached_client.read_data())
+                supplement = _normalize_web_data(await cached_client.read_data(), cached_variant)
                 return await _read_optional_notifications(cached_client, supplement)
             except Exception as err:
                 _LOGGER.debug(
-                    "IDM web %s cached client failed at %s; rebuilding on next poll",
+                    "IDM web %s cached client failed at %s; rebuilding the same variant",
                     cached_variant,
                     host,
                     exc_info=True,
                 )
                 await client_pool.invalidate()
-                # A genuine PIN rejection is fatal this cycle — re-raise so the
-                # caller reports it. Other errors fall through to the full
-                # variant-probing loop, which rebuilds a fresh client.
                 if _is_authentication_error(err):
-                    raise IdmWebAuthenticationFailed("IDM Navigator web PIN was rejected") from err
+                    last_auth_error = err
+                else:
+                    last_error = err
 
-    last_error: Exception | None = None
-    last_auth_error: Exception | None = None
     tried_variants: list[str] = []
-    factories = _ordered_web_factories(model_hint, preferred_variant)
+    factories = _ordered_web_factories(
+        model_hint,
+        preferred_variant,
+        allow_variant_fallback=allow_variant_fallback,
+    )
     for variant_name, factory in factories:
         tried_variants.append(variant_name)
         client = factory(host, clean_pin)
         if client is None:
             continue
         try:
-            supplement = _normalize_web_data(await client.read_data())
+            supplement = _normalize_web_data(await client.read_data(), variant_name)
             _LOGGER.debug(
                 "IDM web supplement succeeded with %s variant at %s",
                 variant_name,
@@ -430,10 +446,9 @@ async def async_read_web_supplement(
             last_error = err
             await _safe_close(client)
 
-    # If any attempted variant explicitly rejected the PIN, report it. This
-    # keeps the existing behaviour: a genuine bad PIN fails fast, while an
-    # auth error from the wrong variant is still retried on the other variant
-    # by the loop above. If the other variant succeeds we never reach here.
+    # If any attempted variant explicitly rejected the PIN, report it. During
+    # initial detection the other protocol has already been tried; for a locked
+    # runtime variant the same protocol has already been rebuilt once.
     if last_auth_error is not None:
         raise IdmWebAuthenticationFailed("IDM Navigator web PIN was rejected") from last_auth_error
     if last_error is not None:

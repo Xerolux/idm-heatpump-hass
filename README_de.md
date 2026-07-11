@@ -136,11 +136,11 @@ Maintainer sollten vor einem stabilen Release den
 
 | Plattform | Entities | Beschreibung |
 |-----------|----------|--------------|
-| **Sensor** | 110+ | Temperaturen, Drücke, Durchflüsse, Energie, PV, Solar, Kaskade, Laufzeitversionen und Diagnose |
-| **Binary Sensor** | 8+ | Störungen, Verdichterstatus sowie Heiz-/Kühl-/Warmwasseranforderung |
-| **Number** | 44+ | Sollwerte, Temperaturgrenzen, GLT-Parameter und Leistungsgrenzen |
-| **Select** | 4+ | Betriebsart, Heizkreis-, Solar- und ISC-Modi |
-| **Switch** | 4 | Externe Heiz-/Kühl-/Warmwasseranforderung und einmalige Warmwasserladung |
+| **Sensor** | modellabhängig | Temperaturen, Drücke, Durchflüsse, Energie, PV, Solar, Kaskade, Laufzeitversionen und Diagnose |
+| **Binary Sensor** | modellabhängig | Störungen, Verdichterstatus sowie Heiz-/Kühl-/Warmwasseranforderung |
+| **Number** | modellabhängig | Sollwerte, Temperaturgrenzen, GLT-Parameter und Leistungsgrenzen |
+| **Select** | modellabhängig | Betriebsart, Heizkreis-, Solar- und ISC-Modi |
+| **Switch** | modellabhängig | Externe Heiz-/Kühl-/Warmwasseranforderung und einmalige Warmwasserladung |
 
 ---
 
@@ -177,13 +177,14 @@ Home Assistant
 - **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
 - **Auto-Recovery**: Exponentielles Backoff bei Verbindungsfehlern
-- **Optionale Web-Zusatzdaten**: lokale read-only Erkennung von Navigator-Generation, Softwareversion, Modell, kompakter myIDM ID und Webdiagnosen; Standardintervall 30 Sekunden, Modbus bleibt führend
+- **Optionale Web-Zusatzdaten**: Die Einrichtung erkennt lokal Navigator-2.0-HTTP oder Navigator-10/Pro-WebSocket, speichert das erfolgreiche Protokoll, nutzt die Sitzung weiter und verbindet im Normalbetrieb nur diese bekannte Variante neu; Modbus bleibt führend
 - **Verständliche Verbindungsdiagnose**: Setup, Reconfigure, Logs und Reparaturmeldungen unterscheiden DNS-/Hostnamefehler, abgelehnte TCP-Verbindungen, Timeouts, nicht erreichbare Endpunkte, fehlende Modbus-Antworten, falsche Web-PINs und Webfehler
 - **Eingebautes Testmenü**: „Neu konfigurieren“ bietet einen zerstörungsfreien Test eines bekannten IDM-Modbus-Registers, gezielte DNS/TCP-Fehlerklassifizierung und – falls eingerichtet – die lokale Navigator-Webanmeldung
 - **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations- sowie `pymodbus`-Version als Attribute; dieselben Angaben stehen im Diagnoseexport und Startlog
 - **Raumtemperatur-Weitergabe**: standardmäßig deaktiviert; kann ausgewählte Home-Assistant-Temperatursensoren pro Heizkreis an die externen IDM-Raumtemperaturregister weitergeben, mit 300 Sekunden Standardintervall, sofortiger Weitergabe bei Zustandsänderung, 0,2 °C Standardtoleranz und Bereichsprüfung
 - **Lesbare Diagnose**: der Sensor `internal_message` zeigt Klartext und liefert zusätzlich die Attribute `message_code` und `message_text` statt nur einer nackten Nummer
 - **Entity-Ordnung**: Fachmann-Code-Sensoren sind ganz oben angeheftet, danach folgen sinnvolle Funktionsgruppen für Konfiguration, Schalter, schreibbare Werte und Diagnose
+- **Private Diagnoseexporte**: Modbus-/Web-Host, Port, Slave-ID und lokale Web-PIN werden redigiert; detaillierte Web-Verbindungsfehler werden auf eine sichere Fehlerkategorie reduziert
 
 ---
 

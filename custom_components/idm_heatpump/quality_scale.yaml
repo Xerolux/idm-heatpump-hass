@@ -188,7 +188,9 @@ rules:
   diagnostics:
     status: done
     comment: >
-      diagnostics.py implements async_get_config_entry_diagnostics.
+      diagnostics.py implements async_get_config_entry_diagnostics and redacts
+      Modbus/web connection settings, the local web PIN and detailed web error
+      connection strings.
 
   discovery:
     status: exempt

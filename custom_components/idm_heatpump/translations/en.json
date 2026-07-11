@@ -3,13 +3,13 @@
     "step": {
       "user": {
         "title": "Set up IDM Navigator Heat Pump",
-        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nEnter the connection details of your IDM heat pump.\n\n**Required for full operation:** On the IDM Navigator/controller, enable *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Usually use port **502** and slave ID **1**. If the menu is missing or locked, your heating installer or iDM service must enable it.",
+        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nEnter the connection details of your IDM heat pump.\n\n**Required for full operation:** On the IDM Navigator/controller, enable *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Usually use port **502** and slave ID **1**. If the menu is missing or locked, your heating installer or iDM service must enable it.\n\n**Optional local web access:** Is a *Local network code* configured on the Navigator? Set it on the controller display under *Settings → General settings → Network settings → Local network code*. Cloud/app passwords and two-factor authentication codes are not used here; an empty value or `0` disables local web access.",
         "data": {
           "name": "Name",
           "host": "Modbus IP / Hostname",
           "port": "Port",
           "slave_id": "Slave ID",
-          "web_pin": "Local web PIN",
+          "web_pin": "Local network PIN (Navigator web)",
           "modbus_proxy": "Use a Modbus proxy",
           "web_host": "Original heat pump IP for web access"
         },
@@ -18,7 +18,7 @@
           "host": "IP address or hostname used for Modbus TCP. If you use a Modbus proxy, enter the proxy address here.",
           "port": "Modbus TCP port of the controller. Default is `502`.",
           "slave_id": "Modbus slave ID. Default is `1`. Only change this if multiple devices share the same bus.",
-          "web_pin": "Optional PIN for the local Navigator web interface. Leave empty to use Modbus only.",
+          "web_pin": "Enter the Local network code configured on the Navigator display. Do not enter a cloud/app password or a two-factor code. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
           "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
         }
@@ -37,12 +37,12 @@
       },
       "connection": {
         "title": "Change connection – {name}",
-        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nCurrent connection: **{host}**\n\nThe new settings are validated before saving. The integration restarts automatically afterwards. Modbus TCP must be enabled on the Navigator under *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*.",
+        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nCurrent connection: **{host}**\n\nThe new settings are validated before saving. The integration restarts automatically afterwards. Modbus TCP must be enabled on the Navigator under *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. For optional local web access, use the code from *Settings → General settings → Network settings → Local network code*, not cloud credentials or a two-factor code.",
         "data": {
           "host": "Modbus IP / Hostname",
           "port": "Port",
           "slave_id": "Slave ID",
-          "web_pin": "Local web PIN",
+          "web_pin": "Local network PIN (Navigator web)",
           "modbus_proxy": "Use a Modbus proxy",
           "web_host": "Original heat pump IP for web access"
         },
@@ -50,7 +50,7 @@
           "host": "IP address or hostname used for Modbus TCP. If you use a Modbus proxy, enter the proxy address here.",
           "port": "Modbus TCP port. Default is `502`.",
           "slave_id": "Modbus slave ID. Default is `1`.",
-          "web_pin": "Optional PIN for the local Navigator web interface. Leave empty to keep Modbus-only operation.",
+          "web_pin": "Local network code configured on the Navigator display. Cloud/app passwords and two-factor codes do not work here. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
           "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
         }
@@ -186,7 +186,7 @@
           "web_host": "Original heat pump IP for web access"
         },
         "data_description": {
-          "web_pin": "Required for web-only mode. The PIN is checked before the integration is created.",
+          "web_pin": "Required for web-only mode. Use the Navigator's Local network code, not cloud/app credentials or a two-factor code. Empty or `0` means local web access is disabled.",
           "web_host": "Required when Modbus uses a proxy. Enter the address of the heat pump itself."
         }
       },
@@ -468,9 +468,9 @@
           },
           "set_pin": {
             "title": "Set local Navigator web PIN",
-            "description": "Enter the PIN for the local Navigator web interface. The integration will verify it before saving.",
+            "description": "Enter the Local network code configured on the Navigator under Settings → General settings → Network settings. Do not use cloud/app credentials or a two-factor code. Empty or `0` disables local web access.",
             "data": {
-              "web_pin": "Local web PIN"
+              "web_pin": "Local network PIN (Navigator web)"
             }
           },
           "disable_web": {

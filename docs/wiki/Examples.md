@@ -77,9 +77,95 @@ automation:
 
 ---
 
-## DHW boost on PV surplus
+## Forward PV surplus through the supported GLT entity
 
-Increases the DHW target temperature when PV surplus is available:
+Register 74 is designed to receive the current PV surplus from one energy
+manager. Use the generated writable `number` entity so FLOAT word order and
+validation remain inside the integration. Replace the example entity IDs with
+your actual IDs. Do not run this automation if an inverter, E3DC, Smartfox or
+another controller already writes the same register.
+
+```yaml
+automation:
+  - alias: "Heat pump: Forward PV surplus"
+    mode: restart
+    trigger:
+      - platform: state
+        entity_id: sensor.house_pv_surplus_kw
+    condition:
+      - condition: template
+        value_template: "{{ is_number(states('sensor.house_pv_surplus_kw')) }}"
+    action:
+      - service: number.set_value
+        target:
+          entity_id: number.idm_heatpump_pv_surplus_set
+        data:
+          value: "{{ [states('sensor.house_pv_surplus_kw') | float(0), 0] | max }}"
+```
+
+Thresholds at which a heat pump starts, stops or modulates depend on the exact
+model, firmware, temperatures and controller configuration. A fixed 2–3 kW
+threshold is therefore not a universal default.
+
+---
+
+## Request DHW charging with explicit safety stops
+
+For a temporary external request, prefer the generated switch for register
+1712 over repeatedly changing an EEPROM-backed DHW setpoint. The thresholds
+below are examples only and must be agreed with the installer for the actual
+hydraulic system.
+
+```yaml
+automation:
+  - alias: "Heat pump: Start DHW request from PV"
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.house_pv_surplus_kw
+        above: 3.0
+        for:
+          minutes: 10
+    condition:
+      - condition: numeric_state
+        entity_id: sensor.idm_heatpump_dhw_temp_bottom
+        below: 50
+    action:
+      - service: switch.turn_on
+        target:
+          entity_id: switch.idm_heatpump_demand_dhw_charging
+
+  - alias: "Heat pump: Stop external DHW request"
+    mode: restart
+    trigger:
+      - platform: numeric_state
+        entity_id: sensor.idm_heatpump_dhw_temp_bottom
+        above: 54
+      - platform: numeric_state
+        entity_id: sensor.house_pv_surplus_kw
+        below: 0.5
+        for:
+          minutes: 10
+      - platform: state
+        entity_id: switch.idm_heatpump_demand_dhw_charging
+        to: "on"
+        for:
+          minutes: 60
+    action:
+      - service: switch.turn_off
+        target:
+          entity_id: switch.idm_heatpump_demand_dhw_charging
+```
+
+External requests should always have temperature, low-surplus and maximum-time
+stop paths. Verify the behavior with the Navigator GLT Monitor before leaving
+the automation unattended.
+
+---
+
+## EEPROM-backed DHW setpoint boost (use sparingly)
+
+This alternative changes a persistent setpoint. It is suitable only for
+occasional mode changes, not rapid tracking of fluctuating PV power:
 
 ```yaml
 automation:

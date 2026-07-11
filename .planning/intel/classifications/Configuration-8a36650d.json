@@ -1,0 +1,27 @@
+{
+  "source_path": "docs/wiki/Configuration.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Configuration",
+  "summary": "User guide for configuring IDM Heatpump connections, optional features, reconfiguration, runtime diagnostics, logging, and protected register behavior.",
+  "scope": [
+    "connection parameters",
+    "Modbus polling",
+    "web supplement data",
+    "room temperature forwarding",
+    "heating circuits",
+    "zone modules",
+    "technician codes",
+    "reconfiguration",
+    "runtime versions",
+    "EEPROM-sensitive registers",
+    "BMS cyclic writes"
+  ],
+  "cross_refs": [
+    "manifest.json"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

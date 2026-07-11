@@ -14,10 +14,10 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
-from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, DOMAIN
+from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN, DOMAIN
 from .versions import async_runtime_versions
 
-TO_REDACT = {CONF_HOST, CONF_PORT, CONF_SLAVE_ID}
+TO_REDACT = {CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN}
 
 
 def _model_info_diagnostics(model_info: Any) -> dict[str, Any]:
@@ -54,11 +54,25 @@ def _client_diagnostics(coordinator: Any) -> dict[str, Any]:
     return {}
 
 
+def _sanitized_web_error(error: Any) -> str | None:
+    """Return a useful error category without URLs, hosts, PINs or query data."""
+    if not isinstance(error, str) or not error.strip():
+        return None
+    clean_error = error.strip()
+    if clean_error == "No web supplement data returned":
+        return clean_error
+    error_type, _, _details = clean_error.partition(":")
+    clean_type = error_type.strip()
+    if clean_type.isidentifier() and clean_type.endswith(("Error", "Exception", "Failed", "Failure")):
+        return clean_type
+    return "Web supplement error"
+
+
 def _web_supplement_diagnostics(coordinator: Any) -> dict[str, Any]:
     return {
         "enabled": bool(getattr(coordinator, "web_enabled", False)),
         "available": getattr(coordinator, "web_supplement", None) is not None,
-        "last_error": getattr(coordinator, "last_web_error", None),
+        "last_error": _sanitized_web_error(getattr(coordinator, "last_web_error", None)),
         "available_values": list(getattr(coordinator, "web_value_keys", ()) or ()),
         "missing_core_values": list(getattr(coordinator, "missing_web_core_values", ()) or ()),
     }

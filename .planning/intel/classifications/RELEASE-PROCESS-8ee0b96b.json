@@ -1,0 +1,23 @@
+{
+  "source_path": "docs/RELEASE_PROCESS.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "Release Process",
+  "summary": "Runbook for coordinated API and Home Assistant integration releases, validation, changelog preparation, artifact verification, and rollback.",
+  "scope": [
+    "idm-heatpump-api releases",
+    "Home Assistant integration releases",
+    "pre-release channels",
+    "release validation",
+    "changelogs",
+    "release artifacts",
+    "rollback procedures"
+  ],
+  "cross_refs": [
+    "docs/RELEASE_SMOKE_TEST.md"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

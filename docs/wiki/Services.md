@@ -8,6 +8,16 @@ There are several ways to write values to the heat pump in this integration:
 3. **Direct Modbus access (advanced / alternative):**
    If an entity for a specific register is missing or you want to target registers directly, you can use the `idm_heatpump.write_register` service to write values directly to any Modbus register. An overview of registers can be found at [Modbus Registers](Modbus-Register). **Warning: Use at your own risk.**
 
+### Where to find writable controls in Home Assistant
+
+On the IDM device page, writable values appear as `number`, `select` and
+`switch` entities rather than a separate actuator list. In an automation open
+**Add action**, search for the entity or IDM, and choose the corresponding
+entity action. IDM-specific actions such as error acknowledgement are listed in
+the same action picker. Prefer these generated entities because they retain the
+library datatype, value range, model availability and EEPROM/cyclic-write
+metadata.
+
 ### Which values can be written?
 With this integration you can essentially change the following values (see [Entities](Entities)):
 - **Temperatures & setpoints** via `number` entities (e.g., DHW setpoint, circuit setpoint, heating limit).
@@ -91,7 +101,7 @@ data:
 
 ## Automation Examples (Writing Values)
 
-Here are some examples of how to write values via automations. For more practical examples, see the [Examples](Examples) page.
+The following examples show how to write values through automations.
 
 ### Change a regular entity (recommended method)
 If you want to adjust a target temperature, for example, use the standard service `number.set_value`:

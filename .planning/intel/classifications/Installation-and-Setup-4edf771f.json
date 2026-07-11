@@ -1,0 +1,24 @@
+{
+  "source_path": "docs/wiki/Installation-and-Setup.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Installation & Setup",
+  "summary": "Guide for installing, configuring, validating, testing, upgrading, and removing the IDM Heatpump Home Assistant integration.",
+  "scope": [
+    "Home Assistant",
+    "HACS installation",
+    "manual installation",
+    "IDM Navigator",
+    "Modbus TCP",
+    "local web PIN",
+    "configuration flow",
+    "connection validation",
+    "uninstallation",
+    "upgrades"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

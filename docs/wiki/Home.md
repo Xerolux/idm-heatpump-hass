@@ -17,19 +17,20 @@
 
 ## What is the IDM Heatpump Integration?
 
-The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https://www.home-assistant.io/) with the [IDM Navigator 2.0 / 10](https://www.idm-energiesysteme.de/) by IDM EnergieSysteme GmbH. It enables complete local control and monitoring of your heat pump via **Modbus TCP — no cloud, no subscription**.
+The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https://www.home-assistant.io/) with IDM Navigator controllers by IDM EnergieSysteme GmbH. It enables local monitoring and supported controls via **Modbus TCP — no cloud, no subscription**. Navigator 10 has direct hardware confirmation; Navigator 2.0 and Navigator Pro remain under broader compatibility validation.
 
 | Feature | Details |
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Min HA Version** | 2026.5.0 |
+| **Integration version** | 0.8.1-beta.29 |
+| **Supported/tested HA baseline** | 2026.5.0 |
 | **Python** | 3.13+ (managed by Home Assistant) |
 | **pymodbus** | pymodbus>=3.12.1,<4.0 |
 | **Library** | idm-heatpump-api[web]==0.7.6 |
 | **License** | MIT |
 | **Languages** | DE, EN |
-| **Entities** | 169+ (109 sensors, 8 binary, 44 numbers, 4 selects, 4 switches) |
+| **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects and switches |
 
 ---
 
@@ -53,11 +54,11 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 | Platform | Entities | Description |
 |----------|----------|-------------|
-| **Sensor** | 110+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions |
-| **Binary Sensor** | 8+ | Fault alarms, compressor status, heating/cooling/DHW demand |
-| **Number** | 44+ | Writable setpoints, limits, GLT parameters, power limits |
-| **Select** | 4+ | System mode, circuit modes, solar/ISC mode |
-| **Switch** | 4 | External heating/cooling/DHW demand |
+| **Sensor** | model-dependent | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions |
+| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand |
+| **Number** | model-dependent | Writable setpoints, limits, GLT parameters, power limits |
+| **Select** | model-dependent | System mode, circuit modes, solar/ISC mode |
+| **Switch** | model-dependent | External heating/cooling/DHW demand |
 
 ---
 
@@ -73,8 +74,9 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 ### I have a problem
 1. [Troubleshooting](Troubleshooting)
-2. [Modbus Registers](Modbus-Register)
-3. [Stability & Release Readiness](Stability-and-Release-Readiness)
+2. [Local Navigator Web Interface](Local-Web-Interface)
+3. [Modbus Registers](Modbus-Register)
+4. [Stability & Release Readiness](Stability-and-Release-Readiness)
 
 ### I want to contribute
 - [Contributing Guide](Contributing)
@@ -92,7 +94,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **EEPROM protection**: Sensitive registers tracked and protected
 - **Auto-recovery**: Exponential backoff on connection errors
 - **Navigator 10**: Heat sink sensors, flow rate (Sieb monitoring), groundwater temps, booster A/B
-- **Web supplement**: Separate interval, slightly delayed from Modbus polling, and non-fatal when unavailable or disabled
+- **Web supplement**: Setup tests both supported local protocols when needed, stores the successful Navigator family, reuses its session and retries only that same protocol during normal runtime recovery
 - **Room forwarding**: Optional write path with state-change updates, periodic refresh, tolerance and range checks
 
 ---

@@ -95,6 +95,11 @@ web PIN enables a validated, read-only web-only fallback.
 Later, use **Settings → Devices & Services → IDM Heatpump → Reconfigure →
 Test current connection** for a safe repeatable Modbus and optional web test.
 
+Writable controls are exposed as `number`, `select` and `switch` entities and
+can also be selected under **Automations → Add action**. For register-level
+diagnosis, the Navigator's **GLT Monitor** can be compared with the integration
+diagnostics without writing test values.
+
 **4. Done!** 🎉 Your heat pump is now smart.
 
 > Detailed guide → **[Installation & Setup][wiki-install]**
@@ -133,11 +138,11 @@ before publishing a stable release.
 
 | Platform | Entities | Description |
 |----------|----------|-------------|
-| **Sensor** | 110+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions and diagnostics |
-| **Binary Sensor** | 8+ | Fault alarms, compressor status, heating/cooling/DHW demand |
-| **Number** | 44+ | Setpoints, temperatures, limits, GLT parameters, power limits (writable) |
-| **Select** | 4+ | System mode, heating circuit modes, solar mode, ISC mode |
-| **Switch** | 4 | External heating/cooling/DHW demand, one-time DHW charge |
+| **Sensor** | model-dependent | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions and diagnostics |
+| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand |
+| **Number** | model-dependent | Setpoints, temperatures, limits, GLT parameters, power limits (writable) |
+| **Select** | model-dependent | System mode, heating circuit modes, solar mode, ISC mode |
+| **Switch** | model-dependent | External heating/cooling/DHW demand, one-time DHW charge |
 
 ---
 
@@ -173,13 +178,16 @@ Home Assistant
 - **Auto-recovery**: Exponential backoff on connection errors
 - **Library-powered**: All register definitions sourced from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools
 - **Navigator 10 support**: Heat sink (Trennwärmetauscher) sensors, flow rate monitoring (Sieb detection), groundwater temperatures, booster A/B diagnostics
-- **Optional web supplement**: local read-only Navigator generation, software version, model, compact myIDM ID and web-only diagnostics; default interval is 30 seconds and Modbus remains authoritative
+- **Optional web supplement**: setup detects Navigator 2.0 HTTP or Navigator 10/Pro WebSocket locally, remembers the successful protocol, reuses that session and keeps routine reconnects on the known variant; Modbus remains authoritative
 - **Room temperature forwarding**: disabled by default; can forward selected Home Assistant temperature sensors to the IDM external room temperature registers per heating circuit with a 300 second default interval, immediate updates on state change, 0.2 °C default tolerance and range validation
 - **Readable diagnostics**: the `internal_message` sensor shows clear message text and exposes `message_code` / `message_text` attributes instead of a bare numeric code
 - **Actionable connection diagnostics**: setup, reconfigure, logs and repairs distinguish DNS/hostname errors, refused TCP connections, timeouts, unreachable endpoints, missing Modbus replies, wrong web PINs and web-interface failures
 - **Built-in test menu**: Reconfigure offers a non-destructive connection test for a known IDM Modbus register, targeted DNS/TCP failure classification and, when configured, local Navigator web authentication
 - **Visible runtime stack**: the diagnostic `IDM Heatpump API version` sensor exposes the installed API version and includes the integration and `pymodbus` versions as attributes; the same versions are included in diagnostics exports and startup logs
 - **Entity organization**: technician code sensors are pinned at the top, followed by functional groups for configuration, switches, writable values and diagnostics
+- **PV/GLT correctness**: float inputs use IDM word order, battery SOC is a single signed 16-bit percentage value, and documentation warns against multiple energy managers writing the same register
+- **Hardware-assisted diagnosis**: troubleshooting explains how to compare Home Assistant values and timestamps with the Navigator GLT Monitor
+- **Private diagnostics**: Modbus/web hosts, port, slave ID and local web PIN are redacted; detailed web connection strings are reduced to a safe error category
 
 ---
 

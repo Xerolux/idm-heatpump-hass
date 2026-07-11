@@ -55,6 +55,7 @@ class IdmWebAuthenticationError(Exception):
 def test_web_pin_configured_without_api_symbol() -> None:
     assert web_pin_configured(" 1234 ")
     assert not web_pin_configured("")
+    assert not web_pin_configured(" 0 ")
     assert not web_pin_configured(None)
 
 
@@ -98,6 +99,7 @@ async def test_async_read_web_supplement_reads_navigator10(monkeypatch: pytest.M
         navigator_version="Navigator 10",
         software_version="NAV10_20.23-903.iup",
         heatpump_model="iPump",
+        web_variant="nav10",
         values={
             "software_version": "NAV10_20.23-903.iup",
             "navigator_version": "Navigator 10",
@@ -656,6 +658,88 @@ class TestWebClientPool:
         assert second is not None
         assert nav10_first.closed  # failed cached client was closed on invalidation
         assert not nav10_second.closed  # new client cached
+
+    async def test_locked_nav20_reconnect_never_probes_nav10(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A known Nav 2.0 installation must stay on its HTTP protocol."""
+        created = {"nav10": 0, "nav20": 0}
+
+        def make_nav10(host, pin):
+            created["nav10"] += 1
+            return _FakeWebClient(_web_data_snapshot())
+
+        def make_nav20(host, pin):
+            created["nav20"] += 1
+            return _FakeWebClient(error=RuntimeError("HTTP session unavailable"))
+
+        monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+        monkeypatch.setattr(idm_heatpump, "create_optional_navigator10_web_client", make_nav10, raising=False)
+        monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", make_nav20, raising=False)
+
+        with pytest.raises(RuntimeError, match="HTTP session unavailable"):
+            await async_read_web_supplement(
+                "192.0.2.10",
+                "1234",
+                preferred_variant="nav20",
+                allow_variant_fallback=False,
+            )
+
+        assert created == {"nav10": 0, "nav20": 1}
+
+    async def test_cached_auth_error_reconnects_same_locked_variant(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """An expired session rebuilds the known client without generation probing."""
+        first = _FakeWebClient(
+            SimpleNamespace(
+                navigator_version="Navigator 2.0",
+                software_version="2.35",
+                heatpump_model=None,
+                simple_values={},
+            )
+        )
+        second = _FakeWebClient(
+            SimpleNamespace(
+                navigator_version="Navigator 2.0",
+                software_version="2.35",
+                heatpump_model=None,
+                simple_values={},
+            )
+        )
+        clients = [first, second]
+        created = {"nav10": 0, "nav20": 0}
+
+        def make_nav10(host, pin):
+            created["nav10"] += 1
+            return _FakeWebClient(_web_data_snapshot())
+
+        def make_nav20(host, pin):
+            created["nav20"] += 1
+            return clients.pop(0)
+
+        monkeypatch.setattr(idm_heatpump, "IdmWebAuthenticationError", IdmWebAuthenticationError, raising=False)
+        monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+        monkeypatch.setattr(idm_heatpump, "create_optional_navigator10_web_client", make_nav10, raising=False)
+        monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", make_nav20, raising=False)
+        pool = IdmWebClientPool()
+
+        await async_read_web_supplement(
+            "192.0.2.10",
+            "1234",
+            preferred_variant="nav20",
+            client_pool=pool,
+            allow_variant_fallback=False,
+        )
+        first.error = IdmWebAuthenticationError("session expired")
+        result = await async_read_web_supplement(
+            "192.0.2.10",
+            "1234",
+            preferred_variant="nav20",
+            client_pool=pool,
+            allow_variant_fallback=False,
+        )
+
+        assert result is not None
+        assert result.web_variant == "nav20"
+        assert first.closed
+        assert created == {"nav10": 0, "nav20": 2}
 
     async def test_close_releases_held_client(self, monkeypatch: pytest.MonkeyPatch) -> None:
         nav10 = _FakeWebClient(_web_data_snapshot())

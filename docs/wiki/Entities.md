@@ -2,18 +2,19 @@
 
 The integration dynamically generates entities based on your heat pump configuration (heating circuits, zones, optional features).
 
-## Entity Counts (1 heating circuit, 0 zones)
+## Entity Platforms
 
 | Platform | Count | Description |
 |----------|-------|-------------|
-| **Sensor** | 110+ | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions, diagnostics |
-| **Binary Sensor** | 8+ | Fault alarms, compressor status, heating/cooling/DHW demand |
-| **Number** | 44+ | Writable setpoints, temperature limits, GLT parameters, power limits |
-| **Select** | 4+ | System mode, heating circuit modes, solar mode, ISC mode |
-| **Switch** | 4 | External heating/cooling/DHW demand, one-time DHW charge |
+| **Sensor** | model-dependent | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions, diagnostics |
+| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand |
+| **Number** | model-dependent | Writable setpoints, temperature limits, GLT parameters, power limits |
+| **Select** | model-dependent | System mode, heating circuit modes, solar mode, ISC mode |
+| **Switch** | model-dependent | External heating/cooling/DHW demand, one-time DHW charge |
 
-Adding more heating circuits, zones, cascade, optional technician codes, or
-optional web supplement data increases the counts.
+Exact counts depend on the detected model, active heating circuits, zones,
+rooms and optional features. Adding circuits, zones, cascade, technician codes
+or web supplement data can add entities.
 
 Entities are grouped by function in Home Assistant where possible. The optional
 technician code sensors are pinned at the top, followed by configuration
@@ -89,14 +90,18 @@ when collecting information for a bug report.
 
 ### PV / Energy Management
 
-| Entity | Register | Unit |
-|--------|----------|------|
-| PV surplus | 74 | kW |
-| Electric heater power | 76 | kW |
-| PV production | 78 | kW |
-| House consumption | 82 | kW |
-| Battery discharge | 84 | kW |
-| Battery SOC | 86 | % |
+| Entity | Register | Datatype | Unit |
+|--------|----------|----------|------|
+| PV surplus | 74 | FLOAT, word-swapped | kW |
+| Electric heater power | 76 | FLOAT, word-swapped | kW |
+| PV production | 78 | FLOAT, word-swapped | kW |
+| House consumption | 82 | FLOAT, word-swapped | kW |
+| Battery discharge | 84 | FLOAT, word-swapped | kW |
+| Battery SOC | 86 | signed INT16, one register | % |
+
+Battery SOC accepts `0–100`; `-1` means that no battery value is available.
+Treating address 86 like the surrounding two-register FLOAT values produces an
+implausible result.
 
 ### Solar Thermal
 
@@ -167,6 +172,12 @@ Typical web-only sensors include:
 If a web value duplicates an existing Modbus entity, the web entity is skipped.
 This prevents duplicate dashboard values and keeps Modbus as the authoritative
 source for register-backed data.
+
+Only values returned by the current local web snapshot are available. Optional
+Navigator 10 infosystem notifications are read independently; if that optional
+request fails, the other valid web values remain available. See [Local
+Navigator Web Interface](Local-Web-Interface) for protocol and web-only-mode
+details.
 
 ### Internal Message Sensor
 

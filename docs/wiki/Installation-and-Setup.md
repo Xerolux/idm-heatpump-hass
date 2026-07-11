@@ -85,6 +85,28 @@ Modbus communication in its [technical PV/GLT documentation](https://www.idm-ene
    - **Zones**: Configure the number of active rooms for each selected zone module
 5. Click **Finish**
 
+### Local Navigator web PIN (not cloud 2FA)
+
+The optional web PIN is the **local network code configured on the Navigator
+display**. It is separate from the myIDM app/cloud account, its password and
+two-factor authentication.
+
+On a German Navigator 2.0 display, configure it under:
+
+**Einstellungen → Allgemeine Einstellungen → Netzwerkeinstellungen → Code
+lokales Netzwerk**
+
+Menu wording can vary by Navigator generation and firmware. An empty value or
+`0` disables the local web interface. Entering cloud credentials or a temporary
+two-factor code in Home Assistant will therefore be rejected.
+
+Navigator 2.0 uses a local HTTP login with a CSRF token. Navigator 10 and
+Navigator Pro use the Navigator-10 WebSocket login family. Setup uses the
+Modbus-detected model only to choose the first attempt, tries the other
+supported protocol if necessary and stores the protocol that actually works.
+Normal polling then stays on that known protocol. See [Local Navigator Web
+Interface](Local-Web-Interface) for the complete lifecycle.
+
 ## Setup validation and error messages
 
 The setup and reconfigure flows read a known IDM register. If that fails, a

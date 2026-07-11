@@ -1,0 +1,23 @@
+{
+  "source_path": "docs/wiki/Entities.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "Entities",
+  "summary": "Reference catalog of IDM Heatpump entity platforms, register mappings, units, writable ranges, optional web sensors, and zone entities.",
+  "scope": [
+    "Home Assistant entities",
+    "Modbus registers",
+    "sensors",
+    "binary sensors",
+    "number entities",
+    "select entities",
+    "switch entities",
+    "web supplement sensors",
+    "zone modules"
+  ],
+  "cross_refs": [],
+  "locked": false,
+  "precedence": null,
+  "notes": "The register and range tables resemble technical specification material, but the document is primarily a user-facing wiki reference rather than an implementation contract."
+}

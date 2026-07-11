@@ -45,6 +45,7 @@ from .const import (
     CONF_ENABLE_CASCADE,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
+    CONF_DETECTED_WEB_VARIANT,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_MODBUS_MAX_RETRIES,
@@ -1211,6 +1212,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             detected[CONF_DETECTED_NAVIGATOR_VERSION] = web_supplement.navigator_version
         if web_supplement.software_version:
             detected[CONF_DETECTED_SOFTWARE_VERSION] = web_supplement.software_version
+        web_variant = getattr(web_supplement, "web_variant", None)
+        if web_variant:
+            detected[CONF_DETECTED_WEB_VARIANT] = web_variant
         return detected
 
 

@@ -88,3 +88,37 @@ Navigator 10 default.
 - Real-device deviations are tracked as compatibility notes and regression tests before being advertised as supported features.
 - Batches contain only exactly adjacent, non-overlapping logical ranges and are limited to 40 Modbus words.
 - A custom raw write can validate encoding but cannot infer safe ranges, EEPROM behavior or meaning for an unknown address.
+
+## External energy-manager ownership
+
+Some GLT/PV input registers are designed to be supplied continuously by an
+external energy manager. For example, official iDM documentation defines
+register 74 as the writable current PV surplus and register 4122 as the
+read-only current heat-pump power consumption. If an inverter, E3DC, Smartfox
+or another controller already writes a GLT/PV value, a Home Assistant write can
+only override it until that controller's next communication cycle.
+
+Avoid multiple writers for the same register. Before creating an automation,
+identify which system owns the value and use the register's library metadata
+for datatype, write class, range and cyclic behavior. Do not infer semantics
+from an address used by a different installation or firmware; for example,
+this integration maps Smart Grid status and the configurable variable input as
+separate registers.
+
+### PV/energy-management datatype reference
+
+The addresses in the PV block do not all share the same datatype. In
+particular, battery SOC must not be encoded as a two-register float.
+
+| Address | Entity | Datatype | Unit | Notes |
+|---------|--------|----------|------|-------|
+| 74 | `pv_surplus` | FLOAT, word-swapped | kW | Writable GLT input; not EEPROM |
+| 76 | `electric_heater_power` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 78 | `pv_production` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 82 | `house_consumption` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 84 | `battery_discharge` | FLOAT, word-swapped | kW | Writable GLT measurement |
+| 86 | `battery_soc` | signed INT16, one register | % | `0–100`; `-1` means unavailable |
+| 88 | `pv_target_value` | FLOAT, word-swapped | kW | Model/firmware dependent |
+
+Always use the generated entity or library register definition when writing.
+The advanced raw-write action cannot infer the correct datatype from an address.

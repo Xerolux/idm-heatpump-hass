@@ -1,0 +1,41 @@
+{
+  "source_path": "docs/wiki/_Sidebar.md",
+  "type": "DOC",
+  "confidence": "medium",
+  "manifest_override": false,
+  "title": "IDM Heatpump",
+  "summary": "Wiki navigation sidebar linking setup, entity, automation, operations, maintenance, and development documentation while displaying minimum runtime versions.",
+  "scope": [
+    "wiki navigation",
+    "getting started documentation",
+    "entity documentation",
+    "automation documentation",
+    "operations documentation",
+    "development documentation",
+    "runtime requirements"
+  ],
+  "cross_refs": [
+    "Home",
+    "Installation-and-Setup",
+    "Configuration",
+    "Entities",
+    "Entities#sensors",
+    "Entities#numbers",
+    "Entities#selects",
+    "Entities#switches",
+    "Services",
+    "Examples",
+    "Data-Update",
+    "Supported-Devices",
+    "Compatibility-Matrix",
+    "Known-Limitations",
+    "Stability-and-Release-Readiness",
+    "Troubleshooting",
+    "Modbus-Register",
+    "Contributing",
+    "Changelog"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

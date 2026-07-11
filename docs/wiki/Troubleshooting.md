@@ -79,13 +79,23 @@ controller does not expose the setting.
 ### "Navigator web PIN rejected"
 
 - Open **Settings → Devices & Services → IDM Heatpump → Reconfigure → Change connection settings**
-- Enter the current local Navigator web PIN again
-- Do not use a cloud account password; the integration needs the local PIN
+- At the Navigator display, verify **Settings → General settings → Network
+  settings → Local network code** (German: **Einstellungen → Allgemeine
+  Einstellungen → Netzwerkeinstellungen → Code lokales Netzwerk**)
+- Enter that local network code in Home Assistant
+- Do not use a cloud/app password or a two-factor authentication code
+- An empty local network code or `0` disables the Navigator's local web access
 - Clear the PIN if you intentionally want Modbus-only operation
 
 The runtime repair notification and log identify authentication failures
 separately from network failures. The repair action can verify a replacement
 PIN or disable optional web data. The PIN itself is never logged.
+
+After a protocol has worked once, normal runtime recovery intentionally retries
+only that Navigator 2.0 or Navigator 10/Pro protocol. It closes a failed session
+and rebuilds the same client instead of silently switching controller
+generations. If the controller, firmware behavior or web endpoint has changed,
+run **Reconfigure → Change connection settings** to perform fresh detection.
 
 ### "Navigator web interface could not be read"
 
@@ -93,6 +103,16 @@ PIN or disable optional web data. The PIN itself is never logged.
 - With a Modbus proxy, enable the proxy option and enter the **original heat pump address** as web host
 - Confirm that Home Assistant can reach the local Navigator web interface
 - Clear the web PIN to continue with Modbus only
+
+Web authentication and general web connection failures create separate repair
+issues. Neither failure stops working Modbus polling.
+
+### Web-only mode exposes fewer entities than expected
+
+This is intentional. Web-only mode loads only read-only sensors returned by the
+local web interface. It has no Modbus polling, binary sensors, numbers, selects,
+switches, register writes, system-mode action or error acknowledgement. Values
+missing from the latest successful web snapshot remain unavailable.
 
 ## Entity Problems
 
@@ -109,6 +129,37 @@ PIN or disable optional web data. The PIN itself is never logged.
 - If possible, state the value shown on the Navigator at the same time. A plausible but different value is as important as an obviously absurd number.
 - Do not assume every `254`, `255` or `-1` is corrupt: these are valid unavailable sentinels only where the register metadata declares them.
 - Report the case as a [bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md). Maintainers should compare the exact FC03/FC04 address/count and raw words in batch and individual reads before changing datatype or address metadata.
+
+### Compare values with the Navigator GLT Monitor
+
+For difficult register or write problems, open the **GLT Monitor** on the
+Navigator under the building-management/GLT area. Menu wording and access level
+vary by controller and firmware; technician access may be required. The monitor
+shows the values and communication seen by the controller and is therefore the
+best on-device comparison point for Home Assistant diagnostics.
+
+When reporting a discrepancy, capture at the same time:
+
+- Navigator generation, firmware and heat-pump model
+- Entity and library register name, address and datatype
+- Home Assistant value and timestamp
+- Navigator display value and GLT Monitor value
+- Whether the value was read in a batch or individually
+- Every system that can write the register, such as Home Assistant, an inverter,
+  E3DC, Smartfox or another building-management controller
+
+If a writable value alternates between two values, first disable every other
+writer. A repeating change often means two automations or energy managers own
+the same GLT register; it is not evidence that the datatype is wrong.
+
+### Controls or actuators appear to be missing
+
+Writable functions are not all shown as traditional "actuators". Open the IDM
+device and look for `number`, `select` and `switch` entities. In an automation,
+choose **Add action** and select the entity action (`number.set_value`,
+`select.select_option`, `switch.turn_on`/`switch.turn_off`) or an IDM-specific
+action. Advanced raw register writing is intentionally available only through
+the risk-acknowledged IDM action documented under [Services](Services).
 
 ### Values not updating
 

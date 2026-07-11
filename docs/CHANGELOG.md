@@ -11,6 +11,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1-beta.29] - 2026-07-11
+
+### Fixed
+
+- Detect both supported local Navigator web protocols during setup,
+  reconfiguration or repair, persist the protocol that actually succeeds and
+  keep normal runtime reconnects on that known protocol.
+- Rebuild an expired or failed cached web session with the same Navigator
+  client before reporting an authentication or transport failure.
+- Treat local network code `0` as disabled web access instead of a rejected
+  PIN.
+- Redact the optional web host and PIN from diagnostics and expose only a safe
+  web-error category without connection URLs or authorization query data.
+- Select prerelease tags when generating the previous-release comparison so
+  beta release notes cover only changes since the preceding beta.
+
+### Documentation
+
+- Explain that the optional web PIN is the Navigator's local network code, not
+  a cloud password or two-factor code, including the controller menu path and
+  protocol-detection lifecycle.
+- Document GLT Monitor diagnosis, writable-control discovery, PV/energy-manager
+  ownership, the signed INT16 battery-SOC exception and guarded external DHW
+  request automation.
+- Consolidate verified technical constraints, release gates and remaining
+  hardware-evidence requirements in the project knowledge base and Wiki.
+
+### Dependencies
+
+- Keep the tested `idm-heatpump-api[web]==0.7.6` pin. No library change is
+  required for this integration-side protocol-selection and documentation
+  release.
+
 ## [0.8.1-beta.28] - 2026-07-11
 
 ### Fixed
@@ -491,9 +524,8 @@ _Generated automatically by GitHub Actions on 2026-07-07 07:06:48 UTC_
 - Harden local web supplement discovery: if the Navigator 10 web client fails
   with a wrong-variant / unrecognised response, the integration now explicitly
   falls back to the Navigator 2.0 web client (and vice-versa). Both variants are
-  closed cleanly after the attempt. This mirrors hacs-idm-hpweb behaviour and
-  reduces misleading "web PIN rejected" errors when the wrong generation was
-  probed first.
+  closed cleanly after the attempt. This symmetric discovery reduces misleading
+  "web PIN rejected" errors when the wrong generation was probed first.
 - Config flow now forwards the Modbus-detected Navigator model as a `model_hint`
   to the local web supplement detection. This avoids probing the wrong web
   variant first during setup and reconfiguration, saving a full connect timeout.

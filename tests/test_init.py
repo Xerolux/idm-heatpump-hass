@@ -734,8 +734,52 @@ class TestAsyncSetupEntryOptions:
         ):
             await async_setup_entry(mock_hass, entry)
 
-        read_web.assert_awaited_once_with("192.0.2.103", "1234", model_hint="Navigator 2.0 / 10")
+        read_web.assert_awaited_once_with(
+            "192.0.2.103",
+            "1234",
+            model_hint="Navigator 2.0 / 10",
+            preferred_variant=None,
+            allow_variant_fallback=True,
+        )
         assert captured_kwargs.get("web_host") == "192.0.2.103"
+
+    async def test_stored_web_variant_locks_runtime_protocol(self, mock_hass):
+        """A previously detected Nav 2.0 entry must not probe Nav 10 at startup."""
+        entry = self._make_entry(
+            data_override={
+                "web_pin": "1234",
+                "detected_navigator_version": "Navigator 2.0",
+                "detected_web_variant": "nav20",
+            },
+            options_override={"web_extra_data": True},
+        )
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+        captured_kwargs: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured_kwargs.update(kwargs)
+            return mock_coordinator
+
+        patches = self._common_patches(mock_client, mock_coordinator)
+        patches[1] = patch("custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator)
+
+        ctx = __import__("contextlib").ExitStack()
+        for item in patches:
+            ctx.enter_context(item)
+        with (
+            ctx,
+            patch("custom_components.idm_heatpump.async_read_web_supplement", return_value=None) as read_web,
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        kwargs = read_web.await_args.kwargs
+        assert kwargs["preferred_variant"] == "nav20"
+        assert kwargs["allow_variant_fallback"] is False
+        assert captured_kwargs["web_variant"] == "nav20"
 
     async def test_coordinator_first_refresh_failure_raises_not_ready(self, mock_hass):
         """If coordinator.async_config_entry_first_refresh() fails, ConfigEntryNotReady is raised."""

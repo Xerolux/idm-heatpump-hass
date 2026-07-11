@@ -5,6 +5,21 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.1-beta.29 — 2026-07-11
+
+- Remembers the successful Navigator 2.0 or Navigator 10/Pro local web
+  protocol and retries only that protocol during normal runtime recovery.
+- Tries both supported web protocols during setup, reconfiguration and repair,
+  and treats local network code `0` as disabled.
+- Redacts web host, web PIN and detailed web connection strings from downloaded
+  diagnostics.
+- Adds GLT Monitor diagnosis, writable-control guidance, exact PV/battery
+  datatypes and guarded examples for PV surplus and external DHW requests.
+- Keeps `idm-heatpump-api[web]==0.7.6`; this release needs a new integration
+  version, not a new API package.
+- Consolidates verified constraints and remaining verification work in the
+  project knowledge base and Wiki.
+
 ## v0.8.1-beta.28 — 2026-07-11
 
 - Pins the published `idm-heatpump-api` 0.7.6 stability release.

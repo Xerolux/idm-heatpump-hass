@@ -1,0 +1,25 @@
+{
+  "source_path": "docs/ha-core-integration-page.md",
+  "type": "DOC",
+  "confidence": "high",
+  "manifest_override": false,
+  "title": "IDM Heatpump",
+  "summary": "Draft Home Assistant Core integration guide covering setup, entities, actions, diagnostics, limitations, troubleshooting, and automations for IDM Navigator heat pumps.",
+  "scope": [
+    "IDM Navigator heat pumps",
+    "Home Assistant integration",
+    "Modbus TCP",
+    "configuration flow",
+    "entity platforms",
+    "integration actions",
+    "diagnostics",
+    "automations"
+  ],
+  "cross_refs": [
+    "integrations/config_flow.md",
+    "/integrations/diagnostics/"
+  ],
+  "locked": false,
+  "precedence": null,
+  "notes": ""
+}

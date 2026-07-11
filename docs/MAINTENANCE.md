@@ -74,7 +74,6 @@ Keep these artifacts current so another maintainer can take over emergency
 work:
 
 - `docs/RELEASE_PROCESS.md`
-- `docs/MAINTENANCE.md`
 - `docs/CORE_STRATEGY.md`
 - `docs/wiki/Compatibility-Matrix.md`
 - `docs/wiki/Modbus-Register.md`
