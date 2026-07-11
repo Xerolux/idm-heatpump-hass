@@ -6,7 +6,12 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-from custom_components.idm_heatpump.coordinator import IdmCoordinator, _repair_issue_for_error, navigator_family
+from custom_components.idm_heatpump.coordinator import (
+    IdmCoordinator,
+    _friendly_communication_error,
+    _repair_issue_for_error,
+    navigator_family,
+)
 from custom_components.idm_heatpump.web_data import (
     IdmWebAuthenticationFailed,
     IdmWebSensorValue,
@@ -138,6 +143,13 @@ class TestRepairIssueClassification:
         ("error", "issue_id"),
         [
             (ConnectionException("connection lost"), "cannot_connect"),
+            (
+                ConnectionException(
+                    "Modbus Error: [Connection] Failed to connect [Errno 111] "
+                    "Connect call failed ('192.168.178.196', 5020)"
+                ),
+                "modbus_connection_refused",
+            ),
             (socket.gaierror("name or service not known"), "host_not_found"),
             (ConnectionRefusedError("connection refused"), "modbus_connection_refused"),
             (TimeoutError("timed out"), "modbus_timeout"),
@@ -149,6 +161,31 @@ class TestRepairIssueClassification:
     )
     def test_classifies_communication_errors(self, error, issue_id):
         assert _repair_issue_for_error(error) == issue_id
+
+    def test_connection_refused_message_is_actionable(self):
+        message = _friendly_communication_error(
+            "modbus_connection_refused",
+            "192.168.178.196",
+            5020,
+            ConnectionException("connect call failed"),
+        )
+
+        assert "192.168.178.196:5020" in message
+        assert "refused the Modbus TCP connection" in message
+        assert "Modbus TCP is enabled" in message
+
+    @pytest.mark.parametrize(
+        ("error", "expected"),
+        [
+            (ConnectionException("connection reset by peer"), "was interrupted"),
+            (ConnectionException("No route to host (Errno 113)"), "no working network route"),
+            (ModbusException("Modbus response CRC error"), "response that could not be read"),
+        ],
+    )
+    def test_generic_communication_errors_are_actionable(self, error, expected):
+        message = _friendly_communication_error("cannot_connect", "192.168.178.196", 502, error)
+
+        assert expected in message
 
 
 class TestSetupRegisters:
@@ -505,7 +542,7 @@ class TestAsyncUpdateData:
         coord._registers = [RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")]
 
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception, match=str(error)):
+            with pytest.raises(Exception, match="IDM device"):
                 await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
 
@@ -601,7 +638,7 @@ class TestAsyncUpdateData:
         )
 
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception, match="No response received"):
+            with pytest.raises(Exception, match="did not respond in time"):
                 await coord._async_update_data()
 
         assert mock_ir.async_create_issue.call_args.args[2] == "modbus_timeout"

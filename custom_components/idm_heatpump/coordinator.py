@@ -86,14 +86,37 @@ def _is_zone_room_mode_register(reg: RegisterDef) -> bool:
 
 def _repair_issue_for_error(err: Exception) -> str:
     """Map communication errors to actionable repair issue translations."""
-    message = str(err).casefold()
+    messages: list[str] = []
+    current: BaseException | None = err
+    while current is not None and len(messages) < 4:
+        messages.append(str(current).casefold())
+        current = current.__cause__ or current.__context__
+    message = " ".join(messages)
     if isinstance(err, socket.gaierror) or any(
-        marker in message for marker in ("name or service not known", "nodename nor servname", "dns")
+        marker in message
+        for marker in (
+            "name or service not known",
+            "nodename nor servname",
+            "temporary failure in name resolution",
+            "getaddrinfo failed",
+            "dns",
+        )
     ):
         return "host_not_found"
-    if isinstance(err, ConnectionRefusedError) or "connection refused" in message:
+    if isinstance(err, ConnectionRefusedError) or any(
+        marker in message
+        for marker in (
+            "connection refused",
+            "connect call failed",
+            "actively refused",
+            "errno 111",
+            "winerror 10061",
+        )
+    ):
         return "modbus_connection_refused"
-    if isinstance(err, TimeoutError) or any(marker in message for marker in ("timed out", "timeout")):
+    if isinstance(err, TimeoutError) or any(
+        marker in message for marker in ("timed out", "timeout", "errno 110", "winerror 10060")
+    ):
         return "modbus_timeout"
     if isinstance(err, ModbusIOException):
         # Pymodbus uses this exception for an established TCP connection that
@@ -109,6 +132,62 @@ def _repair_issue_for_error(err: Exception) -> str:
     ):
         return "incompatible_firmware"
     return "cannot_connect"
+
+
+def _friendly_communication_error(issue_id: str, host: str, port: int | None, err: Exception) -> str:
+    """Return an actionable communication error for the Home Assistant log."""
+    endpoint = f"{host}:{port}" if port is not None else host
+    technical_message = str(err).casefold()
+    messages = {
+        "host_not_found": (
+            f"The configured IDM address {host} could not be found. "
+            "Check the IP address or hostname in the integration settings"
+        ),
+        "modbus_connection_refused": (
+            f"The IDM device at {endpoint} refused the Modbus TCP connection. "
+            "Check that Building management system -> Modbus TCP is enabled on the Navigator "
+            "and that the configured IP address and port are correct"
+        ),
+        "modbus_timeout": (
+            f"The IDM device at {endpoint} did not respond in time. "
+            "Check that the controller is online and that no firewall or network rule blocks the connection"
+        ),
+        "wrong_slave_id": (
+            f"A Modbus endpoint was reached at {endpoint}, but the IDM controller did not answer as expected. "
+            "Check the slave ID (normally 1) and the Modbus proxy target"
+        ),
+        "incompatible_firmware": (
+            f"The IDM device at {endpoint} does not support the requested Modbus function. "
+            "Check the Navigator firmware and integration compatibility"
+        ),
+    }
+    if issue_id in messages:
+        return messages[issue_id]
+    if any(
+        marker in technical_message
+        for marker in ("network is unreachable", "no route to host", "host is unreachable", "errno 101", "errno 113")
+    ):
+        return (
+            f"There is no working network route from Home Assistant to the IDM device at {endpoint}. "
+            "Check the device address, network connection, VLAN and router settings"
+        )
+    if any(
+        marker in technical_message
+        for marker in ("connection lost", "connection reset", "reset by peer", "broken pipe", "disconnected")
+    ):
+        return (
+            f"The Modbus TCP connection to the IDM device at {endpoint} was interrupted. "
+            "Check the network cable or Wi-Fi connection, the controller and any Modbus proxy"
+        )
+    if any(marker in technical_message for marker in ("crc", "invalid response", "malformed", "decode")):
+        return (
+            f"The IDM device at {endpoint} sent a Modbus response that could not be read. "
+            "Check the network connection, Modbus proxy and whether another Modbus client is interfering"
+        )
+    return (
+        f"The integration could not connect to the IDM device at {endpoint}. "
+        "Check the network connection and the Modbus TCP settings on the Navigator"
+    )
 
 
 def navigator_family(model_name: str | None) -> str | None:
@@ -541,6 +620,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             await self._async_refresh_zone_room_modes(data)
         except Exception as err:
             issue_id = _repair_issue_for_error(err)
+            friendly_error = _friendly_communication_error(
+                issue_id,
+                self._client.host,
+                getattr(self._client, "port", None),
+                err,
+            )
             for stale_issue_id in _CONNECTIVITY_REPAIR_ISSUES:
                 if stale_issue_id != issue_id:
                     ir.async_delete_issue(self.hass, DOMAIN, stale_issue_id)
@@ -554,13 +639,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_placeholders={"host": self._client.host},
             )
             _LOGGER.error(
-                "IDM Modbus polling failed for %s: %s: %s; created repair issue %s",
-                self._client.host,
-                err.__class__.__name__,
-                err,
+                "%s; created repair issue %s",
+                friendly_error,
                 issue_id,
             )
-            raise UpdateFailed(f"Error communicating with heat pump: {err}") from err
+            raise UpdateFailed(friendly_error) from err
 
         for issue_id in _CONNECTIVITY_REPAIR_ISSUES:
             ir.async_delete_issue(self.hass, DOMAIN, issue_id)
