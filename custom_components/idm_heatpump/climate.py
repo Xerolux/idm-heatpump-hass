@@ -11,16 +11,14 @@ import logging
 from typing import Any
 import re
 
-from homeassistant.components.climate import (
-    ClimateEntity,
-    ClimateEntityFeature,  # type: ignore[attr-defined]
-    HVACMode,  # type: ignore[attr-defined]
-    HVACAction,  # type: ignore[attr-defined]
-)
+from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
+    HVACAction,
+    HVACMode,
     PRESET_ECO,
     PRESET_COMFORT,
     PRESET_NONE,
+    ClimateEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
