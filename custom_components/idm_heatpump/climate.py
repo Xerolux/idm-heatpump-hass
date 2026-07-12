@@ -13,9 +13,9 @@ import re
 
 from homeassistant.components.climate import (
     ClimateEntity,
-    ClimateEntityFeature,
-    HVACMode,
-    HVACAction,
+    ClimateEntityFeature,  # type: ignore[attr-defined]
+    HVACMode,  # type: ignore[attr-defined]
+    HVACAction,  # type: ignore[attr-defined]
 )
 from homeassistant.components.climate.const import (
     PRESET_ECO,
@@ -106,9 +106,10 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         self._mode_reg = mode_reg
         self._target_reg = target_reg
         self._current_reg = current_reg
+        assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{unique_id}"
-        self._attr_device_info = coordinator.device_info
-
+        from .entity import build_device_info
+        self._attr_device_info = build_device_info(coordinator)
         self._attr_min_temp = float(self._target_reg.min_value) if hasattr(self._target_reg, "min_value") else 10.0
         self._attr_max_temp = float(self._target_reg.max_value) if hasattr(self._target_reg, "max_value") else 35.0
 

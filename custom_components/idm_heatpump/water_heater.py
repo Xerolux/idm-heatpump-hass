@@ -66,8 +66,10 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         super().__init__(coordinator)
         self._current_reg = current_reg
         self._target_reg = target_reg
+        assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_water_heater"
-        self._attr_device_info = coordinator.device_info
+        from .entity import build_device_info
+        self._attr_device_info = build_device_info(coordinator)
 
     @property
     def current_temperature(self) -> float | None:
