@@ -336,6 +336,24 @@
     }
   },
   "entity": {
+    "climate": {
+      "heating_circuit": {
+        "name": "Heating Circuit {circuit}"
+      },
+      "zone_room": {
+        "name": "Zone {zone} Room {room}"
+      }
+    },
+    "water_heater": {
+      "water_heater": {
+        "name": "Domestic Hot Water"
+      }
+    },
+    "button": {
+      "acknowledge_errors": {
+        "name": "Acknowledge Errors"
+      }
+    },
     "select": {
       "system_mode": {
         "state": {

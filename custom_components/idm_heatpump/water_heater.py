@@ -1,0 +1,115 @@
+"""Water heater platform for IDM Heatpump."""
+
+from __future__ import annotations
+
+# IDM Heatpump for Home Assistant
+# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
+# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# Lizenz: MIT
+
+import logging
+from typing import Any
+
+from homeassistant.components.water_heater import (
+    WaterHeaterEntity,
+    WaterHeaterEntityFeature,
+    STATE_PERFORMANCE,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import UnitOfTemperature
+from homeassistant.core import HomeAssistant
+from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+from .const import DOMAIN
+from .coordinator import IdmCoordinator
+
+_LOGGER = logging.getLogger(__name__)
+
+PARALLEL_UPDATES = 0
+
+async def async_setup_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    async_add_entities: AddEntitiesCallback,
+) -> None:
+    """Set up the IDM water heater platform."""
+    coordinator: IdmCoordinator = entry.runtime_data.coordinator
+
+    # Check if we have DHW registers at all
+    dhw_current_reg = coordinator.get_register("dhw_temp_top")
+    dhw_target_reg = coordinator.get_register("dhw_setpoint")
+
+    if dhw_current_reg and dhw_target_reg:
+        async_add_entities([IdmWaterHeater(coordinator, dhw_current_reg, dhw_target_reg)])
+    else:
+        _LOGGER.debug("No DHW registers found; not setting up water_heater platform")
+
+class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
+    """Representation of the IDM Domestic Hot Water."""
+
+    _attr_has_entity_name = True
+    _attr_name = None
+    _attr_temperature_unit = UnitOfTemperature.CELSIUS
+    _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE
+    _attr_operation_list = [STATE_PERFORMANCE]
+    _attr_current_operation = STATE_PERFORMANCE
+    
+    def __init__(
+        self,
+        coordinator: IdmCoordinator,
+        current_reg: Any,
+        target_reg: Any,
+    ) -> None:
+        """Initialize the water heater."""
+        super().__init__(coordinator)
+        self._current_reg = current_reg
+        self._target_reg = target_reg
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_water_heater"
+        self._attr_device_info = coordinator.device_info
+
+    @property
+    def current_temperature(self) -> float | None:
+        """Return the current temperature."""
+        if not self.coordinator.data:
+            return None
+        # Use top sensor as representative
+        val = self.coordinator.data.get(self._current_reg.name)
+        return float(val) if val is not None else None
+
+    @property
+    def target_temperature(self) -> float | None:
+        """Return the temperature we try to reach."""
+        if not self.coordinator.data:
+            return None
+        val = self.coordinator.data.get(self._target_reg.name)
+        return float(val) if val is not None else None
+
+    @property
+    def min_temp(self) -> float:
+        """Return the minimum temperature."""
+        return float(self._target_reg.min_value) if hasattr(self._target_reg, "min_value") else 30.0
+
+    @property
+    def max_temp(self) -> float:
+        """Return the maximum temperature."""
+        return float(self._target_reg.max_value) if hasattr(self._target_reg, "max_value") else 65.0
+
+    async def async_set_temperature(self, **kwargs: Any) -> None:
+        """Set new target temperature."""
+        temp = kwargs.get("temperature")
+        if temp is None:
+            return
+        
+        # Write optimistically to the coordinator data
+        if self._target_reg.name in self.coordinator.data:
+            self.coordinator.data[self._target_reg.name] = temp
+            self.async_write_ha_state()
+
+        try:
+            await self.coordinator.client.write_register(self._target_reg, temp)
+            _LOGGER.debug("Set water heater target temperature to %s", temp)
+        except Exception as err:
+            _LOGGER.error("Failed to set water heater target temperature: %s", err)
+            # Revert optimistic update on failure by triggering a refresh
+            await self.coordinator.async_request_refresh()

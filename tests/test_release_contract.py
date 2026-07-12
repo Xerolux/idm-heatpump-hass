@@ -39,15 +39,15 @@ def _detect_release(workflow: str, tmp_path: Path, tag: str, *, draft: bool = Fa
     """Execute release metadata detection with controlled workflow inputs."""
     tmp_path.mkdir(parents=True, exist_ok=True)
     output = tmp_path / "github-output"
+    env = os.environ.copy()
+    env["GITHUB_OUTPUT"] = str(output)
+    env["RELEASE_DRAFT"] = str(draft).lower()
+    env["RELEASE_TAG"] = tag
+    
     subprocess.run(
         ["bash", "-euo", "pipefail", "-c", _release_detection_script(workflow)],
         check=True,
-        env={
-            **os.environ,
-            "GITHUB_OUTPUT": str(output),
-            "RELEASE_DRAFT": str(draft).lower(),
-            "RELEASE_TAG": tag,
-        },
+        env=env,
     )
     return dict(line.split("=", 1) for line in output.read_text(encoding="utf-8").splitlines())
 
@@ -121,6 +121,10 @@ def test_release_has_one_tag_trigger_and_serializes_each_version() -> None:
     assert "cancel-in-progress: false" in release
 
 
+import pytest
+import sys
+
+@pytest.mark.skipif(sys.platform == "win32", reason="Bash script tests require a POSIX environment")
 def test_release_type_is_derived_only_from_validated_tag(tmp_path: Path) -> None:
     workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
 
@@ -138,6 +142,7 @@ def test_release_type_is_derived_only_from_validated_tag(tmp_path: Path) -> None
     assert "github.event.release.tag_name" not in workflow
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="Bash script tests require a POSIX environment")
 def test_release_draft_is_independent_and_inputs_are_passed_via_env(
     tmp_path: Path,
 ) -> None:

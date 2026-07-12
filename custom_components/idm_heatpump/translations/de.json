@@ -336,6 +336,24 @@
     }
   },
   "entity": {
+    "climate": {
+      "heating_circuit": {
+        "name": "Heizkreis {circuit}"
+      },
+      "zone_room": {
+        "name": "Zone {zone} Raum {room}"
+      }
+    },
+    "water_heater": {
+      "water_heater": {
+        "name": "Trinkwassererwärmer"
+      }
+    },
+    "button": {
+      "acknowledge_errors": {
+        "name": "Störungen quittieren"
+      }
+    },
     "select": {
       "system_mode": {
         "state": {
