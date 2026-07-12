@@ -30,7 +30,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import RegisterDef
 
-from .const import DOMAIN, CircuitMode, RoomMode, HeatPumpStatus
+from .const import CircuitMode, RoomMode, HeatPumpStatus
 from .coordinator import IdmCoordinator
 
 _LOGGER = logging.getLogger(__name__)

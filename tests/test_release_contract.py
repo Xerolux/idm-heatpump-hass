@@ -6,6 +6,9 @@ import json
 import os
 from pathlib import Path
 import subprocess
+import sys
+
+import pytest
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -121,8 +124,6 @@ def test_release_has_one_tag_trigger_and_serializes_each_version() -> None:
     assert "cancel-in-progress: false" in release
 
 
-import pytest
-import sys
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Bash script tests require a POSIX environment")
 def test_release_type_is_derived_only_from_validated_tag(tmp_path: Path) -> None:

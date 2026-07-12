@@ -11,6 +11,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1] - 2026-07-12
+
+Diese Version ist das größte Update seit langem und bündelt die Ergebnisse aus über 30 Beta-Releases seit v0.7.4. Sie bringt massive Verbesserungen bei der Stabilität, komplett neue Plattformen und einen optionalen Web-Fallback!
+
+> 🛑 **WICHTIGER HAFTUNGSAUSSCHLUSS / DISCLAIMER** 🛑
+> 
+> Dieses Projekt ist eine **inoffizielle Community-Integration** und steht in keinerlei Verbindung zu IDM Energiesysteme GmbH. Die Nutzung erfolgt **ausschließlich und komplett auf eigene Gefahr!** 
+> 
+> Wir übernehmen **keine Haftung** für Schäden an der Wärmepumpe, der Steuerung (Navigator) oder anderen Systemen, die durch die Nutzung dieser Software (insbesondere durch das Schreiben von Modbus-Registern) entstehen könnten. IDM Energiesysteme GmbH hat dieses Projekt weder autorisiert noch geprüft. **Jeder Nutzer ist selbst dafür verantwortlich, was an seine Heizung gesendet wird.**
+
+### ⚠️ WICHTIGE HINWEISE ZUM UPDATE (BREAKING CHANGES)
+Wenn ihr von v0.7.4 auf v0.8.1 aktualisiert, beachtet bitte Folgendes:
+
+1. **Web-Login per Netzwerk & PIN aktivieren:**
+   Die Integration bietet jetzt den Web-Fallback an. Damit dieser (oder spätere Web-Features) funktioniert, müsst ihr an eurer IDM zwingend den lokalen Webzugriff im Netzwerk aktivieren und **einmalig eine PIN in der Wärmepumpe vergeben**. Diese PIN muss dann auch in der Integration (unter Konfigurieren) eingetragen werden!
+2. **Update auf die neueste API-Version (`idm-heatpump-api==0.7.6`):**
+   Das Update pinnt die Integration fest auf die neue API-Version. Dies **behebt den kritischen Bug #109** (Kühlgrenze / Batch-Read-Kollision), der falsche Werte wie `200` geliefert hat. 
+3. **Neue `climate` und `water_heater` Plattformen:**
+   Wir haben jetzt native Home Assistant Klimakomponenten und Warmwasser-Komponenten. Alte, einzelne Sensoren oder Skripte für Modus/Solltemperaturen können schrittweise durch diese sauberen Plattformen ersetzt werden.
+4. **Entfernte Entität `ext_demand_brine_pump_m16`:**
+   Dieser Sensor wurde komplett entfernt, da er in der offiziellen IDM-Dokumentation nicht mehr existiert.
+5. **Fehlertoleranz (Resilient Polling):**
+   Manche Entitäten, die früher geflackert haben, weil ein fehlendes Register den ganzen Block lahmgelegt hat, sind jetzt stabil. Entitäten für Hardware, die ihr gar nicht habt, bleiben nun dauerhaft korrekt deaktiviert.
+6. **Unique IDs der Integration geändert:**
+   Wir nutzen nicht mehr die IP-Adresse als Unique-ID. In ganz seltenen Edge-Cases kann das dazu führen, dass Home Assistant die Wärmepumpe beim Update neu zuordnet.
+
+### 🚀 Neue Features & Plattformen
+- **Native Climate-Plattform:** Volle Unterstützung für alle Heizkreise (A-G) und Zonenräume (inklusive Modus-Steuerung und Temperatur-Vorgaben).
+- **Native Water-Heater-Plattform:** Steuerung und Überwachung der Trinkwassererwärmung (DHW).
+- **Fachmann-Ebene Codes (Technician Codes):** Neuer Sensor, der euch passend zur Uhrzeit den aktuellen PIN-Code für die Fachmann-Ebene am Navigator berechnet und direkt in Home Assistant anzeigt.
+- **Klartext-Fehler:** Interne Wärmepumpen-Statusmeldungen werden jetzt als menschenlesbarer Text (statt nur als Zahlen-Code) angezeigt.
+- **Acknowledge Errors Button:** Neue Entität, um Störungen an der Wärmepumpe direkt aus Home Assistant heraus zu quittieren.
+- **Local Web-Client Fallback (`idm-heatpump-api[web]`):** Ist Modbus mal offline oder am Navigator deaktiviert, kann die Integration optional Sensordaten über die lokale Weboberfläche (PIN erforderlich) abrufen.
+- **Raumtemperatur-Forwarding:** Übermittlung von Home-Assistant-Raumtemperaturen direkt an die Gebäudeleittechnik der IDM.
+
+### 🛠️ Bugfixes & Stabilität
+- **Kühlgrenzen-Bugfix (Issue #109):** Update auf die neueste `idm-heatpump-api==0.7.6` repariert überlappende Register (wie z.B. Kühlgrenze HK A, Feuchte).
+- **Resilient Polling:** Gezieltes Herausfiltern nicht unterstützter Register statt Verwerfen des ganzen Blocks.
+- **Verbesserte Fehlerdiagnose:** Klare "Repairs" (Reparatur-Hinweise) in Home Assistant bei DNS-Fehlern, Timeout oder schreibgeschützten Werten anstatt kryptischer Pymodbus-Fehler im Log.
+- Diverse Async-Optimierungen und Verhinderung von unnötigem ERROR-Log-Spam bei kurzzeitigen Verbindungsabbrüchen.
+
 ## [0.8.1-beta.32] - 2026-07-12
 
 ### Added
