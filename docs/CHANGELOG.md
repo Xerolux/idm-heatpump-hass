@@ -11,6 +11,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.1-beta.32] - 2026-07-12
+
+### Added
+
+- Add native `climate` platform supporting Heating Circuits (A-G) and Zone Rooms.
+- Add native `water_heater` platform for Domestic Hot Water (DHW / Trinkwassererwärmer).
+- Add native `button` platform with "Acknowledge Errors" (Störungen quittieren) button.
+
+### Fixed
+
+- Skip Git Bash dependent release contract tests when running tests locally on Windows.
+
 ## [0.8.1-beta.31] - 2026-07-11
 
 ### Fixed
