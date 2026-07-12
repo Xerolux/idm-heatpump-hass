@@ -46,7 +46,7 @@ def _detect_release(workflow: str, tmp_path: Path, tag: str, *, draft: bool = Fa
     env["GITHUB_OUTPUT"] = str(output)
     env["RELEASE_DRAFT"] = str(draft).lower()
     env["RELEASE_TAG"] = tag
-    
+
     subprocess.run(
         ["bash", "-euo", "pipefail", "-c", _release_detection_script(workflow)],
         check=True,
@@ -122,7 +122,6 @@ def test_release_has_one_tag_trigger_and_serializes_each_version() -> None:
     assert "  workflow_dispatch:" in release
     assert "group: release-${{ inputs.tag_name || github.ref_name }}" in release
     assert "cancel-in-progress: false" in release
-
 
 
 @pytest.mark.skipif(sys.platform == "win32", reason="Bash script tests require a POSIX environment")

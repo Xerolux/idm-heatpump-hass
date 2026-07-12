@@ -26,6 +26,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -33,10 +34,8 @@ async def async_setup_entry(
 ) -> None:
     """Set up the IDM button platform."""
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    
-    entities = [
-        IdmAcknowledgeErrorsButton(coordinator)
-    ]
+
+    entities = [IdmAcknowledgeErrorsButton(coordinator)]
     async_add_entities(entities)
 
 

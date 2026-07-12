@@ -40,6 +40,7 @@ PARALLEL_UPDATES = 0
 _HC_REGEX = re.compile(r"^hc_([a-g])_")
 _ZM_ROOM_REGEX = re.compile(r"^zm(\d+)_room(\d+)_")
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -47,7 +48,7 @@ async def async_setup_entry(
 ) -> None:
     """Set up the IDM climate platform."""
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    
+
     entities: list[ClimateEntity] = []
 
     # Find heating circuits
@@ -56,12 +57,12 @@ async def async_setup_entry(
         match = _HC_REGEX.search(reg.name)
         if match:
             circuits.add(match.group(1))
-            
+
     for circuit in circuits:
         mode_reg = coordinator.get_register(f"hc_{circuit}_mode")
         target_reg = coordinator.get_register(f"hc_{circuit}_room_setpoint_heat_normal")
         current_reg = coordinator.get_register(f"hc_{circuit}_room_temp")
-        
+
         if mode_reg and target_reg:
             entities.append(IdmHeatingCircuitClimate(coordinator, circuit, mode_reg, target_reg, current_reg))
 
@@ -77,7 +78,7 @@ async def async_setup_entry(
         mode_reg = coordinator.get_register(f"{prefix}_mode")
         target_reg = coordinator.get_register(f"{prefix}_setpoint")
         current_reg = coordinator.get_register(f"{prefix}_temp")
-        
+
         if mode_reg and target_reg and current_reg:
             entities.append(IdmZoneRoomClimate(coordinator, zone, room, mode_reg, target_reg, current_reg))
 
@@ -107,7 +108,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         self._current_reg = current_reg
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{unique_id}"
         self._attr_device_info = coordinator.device_info
-        
+
         self._attr_min_temp = float(self._target_reg.min_value) if hasattr(self._target_reg, "min_value") else 10.0
         self._attr_max_temp = float(self._target_reg.max_value) if hasattr(self._target_reg, "max_value") else 35.0
 
@@ -132,7 +133,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is None:
             return
-            
+
         if self._target_reg.name in self.coordinator.data:
             self.coordinator.data[self._target_reg.name] = temp
             self.async_write_ha_state()
@@ -154,7 +155,12 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
 
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT, HVACMode.COOL]
     _attr_preset_modes = [PRESET_NONE, PRESET_ECO]
-    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
+    _attr_supported_features = (
+        ClimateEntityFeature.TARGET_TEMPERATURE
+        | ClimateEntityFeature.PRESET_MODE
+        | ClimateEntityFeature.TURN_OFF
+        | ClimateEntityFeature.TURN_ON
+    )
 
     def __init__(
         self,
@@ -165,9 +171,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         current_reg: RegisterDef | None,
     ) -> None:
         """Initialize the heating circuit climate."""
-        super().__init__(
-            coordinator, mode_reg, target_reg, current_reg, f"climate_hc_{circuit}"
-        )
+        super().__init__(coordinator, mode_reg, target_reg, current_reg, f"climate_hc_{circuit}")
         self._circuit = circuit.upper()
         self._attr_translation_key = "heating_circuit"
         self._attr_translation_placeholders = {"circuit": self._circuit}
@@ -204,7 +208,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
             return None
         if self.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
-        
+
         status_val = self.coordinator.data.get("heatpump_status")
         if status_val is not None:
             status = HeatPumpStatus(status_val)
@@ -225,7 +229,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
             val = CircuitMode.MANUAL_COOL
         else:
             return
-            
+
         if self._mode_reg.name in self.coordinator.data:
             self.coordinator.data[self._mode_reg.name] = val
             self.async_write_ha_state()
@@ -240,7 +244,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
             val = CircuitMode.ECO
         else:
             val = CircuitMode.NORMAL
-            
+
         if self._mode_reg.name in self.coordinator.data:
             self.coordinator.data[self._mode_reg.name] = val
             self.async_write_ha_state()
@@ -256,7 +260,12 @@ class IdmZoneRoomClimate(IdmClimateBase):
 
     _attr_hvac_modes = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT]
     _attr_preset_modes = [PRESET_NONE, PRESET_ECO, PRESET_COMFORT]
-    _attr_supported_features = ClimateEntityFeature.TARGET_TEMPERATURE | ClimateEntityFeature.PRESET_MODE | ClimateEntityFeature.TURN_OFF | ClimateEntityFeature.TURN_ON
+    _attr_supported_features = (
+        ClimateEntityFeature.TARGET_TEMPERATURE
+        | ClimateEntityFeature.PRESET_MODE
+        | ClimateEntityFeature.TURN_OFF
+        | ClimateEntityFeature.TURN_ON
+    )
 
     def __init__(
         self,
@@ -268,9 +277,7 @@ class IdmZoneRoomClimate(IdmClimateBase):
         current_reg: RegisterDef,
     ) -> None:
         """Initialize the zone room climate."""
-        super().__init__(
-            coordinator, mode_reg, target_reg, current_reg, f"climate_zm{zone}_room{room}"
-        )
+        super().__init__(coordinator, mode_reg, target_reg, current_reg, f"climate_zm{zone}_room{room}")
         self._zone = zone
         self._room = room
         self._attr_translation_key = "zone_room"
@@ -324,7 +331,7 @@ class IdmZoneRoomClimate(IdmClimateBase):
             val = RoomMode.NORMAL
         else:
             return
-            
+
         if self._mode_reg.name in self.coordinator.data:
             self.coordinator.data[self._mode_reg.name] = val
             self.async_write_ha_state()
@@ -341,7 +348,7 @@ class IdmZoneRoomClimate(IdmClimateBase):
             val = RoomMode.COMFORT
         else:
             val = RoomMode.NORMAL
-            
+
         if self._mode_reg.name in self.coordinator.data:
             self.coordinator.data[self._mode_reg.name] = val
             self.async_write_ha_state()

@@ -27,6 +27,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PARALLEL_UPDATES = 0
 
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -44,6 +45,7 @@ async def async_setup_entry(
     else:
         _LOGGER.debug("No DHW registers found; not setting up water_heater platform")
 
+
 class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
     """Representation of the IDM Domestic Hot Water."""
 
@@ -53,7 +55,7 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
     _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE
     _attr_operation_list = [STATE_PERFORMANCE]
     _attr_current_operation = STATE_PERFORMANCE
-    
+
     def __init__(
         self,
         coordinator: IdmCoordinator,
@@ -99,7 +101,7 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         temp = kwargs.get("temperature")
         if temp is None:
             return
-        
+
         # Write optimistically to the coordinator data
         if self._target_reg.name in self.coordinator.data:
             self.coordinator.data[self._target_reg.name] = temp
