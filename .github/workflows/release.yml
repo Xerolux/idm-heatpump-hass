@@ -51,7 +51,7 @@ jobs:
       is_draft: ${{ steps.version.outputs.is_draft }}
       release_type: ${{ steps.version.outputs.release_type }}
       release-notes: ${{ steps.generate.outputs.release-notes }}
-      previous-tag: ${{ steps.commits.outputs.previous-tag }}
+      previous-tag: ${{ steps.previous.outputs.previous-tag }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
         with:
@@ -129,123 +129,86 @@ jobs:
               )
           PY
 
-      - name: Parse commits since last release
-        id: commits
+      - name: Determine previous release
+        id: previous
+        env:
+          RELEASE_TYPE: ${{ steps.version.outputs.release_type }}
+          CURRENT_TAG: ${{ steps.version.outputs.tag }}
         run: |
-          CURRENT_TAG="${{ steps.version.outputs.tag }}"
-          PREV_TAG=$(git tag --sort=-version:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$' | grep -v "$CURRENT_TAG" | head -1)
-
-          if [ -z "$PREV_TAG" ]; then
-            COMMITS=$(git log --oneline --pretty=format:"- %s (%h)" | head -30)
+          if [ "$RELEASE_TYPE" = "stable" ]; then
+            TAG_PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+$'
           else
-            COMMITS=$(git log ${PREV_TAG}..HEAD --oneline --pretty=format:"- %s (%h)" 2>/dev/null || git log --oneline --pretty=format:"- %s (%h)" | head -30)
+            TAG_PATTERN='^v[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'
           fi
 
-          BUG_FIXES=$(echo "$COMMITS" | grep -iE "(\bfix\b|\bbug\b|\bpatch\b|hotfix|bugfix)" || echo "")
-          IMPROVEMENTS=$(echo "$COMMITS" | grep -iE "(\bimprove\b|\benhance\b|\bupdate\b|\brefactor\b|\boptimize\b)" || echo "")
-          NEW_FEATURES=$(echo "$COMMITS" | grep -iE "(\badd\b|\bfeat\b|\bfeature\b|\bnew\b)" || echo "")
-          BREAKING_CHANGES=$(echo "$COMMITS" | grep -iE "(\bbreaking\b|\bmigration\b|\bdeprecat)" || echo "")
+          PREV_TAG=$(git tag --sort=-version:refname \
+            | grep -E "$TAG_PATTERN" \
+            | grep -Fxv "$CURRENT_TAG" \
+            | head -1 || true)
 
-          echo "previous-tag=$PREV_TAG" >> $GITHUB_OUTPUT
-          echo "bug-fixes<<EOF" >> $GITHUB_OUTPUT
-          echo "$BUG_FIXES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "improvements<<EOF" >> $GITHUB_OUTPUT
-          echo "$IMPROVEMENTS" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "new-features<<EOF" >> $GITHUB_OUTPUT
-          echo "$NEW_FEATURES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-          echo "breaking-changes<<EOF" >> $GITHUB_OUTPUT
-          echo "$BREAKING_CHANGES" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "previous-tag=$PREV_TAG" >> "$GITHUB_OUTPUT"
 
       - name: Generate release notes
         id: generate
         env:
-          RELEASE_TYPE: ${{ steps.version.outputs.release_type }}
           VERSION: ${{ steps.version.outputs.version }}
           TAG: ${{ steps.version.outputs.tag }}
-          BUG_FIXES: ${{ steps.commits.outputs.bug-fixes }}
-          IMPROVEMENTS: ${{ steps.commits.outputs.improvements }}
-          NEW_FEATURES: ${{ steps.commits.outputs.new-features }}
-          BREAKING_CHANGES: ${{ steps.commits.outputs.breaking-changes }}
-          PREVIOUS_TAG: ${{ steps.commits.outputs.previous-tag }}
+          PREVIOUS_TAG: ${{ steps.previous.outputs.previous-tag }}
           CURATED_RELEASE_NOTES: ${{ inputs.release_notes }}
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
         run: |
-          case "$RELEASE_TYPE" in
-            alpha) TYPE_BADGE="ALPHA RELEASE - Experimental features, use with caution!" ;;
-            beta) TYPE_BADGE="BETA RELEASE - Testing phase, may contain bugs" ;;
-            rc) TYPE_BADGE="RELEASE CANDIDATE - Feature complete, final testing" ;;
-            draft) TYPE_BADGE="DRAFT RELEASE - Work in progress" ;;
-            *) TYPE_BADGE="STABLE RELEASE" ;;
-          esac
+          python - <<'PY'
+          import os
+          from pathlib import Path
 
-          [ -z "$BUG_FIXES" ] && BUG_FIXES="- Minor bug fixes and stability improvements"
-          [ -z "$IMPROVEMENTS" ] && IMPROVEMENTS="- Performance improvements and code optimizations"
-          [ -z "$NEW_FEATURES" ] && NEW_FEATURES="- Enhanced IDM Heatpump functionality"
+          version = os.environ["VERSION"]
+          tag = os.environ["TAG"]
+          previous_tag = os.environ["PREVIOUS_TAG"]
+          repository_url = os.environ["REPOSITORY_URL"]
+          curated_notes = os.environ["CURATED_RELEASE_NOTES"].strip()
 
-          if [ -z "$PREVIOUS_TAG" ]; then
-            CHANGELOG_LINK="Full changelog: Initial release"
-          else
-            CHANGELOG_URL="${{ github.server_url }}/${{ github.repository }}/compare/$PREVIOUS_TAG...$TAG"
-            CHANGELOG_LINK="[Full changelog: $PREVIOUS_TAG...$TAG]($CHANGELOG_URL)"
-          fi
+          if curated_notes:
+              release_notes = curated_notes
+          else:
+              changelog_lines = Path("docs/CHANGELOG.md").read_text(encoding="utf-8").splitlines()
+              heading = f"## [{version}]"
+              start = next(
+                  index
+                  for index, line in enumerate(changelog_lines)
+                  if line == heading or line.startswith(f"{heading} ")
+              )
+              end = next(
+                  (
+                      index
+                      for index in range(start + 1, len(changelog_lines))
+                      if changelog_lines[index].startswith("## [")
+                  ),
+                  len(changelog_lines),
+              )
+              release_notes = "\n".join(changelog_lines[start:end]).strip()
+              release_notes += """
 
-          if [ -n "$CURATED_RELEASE_NOTES" ]; then
-            {
-              echo "$CURATED_RELEASE_NOTES"
-              echo ""
-              echo "---"
-              echo ""
-              echo "$CHANGELOG_LINK"
-            } > temp_release_notes.md
-          else
-          {
-            echo "## $TAG - IDM Heatpump"
-            echo ""
-            echo "**$TYPE_BADGE**"
-            echo ""
-            echo "### What changed"
-            echo ""
-            echo "$BUG_FIXES"
-            echo ""
-            echo "$IMPROVEMENTS"
-            echo ""
-            echo "$NEW_FEATURES"
-            echo ""
-            echo "### Why it matters"
-            echo ""
-            echo "- Keeps update notes short and readable directly inside Home Assistant / HACS."
-            echo "- Highlights the most important fixes and improvements without forcing users into the full changelog."
-            echo "- Preserves a clean path to the full compare view when deeper details are needed."
-            echo ""
-            if [ -n "$BREAKING_CHANGES" ]; then
-              echo "### Breaking changes / Migration"
-              echo ""
-              echo "$BREAKING_CHANGES"
-              echo ""
-            fi
-            echo "### Support"
-            echo ""
-            echo "Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:"
-            echo ""
-            echo "- [GitHub Sponsors](https://github.com/sponsors/xerolux)"
-            echo "- [Ko-Fi](https://ko-fi.com/xerolux)"
-            echo "- [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)"
-            echo "- [PayPal](https://paypal.me/xerolux)"
-            echo ""
-            echo "---"
-            echo ""
-            echo "$CHANGELOG_LINK"
-            echo ""
-            echo "**Developed by:** [Xerolux](https://github.com/Xerolux)"
-            echo "**Integration for:** IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH"
-            echo "**License:** MIT"
-            echo ""
-            echo "_Generated automatically by GitHub Actions on $(date +'%Y-%m-%d %H:%M:%S UTC')_"
-          } > temp_release_notes.md
-          fi
+          ### Support
+
+          Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:
+
+          - [GitHub Sponsors](https://github.com/sponsors/xerolux)
+          - [Ko-Fi](https://ko-fi.com/xerolux)
+          - [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)
+          - [PayPal](https://paypal.me/xerolux)
+          """.rstrip()
+
+          if previous_tag:
+              compare_url = f"{repository_url}/compare/{previous_tag}...{tag}"
+              changelog_link = f"[Full changelog: {previous_tag}...{tag}]({compare_url})"
+          else:
+              changelog_link = "Full changelog: Initial release"
+
+          Path("temp_release_notes.md").write_text(
+              f"{release_notes}\n\n---\n\n{changelog_link}\n",
+              encoding="utf-8",
+          )
+          PY
 
           echo "release-notes<<EOFNOTES" >> $GITHUB_OUTPUT
           cat temp_release_notes.md >> $GITHUB_OUTPUT
