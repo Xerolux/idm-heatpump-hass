@@ -11,6 +11,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.2] - 2026-07-12
+
+### ⚠️ WICHTIGE HINWEISE ZUM UPDATE (BREAKING CHANGES)
+
+Das direkte Update von v0.8.1 auf v0.8.2 enthält **keine zusätzlichen Breaking Changes**. Wenn ihr von v0.7.4 oder älter auf eine v0.8-Version aktualisiert, gelten weiterhin diese wichtigen Änderungen:
+
+1. **Web-Login per Netzwerk & PIN aktivieren:**
+   Die Integration bietet jetzt den Web-Fallback an. Damit dieser (oder spätere Web-Features) funktioniert, müsst ihr an eurer IDM den lokalen Webzugriff im Netzwerk aktivieren und **einmalig eine PIN in der Wärmepumpe vergeben**. Diese PIN muss dann auch in der Integration unter „Konfigurieren“ eingetragen werden.
+2. **Fest gepinnte API-Version (`idm-heatpump-api[web]==0.7.6`):**
+   Das Update verwendet die getestete API-Version 0.7.6. Sie behebt unter anderem den kritischen Bug #109 (Kühlgrenze / Batch-Read-Kollision), der falsche Werte wie `200` liefern konnte.
+3. **Neue `climate`- und `water_heater`-Plattformen:**
+   Native Home-Assistant-Klima- und Warmwasser-Entitäten ergänzen beziehungsweise ersetzen bisherige einzelne Sensoren, Numbers oder Skripte für Betriebsarten und Solltemperaturen.
+4. **Entfernte Entität `ext_demand_brine_pump_m16`:**
+   Diese Entität wurde entfernt, da das zugehörige Register in der offiziellen IDM-Dokumentation nicht mehr existiert.
+5. **Fehlertolerantes Polling:**
+   Nicht unterstützte optionale Register werden isoliert. Dadurch können sich Verfügbarkeit und Verhalten bisher flackernder oder unpassender Entitäten ändern.
+6. **Geänderte Unique IDs:**
+   Die Integration verwendet nicht mehr die IP-Adresse als Basis der Unique ID. In seltenen Fällen kann Home Assistant Entitäten beim Update neu zuordnen.
+
+> 🛑 **WICHTIGER HAFTUNGSAUSSCHLUSS / DISCLAIMER** 🛑
+>
+> Dieses Projekt ist eine **inoffizielle Community-Integration** und steht in keinerlei Verbindung zu IDM Energiesysteme GmbH. Die Nutzung erfolgt **ausschließlich und komplett auf eigene Gefahr!** Wir übernehmen keine Haftung für Schäden, insbesondere durch das Schreiben von Modbus-Registern.
+
+### 🛠️ Korrekturen
+
+- Zeigt die nativen Klimaregler mit eindeutigen Namen wie **Heizkreis A** oder **Zone 1 Raum 1** an, statt beide auf den Namen der Wärmepumpe zurückfallen zu lassen.
+- Benennt die Warmwasser-Entität verständlich als **Warmwasser**.
+- Ersetzt den irreführenden, pauschalen Warmwasserstatus **Hochleistung** durch den passenden Home-Assistant-Modus **Wärmepumpe**.
+- Vervollständigt die kanonischen englischen Entity-Texte für Klima, Warmwasser und „Störungen quittieren“, damit alle Übersetzungen zuverlässig aufgelöst werden.
+
+### ✅ Validierung
+
+- 691 Tests bestanden.
+- Ruff-Linting und Formatprüfung bestanden.
+- Strikte mypy-Typprüfung bestanden.
+- Die getestete Abhängigkeit `idm-heatpump-api[web]==0.7.6` bleibt unverändert gepinnt.
+
 ## [0.8.1] - 2026-07-12
 
 Diese Version ist das größte Update seit langem und bündelt die Ergebnisse aus über 30 Beta-Releases seit v0.7.4. Sie bringt massive Verbesserungen bei der Stabilität, komplett neue Plattformen und einen optionalen Web-Fallback!

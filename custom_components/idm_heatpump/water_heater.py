@@ -11,9 +11,9 @@ import logging
 from typing import Any
 
 from homeassistant.components.water_heater import (
+    STATE_HEAT_PUMP,
     WaterHeaterEntity,
     WaterHeaterEntityFeature,
-    STATE_PERFORMANCE,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
@@ -50,11 +50,11 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
     """Representation of the IDM Domestic Hot Water."""
 
     _attr_has_entity_name = True
-    _attr_name = None
+    _attr_translation_key = "water_heater"
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE
-    _attr_operation_list = [STATE_PERFORMANCE]
-    _attr_current_operation = STATE_PERFORMANCE
+    _attr_operation_list = [STATE_HEAT_PUMP]
+    _attr_current_operation = STATE_HEAT_PUMP
 
     def __init__(
         self,
