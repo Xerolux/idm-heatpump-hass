@@ -88,7 +88,6 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
     """Base class for IDM climate entities."""
 
     _attr_has_entity_name = True
-    _attr_name = None
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
 
     def __init__(

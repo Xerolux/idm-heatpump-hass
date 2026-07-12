@@ -5,6 +5,26 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.2 — 2026-07-12
+
+### ⚠️ Wichtige Hinweise zum Update (Breaking Changes)
+
+Das direkte Update von v0.8.1 auf v0.8.2 enthält keine zusätzlichen Breaking
+Changes. Bei einem Update von v0.7.4 oder älter gelten weiterhin die
+v0.8-Änderungen: lokaler Webzugriff mit PIN, die fest gepinnte API 0.7.6, neue
+`climate`- und `water_heater`-Plattformen, die entfernte Entität
+`ext_demand_brine_pump_m16`, fehlertolerantes Polling und IP-unabhängige Unique
+IDs. Die vollständigen Hinweise stehen im [Changelog](../CHANGELOG.md).
+
+### Korrekturen
+
+- Benennt native Regler eindeutig als **Heizkreis A**, **Zone 1 Raum 1** und
+  **Warmwasser**, statt den Gerätenamen für mehrere Entitäten anzuzeigen.
+- Zeigt für Warmwasser den passenden Modus **Wärmepumpe** statt des
+  irreführenden Status **Hochleistung**.
+- Vervollständigt die kanonischen Entity-Texte und sichert das Naming mit Tests
+  ab.
+
 ## v0.8.1-beta.29 — 2026-07-11
 
 - Remembers the successful Navigator 2.0 or Navigator 10/Pro local web

@@ -23,7 +23,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Integration version** | 0.8.1-beta.29 |
+| **Integration version** | 0.8.2 |
 | **Supported/tested HA baseline** | 2026.5.0 |
 | **Python** | 3.13+ (managed by Home Assistant) |
 | **pymodbus** | pymodbus>=3.12.1,<4.0 |

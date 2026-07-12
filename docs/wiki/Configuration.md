@@ -179,7 +179,7 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.8.1-beta.29` | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | `0.8.2` | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Python register/web library | `idm-heatpump-api[web]==0.7.6` | Register schema, encoding/decoding, Modbus client or reusable web-client implementation changes |
 
 Every integration release pins the exact API version it was tested with. The
