@@ -69,6 +69,7 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_water_heater"
         from .entity import build_device_info
+
         self._attr_device_info = build_device_info(coordinator)
 
     @property

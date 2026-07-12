@@ -109,6 +109,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{unique_id}"
         from .entity import build_device_info
+
         self._attr_device_info = build_device_info(coordinator)
         self._attr_min_temp = float(self._target_reg.min_value) if hasattr(self._target_reg, "min_value") else 10.0
         self._attr_max_temp = float(self._target_reg.max_value) if hasattr(self._target_reg, "max_value") else 35.0

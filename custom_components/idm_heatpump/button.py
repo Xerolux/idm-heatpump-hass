@@ -52,6 +52,7 @@ class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_acknowledge_errors"
         from .entity import build_device_info
+
         self._attr_device_info = build_device_info(coordinator)
         self._register = RegisterDef(
             address=REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
