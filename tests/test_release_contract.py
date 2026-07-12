@@ -301,10 +301,26 @@ def test_release_workflow_never_mutates_or_pushes_release_metadata() -> None:
     assert "git push" not in release_workflow
 
 
-def test_release_workflow_uses_prerelease_tags_for_previous_release() -> None:
+def test_release_workflow_selects_previous_tag_without_substring_exclusions() -> None:
     release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
 
     assert "(-[0-9A-Za-z.-]+)?$" in release_workflow
+    assert 'grep -Fxv "$CURRENT_TAG"' in release_workflow
+    assert 'grep -v "$CURRENT_TAG"' not in release_workflow
+    assert 'if [ "$RELEASE_TYPE" = "stable" ]' in release_workflow
+    assert "TAG_PATTERN='^v[0-9]+\\.[0-9]+\\.[0-9]+$'" in release_workflow
+    assert "| head -1 || true)" in release_workflow
+
+
+def test_release_workflow_uses_curated_changelog_section_by_default() -> None:
+    release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+
+    assert 'changelog_lines = Path("docs/CHANGELOG.md").read_text(encoding="utf-8").splitlines()' in release_workflow
+    assert 'heading = f"## [{version}]"' in release_workflow
+    assert 'changelog_lines[index].startswith("## [")' in release_workflow
+    assert 'release_notes = "\\n".join(changelog_lines[start:end]).strip()' in release_workflow
+    assert "### Support" in release_workflow
+    assert "### What changed" not in release_workflow
 
 
 def test_wiki_sync_exactly_mirrors_source_pages_safely() -> None:
