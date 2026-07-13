@@ -181,6 +181,7 @@ def test_api_dependency_update_workflow_updates_pin_and_runs_contract_tests() ->
     assert "exact, reproducible `idm-heatpump-api` pin" in workflow
     assert 'json.load(manifest_file)["requirements"]' in workflow
     assert 'pip", "install", *requirements' in workflow
+    assert "python scripts/generate_modbus_register_reference.py" in workflow
     assert "tests/test_release_contract.py tests/test_cross_repo_contract.py" in workflow
     assert "peter-evans/create-pull-request" in workflow
 
@@ -241,6 +242,17 @@ def test_release_artifact_is_built_from_manifest_directory() -> None:
     assert "cd custom_components/idm_heatpump" in release_workflow
     assert "zip -r ../../idm_heatpump.zip ." in release_workflow
     assert "manifest.json" not in release_workflow.partition("zip -r ../../idm_heatpump.zip .")[2].partition("\n\n")[0]
+
+
+def test_release_announces_non_draft_versions_in_discussions() -> None:
+    release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+
+    assert "  discussions: write" in release_workflow
+    assert "Announce published release in GitHub Discussions" in release_workflow
+    assert "if: steps.version.outputs.is_draft == 'false'" in release_workflow
+    assert "RELEASE_NOTES_PATH: temp_release_notes.md" in release_workflow
+    assert "DISCUSSION_CATEGORY_SLUG: announcements" in release_workflow
+    assert "run: python scripts/publish_release_discussion.py" in release_workflow
 
 
 def test_release_smoke_test_is_candidate_bound_without_stale_version() -> None:

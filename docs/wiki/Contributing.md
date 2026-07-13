@@ -5,7 +5,9 @@ We welcome contributions to this project!
 ## How to Contribute
 
 - **Bug Reports**: [Create an issue](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
-- **Feature Requests**: [Create an issue](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
+- **Questions & Help**: [Start a Q&A discussion](https://github.com/Xerolux/idm-heatpump-hass/discussions/categories/q-a)
+- **Feature Requests**: [Share an idea](https://github.com/Xerolux/idm-heatpump-hass/discussions/categories/ideas)
+- **Lovelace & Automations**: [Show your project](https://github.com/Xerolux/idm-heatpump-hass/discussions/categories/show-and-tell)
 - **Pull Requests**: Fork → Branch → Changes → PR
 - **Documentation**: Improve wiki pages or add new ones
 - **Translations**: Help with DE/EN translations

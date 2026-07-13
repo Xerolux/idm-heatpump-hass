@@ -104,11 +104,11 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | Resource | Link |
 |----------|------|
 | GitHub Repository | https://github.com/Xerolux/idm-heatpump-hass |
+| Community, Questions & Ideas | https://github.com/Xerolux/idm-heatpump-hass/discussions |
 | Issues & Bugs | https://github.com/Xerolux/idm-heatpump-hass/issues |
 | HACS | https://hacs.xyz/ |
 | Home Assistant | https://www.home-assistant.io/ |
 | IDM EnergieSysteme | https://www.idm-energiesysteme.de/ |
-| Community Forum | https://community.home-assistant.io/ |
 
 ---
 

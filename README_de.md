@@ -10,7 +10,7 @@
     <a href="https://xerolux.github.io/idm-heatpump-hass/"><strong>Website</strong></a> ·
     <a href="https://xerolux.github.io/idm-heatpump-hass/docs/#/home"><strong>Dokumentation</strong></a> ·
     <a href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest"><strong>Download</strong></a> ·
-    <a href="https://github.com/Xerolux/idm-heatpump-hass/issues"><strong>Support</strong></a>
+    <a href="https://github.com/Xerolux/idm-heatpump-hass/discussions"><strong>Community</strong></a>
   </p>
 </div>
 
@@ -44,7 +44,7 @@
 | **🧭 Geführte Einrichtungsdiagnose** | Unterscheidet unbekannte Hosts, abgelehntes/deaktiviertes Modbus TCP, Timeouts, Netzwerkfehler, falsche Slave-ID, falsche Web-PIN und nicht erreichbare Weboberfläche |
 | **🧪 Schreibgeschützter Verbindungstest** | Das Rekonfigurationsmenü testet die gespeicherte Modbus- und optionale Webverbindung, ohne Einstellungen zu ändern oder Register zu schreiben |
 | **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api` und `pymodbus` |
-| **🔑 Fachmann-Ebene** | Optionale Sensoren für Fachmann Ebene 1 & 2 Codes (zeitbasiert, minütlich aktualisiert und ganz oben angeheftet) |
+| **🔑 Fachmann-Ebene** | Optionale Sensoren für die aktuellen Zugangscodes der Ebenen 1 & 2 (standardmäßig aus, minütlich aktualisiert und ganz oben angeheftet) |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
 
 ---
@@ -205,7 +205,7 @@ Diese Integration wird in meiner Freizeit entwickelt:
 - ⭐ Repository auf GitHub sternen
 - 🐛 [Bugs melden][issues]
 - 📢 Mit anderen Wärmepumpen-Besitzern teilen
-- 💬 Anderen in der [Community][forum] helfen
+- 💬 Fragen stellen und anderen in den [GitHub Discussions][discussions] helfen
 
 ---
 
@@ -278,7 +278,7 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [kofi-badge]: https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge
 [bmac]: https://www.buymeacoffee.com/xerolux
 [bmac-badge]: https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge
-[forum]: https://community.home-assistant.io/
+[discussions]: https://github.com/Xerolux/idm-heatpump-hass/discussions
 [github]: https://github.com/Xerolux/idm-heatpump-hass
 [github-shield]: https://img.shields.io/badge/GitHub-Xerolux/idm--heatpump--hass-blue?style=for-the-badge&logo=github
 [issues]: https://github.com/Xerolux/idm-heatpump-hass/issues

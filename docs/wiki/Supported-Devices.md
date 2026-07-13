@@ -35,7 +35,7 @@ The following devices may use the same register mapping as the Navigator 2.0 / 1
 - IDM Terra HT (with Navigator 2.0 / 10 controller)
 - IDM Aero SLM (with Navigator 2.0 / 10 controller)
 
-> **Note:** If you successfully use an unlisted IDM device, please create a [GitHub Issue](https://github.com/Xerolux/idm-heatpump-hass/issues) so we can expand the list!
+> **Note:** If you successfully use an unlisted IDM device, please share a detailed [compatibility report in Q&A](https://github.com/Xerolux/idm-heatpump-hass/discussions/categories/q-a) so we can expand the list. Select **Devices or firmware compatibility** in the form.
 
 ## Modbus Register Compatibility
 

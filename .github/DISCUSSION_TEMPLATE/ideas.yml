@@ -1,0 +1,64 @@
+title: "[Idee] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Ideen sind willkommen. Beschreibe zuerst das Problem oder den Anwendungsfall;
+        so kann die Community gemeinsam die sinnvollste Lösung entwickeln.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Bereich
+      options:
+        - Entitäten und Modbus-Register
+        - Konfiguration und Bedienung
+        - Automationen und Services
+        - Lovelace und Darstellung
+        - Geräte- oder Firmware-Unterstützung
+        - Dokumentation
+        - Entwicklung und Qualität
+        - Sonstiges
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem oder Anwendungsfall
+      description: Welches konkrete Problem soll gelöst werden und für wen ist es relevant?
+      placeholder: Heute muss ich ...; hilfreich wäre das, weil ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Gewünschte Lösung
+      description: Wie könnte sich die Funktion aus Sicht der Nutzerinnen und Nutzer verhalten?
+      placeholder: Eine mögliche Lösung wäre ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativen
+      description: Gibt es bereits einen Workaround oder andere Lösungswege?
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Zusätzlicher Kontext
+      description: Screenshots, Beispiele oder Links können direkt hier eingefügt werden. Bitte private Daten entfernen.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checkliste
+      options:
+        - label: Ich habe bestehende Ideas und Issues nach einem ähnlichen Vorschlag durchsucht.
+          required: true
+        - label: Die Idee beschreibt den Nutzen und nicht nur eine technische Umsetzung.
+          required: true
+

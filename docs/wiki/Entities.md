@@ -33,6 +33,18 @@ entities, switches, writable values, live measurements and diagnostics.
 This sensor remains available even if heat-pump polling fails, making it useful
 when collecting information for a bug report.
 
+### Technician-level access codes
+
+When enabled in the integration options, two additional sensors expose the
+current access codes for *Fachmann Ebene 1* and *Fachmann Ebene 2*. They update
+once per minute, are placed at the top of the IDM device entity list and are not
+Modbus registers.
+
+The option is disabled by default. Treat the values as sensitive: limit access
+to their dashboard cards and never publish them in screenshots, logs or support
+requests. See [Configuration](Configuration#technician-level-codes) for setup
+and security guidance. The calculation method is deliberately not documented.
+
 ### System Temperatures & Pressures
 
 | Entity | Register | Unit |

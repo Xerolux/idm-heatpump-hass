@@ -32,6 +32,7 @@ concurrency:
 
 permissions:
   contents: write
+  discussions: write
 
 jobs:
   validate-release:
@@ -251,6 +252,16 @@ jobs:
           draft: ${{ steps.version.outputs.is_draft == 'true' }}
           prerelease: ${{ steps.version.outputs.is_prerelease == 'true' }}
           make_latest: ${{ inputs.make_latest != false && steps.version.outputs.release_type == 'stable' }}
+
+      - name: Announce published release in GitHub Discussions
+        if: steps.version.outputs.is_draft == 'false'
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          RELEASE_IS_PRERELEASE: ${{ steps.version.outputs.is_prerelease }}
+          RELEASE_NOTES_PATH: temp_release_notes.md
+          DISCUSSION_CATEGORY_SLUG: announcements
+        run: python scripts/publish_release_discussion.py
 
   create-summary:
     needs: prepare-release

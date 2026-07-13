@@ -119,6 +119,7 @@ jobs:
 
           subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
           PY
+          python scripts/generate_modbus_register_reference.py
           pytest tests/test_release_contract.py tests/test_cross_repo_contract.py -q
 
       - name: Create dependency update PR

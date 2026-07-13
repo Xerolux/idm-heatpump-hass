@@ -30,6 +30,7 @@
 - [Modbus Registers](Modbus-Register)
 
 ## Development
+- [Community & Support](Community)
 - [Contributing](Contributing)
 - [Changelog](Changelog)
 
@@ -38,4 +39,4 @@
 **HA:** 2026.5.0+
 **Python:** 3.13+ · **pymodbus:** pymodbus>=3.12.1,<4.0 · **idm-heatpump-api[web]:** idm-heatpump-api[web]==0.7.6
 
-[GitHub](https://github.com/Xerolux/idm-heatpump-hass) · [Issues](https://github.com/Xerolux/idm-heatpump-hass/issues) · [HACS](https://hacs.xyz/)
+[GitHub](https://github.com/Xerolux/idm-heatpump-hass) · [Discussions](https://github.com/Xerolux/idm-heatpump-hass/discussions) · [Issues](https://github.com/Xerolux/idm-heatpump-hass/issues) · [HACS](https://hacs.xyz/)

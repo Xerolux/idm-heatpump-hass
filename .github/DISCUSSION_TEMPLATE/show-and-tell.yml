@@ -1,0 +1,60 @@
+title: "[Lovelace/Automation] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Zeig der Community dein Dashboard, deine Automation oder eine andere kreative
+        Nutzung der Integration. Wiederverwendbare Beispiele helfen allen weiter.
+
+  - type: dropdown
+    id: type
+    attributes:
+      label: Art des Projekts
+      options:
+        - Lovelace-Dashboard oder Karte
+        - Automation
+        - Script oder Blueprint
+        - Energie-Dashboard
+        - Auswertung oder Benachrichtigung
+        - Andere Idee
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Was hast du gebaut?
+      description: Erkläre kurz den Zweck, die wichtigsten Funktionen und für wen das Beispiel nützlich ist.
+    validations:
+      required: true
+
+  - type: textarea
+    id: configuration
+    attributes:
+      label: YAML oder Konfiguration
+      description: Teile einen bereinigten, möglichst direkt nutzbaren Ausschnitt.
+      render: yaml
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Bilder können per Drag-and-drop eingefügt werden. Bitte Namen, IP-Adressen, PINs und Zugangscodes unkenntlich machen.
+
+  - type: textarea
+    id: requirements
+    attributes:
+      label: Voraussetzungen
+      description: Benötigte Karten, Helfer, Entitäten oder weitere Integrationen.
+      placeholder: "z. B. Mushroom Cards, sensor.idm_..."
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Datenschutz und Nutzbarkeit
+      options:
+        - label: Ich habe private Daten, IP-Adressen, PINs und Zugangscodes entfernt.
+          required: true
+        - label: Ich habe Abhängigkeiten und wichtige Voraussetzungen genannt.
+          required: true
+

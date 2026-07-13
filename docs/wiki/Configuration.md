@@ -113,14 +113,23 @@ Specify the number of zone modules (0–10) and the active rooms per module. The
 
 ### Technician Level Codes
 
-Enable this option to get two additional sensor entities that display the current technician level access codes:
+Enable this optional feature to add two sensor entities that display the current
+access codes for *Fachmann Ebene 1* and *Fachmann Ebene 2* on the IDM Navigator.
+The feature is disabled by default.
 
 | Sensor | Description |
 |--------|-------------|
-| `sensor.{name}_fachmann_ebene_1` | 4-digit code: day + month (`DDMM`) |
-| `sensor.{name}_fachmann_ebene_2` | 5-digit code derived from hour, year, month, day |
+| `sensor.{name}_fachmann_ebene_1` | Current access code for technician level 1 |
+| `sensor.{name}_fachmann_ebene_2` | Current access code for technician level 2 |
 
-The codes are automatically updated every minute and can be displayed in a HA dashboard card or notification. They correspond to the codes that must be entered on the IDM Navigator display under *Technician Level*.
+The sensors update every minute and can be used in a Home Assistant dashboard or
+notification. They are integration-provided helper sensors rather than Modbus
+register values, so they do not appear in the Modbus register catalog.
+
+Treat both sensor states as sensitive access information. Enable them only when
+needed, restrict dashboard visibility, and do not include their values in public
+screenshots, support posts, notifications to shared devices or logs. The
+calculation method is intentionally not part of the public documentation.
 
 ### Room Names
 

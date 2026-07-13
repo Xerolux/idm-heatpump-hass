@@ -79,4 +79,6 @@ options.
 
 ## Technician Code Sensors
 
-The optional technician code sensors update **independently** every 60 seconds via their own timer, since they are not Modbus register values but computed codes.
+The optional technician code sensors update **independently** every 60 seconds.
+They are local helper sensors and not values read from Modbus registers. Their
+states should be treated as sensitive access information.

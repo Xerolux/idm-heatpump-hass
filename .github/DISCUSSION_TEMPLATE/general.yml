@@ -1,0 +1,32 @@
+title: "[Austausch] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Dieser Bereich ist für projektbezogenen Austausch, Erfahrungen und Themen,
+        die nicht in Q&A, Ideas oder Show and tell passen.
+
+  - type: textarea
+    id: topic
+    attributes:
+      label: Thema
+      description: Worum möchtest du dich mit der Community austauschen?
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Hintergrund
+      description: Ergänze Informationen, Beispiele oder Links, die für die Diskussion hilfreich sind.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checkliste
+      options:
+        - label: Das Thema bezieht sich auf IDM Heatpump for Home Assistant.
+          required: true
+        - label: Ich habe private Daten, IP-Adressen, PINs und Zugangscodes entfernt.
+          required: true
+

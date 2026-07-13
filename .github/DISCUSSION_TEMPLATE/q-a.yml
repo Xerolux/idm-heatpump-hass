@@ -1,0 +1,106 @@
+title: "[Hilfe] "
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Danke, dass du die Community fragst. Je genauer die Umgebung beschrieben ist,
+        desto schneller kann jemand helfen. Für einen reproduzierbaren Fehler nutze
+        bitte stattdessen den [Bug-Report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md).
+
+  - type: dropdown
+    id: topic
+    attributes:
+      label: Thema
+      description: Worum geht es hauptsächlich?
+      options:
+        - Einrichtung und Verbindung
+        - Geräte- oder Firmware-Kompatibilität
+        - Modbus-Register und Entitäten
+        - Schreiben und Steuern
+        - Lokale Web-Schnittstelle
+        - Automationen und Lovelace
+        - Sonstiges
+    validations:
+      required: true
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Frage oder Ziel
+      description: Was möchtest du erreichen und an welcher Stelle kommst du nicht weiter?
+      placeholder: Beschreibe das Ziel und die konkrete Frage möglichst vollständig.
+    validations:
+      required: true
+
+  - type: input
+    id: integration-version
+    attributes:
+      label: Integrationsversion
+      description: Zu finden unter HACS oder Einstellungen > Geräte & Dienste.
+      placeholder: "z. B. 0.8.2"
+    validations:
+      required: true
+
+  - type: input
+    id: home-assistant-version
+    attributes:
+      label: Home-Assistant-Version
+      placeholder: "z. B. 2026.7.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: navigator
+    attributes:
+      label: IDM-Navigator
+      options:
+        - Navigator 10
+        - Navigator 2.0
+        - Navigator Pro
+        - Unbekannt / anderes Modell
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Firmware und Wärmepumpenmodell
+      description: Falls bekannt, bitte Navigator-Firmware und genaue IDM-Wärmepumpe angeben.
+      placeholder: "z. B. NAV10 20.23, iPump A 3-11"
+
+  - type: dropdown
+    id: connection
+    attributes:
+      label: Verbindungsart
+      options:
+        - Modbus TCP
+        - Modbus TCP plus lokale Web-Schnittstelle
+        - Nur lokale Web-Schnittstelle
+        - Noch nicht verbunden
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: Bereits geprüft
+      description: Welche Dokumentation oder Lösungsschritte hast du bereits ausprobiert?
+      placeholder: Links, Einstellungen und bisherige Ergebnisse.
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Relevante Diagnose oder Logs
+      description: Nur den relevanten Ausschnitt einfügen. IP-Adressen, Seriennummern, PINs und Zugangscodes entfernen.
+      render: shell
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checkliste
+      options:
+        - label: Ich habe die Dokumentation und bestehende Discussions nach meinem Thema durchsucht.
+          required: true
+        - label: Ich habe private Daten, IP-Adressen, PINs und Zugangscodes entfernt.
+          required: true
+
