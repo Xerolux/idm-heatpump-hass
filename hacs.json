@@ -1,8 +1,0 @@
-{
-  "name": "IDM Heatpump",
-  "filename": "idm_heatpump.zip",
-  "content_in_root": false,
-  "render_readme": true,
-  "zip_release": true,
-  "homeassistant": "2026.5.0"
-}
