@@ -5,6 +5,9 @@ on:
     branches: [main]
     paths:
       - 'docs/public/**'
+      - 'docs/wiki/**'
+      - 'docs/images/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -26,6 +29,11 @@ jobs:
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
       - uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d
+      - name: Prepare documentation content
+        run: |
+          mkdir -p docs/public/docs/content docs/public/docs/images
+          cp docs/wiki/*.md docs/public/docs/content/
+          cp -R docs/images/. docs/public/docs/images/
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9
         with:
           path: docs/public
