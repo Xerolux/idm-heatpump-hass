@@ -1,193 +1,391 @@
-<!DOCTYPE html>
-<html lang="de">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IDM Heatpump - Home Assistant Integration</title>
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #1a1a2e; color: #e0e0e0; line-height: 1.6; }
-        .container { max-width: 920px; margin: 0 auto; padding: 2rem; }
-        h1 { color: #4fc3f7; font-size: 2.5rem; margin-bottom: 0.5rem; }
-        .subtitle { color: #888; font-size: 1.1rem; margin-bottom: 1.5rem; }
-        .badges { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1.5rem; align-items: center; }
-        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.85rem; }
-        .badge-ha { background: #41bdf5; color: #000; font-weight: 600; }
-        .badge-hacs { background: #ff6d00; color: #fff; font-weight: 600; }
-        .badge-license { background: #66bb6a; color: #000; }
-        .badge-modbus { background: #555; color: #fff; }
-        .hacs-btn { margin: 1.5rem 0; }
-        .hacs-btn img { height: 40px; border-radius: 6px; }
-        .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0; }
-        .feature { background: #16213e; padding: 1.25rem; border-radius: 8px; border: 1px solid #2a2a4a; }
-        .feature h3 { color: #4fc3f7; margin-bottom: 0.5rem; }
-        .feature p { font-size: 0.9rem; color: #aaa; }
-        .section { margin: 2.5rem 0; }
-        .section h2 { color: #4fc3f7; margin-bottom: 1rem; font-size: 1.5rem; border-bottom: 1px solid #2a2a4a; padding-bottom: 0.4rem; }
-        .steps { background: #16213e; padding: 1.5rem; border-radius: 8px; border: 1px solid #2a2a4a; }
-        .steps ol { padding-left: 1.5rem; }
-        .steps li { margin-bottom: 0.5rem; }
-        .steps code { background: #0a0a1a; padding: 0.15rem 0.4rem; border-radius: 3px; font-size: 0.9rem; }
-        .support-grid { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1rem; }
-        .support-btn { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.2rem; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 0.9rem; transition: opacity 0.2s; }
-        .support-btn:hover { opacity: 0.85; }
-        .btn-bmac { background: #ffdd00; color: #000; }
-        .btn-kofi { background: #29abe0; color: #fff; }
-        .btn-sponsor { background: #db61a2; color: #fff; }
-        .btn-paypal { background: #003087; color: #fff; }
-        .btn-tesla { background: #cc0000; color: #fff; }
-        .disclaimer { background: #1e1e0e; border: 1px solid #5a5a20; border-radius: 8px; padding: 1.25rem 1.5rem; margin-top: 1rem; }
-        .disclaimer p { font-size: 0.9rem; color: #ccc; margin-bottom: 0.4rem; }
-        .disclaimer p:last-child { margin-bottom: 0; }
-        .disclaimer strong { color: #e0c060; }
-        .links { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
-        .link { color: #4fc3f7; text-decoration: none; padding: 0.5rem 1rem; border: 1px solid #4fc3f7; border-radius: 6px; font-size: 0.9rem; transition: all 0.2s; }
-        .link:hover { background: #4fc3f7; color: #1a1a2e; }
-        .footer { text-align: center; margin-top: 3rem; padding-top: 2rem; border-top: 1px solid #2a2a4a; color: #666; font-size: 0.85rem; }
-        .footer a { color: #4fc3f7; text-decoration: none; }
-        .footer p { margin-bottom: 0.3rem; }
-        table { width: 100%; border-collapse: collapse; margin-top: 0.5rem; }
-        th, td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid #2a2a4a; font-size: 0.9rem; }
-        th { color: #4fc3f7; background: #16213e; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>IDM Heatpump</h1>
-        <p class="subtitle">Home Assistant Integration – 100% lokal via Modbus TCP</p>
+<!doctype html>
+<html lang="de" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="IDM Heatpump für Home Assistant – IDM Wärmepumpen lokal per Modbus TCP überwachen, steuern und automatisieren."
+    />
+    <meta name="theme-color" content="#07110f" />
+    <meta property="og:title" content="IDM Heatpump für Home Assistant" />
+    <meta
+      property="og:description"
+      content="Deine IDM Wärmepumpe. Direkt in Home Assistant. Lokal, transparent und ohne Cloud."
+    />
+    <title>IDM Heatpump · Home Assistant Integration</title>
+    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="script.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Zum Inhalt springen</a>
 
-        <div class="badges">
-            <span class="badge badge-ha">HA 2026.5.0+</span>
-            <span class="badge badge-hacs">HACS</span>
-            <span class="badge badge-license">MIT License</span>
-            <span class="badge badge-modbus">Modbus TCP</span>
+    <header class="site-header" data-header>
+      <div class="container nav-wrap">
+        <a class="brand" href="#top" aria-label="IDM Heatpump Startseite">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M6.5 20.5c0-5.7 4-10.6 9.5-11.7" />
+              <path d="M25.5 11.5c0 5.7-4 10.6-9.5 11.7" />
+              <path d="M10 7.8 16 8.8l-2.6 5.3" />
+              <path d="m22 24.2-6-1 2.6-5.3" />
+            </svg>
+          </span>
+          <span>IDM <strong>Heatpump</strong></span>
+        </a>
+
+        <nav class="nav-links" id="site-nav" aria-label="Hauptnavigation">
+          <a href="#features">Funktionen</a>
+          <a href="#preview">Einblicke</a>
+          <a href="#install">Installation</a>
+          <a href="https://github.com/Xerolux/idm-heatpump-hass/wiki" target="_blank" rel="noreferrer">Dokumentation</a>
+        </nav>
+
+        <div class="nav-actions">
+          <button class="icon-button theme-toggle" type="button" aria-label="Helles Design aktivieren" data-theme-toggle>
+            <svg class="sun-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <circle cx="12" cy="12" r="4" />
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42" />
+            </svg>
+            <svg class="moon-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z" />
+            </svg>
+          </button>
+          <a class="button button-small button-ghost nav-download" href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest" target="_blank" rel="noreferrer">
+            Download
+          </a>
+          <button class="icon-button menu-toggle" type="button" aria-label="Menü öffnen" aria-controls="site-nav" aria-expanded="false" data-menu-toggle>
+            <span></span><span></span>
+          </button>
         </div>
+      </div>
+    </header>
 
-        <div class="hacs-btn">
-            <a href="https://my.home-assistant.io/redirect/hacs_repository/?repository=https%3A%2F%2Fgithub.com%2FXerolux%2Fidm-heatpump-hass&owner=Xerolux&category=Integration"
-               target="_blank" rel="noopener noreferrer">
-                <img src="https://my.home-assistant.io/badges/hacs_repository.svg"
-                     alt="Add IDM Heatpump to HACS">
+    <main id="main">
+      <section class="hero" id="top">
+        <div class="hero-glow hero-glow-one" aria-hidden="true"></div>
+        <div class="hero-glow hero-glow-two" aria-hidden="true"></div>
+        <div class="container hero-grid">
+          <div class="hero-copy reveal">
+            <a class="release-pill" href="https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.8.2" target="_blank" rel="noreferrer">
+              <span class="pulse-dot"></span>
+              Aktuell: v0.8.2
+              <svg viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m6 3 5 5-5 5" /></svg>
             </a>
-        </div>
-
-        <div class="section">
-            <h2>Features</h2>
-            <div class="features">
-                <div class="feature">
-                    <h3>🌡️ System Monitoring</h3>
-                    <p>100+ sensors for temperatures, pressures, flow rates, energy, and runtime hours</p>
-                </div>
-                <div class="feature">
-                    <h3>🔧 Heating Circuits A–G</h3>
-                    <p>Up to 7 circuits with individual setpoints and mode control</p>
-                </div>
-                <div class="feature">
-                    <h3>🏠 Zone Modules</h3>
-                    <p>Up to 10 zones with up to 8 configurable rooms; 6 is the current Navigator 10 default</p>
-                </div>
-                <div class="feature">
-                    <h3>🌡️ Room Forwarding</h3>
-                    <p>Optionally forward Home Assistant temperature sensors to IDM external room temperature registers</p>
-                </div>
-                <div class="feature">
-                    <h3>🌐 Web Supplement</h3>
-                    <p>Optional read-only Navigator web data every 30 seconds for firmware, model, generation, myIDM ID and diagnostics</p>
-                </div>
-                <div class="feature">
-                    <h3>☀️ Solar &amp; PV</h3>
-                    <p>Solar hot water, PV surplus utilization, battery monitoring</p>
-                </div>
-                <div class="feature">
-                    <h3>💧 Domestic Hot Water</h3>
-                    <p>DHW setpoint and priority control</p>
-                </div>
-                <div class="feature">
-                    <h3>⚡ Full Control</h3>
-                    <p>Write setpoints, change modes, acknowledge errors via HA UI</p>
-                </div>
-                <div class="feature">
-                    <h3>🔑 Installer Codes</h3>
-                    <p>Optional Fachmann Ebene 1 &amp; 2 code sensors, refreshed every minute and pinned first</p>
-                </div>
-                <div class="feature">
-                    <h3>🧭 Readable Diagnostics</h3>
-                    <p>Internal IDM messages are shown as text with structured code and message attributes</p>
-                </div>
-                <div class="feature">
-                    <h3>🛡️ EEPROM Protection</h3>
-                    <p>88 write-protected registers, exponential backoff on connection errors</p>
-                </div>
+            <p class="eyebrow">Für Home Assistant</p>
+            <h1>Deine Wärmepumpe.<br /><span>Endlich smart.</span></h1>
+            <p class="hero-text">
+              Überwache und steuere deine IDM Navigator Wärmepumpe direkt in Home Assistant –
+              lokal per Modbus TCP, transparent und ohne Cloud.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest" target="_blank" rel="noreferrer">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M10 3v9m0 0 3.5-3.5M10 12 6.5 8.5M4 15.5h12" /></svg>
+                Integration laden
+              </a>
+              <a class="button button-secondary" href="https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-&-Setup" target="_blank" rel="noreferrer">
+                Installation ansehen
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
+              </a>
             </div>
-        </div>
+            <ul class="trust-list" aria-label="Vorteile">
+              <li><span>✓</span> 100 % lokal</li>
+              <li><span>✓</span> Über HACS installierbar</li>
+              <li><span>✓</span> Open Source</li>
+            </ul>
+          </div>
 
-        <div class="section">
-            <h2>Supported Platforms</h2>
-            <table>
-                <tr><th>Platform</th><th>Entities</th><th>Description</th></tr>
-                <tr><td>Sensor</td><td>109+</td><td>Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster</td></tr>
-                <tr><td>Binary Sensor</td><td>8+</td><td>Fault alarms, compressor status, heating/cooling/DHW demand</td></tr>
-                <tr><td>Number</td><td>44+</td><td>Writable setpoints, limits, GLT parameters, power limits</td></tr>
-                <tr><td>Select</td><td>4+</td><td>System mode, circuit modes, solar/ISC mode</td></tr>
-                <tr><td>Switch</td><td>4</td><td>External heating/cooling/DHW demand</td></tr>
-            </table>
-        </div>
+          <div class="hero-visual reveal" data-delay="120">
+            <div class="visual-orbit orbit-one" aria-hidden="true"></div>
+            <div class="visual-orbit orbit-two" aria-hidden="true"></div>
+            <div class="dashboard-window">
+              <div class="window-bar">
+                <div class="window-brand">
+                  <span class="ha-mark"><span></span></span>
+                  <span>Home Assistant</span>
+                </div>
+                <div class="window-actions" aria-hidden="true"><i></i><i></i><i></i></div>
+              </div>
+              <div class="dashboard-content">
+                <div class="dashboard-head">
+                  <div>
+                    <span class="dash-kicker">IDM Navigator</span>
+                    <h2>Wärmepumpe</h2>
+                  </div>
+                  <span class="status-badge"><i></i> Online</span>
+                </div>
 
-        <div class="section">
-            <h2>Quick Start</h2>
-            <div class="steps">
-                <ol>
-                    <li>Click the HACS button above — or manually add <code>Xerolux/idm-heatpump-hass</code> as a custom repository</li>
-                    <li>Download "IDM Heatpump" and restart Home Assistant</li>
-                    <li>Go to <strong>Settings → Devices &amp; Services → Add Integration → IDM Heatpump</strong></li>
-                    <li>Enter your heat pump IP address and Modbus port (default: <code>502</code>)</li>
-                    <li>Select heating circuits, zones, and optional features → Done!</li>
-                </ol>
+                <div class="system-visual">
+                  <div class="heat-rings" aria-hidden="true">
+                    <span></span><span></span><span></span>
+                    <svg viewBox="0 0 48 48" fill="none">
+                      <path d="M26 4c2 8-6 11-4 18 1 3 4 4 4 8 0 4-3 7-7 7-5 0-9-4-9-10 0-8 8-12 8-20 4 3 7 7 8 11 3-4 4-8 0-14Z" />
+                    </svg>
+                  </div>
+                  <div class="temp-main"><strong>31,4°</strong><span>Vorlauf</span></div>
+                  <div class="temp-side temp-top"><span>Außen</span><strong>8,2 °C</strong></div>
+                  <div class="temp-side temp-bottom"><span>Rücklauf</span><strong>26,8 °C</strong></div>
+                </div>
+
+                <div class="metric-grid">
+                  <div class="metric-card accent">
+                    <span class="metric-icon">
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m11.5 2-7 9h5l-1 7 7-10h-5l1-6Z" /></svg>
+                    </span>
+                    <div><small>Leistung</small><strong>2,1 <em>kW</em></strong></div>
+                  </div>
+                  <div class="metric-card">
+                    <span class="metric-icon">
+                      <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M4 15V9m4 6V5m4 10v-4m4 4V3" /></svg>
+                    </span>
+                    <div><small>Aktueller COP</small><strong>4,6</strong></div>
+                  </div>
+                  <div class="metric-card full">
+                    <div class="mode-info"><small>Betriebsart</small><strong>Heizen</strong></div>
+                    <div class="mode-line"><span style="--fill: 68%"></span></div>
+                    <span class="mode-value">68 %</span>
+                  </div>
+                </div>
+                <span class="demo-label">Beispieldaten</span>
+              </div>
             </div>
-        </div>
-
-        <div class="links">
-            <a href="https://github.com/Xerolux/idm-heatpump-hass" class="link">GitHub Repository</a>
-            <a href="https://github.com/Xerolux/idm-heatpump-hass/wiki" class="link">Wiki Documentation</a>
-            <a href="https://github.com/Xerolux/idm-heatpump-hass/releases" class="link">Releases</a>
-            <a href="https://github.com/Xerolux/idm-heatpump-hass/issues" class="link">Report a Bug</a>
-        </div>
-
-        <div class="section">
-            <h2>Support This Project</h2>
-            <p style="color:#aaa;margin-bottom:1rem;">This integration is developed in my free time. Every contribution is a huge motivation – thank you! ❤️</p>
-            <div class="support-grid">
-                <a href="https://www.buymeacoffee.com/xerolux" target="_blank" rel="noopener noreferrer" class="support-btn btn-bmac">
-                    ☕ Buy Me a Coffee
-                </a>
-                <a href="https://ko-fi.com/xerolux" target="_blank" rel="noopener noreferrer" class="support-btn btn-kofi">
-                    Ko-Fi
-                </a>
-                <a href="https://github.com/sponsors/xerolux" target="_blank" rel="noopener noreferrer" class="support-btn btn-sponsor">
-                    ♥ GitHub Sponsors
-                </a>
-                <a href="https://paypal.me/xerolux" target="_blank" rel="noopener noreferrer" class="support-btn btn-paypal">
-                    PayPal
-                </a>
-                <a href="https://ts.la/sebastian564489" target="_blank" rel="noopener noreferrer" class="support-btn btn-tesla">
-                    🚗 Tesla Referral
-                </a>
+            <div class="floating-card floating-energy">
+              <span>Heute erzeugt</span><strong>18,7 kWh</strong><small><i>↗</i> 12 % effizienter</small>
             </div>
-        </div>
-
-        <div class="section">
-            <h2>⚠️ Disclaimer</h2>
-            <div class="disclaimer">
-                <p><strong>This is an unofficial community project</strong> and is not affiliated with, endorsed by, or connected to IDM Energiesysteme GmbH in any way.</p>
-                <p>All trademarks, logos, and product names (e.g. "IDM", "Navigator") are the property of their respective owners. Logos and images are used solely for identification of the compatible device and not for commercial purposes.</p>
-                <p>This project is provided without any warranty. Use at your own risk — especially when writing Modbus registers.</p>
+            <div class="floating-card floating-local">
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M5 9V6a5 5 0 0 1 10 0v3M4 9h12v9H4V9Z" /></svg>
+              <div><strong>Lokale Verbindung</strong><span>Modbus TCP · 2 ms</span></div>
             </div>
+          </div>
         </div>
+        <div class="scroll-cue" aria-hidden="true"><span></span></div>
+      </section>
 
-        <div class="footer">
-            <p>Made with ❤️ by <a href="https://github.com/Xerolux">Xerolux</a> for the Home Assistant &amp; Heat Pump Community</p>
-            <p>Compatible with IDM Navigator 2.0 / 10 by IDM EnergieSysteme GmbH</p>
+      <section class="section features" id="features">
+        <div class="container">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Alles im Blick</p>
+            <h2>Mehr als nur Temperaturen.</h2>
+            <p>Die Integration macht aus Modbus-Registern verständliche Home-Assistant-Entitäten – passend zu deinem erkannten System.</p>
+          </div>
+
+          <div class="feature-bento">
+            <article class="feature-card feature-card-wide reveal">
+              <div class="feature-copy">
+                <span class="feature-number">01</span>
+                <div class="feature-icon lime">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 18V9m5 9V5m6 13v-7m5 7V3" /></svg>
+                </div>
+                <h3>System verstehen</h3>
+                <p>Vorlauf, Rücklauf, Warmwasser, Außentemperatur, Druck, Durchfluss, Laufzeiten und Wärmemengen in einer klaren Oberfläche.</p>
+                <ul class="mini-list">
+                  <li>Live-Sensordaten</li>
+                  <li>Energie & Effizienz</li>
+                  <li>Modellabhängige Erkennung</li>
+                </ul>
+              </div>
+              <div class="feature-chart" aria-label="Beispielhafter Temperaturverlauf">
+                <div class="chart-legend"><span><i class="lime-dot"></i> Vorlauf</span><span><i></i> Rücklauf</span><strong>24 h</strong></div>
+                <svg viewBox="0 0 520 210" role="img" aria-label="Temperaturverlauf über 24 Stunden">
+                  <defs>
+                    <linearGradient id="area" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#baff4a" stop-opacity=".24"/><stop offset="1" stop-color="#baff4a" stop-opacity="0"/></linearGradient>
+                  </defs>
+                  <g class="grid-lines"><path d="M15 35h490M15 82h490M15 129h490M15 176h490"/></g>
+                  <path class="chart-area" d="M15 145C45 137 56 98 89 107s44 40 76 20 43-66 78-53 40 52 76 32 51-54 82-40 48 45 104 13v97H15Z" />
+                  <path class="chart-line-main" d="M15 145C45 137 56 98 89 107s44 40 76 20 43-66 78-53 40 52 76 32 51-54 82-40 48 45 104 13" />
+                  <path class="chart-line-second" d="M15 163c38-11 50-28 85-25s52 23 85 7 41-35 75-26 45 27 81 13 60-29 84-22 50 22 100 5" />
+                </svg>
+                <div class="chart-labels"><span>00:00</span><span>06:00</span><span>12:00</span><span>18:00</span><span>24:00</span></div>
+              </div>
+            </article>
+
+            <article class="feature-card reveal" data-delay="80">
+              <span class="feature-number">02</span>
+              <div class="feature-icon blue">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M5 7h14M8 7a2 2 0 1 0 0-4 2 2 0 0 0 0 4Zm11 10H5m11 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM5 12h14m-5 2a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z" /></svg>
+              </div>
+              <h3>Präzise steuern</h3>
+              <p>Sollwerte, Betriebsarten und Freigaben direkt über Number-, Select- und Switch-Entitäten setzen.</p>
+              <div class="control-demo" aria-hidden="true">
+                <div><span>Warmwasser</span><strong>48 °C</strong></div>
+                <input type="range" min="0" max="100" value="68" tabindex="-1" />
+                <div class="control-switch"><span>Einmalige Ladung</span><i></i></div>
+              </div>
+            </article>
+
+            <article class="feature-card reveal" data-delay="160">
+              <span class="feature-number">03</span>
+              <div class="feature-icon orange">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3v4m0 10v4M5.64 5.64l2.83 2.83m7.06 7.06 2.83 2.83M3 12h4m10 0h4M5.64 18.36l2.83-2.83m7.06-7.06 2.83-2.83"/><circle cx="12" cy="12" r="4"/></svg>
+              </div>
+              <h3>Intelligent automatisieren</h3>
+              <p>PV-Überschuss, Heizkreise A–G, bis zu zehn Zonen und Warmwasser logisch mit deinem Zuhause verbinden.</p>
+              <div class="automation-demo" aria-hidden="true">
+                <div class="auto-node"><i class="sun-node">☀</i><span>PV-Überschuss</span></div>
+                <span class="auto-arrow">→</span>
+                <div class="auto-node"><i class="heat-node">⌁</i><span>Warmwasser</span></div>
+              </div>
+            </article>
+          </div>
+
+          <div class="feature-strip reveal">
+            <div><span class="strip-icon">⌂</span><p><strong>100 % lokal</strong><small>Keine Cloud erforderlich</small></p></div>
+            <div><span class="strip-icon">A–G</span><p><strong>7 Heizkreise</strong><small>Individuell konfigurierbar</small></p></div>
+            <div><span class="strip-icon">10</span><p><strong>Zonenmodule</strong><small>Bis zu 8 Räume je Zone</small></p></div>
+            <div><span class="strip-icon">↻</span><p><strong>Auto-Recovery</strong><small>Robust bei Verbindungsfehlern</small></p></div>
+          </div>
         </div>
-    </div>
-</body>
+      </section>
+
+      <section class="section preview" id="preview">
+        <div class="container">
+          <div class="section-heading heading-row reveal">
+            <div>
+              <p class="eyebrow">So sieht es aus</p>
+              <h2>Nahtlos in Home Assistant.</h2>
+            </div>
+            <p>Alle Werte erscheinen dort, wo du sie erwartest – in Geräten, Dashboards, Automationen und Diagnosen.</p>
+          </div>
+
+          <div class="preview-tabs reveal" role="tablist" aria-label="Ansicht auswählen">
+            <button role="tab" aria-selected="true" aria-controls="panel-overview" id="tab-overview" data-tab="overview">Übersicht</button>
+            <button role="tab" aria-selected="false" aria-controls="panel-control" id="tab-control" data-tab="control">Heizkreise</button>
+            <button role="tab" aria-selected="false" aria-controls="panel-diagnostics" id="tab-diagnostics" data-tab="diagnostics">Diagnose</button>
+          </div>
+
+          <div class="preview-stage reveal" data-delay="80">
+            <div class="preview-panel is-active" id="panel-overview" role="tabpanel" aria-labelledby="tab-overview" data-panel="overview">
+              <div class="ha-sidebar">
+                <span class="ha-logo"><i></i></span>
+                <span class="side-item active"><i>⌂</i> Übersicht</span>
+                <span class="side-item"><i>◈</i> Energie</span>
+                <span class="side-item"><i>↯</i> Automationen</span>
+                <span class="side-item"><i>⚙</i> Einstellungen</span>
+              </div>
+              <div class="ha-page">
+                <div class="ha-top"><span class="mobile-ha-menu">☰</span><strong>IDM Wärmepumpe</strong><span>⋮</span></div>
+                <div class="ha-cards">
+                  <article class="ha-card ha-status">
+                    <div class="ha-card-title"><span class="round-icon lime">⌁</span><div><strong>IDM Navigator</strong><small>Heizen · Online</small></div></div>
+                    <div class="ha-temp"><strong>31,4</strong><span>°C<br/><small>Vorlauf</small></span></div>
+                    <div class="ha-temp-row"><span>Rücklauf <strong>26,8 °C</strong></span><span>Außen <strong>8,2 °C</strong></span></div>
+                  </article>
+                  <article class="ha-card ha-energy">
+                    <div class="ha-card-title"><span class="round-icon blue">↯</span><div><strong>Energie heute</strong><small>Stand 14:35 Uhr</small></div></div>
+                    <div class="energy-bars"><i style="--h: 32%"></i><i style="--h: 44%"></i><i style="--h: 63%"></i><i style="--h: 48%"></i><i style="--h: 76%"></i><i style="--h: 56%"></i><i style="--h: 85%"></i><i style="--h: 68%"></i></div>
+                    <div class="energy-values"><span><small>Verbrauch</small><strong>4,1 kWh</strong></span><span><small>Wärme</small><strong>18,7 kWh</strong></span></div>
+                  </article>
+                  <article class="ha-card ha-wide-card">
+                    <div class="ha-card-title"><span class="round-icon orange">♨</span><div><strong>Warmwasser</strong><small>Bereit</small></div><strong class="right-value">48,0 °C</strong></div>
+                    <div class="ha-progress"><span></span></div>
+                  </article>
+                </div>
+              </div>
+            </div>
+
+            <div class="preview-panel" id="panel-control" role="tabpanel" aria-labelledby="tab-control" data-panel="control" hidden>
+              <div class="device-header"><span class="device-icon">⌁</span><div><small>IDM Navigator</small><h3>Heizkreise & Zonen</h3></div><span class="connected"><i></i> Verbunden</span></div>
+              <div class="circuit-grid">
+                <article class="circuit-card"><div><span>Heizkreis A</span><small>Fußbodenheizung</small></div><strong>21,5 °C</strong><div class="segmented"><span></span><b>Automatik</b></div></article>
+                <article class="circuit-card"><div><span>Heizkreis B</span><small>Obergeschoss</small></div><strong>20,8 °C</strong><div class="segmented"><span></span><b>Automatik</b></div></article>
+                <article class="circuit-card"><div><span>Zone 1 · Wohnen</span><small>Raumtemperatur</small></div><strong>22,1 °C</strong><div class="zone-line"><span style="--z: 72%"></span></div></article>
+                <article class="circuit-card"><div><span>Zone 2 · Bad</span><small>Raumtemperatur</small></div><strong>23,0 °C</strong><div class="zone-line"><span style="--z: 82%"></span></div></article>
+              </div>
+            </div>
+
+            <div class="preview-panel" id="panel-diagnostics" role="tabpanel" aria-labelledby="tab-diagnostics" data-panel="diagnostics" hidden>
+              <div class="diagnostic-head"><div><small>Systemdiagnose</small><h3>Alles arbeitet wie erwartet</h3></div><span class="health-score">100 %</span></div>
+              <div class="diagnostic-list">
+                <div><span class="check">✓</span><p><strong>Modbus TCP</strong><small>Verbindung stabil · 2 ms</small></p><span>Port 502</span></div>
+                <div><span class="check">✓</span><p><strong>IDM Heatpump API</strong><small>Bibliothek erfolgreich geladen</small></p><span>v0.7.6</span></div>
+                <div><span class="check">✓</span><p><strong>Entitäten</strong><small>Alle verfügbaren Register eingelesen</small></p><span>Modellabhängig</span></div>
+                <div><span class="check">✓</span><p><strong>Interne Meldungen</strong><small>Keine aktiven Fehler vorhanden</small></p><span>Bereit</span></div>
+              </div>
+              <div class="diagnostic-note"><span>i</span> Verbindungsdaten und PIN werden im Diagnoseexport automatisch geschützt.</div>
+            </div>
+          </div>
+          <p class="preview-note reveal"><span></span> Interaktive Vorschau mit Beispieldaten – die tatsächlichen Entitäten hängen vom Wärmepumpenmodell und der Konfiguration ab.</p>
+        </div>
+      </section>
+
+      <section class="section install" id="install">
+        <div class="container install-shell reveal">
+          <div class="install-copy">
+            <p class="eyebrow">In wenigen Minuten bereit</p>
+            <h2>Einfach installieren.<br/><span>Lokal verbinden.</span></h2>
+            <p>Die Integration lässt sich direkt über HACS hinzufügen. Danach brauchst du nur noch die IP-Adresse deiner IDM Navigator Steuerung.</p>
+
+            <div class="install-steps">
+              <div><span>1</span><p><strong>Repository hinzufügen</strong><small>IDM Heatpump als benutzerdefiniertes HACS-Repository eintragen.</small></p></div>
+              <div><span>2</span><p><strong>Modbus TCP aktivieren</strong><small>In der Gebäudeleittechnik des Navigators einschalten.</small></p></div>
+              <div><span>3</span><p><strong>Integration konfigurieren</strong><small>IP-Adresse, Port 502 und üblicherweise Slave-ID 1 eingeben.</small></p></div>
+            </div>
+
+            <div class="requirements">
+              <span>Benötigt</span>
+              <p>Home Assistant 2026.5.0+ · HACS · IDM Navigator 2.0 / 10 / Pro</p>
+            </div>
+          </div>
+
+          <div class="download-card">
+            <div class="download-card-top">
+              <span class="download-mark">
+                <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M20 7v18m0 0 7-7m-7 7-7-7M8 31h24" /></svg>
+              </span>
+              <div><small>Aktuelle stabile Version</small><h3>v0.8.2</h3></div>
+              <span class="stable-badge">Stable</span>
+            </div>
+            <a class="button button-primary button-full" href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest" target="_blank" rel="noreferrer">
+              Auf GitHub herunterladen
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
+            </a>
+            <a class="hacs-link" href="https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=integration" target="_blank" rel="noreferrer">
+              <span class="hacs-symbol">H</span>
+              <span><strong>In HACS öffnen</strong><small>Empfohlene Installation</small></span>
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
+            </a>
+
+            <div class="repo-copy">
+              <span>Repository-URL</span>
+              <div><code data-repo-url>https://github.com/Xerolux/idm-heatpump-hass</code><button type="button" data-copy aria-label="Repository-URL kopieren">
+                <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M13 7V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2"/></svg>
+              </button></div>
+            </div>
+
+            <div class="docs-grid">
+              <a href="https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-&-Setup" target="_blank" rel="noreferrer"><span>↗</span><strong>Installationsanleitung</strong><small>Schritt für Schritt starten</small></a>
+              <a href="https://github.com/Xerolux/idm-heatpump-hass/wiki" target="_blank" rel="noreferrer"><span>?</span><strong>Dokumentation</strong><small>Entitäten & Konfiguration</small></a>
+              <a href="https://github.com/Xerolux/idm-heatpump-hass/wiki/Troubleshooting" target="_blank" rel="noreferrer"><span>!</span><strong>Fehlerbehebung</strong><small>Diagnose & Lösungen</small></a>
+              <a href="https://github.com/Xerolux/idm-heatpump-hass/issues" target="_blank" rel="noreferrer"><span>⌁</span><strong>Support</strong><small>Issue auf GitHub melden</small></a>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container footer-main">
+        <div>
+          <a class="brand" href="#top">
+            <span class="brand-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32" fill="none"><path d="M6.5 20.5c0-5.7 4-10.6 9.5-11.7"/><path d="M25.5 11.5c0 5.7-4 10.6-9.5 11.7"/><path d="M10 7.8 16 8.8l-2.6 5.3"/><path d="m22 24.2-6-1 2.6-5.3"/></svg>
+            </span>
+            <span>IDM <strong>Heatpump</strong></span>
+          </a>
+          <p>Mit Leidenschaft für die Home-Assistant- und Wärmepumpen-Community entwickelt.</p>
+        </div>
+        <div class="footer-links">
+          <div><strong>Projekt</strong><a href="https://github.com/Xerolux/idm-heatpump-hass" target="_blank" rel="noreferrer">GitHub</a><a href="https://github.com/Xerolux/idm-heatpump-hass/releases" target="_blank" rel="noreferrer">Releases</a><a href="https://github.com/Xerolux/idm-heatpump-hass/blob/main/ROADMAP.md" target="_blank" rel="noreferrer">Roadmap</a></div>
+          <div><strong>Hilfe</strong><a href="https://github.com/Xerolux/idm-heatpump-hass/wiki" target="_blank" rel="noreferrer">Wiki</a><a href="https://github.com/Xerolux/idm-heatpump-hass/issues" target="_blank" rel="noreferrer">Issues</a><a href="https://community.home-assistant.io/" target="_blank" rel="noreferrer">Community</a></div>
+        </div>
+      </div>
+      <div class="container footer-bottom">
+        <p>Inoffizielles Community-Projekt · Nicht mit IDM Energiesysteme GmbH verbunden · MIT-Lizenz</p>
+        <a href="https://github.com/sponsors/Xerolux" target="_blank" rel="noreferrer">Projekt unterstützen <span>♥</span></a>
+      </div>
+    </footer>
+
+    <div class="toast" role="status" aria-live="polite" data-toast>Repository-URL kopiert</div>
+  </body>
 </html>
