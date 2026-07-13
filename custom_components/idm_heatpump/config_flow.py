@@ -109,7 +109,7 @@ class _ModbusConnectionStatus(StrEnum):
 
 
 _MODBUS_SETUP_URL = (
-    "https://github.com/Xerolux/idm-heatpump-hass/wiki/Installation-and-Setup#enable-modbus-tcp-on-the-idm-heat-pump"
+    "https://xerolux.github.io/idm-heatpump-hass/docs/#/installation-and-setup/enable-modbus-tcp-on-the-idm-heat-pump"
 )
 
 

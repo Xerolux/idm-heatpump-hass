@@ -3226,7 +3226,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3303,7 +3303,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3378,7 +3378,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3458,7 +3458,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3536,7 +3536,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3596,7 +3596,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3664,7 +3664,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3742,7 +3742,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3812,7 +3812,7 @@ _Jede Unterstützung ist eine große Motivation! Vielen Dank!_
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3886,7 +3886,7 @@ Every contribution is a huge motivation! Thank you!
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -3978,7 +3978,7 @@ Every contribution is a huge motivation! Thank you!
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -4064,7 +4064,7 @@ Every contribution is a huge motivation! Thank you!
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
@@ -4162,7 +4162,7 @@ Every contribution is a huge motivation! Thank you!
 
 - [Report a bug](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 - [Request a feature](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=feature_request.md)
-- [Contribute](https://github.com/Xerolux/idm-heatpump-hass/wiki/Contributing)
+- [Contribute](https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing)
 
 ---
 
