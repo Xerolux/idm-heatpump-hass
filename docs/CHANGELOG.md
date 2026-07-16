@@ -11,6 +11,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.8.3] - 2026-07-16
+
+### ⚠️ WICHTIGE HINWEISE ZUM UPDATE
+
+Das Update von v0.8.2 auf v0.8.3 enthält **keine Breaking Changes**. Es aktualisiert ausschließlich die fest gepinnte Bibliotheksversion.
+
+> 🛑 **WICHTIGER HAFTUNGSAUSSCHLUSS / DISCLAIMER** 🛑
+>
+> Dieses Projekt ist eine **inoffizielle Community-Integration** und steht in keinerlei Verbindung zu IDM Energiesysteme GmbH. Die Nutzung erfolgt **ausschließlich und komplett auf eigene Gefahr!** Wir übernehmen keine Haftung für Schäden, insbesondere durch das Schreiben von Modbus-Registern.
+
+### 🛠️ Korrekturen
+
+- **Update auf `idm-heatpump-api[web]==0.8.0`:** Die Integration nutzt jetzt die getestete Bibliotheksversion 0.8.0. Diese bringt zwei Verbesserungen mit, die automatisch wirksam werden:
+  - **Erkennung nicht-kontinuierlicher Heizkreise:** Die Modellerkennung (`detect_model`) erkennt nun auch Konfigurationen, bei denen einzelne Heizkreise nicht konfiguriert sind (z. B. nur HK A und HK D installiert, HK B/C unkonfiguriert). Bisher brach die Erkennung nach zwei Sentinel-Slots ab; jetzt wird zusätzlich die Active-Mode-Registerreihe (1498–1504) als zweites Presence-Signal herangezogen.
+  - **Navigator-10-Web-Client – Heizkreise B–G:** Die Vorlauftemperatur, Pumpe und Mischer der Heizkreise B–G werden im Navigator-10-Web-Client jetzt korrekt gemappt (vorher wurden nur HK A und HK C ausgeliefert, D/B/E/F/G wurden still verworfen). Betroffene Web-Entitäten erscheinen damit zuverlässiger.
+  - Enthalten ist außerdem die in 0.7.7 stabilisierte IPv4/IPv6-Web-Anmeldung am Navigator 2.0.
+
+### ✅ Validierung
+
+- Die Integration verwendet ausschließlich die fest gepinnte, getestete Abhängigkeit `idm-heatpump-api[web]==0.8.0`.
+- Keine Code-Änderungen an der Integration selbst erforderlich; beide Verbesserungen liegen in der Bibliothek.
+
 ## [0.8.2] - 2026-07-12
 
 ### ⚠️ WICHTIGE HINWEISE ZUM UPDATE (BREAKING CHANGES)

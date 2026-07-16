@@ -6,7 +6,7 @@ normal changelog.
 
 ## Current Status
 
-Integration `0.8.1-beta.31` and `idm-heatpump-api` `0.7.6` form the current,
+Integration `0.8.3` and `idm-heatpump-api` `0.8.0` form the current,
 exactly pinned candidate pair. Automated CI, security, release-artifact, and
 checksum checks passed. The candidate remains blocked for stable release until
 the clean-Home-Assistant hardware smoke test, the minimum soak duration, and
