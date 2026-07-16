@@ -485,6 +485,15 @@
     },
     "invalid_value": {
       "message": "Invalid value \"{value}\" for datatype {datatype}."
+    },
+    "invalid_heating_circuit": {
+      "message": "Invalid heating circuit: \"{heating_circuit}\". Valid values: A, B, C, D, E, F, G."
+    },
+    "external_climate_temperature_out_of_range": {
+      "message": "External room temperature {value} °C is outside the allowed range -20…60 °C."
+    },
+    "external_climate_humidity_out_of_range": {
+      "message": "External humidity {value} % is outside the allowed range 0…100 %."
     }
   },
   "issues": {
@@ -616,6 +625,24 @@
         "acknowledge_risk": {
           "name": "Acknowledge risk",
           "description": "Must be set to `true` to allow the write operation."
+        }
+      }
+    },
+    "set_external_climate": {
+      "name": "Set External Climate",
+      "description": "Writes external room temperature and optional humidity to the IDM GLT registers.",
+      "fields": {
+        "heating_circuit": {
+          "name": "Heating circuit",
+          "description": "Target heating circuit A-G."
+        },
+        "room_temperature": {
+          "name": "Room temperature",
+          "description": "External room temperature in °C (-20…60)."
+        },
+        "humidity": {
+          "name": "Humidity",
+          "description": "Optional external relative humidity in % (0…100)."
         }
       }
     }

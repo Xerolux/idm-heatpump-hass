@@ -70,6 +70,49 @@ target:
   device_id: abc123def456
 ```
 
+## set_external_climate
+
+Writes an external room temperature and optionally relative humidity to the IDM GLT/BMS registers without requiring raw Modbus addresses. The service uses the known register definitions from `idm-heatpump-api`, so model availability, datatype and write-safety checks stay active.
+
+**Service:** `idm_heatpump.set_external_climate`
+
+**Target:** Entity of the integration, or provide `entry_id` when multiple IDM entries are loaded
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `heating_circuit` | select | Heating circuit `A`–`G` for the external room temperature |
+| `room_temperature` | number | External room temperature in °C (`-20`…`60`) |
+| `humidity` | number | Optional external relative humidity in % (`0`…`100`) |
+
+**Example:**
+```yaml
+action: idm_heatpump.set_external_climate
+data:
+  heating_circuit: A
+  room_temperature: 23.1
+  humidity: 58.4
+```
+
+**Cyclic automation example:**
+```yaml
+alias: Forward living room climate to IDM
+trigger:
+  - platform: time_pattern
+    minutes: "/5"
+  - platform: state
+    entity_id:
+      - sensor.living_room_temperature
+      - sensor.living_room_humidity
+action:
+  - action: idm_heatpump.set_external_climate
+    target:
+      entity_id: sensor.idm_navigator_system_mode
+    data:
+      heating_circuit: A
+      room_temperature: "{{ states('sensor.living_room_temperature') | float }}"
+      humidity: "{{ states('sensor.living_room_humidity') | float }}"
+```
+
 ## write_register
 
 Writes a value directly to a Modbus register (advanced).

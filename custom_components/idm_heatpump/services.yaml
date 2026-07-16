@@ -73,3 +73,47 @@ write_register:
       selector:
         constant:
           value: true
+
+set_external_climate:
+  name: "Set External Climate"
+  description: "Write external room temperature and optional humidity to IDM GLT registers"
+  target:
+    entity:
+      integration: idm_heatpump
+  fields:
+    heating_circuit:
+      name: "Heating Circuit"
+      description: "Heating circuit to receive the external room temperature"
+      required: true
+      selector:
+        select:
+          options:
+            - "A"
+            - "B"
+            - "C"
+            - "D"
+            - "E"
+            - "F"
+            - "G"
+    room_temperature:
+      name: "Room Temperature"
+      description: "External room temperature in °C (-20…60)"
+      required: true
+      selector:
+        number:
+          min: -20
+          max: 60
+          step: 0.1
+          unit_of_measurement: "°C"
+          mode: box
+    humidity:
+      name: "Humidity"
+      description: "Optional external relative humidity in % (0…100)"
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 0.1
+          unit_of_measurement: "%"
+          mode: box
