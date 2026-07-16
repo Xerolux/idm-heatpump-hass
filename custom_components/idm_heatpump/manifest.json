@@ -8,6 +8,6 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Xerolux/idm-heatpump-hass/issues",
   "quality_scale": "gold",
-  "requirements": ["pymodbus>=3.12.1,<4.0", "idm-heatpump-api[web]==0.7.6"],
+  "requirements": ["pymodbus>=3.12.1,<4.0", "idm-heatpump-api[web]==0.7.7"],
   "version": "0.8.2"
 }

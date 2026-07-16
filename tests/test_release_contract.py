@@ -16,7 +16,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "pymodbus>=3.12.1,<4.0",
-    "idm-heatpump-api[web]==0.7.6",
+    "idm-heatpump-api[web]==0.7.7",
 ]
 
 

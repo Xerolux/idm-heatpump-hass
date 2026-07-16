@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import asyncio
+import inspect
+import ipaddress
 import logging
 from dataclasses import dataclass, field
 import re
@@ -10,6 +13,11 @@ from typing import Any, Callable, Protocol
 from .const import MODEL
 
 _LOGGER = logging.getLogger(__name__)
+
+
+class _ClosableSession(Protocol):
+    async def close(self) -> None:
+        """Close the HTTP session."""
 
 
 class _IdmWebClient(Protocol):
@@ -228,13 +236,104 @@ def web_pin_configured(pin: str | None) -> bool:
     return bool(api_web_pin_configured(clean_pin))
 
 
+def _is_ip_literal(host: str) -> bool:
+    """Return whether *host* is an IPv4 or IPv6 address literal."""
+    candidate = host.strip()
+    if not candidate:
+        return False
+    if candidate.startswith("[") and "]" in candidate:
+        candidate = candidate[1 : candidate.index("]")]
+    elif ":" in candidate and candidate.count(":") == 1:
+        candidate = candidate.rsplit(":", 1)[0]
+    try:
+        ipaddress.ip_address(candidate)
+    except ValueError:
+        return False
+    return True
+
+
+def _session_factory_supports_session(factory: Callable[..., Any]) -> bool:
+    """Return whether an API web-client factory accepts a session argument."""
+    try:
+        signature = inspect.signature(factory)
+    except (TypeError, ValueError):
+        return False
+    return any(
+        parameter.kind is inspect.Parameter.VAR_KEYWORD or name == "session"
+        for name, parameter in signature.parameters.items()
+    )
+
+
+def _create_ip_cookie_session(host: str) -> _ClosableSession | None:
+    """Create an aiohttp session that accepts Navigator cookies from IP hosts."""
+    if not _is_ip_literal(host):
+        return None
+    try:
+        import aiohttp
+    except ImportError:
+        return None
+    return aiohttp.ClientSession(cookie_jar=aiohttp.CookieJar(unsafe=True))
+
+
+class _SessionClosingWebClient:
+    """Close an integration-owned aiohttp session with its web client."""
+
+    def __init__(self, client: _IdmWebClient, session: _ClosableSession | None) -> None:
+        self._client = client
+        self._session = session
+
+    def __getattr__(self, name: str) -> Any:
+        return getattr(self._client, name)
+
+    async def read_data(self) -> Any:
+        return await self._client.read_data()
+
+    async def close(self) -> None:
+        close_error: Exception | None = None
+        try:
+            await self._client.close()
+        except Exception as err:
+            close_error = err
+        if self._session is not None:
+            await self._session.close()
+        if close_error is not None:
+            raise close_error
+
+
+def _close_session_later(session: _ClosableSession) -> None:
+    """Schedule session close from synchronous client-factory error paths."""
+    asyncio.create_task(session.close())
+
+
+def _create_web_client_with_optional_ip_session(
+    factory: Callable[..., _IdmWebClient | None],
+    host: str,
+    pin: str,
+) -> _IdmWebClient | None:
+    """Create a web client, passing an IP-safe session when the API supports it."""
+    session = _create_ip_cookie_session(host) if _session_factory_supports_session(factory) else None
+    try:
+        client = factory(host, pin, session=session) if session is not None else factory(host, pin)
+    except Exception:
+        if session is not None:
+            # Client construction failed before ownership was transferred.
+            _close_session_later(session)
+        raise
+    if client is None:
+        if session is not None:
+            _close_session_later(session)
+        return None
+    if session is None:
+        return client
+    return _SessionClosingWebClient(client, session)
+
+
 def _create_nav10_client(host: str, pin: str) -> _IdmWebClient | None:
     try:
         from idm_heatpump import create_optional_navigator10_web_client
     except ImportError:
         return None
-    client = create_optional_navigator10_web_client(host, pin)
-    return client
+    return _create_web_client_with_optional_ip_session(create_optional_navigator10_web_client, host, pin)
 
 
 def _create_nav20_client(host: str, pin: str) -> _IdmWebClient | None:
@@ -242,8 +341,7 @@ def _create_nav20_client(host: str, pin: str) -> _IdmWebClient | None:
         from idm_heatpump import create_optional_navigator20_web_client
     except ImportError:
         return None
-    client = create_optional_navigator20_web_client(host, pin)
-    return client
+    return _create_web_client_with_optional_ip_session(create_optional_navigator20_web_client, host, pin)
 
 
 # Type alias for a web client factory function.
