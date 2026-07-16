@@ -5,6 +5,18 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.3 — 2026-07-16
+
+### Changed
+
+- **Pin auf `idm-heatpump-api[web]==0.8.0`:** Wirkt zwei Verbesserungen der
+  Bibliothek automatisch aus (keine Code-Änderung an der Integration):
+  - `detect_model` erkennt **nicht-kontinuierliche Heizkreise** (z. B. nur HK A
+    und HK D installiert) zusätzlich über die Active-Mode-Register 1498–1504.
+  - Der Navigator-10-Web-Client liefert **Vorlauf, Pumpe und Mischer der
+    Heizkreise B–G** (vorher nur HK A und HK C).
+  - Enthält den IPv4/IPv6-Web-Anmeldungsfix für den Navigator 2.0 aus API 0.7.7.
+
 ## v0.8.2 — 2026-07-12
 
 ### ⚠️ Wichtige Hinweise zum Update (Breaking Changes)

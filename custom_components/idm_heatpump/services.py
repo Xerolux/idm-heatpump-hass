@@ -296,6 +296,12 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
 def _coerce_float_field(call: ServiceCall, field: str) -> float:
     """Return a finite float from service data or raise a translated validation error."""
     raw_value = call.data.get(field)
+    if raw_value is None:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_value",
+            translation_placeholders={"value": str(raw_value), "datatype": "float"},
+        )
     try:
         value = float(raw_value)
     except (TypeError, ValueError, OverflowError) as err:

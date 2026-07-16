@@ -11,11 +11,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.3] - 2026-07-16
 
 ### Changed
 
-- Pin `idm-heatpump-api[web]` to `0.7.7` to consume the Navigator 2.0 IP-literal cookie handling fix from the API.
+- Pin `idm-heatpump-api[web]` to `0.8.0`. The release picks up two library-side improvements that take effect automatically, with no integration code change:
+  - **Non-contiguous heating-circuit detection:** `detect_model()` now recognises setups where individual circuits are unconfigured (e.g. only HK A and HK D installed), probing the active operating-mode registers 1498–1504 as a second presence signal instead of early-breaking after two sentinel slots.
+  - **Navigator 10 web client – heating circuits B–G:** flow temperature, pump and mixer for circuits B–G are now mapped (previously only HK A and HK C were exposed).
+  - Also consumes the Navigator 2.0 IPv4/IPv6 IP-literal cookie handling fix from API 0.7.7.
 
 ## [0.8.2] - 2026-07-12
 
