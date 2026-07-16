@@ -8,6 +8,7 @@ from __future__ import annotations
 # Lizenz: MIT
 
 import logging
+import math
 from collections.abc import Mapping, Sequence
 from functools import partial
 
@@ -24,13 +25,13 @@ from homeassistant.util.json import JsonValueType
 
 from idm_heatpump import DataType, RegisterDef
 
-from .const import DOMAIN, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
+from .const import DOMAIN, HEATING_CIRCUITS, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
 from .coordinator import IdmCoordinator
 from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
-_SERVICES = ["set_system_mode", "acknowledge_errors", "write_register"]
+_SERVICES = ["set_system_mode", "acknowledge_errors", "write_register", "set_external_climate"]
 
 
 def _encoded_registers_from_safety_result(safety_result: object) -> list[JsonValueType] | None:
@@ -66,6 +67,11 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         "write_register",
         partial(_handle_write_register, hass),  # type: ignore[arg-type]
         supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "set_external_climate",
+        partial(_handle_set_external_climate, hass),  # type: ignore[arg-type]
     )
 
 
@@ -285,3 +291,73 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
             translation_key=translation_key,
             translation_placeholders=write_error_placeholders(reg.name),
         ) from err
+
+
+def _coerce_float_field(call: ServiceCall, field: str) -> float:
+    """Return a finite float from service data or raise a translated validation error."""
+    raw_value = call.data.get(field)
+    try:
+        value = float(raw_value)
+    except (TypeError, ValueError, OverflowError) as err:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_value",
+            translation_placeholders={"value": str(raw_value), "datatype": "float"},
+        ) from err
+    if math.isnan(value) or math.isinf(value):
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_value",
+            translation_placeholders={"value": str(raw_value), "datatype": "float"},
+        )
+    return value
+
+
+def _external_climate_register(coordinator: IdmCoordinator, register_name: str) -> RegisterDef:
+    """Return a writable external climate register exposed by the library map."""
+    reg = coordinator.get_register(register_name)
+    if reg is None or not reg.writable:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="write_not_supported",
+            translation_placeholders=write_error_placeholders(register_name),
+        )
+    return reg
+
+
+async def _handle_set_external_climate(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Write external room temperature and optional humidity via known GLT registers."""
+    coordinator = await _get_coordinator(hass, call)
+
+    circuit = str(call.data.get("heating_circuit", "")).strip().lower()
+    if circuit not in HEATING_CIRCUITS:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_heating_circuit",
+            translation_placeholders={"heating_circuit": str(call.data.get("heating_circuit", ""))},
+        )
+
+    room_temperature = _coerce_float_field(call, "room_temperature")
+    if not -20.0 <= room_temperature <= 60.0:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="external_climate_temperature_out_of_range",
+            translation_placeholders={"value": str(room_temperature)},
+        )
+
+    writes: list[tuple[RegisterDef, float]] = [
+        (_external_climate_register(coordinator, f"hc_{circuit}_ext_room_temp"), room_temperature)
+    ]
+
+    if "humidity" in call.data and call.data.get("humidity") is not None:
+        humidity = _coerce_float_field(call, "humidity")
+        if not 0.0 <= humidity <= 100.0:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="external_climate_humidity_out_of_range",
+                translation_placeholders={"value": str(humidity)},
+            )
+        writes.append((_external_climate_register(coordinator, "ext_humidity"), humidity))
+
+    for reg, value in writes:
+        await _async_write_register(coordinator, reg, value)

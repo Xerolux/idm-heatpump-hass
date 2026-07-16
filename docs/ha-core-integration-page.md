@@ -188,6 +188,25 @@ target:
   device_id: <your_device_id>
 ```
 
+
+### `idm_heatpump.set_external_climate`
+
+Write external room temperature and optional humidity through known GLT/BMS register definitions.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `heating_circuit` | string | yes | Heating circuit `A`–`G` |
+| `room_temperature` | number | yes | External room temperature in °C (`-20`…`60`) |
+| `humidity` | number | no | External relative humidity in % (`0`…`100`) |
+
+```yaml
+action: idm_heatpump.set_external_climate
+data:
+  heating_circuit: A
+  room_temperature: 23.1
+  humidity: 58.4
+```
+
 ### `idm_heatpump.write_register`
 
 Write a value directly to a Modbus register. **For advanced users only.**

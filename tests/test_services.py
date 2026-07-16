@@ -12,6 +12,7 @@ from custom_components.idm_heatpump.services import (
     _handle_set_system_mode,
     _handle_acknowledge_errors,
     _handle_write_register,
+    _handle_set_external_climate,
     _encoded_registers_from_safety_result,
 )
 
@@ -52,7 +53,7 @@ class TestWriteSafetyHelpers:
 class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
-        assert mock_hass.services.async_register.call_count == 3
+        assert mock_hass.services.async_register.call_count == 4
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -69,12 +70,12 @@ class TestUnloadServices:
         entry.state = ConfigEntryState.NOT_LOADED
         mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
         await async_unload_services(mock_hass)
-        assert mock_hass.services.async_remove.call_count == 3
+        assert mock_hass.services.async_remove.call_count == 4
 
     async def test_removes_services_when_empty(self, mock_hass):
         mock_hass.config_entries.async_entries = MagicMock(return_value=[])
         await async_unload_services(mock_hass)
-        assert mock_hass.services.async_remove.call_count == 3
+        assert mock_hass.services.async_remove.call_count == 4
 
     async def test_keeps_services_when_loaded_entries_remain(self, mock_hass):
         from homeassistant.config_entries import ConfigEntryState
@@ -94,7 +95,7 @@ class TestUnloadServices:
         entry.state = ConfigEntryState.LOADED
         mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
         await async_unload_services(mock_hass)
-        assert mock_hass.services.async_remove.call_count == 3
+        assert mock_hass.services.async_remove.call_count == 4
 
 
 class TestGetCoordinator:
@@ -470,3 +471,90 @@ class TestGetCoordinatorMultipleDevices:
         call.data = {}
         result = await _get_coordinator(mock_hass, call)
         assert result is coord2
+
+
+class TestSetExternalClimate:
+    def _setup_registers(self, coord):
+        from idm_heatpump import DataType, RegisterDef
+
+        registers = {
+            "hc_a_ext_room_temp": RegisterDef(1812, DataType.FLOAT, "hc_a_ext_room_temp", unit="°C", writable=True),
+            "hc_b_ext_room_temp": RegisterDef(1912, DataType.FLOAT, "hc_b_ext_room_temp", unit="°C", writable=True),
+            "ext_humidity": RegisterDef(1692, DataType.FLOAT, "ext_humidity", unit="%", writable=True),
+        }
+        coord.get_register.side_effect = registers.get
+        return registers
+
+    async def test_writes_room_temperature_and_humidity(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        self._setup_registers(coord)
+        call = MagicMock()
+        call.data = {"heating_circuit": "A", "room_temperature": 23.1, "humidity": 58.4}
+
+        await _handle_set_external_climate(mock_hass, call)
+
+        assert coord.async_write_register.await_count == 2
+        temp_call, humidity_call = coord.async_write_register.await_args_list
+        assert temp_call.args[0].name == "hc_a_ext_room_temp"
+        assert temp_call.args[1] == 23.1
+        assert humidity_call.args[0].name == "ext_humidity"
+        assert humidity_call.args[1] == 58.4
+
+    async def test_humidity_is_optional(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        self._setup_registers(coord)
+        call = MagicMock()
+        call.data = {"heating_circuit": "b", "room_temperature": "21.5"}
+
+        await _handle_set_external_climate(mock_hass, call)
+
+        coord.async_write_register.assert_awaited_once()
+        reg, value = coord.async_write_register.await_args.args
+        assert reg.name == "hc_b_ext_room_temp"
+        assert value == 21.5
+
+    @pytest.mark.parametrize(
+        "data",
+        [
+            {"heating_circuit": "Z", "room_temperature": 20},
+            {"heating_circuit": "A", "room_temperature": -20.1},
+            {"heating_circuit": "A", "room_temperature": 60.1},
+            {"heating_circuit": "A", "room_temperature": 20, "humidity": -0.1},
+            {"heating_circuit": "A", "room_temperature": 20, "humidity": 100.1},
+            {"heating_circuit": "A", "room_temperature": "nan"},
+        ],
+    )
+    async def test_validates_inputs(self, mock_hass, data):
+        coord = _make_coordinator_in_hass(mock_hass)
+        self._setup_registers(coord)
+        call = MagicMock()
+        call.data = data
+
+        with pytest.raises(ServiceValidationError):
+            await _handle_set_external_climate(mock_hass, call)
+
+        coord.async_write_register.assert_not_awaited()
+
+    async def test_requires_known_writable_library_register(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.get_register.return_value = None
+        call = MagicMock()
+        call.data = {"heating_circuit": "A", "room_temperature": 23.1}
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_set_external_climate(mock_hass, call)
+
+        assert exc_info.value.translation_key == "write_not_supported"
+        coord.async_write_register.assert_not_awaited()
+
+    async def test_write_error_is_translated(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        self._setup_registers(coord)
+        coord.async_write_register = AsyncMock(side_effect=Exception("connection lost"))
+        call = MagicMock()
+        call.data = {"heating_circuit": "A", "room_temperature": 23.1}
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await _handle_set_external_climate(mock_hass, call)
+
+        assert exc_info.value.translation_key == "write_connection_failed"

@@ -485,6 +485,15 @@
     },
     "invalid_value": {
       "message": "Ungültiger Wert \"{value}\" für den Datentyp {datatype}."
+    },
+    "invalid_heating_circuit": {
+      "message": "Ungültiger Heizkreis: \"{heating_circuit}\". Gültige Werte: A, B, C, D, E, F, G."
+    },
+    "external_climate_temperature_out_of_range": {
+      "message": "Externe Raumtemperatur {value} °C liegt außerhalb des erlaubten Bereichs -20…60 °C."
+    },
+    "external_climate_humidity_out_of_range": {
+      "message": "Externe Feuchte {value} % liegt außerhalb des erlaubten Bereichs 0…100 %."
     }
   },
   "issues": {
@@ -616,6 +625,24 @@
         "acknowledge_risk": {
           "name": "Risiko bestätigen",
           "description": "Muss auf `true` gesetzt sein, um den Schreibvorgang zu erlauben."
+        }
+      }
+    },
+    "set_external_climate": {
+      "name": "Externes Raumklima setzen",
+      "description": "Schreibt externe Raumtemperatur und optionale Feuchte in die IDM-GLT-Register.",
+      "fields": {
+        "heating_circuit": {
+          "name": "Heizkreis",
+          "description": "Ziel-Heizkreis A-G."
+        },
+        "room_temperature": {
+          "name": "Raumtemperatur",
+          "description": "Externe Raumtemperatur in °C (-20…60)."
+        },
+        "humidity": {
+          "name": "Feuchte",
+          "description": "Optionale externe relative Feuchte in % (0…100)."
         }
       }
     }
