@@ -16,7 +16,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "pymodbus>=3.12.1,<4.0",
-    "idm-heatpump-api[web]==0.7.7",
+    "idm-heatpump-api[web]==0.8.0",
 ]
 
 
@@ -393,7 +393,7 @@ def test_user_facing_dependency_docs_match_manifest() -> None:
     api_version = api_requirement.partition("==")[2]
     configuration = _read(ROOT / "docs" / "wiki" / "Configuration.md")
     stability = _read(ROOT / "docs" / "wiki" / "Stability-and-Release-Readiness.md")
-    assert f"API {api_version} unchanged" in configuration
+    assert api_requirement in configuration.replace(" == ", "==")
     assert f"`idm-heatpump-api` `{api_version}`" in stability
 
 

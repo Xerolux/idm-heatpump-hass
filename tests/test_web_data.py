@@ -88,7 +88,9 @@ async def test_nav20_factory_uses_unsafe_cookie_jar_for_ip_hosts(monkeypatch: py
         return client
 
     monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", create_client, raising=False)
-    monkeypatch.setitem(__import__("sys").modules, "aiohttp", SimpleNamespace(ClientSession=FakeClientSession, CookieJar=FakeCookieJar))
+    monkeypatch.setitem(
+        __import__("sys").modules, "aiohttp", SimpleNamespace(ClientSession=FakeClientSession, CookieJar=FakeCookieJar)
+    )
 
     wrapped = _create_nav20_client("192.168.1.50", "1234")
 
