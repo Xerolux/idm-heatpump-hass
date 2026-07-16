@@ -114,5 +114,5 @@ See [Troubleshooting](Troubleshooting) for categorized errors and
 
 The sticky protocol selection is implemented by integration version
 `0.8.1-beta.29`. It uses the already published
-`idm-heatpump-api[web]==0.7.6` web clients, so no newer API package is required
+`idm-heatpump-api[web]==0.7.7` web clients, so no newer API package is required
 for this behavior.

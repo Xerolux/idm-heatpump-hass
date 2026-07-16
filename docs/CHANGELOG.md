@@ -11,6 +11,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- Pin `idm-heatpump-api[web]` to `0.7.7` to consume the Navigator 2.0 IP-literal cookie handling fix from the API.
+
 ## [0.8.2] - 2026-07-12
 
 ### ⚠️ WICHTIGE HINWEISE ZUM UPDATE (BREAKING CHANGES)

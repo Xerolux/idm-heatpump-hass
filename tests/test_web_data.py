@@ -12,6 +12,8 @@ from custom_components.idm_heatpump.web_data import (
     IdmWebClientPool,
     IdmWebSensorValue,
     IdmWebSupplement,
+    _create_nav20_client,
+    _is_ip_literal,
     _is_wrong_variant_error,
     _preferred_web_variant,
     async_read_web_supplement,
@@ -50,6 +52,63 @@ class _FakeWebClient:
 
 class IdmWebAuthenticationError(Exception):
     """Fake API authentication error."""
+
+
+def test_is_ip_literal_accepts_direct_addresses() -> None:
+    assert _is_ip_literal("192.168.1.50")
+    assert _is_ip_literal("192.168.1.50:80")
+    assert _is_ip_literal("2001:db8::1")
+    assert _is_ip_literal("[2001:db8::1]")
+    assert not _is_ip_literal("idm-navigator.local")
+
+
+async def test_nav20_factory_uses_unsafe_cookie_jar_for_ip_hosts(monkeypatch: pytest.MonkeyPatch) -> None:
+    created_sessions: list[object] = []
+    created_cookie_jars: list[object] = []
+    client = _FakeWebClient()
+
+    class FakeCookieJar:
+        def __init__(self, *, unsafe: bool = False) -> None:
+            self.unsafe = unsafe
+            created_cookie_jars.append(self)
+
+    class FakeClientSession:
+        def __init__(self, *, cookie_jar: object) -> None:
+            self.cookie_jar = cookie_jar
+            self.closed = False
+            created_sessions.append(self)
+
+        async def close(self) -> None:
+            self.closed = True
+
+    def create_client(host: str, pin: str, *, session: object | None = None) -> _FakeWebClient:
+        assert host == "192.168.1.50"
+        assert pin == "1234"
+        assert session is created_sessions[0]
+        return client
+
+    monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", create_client, raising=False)
+    monkeypatch.setitem(__import__("sys").modules, "aiohttp", SimpleNamespace(ClientSession=FakeClientSession, CookieJar=FakeCookieJar))
+
+    wrapped = _create_nav20_client("192.168.1.50", "1234")
+
+    assert wrapped is not None
+    assert created_cookie_jars[0].unsafe is True
+    await wrapped.close()
+    assert client.closed
+    assert created_sessions[0].closed
+
+
+async def test_nav20_factory_does_not_create_ip_cookie_session_for_hostnames(monkeypatch: pytest.MonkeyPatch) -> None:
+    client = _FakeWebClient()
+
+    def create_client(host: str, pin: str, *, session: object | None = None) -> _FakeWebClient:
+        assert session is None
+        return client
+
+    monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", create_client, raising=False)
+
+    assert _create_nav20_client("idm-navigator.local", "1234") is client
 
 
 def test_web_pin_configured_without_api_symbol() -> None:

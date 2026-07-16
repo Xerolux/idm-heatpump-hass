@@ -189,11 +189,11 @@ This project has two independently versioned packages:
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
 | Home Assistant custom integration | `0.8.2` | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
-| Python register/web library | `idm-heatpump-api[web]==0.7.6` | Register schema, encoding/decoding, Modbus client or reusable web-client implementation changes |
+| Python register/web library | `idm-heatpump-api[web]==0.7.7` | Register schema, encoding/decoding, Modbus client or reusable web-client implementation changes |
 
 Every integration release pins the exact API version it was tested with. The
 beta.29 web-protocol persistence and diagnostic redaction are integration-side
-changes and use API 0.7.6 unchanged. IDM Heatpump is a custom integration, not
+changes and use API 0.7.7 unchanged. IDM Heatpump is a custom integration, not
 a Home Assistant add-on.
 
 ## Debug Logging

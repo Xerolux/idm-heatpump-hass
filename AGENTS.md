@@ -12,7 +12,7 @@ This file provides guidance for AI assistants working on this codebase.
 - **License**: MIT
 - **Min HA Version**: 2026.5.0
 - **Python**: 3.13+
-- **Key Dependencies**: `pymodbus >= 3.12.1, < 4.0`, `idm-heatpump-api[web] == 0.7.6`
+- **Key Dependencies**: `pymodbus >= 3.12.1, < 4.0`, `idm-heatpump-api[web] == 0.7.7`
 
 ---
 
