@@ -108,8 +108,8 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         from .entity import build_device_info
 
         self._attr_device_info = build_device_info(coordinator)
-        self._attr_min_temp = float(self._target_reg.min_value) if hasattr(self._target_reg, "min_value") else 10.0
-        self._attr_max_temp = float(self._target_reg.max_value) if hasattr(self._target_reg, "max_value") else 35.0
+        self._attr_min_temp = min_val if (min_val := self._target_reg.min_val) is not None else 10.0
+        self._attr_max_temp = max_val if (max_val := self._target_reg.max_val) is not None else 35.0
 
     @property
     def current_temperature(self) -> float | None:
@@ -128,21 +128,29 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         return float(val) if val is not None else None
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Set new target temperature."""
+        """Set new target temperature.
+
+        Routed through the coordinator's centralized write path (see
+        ``IdmCoordinator.async_write_register``) so optimistic updates, alias
+        handling, the write_rejected repair issue and the background refresh
+        are all handled in one place.
+        """
         temp = kwargs.get(ATTR_TEMPERATURE)
         if temp is None:
             return
 
-        if self._target_reg.name in self.coordinator.data:
-            self.coordinator.data[self._target_reg.name] = temp
-            self.async_write_ha_state()
+        await self.coordinator.async_write_register(self._target_reg, temp)
+        _LOGGER.debug("Set %s target temperature to %s", self._attr_unique_id, temp)
 
-        try:
-            await self.coordinator.client.write_register(self._target_reg, temp)
-            _LOGGER.debug("Set %s target temperature to %s", self._attr_unique_id, temp)
-        except Exception as err:
-            _LOGGER.error("Failed to set target temperature: %s", err)
-            await self.coordinator.async_request_refresh()
+    async def _async_write_mode(self, value: int) -> None:
+        """Write a mode-register value through the centralized coordinator path.
+
+        Subclasses translate their HVAC/preset selection into a raw register
+        value and delegate here so optimistic updates, alias handling, the
+        write_rejected repair issue and the background refresh stay consistent
+        with every other writable platform.
+        """
+        await self.coordinator.async_write_register(self._mode_reg, value)
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
@@ -208,7 +216,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         if self.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
 
-        status_val = self.coordinator.data.get("heatpump_status")
+        status_val = self.coordinator.data.get("hp_operating_mode")
         if status_val is not None:
             status = HeatPumpStatus(status_val)
             if HeatPumpStatus.HEATING in status:
@@ -229,14 +237,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         else:
             return
 
-        if self._mode_reg.name in self.coordinator.data:
-            self.coordinator.data[self._mode_reg.name] = val
-            self.async_write_ha_state()
-
-        try:
-            await self.coordinator.client.write_register(self._mode_reg, val)
-        except Exception:
-            await self.coordinator.async_request_refresh()
+        await self._async_write_mode(val)
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         if preset_mode == PRESET_ECO:
@@ -244,14 +245,7 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         else:
             val = CircuitMode.NORMAL
 
-        if self._mode_reg.name in self.coordinator.data:
-            self.coordinator.data[self._mode_reg.name] = val
-            self.async_write_ha_state()
-
-        try:
-            await self.coordinator.client.write_register(self._mode_reg, val)
-        except Exception:
-            await self.coordinator.async_request_refresh()
+        await self._async_write_mode(val)
 
 
 class IdmZoneRoomClimate(IdmClimateBase):
@@ -331,14 +325,7 @@ class IdmZoneRoomClimate(IdmClimateBase):
         else:
             return
 
-        if self._mode_reg.name in self.coordinator.data:
-            self.coordinator.data[self._mode_reg.name] = val
-            self.async_write_ha_state()
-
-        try:
-            await self.coordinator.client.write_register(self._mode_reg, val)
-        except Exception:
-            await self.coordinator.async_request_refresh()
+        await self._async_write_mode(val)
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
         if preset_mode == PRESET_ECO:
@@ -348,11 +335,4 @@ class IdmZoneRoomClimate(IdmClimateBase):
         else:
             val = RoomMode.NORMAL
 
-        if self._mode_reg.name in self.coordinator.data:
-            self.coordinator.data[self._mode_reg.name] = val
-            self.async_write_ha_state()
-
-        try:
-            await self.coordinator.client.write_register(self._mode_reg, val)
-        except Exception:
-            await self.coordinator.async_request_refresh()
+        await self._async_write_mode(val)

@@ -92,28 +92,24 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
     @property
     def min_temp(self) -> float:
         """Return the minimum temperature."""
-        return float(self._target_reg.min_value) if hasattr(self._target_reg, "min_value") else 30.0
+        # RegisterDef exposes bounds as min_val/max_val, not min_value/max_value.
+        return min_val if (min_val := self._target_reg.min_val) is not None else 30.0
 
     @property
     def max_temp(self) -> float:
         """Return the maximum temperature."""
-        return float(self._target_reg.max_value) if hasattr(self._target_reg, "max_value") else 65.0
+        return max_val if (max_val := self._target_reg.max_val) is not None else 65.0
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
-        """Set new target temperature."""
+        """Set new target temperature.
+
+        Routed through the coordinator's centralized write path so it inherits
+        optimistic updates (with alias handling), the write_rejected repair
+        issue on failure, and the scheduled background refresh.
+        """
         temp = kwargs.get("temperature")
         if temp is None:
             return
 
-        # Write optimistically to the coordinator data
-        if self._target_reg.name in self.coordinator.data:
-            self.coordinator.data[self._target_reg.name] = temp
-            self.async_write_ha_state()
-
-        try:
-            await self.coordinator.client.write_register(self._target_reg, temp)
-            _LOGGER.debug("Set water heater target temperature to %s", temp)
-        except Exception as err:
-            _LOGGER.error("Failed to set water heater target temperature: %s", err)
-            # Revert optimistic update on failure by triggering a refresh
-            await self.coordinator.async_request_refresh()
+        await self.coordinator.async_write_register(self._target_reg, temp)
+        _LOGGER.debug("Set water heater target temperature to %s", temp)
