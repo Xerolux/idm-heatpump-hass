@@ -611,6 +611,84 @@ def _stub_homeassistant() -> None:
         mod.async_redact_data = _redact
         setattr(components, platform, mod)
 
+    # ------------------------------------------------------------------
+    # Additional platform stubs: button / climate / water_heater
+    # These three are registered in PLATFORMS but were not previously
+    # stubbed, so they could not be unit-tested (0 % coverage). The base
+    # classes are trivial mixins over CoordinatorEntity; the real behaviour
+    # lives in the integration code, so plain stubs suffice.
+    # ------------------------------------------------------------------
+
+    # homeassistant.const attribute used by climate.set_temperature
+    ha.const.ATTR_TEMPERATURE = "temperature"
+    sys.modules["homeassistant.const"].ATTR_TEMPERATURE = "temperature"
+
+    # Button
+    button_mod = _make_module("homeassistant.components.button")
+
+    class _ButtonEntity:
+        pass
+
+    button_mod.ButtonEntity = _ButtonEntity
+    components.button = button_mod
+
+    # Climate
+    climate_mod = _make_module("homeassistant.components.climate")
+
+    class _HVACMode:
+        OFF = "off"
+        AUTO = "auto"
+        HEAT = "heat"
+        COOL = "cool"
+
+    class _HVACAction:
+        OFF = "off"
+        IDLE = "idle"
+        HEATING = "heating"
+        COOLING = "cooling"
+
+    class _ClimateEntityFeature:
+        TARGET_TEMPERATURE = 1
+        PRESET_MODE = 2
+        TURN_OFF = 4
+        TURN_ON = 8
+
+    class _ClimateEntity:
+        pass
+
+    climate_mod.ClimateEntity = _ClimateEntity
+    # Real HA re-exports climate.const symbols onto the climate module, so mirror
+    # that here — platform code and tests may import from either location.
+    climate_mod.HVACMode = _HVACMode
+    climate_mod.HVACAction = _HVACAction
+    climate_mod.PRESET_NONE = "none"
+    climate_mod.PRESET_ECO = "eco"
+    climate_mod.PRESET_COMFORT = "comfort"
+    climate_mod.ClimateEntityFeature = _ClimateEntityFeature
+    components.climate = climate_mod
+
+    climate_const_mod = _make_module("homeassistant.components.climate.const")
+    climate_const_mod.HVACMode = _HVACMode
+    climate_const_mod.HVACAction = _HVACAction
+    climate_const_mod.PRESET_NONE = "none"
+    climate_const_mod.PRESET_ECO = "eco"
+    climate_const_mod.PRESET_COMFORT = "comfort"
+    climate_const_mod.ClimateEntityFeature = _ClimateEntityFeature
+
+    # Water heater
+    water_heater_mod = _make_module("homeassistant.components.water_heater")
+
+    class _WaterHeaterEntityFeature:
+        TARGET_TEMPERATURE = 1
+
+    class _WaterHeaterEntity:
+        pass
+
+    water_heater_mod.STATE_HEAT_PUMP = "performance"
+    water_heater_mod.WaterHeaterEntity = _WaterHeaterEntity
+    water_heater_mod.WaterHeaterEntityFeature = _WaterHeaterEntityFeature
+    components.water_heater = water_heater_mod
+
     ha.loader.async_get_integration = AsyncMock(return_value=MagicMock(manifest={"version": "0.5.0"}))
 
 
