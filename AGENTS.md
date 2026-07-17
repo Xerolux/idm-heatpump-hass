@@ -32,6 +32,9 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── number.py                     # Number platform (setpoints, GLT values)
 │   ├── select.py                     # Select platform (mode registers)
 │   ├── switch.py                     # Switch platform (boolean writable registers)
+│   ├── climate.py                    # Climate platform (heating circuits, zone-module rooms)
+│   ├── water_heater.py               # Water heater platform (DHW setpoint)
+│   ├── button.py                     # Button platform (acknowledge errors)
 │   ├── services.py                   # Custom HA services (set_system_mode, acknowledge_errors, write_register)
 │   ├── services.yaml                 # Service schema definitions
 │   ├── diagnostics.py                # HA diagnostics export
@@ -65,6 +68,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_library_client.py
 │   ├── test_log_filter.py
 │   ├── test_platforms.py
+│   ├── test_platforms_climate.py
 │   ├── test_registers.py
 │   ├── test_repairs.py
 │   ├── test_room_temp_forwarding.py
@@ -106,8 +110,12 @@ Home Assistant
     │       │
     │       └── Optional IdmWebSupplement (web_data.py)
     │
-    ├── Platforms: sensor, binary_sensor, number, select, switch
-    │       └── All extend IdmEntity [entity.py] → CoordinatorEntity
+    ├── Platforms: sensor, binary_sensor, number, select, switch,
+    │              climate, water_heater, button
+    │       ├── sensor/binary_sensor/number/select/switch extend IdmEntity [entity.py]
+    │       │   → CoordinatorEntity (register-backed, unused-register filtering)
+    │       └── climate/water_heater/button extend CoordinatorEntity directly
+    │           (multi-register or action entities, not unused-filtered)
     │
     ├── Services [services.py]
     │       ├── set_system_mode
@@ -243,6 +251,9 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Web supplement | `web_data.py`, `coordinator.py` | Optional local Navigator web data (Nav 2.0 / Nav 10 / Pro) |
 | Web-only fallback | `__init__.py`, `config_flow.py` | Runs without Modbus when only web access is available |
 | Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps to GLT registers |
+| Climate entities | `climate.py` | Heating-circuit + zone-module room climates; routes writes through `coordinator.async_write_register` |
+| Water heater entity | `water_heater.py` | DHW target setpoint; only set up when both `dhw_temp_top` and `dhw_setpoint` exist |
+| Acknowledge-errors button | `button.py` | One-shot button writing the centralized acknowledge register |
 | Bitflag decoding | `adapter_enums.py`, `sensor.py` | Renders human-readable strings like "Heating\|Water\|Defrosting" |
 | Diagnostics export | `diagnostics.py` | Redacts host/port/slave for privacy |
 | Unused register filtering | `entity.py`, `coordinator.py` | Entities become unavailable when their register indicates "unused" |

@@ -11,6 +11,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- **Climate: `hvac_action` never reported heating/cooling.** `IdmHeatingCircuitClimate` read `coordinator.data["heatpump_status"]`, but the register is published under its real name `hp_operating_mode`, so the action always fell back to `IDLE`. The entity now reads the correct key.
+- **Climate/Water heater ignored register min/max bounds.** Both platforms checked for a non-existent `min_value`/`max_value` attribute on `RegisterDef` (which exposes `min_val`/`max_val`), so `min_temp`/`max_temp` always fell back to the hard-coded defaults instead of the register's configured range.
+
+### Changed
+
+- **Unified write path for climate & water_heater.** `climate.py` and `water_heater.py` previously wrote to the heat pump via `coordinator.client.write_register` directly and replicated optimistic-update/revert logic by hand. They now route through `IdmCoordinator.async_write_register` — the same centralized path already used by `button.py`, `number.py`, `select.py` and `switch.py` — so they inherit alias-aware optimistic updates, the `write_rejected` repair issue on failure, and the scheduled background refresh. This removes the duplicated logic and the inconsistent error handling between platforms.
+
+### Added
+
+- **Unit tests for `button`, `climate` and `water_heater`.** These three platforms were registered in `PLATFORMS` but had no tests at all (0 % coverage). Added `tests/test_platforms_climate.py` (43 tests) plus the `button`/`climate`/`water_heater` HA base-class stubs in `conftest.py` needed to exercise them. Coverage for the three modules is now 100 % / 91 % / 98 % respectively.
+
 ## [0.8.3] - 2026-07-16
 
 ### Changed
