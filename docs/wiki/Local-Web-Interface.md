@@ -114,5 +114,5 @@ See [Troubleshooting](Troubleshooting) for categorized errors and
 
 The sticky protocol selection is implemented by integration version
 `0.8.1-beta.29`. Integration `0.8.3` ships the tested
-`idm-heatpump-api[web]==0.8.0` web clients, which additionally expose Navigator
+`idm-heatpump-api[web]==0.8.1` web clients, which additionally expose Navigator
 10 heating-circuit data for circuits B–G.

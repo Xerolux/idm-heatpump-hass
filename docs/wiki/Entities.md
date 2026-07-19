@@ -304,6 +304,6 @@ For each enabled zone module (up to 10), room-level entities are created:
 | `zm{z}_room{r}_setpoint` | Room setpoint (writable) |
 | `zm{z}_room{r}_humidity` | Room humidity |
 | `zm{z}_room{r}_mode` | Room operating mode |
-| `zm{z}_room{r}_relay` | Relay status |
+| `zm{z}_room{r}_relay` | Relay status (binary_sensor: on/off) |
 
 Plus per-zone: `zm{z}_mode_heat_cool`, `zm{z}_dehumidification`

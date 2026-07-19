@@ -283,6 +283,12 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
     for name, reg in zone_regs.items():
         if reg.writable and not is_glt_measurement(name):
             continue
+        # Binary status registers (e.g. room relay) belong on binary_sensor,
+        # not sensor. Filter them out here so they never produce a numeric
+        # 0/1 sensor. The name-based fallback keeps older idm-heatpump-api
+        # releases (where the relay has binary=False) working correctly.
+        if reg.binary or name.endswith("_relay"):
+            continue
 
         desc = _build_sensor_description(reg)
         sensors.append(
@@ -290,6 +296,46 @@ def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[st
                 "register": reg,
                 "description": desc,
                 "category": f"zone_{zone_idx}",
+            }
+        )
+    return sensors
+
+
+def get_library_zone_binary_sensors(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
+    """Binary sensor descriptions for a single zone module.
+
+    Mirrors :func:`get_library_zone_sensors` for binary status registers
+    (currently the per-room relay). Read-only registers that are either
+    flagged ``binary=True`` by the library or follow the ``_relay`` naming
+    convention are routed here so Home Assistant exposes them as
+    ``binary_sensor`` entities with ``on``/``off`` instead of numeric 0/1.
+    """
+    from homeassistant.components.binary_sensor import BinarySensorEntityDescription
+
+    try:
+        zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
+    except Exception:
+        _LOGGER.debug("Failed to load zone %d binary registers", zone_idx, exc_info=True)
+        return []
+
+    sensors = []
+    for name, reg in zone_regs.items():
+        if reg.writable:
+            continue
+        if not (reg.binary or name.endswith("_relay")):
+            continue
+        desc = BinarySensorEntityDescription(
+            key=name,
+            name=_get_german_name(name),
+            device_class=infer_binary_device_class(name),
+            icon=get_icon_for_register(name, reg.unit),
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+        sensors.append(
+            {
+                "register": reg,
+                "description": desc,
+                "category": f"zone_binary_{zone_idx}",
             }
         )
     return sensors

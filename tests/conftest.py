@@ -1062,6 +1062,7 @@ def _stub_idm_heatpump() -> None:
                 RegisterDef(
                     off + 5, DataType.UCHAR, f"zm{zone_idx}_room{r}_mode", writable=True, enum_options=dict(_ROOM_MODE)
                 ),
+                RegisterDef(off + 6, DataType.UCHAR, f"zm{zone_idx}_room{r}_relay", binary=True),
             ]
         return regs
 

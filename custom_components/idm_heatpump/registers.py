@@ -24,6 +24,7 @@ from .library_adapter import (
     get_library_selects,
     get_library_sensors,
     get_library_switches,
+    get_library_zone_binary_sensors,
     get_library_zone_numbers,
     get_library_zone_selects,
     get_library_zone_sensors,
@@ -256,6 +257,15 @@ def get_all_binary_sensor_descriptions(
         )
     except Exception:
         _LOGGER.warning("Failed to load library binary sensor descriptions", exc_info=True)
+
+    # Zone-module binary registers (e.g. per-room relay status) are generated
+    # per zone so each zone's configured room count is respected. The bulk
+    # library path above only handles uniform room counts, mirroring the
+    # sensor path in get_all_sensor_descriptions.
+    for z in range(zone_count):
+        rooms = zone_rooms.get(z, 6)
+        descriptions.extend(get_library_zone_binary_sensors(z + 1, rooms))
+
     # Old local binary sensors disabled during migration
     return sort_entity_descriptions(descriptions)
 
