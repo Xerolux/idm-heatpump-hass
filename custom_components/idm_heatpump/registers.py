@@ -247,16 +247,11 @@ def get_all_binary_sensor_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
     zone_rooms = normalize_zone_rooms(zone_rooms)
-    # zone_modules=0: zone registers are added below via the per-zone loop,
-    # which respects each zone's configured room count (zone_rooms). The
-    # library's bulk zone handling only supports one uniform room count for
-    # all zones, so passing zone_modules here would duplicate the zone
-    # registers that the loop below also produces.
     try:
         descriptions.extend(
             get_library_binary_sensors(
                 circuits=circuits,
-                zone_modules=0,
+                zone_modules=zone_count,
                 model_info=model_info,
             )
         )
@@ -264,13 +259,26 @@ def get_all_binary_sensor_descriptions(
         _LOGGER.warning("Failed to load library binary sensor descriptions", exc_info=True)
 
     # Zone-module binary registers (e.g. per-room relay status) are generated
-    # per zone so each zone's configured room count is respected.
+    # per zone so each zone's configured room count is respected. The bulk
+    # library path above is the only other source of zone registers; dedupe
+    # below keeps the union stable when build_register_map(model_info=...)
+    # also emits zone-module registers because model_info.zone_modules > 0.
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_binary_sensors(z + 1, rooms))
 
-    # Old local binary sensors disabled during migration
-    return sort_entity_descriptions(descriptions)
+    # Deduplicate (mirror of the sensor path). The per-zone loop wins over
+    # the bulk library entry because it runs second, so the configured
+    # per-zone room count is the authoritative source.
+    seen_keys: set[str] = set()
+    unique: list[dict[str, Any]] = []
+    for desc in descriptions:
+        key = desc["description"].key
+        if key not in seen_keys:
+            seen_keys.add(key)
+            unique.append(desc)
+
+    return sort_entity_descriptions(unique)
 
 
 def get_all_number_descriptions(

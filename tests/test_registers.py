@@ -501,6 +501,42 @@ class TestZoneRelayBinarySensor:
         assert "zm1_room1_relay" not in sensor_names
         assert "zm1_room1_relay" in binary_names
 
+    def test_zone_relay_keys_unique_when_bulk_and_per_zone_overlap(self, monkeypatch):
+        """The bulk library binary path and the per-zone generator can both
+        emit the same zone-relay register (e.g. when model_info.zone_modules
+        is set, build_register_map emits zone registers regardless of the
+        zone_modules argument). The dispatcher must deduplicate so each
+        entity key appears exactly once on the binary_sensor platform.
+        """
+        import custom_components.idm_heatpump.library_adapter as adapter
+
+        def zone_regs_with_relay(zone_idx: int, room_count: int = 6):
+            base = 2000 + (zone_idx - 1) * 100
+            registers: dict[str, RegisterDef] = {}
+            for room in range(1, room_count + 1):
+                offset = base + (room - 1) * 10
+                registers[f"zm{zone_idx}_room{room}_relay"] = RegisterDef(
+                    offset + 6, DataType.UCHAR, f"zm{zone_idx}_room{room}_relay", binary=True
+                )
+            return registers
+
+        # Also make the bulk register map emit a relay so the two paths overlap.
+        def fake_build_filtered_register_map(model_info=None, circuits=None, zone_modules=0):
+            # Same relay the per-zone loop will also produce for zone 1 room 1.
+            return {"zm1_room1_relay": RegisterDef(2008, DataType.UCHAR, "zm1_room1_relay", binary=True)}
+
+        monkeypatch.setattr(adapter, "_library_get_zone_module_registers", zone_regs_with_relay)
+        monkeypatch.setattr(
+            adapter,
+            "build_filtered_register_map",
+            fake_build_filtered_register_map,
+        )
+
+        descs = get_all_binary_sensor_descriptions(["a"], 1, {0: 2})
+        keys = [d["description"].key for d in descs]
+        assert keys.count("zm1_room1_relay") == 1
+        assert "zm1_room2_relay" in keys
+
 
 class TestGetAllNumberDescriptions:
     def test_returns_list(self):
