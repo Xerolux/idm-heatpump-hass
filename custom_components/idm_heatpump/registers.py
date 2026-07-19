@@ -247,11 +247,16 @@ def get_all_binary_sensor_descriptions(
 ) -> list[dict[str, Any]]:
     descriptions = []
     zone_rooms = normalize_zone_rooms(zone_rooms)
+    # zone_modules=0: zone registers are added below via the per-zone loop,
+    # which respects each zone's configured room count (zone_rooms). The
+    # library's bulk zone handling only supports one uniform room count for
+    # all zones, so passing zone_modules here would duplicate the zone
+    # registers that the loop below also produces.
     try:
         descriptions.extend(
             get_library_binary_sensors(
                 circuits=circuits,
-                zone_modules=zone_count,
+                zone_modules=0,
                 model_info=model_info,
             )
         )
@@ -259,9 +264,7 @@ def get_all_binary_sensor_descriptions(
         _LOGGER.warning("Failed to load library binary sensor descriptions", exc_info=True)
 
     # Zone-module binary registers (e.g. per-room relay status) are generated
-    # per zone so each zone's configured room count is respected. The bulk
-    # library path above only handles uniform room counts, mirroring the
-    # sensor path in get_all_sensor_descriptions.
+    # per zone so each zone's configured room count is respected.
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_binary_sensors(z + 1, rooms))
