@@ -37,6 +37,7 @@ _BINARY_DC_KEYWORDS: list[tuple[str, BinarySensorDeviceClass]] = [
     ("pump", BinarySensorDeviceClass.RUNNING),
     ("compressor", BinarySensorDeviceClass.RUNNING),
     ("demand", BinarySensorDeviceClass.RUNNING),
+    ("relay", BinarySensorDeviceClass.RUNNING),
 ]
 
 
@@ -87,6 +88,8 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
         return "mdi:battery"
     if "pump" in name_lower:
         return "mdi:pump"
+    if "relay" in name_lower:
+        return "mdi:toggle-switch"
     if "valve" in name_lower:
         return "mdi:valve"
     if "solar" in name_lower:

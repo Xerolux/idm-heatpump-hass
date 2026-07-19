@@ -13,6 +13,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.4] - 2026-07-19
+
 ### Fixed
 
 - **Climate: `hvac_action` never reported heating/cooling.** `IdmHeatingCircuitClimate` read `coordinator.data["heatpump_status"]`, but the register is published under its real name `hp_operating_mode`, so the action always fell back to `IDLE`. The entity now reads the correct key.
@@ -21,6 +23,8 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - **Unified write path for climate & water_heater.** `climate.py` and `water_heater.py` previously wrote to the heat pump via `coordinator.client.write_register` directly and replicated optimistic-update/revert logic by hand. They now route through `IdmCoordinator.async_write_register` — the same centralized path already used by `button.py`, `number.py`, `select.py` and `switch.py` — so they inherit alias-aware optimistic updates, the `write_rejected` repair issue on failure, and the scheduled background refresh. This removes the duplicated logic and the inconsistent error handling between platforms.
+- **Zone-module room relay is now a `binary_sensor`.** The per-room relay status (`zm{z}_room{r}_relay`) was previously exposed as a numeric sensor showing `0`/`1`. It is now routed to the `binary_sensor` platform and renders as `on`/`off`, with device class `Running` and a toggle-switch icon. Requires the bundled `idm-heatpump-api[web]==0.8.1`, where the relay register is flagged `binary=True` (matching the existing library convention for UCHAR status bits like compressor and demand signals). The integration keeps a name-based fallback so older API releases that still report the relay as non-binary are routed correctly as well. Closes #128.
+- Pin `idm-heatpump-api[web]` to `0.8.1`.
 
 ### Added
 

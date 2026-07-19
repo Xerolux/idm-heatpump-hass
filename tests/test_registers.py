@@ -424,6 +424,129 @@ class TestGetAllBinarySensorDescriptions:
         assert isinstance(descs, list)
 
 
+class TestZoneRelayBinarySensor:
+    """Zone-module room relays route to binary_sensor, not sensor (issue #128)."""
+
+    def test_zone_relay_not_in_sensor_descriptions(self):
+        descs = get_all_sensor_descriptions(["a"], 1, {0: 2})
+        names = {d["register"].name for d in descs}
+        assert "zm1_room1_relay" not in names
+        assert "zm1_room2_relay" not in names
+
+    def test_zone_relay_in_binary_sensor_descriptions(self):
+        descs = get_all_binary_sensor_descriptions(["a"], 1, {0: 2})
+        by_name = {d["register"].name: d for d in descs}
+        for room in (1, 2):
+            key = f"zm1_room{room}_relay"
+            assert key in by_name, f"{key} missing from binary_sensor descriptions"
+            reg = by_name[key]["register"]
+            assert reg.writable is False, f"{key} must stay read-only"
+
+    def test_zone_relay_room_count_respected(self):
+        descs = get_all_binary_sensor_descriptions(["a"], 1, {0: 3})
+        names = {d["register"].name for d in descs}
+        assert "zm1_room1_relay" in names
+        assert "zm1_room2_relay" in names
+        assert "zm1_room3_relay" in names
+        assert "zm1_room4_relay" not in names
+
+    def test_zone_relay_device_class_running_and_icon(self):
+        # The conftest HA stub makes BinarySensorDeviceClass a MagicMock, so
+        # we cannot assert on the resolved enum value here. Instead verify
+        # that "relay" maps to the same device-class instance as the other
+        # RUNNING keywords (pump, compressor, demand) and that the
+        # description carries a non-None device class plus the toggle icon.
+        from custom_components.idm_heatpump.adapter_descriptions import (
+            _BINARY_DC_KEYWORDS,
+            infer_binary_device_class,
+        )
+
+        dc_by_keyword = dict(_BINARY_DC_KEYWORDS)
+        assert dc_by_keyword["relay"] is dc_by_keyword["pump"]
+        assert dc_by_keyword["relay"] is dc_by_keyword["compressor"]
+        assert infer_binary_device_class("zm1_room1_relay") is dc_by_keyword["relay"]
+
+        descs = get_all_binary_sensor_descriptions(["a"], 1, {0: 1})
+        relay = next(d for d in descs if d["register"].name == "zm1_room1_relay")
+        assert relay["description"].device_class is dc_by_keyword["relay"]
+        assert relay["description"].icon == "mdi:toggle-switch"
+
+    def test_zone_relay_routed_to_binary_even_with_legacy_api(self, monkeypatch):
+        """Name-based fallback: older API releases report the relay as UCHAR
+        without binary=True. The integration must still route it to
+        binary_sensor so users on older idm-heatpump-api releases get the
+        correct on/off entity without waiting for the library upgrade.
+        """
+        import custom_components.idm_heatpump.library_adapter as adapter
+
+        def legacy_zone_regs(zone_idx: int, room_count: int = 6):
+            base = 2000 + (zone_idx - 1) * 100
+            registers: dict[str, RegisterDef] = {}
+            for room in range(1, room_count + 1):
+                offset = base + (room - 1) * 10
+                registers[f"zm{zone_idx}_room{room}_temp"] = RegisterDef(
+                    offset, DataType.FLOAT, f"zm{zone_idx}_room{room}_temp", unit="°C", writable=True
+                )
+                # Relay WITHOUT binary=True, mirroring pre-0.8.1 API behaviour.
+                registers[f"zm{zone_idx}_room{room}_relay"] = RegisterDef(
+                    offset + 6, DataType.UCHAR, f"zm{zone_idx}_room{room}_relay"
+                )
+            return registers
+
+        monkeypatch.setattr(adapter, "_library_get_zone_module_registers", legacy_zone_regs)
+
+        sensor_names = {d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 1})}
+        binary_names = {d["register"].name for d in get_all_binary_sensor_descriptions(["a"], 1, {0: 1})}
+
+        assert "zm1_room1_relay" not in sensor_names
+        assert "zm1_room1_relay" in binary_names
+
+    def test_zone_relay_keys_unique_when_bulk_and_per_zone_overlap(self, monkeypatch):
+        """The bulk library binary path and the per-zone generator can both
+        emit the same zone-relay register (e.g. when model_info.zone_modules
+        is set, build_register_map emits zone registers regardless of the
+        zone_modules argument). The dispatcher strips zone-relay entries
+        from the bulk list so the per-zone loop is the single authoritative
+        source and the configured per-zone room count wins.
+        """
+        import custom_components.idm_heatpump.library_adapter as adapter
+
+        def zone_regs_with_relay(zone_idx: int, room_count: int = 6):
+            base = 2000 + (zone_idx - 1) * 100
+            registers: dict[str, RegisterDef] = {}
+            for room in range(1, room_count + 1):
+                offset = base + (room - 1) * 10
+                registers[f"zm{zone_idx}_room{room}_relay"] = RegisterDef(
+                    offset + 6, DataType.UCHAR, f"zm{zone_idx}_room{room}_relay", binary=True
+                )
+            return registers
+
+        # Bulk path emits 6 rooms (uniform library default), per-zone loop
+        # only 2 (configured). The dispatcher must keep the 2-room result.
+        def fake_build_filtered_register_map(model_info=None, circuits=None, zone_modules=0):
+            return {
+                f"zm1_room{room}_relay": RegisterDef(
+                    2008 + (room - 1) * 7,
+                    DataType.UCHAR,
+                    f"zm1_room{room}_relay",
+                    binary=True,
+                )
+                for room in range(1, 7)
+            }
+
+        monkeypatch.setattr(adapter, "_library_get_zone_module_registers", zone_regs_with_relay)
+        monkeypatch.setattr(adapter, "build_filtered_register_map", fake_build_filtered_register_map)
+
+        descs = get_all_binary_sensor_descriptions(["a"], 1, {0: 2})
+        keys = [d["description"].key for d in descs]
+        # Per-zone loop result only: rooms 1 and 2.
+        assert keys.count("zm1_room1_relay") == 1
+        assert keys.count("zm1_room2_relay") == 1
+        # Bulk-only rooms 3-6 must not leak through.
+        assert "zm1_room3_relay" not in keys
+        assert "zm1_room6_relay" not in keys
+
+
 class TestGetAllNumberDescriptions:
     def test_returns_list(self):
         descs = get_all_number_descriptions(["a"], 0, {})

@@ -413,420 +413,420 @@ The German description is intended for identification; the code-form register na
 | 2004–2005 | Zone 1 Raum 1 Raumsolltemperatur | `zm1_room1_setpoint` | FLOAT | °C | RW | — |
 | 2006 | Zone 1 Raum 1 Raumfeuchte | `zm1_room1_humidity` | UCHAR | % | RW | — |
 | 2007 | Zone 1 Raum 1 Raumbetriebsart | `zm1_room1_mode` | UCHAR | — | RW | Enum |
-| 2008 | Zone 1 Raum 1 Relais | `zm1_room1_relay` | UCHAR | — | R | — |
+| 2008 | Zone 1 Raum 1 Relais | `zm1_room1_relay` | UCHAR (binary) | — | R | — |
 | 2009–2010 | Zone 1 Raum 2 Raumtemperatur | `zm1_room2_temp` | FLOAT | °C | RW | — |
 | 2011–2012 | Zone 1 Raum 2 Raumsolltemperatur | `zm1_room2_setpoint` | FLOAT | °C | RW | — |
 | 2013 | Zone 1 Raum 2 Raumfeuchte | `zm1_room2_humidity` | UCHAR | % | RW | — |
 | 2014 | Zone 1 Raum 2 Raumbetriebsart | `zm1_room2_mode` | UCHAR | — | RW | Enum |
-| 2015 | Zone 1 Raum 2 Relais | `zm1_room2_relay` | UCHAR | — | R | — |
+| 2015 | Zone 1 Raum 2 Relais | `zm1_room2_relay` | UCHAR (binary) | — | R | — |
 | 2016–2017 | Zone 1 Raum 3 Raumtemperatur | `zm1_room3_temp` | FLOAT | °C | RW | — |
 | 2018–2019 | Zone 1 Raum 3 Raumsolltemperatur | `zm1_room3_setpoint` | FLOAT | °C | RW | — |
 | 2020 | Zone 1 Raum 3 Raumfeuchte | `zm1_room3_humidity` | UCHAR | % | RW | — |
 | 2021 | Zone 1 Raum 3 Raumbetriebsart | `zm1_room3_mode` | UCHAR | — | RW | Enum |
-| 2022 | Zone 1 Raum 3 Relais | `zm1_room3_relay` | UCHAR | — | R | — |
+| 2022 | Zone 1 Raum 3 Relais | `zm1_room3_relay` | UCHAR (binary) | — | R | — |
 | 2023–2024 | Zone 1 Raum 4 Raumtemperatur | `zm1_room4_temp` | FLOAT | °C | RW | — |
 | 2025–2026 | Zone 1 Raum 4 Raumsolltemperatur | `zm1_room4_setpoint` | FLOAT | °C | RW | — |
 | 2027 | Zone 1 Raum 4 Raumfeuchte | `zm1_room4_humidity` | UCHAR | % | RW | — |
 | 2028 | Zone 1 Raum 4 Raumbetriebsart | `zm1_room4_mode` | UCHAR | — | RW | Enum |
-| 2029 | Zone 1 Raum 4 Relais | `zm1_room4_relay` | UCHAR | — | R | — |
+| 2029 | Zone 1 Raum 4 Relais | `zm1_room4_relay` | UCHAR (binary) | — | R | — |
 | 2030–2031 | Zone 1 Raum 5 Raumtemperatur | `zm1_room5_temp` | FLOAT | °C | RW | — |
 | 2032–2033 | Zone 1 Raum 5 Raumsolltemperatur | `zm1_room5_setpoint` | FLOAT | °C | RW | — |
 | 2034 | Zone 1 Raum 5 Raumfeuchte | `zm1_room5_humidity` | UCHAR | % | RW | — |
 | 2035 | Zone 1 Raum 5 Raumbetriebsart | `zm1_room5_mode` | UCHAR | — | RW | Enum |
-| 2036 | Zone 1 Raum 5 Relais | `zm1_room5_relay` | UCHAR | — | R | — |
+| 2036 | Zone 1 Raum 5 Relais | `zm1_room5_relay` | UCHAR (binary) | — | R | — |
 | 2037–2038 | Zone 1 Raum 6 Raumtemperatur | `zm1_room6_temp` | FLOAT | °C | RW | — |
 | 2039–2040 | Zone 1 Raum 6 Raumsolltemperatur | `zm1_room6_setpoint` | FLOAT | °C | RW | — |
 | 2041 | Zone 1 Raum 6 Raumfeuchte | `zm1_room6_humidity` | UCHAR | % | RW | — |
 | 2042 | Zone 1 Raum 6 Raumbetriebsart | `zm1_room6_mode` | UCHAR | — | RW | Enum |
-| 2043 | Zone 1 Raum 6 Relais | `zm1_room6_relay` | UCHAR | — | R | — |
+| 2043 | Zone 1 Raum 6 Relais | `zm1_room6_relay` | UCHAR (binary) | — | R | — |
 | 2044–2045 | Zone 1 Raum 7 Raumtemperatur | `zm1_room7_temp` | FLOAT | °C | RW | — |
 | 2046–2047 | Zone 1 Raum 7 Raumsolltemperatur | `zm1_room7_setpoint` | FLOAT | °C | RW | — |
 | 2048 | Zone 1 Raum 7 Raumfeuchte | `zm1_room7_humidity` | UCHAR | % | RW | — |
 | 2049 | Zone 1 Raum 7 Raumbetriebsart | `zm1_room7_mode` | UCHAR | — | RW | Enum |
-| 2050 | Zone 1 Raum 7 Relais | `zm1_room7_relay` | UCHAR | — | R | — |
+| 2050 | Zone 1 Raum 7 Relais | `zm1_room7_relay` | UCHAR (binary) | — | R | — |
 | 2051–2052 | Zone 1 Raum 8 Raumtemperatur | `zm1_room8_temp` | FLOAT | °C | RW | — |
 | 2053–2054 | Zone 1 Raum 8 Raumsolltemperatur | `zm1_room8_setpoint` | FLOAT | °C | RW | — |
 | 2055 | Zone 1 Raum 8 Raumfeuchte | `zm1_room8_humidity` | UCHAR | % | RW | — |
 | 2056 | Zone 1 Raum 8 Raumbetriebsart | `zm1_room8_mode` | UCHAR | — | RW | Enum |
-| 2057 | Zone 1 Raum 8 Relais | `zm1_room8_relay` | UCHAR | — | R | — |
+| 2057 | Zone 1 Raum 8 Relais | `zm1_room8_relay` | UCHAR (binary) | — | R | — |
 | 2065 | Zone 2 Betriebsart Heizen/Kühlen | `zm2_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2066 | Zone 2 Entfeuchtung | `zm2_dehumidification` | UCHAR | — | R | — |
 | 2067–2068 | Zone 2 Raum 1 Raumtemperatur | `zm2_room1_temp` | FLOAT | °C | RW | — |
 | 2069–2070 | Zone 2 Raum 1 Raumsolltemperatur | `zm2_room1_setpoint` | FLOAT | °C | RW | — |
 | 2071 | Zone 2 Raum 1 Raumfeuchte | `zm2_room1_humidity` | UCHAR | % | RW | — |
 | 2072 | Zone 2 Raum 1 Raumbetriebsart | `zm2_room1_mode` | UCHAR | — | RW | Enum |
-| 2073 | Zone 2 Raum 1 Relais | `zm2_room1_relay` | UCHAR | — | R | — |
+| 2073 | Zone 2 Raum 1 Relais | `zm2_room1_relay` | UCHAR (binary) | — | R | — |
 | 2074–2075 | Zone 2 Raum 2 Raumtemperatur | `zm2_room2_temp` | FLOAT | °C | RW | — |
 | 2076–2077 | Zone 2 Raum 2 Raumsolltemperatur | `zm2_room2_setpoint` | FLOAT | °C | RW | — |
 | 2078 | Zone 2 Raum 2 Raumfeuchte | `zm2_room2_humidity` | UCHAR | % | RW | — |
 | 2079 | Zone 2 Raum 2 Raumbetriebsart | `zm2_room2_mode` | UCHAR | — | RW | Enum |
-| 2080 | Zone 2 Raum 2 Relais | `zm2_room2_relay` | UCHAR | — | R | — |
+| 2080 | Zone 2 Raum 2 Relais | `zm2_room2_relay` | UCHAR (binary) | — | R | — |
 | 2081–2082 | Zone 2 Raum 3 Raumtemperatur | `zm2_room3_temp` | FLOAT | °C | RW | — |
 | 2083–2084 | Zone 2 Raum 3 Raumsolltemperatur | `zm2_room3_setpoint` | FLOAT | °C | RW | — |
 | 2085 | Zone 2 Raum 3 Raumfeuchte | `zm2_room3_humidity` | UCHAR | % | RW | — |
 | 2086 | Zone 2 Raum 3 Raumbetriebsart | `zm2_room3_mode` | UCHAR | — | RW | Enum |
-| 2087 | Zone 2 Raum 3 Relais | `zm2_room3_relay` | UCHAR | — | R | — |
+| 2087 | Zone 2 Raum 3 Relais | `zm2_room3_relay` | UCHAR (binary) | — | R | — |
 | 2088–2089 | Zone 2 Raum 4 Raumtemperatur | `zm2_room4_temp` | FLOAT | °C | RW | — |
 | 2090–2091 | Zone 2 Raum 4 Raumsolltemperatur | `zm2_room4_setpoint` | FLOAT | °C | RW | — |
 | 2092 | Zone 2 Raum 4 Raumfeuchte | `zm2_room4_humidity` | UCHAR | % | RW | — |
 | 2093 | Zone 2 Raum 4 Raumbetriebsart | `zm2_room4_mode` | UCHAR | — | RW | Enum |
-| 2094 | Zone 2 Raum 4 Relais | `zm2_room4_relay` | UCHAR | — | R | — |
+| 2094 | Zone 2 Raum 4 Relais | `zm2_room4_relay` | UCHAR (binary) | — | R | — |
 | 2095–2096 | Zone 2 Raum 5 Raumtemperatur | `zm2_room5_temp` | FLOAT | °C | RW | — |
 | 2097–2098 | Zone 2 Raum 5 Raumsolltemperatur | `zm2_room5_setpoint` | FLOAT | °C | RW | — |
 | 2099 | Zone 2 Raum 5 Raumfeuchte | `zm2_room5_humidity` | UCHAR | % | RW | — |
 | 2100 | Zone 2 Raum 5 Raumbetriebsart | `zm2_room5_mode` | UCHAR | — | RW | Enum |
-| 2101 | Zone 2 Raum 5 Relais | `zm2_room5_relay` | UCHAR | — | R | — |
+| 2101 | Zone 2 Raum 5 Relais | `zm2_room5_relay` | UCHAR (binary) | — | R | — |
 | 2102–2103 | Zone 2 Raum 6 Raumtemperatur | `zm2_room6_temp` | FLOAT | °C | RW | — |
 | 2104–2105 | Zone 2 Raum 6 Raumsolltemperatur | `zm2_room6_setpoint` | FLOAT | °C | RW | — |
 | 2106 | Zone 2 Raum 6 Raumfeuchte | `zm2_room6_humidity` | UCHAR | % | RW | — |
 | 2107 | Zone 2 Raum 6 Raumbetriebsart | `zm2_room6_mode` | UCHAR | — | RW | Enum |
-| 2108 | Zone 2 Raum 6 Relais | `zm2_room6_relay` | UCHAR | — | R | — |
+| 2108 | Zone 2 Raum 6 Relais | `zm2_room6_relay` | UCHAR (binary) | — | R | — |
 | 2109–2110 | Zone 2 Raum 7 Raumtemperatur | `zm2_room7_temp` | FLOAT | °C | RW | — |
 | 2111–2112 | Zone 2 Raum 7 Raumsolltemperatur | `zm2_room7_setpoint` | FLOAT | °C | RW | — |
 | 2113 | Zone 2 Raum 7 Raumfeuchte | `zm2_room7_humidity` | UCHAR | % | RW | — |
 | 2114 | Zone 2 Raum 7 Raumbetriebsart | `zm2_room7_mode` | UCHAR | — | RW | Enum |
-| 2115 | Zone 2 Raum 7 Relais | `zm2_room7_relay` | UCHAR | — | R | — |
+| 2115 | Zone 2 Raum 7 Relais | `zm2_room7_relay` | UCHAR (binary) | — | R | — |
 | 2116–2117 | Zone 2 Raum 8 Raumtemperatur | `zm2_room8_temp` | FLOAT | °C | RW | — |
 | 2118–2119 | Zone 2 Raum 8 Raumsolltemperatur | `zm2_room8_setpoint` | FLOAT | °C | RW | — |
 | 2120 | Zone 2 Raum 8 Raumfeuchte | `zm2_room8_humidity` | UCHAR | % | RW | — |
 | 2121 | Zone 2 Raum 8 Raumbetriebsart | `zm2_room8_mode` | UCHAR | — | RW | Enum |
-| 2122 | Zone 2 Raum 8 Relais | `zm2_room8_relay` | UCHAR | — | R | — |
+| 2122 | Zone 2 Raum 8 Relais | `zm2_room8_relay` | UCHAR (binary) | — | R | — |
 | 2130 | Zone 3 Betriebsart Heizen/Kühlen | `zm3_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2131 | Zone 3 Entfeuchtung | `zm3_dehumidification` | UCHAR | — | R | — |
 | 2132–2133 | Zone 3 Raum 1 Raumtemperatur | `zm3_room1_temp` | FLOAT | °C | RW | — |
 | 2134–2135 | Zone 3 Raum 1 Raumsolltemperatur | `zm3_room1_setpoint` | FLOAT | °C | RW | — |
 | 2136 | Zone 3 Raum 1 Raumfeuchte | `zm3_room1_humidity` | UCHAR | % | RW | — |
 | 2137 | Zone 3 Raum 1 Raumbetriebsart | `zm3_room1_mode` | UCHAR | — | RW | Enum |
-| 2138 | Zone 3 Raum 1 Relais | `zm3_room1_relay` | UCHAR | — | R | — |
+| 2138 | Zone 3 Raum 1 Relais | `zm3_room1_relay` | UCHAR (binary) | — | R | — |
 | 2139–2140 | Zone 3 Raum 2 Raumtemperatur | `zm3_room2_temp` | FLOAT | °C | RW | — |
 | 2141–2142 | Zone 3 Raum 2 Raumsolltemperatur | `zm3_room2_setpoint` | FLOAT | °C | RW | — |
 | 2143 | Zone 3 Raum 2 Raumfeuchte | `zm3_room2_humidity` | UCHAR | % | RW | — |
 | 2144 | Zone 3 Raum 2 Raumbetriebsart | `zm3_room2_mode` | UCHAR | — | RW | Enum |
-| 2145 | Zone 3 Raum 2 Relais | `zm3_room2_relay` | UCHAR | — | R | — |
+| 2145 | Zone 3 Raum 2 Relais | `zm3_room2_relay` | UCHAR (binary) | — | R | — |
 | 2146–2147 | Zone 3 Raum 3 Raumtemperatur | `zm3_room3_temp` | FLOAT | °C | RW | — |
 | 2148–2149 | Zone 3 Raum 3 Raumsolltemperatur | `zm3_room3_setpoint` | FLOAT | °C | RW | — |
 | 2150 | Zone 3 Raum 3 Raumfeuchte | `zm3_room3_humidity` | UCHAR | % | RW | — |
 | 2151 | Zone 3 Raum 3 Raumbetriebsart | `zm3_room3_mode` | UCHAR | — | RW | Enum |
-| 2152 | Zone 3 Raum 3 Relais | `zm3_room3_relay` | UCHAR | — | R | — |
+| 2152 | Zone 3 Raum 3 Relais | `zm3_room3_relay` | UCHAR (binary) | — | R | — |
 | 2153–2154 | Zone 3 Raum 4 Raumtemperatur | `zm3_room4_temp` | FLOAT | °C | RW | — |
 | 2155–2156 | Zone 3 Raum 4 Raumsolltemperatur | `zm3_room4_setpoint` | FLOAT | °C | RW | — |
 | 2157 | Zone 3 Raum 4 Raumfeuchte | `zm3_room4_humidity` | UCHAR | % | RW | — |
 | 2158 | Zone 3 Raum 4 Raumbetriebsart | `zm3_room4_mode` | UCHAR | — | RW | Enum |
-| 2159 | Zone 3 Raum 4 Relais | `zm3_room4_relay` | UCHAR | — | R | — |
+| 2159 | Zone 3 Raum 4 Relais | `zm3_room4_relay` | UCHAR (binary) | — | R | — |
 | 2160–2161 | Zone 3 Raum 5 Raumtemperatur | `zm3_room5_temp` | FLOAT | °C | RW | — |
 | 2162–2163 | Zone 3 Raum 5 Raumsolltemperatur | `zm3_room5_setpoint` | FLOAT | °C | RW | — |
 | 2164 | Zone 3 Raum 5 Raumfeuchte | `zm3_room5_humidity` | UCHAR | % | RW | — |
 | 2165 | Zone 3 Raum 5 Raumbetriebsart | `zm3_room5_mode` | UCHAR | — | RW | Enum |
-| 2166 | Zone 3 Raum 5 Relais | `zm3_room5_relay` | UCHAR | — | R | — |
+| 2166 | Zone 3 Raum 5 Relais | `zm3_room5_relay` | UCHAR (binary) | — | R | — |
 | 2167–2168 | Zone 3 Raum 6 Raumtemperatur | `zm3_room6_temp` | FLOAT | °C | RW | — |
 | 2169–2170 | Zone 3 Raum 6 Raumsolltemperatur | `zm3_room6_setpoint` | FLOAT | °C | RW | — |
 | 2171 | Zone 3 Raum 6 Raumfeuchte | `zm3_room6_humidity` | UCHAR | % | RW | — |
 | 2172 | Zone 3 Raum 6 Raumbetriebsart | `zm3_room6_mode` | UCHAR | — | RW | Enum |
-| 2173 | Zone 3 Raum 6 Relais | `zm3_room6_relay` | UCHAR | — | R | — |
+| 2173 | Zone 3 Raum 6 Relais | `zm3_room6_relay` | UCHAR (binary) | — | R | — |
 | 2174–2175 | Zone 3 Raum 7 Raumtemperatur | `zm3_room7_temp` | FLOAT | °C | RW | — |
 | 2176–2177 | Zone 3 Raum 7 Raumsolltemperatur | `zm3_room7_setpoint` | FLOAT | °C | RW | — |
 | 2178 | Zone 3 Raum 7 Raumfeuchte | `zm3_room7_humidity` | UCHAR | % | RW | — |
 | 2179 | Zone 3 Raum 7 Raumbetriebsart | `zm3_room7_mode` | UCHAR | — | RW | Enum |
-| 2180 | Zone 3 Raum 7 Relais | `zm3_room7_relay` | UCHAR | — | R | — |
+| 2180 | Zone 3 Raum 7 Relais | `zm3_room7_relay` | UCHAR (binary) | — | R | — |
 | 2181–2182 | Zone 3 Raum 8 Raumtemperatur | `zm3_room8_temp` | FLOAT | °C | RW | — |
 | 2183–2184 | Zone 3 Raum 8 Raumsolltemperatur | `zm3_room8_setpoint` | FLOAT | °C | RW | — |
 | 2185 | Zone 3 Raum 8 Raumfeuchte | `zm3_room8_humidity` | UCHAR | % | RW | — |
 | 2186 | Zone 3 Raum 8 Raumbetriebsart | `zm3_room8_mode` | UCHAR | — | RW | Enum |
-| 2187 | Zone 3 Raum 8 Relais | `zm3_room8_relay` | UCHAR | — | R | — |
+| 2187 | Zone 3 Raum 8 Relais | `zm3_room8_relay` | UCHAR (binary) | — | R | — |
 | 2195 | Zone 4 Betriebsart Heizen/Kühlen | `zm4_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2196 | Zone 4 Entfeuchtung | `zm4_dehumidification` | UCHAR | — | R | — |
 | 2197–2198 | Zone 4 Raum 1 Raumtemperatur | `zm4_room1_temp` | FLOAT | °C | RW | — |
 | 2199–2200 | Zone 4 Raum 1 Raumsolltemperatur | `zm4_room1_setpoint` | FLOAT | °C | RW | — |
 | 2201 | Zone 4 Raum 1 Raumfeuchte | `zm4_room1_humidity` | UCHAR | % | RW | — |
 | 2202 | Zone 4 Raum 1 Raumbetriebsart | `zm4_room1_mode` | UCHAR | — | RW | Enum |
-| 2203 | Zone 4 Raum 1 Relais | `zm4_room1_relay` | UCHAR | — | R | — |
+| 2203 | Zone 4 Raum 1 Relais | `zm4_room1_relay` | UCHAR (binary) | — | R | — |
 | 2204–2205 | Zone 4 Raum 2 Raumtemperatur | `zm4_room2_temp` | FLOAT | °C | RW | — |
 | 2206–2207 | Zone 4 Raum 2 Raumsolltemperatur | `zm4_room2_setpoint` | FLOAT | °C | RW | — |
 | 2208 | Zone 4 Raum 2 Raumfeuchte | `zm4_room2_humidity` | UCHAR | % | RW | — |
 | 2209 | Zone 4 Raum 2 Raumbetriebsart | `zm4_room2_mode` | UCHAR | — | RW | Enum |
-| 2210 | Zone 4 Raum 2 Relais | `zm4_room2_relay` | UCHAR | — | R | — |
+| 2210 | Zone 4 Raum 2 Relais | `zm4_room2_relay` | UCHAR (binary) | — | R | — |
 | 2211–2212 | Zone 4 Raum 3 Raumtemperatur | `zm4_room3_temp` | FLOAT | °C | RW | — |
 | 2213–2214 | Zone 4 Raum 3 Raumsolltemperatur | `zm4_room3_setpoint` | FLOAT | °C | RW | — |
 | 2215 | Zone 4 Raum 3 Raumfeuchte | `zm4_room3_humidity` | UCHAR | % | RW | — |
 | 2216 | Zone 4 Raum 3 Raumbetriebsart | `zm4_room3_mode` | UCHAR | — | RW | Enum |
-| 2217 | Zone 4 Raum 3 Relais | `zm4_room3_relay` | UCHAR | — | R | — |
+| 2217 | Zone 4 Raum 3 Relais | `zm4_room3_relay` | UCHAR (binary) | — | R | — |
 | 2218–2219 | Zone 4 Raum 4 Raumtemperatur | `zm4_room4_temp` | FLOAT | °C | RW | — |
 | 2220–2221 | Zone 4 Raum 4 Raumsolltemperatur | `zm4_room4_setpoint` | FLOAT | °C | RW | — |
 | 2222 | Zone 4 Raum 4 Raumfeuchte | `zm4_room4_humidity` | UCHAR | % | RW | — |
 | 2223 | Zone 4 Raum 4 Raumbetriebsart | `zm4_room4_mode` | UCHAR | — | RW | Enum |
-| 2224 | Zone 4 Raum 4 Relais | `zm4_room4_relay` | UCHAR | — | R | — |
+| 2224 | Zone 4 Raum 4 Relais | `zm4_room4_relay` | UCHAR (binary) | — | R | — |
 | 2225–2226 | Zone 4 Raum 5 Raumtemperatur | `zm4_room5_temp` | FLOAT | °C | RW | — |
 | 2227–2228 | Zone 4 Raum 5 Raumsolltemperatur | `zm4_room5_setpoint` | FLOAT | °C | RW | — |
 | 2229 | Zone 4 Raum 5 Raumfeuchte | `zm4_room5_humidity` | UCHAR | % | RW | — |
 | 2230 | Zone 4 Raum 5 Raumbetriebsart | `zm4_room5_mode` | UCHAR | — | RW | Enum |
-| 2231 | Zone 4 Raum 5 Relais | `zm4_room5_relay` | UCHAR | — | R | — |
+| 2231 | Zone 4 Raum 5 Relais | `zm4_room5_relay` | UCHAR (binary) | — | R | — |
 | 2232–2233 | Zone 4 Raum 6 Raumtemperatur | `zm4_room6_temp` | FLOAT | °C | RW | — |
 | 2234–2235 | Zone 4 Raum 6 Raumsolltemperatur | `zm4_room6_setpoint` | FLOAT | °C | RW | — |
 | 2236 | Zone 4 Raum 6 Raumfeuchte | `zm4_room6_humidity` | UCHAR | % | RW | — |
 | 2237 | Zone 4 Raum 6 Raumbetriebsart | `zm4_room6_mode` | UCHAR | — | RW | Enum |
-| 2238 | Zone 4 Raum 6 Relais | `zm4_room6_relay` | UCHAR | — | R | — |
+| 2238 | Zone 4 Raum 6 Relais | `zm4_room6_relay` | UCHAR (binary) | — | R | — |
 | 2239–2240 | Zone 4 Raum 7 Raumtemperatur | `zm4_room7_temp` | FLOAT | °C | RW | — |
 | 2241–2242 | Zone 4 Raum 7 Raumsolltemperatur | `zm4_room7_setpoint` | FLOAT | °C | RW | — |
 | 2243 | Zone 4 Raum 7 Raumfeuchte | `zm4_room7_humidity` | UCHAR | % | RW | — |
 | 2244 | Zone 4 Raum 7 Raumbetriebsart | `zm4_room7_mode` | UCHAR | — | RW | Enum |
-| 2245 | Zone 4 Raum 7 Relais | `zm4_room7_relay` | UCHAR | — | R | — |
+| 2245 | Zone 4 Raum 7 Relais | `zm4_room7_relay` | UCHAR (binary) | — | R | — |
 | 2246–2247 | Zone 4 Raum 8 Raumtemperatur | `zm4_room8_temp` | FLOAT | °C | RW | — |
 | 2248–2249 | Zone 4 Raum 8 Raumsolltemperatur | `zm4_room8_setpoint` | FLOAT | °C | RW | — |
 | 2250 | Zone 4 Raum 8 Raumfeuchte | `zm4_room8_humidity` | UCHAR | % | RW | — |
 | 2251 | Zone 4 Raum 8 Raumbetriebsart | `zm4_room8_mode` | UCHAR | — | RW | Enum |
-| 2252 | Zone 4 Raum 8 Relais | `zm4_room8_relay` | UCHAR | — | R | — |
+| 2252 | Zone 4 Raum 8 Relais | `zm4_room8_relay` | UCHAR (binary) | — | R | — |
 | 2260 | Zone 5 Betriebsart Heizen/Kühlen | `zm5_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2261 | Zone 5 Entfeuchtung | `zm5_dehumidification` | UCHAR | — | R | — |
 | 2262–2263 | Zone 5 Raum 1 Raumtemperatur | `zm5_room1_temp` | FLOAT | °C | RW | — |
 | 2264–2265 | Zone 5 Raum 1 Raumsolltemperatur | `zm5_room1_setpoint` | FLOAT | °C | RW | — |
 | 2266 | Zone 5 Raum 1 Raumfeuchte | `zm5_room1_humidity` | UCHAR | % | RW | — |
 | 2267 | Zone 5 Raum 1 Raumbetriebsart | `zm5_room1_mode` | UCHAR | — | RW | Enum |
-| 2268 | Zone 5 Raum 1 Relais | `zm5_room1_relay` | UCHAR | — | R | — |
+| 2268 | Zone 5 Raum 1 Relais | `zm5_room1_relay` | UCHAR (binary) | — | R | — |
 | 2269–2270 | Zone 5 Raum 2 Raumtemperatur | `zm5_room2_temp` | FLOAT | °C | RW | — |
 | 2271–2272 | Zone 5 Raum 2 Raumsolltemperatur | `zm5_room2_setpoint` | FLOAT | °C | RW | — |
 | 2273 | Zone 5 Raum 2 Raumfeuchte | `zm5_room2_humidity` | UCHAR | % | RW | — |
 | 2274 | Zone 5 Raum 2 Raumbetriebsart | `zm5_room2_mode` | UCHAR | — | RW | Enum |
-| 2275 | Zone 5 Raum 2 Relais | `zm5_room2_relay` | UCHAR | — | R | — |
+| 2275 | Zone 5 Raum 2 Relais | `zm5_room2_relay` | UCHAR (binary) | — | R | — |
 | 2276–2277 | Zone 5 Raum 3 Raumtemperatur | `zm5_room3_temp` | FLOAT | °C | RW | — |
 | 2278–2279 | Zone 5 Raum 3 Raumsolltemperatur | `zm5_room3_setpoint` | FLOAT | °C | RW | — |
 | 2280 | Zone 5 Raum 3 Raumfeuchte | `zm5_room3_humidity` | UCHAR | % | RW | — |
 | 2281 | Zone 5 Raum 3 Raumbetriebsart | `zm5_room3_mode` | UCHAR | — | RW | Enum |
-| 2282 | Zone 5 Raum 3 Relais | `zm5_room3_relay` | UCHAR | — | R | — |
+| 2282 | Zone 5 Raum 3 Relais | `zm5_room3_relay` | UCHAR (binary) | — | R | — |
 | 2283–2284 | Zone 5 Raum 4 Raumtemperatur | `zm5_room4_temp` | FLOAT | °C | RW | — |
 | 2285–2286 | Zone 5 Raum 4 Raumsolltemperatur | `zm5_room4_setpoint` | FLOAT | °C | RW | — |
 | 2287 | Zone 5 Raum 4 Raumfeuchte | `zm5_room4_humidity` | UCHAR | % | RW | — |
 | 2288 | Zone 5 Raum 4 Raumbetriebsart | `zm5_room4_mode` | UCHAR | — | RW | Enum |
-| 2289 | Zone 5 Raum 4 Relais | `zm5_room4_relay` | UCHAR | — | R | — |
+| 2289 | Zone 5 Raum 4 Relais | `zm5_room4_relay` | UCHAR (binary) | — | R | — |
 | 2290–2291 | Zone 5 Raum 5 Raumtemperatur | `zm5_room5_temp` | FLOAT | °C | RW | — |
 | 2292–2293 | Zone 5 Raum 5 Raumsolltemperatur | `zm5_room5_setpoint` | FLOAT | °C | RW | — |
 | 2294 | Zone 5 Raum 5 Raumfeuchte | `zm5_room5_humidity` | UCHAR | % | RW | — |
 | 2295 | Zone 5 Raum 5 Raumbetriebsart | `zm5_room5_mode` | UCHAR | — | RW | Enum |
-| 2296 | Zone 5 Raum 5 Relais | `zm5_room5_relay` | UCHAR | — | R | — |
+| 2296 | Zone 5 Raum 5 Relais | `zm5_room5_relay` | UCHAR (binary) | — | R | — |
 | 2297–2298 | Zone 5 Raum 6 Raumtemperatur | `zm5_room6_temp` | FLOAT | °C | RW | — |
 | 2299–2300 | Zone 5 Raum 6 Raumsolltemperatur | `zm5_room6_setpoint` | FLOAT | °C | RW | — |
 | 2301 | Zone 5 Raum 6 Raumfeuchte | `zm5_room6_humidity` | UCHAR | % | RW | — |
 | 2302 | Zone 5 Raum 6 Raumbetriebsart | `zm5_room6_mode` | UCHAR | — | RW | Enum |
-| 2303 | Zone 5 Raum 6 Relais | `zm5_room6_relay` | UCHAR | — | R | — |
+| 2303 | Zone 5 Raum 6 Relais | `zm5_room6_relay` | UCHAR (binary) | — | R | — |
 | 2304–2305 | Zone 5 Raum 7 Raumtemperatur | `zm5_room7_temp` | FLOAT | °C | RW | — |
 | 2306–2307 | Zone 5 Raum 7 Raumsolltemperatur | `zm5_room7_setpoint` | FLOAT | °C | RW | — |
 | 2308 | Zone 5 Raum 7 Raumfeuchte | `zm5_room7_humidity` | UCHAR | % | RW | — |
 | 2309 | Zone 5 Raum 7 Raumbetriebsart | `zm5_room7_mode` | UCHAR | — | RW | Enum |
-| 2310 | Zone 5 Raum 7 Relais | `zm5_room7_relay` | UCHAR | — | R | — |
+| 2310 | Zone 5 Raum 7 Relais | `zm5_room7_relay` | UCHAR (binary) | — | R | — |
 | 2311–2312 | Zone 5 Raum 8 Raumtemperatur | `zm5_room8_temp` | FLOAT | °C | RW | — |
 | 2313–2314 | Zone 5 Raum 8 Raumsolltemperatur | `zm5_room8_setpoint` | FLOAT | °C | RW | — |
 | 2315 | Zone 5 Raum 8 Raumfeuchte | `zm5_room8_humidity` | UCHAR | % | RW | — |
 | 2316 | Zone 5 Raum 8 Raumbetriebsart | `zm5_room8_mode` | UCHAR | — | RW | Enum |
-| 2317 | Zone 5 Raum 8 Relais | `zm5_room8_relay` | UCHAR | — | R | — |
+| 2317 | Zone 5 Raum 8 Relais | `zm5_room8_relay` | UCHAR (binary) | — | R | — |
 | 2325 | Zone 6 Betriebsart Heizen/Kühlen | `zm6_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2326 | Zone 6 Entfeuchtung | `zm6_dehumidification` | UCHAR | — | R | — |
 | 2327–2328 | Zone 6 Raum 1 Raumtemperatur | `zm6_room1_temp` | FLOAT | °C | RW | — |
 | 2329–2330 | Zone 6 Raum 1 Raumsolltemperatur | `zm6_room1_setpoint` | FLOAT | °C | RW | — |
 | 2331 | Zone 6 Raum 1 Raumfeuchte | `zm6_room1_humidity` | UCHAR | % | RW | — |
 | 2332 | Zone 6 Raum 1 Raumbetriebsart | `zm6_room1_mode` | UCHAR | — | RW | Enum |
-| 2333 | Zone 6 Raum 1 Relais | `zm6_room1_relay` | UCHAR | — | R | — |
+| 2333 | Zone 6 Raum 1 Relais | `zm6_room1_relay` | UCHAR (binary) | — | R | — |
 | 2334–2335 | Zone 6 Raum 2 Raumtemperatur | `zm6_room2_temp` | FLOAT | °C | RW | — |
 | 2336–2337 | Zone 6 Raum 2 Raumsolltemperatur | `zm6_room2_setpoint` | FLOAT | °C | RW | — |
 | 2338 | Zone 6 Raum 2 Raumfeuchte | `zm6_room2_humidity` | UCHAR | % | RW | — |
 | 2339 | Zone 6 Raum 2 Raumbetriebsart | `zm6_room2_mode` | UCHAR | — | RW | Enum |
-| 2340 | Zone 6 Raum 2 Relais | `zm6_room2_relay` | UCHAR | — | R | — |
+| 2340 | Zone 6 Raum 2 Relais | `zm6_room2_relay` | UCHAR (binary) | — | R | — |
 | 2341–2342 | Zone 6 Raum 3 Raumtemperatur | `zm6_room3_temp` | FLOAT | °C | RW | — |
 | 2343–2344 | Zone 6 Raum 3 Raumsolltemperatur | `zm6_room3_setpoint` | FLOAT | °C | RW | — |
 | 2345 | Zone 6 Raum 3 Raumfeuchte | `zm6_room3_humidity` | UCHAR | % | RW | — |
 | 2346 | Zone 6 Raum 3 Raumbetriebsart | `zm6_room3_mode` | UCHAR | — | RW | Enum |
-| 2347 | Zone 6 Raum 3 Relais | `zm6_room3_relay` | UCHAR | — | R | — |
+| 2347 | Zone 6 Raum 3 Relais | `zm6_room3_relay` | UCHAR (binary) | — | R | — |
 | 2348–2349 | Zone 6 Raum 4 Raumtemperatur | `zm6_room4_temp` | FLOAT | °C | RW | — |
 | 2350–2351 | Zone 6 Raum 4 Raumsolltemperatur | `zm6_room4_setpoint` | FLOAT | °C | RW | — |
 | 2352 | Zone 6 Raum 4 Raumfeuchte | `zm6_room4_humidity` | UCHAR | % | RW | — |
 | 2353 | Zone 6 Raum 4 Raumbetriebsart | `zm6_room4_mode` | UCHAR | — | RW | Enum |
-| 2354 | Zone 6 Raum 4 Relais | `zm6_room4_relay` | UCHAR | — | R | — |
+| 2354 | Zone 6 Raum 4 Relais | `zm6_room4_relay` | UCHAR (binary) | — | R | — |
 | 2355–2356 | Zone 6 Raum 5 Raumtemperatur | `zm6_room5_temp` | FLOAT | °C | RW | — |
 | 2357–2358 | Zone 6 Raum 5 Raumsolltemperatur | `zm6_room5_setpoint` | FLOAT | °C | RW | — |
 | 2359 | Zone 6 Raum 5 Raumfeuchte | `zm6_room5_humidity` | UCHAR | % | RW | — |
 | 2360 | Zone 6 Raum 5 Raumbetriebsart | `zm6_room5_mode` | UCHAR | — | RW | Enum |
-| 2361 | Zone 6 Raum 5 Relais | `zm6_room5_relay` | UCHAR | — | R | — |
+| 2361 | Zone 6 Raum 5 Relais | `zm6_room5_relay` | UCHAR (binary) | — | R | — |
 | 2362–2363 | Zone 6 Raum 6 Raumtemperatur | `zm6_room6_temp` | FLOAT | °C | RW | — |
 | 2364–2365 | Zone 6 Raum 6 Raumsolltemperatur | `zm6_room6_setpoint` | FLOAT | °C | RW | — |
 | 2366 | Zone 6 Raum 6 Raumfeuchte | `zm6_room6_humidity` | UCHAR | % | RW | — |
 | 2367 | Zone 6 Raum 6 Raumbetriebsart | `zm6_room6_mode` | UCHAR | — | RW | Enum |
-| 2368 | Zone 6 Raum 6 Relais | `zm6_room6_relay` | UCHAR | — | R | — |
+| 2368 | Zone 6 Raum 6 Relais | `zm6_room6_relay` | UCHAR (binary) | — | R | — |
 | 2369–2370 | Zone 6 Raum 7 Raumtemperatur | `zm6_room7_temp` | FLOAT | °C | RW | — |
 | 2371–2372 | Zone 6 Raum 7 Raumsolltemperatur | `zm6_room7_setpoint` | FLOAT | °C | RW | — |
 | 2373 | Zone 6 Raum 7 Raumfeuchte | `zm6_room7_humidity` | UCHAR | % | RW | — |
 | 2374 | Zone 6 Raum 7 Raumbetriebsart | `zm6_room7_mode` | UCHAR | — | RW | Enum |
-| 2375 | Zone 6 Raum 7 Relais | `zm6_room7_relay` | UCHAR | — | R | — |
+| 2375 | Zone 6 Raum 7 Relais | `zm6_room7_relay` | UCHAR (binary) | — | R | — |
 | 2376–2377 | Zone 6 Raum 8 Raumtemperatur | `zm6_room8_temp` | FLOAT | °C | RW | — |
 | 2378–2379 | Zone 6 Raum 8 Raumsolltemperatur | `zm6_room8_setpoint` | FLOAT | °C | RW | — |
 | 2380 | Zone 6 Raum 8 Raumfeuchte | `zm6_room8_humidity` | UCHAR | % | RW | — |
 | 2381 | Zone 6 Raum 8 Raumbetriebsart | `zm6_room8_mode` | UCHAR | — | RW | Enum |
-| 2382 | Zone 6 Raum 8 Relais | `zm6_room8_relay` | UCHAR | — | R | — |
+| 2382 | Zone 6 Raum 8 Relais | `zm6_room8_relay` | UCHAR (binary) | — | R | — |
 | 2390 | Zone 7 Betriebsart Heizen/Kühlen | `zm7_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2391 | Zone 7 Entfeuchtung | `zm7_dehumidification` | UCHAR | — | R | — |
 | 2392–2393 | Zone 7 Raum 1 Raumtemperatur | `zm7_room1_temp` | FLOAT | °C | RW | — |
 | 2394–2395 | Zone 7 Raum 1 Raumsolltemperatur | `zm7_room1_setpoint` | FLOAT | °C | RW | — |
 | 2396 | Zone 7 Raum 1 Raumfeuchte | `zm7_room1_humidity` | UCHAR | % | RW | — |
 | 2397 | Zone 7 Raum 1 Raumbetriebsart | `zm7_room1_mode` | UCHAR | — | RW | Enum |
-| 2398 | Zone 7 Raum 1 Relais | `zm7_room1_relay` | UCHAR | — | R | — |
+| 2398 | Zone 7 Raum 1 Relais | `zm7_room1_relay` | UCHAR (binary) | — | R | — |
 | 2399–2400 | Zone 7 Raum 2 Raumtemperatur | `zm7_room2_temp` | FLOAT | °C | RW | — |
 | 2401–2402 | Zone 7 Raum 2 Raumsolltemperatur | `zm7_room2_setpoint` | FLOAT | °C | RW | — |
 | 2403 | Zone 7 Raum 2 Raumfeuchte | `zm7_room2_humidity` | UCHAR | % | RW | — |
 | 2404 | Zone 7 Raum 2 Raumbetriebsart | `zm7_room2_mode` | UCHAR | — | RW | Enum |
-| 2405 | Zone 7 Raum 2 Relais | `zm7_room2_relay` | UCHAR | — | R | — |
+| 2405 | Zone 7 Raum 2 Relais | `zm7_room2_relay` | UCHAR (binary) | — | R | — |
 | 2406–2407 | Zone 7 Raum 3 Raumtemperatur | `zm7_room3_temp` | FLOAT | °C | RW | — |
 | 2408–2409 | Zone 7 Raum 3 Raumsolltemperatur | `zm7_room3_setpoint` | FLOAT | °C | RW | — |
 | 2410 | Zone 7 Raum 3 Raumfeuchte | `zm7_room3_humidity` | UCHAR | % | RW | — |
 | 2411 | Zone 7 Raum 3 Raumbetriebsart | `zm7_room3_mode` | UCHAR | — | RW | Enum |
-| 2412 | Zone 7 Raum 3 Relais | `zm7_room3_relay` | UCHAR | — | R | — |
+| 2412 | Zone 7 Raum 3 Relais | `zm7_room3_relay` | UCHAR (binary) | — | R | — |
 | 2413–2414 | Zone 7 Raum 4 Raumtemperatur | `zm7_room4_temp` | FLOAT | °C | RW | — |
 | 2415–2416 | Zone 7 Raum 4 Raumsolltemperatur | `zm7_room4_setpoint` | FLOAT | °C | RW | — |
 | 2417 | Zone 7 Raum 4 Raumfeuchte | `zm7_room4_humidity` | UCHAR | % | RW | — |
 | 2418 | Zone 7 Raum 4 Raumbetriebsart | `zm7_room4_mode` | UCHAR | — | RW | Enum |
-| 2419 | Zone 7 Raum 4 Relais | `zm7_room4_relay` | UCHAR | — | R | — |
+| 2419 | Zone 7 Raum 4 Relais | `zm7_room4_relay` | UCHAR (binary) | — | R | — |
 | 2420–2421 | Zone 7 Raum 5 Raumtemperatur | `zm7_room5_temp` | FLOAT | °C | RW | — |
 | 2422–2423 | Zone 7 Raum 5 Raumsolltemperatur | `zm7_room5_setpoint` | FLOAT | °C | RW | — |
 | 2424 | Zone 7 Raum 5 Raumfeuchte | `zm7_room5_humidity` | UCHAR | % | RW | — |
 | 2425 | Zone 7 Raum 5 Raumbetriebsart | `zm7_room5_mode` | UCHAR | — | RW | Enum |
-| 2426 | Zone 7 Raum 5 Relais | `zm7_room5_relay` | UCHAR | — | R | — |
+| 2426 | Zone 7 Raum 5 Relais | `zm7_room5_relay` | UCHAR (binary) | — | R | — |
 | 2427–2428 | Zone 7 Raum 6 Raumtemperatur | `zm7_room6_temp` | FLOAT | °C | RW | — |
 | 2429–2430 | Zone 7 Raum 6 Raumsolltemperatur | `zm7_room6_setpoint` | FLOAT | °C | RW | — |
 | 2431 | Zone 7 Raum 6 Raumfeuchte | `zm7_room6_humidity` | UCHAR | % | RW | — |
 | 2432 | Zone 7 Raum 6 Raumbetriebsart | `zm7_room6_mode` | UCHAR | — | RW | Enum |
-| 2433 | Zone 7 Raum 6 Relais | `zm7_room6_relay` | UCHAR | — | R | — |
+| 2433 | Zone 7 Raum 6 Relais | `zm7_room6_relay` | UCHAR (binary) | — | R | — |
 | 2434–2435 | Zone 7 Raum 7 Raumtemperatur | `zm7_room7_temp` | FLOAT | °C | RW | — |
 | 2436–2437 | Zone 7 Raum 7 Raumsolltemperatur | `zm7_room7_setpoint` | FLOAT | °C | RW | — |
 | 2438 | Zone 7 Raum 7 Raumfeuchte | `zm7_room7_humidity` | UCHAR | % | RW | — |
 | 2439 | Zone 7 Raum 7 Raumbetriebsart | `zm7_room7_mode` | UCHAR | — | RW | Enum |
-| 2440 | Zone 7 Raum 7 Relais | `zm7_room7_relay` | UCHAR | — | R | — |
+| 2440 | Zone 7 Raum 7 Relais | `zm7_room7_relay` | UCHAR (binary) | — | R | — |
 | 2441–2442 | Zone 7 Raum 8 Raumtemperatur | `zm7_room8_temp` | FLOAT | °C | RW | — |
 | 2443–2444 | Zone 7 Raum 8 Raumsolltemperatur | `zm7_room8_setpoint` | FLOAT | °C | RW | — |
 | 2445 | Zone 7 Raum 8 Raumfeuchte | `zm7_room8_humidity` | UCHAR | % | RW | — |
 | 2446 | Zone 7 Raum 8 Raumbetriebsart | `zm7_room8_mode` | UCHAR | — | RW | Enum |
-| 2447 | Zone 7 Raum 8 Relais | `zm7_room8_relay` | UCHAR | — | R | — |
+| 2447 | Zone 7 Raum 8 Relais | `zm7_room8_relay` | UCHAR (binary) | — | R | — |
 | 2455 | Zone 8 Betriebsart Heizen/Kühlen | `zm8_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2456 | Zone 8 Entfeuchtung | `zm8_dehumidification` | UCHAR | — | R | — |
 | 2457–2458 | Zone 8 Raum 1 Raumtemperatur | `zm8_room1_temp` | FLOAT | °C | RW | — |
 | 2459–2460 | Zone 8 Raum 1 Raumsolltemperatur | `zm8_room1_setpoint` | FLOAT | °C | RW | — |
 | 2461 | Zone 8 Raum 1 Raumfeuchte | `zm8_room1_humidity` | UCHAR | % | RW | — |
 | 2462 | Zone 8 Raum 1 Raumbetriebsart | `zm8_room1_mode` | UCHAR | — | RW | Enum |
-| 2463 | Zone 8 Raum 1 Relais | `zm8_room1_relay` | UCHAR | — | R | — |
+| 2463 | Zone 8 Raum 1 Relais | `zm8_room1_relay` | UCHAR (binary) | — | R | — |
 | 2464–2465 | Zone 8 Raum 2 Raumtemperatur | `zm8_room2_temp` | FLOAT | °C | RW | — |
 | 2466–2467 | Zone 8 Raum 2 Raumsolltemperatur | `zm8_room2_setpoint` | FLOAT | °C | RW | — |
 | 2468 | Zone 8 Raum 2 Raumfeuchte | `zm8_room2_humidity` | UCHAR | % | RW | — |
 | 2469 | Zone 8 Raum 2 Raumbetriebsart | `zm8_room2_mode` | UCHAR | — | RW | Enum |
-| 2470 | Zone 8 Raum 2 Relais | `zm8_room2_relay` | UCHAR | — | R | — |
+| 2470 | Zone 8 Raum 2 Relais | `zm8_room2_relay` | UCHAR (binary) | — | R | — |
 | 2471–2472 | Zone 8 Raum 3 Raumtemperatur | `zm8_room3_temp` | FLOAT | °C | RW | — |
 | 2473–2474 | Zone 8 Raum 3 Raumsolltemperatur | `zm8_room3_setpoint` | FLOAT | °C | RW | — |
 | 2475 | Zone 8 Raum 3 Raumfeuchte | `zm8_room3_humidity` | UCHAR | % | RW | — |
 | 2476 | Zone 8 Raum 3 Raumbetriebsart | `zm8_room3_mode` | UCHAR | — | RW | Enum |
-| 2477 | Zone 8 Raum 3 Relais | `zm8_room3_relay` | UCHAR | — | R | — |
+| 2477 | Zone 8 Raum 3 Relais | `zm8_room3_relay` | UCHAR (binary) | — | R | — |
 | 2478–2479 | Zone 8 Raum 4 Raumtemperatur | `zm8_room4_temp` | FLOAT | °C | RW | — |
 | 2480–2481 | Zone 8 Raum 4 Raumsolltemperatur | `zm8_room4_setpoint` | FLOAT | °C | RW | — |
 | 2482 | Zone 8 Raum 4 Raumfeuchte | `zm8_room4_humidity` | UCHAR | % | RW | — |
 | 2483 | Zone 8 Raum 4 Raumbetriebsart | `zm8_room4_mode` | UCHAR | — | RW | Enum |
-| 2484 | Zone 8 Raum 4 Relais | `zm8_room4_relay` | UCHAR | — | R | — |
+| 2484 | Zone 8 Raum 4 Relais | `zm8_room4_relay` | UCHAR (binary) | — | R | — |
 | 2485–2486 | Zone 8 Raum 5 Raumtemperatur | `zm8_room5_temp` | FLOAT | °C | RW | — |
 | 2487–2488 | Zone 8 Raum 5 Raumsolltemperatur | `zm8_room5_setpoint` | FLOAT | °C | RW | — |
 | 2489 | Zone 8 Raum 5 Raumfeuchte | `zm8_room5_humidity` | UCHAR | % | RW | — |
 | 2490 | Zone 8 Raum 5 Raumbetriebsart | `zm8_room5_mode` | UCHAR | — | RW | Enum |
-| 2491 | Zone 8 Raum 5 Relais | `zm8_room5_relay` | UCHAR | — | R | — |
+| 2491 | Zone 8 Raum 5 Relais | `zm8_room5_relay` | UCHAR (binary) | — | R | — |
 | 2492–2493 | Zone 8 Raum 6 Raumtemperatur | `zm8_room6_temp` | FLOAT | °C | RW | — |
 | 2494–2495 | Zone 8 Raum 6 Raumsolltemperatur | `zm8_room6_setpoint` | FLOAT | °C | RW | — |
 | 2496 | Zone 8 Raum 6 Raumfeuchte | `zm8_room6_humidity` | UCHAR | % | RW | — |
 | 2497 | Zone 8 Raum 6 Raumbetriebsart | `zm8_room6_mode` | UCHAR | — | RW | Enum |
-| 2498 | Zone 8 Raum 6 Relais | `zm8_room6_relay` | UCHAR | — | R | — |
+| 2498 | Zone 8 Raum 6 Relais | `zm8_room6_relay` | UCHAR (binary) | — | R | — |
 | 2499–2500 | Zone 8 Raum 7 Raumtemperatur | `zm8_room7_temp` | FLOAT | °C | RW | — |
 | 2501–2502 | Zone 8 Raum 7 Raumsolltemperatur | `zm8_room7_setpoint` | FLOAT | °C | RW | — |
 | 2503 | Zone 8 Raum 7 Raumfeuchte | `zm8_room7_humidity` | UCHAR | % | RW | — |
 | 2504 | Zone 8 Raum 7 Raumbetriebsart | `zm8_room7_mode` | UCHAR | — | RW | Enum |
-| 2505 | Zone 8 Raum 7 Relais | `zm8_room7_relay` | UCHAR | — | R | — |
+| 2505 | Zone 8 Raum 7 Relais | `zm8_room7_relay` | UCHAR (binary) | — | R | — |
 | 2506–2507 | Zone 8 Raum 8 Raumtemperatur | `zm8_room8_temp` | FLOAT | °C | RW | — |
 | 2508–2509 | Zone 8 Raum 8 Raumsolltemperatur | `zm8_room8_setpoint` | FLOAT | °C | RW | — |
 | 2510 | Zone 8 Raum 8 Raumfeuchte | `zm8_room8_humidity` | UCHAR | % | RW | — |
 | 2511 | Zone 8 Raum 8 Raumbetriebsart | `zm8_room8_mode` | UCHAR | — | RW | Enum |
-| 2512 | Zone 8 Raum 8 Relais | `zm8_room8_relay` | UCHAR | — | R | — |
+| 2512 | Zone 8 Raum 8 Relais | `zm8_room8_relay` | UCHAR (binary) | — | R | — |
 | 2520 | Zone 9 Betriebsart Heizen/Kühlen | `zm9_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2521 | Zone 9 Entfeuchtung | `zm9_dehumidification` | UCHAR | — | R | — |
 | 2522–2523 | Zone 9 Raum 1 Raumtemperatur | `zm9_room1_temp` | FLOAT | °C | RW | — |
 | 2524–2525 | Zone 9 Raum 1 Raumsolltemperatur | `zm9_room1_setpoint` | FLOAT | °C | RW | — |
 | 2526 | Zone 9 Raum 1 Raumfeuchte | `zm9_room1_humidity` | UCHAR | % | RW | — |
 | 2527 | Zone 9 Raum 1 Raumbetriebsart | `zm9_room1_mode` | UCHAR | — | RW | Enum |
-| 2528 | Zone 9 Raum 1 Relais | `zm9_room1_relay` | UCHAR | — | R | — |
+| 2528 | Zone 9 Raum 1 Relais | `zm9_room1_relay` | UCHAR (binary) | — | R | — |
 | 2529–2530 | Zone 9 Raum 2 Raumtemperatur | `zm9_room2_temp` | FLOAT | °C | RW | — |
 | 2531–2532 | Zone 9 Raum 2 Raumsolltemperatur | `zm9_room2_setpoint` | FLOAT | °C | RW | — |
 | 2533 | Zone 9 Raum 2 Raumfeuchte | `zm9_room2_humidity` | UCHAR | % | RW | — |
 | 2534 | Zone 9 Raum 2 Raumbetriebsart | `zm9_room2_mode` | UCHAR | — | RW | Enum |
-| 2535 | Zone 9 Raum 2 Relais | `zm9_room2_relay` | UCHAR | — | R | — |
+| 2535 | Zone 9 Raum 2 Relais | `zm9_room2_relay` | UCHAR (binary) | — | R | — |
 | 2536–2537 | Zone 9 Raum 3 Raumtemperatur | `zm9_room3_temp` | FLOAT | °C | RW | — |
 | 2538–2539 | Zone 9 Raum 3 Raumsolltemperatur | `zm9_room3_setpoint` | FLOAT | °C | RW | — |
 | 2540 | Zone 9 Raum 3 Raumfeuchte | `zm9_room3_humidity` | UCHAR | % | RW | — |
 | 2541 | Zone 9 Raum 3 Raumbetriebsart | `zm9_room3_mode` | UCHAR | — | RW | Enum |
-| 2542 | Zone 9 Raum 3 Relais | `zm9_room3_relay` | UCHAR | — | R | — |
+| 2542 | Zone 9 Raum 3 Relais | `zm9_room3_relay` | UCHAR (binary) | — | R | — |
 | 2543–2544 | Zone 9 Raum 4 Raumtemperatur | `zm9_room4_temp` | FLOAT | °C | RW | — |
 | 2545–2546 | Zone 9 Raum 4 Raumsolltemperatur | `zm9_room4_setpoint` | FLOAT | °C | RW | — |
 | 2547 | Zone 9 Raum 4 Raumfeuchte | `zm9_room4_humidity` | UCHAR | % | RW | — |
 | 2548 | Zone 9 Raum 4 Raumbetriebsart | `zm9_room4_mode` | UCHAR | — | RW | Enum |
-| 2549 | Zone 9 Raum 4 Relais | `zm9_room4_relay` | UCHAR | — | R | — |
+| 2549 | Zone 9 Raum 4 Relais | `zm9_room4_relay` | UCHAR (binary) | — | R | — |
 | 2550–2551 | Zone 9 Raum 5 Raumtemperatur | `zm9_room5_temp` | FLOAT | °C | RW | — |
 | 2552–2553 | Zone 9 Raum 5 Raumsolltemperatur | `zm9_room5_setpoint` | FLOAT | °C | RW | — |
 | 2554 | Zone 9 Raum 5 Raumfeuchte | `zm9_room5_humidity` | UCHAR | % | RW | — |
 | 2555 | Zone 9 Raum 5 Raumbetriebsart | `zm9_room5_mode` | UCHAR | — | RW | Enum |
-| 2556 | Zone 9 Raum 5 Relais | `zm9_room5_relay` | UCHAR | — | R | — |
+| 2556 | Zone 9 Raum 5 Relais | `zm9_room5_relay` | UCHAR (binary) | — | R | — |
 | 2557–2558 | Zone 9 Raum 6 Raumtemperatur | `zm9_room6_temp` | FLOAT | °C | RW | — |
 | 2559–2560 | Zone 9 Raum 6 Raumsolltemperatur | `zm9_room6_setpoint` | FLOAT | °C | RW | — |
 | 2561 | Zone 9 Raum 6 Raumfeuchte | `zm9_room6_humidity` | UCHAR | % | RW | — |
 | 2562 | Zone 9 Raum 6 Raumbetriebsart | `zm9_room6_mode` | UCHAR | — | RW | Enum |
-| 2563 | Zone 9 Raum 6 Relais | `zm9_room6_relay` | UCHAR | — | R | — |
+| 2563 | Zone 9 Raum 6 Relais | `zm9_room6_relay` | UCHAR (binary) | — | R | — |
 | 2564–2565 | Zone 9 Raum 7 Raumtemperatur | `zm9_room7_temp` | FLOAT | °C | RW | — |
 | 2566–2567 | Zone 9 Raum 7 Raumsolltemperatur | `zm9_room7_setpoint` | FLOAT | °C | RW | — |
 | 2568 | Zone 9 Raum 7 Raumfeuchte | `zm9_room7_humidity` | UCHAR | % | RW | — |
 | 2569 | Zone 9 Raum 7 Raumbetriebsart | `zm9_room7_mode` | UCHAR | — | RW | Enum |
-| 2570 | Zone 9 Raum 7 Relais | `zm9_room7_relay` | UCHAR | — | R | — |
+| 2570 | Zone 9 Raum 7 Relais | `zm9_room7_relay` | UCHAR (binary) | — | R | — |
 | 2571–2572 | Zone 9 Raum 8 Raumtemperatur | `zm9_room8_temp` | FLOAT | °C | RW | — |
 | 2573–2574 | Zone 9 Raum 8 Raumsolltemperatur | `zm9_room8_setpoint` | FLOAT | °C | RW | — |
 | 2575 | Zone 9 Raum 8 Raumfeuchte | `zm9_room8_humidity` | UCHAR | % | RW | — |
 | 2576 | Zone 9 Raum 8 Raumbetriebsart | `zm9_room8_mode` | UCHAR | — | RW | Enum |
-| 2577 | Zone 9 Raum 8 Relais | `zm9_room8_relay` | UCHAR | — | R | — |
+| 2577 | Zone 9 Raum 8 Relais | `zm9_room8_relay` | UCHAR (binary) | — | R | — |
 | 2585 | Zone 10 Betriebsart Heizen/Kühlen | `zm10_mode_heat_cool` | UCHAR | — | R | Enum |
 | 2586 | Zone 10 Entfeuchtung | `zm10_dehumidification` | UCHAR | — | R | — |
 | 2587–2588 | Zone 10 Raum 1 Raumtemperatur | `zm10_room1_temp` | FLOAT | °C | RW | — |
 | 2589–2590 | Zone 10 Raum 1 Raumsolltemperatur | `zm10_room1_setpoint` | FLOAT | °C | RW | — |
 | 2591 | Zone 10 Raum 1 Raumfeuchte | `zm10_room1_humidity` | UCHAR | % | RW | — |
 | 2592 | Zone 10 Raum 1 Raumbetriebsart | `zm10_room1_mode` | UCHAR | — | RW | Enum |
-| 2593 | Zone 10 Raum 1 Relais | `zm10_room1_relay` | UCHAR | — | R | — |
+| 2593 | Zone 10 Raum 1 Relais | `zm10_room1_relay` | UCHAR (binary) | — | R | — |
 | 2594–2595 | Zone 10 Raum 2 Raumtemperatur | `zm10_room2_temp` | FLOAT | °C | RW | — |
 | 2596–2597 | Zone 10 Raum 2 Raumsolltemperatur | `zm10_room2_setpoint` | FLOAT | °C | RW | — |
 | 2598 | Zone 10 Raum 2 Raumfeuchte | `zm10_room2_humidity` | UCHAR | % | RW | — |
 | 2599 | Zone 10 Raum 2 Raumbetriebsart | `zm10_room2_mode` | UCHAR | — | RW | Enum |
-| 2600 | Zone 10 Raum 2 Relais | `zm10_room2_relay` | UCHAR | — | R | — |
+| 2600 | Zone 10 Raum 2 Relais | `zm10_room2_relay` | UCHAR (binary) | — | R | — |
 | 2601–2602 | Zone 10 Raum 3 Raumtemperatur | `zm10_room3_temp` | FLOAT | °C | RW | — |
 | 2603–2604 | Zone 10 Raum 3 Raumsolltemperatur | `zm10_room3_setpoint` | FLOAT | °C | RW | — |
 | 2605 | Zone 10 Raum 3 Raumfeuchte | `zm10_room3_humidity` | UCHAR | % | RW | — |
 | 2606 | Zone 10 Raum 3 Raumbetriebsart | `zm10_room3_mode` | UCHAR | — | RW | Enum |
-| 2607 | Zone 10 Raum 3 Relais | `zm10_room3_relay` | UCHAR | — | R | — |
+| 2607 | Zone 10 Raum 3 Relais | `zm10_room3_relay` | UCHAR (binary) | — | R | — |
 | 2608–2609 | Zone 10 Raum 4 Raumtemperatur | `zm10_room4_temp` | FLOAT | °C | RW | — |
 | 2610–2611 | Zone 10 Raum 4 Raumsolltemperatur | `zm10_room4_setpoint` | FLOAT | °C | RW | — |
 | 2612 | Zone 10 Raum 4 Raumfeuchte | `zm10_room4_humidity` | UCHAR | % | RW | — |
 | 2613 | Zone 10 Raum 4 Raumbetriebsart | `zm10_room4_mode` | UCHAR | — | RW | Enum |
-| 2614 | Zone 10 Raum 4 Relais | `zm10_room4_relay` | UCHAR | — | R | — |
+| 2614 | Zone 10 Raum 4 Relais | `zm10_room4_relay` | UCHAR (binary) | — | R | — |
 | 2615–2616 | Zone 10 Raum 5 Raumtemperatur | `zm10_room5_temp` | FLOAT | °C | RW | — |
 | 2617–2618 | Zone 10 Raum 5 Raumsolltemperatur | `zm10_room5_setpoint` | FLOAT | °C | RW | — |
 | 2619 | Zone 10 Raum 5 Raumfeuchte | `zm10_room5_humidity` | UCHAR | % | RW | — |
 | 2620 | Zone 10 Raum 5 Raumbetriebsart | `zm10_room5_mode` | UCHAR | — | RW | Enum |
-| 2621 | Zone 10 Raum 5 Relais | `zm10_room5_relay` | UCHAR | — | R | — |
+| 2621 | Zone 10 Raum 5 Relais | `zm10_room5_relay` | UCHAR (binary) | — | R | — |
 | 2622–2623 | Zone 10 Raum 6 Raumtemperatur | `zm10_room6_temp` | FLOAT | °C | RW | — |
 | 2624–2625 | Zone 10 Raum 6 Raumsolltemperatur | `zm10_room6_setpoint` | FLOAT | °C | RW | — |
 | 2626 | Zone 10 Raum 6 Raumfeuchte | `zm10_room6_humidity` | UCHAR | % | RW | — |
 | 2627 | Zone 10 Raum 6 Raumbetriebsart | `zm10_room6_mode` | UCHAR | — | RW | Enum |
-| 2628 | Zone 10 Raum 6 Relais | `zm10_room6_relay` | UCHAR | — | R | — |
+| 2628 | Zone 10 Raum 6 Relais | `zm10_room6_relay` | UCHAR (binary) | — | R | — |
 | 2629–2630 | Zone 10 Raum 7 Raumtemperatur | `zm10_room7_temp` | FLOAT | °C | RW | — |
 | 2631–2632 | Zone 10 Raum 7 Raumsolltemperatur | `zm10_room7_setpoint` | FLOAT | °C | RW | — |
 | 2633 | Zone 10 Raum 7 Raumfeuchte | `zm10_room7_humidity` | UCHAR | % | RW | — |
 | 2634 | Zone 10 Raum 7 Raumbetriebsart | `zm10_room7_mode` | UCHAR | — | RW | Enum |
-| 2635 | Zone 10 Raum 7 Relais | `zm10_room7_relay` | UCHAR | — | R | — |
+| 2635 | Zone 10 Raum 7 Relais | `zm10_room7_relay` | UCHAR (binary) | — | R | — |
 | 2636–2637 | Zone 10 Raum 8 Raumtemperatur | `zm10_room8_temp` | FLOAT | °C | RW | — |
 | 2638–2639 | Zone 10 Raum 8 Raumsolltemperatur | `zm10_room8_setpoint` | FLOAT | °C | RW | — |
 | 2640 | Zone 10 Raum 8 Raumfeuchte | `zm10_room8_humidity` | UCHAR | % | RW | — |
 | 2641 | Zone 10 Raum 8 Raumbetriebsart | `zm10_room8_mode` | UCHAR | — | RW | Enum |
-| 2642 | Zone 10 Raum 8 Relais | `zm10_room8_relay` | UCHAR | — | R | — |
+| 2642 | Zone 10 Raum 8 Relais | `zm10_room8_relay` | UCHAR (binary) | — | R | — |
 
 ### 4000+ · Navigator 10 extensions (25)
 

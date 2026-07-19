@@ -5,6 +5,18 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.4 — 2026-07-19
+
+### Changed
+
+- **Zonenmodul-Raumrelais ist jetzt ein `binary_sensor`:** Der Relaisstatus
+  pro Raum (`zm{z}_room{r}_relay`) wurde bisher als numerischer Sensor mit
+  `0`/`1` angezeigt. Er läuft jetzt auf der `binary_sensor`-Plattform und
+  zeigt `on`/`off` (Device Class `Running`, Toggle-Icon). Erfordert das
+  mitgelieferte `idm-heatpump-api[web]==0.8.1`, in dem das Relay-Register
+  als `binary=True` markiert ist. Schließt #128.
+- Pin auf `idm-heatpump-api[web]==0.8.1`.
+
 ## v0.8.3 — 2026-07-16
 
 ### Changed
