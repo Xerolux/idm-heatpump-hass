@@ -248,37 +248,30 @@ def get_all_binary_sensor_descriptions(
     descriptions = []
     zone_rooms = normalize_zone_rooms(zone_rooms)
     try:
-        descriptions.extend(
-            get_library_binary_sensors(
-                circuits=circuits,
-                zone_modules=zone_count,
-                model_info=model_info,
-            )
+        bulk = get_library_binary_sensors(
+            circuits=circuits,
+            zone_modules=zone_count,
+            model_info=model_info,
         )
     except Exception:
         _LOGGER.warning("Failed to load library binary sensor descriptions", exc_info=True)
+        bulk = []
 
-    # Zone-module binary registers (e.g. per-room relay status) are generated
-    # per zone so each zone's configured room count is respected. The bulk
-    # library path above is the only other source of zone registers; dedupe
-    # below keeps the union stable when build_register_map(model_info=...)
-    # also emits zone-module registers because model_info.zone_modules > 0.
+    # Zone-module binary registers (e.g. per-room relay status) are produced
+    # per zone below, where each zone's configured room count is respected.
+    # build_register_map(model_info=...) honours model_info.zone_modules
+    # regardless of the zone_modules argument, so the bulk list above may
+    # already contain zone-relay entries with a uniform room count of 6.
+    # Strip every zm{z}_room{r}_relay entry from the bulk list so the per-zone
+    # loop is the single authoritative source for these entities.
+    bulk = [d for d in bulk if not (d["description"].key.startswith("zm") and d["description"].key.endswith("_relay"))]
+    descriptions.extend(bulk)
+
     for z in range(zone_count):
         rooms = zone_rooms.get(z, 6)
         descriptions.extend(get_library_zone_binary_sensors(z + 1, rooms))
 
-    # Deduplicate (mirror of the sensor path). The per-zone loop wins over
-    # the bulk library entry because it runs second, so the configured
-    # per-zone room count is the authoritative source.
-    seen_keys: set[str] = set()
-    unique: list[dict[str, Any]] = []
-    for desc in descriptions:
-        key = desc["description"].key
-        if key not in seen_keys:
-            seen_keys.add(key)
-            unique.append(desc)
-
-    return sort_entity_descriptions(unique)
+    return sort_entity_descriptions(descriptions)
 
 
 def get_all_number_descriptions(

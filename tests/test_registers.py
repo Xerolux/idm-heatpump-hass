@@ -505,8 +505,9 @@ class TestZoneRelayBinarySensor:
         """The bulk library binary path and the per-zone generator can both
         emit the same zone-relay register (e.g. when model_info.zone_modules
         is set, build_register_map emits zone registers regardless of the
-        zone_modules argument). The dispatcher must deduplicate so each
-        entity key appears exactly once on the binary_sensor platform.
+        zone_modules argument). The dispatcher strips zone-relay entries
+        from the bulk list so the per-zone loop is the single authoritative
+        source and the configured per-zone room count wins.
         """
         import custom_components.idm_heatpump.library_adapter as adapter
 
@@ -520,22 +521,30 @@ class TestZoneRelayBinarySensor:
                 )
             return registers
 
-        # Also make the bulk register map emit a relay so the two paths overlap.
+        # Bulk path emits 6 rooms (uniform library default), per-zone loop
+        # only 2 (configured). The dispatcher must keep the 2-room result.
         def fake_build_filtered_register_map(model_info=None, circuits=None, zone_modules=0):
-            # Same relay the per-zone loop will also produce for zone 1 room 1.
-            return {"zm1_room1_relay": RegisterDef(2008, DataType.UCHAR, "zm1_room1_relay", binary=True)}
+            return {
+                f"zm1_room{room}_relay": RegisterDef(
+                    2008 + (room - 1) * 7,
+                    DataType.UCHAR,
+                    f"zm1_room{room}_relay",
+                    binary=True,
+                )
+                for room in range(1, 7)
+            }
 
         monkeypatch.setattr(adapter, "_library_get_zone_module_registers", zone_regs_with_relay)
-        monkeypatch.setattr(
-            adapter,
-            "build_filtered_register_map",
-            fake_build_filtered_register_map,
-        )
+        monkeypatch.setattr(adapter, "build_filtered_register_map", fake_build_filtered_register_map)
 
         descs = get_all_binary_sensor_descriptions(["a"], 1, {0: 2})
         keys = [d["description"].key for d in descs]
+        # Per-zone loop result only: rooms 1 and 2.
         assert keys.count("zm1_room1_relay") == 1
-        assert "zm1_room2_relay" in keys
+        assert keys.count("zm1_room2_relay") == 1
+        # Bulk-only rooms 3-6 must not leak through.
+        assert "zm1_room3_relay" not in keys
+        assert "zm1_room6_relay" not in keys
 
 
 class TestGetAllNumberDescriptions:
