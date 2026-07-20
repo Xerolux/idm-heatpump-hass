@@ -9,7 +9,11 @@ import pytest
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump import polling_plan
-from custom_components.idm_heatpump.polling_plan import EntityAwarePollingManager
+from custom_components.idm_heatpump.coordinator import IdmCoordinator
+from custom_components.idm_heatpump.polling_plan import (
+    EntityAwarePollingManager,
+    ensure_entity_aware_polling,
+)
 
 
 @dataclass
@@ -92,3 +96,12 @@ async def test_manager_keeps_full_plan_without_registry_entries(monkeypatch) -> 
 
     assert len(coordinator._registers) == 5
     coordinator.async_request_refresh.assert_not_awaited()
+
+
+def test_ensure_rejects_magicmock_with_coordinator_spec() -> None:
+    coordinator = MagicMock(spec=IdmCoordinator)
+    coordinator._registers = [RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp")]
+
+    assert isinstance(coordinator, IdmCoordinator)
+    assert ensure_entity_aware_polling(coordinator) is None
+    coordinator.hass.async_create_task.assert_not_called()
