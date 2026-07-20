@@ -419,6 +419,53 @@
           "comfort": "Komfort"
         }
       }
+    },
+    "binary_sensor": {
+      "web_compressor_1": {
+        "name": "Verdichter 1 (Web)"
+      },
+      "web_compressor_heating": {
+        "name": "Verdichterheizung (Web)"
+      },
+      "web_dewpoint_humidity_alarm": {
+        "name": "Taupunkt-Feuchtealarm (Web)"
+      },
+      "web_ew_evu_lock_contact": {
+        "name": "EVU-Sperrkontakt (Web)"
+      },
+      "web_ext_hotwater_signal": {
+        "name": "Externe Warmwasseranforderung (Web)"
+      },
+      "web_external_request": {
+        "name": "Externe Anforderung (Web)"
+      },
+      "web_failure_eheating": {
+        "name": "Störung E-Heizung (Web)"
+      },
+      "web_flow_pump_on": {
+        "name": "Durchflusspumpe (Web)"
+      },
+      "web_heat_generator_2nd": {
+        "name": "Zweiter Wärmeerzeuger (Web)"
+      },
+      "web_heat_generator_2nd_3rd": {
+        "name": "Zweiter oder dritter Wärmeerzeuger (Web)"
+      },
+      "web_high_pressure_error": {
+        "name": "Hochdruckstörung (Web)"
+      },
+      "web_hotwater_circulation_pump": {
+        "name": "Warmwasser-Zirkulationspumpe (Web)"
+      },
+      "web_hotwater_station_flow_switch": {
+        "name": "Warmwasserstation Strömungsschalter (Web)"
+      },
+      "web_pump_heating_circuitA": {
+        "name": "Pumpe Heizkreis A (Web)"
+      },
+      "web_siphon_heating": {
+        "name": "Siphonheizung (Web)"
+      }
     }
   },
   "selector": {

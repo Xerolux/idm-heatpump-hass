@@ -109,9 +109,7 @@ WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
     ),
 )
 
-WEB_BINARY_VALUE_KEYS: frozenset[str] = frozenset(
-    definition.key for definition in WEB_BINARY_SENSOR_DEFINITIONS
-)
+WEB_BINARY_VALUE_KEYS: frozenset[str] = frozenset(definition.key for definition in WEB_BINARY_SENSOR_DEFINITIONS)
 
 _TRUE_TEXT_VALUES = frozenset(
     {

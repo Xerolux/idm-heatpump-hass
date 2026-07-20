@@ -43,6 +43,7 @@ from .internal_messages import format_internal_message, internal_message_text
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 from .versions import RuntimeVersions, async_runtime_versions
+from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
 
 
 def _decode_bitflag(value: int, options: dict[int, str]) -> str:
@@ -331,6 +332,8 @@ def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefini
     has_modbus = len(modbus_register_names) > 0
     definitions = []
     for key in (*_WEB_VALUE_NAMES, *_WEB_ONLY_EXTRA_VALUE_NAMES):
+        if key in WEB_BINARY_VALUE_KEYS:
+            continue
         if key in modbus_register_names:
             continue
         if has_modbus and key in _WEB_MODBUS_DUPLICATE_VALUES:

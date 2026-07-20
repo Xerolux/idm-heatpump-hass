@@ -71,9 +71,9 @@ def test_creates_only_values_present_in_snapshot():
 
 
 def test_problem_sensor_has_diagnostic_metadata():
-    sensor = _entities_by_key(
-        _coordinator({"high_pressure_error": IdmWebSensorValue("Ein", 1.0)})
-    )["web_high_pressure_error"]
+    sensor = _entities_by_key(_coordinator({"high_pressure_error": IdmWebSensorValue("Ein", 1.0)}))[
+        "web_high_pressure_error"
+    ]
 
     assert sensor.entity_description.device_class == BinarySensorDeviceClass.PROBLEM
     assert sensor.entity_description.entity_category == EntityCategory.DIAGNOSTIC
@@ -82,9 +82,7 @@ def test_problem_sensor_has_diagnostic_metadata():
 
 
 def test_running_sensor_has_running_device_class():
-    sensor = _entities_by_key(
-        _coordinator({"compressor_1": IdmWebSensorValue("Ein", 1.0)})
-    )["web_compressor_1"]
+    sensor = _entities_by_key(_coordinator({"compressor_1": IdmWebSensorValue("Ein", 1.0)}))["web_compressor_1"]
 
     assert sensor.entity_description.device_class == BinarySensorDeviceClass.RUNNING
     assert sensor.entity_description.entity_category is None
@@ -107,3 +105,22 @@ def test_missing_web_supplement_creates_no_entities():
 
 def test_binary_keys_are_unique():
     assert len(WEB_BINARY_VALUE_KEYS) == 15
+
+
+def test_binary_web_values_are_not_created_as_regular_sensors():
+    from custom_components.idm_heatpump.sensor import _web_sensor_definitions
+
+    coordinator = _coordinator(
+        {
+            "compressor_1": IdmWebSensorValue("Ein", 1.0),
+            "high_pressure_error": IdmWebSensorValue("Aus", 0.0),
+            "hotgas_temperature": IdmWebSensorValue("72.5°C", 72.5, "°C"),
+        }
+    )
+    coordinator._registers = []
+
+    keys = {definition.key for definition in _web_sensor_definitions(coordinator)}
+
+    assert "compressor_1" not in keys
+    assert "high_pressure_error" not in keys
+    assert "hotgas_temperature" in keys
