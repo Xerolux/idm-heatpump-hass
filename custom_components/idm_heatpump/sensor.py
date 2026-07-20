@@ -43,6 +43,11 @@ from .entity import (
 )
 from .device_hierarchy import build_subdevice_info
 from .internal_messages import format_internal_message, internal_message_text
+from .operation_entities import (
+    IdmOperationSensor,
+    operation_sensor_entities,
+    runtime_operation_analysis,
+)
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 from .versions import RuntimeVersions, async_runtime_versions
@@ -358,7 +363,14 @@ async def async_setup_entry(
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
     versions = await async_runtime_versions(integration.manifest.get("version"))
-    entities: list[IdmSensor | IdmCalculatedSensor | IdmTechnicianCodeSensor | IdmWebSensor | IdmApiVersionSensor] = []
+    entities: list[
+        IdmSensor
+        | IdmCalculatedSensor
+        | IdmTechnicianCodeSensor
+        | IdmWebSensor
+        | IdmApiVersionSensor
+        | IdmOperationSensor
+    ] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
         entities += _technician_code_entities(coordinator)
     entities += [
@@ -372,6 +384,10 @@ async def async_setup_entry(
         )
     ]
     entities += calculated_sensor_entities(coordinator)
+    entities += operation_sensor_entities(
+        coordinator,
+        runtime_operation_analysis(entry.runtime_data),
+    )
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
     entities.append(IdmApiVersionSensor(coordinator, versions))

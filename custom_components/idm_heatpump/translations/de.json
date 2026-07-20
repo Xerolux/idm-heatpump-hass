@@ -91,14 +91,16 @@
               "enable_cascade": "Kaskadenregister aktivieren",
               "web_extra_data": "Web-Zusatzdaten aktivieren",
               "web_scan_interval": "Web-Abfrageintervall",
-              "device_hierarchy": "Heizkreise und Zonen als Geräte organisieren"
+              "device_hierarchy": "Heizkreise und Zonen als Geräte organisieren",
+              "short_cycle_minutes": "Kurz-Takt-Schwelle"
             },
             "data_description": {
               "technician_codes": "Zeigt die aktuellen Codes für Fachmann-Ebene 1 und 2; Aktualisierung jede Minute.",
               "enable_cascade": "Nur aktivieren, wenn mehrere Wärmepumpen als Kaskade eingerichtet sind.",
               "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten, wenn eine lokale Web-PIN hinterlegt ist.",
               "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden.",
-              "device_hierarchy": "Erstellt getrennte Home-Assistant-Geräte für Heizkreise, Zonenmodule und Räume. Bestehende Installationen behalten die bisherige Ansicht, bis diese Option aktiviert wird."
+              "device_hierarchy": "Erstellt getrennte Home-Assistant-Geräte für Heizkreise, Zonenmodule und Räume. Bestehende Installationen behalten die bisherige Ansicht, bis diese Option aktiviert wird.",
+              "short_cycle_minutes": "Der letzte vollständig beobachtete Verdichtertakt wird als Problem gemeldet, wenn er kürzer als diese Dauer war."
             }
           },
           "room_temperature_forwarding": {
