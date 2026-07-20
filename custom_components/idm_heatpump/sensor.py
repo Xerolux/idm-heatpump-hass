@@ -352,9 +352,7 @@ async def async_setup_entry(
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
     versions = await async_runtime_versions(integration.manifest.get("version"))
-    entities: list[
-        IdmSensor | IdmCalculatedSensor | IdmTechnicianCodeSensor | IdmWebSensor | IdmApiVersionSensor
-    ] = []
+    entities: list[IdmSensor | IdmCalculatedSensor | IdmTechnicianCodeSensor | IdmWebSensor | IdmApiVersionSensor] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
         entities += _technician_code_entities(coordinator)
     entities += [
