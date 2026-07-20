@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
+from functools import partial
 
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall
@@ -10,13 +11,20 @@ from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
-from .dhw_boost import DhwBoostError, async_get_dhw_boost_manager
+from .dhw_boost import (
+    DhwBoostError,
+    DhwBoostManager,
+    async_get_dhw_boost_manager,
+)
 
 _START_SERVICE = "start_dhw_boost"
 _CANCEL_SERVICE = "cancel_dhw_boost"
 
 
-async def _get_manager(hass: HomeAssistant, call: ServiceCall):
+async def _get_manager(
+    hass: HomeAssistant,
+    call: ServiceCall,
+) -> DhwBoostManager:
     data = call.data if isinstance(call.data, Mapping) else {}
     requested_entry_id = str(data.get("entry_id", "")).strip() or None
     loaded_entries = [
@@ -84,13 +92,13 @@ async def async_setup_dhw_boost_services(hass: HomeAssistant) -> None:
         hass.services.async_register(
             DOMAIN,
             _START_SERVICE,
-            lambda call: _handle_start(hass, call),
+            partial(_handle_start, hass),
         )
     if not hass.services.has_service(DOMAIN, _CANCEL_SERVICE):
         hass.services.async_register(
             DOMAIN,
             _CANCEL_SERVICE,
-            lambda call: _handle_cancel(hass, call),
+            partial(_handle_cancel, hass),
         )
 
 
