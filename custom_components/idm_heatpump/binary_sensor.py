@@ -12,6 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .binary_semantics import binary_value_is_on
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
@@ -39,4 +40,4 @@ class IdmBinarySensor(IdmEntity, BinarySensorEntity):
         if not self.coordinator.data:
             return False
         value = self.coordinator.data.get(self._register.name)
-        return bool(value) if value is not None else False
+        return binary_value_is_on(self._register, value)
