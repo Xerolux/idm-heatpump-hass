@@ -90,9 +90,9 @@ def test_boolean_source_is_not_treated_as_temperature():
 
 
 def test_entity_metadata_and_unique_id():
-    sensor = _entities_by_key(
-        _coordinator({"hp_flow_temp": 35.0, "hp_return_temp": 30.0})
-    )["calculated_hp_temperature_delta"]
+    sensor = _entities_by_key(_coordinator({"hp_flow_temp": 35.0, "hp_return_temp": 30.0}))[
+        "calculated_hp_temperature_delta"
+    ]
 
     assert sensor._attr_unique_id == "test_entry_calculated_hp_temperature_delta"
     assert sensor.entity_description.native_unit_of_measurement == UnitOfTemperature.CELSIUS
