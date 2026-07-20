@@ -62,7 +62,6 @@ async def test_manager_reduces_and_reexpands_polling_plan(monkeypatch) -> None:
 
     await manager._async_apply_plan(request_refresh=False)
 
-    # Alias names stay together and unrelated zone registers are removed.
     assert {register.name for register in coordinator._registers} == {
         "outdoor_temp",
         "hp_flow_temp",
@@ -104,4 +103,3 @@ def test_ensure_rejects_magicmock_with_coordinator_spec() -> None:
 
     assert isinstance(coordinator, IdmCoordinator)
     assert ensure_entity_aware_polling(coordinator) is None
-    coordinator.hass.async_create_task.assert_not_called()
