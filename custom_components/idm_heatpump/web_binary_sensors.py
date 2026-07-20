@@ -199,7 +199,7 @@ class IdmWebBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
         )
 
     @property
-    def device_info(self):
+    def device_info(self) -> Any:
         return build_subdevice_info(self.coordinator, self._definition.key) or build_device_info(self.coordinator)
 
     def _normalized_value(self) -> bool | None:
