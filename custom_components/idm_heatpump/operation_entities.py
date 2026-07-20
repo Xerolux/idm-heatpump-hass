@@ -149,7 +149,7 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_time_since_last_defrost",
-        name="Zeit seit letzter Abtauung",
+        name="Zeit seit letztem Abtaustart",
         value=lambda analysis: analysis.minutes_since_last_defrost(),
         icon="mdi:timer-snowflake",
         source="mode",
@@ -232,6 +232,7 @@ class IdmOperationSensor(IdmCoordinatorEntityBase, SensorEntity):
     def extra_state_attributes(self) -> dict[str, Any]:
         attributes: dict[str, Any] = {
             "recording_scope": "observed_since_feature_activation",
+            "compressor_counting_method": "aggregate_any_compressor_off_to_on",
         }
         if self._definition.key.startswith("analysis_compressor"):
             attributes["completed_cycles_used_for_average"] = len(self._analysis.completed_cycle_durations)

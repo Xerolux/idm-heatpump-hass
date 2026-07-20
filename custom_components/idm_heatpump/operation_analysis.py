@@ -65,6 +65,17 @@ def _finite_non_negative(value: Any) -> float | None:
     return numeric
 
 
+def _non_negative_int(value: Any) -> int:
+    """Return a persisted non-negative integer or zero for malformed data."""
+    if isinstance(value, bool):
+        return 0
+    try:
+        numeric = int(value)
+    except (TypeError, ValueError):
+        return 0
+    return max(0, numeric)
+
+
 class OperationAnalysis:
     """Track observed heat-pump operating events without inventing missed edges."""
 
@@ -83,7 +94,7 @@ class OperationAnalysis:
             f"{DOMAIN}.operation_analysis.{entry_id}",
         )
         self._register_getter = register_getter
-        self.short_cycle_minutes = short_cycle_minutes
+        self.short_cycle_minutes = max(5, min(60, int(short_cycle_minutes)))
         self._max_sample_gap = max(60.0, expected_poll_interval * 3.0)
 
         self.total_compressor_starts = 0
@@ -127,8 +138,8 @@ class OperationAnalysis:
         if not isinstance(stored, dict):
             return
 
-        self.total_compressor_starts = max(0, int(stored.get("total_compressor_starts", 0)))
-        self.total_defrost_starts = max(0, int(stored.get("total_defrost_starts", 0)))
+        self.total_compressor_starts = _non_negative_int(stored.get("total_compressor_starts"))
+        self.total_defrost_starts = _non_negative_int(stored.get("total_defrost_starts"))
         self.compressor_start_events = _parse_datetime_list(stored.get("compressor_start_events"))
         self.defrost_start_events = _parse_datetime_list(stored.get("defrost_start_events"))
         self.last_compressor_start = _parse_datetime(stored.get("last_compressor_start"))
@@ -343,8 +354,10 @@ class OperationAnalysis:
         return self._count_today(self.defrost_start_events, current)
 
     def current_cycle_minutes(self, now: datetime | None = None) -> float | None:
-        if self._compressor_on is not True or self.current_cycle_started is None:
+        if not self._compressor_reconciled:
             return None
+        if self._compressor_on is not True or self.current_cycle_started is None:
+            return 0.0
         current = (now or _utcnow()).astimezone(UTC)
         elapsed = (current - self.current_cycle_started).total_seconds()
         return round(max(0.0, elapsed) / 60.0, 1)

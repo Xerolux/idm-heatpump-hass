@@ -251,3 +251,44 @@ async def test_async_save_serializes_observations(monkeypatch) -> None:
     assert store.saved is not None
     assert store.saved["total_compressor_starts"] == 0
     assert store.saved["compressor_on"] is False
+
+
+@pytest.mark.asyncio
+async def test_malformed_persisted_counts_are_reset_safely(monkeypatch) -> None:
+    analysis, _store = _analysis(
+        monkeypatch,
+        loaded={
+            "total_compressor_starts": "broken",
+            "total_defrost_starts": None,
+        },
+    )
+
+    await analysis.async_load()
+
+    assert analysis.total_compressor_starts == 0
+    assert analysis.total_defrost_starts == 0
+
+
+@pytest.mark.asyncio
+async def test_current_cycle_duration_is_zero_while_reconciled_off(monkeypatch) -> None:
+    analysis, _store = _analysis(monkeypatch)
+    await analysis.async_load()
+    now = datetime(2026, 7, 20, 8, 0, tzinfo=UTC)
+
+    analysis.process_snapshot(_snapshot(), set(), now=now)
+
+    assert analysis.current_cycle_minutes(now) == 0.0
+
+
+def test_short_cycle_threshold_is_clamped(monkeypatch) -> None:
+    fake_store = FakeStore()
+    monkeypatch.setattr(module, "Store", lambda *args, **kwargs: fake_store)
+    analysis = OperationAnalysis(
+        object(),
+        "entry",
+        _registers().get,
+        short_cycle_minutes=999,
+        expected_poll_interval=10,
+    )
+
+    assert analysis.short_cycle_minutes == 60
