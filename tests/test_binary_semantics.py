@@ -8,6 +8,7 @@ from unittest.mock import MagicMock
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from idm_heatpump import DataType, RegisterDef
 
+from custom_components.idm_heatpump import binary_semantics
 from custom_components.idm_heatpump.binary_semantics import (
     binary_value_is_on,
     infer_binary_device_class,
@@ -93,6 +94,38 @@ def test_known_text_values_are_supported():
     assert binary_value_is_on(register, "running") is True
     assert binary_value_is_on(register, "off") is False
     assert binary_value_is_on(register, "unexpected") is False
+
+
+def test_optional_library_metadata_is_used(monkeypatch):
+    metadata = SimpleNamespace(
+        on_values=(7,),
+        off_values=(3,),
+        bitmask=None,
+        inverted=False,
+        device_class="problem",
+    )
+    monkeypatch.setattr(binary_semantics, "_GET_LIBRARY_BINARY_METADATA", lambda _name: metadata)
+    register = _register(name="custom_status")
+
+    assert binary_value_is_on(register, 7) is True
+    assert binary_value_is_on(register, 3) is False
+    assert infer_binary_device_class("custom_status") == BinarySensorDeviceClass.PROBLEM
+
+
+def test_register_local_metadata_overrides_library_metadata(monkeypatch):
+    metadata = SimpleNamespace(
+        on_values=(7,),
+        off_values=(3,),
+        bitmask=None,
+        inverted=False,
+        device_class="running",
+    )
+    monkeypatch.setattr(binary_semantics, "_GET_LIBRARY_BINARY_METADATA", lambda _name: metadata)
+    register = _register(binary_on_values={2}, binary_off_values={1})
+
+    assert binary_value_is_on(register, 2) is True
+    assert binary_value_is_on(register, 7) is True
+    assert binary_value_is_on(register, 1) is False
 
 
 def test_binary_entity_does_not_turn_on_for_minus_one():
