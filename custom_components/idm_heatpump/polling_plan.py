@@ -9,7 +9,7 @@ from collections.abc import Callable, Iterable
 from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import Event, HomeAssistant, callback
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 
 from .coordinator import IdmCoordinator
@@ -163,7 +163,7 @@ class EntityAwarePollingManager:
         self._refresh_task = None
 
     @callback
-    def _handle_registry_event(self, event: Event) -> None:
+    def _handle_registry_event(self, event: Any) -> None:
         """Debounce registry changes affecting this config entry."""
         entity_id = event.data.get("entity_id")
         if isinstance(entity_id, str):
