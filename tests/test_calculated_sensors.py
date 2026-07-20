@@ -108,3 +108,103 @@ def test_values_are_recalculated_from_latest_snapshot():
     assert sensor.native_value == 5.0
     coordinator.data = {"hp_flow_temp": 37.5, "hp_return_temp": 31.0}
     assert sensor.native_value == 6.5
+
+
+def test_cop_is_thermal_over_electric_when_both_positive():
+    coordinator = _coordinator(
+        {
+            "power_consumption_hp": 2.0,
+            "thermal_power_flow_sensor": 8.0,
+        }
+    )
+    sensor = _entities_by_key(coordinator)["calculated_cop"]
+
+    assert sensor.native_value == 4.0
+    assert sensor.available is True
+
+
+def test_cop_suppressed_when_heat_pump_is_idle():
+    """Issue #135: P_el = 0 (standby) must yield unavailable, never division-by-zero."""
+    coordinator = _coordinator(
+        {
+            "power_consumption_hp": 0.0,
+            "thermal_power_flow_sensor": 0.0,
+        }
+    )
+    sensor = _entities_by_key(coordinator)["calculated_cop"]
+
+    assert sensor.native_value is None
+    assert sensor.available is False
+
+
+def test_cop_suppressed_when_only_one_source_is_zero():
+    coordinator = _coordinator(
+        {
+            "power_consumption_hp": 2.0,
+            "thermal_power_flow_sensor": 0.0,
+        }
+    )
+    sensor = _entities_by_key(coordinator)["calculated_cop"]
+
+    assert sensor.native_value is None
+    assert sensor.available is False
+
+
+def test_cop_suppressed_below_meaningful_power_threshold():
+    """Standby/commissioning band (<50 W) must not produce a misleading high COP."""
+    coordinator = _coordinator(
+        {
+            "power_consumption_hp": 0.02,
+            "thermal_power_flow_sensor": 0.1,
+        }
+    )
+    sensor = _entities_by_key(coordinator)["calculated_cop"]
+
+    assert sensor.native_value is None
+
+
+def test_cop_handles_missing_and_nan_sources():
+    # Missing source values -> unavailable
+    coordinator = _coordinator({})
+    assert "calculated_cop" not in _entities_by_key(coordinator)
+
+    # NaN sentinel (unused register) -> treated as missing
+    nan_coordinator = _coordinator(
+        {
+            "power_consumption_hp": math.nan,
+            "thermal_power_flow_sensor": 1.0,
+        }
+    )
+    sensor = _entities_by_key(nan_coordinator)["calculated_cop"]
+    assert sensor.native_value is None
+    assert sensor.available is False
+
+
+def test_cop_entity_is_dimensionless():
+    sensor = _entities_by_key(
+        _coordinator(
+            {
+                "power_consumption_hp": 2.0,
+                "thermal_power_flow_sensor": 8.0,
+            }
+        )
+    )["calculated_cop"]
+
+    assert sensor.entity_description.native_unit_of_measurement is None
+    assert sensor.entity_description.device_class is None
+    assert sensor.entity_description.state_class == SensorStateClass.MEASUREMENT
+    assert sensor.entity_description.suggested_display_precision == 2
+    assert sensor._attr_unique_id == "test_entry_calculated_cop"
+
+
+def test_cop_not_registered_when_source_registers_unused():
+    """If the installation reports a COP source register as unused, hide the sensor."""
+    coordinator = _coordinator(
+        {
+            "power_consumption_hp": 2.0,
+            "thermal_power_flow_sensor": 8.0,
+        },
+        unused={"thermal_power_flow_sensor"},
+    )
+
+    assert "calculated_cop" not in _entities_by_key(coordinator)
