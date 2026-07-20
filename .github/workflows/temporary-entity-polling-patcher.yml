@@ -1,0 +1,182 @@
+name: Temporary Entity Polling Patcher
+
+on:
+  push:
+    branches:
+      - feat/entity-aware-polling
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/entity-aware-polling
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Wire polling plan
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          coordinator_path = Path("custom_components/idm_heatpump/coordinator.py")
+          text = coordinator_path.read_text(encoding="utf-8")
+          text = text.replace(
+              "from collections.abc import Mapping\n",
+              "from collections.abc import Iterable, Mapping\n",
+              1,
+          )
+          text = text.replace(
+              "        self._register_by_name: dict[str, RegisterDef] = {}\n",
+              "        self._register_by_name: dict[str, RegisterDef] = {}\n        self._poll_register_names: set[str] | None = None\n",
+              1,
+          )
+          text = text.replace(
+              "        self._register_by_name = {reg.name: reg for reg in self._registers}\n        self._alias_primary_map = None\n",
+              "        self._register_by_name = {reg.name: reg for reg in self._registers}\n        self._poll_register_names = None\n        self._alias_primary_map = None\n",
+              1,
+          )
+          anchor = '''    def attach_operation_analysis(self, analysis: OperationAnalysis) -> None:
+        """Attach the restart-safe operating analysis before first refresh."""
+        self._operation_analysis = analysis
+'''
+          block = '''    @property
+    def register_names(self) -> frozenset[str]:
+        """Return all configured Modbus register names."""
+        return frozenset(self._register_by_name)
+
+    @property
+    def total_register_count(self) -> int:
+        """Return the full configured register count."""
+        return len(self._registers)
+
+    @property
+    def polling_register_count(self) -> int:
+        """Return the active polling register count."""
+        return len(self._polling_registers())
+
+    def set_polling_register_names(self, names: Iterable[str]) -> bool:
+        """Apply an entity-aware polling set while retaining configured order."""
+        filtered = {name for name in names if name in self._register_by_name}
+        if not filtered or filtered == self._poll_register_names:
+            return False
+        self._poll_register_names = filtered
+        return True
+
+    def _polling_registers(self) -> list[RegisterDef]:
+        """Return registers selected for the next Modbus snapshot."""
+        if self._poll_register_names is None:
+            return self._registers
+        return [reg for reg in self._registers if reg.name in self._poll_register_names]
+
+''' + anchor
+          if "def set_polling_register_names" not in text:
+              if anchor not in text:
+                  raise RuntimeError("Coordinator analysis anchor not found")
+              text = text.replace(anchor, block, 1)
+          text = text.replace(
+              "            if reg.name not in self._unsupported_registers and reg.name not in batch_unsafe\n",
+              "            if reg.name not in self._unsupported_registers\n            and reg.name not in batch_unsafe\n            and (self._poll_register_names is None or reg.name in self._poll_register_names)\n",
+              1,
+          )
+          text = text.replace(
+              "            data = await self._async_read_registers_resilient(self._registers)\n",
+              "            data = await self._async_read_registers_resilient(self._polling_registers())\n",
+              1,
+          )
+          old_alias = '''        if self._alias_map:
+            if self._alias_primary_map is None:
+                self._alias_primary_map = {reg.address: reg.name for reg in self._registers}
+            for addr, names in self._alias_map.items():
+                primary = self._alias_primary_map.get(addr)
+                if primary and primary in data:
+                    val = data[primary]
+                    for alias in names:
+                        if alias != primary and alias not in data:
+                            data[alias] = val
+'''
+          new_alias = '''        if self._alias_map:
+            for names in self._alias_map.values():
+                source = next((name for name in names if name in data), None)
+                if source is None:
+                    continue
+                value = data[source]
+                for alias in names:
+                    if alias not in data:
+                        data[alias] = value
+'''
+          if old_alias in text:
+              text = text.replace(old_alias, new_alias, 1)
+          coordinator_path.write_text(text, encoding="utf-8")
+
+          init_path = Path("custom_components/idm_heatpump/__init__.py")
+          init = init_path.read_text(encoding="utf-8")
+          init = init.replace(
+              "from .operation_analysis import OperationAnalysis\n",
+              "from .operation_analysis import OperationAnalysis\nfrom .polling_plan import EntityAwarePollingManager\n",
+              1,
+          )
+          init = init.replace(
+              "    operation_analysis: OperationAnalysis | None = None\n",
+              "    operation_analysis: OperationAnalysis | None = None\n    polling_manager: EntityAwarePollingManager | None = None\n",
+              1,
+          )
+          setup_anchor = '''        await coordinator.async_config_entry_first_refresh()
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        cleanup_stale_hierarchy_devices(hass, coordinator)
+'''
+          setup_block = '''        await coordinator.async_config_entry_first_refresh()
+        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        cleanup_stale_hierarchy_devices(hass, coordinator)
+
+        polling_manager = EntityAwarePollingManager(hass, entry, coordinator)
+        await polling_manager.async_setup()
+        entry.runtime_data.polling_manager = polling_manager
+'''
+          if "polling_manager = EntityAwarePollingManager" not in init:
+              if setup_anchor not in init:
+                  raise RuntimeError("Setup platform anchor not found")
+              init = init.replace(setup_anchor, setup_block, 1)
+          unload_anchor = '''        operation_analysis = getattr(entry.runtime_data, "operation_analysis", None)
+        if operation_analysis is not None:
+'''
+          unload_block = '''        polling_manager = getattr(entry.runtime_data, "polling_manager", None)
+        if polling_manager is not None:
+            await polling_manager.async_shutdown()
+        operation_analysis = getattr(entry.runtime_data, "operation_analysis", None)
+        if operation_analysis is not None:
+'''
+          if "await polling_manager.async_shutdown()" not in init:
+              if unload_anchor not in init:
+                  raise RuntimeError("Unload analysis anchor not found")
+              init = init.replace(unload_anchor, unload_block, 1)
+          init_path.write_text(init, encoding="utf-8")
+
+          sensor_path = Path("custom_components/idm_heatpump/sensor.py")
+          sensor = sensor_path.read_text(encoding="utf-8")
+          sensor = sensor.replace(
+              "    def extra_state_attributes(self) -> dict[str, str]:\n        return {\n            \"integration_version\": self._versions.integration,\n            \"pymodbus_version\": self._versions.pymodbus,\n        }\n",
+              "    def extra_state_attributes(self) -> dict[str, str | int]:\n        return {\n            \"integration_version\": self._versions.integration,\n            \"pymodbus_version\": self._versions.pymodbus,\n            \"polled_registers\": self.coordinator.polling_register_count,\n            \"configured_registers\": self.coordinator.total_register_count,\n        }\n",
+              1,
+          )
+          sensor_path.write_text(sensor, encoding="utf-8")
+          PY
+      - name: Format and lint
+        run: |
+          python -m pip install ruff==0.14.14
+          ruff check custom_components tests --fix
+          ruff format custom_components tests
+      - name: Commit changes
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components tests
+          git commit -m "feat: wire entity-aware polling manager"
+          git push origin HEAD:feat/entity-aware-polling
