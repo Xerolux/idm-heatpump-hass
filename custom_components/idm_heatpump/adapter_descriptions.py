@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription, SensorStateClass
+from homeassistant.components.sensor import (
+    SensorDeviceClass,
+    SensorEntityDescription,
+    SensorStateClass,
+)
 from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTemperature
 
 from idm_heatpump import RegisterDef
@@ -12,11 +16,17 @@ from idm_heatpump import RegisterDef
 from .binary_semantics import infer_binary_device_class as infer_binary_device_class
 
 _UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
-    UnitOfEnergy.KILO_WATT_HOUR: (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
+    UnitOfEnergy.KILO_WATT_HOUR: (
+        SensorDeviceClass.ENERGY,
+        SensorStateClass.TOTAL_INCREASING,
+    ),
     "kWh": (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
     UnitOfPower.KILO_WATT: (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
     "kW": (SensorDeviceClass.POWER, SensorStateClass.MEASUREMENT),
-    UnitOfTemperature.CELSIUS: (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
+    UnitOfTemperature.CELSIUS: (
+        SensorDeviceClass.TEMPERATURE,
+        SensorStateClass.MEASUREMENT,
+    ),
     "°C": (SensorDeviceClass.TEMPERATURE, SensorStateClass.MEASUREMENT),
     "L/min": (SensorDeviceClass.VOLUME_FLOW_RATE, SensorStateClass.MEASUREMENT),
 }
@@ -61,7 +71,10 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
         return "mdi:thermometer"
     if "humidity" in name_lower or "feuchte" in name_lower:
         return "mdi:water-percent"
-    if any(fragment in name_lower for fragment in ["power", "energy", "consumption", "leistung"]):
+    if any(
+        fragment in name_lower
+        for fragment in ["power", "energy", "consumption", "leistung"]
+    ):
         if "thermal" in name_lower:
             return "mdi:heat-wave"
         return "mdi:flash"
@@ -79,9 +92,14 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
         return "mdi:solar-panel"
     if "cascade" in name_lower:
         return "mdi:heat-pump-multiple"
-    if any(fragment in name_lower for fragment in ["fault", "alarm", "error", "störung"]):
+    if any(
+        fragment in name_lower for fragment in ["fault", "alarm", "error", "störung"]
+    ):
         return "mdi:alert-circle"
-    if any(fragment in name_lower for fragment in ["mode", "status", "betriebsart", "demand"]):
+    if any(
+        fragment in name_lower
+        for fragment in ["mode", "status", "betriebsart", "demand"]
+    ):
         return "mdi:cog"
     if unit and "%" in unit:
         return "mdi:gauge"
