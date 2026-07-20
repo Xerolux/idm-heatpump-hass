@@ -89,10 +89,10 @@ def _scope_identifiers(coordinator: IdmCoordinator, scope: DeviceScope) -> set[t
 
 def expected_subdevice_identifiers(coordinator: IdmCoordinator) -> set[tuple[str, str]]:
     """Return subdevices justified by the current register and web-value set."""
-    if not coordinator.device_hierarchy_enabled:
+    if coordinator.device_hierarchy_enabled is not True:
         return set()
 
-    entity_keys = {register.name for register in getattr(coordinator, "_registers", ())}
+    entity_keys = {register.name for register in coordinator._registers}
     entity_keys.update(coordinator.web_value_keys)
 
     identifiers: set[tuple[str, str]] = set()
@@ -105,7 +105,9 @@ def expected_subdevice_identifiers(coordinator: IdmCoordinator) -> set[tuple[str
 def _is_hierarchy_identifier(entry_id: str, identifier: tuple[str, str]) -> bool:
     """Return whether an identifier belongs to an IDM hierarchy subdevice."""
     domain, value = identifier
-    return domain == DOMAIN and value.startswith((f"{entry_id}_heating_circuit_", f"{entry_id}_zone_module_"))
+    return domain == DOMAIN and value.startswith(
+        (f"{entry_id}_heating_circuit_", f"{entry_id}_zone_module_")
+    )
 
 
 def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
@@ -120,7 +122,9 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
 
     for device in dr.async_entries_for_config_entry(registry, entry_id):
         hierarchy_identifiers = {
-            identifier for identifier in device.identifiers if _is_hierarchy_identifier(entry_id, identifier)
+            identifier
+            for identifier in device.identifiers
+            if _is_hierarchy_identifier(entry_id, identifier)
         }
         if hierarchy_identifiers and hierarchy_identifiers.isdisjoint(expected):
             registry.async_update_device(
@@ -131,7 +135,7 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
 
 def build_subdevice_info(coordinator: IdmCoordinator, entity_key: str) -> DeviceInfo | None:
     """Build subdevice information when hierarchy mode is enabled."""
-    if not coordinator.device_hierarchy_enabled:
+    if coordinator.device_hierarchy_enabled is not True:
         return None
 
     scope = resolve_device_scope(entity_key)
