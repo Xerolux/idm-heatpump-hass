@@ -70,9 +70,7 @@ async def test_manager_reduces_and_reexpands_polling_plan(monkeypatch) -> None:
     await manager._async_apply_plan(request_refresh=True)
 
     assert "zm1_room1_mode" in {register.name for register in coordinator._registers}
-    assert [register.name for register in coordinator._room_mode_registers] == [
-        "zm1_room1_mode"
-    ]
+    assert [register.name for register in coordinator._room_mode_registers] == ["zm1_room1_mode"]
     coordinator.async_request_refresh.assert_awaited_once()
 
 
