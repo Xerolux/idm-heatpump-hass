@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
@@ -14,6 +15,20 @@ from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTem
 from idm_heatpump import RegisterDef
 
 from .binary_semantics import infer_binary_device_class as infer_binary_device_class
+
+# Compatibility export used by tests and downstream consumers that inspect the
+# legacy keyword table. Actual inference lives in binary_semantics and prefers
+# explicit idm-heatpump-api metadata before falling back to these semantics.
+_BINARY_DC_KEYWORDS: list[tuple[str, BinarySensorDeviceClass]] = [
+    ("fault", BinarySensorDeviceClass.PROBLEM),
+    ("alarm", BinarySensorDeviceClass.PROBLEM),
+    ("störung", BinarySensorDeviceClass.PROBLEM),
+    ("lock", BinarySensorDeviceClass.LOCK),
+    ("pump", BinarySensorDeviceClass.RUNNING),
+    ("compressor", BinarySensorDeviceClass.RUNNING),
+    ("demand", BinarySensorDeviceClass.RUNNING),
+    ("relay", BinarySensorDeviceClass.RUNNING),
+]
 
 _UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
     UnitOfEnergy.KILO_WATT_HOUR: (
