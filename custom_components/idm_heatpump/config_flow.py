@@ -261,6 +261,7 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                 vol.Schema(
                     {
                         vol.Required(
+                            CONF_DEVICE_HIERARCHY,
                             default=options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY),
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
