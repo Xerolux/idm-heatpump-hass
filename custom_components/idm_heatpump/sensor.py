@@ -10,6 +10,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
+from typing import Any
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
@@ -36,9 +37,11 @@ from .coordinator import IdmCoordinator
 from .entity import (
     IdmCoordinatorEntityBase,
     IdmEntity,
+    build_device_info,
     build_entity_unique_id,
     should_add_entity,
 )
+from .device_hierarchy import build_subdevice_info
 from .internal_messages import format_internal_message, internal_message_text
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
@@ -491,6 +494,10 @@ class IdmWebSensor(IdmCoordinatorEntityBase, SensorEntity):
             entity_category=definition.entity_category,
             entity_registry_enabled_default=definition.enabled_by_default,
         )
+
+    @property
+    def device_info(self) -> Any:
+        return build_subdevice_info(self.coordinator, self._definition.key) or build_device_info(self.coordinator)
 
     @property
     def available(self) -> bool:

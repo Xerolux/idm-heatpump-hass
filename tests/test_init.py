@@ -15,7 +15,7 @@ from custom_components.idm_heatpump import (
     _detect_model_info,
     _model_info_from_detected_name,
 )
-from custom_components.idm_heatpump.const import MODEL
+from custom_components.idm_heatpump.const import CONF_DEVICE_HIERARCHY, MODEL
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
 from idm_heatpump import MODEL_UNKNOWN, IdmModelInfo
 
@@ -59,6 +59,7 @@ class TestAsyncMigrateEntry:
         entry.entry_id = "entry-123"
         entry.version = 1
         entry.minor_version = 1
+        entry.options = {}
 
         legacy_entity = MagicMock()
         legacy_entity.entity_id = "sensor.outdoor_temperature"
@@ -85,8 +86,9 @@ class TestAsyncMigrateEntry:
         mock_hass.config_entries.async_update_entry.assert_called_once_with(
             entry,
             unique_id=None,
+            options={CONF_DEVICE_HIERARCHY: False},
             version=1,
-            minor_version=2,
+            minor_version=3,
         )
 
     async def test_updates_entry_version_when_no_legacy_entities_exist(self, mock_hass):
@@ -94,6 +96,7 @@ class TestAsyncMigrateEntry:
         entry.entry_id = "entry-empty"
         entry.version = 1
         entry.minor_version = 0
+        entry.options = {}
         registry = MagicMock()
 
         with (
@@ -110,8 +113,9 @@ class TestAsyncMigrateEntry:
         mock_hass.config_entries.async_update_entry.assert_called_once_with(
             entry,
             unique_id=None,
+            options={CONF_DEVICE_HIERARCHY: False},
             version=1,
-            minor_version=2,
+            minor_version=3,
         )
 
     async def test_migrates_multiple_legacy_unique_id_prefixes(self, mock_hass):
@@ -119,6 +123,7 @@ class TestAsyncMigrateEntry:
         entry.entry_id = "entry-multi"
         entry.version = 1
         entry.minor_version = 0
+        entry.options = {}
         registry = MagicMock()
         entities = [
             MagicMock(entity_id="sensor.host_prefix", unique_id="192.168.1.100:502_flow_temperature"),
@@ -149,7 +154,7 @@ class TestAsyncMigrateEntry:
     async def test_skips_current_config_entry_version(self, mock_hass):
         entry = MagicMock()
         entry.version = 1
-        entry.minor_version = 2
+        entry.minor_version = 3
 
         assert await async_migrate_entry(mock_hass, entry) is True
         mock_hass.config_entries.async_update_entry.assert_not_called()

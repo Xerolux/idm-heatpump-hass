@@ -37,6 +37,7 @@ from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
+    CONF_DEVICE_HIERARCHY,
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
@@ -55,6 +56,7 @@ from .const import (
     CONF_WEB_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_MODBUS_MAX_RETRIES,
@@ -72,6 +74,7 @@ from .const import (
     NAME,
 )
 from .coordinator import IdmCoordinator, navigator_family
+from .device_hierarchy import cleanup_stale_hierarchy_devices
 from .error_messages import (
     classify_communication_error,
     classify_web_error,
@@ -251,6 +254,7 @@ async def _async_setup_web_only_entry(
     web_pin: str | None,
     web_host: str,
     web_scan_interval: int,
+    device_hierarchy_enabled: bool,
 ) -> bool:
     """Set up a web-only integration entry (no Modbus)."""
     _LOGGER.info(
@@ -323,6 +327,7 @@ async def _async_setup_web_only_entry(
         web_host=web_host,
         web_supplement=web_supplement,
         web_variant=stored_web_variant,
+        device_hierarchy_enabled=device_hierarchy_enabled,
     )
     coordinator._registers = []
     coordinator._alias_map = {}
@@ -334,6 +339,7 @@ async def _async_setup_web_only_entry(
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+    cleanup_stale_hierarchy_devices(hass, coordinator)
 
     entry.runtime_data.web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
 
@@ -342,23 +348,33 @@ async def _async_setup_web_only_entry(
 
 
 async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
-    """Migrate connection-based IDs to stable config-entry-based IDs."""
-    if entry.version != 1 or entry.minor_version >= 2:
+    """Migrate entity IDs and preserve existing device placement safely."""
+    if entry.version != 1:
+        return True
+    if entry.minor_version >= 3:
         return True
 
-    entity_registry = er.async_get(hass)
-    for entity in er.async_entries_for_config_entry(entity_registry, entry.entry_id):
-        match = _LEGACY_ENTITY_UNIQUE_ID.fullmatch(entity.unique_id)
-        if match is None:
-            continue
-        new_unique_id = f"{entry.entry_id}_{match.group('entity_key')}"
-        entity_registry.async_update_entity(entity.entity_id, new_unique_id=new_unique_id)
+    if entry.minor_version < 2:
+        entity_registry = er.async_get(hass)
+        for entity in er.async_entries_for_config_entry(entity_registry, entry.entry_id):
+            match = _LEGACY_ENTITY_UNIQUE_ID.fullmatch(entity.unique_id)
+            if match is None:
+                continue
+            new_unique_id = f"{entry.entry_id}_{match.group('entity_key')}"
+            entity_registry.async_update_entity(entity.entity_id, new_unique_id=new_unique_id)
+
+    options = dict(entry.options)
+    if entry.minor_version < 3 and CONF_DEVICE_HIERARCHY not in options:
+        # Existing users keep the previous single-device layout until they
+        # explicitly opt in. New entries default to the hierarchy in the flow.
+        options[CONF_DEVICE_HIERARCHY] = False
 
     hass.config_entries.async_update_entry(
         entry,
         unique_id=None,
+        options=options,
         version=1,
-        minor_version=2,
+        minor_version=3,
     )
     return True
 
@@ -382,6 +398,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     zone_count = int(entry.options.get(CONF_ZONE_COUNT, 0))
     zone_rooms = normalize_zone_rooms(entry.options.get(CONF_ZONE_ROOMS, {}))
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
+    device_hierarchy_enabled = bool(entry.options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY))
     enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
     web_pin = str(entry.data.get(CONF_WEB_PIN, "")).strip() or None
     web_host = str(entry.data.get(CONF_WEB_HOST, "")).strip() or host
@@ -421,7 +438,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
     if web_only:
         return await _async_setup_web_only_entry(
-            hass, entry, host, port, slave_id, scan_interval, web_pin, web_host, web_scan_interval
+            hass,
+            entry,
+            host,
+            port,
+            slave_id,
+            scan_interval,
+            web_pin,
+            web_host,
+            web_scan_interval,
+            device_hierarchy_enabled,
         )
 
     # Use the library via the adapter (migration Option B)
@@ -595,6 +621,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             web_host=web_host,
             web_supplement=web_supplement,
             web_variant=runtime_web_variant,
+            device_hierarchy_enabled=device_hierarchy_enabled,
         )
         coordinator.setup_registers(
             circuits,
@@ -612,6 +639,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
         await coordinator.async_config_entry_first_refresh()
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        cleanup_stale_hierarchy_devices(hass, coordinator)
 
         if web_enabled and web_pin_configured(web_pin):
             entry.runtime_data.web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
