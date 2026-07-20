@@ -4,11 +4,12 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntityDescription, SensorStateClass
 from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTemperature
 
 from idm_heatpump import RegisterDef
+
+from .binary_semantics import infer_binary_device_class
 
 _UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
     UnitOfEnergy.KILO_WATT_HOUR: (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
@@ -29,17 +30,6 @@ _DC_STATE_CLASS_MAP: dict[SensorDeviceClass, SensorStateClass] = {
     SensorDeviceClass.VOLUME_FLOW_RATE: SensorStateClass.MEASUREMENT,
 }
 
-_BINARY_DC_KEYWORDS: list[tuple[str, BinarySensorDeviceClass]] = [
-    ("fault", BinarySensorDeviceClass.PROBLEM),
-    ("alarm", BinarySensorDeviceClass.PROBLEM),
-    ("störung", BinarySensorDeviceClass.PROBLEM),
-    ("lock", BinarySensorDeviceClass.LOCK),
-    ("pump", BinarySensorDeviceClass.RUNNING),
-    ("compressor", BinarySensorDeviceClass.RUNNING),
-    ("demand", BinarySensorDeviceClass.RUNNING),
-    ("relay", BinarySensorDeviceClass.RUNNING),
-]
-
 
 def infer_sensor_classes(
     name: str,
@@ -55,15 +45,6 @@ def infer_sensor_classes(
         if "soc" in name_lower or "battery" in name_lower:
             return SensorDeviceClass.BATTERY, SensorStateClass.MEASUREMENT
     return None, None
-
-
-def infer_binary_device_class(name: str) -> BinarySensorDeviceClass | None:
-    """Infer BinarySensorDeviceClass from register-name keywords."""
-    name_lower = name.lower()
-    for keyword, device_class in _BINARY_DC_KEYWORDS:
-        if keyword in name_lower:
-            return device_class
-    return None
 
 
 def get_icon_for_register(name: str, unit: str | None = None) -> str:
