@@ -35,11 +35,15 @@ _ALWAYS_REQUIRED = frozenset(
 )
 
 _CALCULATED_DEPENDENCIES: dict[str, frozenset[str]] = {
-    "calculated_hp_temperature_delta": frozenset({"hp_flow_temp", "hp_return_temp"}),
+    "calculated_hp_temperature_delta": frozenset(
+        {"hp_flow_temp", "hp_return_temp"}
+    ),
     "calculated_heat_source_temperature_delta": frozenset(
         {"heat_source_inlet_temp", "heat_source_outlet_temp"}
     ),
-    "calculated_dhw_setpoint_deviation": frozenset({"dhw_temp_top", "dhw_setpoint"}),
+    "calculated_dhw_setpoint_deviation": frozenset(
+        {"dhw_temp_top", "dhw_setpoint"}
+    ),
 }
 
 _HEATING_CLIMATE = re.compile(r"^climate_hc_([a-g])$")
@@ -123,14 +127,20 @@ class EntityAwarePollingManager:
     def schedule_setup(self) -> None:
         """Start after all platforms had time to create registry entries."""
         if self._setup_task is None:
-            self._setup_task = self._hass.async_create_task(self._async_delayed_setup())
+            self._setup_task = self._hass.async_create_task(
+                self._async_delayed_setup()
+            )
             self._entry.async_on_unload(self._schedule_shutdown)
 
     async def _async_delayed_setup(self) -> None:
         try:
             await asyncio.sleep(self._debounce_seconds)
             await self._async_apply_plan(request_refresh=False)
-            event_name = getattr(er, "EVENT_ENTITY_REGISTRY_UPDATED", "entity_registry_updated")
+            event_name = getattr(
+                er,
+                "EVENT_ENTITY_REGISTRY_UPDATED",
+                "entity_registry_updated",
+            )
             self._unsub_registry = self._hass.bus.async_listen(
                 event_name,
                 self._handle_registry_event,
@@ -175,7 +185,9 @@ class EntityAwarePollingManager:
                 return
         if self._refresh_task is not None:
             self._refresh_task.cancel()
-        self._refresh_task = self._hass.async_create_task(self._async_debounced_apply())
+        self._refresh_task = self._hass.async_create_task(
+            self._async_debounced_apply()
+        )
 
     async def _async_debounced_apply(self) -> None:
         try:
@@ -205,10 +217,16 @@ class EntityAwarePollingManager:
         if required is None:
             return
         required = self._expand_aliases(required)
-        selected = [register for register in self._full_registers if register.name in required]
+        selected = [
+            register
+            for register in self._full_registers
+            if register.name in required
+        ]
         if not selected:
             return
-        current_names = {register.name for register in self._coordinator._registers}
+        current_names = {
+            register.name for register in self._coordinator._registers
+        }
         selected_names = {register.name for register in selected}
         if selected_names == current_names:
             return
@@ -219,8 +237,16 @@ class EntityAwarePollingManager:
             for register in self._full_room_mode_registers
             if register.name in selected_names
         ]
-        setattr(self._coordinator, "_polling_plan_total_count", len(self._full_registers))
-        setattr(self._coordinator, "_polling_plan_active_count", len(selected))
+        setattr(
+            self._coordinator,
+            "_polling_plan_total_count",
+            len(self._full_registers),
+        )
+        setattr(
+            self._coordinator,
+            "_polling_plan_active_count",
+            len(selected),
+        )
         _LOGGER.info(
             "IDM entity-aware polling uses %d of %d registers",
             len(selected),
@@ -230,7 +256,9 @@ class EntityAwarePollingManager:
             await self._coordinator.async_request_refresh()
 
 
-def ensure_entity_aware_polling(coordinator: IdmCoordinator) -> EntityAwarePollingManager | None:
+def ensure_entity_aware_polling(
+    coordinator: IdmCoordinator,
+) -> EntityAwarePollingManager | None:
     """Create exactly one polling manager for a normal Modbus coordinator."""
     config_entry = coordinator.config_entry
     if config_entry is None or not coordinator._registers:
