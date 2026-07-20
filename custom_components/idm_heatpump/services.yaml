@@ -117,3 +117,49 @@ set_external_climate:
           step: 0.1
           unit_of_measurement: "%"
           mode: box
+
+start_dhw_boost:
+  name: "Start DHW Boost"
+  description: "Temporarily prioritize domestic hot water and restore the exact previous mode and setpoint afterwards"
+  fields:
+    entry_id:
+      name: "Config Entry ID"
+      description: "Required only when multiple IDM heat pumps are loaded"
+      required: false
+      selector:
+        text:
+    target_temperature:
+      name: "Target Temperature"
+      description: "Temporary domestic hot-water target in °C"
+      default: 60
+      required: false
+      selector:
+        number:
+          min: 35
+          max: 65
+          step: 1
+          unit_of_measurement: "°C"
+          mode: slider
+    timeout_minutes:
+      name: "Maximum Runtime"
+      description: "Maximum boost duration before automatic restoration"
+      default: 60
+      required: false
+      selector:
+        number:
+          min: 5
+          max: 240
+          step: 5
+          unit_of_measurement: "min"
+          mode: slider
+
+cancel_dhw_boost:
+  name: "Cancel DHW Boost"
+  description: "Cancel an active boost and restore the exact saved system mode and DHW setpoint"
+  fields:
+    entry_id:
+      name: "Config Entry ID"
+      description: "Required only when multiple IDM heat pumps are loaded"
+      required: false
+      selector:
+        text:
