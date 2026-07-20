@@ -124,3 +124,12 @@ def test_binary_web_values_are_not_created_as_regular_sensors():
     assert "compressor_1" not in keys
     assert "high_pressure_error" not in keys
     assert "hotgas_temperature" in keys
+
+
+def test_camel_case_source_key_uses_normalized_translation_key():
+    sensor = _entities_by_key(_coordinator({"pump_heating_circuitA": IdmWebSensorValue("Ein", 1.0)}))[
+        "web_pump_heating_circuitA"
+    ]
+
+    assert sensor._attr_unique_id == "test_entry_web_pump_heating_circuitA"
+    assert sensor.entity_description.translation_key == "web_pump_heating_circuit_a"

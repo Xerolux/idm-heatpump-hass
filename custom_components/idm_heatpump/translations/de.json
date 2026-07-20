@@ -460,11 +460,11 @@
       "web_hotwater_station_flow_switch": {
         "name": "Warmwasserstation Strömungsschalter (Web)"
       },
-      "web_pump_heating_circuitA": {
-        "name": "Pumpe Heizkreis A (Web)"
-      },
       "web_siphon_heating": {
         "name": "Siphonheizung (Web)"
+      },
+      "web_pump_heating_circuit_a": {
+        "name": "Pumpe Heizkreis A (Web)"
       }
     }
   },

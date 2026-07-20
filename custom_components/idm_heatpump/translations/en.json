@@ -460,11 +460,11 @@
       "web_hotwater_station_flow_switch": {
         "name": "Hot water station flow switch (Web)"
       },
-      "web_pump_heating_circuitA": {
-        "name": "Heating circuit A pump (Web)"
-      },
       "web_siphon_heating": {
         "name": "Siphon heater (Web)"
+      },
+      "web_pump_heating_circuit_a": {
+        "name": "Heating circuit A pump (Web)"
       }
     }
   },

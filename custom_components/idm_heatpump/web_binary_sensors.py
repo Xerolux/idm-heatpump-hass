@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -140,6 +141,11 @@ _FALSE_TEXT_VALUES = frozenset(
 )
 
 
+def web_binary_translation_key(entity_key: str) -> str:
+    """Return a lowercase snake-case Home Assistant translation key."""
+    return re.sub(r"(?<!^)(?=[A-Z])", "_", entity_key).lower()
+
+
 def normalize_web_binary_value(value: Any) -> bool | None:
     """Normalize a Navigator web value without inventing an unknown state."""
     if isinstance(value, bool):
@@ -184,7 +190,7 @@ class IdmWebBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
         self._attr_unique_id = build_entity_unique_id(entry_id, entity_key)
         self.entity_description = BinarySensorEntityDescription(
             key=entity_key,
-            translation_key=entity_key,
+            translation_key=web_binary_translation_key(entity_key),
             icon=definition.icon,
             device_class=definition.device_class,
             entity_category=definition.entity_category,
