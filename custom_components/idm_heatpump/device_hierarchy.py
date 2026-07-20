@@ -15,7 +15,15 @@ from .const import DOMAIN, MANUFACTURER
 if TYPE_CHECKING:
     from .coordinator import IdmCoordinator
 
-DeviceScopeKind = Literal["heating_circuit", "zone_module", "zone_room"]
+DeviceScopeKind = Literal[
+    "heating_circuit",
+    "zone_module",
+    "zone_room",
+    "solar",
+    "isc",
+    "cascade",
+    "auxiliary_heat",
+]
 
 
 @dataclass(frozen=True)
@@ -34,6 +42,37 @@ _WEB_HEATING_CIRCUIT_PATTERNS: tuple[re.Pattern[str], ...] = (
     re.compile(r"^(?:flow_temp_HK_|room_temperature_HK_)([A-G])$"),
     re.compile(r"^(?:pump_heating_circuit|mixer_heating_circuit)([A-G])$"),
 )
+_OPTIONAL_MODULE_PREFIXES: tuple[tuple[str, DeviceScopeKind], ...] = (
+    ("solar_", "solar"),
+    ("isc_", "isc"),
+    ("cascade_", "cascade"),
+)
+_AUXILIARY_HEAT_PREFIXES = (
+    "bivalence_",
+    "booster_",
+    "second_heat_generator_",
+    "eheating_",
+    "electric_heater_",
+)
+_AUXILIARY_HEAT_KEYS = frozenset(
+    {
+        "failure_eheating",
+        "heat_generator_2nd",
+        "heat_generator_2nd_3rd",
+        "runtime_second_heat_generator_hours",
+        "switch_cycles_second_heat_generator",
+    }
+)
+_MODULE_DEVICE_METADATA: dict[DeviceScopeKind, tuple[str, str, str]] = {
+    "solar": ("solar", "Solaranlage", "Solar"),
+    "isc": ("isc", "IDM ISC", "ISC"),
+    "cascade": ("cascade", "IDM Kaskade", "Kaskade"),
+    "auxiliary_heat": (
+        "auxiliary_heat",
+        "Zusatzwärmeerzeuger",
+        "Zusatzwärmeerzeuger",
+    ),
+}
 
 
 def resolve_device_scope(entity_key: str) -> DeviceScope | None:
@@ -49,6 +88,11 @@ def resolve_device_scope(entity_key: str) -> DeviceScope | None:
     for pattern in _WEB_HEATING_CIRCUIT_PATTERNS:
         if match := pattern.match(key):
             return DeviceScope("heating_circuit", match.group(1).upper())
+    for prefix, kind in _OPTIONAL_MODULE_PREFIXES:
+        if key.startswith(prefix):
+            return DeviceScope(kind, prefix.removesuffix("_"))
+    if key in _AUXILIARY_HEAT_KEYS or key.startswith(_AUXILIARY_HEAT_PREFIXES):
+        return DeviceScope("auxiliary_heat", "auxiliary_heat")
     return None
 
 
@@ -75,10 +119,18 @@ def zone_room_identifier(coordinator: IdmCoordinator, zone: str | int, room: int
     return DOMAIN, f"{entry_id}_zone_module_{int(zone)}_room_{room}"
 
 
+def optional_module_identifier(coordinator: IdmCoordinator, module: str) -> tuple[str, str]:
+    """Return the stable identifier for one detected optional module."""
+    entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
+    return DOMAIN, f"{entry_id}_module_{module}"
+
+
 def _scope_identifiers(coordinator: IdmCoordinator, scope: DeviceScope) -> set[tuple[str, str]]:
     """Return all device identifiers required by one entity scope."""
     if scope.kind == "heating_circuit":
         return {heating_circuit_identifier(coordinator, scope.primary)}
+    if scope.kind in _MODULE_DEVICE_METADATA:
+        return {optional_module_identifier(coordinator, scope.primary)}
 
     zone = int(scope.primary)
     identifiers = {zone_module_identifier(coordinator, zone)}
@@ -108,7 +160,13 @@ def expected_subdevice_identifiers(coordinator: IdmCoordinator) -> set[tuple[str
 def _is_hierarchy_identifier(entry_id: str, identifier: tuple[str, str]) -> bool:
     """Return whether an identifier belongs to an IDM hierarchy subdevice."""
     domain, value = identifier
-    return domain == DOMAIN and value.startswith((f"{entry_id}_heating_circuit_", f"{entry_id}_zone_module_"))
+    return domain == DOMAIN and value.startswith(
+        (
+            f"{entry_id}_heating_circuit_",
+            f"{entry_id}_zone_module_",
+            f"{entry_id}_module_",
+        )
+    )
 
 
 def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
@@ -149,6 +207,16 @@ def build_subdevice_info(coordinator: IdmCoordinator, entity_key: str) -> Device
             name=f"Heizkreis {circuit}",
             manufacturer=MANUFACTURER,
             model="Heizkreis",
+            via_device=main_identifier,
+        )
+
+    if scope.kind in _MODULE_DEVICE_METADATA:
+        module, name, model = _MODULE_DEVICE_METADATA[scope.kind]
+        return DeviceInfo(
+            identifiers={optional_module_identifier(coordinator, module)},
+            name=name,
+            manufacturer=MANUFACTURER,
+            model=model,
             via_device=main_identifier,
         )
 
