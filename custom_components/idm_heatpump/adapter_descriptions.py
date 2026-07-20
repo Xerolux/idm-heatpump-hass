@@ -9,7 +9,7 @@ from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTem
 
 from idm_heatpump import RegisterDef
 
-from .binary_semantics import infer_binary_device_class
+from .binary_semantics import infer_binary_device_class as infer_binary_device_class
 
 _UNIT_DC_SC_MAP: dict[str, tuple[SensorDeviceClass, SensorStateClass]] = {
     UnitOfEnergy.KILO_WATT_HOUR: (SensorDeviceClass.ENERGY, SensorStateClass.TOTAL_INCREASING),
