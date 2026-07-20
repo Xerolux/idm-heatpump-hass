@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
@@ -70,7 +71,7 @@ class DhwBoostManager:
         self._timeout_task: asyncio.Task[None] | None = None
         self._evaluation_task: asyncio.Task[None] | None = None
         self._evaluation_in_progress = False
-        self._unsub_coordinator = None
+        self._unsub_coordinator: Callable[[], None] | None = None
         self._setup_complete = False
 
         self.active = False
