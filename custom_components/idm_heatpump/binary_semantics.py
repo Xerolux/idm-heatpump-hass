@@ -50,17 +50,31 @@ def infer_binary_device_class(name: str) -> BinarySensorDeviceClass | None:
         return _DEVICE_CLASS_MAP[explicit]
 
     normalized = name.casefold()
-    if any(token in normalized for token in ("fault", "failure", "alarm", "error", "störung")):
+    if any(
+        token in normalized
+        for token in ("fault", "failure", "alarm", "error", "störung")
+    ):
         return BinarySensorDeviceClass.PROBLEM
-    if any(token in normalized for token in ("connected", "connectivity", "online", "reachable")):
+    if any(
+        token in normalized
+        for token in ("connected", "connectivity", "online", "reachable")
+    ):
         return BinarySensorDeviceClass.CONNECTIVITY
     if any(token in normalized for token in ("lock", "locked", "sperre", "sperr")):
         return BinarySensorDeviceClass.LOCK
-    if any(token in normalized for token in ("cooling", "cool", "defrost", "kühl", "abtau")):
+    if any(
+        token in normalized for token in ("cooling", "cool", "defrost", "kühl", "abtau")
+    ):
         return BinarySensorDeviceClass.COLD
-    if any(token in normalized for token in ("heating", "heat", "dhw", "hotwater", "warmwasser")):
+    if any(
+        token in normalized
+        for token in ("heating", "heat", "dhw", "hotwater", "warmwasser")
+    ):
         return BinarySensorDeviceClass.HEAT
-    if any(token in normalized for token in ("compressor", "pump", "relay", "fan", "demand", "running")):
+    if any(
+        token in normalized
+        for token in ("compressor", "pump", "relay", "fan", "demand", "running")
+    ):
         return BinarySensorDeviceClass.RUNNING
     return None
 
@@ -74,7 +88,9 @@ def _as_value_set(value: Any) -> set[Any]:
     return {value}
 
 
-def _register_values(register: Any, plural: str, singular: str, library_attr: str) -> set[Any]:
+def _register_values(
+    register: Any, plural: str, singular: str, library_attr: str
+) -> set[Any]:
     """Read register-local metadata, falling back to the API catalog."""
     values = _as_value_set(getattr(register, plural, None))
     values.update(_as_value_set(getattr(register, singular, None)))
@@ -103,8 +119,12 @@ def binary_value_is_on(register: Any, value: Any) -> bool:
 
     name = str(getattr(register, "name", ""))
     metadata = _library_metadata(name)
-    on_values = _register_values(register, "binary_on_values", "binary_on_value", "on_values")
-    off_values = _register_values(register, "binary_off_values", "binary_off_value", "off_values")
+    on_values = _register_values(
+        register, "binary_on_values", "binary_on_value", "on_values"
+    )
+    off_values = _register_values(
+        register, "binary_off_values", "binary_off_value", "off_values"
+    )
     bitmask = getattr(register, "binary_bitmask", None)
     if bitmask is None:
         bitmask = getattr(metadata, "bitmask", None)
@@ -127,9 +147,27 @@ def binary_value_is_on(register: Any, value: Any) -> bool:
         result = value
     elif isinstance(value, str):
         normalized = value.strip().casefold()
-        if normalized in {"1", "on", "true", "yes", "active", "running", "ein", "aktiv"}:
+        if normalized in {
+            "1",
+            "on",
+            "true",
+            "yes",
+            "active",
+            "running",
+            "ein",
+            "aktiv",
+        }:
             result = True
-        elif normalized in {"0", "off", "false", "no", "inactive", "stopped", "aus", "inaktiv"}:
+        elif normalized in {
+            "0",
+            "off",
+            "false",
+            "no",
+            "inactive",
+            "stopped",
+            "aus",
+            "inaktiv",
+        }:
             result = False
         else:
             result = False
