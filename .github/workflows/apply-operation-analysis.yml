@@ -1,0 +1,205 @@
+name: Apply Operation Analysis
+
+on:
+  push:
+    branches:
+      - feat/operation-cycle-analysis
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/operation-cycle-analysis
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Wire tracker, entities and options
+        run: |
+          python - <<'PY'
+          from __future__ import annotations
+
+          import json
+          from pathlib import Path
+
+          def replace_once(path: str, old: str, new: str) -> None:
+              file = Path(path)
+              text = file.read_text(encoding="utf-8")
+              if new in text:
+                  return
+              if old not in text:
+                  raise RuntimeError(f"Anchor not found in {path}: {old[:100]!r}")
+              file.write_text(text.replace(old, new, 1), encoding="utf-8")
+
+          # Constants.
+          replace_once(
+              "custom_components/idm_heatpump/const.py",
+              'CONF_DEVICE_HIERARCHY: str = "device_hierarchy"\n',
+              'CONF_DEVICE_HIERARCHY: str = "device_hierarchy"\nCONF_SHORT_CYCLE_MINUTES: str = "short_cycle_minutes"\n',
+          )
+          replace_once(
+              "custom_components/idm_heatpump/const.py",
+              "DEFAULT_DEVICE_HIERARCHY: bool = True\n",
+              "DEFAULT_DEVICE_HIERARCHY: bool = True\nDEFAULT_SHORT_CYCLE_MINUTES: int = 15\n",
+          )
+
+          # Coordinator tracker hook.
+          coordinator_path = Path("custom_components/idm_heatpump/coordinator.py")
+          coordinator = coordinator_path.read_text(encoding="utf-8")
+          coordinator = coordinator.replace(
+              "from typing import Any, cast\n",
+              "from typing import TYPE_CHECKING, Any, cast\n",
+              1,
+          )
+          type_anchor = "from .web_data import (\n"
+          type_block = "if TYPE_CHECKING:\n    from .operation_analysis import OperationAnalysis\n\n"
+          if type_block not in coordinator:
+              coordinator = coordinator.replace(type_anchor, type_block + type_anchor, 1)
+          coordinator = coordinator.replace(
+              "        self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None\n",
+              "        self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None\n        self._operation_analysis: OperationAnalysis | None = None\n",
+              1,
+          )
+          coordinator = coordinator.replace(
+              "    @property\n    def sensor_descriptions(self) -> list[dict[str, Any]]:\n",
+              "    def attach_operation_analysis(self, analysis: OperationAnalysis) -> None:\n        \"\"\"Attach the restart-safe operating analysis before first refresh.\"\"\"\n        self._operation_analysis = analysis\n\n    @property\n    def operation_analysis(self) -> OperationAnalysis | None:\n        return self._operation_analysis\n\n    @property\n    def sensor_descriptions(self) -> list[dict[str, Any]]:\n",
+              1,
+          )
+          coordinator = coordinator.replace(
+              "        self._unused_registers = new_unused_registers\n\n        return data\n",
+              "        self._unused_registers = new_unused_registers\n\n        if self._operation_analysis is not None:\n            try:\n                self._operation_analysis.process_snapshot(data, self._unused_registers)\n            except Exception:\n                _LOGGER.warning(\n                    \"Could not update IDM operation analysis; normal polling continues\",\n                    exc_info=True,\n                )\n\n        return data\n",
+              1,
+          )
+          coordinator_path.write_text(coordinator, encoding="utf-8")
+
+          # Runtime setup and unload persistence.
+          init_path = Path("custom_components/idm_heatpump/__init__.py")
+          init = init_path.read_text(encoding="utf-8")
+          init = init.replace(
+              "    CONF_ROOM_TEMP_FORWARDING,\n",
+              "    CONF_ROOM_TEMP_FORWARDING,\n    CONF_SHORT_CYCLE_MINUTES,\n",
+              1,
+          )
+          init = init.replace(
+              "    DEFAULT_ROOM_TEMP_FORWARDING,\n",
+              "    DEFAULT_ROOM_TEMP_FORWARDING,\n    DEFAULT_SHORT_CYCLE_MINUTES,\n",
+              1,
+          )
+          init = init.replace(
+              "from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig\n",
+              "from .operation_analysis import OperationAnalysis\nfrom .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig\n",
+              1,
+          )
+          init = init.replace(
+              "    room_temp_forwarding_task: asyncio.Task[None] | None = None\n",
+              "    room_temp_forwarding_task: asyncio.Task[None] | None = None\n    operation_analysis: OperationAnalysis | None = None\n",
+              1,
+          )
+          init = init.replace(
+              "    hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)\n",
+              "    hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)\n    short_cycle_minutes = int(\n        entry.options.get(CONF_SHORT_CYCLE_MINUTES, DEFAULT_SHORT_CYCLE_MINUTES)\n    )\n",
+              1,
+          )
+          setup_anchor = '''        coordinator.setup_registers(\n            circuits,\n            zone_count,\n            zone_rooms,\n            enable_cascade,\n            model_info=detected_model_info,\n            descriptions=sensor_descs + binary_descs + number_descs + select_descs + switch_descs,\n        )\n\n        entry.runtime_data = IdmHeatpumpData(\n            coordinator=coordinator,\n            client=client,\n        )\n'''
+          setup_replacement = '''        coordinator.setup_registers(\n            circuits,\n            zone_count,\n            zone_rooms,\n            enable_cascade,\n            model_info=detected_model_info,\n            descriptions=sensor_descs + binary_descs + number_descs + select_descs + switch_descs,\n        )\n\n        operation_analysis = OperationAnalysis(\n            hass,\n            entry.entry_id,\n            coordinator.get_register,\n            short_cycle_minutes=short_cycle_minutes,\n            expected_poll_interval=float(scan_interval),\n        )\n        await operation_analysis.async_load()\n        coordinator.attach_operation_analysis(operation_analysis)\n\n        entry.runtime_data = IdmHeatpumpData(\n            coordinator=coordinator,\n            client=client,\n            operation_analysis=operation_analysis,\n        )\n'''
+          if setup_replacement not in init:
+              if setup_anchor not in init:
+                  raise RuntimeError("Coordinator setup anchor not found")
+              init = init.replace(setup_anchor, setup_replacement, 1)
+          init = init.replace(
+              "        coordinator = getattr(entry.runtime_data, \"coordinator\", None)\n",
+              "        operation_analysis = getattr(entry.runtime_data, \"operation_analysis\", None)\n        if operation_analysis is not None:\n            try:\n                await operation_analysis.async_save()\n            except Exception:\n                _LOGGER.warning(\"Failed to persist IDM operation analysis during unload\", exc_info=True)\n        coordinator = getattr(entry.runtime_data, \"coordinator\", None)\n",
+              1,
+          )
+          init_path.write_text(init, encoding="utf-8")
+
+          # Sensor platform.
+          sensor_path = Path("custom_components/idm_heatpump/sensor.py")
+          sensor = sensor_path.read_text(encoding="utf-8")
+          sensor = sensor.replace(
+              "from .internal_messages import format_internal_message, internal_message_text\n",
+              "from .internal_messages import format_internal_message, internal_message_text\nfrom .operation_entities import IdmOperationSensor, operation_sensor_entities\n",
+              1,
+          )
+          sensor = sensor.replace(
+              "IdmWebSensor | IdmApiVersionSensor] = []\n",
+              "IdmWebSensor | IdmApiVersionSensor | IdmOperationSensor] = []\n",
+              1,
+          )
+          sensor = sensor.replace(
+              "    entities += calculated_sensor_entities(coordinator)\n",
+              "    entities += calculated_sensor_entities(coordinator)\n    entities += operation_sensor_entities(\n        coordinator,\n        entry.runtime_data.operation_analysis,\n    )\n",
+              1,
+          )
+          sensor_path.write_text(sensor, encoding="utf-8")
+
+          # Binary sensor platform.
+          binary_path = Path("custom_components/idm_heatpump/binary_sensor.py")
+          binary = binary_path.read_text(encoding="utf-8")
+          binary = binary.replace(
+              "from .registers import sort_entity_descriptions\n",
+              "from .operation_entities import IdmShortCycleBinarySensor, short_cycle_binary_entities\nfrom .registers import sort_entity_descriptions\n",
+              1,
+          )
+          binary = binary.replace(
+              "    entities: list[IdmBinarySensor | IdmWebBinarySensor] = [\n",
+              "    entities: list[IdmBinarySensor | IdmWebBinarySensor | IdmShortCycleBinarySensor] = [\n",
+              1,
+          )
+          binary = binary.replace(
+              "    if coordinator.web_enabled:\n        entities += web_binary_sensor_entities(coordinator)\n",
+              "    entities += short_cycle_binary_entities(\n        coordinator,\n        entry.runtime_data.operation_analysis,\n    )\n    if coordinator.web_enabled:\n        entities += web_binary_sensor_entities(coordinator)\n",
+              1,
+          )
+          binary_path.write_text(binary, encoding="utf-8")
+
+          # Config option.
+          flow_path = Path("custom_components/idm_heatpump/config_flow.py")
+          flow = flow_path.read_text(encoding="utf-8")
+          flow = flow.replace(
+              "    CONF_ROOM_TEMP_FORWARDING,\n",
+              "    CONF_ROOM_TEMP_FORWARDING,\n    CONF_SHORT_CYCLE_MINUTES,\n",
+              1,
+          )
+          flow = flow.replace(
+              "    DEFAULT_ROOM_TEMP_FORWARDING,\n",
+              "    DEFAULT_ROOM_TEMP_FORWARDING,\n    DEFAULT_SHORT_CYCLE_MINUTES,\n",
+              1,
+          )
+          option_anchor = '''                        vol.Required(\n                            CONF_DEVICE_HIERARCHY,\n                            default=options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY),\n                        ): BooleanSelector(BooleanSelectorConfig()),\n'''
+          option_field = '''                        vol.Required(\n                            CONF_SHORT_CYCLE_MINUTES,\n                            default=int(\n                                options.get(\n                                    CONF_SHORT_CYCLE_MINUTES,\n                                    DEFAULT_SHORT_CYCLE_MINUTES,\n                                )\n                            ),\n                        ): NumberSelector(\n                            NumberSelectorConfig(\n                                min=5,\n                                max=60,\n                                step=1,\n                                mode=NumberSelectorMode.SLIDER,\n                                unit_of_measurement=\"min\",\n                            )\n                        ),\n'''
+          if option_field not in flow:
+              if option_anchor not in flow:
+                  raise RuntimeError("Feature options anchor not found")
+              flow = flow.replace(option_anchor, option_anchor + option_field, 1)
+          flow_path.write_text(flow, encoding="utf-8")
+
+          # Option strings only; analysis entities use stable explicit names.
+          translations = (
+              (Path("custom_components/idm_heatpump/strings.json"), "Short-cycle threshold", "The last fully observed compressor cycle is reported as a problem when it is shorter than this duration."),
+              (Path("custom_components/idm_heatpump/translations/en.json"), "Short-cycle threshold", "The last fully observed compressor cycle is reported as a problem when it is shorter than this duration."),
+              (Path("custom_components/idm_heatpump/translations/de.json"), "Kurz-Takt-Schwelle", "Der letzte vollständig beobachtete Verdichtertakt wird als Problem gemeldet, wenn er kürzer als diese Dauer war."),
+          )
+          for path, label, description in translations:
+              data = json.loads(path.read_text(encoding="utf-8"))
+              features = data["config"]["step"]["options"]["sections"]["features"]
+              features["data"]["short_cycle_minutes"] = label
+              features["data_description"]["short_cycle_minutes"] = description
+              path.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+      - name: Format and lint
+        run: |
+          python -m pip install ruff==0.14.14
+          ruff check custom_components --fix
+          ruff format custom_components
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components
+          git commit -m "feat: wire restart-safe operation analysis"
+          git push origin HEAD:feat/operation-cycle-analysis
