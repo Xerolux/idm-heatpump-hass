@@ -10,8 +10,10 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
+from custom_components.idm_heatpump.operation_analysis import OperationAnalysis
 from custom_components.idm_heatpump.operation_entities import (
     operation_sensor_entities,
+    runtime_operation_analysis,
     short_cycle_binary_entities,
 )
 
@@ -137,3 +139,18 @@ def test_register_fixture_documents_verified_sources() -> None:
 
     assert compressor.binary is True
     assert mode.address == 1090
+
+
+def test_runtime_tracker_rejects_truthy_placeholder() -> None:
+    runtime_data = MagicMock()
+    runtime_data.operation_analysis = MagicMock()
+
+    assert runtime_operation_analysis(runtime_data) is None
+
+
+def test_runtime_tracker_accepts_real_instance() -> None:
+    runtime_data = MagicMock()
+    analysis = object.__new__(OperationAnalysis)
+    runtime_data.operation_analysis = analysis
+
+    assert runtime_operation_analysis(runtime_data) is analysis

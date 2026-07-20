@@ -43,7 +43,10 @@ from .entity import (
 )
 from .device_hierarchy import build_subdevice_info
 from .internal_messages import format_internal_message, internal_message_text
-from .operation_entities import IdmOperationSensor, operation_sensor_entities
+from .operation_entities import (
+    IdmOperationSensor,
+    operation_sensor_entities,
+)
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 from .versions import RuntimeVersions, async_runtime_versions

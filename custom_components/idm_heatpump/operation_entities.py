@@ -180,6 +180,12 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
 )
 
 
+def runtime_operation_analysis(runtime_data: Any) -> OperationAnalysis | None:
+    """Return only a real tracker, never a truthy MagicMock or legacy placeholder."""
+    analysis = getattr(runtime_data, "operation_analysis", None)
+    return analysis if isinstance(analysis, OperationAnalysis) else None
+
+
 def operation_sensor_entities(
     coordinator: IdmCoordinator,
     analysis: OperationAnalysis | None,

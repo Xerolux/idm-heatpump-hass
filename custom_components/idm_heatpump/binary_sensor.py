@@ -15,7 +15,10 @@ from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from .binary_semantics import binary_value_is_on
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
-from .operation_entities import IdmShortCycleBinarySensor, short_cycle_binary_entities
+from .operation_entities import (
+    IdmShortCycleBinarySensor,
+    short_cycle_binary_entities,
+)
 from .registers import sort_entity_descriptions
 from .web_binary_sensors import IdmWebBinarySensor, web_binary_sensor_entities
 
