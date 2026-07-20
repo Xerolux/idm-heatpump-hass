@@ -115,6 +115,7 @@ class EntityAwarePollingManager:
         self._coordinator = coordinator
         self._debounce_seconds = debounce_seconds
         self._full_registers = tuple(coordinator._registers)
+        self._full_room_mode_registers = tuple(coordinator._room_mode_registers)
         self._refresh_task: asyncio.Task[None] | None = None
         self._setup_task: asyncio.Task[None] | None = None
         self._unsub_registry: Callable[[], None] | None = None
@@ -215,7 +216,7 @@ class EntityAwarePollingManager:
         self._coordinator._registers = selected
         self._coordinator._room_mode_registers = [
             register
-            for register in self._coordinator._room_mode_registers
+            for register in self._full_room_mode_registers
             if register.name in selected_names
         ]
         setattr(self._coordinator, "_polling_plan_total_count", len(self._full_registers))
