@@ -16,8 +16,9 @@ oder belastbare Gerätediagnosen abgesichert sind.
 - [x] Aussagekräftigere `BinarySensorDeviceClass` für Fehler, Verbindung,
       Sperren, Heizen, Kühlen und laufende Aggregate.
 - [x] Eigene Unit-Tests für die Binary-Semantik.
-- [ ] Explizite Binary-Metadaten in `idm-heatpump-api` ergänzen und anschließend
-      die heuristische Zuordnung nur noch als Fallback verwenden.
+- [x] Explizite Binary-Metadaten in `idm-heatpump-api` ergänzt; die heuristische
+      Zuordnung bleibt nur als Fallback für ältere API-Versionen und noch nicht
+      dokumentierte Register aktiv.
 - [ ] Operative Binary-Sensoren von reinen Diagnose-Entitäten trennen.
 - [ ] Alle binären IDM-Register gegen echte Diagnosedaten mindestens eines
       Navigator-10- und eines Navigator-2.0-Systems prüfen.
