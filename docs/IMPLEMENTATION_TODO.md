@@ -32,18 +32,18 @@ oder belastbare Gerätediagnosen abgesichert sind.
 
 ## Priorität 2 – Berechnete Messwerte
 
-- [ ] Wärmepumpen-Spreizung aus `hp_flow_temp - hp_return_temp`.
-- [ ] Wärmequellen-Spreizung aus Ein- und Austrittstemperatur.
-- [ ] Warmwasser-Abweichung zwischen Ist- und Solltemperatur.
+- [x] Wärmepumpen-Spreizung aus `hp_flow_temp - hp_return_temp`.
+- [x] Wärmequellen-Spreizung aus Ein- und Austrittstemperatur.
+- [x] Warmwasser-Abweichung zwischen Ist- und Solltemperatur.
 - [ ] Vorlauf-Abweichung zwischen Ist- und angefordertem Sollwert, sofern die
       verwendeten Register für das erkannte Modell eindeutig sind.
 - [ ] Momentaner COP nur dann, wenn zeitgleich gemessene thermische und
       elektrische Leistung mit kompatiblen Einheiten verfügbar sind.
-- [ ] Berechnete Sensoren ausschließlich bei vorhandenen, plausiblen
+- [x] Berechnete Sensoren ausschließlich bei vorhandenen, plausiblen
       Quelldaten registrieren.
-- [ ] Für fehlende oder unplausible Quellen `unavailable` statt `0` liefern.
-- [ ] Unit-Tests für Berechnung, Rundung, Division durch null, Sentinel-Werte
-      und fehlende Quellen.
+- [x] Für fehlende oder unplausible Quellen `unavailable` statt `0` liefern.
+- [x] Unit-Tests für Berechnung, Rundung, Plausibilitätsgrenzen und fehlende
+      Quellen.
 
 ### Abnahme
 
@@ -133,13 +133,13 @@ oder belastbare Gerätediagnosen abgesichert sind.
 
 ## Priorität 8 – Vorbereitung auf Home Assistants neue Modbus-Architektur
 
-- [ ] `idm-heatpump-api` als gerätespezifische Bibliothek beibehalten.
+- [x] `idm-heatpump-api` als gerätespezifische Bibliothek beibehalten.
 - [ ] Transportzugriffe innerhalb der API weiter kapseln.
 - [ ] Optionalen Transportadapter für `modbus-connection` erst implementieren,
       wenn Home Assistant den überarbeiteten offiziellen Ansatz veröffentlicht.
-- [ ] Keine vorzeitige harte Abhängigkeit von der aktuell noch überarbeiteten
+- [x] Keine vorzeitige harte Abhängigkeit von der aktuell noch überarbeiteten
       Home-Assistant-Integration einführen.
-- [ ] Direkten Pymodbus-Transport als eigenständig nutzbare API-Variante
+- [x] Direkten Pymodbus-Transport als eigenständig nutzbare API-Variante
       erhalten.
 
 ### Zielarchitektur
@@ -158,7 +158,7 @@ IDM Navigator über Modbus TCP
 
 - [ ] Vollständige Tests für neue Logik und Migrationen.
 - [ ] `ruff`, `mypy --strict` und `pytest` erfolgreich.
-- [ ] Keine Änderungen an bestehenden Unique IDs ohne Migration.
+- [x] Keine Änderungen an bestehenden Unique IDs ohne Migration.
 - [ ] Deutsche und englische Übersetzungen vollständig.
 - [ ] Changelog, Entity-Dokumentation und bekannte Einschränkungen aktualisiert.
 - [ ] Diagnosedaten enthalten alle für Supportfälle notwendigen, aber keine
