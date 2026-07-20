@@ -195,6 +195,8 @@ def _stub_homeassistant() -> None:
     ha.loader = _make_module("homeassistant.loader")
     ha.util = _make_module("homeassistant.util")
     ha.util.json = _make_module("homeassistant.util.json")
+    ha.util.dt = _make_module("homeassistant.util.dt")
+    ha.util.dt.as_local = lambda value: value.astimezone()
     ha.components = _make_module("homeassistant.components")
     ha.components.repairs = _make_module("homeassistant.components.repairs")
 
@@ -216,6 +218,9 @@ def _stub_homeassistant() -> None:
     class _UnitOfEnergy:
         KILO_WATT_HOUR = "kWh"
 
+    class _UnitOfTime:
+        MINUTES = "min"
+
     units = sys.modules["homeassistant.const"]
     units.CONF_HOST = "host"
     units.CONF_PORT = "port"
@@ -225,6 +230,7 @@ def _stub_homeassistant() -> None:
     units.UnitOfTemperature = _UnitOfTemperature
     units.UnitOfPower = _UnitOfPower
     units.UnitOfEnergy = _UnitOfEnergy
+    units.UnitOfTime = _UnitOfTime
 
     # homeassistant.core
     ha.core.HomeAssistant = MagicMock
