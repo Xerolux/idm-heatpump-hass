@@ -69,6 +69,7 @@ class DhwBoostManager:
         self._lock = asyncio.Lock()
         self._timeout_task: asyncio.Task[None] | None = None
         self._evaluation_task: asyncio.Task[None] | None = None
+        self._evaluation_in_progress = False
         self._unsub_coordinator = None
         self._setup_complete = False
 
@@ -132,6 +133,7 @@ class DhwBoostManager:
                     "the integration will retry on coordinator updates",
                     exc_info=True,
                 )
+        self._notify()
 
     async def async_start(
         self,
@@ -152,11 +154,8 @@ class DhwBoostManager:
 
             target = self._validated_target(target_temperature)
             timeout = self._validated_timeout(timeout_minutes)
-            current_temperature = _finite_number(
-                self.coordinator.data.get("dhw_temp_top")
-                if self.coordinator.data
-                else None
-            )
+            data = self.coordinator.data or {}
+            current_temperature = _finite_number(data.get("dhw_temp_top"))
             if current_temperature is None:
                 raise DhwBoostError("Die aktuelle Warmwassertemperatur ist nicht verfügbar")
             if current_temperature >= target:
@@ -164,19 +163,11 @@ class DhwBoostManager:
                 self.last_reason = "target_already_reached"
                 self.target_temperature = target
                 self.timeout_minutes = timeout
-                self.coordinator.async_update_listeners()
+                self._notify()
                 return
 
-            previous_mode = self._safe_int(
-                self.coordinator.data.get("system_mode")
-                if self.coordinator.data
-                else None
-            )
-            previous_setpoint = self._safe_int(
-                self.coordinator.data.get("dhw_setpoint")
-                if self.coordinator.data
-                else None
-            )
+            previous_mode = self._safe_int(data.get("system_mode"))
+            previous_setpoint = self._safe_int(data.get("dhw_setpoint"))
             if previous_mode is None or previous_setpoint is None:
                 raise DhwBoostError(
                     "Systemmodus oder bisheriger Warmwasser-Sollwert ist nicht verfügbar"
@@ -193,10 +184,10 @@ class DhwBoostManager:
             self.previous_setpoint = previous_setpoint
             self.last_reason = None
 
-            # This save must finish before the first device write. It is the
-            # recovery contract if Home Assistant stops between the two writes.
+            # Persist before the first device write. This is the recovery
+            # contract if Home Assistant stops between the two writes.
             await self._async_save()
-            self.coordinator.async_update_listeners()
+            self._notify()
 
             try:
                 await self._async_write("dhw_setpoint", target)
@@ -219,7 +210,7 @@ class DhwBoostManager:
             self.status = "active"
             await self._async_save()
             self._schedule_timeout()
-            self.coordinator.async_update_listeners()
+            self._notify()
 
     async def async_cancel(self) -> None:
         """Cancel an active boost and restore the exact saved snapshot."""
@@ -227,7 +218,7 @@ class DhwBoostManager:
             if not self.active:
                 self.status = "idle"
                 self.last_reason = "not_active"
-                self.coordinator.async_update_listeners()
+                self._notify()
                 return
             await self._async_restore_locked("manual_cancel")
 
@@ -252,27 +243,43 @@ class DhwBoostManager:
                 self._unsub_coordinator = None
 
     def _handle_coordinator_update(self) -> None:
-        if not self.active or self._evaluation_task is not None:
+        if (
+            not self.active
+            or self._evaluation_in_progress
+            or self._evaluation_task is not None
+        ):
             return
         self._evaluation_task = self.coordinator.hass.async_create_task(
             self._async_evaluate()
         )
 
     async def _async_evaluate(self) -> None:
+        if self._evaluation_in_progress:
+            return
+        self._evaluation_in_progress = True
         try:
             async with self._lock:
                 if not self.active:
                     return
+                if self.status == "recovery_required":
+                    try:
+                        await self._async_restore_locked(
+                            self.last_reason or "recovery_retry"
+                        )
+                    except Exception:
+                        _LOGGER.warning(
+                            "IDM DHW boost recovery retry failed; retrying on next update",
+                            exc_info=True,
+                        )
+                    return
+
                 now = _utcnow()
                 if self.deadline is not None and now >= self.deadline:
                     await self._async_restore_locked("timeout")
                     return
 
-                current_temperature = _finite_number(
-                    self.coordinator.data.get("dhw_temp_top")
-                    if self.coordinator.data
-                    else None
-                )
+                data = self.coordinator.data or {}
+                current_temperature = _finite_number(data.get("dhw_temp_top"))
                 if (
                     current_temperature is not None
                     and self.target_temperature is not None
@@ -281,15 +288,15 @@ class DhwBoostManager:
                     await self._async_restore_locked("target_reached")
                     return
 
-                # Boost owns these two values until it is cancelled or ends.
-                # PV/SG and all unrelated registers are deliberately untouched.
+                # Boost owns only these two values until cancel/end. PV/SG and
+                # all unrelated registers are deliberately untouched.
                 try:
-                    if self.coordinator.data.get("dhw_setpoint") != self.target_temperature:
+                    if data.get("dhw_setpoint") != self.target_temperature:
                         await self._async_write(
                             "dhw_setpoint",
                             self.target_temperature,
                         )
-                    if self.coordinator.data.get("system_mode") != _HOT_WATER_ONLY_MODE:
+                    if data.get("system_mode") != _HOT_WATER_ONLY_MODE:
                         await self._async_write("system_mode", _HOT_WATER_ONLY_MODE)
                 except Exception:
                     self.status = "enforcement_failed"
@@ -300,8 +307,12 @@ class DhwBoostManager:
                         exc_info=True,
                     )
         finally:
-            self._evaluation_task = None
-            self.coordinator.async_update_listeners()
+            # Notify while the recursion guard is still active. Otherwise the
+            # manager would schedule itself again from its own status update.
+            self._notify()
+            self._evaluation_in_progress = False
+            if self._evaluation_task is asyncio.current_task():
+                self._evaluation_task = None
 
     async def _async_timeout(self) -> None:
         try:
@@ -331,7 +342,7 @@ class DhwBoostManager:
             self.last_reason = "invalid_recovery_state"
             self.active = False
             await self._async_save()
-            self.coordinator.async_update_listeners()
+            self._notify()
             raise DhwBoostError("Gespeicherter Wiederherstellungszustand ist unvollständig")
 
         self.status = "restoring"
@@ -343,7 +354,7 @@ class DhwBoostManager:
         except Exception as err:
             self.status = "recovery_required"
             await self._async_save()
-            self.coordinator.async_update_listeners()
+            self._notify()
             raise DhwBoostError(
                 "Der vorherige Warmwasserzustand konnte noch nicht vollständig wiederhergestellt werden"
             ) from err
@@ -353,7 +364,7 @@ class DhwBoostManager:
         self.status = "idle"
         self.last_reason = reason
         await self._async_save()
-        self.coordinator.async_update_listeners()
+        self._notify()
 
     async def _async_write(self, register_name: str, value: Any) -> None:
         register = self.coordinator.get_register(register_name)
@@ -375,6 +386,9 @@ class DhwBoostManager:
                 "last_reason": self.last_reason,
             }
         )
+
+    def _notify(self) -> None:
+        self.coordinator.async_update_listeners()
 
     @staticmethod
     def _iso(value: datetime | None) -> str | None:
@@ -419,11 +433,8 @@ class DhwBoostManager:
 
     @property
     def state_attributes(self) -> dict[str, Any]:
-        current_temperature = _finite_number(
-            self.coordinator.data.get("dhw_temp_top")
-            if self.coordinator.data
-            else None
-        )
+        data = self.coordinator.data or {}
+        current_temperature = _finite_number(data.get("dhw_temp_top"))
         return {
             "active": self.active,
             "status": self.status,
