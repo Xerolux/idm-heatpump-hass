@@ -1,0 +1,65 @@
+name: Fix PR 143 Runtime Guard
+
+on:
+  push:
+    branches:
+      - feat/operation-cycle-analysis
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/operation-cycle-analysis
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Apply runtime guard
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          sensor_path = Path("custom_components/idm_heatpump/sensor.py")
+          sensor = sensor_path.read_text(encoding="utf-8")
+          sensor = sensor.replace(
+              "from .operation_entities import (\n    IdmOperationSensor,\n    operation_sensor_entities,\n)\n",
+              "from .operation_entities import (\n    IdmOperationSensor,\n    operation_sensor_entities,\n    runtime_operation_analysis,\n)\n",
+              1,
+          )
+          sensor = sensor.replace(
+              "        entry.runtime_data.operation_analysis,\n",
+              "        runtime_operation_analysis(entry.runtime_data),\n",
+              1,
+          )
+          sensor_path.write_text(sensor, encoding="utf-8")
+
+          binary_path = Path("custom_components/idm_heatpump/binary_sensor.py")
+          binary = binary_path.read_text(encoding="utf-8")
+          binary = binary.replace(
+              "from .operation_entities import (\n    IdmShortCycleBinarySensor,\n    short_cycle_binary_entities,\n)\n",
+              "from .operation_entities import (\n    IdmShortCycleBinarySensor,\n    runtime_operation_analysis,\n    short_cycle_binary_entities,\n)\n",
+              1,
+          )
+          binary = binary.replace(
+              "        entry.runtime_data.operation_analysis,\n",
+              "        runtime_operation_analysis(entry.runtime_data),\n",
+              1,
+          )
+          binary_path.write_text(binary, encoding="utf-8")
+          PY
+      - name: Format and lint
+        run: |
+          python -m pip install ruff==0.14.14
+          ruff check custom_components tests --fix
+          ruff format custom_components tests
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components tests
+          git commit -m "fix: guard operation analysis runtime data"
+          git push origin HEAD:feat/operation-cycle-analysis
