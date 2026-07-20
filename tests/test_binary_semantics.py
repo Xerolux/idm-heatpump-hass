@@ -121,10 +121,10 @@ def test_register_local_metadata_overrides_library_metadata(monkeypatch):
         device_class="running",
     )
     monkeypatch.setattr(binary_semantics, "_GET_LIBRARY_BINARY_METADATA", lambda _name: metadata)
-    register = _register(binary_on_values={2}, binary_off_values={1})
+    register = _register(binary_on_values={2}, binary_off_values={1, 7})
 
     assert binary_value_is_on(register, 2) is True
-    assert binary_value_is_on(register, 7) is True
+    assert binary_value_is_on(register, 7) is False
     assert binary_value_is_on(register, 1) is False
 
 
