@@ -47,8 +47,6 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
-    CONF_DEVICE_HIERARCHY,
-    CONF_DEVICE_HIERARCHY,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_MODBUS_MAX_RETRIES,
@@ -69,8 +67,6 @@ from .const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONFIG_FLOW_TCP_TIMEOUT,
-    DEFAULT_DEVICE_HIERARCHY,
-    DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
@@ -265,7 +261,6 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                 vol.Schema(
                     {
                         vol.Required(
-                            CONF_DEVICE_HIERARCHY,
                             default=options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY),
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
