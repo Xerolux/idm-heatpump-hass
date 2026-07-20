@@ -43,6 +43,11 @@ jobs:
         with:
           python-version: ${{ inputs.python-version }}
 
+      - name: Early formatter diagnostic
+        run: |
+          pip install ruff
+          ruff format custom_components/idm_heatpump tests --check
+
       - name: Install Home Assistant ${{ inputs.home-assistant-version }} and test tools
         run: |
           python -m pip install --upgrade pip setuptools wheel
