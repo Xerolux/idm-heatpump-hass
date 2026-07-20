@@ -157,6 +157,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         web_host: str | None = None,
         web_supplement: IdmWebSupplement | None = None,
         web_variant: str | None = None,
+        device_hierarchy_enabled: bool = False,
     ) -> None:
         self._client = client
         self._sensor_descs = sensor_descriptions
@@ -173,6 +174,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._web_host = web_host or client.host
         self._web_supplement = web_supplement
         self._web_variant = web_variant if web_variant in ("nav10", "nav20") else None
+        self._device_hierarchy_enabled = device_hierarchy_enabled
         if web_supplement is not None:
             self._web_variant = _web_variant_from_supplement(web_supplement) or self._web_variant
         self._last_web_error: str | None = None
@@ -252,6 +254,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def hide_unused(self) -> bool:
         return self._hide_unused
+
+    @property
+    def device_hierarchy_enabled(self) -> bool:
+        """Return whether entities should be organized into subdevices."""
+        return self._device_hierarchy_enabled
 
     @property
     def model_name(self) -> str:

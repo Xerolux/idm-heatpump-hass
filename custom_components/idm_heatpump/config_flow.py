@@ -46,6 +46,7 @@ from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
+    CONF_DEVICE_HIERARCHY,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_MODBUS_MAX_RETRIES,
@@ -66,6 +67,7 @@ from .const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONFIG_FLOW_TCP_TIMEOUT,
+    DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_MODBUS_MAX_RETRIES,
@@ -258,6 +260,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
             vol.Required(_OPTIONS_FEATURES_SECTION): section(
                 vol.Schema(
                     {
+                        vol.Required(
+                            CONF_DEVICE_HIERARCHY,
+                            default=options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY),
+                        ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
                             CONF_TECHNICIAN_CODES,
                             default=options.get(CONF_TECHNICIAN_CODES, False),
@@ -526,7 +532,7 @@ class _IdmOptionsStepsMixin:
 
 class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, domain=DOMAIN):
     VERSION = 1
-    MINOR_VERSION = 2
+    MINOR_VERSION = 3
 
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}

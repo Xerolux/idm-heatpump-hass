@@ -19,6 +19,7 @@ from idm_heatpump import RegisterDef
 
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
+from .device_hierarchy import build_subdevice_info
 from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
@@ -100,6 +101,11 @@ class IdmEntity(IdmCoordinatorEntityBase):
         self.entity_description = entity_desc
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, reg.name)
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Return a subdevice only when hierarchy mode is enabled."""
+        return build_subdevice_info(self.coordinator, self._register.name) or build_device_info(self.coordinator)
 
     async def _async_write_register(self, value: Any, *, action_label: str) -> None:
         """Write a value to this entity's register with centralized error handling.

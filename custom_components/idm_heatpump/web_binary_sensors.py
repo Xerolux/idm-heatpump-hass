@@ -15,7 +15,8 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from .coordinator import IdmCoordinator
-from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
+from .device_hierarchy import build_subdevice_info
+from .entity import IdmCoordinatorEntityBase, build_device_info, build_entity_unique_id
 
 
 @dataclass(frozen=True)
@@ -196,6 +197,10 @@ class IdmWebBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
             entity_category=definition.entity_category,
             entity_registry_enabled_default=definition.enabled_by_default,
         )
+
+    @property
+    def device_info(self):
+        return build_subdevice_info(self.coordinator, self._definition.key) or build_device_info(self.coordinator)
 
     def _normalized_value(self) -> bool | None:
         supplement = self.coordinator.web_supplement

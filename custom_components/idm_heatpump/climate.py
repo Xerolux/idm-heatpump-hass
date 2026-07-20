@@ -30,6 +30,8 @@ from idm_heatpump import RegisterDef
 
 from .const import CircuitMode, RoomMode, HeatPumpStatus
 from .coordinator import IdmCoordinator
+from .device_hierarchy import build_subdevice_info
+from .entity import build_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -105,9 +107,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         self._current_reg = current_reg
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{unique_id}"
-        from .entity import build_device_info
-
-        self._attr_device_info = build_device_info(coordinator)
+        self._attr_device_info = build_subdevice_info(coordinator, mode_reg.name) or build_device_info(coordinator)
         self._attr_min_temp = min_val if (min_val := self._target_reg.min_val) is not None else 10.0
         self._attr_max_temp = max_val if (max_val := self._target_reg.max_val) is not None else 35.0
 
