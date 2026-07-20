@@ -1,2 +1,0 @@
-custom_components/idm_heatpump/web_binary_sensors.py:15: error: Module "homeassistant.helpers.entity" does not explicitly export attribute "EntityCategory"  [attr-defined]
-Found 1 error in 1 file (checked 34 source files)
