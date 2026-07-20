@@ -1,166 +1,104 @@
-# IDM Heatpump – Optimierungs- und Ausbauplan
+# IDM Heatpump – offene TODO-Liste
 
 Stand: 20.07.2026
 
-Dieses Dokument ist die technische TODO-Liste für die nächsten Ausbaustufen von
-`idm-heatpump-hass`. Änderungen werden nur übernommen, wenn Registerbedeutung,
-Verfügbarkeit und Wertebereich durch die IDM-Dokumentation, die API-Metadaten
-oder belastbare Gerätediagnosen abgesichert sind.
+Die großen Optimierungsblöcke aus dem Repository-Vergleich sind umgesetzt. Dieses
+Dokument enthält nur noch Punkte, die tatsächlich offen, datenabhängig oder durch
+einen externen Home-Assistant-Entscheid blockiert sind.
 
-## Priorität 1 – Datenqualität und korrekte Entitäten
+## Erledigt
 
-- [x] Binärwerte nicht mehr pauschal mit `bool(value)` auswerten.
-- [x] Negative, nicht endliche und Sentinel-Werte sicher als inaktiv behandeln.
-- [x] Vorbereitung auf explizite On-/Off-Werte, Bitmasken und Active-Low-Signale
-      in `idm-heatpump-api`.
-- [x] Aussagekräftigere `BinarySensorDeviceClass` für Fehler, Verbindung,
-      Sperren, Heizen, Kühlen und laufende Aggregate.
-- [x] Eigene Unit-Tests für die Binary-Semantik.
-- [x] Explizite Binary-Metadaten in `idm-heatpump-api` ergänzt; die heuristische
-      Zuordnung bleibt nur als Fallback für ältere API-Versionen und noch nicht
-      dokumentierte Register aktiv.
-- [ ] Operative Binary-Sensoren von reinen Diagnose-Entitäten trennen.
-- [ ] Alle binären IDM-Register gegen echte Diagnosedaten mindestens eines
-      Navigator-10- und eines Navigator-2.0-Systems prüfen.
+- [x] Robuste Binary-Sensor-Auswertung einschließlich Sentinel-, Negativ-,
+      Bitmasken- und Active-Low-Unterstützung.
+- [x] Explizite Binary-Metadaten in `idm-heatpump-api`.
+- [x] Passende Geräteklassen für Betrieb, Heizen, Kühlen, Sperre, Verbindung und
+      Störung.
+- [x] Berechnete Wärmepumpen- und Wärmequellen-Spreizung.
+- [x] Berechnete Warmwasser-Abweichung.
+- [x] Navigator-Webzustände als echte Binary-Sensoren.
+- [x] Optionale Gerätehierarchie für Heizkreise, Zonen, Räume, Solar, ISC,
+      Kaskade und Zusatzwärmeerzeuger.
+- [x] Stabile Unique IDs und sichere Migration bestehender Installationen.
+- [x] Taktungs-, Laufzeit-, Verdichterstart- und Abtauanalyse.
+- [x] Kurz-Takt-Warnung und Betriebsanteile.
+- [x] Neustartfeste Persistenz der Betriebsanalyse.
+- [x] Sicherer Warmwasser-Boost mit Start, Abbruch, Timeout, Zielerreichung,
+      Neustart-Recovery und garantierter Wiederherstellung.
+- [x] Entity-basiertes, dedupliziertes Modbus-Polling.
+- [x] Schutz-, Alarm-, Analyse- und Restore-Register bleiben immer aktiv.
+- [x] Prüfung mit API-Pin `0.8.1` und separat gegen API-Main.
+- [x] Ruff, Formatter, Mypy, Pytest, Hassfest und Security für alle gemergten
+      Arbeitspakete.
 
-### Abnahme
+## Offen – benötigt reale Anlagendaten
 
-- Kein negativer Statuswert kann als `on` erscheinen.
-- Fehler-, Heiz-, Kühl-, Verbindungs- und Laufzustände haben passende
-  Home-Assistant-Geräteklassen.
-- Unbekannte Zustände erzeugen keinen falschen Alarm und keinen falschen
-  Betriebszustand.
+### COP
 
-## Priorität 2 – Berechnete Messwerte
+- [ ] Eindeutiges Register für die zeitgleiche elektrische Gesamtleistung
+      verifizieren.
+- [ ] Eindeutiges Register für die thermische Leistung verifizieren.
+- [ ] Alternativ Durchfluss, Vorlauf, Rücklauf und Wärmeträgermedium für eine
+      thermische Leistungsberechnung verifizieren.
+- [ ] Werte für Heizen, Warmwasser, Leerlauf und möglichst Abtauen über mehrere
+      Minuten mit identischem Zeitstempel erfassen.
+- [ ] Skalierung, Einheit und Verhalten bei Verdichterstillstand prüfen.
+- [ ] Erst danach einen momentanen COP-Sensor implementieren.
 
-- [x] Wärmepumpen-Spreizung aus `hp_flow_temp - hp_return_temp`.
-- [x] Wärmequellen-Spreizung aus Ein- und Austrittstemperatur.
-- [x] Warmwasser-Abweichung zwischen Ist- und Solltemperatur.
-- [ ] Vorlauf-Abweichung zwischen Ist- und angefordertem Sollwert, sofern die
-      verwendeten Register für das erkannte Modell eindeutig sind.
-- [ ] Momentaner COP nur dann, wenn zeitgleich gemessene thermische und
-      elektrische Leistung mit kompatiblen Einheiten verfügbar sind.
-- [x] Berechnete Sensoren ausschließlich bei vorhandenen, plausiblen
-      Quelldaten registrieren.
-- [x] Für fehlende oder unplausible Quellen `unavailable` statt `0` liefern.
-- [x] Unit-Tests für Berechnung, Rundung, Plausibilitätsgrenzen und fehlende
-      Quellen.
+Benötigte Nutzerdaten:
 
-### Abnahme
+- Diagnoseexport aus Home Assistant.
+- Etwa 10–20 Minuten Rohdaten im Intervall von 5–10 Sekunden.
+- Screenshots aus dem IDM-Navigator mit elektrischer Leistung, thermischer
+  Leistung beziehungsweise Durchfluss, Vorlauf, Rücklauf, Betriebsart und
+  Verdichterstatus.
 
-- Alle Berechnungen stammen aus demselben Coordinator-Snapshot.
-- Keine Schätzung wird als gemessener Wert ausgegeben.
-- Sensoren besitzen korrekte Unit-, Device- und State-Class-Metadaten.
+### Vorlauf-Abweichung
 
-## Priorität 3 – Sinnvolle Standardauswahl
+- [ ] Eindeutiges IDM-Register für den tatsächlich angeforderten
+      Wärmepumpen-Vorlauf-Sollwert verifizieren.
+- [ ] Abgrenzung zu Heizkurve, Mischer-Sollwert, maximalem Vorlauf und
+      Heizkreis-Sollwert dokumentieren.
+- [ ] Verhalten bei mehreren Heizkreisen und Kaskaden prüfen.
+- [ ] Erst danach `Ist-Vorlauf - angeforderter Vorlauf` als Sensor ausgeben.
 
-- [ ] Entitäten in Basis, Erweitert und Diagnose/Experte klassifizieren.
-- [ ] Basiswerte standardmäßig aktivieren: Temperaturen, Betriebsmodus,
-      Anforderungen, Verdichter, Leistung, Energie und Störung.
-- [ ] Seltene Ventil-, Rohstatus-, Kaskaden- und Servicewerte standardmäßig
-      deaktivieren, aber weiterhin über die Entity Registry verfügbar halten.
-- [ ] Bestehende Benutzeraktivierungen bei Migrationen unverändert lassen.
-- [ ] Dokumentation und Entity-Liste automatisch aus den API-Metadaten erzeugen.
+Benötigte Nutzerdaten:
 
-### Abnahme
+- Zeitgleiche Werte für `hp_flow_temp`, angeforderten Vorlauf-Sollwert,
+  Betriebsart und aktiven Heizkreis.
+- Nach Möglichkeit Datensätze für Heizen, Warmwasser und Leerlauf.
 
-- Eine neue Installation zeigt ohne Nacharbeit eine übersichtliche,
-  alltagstaugliche Geräteansicht.
-- Experten verlieren keinen Zugriff auf technische Register.
+### Reale Binary-Register-Verifikation
 
-## Priorität 4 – Anlagenmodule als Gerätehierarchie
+- [ ] Alle binären Register mindestens gegen ein Navigator-10-System prüfen.
+- [ ] Alle binären Register mindestens gegen ein Navigator-2.0-System prüfen.
+- [ ] Active-Low-, Sonder- und Firmwarewerte dokumentieren, falls sie von 0/1
+      abweichen.
 
-- [ ] Hauptgerät für die IDM-Steuerung beibehalten.
-- [ ] Heizkreise A–G als untergeordnete Geräte prüfen.
-- [ ] Zonenmodule und Räume als untergeordnete Geräte prüfen.
-- [ ] Solar, Kaskade, ISC und Zusatzwärmeerzeuger nur bei erkannter Hardware
-      anlegen.
-- [ ] Untergeräte über `via_device` mit dem Hauptgerät verbinden.
-- [ ] Stabile Unique IDs und eine getestete Migration für bestehende
-      Installationen sicherstellen.
-- [ ] Veraltete Geräte und Entitäten nach einer geänderten Hardwareerkennung
-      kontrolliert bereinigen.
+## Offen – weitere Qualitätsverbesserungen
 
-### Abnahme
+- [ ] Entity-Katalog vollständig in Basis, Erweitert und Diagnose/Experte
+      klassifizieren.
+- [ ] Seltene Ventil-, Rohstatus-, Kaskaden- und Servicewerte für neue
+      Installationen gezielt standardmäßig deaktivieren.
+- [ ] Bestehende Benutzeraktivierungen bei jeder weiteren Migration unverändert
+      lassen.
+- [ ] Entity-Dokumentation automatisiert aus API- und HA-Metadaten erzeugen.
+- [ ] Lasttests mit maximaler Zahl an Heizkreisen, Zonen und Räumen durchführen.
+- [ ] Diagnosedaten regelmäßig auf Vollständigkeit und Datenschutz prüfen.
 
-- Keine Entity-ID ändert sich ungewollt.
-- Nicht vorhandene Module erzeugen keine leeren Geräte oder Entitäten.
+## Blockiert – Home Assistant
 
-## Priorität 5 – Taktung und Betriebsanalyse
+- [ ] Transportzugriffe in `idm-heatpump-api` weiter abstrahieren, ohne die
+      direkte Pymodbus-Nutzung zu verlieren.
+- [ ] Optionalen `modbus-connection`-Transportadapter erst implementieren, wenn
+      Home Assistant den überarbeiteten offiziellen Integrationsvertrag
+      veröffentlicht hat.
+- [x] Bis dahin keine harte oder vorzeitige Abhängigkeit einführen.
 
-- [ ] Verdichterstarts gesamt, heute sowie in rollierenden 2- und 4-Stunden-
-      Fenstern.
-- [ ] Laufzeit des aktuellen Takts und durchschnittliche Taktlänge.
-- [ ] Abtauvorgänge heute, letzter Abtauzeitpunkt und Zeit seit letzter Abtauung.
-- [ ] Kurz-Takt-Warnung mit dokumentierter, konfigurierbarer Schwelle.
-- [ ] Betriebsanteile für Heizen, Warmwasser, Kühlen und Abtauen.
-- [ ] Home-Assistant-Recorder und Statistiksystem bevorzugen; eigene
-      Persistenzdateien nur verwenden, wenn es technisch zwingend nötig ist.
+## Unveränderte Release-Regeln
 
-### Abnahme
-
-- Neustarts erzeugen keine falschen Starts oder Zähler-Sprünge.
-- Zähler sind monoton beziehungsweise besitzen klar definierte Reset-Zeitpunkte.
-
-## Priorität 6 – Modbus-Last und Aktualisierung
-
-- [ ] Abhängigkeiten jeder Entity zu ihren Quellregistern deklarieren.
-- [ ] Nur aktivierte Entitäten und intern benötigte Register pollen, sofern dies
-      ohne Verlust der automatischen Erkennung möglich ist.
-- [ ] Registeranforderungen global deduplizieren.
-- [ ] Bestehende sichere Batchplanung der API beibehalten.
-- [ ] Schnelles Polling nur für wirklich zeitkritische Flankenerkennung prüfen.
-- [ ] Lasttests mit vielen Heizkreisen, Zonen und Räumen durchführen.
-
-### Abnahme
-
-- Weniger Modbus-Requests ohne langsamere oder unvollständige Zustände.
-- Schreibvorgänge und Polling bleiben über dieselbe Verbindung sauber
-  serialisiert.
-
-## Priorität 7 – Sichere Komfortfunktionen
-
-- [ ] Warmwasser-Boost als Button mit Statussensor entwerfen.
-- [ ] Vorherigen Modus und Sollwert sichern und garantiert wiederherstellen.
-- [ ] Fortschritt, Zieltemperatur, Startzeit und Abbruchgrund anzeigen.
-- [ ] Konflikte mit PV-, SG-Ready- und manuellen Vorgaben eindeutig priorisieren.
-- [ ] Alle Schreibvorgänge durch API-Validierung und EEPROM-Drosselung führen.
-- [ ] Abbruch bei Kommunikationsfehlern und Home-Assistant-Neustart testen.
-
-### Abnahme
-
-- Kein Boost kann einen dauerhaften, unbeabsichtigten Sollwert hinterlassen.
-- Jede automatische Änderung ist im Log und in Diagnosen nachvollziehbar.
-
-## Priorität 8 – Vorbereitung auf Home Assistants neue Modbus-Architektur
-
-- [x] `idm-heatpump-api` als gerätespezifische Bibliothek beibehalten.
-- [ ] Transportzugriffe innerhalb der API weiter kapseln.
-- [ ] Optionalen Transportadapter für `modbus-connection` erst implementieren,
-      wenn Home Assistant den überarbeiteten offiziellen Ansatz veröffentlicht.
-- [x] Keine vorzeitige harte Abhängigkeit von der aktuell noch überarbeiteten
-      Home-Assistant-Integration einführen.
-- [x] Direkten Pymodbus-Transport als eigenständig nutzbare API-Variante
-      erhalten.
-
-### Zielarchitektur
-
-```text
-idm-heatpump-hass
-        ↓
-idm-heatpump-api
-        ↓
-Transportadapter: direkter Pymodbus-Client oder später modbus-connection
-        ↓
-IDM Navigator über Modbus TCP
-```
-
-## Qualitätsanforderungen für jede Ausbaustufe
-
-- [ ] Vollständige Tests für neue Logik und Migrationen.
-- [ ] `ruff`, `mypy --strict` und `pytest` erfolgreich.
-- [x] Keine Änderungen an bestehenden Unique IDs ohne Migration.
-- [ ] Deutsche und englische Übersetzungen vollständig.
-- [ ] Changelog, Entity-Dokumentation und bekannte Einschränkungen aktualisiert.
-- [ ] Diagnosedaten enthalten alle für Supportfälle notwendigen, aber keine
-      geheimen oder personenbezogenen Werte.
+- Add-on-Version bleibt unabhängig von der API-Version.
+- Der API-Pin wird nur in einem eigenen, vollständig geprüften Add-on-PR
+  geändert.
+- Keine Schätzung wird als Messwert veröffentlicht.
+- Keine bestehende Unique ID wird ohne Migration geändert.
