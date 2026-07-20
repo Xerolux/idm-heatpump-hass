@@ -13,6 +13,92 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5-beta.1] - 2026-07-20
+
+This is the first beta preview of the upcoming 0.8.5 stable release. It bundles
+seven feature PRs merged since 0.8.4 (#134, #136, #137, #138, #139, #140, #147)
+and is intended for soak testing on real installations before a stable tag.
+
+> **Compatibility:** Existing installations keep their previous one-device view
+> and behaviour after the config-entry migration. Device hierarchy, polling
+> optimization, web binary sensors, operation analysis and DHW boost are only
+> exposed when their registers are actually detected. Entity unique IDs,
+> entity IDs, registers, write paths and the API pin
+> (`idm-heatpump-api[web]==0.8.1`) are unchanged.
+
+### Added
+
+- **Calculated sensors.** Wärmepumpen-Spreizung (Vorlauf minus Rücklauf),
+  Wärmequellen-Spreizung (Eintritt minus Austritt) und Warmwasser-Abweichung
+  (Ist minus Soll) werden nur dann angelegt, wenn alle Quellregister vorhanden
+  sind; fehlende, nicht endliche oder unplausible Quellen führen zu
+  `unavailable` statt zu einem irreführenden Nullwert.
+- **Momentary COP (Coefficient of Performance).** Dimensionsloser Sensor, der
+  das Verhältnis aus thermischer Abgabeleistung (`thermal_power_flow_sensor`)
+  und elektrischer Aufnahmeleistung (`power_consumption_hp`) bildet. Der
+  Sensor folgt der Roadmap-Regel aus Issue #135 (**keine Schätzwerte als
+  Messwerte**): `unavailable`, solange eine Quelle fehlt, nicht endlich, `0`
+  oder unterhalb der 50-W-Schwelle für sinnvollen Betrieb ist. Die
+  COP-Quellregister wurden gegen eine reale Navigator 10 verifiziert.
+  `CalculatedSensorDefinition` wurde um optionale Einheit und Geräteklassse
+  erweitert, sodass auch dimensionslose Verhältnisse abgebildet werden können.
+- **Navigator web states as binary sensors.** Verdichter-, Pumpen-,
+  Anforderungs-, Sperr- und Störzustände aus dem optionalen Navigator-Webzugriff
+  werden als echte Binary-Sensoren ausgegeben, mit passenden Home-Assistant-
+  Geräteklassen und deutschen sowie englischen Übersetzungen. Unbekannte oder
+  mehrdeutige Werte bleiben `unavailable`, anstatt einen Betriebszustand zu
+  erfinden.
+- **Optional device hierarchy.** Heizkreise, Zonenmodule und einzelne Räume
+  können als getrennte Home-Assistant-Geräte organisiert werden; Heizkreisgeräte
+  werden über `via_device` mit dem IDM-Navigator verbunden, Räume hängen unter
+  ihrem Zonenmodul. Erkannte Solar-, ISC-, Kaskaden- sowie
+  Bivalenz-/Booster-/E-Heizungs-/Zweitwärmeerzeuger-Register landen in eigenen
+  Untegeräten. Nicht mehr benötigte Hierarchiegeräte werden kontrolliert vom
+  Config Entry gelöst, wenn die Option deaktiviert oder die Anlagenkonfiguration
+  geändert wird.
+- **Restart-safe cycling, defrost and operation analysis.** Beobachtete
+  Wärmepumpentakte mit Gesamtwert seit Aktivierung, Tageswert und rollierenden
+  2-/4-Stunden-Fenstern; aktuelle, letzte und durchschnittliche
+  Verdichter-Taktlaufzeit; Abtauvorgänge, Tageswert, letzter Abtaustart und Zeit
+  seit der letzten Abtauung; Betriebsanteile für Heizen, Warmwasser, Kühlen und
+  Abtauen auf Basis von `hp_operating_mode`; konfigurierbare Kurz-Takt-Schwelle
+  und Binary-Sensor für den letzten vollständig beobachteten Verdichtertakt.
+  Persistenz läuft über Home Assistants `Store`-Helper. Der erste Snapshot nach
+  Einrichtung oder Neustart stellt nur den Zustand fest und erzeugt keinen
+  künstlichen Verdichterstart oder Abtauvorgang; als Gesamtwerte werden
+  ausdrücklich nur seit Aktivierung beobachtete Ereignisse ausgegeben.
+- **Entity-aware Modbus polling.** Nach dem Plattform-Setup wird aus den
+  aktivierten Home-Assistant-Entitäten ein deduplizierter Polling-Plan
+  aufgebaut; berechnete Sensoren, Klima-Entitäten und der Warmwasserbereiter
+  deklarieren ihre zusätzlichen Quellregister. Entity-Registry-Änderungen
+  werden entprellt übernommen. Kommunikations-, Alarm-, Betriebsanalyse- und
+  Warmwasser-Wiederherstellungsregister bleiben immer aktiv.
+- **Safe DHW boost.** Start- und Abbruchbutton für einen temporären
+  Warmwasser-Boost; Aktion `idm_heatpump.start_dhw_boost` (Zieltemperatur
+  35–65 °C, max. Laufzeit 5–240 Minuten) und `idm_heatpump.cancel_dhw_boost`.
+  Status, Ziel, Isttemperatur, Startzeit, Deadline und Abschlussgrund stehen
+  als Attribute bereit. Systemmodus und bisheriger Warmwasser-Sollwert werden
+  vor dem ersten Schreibzugriff persistent gespeichert und bei Zielerreichung,
+  Timeout, manuellem Abbruch, Schreibfehler, Reload oder Integration-Unload
+  exakt wiederhergestellt; nach einem unerwarteten HA-Neustart wird ein
+  gespeicherter aktiver Boost zuerst sicher zurückgesetzt.
+- Technical roadmap under `docs/IMPLEMENTATION_TODO.md`.
+
+### Changed
+
+- Wichtige Temperaturen und Wärmemengenzähler werden als primäre Gerätewerte
+  statt pauschal als Diagnose-Entitäten dargestellt.
+- Binary-Sensoren erhalten passendere Geräteklassen für Störung, Verbindung,
+  Sperre, Heizen, Kühlen und laufende Aggregate.
+- Boolesche Webwerte werden nicht mehr zusätzlich als normale Sensoren angelegt.
+
+### Fixed
+
+- Negative IDM-Statuswerte wie `-1` werden nicht mehr durch `bool(-1)` fälschlich
+  als aktiv angezeigt.
+- Binary-Sensor-Auswertung berücksichtigt Sentinel-Werte und ist auf explizite
+  On-/Off-Werte, Bitmasken und Active-Low-Metadaten vorbereitet.
+
 ## [0.8.4] - 2026-07-19
 
 ### Fixed
