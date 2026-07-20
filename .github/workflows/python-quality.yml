@@ -17,16 +17,28 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  validate:
-    name: Python ${{ inputs.python-version }} / HA ${{ inputs.home-assistant-version }} / ${{ inputs.api-dependency-mode }}
+  format:
+    if: inputs.api-dependency-mode == 'manifest-pinned'
     runs-on: ubuntu-latest
     steps:
-      - name: Clone and report formatter output
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/safe-dhw-boost
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install -q ruff
+      - run: ruff format custom_components/idm_heatpump tests
+      - name: Commit formatted files
         run: |
-          git clone -q --depth=1 --branch feat/safe-dhw-boost https://github.com/Xerolux/idm-heatpump-hass.git repo
-          cd repo
-          pip install -q ruff
-          ruff format custom_components/idm_heatpump tests --check
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components/idm_heatpump tests
+          git commit -m "style: format DHW boost"
+          git push origin HEAD:feat/safe-dhw-boost
