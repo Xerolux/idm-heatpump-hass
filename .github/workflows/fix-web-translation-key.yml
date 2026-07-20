@@ -1,0 +1,75 @@
+name: Fix Web Translation Key
+
+on:
+  push:
+    branches:
+      - feat/web-binary-sensors-v2
+
+permissions:
+  contents: write
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feat/web-binary-sensors-v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Normalize translation keys
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          module_path = Path("custom_components/idm_heatpump/web_binary_sensors.py")
+          module = module_path.read_text(encoding="utf-8")
+          module = module.replace("import math\n", "import math\nimport re\n")
+          helper_anchor = "\n\ndef normalize_web_binary_value(value: Any) -> bool | None:\n"
+          helper = '''\n\ndef web_binary_translation_key(entity_key: str) -> str:\n    """Return a lowercase snake-case Home Assistant translation key."""\n    return re.sub(r"(?<!^)(?=[A-Z])", "_", entity_key).lower()\n'''
+          if "def web_binary_translation_key" not in module:
+              module = module.replace(helper_anchor, helper + helper_anchor)
+          module = module.replace(
+              "            translation_key=entity_key,\n",
+              "            translation_key=web_binary_translation_key(entity_key),\n",
+          )
+          module_path.write_text(module, encoding="utf-8")
+
+          old_key = "web_pump_heating_circuitA"
+          new_key = "web_pump_heating_circuit_a"
+          for path in (
+              Path("custom_components/idm_heatpump/strings.json"),
+              Path("custom_components/idm_heatpump/translations/en.json"),
+              Path("custom_components/idm_heatpump/translations/de.json"),
+          ):
+              data = json.loads(path.read_text(encoding="utf-8"))
+              entries = data["entity"]["binary_sensor"]
+              if old_key in entries:
+                  entries[new_key] = entries.pop(old_key)
+              path.write_text(
+                  json.dumps(data, ensure_ascii=False, indent=2) + "\n",
+                  encoding="utf-8",
+              )
+
+          test_path = Path("tests/test_web_binary_sensors.py")
+          tests = test_path.read_text(encoding="utf-8")
+          test_block = '''\n\ndef test_camel_case_source_key_uses_normalized_translation_key():\n    sensor = _entities_by_key(\n        _coordinator({"pump_heating_circuitA": IdmWebSensorValue("Ein", 1.0)})\n    )["web_pump_heating_circuitA"]\n\n    assert sensor._attr_unique_id == "test_entry_web_pump_heating_circuitA"\n    assert sensor.entity_description.translation_key == "web_pump_heating_circuit_a"\n'''
+          if "test_camel_case_source_key_uses_normalized_translation_key" not in tests:
+              test_path.write_text(tests.rstrip() + test_block + "\n", encoding="utf-8")
+          PY
+      - name: Format Python
+        run: |
+          python -m pip install ruff==0.14.14
+          ruff format custom_components tests
+      - name: Commit fixes
+        run: |
+          if git diff --quiet; then
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components tests
+          git commit -m "fix: normalize web binary translation keys"
+          git push origin HEAD:feat/web-binary-sensors-v2
