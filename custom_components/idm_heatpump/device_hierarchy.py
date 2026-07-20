@@ -105,9 +105,7 @@ def expected_subdevice_identifiers(coordinator: IdmCoordinator) -> set[tuple[str
 def _is_hierarchy_identifier(entry_id: str, identifier: tuple[str, str]) -> bool:
     """Return whether an identifier belongs to an IDM hierarchy subdevice."""
     domain, value = identifier
-    return domain == DOMAIN and value.startswith(
-        (f"{entry_id}_heating_circuit_", f"{entry_id}_zone_module_")
-    )
+    return domain == DOMAIN and value.startswith((f"{entry_id}_heating_circuit_", f"{entry_id}_zone_module_"))
 
 
 def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
@@ -122,9 +120,7 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
 
     for device in dr.async_entries_for_config_entry(registry, entry_id):
         hierarchy_identifiers = {
-            identifier
-            for identifier in device.identifiers
-            if _is_hierarchy_identifier(entry_id, identifier)
+            identifier for identifier in device.identifiers if _is_hierarchy_identifier(entry_id, identifier)
         }
         if hierarchy_identifiers and hierarchy_identifiers.isdisjoint(expected):
             registry.async_update_device(

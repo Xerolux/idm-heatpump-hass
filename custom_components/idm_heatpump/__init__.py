@@ -74,6 +74,7 @@ from .const import (
     NAME,
 )
 from .coordinator import IdmCoordinator, navigator_family
+from .device_hierarchy import cleanup_stale_hierarchy_devices
 from .error_messages import (
     classify_communication_error,
     classify_web_error,
@@ -338,6 +339,7 @@ async def _async_setup_web_only_entry(
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
+    cleanup_stale_hierarchy_devices(hass, coordinator)
 
     entry.runtime_data.web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
 
@@ -637,6 +639,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
         await coordinator.async_config_entry_first_refresh()
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        cleanup_stale_hierarchy_devices(hass, coordinator)
 
         if web_enabled and web_pin_configured(web_pin):
             entry.runtime_data.web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
