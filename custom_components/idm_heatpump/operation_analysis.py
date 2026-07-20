@@ -142,9 +142,9 @@ class OperationAnalysis:
         cycle_values = stored.get("completed_cycle_durations")
         if isinstance(cycle_values, list):
             parsed_cycles = [_finite_non_negative(item) for item in cycle_values]
-            self.completed_cycle_durations = [
-                item for item in parsed_cycles if item is not None
-            ][-_MAX_COMPLETED_CYCLES:]
+            self.completed_cycle_durations = [item for item in parsed_cycles if item is not None][
+                -_MAX_COMPLETED_CYCLES:
+            ]
 
         stored_modes = stored.get("mode_durations")
         if isinstance(stored_modes, dict):
@@ -263,9 +263,7 @@ class OperationAnalysis:
                             self.last_cycle_duration = duration
                             self.last_cycle_ended = observed_at
                             self.completed_cycle_durations.append(duration)
-                            self.completed_cycle_durations = self.completed_cycle_durations[
-                                -_MAX_COMPLETED_CYCLES:
-                            ]
+                            self.completed_cycle_durations = self.completed_cycle_durations[-_MAX_COMPLETED_CYCLES:]
                     self.current_cycle_started = None
                 self._compressor_on = compressor_on
                 changed = True
@@ -319,9 +317,7 @@ class OperationAnalysis:
         """Keep enough event history for day and rolling-window calculations."""
         cutoff = now - _EVENT_RETENTION
         before = (len(self.compressor_start_events), len(self.defrost_start_events))
-        self.compressor_start_events = [
-            event for event in self.compressor_start_events if event >= cutoff
-        ]
+        self.compressor_start_events = [event for event in self.compressor_start_events if event >= cutoff]
         self.defrost_start_events = [event for event in self.defrost_start_events if event >= cutoff]
         return before != (len(self.compressor_start_events), len(self.defrost_start_events))
 

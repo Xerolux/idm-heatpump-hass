@@ -112,9 +112,7 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
         key="analysis_last_cycle_duration",
         name="Letzte Taktlaufzeit",
         value=lambda analysis: (
-            round(analysis.last_cycle_duration / 60.0, 1)
-            if analysis.last_cycle_duration is not None
-            else None
+            round(analysis.last_cycle_duration / 60.0, 1) if analysis.last_cycle_duration is not None else None
         ),
         icon="mdi:timer-check-outline",
         source="compressor",
@@ -236,9 +234,7 @@ class IdmOperationSensor(IdmCoordinatorEntityBase, SensorEntity):
             "recording_scope": "observed_since_feature_activation",
         }
         if self._definition.key.startswith("analysis_compressor"):
-            attributes["completed_cycles_used_for_average"] = len(
-                self._analysis.completed_cycle_durations
-            )
+            attributes["completed_cycles_used_for_average"] = len(self._analysis.completed_cycle_durations)
         return attributes
 
 

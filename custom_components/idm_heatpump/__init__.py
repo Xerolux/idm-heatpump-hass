@@ -44,6 +44,7 @@ from .const import (
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_TIMEOUT,
     CONF_ROOM_TEMP_FORWARDING,
+    CONF_SHORT_CYCLE_MINUTES,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
@@ -62,6 +63,7 @@ from .const import (
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_ROOM_TEMP_FORWARDING,
+    DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_SCAN_INTERVAL,
@@ -90,6 +92,7 @@ from .registers import (
     get_all_switch_descriptions,
     normalize_zone_rooms,
 )
+from .operation_analysis import OperationAnalysis
 from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
 from .web_data import (
     IdmWebAuthenticationFailed,
@@ -124,6 +127,7 @@ class IdmHeatpumpData:
     client: IdmModbusClient
     web_task: asyncio.Task[None] | None = None
     room_temp_forwarding_task: asyncio.Task[None] | None = None
+    operation_analysis: OperationAnalysis | None = None
 
 
 IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
@@ -398,6 +402,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     zone_count = int(entry.options.get(CONF_ZONE_COUNT, 0))
     zone_rooms = normalize_zone_rooms(entry.options.get(CONF_ZONE_ROOMS, {}))
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
+    short_cycle_minutes = int(entry.options.get(CONF_SHORT_CYCLE_MINUTES, DEFAULT_SHORT_CYCLE_MINUTES))
     device_hierarchy_enabled = bool(entry.options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY))
     enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
     web_pin = str(entry.data.get(CONF_WEB_PIN, "")).strip() or None
@@ -632,9 +637,20 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             descriptions=sensor_descs + binary_descs + number_descs + select_descs + switch_descs,
         )
 
+        operation_analysis = OperationAnalysis(
+            hass,
+            entry.entry_id,
+            coordinator.get_register,
+            short_cycle_minutes=short_cycle_minutes,
+            expected_poll_interval=float(scan_interval),
+        )
+        await operation_analysis.async_load()
+        coordinator.attach_operation_analysis(operation_analysis)
+
         entry.runtime_data = IdmHeatpumpData(
             coordinator=coordinator,
             client=client,
+            operation_analysis=operation_analysis,
         )
 
         await coordinator.async_config_entry_first_refresh()
@@ -676,6 +692,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
+        operation_analysis = getattr(entry.runtime_data, "operation_analysis", None)
+        if operation_analysis is not None:
+            try:
+                await operation_analysis.async_save()
+            except Exception:
+                _LOGGER.warning("Failed to persist IDM operation analysis during unload", exc_info=True)
         coordinator = getattr(entry.runtime_data, "coordinator", None)
         shutdown = getattr(coordinator, "async_shutdown", None)
         if callable(shutdown):

@@ -53,6 +53,7 @@ from .const import (
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
     CONF_ROOM_TEMP_FORWARDING,
+    CONF_SHORT_CYCLE_MINUTES,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
@@ -74,6 +75,7 @@ from .const import (
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_PORT,
     DEFAULT_ROOM_TEMP_FORWARDING,
+    DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_SCAN_INTERVAL,
@@ -264,6 +266,23 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             CONF_DEVICE_HIERARCHY,
                             default=options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY),
                         ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_SHORT_CYCLE_MINUTES,
+                            default=int(
+                                options.get(
+                                    CONF_SHORT_CYCLE_MINUTES,
+                                    DEFAULT_SHORT_CYCLE_MINUTES,
+                                )
+                            ),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=5,
+                                max=60,
+                                step=1,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="min",
+                            )
+                        ),
                         vol.Required(
                             CONF_TECHNICIAN_CODES,
                             default=options.get(CONF_TECHNICIAN_CODES, False),

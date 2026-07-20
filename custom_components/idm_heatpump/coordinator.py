@@ -12,7 +12,7 @@ import logging
 import math
 from datetime import timedelta
 from collections.abc import Mapping
-from typing import Any, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -43,6 +43,10 @@ from .registers import (
     collect_registers_from_descriptions,
     collect_aliases_from_descriptions,
 )
+
+if TYPE_CHECKING:
+    from .operation_analysis import OperationAnalysis
+
 from .web_data import (
     IdmWebAuthenticationFailed,
     IdmWebClientPool,
@@ -185,6 +189,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._alias_primary_map: dict[int, str] | None = None
         self._room_mode_registers: list[RegisterDef] = []
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
+        self._operation_analysis: OperationAnalysis | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         # Persistent web client pool: keeps the Navigator web client across
         # polls so the TCP+auth overhead is paid once per session instead of
@@ -226,6 +231,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # on every poll.
         self._room_mode_registers = [reg for reg in self._registers if _is_zone_room_mode_register(reg)]
         self._invalidate_device_info_cache()
+
+    def attach_operation_analysis(self, analysis: OperationAnalysis) -> None:
+        """Attach the restart-safe operating analysis before first refresh."""
+        self._operation_analysis = analysis
+
+    @property
+    def operation_analysis(self) -> OperationAnalysis | None:
+        return self._operation_analysis
 
     @property
     def sensor_descriptions(self) -> list[dict[str, Any]]:
@@ -601,6 +614,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if self.is_register_unused(reg_name, value):
                 new_unused_registers.add(reg_name)
         self._unused_registers = new_unused_registers
+
+        if self._operation_analysis is not None:
+            try:
+                self._operation_analysis.process_snapshot(data, self._unused_registers)
+            except Exception:
+                _LOGGER.warning(
+                    "Could not update IDM operation analysis; normal polling continues",
+                    exc_info=True,
+                )
 
         return data
 
