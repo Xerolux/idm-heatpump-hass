@@ -1,0 +1,245 @@
+
+==================================== ERRORS ====================================
+________________ ERROR collecting tests/test_adapter_helpers.py ________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_adapter_helpers.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_adapter_helpers.py:7: in <module>
+    from custom_components.idm_heatpump.adapter_enums import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+_______________ ERROR collecting tests/test_binary_semantics.py ________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_binary_semantics.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_binary_semantics.py:11: in <module>
+    from custom_components.idm_heatpump import binary_semantics
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+______________ ERROR collecting tests/test_calculated_sensors.py _______________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_calculated_sensors.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_calculated_sensors.py:11: in <module>
+    from custom_components.idm_heatpump.calculated_sensors import calculated_sensor_entities
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+__________________ ERROR collecting tests/test_config_flow.py __________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_config_flow.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_config_flow.py:7: in <module>
+    from custom_components.idm_heatpump.config_flow import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+_______________ ERROR collecting tests/test_device_hierarchy.py ________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_device_hierarchy.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_device_hierarchy.py:11: in <module>
+    from custom_components.idm_heatpump import async_migrate_entry
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+__________________ ERROR collecting tests/test_diagnostics.py __________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_diagnostics.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_diagnostics.py:6: in <module>
+    from custom_components.idm_heatpump.diagnostics import async_get_config_entry_diagnostics
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+____________________ ERROR collecting tests/test_entity.py _____________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_entity.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_entity.py:6: in <module>
+    from custom_components.idm_heatpump.entity import IdmEntity
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+_____________________ ERROR collecting tests/test_init.py ______________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_init.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_init.py:8: in <module>
+    from custom_components.idm_heatpump import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+__________________ ERROR collecting tests/test_log_filter.py ___________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_log_filter.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_log_filter.py:9: in <module>
+    from custom_components.idm_heatpump.log_filter import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+______________ ERROR collecting tests/test_operation_analysis.py _______________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_operation_analysis.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_operation_analysis.py:11: in <module>
+    from custom_components.idm_heatpump import operation_analysis as module
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+______________ ERROR collecting tests/test_operation_entities.py _______________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_operation_entities.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_operation_entities.py:13: in <module>
+    from custom_components.idm_heatpump.operation_entities import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+____________________ ERROR collecting tests/test_repairs.py ____________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_repairs.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_repairs.py:18: in <module>
+    from custom_components.idm_heatpump.repairs import async_create_fix_flow
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+_____________ ERROR collecting tests/test_room_temp_forwarding.py ______________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_room_temp_forwarding.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_room_temp_forwarding.py:11: in <module>
+    from custom_components.idm_heatpump.room_temp_forwarding import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+___________________ ERROR collecting tests/test_services.py ____________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_services.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_services.py:8: in <module>
+    from custom_components.idm_heatpump.services import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+___________________ ERROR collecting tests/test_versions.py ____________________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_versions.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_versions.py:6: in <module>
+    from custom_components.idm_heatpump.versions import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+______________ ERROR collecting tests/test_web_binary_sensors.py _______________
+ImportError while importing test module '/home/runner/work/idm-heatpump-hass/idm-heatpump-hass/tests/test_web_binary_sensors.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/opt/hostedtoolcache/Python/3.14.6/x64/lib/python3.14/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+tests/test_web_binary_sensors.py:11: in <module>
+    from custom_components.idm_heatpump.web_binary_sensors import (
+custom_components/idm_heatpump/__init__.py:95: in <module>
+    from .operation_analysis import OperationAnalysis
+custom_components/idm_heatpump/operation_analysis.py:11: in <module>
+    from homeassistant.helpers.storage import Store
+E   ModuleNotFoundError: No module named 'homeassistant.helpers.storage'; 'homeassistant.helpers' is not a package
+=========================== short test summary info ============================
+ERROR tests/test_adapter_helpers.py
+ERROR tests/test_binary_semantics.py
+ERROR tests/test_calculated_sensors.py
+ERROR tests/test_config_flow.py
+ERROR tests/test_device_hierarchy.py
+ERROR tests/test_diagnostics.py
+ERROR tests/test_entity.py
+ERROR tests/test_init.py
+ERROR tests/test_log_filter.py
+ERROR tests/test_operation_analysis.py
+ERROR tests/test_operation_entities.py
+ERROR tests/test_repairs.py
+ERROR tests/test_room_temp_forwarding.py
+ERROR tests/test_services.py
+ERROR tests/test_versions.py
+ERROR tests/test_web_binary_sensors.py
+!!!!!!!!!!!!!!!!!!! Interrupted: 16 errors during collection !!!!!!!!!!!!!!!!!!!
+16 errors in 1.77s
