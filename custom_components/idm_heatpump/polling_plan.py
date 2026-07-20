@@ -242,7 +242,10 @@ def ensure_entity_aware_polling(
     coordinator: IdmCoordinator,
 ) -> EntityAwarePollingManager | None:
     """Create exactly one polling manager for a real Modbus coordinator."""
-    if not isinstance(coordinator, IdmCoordinator):
+    # MagicMock(spec=IdmCoordinator) passes isinstance() via its synthetic
+    # __class__. type() identifies the actual runtime object and prevents test,
+    # legacy or placeholder coordinators from spawning background tasks.
+    if type(coordinator) is not IdmCoordinator:
         return None
     config_entry = coordinator.config_entry
     if config_entry is None or not coordinator._registers:
