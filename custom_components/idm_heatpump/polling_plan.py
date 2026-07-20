@@ -16,9 +16,8 @@ from .coordinator import IdmCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 
-# These registers provide the communication heartbeat, faults, the restart-safe
-# operating analysis and the safe DHW restore path. They are intentionally kept
-# even when all related UI entities are disabled.
+# Communication, alarm, operating-analysis and safe DHW restore registers are
+# intentionally retained even when their UI entities are disabled.
 _ALWAYS_REQUIRED = frozenset(
     {
         "outdoor_temp",
@@ -82,8 +81,6 @@ def build_required_register_names(
     known = set(known_register_names)
     entries = list(er.async_entries_for_config_entry(registry, entry_id))
     if not entries:
-        # First refresh intentionally remains complete. The optimized plan is
-        # applied only after Home Assistant created the entity registry entries.
         return None
 
     required = set(_ALWAYS_REQUIRED) & known
@@ -117,27 +114,50 @@ class EntityAwarePollingManager:
         self._entry = entry
         self._coordinator = coordinator
         self._debounce_seconds = debounce_seconds
+        self._full_registers = tuple(coordinator._registers)
         self._refresh_task: asyncio.Task[None] | None = None
+        self._setup_task: asyncio.Task[None] | None = None
         self._unsub_registry: Callable[[], None] | None = None
 
-    async def async_setup(self) -> None:
-        """Apply the initial post-platform plan and subscribe to registry changes."""
-        await self._async_apply_plan(request_refresh=False)
-        event_name = getattr(er, "EVENT_ENTITY_REGISTRY_UPDATED", "entity_registry_updated")
-        self._unsub_registry = self._hass.bus.async_listen(event_name, self._handle_registry_event)
+    def schedule_setup(self) -> None:
+        """Start after all platforms had time to create registry entries."""
+        if self._setup_task is None:
+            self._setup_task = self._hass.async_create_task(self._async_delayed_setup())
+            self._entry.async_on_unload(self._schedule_shutdown)
+
+    async def _async_delayed_setup(self) -> None:
+        try:
+            await asyncio.sleep(self._debounce_seconds)
+            await self._async_apply_plan(request_refresh=False)
+            event_name = getattr(er, "EVENT_ENTITY_REGISTRY_UPDATED", "entity_registry_updated")
+            self._unsub_registry = self._hass.bus.async_listen(
+                event_name,
+                self._handle_registry_event,
+            )
+        except asyncio.CancelledError:
+            raise
+        finally:
+            self._setup_task = None
+
+    @callback
+    def _schedule_shutdown(self) -> None:
+        self._hass.async_create_task(self.async_shutdown())
 
     async def async_shutdown(self) -> None:
         """Cancel pending work and remove the entity registry listener."""
         if self._unsub_registry is not None:
             self._unsub_registry()
             self._unsub_registry = None
-        if self._refresh_task is not None:
-            self._refresh_task.cancel()
+        for task in (self._setup_task, self._refresh_task):
+            if task is None:
+                continue
+            task.cancel()
             try:
-                await self._refresh_task
+                await task
             except asyncio.CancelledError:
                 pass
-            self._refresh_task = None
+        self._setup_task = None
+        self._refresh_task = None
 
     @callback
     def _handle_registry_event(self, event: Event) -> None:
@@ -146,10 +166,11 @@ class EntityAwarePollingManager:
         if isinstance(entity_id, str):
             registry = er.async_get(self._hass)
             registry_entry = registry.async_get(entity_id)
-            if registry_entry is not None and getattr(registry_entry, "config_entry_id", None) not in (
+            if registry_entry is not None and getattr(
+                registry_entry,
+                "config_entry_id",
                 None,
-                self._entry.entry_id,
-            ):
+            ) not in (None, self._entry.entry_id):
                 return
         if self._refresh_task is not None:
             self._refresh_task.cancel()
@@ -164,22 +185,59 @@ class EntityAwarePollingManager:
         finally:
             self._refresh_task = None
 
+    def _expand_aliases(self, required: set[str]) -> set[str]:
+        """Keep all configured names sharing a selected Modbus address."""
+        expanded = set(required)
+        for names in self._coordinator._alias_map.values():
+            if expanded.intersection(names):
+                expanded.update(names)
+        return expanded
+
     async def _async_apply_plan(self, *, request_refresh: bool) -> None:
         registry = er.async_get(self._hass)
+        known = {register.name for register in self._full_registers}
         required = build_required_register_names(
             registry,
             self._entry.entry_id,
-            self._coordinator.register_names,
+            known,
         )
         if required is None:
             return
-        changed = self._coordinator.set_polling_register_names(required)
-        if not changed:
+        required = self._expand_aliases(required)
+        selected = [register for register in self._full_registers if register.name in required]
+        if not selected:
             return
+        current_names = {register.name for register in self._coordinator._registers}
+        selected_names = {register.name for register in selected}
+        if selected_names == current_names:
+            return
+
+        self._coordinator._registers = selected
+        self._coordinator._room_mode_registers = [
+            register
+            for register in self._coordinator._room_mode_registers
+            if register.name in selected_names
+        ]
+        setattr(self._coordinator, "_polling_plan_total_count", len(self._full_registers))
+        setattr(self._coordinator, "_polling_plan_active_count", len(selected))
         _LOGGER.info(
             "IDM entity-aware polling uses %d of %d registers",
-            self._coordinator.polling_register_count,
-            self._coordinator.total_register_count,
+            len(selected),
+            len(self._full_registers),
         )
         if request_refresh:
             await self._coordinator.async_request_refresh()
+
+
+def ensure_entity_aware_polling(coordinator: IdmCoordinator) -> EntityAwarePollingManager | None:
+    """Create exactly one polling manager for a normal Modbus coordinator."""
+    config_entry = coordinator.config_entry
+    if config_entry is None or not coordinator._registers:
+        return None
+    existing = getattr(coordinator, "_entity_aware_polling_manager", None)
+    if isinstance(existing, EntityAwarePollingManager):
+        return existing
+    manager = EntityAwarePollingManager(coordinator.hass, config_entry, coordinator)
+    setattr(coordinator, "_entity_aware_polling_manager", manager)
+    manager.schedule_setup()
+    return manager
