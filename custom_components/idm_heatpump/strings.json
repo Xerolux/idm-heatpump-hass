@@ -419,6 +419,53 @@
           "comfort": "Comfort"
         }
       }
+    },
+    "binary_sensor": {
+      "web_compressor_1": {
+        "name": "Compressor 1 (Web)"
+      },
+      "web_compressor_heating": {
+        "name": "Compressor heater (Web)"
+      },
+      "web_dewpoint_humidity_alarm": {
+        "name": "Dew point humidity alarm (Web)"
+      },
+      "web_ew_evu_lock_contact": {
+        "name": "Utility lock contact (Web)"
+      },
+      "web_ext_hotwater_signal": {
+        "name": "External hot water request (Web)"
+      },
+      "web_external_request": {
+        "name": "External request (Web)"
+      },
+      "web_failure_eheating": {
+        "name": "Electric heater fault (Web)"
+      },
+      "web_flow_pump_on": {
+        "name": "Flow pump (Web)"
+      },
+      "web_heat_generator_2nd": {
+        "name": "Second heat generator (Web)"
+      },
+      "web_heat_generator_2nd_3rd": {
+        "name": "Second or third heat generator (Web)"
+      },
+      "web_high_pressure_error": {
+        "name": "High-pressure fault (Web)"
+      },
+      "web_hotwater_circulation_pump": {
+        "name": "Hot water circulation pump (Web)"
+      },
+      "web_hotwater_station_flow_switch": {
+        "name": "Hot water station flow switch (Web)"
+      },
+      "web_siphon_heating": {
+        "name": "Siphon heater (Web)"
+      },
+      "web_pump_heating_circuit_a": {
+        "name": "Heating circuit A pump (Web)"
+      }
     }
   },
   "selector": {

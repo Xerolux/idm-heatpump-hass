@@ -16,6 +16,7 @@ from .binary_semantics import binary_value_is_on
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
+from .web_binary_sensors import IdmWebBinarySensor, web_binary_sensor_entities
 
 PARALLEL_UPDATES = 0
 
@@ -26,11 +27,13 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities = [
+    entities: list[IdmBinarySensor | IdmWebBinarySensor] = [
         IdmBinarySensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.binary_sensor_descriptions)
         if should_add_entity(coordinator, desc_info["register"])
     ]
+    if coordinator.web_enabled:
+        entities += web_binary_sensor_entities(coordinator)
     async_add_entities(entities)
 
 
