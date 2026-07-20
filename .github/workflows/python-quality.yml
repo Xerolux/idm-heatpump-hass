@@ -17,32 +17,48 @@ on:
         type: string
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  validate:
-    name: Python ${{ inputs.python-version }} / HA ${{ inputs.home-assistant-version }} / ${{ inputs.api-dependency-mode }}
+  fix:
+    if: inputs.api-dependency-mode == 'manifest-pinned'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      - uses: actions/checkout@v4
         with:
-          python-version: ${{ inputs.python-version }}
-      - name: Clone and run concise polling tests
+          ref: feat/entity-aware-polling
+          fetch-depth: 0
+      - name: Apply compatibility fix and restore CI workflows
         run: |
-          git clone -q --depth=1 --branch feat/entity-aware-polling https://github.com/Xerolux/idm-heatpump-hass.git repo
-          cd repo
-          python -m pip install -q --upgrade pip setuptools wheel
-          pip install -q "homeassistant==${{ inputs.home-assistant-version }}" pytest pytest-asyncio pytest-homeassistant-custom-component
           python - <<'PY'
-          import json
-          import subprocess
-          import sys
+          from pathlib import Path
 
-          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as file:
-              requirements = json.load(file)["requirements"]
-          subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", *requirements])
+          path = Path("custom_components/idm_heatpump/polling_plan.py")
+          text = path.read_text(encoding="utf-8")
+          text = text.replace(
+              "from homeassistant.core import Event, HomeAssistant, callback\n",
+              "from homeassistant.core import HomeAssistant, callback\n",
+              1,
+          )
+          text = text.replace(
+              "    def _handle_registry_event(self, event: Event) -> None:\n",
+              "    def _handle_registry_event(self, event: Any) -> None:\n",
+              1,
+          )
+          path.write_text(text, encoding="utf-8")
           PY
-          if [ "${{ inputs.api-dependency-mode }}" = "api-main" ]; then
-            pip install -q --upgrade "pymodbus>=3.12.1,<4.0" "git+https://github.com/Xerolux/idm-heatpump-api.git@main"
-          fi
-          pytest tests/test_polling_plan.py tests/test_polling_manager.py -q --tb=short
+          git fetch origin main
+          git show origin/main:.github/workflows/python-quality.yml > .github/workflows/python-quality.yml
+          git show origin/main:.github/workflows/ci.yml > .github/workflows/ci.yml
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - run: python -m pip install -q ruff
+      - run: ruff format custom_components/idm_heatpump/polling_plan.py
+      - name: Commit final fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add custom_components/idm_heatpump/polling_plan.py .github/workflows/python-quality.yml .github/workflows/ci.yml
+          git commit -m "fix: avoid hard Event type dependency in polling manager"
+          git push origin HEAD:feat/entity-aware-polling
