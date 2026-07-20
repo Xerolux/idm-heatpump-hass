@@ -64,17 +64,17 @@ def _by_key(entities):
 def test_creates_compressor_and_mode_entities() -> None:
     entities = _by_key(operation_sensor_entities(_coordinator(), _analysis()))
 
-    assert entities["analysis_compressor_starts_recorded"].native_value == 12
-    assert entities["analysis_compressor_starts_today"].native_value == 4
+    assert entities["analysis_heat_pump_cycles_recorded"].native_value == 12
+    assert entities["analysis_heat_pump_cycles_today"].native_value == 4
     assert entities["analysis_defrost_starts_today"].native_value == 1
     assert entities["analysis_operating_share_heating"].native_value == 50.0
 
 
 def test_total_start_sensor_is_total_increasing() -> None:
-    sensor = _by_key(operation_sensor_entities(_coordinator(), _analysis()))["analysis_compressor_starts_recorded"]
+    sensor = _by_key(operation_sensor_entities(_coordinator(), _analysis()))["analysis_heat_pump_cycles_recorded"]
 
     assert sensor.entity_description.state_class == SensorStateClass.TOTAL_INCREASING
-    assert sensor._attr_unique_id == "entry_analysis_compressor_starts_recorded"
+    assert sensor._attr_unique_id == "entry_analysis_heat_pump_cycles_recorded"
 
 
 def test_duration_and_timestamp_metadata() -> None:
@@ -87,7 +87,7 @@ def test_duration_and_timestamp_metadata() -> None:
 def test_advanced_window_and_share_sensors_are_disabled_by_default() -> None:
     entities = _by_key(operation_sensor_entities(_coordinator(), _analysis()))
 
-    assert entities["analysis_compressor_starts_2h"].entity_description.entity_registry_enabled_default is False
+    assert entities["analysis_heat_pump_cycles_2h"].entity_description.entity_registry_enabled_default is False
     assert entities["analysis_operating_share_defrost"].entity_description.entity_registry_enabled_default is False
 
 

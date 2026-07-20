@@ -45,24 +45,24 @@ class OperationSensorDefinition:
 
 _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     OperationSensorDefinition(
-        key="analysis_compressor_starts_recorded",
-        name="Verdichterstarts erfasst",
+        key="analysis_heat_pump_cycles_recorded",
+        name="Wärmepumpentakte erfasst",
         value=lambda analysis: analysis.total_compressor_starts,
         icon="mdi:counter",
         source="compressor",
         state_class=SensorStateClass.TOTAL_INCREASING,
     ),
     OperationSensorDefinition(
-        key="analysis_compressor_starts_today",
-        name="Verdichterstarts heute",
+        key="analysis_heat_pump_cycles_today",
+        name="Wärmepumpentakte heute",
         value=lambda analysis: analysis.compressor_starts_today(),
         icon="mdi:calendar-today",
         source="compressor",
         state_class=SensorStateClass.MEASUREMENT,
     ),
     OperationSensorDefinition(
-        key="analysis_compressor_starts_2h",
-        name="Verdichterstarts letzte 2 Stunden",
+        key="analysis_heat_pump_cycles_2h",
+        name="Wärmepumpentakte letzte 2 Stunden",
         value=lambda analysis: analysis.compressor_starts_last_hours(2),
         icon="mdi:history",
         source="compressor",
@@ -70,8 +70,8 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
         enabled_by_default=False,
     ),
     OperationSensorDefinition(
-        key="analysis_compressor_starts_4h",
-        name="Verdichterstarts letzte 4 Stunden",
+        key="analysis_heat_pump_cycles_4h",
+        name="Wärmepumpentakte letzte 4 Stunden",
         value=lambda analysis: analysis.compressor_starts_last_hours(4),
         icon="mdi:history",
         source="compressor",
