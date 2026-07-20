@@ -23,6 +23,7 @@ from homeassistant.const import PERCENTAGE, UnitOfTime
 from .coordinator import IdmCoordinator
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 from .operation_analysis import OperationAnalysis
+from .polling_plan import ensure_entity_aware_polling
 
 AnalysisValue = int | float | datetime | None
 
@@ -193,6 +194,7 @@ def operation_sensor_entities(
     """Create analysis sensors only for verified source registers."""
     if analysis is None:
         return []
+    ensure_entity_aware_polling(coordinator)
     return [
         IdmOperationSensor(coordinator, analysis, definition)
         for definition in _OPERATION_SENSOR_DEFINITIONS
@@ -252,6 +254,7 @@ def short_cycle_binary_entities(
     """Create the short-cycle warning only for verified compressor sources."""
     if analysis is None or not analysis.supports_compressor:
         return []
+    ensure_entity_aware_polling(coordinator)
     return [IdmShortCycleBinarySensor(coordinator, analysis)]
 
 
