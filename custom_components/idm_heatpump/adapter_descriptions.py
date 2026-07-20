@@ -71,10 +71,7 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
         return "mdi:thermometer"
     if "humidity" in name_lower or "feuchte" in name_lower:
         return "mdi:water-percent"
-    if any(
-        fragment in name_lower
-        for fragment in ["power", "energy", "consumption", "leistung"]
-    ):
+    if any(fragment in name_lower for fragment in ["power", "energy", "consumption", "leistung"]):
         if "thermal" in name_lower:
             return "mdi:heat-wave"
         return "mdi:flash"
@@ -92,14 +89,9 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
         return "mdi:solar-panel"
     if "cascade" in name_lower:
         return "mdi:heat-pump-multiple"
-    if any(
-        fragment in name_lower for fragment in ["fault", "alarm", "error", "störung"]
-    ):
+    if any(fragment in name_lower for fragment in ["fault", "alarm", "error", "störung"]):
         return "mdi:alert-circle"
-    if any(
-        fragment in name_lower
-        for fragment in ["mode", "status", "betriebsart", "demand"]
-    ):
+    if any(fragment in name_lower for fragment in ["mode", "status", "betriebsart", "demand"]):
         return "mdi:cog"
     if unit and "%" in unit:
         return "mdi:gauge"
