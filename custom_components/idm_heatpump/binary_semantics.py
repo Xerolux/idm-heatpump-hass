@@ -10,17 +10,19 @@ as active (for example ``bool(-1) is True``).
 from __future__ import annotations
 
 import math
-from collections.abc import Collection
+from collections.abc import Callable, Collection
 from typing import Any
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 
+_GET_LIBRARY_BINARY_METADATA: Callable[[str], Any | None] | None
 try:
     import idm_heatpump as idm_api
 except ImportError:
     _GET_LIBRARY_BINARY_METADATA = None
 else:
-    _GET_LIBRARY_BINARY_METADATA = getattr(idm_api, "get_binary_register_metadata", None)
+    getter = getattr(idm_api, "get_binary_register_metadata", None)
+    _GET_LIBRARY_BINARY_METADATA = getter if callable(getter) else None
 
 _DEVICE_CLASS_MAP: dict[str, BinarySensorDeviceClass] = {
     "problem": BinarySensorDeviceClass.PROBLEM,
@@ -35,7 +37,7 @@ _DEVICE_CLASS_MAP: dict[str, BinarySensorDeviceClass] = {
 
 def _library_metadata(name: str) -> Any | None:
     """Return optional neutral metadata from newer idm-heatpump-api releases."""
-    if not callable(_GET_LIBRARY_BINARY_METADATA):
+    if _GET_LIBRARY_BINARY_METADATA is None:
         return None
     return _GET_LIBRARY_BINARY_METADATA(name)
 
