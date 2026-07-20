@@ -28,25 +28,17 @@ async def _get_manager(
     data = call.data if isinstance(call.data, Mapping) else {}
     requested_entry_id = str(data.get("entry_id", "")).strip() or None
     loaded_entries = [
-        entry
-        for entry in hass.config_entries.async_entries(DOMAIN)
-        if entry.state == ConfigEntryState.LOADED
+        entry for entry in hass.config_entries.async_entries(DOMAIN) if entry.state == ConfigEntryState.LOADED
     ]
     if requested_entry_id is not None:
-        loaded_entries = [
-            entry
-            for entry in loaded_entries
-            if str(entry.entry_id) == requested_entry_id
-        ]
+        loaded_entries = [entry for entry in loaded_entries if str(entry.entry_id) == requested_entry_id]
     if not loaded_entries:
         raise ServiceValidationError(
             translation_domain=DOMAIN,
             translation_key="no_device_configured",
         )
     if requested_entry_id is None and len(loaded_entries) > 1:
-        raise ServiceValidationError(
-            "Mehrere IDM-Geräte sind geladen; entry_id muss angegeben werden"
-        )
+        raise ServiceValidationError("Mehrere IDM-Geräte sind geladen; entry_id muss angegeben werden")
     runtime_data = loaded_entries[0].runtime_data
     coordinator = getattr(runtime_data, "coordinator", None)
     if not isinstance(coordinator, IdmCoordinator):
@@ -110,8 +102,7 @@ async def async_unload_dhw_boost_services(
     remaining = [
         entry
         for entry in hass.config_entries.async_entries(DOMAIN)
-        if entry.state == ConfigEntryState.LOADED
-        and str(entry.entry_id) != unloading_entry_id
+        if entry.state == ConfigEntryState.LOADED and str(entry.entry_id) != unloading_entry_id
     ]
     if remaining:
         return

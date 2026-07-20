@@ -103,9 +103,7 @@ class DhwBoostManager:
         if self._setup_complete:
             return
         self._setup_complete = True
-        self._unsub_coordinator = self.coordinator.async_add_listener(
-            self._handle_coordinator_update
-        )
+        self._unsub_coordinator = self.coordinator.async_add_listener(self._handle_coordinator_update)
         try:
             stored = await self._store.async_load()
         except Exception:
@@ -144,13 +142,9 @@ class DhwBoostManager:
         """Persist the snapshot, then activate DHW priority and target."""
         async with self._lock:
             if self.active:
-                raise DhwBoostError(
-                    "Der Warmwasser-Boost ist bereits aktiv; zuerst abbrechen"
-                )
+                raise DhwBoostError("Der Warmwasser-Boost ist bereits aktiv; zuerst abbrechen")
             if not self.supported:
-                raise DhwBoostError(
-                    "Die benötigten Warmwasser- und Systemmodusregister sind nicht verfügbar"
-                )
+                raise DhwBoostError("Die benötigten Warmwasser- und Systemmodusregister sind nicht verfügbar")
 
             target = self._validated_target(target_temperature)
             timeout = self._validated_timeout(timeout_minutes)
@@ -169,9 +163,7 @@ class DhwBoostManager:
             previous_mode = self._safe_int(data.get("system_mode"))
             previous_setpoint = self._safe_int(data.get("dhw_setpoint"))
             if previous_mode is None or previous_setpoint is None:
-                raise DhwBoostError(
-                    "Systemmodus oder bisheriger Warmwasser-Sollwert ist nicht verfügbar"
-                )
+                raise DhwBoostError("Systemmodus oder bisheriger Warmwasser-Sollwert ist nicht verfügbar")
 
             now = _utcnow()
             self.active = True
@@ -230,8 +222,7 @@ class DhwBoostManager:
                     await self._async_restore_locked("integration_unload")
                 except Exception:
                     _LOGGER.error(
-                        "Could not restore IDM DHW boost state during unload; "
-                        "persisted recovery remains active",
+                        "Could not restore IDM DHW boost state during unload; persisted recovery remains active",
                         exc_info=True,
                     )
             self._cancel_timeout()
@@ -243,15 +234,9 @@ class DhwBoostManager:
                 self._unsub_coordinator = None
 
     def _handle_coordinator_update(self) -> None:
-        if (
-            not self.active
-            or self._evaluation_in_progress
-            or self._evaluation_task is not None
-        ):
+        if not self.active or self._evaluation_in_progress or self._evaluation_task is not None:
             return
-        self._evaluation_task = self.coordinator.hass.async_create_task(
-            self._async_evaluate()
-        )
+        self._evaluation_task = self.coordinator.hass.async_create_task(self._async_evaluate())
 
     async def _async_evaluate(self) -> None:
         if self._evaluation_in_progress:
@@ -263,9 +248,7 @@ class DhwBoostManager:
                     return
                 if self.status == "recovery_required":
                     try:
-                        await self._async_restore_locked(
-                            self.last_reason or "recovery_retry"
-                        )
+                        await self._async_restore_locked(self.last_reason or "recovery_retry")
                     except Exception:
                         _LOGGER.warning(
                             "IDM DHW boost recovery retry failed; retrying on next update",
@@ -326,9 +309,7 @@ class DhwBoostManager:
 
     def _schedule_timeout(self) -> None:
         self._cancel_timeout()
-        self._timeout_task = self.coordinator.hass.async_create_task(
-            self._async_timeout()
-        )
+        self._timeout_task = self.coordinator.hass.async_create_task(self._async_timeout())
 
     def _cancel_timeout(self) -> None:
         task = self._timeout_task
@@ -417,18 +398,14 @@ class DhwBoostManager:
             int(register.max_val) if register.max_val is not None else _MAX_TARGET,
         )
         if not minimum <= target <= maximum:
-            raise DhwBoostError(
-                f"Warmwasser-Zieltemperatur muss zwischen {minimum} und {maximum} °C liegen"
-            )
+            raise DhwBoostError(f"Warmwasser-Zieltemperatur muss zwischen {minimum} und {maximum} °C liegen")
         return target
 
     @staticmethod
     def _validated_timeout(value: Any) -> int:
         timeout = DhwBoostManager._safe_int(value)
         if timeout is None or not _MIN_TIMEOUT <= timeout <= _MAX_TIMEOUT:
-            raise DhwBoostError(
-                f"Boost-Laufzeit muss zwischen {_MIN_TIMEOUT} und {_MAX_TIMEOUT} Minuten liegen"
-            )
+            raise DhwBoostError(f"Boost-Laufzeit muss zwischen {_MIN_TIMEOUT} und {_MAX_TIMEOUT} Minuten liegen")
         return timeout
 
     @property
