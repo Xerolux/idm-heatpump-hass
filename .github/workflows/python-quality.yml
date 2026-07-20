@@ -24,6 +24,9 @@ jobs:
     name: Python ${{ inputs.python-version }} / HA ${{ inputs.home-assistant-version }} / ${{ inputs.api-dependency-mode }}
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: ${{ inputs.python-version }}
       - name: Clone and run concise mypy diagnostic
         run: |
           git clone -q --depth=1 --branch feat/safe-dhw-boost https://github.com/Xerolux/idm-heatpump-hass.git repo
