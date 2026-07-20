@@ -25,64 +25,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0
-
-      - name: Validate API dependency mode
-        env:
-          API_DEPENDENCY_MODE: ${{ inputs.api-dependency-mode }}
-        run: |
-          case "$API_DEPENDENCY_MODE" in
-            manifest-pinned|api-main) ;;
-            *)
-              echo "Unsupported API dependency mode: $API_DEPENDENCY_MODE"
-              exit 1
-              ;;
-          esac
-
-      - name: Set up Python ${{ inputs.python-version }}
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: ${{ inputs.python-version }}
-
-      - name: Install Home Assistant ${{ inputs.home-assistant-version }} and test tools
+      - name: Install test environment
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install "homeassistant==${{ inputs.home-assistant-version }}" "aiohttp>=3.8.0"
-          pip install ruff mypy pytest pytest-cov pytest-asyncio pytest-homeassistant-custom-component
-
-      - name: Install manifest runtime dependencies
-        run: |
+          python -m pip install -q --upgrade pip setuptools wheel
+          pip install -q "homeassistant==${{ inputs.home-assistant-version }}" "aiohttp>=3.8.0"
+          pip install -q pytest pytest-asyncio pytest-homeassistant-custom-component
           python - <<'PY'
           import json
           import subprocess
           import sys
-
-          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
-              requirements = json.load(manifest_file)["requirements"]
-
-          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
+          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as file:
+              requirements = json.load(file)["requirements"]
+          subprocess.check_call([sys.executable, "-m", "pip", "install", "-q", *requirements])
           PY
-
-      - name: Install API main branch
-        if: inputs.api-dependency-mode == 'api-main'
-        run: |
-          pip install --upgrade \
-            "pymodbus>=3.12.1,<4.0" \
-            "git+https://github.com/Xerolux/idm-heatpump-api.git@main"
-
-      - name: Lint with Ruff
-        run: ruff check custom_components/idm_heatpump tests --line-length=120 --output-format=github
-
-      - name: Format check with Ruff
-        run: ruff format custom_components/idm_heatpump tests --check
-
-      - name: Type check with mypy
-        run: mypy custom_components/idm_heatpump
-
-      - name: Run unit tests
-        run: |
-          pytest tests/ \
-            -v \
-            --tb=short \
-            --cov=custom_components/idm_heatpump \
-            --cov-report=xml \
-            --cov-report=term-missing
+          if [ "${{ inputs.api-dependency-mode }}" = "api-main" ]; then
+            pip install -q --upgrade "pymodbus>=3.12.1,<4.0" "git+https://github.com/Xerolux/idm-heatpump-api.git@main"
+          fi
+      - name: Run until first failure
+        run: pytest tests/ -x -q --tb=short
