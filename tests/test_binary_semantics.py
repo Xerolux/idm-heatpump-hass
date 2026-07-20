@@ -47,14 +47,22 @@ def _coordinator(value):
 
 def test_infer_problem_device_class():
     assert infer_binary_device_class("hp_sum_alarm") == BinarySensorDeviceClass.PROBLEM
-    assert infer_binary_device_class("failure_eheating") == BinarySensorDeviceClass.PROBLEM
+    assert (
+        infer_binary_device_class("failure_eheating") == BinarySensorDeviceClass.PROBLEM
+    )
 
 
 def test_infer_operating_device_classes():
-    assert infer_binary_device_class("compressor_status_1") == BinarySensorDeviceClass.RUNNING
+    assert (
+        infer_binary_device_class("compressor_status_1")
+        == BinarySensorDeviceClass.RUNNING
+    )
     assert infer_binary_device_class("heating_demand") == BinarySensorDeviceClass.HEAT
     assert infer_binary_device_class("cooling_demand") == BinarySensorDeviceClass.COLD
-    assert infer_binary_device_class("controller_connected") == BinarySensorDeviceClass.CONNECTIVITY
+    assert (
+        infer_binary_device_class("controller_connected")
+        == BinarySensorDeviceClass.CONNECTIVITY
+    )
 
 
 def test_zero_and_one_decode_normally():
@@ -104,7 +112,9 @@ def test_optional_library_metadata_is_used(monkeypatch):
         inverted=False,
         device_class="problem",
     )
-    monkeypatch.setattr(binary_semantics, "_GET_LIBRARY_BINARY_METADATA", lambda _name: metadata)
+    monkeypatch.setattr(
+        binary_semantics, "_GET_LIBRARY_BINARY_METADATA", lambda _name: metadata
+    )
     register = _register(name="custom_status")
 
     assert binary_value_is_on(register, 7) is True
@@ -120,7 +130,9 @@ def test_register_local_metadata_overrides_library_metadata(monkeypatch):
         inverted=False,
         device_class="running",
     )
-    monkeypatch.setattr(binary_semantics, "_GET_LIBRARY_BINARY_METADATA", lambda _name: metadata)
+    monkeypatch.setattr(
+        binary_semantics, "_GET_LIBRARY_BINARY_METADATA", lambda _name: metadata
+    )
     register = _register(binary_on_values={2}, binary_off_values={1, 7})
 
     assert binary_value_is_on(register, 2) is True
