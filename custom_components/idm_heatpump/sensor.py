@@ -28,6 +28,9 @@ except ImportError:
 else:
     WEB_VALUE_DESCRIPTIONS = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
 
+from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
+from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
+from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities
 from .const import CONF_TECHNICIAN_CODES, DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import (
@@ -36,8 +39,6 @@ from .entity import (
     build_entity_unique_id,
     should_add_entity,
 )
-from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
-from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .internal_messages import format_internal_message, internal_message_text
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
@@ -351,7 +352,7 @@ async def async_setup_entry(
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
     versions = await async_runtime_versions(integration.manifest.get("version"))
-    entities: list[IdmSensor | IdmTechnicianCodeSensor | IdmWebSensor | IdmApiVersionSensor] = []
+    entities: list[IdmSensor | IdmCalculatedSensor | IdmTechnicianCodeSensor | IdmWebSensor | IdmApiVersionSensor] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
         entities += _technician_code_entities(coordinator)
     entities += [
@@ -364,6 +365,7 @@ async def async_setup_entry(
             and desc_info["register"].writable
         )
     ]
+    entities += calculated_sensor_entities(coordinator)
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
     entities.append(IdmApiVersionSensor(coordinator, versions))

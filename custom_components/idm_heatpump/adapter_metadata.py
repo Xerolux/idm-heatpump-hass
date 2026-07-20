@@ -16,6 +16,72 @@ from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 SENSOR_METADATA: dict[str, dict[str, Any]] = {
+    # Core installation measurements. These belong on the main device page and
+    # must not be hidden in Home Assistant's diagnostic section.
+    "outdoor_temp": {
+        "name": "Außentemperatur",
+        "icon": "mdi:thermometer",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+    },
+    "storage_temp": {
+        "name": "Speichertemperatur",
+        "icon": "mdi:storage-tank",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+    },
+    "dhw_temp_bottom": {
+        "name": "Warmwasser unten",
+        "icon": "mdi:water-thermometer",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+    },
+    "dhw_temp_top": {
+        "name": "Warmwasser oben",
+        "icon": "mdi:water-thermometer",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+    },
+    "hp_flow_temp": {
+        "name": "Wärmepumpe Vorlauf",
+        "icon": "mdi:thermometer-chevron-up",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+    },
+    "hp_return_temp": {
+        "name": "Wärmepumpe Rücklauf",
+        "icon": "mdi:thermometer-chevron-down",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+    },
+    "heat_source_inlet_temp": {
+        "name": "Wärmequelle Eintritt",
+        "icon": "mdi:thermometer-water",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+    },
+    "heat_source_outlet_temp": {
+        "name": "Wärmequelle Austritt",
+        "icon": "mdi:thermometer-water",
+        "unit": UnitOfTemperature.CELSIUS,
+        "device_class": SensorDeviceClass.TEMPERATURE,
+    },
+    "energy_heating": {
+        "name": "Wärmemenge Heizen",
+        "icon": "mdi:radiator",
+    },
+    "energy_dhw": {
+        "name": "Wärmemenge Warmwasser",
+        "icon": "mdi:water-boiler",
+    },
+    "energy_cooling": {
+        "name": "Wärmemenge Kühlen",
+        "icon": "mdi:snowflake",
+    },
+    "energy_total": {
+        "name": "Wärmemenge Gesamt",
+        "icon": "mdi:heat-pump",
+    },
     "internal_message": {
         "name": "Interne Meldung",
         "icon": "mdi:message-alert",
