@@ -17,6 +17,7 @@ from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .operation_entities import (
     IdmShortCycleBinarySensor,
+    runtime_operation_analysis,
     short_cycle_binary_entities,
 )
 from .registers import sort_entity_descriptions
@@ -38,7 +39,7 @@ async def async_setup_entry(
     ]
     entities += short_cycle_binary_entities(
         coordinator,
-        entry.runtime_data.operation_analysis,
+        runtime_operation_analysis(entry.runtime_data),
     )
     if coordinator.web_enabled:
         entities += web_binary_sensor_entities(coordinator)
