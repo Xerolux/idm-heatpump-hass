@@ -42,8 +42,17 @@ async def async_setup_entry(
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
 
     entities: list[ButtonEntity] = [IdmAcknowledgeErrorsButton(coordinator)]
-    boost = await async_get_dhw_boost_manager(coordinator)
-    if boost.supported:
+    mode_register = coordinator.get_register("system_mode")
+    setpoint_register = coordinator.get_register("dhw_setpoint")
+    temperature_register = coordinator.get_register("dhw_temp_top")
+    if (
+        isinstance(mode_register, RegisterDef)
+        and mode_register.writable
+        and isinstance(setpoint_register, RegisterDef)
+        and setpoint_register.writable
+        and isinstance(temperature_register, RegisterDef)
+    ):
+        boost = await async_get_dhw_boost_manager(coordinator)
         await async_setup_dhw_boost_services(hass)
         entities.extend(
             [
