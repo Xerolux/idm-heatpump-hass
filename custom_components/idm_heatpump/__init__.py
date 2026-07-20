@@ -38,6 +38,7 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
+    CONF_DEVICE_HIERARCHY,
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
@@ -56,6 +57,7 @@ from .const import (
     CONF_WEB_SCAN_INTERVAL,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
@@ -396,6 +398,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     zone_count = int(entry.options.get(CONF_ZONE_COUNT, 0))
     zone_rooms = normalize_zone_rooms(entry.options.get(CONF_ZONE_ROOMS, {}))
     hide_unused = entry.options.get(CONF_HIDE_UNUSED, DEFAULT_HIDE_UNUSED)
+    device_hierarchy_enabled = bool(entry.options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY))
     device_hierarchy_enabled = bool(entry.options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY))
     enable_cascade = entry.options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE)
     web_pin = str(entry.data.get(CONF_WEB_PIN, "")).strip() or None
