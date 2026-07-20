@@ -125,7 +125,7 @@ class TestConfigFlowInit:
 
     def test_version(self):
         assert IdmHeatpumpConfigFlow.VERSION == 1
-        assert IdmHeatpumpConfigFlow.MINOR_VERSION == 2
+        assert IdmHeatpumpConfigFlow.MINOR_VERSION == 3
 
     def test_duplicate_host_detection_ignores_port_and_slave_id(self):
         hass = MagicMock()
