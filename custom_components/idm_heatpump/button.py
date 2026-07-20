@@ -22,6 +22,10 @@ from idm_heatpump import DataType, RegisterDef
 from .const import DOMAIN, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE
 from .coordinator import IdmCoordinator
 from .dhw_boost import DhwBoostError, DhwBoostManager, async_get_dhw_boost_manager
+from .dhw_boost_services import (
+    async_setup_dhw_boost_services,
+    async_unload_dhw_boost_services,
+)
 from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
@@ -40,6 +44,7 @@ async def async_setup_entry(
     entities: list[ButtonEntity] = [IdmAcknowledgeErrorsButton(coordinator)]
     boost = await async_get_dhw_boost_manager(coordinator)
     if boost.supported:
+        await async_setup_dhw_boost_services(hass)
         entities.extend(
             [
                 IdmDhwBoostStartButton(coordinator, boost),
@@ -130,6 +135,12 @@ class IdmDhwBoostStartButton(_IdmDhwBoostButtonBase):
 
     async def async_will_remove_from_hass(self) -> None:
         await self._manager.async_shutdown()
+        config_entry = self.coordinator.config_entry
+        if config_entry is not None:
+            await async_unload_dhw_boost_services(
+                self.coordinator.hass,
+                str(config_entry.entry_id),
+            )
         await super().async_will_remove_from_hass()
 
 
