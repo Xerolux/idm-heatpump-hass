@@ -241,7 +241,9 @@ class EntityAwarePollingManager:
 def ensure_entity_aware_polling(
     coordinator: IdmCoordinator,
 ) -> EntityAwarePollingManager | None:
-    """Create exactly one polling manager for a normal Modbus coordinator."""
+    """Create exactly one polling manager for a real Modbus coordinator."""
+    if not isinstance(coordinator, IdmCoordinator):
+        return None
     config_entry = coordinator.config_entry
     if config_entry is None or not coordinator._registers:
         return None
