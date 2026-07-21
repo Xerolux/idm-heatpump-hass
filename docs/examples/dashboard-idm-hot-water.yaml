@@ -1,0 +1,49 @@
+# Example Lovelace dashboard focused on IDM domestic hot water.
+# Replace entity IDs with the IDs from your installation.
+
+title: IDM Hot Water
+views:
+  - title: Hot water
+    path: idm-hot-water
+    icon: mdi:water-boiler
+    cards:
+      - type: entities
+        title: Current state
+        show_header_toggle: false
+        entities:
+          - entity: water_heater.idm_heatpump_domestic_hot_water
+            name: Domestic hot water
+          - entity: sensor.idm_heatpump_dhw_temp_top
+            name: DHW top temperature
+          - entity: sensor.idm_heatpump_dhw_temp_bottom
+            name: DHW bottom temperature
+          - entity: sensor.idm_heatpump_calculated_dhw_deviation
+            name: DHW deviation
+          - entity: binary_sensor.idm_heatpump_dhw_demand
+            name: DHW demand
+
+      - type: entities
+        title: Safe controls
+        show_header_toggle: false
+        entities:
+          - entity: number.idm_heatpump_dhw_setpoint
+            name: DHW setpoint
+          - entity: switch.idm_heatpump_demand_dhw_charging
+            name: External DHW demand
+          - entity: switch.idm_heatpump_demand_onetime_dhw
+            name: One-time DHW charge
+          - entity: button.idm_heatpump_start_dhw_boost
+            name: Start DHW boost
+          - entity: button.idm_heatpump_cancel_dhw_boost
+            name: Cancel DHW boost
+          - entity: sensor.idm_heatpump_dhw_boost_status
+            name: DHW boost status
+
+      - type: entities
+        title: Energy
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_energy_dhw
+            name: DHW energy
+          - entity: sensor.idm_heatpump_operating_share_dhw
+            name: DHW operating share

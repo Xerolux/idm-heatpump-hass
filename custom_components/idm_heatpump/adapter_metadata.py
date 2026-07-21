@@ -8,12 +8,21 @@ tables separate from the generator logic.
 
 from __future__ import annotations
 
+from enum import StrEnum
 from typing import Any
 
 from homeassistant.components.number import NumberDeviceClass
 from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
+
+class EntityProfile(StrEnum):
+    """User-facing profile for default entity presentation."""
+
+    BASIC = "basic"
+    ADVANCED = "advanced"
+    DIAGNOSTIC_EXPERT = "diagnostic_expert"
+
 
 SENSOR_METADATA: dict[str, dict[str, Any]] = {
     # Core installation measurements. These belong on the main device page and
@@ -163,3 +172,64 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
         "device_class": NumberDeviceClass.POWER,
     },
 }
+
+
+_EXPERT_DISABLED_PREFIXES: tuple[str, ...] = (
+    "booster_",
+    "cascade_",
+)
+_EXPERT_DISABLED_FRAGMENTS: tuple[str, ...] = (
+    "charging_pump_signal",
+    "pump_signal",
+    "_pump_",
+    "_valve",
+    "valve_",
+    "_relay",
+    "_raw",
+    "raw_",
+    "_stage",
+    "stage_",
+    "service",
+)
+
+
+def entity_enabled_by_default(register_name: str, *, default: bool = True) -> bool:
+    """Return the safe default entity-registry state for generated descriptions.
+
+    Explicit metadata in the tables above still wins for user-facing core
+    measurements. This helper only provides a conservative profile for generated
+    entities where we otherwise would expose every optional technical value by
+    default.
+    """
+    if not default:
+        return False
+
+    normalized = register_name.casefold()
+    if normalized.startswith(_EXPERT_DISABLED_PREFIXES):
+        return False
+    return not any(fragment in normalized for fragment in _EXPERT_DISABLED_FRAGMENTS)
+
+
+def _metadata_category(meta: dict[str, Any] | None) -> str | None:
+    if not meta:
+        return None
+    category = meta.get("entity_category")
+    if category is None:
+        return None
+    value = getattr(category, "value", category)
+    return str(value).casefold()
+
+
+def entity_profile(register_name: str, meta: dict[str, Any] | None = None, *, default: bool = True) -> EntityProfile:
+    """Return the presentation profile for an explicit or generated entity."""
+    if meta:
+        if meta.get("enabled_by_default") is False:
+            return EntityProfile.DIAGNOSTIC_EXPERT
+        category = _metadata_category(meta)
+        if category in {"diagnostic", "config"}:
+            return EntityProfile.ADVANCED
+        return EntityProfile.BASIC
+
+    if not entity_enabled_by_default(register_name, default=default):
+        return EntityProfile.DIAGNOSTIC_EXPERT
+    return EntityProfile.BASIC

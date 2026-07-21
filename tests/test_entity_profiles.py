@@ -7,7 +7,12 @@ from homeassistant.helpers.entity import EntityCategory
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.adapter_descriptions import make_sensor_description
-from custom_components.idm_heatpump.adapter_metadata import SENSOR_METADATA
+from custom_components.idm_heatpump.adapter_metadata import (
+    SENSOR_METADATA,
+    EntityProfile,
+    entity_enabled_by_default,
+    entity_profile,
+)
 
 
 def _description(name: str, unit: str | None = None, state_class: str | None = None):
@@ -68,3 +73,51 @@ def test_expected_core_keys_are_explicitly_profiled():
 
     assert expected <= SENSOR_METADATA.keys()
     assert all(SENSOR_METADATA[key].get("entity_category") is None for key in expected)
+
+
+def test_generated_expert_profile_disables_rare_technical_names():
+    disabled = {
+        "booster_a_flow_temp",
+        "cascade_power_heating",
+        "heat_sink_charging_pump_signal",
+        "mixer_valve_position",
+        "raw_status_word",
+        "zm1_room1_relay",
+    }
+    enabled = {
+        "dhw_temp_top",
+        "energy_total",
+        "hp_flow_temp",
+        "pv_surplus",
+        "compressor_status_1",
+    }
+
+    assert all(not entity_enabled_by_default(name) for name in disabled)
+    assert all(entity_enabled_by_default(name) for name in enabled)
+
+
+def test_generated_sensor_description_uses_expert_default_profile():
+    register = RegisterDef(
+        address=4000,
+        datatype=DataType.FLOAT,
+        name="cascade_power_heating",
+        unit="kW",
+    )
+
+    description = make_sensor_description(register, {}, "Cascade power heating")
+
+    assert description.entity_registry_enabled_default is False
+
+
+def test_entity_profile_classifies_core_advanced_and_expert_entities():
+    assert entity_profile("hp_flow_temp", SENSOR_METADATA["hp_flow_temp"]) == EntityProfile.BASIC
+    assert entity_profile("internal_message", SENSOR_METADATA["internal_message"]) == EntityProfile.ADVANCED
+    assert entity_profile("booster_fault", SENSOR_METADATA["booster_fault"]) == EntityProfile.ADVANCED
+    assert (
+        entity_profile(
+            "heat_sink_charging_pump_signal",
+            SENSOR_METADATA["heat_sink_charging_pump_signal"],
+        )
+        == EntityProfile.DIAGNOSTIC_EXPERT
+    )
+    assert entity_profile("cascade_power_heating") == EntityProfile.DIAGNOSTIC_EXPERT

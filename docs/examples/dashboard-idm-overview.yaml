@@ -1,0 +1,95 @@
+# Example Lovelace dashboard for IDM Heatpump.
+#
+# Replace entity IDs with the IDs created by your Home Assistant instance. The
+# example uses standard cards only, so it is safe to paste into a manual
+# dashboard and then edit visually.
+
+title: IDM Heatpump
+views:
+  - title: Overview
+    path: idm-heatpump
+    icon: mdi:heat-pump
+    cards:
+      - type: entities
+        title: Heat pump status
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_operating_mode
+            name: Operating mode
+          - entity: binary_sensor.idm_heatpump_compressor_1
+            name: Compressor 1
+          - entity: binary_sensor.idm_heatpump_fault_alarm
+            name: Fault alarm
+          - entity: button.idm_heatpump_acknowledge_errors
+            name: Acknowledge errors
+
+      - type: entities
+        title: Hot water
+        show_header_toggle: false
+        entities:
+          - entity: water_heater.idm_heatpump_domestic_hot_water
+            name: Domestic hot water
+          - entity: sensor.idm_heatpump_dhw_temp_top
+            name: DHW top temperature
+          - entity: number.idm_heatpump_dhw_setpoint
+            name: DHW setpoint
+          - entity: button.idm_heatpump_start_dhw_boost
+            name: Start DHW boost
+          - entity: button.idm_heatpump_cancel_dhw_boost
+            name: Cancel DHW boost
+          - entity: sensor.idm_heatpump_dhw_boost_status
+            name: DHW boost status
+
+      - type: entities
+        title: Heating circuit A
+        show_header_toggle: false
+        entities:
+          - entity: climate.idm_heatpump_heating_circuit_a
+            name: Heating circuit A
+          - entity: sensor.idm_heatpump_hc_a_flow_temp
+            name: Flow temperature
+          - entity: sensor.idm_heatpump_hc_a_room_temp
+            name: Room temperature
+          - entity: number.idm_heatpump_hc_a_ext_room_temp
+            name: External room temperature input
+
+      - type: entities
+        title: Operation analysis
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_warmepumpentakte_heute
+            name: Heat pump cycles today
+          - entity: sensor.idm_heatpump_aktuelle_taktlaufzeit
+            name: Current cycle duration
+          - entity: sensor.idm_heatpump_durchschnittliche_taktlaufzeit
+            name: Average cycle duration
+          - entity: binary_sensor.idm_heatpump_letzter_verdichtertakt_zu_kurz
+            name: Last compressor cycle too short
+          - entity: sensor.idm_heatpump_abtauvorgange_heute
+            name: Defrost starts today
+
+      - type: entities
+        title: Energy and PV / GLT
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_energy_heating
+            name: Heating energy
+          - entity: sensor.idm_heatpump_energy_dhw
+            name: DHW energy
+          - entity: sensor.idm_heatpump_pv_surplus
+            name: PV surplus
+          - entity: number.idm_heatpump_pv_surplus_vorgabe
+            name: PV surplus input
+
+      - type: entities
+        title: Diagnostics
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_navigator_version
+            name: Navigator version
+          - entity: sensor.idm_heatpump_software_version
+            name: Software version
+          - entity: sensor.idm_heatpump_idm_heatpump_api_version
+            name: API version
+          - entity: sensor.idm_heatpump_pymodbus_version
+            name: Pymodbus version

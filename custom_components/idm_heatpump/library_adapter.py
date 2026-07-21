@@ -50,7 +50,7 @@ from .adapter_descriptions import (
     make_sensor_description,
 )
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
-from .adapter_metadata import NUMBER_METADATA, SENSOR_METADATA
+from .adapter_metadata import NUMBER_METADATA, SENSOR_METADATA, entity_enabled_by_default
 from .adapter_names import _get_german_name
 from .adapter_registers import build_filtered_register_map
 
@@ -163,7 +163,10 @@ def _build_sensor_description(reg: RegisterDef, *, include_enabled_default: bool
     slug_map, t_key = get_slug_map_and_key(name)
     extra: dict[str, Any] = {}
     if include_enabled_default:
-        extra["entity_registry_enabled_default"] = reg.enabled_by_default
+        extra["entity_registry_enabled_default"] = entity_enabled_by_default(
+            name,
+            default=reg.enabled_by_default,
+        )
     if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
         return SensorEntityDescription(
             key=name,
@@ -330,6 +333,7 @@ def get_library_zone_binary_sensors(zone_idx: int, room_count: int = 6) -> list[
             device_class=infer_binary_device_class(name),
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
+            entity_registry_enabled_default=entity_enabled_by_default(name),
         )
         sensors.append(
             {
@@ -365,6 +369,7 @@ def get_library_binary_sensors(
             device_class=infer_binary_device_class(name),
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
+            entity_registry_enabled_default=entity_enabled_by_default(name),
         )
         sensors.append(
             {

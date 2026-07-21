@@ -14,6 +14,7 @@ from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTem
 
 from idm_heatpump import RegisterDef
 
+from .adapter_metadata import entity_enabled_by_default
 from .binary_semantics import infer_binary_device_class as infer_binary_device_class
 
 # Compatibility export used by tests and downstream consumers that inspect the
@@ -132,5 +133,7 @@ def make_sensor_description(
         state_class=state_class,
         icon=meta.get("icon"),
         entity_category=meta.get("entity_category"),
-        entity_registry_enabled_default=meta.get("enabled_by_default", True),
+        entity_registry_enabled_default=(
+            entity_enabled_by_default(reg.name) if not meta else bool(meta.get("enabled_by_default", True))
+        ),
     )
