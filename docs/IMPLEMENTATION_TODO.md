@@ -1,10 +1,23 @@
 # IDM Heatpump – offene TODO-Liste
 
-Stand: 20.07.2026
+Stand: 21.07.2026
 
-Die großen Optimierungsblöcke aus dem Repository-Vergleich sind umgesetzt. Dieses
+Die großen strategischen Optimierungsblöcke sind umgesetzt. Dieses
 Dokument enthält nur noch Punkte, die tatsächlich offen, datenabhängig oder durch
 einen externen Home-Assistant-Entscheid blockiert sind.
+
+
+## Design-Dokument
+
+Die detaillierte, sicherheitsorientierte Roadmap steht in
+[`docs/dev/heatpump-feature-roadmap.md`](dev/heatpump-feature-roadmap.md). Dieses
+TODO-Dokument bleibt die kurze operative Liste; das Design-Dokument beschreibt
+Phasen, Sicherheitsregeln und blockierte Datenpunkte.
+
+Die aktuelle Prüfung der noch offenen Arbeit steht in
+[`docs/dev/open-work-audit.md`](dev/open-work-audit.md). Dort ist getrennt, was
+lokal erledigt ist und was wegen fehlender realer Anlagendaten oder eines noch
+nicht finalen Home-Assistant-Modbus-Vertrags blockiert bleibt.
 
 ## Erledigt
 
@@ -26,6 +39,8 @@ einen externen Home-Assistant-Entscheid blockiert sind.
       Neustart-Recovery und garantierter Wiederherstellung.
 - [x] Entity-basiertes, dedupliziertes Modbus-Polling.
 - [x] Schutz-, Alarm-, Analyse- und Restore-Register bleiben immer aktiv.
+- [x] Konservatives Default-Profil für generierte technische/seltene
+      Diagnose-Entities ergänzt, ohne bestehende Unique IDs zu ändern.
 - [x] Prüfung mit API-Pin `0.8.1` und separat gegen API-Main.
 - [x] Ruff, Formatter, Mypy, Pytest, Hassfest und Security für alle gemergten
       Arbeitspakete.
@@ -34,23 +49,22 @@ einen externen Home-Assistant-Entscheid blockiert sind.
 
 ### COP
 
-- [ ] Eindeutiges Register für die zeitgleiche elektrische Gesamtleistung
-      verifizieren.
-- [ ] Eindeutiges Register für die thermische Leistung verifizieren.
-- [ ] Alternativ Durchfluss, Vorlauf, Rücklauf und Wärmeträgermedium für eine
-      thermische Leistungsberechnung verifizieren.
-- [ ] Werte für Heizen, Warmwasser, Leerlauf und möglichst Abtauen über mehrere
-      Minuten mit identischem Zeitstempel erfassen.
-- [ ] Skalierung, Einheit und Verhalten bei Verdichterstillstand prüfen.
-- [ ] Erst danach einen momentanen COP-Sensor implementieren.
+- [x] Eindeutige Register für zeitgleiche elektrische und thermische Leistung
+      verifiziert.
+- [x] Verhalten bei Heizen, Leerlauf und Kleinstleistung defensiv abgesichert.
+- [x] Momentanen COP-Sensor nur veröffentlichen, wenn beide Quellen belastbar
+      verfügbar sind und die Anlage nicht im Stillstand falsche Kennzahlen
+      erzeugen würde.
+- [ ] Weitere reale Datensätze für Warmwasser, Abtauen und unterschiedliche
+      Navigator-Firmwares sammeln; Issue-Vorlage und Field-Diagnostics-Guide
+      sind vorbereitet.
 
-Benötigte Nutzerdaten:
+Zusätzliche Nutzerdaten:
 
 - Diagnoseexport aus Home Assistant.
 - Etwa 10–20 Minuten Rohdaten im Intervall von 5–10 Sekunden.
 - Screenshots aus dem IDM-Navigator mit elektrischer Leistung, thermischer
-  Leistung beziehungsweise Durchfluss, Vorlauf, Rücklauf, Betriebsart und
-  Verdichterstatus.
+  Leistung, Betriebsart und Verdichterstatus.
 
 ### Vorlauf-Abweichung
 
@@ -76,23 +90,34 @@ Benötigte Nutzerdaten:
 
 ## Offen – weitere Qualitätsverbesserungen
 
-- [ ] Entity-Katalog vollständig in Basis, Erweitert und Diagnose/Experte
-      klassifizieren.
-- [ ] Seltene Ventil-, Rohstatus-, Kaskaden- und Servicewerte für neue
+- [x] Entity-Katalog in Basis, Erweitert und Diagnose/Experte klassifizieren;
+      API-weite Erweiterung bleibt als separater Dokumentationsausbau offen.
+- [x] Seltene Ventil-, Rohstatus-, Kaskaden- und Servicewerte für neue
       Installationen gezielt standardmäßig deaktivieren.
-- [ ] Bestehende Benutzeraktivierungen bei jeder weiteren Migration unverändert
-      lassen.
-- [ ] Entity-Dokumentation automatisiert aus API- und HA-Metadaten erzeugen.
-- [ ] Lasttests mit maximaler Zahl an Heizkreisen, Zonen und Räumen durchführen.
-- [ ] Diagnosedaten regelmäßig auf Vollständigkeit und Datenschutz prüfen.
+- [x] Bestehende Benutzeraktivierungen bei jeder weiteren Migration unverändert
+      lassen; der Entity-Registry-Migrationsvertrag ist dokumentiert.
+- [x] Entity-Metadatenkatalog automatisiert aus HA-Metadaten erzeugen.
+- [x] API-weite Entity-Dokumentation vorbereitet: explizite HA-Overlays stehen
+      im Entity-Metadatenkatalog, die vollständige Registerreferenz bleibt über
+      den bestehenden Generator an `idm-heatpump-api` gekoppelt; weitere reale
+      Profilverifikation ist datenabhängig.
+- [ ] Lasttests mit maximaler Zahl an Heizkreisen, Zonen und Räumen durchführen;
+      blockiert bis passende Diagnoseexports über die Field-Diagnostics-Vorlage
+      vorliegen.
+- [x] Diagnosedaten-Anforderungen und Datenschutzregeln für Felddiagnosen
+      dokumentieren.
 
 ## Blockiert – Home Assistant
 
+- [x] Minimalen Transportvertrag für spätere Adapter im HASS-Repository
+      dokumentieren, ohne ihn produktiv einzubinden.
 - [ ] Transportzugriffe in `idm-heatpump-api` weiter abstrahieren, ohne die
-      direkte Pymodbus-Nutzung zu verlieren.
+      direkte Pymodbus-Nutzung zu verlieren; integrationsseitig sind Vertrag,
+      Endpoint-Validierung und redigierte Diagnose-Helfer vorbereitet.
 - [ ] Optionalen `modbus-connection`-Transportadapter erst implementieren, wenn
       Home Assistant den überarbeiteten offiziellen Integrationsvertrag
-      veröffentlicht hat.
+      veröffentlicht hat; bis dahin den Issue mit der vorbereiteten Vorlage,
+      Vertrag, Akzeptanzkriterien und Migrationsfragen pflegen.
 - [x] Bis dahin keine harte oder vorzeitige Abhängigkeit einführen.
 
 ## Unveränderte Release-Regeln

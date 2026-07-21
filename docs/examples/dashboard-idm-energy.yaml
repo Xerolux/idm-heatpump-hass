@@ -1,0 +1,53 @@
+# Example Lovelace dashboard focused on IDM energy, PV and operation analysis.
+# Keep GLT/PV write ownership clear before enabling writable entities here.
+
+title: IDM Energy
+views:
+  - title: Energy
+    path: idm-energy
+    icon: mdi:solar-power-variant
+    cards:
+      - type: entities
+        title: Heat and power
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_energy_heating
+            name: Heating energy
+          - entity: sensor.idm_heatpump_energy_dhw
+            name: DHW energy
+          - entity: sensor.idm_heatpump_thermal_power_flow_sensor
+            name: Thermal power
+          - entity: sensor.idm_heatpump_power_consumption_hp
+            name: Electric power
+          - entity: sensor.idm_heatpump_jahresarbeitszahl_cop_momentan
+            name: Momentary COP
+
+      - type: entities
+        title: PV / GLT monitor
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_pv_surplus
+            name: PV surplus
+          - entity: sensor.idm_heatpump_pv_production
+            name: PV production
+          - entity: sensor.idm_heatpump_house_consumption
+            name: House consumption
+          - entity: sensor.idm_heatpump_battery_soc
+            name: Battery state of charge
+          - entity: number.idm_heatpump_pv_surplus_vorgabe
+            name: PV surplus input
+
+      - type: entities
+        title: Operation quality
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_warmepumpentakte_heute
+            name: Heat pump cycles today
+          - entity: sensor.idm_heatpump_warmepumpentakte_letzte_2_stunden
+            name: Heat pump cycles last 2 hours
+          - entity: sensor.idm_heatpump_warmepumpentakte_letzte_4_stunden
+            name: Heat pump cycles last 4 hours
+          - entity: sensor.idm_heatpump_durchschnittliche_taktlaufzeit
+            name: Average cycle duration
+          - entity: binary_sensor.idm_heatpump_letzter_verdichtertakt_zu_kurz
+            name: Last compressor cycle too short

@@ -1,0 +1,56 @@
+# Example Lovelace dashboard for IDM diagnostics and support sessions.
+# Keep this dashboard private: it may reveal installer-level context.
+
+title: IDM Diagnostics
+views:
+  - title: Diagnostics
+    path: idm-diagnostics
+    icon: mdi:stethoscope
+    cards:
+      - type: entities
+        title: Device and runtime
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_heatpump_model
+            name: Heat pump model
+          - entity: sensor.idm_heatpump_navigator_version
+            name: Navigator version
+          - entity: sensor.idm_heatpump_software_version
+            name: Software version
+          - entity: sensor.idm_heatpump_idm_heatpump_api_version
+            name: API version
+          - entity: sensor.idm_heatpump_pymodbus_version
+            name: Pymodbus version
+
+      - type: entities
+        title: Communication and web supplement
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_web_status
+            name: Web supplement status
+          - entity: binary_sensor.idm_heatpump_web_compressor_1
+            name: Web compressor 1
+          - entity: binary_sensor.idm_heatpump_web_high_pressure_error
+            name: Web high-pressure error
+
+      - type: entities
+        title: Alarms and recovery
+        show_header_toggle: false
+        entities:
+          - entity: binary_sensor.idm_heatpump_fault_alarm
+            name: Fault alarm
+          - entity: sensor.idm_heatpump_internal_message
+            name: Internal message
+          - entity: button.idm_heatpump_acknowledge_errors
+            name: Acknowledge errors
+          - entity: binary_sensor.idm_heatpump_letzter_verdichtertakt_zu_kurz
+            name: Last compressor cycle too short
+
+      - type: entities
+        title: Technician codes
+        show_header_toggle: false
+        entities:
+          - entity: sensor.idm_heatpump_technician_code_l1
+            name: Technician code L1
+          - entity: sensor.idm_heatpump_technician_code_l2
+            name: Technician code L2

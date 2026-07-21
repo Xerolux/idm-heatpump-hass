@@ -746,9 +746,10 @@ _stub_homeassistant()
 def _stub_idm_heatpump() -> None:
     """Stub for idm_heatpump library when the real package is not available."""
     try:
-        import idm_heatpump  # noqa: F401
+        import idm_heatpump
 
-        return  # Real library installed — don't override
+        if hasattr(idm_heatpump, "DataType") and hasattr(idm_heatpump, "RegisterDef"):
+            return  # Real library installed — don't override
     except ImportError:
         pass
 
@@ -1130,6 +1131,7 @@ def _stub_idm_heatpump() -> None:
         return {r.name: r for r in _zone_regs(zone_idx, room_count)}
 
     idm_mod = ModuleType("idm_heatpump")
+    idm_mod.DataType = DataType  # type: ignore[attr-defined]
     idm_mod.RegisterDef = RegisterDef  # type: ignore[attr-defined]
     idm_mod.IdmModbusClient = IdmModbusClient  # type: ignore[attr-defined]
     idm_mod.IdmModelInfo = IdmModelInfo  # type: ignore[attr-defined]
