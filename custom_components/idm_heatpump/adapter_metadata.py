@@ -16,6 +16,7 @@ from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
+
 class EntityProfile(StrEnum):
     """User-facing profile for default entity presentation."""
 
