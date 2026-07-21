@@ -125,6 +125,15 @@ def make_sensor_description(
     if device_class is None:
         device_class, _ = infer_sensor_classes(reg.name, unit)
     state_class = _DC_STATE_CLASS_MAP.get(device_class) if device_class else None
+    # Explicit ``enabled_by_default`` metadata wins for user-facing core
+    # measurements. When the key is absent, fall back to the conservative
+    # generated profile so rare technical registers stay disabled by default
+    # even when they reach this path with an (incomplete) metadata dict.
+    if "enabled_by_default" in meta:
+        enabled_default = bool(meta["enabled_by_default"])
+    else:
+        enabled_default = entity_enabled_by_default(reg.name)
+
     return SensorEntityDescription(
         key=reg.name,
         name=meta.get("name") or fallback_name,
@@ -133,7 +142,5 @@ def make_sensor_description(
         state_class=state_class,
         icon=meta.get("icon"),
         entity_category=meta.get("entity_category"),
-        entity_registry_enabled_default=(
-            entity_enabled_by_default(reg.name) if not meta else bool(meta.get("enabled_by_default", True))
-        ),
+        entity_registry_enabled_default=enabled_default,
     )

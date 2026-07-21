@@ -157,6 +157,13 @@ def _build_sensor_description(reg: RegisterDef, *, include_enabled_default: bool
     sensor generators. When *include_enabled_default* is set, the register's
     enabled_by_default flag is propagated (used by the library-wide sensor
     generator, not the circuit/zone generators).
+
+    The expert-default profile (``entity_enabled_by_default``) is shared with
+    ``make_sensor_description`` so both code paths agree on which generated
+    technical registers stay disabled by default. The only difference is the
+    source of the seed default: this path trusts the library's
+    ``RegisterDef.enabled_by_default``, while ``make_sensor_description``
+    trusts explicit ``SENSOR_METADATA`` overrides first.
     """
     name = reg.name
     icon = reg.icon or get_icon_for_register(name, reg.unit)

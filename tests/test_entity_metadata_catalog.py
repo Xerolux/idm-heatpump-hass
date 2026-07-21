@@ -53,9 +53,7 @@ def test_field_diagnostics_template_is_read_only_and_privacy_safe() -> None:
 
 
 def test_modbus_transport_issue_template_keeps_runtime_guardrails() -> None:
-    template = (ROOT / ".github" / "ISSUE_TEMPLATE" / "modbus_transport_modernization.md").read_text(
-        encoding="utf-8"
-    )
+    template = (ROOT / ".github" / "ISSUE_TEMPLATE" / "modbus_transport_modernization.md").read_text(encoding="utf-8")
 
     assert "No new manifest requirement" in template
     assert "No direct import of a non-final Home Assistant Modbus API" in template

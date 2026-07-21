@@ -13,6 +13,42 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5-beta.2] - 2026-07-21
+
+Second beta preview of the upcoming 0.8.5 stable release. It bundles the
+follow-up cleanup work on top of 0.8.5-beta.1 (#152): hardens the
+expert-default entity profile, closes a metadata-bypass gap and fixes the
+lint regression introduced with that audit.
+
+> **Compatibility:** Existing entity-registry entries are not retroactively
+> changed by Home Assistant. The profile only affects the default state of
+> newly created entities. Entity unique IDs, entity IDs, registers, write
+> paths and the API pin (`idm-heatpump-api[web]==0.8.1`) are unchanged.
+
+### Changed
+
+- **Expert-Default-Profil für generierte Sensoren.** Seltene technische
+  Register, die nicht explizit in `SENSOR_METADATA` gepflegt sind
+  (z. B. `booster_*`, `cascade_*`, `*_relay`, `*_pump_*`, `*_valve`,
+  `*_stage`, `service*`, `raw_*`), werden bei der Neuanlage standardmäßig
+  deaktiviert (`entity_registry_enabled_default=false`). Core-Messwerte und
+  alle explizit gemappten Sensoren sind hiervon nicht betroffen – explizite
+  `enabled_by_default`-Werte in den Metadaten haben weiterhin Vorrang.
+  Bereits vorhandene Entity-Registry-Einträge werden durch HA nicht
+  nachträglich geändert; Nutzer können die Sensoren wie gewohnt manuell
+  aktivieren. Dies korrigiert gleichzeitig eine Lücke, bei der
+  unvollständige Metadaten-Dicts das Profil ungewollt umgangen haben.
+
+### Fixed
+
+- **Ruff-Lint-Fehler (E302)** in `adapter_metadata.py` durch fehlende
+  Leerzeile zwischen Importblock und `EntityProfile`-Klassendefinition.
+- **Profil-Lücke in `make_sensor_description`.** Bisher wurde
+  `entity_enabled_by_default` bei belegtem Metadaten-Dict komplett umgangen,
+  sodass das Profil für den produktiven Pfad nie griff. Jetzt gilt:
+  expliziter `enabled_by_default`-Schlüssel gewinnt, ansonsten greift das
+  Profil. Durch neue Tests für den produktiven Pfad abgesichert.
+
 ## [0.8.5-beta.1] - 2026-07-20
 
 This is the first beta preview of the upcoming 0.8.5 stable release. It bundles

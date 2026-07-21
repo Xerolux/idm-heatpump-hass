@@ -109,6 +109,71 @@ def test_generated_sensor_description_uses_expert_default_profile():
     assert description.entity_registry_enabled_default is False
 
 
+def test_metadata_dict_without_explicit_key_still_applies_expert_profile():
+    """Production path: a populated meta dict without ``enabled_by_default``.
+
+    The previous implementation short-circuited this case and always fell back
+    to ``True``, bypassing the generated expert profile. The expert profile
+    must still apply so technical registers stay disabled even when they pass
+    through ``make_sensor_description`` with incomplete metadata.
+    """
+    register = RegisterDef(
+        address=4001,
+        datatype=DataType.FLOAT,
+        name="cascade_power_heating",
+        unit="kW",
+    )
+
+    description = make_sensor_description(
+        register,
+        {"name": "Cascade power heating", "icon": "mdi:gauge"},
+        "Cascade power heating",
+    )
+
+    assert description.entity_registry_enabled_default is False
+
+
+def test_explicit_enabled_by_default_true_overrides_expert_profile():
+    """An explicit ``enabled_by_default: True`` wins over the profile logic.
+
+    This guarantees that user-facing core measurements mapped in
+    ``SENSOR_METADATA`` stay enabled even if their name would otherwise match
+    an expert-disabled fragment.
+    """
+    register = RegisterDef(
+        address=4002,
+        datatype=DataType.FLOAT,
+        name="cascade_power_heating",
+        unit="kW",
+    )
+
+    description = make_sensor_description(
+        register,
+        {"enabled_by_default": True},
+        "Cascade power heating",
+    )
+
+    assert description.entity_registry_enabled_default is True
+
+
+def test_explicit_enabled_by_default_false_overrides_core_register():
+    """An explicit ``enabled_by_default: False`` wins for core registers too."""
+    register = RegisterDef(
+        address=4003,
+        datatype=DataType.FLOAT,
+        name="hp_flow_temp",
+        unit="°C",
+    )
+
+    description = make_sensor_description(
+        register,
+        {"enabled_by_default": False},
+        "Vorlauf",
+    )
+
+    assert description.entity_registry_enabled_default is False
+
+
 def test_entity_profile_classifies_core_advanced_and_expert_entities():
     assert entity_profile("hp_flow_temp", SENSOR_METADATA["hp_flow_temp"]) == EntityProfile.BASIC
     assert entity_profile("internal_message", SENSOR_METADATA["internal_message"]) == EntityProfile.ADVANCED
