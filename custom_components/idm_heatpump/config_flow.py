@@ -140,7 +140,7 @@ def _connection_error_key(result: _ModbusConnectionStatus | bool) -> str | None:
 # "only change if detection fails" warning next to the field.
 _MODEL_OVERRIDE_SELECTOR: SelectSelector = SelectSelector(
     SelectSelectorConfig(
-        options=[{"value": value, "label": value} for value in MODEL_OVERRIDE_OPTIONS],
+        options=list(MODEL_OVERRIDE_OPTIONS),
         mode=SelectSelectorMode.DROPDOWN,
         translation_key="model_override",
     )

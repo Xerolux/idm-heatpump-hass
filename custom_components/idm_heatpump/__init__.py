@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
+from typing import Mapping
 from typing import TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
@@ -238,7 +239,7 @@ def _model_name_for_override(override_value: str) -> str | None:
     return mapping.get(override_value)
 
 
-def _resolved_model_override(entry_data: dict[str, Any]) -> str | None:
+def _resolved_model_override(entry_data: Mapping[str, Any]) -> str | None:
     """Return the configured override model name, or ``None`` for automatic.
 
     Empty/missing/``auto`` values resolve to ``None`` so the behavior is
