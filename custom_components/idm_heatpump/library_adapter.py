@@ -51,7 +51,12 @@ from .adapter_descriptions import (
     make_sensor_description,
 )
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
-from .adapter_metadata import NUMBER_METADATA, SENSOR_METADATA, entity_enabled_by_default
+from .adapter_metadata import (
+    NUMBER_METADATA,
+    SENSOR_METADATA,
+    entity_enabled_by_default,
+    native_step_for_register,
+)
 from .adapter_names import _get_german_name
 from .adapter_registers import build_filtered_register_map
 
@@ -530,7 +535,7 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
             name=number_name,
             native_min_value=min_val,
             native_max_value=max_val,
-            native_step=meta.get("step", 0.5),
+            native_step=native_step_for_register(reg, meta),
             native_unit_of_measurement=meta.get("unit") or reg.unit,
             device_class=meta.get("device_class"),
             icon=meta.get("icon", get_icon_for_register(name, reg.unit)),

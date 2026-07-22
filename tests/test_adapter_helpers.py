@@ -13,9 +13,17 @@ from custom_components.idm_heatpump.adapter_registers import (
     build_filtered_register_map,
     model_info_from_flags,
 )
-from custom_components.idm_heatpump.library_adapter import get_idm_client
+from custom_components.idm_heatpump.library_adapter import (
+    _numbers_from_register_map,
+    get_idm_client,
+)
 
-from idm_heatpump import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20
+from idm_heatpump import (
+    MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_20,
+    DataType,
+    RegisterDef,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -133,3 +141,84 @@ def test_get_idm_client_omits_unset_optional_params() -> None:
 
     assert "timeout" not in captured
     assert "max_retries" not in captured
+
+
+def test_integer_register_numbers_use_whole_number_steps() -> None:
+    """Issue #158: UCHAR limits must not offer invalid half-degree values."""
+    registers = {
+        "hc_a_heating_limit": RegisterDef(
+            address=1442,
+            datatype=DataType.UCHAR,
+            name="hc_a_heating_limit",
+            unit="°C",
+            writable=True,
+            min_val=0,
+            max_val=50,
+        ),
+        "hc_a_cooling_limit": RegisterDef(
+            address=1484,
+            datatype=DataType.UCHAR,
+            name="hc_a_cooling_limit",
+            unit="°C",
+            writable=True,
+            min_val=0,
+            max_val=36,
+        ),
+    }
+
+    descriptions = {item["register"].name: item["description"] for item in _numbers_from_register_map(registers)}
+
+    assert descriptions["hc_a_heating_limit"].native_step == 1.0
+    assert descriptions["hc_a_heating_limit"].native_min_value == 0
+    assert descriptions["hc_a_heating_limit"].native_max_value == 50
+    assert descriptions["hc_a_cooling_limit"].native_step == 1.0
+    assert descriptions["hc_a_cooling_limit"].native_min_value == 0
+    assert descriptions["hc_a_cooling_limit"].native_max_value == 36
+
+
+def test_all_integer_register_datatypes_use_whole_number_steps() -> None:
+    """Every integer datatype accepted as a Number must reject fractional UI input."""
+    datatypes = (
+        DataType.UCHAR,
+        DataType.INT8,
+        DataType.INT16,
+        DataType.UINT16,
+        DataType.BITFLAG,
+    )
+    registers = {
+        f"integer_{datatype.value.lower()}": RegisterDef(
+            address=2000 + index,
+            datatype=datatype,
+            name=f"integer_{datatype.value.lower()}",
+            writable=True,
+        )
+        for index, datatype in enumerate(datatypes)
+    }
+
+    descriptions = _numbers_from_register_map(registers)
+
+    assert len(descriptions) == len(datatypes)
+    assert all(item["description"].native_step == 1.0 for item in descriptions)
+
+
+def test_float_register_number_defaults_and_overrides_remain_unchanged() -> None:
+    """Datatype-derived integer steps must preserve float and metadata steps."""
+    registers = {
+        "dhw_setpoint": RegisterDef(
+            address=1250,
+            datatype=DataType.FLOAT,
+            name="dhw_setpoint",
+            writable=True,
+        ),
+        "power_limit_hp": RegisterDef(
+            address=4108,
+            datatype=DataType.FLOAT,
+            name="power_limit_hp",
+            writable=True,
+        ),
+    }
+
+    descriptions = {item["register"].name: item["description"] for item in _numbers_from_register_map(registers)}
+
+    assert descriptions["dhw_setpoint"].native_step == 0.5
+    assert descriptions["power_limit_hp"].native_step == 0.1

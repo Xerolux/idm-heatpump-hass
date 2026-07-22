@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.5-beta.6 — 2026-07-22
+
+### Fixed
+
+- **Ganzzahlige Modbus-Werte verwenden jetzt Schrittweite 1:** Heiz- und
+  Kühlgrenzen der Heizkreise A–G sowie alle weiteren schreibbaren Integer-
+  Register bieten keine ungültigen 0,5-Schritte mehr an.
+- **Climate und Warmwasser melden die unterstützte Zielwert-Schrittweite:**
+  Heizkreis- und Raum-Sollwerte verwenden 0,5 °C, der ganzzahlige Warmwasser-
+  Sollwert 1 °C.
+
 ## v0.8.5-beta.5 — 2026-07-22
 
 ### Changed

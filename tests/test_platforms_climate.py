@@ -151,7 +151,12 @@ class TestIdmWaterHeater:
 
         coord = _make_coordinator(data=data)
         current = current or _make_register("dhw_temp_top", 100)
-        target = target or _make_register("dhw_setpoint", 200)
+        target = target or _make_register(
+            "dhw_setpoint",
+            200,
+            writable=True,
+            datatype=DataType.UCHAR,
+        )
         return IdmWaterHeater(coord, current, target), coord
 
     def test_unique_id(self):
@@ -184,6 +189,10 @@ class TestIdmWaterHeater:
         wh, _ = self._make()
         assert wh.min_temp == 30.0
         assert wh.max_temp == 65.0
+
+    def test_target_temperature_step_uses_register_datatype(self):
+        wh, _ = self._make()
+        assert wh._attr_target_temperature_step == 1.0
 
     async def test_async_set_temperature_routes_through_coordinator(self):
         wh, coord = self._make(data={"dhw_setpoint": 50.0})
@@ -306,6 +315,7 @@ class TestIdmHeatingCircuitClimate:
         assert climate._attr_unique_id == "test_entry_climate_hc_a"
         assert climate._attr_translation_key == "heating_circuit"
         assert climate._attr_translation_placeholders == {"circuit": "A"}
+        assert climate._attr_target_temperature_step == 0.5
 
     def test_hvac_modes_advertised(self):
         from homeassistant.components.climate import HVACMode
@@ -437,6 +447,7 @@ class TestIdmZoneRoomClimate:
         assert climate._attr_unique_id == "test_entry_climate_zm1_room2"
         assert climate._attr_translation_key == "zone_room"
         assert climate._attr_translation_placeholders == {"zone": "1", "room": "2"}
+        assert climate._attr_target_temperature_step == 0.5
 
     def test_hvac_mode_mapping(self):
         from homeassistant.components.climate import HVACMode

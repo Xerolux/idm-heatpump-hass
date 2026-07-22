@@ -30,7 +30,8 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import RegisterDef
 
-from .const import DOMAIN, CircuitMode, RoomMode, HeatPumpStatus
+from .adapter_metadata import native_step_for_register
+from .const import DOMAIN, CircuitMode, HeatPumpStatus, RoomMode
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import build_device_info
@@ -112,6 +113,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{unique_id}"
         self._attr_min_temp = min_val if (min_val := self._target_reg.min_val) is not None else 10.0
         self._attr_max_temp = max_val if (max_val := self._target_reg.max_val) is not None else 35.0
+        self._attr_target_temperature_step = native_step_for_register(self._target_reg)
 
     @property
     def device_info(self) -> DeviceInfo:
