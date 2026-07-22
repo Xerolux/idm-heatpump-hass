@@ -88,9 +88,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
         "data": async_redact_data(
             {
                 "scan_interval": (
-                    coordinator.update_interval.total_seconds()
-                    if coordinator.update_interval is not None
-                    else None
+                    coordinator.update_interval.total_seconds() if coordinator.update_interval is not None else None
                 ),
                 "registers_count": coordinator.registers_count,
                 "last_update_success": coordinator.last_update_success,

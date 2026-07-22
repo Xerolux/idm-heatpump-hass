@@ -688,12 +688,15 @@ class TestIdmTechnicianCodeSensor:
         sensor.hass = MagicMock()
         cancel_mock = MagicMock()
 
-        with patch(
-            "custom_components.idm_heatpump.sensor.async_track_time_interval",
-            return_value=cancel_mock,
-        ) as mock_timer, patch(
-            "custom_components.idm_heatpump.sensor.dt_util",
-        ) as mock_dt:
+        with (
+            patch(
+                "custom_components.idm_heatpump.sensor.async_track_time_interval",
+                return_value=cancel_mock,
+            ) as mock_timer,
+            patch(
+                "custom_components.idm_heatpump.sensor.dt_util",
+            ) as mock_dt,
+        ):
             mock_dt.now.return_value = datetime(2025, 6, 15, 14, 30)
             await sensor.async_added_to_hass()
         mock_timer.assert_called_once()
