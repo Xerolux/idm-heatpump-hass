@@ -93,6 +93,22 @@ class TestNavigatorFamily:
 
 
 class TestCoordinatorInit:
+    def test_model_info_is_synchronized_to_client(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        model_info = IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_20,
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+
+        _make_coordinator(mock_hass, mock_config_entry, client=client, model_info=model_info)
+
+        client.set_model_info.assert_called_once_with(model_info)
+
     def test_properties_match_init(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(
             mock_hass,
@@ -1175,7 +1191,7 @@ class TestAsyncRefreshWebSupplement:
             has_pv=False,
             has_cascade=False,
         )
-        coord, _ = _make_coordinator(
+        coord, client = _make_coordinator(
             mock_hass,
             mock_config_entry,
             model_name="Navigator 2.0",
@@ -1183,6 +1199,7 @@ class TestAsyncRefreshWebSupplement:
             model_info=model_info,
             web_pin="1234",
         )
+        client.set_model_info.reset_mock()
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(
@@ -1204,6 +1221,7 @@ class TestAsyncRefreshWebSupplement:
         assert coord.firmware_version == "NAV10_20.24"
         assert coord.web_supplement is supplement
         assert coord.data["web_navigator_version"] == "Navigator 10"
+        client.set_model_info.assert_called_once_with(coord.model_info)
 
     async def test_web_refresh_success_reports_missing_core_values(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
@@ -1389,13 +1407,14 @@ class TestAsyncRefreshWebSupplement:
             has_pv=False,
             has_cascade=False,
         )
-        coord, _ = _make_coordinator(
+        coord, client = _make_coordinator(
             mock_hass,
             mock_config_entry,
             model_name="Navigator 2.0 / 10",
             model_info=model_info,
             web_pin="1234",
         )
+        client.set_model_info.reset_mock()
         coord.data = {}
         coord.async_update_listeners = MagicMock()
         supplement = IdmWebSupplement(navigator_version="Navigator 10")
@@ -1412,6 +1431,7 @@ class TestAsyncRefreshWebSupplement:
         assert coord.model_name == "Navigator 10"
         assert coord.model_info is not None
         assert coord.model_info.model_name == "Navigator 10"
+        client.set_model_info.assert_called_once_with(coord.model_info)
 
     async def test_web_refresh_caches_navigator20_variant(self, mock_hass, mock_config_entry):
         """After a successful Nav 2.0 web read, the variant is cached for future polls."""

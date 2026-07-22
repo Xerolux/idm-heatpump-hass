@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.5-beta.7 — 2026-07-22
+
+### Fixed
+
+- **Endgültiges Navigator-Modell wird mit der API synchronisiert:** Manuelle
+  Modell-Overrides und eindeutige spätere Web-Korrekturen gelten nun auch für
+  die modellabhängigen Register- und Schreibprüfungen der API.
+- **Zukünftiger Modbus-Transportvertrag korrigiert:** Der weiterhin inaktive
+  Vertrag unterscheidet FC04/Input Register und FC03/Holding Register und
+  begrenzt Slave-IDs auf 1–247. Der produktive Transport bleibt unverändert.
+
 ## v0.8.5-beta.6 — 2026-07-22
 
 ### Fixed
