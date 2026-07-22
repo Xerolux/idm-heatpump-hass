@@ -5,6 +5,15 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.5-beta.5 — 2026-07-22
+
+### Changed
+
+- **Pin auf `idm-heatpump-api[web]==0.8.4`:** Aktualisiert die API-Bibliothek
+  auf v0.8.4 für verbesserte Modbus-Modellerkennung (Erkennung aktiver Heizkreise
+  über Betriebsmodus-Register, verlässliche Abfrage für Navigator 10 vs. 2.0
+  bei Terra SWM Firmware und Kaskaden-Erkennung).
+
 ## v0.8.4 — 2026-07-19
 
 ### Changed

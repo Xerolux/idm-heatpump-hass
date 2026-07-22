@@ -755,8 +755,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # can only connect to a Navigator 10 controller.
             if _firmware_indicates_nav10(web_supplement.software_version):
                 _LOGGER.info(
-                    "Correcting Modbus-detected model %s to %s "
-                    "based on web firmware string %s",
+                    "Correcting Modbus-detected model %s to %s based on web firmware string %s",
                     getattr(self._model_info, "model_name", None) or self._model_name,
                     web_model_name,
                     web_supplement.software_version,

@@ -13,6 +13,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5-beta.5] - 2026-07-22
+
+Fifth beta preview of the upcoming 0.8.5 stable release. Upgrades the PyPI API
+dependency requirement to `idm-heatpump-api[web]==0.8.4` and updates model detection
+probing handling across the integration adapter.
+
+> **Compatibility:** Pinned API updated to `idm-heatpump-api[web]==0.8.4`.
+> Entity unique IDs, entity IDs, registers and write paths are unchanged.
+
+### Changed
+
+- **Bump `idm-heatpump-api[web]` pin to `0.8.4`.** Brings in library improvements for
+  Modbus model detection (sentinel-aware heating circuit mode register probes, robust
+  Navigator 10 vs 2.0 differentiator checks for Terra SWM firmwares, and automatic
+  cascade capability detection).
+- **Model Info Feature Set Alignment.** Updated `_model_info_from_detected_name` and
+  `model_info_from_flags` to explicitly populate feature sets on fallback `IdmModelInfo`
+  instances matching library feature flags (`FEATURE_CASCADE`, `FEATURE_HEATING_CIRCUITS`,
+  `FEATURE_ZONE_MODULES`, etc.).
+
 ## [0.8.5-beta.4] - 2026-07-22
 
 Fourth beta preview of the upcoming 0.8.5 stable release. This release

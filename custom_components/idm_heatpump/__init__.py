@@ -27,6 +27,12 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.loader import async_get_integration
 
 from idm_heatpump import (
+    FEATURE_CASCADE,
+    FEATURE_HEATING_CIRCUITS,
+    FEATURE_ISC,
+    FEATURE_PV,
+    FEATURE_SOLAR,
+    FEATURE_ZONE_MODULES,
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
     MODEL_NAVIGATOR_PRO,
@@ -269,6 +275,17 @@ def _model_info_from_detected_name(
         # completely unknown: prefer Navigator 2.0 to avoid first-setup crashes.
         detected_model = MODEL_NAVIGATOR_20
 
+    features: set[str] = set()
+    if circuits:
+        features.add(FEATURE_HEATING_CIRCUITS)
+    if zone_count > 0:
+        features.add(FEATURE_ZONE_MODULES)
+    features.add(FEATURE_SOLAR)
+    features.add(FEATURE_ISC)
+    features.add(FEATURE_PV)
+    if enable_cascade:
+        features.add(FEATURE_CASCADE)
+
     return IdmModelInfo(
         model_name=detected_model,
         active_heating_circuits=[circuit.upper() for circuit in circuits],
@@ -277,6 +294,7 @@ def _model_info_from_detected_name(
         has_isc=True,
         has_pv=True,
         has_cascade=enable_cascade,
+        features=features,
     )
 
 
@@ -691,8 +709,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 # probe (register 4108 is rejected by some Nav10 firmwares).
                 if _firmware_indicates_nav10(web_supplement.software_version):
                     _LOGGER.info(
-                        "Correcting Modbus-detected model %s to %s "
-                        "based on web firmware string %s",
+                        "Correcting Modbus-detected model %s to %s based on web firmware string %s",
                         modbus_model_name,
                         web_supplement.model_name,
                         web_supplement.software_version,
@@ -717,9 +734,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                         _web_correction_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
                     if web_supplement.web_variant:
                         _web_correction_updates[CONF_DETECTED_WEB_VARIANT] = web_supplement.web_variant
-                    hass.config_entries.async_update_entry(
-                        entry, data={**entry.data, **_web_correction_updates}
-                    )
+                    hass.config_entries.async_update_entry(entry, data={**entry.data, **_web_correction_updates})
                 else:
                     stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = web_supplement.model_name
                     _LOGGER.warning(
@@ -775,11 +790,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             # (features, capabilities). Skip when families disagree (e.g. web
             # evidence corrected a weak Modbus "Navigator 2.0" detection).
             detected_model_info = client_model_info
-        elif (
-            not override_active
-            and isinstance(client_model_info, IdmModelInfo)
-            and detected_model_info is None
-        ):
+        elif not override_active and isinstance(client_model_info, IdmModelInfo) and detected_model_info is None:
             detected_model_info = client_model_info
         if override_active or detected_model_info is None:
             # With an active override, always (re)build model info from the

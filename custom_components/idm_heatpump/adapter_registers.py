@@ -5,6 +5,12 @@ from __future__ import annotations
 from typing import Any
 
 from idm_heatpump import (
+    FEATURE_CASCADE,
+    FEATURE_HEATING_CIRCUITS,
+    FEATURE_ISC,
+    FEATURE_PV,
+    FEATURE_SOLAR,
+    FEATURE_ZONE_MODULES,
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
     IdmModelInfo,
@@ -54,6 +60,17 @@ def model_info_from_flags(
     callers should supply the actually detected model name whenever
     possible to avoid polluting the register map with wrong entries.
     """
+    features: set[str] = set()
+    if circuits:
+        features.add(FEATURE_HEATING_CIRCUITS)
+    if zone_modules > 0:
+        features.add(FEATURE_ZONE_MODULES)
+    features.add(FEATURE_SOLAR)
+    features.add(FEATURE_ISC)
+    features.add(FEATURE_PV)
+    if enable_cascade:
+        features.add(FEATURE_CASCADE)
+
     return IdmModelInfo(
         model_name=model_name,
         active_heating_circuits=circuits,
@@ -62,6 +79,7 @@ def model_info_from_flags(
         has_isc=True,
         has_pv=True,
         has_cascade=enable_cascade,
+        features=features,
     )
 
 

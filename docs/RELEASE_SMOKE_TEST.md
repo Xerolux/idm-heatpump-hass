@@ -66,7 +66,7 @@ installation test.
    )
    assert manifest["requirements"] == [
        "pymodbus>=3.12.1,<4.0",
-       "idm-heatpump-api[web]==0.8.3",
+       "idm-heatpump-api[web]==0.8.4",
    ]
    assert manifest["version"] == os.environ["RELEASE_VERSION"]
    print("artifact metadata ok")
