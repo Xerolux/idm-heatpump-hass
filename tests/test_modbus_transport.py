@@ -30,6 +30,9 @@ class FakeTransport:
     async def async_read_holding_registers(self, address: int, count: int) -> tuple[int, ...]:
         return tuple(address + offset for offset in range(count))
 
+    async def async_read_input_registers(self, address: int, count: int) -> tuple[int, ...]:
+        return tuple(0x1000 + address + offset for offset in range(count))
+
     async def async_write_registers(self, address: int, values: tuple[int, ...]) -> None:
         return None
 
@@ -46,6 +49,7 @@ def test_endpoint_is_immutable() -> None:
     [
         ({"host": " ", "port": 502, "slave_id": 1, "timeout": 10.0, "retries": 3}, "host"),
         ({"host": "192.0.2.10", "port": 0, "slave_id": 1, "timeout": 10.0, "retries": 3}, "port"),
+        ({"host": "192.0.2.10", "port": 502, "slave_id": 0, "timeout": 10.0, "retries": 3}, "slave_id"),
         ({"host": "192.0.2.10", "port": 502, "slave_id": 248, "timeout": 10.0, "retries": 3}, "slave_id"),
         ({"host": "192.0.2.10", "port": 502, "slave_id": 1, "timeout": 0.0, "retries": 3}, "timeout"),
         ({"host": "192.0.2.10", "port": 502, "slave_id": 1, "timeout": 10.0, "retries": -1}, "retries"),
@@ -98,3 +102,11 @@ def test_capabilities_diagnostics_are_plain_values() -> None:
 
 def test_protocol_accepts_matching_transport() -> None:
     assert isinstance(FakeTransport(), IdmModbusTransport)
+
+
+@pytest.mark.asyncio
+async def test_transport_keeps_input_and_holding_reads_distinct() -> None:
+    transport = FakeTransport()
+
+    assert await transport.async_read_holding_registers(100, 2) == (100, 101)
+    assert await transport.async_read_input_registers(100, 2) == (4196, 4197)

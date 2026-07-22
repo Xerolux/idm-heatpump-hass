@@ -832,10 +832,18 @@ def _stub_idm_heatpump() -> None:
             self.host = host
             self.port = port
             self.slave_id = slave_id
+            self._model_info: IdmModelInfo | None = None
             self._client = None
             self._max_retries = 3
             self._register_failures: dict[str, int] = {}
             self._permanently_failed_registers: set[str] = set()
+
+        @property
+        def model_info(self) -> IdmModelInfo | None:
+            return self._model_info
+
+        def set_model_info(self, model_info: IdmModelInfo) -> None:
+            self._model_info = model_info
 
         async def connect(self) -> None:
             if self._client is not None and getattr(self._client, "connected", False):

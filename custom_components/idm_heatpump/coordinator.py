@@ -186,6 +186,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._model_name = model_name
         self._firmware_version = firmware_version
         self._model_info = model_info
+        if model_info is not None:
+            # Keep API-side model-gated register and write validation aligned
+            # with the final model resolved by Home Assistant.
+            self._client.set_model_info(model_info)
         self._web_pin = web_pin
         self._web_host = web_host or client.host
         self._web_supplement = web_supplement
@@ -732,6 +736,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         model_conflicts = (
             modbus_family is not None and web_model_family is not None and modbus_family != web_model_family
         )
+        model_info_changed = False
         if web_model_name and not model_conflicts:
             self._model_name = web_model_name
             # Keep model_info consistent so future conflict checks and
@@ -749,6 +754,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self._model_info = replace(self._model_info, model_name=web_model_name)
                 except (TypeError, ValueError):
                     self._model_info.model_name = web_model_name
+                model_info_changed = True
         elif web_model_name:
             # Web and Modbus disagree. Web evidence is definitive when the
             # firmware string carries a NAV10 prefix: the nav10 web variant
@@ -768,6 +774,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                         self._model_info = replace(self._model_info, model_name=web_model_name)
                     except (TypeError, ValueError):
                         self._model_info.model_name = web_model_name
+                    model_info_changed = True
                 if web_supplement.software_version:
                     self._firmware_version = web_supplement.software_version
                 model_conflicts = False
@@ -777,6 +784,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     web_model_name,
                     getattr(self._model_info, "model_name", None) or self._model_name,
                 )
+        if model_info_changed and self._model_info is not None:
+            self._client.set_model_info(self._model_info)
         if web_supplement.software_version and not model_conflicts:
             self._firmware_version = web_supplement.software_version
 

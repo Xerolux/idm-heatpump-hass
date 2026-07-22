@@ -51,13 +51,18 @@ transport.endpoint
 transport.capabilities
 await transport.async_connect()
 await transport.async_close()
-words = await transport.async_read_holding_registers(address, count)
+input_words = await transport.async_read_input_registers(address, count)
+holding_words = await transport.async_read_holding_registers(address, count)
 await transport.async_write_registers(address, values)
 ```
 
+Input Register (Function Code 04) und Holding Register (Function Code 03)
+bleiben dabei ausdrücklich getrennte Leseoperationen. Der Adapter darf die von
+der API vorgegebene Registerart nicht vereinheitlichen oder ignorieren.
+
 `ModbusTcpEndpoint` validiert die statische Zieldefinition bereits beim
-Erzeugen: Host darf nicht leer sein, Port liegt im TCP-Bereich, Slave-ID im
-Modbus-Bereich, Timeout ist positiv und Retries sind nicht negativ. Zusätzlich
+Erzeugen: Host darf nicht leer sein, Port liegt im TCP-Bereich, Slave-ID liegt
+zwischen 1 und 247, Timeout ist positiv und Retries sind nicht negativ. Zusätzlich
 stellt `connection_key` eine normalisierte `(host, port, slave_id)`-Kennung für
 spätere Konfliktprüfungen mehrerer Config-Entries bereit.
 

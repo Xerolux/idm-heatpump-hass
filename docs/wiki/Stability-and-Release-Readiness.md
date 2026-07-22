@@ -6,12 +6,11 @@ normal changelog.
 
 ## Current Status
 
-Integration `0.8.5-beta.6` and `idm-heatpump-api` `0.8.4` form the current,
-exactly pinned candidate pair. Automated CI, security, release-artifact, and
-checksum checks passed. The candidate remains blocked for stable release until
-the clean-Home-Assistant hardware smoke test, the minimum soak duration, and
-the hardware/community gates below pass. See the
-[candidate evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.8.1-beta.31.md).
+Integration `0.8.5-beta.7` and `idm-heatpump-api` `0.8.4` form the current,
+exactly pinned candidate pair. The candidate remains blocked for stable release
+until the clean-Home-Assistant hardware smoke test, the minimum soak duration,
+and the hardware/community gates below pass. See the
+[candidate evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.8.5-beta.7.md).
 
 The July 2026 stability audit verified:
 

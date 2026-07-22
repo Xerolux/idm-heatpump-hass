@@ -31,8 +31,8 @@ class ModbusTcpEndpoint:
             raise ValueError("host must not be empty")
         if not 1 <= self.port <= 65535:
             raise ValueError("port must be between 1 and 65535")
-        if not 0 <= self.slave_id <= 247:
-            raise ValueError("slave_id must be between 0 and 247")
+        if not 1 <= self.slave_id <= 247:
+            raise ValueError("slave_id must be between 1 and 247")
         if self.timeout <= 0:
             raise ValueError("timeout must be greater than 0")
         if self.retries < 0:
@@ -96,6 +96,9 @@ class IdmModbusTransport(Protocol):
 
     async def async_read_holding_registers(self, address: int, count: int) -> tuple[int, ...]:
         """Read raw holding-register words from the device."""
+
+    async def async_read_input_registers(self, address: int, count: int) -> tuple[int, ...]:
+        """Read raw input-register words from the device."""
 
     async def async_write_registers(self, address: int, values: tuple[int, ...]) -> None:
         """Write raw holding-register words to the device."""

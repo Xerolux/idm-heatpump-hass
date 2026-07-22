@@ -13,6 +13,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5-beta.7] - 2026-07-22
+
+Seventh beta preview of the upcoming 0.8.5 stable release. Keeps API-side
+model-gated validation aligned with Home Assistant's final model decision and
+corrects the dormant transport contract prepared for a future shared Modbus
+connection.
+
+> **Compatibility:** API pin unchanged at `idm-heatpump-api[web]==0.8.4`.
+> Entity unique IDs, entity IDs, register addresses, and the active Modbus
+> transport are unchanged.
+
+### Fixed
+
+- **Die endgültige Home-Assistant-Modellerkennung wird in den API-Client
+  zurückgespiegelt.** Modellabhängige Register- und Schreibprüfungen verwenden
+  damit auch nach einem manuellen Override oder einer eindeutigen Web-Korrektur
+  das von der Integration bestätigte Navigator-Modell.
+- **Der vorbereitete Modbus-Transportvertrag unterscheidet FC04 und FC03.** Der
+  weiterhin nicht produktiv eingebundene Vertrag unterstützt getrennte Input-
+  und Holding-Register-Leseoperationen und akzeptiert nur Slave-IDs von 1 bis
+  247.
+
+### Known limitation
+
+- **Home Assistants experimentelle `modbus_connection` wird noch nicht
+  verwendet.** Der vorhandene `IdmModbusClient` bleibt der aktive und getestete
+  Laufzeitpfad; die Transportumstellung folgt erst nach Freigabe der
+  Home-Assistant-Schnittstelle.
+
 ## [0.8.5-beta.6] - 2026-07-22
 
 Sixth beta preview of the upcoming 0.8.5 stable release. Corrects invalid
