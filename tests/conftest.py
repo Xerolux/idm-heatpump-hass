@@ -121,9 +121,10 @@ def _stub_voluptuous() -> None:
         return schema
 
     class _Required:
-        def __init__(self, key, default=None):
+        def __init__(self, key, default=None, msg=None, description=None, **kwargs):
             self.key = key
             self.default = default
+            self.description = description
 
         def __hash__(self):
             return hash(self.key)
@@ -134,9 +135,14 @@ def _stub_voluptuous() -> None:
             return self.key == other
 
     class _Optional:
-        def __init__(self, key, default=None):
+        def __init__(self, key, default=None, msg=None, description=None, **kwargs):
             self.key = key
             self.default = default
+            # Real voluptuous accepts ``description`` (used by HA to mark fields
+            # as advanced, set suggested values, etc.). The stub ignores the
+            # contents but must accept the argument so schema definitions that
+            # use it load under the test stub.
+            self.description = description
 
         def __hash__(self):
             return hash(self.key)

@@ -14,8 +14,17 @@ from custom_components.idm_heatpump import (
     async_reload_entry,
     _detect_model_info,
     _model_info_from_detected_name,
+    _model_name_for_override,
+    _resolved_model_override,
 )
-from custom_components.idm_heatpump.const import CONF_DEVICE_HIERARCHY, MODEL
+from custom_components.idm_heatpump.const import (
+    CONF_DEVICE_HIERARCHY,
+    CONF_MODEL_OVERRIDE,
+    MODEL,
+    MODEL_OVERRIDE_AUTO,
+    MODEL_OVERRIDE_NAVIGATOR_10,
+    MODEL_OVERRIDE_NAVIGATOR_20,
+)
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
 from idm_heatpump import MODEL_UNKNOWN, IdmModelInfo
 
@@ -1547,3 +1556,131 @@ class TestAsyncSetupEntryModelDetection:
         assert model_info is not None
         assert model_info.model_name == "Navigator 2.0"
         assert model_info.has_cascade is False
+
+
+class TestModelOverrideHelpers:
+    """Unit tests for the pure override mapping helpers."""
+
+    def test_model_name_for_override_maps_known_values(self):
+        assert _model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_10) == "Navigator 10"
+        assert _model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_20) == "Navigator 2.0"
+
+    def test_model_name_for_override_returns_none_for_auto(self):
+        assert _model_name_for_override(MODEL_OVERRIDE_AUTO) is None
+
+    def test_model_name_for_override_returns_none_for_unknown(self):
+        assert _model_name_for_override("navigator_99") is None
+
+    def test_resolved_override_returns_none_for_auto(self):
+        assert _resolved_model_override({CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_AUTO}) is None
+
+    def test_resolved_override_returns_none_for_missing_key(self):
+        assert _resolved_model_override({}) is None
+
+    def test_resolved_override_returns_none_for_empty_string(self):
+        assert _resolved_model_override({CONF_MODEL_OVERRIDE: ""}) is None
+
+    def test_resolved_override_returns_name_for_explicit_value(self):
+        assert _resolved_model_override({CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10}) == "Navigator 10"
+
+    def test_resolved_override_returns_none_for_bogus_value(self):
+        # Defensive: an invalid value stored in entry.data must not force a
+        # wrong family — it falls back to automatic detection.
+        assert _resolved_model_override({CONF_MODEL_OVERRIDE: "garbage"}) is None
+
+
+class TestAsyncSetupEntryModelOverride:
+    """Integration-style tests: the override must win over Modbus detection."""
+
+    def _make_entry(self, override: str | None = None):
+        entry = MagicMock()
+        entry.entry_id = "override_test_id"
+        entry.title = "IDM Override Test"
+        data: dict = {"host": "10.0.0.9", "port": 502, "slave_id": 1}
+        if override is not None:
+            data[CONF_MODEL_OVERRIDE] = override
+        entry.data = data
+        entry.options = {
+            "scan_interval": 10,
+            "heating_circuits": ["a"],
+            "zone_count": 0,
+            "zone_rooms": {},
+            "hide_unused_registers": True,
+        }
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    async def test_override_wins_over_modbus_detection(self, mock_hass):
+        """Even if detect_model() returns Navigator 2.0, an explicit Navigator 10
+        override must drive the coordinator model and the register map."""
+        entry = self._make_entry(override=MODEL_OVERRIDE_NAVIGATOR_10)
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        # Modbus detection disagrees with the override on purpose.
+        mock_client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 2.0", firmware_version=None))
+        mock_client.model_info = None
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured.update(kwargs)
+            return mock_coordinator
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.8.5"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        # The override won: the coordinator sees Navigator 10, not the detected 2.0.
+        assert captured.get("model_name") == "Navigator 10"
+
+    async def test_auto_keeps_modbus_detection(self, mock_hass):
+        """With override = auto (or missing), the Modbus detection wins as before."""
+        entry = self._make_entry(override=MODEL_OVERRIDE_AUTO)
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10", firmware_version=None))
+        mock_client.model_info = None
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        captured: dict = {}
+
+        def _capture_coordinator(*args, **kwargs):
+            captured.update(kwargs)
+            return mock_coordinator
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", side_effect=_capture_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.8.5"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        assert captured.get("model_name") == "Navigator 10"

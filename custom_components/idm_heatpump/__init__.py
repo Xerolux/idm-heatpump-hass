@@ -13,6 +13,7 @@ import re
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Any
+from typing import Mapping
 from typing import TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
@@ -43,6 +44,7 @@ from .const import (
     CONF_HIDE_UNUSED,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_TIMEOUT,
+    CONF_MODEL_OVERRIDE,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_SHORT_CYCLE_MINUTES,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
@@ -73,6 +75,10 @@ from .const import (
     DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     MODEL,
+    MODEL_OVERRIDE_AUTO,
+    MODEL_OVERRIDE_NAVIGATOR_10,
+    MODEL_OVERRIDE_NAVIGATOR_20,
+    MODEL_OVERRIDE_NAVIGATOR_PRO,
     NAME,
 )
 from .coordinator import IdmCoordinator, navigator_family
@@ -218,6 +224,36 @@ def _model_info_from_detected_name(
     )
 
 
+def _model_name_for_override(override_value: str) -> str | None:
+    """Map a config-flow model override value to a library model name.
+
+    Returns ``None`` for ``auto``/unknown so callers keep using automatic
+    detection. Returning the canonical library string lets the rest of setup
+    (register map, family checks, device info) work unchanged.
+    """
+    mapping = {
+        MODEL_OVERRIDE_NAVIGATOR_10: MODEL_NAVIGATOR_10,
+        MODEL_OVERRIDE_NAVIGATOR_20: MODEL_NAVIGATOR_20,
+        MODEL_OVERRIDE_NAVIGATOR_PRO: MODEL_NAVIGATOR_PRO,
+    }
+    return mapping.get(override_value)
+
+
+def _resolved_model_override(entry_data: Mapping[str, Any]) -> str | None:
+    """Return the configured override model name, or ``None`` for automatic.
+
+    Empty/missing/``auto`` values resolve to ``None`` so the behavior is
+    identical to the pre-override detection path.
+    """
+    raw = entry_data.get(CONF_MODEL_OVERRIDE)
+    if not isinstance(raw, str):
+        return None
+    raw = raw.strip()
+    if raw == MODEL_OVERRIDE_AUTO or not raw:
+        return None
+    return _model_name_for_override(raw)
+
+
 async def _web_poll_loop(coordinator: IdmCoordinator, interval: int) -> None:
     """Poll optional web supplement data independently from Modbus."""
     await asyncio.sleep(0.3)
@@ -306,6 +342,17 @@ async def _async_setup_web_only_entry(
             web_host,
             MODEL,
         )
+
+    # A user-configured override is authoritative even in web-only mode (it
+    # only affects the device model label here, since web-only has no Modbus
+    # register map). The web-supplement firmware version is still kept.
+    override_model_name = _resolved_model_override(entry.data)
+    if override_model_name is not None:
+        _LOGGER.warning(
+            "IDM Navigator model override active in web-only mode: using %s",
+            override_model_name,
+        )
+        model_name = override_model_name
 
     client = get_idm_client(host=host, port=port, slave_id=slave_id)
 
@@ -486,11 +533,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             firmware_version or "unknown",
             "available" if detected_model_info is not None else "unavailable",
         )
+
+        # Optional user-configured Navigator model override. An explicit
+        # override wins over both the fresh Modbus detection and any stored/
+        # web-supplement values, because the user explicitly chose it. It only
+        # affects register selection (which registers are polled); unique IDs,
+        # entity IDs and write paths stay unchanged. ``auto`` keeps detection.
+        override_model_name = _resolved_model_override(entry.data)
+        override_active = override_model_name is not None
+        if override_active:
+            assert override_model_name is not None  # for mypy
+            _LOGGER.warning(
+                "IDM Navigator model override active: using %s (automatic detection was %s); "
+                "change the override back to 'Automatic' in the integration settings if it was set "
+                "by mistake",
+                override_model_name,
+                modbus_model_name,
+            )
+            model_name = override_model_name
+            modbus_model_name = override_model_name
+
         stale_detected_data: dict[str, Any] = {}
         stored_model_conflict = False
         detected_model_name = entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION)
+        # When a user override is active, the stored detected value is not a
+        # detection result that could become "stale" — it is whatever the user
+        # last saw. Skip the stored-vs-fresh conflict reconciliation entirely
+        # so we never silently rewrite a user override.
         if (
-            isinstance(detected_model_name, str)
+            not override_active
+            and isinstance(detected_model_name, str)
             and detected_model_name.strip()
             and (
                 detected_model_info is None
@@ -502,7 +574,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 "Using stored IDM Navigator model %s because it matches fresh Modbus detection",
                 model_name,
             )
-        elif isinstance(detected_model_name, str) and detected_model_name.strip():
+        elif not override_active and isinstance(detected_model_name, str) and detected_model_name.strip():
             stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = detected_model_name
             stored_model_conflict = True
             _LOGGER.warning(
@@ -543,7 +615,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 )
                 _LOGGER.debug("Technical initial Navigator web error", exc_info=True)
             if (
-                web_supplement is not None
+                not override_active
+                and web_supplement is not None
                 and detected_model_info is not None
                 and web_supplement.model_name
                 and navigator_family(web_supplement.model_name) != navigator_family(modbus_model_name)
@@ -553,6 +626,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     "Ignoring conflicting stored/web Navigator model %s because Modbus detected %s",
                     web_supplement.model_name,
                     modbus_model_name,
+                )
+            elif override_active:
+                # A user override is authoritative for the model. The web
+                # supplement may still contribute the software version, but it
+                # must not change the model name.
+                _, firmware_version = merge_model_info(
+                    model_name,
+                    firmware_version,
+                    web_supplement,
                 )
             else:
                 model_name, firmware_version = merge_model_info(
@@ -582,9 +664,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             hass.config_entries.async_update_entry(entry, data=updated_data)
 
         client_model_info = getattr(client, "model_info", None)
-        if isinstance(client_model_info, IdmModelInfo):
+        if not override_active and isinstance(client_model_info, IdmModelInfo):
             detected_model_info = client_model_info
-        if detected_model_info is None:
+        if override_active or detected_model_info is None:
+            # With an active override, always (re)build model info from the
+            # authoritative override name so the register map reflects the
+            # user's choice, not whatever the Modbus probe happened to detect.
             detected_model_info = _model_info_from_detected_name(
                 model_name,
                 circuits,

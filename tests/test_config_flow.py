@@ -20,6 +20,7 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_WEB_VARIANT,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_MODEL_OVERRIDE,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
@@ -39,6 +40,8 @@ from custom_components.idm_heatpump.const import (
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_WEB_ENABLED,
+    MODEL_OVERRIDE_AUTO,
+    MODEL_OVERRIDE_NAVIGATOR_10,
 )
 from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed, IdmWebSupplement
 
@@ -445,6 +448,59 @@ class TestAsyncStepUser:
         assert result["type"] == "form"
         assert result["errors"]["base"] == "web_cannot_connect"
 
+    async def test_successful_connection_defaults_model_override_to_auto(self):
+        flow = _make_flow()
+        flow._async_abort_entries_match = MagicMock()
+        with patch.object(flow, "_test_connection", return_value=True):
+            with patch.object(
+                flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}
+            ):
+                await flow.async_step_user(
+                    {
+                        "name": "IDM Test",
+                        "host": "192.168.1.100",
+                        "port": 502,
+                        "slave_id": 1,
+                    }
+                )
+        assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
+
+    async def test_explicit_model_override_is_stored(self):
+        flow = _make_flow()
+        flow._async_abort_entries_match = MagicMock()
+        with patch.object(flow, "_test_connection", return_value=True):
+            with patch.object(
+                flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}
+            ):
+                await flow.async_step_user(
+                    {
+                        "name": "IDM Test",
+                        "host": "192.168.1.100",
+                        "port": 502,
+                        "slave_id": 1,
+                        CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10,
+                    }
+                )
+        assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_NAVIGATOR_10
+
+    async def test_invalid_model_override_falls_back_to_auto(self):
+        flow = _make_flow()
+        flow._async_abort_entries_match = MagicMock()
+        with patch.object(flow, "_test_connection", return_value=True):
+            with patch.object(
+                flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}
+            ):
+                await flow.async_step_user(
+                    {
+                        "name": "IDM Test",
+                        "host": "192.168.1.100",
+                        "port": 502,
+                        "slave_id": 1,
+                        CONF_MODEL_OVERRIDE: "navigator_99_bogus",
+                    }
+                )
+        assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
+
 
 class TestAsyncStepOptions:
     async def test_shows_form_without_input(self):
@@ -700,6 +756,7 @@ class TestAsyncStepReconfigure:
                 "web_pin": "",
                 "modbus_proxy": False,
                 "web_host": "",
+                CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_AUTO,
                 CONF_WEB_ONLY: False,
             },
         )
@@ -732,6 +789,7 @@ class TestAsyncStepReconfigure:
                 "web_pin": "",
                 "modbus_proxy": False,
                 "web_host": "",
+                CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_AUTO,
                 CONF_WEB_ONLY: False,
             },
         )
@@ -770,6 +828,7 @@ class TestAsyncStepReconfigure:
                 "web_pin": "2634",
                 "modbus_proxy": True,
                 "web_host": "192.168.178.103",
+                CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_AUTO,
                 CONF_WEB_ONLY: False,
             },
         )

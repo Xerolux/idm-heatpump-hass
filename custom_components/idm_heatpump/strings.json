@@ -11,7 +11,8 @@
           "slave_id": "Slave ID",
           "web_pin": "Local network PIN (Navigator web)",
           "modbus_proxy": "Use a Modbus proxy",
-          "web_host": "Original heat pump IP for web access"
+          "web_host": "Original heat pump IP for web access",
+          "model_override": "Navigator model"
         },
         "data_description": {
           "name": "Display name for the device in Home Assistant, e.g. \"IDM Heat Pump\".",
@@ -20,7 +21,8 @@
           "slave_id": "Modbus slave ID. Default is `1`. Only change this if multiple devices share the same bus.",
           "web_pin": "Enter the Local network code configured on the Navigator display. Do not enter a cloud/app password or a two-factor code. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
-          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
+          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`.",
+          "model_override": "**Only change if the automatic detection does not work correctly.** The model is detected automatically in almost all cases. A wrong manual choice can degrade the register map and lead to missing or unavailable sensors."
         }
       },
       "reconfigure": {
@@ -44,7 +46,8 @@
           "slave_id": "Slave ID",
           "web_pin": "Local network PIN (Navigator web)",
           "modbus_proxy": "Use a Modbus proxy",
-          "web_host": "Original heat pump IP for web access"
+          "web_host": "Original heat pump IP for web access",
+          "model_override": "Navigator model"
         },
         "data_description": {
           "host": "IP address or hostname used for Modbus TCP. If you use a Modbus proxy, enter the proxy address here.",
@@ -52,7 +55,8 @@
           "slave_id": "Modbus slave ID. Default is `1`.",
           "web_pin": "Local network code configured on the Navigator display. Cloud/app passwords and two-factor codes do not work here. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
-          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
+          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`.",
+          "model_override": "**Only change if the automatic detection does not work correctly.** The model is detected automatically in almost all cases. A wrong manual choice can degrade the register map and lead to missing or unavailable sensors."
         }
       },
       "diagnostics_success": {
@@ -473,6 +477,14 @@
     }
   },
   "selector": {
+    "model_override": {
+      "options": {
+        "auto": "Automatic (recommended)",
+        "navigator_10": "Navigator 10",
+        "navigator_20": "Navigator 2.0",
+        "navigator_pro": "Navigator Pro"
+      }
+    },
     "heating_circuit": {
       "options": {
         "a": "Circuit A – Primary",
