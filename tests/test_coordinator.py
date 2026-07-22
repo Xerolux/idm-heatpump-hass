@@ -1164,7 +1164,8 @@ class TestAsyncRefreshWebSupplement:
         assert coord.data["hp_return_temp"] == 30.0
         assert coord.data["web_navigator_version"] == "Navigator 10"
 
-    async def test_web_refresh_does_not_override_modbus_detected_navigator_20(self, mock_hass, mock_config_entry):
+    async def test_web_refresh_web_firmware_prefix_overrides_weak_modbus_detection(self, mock_hass, mock_config_entry):
+        """Web firmware NAV10 prefix corrects a weak Modbus Navigator 2.0 detection."""
         model_info = IdmModelInfo(
             model_name=MODEL_NAVIGATOR_20,
             active_heating_circuits=["A"],
@@ -1199,8 +1200,8 @@ class TestAsyncRefreshWebSupplement:
         ):
             await coord.async_refresh_web_supplement()
 
-        assert coord.model_name == "Navigator 2.0"
-        assert coord.firmware_version is None
+        assert coord.model_name == "Navigator 10"
+        assert coord.firmware_version == "NAV10_20.24"
         assert coord.web_supplement is supplement
         assert coord.data["web_navigator_version"] == "Navigator 10"
 
@@ -1247,8 +1248,8 @@ class TestAsyncRefreshWebSupplement:
         assert kwargs["data"]["detected_navigator_version"] == "Navigator 10"
         assert kwargs["data"]["detected_software_version"] == "NAV10_20.24"
 
-    async def test_web_refresh_does_not_persist_on_conflict(self, mock_hass, mock_config_entry):
-        """No persistence when web model conflicts with Modbus detection."""
+    async def test_web_refresh_persists_when_firmware_prefix_resolves_conflict(self, mock_hass, mock_config_entry):
+        """Persistence happens when NAV10 firmware prefix resolves a model conflict."""
         model_info = IdmModelInfo(
             model_name=MODEL_NAVIGATOR_20,
             active_heating_circuits=["A"],
@@ -1270,6 +1271,45 @@ class TestAsyncRefreshWebSupplement:
         supplement = IdmWebSupplement(
             navigator_version="Navigator 10",
             software_version="NAV10_20.24",
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        mock_hass.config_entries.async_update_entry.assert_called_once()
+        _, kwargs = mock_hass.config_entries.async_update_entry.call_args
+        assert kwargs["data"]["detected_navigator_version"] == "Navigator 10"
+        assert kwargs["data"]["detected_software_version"] == "NAV10_20.24"
+
+    async def test_web_refresh_does_not_persist_on_conflict_without_firmware_prefix(self, mock_hass, mock_config_entry):
+        """No persistence when web model conflicts without NAV10 firmware prefix."""
+        model_info = IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_20,
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0",
+            model_info=model_info,
+            web_pin="1234",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="20.24",
         )
 
         with (
@@ -1483,6 +1523,47 @@ class TestAsyncRefreshWebSupplement:
             await coord.async_refresh_web_supplement()
 
         assert coord.web_variant == "nav20"
+
+    async def test_web_refresh_does_not_override_modbus_without_firmware_prefix(self, mock_hass, mock_config_entry):
+        """Modbus still wins when web firmware lacks a NAV10 prefix."""
+        model_info = IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_20,
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0",
+            firmware_version=None,
+            model_info=model_info,
+            web_pin="1234",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="20.24",
+            sensor_values={"navigator_version": IdmWebSensorValue("Navigator 10", "Navigator 10")},
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.model_name == "Navigator 2.0"
+        assert coord.firmware_version is None
+        assert coord.web_supplement is supplement
+        assert coord.data["web_navigator_version"] == "Navigator 10"
 
 
 class TestCoordinatorProperties:

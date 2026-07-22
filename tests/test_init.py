@@ -1382,7 +1382,8 @@ class TestAsyncSetupEntryModelDetection:
             },
         )
 
-    async def test_modbus_detected_navigator_20_overrides_conflicting_web_navigator_10(self, mock_hass):
+    async def test_web_firmware_prefix_corrects_weak_modbus_navigator_20_detection(self, mock_hass):
+        """Web firmware NAV10 prefix overrides a weak Modbus Navigator 2.0 result."""
         entry = self._make_entry()
         entry.data = {**entry.data, "web_pin": "1234"}
         entry.options = {**entry.options, "web_extra_data": True}
@@ -1428,13 +1429,9 @@ class TestAsyncSetupEntryModelDetection:
         ):
             await async_setup_entry(mock_hass, entry)
 
-        assert captured_kwargs["model_name"] == "Navigator 2.0"
-        assert captured_kwargs["firmware_version"] is None
-        assert captured_kwargs["model_info"] is model_info
-        mock_hass.config_entries.async_update_entry.assert_any_call(
-            entry,
-            data={**entry.data, "detected_navigator_version": "Navigator 2.0"},
-        )
+        assert captured_kwargs["model_name"] == "Navigator 10"
+        assert captured_kwargs["firmware_version"] == "NAV10_20.23"
+        assert captured_kwargs["model_info"].model_name == "Navigator 10"
 
     async def test_coordinator_receives_detected_firmware_version(self, mock_hass):
         entry = self._make_entry()

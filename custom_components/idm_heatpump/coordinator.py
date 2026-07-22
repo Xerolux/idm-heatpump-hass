@@ -52,6 +52,7 @@ from .web_data import (
     IdmWebAuthenticationFailed,
     IdmWebClientPool,
     IdmWebSupplement,
+    _firmware_indicates_nav10,
     async_read_web_supplement,
 )
 
@@ -749,11 +750,34 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 except (TypeError, ValueError):
                     self._model_info.model_name = web_model_name
         elif web_model_name:
-            _LOGGER.warning(
-                "Ignoring conflicting IDM web Navigator model %s because Modbus detected %s",
-                web_model_name,
-                getattr(self._model_info, "model_name", None) or self._model_name,
-            )
+            # Web and Modbus disagree. Web evidence is definitive when the
+            # firmware string carries a NAV10 prefix: the nav10 web variant
+            # can only connect to a Navigator 10 controller.
+            if _firmware_indicates_nav10(web_supplement.software_version):
+                _LOGGER.info(
+                    "Correcting Modbus-detected model %s to %s "
+                    "based on web firmware string %s",
+                    getattr(self._model_info, "model_name", None) or self._model_name,
+                    web_model_name,
+                    web_supplement.software_version,
+                )
+                self._model_name = web_model_name
+                if self._model_info is not None:
+                    try:
+                        from dataclasses import replace
+
+                        self._model_info = replace(self._model_info, model_name=web_model_name)
+                    except (TypeError, ValueError):
+                        self._model_info.model_name = web_model_name
+                if web_supplement.software_version:
+                    self._firmware_version = web_supplement.software_version
+                model_conflicts = False
+            else:
+                _LOGGER.warning(
+                    "Ignoring conflicting IDM web Navigator model %s because Modbus detected %s",
+                    web_model_name,
+                    getattr(self._model_info, "model_name", None) or self._model_name,
+                )
         if web_supplement.software_version and not model_conflicts:
             self._firmware_version = web_supplement.software_version
 

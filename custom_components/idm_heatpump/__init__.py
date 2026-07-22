@@ -104,6 +104,7 @@ from .polling_plan import ensure_entity_aware_polling
 from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
 from .web_data import (
     IdmWebAuthenticationFailed,
+    _firmware_indicates_nav10,
     async_read_web_supplement,
     merge_model_info,
     web_pin_configured,
@@ -682,12 +683,50 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 and web_supplement.model_name
                 and navigator_family(web_supplement.model_name) != navigator_family(modbus_model_name)
             ):
-                stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = web_supplement.model_name
-                _LOGGER.warning(
-                    "Ignoring conflicting stored/web Navigator model %s because Modbus detected %s",
-                    web_supplement.model_name,
-                    modbus_model_name,
-                )
+                # The web supplement disagrees with Modbus detection.
+                # The web variant that succeeded is definitive: nav10 clients
+                # can only connect to Navigator 10 controllers. When the
+                # firmware string additionally carries a NAV10 prefix, the
+                # web evidence is stronger than a potentially failed Modbus
+                # probe (register 4108 is rejected by some Nav10 firmwares).
+                if _firmware_indicates_nav10(web_supplement.software_version):
+                    _LOGGER.info(
+                        "Correcting Modbus-detected model %s to %s "
+                        "based on web firmware string %s",
+                        modbus_model_name,
+                        web_supplement.model_name,
+                        web_supplement.software_version,
+                    )
+                    model_name = web_supplement.model_name
+                    firmware_version = web_supplement.software_version or firmware_version
+                    # Build corrected model_info so register map includes
+                    # Navigator-10-only blocks. The library's client.model_info
+                    # still holds the stale Nav2.0 detection result.
+                    detected_model_info = _model_info_from_detected_name(
+                        model_name,
+                        circuits,
+                        zone_count,
+                        enable_cascade,
+                    )
+                    # Persist the corrected model so it survives reloads.
+                    # Detection-only keys do not trigger a config-entry reload.
+                    _web_correction_updates: dict[str, Any] = {
+                        CONF_DETECTED_NAVIGATOR_VERSION: model_name,
+                    }
+                    if firmware_version:
+                        _web_correction_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
+                    if web_supplement.web_variant:
+                        _web_correction_updates[CONF_DETECTED_WEB_VARIANT] = web_supplement.web_variant
+                    hass.config_entries.async_update_entry(
+                        entry, data={**entry.data, **_web_correction_updates}
+                    )
+                else:
+                    stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = web_supplement.model_name
+                    _LOGGER.warning(
+                        "Ignoring conflicting stored/web Navigator model %s because Modbus detected %s",
+                        web_supplement.model_name,
+                        modbus_model_name,
+                    )
             elif override_active:
                 # A user override is authoritative for the model. The web
                 # supplement may still contribute the software version, but it
@@ -725,7 +764,22 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             hass.config_entries.async_update_entry(entry, data=updated_data)
 
         client_model_info = getattr(client, "model_info", None)
-        if not override_active and isinstance(client_model_info, IdmModelInfo):
+        if (
+            not override_active
+            and isinstance(client_model_info, IdmModelInfo)
+            and isinstance(detected_model_info, IdmModelInfo)
+            and navigator_family(client_model_info.model_name) == navigator_family(detected_model_info.model_name)
+        ):
+            # When the library's detection result and the resolved model_info
+            # agree on the Navigator family, prefer the library's richer info
+            # (features, capabilities). Skip when families disagree (e.g. web
+            # evidence corrected a weak Modbus "Navigator 2.0" detection).
+            detected_model_info = client_model_info
+        elif (
+            not override_active
+            and isinstance(client_model_info, IdmModelInfo)
+            and detected_model_info is None
+        ):
             detected_model_info = client_model_info
         if override_active or detected_model_info is None:
             # With an active override, always (re)build model info from the

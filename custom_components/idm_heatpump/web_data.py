@@ -607,6 +607,19 @@ class IdmWebClientPool:
         await self.invalidate()
 
 
+def _firmware_indicates_nav10(software_version: str | None) -> bool:
+    """Return True when the firmware string definitively indicates Navigator 10.
+
+    Navigator 10 firmwares carry a ``NAV10_`` prefix (e.g.
+    ``NAV10_20.24-880-g265e09c4a``). This signal is available from the local
+    web supplement and is more reliable than a single Modbus probe that may be
+    rejected by certain firmware builds.
+    """
+    if not isinstance(software_version, str):
+        return False
+    return software_version.strip().upper().startswith("NAV10")
+
+
 def merge_model_info(
     modbus_model_name: str,
     modbus_firmware_version: str | None,
