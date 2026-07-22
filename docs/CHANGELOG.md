@@ -13,6 +13,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5-beta.6] - 2026-07-22
+
+Sixth beta preview of the upcoming 0.8.5 stable release. Corrects invalid
+fractional controls for integer-backed Modbus registers and aligns all Home
+Assistant temperature controls with the device-supported input increments.
+
+> **Compatibility:** API pin unchanged at `idm-heatpump-api[web]==0.8.4`.
+> Entity unique IDs, entity IDs, register addresses, and write paths are unchanged.
+
+### Fixed
+
+- **Integer Modbus numbers no longer offer invalid fractional values.** Number
+  entities now derive a `1` step from integer register datatypes instead of
+  applying the generic `0.5` default. This fixes heating limits (`0..50 °C`)
+  and cooling limits (`0..36 °C`) for heating circuits A–G and prevents the
+  same invalid UI input for every writable `UCHAR`, `INT8`, `INT16`, `UINT16`,
+  and `BITFLAG` register ([#158](https://github.com/Xerolux/idm-heatpump-hass/issues/158)).
+- **Climate and water-heater controls now publish their supported target step.**
+  Heating-circuit and zone-room climates expose `0.5 °C`; the integer-backed
+  domestic-hot-water target exposes `1 °C`. This closes the remaining UI paths
+  that could otherwise submit unsupported fractional values.
+
 ## [0.8.5-beta.5] - 2026-07-22
 
 Fifth beta preview of the upcoming 0.8.5 stable release. Upgrades the PyPI API

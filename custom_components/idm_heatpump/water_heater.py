@@ -23,6 +23,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .adapter_metadata import native_step_for_register
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .entity import build_device_info
@@ -73,6 +74,7 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         self._target_reg = target_reg
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_water_heater"
+        self._attr_target_temperature_step = native_step_for_register(self._target_reg)
 
     @property
     def device_info(self) -> DeviceInfo:

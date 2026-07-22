@@ -16,6 +16,8 @@ from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.const import PERCENTAGE, UnitOfPower, UnitOfTemperature
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
+from idm_heatpump import DataType, RegisterDef
+
 
 class EntityProfile(StrEnum):
     """User-facing profile for default entity presentation."""
@@ -173,6 +175,27 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
         "device_class": NumberDeviceClass.POWER,
     },
 }
+
+_INTEGER_REGISTER_DATA_TYPES: frozenset[DataType] = frozenset(
+    {DataType.UCHAR, DataType.INT8, DataType.INT16, DataType.UINT16, DataType.BITFLAG}
+)
+
+
+def native_step_for_register(
+    register: RegisterDef,
+    metadata: dict[str, Any] | None = None,
+) -> float:
+    """Return the HA input step for a writable Modbus register.
+
+    Explicit presentation metadata wins. Otherwise integer-backed registers
+    must only expose whole-number inputs, while FLOAT registers retain the
+    integration's established half-step default.
+    """
+    if metadata is not None and "step" in metadata:
+        return float(metadata["step"])
+    if register.datatype in _INTEGER_REGISTER_DATA_TYPES:
+        return 1.0
+    return 0.5
 
 
 _EXPERT_DISABLED_PREFIXES: tuple[str, ...] = (
