@@ -55,9 +55,13 @@ nicht finalen Home-Assistant-Modbus-Vertrags blockiert bleibt.
 - [x] Momentanen COP-Sensor nur veröffentlichen, wenn beide Quellen belastbar
       verfügbar sind und die Anlage nicht im Stillstand falsche Kennzahlen
       erzeugen würde.
-- [ ] Weitere reale Datensätze für Warmwasser, Abtauen und unterschiedliche
+- [/] Weitere reale Datensätze für Warmwasser, Abtauen und unterschiedliche
       Navigator-Firmwares sammeln; Issue-Vorlage und Field-Diagnostics-Guide
       sind vorbereitet.
+      **Teilverifiziert (22.07.2026, Nav 10):** COP-Quellregister
+      `power_consumption_hp` (@4122) und `thermal_power_flow_sensor` (@4126)
+      sind live bestätigt; Standby-Nullfall wird durch die 50-W-Schranke
+      abgefangen. Breitere Datensätze für Warmwasser/Abtauen bleiben offen.
 
 Zusätzliche Nutzerdaten:
 
@@ -70,7 +74,7 @@ Zusätzliche Nutzerdaten:
 
 - [/] Eindeutiges IDM-Register für den tatsächlich angeforderten
       Wärmepumpen-Vorlauf-Sollwert verifiziert.
-      **Teilverifiziert (22.07.2026, Nav 2.0):** pro Heizkreis existiert
+      **Teilverifiziert (22.07.2026, Nav 10):** pro Heizkreis existiert
       `hc_{a..g}_setpoint_flow_temp` (Adresse 1378 ff., FLOAT, nur lesend) als
       berechneter Vorlauf-Sollwert. Sentinel `0.0` im Standby, `-1.0` für
       nicht aktivierte Heizkreise. Siehe `docs/dev/open-work-audit.md`.
@@ -87,12 +91,12 @@ Benötigte Nutzerdaten:
 
 ### Reale Binary-Register-Verifikation
 
-- [ ] Alle binären Register mindestens gegen ein Navigator-10-System prüfen.
-- [/] Alle binären Register mindestens gegen ein Navigator-2.0-System prüfen.
-      **Stichproben-verifiziert (22.07.2026, Nav 2.0):** Verdichter-, Pumpen-,
+- [/] Alle binären Register mindestens gegen ein Navigator-10-System prüfen.
+      **Stichproben-verifiziert (22.07.2026, Nav 10):** Verdichter-, Pumpen-,
       Ventil- und Heizkreis-Statusregister gelesen. Die drei Sentinel-Varianten
       (`255` UCHAR, `-1` INT16, `65535` UINT16) wurden live beobachtet und
       passen zur `is_register_unused`-Logik. Siehe `docs/dev/open-work-audit.md`.
+- [ ] Alle binären Register mindestens gegen ein Navigator-2.0-System prüfen.
 - [/] Active-Low-, Sonder- und Firmwarewerte dokumentieren, falls sie von 0/1
       abweichen.
       **Bestätigt:** `evu_lock` nutzt inverse Logik (`1 = Not Locked`); volle

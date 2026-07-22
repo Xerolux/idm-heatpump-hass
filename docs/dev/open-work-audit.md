@@ -19,13 +19,25 @@ keine riskante Modbus-Änderung vorzeitig produktiv zu verdrahten.
   Konfliktkennung und privacy-sicheren Diagnose-Helfern.
 - Issue-Vorlage für die spätere Home-Assistant-Modbus-Modernisierung.
 
-## Live-verifiziert (Navigator 2.0, read-only Modbus FC04)
+## Live-verifiziert (Navigator 10, read-only Modbus FC04 + Web-Supplement)
 
-Am 22.07.2026 wurden die nachfolgenden Punkte an einer realen Navigator-2.0-Anlage
-per streng lesendem Modbus-Zugriff (Function Code 04, keine Schreibzugriffe,
-keine EEPROM-Kandidaten) verifiziert. Die Verifikation bestätigt die
-Code-Annahmen; sie ersetzt aber nicht die breitere Feld-Diagnose für andere
-Navigator-Typen und Firmware-Stände.
+Am 22.07.2026 wurden die nachfolgenden Punkte an einer realen Navigator-10-Anlage
+(Heizkreis A, Solar/ISC/PV erkannt, Software `NAV10_20.24-880-g265e09c4a`)
+verifiziert – per streng lesendem Modbus-Zugriff (Function Code 04, keine
+Schreibzugriffe, keine EEPROM-Kandidaten) und zusätzlich über das lokale
+Navigator-10-Web-Supplement (Port 61220, WebSocket-Authentifizierung per PIN).
+Die Verifikation bestätigt die Code-Annahmen; sie ersetzt aber nicht die
+breitere Feld-Diagnose für andere Navigator-Typen und Firmware-Stände.
+
+### Modellerkennung
+
+- `IdmModbusClient.detect_model()` erkennt die Anlage korrekt als
+  `Navigator 10` (Heizkreis A aktiv, Solar/ISC/PV = True, keine Kaskade).
+  Die Unterscheidung läuft primär über das Navigator-10-spezifische Register
+  `power_limit_hp` (Adresse 4108), das auf der Anlage antwortet.
+- `client.model_info` ist eine **Property** der API (kein Callable); die
+  Integration in `_detect_model_info()` greift korrekt auf die erkennten
+  Attribute zu und behandelt fehlende Firmware defensiv.
 
 ### COP-Quellenregister
 
@@ -71,13 +83,22 @@ Navigator-Typen und Firmware-Stände.
   `sentinel_values`; die Integration erkennt die Sentinels daher eigenständig
   über den numerischen Filter. Das ist ein bekannter Folge-Punkt für die API.
 
-### Web-Zugriff (Navigator 2.0)
+### Web-Supplement (Navigator 10)
 
-- Der Port-80-HTTP-Endpunkt antwortet. Die Login-Erkennung des
-  `IdmNavigator20WebClient` schlägt jedoch mit `IdmWebAuthenticationError`
-  fehl, wenn die PIN abgelehnt wird oder die Login-Form nicht die erwartete
-  Struktur hat. Der Web-Only-Pfad bleibt daher von der PIN-Qualität und der
-  Firmware-Oberfläche abhängig; Modbus ist der zuverlässigere Kanal.
+- Der Navigator-10-Web-Client (`IdmNavigator10WebClient`) spricht WebSocket auf
+  Port 61220. Login per PIN, `connect()` und `read_data()` wurden gegen die
+  reale Anlage erfolgreich durchlaufen; die `async_read_web_supplement`-Logik
+  der Integration wählt für ein als Navigator 10 erkanntes Gerät diesen Client
+  zuerst und fällt nur bei variantenbedingten Fehlern auf den Nav-2.0-HTTP-Client
+  zurück.
+- `read_data()` lieferte 60 Werte, darunter reine Web-Größen, die über Modbus
+  nicht verfügbar sind: Heißgastemperatur, Kondensations-/Verdampfungsdruck,
+  Verdichter-Heizung, Platinentemperatur, Laufzeiten (Heizen/Warmwasser/Abtauen/
+  Stufe 1/2. Wärmeerzeuger), Schaltzyklen, myIDM-ID und die Software-Version.
+- Die Software-Version (`software_version`-Feld im Web-Datenmodell) ist die
+  zuverlässige Quelle für die Firmware, da das Modbus-Register 4120 auf dieser
+  Firmware nicht verlässlich auslesbar ist (wird daher in
+  `_detect_model_info` mit `read_firmware=False` übersprungen).
 
 ## Extern blockiert
 
