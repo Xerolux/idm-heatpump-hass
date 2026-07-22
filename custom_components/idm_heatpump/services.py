@@ -133,9 +133,9 @@ async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordin
         )
 
     if len(loaded_entries) > 1:
-        _LOGGER.debug(
-            "Multiple loaded IDM entries found, using first loaded entry. "
-            "Provide entry_id in service data for explicit selection."
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="multiple_entries_select_entry",
         )
 
     for entry in loaded_entries:
@@ -151,10 +151,20 @@ async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordin
     )
 
 
-async def _async_write_register(coordinator: IdmCoordinator, reg: RegisterDef, value: object) -> None:
+async def _async_write_register(
+    coordinator: IdmCoordinator,
+    reg: RegisterDef,
+    value: object,
+    *,
+    allow_custom_register: bool = False,
+) -> None:
     """Write a known register and expose communication failures consistently."""
     try:
-        await coordinator.async_write_register(reg, value)
+        await coordinator.async_write_register(
+            reg,
+            value,
+            allow_custom_register=allow_custom_register,
+        )
     except Exception as err:
         translation_key = classify_write_error(err)
         raise HomeAssistantError(
@@ -193,24 +203,32 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
             translation_placeholders={"mode": mode_str},
         )
 
-    reg = RegisterDef(
-        address=REGISTER_ADDRESS_SYSTEM_MODE,
-        datatype=DataType.UCHAR,
-        name="system_mode",
-        writable=True,
-    )
-    await _async_write_register(coordinator, reg, mode_val)
+    reg = coordinator.get_register("system_mode")
+    allow_custom = False
+    if not isinstance(reg, RegisterDef) or not getattr(reg, "writable", False):
+        reg = RegisterDef(
+            address=REGISTER_ADDRESS_SYSTEM_MODE,
+            datatype=DataType.UCHAR,
+            name="system_mode",
+            writable=True,
+        )
+        allow_custom = True
+    await _async_write_register(coordinator, reg, mode_val, allow_custom_register=allow_custom)
 
 
 async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = await _get_coordinator(hass, call)
-    reg = RegisterDef(
-        address=REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
-        datatype=DataType.UCHAR,
-        name="error_acknowledge",
-        writable=True,
-    )
-    await _async_write_register(coordinator, reg, 1)
+    reg = coordinator.get_register("error_acknowledge")
+    allow_custom = False
+    if not isinstance(reg, RegisterDef) or not getattr(reg, "writable", False):
+        reg = RegisterDef(
+            address=REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
+            datatype=DataType.UCHAR,
+            name="error_acknowledge",
+            writable=True,
+        )
+        allow_custom = True
+    await _async_write_register(coordinator, reg, 1, allow_custom_register=allow_custom)
 
 
 async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:

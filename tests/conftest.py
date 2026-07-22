@@ -1143,9 +1143,11 @@ def _stub_idm_heatpump() -> None:
     idm_mod.IdmModelInfo = IdmModelInfo  # type: ignore[attr-defined]
     idm_mod.WriteSafetyResult = WriteSafetyResult  # type: ignore[attr-defined]
     idm_mod.IdmClientDiagnostics = IdmClientDiagnostics  # type: ignore[attr-defined]
-    idm_mod.MODEL_NAVIGATOR_10 = "navigator_10"  # type: ignore[attr-defined]
-    idm_mod.MODEL_NAVIGATOR_20 = "navigator_20"  # type: ignore[attr-defined]
-    idm_mod.MODEL_NAVIGATOR_PRO = "navigator_pro"  # type: ignore[attr-defined]
+    # Match real idm-heatpump-api human-readable model labels used in production
+    # and asserted by the unit tests (not the config-flow override slugs).
+    idm_mod.MODEL_NAVIGATOR_10 = "Navigator 10"  # type: ignore[attr-defined]
+    idm_mod.MODEL_NAVIGATOR_20 = "Navigator 2.0"  # type: ignore[attr-defined]
+    idm_mod.MODEL_NAVIGATOR_PRO = "Navigator Pro"  # type: ignore[attr-defined]
     idm_mod.MODEL_UNKNOWN = "unknown"  # type: ignore[attr-defined]
     idm_mod.build_register_map = build_register_map  # type: ignore[attr-defined]
     idm_mod.get_heating_circuit_registers = get_heating_circuit_registers  # type: ignore[attr-defined]
@@ -1162,9 +1164,9 @@ def _stub_idm_heatpump() -> None:
     idm_mod.client = client_mod  # type: ignore[attr-defined]
 
     const_mod = ModuleType("idm_heatpump.const")
-    const_mod.MODEL_NAVIGATOR_10 = "navigator_10"  # type: ignore[attr-defined]
-    const_mod.MODEL_NAVIGATOR_20 = "navigator_20"  # type: ignore[attr-defined]
-    const_mod.MODEL_NAVIGATOR_PRO = "navigator_pro"  # type: ignore[attr-defined]
+    const_mod.MODEL_NAVIGATOR_10 = "Navigator 10"  # type: ignore[attr-defined]
+    const_mod.MODEL_NAVIGATOR_20 = "Navigator 2.0"  # type: ignore[attr-defined]
+    const_mod.MODEL_NAVIGATOR_PRO = "Navigator Pro"  # type: ignore[attr-defined]
     const_mod.MODEL_UNKNOWN = "unknown"  # type: ignore[attr-defined]
     sys.modules["idm_heatpump.const"] = const_mod
     idm_mod.const = const_mod  # type: ignore[attr-defined]

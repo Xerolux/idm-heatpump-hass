@@ -517,16 +517,15 @@ class IdmWebSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        if not super().available:
+        # Web sensors are refreshed independently of Modbus. Do not gate on
+        # CoordinatorEntity.available / last_update_success, or a Modbus outage
+        # would hide still-valid local web values.
+        web_supplement = self.coordinator.web_supplement
+        if web_supplement is None:
             return False
         if self._definition.key == "navigator_version":
-            return self.coordinator.web_supplement is not None and bool(
-                self.coordinator.web_supplement.navigator_version
-            )
-        return (
-            self.coordinator.web_supplement is not None
-            and self._definition.key in self.coordinator.web_supplement.sensor_values
-        )
+            return bool(web_supplement.navigator_version)
+        return self._definition.key in web_supplement.sensor_values
 
     @property
     def native_value(self) -> str | float | None:

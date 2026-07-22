@@ -48,9 +48,11 @@ WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
         entity_category=EntityCategory.DIAGNOSTIC,
     ),
     WebBinarySensorDefinition(
+        # DeviceClass.LOCK means on=unlocked in HA. EVU "lock contact active"
+        # is closer to a safety/grid-block state, so SAFETY is used (on=unsafe).
         key="ew_evu_lock_contact",
         icon="mdi:lock",
-        device_class=BinarySensorDeviceClass.LOCK,
+        device_class=BinarySensorDeviceClass.SAFETY,
     ),
     WebBinarySensorDefinition(
         key="ext_hotwater_signal",
@@ -169,15 +171,12 @@ def normalize_web_binary_value(value: Any) -> bool | None:
 
 
 def web_binary_sensor_entities(coordinator: IdmCoordinator) -> list[IdmWebBinarySensor]:
-    """Create web binary sensors whose values exist in the current snapshot."""
-    supplement = coordinator.web_supplement
-    if supplement is None:
-        return []
-    return [
-        IdmWebBinarySensor(coordinator, definition)
-        for definition in WEB_BINARY_SENSOR_DEFINITIONS
-        if definition.key in supplement.sensor_values
-    ]
+    """Create all web binary sensors when web is enabled.
+
+    Values may arrive after the first successful web poll; entities stay
+    unavailable until a normalized boolean value exists for their key.
+    """
+    return [IdmWebBinarySensor(coordinator, definition) for definition in WEB_BINARY_SENSOR_DEFINITIONS]
 
 
 class IdmWebBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
@@ -213,7 +212,8 @@ class IdmWebBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and self._normalized_value() is not None
+        # Independent of Modbus last_update_success (see IdmWebSensor).
+        return self.coordinator.web_supplement is not None and self._normalized_value() is not None
 
     @property
     def is_on(self) -> bool | None:

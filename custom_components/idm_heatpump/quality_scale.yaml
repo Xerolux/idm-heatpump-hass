@@ -52,8 +52,10 @@ rules:
   docs-actions:
     status: done
     comment: >
-      services.yaml documents all three service actions with field descriptions.
-      de.json also includes translated service documentation.
+      services.yaml documents domain service actions (set_system_mode,
+      acknowledge_errors, write_register, set_external_climate, DHW boost
+      start/cancel) with field descriptions. de.json includes translated
+      service documentation.
 
   docs-high-level-description:
     status: done
@@ -182,8 +184,9 @@ rules:
   devices:
     status: done
     comment: >
-      All entities set _attr_device_info with DeviceInfo (centralized in IdmEntity).
-      The integration creates a single device per config entry.
+      All entities set device_info with DeviceInfo (centralized in IdmEntity /
+      build_device_info). Optional device hierarchy creates subdevices for
+      heating circuits, zones, solar, ISC, cascade and aux heat.
 
   diagnostics:
     status: done
@@ -307,9 +310,10 @@ rules:
       Modbus communication fails and deletes it on recovery.
 
   stale-devices:
-    status: exempt
+    status: done
     comment: >
-      Single-device integration. Stale device cleanup is not applicable.
+      cleanup_stale_hierarchy_devices removes hierarchy subdevices that are no
+      longer referenced after option changes or model reconfiguration.
 
   # ── PLATINUM ───────────────────────────────────────────────────────────────
 

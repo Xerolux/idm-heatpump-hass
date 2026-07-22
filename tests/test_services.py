@@ -182,7 +182,7 @@ class TestGetCoordinator:
         with pytest.raises(ServiceValidationError):
             await _get_coordinator(mock_hass, call)
 
-    async def test_uses_first_loaded_when_multiple_entries_without_entry_id(self, mock_hass):
+    async def test_raises_when_multiple_entries_without_entry_id(self, mock_hass):
         from homeassistant.config_entries import ConfigEntryState
         from custom_components.idm_heatpump.coordinator import IdmCoordinator
 
@@ -202,8 +202,9 @@ class TestGetCoordinator:
         mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
         call = MagicMock()
         call.data = {}
-        result = await _get_coordinator(mock_hass, call)
-        assert result is coord1
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _get_coordinator(mock_hass, call)
+        assert exc_info.value.translation_key == "multiple_entries_select_entry"
 
 
 class TestSetSystemMode:
@@ -447,8 +448,9 @@ class TestGetCoordinatorMultipleDevices:
         mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
         call = MagicMock()
         call.data = {}
-        result = await _get_coordinator(mock_hass, call)
-        assert result is coord1
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _get_coordinator(mock_hass, call)
+        assert exc_info.value.translation_key == "multiple_entries_select_entry"
 
     async def test_skips_not_loaded_entries(self, mock_hass):
         """NOT_LOADED entries are skipped; uses next LOADED entry."""

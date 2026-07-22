@@ -54,7 +54,7 @@ def test_unknown_values_remain_unknown():
     assert normalize_web_binary_value(None) is None
 
 
-def test_creates_only_values_present_in_snapshot():
+def test_creates_all_definitions_and_availability_tracks_values():
     entities = _entities_by_key(
         _coordinator(
             {
@@ -65,9 +65,14 @@ def test_creates_only_values_present_in_snapshot():
         )
     )
 
-    assert set(entities) == {"web_compressor_1", "web_high_pressure_error"}
+    assert "web_compressor_1" in entities
+    assert "web_high_pressure_error" in entities
+    assert len(entities) == len(WEB_BINARY_VALUE_KEYS)
     assert entities["web_compressor_1"].is_on is True
+    assert entities["web_compressor_1"].available is True
     assert entities["web_high_pressure_error"].is_on is False
+    # Definitions without a current value stay unavailable until web provides them.
+    assert entities["web_flow_pump_on"].available is False
 
 
 def test_problem_sensor_has_diagnostic_metadata():
@@ -96,11 +101,22 @@ def test_unknown_runtime_value_makes_entity_unavailable():
     assert sensor.available is False
 
 
-def test_missing_web_supplement_creates_no_entities():
+def test_missing_web_supplement_keeps_entities_unavailable():
     coordinator = _coordinator({})
     coordinator.web_supplement = None
+    entities = web_binary_sensor_entities(coordinator)
 
-    assert web_binary_sensor_entities(coordinator) == []
+    assert len(entities) == len(WEB_BINARY_VALUE_KEYS)
+    assert all(entity.available is False for entity in entities)
+
+
+def test_web_binary_available_when_modbus_update_failed():
+    coordinator = _coordinator({"compressor_1": IdmWebSensorValue("Ein", 1.0)})
+    coordinator.last_update_success = False
+    sensor = _entities_by_key(coordinator)["web_compressor_1"]
+
+    assert sensor.available is True
+    assert sensor.is_on is True
 
 
 def test_binary_keys_are_unique():

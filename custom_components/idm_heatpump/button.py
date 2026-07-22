@@ -14,6 +14,7 @@ from homeassistant.components.button import ButtonEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -26,6 +27,7 @@ from .dhw_boost_services import (
     async_setup_dhw_boost_services,
     async_unload_dhw_boost_services,
 )
+from .entity import build_device_info
 from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
@@ -75,20 +77,31 @@ class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity
         super().__init__(coordinator)
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_acknowledge_errors"
-        from .entity import build_device_info
+        mapped = coordinator.get_register("error_acknowledge")
+        if isinstance(mapped, RegisterDef) and mapped.writable:
+            self._register = mapped
+            self._allow_custom_register = False
+        else:
+            self._register = RegisterDef(
+                address=REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
+                datatype=DataType.UCHAR,
+                name="error_acknowledge",
+                writable=True,
+            )
+            self._allow_custom_register = True
 
-        self._attr_device_info = build_device_info(coordinator)
-        self._register = RegisterDef(
-            address=REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
-            datatype=DataType.UCHAR,
-            name="error_acknowledge",
-            writable=True,
-        )
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self.coordinator)
 
     async def async_press(self) -> None:
         """Handle the button press."""
         try:
-            await self.coordinator.async_write_register(self._register, 1)
+            await self.coordinator.async_write_register(
+                self._register,
+                1,
+                allow_custom_register=self._allow_custom_register,
+            )
             _LOGGER.debug("Acknowledged errors via button")
         except Exception as err:
             translation_key = classify_write_error(err)
@@ -115,9 +128,10 @@ class _IdmDhwBoostButtonBase(
         self._manager = manager
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{unique_suffix}"
-        from .entity import build_device_info
 
-        self._attr_device_info = build_device_info(coordinator)
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self.coordinator)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

@@ -713,6 +713,7 @@ class TestBinarySensorAsyncSetupEntry:
         from custom_components.idm_heatpump.binary_sensor import async_setup_entry
 
         coord = _make_coordinator()
+        coord.web_enabled = False
         coord.binary_sensor_descriptions = [
             {"register": _make_register("fault"), "description": _make_desc("fault")},
         ]
@@ -729,6 +730,7 @@ class TestBinarySensorAsyncSetupEntry:
         from custom_components.idm_heatpump.binary_sensor import async_setup_entry
 
         coord = _make_coordinator(data={"other_fault": 0}, hide_unused=True)
+        coord.web_enabled = False
         coord.binary_sensor_descriptions = [
             {"register": _make_register("fault"), "description": _make_desc("fault")},
         ]
@@ -745,6 +747,7 @@ class TestBinarySensorAsyncSetupEntry:
         from custom_components.idm_heatpump.binary_sensor import async_setup_entry
 
         coord = _make_coordinator()
+        coord.web_enabled = False
         coord.binary_sensor_descriptions = []
 
         entry = MagicMock()
@@ -759,6 +762,7 @@ class TestBinarySensorAsyncSetupEntry:
         from custom_components.idm_heatpump.binary_sensor import async_setup_entry
 
         coord = _make_coordinator()
+        coord.web_enabled = False
         coord.binary_sensor_descriptions = [
             {"register": _make_register("pv_surplus", address=1003), "description": _make_desc("pv_surplus")},
             {

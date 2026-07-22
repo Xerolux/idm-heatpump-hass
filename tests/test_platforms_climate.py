@@ -199,10 +199,12 @@ class TestIdmWaterHeater:
         coord.async_write_register.assert_not_awaited()
 
     async def test_async_set_temperature_propagates_write_error(self):
+        from homeassistant.exceptions import HomeAssistantError
+
         wh, coord = self._make(data={"dhw_setpoint": 50.0})
         coord.async_write_register = AsyncMock(side_effect=RuntimeError("boom"))
-        # The centralized write path re-raises; the entity must surface it too.
-        with pytest.raises(RuntimeError, match="boom"):
+        # Writable platforms wrap communication failures as translated HomeAssistantError.
+        with pytest.raises(HomeAssistantError):
             await wh.async_set_temperature(temperature=55.0)
 
 
@@ -400,11 +402,12 @@ class TestIdmHeatingCircuitClimate:
 
     async def test_write_failure_propagates_from_coordinator(self):
         from homeassistant.components.climate import HVACMode
+        from homeassistant.exceptions import HomeAssistantError
 
         climate, coord = self._make(data={"hc_a_mode": CircuitMode.NORMAL})
         coord.async_write_register = AsyncMock(side_effect=RuntimeError("link down"))
-        # The centralized write path re-raises; the climate entity surfaces it.
-        with pytest.raises(RuntimeError, match="link down"):
+        # Climate wraps failures with translated HomeAssistantError (same as IdmEntity).
+        with pytest.raises(HomeAssistantError):
             await climate.async_set_hvac_mode(HVACMode.AUTO)
 
     async def test_async_set_temperature_routes_through_coordinator(self):

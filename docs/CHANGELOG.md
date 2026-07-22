@@ -13,6 +13,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5-beta.3] - 2026-07-22
+
+Third beta preview of the upcoming 0.8.5 stable release. It contains the
+manual Navigator model override (from beta.3-rc) and, more importantly,
+**fixes the automatic model detection for IDM Terra SWM / Navigator 2.0
+controllers** that were misclassified as Navigator 10 and failed setup.
+
+> **Compatibility:** API pin updated to `idm-heatpump-api[web]==0.8.3`.
+> Entity unique IDs, entity IDs, registers and write paths are unchanged.
+> Existing Navigator 10 and Navigator Pro installations behave exactly as
+> before.
+
+### Fixed
+
+- **Modellerkennung: Terra SWM / Navigator 2.0 wurde fälschlich als Navigator 10 erkannt.** Bisher wurde das Register `power_limit_hp` (Adresse 4108) als Navigator-10-Indikator genutzt, wobei bereits das bloße Antworten als Indikator gewertet wurde. Einige Navigator-2.0-Regelungen – namentlich die IDM Terra SWM – beantworten diese Adresse mit einem Sentinel-Wert (`-1.0` oder `0.0`) anstatt sie abzulehnen. Dadurch wurde die Anlage als Navigator 10 klassifiziert und das Setup brach beim Poll des Navigator-10-only-Registerblocks (ab Adresse 4001) mit Modbus-Ausnahmecode 2 ab. Die Erkennung wertet jetzt nur noch plausible, konfigurierte Power-Limit-Werte (>0 kW) als Navigator-10-Indikator. **Fix in `idm-heatpump-api` 0.8.3** (PR Xerolux/idm-heatpump-api#65). Behebt Issue #44.
+
 ### Added
 
 - **Optionale manuelle Navigator-Modell-Auswahl.** Im Einrichtungs- und
@@ -25,6 +41,12 @@ All notable changes to this project will be documented in this file.
   manuelle Auswahl kann die Registerauswahl verschlechtern. Ein gesetzter
   Override gewinnt verlässlich über die Modbus- und Web-Erkennung, verändert
   aber keine Unique IDs, Entity-IDs, Register oder Schreibpfade.
+
+### Changed
+
+- **API-Pin aktualisiert:** `idm-heatpump-api[web]==0.8.1` → `==0.8.3`. Die
+  neue API-Version enthält den Erkennungs-Fix sowie die binären
+  Register-Metadaten aus 0.8.2.
 
 ## [0.8.5-beta.2] - 2026-07-21
 

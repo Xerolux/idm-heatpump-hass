@@ -169,3 +169,9 @@ class TestDiagnostics:
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
         assert result["data"]["sensor_count"] == 10
         assert result["data"]["switch_count"] == 2
+
+    async def test_web_only_null_update_interval(self, mock_hass, mock_config_entry):
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.update_interval = None
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        assert result["data"]["scan_interval"] is None

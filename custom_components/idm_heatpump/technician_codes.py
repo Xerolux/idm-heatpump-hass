@@ -16,6 +16,12 @@ def calculate_codes(now: datetime | None = None) -> dict[str, str]:
     Level 1: DDMM  (day zero-padded + month zero-padded)
     Level 2: last digit of hour, first digit of hour, last digit of year,
              last digit of month, last digit of day
+
+    Important: When ``now`` is omitted, this uses the **Home Assistant host
+    local time** (``datetime.now()``), not the Navigator controller clock.
+    Codes will be wrong if HA runs in UTC (common in containers) while the
+    heat pump display uses local wall time. Pass an explicit ``now`` in the
+    desired local timezone when needed.
     """
     if now is None:
         now = datetime.now()

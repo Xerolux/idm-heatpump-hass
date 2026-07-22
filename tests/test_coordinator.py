@@ -477,7 +477,7 @@ class TestAsyncUpdateData:
         mock_ir.async_create_issue.assert_any_call(
             mock_hass,
             "idm_heatpump",
-            "register_not_supported",
+            "register_not_supported_power_limit_hp",
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="register_not_supported",
@@ -1134,6 +1134,35 @@ class TestAsyncRefreshWebSupplement:
         mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_authentication_failed")
         mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_supplement_failed")
         coord.async_update_listeners.assert_called_once()
+
+    async def test_web_refresh_merges_into_live_modbus_snapshot(self, mock_hass, mock_config_entry):
+        """Web merge must re-read self.data after await so concurrent Modbus wins."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_pin="1234")
+        coord.data = {"hp_flow_temp": 35.0}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.24",
+            heatpump_model="iPump",
+        )
+
+        async def _read_web(*args, **kwargs):
+            # Simulate a concurrent Modbus poll completing while web I/O runs.
+            coord.data = {"hp_flow_temp": 36.5, "hp_return_temp": 30.0}
+            return supplement
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                side_effect=_read_web,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.data["hp_flow_temp"] == 36.5
+        assert coord.data["hp_return_temp"] == 30.0
+        assert coord.data["web_navigator_version"] == "Navigator 10"
 
     async def test_web_refresh_does_not_override_modbus_detected_navigator_20(self, mock_hass, mock_config_entry):
         model_info = IdmModelInfo(

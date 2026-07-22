@@ -60,6 +60,8 @@ class RoomTempForwarder:
         self._config = config
         self._last_written: dict[str, float] = {}
         self._unsub_state: list[Callable[[], None]] = []
+        self._pending_forward_tasks: dict[str, asyncio.Task[None]] = {}
+        self._debounce_seconds = 1.0
 
     async def async_run(self) -> None:
         """Run forwarding until cancelled."""
@@ -75,6 +77,10 @@ class RoomTempForwarder:
                 except Exception:
                     _LOGGER.exception("IDM room temperature forwarding cycle failed; retrying next interval")
         finally:
+            for task in self._pending_forward_tasks.values():
+                if not task.done():
+                    task.cancel()
+            self._pending_forward_tasks.clear()
             for unsub in self._unsub_state:
                 unsub()
             self._unsub_state.clear()
@@ -83,7 +89,24 @@ class RoomTempForwarder:
         entity_id = event.data.get("entity_id")
         if not isinstance(entity_id, str):
             return
-        self._hass.async_create_task(self.async_forward_entity(entity_id))
+        # Debounce noisy sensors: replace any pending forward for this entity
+        # so rapid updates collapse into one Modbus write.
+        existing = self._pending_forward_tasks.get(entity_id)
+        if existing is not None and not existing.done():
+            existing.cancel()
+
+        async def _debounced() -> None:
+            try:
+                await asyncio.sleep(self._debounce_seconds)
+                await self.async_forward_entity(entity_id)
+            except asyncio.CancelledError:
+                raise
+            finally:
+                current = self._pending_forward_tasks.get(entity_id)
+                if current is not None and current.done():
+                    self._pending_forward_tasks.pop(entity_id, None)
+
+        self._pending_forward_tasks[entity_id] = self._hass.async_create_task(_debounced())
 
     async def async_forward_all(self) -> None:
         for entity_id in self._config.entities.values():

@@ -8,6 +8,7 @@ from __future__ import annotations
 # Lizenz: MIT
 
 import asyncio
+import json
 import logging
 import re
 from dataclasses import dataclass
@@ -125,6 +126,17 @@ _LOGGER = logging.getLogger(__name__)
 _LEGACY_ENTITY_UNIQUE_ID = re.compile(r"^.+:\d+_(?P<entity_key>.+)$")
 
 
+# Config-entry data keys that only store retroactive detection metadata.
+# Changing them must not force a full integration reload.
+_DETECTION_ONLY_DATA_KEYS = frozenset(
+    {
+        CONF_DETECTED_NAVIGATOR_VERSION,
+        CONF_DETECTED_SOFTWARE_VERSION,
+        CONF_DETECTED_WEB_VARIANT,
+    }
+)
+
+
 @dataclass
 class IdmHeatpumpData:
     """Runtime data stored in ConfigEntry.runtime_data."""
@@ -134,9 +146,51 @@ class IdmHeatpumpData:
     web_task: asyncio.Task[None] | None = None
     room_temp_forwarding_task: asyncio.Task[None] | None = None
     operation_analysis: OperationAnalysis | None = None
+    reload_fingerprint: str | None = None
+    loaded_platforms: tuple[Platform, ...] = ()
 
 
 IdmConfigEntry: TypeAlias = ConfigEntry[IdmHeatpumpData]
+
+
+def _entry_reload_fingerprint(entry: ConfigEntry) -> str:
+    """Return a stable fingerprint of settings that require a reload.
+
+    Detection-only keys (navigator version, software version, web variant)
+    are excluded so ``IdmCoordinator._persist_web_detection`` can update
+    ``entry.data`` without tearing down Modbus, web polls, or active writes.
+    """
+    data = {key: value for key, value in dict(entry.data).items() if key not in _DETECTION_ONLY_DATA_KEYS}
+    options = dict(entry.options)
+    return json.dumps({"data": data, "options": options}, sort_keys=True, default=str)
+
+
+def _create_entry_background_task(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coro: Any,
+    *,
+    name: str,
+) -> asyncio.Task[None]:
+    """Create a background task tracked by the config entry when supported.
+
+    Looks up ``async_create_background_task`` on the entry **class** so unit
+    tests that pass a MagicMock entry still fall back to ``asyncio.create_task``
+    instead of swallowing the coroutine into another MagicMock.
+    """
+    create_bg = getattr(type(entry), "async_create_background_task", None)
+    if callable(create_bg):
+        return create_bg(entry, hass, coro, name)
+    create_task = getattr(hass, "async_create_task", None)
+    if callable(create_task):
+        return create_task(coro)
+    return asyncio.create_task(coro)
+
+
+def _register_update_listener(entry: IdmConfigEntry) -> None:
+    """Store the reload fingerprint and attach the update listener."""
+    entry.runtime_data.reload_fingerprint = _entry_reload_fingerprint(entry)
+    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
 
 async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, IdmModelInfo | None]:
@@ -387,14 +441,20 @@ async def _async_setup_web_only_entry(
     entry.runtime_data = IdmHeatpumpData(
         coordinator=coordinator,
         client=client,
+        loaded_platforms=(Platform.SENSOR,),
     )
 
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
     cleanup_stale_hierarchy_devices(hass, coordinator)
 
-    entry.runtime_data.web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
+    entry.runtime_data.web_task = _create_entry_background_task(
+        hass,
+        entry,
+        _web_poll_loop(coordinator, web_scan_interval),
+        name=f"{DOMAIN}_web_poll_{entry.entry_id}",
+    )
 
-    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    _register_update_listener(entry)
     return True
 
 
@@ -736,6 +796,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             coordinator=coordinator,
             client=client,
             operation_analysis=operation_analysis,
+            loaded_platforms=tuple(PLATFORMS),
         )
 
         await coordinator.async_config_entry_first_refresh()
@@ -743,7 +804,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         cleanup_stale_hierarchy_devices(hass, coordinator)
 
         if web_enabled and web_pin_configured(web_pin):
-            entry.runtime_data.web_task = asyncio.create_task(_web_poll_loop(coordinator, web_scan_interval))
+            entry.runtime_data.web_task = _create_entry_background_task(
+                hass,
+                entry,
+                _web_poll_loop(coordinator, web_scan_interval),
+                name=f"{DOMAIN}_web_poll_{entry.entry_id}",
+            )
 
         if room_temp_forwarding_enabled and isinstance(room_temp_forwarding_entities, dict):
             forwarding_entities = {
@@ -761,7 +827,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                         tolerance=room_temp_forwarding_tolerance,
                     ),
                 )
-                entry.runtime_data.room_temp_forwarding_task = asyncio.create_task(forwarder.async_run())
+                entry.runtime_data.room_temp_forwarding_task = _create_entry_background_task(
+                    hass,
+                    entry,
+                    forwarder.async_run(),
+                    name=f"{DOMAIN}_room_temp_{entry.entry_id}",
+                )
     except Exception:
         try:
             await client.disconnect()
@@ -769,13 +840,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             _LOGGER.warning("Failed to clean up client for %s:%d", host, port, exc_info=True)
         raise
 
-    entry.async_on_unload(entry.add_update_listener(async_reload_entry))
+    _register_update_listener(entry)
 
     return True
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
-    unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    platforms = getattr(entry.runtime_data, "loaded_platforms", None) or tuple(PLATFORMS)
+    unload_ok = await hass.config_entries.async_unload_platforms(entry, list(platforms))
     if unload_ok:
         operation_analysis = getattr(entry.runtime_data, "operation_analysis", None)
         if operation_analysis is not None:
@@ -816,4 +888,19 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
 
 
 async def async_reload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
+    """Reload the config entry when structural settings change.
+
+    Retroactive web detection only updates detection metadata in ``entry.data``.
+    Those keys are excluded from the fingerprint so a successful web poll does
+    not unload platforms, cancel DHW boost / room-temp tasks, or reconnect.
+    """
+    new_fingerprint = _entry_reload_fingerprint(entry)
+    runtime = getattr(entry, "runtime_data", None)
+    previous = getattr(runtime, "reload_fingerprint", None) if runtime is not None else None
+    if previous is not None and previous == new_fingerprint:
+        _LOGGER.debug(
+            "Skipping IDM config entry reload for %s; only detection metadata changed",
+            entry.entry_id,
+        )
+        return
     await hass.config_entries.async_reload(entry.entry_id)

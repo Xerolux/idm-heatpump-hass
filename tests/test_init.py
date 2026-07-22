@@ -507,8 +507,39 @@ class TestAsyncReloadEntry:
     async def test_calls_async_reload(self, mock_hass):
         entry = MagicMock()
         entry.entry_id = "test_id"
+        entry.data = {"host": "10.0.0.1", "port": 502}
+        entry.options = {"scan_interval": 10}
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.reload_fingerprint = None
         await async_reload_entry(mock_hass, entry)
         mock_hass.config_entries.async_reload.assert_called_once_with("test_id")
+
+    async def test_skips_reload_when_only_detection_metadata_changed(self, mock_hass):
+        from custom_components.idm_heatpump import _entry_reload_fingerprint
+
+        entry = MagicMock()
+        entry.entry_id = "test_id"
+        entry.data = {
+            "host": "10.0.0.1",
+            "port": 502,
+            "detected_navigator_version": "Navigator 10",
+        }
+        entry.options = {"scan_interval": 10}
+        entry.runtime_data = MagicMock()
+        # Fingerprint without detection keys matches structural settings.
+        entry.data = {"host": "10.0.0.1", "port": 502}
+        entry.runtime_data.reload_fingerprint = _entry_reload_fingerprint(entry)
+        # Detection metadata arrives later without changing structural settings.
+        entry.data = {
+            "host": "10.0.0.1",
+            "port": 502,
+            "detected_navigator_version": "Navigator 10",
+            "detected_software_version": "NAV10_20.24",
+            "detected_web_variant": "nav10",
+        }
+
+        await async_reload_entry(mock_hass, entry)
+        mock_hass.config_entries.async_reload.assert_not_called()
 
 
 class TestAsyncSetupEntryOptions:

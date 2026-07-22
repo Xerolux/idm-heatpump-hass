@@ -18,10 +18,15 @@ from homeassistant.components.water_heater import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from .const import DOMAIN
 from .coordinator import IdmCoordinator
+from .entity import build_device_info
+from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -68,9 +73,10 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         self._target_reg = target_reg
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_water_heater"
-        from .entity import build_device_info
 
-        self._attr_device_info = build_device_info(coordinator)
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_device_info(self.coordinator)
 
     @property
     def current_temperature(self) -> float | None:
@@ -111,5 +117,19 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         if temp is None:
             return
 
-        await self.coordinator.async_write_register(self._target_reg, temp)
+        try:
+            await self.coordinator.async_write_register(self._target_reg, temp)
+        except Exception as err:
+            translation_key = classify_write_error(err)
+            _LOGGER.error(
+                "Could not set water heater target temperature for %s; Home Assistant will show %s",
+                self._target_reg.name,
+                translation_key,
+            )
+            _LOGGER.debug("Technical IDM water heater write error", exc_info=True)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key=translation_key,
+                translation_placeholders=write_error_placeholders(self._target_reg.name),
+            ) from err
         _LOGGER.debug("Set water heater target temperature to %s", temp)

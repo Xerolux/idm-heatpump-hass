@@ -106,18 +106,28 @@ def navigator_family(model_name: str | None) -> str | None:
     """Return a coarse Navigator generation identifier for conflict checks."""
     if not isinstance(model_name, str):
         return None
-    normalized = model_name.casefold()
-    if normalized == MODEL.casefold():
+    normalized = model_name.casefold().replace("-", "_").replace(" ", "_")
+    # Collapse repeated underscores from mixed human/slug names.
+    while "__" in normalized:
+        normalized = normalized.replace("__", "_")
+    if normalized in {MODEL.casefold().replace(" ", "_"), "navigator_2.0_/_10", "navigator_2_0_/_10"}:
         return None
-    has_navigator_20 = "navigator 2" in normalized
-    has_navigator_10 = "navigator 10" in normalized
+    # Accept human labels ("Navigator 2.0") and slug constants ("navigator_20").
+    has_navigator_20 = (
+        "navigator_20" in normalized
+        or "navigator_2.0" in normalized
+        or "navigator_2_0" in normalized
+        or normalized.endswith("navigator_2")
+    )
+    has_navigator_10 = "navigator_10" in normalized
+    has_navigator_pro = "navigator_pro" in normalized
     if has_navigator_20 and has_navigator_10:
         return None
     if has_navigator_20:
         return "navigator_20"
     if has_navigator_10:
         return "navigator_10"
-    if "navigator pro" in normalized:
+    if has_navigator_pro:
         return "navigator_pro"
     return None
 
@@ -191,6 +201,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._operation_analysis: OperationAnalysis | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
+        # Room-mode individual validation is expensive (one Modbus read per
+        # register). Run it on the first poll, then only every Nth poll.
+        self._room_mode_validation_counter = 0
+        self._room_mode_validation_interval = 6
         # Persistent web client pool: keeps the Navigator web client across
         # polls so the TCP+auth overhead is paid once per session instead of
         # every 30s. Invalidated on failure and closed in async_shutdown.
@@ -414,7 +428,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 ir.async_create_issue(
                     self.hass,
                     DOMAIN,
-                    "register_not_supported",
+                    f"register_not_supported_{reg.name}",
                     is_fixable=False,
                     severity=ir.IssueSeverity.WARNING,
                     translation_key="register_not_supported",
@@ -492,6 +506,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if reg.name not in self._unsupported_registers and reg.name not in batch_unsafe
         ]
         if not room_mode_registers:
+            return
+
+        # Skip most polls once batch-unsafe quarantine is established for a
+        # register set; still re-check periodically for newly added rooms.
+        self._room_mode_validation_counter += 1
+        if (
+            self._room_mode_validation_counter > 1
+            and (self._room_mode_validation_counter - 1) % self._room_mode_validation_interval != 0
+        ):
             return
 
         for reg in room_mode_registers:
@@ -714,7 +737,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 and web_model_family is not None
                 and navigator_family(self._model_info.model_name) is None
             ):
-                self._model_info.model_name = web_model_name
+                # Prefer a replaced model_info object over mutating a library
+                # dataclass field in place (may be shared / frozen in future).
+                try:
+                    from dataclasses import replace
+
+                    self._model_info = replace(self._model_info, model_name=web_model_name)
+                except (TypeError, ValueError):
+                    self._model_info.model_name = web_model_name
         elif web_model_name:
             _LOGGER.warning(
                 "Ignoring conflicting IDM web Navigator model %s because Modbus detected %s",
@@ -729,11 +759,16 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._invalidate_device_info_cache()
 
         # Persist retroactively detected model/firmware so it survives reloads.
+        # Detection keys alone must not trigger a config-entry reload (see
+        # async_reload_entry fingerprinting in __init__.py).
         self._persist_web_detection(web_supplement, model_conflicts)
 
-        current_data = cast(dict[str, Any] | None, getattr(self, "data", None))
-        if current_data is not None:
-            self.data = {**current_data, **self._web_metadata_data()}
+        # Re-read live coordinator data after the await above. A concurrent
+        # Modbus poll may have replaced self.data while the web call was in
+        # flight; merging into a stale snapshot would drop those register values.
+        live_data = cast(dict[str, Any] | None, getattr(self, "data", None))
+        if live_data is not None:
+            self.data = {**live_data, **self._web_metadata_data()}
         self.async_update_listeners()
 
     def _persist_web_detection(self, supplement: IdmWebSupplement, model_conflicts: bool) -> None:
@@ -827,9 +862,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return dict(vars(diagnostics))
         return {}
 
-    async def async_write_register(self, reg: RegisterDef, value: Any) -> None:
+    async def async_write_register(
+        self,
+        reg: RegisterDef,
+        value: Any,
+        *,
+        allow_custom_register: bool = False,
+    ) -> None:
         try:
-            self.simulate_write(reg, value)
+            self.simulate_write(reg, value, allow_custom_register=allow_custom_register)
             await self._client.write_register(reg, value)
         except Exception:
             ir.async_create_issue(
@@ -842,18 +883,24 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_placeholders={"register": reg.name, "address": str(reg.address)},
             )
             raise
-        # Optimistic update so entities reflect the new value immediately
+        # Optimistic update so entities reflect the new value immediately.
+        # Replace the snapshot dict (do not mutate in place) so concurrent web
+        # merges that re-read self.data cannot race mid-mutation.
         if self.data is not None:
+            updated = dict(self.data)
             alias_names = self._alias_map.get(reg.address)
             if alias_names:
                 for name in alias_names:
-                    self.data[name] = value
+                    updated[name] = value
             else:
-                self.data[reg.name] = value
+                updated[reg.name] = value
+            self.data = updated
         self.async_update_listeners()
         old_task = self._delayed_refresh_task
         if old_task is not None and not old_task.done():
             old_task.cancel()
+        # Short-lived confirmation refresh; use asyncio.create_task so unit
+        # tests can await the real Task (hass.async_create_task is often a MagicMock).
         self._delayed_refresh_task = asyncio.create_task(self._delayed_refresh())
 
     def _invalidate_device_info_cache(self) -> None:

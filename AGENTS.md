@@ -7,12 +7,12 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.8.2` (defined in `custom_components/idm_heatpump/manifest.json`)
+- **Current Version**: `0.8.5-beta.3` (defined in `custom_components/idm_heatpump/manifest.json`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.5.0
 - **Python**: 3.13+
-- **Key Dependencies**: `pymodbus >= 3.12.1, < 4.0`, `idm-heatpump-api[web] == 0.8.1`
+- **Key Dependencies**: `pymodbus >= 3.12.1, < 4.0`, `idm-heatpump-api[web]==0.8.3`
 
 ---
 
@@ -114,13 +114,15 @@ Home Assistant
     │              climate, water_heater, button
     │       ├── sensor/binary_sensor/number/select/switch extend IdmEntity [entity.py]
     │       │   → CoordinatorEntity (register-backed, unused-register filtering)
-    │       └── climate/water_heater/button extend CoordinatorEntity directly
-    │           (multi-register or action entities, not unused-filtered)
+    │       └── climate/water_heater/button extend CoordinatorEntity (+ shared device_info)
+    │           (multi-register or action entities)
     │
     ├── Services [services.py]
     │       ├── set_system_mode
     │       ├── acknowledge_errors
-    │       └── write_register
+    │       ├── write_register
+    │       ├── set_external_climate
+    │       └── start_dhw_boost / cancel_dhw_boost
     │
     ├── Repairs [repairs.py]
     │       └── web_pin_missing

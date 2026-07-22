@@ -23,15 +23,18 @@ from homeassistant.components.climate.const import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import RegisterDef
 
-from .const import CircuitMode, RoomMode, HeatPumpStatus
+from .const import DOMAIN, CircuitMode, RoomMode, HeatPumpStatus
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import build_device_info
+from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -107,9 +110,44 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         self._current_reg = current_reg
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{unique_id}"
-        self._attr_device_info = build_subdevice_info(coordinator, mode_reg.name) or build_device_info(coordinator)
         self._attr_min_temp = min_val if (min_val := self._target_reg.min_val) is not None else 10.0
         self._attr_max_temp = max_val if (max_val := self._target_reg.max_val) is not None else 35.0
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        return build_subdevice_info(self.coordinator, self._mode_reg.name) or build_device_info(self.coordinator)
+
+    @property
+    def available(self) -> bool:
+        if not super().available:
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        for reg in (self._mode_reg, self._target_reg):
+            if reg.name not in data:
+                return False
+            if reg.name in self.coordinator.unused_registers:
+                return False
+        return True
+
+    async def _async_write_register(self, reg: RegisterDef, value: Any, *, action_label: str) -> None:
+        try:
+            await self.coordinator.async_write_register(reg, value)
+        except Exception as err:
+            translation_key = classify_write_error(err)
+            _LOGGER.error(
+                "Could not %s %s; Home Assistant will show the actionable %s message",
+                action_label,
+                reg.name,
+                translation_key,
+            )
+            _LOGGER.debug("Technical IDM climate register write error", exc_info=True)
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key=translation_key,
+                translation_placeholders=write_error_placeholders(reg.name),
+            ) from err
 
     @property
     def current_temperature(self) -> float | None:
@@ -139,7 +177,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         if temp is None:
             return
 
-        await self.coordinator.async_write_register(self._target_reg, temp)
+        await self._async_write_register(self._target_reg, temp, action_label="set target temperature for")
         _LOGGER.debug("Set %s target temperature to %s", self._attr_unique_id, temp)
 
     async def _async_write_mode(self, value: int) -> None:
@@ -150,7 +188,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         write_rejected repair issue and the background refresh stay consistent
         with every other writable platform.
         """
-        await self.coordinator.async_write_register(self._mode_reg, value)
+        await self._async_write_register(self._mode_reg, value, action_label="set mode for")
 
     async def async_set_hvac_mode(self, hvac_mode: HVACMode) -> None:
         """Set new target hvac mode."""
@@ -218,7 +256,10 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
 
         status_val = self.coordinator.data.get("hp_operating_mode")
         if status_val is not None:
-            status = HeatPumpStatus(status_val)
+            try:
+                status = HeatPumpStatus(int(status_val))
+            except (TypeError, ValueError):
+                return HVACAction.IDLE
             if HeatPumpStatus.HEATING in status:
                 return HVACAction.HEATING
             if HeatPumpStatus.COOLING in status:
