@@ -657,7 +657,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         elif not override_active and isinstance(detected_model_name, str) and detected_model_name.strip():
             stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = detected_model_name
             stored_model_conflict = True
-            _LOGGER.warning(
+            _LOGGER.info(
                 "Stored IDM Navigator model %s conflicts with fresh Modbus detection %s; correcting stored data",
                 detected_model_name,
                 modbus_model_name,
