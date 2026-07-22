@@ -13,6 +13,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Optionale manuelle Navigator-Modell-Auswahl.** Im Einrichtungs- und
+  Reconfigure-Dialog gibt es ein neues, unter „Erweitert" verstecktes Feld
+  „Navigator-Modell" mit den Optionen *Automatisch (empfohlen)*,
+  *Navigator 10*, *Navigator 2.0* und *Navigator Pro*. Standard ist
+  *Automatisch* – das Verhalten ändert sich für bestehende Installationen
+  nicht. Die Option ist nur als Notnagel gedacht, falls die automatische
+  Erkennung für eine Anlage einmal nicht korrekt arbeitet; eine falsche
+  manuelle Auswahl kann die Registerauswahl verschlechtern. Ein gesetzter
+  Override gewinnt verlässlich über die Modbus- und Web-Erkennung, verändert
+  aber keine Unique IDs, Entity-IDs, Register oder Schreibpfade.
+
 ## [0.8.5-beta.2] - 2026-07-21
 
 Second beta preview of the upcoming 0.8.5 stable release. It bundles the

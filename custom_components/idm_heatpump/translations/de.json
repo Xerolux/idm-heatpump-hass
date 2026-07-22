@@ -11,7 +11,8 @@
           "slave_id": "Slave-ID",
           "web_pin": "Lokale Netzwerk-PIN (Navigator-Webzugriff)",
           "modbus_proxy": "Modbus-Proxy verwenden",
-          "web_host": "Original-IP der Wärmepumpe für Webzugriff"
+          "web_host": "Original-IP der Wärmepumpe für Webzugriff",
+          "model_override": "Navigator-Modell"
         },
         "data_description": {
           "name": "Anzeigename des Geräts in Home Assistant, z. B. \"IDM Wärmepumpe\".",
@@ -20,7 +21,8 @@
           "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen.",
           "web_pin": "Gib den am Navigator-Display gesetzten Code lokales Netzwerk ein. Verwende weder Cloud-/App-Passwort noch Zwei-Faktor-Code. Leer lassen für reinen Modbus-Betrieb; `0` deaktiviert den lokalen Webzugriff an der Regelung.",
           "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
-          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`."
+          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`.",
+          "model_override": "**Nur ändern, wenn die automatische Erkennung nicht korrekt arbeitet.** Das Modell wird in fast allen Fällen automatisch erkannt. Eine falsche manuelle Auswahl kann die Registerkarte verschlechtern und zu fehlenden oder nicht verfügbaren Sensoren führen."
         }
       },
       "reconfigure": {
@@ -44,7 +46,8 @@
           "slave_id": "Slave-ID",
           "web_pin": "Lokale Netzwerk-PIN (Navigator-Webzugriff)",
           "modbus_proxy": "Modbus-Proxy verwenden",
-          "web_host": "Original-IP der Wärmepumpe für Webzugriff"
+          "web_host": "Original-IP der Wärmepumpe für Webzugriff",
+          "model_override": "Navigator-Modell"
         },
         "data_description": {
           "host": "IP-Adresse oder Hostname für Modbus TCP. Wenn du einen Modbus-Proxy nutzt, trage hier die Proxy-Adresse ein.",
@@ -52,7 +55,8 @@
           "slave_id": "Modbus-Slave-ID. Standard ist `1`.",
           "web_pin": "Am Navigator-Display gesetzter Code lokales Netzwerk. Cloud-/App-Passwort und Zwei-Faktor-Code funktionieren hier nicht. Leer lassen für reinen Modbus-Betrieb; `0` deaktiviert den lokalen Webzugriff an der Regelung.",
           "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
-          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`."
+          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`.",
+          "model_override": "**Nur ändern, wenn die automatische Erkennung nicht korrekt arbeitet.** Das Modell wird in fast allen Fällen automatisch erkannt. Eine falsche manuelle Auswahl kann die Registerkarte verschlechtern und zu fehlenden oder nicht verfügbaren Sensoren führen."
         }
       },
       "diagnostics_success": {
@@ -473,6 +477,14 @@
     }
   },
   "selector": {
+    "model_override": {
+      "options": {
+        "auto": "Automatisch (empfohlen)",
+        "navigator_10": "Navigator 10",
+        "navigator_20": "Navigator 2.0",
+        "navigator_pro": "Navigator Pro"
+      }
+    },
     "heating_circuit": {
       "options": {
         "a": "Heizkreis A – Hauptkreis",

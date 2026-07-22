@@ -43,6 +43,10 @@ CONF_WEB_SCAN_INTERVAL: str = "web_scan_interval"
 CONF_DETECTED_NAVIGATOR_VERSION: str = "detected_navigator_version"
 CONF_DETECTED_SOFTWARE_VERSION: str = "detected_software_version"
 CONF_DETECTED_WEB_VARIANT: str = "detected_web_variant"
+# Optional manual override of the detected Navigator model. Stored in
+# entry.data alongside the detected_* keys. ``MODEL_OVERRIDE_AUTO`` means
+# "use automatic detection"; any other value forces that model family.
+CONF_MODEL_OVERRIDE: str = "model_override"
 CONF_ROOM_TEMP_FORWARDING: str = "room_temp_forwarding"
 CONF_ROOM_TEMP_FORWARDING_INTERVAL: str = "room_temp_forwarding_interval"
 CONF_ROOM_TEMP_FORWARDING_TOLERANCE: str = "room_temp_forwarding_tolerance"
@@ -54,6 +58,19 @@ CONF_MODBUS_MAX_RETRIES: str = "modbus_retries"
 DEFAULT_HOST: str = ""
 DEFAULT_WEB_ONLY: bool = False
 DEFAULT_PORT: int = 502
+# Selector values for the optional model override. ``auto`` keeps the
+# automatic detection; the other values force a Navigator family.
+MODEL_OVERRIDE_AUTO: str = "auto"
+MODEL_OVERRIDE_NAVIGATOR_10: str = "navigator_10"
+MODEL_OVERRIDE_NAVIGATOR_20: str = "navigator_20"
+MODEL_OVERRIDE_NAVIGATOR_PRO: str = "navigator_pro"
+DEFAULT_MODEL_OVERRIDE: str = MODEL_OVERRIDE_AUTO
+MODEL_OVERRIDE_OPTIONS: tuple[str, ...] = (
+    MODEL_OVERRIDE_AUTO,
+    MODEL_OVERRIDE_NAVIGATOR_10,
+    MODEL_OVERRIDE_NAVIGATOR_20,
+    MODEL_OVERRIDE_NAVIGATOR_PRO,
+)
 CONFIG_FLOW_TCP_TIMEOUT: float = 5.0
 DEFAULT_SLAVE_ID: int = 1
 DEFAULT_SCAN_INTERVAL: int = 10

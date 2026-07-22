@@ -52,6 +52,7 @@ from .const import (
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
+    CONF_MODEL_OVERRIDE,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_SHORT_CYCLE_MINUTES,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
@@ -71,6 +72,7 @@ from .const import (
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
+    DEFAULT_MODEL_OVERRIDE,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_PORT,
@@ -90,6 +92,7 @@ from .const import (
     MAX_ZONE_COUNT,
     MIN_MODBUS_MAX_RETRIES,
     MIN_MODBUS_TIMEOUT,
+    MODEL_OVERRIDE_OPTIONS,
     REGISTER_ADDRESS_CONNECTION_PROBE,
     REGISTER_COUNT_CONNECTION_PROBE,
 )
@@ -130,6 +133,20 @@ def _connection_error_key(result: _ModbusConnectionStatus | bool) -> str | None:
     return _ModbusConnectionStatus.FAILED.value
 
 
+# Optional manual Navigator model override. Marked ``advanced`` so it is hidden
+# behind the "show advanced" toggle in the config flow UI; automatic detection
+# is correct for the vast majority of installations and a wrong manual choice
+# can degrade the register map. The data_description (strings.json) repeats the
+# "only change if detection fails" warning next to the field.
+_MODEL_OVERRIDE_SELECTOR: SelectSelector = SelectSelector(
+    SelectSelectorConfig(
+        options=[{"value": value, "label": value} for value in MODEL_OVERRIDE_OPTIONS],
+        mode=SelectSelectorMode.DROPDOWN,
+        translation_key="model_override",
+    )
+)
+
+
 # Schema for initial setup – no defaults so add_suggested_values_to_schema fills them
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -144,6 +161,11 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
         vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
         vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+        vol.Optional(
+            CONF_MODEL_OVERRIDE,
+            default=DEFAULT_MODEL_OVERRIDE,
+            description={"advanced": True},
+        ): _MODEL_OVERRIDE_SELECTOR,
     }
 )
 
@@ -160,6 +182,11 @@ STEP_RECONFIGURE_SCHEMA = vol.Schema(
         vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
         vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
         vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+        vol.Optional(
+            CONF_MODEL_OVERRIDE,
+            default=DEFAULT_MODEL_OVERRIDE,
+            description={"advanced": True},
+        ): _MODEL_OVERRIDE_SELECTOR,
     }
 )
 
@@ -172,6 +199,11 @@ _CIRCUIT_SELECTOR: SelectSelector = SelectSelector(
     )
 )
 
+# Optional manual Navigator model override. Marked ``advanced`` so it is hidden
+# behind the "show advanced" toggle in the config flow UI; automatic detection
+# is correct for the vast majority of installations and a wrong manual choice
+# can degrade the register map. The data_description (strings.json) repeats the
+# "only change if detection fails" warning next to the field.
 _ROOM_TEMPERATURE_SELECTOR = EntitySelector(
     EntitySelectorConfig(
         domain="sensor",
@@ -408,6 +440,17 @@ def _web_host_for_input(user_input: dict[str, Any], host: str) -> str:
 
 def _stored_web_host(web_host: str, host: str) -> str:
     return "" if web_host == host else web_host
+
+
+def _normalize_model_override(user_input: dict[str, Any]) -> str:
+    """Return a valid model override value, defaulting to ``auto``.
+
+    The field is marked advanced and optional; missing/empty/invalid values
+    always fall back to automatic detection so a misconfigured entry never
+    forces a wrong Navigator family.
+    """
+    raw = str(user_input.get(CONF_MODEL_OVERRIDE, DEFAULT_MODEL_OVERRIDE) or "").strip()
+    return raw if raw in MODEL_OVERRIDE_OPTIONS else DEFAULT_MODEL_OVERRIDE
 
 
 def _host_key(host: str) -> str:
@@ -651,6 +694,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             CONF_WEB_PIN: web_pin,
                             CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
                             CONF_WEB_HOST: _stored_web_host(web_host, host),
+                            CONF_MODEL_OVERRIDE: _normalize_model_override(user_input),
                             **detected,
                         }
                         return await self.async_step_options()
@@ -760,6 +804,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                                 CONF_WEB_PIN: web_pin,
                                 CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
                                 CONF_WEB_HOST: _stored_web_host(web_host, host),
+                                CONF_MODEL_OVERRIDE: _normalize_model_override(user_input),
                                 CONF_WEB_ONLY: False,
                                 **detected,
                             },
@@ -773,6 +818,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             CONF_WEB_PIN: current_data.get(CONF_WEB_PIN, ""),
             CONF_MODBUS_PROXY: bool(current_data.get(CONF_MODBUS_PROXY) or current_data.get(CONF_WEB_HOST)),
             CONF_WEB_HOST: current_data.get(CONF_WEB_HOST, ""),
+            CONF_MODEL_OVERRIDE: current_data.get(CONF_MODEL_OVERRIDE, DEFAULT_MODEL_OVERRIDE),
         }
 
         return self.async_show_form(
