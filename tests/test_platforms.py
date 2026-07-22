@@ -609,13 +609,33 @@ class TestIdmTechnicianCodeSensor:
         assert sensor.available is True
 
     def test_native_value_returns_code(self):
+        from datetime import datetime
+        from unittest.mock import patch
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
+        fixed_dt = datetime(2025, 6, 15, 14, 30)
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
-        expected = calculate_codes()["level_1"]
-        assert sensor.native_value == expected
+        with patch("custom_components.idm_heatpump.sensor.dt_util") as mock_dt:
+            mock_dt.now.return_value = fixed_dt
+            expected = calculate_codes(now=fixed_dt)["level_1"]
+            assert sensor.native_value == expected
+
+    def test_native_value_falls_back_when_cache_is_none(self):
+        from datetime import datetime
+        from unittest.mock import patch
+        from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
+
+        fixed_dt = datetime(2025, 6, 15, 14, 30)
+        coord = _make_coordinator()
+        sensor = IdmTechnicianCodeSensor(coord, "level_2")
+        sensor._codes_cache = None
+        with patch("custom_components.idm_heatpump.sensor.dt_util") as mock_dt:
+            mock_dt.now.return_value = fixed_dt
+            expected = calculate_codes(now=fixed_dt)["level_2"]
+            assert sensor.native_value == expected
 
     def test_entity_enabled_by_default(self):
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
@@ -643,15 +663,23 @@ class TestIdmTechnicianCodeSensor:
         await sensor.async_will_remove_from_hass()
 
     def test_async_refresh_writes_ha_state(self):
+        from datetime import datetime
+        from unittest.mock import patch
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
+        fixed_dt = datetime(2025, 6, 15, 14, 30)
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
         sensor.async_write_ha_state = MagicMock()
-        sensor._async_refresh()
+        with patch("custom_components.idm_heatpump.sensor.dt_util") as mock_dt:
+            mock_dt.now.return_value = fixed_dt
+            sensor._async_refresh()
         sensor.async_write_ha_state.assert_called_once()
+        assert sensor._codes_cache is not None
+        assert sensor._codes_cache["level_1"] == "1506"
 
     async def test_async_added_to_hass_starts_timer(self):
+        from datetime import datetime
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
         from unittest.mock import patch, MagicMock
 
@@ -663,7 +691,10 @@ class TestIdmTechnicianCodeSensor:
         with patch(
             "custom_components.idm_heatpump.sensor.async_track_time_interval",
             return_value=cancel_mock,
-        ) as mock_timer:
+        ) as mock_timer, patch(
+            "custom_components.idm_heatpump.sensor.dt_util",
+        ) as mock_dt:
+            mock_dt.now.return_value = datetime(2025, 6, 15, 14, 30)
             await sensor.async_added_to_hass()
         mock_timer.assert_called_once()
         assert sensor._cancel_timer is cancel_mock

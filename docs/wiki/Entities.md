@@ -7,10 +7,13 @@ The integration dynamically generates entities based on your heat pump configura
 | Platform | Count | Description |
 |----------|-------|-------------|
 | **Sensor** | model-dependent | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions, diagnostics |
-| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand |
+| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand, web states |
 | **Number** | model-dependent | Writable setpoints, temperature limits, GLT parameters, power limits |
 | **Select** | model-dependent | System mode, heating circuit modes, solar mode, ISC mode |
 | **Switch** | model-dependent | External heating/cooling/DHW demand, one-time DHW charge |
+| **Climate** | per circuit + zone room | Heating/cooling mode + target temperature for heating circuits and zone-module rooms |
+| **Water Heater** | 1 | DHW target temperature with current temperature readback |
+| **Button** | 1 | Acknowledge active errors on the heat pump |
 
 Exact counts depend on the detected model, active heating circuits, zones,
 rooms and optional features. Adding circuits, zones, cascade, technician codes
@@ -291,6 +294,64 @@ These registers are model-dependent and disabled by default. Do not use them for
 | `demand_cooling` | 1711 | External cooling demand |
 | `demand_dhw_charging` | 1712 | External DHW charge demand |
 | `demand_onetime_dhw` | 1713 | One-time DHW charge |
+
+---
+
+## Climate
+
+Climate entities combine a mode selector and a temperature target into the
+standard Home Assistant thermostat card. Two types are created:
+
+### Heating Circuit Climate (`climate.hc_x`)
+
+One per configured heating circuit (A–G). Controls the circuit operating mode
+and its normal (day) room setpoint temperature.
+
+| Control | Register | Notes |
+|---------|----------|-------|
+| HVAC mode | `hc_{x}_mode` | Off, Time Program, Normal, Eco, Manual Heat, Manual Cool |
+| Target temperature | `hc_{x}_room_setpoint_heat_normal` | Range depends on circuit config |
+| Current temperature | `hc_{x}_room_temp` | Room temperature sensor |
+| HVAC action | `hp_operating_mode` | Derives HEATING/COOLING/IDLE from heat pump status |
+
+### Zone Room Climate (`climate.zm{z}_room{r}`)
+
+One per configured room in each zone module. Controls the room operating mode
+and its temperature setpoint.
+
+| Control | Register | Notes |
+|---------|----------|-------|
+| HVAC mode | `zm{z}_room{r}_mode` | Off, Time Program, Normal, Eco, Manual Heat, Manual Cool |
+| Target temperature | `zm{z}_room{r}_setpoint` | Range depends on zone config |
+| Current temperature | `zm{z}_room{r}_temp` | Room temperature sensor |
+| HVAC action | `hp_operating_mode` | Derives HEATING/COOLING/IDLE from heat pump status |
+
+Writes go through the coordinator's centralized write path with optimistic
+updates and translated error messages.
+
+---
+
+## Water Heater
+
+A single water heater entity (`water_heater.idm_heatpump`) provides DHW target
+temperature control with current temperature readback. Created when both
+`dhw_temp_top` and `dhw_setpoint` registers exist.
+
+| Property | Register | Notes |
+|----------|----------|-------|
+| Current temperature | `dhw_temp_top` | Top DHW tank temperature |
+| Target temperature | `dhw_setpoint` | Writable setpoint (35–95 °C typical) |
+| Operation mode | N/A | Always "Heat Pump" |
+
+Uses the same coordinator write path as climate entities.
+
+---
+
+## Button
+
+A single button (`button.idm_heatpump_acknowledge_errors`) acknowledges active
+errors on the heat pump by writing `1` to the `error_acknowledge` write-only
+register. Always available so automations can trigger on alarm state changes.
 
 ---
 

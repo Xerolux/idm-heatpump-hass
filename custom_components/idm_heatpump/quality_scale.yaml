@@ -272,6 +272,20 @@ rules:
       POWER, energy sensors use ENERGY, number entities use
       NumberDeviceClass.TEMPERATURE where applicable.
 
+  entity-state-class:
+    status: done
+    comment: >
+      Energy sensors use TOTAL_INCREASING, temperature/power/flow sensors use
+      MEASUREMENT. Inferred from device_class via _DC_STATE_CLASS_MAP in
+      adapter_descriptions.py. Contract test enforces consistency.
+
+  entity-suggested-display-precision:
+    status: done
+    comment: >
+      Numeric sensor entities declare suggested_display_precision based on
+      unit (temperature=1, power=2, energy=1, flow=1, percentage=0).
+      Inferred via infer_suggested_display_precision in adapter_descriptions.py.
+
   entity-disabled-by-default:
     status: done
     comment: >

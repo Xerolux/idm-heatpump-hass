@@ -56,6 +56,28 @@ _DC_STATE_CLASS_MAP: dict[SensorDeviceClass, SensorStateClass] = {
     SensorDeviceClass.VOLUME_FLOW_RATE: SensorStateClass.MEASUREMENT,
 }
 
+_UNIT_PRECISION_MAP: dict[str, int] = {
+    UnitOfTemperature.CELSIUS: 1,
+    "°C": 1,
+    UnitOfPower.KILO_WATT: 2,
+    "kW": 2,
+    "W": 0,
+    UnitOfEnergy.KILO_WATT_HOUR: 1,
+    "kWh": 1,
+    "L/min": 1,
+    PERCENTAGE: 0,
+    "bar": 2,
+    "V": 1,
+    "h": 0,
+}
+
+
+def infer_suggested_display_precision(unit: str | None) -> int | None:
+    """Return suggested display precision for a given unit string."""
+    if unit is None:
+        return None
+    return _UNIT_PRECISION_MAP.get(unit)
+
 
 def infer_sensor_classes(
     name: str,
@@ -140,6 +162,7 @@ def make_sensor_description(
         native_unit_of_measurement=unit,
         device_class=device_class,
         state_class=state_class,
+        suggested_display_precision=infer_suggested_display_precision(unit),
         icon=meta.get("icon"),
         entity_category=meta.get("entity_category"),
         entity_registry_enabled_default=enabled_default,

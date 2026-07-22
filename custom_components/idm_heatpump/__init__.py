@@ -100,6 +100,7 @@ from .registers import (
     normalize_zone_rooms,
 )
 from .operation_analysis import OperationAnalysis
+from .polling_plan import ensure_entity_aware_polling
 from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
 from .web_data import (
     IdmWebAuthenticationFailed,
@@ -802,6 +803,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         await coordinator.async_config_entry_first_refresh()
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
         cleanup_stale_hierarchy_devices(hass, coordinator)
+
+        # Activate entity-aware polling after platforms have created registry
+        # entries. Idempotent — subsequent calls from operation_entities.py are no-ops.
+        ensure_entity_aware_polling(coordinator)
 
         if web_enabled and web_pin_configured(web_pin):
             entry.runtime_data.web_task = _create_entry_background_task(

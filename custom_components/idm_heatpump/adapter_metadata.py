@@ -102,7 +102,7 @@ SENSOR_METADATA: dict[str, dict[str, Any]] = {
     "heat_sink_flow_rate": {
         "name": "Durchfluss Wärmesenke (B2)",
         "icon": "mdi:water-pump",
-        "unit": "l/min",
+        "unit": "L/min",
         "device_class": None,
         "entity_category": EntityCategory.DIAGNOSTIC,
     },

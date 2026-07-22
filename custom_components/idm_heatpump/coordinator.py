@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import time
 from datetime import timedelta
 from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any, cast
@@ -201,6 +202,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._operation_analysis: OperationAnalysis | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
+        self._write_timestamps: dict[int, float] = {}
+        self._write_cooldown_seconds: float = 5.0
         # Room-mode individual validation is expensive (one Modbus read per
         # register). Run it on the first poll, then only every Nth poll.
         self._room_mode_validation_counter = 0
@@ -869,6 +872,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         *,
         allow_custom_register: bool = False,
     ) -> None:
+        now = time.monotonic()
+        last = self._write_timestamps.get(reg.address)
+        if last is not None and (now - last) < self._write_cooldown_seconds:
+            _LOGGER.warning(
+                "Write to register %s (addr %d) within %0.1fs cooldown (last write was %0.1fs ago)",
+                reg.name,
+                reg.address,
+                self._write_cooldown_seconds,
+                now - last,
+            )
+        self._write_timestamps[reg.address] = now
         try:
             self.simulate_write(reg, value, allow_custom_register=allow_custom_register)
             await self._client.write_register(reg, value)

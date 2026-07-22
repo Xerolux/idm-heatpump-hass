@@ -5,6 +5,7 @@ import math
 import struct
 import sys
 from dataclasses import dataclass, field
+from datetime import datetime
 from enum import Enum
 from types import ModuleType
 from typing import Any
@@ -202,6 +203,7 @@ def _stub_homeassistant() -> None:
     ha.util = _make_module("homeassistant.util")
     ha.util.json = _make_module("homeassistant.util.json")
     ha.util.dt = _make_module("homeassistant.util.dt")
+    ha.util.dt.now = datetime.now
     ha.util.dt.as_local = lambda value: value.astimezone()
     ha.components = _make_module("homeassistant.components")
     ha.components.repairs = _make_module("homeassistant.components.repairs")

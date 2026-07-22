@@ -47,6 +47,7 @@ from .adapter_descriptions import (
     get_icon_for_register,
     infer_binary_device_class,
     infer_sensor_classes,
+    infer_suggested_display_precision,
     make_sensor_description,
 )
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
@@ -194,6 +195,7 @@ def _build_sensor_description(reg: RegisterDef, *, include_enabled_default: bool
         native_unit_of_measurement=reg.unit,
         device_class=dc,
         state_class=sc,
+        suggested_display_precision=infer_suggested_display_precision(reg.unit),
         icon=icon,
         entity_category=EntityCategory.DIAGNOSTIC,
         **extra,

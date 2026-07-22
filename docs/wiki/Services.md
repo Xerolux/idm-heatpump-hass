@@ -4,7 +4,9 @@ There are several ways to write values to the heat pump in this integration:
 1. **Via regular entities (recommended):**
    Many values (such as temperatures, setpoints, or modes) are represented as `number`, `select`, or `switch` entities in Home Assistant. You can change them directly in dashboards or use them in automations with standard services (e.g., `number.set_value` or `select.select_option`). A list of all adjustable entities can be found at [Entities](Entities).
 2. **Via specific services:**
-   For special actions like acknowledging errors or setting the system mode, there are dedicated services (e.g., `idm_heatpump.set_system_mode`).
+   For special actions like acknowledging errors, setting the system mode,
+   starting a DHW boost, or forwarding external climate data, there are
+   dedicated services (e.g., `idm_heatpump.set_system_mode`).
 3. **Direct Modbus access (advanced / alternative):**
    If an entity for a specific register is missing or you want to target registers directly, you can use the `idm_heatpump.write_register` service to write values directly to any Modbus register. An overview of registers can be found at [Modbus Registers](Modbus-Register). **Warning: Use at your own risk.**
 
@@ -140,6 +142,47 @@ data:
   value: "1"
   datatype: uchar
   acknowledge_risk: true
+```
+
+## start_dhw_boost
+
+Starts a time-limited DHW quick heating cycle. The heat pump raises the DHW
+target to maximum and prioritizes hot water until the boost duration expires or
+is cancelled.
+
+**Service:** `idm_heatpump.start_dhw_boost`
+
+**Target:** Device of the integration
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `minutes` | number | Boost duration in minutes (1–1440). Default 60. |
+
+**Example:**
+```yaml
+service: idm_heatpump.start_dhw_boost
+target:
+  device_id: abc123def456
+data:
+  minutes: 90
+```
+
+The boost is restart-safe: if Home Assistant restarts during a boost, the
+remaining time is restored from the heat pump's active DHW setpoint register.
+
+## cancel_dhw_boost
+
+Cancels an active DHW boost and restores the previous DHW setpoint.
+
+**Service:** `idm_heatpump.cancel_dhw_boost`
+
+**Target:** Device of the integration
+
+**Example:**
+```yaml
+service: idm_heatpump.cancel_dhw_boost
+target:
+  device_id: abc123def456
 ```
 
 ## Automation Examples (Writing Values)

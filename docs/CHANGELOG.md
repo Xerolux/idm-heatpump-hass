@@ -13,6 +13,53 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5-beta.4] - 2026-07-22
+
+Fourth beta preview of the upcoming 0.8.5 stable release. This release
+focuses on **HA Core submission preparation**, entity-aware polling,
+EEPROM write safety, and documentation completeness.
+
+> **Compatibility:** API pin unchanged at `idm-heatpump-api[web]==0.8.3`.
+> Entity unique IDs, entity IDs, registers and write paths are unchanged.
+
+### Added
+
+- **Entity-aware polling now wired as main path.** The `EntityAwarePollingManager`
+  is now activated from `__init__.py` after all platforms have registered their
+  entities, reducing Modbus traffic to only registers needed by enabled entities.
+  The `_ALWAYS_REQUIRED` set ensures internal registers (alarms, compressor
+  status, operating mode) remain polled regardless of UI entity state.
+- **Write cooldown protection.** The coordinator now tracks last-write timestamps
+  per register address and warns when the same address is written within a 5-second
+  window. This helps detect runaway automation loops before they cause hardware
+  EEPROM wear.
+- **`suggested_display_precision` inference.** All Modbus-backed sensor entities
+  now declare a display precision based on their unit (°C → 1, kW → 2, kWh → 1,
+  L/min → 1, % → 0). Improves dashboard rendering consistency.
+- **DHW boost services** (`start_dhw_boost`, `cancel_dhw_boost`) documented in wiki.
+
+### Fixed
+
+- **`heat_sink_flow_rate` missing `state_class=MEASUREMENT`.** Root cause was a
+  unit-string case mismatch (`"l/min"` vs `"L/min"`) in `SENSOR_METADATA`.
+- **`controller_online_hours` web sensor** now correctly receives
+  `state_class=TOTAL_INCREASING` by adding its unit (`"h"`) to `_WEB_VALUE_UNITS`.
+- **Technician code timezone.** Code calculation now uses `dt_util.now()` (HA
+  configured timezone) instead of `datetime.now()` (host local time), fixing
+  incorrect codes on Docker containers running in UTC.
+- **EEPROM documentation corrected.** Removed false claim of automatic 1/minute
+  write enforcement for 88 EEPROM registers. Replaced with honest description of
+  the new write cooldown warning.
+
+### Changed
+
+- **Wiki:** Climate, Water Heater, and Button platforms now fully documented in
+  Entities.md, Home.md platforms table, and sidebar navigation.
+- **`quality_scale.yaml`:** Added `entity-state-class` and
+  `entity-suggested-display-precision` rules (both `done`).
+- **`Known-Limitations.md`:** Removed obsolete "Climate entity not exposed" note;
+  updated EEPROM section with accurate write cooldown description.
+
 ## [0.8.5-beta.3] - 2026-07-22
 
 Third beta preview of the upcoming 0.8.5 stable release. It contains the

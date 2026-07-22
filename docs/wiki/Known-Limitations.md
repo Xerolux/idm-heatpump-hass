@@ -14,11 +14,15 @@
 - Port and Slave ID must be configured correctly
 - Some controller/firmware combinations tolerate only limited parallel Modbus clients. If timeouts correlate with another automation system, test with that client stopped or increase the polling interval
 
-## EEPROM Protection
+## Write Frequency
 
-- **88 registers** are EEPROM-protected and can only be written **once per minute**
-- More frequent write operations to these registers can cause hardware wear
-- The integration enforces this limit automatically
+- Some Modbus registers are backed by EEPROM storage on the controller and
+  tolerate only limited write cycles over the hardware lifetime.
+- The integration logs a warning when the same register address is written
+  more than once within 5 seconds, which helps catch runaway automation loops.
+- For the raw `write_register` service, users must acknowledge the risk
+  explicitly. No automatic hard-block prevents frequent EEPROM writes — treat
+  unknown addresses with care.
 
 ## Single Device per Configuration Entry
 
@@ -59,7 +63,6 @@
 
 ## Deliberately Not Implemented
 
-- **Climate entity:** Not exposed yet because IDM modes combine heating circuits, rooms, cooling and hot water in ways that do not map cleanly to one Home Assistant climate entity.
 - **Web connection as the core path:** Modbus operation does not depend on a web
   login. The optional read-only supplement uses the supported local Navigator
   HTTP or WebSocket session and can provide a limited web-only fallback.

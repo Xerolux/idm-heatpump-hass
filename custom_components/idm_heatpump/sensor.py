@@ -19,6 +19,7 @@ from homeassistant.helpers.entity import EntityCategory, EntityDescription  # ty
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.loader import async_get_integration
+from homeassistant.util import dt as dt_util
 
 from idm_heatpump import DataType, RegisterDef
 
@@ -178,6 +179,7 @@ _WEB_VALUE_UNITS: dict[str, str] = {
     "cold_water_temperature": "°C",
     "condenser_pressure": "bar",
     "condenser_temperature": "°C",
+    "controller_online_hours": "h",
     "current_electrical_power": "kW",
     "current_expected_power_cooling": "kW",
     "current_expected_power_heating": "kW",
@@ -545,9 +547,11 @@ class IdmTechnicianCodeBaseSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     _attr_entity_registry_enabled_default = True
     _cancel_timer: Callable[[], None] | None = None
+    _codes_cache: dict[str, str] | None = None
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
+        self._refresh_codes()
         self._cancel_timer = async_track_time_interval(self.hass, self._async_refresh, timedelta(seconds=60))
 
     async def async_will_remove_from_hass(self) -> None:
@@ -556,7 +560,12 @@ class IdmTechnicianCodeBaseSensor(IdmCoordinatorEntityBase, SensorEntity):
             self._cancel_timer = None
 
     @callback
+    def _refresh_codes(self) -> None:
+        self._codes_cache = calculate_codes(now=dt_util.now())
+
+    @callback
     def _async_refresh(self, _now: object = None) -> None:
+        self._refresh_codes()
         self.async_write_ha_state()
 
     @property
@@ -585,4 +594,6 @@ class IdmTechnicianCodeSensor(
 
     @property
     def native_value(self) -> str:
-        return calculate_codes()[self._level]
+        if self._codes_cache is not None:
+            return self._codes_cache.get(self._level, "")
+        return calculate_codes(now=dt_util.now())[self._level]

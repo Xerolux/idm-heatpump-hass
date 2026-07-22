@@ -11,9 +11,13 @@
 ## Entities & Devices
 - [All Entities](Entities)
 - [Sensors & Measurements](Entities#sensors)
+- [Binary Sensors](Entities#binary-sensors)
 - [Numbers (Setpoints)](Entities#numbers)
 - [Selects (Modes)](Entities#selects)
 - [Switches](Entities#switches)
+- [Climate](Entities#climate)
+- [Water Heater](Entities#water-heater)
+- [Button](Entities#button)
 
 ## Automation
 - [Services Reference](Services)

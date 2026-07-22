@@ -23,14 +23,14 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Integration version** | 0.8.3 |
+| **Integration version** | 0.8.5-beta.3 |
 | **Supported/tested HA baseline** | 2026.5.0 |
 | **Python** | 3.13+ (managed by Home Assistant) |
 | **pymodbus** | pymodbus>=3.12.1,<4.0 |
 | **Library** | idm-heatpump-api[web]==0.8.3 |
 | **License** | MIT |
 | **Languages** | DE, EN |
-| **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects and switches |
+| **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects, switches, climate, water heater, and buttons |
 
 ---
 
@@ -55,10 +55,13 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | Platform | Entities | Description |
 |----------|----------|-------------|
 | **Sensor** | model-dependent | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions |
-| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand |
+| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand, web states |
 | **Number** | model-dependent | Writable setpoints, limits, GLT parameters, power limits |
 | **Select** | model-dependent | System mode, circuit modes, solar/ISC mode |
 | **Switch** | model-dependent | External heating/cooling/DHW demand |
+| **Climate** | per circuit + zone room | Heating/cooling mode + target temperature for heating circuits and zone-module rooms |
+| **Water Heater** | 1 | DHW target temperature with current temperature readback |
+| **Button** | 1 | Acknowledge active errors on the heat pump |
 
 ---
 
