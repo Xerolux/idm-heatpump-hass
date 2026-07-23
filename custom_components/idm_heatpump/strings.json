@@ -95,7 +95,7 @@
               "enable_cascade": "Enable cascade registers",
               "web_extra_data": "Enable web supplement data",
               "web_scan_interval": "Web supplement interval",
-              "device_hierarchy": "Organize heating circuits and zones as devices",
+              "device_hierarchy": "Show functional areas as separate devices",
               "short_cycle_minutes": "Short-cycle threshold"
             },
             "data_description": {
@@ -103,7 +103,7 @@
               "enable_cascade": "Only enable this when multiple heat pumps are configured as a cascade.",
               "web_extra_data": "Reads additional local Navigator web data when a local web PIN is configured.",
               "web_scan_interval": "How often to read optional web data. Default: 30 seconds.",
-              "device_hierarchy": "Creates separate Home Assistant devices for heating circuits, zone modules, and rooms. Existing installations keep the previous layout until this option is enabled.",
+              "device_hierarchy": "When enabled, Home Assistant shows functional areas such as heating circuits, zone modules, rooms, domestic hot water, diagnostics, solar, ISC, cascade, and auxiliary heat as separate child devices under the heat pump. This is not an entity category or sorting group: it only changes which Home Assistant device an entity belongs to. It does not change entity IDs, entity behavior, or heat-pump control. Existing installations keep the previous single-device layout until you enable this option.",
               "short_cycle_minutes": "The last fully observed compressor cycle is reported as a problem when it is shorter than this duration."
             }
           },

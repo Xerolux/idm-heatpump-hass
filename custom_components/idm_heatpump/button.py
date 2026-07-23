@@ -27,6 +27,7 @@ from .dhw_boost_services import (
     async_setup_dhw_boost_services,
     async_unload_dhw_boost_services,
 )
+from .device_hierarchy import build_subdevice_info
 from .entity import build_device_info
 from .error_messages import classify_write_error, write_error_placeholders
 
@@ -92,7 +93,7 @@ class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity
 
     @property
     def device_info(self) -> DeviceInfo:
-        return build_device_info(self.coordinator)
+        return build_subdevice_info(self.coordinator, self._register.name) or build_device_info(self.coordinator)
 
     async def async_press(self) -> None:
         """Handle the button press."""
@@ -131,7 +132,7 @@ class _IdmDhwBoostButtonBase(
 
     @property
     def device_info(self) -> DeviceInfo:
-        return build_device_info(self.coordinator)
+        return build_subdevice_info(self.coordinator, "dhw_boost") or build_device_info(self.coordinator)
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

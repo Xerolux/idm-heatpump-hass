@@ -179,7 +179,6 @@ _WEB_VALUE_UNITS: dict[str, str] = {
     "cold_water_temperature": "°C",
     "condenser_pressure": "bar",
     "condenser_temperature": "°C",
-    "controller_online_hours": "h",
     "current_electrical_power": "kW",
     "current_expected_power_cooling": "kW",
     "current_expected_power_heating": "kW",
@@ -208,6 +207,11 @@ _WEB_VALUE_UNITS: dict[str, str] = {
     "ventilator_voltage": "V",
     "verdamper_pressure": "bar",
 }
+
+# Keep these legacy web diagnostics unitless: older releases already created
+# long-term statistics without a unit, and changing them to hours makes Home
+# Assistant suppress statistics until the user repairs recorder metadata.
+_WEB_LEGACY_UNITLESS_TOTAL_KEYS: frozenset[str] = frozenset({"controller_online_hours"})
 
 _WEB_VALUE_NAMES_DE: dict[str, str] = {
     "airsource_temperature": "Luftquellen Temperatur",
@@ -309,6 +313,8 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
         device_class, state_class = infer_sensor_classes(key, unit)
     if unit == "h":
         state_class = SensorStateClass.TOTAL_INCREASING
+    if key in _WEB_LEGACY_UNITLESS_TOTAL_KEYS:
+        state_class = None
     if key.startswith("switch_cycles"):
         state_class = SensorStateClass.TOTAL_INCREASING
     enabled_by_default = _web_metadata_value(metadata, "enabled_by_default")
@@ -546,6 +552,11 @@ class IdmTechnicianCodeBaseSensor(IdmCoordinatorEntityBase, SensorEntity):
     """Refresh technician-code entities on the minute without coordinator polling."""
 
     _attr_entity_registry_enabled_default = True
+
+    @property
+    def device_info(self) -> Any:
+        return build_subdevice_info(self.coordinator, "technician_codes") or build_device_info(self.coordinator)
+
     _cancel_timer: Callable[[], None] | None = None
     _codes_cache: dict[str, str] | None = None
 

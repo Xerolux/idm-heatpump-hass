@@ -26,6 +26,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 from .adapter_metadata import native_step_for_register
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
+from .device_hierarchy import build_subdevice_info
 from .entity import build_device_info
 from .error_messages import classify_write_error, write_error_placeholders
 
@@ -78,7 +79,7 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
 
     @property
     def device_info(self) -> DeviceInfo:
-        return build_device_info(self.coordinator)
+        return build_subdevice_info(self.coordinator, self._target_reg.name) or build_device_info(self.coordinator)
 
     @property
     def current_temperature(self) -> float | None:

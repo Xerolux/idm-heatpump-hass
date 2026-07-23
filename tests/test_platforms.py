@@ -528,6 +528,35 @@ class TestSensorAsyncSetupEntry:
         assert hotgas.entity_description.state_class == "measurement"
         assert hotgas.entity_description.entity_registry_enabled_default is False
 
+    async def test_controller_online_web_sensor_keeps_legacy_unitless_metadata(self):
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = True
+        coord._registers = []
+        coord.web_supplement = IdmWebSupplement(
+            sensor_values={"controller_online_hours": IdmWebSensorValue("123 h", 123.0, "h")}
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        controller_online = next(
+            entity
+            for entity in added_entities
+            if isinstance(entity, IdmWebSensor) and entity.entity_description.key == "web_controller_online_hours"
+        )
+        assert controller_online.entity_description.native_unit_of_measurement is None
+        assert controller_online.entity_description.state_class is None
+        assert controller_online.native_value == 123.0
+
     async def test_web_sensor_device_info_uses_latest_firmware_metadata(self):
         from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
 
