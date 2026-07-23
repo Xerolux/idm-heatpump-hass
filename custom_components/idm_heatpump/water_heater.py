@@ -82,6 +82,21 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         return build_subdevice_info(self.coordinator, self._target_reg.name) or build_device_info(self.coordinator)
 
     @property
+    def available(self) -> bool:
+        """Hide the entity when DHW registers report unused sentinels."""
+        if not super().available:
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        for reg in (self._current_reg, self._target_reg):
+            if reg.name not in data:
+                return False
+            if reg.name in self.coordinator.unused_registers:
+                return False
+        return True
+
+    @property
     def current_temperature(self) -> float | None:
         """Return the current temperature."""
         if not self.coordinator.data:

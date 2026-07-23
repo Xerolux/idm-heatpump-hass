@@ -24,6 +24,7 @@ from .const import DOMAIN, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE
 from .coordinator import IdmCoordinator
 from .dhw_boost import DhwBoostError, DhwBoostManager, async_get_dhw_boost_manager
 from .dhw_boost_services import (
+    _translate_boost_error,
     async_setup_dhw_boost_services,
     async_unload_dhw_boost_services,
 )
@@ -142,7 +143,7 @@ class _IdmDhwBoostButtonBase(
 class IdmDhwBoostStartButton(_IdmDhwBoostButtonBase):
     """Start DHW boost with the safe default target and timeout."""
 
-    _attr_name = "Warmwasser-Boost starten"
+    _attr_translation_key = "dhw_boost_start"
     _attr_icon = "mdi:water-boiler-alert"
 
     def __init__(self, coordinator: IdmCoordinator, manager: DhwBoostManager) -> None:
@@ -155,7 +156,7 @@ class IdmDhwBoostStartButton(_IdmDhwBoostButtonBase):
                 timeout_minutes=self._manager.default_timeout_minutes,
             )
         except DhwBoostError as err:
-            raise HomeAssistantError(str(err)) from err
+            raise _translate_boost_error(err) from err
 
     async def async_will_remove_from_hass(self) -> None:
         await self._manager.async_shutdown()
@@ -171,7 +172,7 @@ class IdmDhwBoostStartButton(_IdmDhwBoostButtonBase):
 class IdmDhwBoostCancelButton(_IdmDhwBoostButtonBase):
     """Cancel DHW boost and restore the exact previous values."""
 
-    _attr_name = "Warmwasser-Boost abbrechen"
+    _attr_translation_key = "dhw_boost_cancel"
     _attr_icon = "mdi:water-boiler-off"
 
     def __init__(self, coordinator: IdmCoordinator, manager: DhwBoostManager) -> None:
@@ -185,4 +186,4 @@ class IdmDhwBoostCancelButton(_IdmDhwBoostButtonBase):
         try:
             await self._manager.async_cancel()
         except DhwBoostError as err:
-            raise HomeAssistantError(str(err)) from err
+            raise _translate_boost_error(err) from err

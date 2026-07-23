@@ -116,6 +116,163 @@ class TestIdmAcknowledgeErrorsButton:
 
 
 # ---------------------------------------------------------------------------
+# DHW boost buttons
+# ---------------------------------------------------------------------------
+
+
+class _StubBoostManager:
+    """Minimal stand-in for DhwBoostManager used by the boost buttons."""
+
+    def __init__(self) -> None:
+        self.default_target_temperature = 60
+        self.default_timeout_minutes = 60
+        self.active = False
+        self.state_attributes = {"active": False, "status": "idle"}
+        self.start_calls: list[tuple[int, int]] = []
+        self.cancel_calls: list[bool] = []
+        self.start_error: Exception | None = None
+        self.cancel_error: Exception | None = None
+        self.shutdown_called = False
+
+    async def async_start(self, *, target_temperature, timeout_minutes):
+        self.start_calls.append((target_temperature, timeout_minutes))
+        if self.start_error is not None:
+            raise self.start_error
+
+    async def async_cancel(self):
+        self.cancel_calls.append(True)
+        if self.cancel_error is not None:
+            raise self.cancel_error
+
+    async def async_shutdown(self):
+        self.shutdown_called = True
+
+
+class TestDhwBoostStartButton:
+    def _make(self, manager=None):
+        from custom_components.idm_heatpump.button import IdmDhwBoostStartButton
+
+        manager = manager or _StubBoostManager()
+        coord = _make_coordinator()
+        button = IdmDhwBoostStartButton(coord, manager)
+        return button, manager, coord
+
+    def test_uses_translation_key_not_hardcoded_name(self):
+        button, _, _ = self._make()
+        # H1 fix: name is localized via translation_key, not hardcoded German.
+        assert button._attr_translation_key == "dhw_boost_start"
+        assert not hasattr(button, "_attr_name") or button._attr_name is None
+
+    def test_unique_id(self):
+        button, _, _ = self._make()
+        assert button._attr_unique_id == "test_entry_dhw_boost_start"
+
+    async def test_async_press_delegates_with_defaults(self):
+        button, manager, _ = self._make()
+        await button.async_press()
+        assert manager.start_calls == [(60, 60)]
+
+    async def test_async_press_translates_dhw_boost_error(self):
+        from custom_components.idm_heatpump.dhw_boost import DhwBoostError
+        from homeassistant.exceptions import HomeAssistantError
+
+        button, manager, _ = self._make()
+        manager.start_error = DhwBoostError(
+            "intern",
+            translation_key="dhw_boost_already_active",
+        )
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await button.async_press()
+
+        assert exc_info.value.translation_key == "dhw_boost_already_active"
+        assert exc_info.value.translation_domain == "idm_heatpump"
+
+    async def test_async_will_remove_shuts_down_manager_and_services(self):
+        import custom_components.idm_heatpump.button as button_module
+        from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+        button, manager, coord = self._make()
+
+        # Stub the async_unload_dhw_boost_services helper so we don't need a
+        # full Home Assistant services registry, and provide a no-op
+        # ``async_will_remove_from_hass`` on the base class so super(). works.
+        unload_called = []
+
+        async def _fake_unload(hass, entry_id):
+            unload_called.append((hass, entry_id))
+
+        async def _no_op_will_remove(self):
+            return None
+
+        orig_unload = button_module.async_unload_dhw_boost_services
+        orig_super = getattr(CoordinatorEntity, "async_will_remove_from_hass", None)
+        button_module.async_unload_dhw_boost_services = _fake_unload
+        CoordinatorEntity.async_will_remove_from_hass = _no_op_will_remove
+        try:
+            await button.async_will_remove_from_hass()
+        finally:
+            button_module.async_unload_dhw_boost_services = orig_unload
+            if orig_super is not None:
+                CoordinatorEntity.async_will_remove_from_hass = orig_super
+            else:
+                delattr(CoordinatorEntity, "async_will_remove_from_hass")
+
+        assert manager.shutdown_called is True
+        assert unload_called == [(coord.hass, "test_entry")]
+
+
+class TestDhwBoostCancelButton:
+    def _make(self, manager=None):
+        from custom_components.idm_heatpump.button import IdmDhwBoostCancelButton
+
+        manager = manager or _StubBoostManager()
+        coord = _make_coordinator()
+        button = IdmDhwBoostCancelButton(coord, manager)
+        return button, manager, coord
+
+    def test_uses_translation_key(self):
+        button, _, _ = self._make()
+        assert button._attr_translation_key == "dhw_boost_cancel"
+        assert not hasattr(button, "_attr_name") or button._attr_name is None
+
+    def test_unique_id(self):
+        button, _, _ = self._make()
+        assert button._attr_unique_id == "test_entry_dhw_boost_cancel"
+
+    def test_available_follows_manager_active(self):
+        button, manager, _ = self._make()
+        manager.active = False
+        # Coordinator reports success and data is present; only manager.active
+        # gates availability for the cancel button.
+        button2, manager2, coord2 = self._make()
+        coord2.data = {"dhw_temp_top": 50.0, "dhw_setpoint": 55.0}
+        coord2.unused_registers = set()
+        manager2.active = True
+        assert button2.available is True
+
+    async def test_async_press_delegates_cancel(self):
+        button, manager, _ = self._make()
+        await button.async_press()
+        assert manager.cancel_calls == [True]
+
+    async def test_async_press_translates_dhw_boost_error(self):
+        from custom_components.idm_heatpump.dhw_boost import DhwBoostError
+        from homeassistant.exceptions import HomeAssistantError
+
+        button, manager, _ = self._make()
+        manager.cancel_error = DhwBoostError(
+            "intern",
+            translation_key="dhw_boost_restore_failed",
+        )
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await button.async_press()
+
+        assert exc_info.value.translation_key == "dhw_boost_restore_failed"
+
+
+# ---------------------------------------------------------------------------
 # Water heater platform
 # ---------------------------------------------------------------------------
 
@@ -215,6 +372,31 @@ class TestIdmWaterHeater:
         # Writable platforms wrap communication failures as translated HomeAssistantError.
         with pytest.raises(HomeAssistantError):
             await wh.async_set_temperature(temperature=55.0)
+
+    def test_available_false_when_coordinator_update_failed(self):
+        wh, coord = self._make(data={"dhw_temp_top": 50.0, "dhw_setpoint": 55.0})
+        coord.last_update_success = False
+        assert wh.available is False
+
+    def test_available_false_when_data_missing(self):
+        wh, _ = self._make(data={})
+        assert wh.available is False
+
+    def test_available_false_when_dhw_register_unused(self):
+        """H2 fix: entity must hide when DHW registers report unused sentinels."""
+        wh, coord = self._make(data={"dhw_temp_top": -1.0, "dhw_setpoint": -1.0})
+        coord.unused_registers = {"dhw_temp_top", "dhw_setpoint"}
+        assert wh.available is False
+
+    def test_available_true_when_registers_present_and_used(self):
+        wh, coord = self._make(data={"dhw_temp_top": 50.0, "dhw_setpoint": 55.0})
+        coord.unused_registers = set()
+        assert wh.available is True
+
+    def test_available_false_when_only_one_register_unused(self):
+        wh, coord = self._make(data={"dhw_temp_top": 50.0, "dhw_setpoint": -1.0})
+        coord.unused_registers = {"dhw_setpoint"}
+        assert wh.available is False
 
 
 # ---------------------------------------------------------------------------

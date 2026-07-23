@@ -360,6 +360,12 @@
     "button": {
       "acknowledge_errors": {
         "name": "Acknowledge Errors"
+      },
+      "dhw_boost_start": {
+        "name": "Start DHW boost"
+      },
+      "dhw_boost_cancel": {
+        "name": "Cancel DHW boost"
       }
     },
     "select": {
@@ -557,6 +563,45 @@
     },
     "external_climate_humidity_out_of_range": {
       "message": "External humidity {value} % is outside the allowed range 0…100 %."
+    },
+    "dhw_boost_no_entry": {
+      "message": "The configuration entry is not available."
+    },
+    "dhw_boost_already_active": {
+      "message": "A DHW boost is already active. Cancel it before starting a new one."
+    },
+    "dhw_boost_unsupported": {
+      "message": "The required hot-water and system-mode registers are not available on this heat pump."
+    },
+    "dhw_boost_no_current_temp": {
+      "message": "The current domestic hot-water temperature is not available."
+    },
+    "dhw_boost_no_previous_state": {
+      "message": "The current system mode or DHW setpoint is not available."
+    },
+    "dhw_boost_start_failed_rolled_back": {
+      "message": "The DHW boost could not start; the previous state was restored."
+    },
+    "dhw_boost_start_failed_rollback_incomplete": {
+      "message": "The DHW boost could not start and the previous state could not be fully restored yet. Recovery will retry on the next coordinator update."
+    },
+    "dhw_boost_invalid_recovery_state": {
+      "message": "The persisted recovery state is incomplete."
+    },
+    "dhw_boost_restore_failed": {
+      "message": "The previous DHW state could not be fully restored yet. Recovery will retry on the next coordinator update."
+    },
+    "dhw_boost_register_not_writable": {
+      "message": "Register {register} is not writable."
+    },
+    "dhw_boost_invalid_target": {
+      "message": "Invalid DHW target temperature."
+    },
+    "dhw_boost_target_out_of_range": {
+      "message": "DHW target temperature must be between {minimum} and {maximum} °C."
+    },
+    "dhw_boost_timeout_out_of_range": {
+      "message": "Boost duration must be between {minimum} and {maximum} minutes."
     }
   },
   "issues": {

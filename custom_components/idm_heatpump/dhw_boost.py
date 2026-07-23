@@ -27,7 +27,23 @@ _HOT_WATER_ONLY_MODE: Final = 4
 
 
 class DhwBoostError(RuntimeError):
-    """Raised when a DHW boost cannot be started or restored safely."""
+    """Raised when a DHW boost cannot be started or restored safely.
+
+    Carries a Home Assistant translation key + placeholders so the service
+    handlers and button entities can surface a localized error instead of
+    the raw German developer message.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        translation_key: str | None = None,
+        translation_placeholders: dict[str, str] | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.translation_key = translation_key
+        self.translation_placeholders = translation_placeholders or {}
 
 
 def _utcnow() -> datetime:
@@ -59,7 +75,10 @@ class DhwBoostManager:
     def __init__(self, coordinator: IdmCoordinator) -> None:
         config_entry = coordinator.config_entry
         if config_entry is None:
-            raise DhwBoostError("Der Konfigurationseintrag ist nicht verfügbar")
+            raise DhwBoostError(
+                "Der Konfigurationseintrag ist nicht verfügbar",
+                translation_key="dhw_boost_no_entry",
+            )
         self.coordinator = coordinator
         self._entry = config_entry
         self._store: Store[dict[str, Any]] = Store(
@@ -143,16 +162,25 @@ class DhwBoostManager:
         """Persist the snapshot, then activate DHW priority and target."""
         async with self._lock:
             if self.active:
-                raise DhwBoostError("Der Warmwasser-Boost ist bereits aktiv; zuerst abbrechen")
+                raise DhwBoostError(
+                    "Der Warmwasser-Boost ist bereits aktiv; zuerst abbrechen",
+                    translation_key="dhw_boost_already_active",
+                )
             if not self.supported:
-                raise DhwBoostError("Die benötigten Warmwasser- und Systemmodusregister sind nicht verfügbar")
+                raise DhwBoostError(
+                    "Die benötigten Warmwasser- und Systemmodusregister sind nicht verfügbar",
+                    translation_key="dhw_boost_unsupported",
+                )
 
             target = self._validated_target(target_temperature)
             timeout = self._validated_timeout(timeout_minutes)
             data = self.coordinator.data or {}
             current_temperature = _finite_number(data.get("dhw_temp_top"))
             if current_temperature is None:
-                raise DhwBoostError("Die aktuelle Warmwassertemperatur ist nicht verfügbar")
+                raise DhwBoostError(
+                    "Die aktuelle Warmwassertemperatur ist nicht verfügbar",
+                    translation_key="dhw_boost_no_current_temp",
+                )
             if current_temperature >= target:
                 self.status = "idle"
                 self.last_reason = "target_already_reached"
@@ -164,7 +192,10 @@ class DhwBoostManager:
             previous_mode = self._safe_int(data.get("system_mode"))
             previous_setpoint = self._safe_int(data.get("dhw_setpoint"))
             if previous_mode is None or previous_setpoint is None:
-                raise DhwBoostError("Systemmodus oder bisheriger Warmwasser-Sollwert ist nicht verfügbar")
+                raise DhwBoostError(
+                    "Systemmodus oder bisheriger Warmwasser-Sollwert ist nicht verfügbar",
+                    translation_key="dhw_boost_no_previous_state",
+                )
 
             now = _utcnow()
             self.active = True
@@ -194,10 +225,12 @@ class DhwBoostManager:
                 except Exception:
                     raise DhwBoostError(
                         "Boost-Start fehlgeschlagen und der vorherige Zustand konnte "
-                        "noch nicht vollständig wiederhergestellt werden"
+                        "noch nicht vollständig wiederhergestellt werden",
+                        translation_key="dhw_boost_start_failed_rollback_incomplete",
                     ) from err
                 raise DhwBoostError(
-                    "Boost-Start fehlgeschlagen; der vorherige Zustand wurde wiederhergestellt"
+                    "Boost-Start fehlgeschlagen; der vorherige Zustand wurde wiederhergestellt",
+                    translation_key="dhw_boost_start_failed_rolled_back",
                 ) from err
 
             self.status = "active"
@@ -259,7 +292,14 @@ class DhwBoostManager:
 
                 now = _utcnow()
                 if self.deadline is not None and now >= self.deadline:
-                    await self._async_restore_locked("timeout")
+                    try:
+                        await self._async_restore_locked("timeout")
+                    except DhwBoostError:
+                        _LOGGER.warning(
+                            "IDM DHW boost timed out and the previous state could not be fully "
+                            "restored yet; recovery will retry on the next coordinator update",
+                            exc_info=True,
+                        )
                     return
 
                 data = self.coordinator.data or {}
@@ -269,7 +309,14 @@ class DhwBoostManager:
                     and self.target_temperature is not None
                     and current_temperature >= self.target_temperature
                 ):
-                    await self._async_restore_locked("target_reached")
+                    try:
+                        await self._async_restore_locked("target_reached")
+                    except DhwBoostError:
+                        _LOGGER.warning(
+                            "IDM DHW boost target reached and the previous state could not be fully "
+                            "restored yet; recovery will retry on the next coordinator update",
+                            exc_info=True,
+                        )
                     return
 
                 # Boost owns only these two values until cancel/end. PV/SG and
@@ -325,7 +372,10 @@ class DhwBoostManager:
             self.active = False
             await self._async_save()
             self._notify()
-            raise DhwBoostError("Gespeicherter Wiederherstellungszustand ist unvollständig")
+            raise DhwBoostError(
+                "Gespeicherter Wiederherstellungszustand ist unvollständig",
+                translation_key="dhw_boost_invalid_recovery_state",
+            )
 
         self.status = "restoring"
         self.last_reason = reason
@@ -338,7 +388,8 @@ class DhwBoostManager:
             await self._async_save()
             self._notify()
             raise DhwBoostError(
-                "Der vorherige Warmwasserzustand konnte noch nicht vollständig wiederhergestellt werden"
+                "Der vorherige Warmwasserzustand konnte noch nicht vollständig wiederhergestellt werden",
+                translation_key="dhw_boost_restore_failed",
             ) from err
 
         self._cancel_timeout()
@@ -351,7 +402,11 @@ class DhwBoostManager:
     async def _async_write(self, register_name: str, value: Any) -> None:
         register = self.coordinator.get_register(register_name)
         if register is None or not register.writable:
-            raise DhwBoostError(f"Register {register_name} ist nicht schreibbar")
+            raise DhwBoostError(
+                f"Register {register_name} ist nicht schreibbar",
+                translation_key="dhw_boost_register_not_writable",
+                translation_placeholders={"register": register_name},
+            )
         await self.coordinator.async_write_register(register, value)
 
     async def _async_save(self) -> None:
@@ -389,7 +444,10 @@ class DhwBoostManager:
         target = self._safe_int(value)
         register = self.coordinator.get_register("dhw_setpoint")
         if target is None or register is None:
-            raise DhwBoostError("Ungültige Warmwasser-Zieltemperatur")
+            raise DhwBoostError(
+                "Ungültige Warmwasser-Zieltemperatur",
+                translation_key="dhw_boost_invalid_target",
+            )
         minimum = max(
             _MIN_TARGET,
             int(register.min_val) if register.min_val is not None else _MIN_TARGET,
@@ -399,14 +457,22 @@ class DhwBoostManager:
             int(register.max_val) if register.max_val is not None else _MAX_TARGET,
         )
         if not minimum <= target <= maximum:
-            raise DhwBoostError(f"Warmwasser-Zieltemperatur muss zwischen {minimum} und {maximum} °C liegen")
+            raise DhwBoostError(
+                f"Warmwasser-Zieltemperatur muss zwischen {minimum} und {maximum} °C liegen",
+                translation_key="dhw_boost_target_out_of_range",
+                translation_placeholders={"minimum": str(minimum), "maximum": str(maximum)},
+            )
         return target
 
     @staticmethod
     def _validated_timeout(value: Any) -> int:
         timeout = DhwBoostManager._safe_int(value)
         if timeout is None or not _MIN_TIMEOUT <= timeout <= _MAX_TIMEOUT:
-            raise DhwBoostError(f"Boost-Laufzeit muss zwischen {_MIN_TIMEOUT} und {_MAX_TIMEOUT} Minuten liegen")
+            raise DhwBoostError(
+                f"Boost-Laufzeit muss zwischen {_MIN_TIMEOUT} und {_MAX_TIMEOUT} Minuten liegen",
+                translation_key="dhw_boost_timeout_out_of_range",
+                translation_placeholders={"minimum": str(_MIN_TIMEOUT), "maximum": str(_MAX_TIMEOUT)},
+            )
         return timeout
 
     @property

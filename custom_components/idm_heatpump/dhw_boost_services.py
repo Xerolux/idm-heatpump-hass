@@ -21,6 +21,17 @@ _START_SERVICE = "start_dhw_boost"
 _CANCEL_SERVICE = "cancel_dhw_boost"
 
 
+def _translate_boost_error(err: DhwBoostError) -> HomeAssistantError:
+    """Convert a DhwBoostError into a translated HomeAssistantError."""
+    if err.translation_key:
+        return HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key=err.translation_key,
+            translation_placeholders=err.translation_placeholders,
+        )
+    return HomeAssistantError(str(err))
+
+
 async def _get_manager(
     hass: HomeAssistant,
     call: ServiceCall,
@@ -38,7 +49,10 @@ async def _get_manager(
             translation_key="no_device_configured",
         )
     if requested_entry_id is None and len(loaded_entries) > 1:
-        raise ServiceValidationError("Mehrere IDM-Geräte sind geladen; entry_id muss angegeben werden")
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="multiple_entries_select_entry",
+        )
     runtime_data = loaded_entries[0].runtime_data
     coordinator = getattr(runtime_data, "coordinator", None)
     if not isinstance(coordinator, IdmCoordinator):
@@ -66,7 +80,9 @@ async def _handle_start(hass: HomeAssistant, call: ServiceCall) -> None:
                 )
             ),
         )
-    except (DhwBoostError, TypeError, ValueError, OverflowError) as err:
+    except DhwBoostError as err:
+        raise _translate_boost_error(err) from err
+    except (TypeError, ValueError, OverflowError) as err:
         raise HomeAssistantError(str(err)) from err
 
 
@@ -75,7 +91,7 @@ async def _handle_cancel(hass: HomeAssistant, call: ServiceCall) -> None:
     try:
         await manager.async_cancel()
     except DhwBoostError as err:
-        raise HomeAssistantError(str(err)) from err
+        raise _translate_boost_error(err) from err
 
 
 async def async_setup_dhw_boost_services(hass: HomeAssistant) -> None:

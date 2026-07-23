@@ -360,6 +360,12 @@
     "button": {
       "acknowledge_errors": {
         "name": "Störungen quittieren"
+      },
+      "dhw_boost_start": {
+        "name": "Warmwasser-Boost starten"
+      },
+      "dhw_boost_cancel": {
+        "name": "Warmwasser-Boost abbrechen"
       }
     },
     "select": {
@@ -556,7 +562,46 @@
       "message": "Externe Raumtemperatur {value} °C liegt außerhalb des erlaubten Bereichs -20…60 °C."
     },
     "external_climate_humidity_out_of_range": {
-      "message": "Externe Feuchte {value} % liegt außerhalb des erlaubten Bereichs 0…100 %."
+      "message": "Externe Luftfeuchte {value} % liegt außerhalb des erlaubten Bereichs 0…100 %."
+    },
+    "dhw_boost_no_entry": {
+      "message": "Der Konfigurationseintrag ist nicht verfügbar."
+    },
+    "dhw_boost_already_active": {
+      "message": "Ein Warmwasser-Boost ist bereits aktiv; bitte zuerst abbrechen."
+    },
+    "dhw_boost_unsupported": {
+      "message": "Die benötigten Warmwasser- und Systemmodusregister sind nicht verfügbar."
+    },
+    "dhw_boost_no_current_temp": {
+      "message": "Die aktuelle Warmwassertemperatur ist nicht verfügbar."
+    },
+    "dhw_boost_no_previous_state": {
+      "message": "Systemmodus oder bisheriger Warmwasser-Sollwert ist nicht verfügbar."
+    },
+    "dhw_boost_start_failed_rolled_back": {
+      "message": "Der Boost-Start ist fehlgeschlagen; der vorherige Zustand wurde wiederhergestellt."
+    },
+    "dhw_boost_start_failed_rollback_incomplete": {
+      "message": "Der Boost-Start ist fehlgeschlagen und der vorherige Zustand konnte noch nicht vollständig wiederhergestellt werden. Die Wiederherstellung wird beim nächsten Coordinator-Update erneut versucht."
+    },
+    "dhw_boost_invalid_recovery_state": {
+      "message": "Der gespeicherte Wiederherstellungszustand ist unvollständig."
+    },
+    "dhw_boost_restore_failed": {
+      "message": "Der vorherige Warmwasserzustand konnte noch nicht vollständig wiederhergestellt werden. Die Wiederherstellung wird beim nächsten Coordinator-Update erneut versucht."
+    },
+    "dhw_boost_register_not_writable": {
+      "message": "Register {register} ist nicht schreibbar."
+    },
+    "dhw_boost_invalid_target": {
+      "message": "Ungültige Warmwasser-Zieltemperatur."
+    },
+    "dhw_boost_target_out_of_range": {
+      "message": "Die Warmwasser-Zieltemperatur muss zwischen {minimum} und {maximum} °C liegen."
+    },
+    "dhw_boost_timeout_out_of_range": {
+      "message": "Die Boost-Laufzeit muss zwischen {minimum} und {maximum} Minuten liegen."
     }
   },
   "issues": {
