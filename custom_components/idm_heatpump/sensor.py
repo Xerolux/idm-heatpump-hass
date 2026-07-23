@@ -210,7 +210,9 @@ _WEB_VALUE_UNITS: dict[str, str] = {
 
 # Keep these legacy web diagnostics unitless: older releases already created
 # long-term statistics without a unit, and changing them to hours makes Home
-# Assistant suppress statistics until the user repairs recorder metadata.
+# Assistant suppress statistics until the user repairs recorder metadata. Preserve
+# their total-increasing state class so Home Assistant can continue long-term
+# statistics for existing entities.
 _WEB_LEGACY_UNITLESS_TOTAL_KEYS: frozenset[str] = frozenset({"controller_online_hours"})
 
 _WEB_VALUE_NAMES_DE: dict[str, str] = {
@@ -314,7 +316,8 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
     if unit == "h":
         state_class = SensorStateClass.TOTAL_INCREASING
     if key in _WEB_LEGACY_UNITLESS_TOTAL_KEYS:
-        state_class = None
+        unit = None
+        state_class = SensorStateClass.TOTAL_INCREASING
     if key.startswith("switch_cycles"):
         state_class = SensorStateClass.TOTAL_INCREASING
     enabled_by_default = _web_metadata_value(metadata, "enabled_by_default")
