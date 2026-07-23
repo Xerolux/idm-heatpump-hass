@@ -45,6 +45,7 @@ def test_expected_identifiers_include_zone_parent_for_room() -> None:
         (DOMAIN, "entry_heating_circuit_b"),
         (DOMAIN, "entry_zone_module_2"),
         (DOMAIN, "entry_zone_module_2_room_4"),
+        (DOMAIN, "entry_module_diagnostics"),
     }
 
 

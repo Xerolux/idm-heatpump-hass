@@ -95,7 +95,7 @@
               "enable_cascade": "Kaskadenregister aktivieren",
               "web_extra_data": "Web-Zusatzdaten aktivieren",
               "web_scan_interval": "Web-Abfrageintervall",
-              "device_hierarchy": "Heizkreise und Zonen als Geräte organisieren",
+              "device_hierarchy": "Funktionsbereiche als eigene Geräte anzeigen",
               "short_cycle_minutes": "Kurz-Takt-Schwelle"
             },
             "data_description": {
@@ -103,7 +103,7 @@
               "enable_cascade": "Nur aktivieren, wenn mehrere Wärmepumpen als Kaskade eingerichtet sind.",
               "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten, wenn eine lokale Web-PIN hinterlegt ist.",
               "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden.",
-              "device_hierarchy": "Erstellt getrennte Home-Assistant-Geräte für Heizkreise, Zonenmodule und Räume. Bestehende Installationen behalten die bisherige Ansicht, bis diese Option aktiviert wird.",
+              "device_hierarchy": "Wenn aktiviert, zeigt Home Assistant Funktionsbereiche wie Heizkreise, Zonenmodule, Räume, Warmwasser, Diagnose, Solar, ISC, Kaskade und Zusatzwärmeerzeuger als eigene Untergeräte der Wärmepumpe an. Das ist keine Entity-Kategorie und keine Sortiergruppe: Es ändert nur, welchem Home-Assistant-Gerät eine Entität zugeordnet ist. Entity-IDs, Verhalten der Entitäten und Steuerung der Wärmepumpe bleiben unverändert. Bestehende Installationen behalten die bisherige Ansicht mit einem Gerät, bis diese Option aktiviert wird.",
               "short_cycle_minutes": "Der letzte vollständig beobachtete Verdichtertakt wird als Problem gemeldet, wenn er kürzer als diese Dauer war."
             }
           },

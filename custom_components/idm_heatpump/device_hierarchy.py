@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from .const import DOMAIN, MANUFACTURER
+from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
 
 if TYPE_CHECKING:
     from .coordinator import IdmCoordinator
@@ -23,6 +23,8 @@ DeviceScopeKind = Literal[
     "isc",
     "cascade",
     "auxiliary_heat",
+    "domestic_hot_water",
+    "diagnostics",
 ]
 
 
@@ -54,6 +56,36 @@ _AUXILIARY_HEAT_PREFIXES = (
     "eheating_",
     "electric_heater_",
 )
+_DHW_PREFIXES = ("dhw_", "hotwater_", "water_temp_")
+_DHW_KEYS = frozenset(
+    {
+        "current_expected_power_hotwater",
+        "energy_dhw",
+        "glt_request_dhw",
+        "glt_single_dhw",
+        "request_dhw",
+        "runtime_hotwater_hours",
+        "valve_heating_hotwater",
+        "ext_hotwater_signal",
+    }
+)
+_DIAGNOSTIC_KEYS = frozenset(
+    {
+        "controller_online_hours",
+        "error_acknowledge",
+        "heatpump_model",
+        "infosystem_notification_count",
+        "infosystem_notifications",
+        "internal_message",
+        "myidm_id",
+        "navigator_version",
+        "software_version",
+        "technician_codes",
+        "technician_level_1",
+        "technician_level_2",
+    }
+)
+
 _AUXILIARY_HEAT_KEYS = frozenset(
     {
         "failure_eheating",
@@ -72,6 +104,8 @@ _MODULE_DEVICE_METADATA: dict[DeviceScopeKind, tuple[str, str, str]] = {
         "Zusatzwärmeerzeuger",
         "Zusatzwärmeerzeuger",
     ),
+    "domestic_hot_water": ("domestic_hot_water", "Warmwasser", "Warmwasserbereitung"),
+    "diagnostics": ("diagnostics", "Diagnose", "Diagnose"),
 }
 
 
@@ -91,6 +125,10 @@ def resolve_device_scope(entity_key: str) -> DeviceScope | None:
     for prefix, kind in _OPTIONAL_MODULE_PREFIXES:
         if key.startswith(prefix):
             return DeviceScope(kind, prefix.removesuffix("_"))
+    if key in _DHW_KEYS or key.startswith(_DHW_PREFIXES):
+        return DeviceScope("domestic_hot_water", "domestic_hot_water")
+    if key in _DIAGNOSTIC_KEYS:
+        return DeviceScope("diagnostics", "diagnostics")
     if key in _AUXILIARY_HEAT_KEYS or key.startswith(_AUXILIARY_HEAT_PREFIXES):
         return DeviceScope("auxiliary_heat", "auxiliary_heat")
     return None
@@ -149,6 +187,10 @@ def expected_subdevice_identifiers(coordinator: IdmCoordinator) -> set[tuple[str
     sensor_values = getattr(supplement, "sensor_values", None)
     if isinstance(sensor_values, dict):
         entity_keys.update(str(key) for key in sensor_values)
+    options = getattr(coordinator.config_entry, "options", {}) if coordinator.config_entry is not None else {}
+    if isinstance(options, dict) and options.get(CONF_TECHNICIAN_CODES, False):
+        entity_keys.add("technician_codes")
+    entity_keys.add("error_acknowledge")
 
     identifiers: set[tuple[str, str]] = set()
     for entity_key in entity_keys:
