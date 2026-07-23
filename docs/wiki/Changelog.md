@@ -5,6 +5,15 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.5-beta.8 — 2026-07-23
+
+### Changed
+
+- **Neue Beta-Kandidatenversion `0.8.5-beta.8`:** Aktualisiert Manifest,
+  Release-Evidence, Changelog und Wiki-Verweise auf den aktuellen Beta-Stand.
+  Laufzeitcode, Entitäten, Register, Schreibpfade und der getestete
+  `idm-heatpump-api[web]==0.8.4`-Pin bleiben unverändert.
+
 ## v0.8.5-beta.7 — 2026-07-22
 
 ### Fixed

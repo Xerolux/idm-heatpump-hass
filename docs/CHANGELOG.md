@@ -13,6 +13,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5-beta.8] - 2026-07-23
+
+Eighth beta preview of the upcoming 0.8.5 stable release. This is a release
+metadata and documentation refresh for the latest beta candidate; runtime code,
+entity unique IDs, entity IDs, register addresses, write paths, and the tested
+API pin remain unchanged.
+
+> **Compatibility:** API pin unchanged at `idm-heatpump-api[web]==0.8.4`.
+> This release only advances the integration beta version and synchronizes the
+> release, wiki, and documentation references for the new candidate.
+
+### Changed
+
+- **Bump integration beta version to `0.8.5-beta.8`.** The manifest, release
+  evidence, changelog, and wiki pages now reference the latest beta candidate
+  consistently.
+
 ## [0.8.5-beta.7] - 2026-07-22
 
 Seventh beta preview of the upcoming 0.8.5 stable release. Keeps API-side
