@@ -5,7 +5,8 @@ ha_category:
   - Climate
   - Energy
   - Sensor
-ha_release: "2026.x"
+  - Water Heater
+ha_release: "2026.5.0"
 ha_iot_class: Local Polling
 ha_config_flow: true
 ha_codeowners:
@@ -13,16 +14,19 @@ ha_codeowners:
 ha_domain: idm_heatpump
 ha_platforms:
   - binary_sensor
+  - button
+  - climate
   - diagnostics
   - number
   - select
   - sensor
   - switch
+  - water_heater
 ha_integration_type: device
 ha_quality_scale: gold
 ha_requirements:
   - pymodbus>=3.12.1,<4.0
-  - idm-heatpump-api[web]>=0.6.0,<0.7
+  - idm-heatpump-api[web]==0.8.4
 ---
 
 > Draft for a possible future Home Assistant Core documentation page. The
@@ -154,6 +158,18 @@ Mode selectors for:
 | GLT heating request | Enable cyclic GLT heating request (writes register every 10 min) |
 | GLT cooling request | Enable cyclic GLT cooling request |
 
+### Climate
+
+Per-heating-circuit and per-zone-room climate entities expose heating/cooling operation and a target temperature. Each circuit (`A`–`G`) configured during setup gets its own climate entity; each enabled zone-module room gets an additional room climate entity that routes mode and setpoint writes through the integration's safe write path.
+
+### Water heater
+
+When both the current DHW top temperature and the DHW setpoint register are available, a single `water_heater` entity exposes the domestic hot water target temperature with current-temperature read-back. The entity supports the standard `set_temperature` action and publishes the integration's supported target step (1 °C for the integer-backed DHW target register).
+
+### Button
+
+A single `button` entity writes the centralized IDM acknowledge-errors register when pressed. It is the UI equivalent of the `idm_heatpump.acknowledge_errors` action and is disabled by default to avoid accidental error resets.
+
 ### Diagnostics
 
 The integration supports [diagnostics download](/integrations/diagnostics/) which exports the full current coordinator state including all register values, configuration, and error information. Sensitive values (IP address) are redacted automatically.
@@ -229,6 +245,30 @@ data:
   address: 1005
   value: "1"
   acknowledge_risk: true
+```
+
+### `idm_heatpump.start_dhw_boost`
+
+Trigger a one-time domestic hot water boost that raises the DHW setpoint to the configured boost target for a configurable duration. The boost state survives Home Assistant restarts and is cancelled automatically when the boost window elapses or when the DHW setpoint is changed manually.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `duration` | integer | no | Boost duration in minutes (default: `120`) |
+| `target_temperature` | number | no | Temporary DHW target temperature in °C (default: integration config) |
+
+```yaml
+action: idm_heatpump.start_dhw_boost
+data:
+  duration: 90
+  target_temperature: 60
+```
+
+### `idm_heatpump.cancel_dhw_boost`
+
+Cancel an active DHW boost and restore the previous DHW setpoint. No-op when no boost is active.
+
+```yaml
+action: idm_heatpump.cancel_dhw_boost
 ```
 
 ## Known limitations

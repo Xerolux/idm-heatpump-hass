@@ -138,10 +138,13 @@ Maintainer sollten vor einem stabilen Release den
 | Plattform | Entities | Beschreibung |
 |-----------|----------|--------------|
 | **Sensor** | modellabhängig | Temperaturen, Drücke, Durchflüsse, Energie, PV, Solar, Kaskade, Laufzeitversionen und Diagnose |
-| **Binary Sensor** | modellabhängig | Störungen, Verdichterstatus sowie Heiz-/Kühl-/Warmwasseranforderung |
+| **Binary Sensor** | modellabhängig | Störungen, Verdichterstatus sowie Heiz-/Kühl-/Warmwasseranforderung, Web-Status |
 | **Number** | modellabhängig | Sollwerte, Temperaturgrenzen, GLT-Parameter und Leistungsgrenzen |
 | **Select** | modellabhängig | Betriebsart, Heizkreis-, Solar- und ISC-Modi |
 | **Switch** | modellabhängig | Externe Heiz-/Kühl-/Warmwasseranforderung und einmalige Warmwasserladung |
+| **Climate** | pro Heizkreis + Zonenraum | Heiz-/Kühlmodus und Zieltemperatur für Heizkreise A–G und Zonenmodule-Räume |
+| **Water Heater** | 1 | Warmwasser-Solltemperatur mit aktueller Ist-Temperatur (sofern DHW-Register verfügbar) |
+| **Button** | 1–3 | Störungen quittieren sowie optional Warmwasser-Boost starten/abbrechen |
 
 <details>
 <summary><strong>🏗️ Architektur & technische Details</strong></summary>
@@ -164,9 +167,9 @@ Home Assistant
     │       │
     │       ├── Optionaler RoomTempForwarder (HA-Sensoren -> externe Raumtemperaturregister)
     │       │
-    │       └── Entities (sensor, binary_sensor, number, select, switch)
+    │       └── Entities (sensor, binary_sensor, number, select, switch, climate, water_heater, button)
     │
-    ├── Services (set_system_mode, acknowledge_errors, write_register)
+    ├── Services (set_system_mode, acknowledge_errors, write_register, set_external_climate, start_dhw_boost, cancel_dhw_boost)
     │
     └── Diagnostics (JSON-Export via HA UI)
 ```

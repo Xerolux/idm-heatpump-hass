@@ -140,10 +140,13 @@ before publishing a stable release.
 | Platform | Entities | Description |
 |----------|----------|-------------|
 | **Sensor** | model-dependent | Temperatures, pressures, flow rates, energy, PV, solar, cascade, booster, runtime versions and diagnostics |
-| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand |
+| **Binary Sensor** | model-dependent | Fault alarms, compressor status, heating/cooling/DHW demand, web states |
 | **Number** | model-dependent | Setpoints, temperatures, limits, GLT parameters, power limits (writable) |
 | **Select** | model-dependent | System mode, heating circuit modes, solar mode, ISC mode |
 | **Switch** | model-dependent | External heating/cooling/DHW demand, one-time DHW charge |
+| **Climate** | per circuit + zone room | Heating/cooling mode + target temperature for heating circuits A–G and zone-module rooms |
+| **Water Heater** | 1 | DHW target temperature with current-temperature readback (when DHW registers are available) |
+| **Button** | 1–3 | Acknowledge active errors, plus optional start/cancel DHW boost |
 
 <details>
 <summary><strong>🏗️ Architecture & technical details</strong></summary>
@@ -163,9 +166,9 @@ Home Assistant
     |
     |       +-- Optional RoomTempForwarder (HA sensors -> external room temp registers)
     |       |
-    |       +-- Entities (sensor, binary_sensor, number, select, switch)
+    |       +-- Entities (sensor, binary_sensor, number, select, switch, climate, water_heater, button)
     |
-    +-- Services (set_system_mode, acknowledge_errors, write_register)
+    +-- Services (set_system_mode, acknowledge_errors, write_register, set_external_climate, start_dhw_boost, cancel_dhw_boost)
     |
     +-- Diagnostics (JSON export via HA UI)
 ```
