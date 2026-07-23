@@ -5,6 +5,58 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.8.5 — 2026-07-23
+
+First stable release of the 0.8.5 line. Consolidates the eight beta candidates
+plus the final i18n and stability fixes from the stable code review.
+
+### Added
+
+- **Manual Navigator model override** (Auto / Navigator 10 / Navigator 2.0 /
+  Navigator Pro), wenn die automatische Erkennung mehrdeutig ist.
+- **Restart-sicherer Warmwasser-Boost** mit den Services
+  `idm_heatpump.start_dhw_boost` und `idm_heatpump.cancel_dhw_boost` sowie
+  Start-/Cancel-Buttons. Der Boost-Zustand überlebt HA-Neustarts.
+- **Optionale Gerät-Hierarchie** (Wärmepumpe, DHW-Controller, Zonenmodule als
+  separate Sub-Geräte).
+- **Entity-bewusstes Modbus-Polling**, **Momentan-COP-Sensor** und
+  **Betriebszyklus-Analyse** (Verdichter-/Abtau-Zähler).
+- **Navigator-Web-Binary-Sensoren** für Online-/Regler-Online-Status.
+
+### Changed
+
+- **API-Pin aktualisiert:** `idm-heatpump-api[web]==0.8.4` (war 0.8.1).
+  Bringt sentinel-aware Heizkreis-Modus-Probes, robusteren Navigator-10-vs-2.0-Differenzierer
+  für Terra SWM, automatische Kaskadenerkennung und Navigator-10-Heizkreisdaten
+  für die Kreise B–G.
+- **Klima- und Warmwasser-Entitäten melden ihre unterstützte Schrittweite**
+  (0,5 °C bzw. 1 °C für integer-backed Register).
+- **Modbus-Register-Wiki** gegen API 0.8.4 regeneriert.
+- **Repository aufgeräumt** (`.planning/`, alte `ROADMAP.md`, verwaiste Skripte
+  und AI-Handoff-Doku entfernt).
+- **README und HA-Core-Entwurf** listen jetzt alle 8 Plattformen und das
+  vollständige Service-Set inkl. DHW-Boost.
+
+### Fixed
+
+- **Integer-Modbus-Numbers bieten keine invaliden Nachkommastellen mehr an**
+  ([#158](https://github.com/Xerolux/idm-heatpump-hass/issues/158)).
+- **Terra SWM / Navigator 2.0 wurde fälschlich als Navigator 10 erkannt**
+  (Issue #44); die Erkennung verlangt jetzt plausible Power-Limit-Werte.
+- **Water-Heater-Entität ignoriert jetzt den Unused-Sentinel** und zeigt nicht
+  mehr `-1 °C` als Live-Temperatur an.
+- **DHW-Boost nutzt Übersetzungsschlüssel** statt harter deutscher Strings;
+  die Multi-Device-Service-ValidationError verwendet den bestehenden Schlüssel
+  `multiple_entries_select_entry`.
+- **DHW-Boost:`DhwBoostError` wird im Timeout-/Target-Restore-Pfad sauber
+  abgefangen** statt als unhandled Task-Exception durchzuschlagen.
+
+### Known limitation
+
+- **Home Assistants experimentelle `modbus_connection` wird noch nicht
+  verwendet.** Der vorbereitete Transport-Vertrag bleibt bewusst inaktiv, bis
+  die offizielle HA-Schnittstelle final ist.
+
 ## v0.8.5-beta.8 — 2026-07-23
 
 ### Changed

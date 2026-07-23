@@ -1,15 +1,15 @@
 # Stability & Release Readiness
 
-This page records what has been verified, what remains uncertain and what must
-be true before removing the beta label. It is deliberately stricter than a
-normal changelog.
+This page records what has been verified, what remains uncertain and what had
+to be true before the beta label was removed. It is deliberately stricter than
+a normal changelog.
 
 ## Current Status
 
-Integration `0.8.5-beta.8` and `idm-heatpump-api` `0.8.4` form the current,
-exactly pinned candidate pair. The candidate remains blocked for stable release
-until the clean-Home-Assistant hardware smoke test, the minimum soak duration,
-and the hardware/community gates below pass. See the
+Integration `0.8.5` and `idm-heatpump-api` `0.8.4` form the current, exactly
+pinned pair. The previous beta cycle (`0.8.5-beta.1` through `0.8.5-beta.8`)
+ran the candidate through the gates below; the latest pre-stable candidate
+evidence is preserved at
 [candidate evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.8.5-beta.8.md).
 
 The July 2026 stability audit verified:
@@ -44,7 +44,8 @@ numbers describe one system and are not universal performance guarantees.
 
 ## Stable-release Gates
 
-All of the following should be satisfied before a non-beta release:
+The following gates were satisfied for the `0.8.5` stable release and remain
+the requirements any future stable cut must meet again:
 
 1. Publish the audited API version, pin the integration to that exact version and rerun both complete suites against the published artifact.
 2. Run the repository release smoke test on a clean Home Assistant installation, including setup, restart, reconfigure, diagnostics, unload/reload and safe entity writes.

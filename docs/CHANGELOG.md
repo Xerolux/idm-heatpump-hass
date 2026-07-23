@@ -13,6 +13,100 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.5] - 2026-07-23
+
+First stable release of the 0.8.5 line. It consolidates the eight beta
+candidates (`0.8.5-beta.1` through `0.8.5-beta.8`) plus the final i18n and
+stability fixes that closed the 0.8.5 stable code review. Entity unique IDs,
+entity IDs, register addresses, write paths and the active Modbus transport
+remain unchanged from 0.8.4.
+
+> **Compatibility:** API pin updated to `idm-heatpump-api[web]==0.8.4`.
+> Entity unique IDs, entity IDs, register addresses, and write paths are unchanged.
+
+### Added
+
+- **Manual Navigator model override.** A new option lets the user pin the
+  detected Navigator model (Auto / Navigator 10 / Navigator 2.0 / Navigator Pro)
+  when auto-detection is ambiguous. The override feeds the API-side model-gated
+  register and write checks.
+- **Native Climate, Water Heater and Button platforms** (carried over from
+  0.8.4) continue to cover heating circuits A–G, zone-module rooms, the DHW
+  target with current-temperature readback, error acknowledgement and the
+  restart-safe DHW boost.
+- **Restart-safe DHW boost** with `idm_heatpump.start_dhw_boost` and
+  `idm_heatpump.cancel_dhw_boost` services plus start/cancel button entities.
+  The boost state is persisted across Home Assistant restarts and restored
+  automatically; only the DHW setpoint and system-mode registers are owned
+  during a boost.
+- **Optional device hierarchy.** Heat pump, DHW controller and zone modules are
+  exposed as separate sub-devices when the corresponding registers are present,
+  keeping the single-device layout available as a fallback.
+- **Entity-aware Modbus polling** that skips disabled entities, plus a polling
+  plan diagnostic.
+- **Momentary COP sensor** and **operation-cycle analysis** (compressor and
+  defrost restart-safe counters).
+- **Navigator web binary sensors** for online/regler-online state.
+
+### Changed
+
+- **API pin bumped to `idm-heatpump-api[web]==0.8.4`.** Brings sentinel-aware
+  heating-circuit mode probes, a robust Navigator 10 vs 2.0 differentiator for
+  Terra SWM firmwares, automatic cascade capability detection, and Navigator 10
+  heating-circuit web data for circuits B–G.
+- **Home Assistant model decision mirrored back into the API client.** Manual
+  overrides and unambiguous later web corrections now also apply to the API's
+  model-dependent register and write checks, not just to the integration's
+  entity generation.
+- **Climate and water-heater controls publish their supported target step.**
+  Heating-circuit and zone-room climates expose `0.5 °C`; the integer-backed
+  domestic-hot-water target exposes `1 °C`.
+- **Modbus-Register wiki page regenerated** against the pinned API `0.8.4`
+  (was previously frozen at `0.7.6`).
+- **Repository cleanup.** Removed the abandoned `.planning/` GSD artifacts, the
+  stale root `ROADMAP.md`, orphaned `test_read_only.py`, and several transient
+  cross-repo AI handoff documents. The public website roadmap link now points
+  at the live `docs/dev/heatpump-feature-roadmap.md`.
+- **README and `docs/ha-core-integration-page.md`** now list all eight
+  platforms (sensor, binary_sensor, number, select, switch, climate,
+  water_heater, button) and the complete service set, including the DHW boost
+  actions.
+
+### Fixed
+
+- **Integer Modbus numbers no longer offer invalid fractional values.** Number
+  entities now derive a `1` step from integer register datatypes instead of
+  applying the generic `0.5` default. Fixes heating/cooling limit inputs and
+  every writable UCHAR/INT8/INT16/UINT16/BITFLAG register ([#158](https://github.com/Xerolux/idm-heatpump-hass/issues/158)).
+- **Terra SWM / Navigator 2.0 was misdetected as Navigator 10.** The register
+  `power_limit_hp` (address 4108) was treated as a Navigator-10 indicator even
+  when answered with a sentinel (`-1.0`/`0.0`). Detection now requires a
+  plausible, configured power-limit value (>0 kW) before switching to the
+  Navigator 10 register block. **Fix in `idm-heatpump-api` 0.8.3**. Behebt Issue #44.
+- **Water heater entity ignored the unused-register sentinel.** When the DHW
+  registers reported `-1.0`, the entity displayed `-1 °C` as a live temperature
+  instead of becoming unavailable. The entity now hides whenever its current or
+  target register is flagged unused, matching the climate platform behaviour.
+- **DHW boost exposed hardcoded German strings to English users.** All
+  `DhwBoostError` messages and the boost button names are now routed through
+  Home Assistant translation keys (`dhw_boost_*` in `strings.json`/`en.json`/
+  `de.json`); the multi-device service error reuses the existing
+  `multiple_entries_select_entry` key.
+- **DHW boost let `DhwBoostError` escape from timeout/target-reached restore.**
+  Both restore paths in `_async_evaluate` now swallow the error after recording
+  the recovery state, matching the recovery-retry pattern, so a failing restore
+  no longer surfaces as an unhandled task exception.
+- **Prepared Modbus transport contract distinguishes FC04 and FC03.** The
+  dormant contract (still not wired into the runtime) supports separate Input
+  and Holding Register read operations and accepts only slave IDs 1–247.
+
+### Known limitation
+
+- **Home Assistants experimental `modbus_connection` is not yet used.** The
+  prepared transport contract is intentionally inert; the existing
+  `IdmModbusClient` remains the active and tested runtime path until the
+  Home Assistant shared-connection interface is finalized.
+
 ## [0.8.5-beta.8] - 2026-07-23
 
 Eighth beta preview of the upcoming 0.8.5 stable release. This is a release
