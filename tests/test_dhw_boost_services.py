@@ -103,9 +103,7 @@ class TestServiceRegistration:
 
         await module.async_setup_dhw_boost_services(hass)
 
-        registered = [
-            (c.args[0], c.args[1]) for c in hass.services.async_register.call_args_list
-        ]
+        registered = [(c.args[0], c.args[1]) for c in hass.services.async_register.call_args_list]
         assert (module.DOMAIN, module._START_SERVICE) in registered
         assert (module.DOMAIN, module._CANCEL_SERVICE) in registered
 
@@ -127,9 +125,7 @@ class TestServiceRegistration:
 
         await module.async_unload_dhw_boost_services(hass, "entry-1")
 
-        removed = [
-            (c.args[0], c.args[1]) for c in hass.services.async_remove.call_args_list
-        ]
+        removed = [(c.args[0], c.args[1]) for c in hass.services.async_remove.call_args_list]
         assert (module.DOMAIN, module._START_SERVICE) in removed
         assert (module.DOMAIN, module._CANCEL_SERVICE) in removed
 

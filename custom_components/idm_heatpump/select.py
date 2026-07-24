@@ -6,7 +6,6 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 from typing import Any
 
 from homeassistant.components.select import SelectEntity
@@ -14,9 +13,9 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
+from .adapter_enums import get_slug_map_and_key
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
-from .adapter_enums import get_slug_map_and_key
 from .registers import sort_entity_descriptions
 
 PARALLEL_UPDATES = 0

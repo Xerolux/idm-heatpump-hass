@@ -3,16 +3,15 @@
 import socket
 from unittest.mock import AsyncMock, MagicMock, patch
 
-
 from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpConfigFlow,
     IdmHeatpumpOptionsFlow,
-    _ModbusConnectionStatus,
-    _WebSupplementConnectionFailed,
     _build_options_schema,
     _build_zones_schema,
     _flatten_options_input,
     _has_duplicate_host,
+    _ModbusConnectionStatus,
+    _WebSupplementConnectionFailed,
 )
 from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -20,23 +19,23 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_WEB_VARIANT,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
-    CONF_MODEL_OVERRIDE,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
+    CONF_MODEL_OVERRIDE,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
-    CONF_ZONE_COUNT,
-    CONF_ZONE_ROOMS,
     CONF_TECHNICIAN_CODES,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
-    CONF_WEB_PIN,
     CONF_WEB_ONLY,
+    CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
+    CONF_ZONE_COUNT,
+    CONF_ZONE_ROOMS,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_WEB_ENABLED,
@@ -256,18 +255,18 @@ class TestAsyncStepUser:
     async def test_successful_connection_goes_to_options(self):
         flow = _make_flow()
         flow._async_abort_entries_match = MagicMock()
-        with patch.object(flow, "_test_connection", return_value=True):
-            with patch.object(
-                flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}
-            ):
-                result = await flow.async_step_user(
-                    {
-                        "name": "IDM Test",
-                        "host": "192.168.1.100",
-                        "port": 502,
-                        "slave_id": 1,
-                    }
-                )
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}),
+        ):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         assert result["step_id"] == "options"
         flow._async_abort_entries_match.assert_called_once_with({"host": "192.168.1.100", "port": 502, "slave_id": 1})
 
@@ -277,22 +276,24 @@ class TestAsyncStepUser:
             CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10",
             CONF_DETECTED_SOFTWARE_VERSION: "NAV10_20.23",
         }
-        with patch.object(flow, "_test_connection", return_value=True):
-            with patch.object(flow, "_async_detect_web_supplement", return_value=detected):
-                with patch.object(
-                    flow,
-                    "async_step_options",
-                    return_value={"type": "form", "step_id": "options", "errors": {}},
-                ):
-                    result = await flow.async_step_user(
-                        {
-                            "name": "IDM Test",
-                            "host": "192.168.1.100",
-                            "port": 502,
-                            "slave_id": 1,
-                            CONF_WEB_PIN: " 1234 ",
-                        }
-                    )
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "_async_detect_web_supplement", return_value=detected),
+            patch.object(
+                flow,
+                "async_step_options",
+                return_value={"type": "form", "step_id": "options", "errors": {}},
+            ),
+        ):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: " 1234 ",
+                }
+            )
 
         assert result["step_id"] == "options"
         assert flow._data[CONF_WEB_PIN] == "1234"
@@ -406,21 +407,23 @@ class TestAsyncStepUser:
 
     async def test_invalid_web_pin_shows_field_error(self):
         flow = _make_flow()
-        with patch.object(flow, "_test_connection", return_value=True):
-            with patch.object(
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(
                 flow,
                 "_async_detect_web_supplement",
                 side_effect=IdmWebAuthenticationFailed("bad pin"),
-            ):
-                result = await flow.async_step_user(
-                    {
-                        "name": "IDM Test",
-                        "host": "192.168.1.100",
-                        "port": 502,
-                        "slave_id": 1,
-                        CONF_WEB_PIN: "0000",
-                    }
-                )
+            ),
+        ):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_WEB_PIN: "0000",
+                }
+            )
 
         assert result["type"] == "form"
         assert result["errors"][CONF_WEB_PIN] == "invalid_web_pin"
@@ -451,54 +454,54 @@ class TestAsyncStepUser:
     async def test_successful_connection_defaults_model_override_to_auto(self):
         flow = _make_flow()
         flow._async_abort_entries_match = MagicMock()
-        with patch.object(flow, "_test_connection", return_value=True):
-            with patch.object(
-                flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}
-            ):
-                await flow.async_step_user(
-                    {
-                        "name": "IDM Test",
-                        "host": "192.168.1.100",
-                        "port": 502,
-                        "slave_id": 1,
-                    }
-                )
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}),
+        ):
+            await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
 
     async def test_explicit_model_override_is_stored(self):
         flow = _make_flow()
         flow._async_abort_entries_match = MagicMock()
-        with patch.object(flow, "_test_connection", return_value=True):
-            with patch.object(
-                flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}
-            ):
-                await flow.async_step_user(
-                    {
-                        "name": "IDM Test",
-                        "host": "192.168.1.100",
-                        "port": 502,
-                        "slave_id": 1,
-                        CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10,
-                    }
-                )
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}),
+        ):
+            await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10,
+                }
+            )
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_NAVIGATOR_10
 
     async def test_invalid_model_override_falls_back_to_auto(self):
         flow = _make_flow()
         flow._async_abort_entries_match = MagicMock()
-        with patch.object(flow, "_test_connection", return_value=True):
-            with patch.object(
-                flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}
-            ):
-                await flow.async_step_user(
-                    {
-                        "name": "IDM Test",
-                        "host": "192.168.1.100",
-                        "port": 502,
-                        "slave_id": 1,
-                        CONF_MODEL_OVERRIDE: "navigator_99_bogus",
-                    }
-                )
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}),
+        ):
+            await flow.async_step_user(
+                {
+                    "name": "IDM Test",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    CONF_MODEL_OVERRIDE: "navigator_99_bogus",
+                }
+            )
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
 
 
@@ -520,7 +523,7 @@ class TestAsyncStepOptions:
     def test_options_schema_applies_defaults_for_timeout_and_retries(self):
         schema = _build_options_schema({})
         # The dict keys are _Required markers; extract their defaults by key name.
-        markers = {marker.key: marker for marker in schema._schema["advanced_modbus"]._schema.keys()}
+        markers = {marker.key: marker for marker in schema._schema["advanced_modbus"]._schema}
         assert markers[CONF_MODBUS_TIMEOUT].default == DEFAULT_MODBUS_TIMEOUT
         assert markers[CONF_MODBUS_MAX_RETRIES].default == DEFAULT_MODBUS_MAX_RETRIES
 
@@ -693,14 +696,16 @@ class TestAsyncStepReconfigure:
         entry = MagicMock()
         entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
         entry.title = "IDM"
-        with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
-            with patch.object(flow, "_test_connection", return_value=False):
-                result = await flow.async_step_reconfigure(
-                    {
-                        "host": "10.0.0.1",
-                        "port": 502,
-                    }
-                )
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=False),
+        ):
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "10.0.0.1",
+                    "port": 502,
+                }
+            )
         assert result["errors"].get("base") == "cannot_connect"
 
     async def test_successful_reconfigure(self):
@@ -708,15 +713,17 @@ class TestAsyncStepReconfigure:
         entry = MagicMock()
         entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
         entry.title = "IDM"
-        with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
-            with patch.object(flow, "_test_connection", return_value=True):
-                result = await flow.async_step_reconfigure(
-                    {
-                        "host": "10.0.0.1",
-                        "port": 502,
-                        "slave_id": 1,
-                    }
-                )
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=True),
+        ):
+            result = await flow.async_step_reconfigure(
+                {
+                    "host": "10.0.0.1",
+                    "port": 502,
+                    "slave_id": 1,
+                }
+            )
         assert result["type"] in ("abort", "create_entry")
 
     async def test_successful_reconfigure_updates_network_fields(self):

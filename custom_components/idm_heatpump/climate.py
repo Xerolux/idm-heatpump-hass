@@ -6,22 +6,21 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 import logging
-from typing import Any
 import re
+from typing import Any, ClassVar
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
-    HVACAction,
-    HVACMode,
-    PRESET_ECO,
     PRESET_COMFORT,
+    PRESET_ECO,
     PRESET_NONE,
     ClimateEntityFeature,
+    HVACAction,
+    HVACMode,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.const import UnitOfTemperature, ATTR_TEMPERATURE
+from homeassistant.const import ATTR_TEMPERATURE, UnitOfTemperature
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -200,8 +199,8 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
 class IdmHeatingCircuitClimate(IdmClimateBase):
     """Climate entity for a heating circuit."""
 
-    _attr_hvac_modes = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT, HVACMode.COOL]
-    _attr_preset_modes = [PRESET_NONE, PRESET_ECO]
+    _attr_hvac_modes: ClassVar[list[HVACMode]] = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT, HVACMode.COOL]
+    _attr_preset_modes: ClassVar[list[str]] = [PRESET_NONE, PRESET_ECO]
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.PRESET_MODE
@@ -294,8 +293,8 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
 class IdmZoneRoomClimate(IdmClimateBase):
     """Climate entity for a zone module room."""
 
-    _attr_hvac_modes = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT]
-    _attr_preset_modes = [PRESET_NONE, PRESET_ECO, PRESET_COMFORT]
+    _attr_hvac_modes: ClassVar[list[HVACMode]] = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT]
+    _attr_preset_modes: ClassVar[list[str]] = [PRESET_NONE, PRESET_ECO, PRESET_COMFORT]
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.PRESET_MODE

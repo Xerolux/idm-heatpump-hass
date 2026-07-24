@@ -6,9 +6,8 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 import logging
-from typing import Any
+from typing import Any, ClassVar
 
 from homeassistant.components.water_heater import (
     STATE_HEAT_PUMP,
@@ -60,7 +59,7 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
     _attr_translation_key = "water_heater"
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE
-    _attr_operation_list = [STATE_HEAT_PUMP]
+    _attr_operation_list: ClassVar[list[str]] = [STATE_HEAT_PUMP]
     _attr_current_operation = STATE_HEAT_PUMP
 
     def __init__(

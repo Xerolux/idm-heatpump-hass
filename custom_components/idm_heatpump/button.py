@@ -6,7 +6,6 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 import logging
 from typing import Any
 
@@ -22,13 +21,13 @@ from idm_heatpump import DataType, RegisterDef
 
 from .const import DOMAIN, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE
 from .coordinator import IdmCoordinator
+from .device_hierarchy import build_subdevice_info
 from .dhw_boost import DhwBoostError, DhwBoostManager, async_get_dhw_boost_manager
 from .dhw_boost_services import (
     _translate_boost_error,
     async_setup_dhw_boost_services,
     async_unload_dhw_boost_services,
 )
-from .device_hierarchy import build_subdevice_info
 from .entity import build_device_info
 from .error_messages import classify_write_error, write_error_placeholders
 

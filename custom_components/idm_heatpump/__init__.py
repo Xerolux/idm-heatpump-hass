@@ -6,16 +6,14 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 import asyncio
 import json
 import logging
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
-from typing import Mapping
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
@@ -53,11 +51,11 @@ from .const import (
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
     CONF_ROOM_TEMP_FORWARDING,
-    CONF_SHORT_CYCLE_MINUTES,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
+    CONF_SHORT_CYCLE_MINUTES,
     CONF_SLAVE_ID,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
@@ -72,10 +70,10 @@ from .const import (
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_ROOM_TEMP_FORWARDING,
-    DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
     DEFAULT_WEB_ONLY,
@@ -97,6 +95,8 @@ from .error_messages import (
     friendly_web_error,
 )
 from .library_adapter import get_idm_client
+from .operation_analysis import OperationAnalysis
+from .polling_plan import ensure_entity_aware_polling
 from .registers import (
     get_all_binary_sensor_descriptions,
     get_all_number_descriptions,
@@ -105,9 +105,8 @@ from .registers import (
     get_all_switch_descriptions,
     normalize_zone_rooms,
 )
-from .operation_analysis import OperationAnalysis
-from .polling_plan import ensure_entity_aware_polling
 from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
+from .versions import async_runtime_versions
 from .web_data import (
     IdmWebAuthenticationFailed,
     _firmware_indicates_nav10,
@@ -115,7 +114,6 @@ from .web_data import (
     merge_model_info,
     web_pin_configured,
 )
-from .versions import async_runtime_versions
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 

@@ -99,8 +99,6 @@ class RoomTempForwarder:
             try:
                 await asyncio.sleep(self._debounce_seconds)
                 await self.async_forward_entity(entity_id)
-            except asyncio.CancelledError:
-                raise
             finally:
                 current = self._pending_forward_tasks.get(entity_id)
                 if current is not None and current.done():

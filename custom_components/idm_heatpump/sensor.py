@@ -6,11 +6,10 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any
+from typing import Any, ClassVar
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription, SensorStateClass
 from homeassistant.config_entries import ConfigEntry
@@ -35,6 +34,7 @@ from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities
 from .const import CONF_TECHNICIAN_CODES, DOMAIN
 from .coordinator import IdmCoordinator
+from .device_hierarchy import build_subdevice_info
 from .entity import (
     IdmCoordinatorEntityBase,
     IdmEntity,
@@ -42,7 +42,6 @@ from .entity import (
     build_entity_unique_id,
     should_add_entity,
 )
-from .device_hierarchy import build_subdevice_info
 from .internal_messages import format_internal_message, internal_message_text
 from .operation_entities import (
     IdmOperationSensor,
@@ -594,7 +593,7 @@ class IdmTechnicianCodeSensor(
 
     _attr_icon = "mdi:key-variant"
 
-    _NAMES = {
+    _NAMES: ClassVar[dict[str, str]] = {
         "level_1": "00 Fachmann Ebene 1",
         "level_2": "00 Fachmann Ebene 2",
     }

@@ -9,7 +9,6 @@ pattern used in ``test_platforms.py``.
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.const import (
@@ -18,7 +17,6 @@ from custom_components.idm_heatpump.const import (
     HeatPumpStatus,
     RoomMode,
 )
-
 
 # ---------------------------------------------------------------------------
 # Shared helpers (mirror the style of test_platforms.py)
@@ -173,8 +171,9 @@ class TestDhwBoostStartButton:
         assert manager.start_calls == [(60, 60)]
 
     async def test_async_press_translates_dhw_boost_error(self):
-        from custom_components.idm_heatpump.dhw_boost import DhwBoostError
         from homeassistant.exceptions import HomeAssistantError
+
+        from custom_components.idm_heatpump.dhw_boost import DhwBoostError
 
         button, manager, _ = self._make()
         manager.start_error = DhwBoostError(
@@ -189,8 +188,9 @@ class TestDhwBoostStartButton:
         assert exc_info.value.translation_domain == "idm_heatpump"
 
     async def test_async_will_remove_shuts_down_manager_and_services(self):
-        import custom_components.idm_heatpump.button as button_module
         from homeassistant.helpers.update_coordinator import CoordinatorEntity
+
+        import custom_components.idm_heatpump.button as button_module
 
         button, manager, coord = self._make()
 
@@ -241,7 +241,7 @@ class TestDhwBoostCancelButton:
         assert button._attr_unique_id == "test_entry_dhw_boost_cancel"
 
     def test_available_follows_manager_active(self):
-        button, manager, _ = self._make()
+        _button, manager, _ = self._make()
         manager.active = False
         # Coordinator reports success and data is present; only manager.active
         # gates availability for the cancel button.
@@ -257,8 +257,9 @@ class TestDhwBoostCancelButton:
         assert manager.cancel_calls == [True]
 
     async def test_async_press_translates_dhw_boost_error(self):
-        from custom_components.idm_heatpump.dhw_boost import DhwBoostError
         from homeassistant.exceptions import HomeAssistantError
+
+        from custom_components.idm_heatpump.dhw_boost import DhwBoostError
 
         button, manager, _ = self._make()
         manager.cancel_error = DhwBoostError(

@@ -11,7 +11,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
-
 type ModbusTransportDiagnosticValue = bool | float | int | str
 
 
@@ -107,6 +106,6 @@ class IdmModbusTransport(Protocol):
 __all__ = [
     "IdmModbusTransport",
     "ModbusTcpEndpoint",
-    "ModbusTransportDiagnosticValue",
     "ModbusTransportCapabilities",
+    "ModbusTransportDiagnosticValue",
 ]

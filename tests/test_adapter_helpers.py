@@ -4,6 +4,13 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
+from idm_heatpump import (
+    MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_20,
+    DataType,
+    RegisterDef,
+)
+
 from custom_components.idm_heatpump.adapter_enums import (
     get_bitflag_de_labels,
     get_slug_map_and_key,
@@ -16,13 +23,6 @@ from custom_components.idm_heatpump.adapter_registers import (
 from custom_components.idm_heatpump.library_adapter import (
     _numbers_from_register_map,
     get_idm_client,
-)
-
-from idm_heatpump import (
-    MODEL_NAVIGATOR_10,
-    MODEL_NAVIGATOR_20,
-    DataType,
-    RegisterDef,
 )
 
 ROOT = Path(__file__).resolve().parents[1]

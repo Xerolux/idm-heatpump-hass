@@ -6,22 +6,21 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 import asyncio
 import logging
 import math
 import time
-from datetime import timedelta
 from collections.abc import Mapping
+from datetime import timedelta
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
+from pymodbus.exceptions import ConnectionException, ModbusException
 
 from idm_heatpump import IdmModbusClient, IdmModelInfo, RegisterDef
-from pymodbus.exceptions import ConnectionException, ModbusException
 
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -34,19 +33,25 @@ from .const import (
 )
 from .error_messages import (
     classify_communication_error as _repair_issue_for_error,
+)
+from .error_messages import (
     classify_web_error,
-    friendly_communication_error as _friendly_communication_error,
     friendly_web_error,
 )
+from .error_messages import (
+    friendly_communication_error as _friendly_communication_error,
+)
 from .registers import (
-    collect_all_registers,
     collect_alias_map,
-    collect_registers_from_descriptions,
     collect_aliases_from_descriptions,
+    collect_all_registers,
+    collect_registers_from_descriptions,
 )
 
 if TYPE_CHECKING:
+    from .dhw_boost import DhwBoostManager
     from .operation_analysis import OperationAnalysis
+    from .polling_plan import EntityAwarePollingManager
 
 from .web_data import (
     IdmWebAuthenticationFailed,
@@ -206,6 +211,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._room_mode_registers: list[RegisterDef] = []
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._operation_analysis: OperationAnalysis | None = None
+        self._entity_aware_polling_manager: EntityAwarePollingManager | None = None
+        self._polling_plan_total_count: int = 0
+        self._polling_plan_active_count: int = 0
+        self._dhw_boost_manager: DhwBoostManager | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         self._write_timestamps: dict[int, float] = {}
         self._write_cooldown_seconds: float = 5.0
@@ -543,7 +552,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 raise
             except (OSError, TimeoutError):
                 raise
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001
                 data.pop(reg.name, None)
                 _LOGGER.warning(
                     "Individual validation of zone room mode register %s at address %d failed; "

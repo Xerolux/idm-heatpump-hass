@@ -13,7 +13,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
-
 # ---------------------------------------------------------------------------
 # Cross-platform event loop setup (Windows uses SelectorEventLoop; Linux is fine)
 # ---------------------------------------------------------------------------
@@ -62,7 +61,6 @@ def _stub_pymodbus() -> None:
 
         def close(self):
             self.connected = False
-            return None
 
         async def read_input_registers(self, address, count, **kwargs):
             raise NotImplementedError("use mock in tests")
@@ -975,7 +973,7 @@ def _stub_idm_heatpump() -> None:
 
                         raise ModbusException("Modbus read error")
                     break
-                except Exception:
+                except Exception:  # noqa: BLE001
                     if attempt < self._max_retries:
                         continue
                     for reg in regs:
