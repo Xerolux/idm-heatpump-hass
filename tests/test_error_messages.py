@@ -5,15 +5,15 @@ from __future__ import annotations
 import socket
 
 import pytest
+from pymodbus.exceptions import ConnectionException, ModbusException
 
 from custom_components.idm_heatpump.error_messages import (
     classify_communication_error,
     classify_web_error,
     classify_write_error,
-    friendly_write_error,
     friendly_web_error,
+    friendly_write_error,
 )
-from pymodbus.exceptions import ConnectionException, ModbusException
 
 
 @pytest.mark.parametrize(

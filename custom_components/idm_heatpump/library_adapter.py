@@ -38,11 +38,12 @@ from idm_heatpump import (
     MODEL_NAVIGATOR_PRO,
     RegisterDef,
     get_heating_circuit_registers,
-    get_zone_module_registers as _library_get_zone_module_registers,
 )
 from idm_heatpump import IdmModbusClient as LibIdmModbusClient
+from idm_heatpump import (
+    get_zone_module_registers as _library_get_zone_module_registers,
+)
 
-from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_descriptions import (
     get_icon_for_register,
     infer_binary_device_class,
@@ -50,6 +51,7 @@ from .adapter_descriptions import (
     infer_suggested_display_precision,
     make_sensor_description,
 )
+from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
 from .adapter_metadata import (
     NUMBER_METADATA,
@@ -273,7 +275,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
         return []
 
     sensors = []
-    for name, reg in circuit_regs.items():
+    for reg in circuit_regs.values():
         if reg.writable:
             continue
 
@@ -575,15 +577,15 @@ def get_idm_client(
 
 
 __all__ = [
-    "LibIdmModbusClient",
     "MODEL_NAVIGATOR_10",
     "MODEL_NAVIGATOR_20",
     "MODEL_NAVIGATOR_PRO",
-    "get_library_sensors",
-    "get_library_numbers",
-    "get_library_zone_numbers",
-    "get_idm_client",
-    "get_slug_map_and_key",
+    "LibIdmModbusClient",
     "get_bitflag_de_labels",
+    "get_idm_client",
+    "get_library_numbers",
+    "get_library_sensors",
+    "get_library_zone_numbers",
+    "get_slug_map_and_key",
     "is_glt_measurement",
 ]

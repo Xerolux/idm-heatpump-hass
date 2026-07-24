@@ -102,7 +102,7 @@ _INTERNAL_MESSAGE_RANGES: tuple[tuple[range, str], ...] = (
 )
 
 
-def _message_code(code: int | float | str | None) -> int | None:
+def _message_code(code: float | str | None) -> int | None:
     if code is None:
         return None
     try:
@@ -111,7 +111,7 @@ def _message_code(code: int | float | str | None) -> int | None:
         return None
 
 
-def internal_message_text(code: int | float | str | None) -> str | None:
+def internal_message_text(code: float | str | None) -> str | None:
     """Return a readable label for an IDM internal message code."""
     message_code = _message_code(code)
     if message_code is None:
@@ -124,7 +124,7 @@ def internal_message_text(code: int | float | str | None) -> str | None:
     return "Unbekannte Meldung - siehe Navigator-Handbuch"
 
 
-def format_internal_message(code: int | float | str | None) -> str | None:
+def format_internal_message(code: float | str | None) -> str | None:
     """Return a stable state string for the internal message entity."""
     text = internal_message_text(code)
     if text is None:

@@ -4,18 +4,19 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.helpers import issue_registry as ir
+from idm_heatpump import MODEL_UNKNOWN, IdmModelInfo
 
 from custom_components.idm_heatpump import (
     IdmHeatpumpData,
-    async_migrate_entry,
-    async_setup,
-    async_setup_entry,
-    async_unload_entry,
-    async_reload_entry,
     _detect_model_info,
     _model_info_from_detected_name,
     _model_name_for_override,
     _resolved_model_override,
+    async_migrate_entry,
+    async_reload_entry,
+    async_setup,
+    async_setup_entry,
+    async_unload_entry,
 )
 from custom_components.idm_heatpump.const import (
     CONF_DEVICE_HIERARCHY,
@@ -26,7 +27,6 @@ from custom_components.idm_heatpump.const import (
     MODEL_OVERRIDE_NAVIGATOR_20,
 )
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
-from idm_heatpump import MODEL_UNKNOWN, IdmModelInfo
 
 
 class TestIdmHeatpumpData:
@@ -841,7 +841,7 @@ class TestAsyncSetupEntryOptions:
         ctx = __import__("contextlib").ExitStack()
         for p in patches:
             ctx.enter_context(p)
-        with ctx, pytest.raises(Exception):
+        with ctx, pytest.raises(Exception):  # noqa: B017
             await async_setup_entry(mock_hass, entry)
 
     async def test_hide_unused_passed_to_coordinator(self, mock_hass):

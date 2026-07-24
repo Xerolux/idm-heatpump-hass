@@ -6,7 +6,6 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 import asyncio
 import logging
 import socket
@@ -23,7 +22,7 @@ except ImportError:
     from typing import Any
 
     ConfigFlowResult = dict[str, Any]  # type: ignore[assignment]
-from homeassistant.const import CONF_HOST, CONF_PORT, CONF_NAME
+from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.core import callback
 from homeassistant.helpers.selector import (
     BooleanSelector,
@@ -42,11 +41,11 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
-    CONF_ENABLE_CASCADE,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
+    CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_MODBUS_MAX_RETRIES,
@@ -54,11 +53,11 @@ from .const import (
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
     CONF_ROOM_TEMP_FORWARDING,
-    CONF_SHORT_CYCLE_MINUTES,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
+    CONF_SHORT_CYCLE_MINUTES,
     CONF_SLAVE_ID,
     CONF_TECHNICIAN_CODES,
     CONF_WEB_ENABLED,
@@ -72,15 +71,15 @@ from .const import (
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
-    DEFAULT_MODEL_OVERRIDE,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
+    DEFAULT_MODEL_OVERRIDE,
     DEFAULT_PORT,
     DEFAULT_ROOM_TEMP_FORWARDING,
-    DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_SCAN_INTERVAL,
+    DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
     DEFAULT_WEB_SCAN_INTERVAL,
@@ -1231,7 +1230,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 err,
             )
             return _ModbusConnectionStatus.UNREACHABLE
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             tcp_status = await self._test_tcp_endpoint(host, port)
             if tcp_status is not _ModbusConnectionStatus.SUCCESS:
                 return tcp_status

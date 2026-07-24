@@ -1,12 +1,13 @@
 """Tests for IdmEntity base class."""
 
+import math
 from unittest.mock import MagicMock
 
-
-from custom_components.idm_heatpump.entity import IdmEntity
 from idm_heatpump import DataType, RegisterDef
+
 from custom_components.idm_heatpump.const import DOMAIN, MANUFACTURER, MODEL, UNUSED_VALUE
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
+from custom_components.idm_heatpump.entity import IdmEntity
 
 
 def _make_register(name="temp", address=100):
@@ -45,7 +46,7 @@ def _make_coordinator(hide_unused=True, data=None, last_update_success=True, fir
                 return True
             if value == -32768:
                 return True
-            if isinstance(value, float) and (value != value or abs(value) == float("inf")):
+            if isinstance(value, float) and (math.isnan(value) or abs(value) == float("inf")):
                 return True
         return False
 
@@ -196,9 +197,9 @@ class TestIdmEntityAvailable:
         coord.last_update_success = False
 
         # Patch the super().available call via the parent class
-        from homeassistant.helpers.update_coordinator import CoordinatorEntity
+        from unittest import mock
 
-        import unittest.mock as mock
+        from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
         with mock.patch.object(
             CoordinatorEntity,

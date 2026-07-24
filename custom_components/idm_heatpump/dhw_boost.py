@@ -146,10 +146,9 @@ class DhwBoostManager:
             try:
                 await self._async_restore_locked("startup_recovery")
             except Exception:
-                _LOGGER.error(
+                _LOGGER.exception(
                     "IDM DHW boost recovery could not restore the previous state; "
                     "the integration will retry on coordinator updates",
-                    exc_info=True,
                 )
         self._notify()
 
@@ -222,7 +221,7 @@ class DhwBoostManager:
                 await self._async_save()
                 try:
                     await self._async_restore_locked("start_failed_rollback")
-                except Exception:
+                except Exception:  # noqa: BLE001
                     raise DhwBoostError(
                         "Boost-Start fehlgeschlagen und der vorherige Zustand konnte "
                         "noch nicht vollständig wiederhergestellt werden",
@@ -255,9 +254,8 @@ class DhwBoostManager:
                 try:
                     await self._async_restore_locked("integration_unload")
                 except Exception:
-                    _LOGGER.error(
+                    _LOGGER.exception(
                         "Could not restore IDM DHW boost state during unload; persisted recovery remains active",
-                        exc_info=True,
                     )
             self._cancel_timeout()
             if self._evaluation_task is not None:
@@ -346,14 +344,11 @@ class DhwBoostManager:
                 self._evaluation_task = None
 
     async def _async_timeout(self) -> None:
-        try:
-            if self.deadline is None:
-                return
-            delay = max(0.0, (self.deadline - _utcnow()).total_seconds())
-            await asyncio.sleep(delay)
-            await self._async_evaluate()
-        except asyncio.CancelledError:
-            raise
+        if self.deadline is None:
+            return
+        delay = max(0.0, (self.deadline - _utcnow()).total_seconds())
+        await asyncio.sleep(delay)
+        await self._async_evaluate()
 
     def _schedule_timeout(self) -> None:
         self._cancel_timeout()
@@ -501,6 +496,6 @@ async def async_get_dhw_boost_manager(
         await existing.async_setup()
         return existing
     manager = DhwBoostManager(coordinator)
-    setattr(coordinator, "_dhw_boost_manager", manager)
+    coordinator._dhw_boost_manager = manager
     await manager.async_setup()
     return manager

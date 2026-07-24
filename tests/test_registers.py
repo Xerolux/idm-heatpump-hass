@@ -1,6 +1,9 @@
 """Tests for register definitions and description builders."""
 
 from types import SimpleNamespace
+from typing import ClassVar
+
+from idm_heatpump import MODEL_NAVIGATOR_20, DataType, IdmModelInfo, RegisterDef
 
 from custom_components.idm_heatpump.registers import (
     collect_all_registers,
@@ -12,7 +15,6 @@ from custom_components.idm_heatpump.registers import (
     normalize_zone_rooms,
     sort_entity_descriptions,
 )
-from idm_heatpump import MODEL_NAVIGATOR_20, DataType, IdmModelInfo, RegisterDef
 
 
 def _make_order_desc(name: str, address: int) -> dict:
@@ -272,7 +274,7 @@ class TestGltDualExposure:
     """GLT-Messwerte (Library 0.3.2): beschreibbare Messwert-Register
     erscheinen sowohl als Sensor als auch als Number (Vorgabe)."""
 
-    PV_BLOCK = [
+    PV_BLOCK: ClassVar[list[str]] = [
         "pv_surplus",
         "pv_production",
         "house_consumption",

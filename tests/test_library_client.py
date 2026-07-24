@@ -4,10 +4,8 @@ import struct
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from pymodbus.exceptions import ConnectionException, ModbusException
-
 from idm_heatpump import DataType, IdmModbusClient, RegisterDef
-
+from pymodbus.exceptions import ConnectionException, ModbusException
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -520,7 +518,7 @@ class TestReadGroupFailureTracking:
 
     async def test_reset_failed_registers(self, client_and_tcp):
         """reset_failed_registers clears all failure tracking."""
-        client, tcp = client_and_tcp
+        client, _tcp = client_and_tcp
         client._register_failures["x"] = 2
         client._permanently_failed_registers.add("x")
         client.reset_failed_registers()

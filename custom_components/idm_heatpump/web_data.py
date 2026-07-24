@@ -6,9 +6,10 @@ import asyncio
 import inspect
 import ipaddress
 import logging
-from dataclasses import dataclass, field
 import re
-from typing import Any, Callable, Protocol
+from collections.abc import Callable
+from dataclasses import dataclass, field
+from typing import Any, Protocol
 
 from .const import MODEL
 
@@ -292,7 +293,7 @@ class _SessionClosingWebClient:
         close_error: Exception | None = None
         try:
             await self._client.close()
-        except Exception as err:
+        except Exception as err:  # noqa: BLE001
             close_error = err
         if self._session is not None:
             await self._session.close()

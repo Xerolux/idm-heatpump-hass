@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import cache
 from importlib.metadata import PackageNotFoundError, version
 
 
@@ -17,7 +17,7 @@ class RuntimeVersions:
     pymodbus: str
 
 
-@lru_cache(maxsize=None)
+@cache
 def distribution_version(distribution: str) -> str:
     """Return an installed distribution version without failing setup."""
     try:

@@ -5,7 +5,15 @@ from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+from idm_heatpump import (
+    MODEL_NAVIGATOR_20,
+    DataType,
+    IdmModelInfo,
+    RegisterDef,
+)
+from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
 
+from custom_components.idm_heatpump.const import UNUSED_VALUE
 from custom_components.idm_heatpump.coordinator import (
     IdmCoordinator,
     _friendly_communication_error,
@@ -17,14 +25,6 @@ from custom_components.idm_heatpump.web_data import (
     IdmWebSensorValue,
     IdmWebSupplement,
 )
-from idm_heatpump import (
-    MODEL_NAVIGATOR_20,
-    DataType,
-    IdmModelInfo,
-    RegisterDef,
-)
-from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
-from custom_components.idm_heatpump.const import UNUSED_VALUE
 
 
 def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
@@ -294,7 +294,7 @@ class TestIsRegisterUnused:
             datatype=DataType.UCHAR,
             name="external_pump_demand",
         )
-        setattr(reg, "sentinel_values", (254,))
+        reg.sentinel_values = (254,)
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
@@ -422,9 +422,11 @@ class TestAsyncUpdateData:
         client.read_batch = AsyncMock(return_value={})
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(UpdateFailed, match="returned no usable register data"):
-                await coord._async_update_data()
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+            pytest.raises(UpdateFailed, match="returned no usable register data"),
+        ):
+            await coord._async_update_data()
 
         assert mock_ir.async_create_issue.call_args.args[2] == "no_data_received"
 
@@ -440,9 +442,8 @@ class TestAsyncUpdateData:
             registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
         )
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(UpdateFailed):
-                await coord._async_update_data()
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(UpdateFailed):
+            await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
 
     async def test_illegal_address_is_isolated_and_skipped(self, mock_hass, mock_config_entry):
@@ -486,9 +487,8 @@ class TestAsyncUpdateData:
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
         coord._registers = [unsupported]
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception):
-                await coord._async_update_data()
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(Exception):  # noqa: B017
+            await coord._async_update_data()
 
         mock_ir.async_create_issue.assert_any_call(
             mock_hass,
@@ -559,9 +559,11 @@ class TestAsyncUpdateData:
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
         coord._registers = [RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")]
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception, match="IDM device"):
-                await coord._async_update_data()
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+            pytest.raises(Exception, match="IDM device"),
+        ):
+            await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
 
     async def test_zone_room_modes_are_refreshed_individually(self, mock_hass, mock_config_entry):
@@ -655,9 +657,11 @@ class TestAsyncUpdateData:
             registers=[room_mode, later_room_mode],
         )
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception, match="did not respond in time"):
-                await coord._async_update_data()
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+            pytest.raises(Exception, match="did not respond in time"),
+        ):
+            await coord._async_update_data()
 
         assert mock_ir.async_create_issue.call_args.args[2] == "modbus_timeout"
         assert client.read_register.await_count == 1
@@ -812,9 +816,8 @@ class TestAsyncUpdateData:
             registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
         )
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception):
-                await coord._async_update_data()
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(Exception):  # noqa: B017
+            await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
         call_kwargs = mock_ir.async_create_issue.call_args
         assert call_kwargs is not None
@@ -829,9 +832,8 @@ class TestAsyncUpdateData:
             registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
         )
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception):
-                await coord._async_update_data()
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(Exception):  # noqa: B017
+            await coord._async_update_data()
 
         assert mock_ir.async_create_issue.call_args.args[2] == "wrong_slave_id"
         assert mock_ir.async_create_issue.call_args.kwargs["translation_key"] == "wrong_slave_id"
@@ -846,9 +848,8 @@ class TestAsyncUpdateData:
             registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
         )
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception):
-                await coord._async_update_data()
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(Exception):  # noqa: B017
+            await coord._async_update_data()
 
         assert mock_ir.async_create_issue.call_args.args[2] == "incompatible_firmware"
         assert mock_ir.async_create_issue.call_args.kwargs["translation_key"] == "incompatible_firmware"
@@ -989,9 +990,11 @@ class TestAsyncWriteRegister:
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
         reg = RegisterDef(address=1005, datatype=DataType.UCHAR, name="system_mode", writable=True)
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
-            with pytest.raises(Exception, match="write rejected"):
-                await coord.async_write_register(reg, 1)
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+            pytest.raises(Exception, match="write rejected"),
+        ):
+            await coord.async_write_register(reg, 1)
 
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,

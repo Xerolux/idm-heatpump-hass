@@ -16,7 +16,6 @@ from custom_components.idm_heatpump.registers import (
     get_all_switch_descriptions,
 )
 
-
 ALL_CIRCUITS = list("abcdefg")
 ALL_ZONE_ROOMS = {idx: 6 for idx in range(10)}
 

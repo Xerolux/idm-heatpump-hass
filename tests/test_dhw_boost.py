@@ -73,9 +73,8 @@ class FakeCoordinator:
     async def async_write_register(self, register, value):
         self.events.append(("write", register.name, value))
         if self.fail_write_name == register.name:
-            if not self.fail_write_once or self.fail_write_once:
-                self.fail_write_name = None if self.fail_write_once else register.name
-                raise RuntimeError("write failed")
+            self.fail_write_name = None if self.fail_write_once else register.name
+            raise RuntimeError("write failed")
         self.data[register.name] = value
 
     def async_add_listener(self, listener):

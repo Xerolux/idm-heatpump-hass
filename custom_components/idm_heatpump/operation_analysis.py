@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import logging
+import math
 from collections.abc import Callable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
@@ -60,7 +61,7 @@ def _finite_non_negative(value: Any) -> float | None:
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         return None
     numeric = float(value)
-    if numeric < 0 or numeric != numeric or numeric in (float("inf"), float("-inf")):
+    if numeric < 0 or math.isnan(numeric) or numeric in (float("inf"), float("-inf")):
         return None
     return numeric
 

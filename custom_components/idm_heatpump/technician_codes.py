@@ -6,7 +6,6 @@ from __future__ import annotations
 # © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
-
 from datetime import datetime
 
 
@@ -24,7 +23,7 @@ def calculate_codes(now: datetime | None = None) -> dict[str, str]:
     desired local timezone when needed.
     """
     if now is None:
-        now = datetime.now()
+        now = datetime.now()  # noqa: DTZ005
 
     d_padded = f"{now.day:02d}"
     m_padded = f"{now.month:02d}"

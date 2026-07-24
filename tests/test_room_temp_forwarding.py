@@ -5,7 +5,6 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.room_temp_forwarding import (
@@ -124,7 +123,7 @@ async def test_forward_entity_ignores_unconfigured_sensor():
 
 @pytest.mark.asyncio
 async def test_run_loop_continues_after_forward_all_failure():
-    coord, reg = _make_coordinator()
+    coord, _reg = _make_coordinator()
     hass = _make_hass("22.0")
     forwarder = RoomTempForwarder(
         hass,

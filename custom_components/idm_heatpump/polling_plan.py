@@ -137,8 +137,6 @@ class EntityAwarePollingManager:
                 event_name,
                 self._handle_registry_event,
             )
-        except asyncio.CancelledError:
-            raise
         finally:
             self._setup_task = None
 
@@ -183,8 +181,6 @@ class EntityAwarePollingManager:
         try:
             await asyncio.sleep(self._debounce_seconds)
             await self._async_apply_plan(request_refresh=True)
-        except asyncio.CancelledError:
-            raise
         finally:
             self._refresh_task = None
 
@@ -219,16 +215,8 @@ class EntityAwarePollingManager:
         self._coordinator._room_mode_registers = [
             register for register in self._full_room_mode_registers if register.name in selected_names
         ]
-        setattr(
-            self._coordinator,
-            "_polling_plan_total_count",
-            len(self._full_registers),
-        )
-        setattr(
-            self._coordinator,
-            "_polling_plan_active_count",
-            len(selected),
-        )
+        self._coordinator._polling_plan_total_count = len(self._full_registers)
+        self._coordinator._polling_plan_active_count = len(selected)
         _LOGGER.info(
             "IDM entity-aware polling uses %d of %d registers",
             len(selected),
@@ -254,6 +242,6 @@ def ensure_entity_aware_polling(
     if isinstance(existing, EntityAwarePollingManager):
         return existing
     manager = EntityAwarePollingManager(coordinator.hass, config_entry, coordinator)
-    setattr(coordinator, "_entity_aware_polling_manager", manager)
+    coordinator._entity_aware_polling_manager = manager
     manager.schedule_setup()
     return manager

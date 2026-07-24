@@ -3,7 +3,6 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
@@ -640,10 +639,11 @@ class TestIdmTechnicianCodeSensor:
     def test_native_value_returns_code(self):
         from datetime import datetime
         from unittest.mock import patch
+
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        fixed_dt = datetime(2025, 6, 15, 14, 30)
+        fixed_dt = datetime(2025, 6, 15, 14, 30)  # noqa: DTZ001
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
         with patch("custom_components.idm_heatpump.sensor.dt_util") as mock_dt:
@@ -654,10 +654,11 @@ class TestIdmTechnicianCodeSensor:
     def test_native_value_falls_back_when_cache_is_none(self):
         from datetime import datetime
         from unittest.mock import patch
+
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        fixed_dt = datetime(2025, 6, 15, 14, 30)
+        fixed_dt = datetime(2025, 6, 15, 14, 30)  # noqa: DTZ001
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_2")
         sensor._codes_cache = None
@@ -694,9 +695,10 @@ class TestIdmTechnicianCodeSensor:
     def test_async_refresh_writes_ha_state(self):
         from datetime import datetime
         from unittest.mock import patch
+
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
-        fixed_dt = datetime(2025, 6, 15, 14, 30)
+        fixed_dt = datetime(2025, 6, 15, 14, 30)  # noqa: DTZ001
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
         sensor.async_write_ha_state = MagicMock()
@@ -709,8 +711,9 @@ class TestIdmTechnicianCodeSensor:
 
     async def test_async_added_to_hass_starts_timer(self):
         from datetime import datetime
+        from unittest.mock import MagicMock, patch
+
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
-        from unittest.mock import patch, MagicMock
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
@@ -726,7 +729,7 @@ class TestIdmTechnicianCodeSensor:
                 "custom_components.idm_heatpump.sensor.dt_util",
             ) as mock_dt,
         ):
-            mock_dt.now.return_value = datetime(2025, 6, 15, 14, 30)
+            mock_dt.now.return_value = datetime(2025, 6, 15, 14, 30)  # noqa: DTZ001
             await sensor.async_added_to_hass()
         mock_timer.assert_called_once()
         assert sensor._cancel_timer is cancel_mock
@@ -901,6 +904,7 @@ class TestIdmNumber:
 
     async def test_async_set_native_value_raises_on_error(self):
         from homeassistant.exceptions import HomeAssistantError
+
         from custom_components.idm_heatpump.number import IdmNumber
 
         coord = _make_coordinator()
@@ -1103,6 +1107,7 @@ class TestIdmSelect:
 
     async def test_async_select_option_raises_on_error(self):
         from homeassistant.exceptions import HomeAssistantError
+
         from custom_components.idm_heatpump.select import IdmSelect
 
         enum_opts = {0: "Standby", 1: "Automatic"}
@@ -1257,6 +1262,7 @@ class TestIdmSwitch:
 
     async def test_async_turn_on_raises_on_error(self):
         from homeassistant.exceptions import HomeAssistantError
+
         from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator()
@@ -1268,6 +1274,7 @@ class TestIdmSwitch:
 
     async def test_async_turn_off_raises_on_error(self):
         from homeassistant.exceptions import HomeAssistantError
+
         from custom_components.idm_heatpump.switch import IdmSwitch
 
         coord = _make_coordinator()
@@ -1359,44 +1366,49 @@ class TestTechnicianCodes:
 
     def test_level_1_format(self):
         from datetime import datetime
+
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        dt = datetime(2025, 3, 15, 10, 30)
+        dt = datetime(2025, 3, 15, 10, 30)  # noqa: DTZ001
         result = calculate_codes(dt)
         assert result["level_1"] == "1503"
 
     def test_level_2_format(self):
         from datetime import datetime
+
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        dt = datetime(2025, 3, 15, 10, 30)
+        dt = datetime(2025, 3, 15, 10, 30)  # noqa: DTZ001
         # hours=10 -> hh_last=0, hh_first=1; year_last=5; month_last=3; day_last=5
         result = calculate_codes(dt)
         assert result["level_2"] == "01535"
 
     def test_uses_current_time_when_none(self):
-        from custom_components.idm_heatpump.technician_codes import calculate_codes
         from datetime import datetime
 
+        from custom_components.idm_heatpump.technician_codes import calculate_codes
+
         result = calculate_codes()
-        now = datetime.now()
+        now = datetime.now()  # noqa: DTZ005
         # level_1 should be DDMM of today
         expected_level_1 = f"{now.day:02d}{now.month:02d}"
         assert result["level_1"] == expected_level_1
 
     def test_single_digit_day_and_month(self):
         from datetime import datetime
+
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        dt = datetime(2025, 1, 5, 8, 0)
+        dt = datetime(2025, 1, 5, 8, 0)  # noqa: DTZ001
         result = calculate_codes(dt)
         assert result["level_1"] == "0501"
 
     def test_midnight_hour(self):
         from datetime import datetime
+
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        dt = datetime(2025, 3, 15, 0, 0)
+        dt = datetime(2025, 3, 15, 0, 0)  # noqa: DTZ001
         result = calculate_codes(dt)
         # hours=00 -> hh_last=0, hh_first=0
         assert result["level_2"][0] == "0"

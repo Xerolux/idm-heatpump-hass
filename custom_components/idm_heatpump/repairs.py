@@ -122,7 +122,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
                         entry.entry_id,
                     )
                     errors[CONF_WEB_PIN] = "invalid_web_pin"
-                except Exception as err:
+                except Exception as err:  # noqa: BLE001
                     _LOGGER.warning(
                         "IDM Navigator web access test failed while repairing entry %s: %s: %s",
                         entry.entry_id,

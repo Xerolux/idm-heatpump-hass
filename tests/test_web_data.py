@@ -2,9 +2,8 @@
 
 from types import SimpleNamespace
 
-import pytest
-
 import idm_heatpump
+import pytest
 
 from custom_components.idm_heatpump.const import MODEL
 from custom_components.idm_heatpump.web_data import (
