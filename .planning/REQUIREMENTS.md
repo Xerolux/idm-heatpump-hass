@@ -111,28 +111,30 @@ Die Roadmap ordnet jedes v1-Requirement genau einer Phase zu.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| LIFE-01 | TBD | Pending |
-| LIFE-02 | TBD | Pending |
-| LIFE-03 | TBD | Pending |
-| GLT-01 | TBD | Pending |
-| GLT-02 | TBD | Pending |
-| GLT-03 | TBD | Pending |
-| GLT-04 | TBD | Pending |
-| GLT-05 | TBD | Pending |
-| MODEL-01 | TBD | Pending |
-| MODEL-02 | TBD | Pending |
-| MODEL-03 | TBD | Pending |
-| MODEL-04 | TBD | Pending |
-| QUAL-01 | TBD | Pending |
-| QUAL-02 | TBD | Pending |
-| REL-01 | TBD | Pending |
-| REL-02 | TBD | Pending |
+| LIFE-01 | Phase 1 | Pending |
+| LIFE-02 | Phase 1 | Pending |
+| LIFE-03 | Phase 1 | Pending |
+| GLT-01 | Phase 2 | Pending |
+| GLT-02 | Phase 2 | Pending |
+| GLT-03 | Phase 2 | Pending |
+| GLT-04 | Phase 2 | Pending |
+| GLT-05 | Phase 2 | Pending |
+| MODEL-01 | Phase 3 | Pending |
+| MODEL-02 | Phase 3 | Pending |
+| MODEL-03 | Phase 3 | Pending |
+| MODEL-04 | Phase 3 | Pending |
+| QUAL-01 | Phase 2 | Pending |
+| QUAL-02 | Phase 4 | Pending |
+| REL-01 | Phase 4 | Pending |
+| REL-02 | Phase 4 | Pending |
 
 **Coverage:**
 - v1 requirements: 16 total
-- Mapped to phases: 0
-- Unmapped: 16
+- Mapped to phases: 16
+- Unmapped: 0
+- Duplicate mappings: 0
+- Coverage: 100%
 
 ---
 *Requirements defined: 2026-07-25*
-*Last updated: 2026-07-25 after initial issue triage*
+*Last updated: 2026-07-25 after roadmap creation*
