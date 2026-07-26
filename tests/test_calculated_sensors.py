@@ -78,8 +78,10 @@ def test_out_of_range_temperature_is_rejected():
     coordinator = _coordinator({"hp_flow_temp": 350.0, "hp_return_temp": 30.0})
     sensor = _entities_by_key(coordinator)["calculated_hp_temperature_delta"]
 
+    # BL-003: source is present and finite, so the sensor stays available and
+    # reports 'unknown' rather than the out-of-range delta.
     assert sensor.native_value is None
-    assert sensor.available is False
+    assert sensor.available is True
 
 
 def test_boolean_source_is_not_treated_as_temperature():
@@ -124,7 +126,9 @@ def test_cop_is_thermal_over_electric_when_both_positive():
 
 
 def test_cop_suppressed_when_heat_pump_is_idle():
-    """Issue #135: P_el = 0 (standby) must yield unavailable, never division-by-zero."""
+    """Issue #135 / BL-003: P_el = 0 (standby) yields state 'unknown', never
+    division-by-zero. The sensor stays available (sources present) and reports
+    no value while the heat pump is idle."""
     coordinator = _coordinator(
         {
             "power_consumption_hp": 0.0,
@@ -134,7 +138,7 @@ def test_cop_suppressed_when_heat_pump_is_idle():
     sensor = _entities_by_key(coordinator)["calculated_cop"]
 
     assert sensor.native_value is None
-    assert sensor.available is False
+    assert sensor.available is True
 
 
 def test_cop_suppressed_when_only_one_source_is_zero():
@@ -147,7 +151,7 @@ def test_cop_suppressed_when_only_one_source_is_zero():
     sensor = _entities_by_key(coordinator)["calculated_cop"]
 
     assert sensor.native_value is None
-    assert sensor.available is False
+    assert sensor.available is True
 
 
 def test_cop_suppressed_below_meaningful_power_threshold():

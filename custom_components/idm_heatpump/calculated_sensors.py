@@ -172,17 +172,33 @@ class IdmCalculatedSensor(IdmCoordinatorEntityBase, SensorEntity):
             icon=definition.icon,
         )
 
-    def _calculate(self) -> float | None:
+    def _sources_available(self) -> bool:
+        """Return True when every source register is present, not unused, and finite.
+
+        A calculated sensor is 'available' as long as its sources exist and are
+        not in an unused/sentinel state; the calculated value may still be None
+        (e.g. COP is suppressed while the heat pump is idle), in which case the
+        state is 'unknown' rather than 'unavailable' (BL-003).
+        """
         data = self.coordinator.data
         if not data:
+            return False
+        for source in self._definition.sources:
+            if source not in data or source in self.coordinator.unused_registers:
+                return False
+            value = data[source]
+            if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+                return False
+        return True
+
+    def _calculate(self) -> float | None:
+        if not self._sources_available():
             return None
-        if any(source in self.coordinator.unused_registers for source in self._definition.sources):
-            return None
-        return self._definition.calculate(data)
+        return self._definition.calculate(self.coordinator.data)
 
     @property
     def available(self) -> bool:
-        return super().available and self._calculate() is not None
+        return super().available and self._sources_available()
 
     @property
     def native_value(self) -> float | None:

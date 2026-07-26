@@ -41,6 +41,14 @@ heuristic.
 - **Pump-status `-1` ("off") handling moved to the API.** The 10 pump-status
   registers now declare their sentinel explicitly in `idm-heatpump-api` 0.8.7, so
   the integration no longer needs its hard-coded exception list.
+- **Calculated sensors report `unknown` instead of `unavailable` when their
+  sources are present but the value is suppressed (BL-003 / #135).** COP and the
+  temperature-delta sensors stay available while the heat pump is idle or a value
+  is out of range; only genuinely missing/NaN sources make them unavailable.
+- **Sub-device `via_device` references always resolve (BL-005).** The main device
+  is pre-created from its stable identifier before platforms are forwarded, so
+  heating-circuit/DHW/module sub-devices no longer trigger the HA
+  `non-existing via_device` warning (HA 2025.12 will reject it).
 
 ## [0.8.6-beta.2] - 2026-07-26
 

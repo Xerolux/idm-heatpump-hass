@@ -139,6 +139,24 @@ def main_device_identifier(coordinator: IdmCoordinator) -> tuple[str, str]:
     return DOMAIN, coordinator.config_entry.entry_id  # type: ignore[union-attr]
 
 
+def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
+    """Ensure the main device exists before sub-devices reference it.
+
+    Sub-device ``DeviceInfo`` uses ``via_device=main_device_identifier(...)``.
+    Home Assistant logs a warning (and from 2025.12 will reject it) when a
+    ``via_device`` target does not exist yet. Platforms are forwarded in an
+    unspecified order, so the first entity added may be a sub-device (e.g. a
+    binary_sensor). Pre-creating the main device here from the stable identifier
+    makes the ``via_device`` reference always resolve. Name/model/manufacturer
+    are enriched later when the first main-device entity is added.
+    """
+    entry = coordinator.config_entry
+    dr.async_get(hass).async_get_or_create_device(
+        config_entry_id=entry.entry_id,
+        identifiers={main_device_identifier(coordinator)},
+    )
+
+
 def heating_circuit_identifier(coordinator: IdmCoordinator, circuit: str) -> tuple[str, str]:
     """Return the stable identifier for one heating circuit."""
     entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]

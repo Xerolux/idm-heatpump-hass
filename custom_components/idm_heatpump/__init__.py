@@ -87,7 +87,7 @@ from .const import (
     NAME,
 )
 from .coordinator import IdmCoordinator, navigator_family
-from .device_hierarchy import cleanup_stale_hierarchy_devices
+from .device_hierarchy import cleanup_stale_hierarchy_devices, precreate_main_device
 from .error_messages import (
     classify_communication_error,
     classify_web_error,
@@ -462,6 +462,7 @@ async def _async_setup_web_only_entry(
         loaded_platforms=(Platform.SENSOR,),
     )
 
+    precreate_main_device(hass, coordinator)
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
     cleanup_stale_hierarchy_devices(hass, coordinator)
 
@@ -864,6 +865,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         )
 
         await coordinator.async_config_entry_first_refresh()
+        precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
         cleanup_stale_hierarchy_devices(hass, coordinator)
 
