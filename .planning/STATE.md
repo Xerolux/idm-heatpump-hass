@@ -1,13 +1,13 @@
 ---
 gsd_state_version: '1.0'
-status: planning
+status: complete
 milestone: '0.8.7 — Sentinel Authority in API'
 progress:
   total_phases: 1
-  completed_phases: 0
+  completed_phases: 1
   total_plans: 2
-  completed_plans: 0
-  percent: 0
+  completed_plans: 2
+  percent: 100
 ---
 
 # Project State
@@ -19,16 +19,15 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 **Core value:** Home Assistant must control and monitor the IDM heat pump locally,
 reliably, and safely without reloads, sentinel values, or uncertain model
 detection silently disabling central automations.
-**Current focus:** v1 milestone complete (0.8.6-beta.2). New milestone 0.8.7
-(Sentinel Authority in API) planned — 2 plans across Phase 6; ready for
-`/gsd-plan-phase 6`.
+**Current focus:** 0.8.7 milestone complete — sentinel authority moved into
+`idm-heatpump-api`; integration consumes it. Release 0.8.7 prepared locally.
 
 ## Current Position
 
-Phase: 6 (planned, not started)
-Plan: 0 of 2 (06-01 API, 06-02 Integration)
-Status: Planning — v1 shipped locally as 0.8.6-beta.2; 0.8.7 milestone scoped.
-Last activity: 2026-07-26 — Phase 5 closed v1 (Nav10 detection fix + live validation); 0.8.7 milestone defined (PROJECT/REQUIREMENTS/ROADMAP).
+Phase: 6 (complete)
+Plan: 2 of 2 (06-01 API, 06-02 Integration)
+Status: Complete — API 0.8.7 + integration 0.8.7 green (pytest 306 / 963, ruff/mypy clean); live bench 11/0/0; 182 entities; #172 preserved; release artifacts built locally (not pushed).
+Last activity: 2026-07-26 — Phase 6 sentinel authority; HASS pytest 963, API pytest 306.
 
 Progress: [██████████] 100%
 

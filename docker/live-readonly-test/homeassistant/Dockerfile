@@ -13,7 +13,7 @@
 
 FROM ghcr.io/home-assistant/home-assistant:stable
 
-ARG API_WHEEL=idm_heatpump_api-0.8.6-py3-none-any.whl
+ARG API_WHEEL=idm_heatpump_api-0.8.7-py3-none-any.whl
 
 # Verify the wheel is present in the build context, then install it (no-deps:
 # pymodbus + aiohttp already ship with Home Assistant).

@@ -768,6 +768,14 @@ def _stub_idm_heatpump() -> None:
         BOOL = "BOOL"
         BITFLAG = "BITFLAG"
 
+    # Mirror of idm_heatpump.client.DATATYPE_SENTINEL_DEFAULTS (Phase 6 / SENT-01).
+    _STUB_DATATYPE_SENTINEL_DEFAULTS: dict[Any, tuple[int | float, ...]] = {
+        DataType.FLOAT: (-1.0,),
+        DataType.UCHAR: (255,),
+        DataType.UINT16: (65535,),
+        DataType.INT16: (-1, -32768),
+    }
+
     @dataclass
     class RegisterDef:
         address: int
@@ -790,6 +798,12 @@ def _stub_idm_heatpump() -> None:
         @property
         def size(self) -> int:
             return 2 if self.datatype == DataType.FLOAT else 1
+
+        @property
+        def effective_sentinel_values(self) -> tuple[int | float | str, ...]:
+            if self.sentinel_values:
+                return self.sentinel_values
+            return _STUB_DATATYPE_SENTINEL_DEFAULTS.get(self.datatype, ())
 
     @dataclass
     class IdmModelInfo:
@@ -1035,7 +1049,76 @@ def _stub_idm_heatpump() -> None:
         RegisterDef(1068, DataType.FLOAT, "heat_sink_return_temp", unit="°C"),
         RegisterDef(1070, DataType.FLOAT, "heat_sink_flow_temp", unit="°C"),
         RegisterDef(1072, DataType.UCHAR, "heat_sink_flow_rate", unit="L/min"),
-        RegisterDef(1074, DataType.INT16, "heat_sink_charging_pump_signal", unit="%"),
+        RegisterDef(
+            1074,
+            DataType.INT16,
+            "heat_sink_charging_pump_signal",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1104,
+            DataType.INT16,
+            "charging_pump_status",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1105,
+            DataType.INT16,
+            "brine_pump_status",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1106,
+            DataType.INT16,
+            "heat_source_pump_status",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1108,
+            DataType.INT16,
+            "isc_cold_storage_pump_status",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1109,
+            DataType.INT16,
+            "isc_recooling_pump_status",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1047,
+            DataType.INT16,
+            "booster_a_source_pump",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1055,
+            DataType.INT16,
+            "booster_a_charging_pump",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1099,
+            DataType.INT16,
+            "booster_b_source_pump",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
+        RegisterDef(
+            1107,
+            DataType.INT16,
+            "booster_b_charging_pump",
+            unit="%",
+            sentinel_values=(-32768, 65535, 255),
+        ),
         RegisterDef(1090, DataType.BITFLAG, "hp_operating_mode", enum_options=_HP_STATUS),
         RegisterDef(1098, DataType.BOOL, "evu_lock", binary=True),
         RegisterDef(1099, DataType.BOOL, "hp_sum_alarm", binary=True),
@@ -1046,7 +1129,7 @@ def _stub_idm_heatpump() -> None:
         RegisterDef(1652, DataType.FLOAT, "pv_production", unit="kW", writable=True),
         RegisterDef(1654, DataType.FLOAT, "house_consumption", unit="kW", writable=True),
         RegisterDef(1656, DataType.FLOAT, "battery_discharge", unit="kW", writable=True),
-        RegisterDef(1658, DataType.UINT16, "battery_soc", unit="%", writable=True),
+        RegisterDef(1658, DataType.INT16, "battery_soc", unit="%", writable=True, sentinel_values=(-1,)),
         RegisterDef(1660, DataType.FLOAT, "electric_heater_power", unit="kW", writable=True),
         RegisterDef(1662, DataType.FLOAT, "pv_target_value", unit="kW", writable=True),
         RegisterDef(1670, DataType.FLOAT, "variable_input"),

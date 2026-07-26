@@ -255,8 +255,10 @@ class TestSetupRegisters:
 
 class TestIsRegisterUnused:
     def test_unused_value_is_unused(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
-        assert coord.is_register_unused("x", UNUSED_VALUE) is True
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="probe_float")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[reg])
+        # FLOAT datatype default sentinel is -1.0 (SENT-01).
+        assert coord.is_register_unused(reg.name, UNUSED_VALUE) is True
 
     def test_none_is_unused(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
@@ -276,17 +278,22 @@ class TestIsRegisterUnused:
         assert coord.is_register_unused("x", 0.0) is False
 
     def test_negative_one_is_unused(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
-        # UNUSED_VALUE is -1.0
-        assert coord.is_register_unused("x", -1.0) is True
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="probe_float")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[reg])
+        # UNUSED_VALUE is -1.0; FLOAT default sentinel.
+        assert coord.is_register_unused(reg.name, -1.0) is True
 
     def test_65535_is_unused(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
-        assert coord.is_register_unused("x", 65535) is True
+        reg = RegisterDef(address=1200, datatype=DataType.UINT16, name="probe_uint16")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[reg])
+        # UINT16 default sentinel is 65535 (SENT-01).
+        assert coord.is_register_unused(reg.name, 65535) is True
 
     def test_255_is_unused(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
-        assert coord.is_register_unused("x", 255) is True
+        reg = RegisterDef(address=1201, datatype=DataType.UCHAR, name="probe_uchar")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[reg])
+        # UCHAR default sentinel is 255 (SENT-01).
+        assert coord.is_register_unused(reg.name, 255) is True
 
     def test_register_metadata_sentinel_is_unused(self, mock_hass, mock_config_entry):
         reg = RegisterDef(
@@ -323,8 +330,10 @@ class TestIsRegisterUnused:
         assert coord.is_register_unused("hc_a_mode", 255) is False
 
     def test_minus_32768_is_unused(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
-        assert coord.is_register_unused("x", -32768) is True
+        reg = RegisterDef(address=1202, datatype=DataType.INT16, name="probe_int16")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[reg])
+        # INT16 default sentinel includes -32768 (SENT-01).
+        assert coord.is_register_unused(reg.name, -32768) is True
 
     def test_nan_is_unused(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
@@ -362,15 +371,24 @@ class TestIsRegisterUnused:
             assert coord.is_register_unused(name, 50) is False, name
 
     def test_pump_status_real_sentinels_still_unused(self, mock_hass, mock_config_entry):
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
-        assert coord.is_register_unused("charging_pump_status", -32768) is True
-        assert coord.is_register_unused("charging_pump_status", float("nan")) is True
-        assert coord.is_register_unused("charging_pump_status", None) is True
+        reg = RegisterDef(
+            address=1104,
+            datatype=DataType.INT16,
+            name="charging_pump_status",
+            sentinel_values=(-32768, 65535, 255),
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[reg])
+        assert coord.is_register_unused(reg.name, -32768) is True
+        assert coord.is_register_unused(reg.name, float("nan")) is True
+        assert coord.is_register_unused(reg.name, None) is True
 
     def test_battery_soc_negative_one_is_unused(self, mock_hass, mock_config_entry):
         # battery_soc: -1 bedeutet "nicht verfügbar" → weiterhin unused.
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True)
-        assert coord.is_register_unused("battery_soc", -1) is True
+        reg = RegisterDef(
+            address=1658, datatype=DataType.INT16, name="battery_soc", sentinel_values=(-1,)
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[reg])
+        assert coord.is_register_unused(reg.name, -1) is True
 
     def test_get_register_uses_name_index(self, mock_hass, mock_config_entry):
         """get_register resolves registers via the O(1) name index (9a6b5ff)."""
@@ -736,11 +754,11 @@ class TestAsyncUpdateData:
             mock_config_entry,
             client=client,
             hide_unused=True,
-            registers=[
-                RegisterDef(address=1000, datatype=DataType.UCHAR, name="dead"),
-                RegisterDef(address=1001, datatype=DataType.UCHAR, name="alive"),
-            ],
-        )
+                registers=[
+                    RegisterDef(address=1000, datatype=DataType.FLOAT, name="dead"),
+                    RegisterDef(address=1001, datatype=DataType.FLOAT, name="alive"),
+                ],
+            )
 
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
@@ -760,11 +778,11 @@ class TestAsyncUpdateData:
             mock_config_entry,
             client=client,
             hide_unused=True,
-            registers=[
-                RegisterDef(address=1000, datatype=DataType.UCHAR, name="dead"),
-                RegisterDef(address=1001, datatype=DataType.UCHAR, name="alive"),
-            ],
-        )
+                registers=[
+                    RegisterDef(address=1000, datatype=DataType.FLOAT, name="dead"),
+                    RegisterDef(address=1001, datatype=DataType.FLOAT, name="alive"),
+                ],
+            )
 
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
@@ -933,10 +951,10 @@ class TestAsyncWriteRegister:
 
         client = MagicMock()
         client.write_register = AsyncMock()
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[reg])
         coord.data = {"temp_set": UNUSED_VALUE}
 
-        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
         # Pre-write: the sentinel value is treated as unused.
         assert coord.is_register_unused("temp_set", coord.data["temp_set"]) is True
 
@@ -1672,9 +1690,9 @@ class TestUnusedRegistersAccumulation:
             client=client,
             hide_unused=True,
             registers=[
-                RegisterDef(address=1000, datatype=DataType.UCHAR, name="x"),
-                RegisterDef(address=1001, datatype=DataType.UCHAR, name="y"),
-                RegisterDef(address=1002, datatype=DataType.UCHAR, name="z"),
+                RegisterDef(address=1000, datatype=DataType.FLOAT, name="x"),
+                RegisterDef(address=1001, datatype=DataType.FLOAT, name="y"),
+                RegisterDef(address=1002, datatype=DataType.FLOAT, name="z"),
             ],
         )
 

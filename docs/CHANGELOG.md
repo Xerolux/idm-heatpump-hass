@@ -13,6 +13,35 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.7] - 2026-07-26
+
+Sentinel authority: the "unused / not configured" classification is now
+data-driven from `idm-heatpump-api` instead of the integration's numeric
+heuristic.
+
+> **Compatibility:** API pin updated to `idm-heatpump-api[web]==0.8.7`.
+> Entity unique IDs, entity IDs, register addresses, and write paths are unchanged.
+
+### Changed
+
+- **API is the single authority for sentinel values (SENT-01/SENT-02).**
+  `IdmCoordinator.is_register_unused` now uses the API's
+  `RegisterDef.effective_sentinel_values` (explicit per-register declaration or
+  the datatype default: FLOAT `-1.0`, UCHAR `255`, UINT16 `65535`, INT16
+  `-1`/`-32768`) as the only unused classification. The previous integration-side
+  `-1`/`255`/`65535`/`-32768` heuristic and the `NEGATIVE_ONE_VALID_REGISTERS`
+  exception list are no longer evaluated (the API now encodes both, including the
+  pump-status opt-out where `-1` means "off"). A documented enum state still
+  takes precedence over a sentinel (an enum value listed in `enum_options` is
+  shown, not hidden). Behavior for the live device is unchanged; the filter is
+  now device-specific and centralized.
+
+### Fixed
+
+- **Pump-status `-1` ("off") handling moved to the API.** The 10 pump-status
+  registers now declare their sentinel explicitly in `idm-heatpump-api` 0.8.7, so
+  the integration no longer needs its hard-coded exception list.
+
 ## [0.8.6-beta.2] - 2026-07-26
 
 Beta 2 of the 0.8.6 line. Verified end-to-end against a live Navigator 10

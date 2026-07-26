@@ -28,8 +28,6 @@ from .const import (
     CONF_DETECTED_WEB_VARIANT,
     DOMAIN,
     MODEL,
-    NEGATIVE_ONE_VALID_REGISTERS,
-    UNUSED_VALUE,
 )
 from .error_messages import (
     classify_communication_error as _repair_issue_for_error,
@@ -417,7 +415,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return self._register_by_name.get(register_name)
 
     def is_register_unused(self, register_name: str, value: Any) -> bool:
-        """Check if a register value indicates an unused/invalid register."""
+        """Check if a register value indicates an unused/invalid register.
+
+        SENT-02 (0.8.7): the API-declared ``effective_sentinel_values`` are the
+        single authority. When a register resolves to a non-empty sentinel set
+        (every FLOAT/UCHAR/UINT16/INT16 register does, either explicitly or via
+        the API's datatype default), only those values — plus NaN/inf — count as
+        unused. The previous numeric heuristic (-1/255/65535/-32768) and the
+        ``NEGATIVE_ONE_VALID_REGISTERS`` exception list are now encoded in the
+        API and no longer evaluated here; they remain in ``const.py`` for
+        backwards-compatibility/documentation only.
+        """
         if not self._hide_unused:
             return False
         if value is None:
@@ -426,24 +434,22 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if register is None and self._registers:
             # Fallback for code paths that mutate _registers directly (e.g. tests)
             register = next((reg for reg in self._registers if reg.name == register_name), None)
-        sentinel_values = getattr(register, "sentinel_values", ())
-        if value in sentinel_values:
-            return True
-        enum_options = getattr(register, "enum_options", None)
-        if isinstance(enum_options, dict) and value in enum_options:
-            return False
-        if isinstance(value, (int, float)):
-            # Pumpenstatus: -1 bedeutet "Aus" — nur den Unused-Check überspringen,
-            # alle übrigen Sentinel-Prüfungen bleiben aktiv.
-            if register_name not in NEGATIVE_ONE_VALID_REGISTERS and abs(value - UNUSED_VALUE) < 0.01:
+        sentinel_values = getattr(register, "effective_sentinel_values", None)
+        if sentinel_values is None:
+            # Older API without effective_sentinel_values: fall back to raw field.
+            sentinel_values = getattr(register, "sentinel_values", ())
+        if sentinel_values:
+            # A documented enum state (e.g. 255 = "Not configured" listed in
+            # enum_options) is shown as a valid state rather than hidden, so the
+            # enum membership takes precedence over the sentinel default.
+            enum_options = getattr(register, "enum_options", None)
+            if isinstance(enum_options, dict) and value in enum_options:
+                return False
+            if value in sentinel_values:
                 return True
-            if value == 65535 or value == 255:
-                return True
-            if value == -32768:
-                return True
-            if isinstance(value, float) and (math.isnan(value) or abs(value) == float("inf")):
-                return True
-        return False
+            return isinstance(value, float) and (math.isnan(value) or math.isinf(value))
+        # Registers without a numeric sentinel (BOOL/BITFLAG): only NaN/inf count.
+        return isinstance(value, float) and (math.isnan(value) or math.isinf(value))
 
     async def _async_read_registers_resilient(self, registers: list[RegisterDef]) -> dict[str, Any]:
         """Read registers while isolating addresses unsupported by this device.

@@ -172,19 +172,25 @@ fallback for undeclared registers.
 Plans:
 
 **Wave 1** (API)
-- [ ] 06-01-PLAN.md — Add `sentinel_values` to `RegisterDef`; populate the
-  register catalog; API tests; release `idm-heatpump-api` 0.8.7.
+- [x] 06-01-PLAN.md — Add `effective_sentinel_values` + `DATATYPE_SENTINEL_DEFAULTS`
+  to `RegisterDef`; explicit pump-status opt-outs; regenerate schema fixture; 7 API
+  tests; release `idm-heatpump-api` 0.8.7.
 
 **Wave 2** _(blocked on Wave 1)_ (Integration)
-- [ ] 06-02-PLAN.md — Consume API-declared sentinels in `is_register_unused`;
-  demote the numeric heuristic to fallback; preserve #172 + `hide_unused`
-  semantics; cross-repo + release contracts; release integration 0.8.7.
+- [x] 06-02-PLAN.md — `is_register_unused` consumes `effective_sentinel_values`
+  authoritatively (enum wins over sentinel); drop `UNUSED_VALUE`/
+  `NEGATIVE_ONE_VALID_REGISTERS` from the hot path; mirror in conftest stub;
+  pin API 0.8.7, release integration 0.8.7.
 
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 6. Sentinel Authority | 0/2 | Planned | — |
+| 6. Sentinel Authority | 2/2 | Complete | 2026-07-26 |
+
+0.8.7 milestone complete: API + integration green (pytest 306 / 963, ruff/mypy
+clean); live bench 11/0/0; 182 entities; #172 writable targets preserved;
+available 146→149 (no regression). Release 0.8.7 prepared locally (not pushed).
 
 ---
 *Milestone planned: 2026-07-26 — 2 plans across 1 phase; ready for `/gsd-plan-phase 6`.*
