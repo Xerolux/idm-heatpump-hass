@@ -927,6 +927,26 @@ class TestAsyncWriteRegister:
         client.simulate_write.assert_called_once_with(reg, 22.0, dry_run=True)
         client.write_register.assert_called_once_with(reg, 22.0)
 
+    async def test_write_lifts_sentinel_state_immediately(self, mock_hass, mock_config_entry):
+        """#172: a successful write moves a writable control from sentinel to the written value before the next poll."""
+        from custom_components.idm_heatpump.const import UNUSED_VALUE
+
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord.data = {"temp_set": UNUSED_VALUE}
+
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
+        # Pre-write: the sentinel value is treated as unused.
+        assert coord.is_register_unused("temp_set", coord.data["temp_set"]) is True
+
+        await coord.async_write_register(reg, 22.0)
+
+        # Post-write: the optimistic update holds the written value immediately,
+        # and is_register_unused no longer classifies it as a sentinel.
+        assert coord.data["temp_set"] == 22.0
+        assert coord.is_register_unused("temp_set", coord.data["temp_set"]) is False
+
     async def test_write_updates_all_register_aliases_optimistically(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.write_register = AsyncMock()
@@ -1685,3 +1705,46 @@ class TestUnusedRegistersAccumulation:
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
         assert "x" not in coord.unused_registers
+
+
+class TestModelConflictSummary:
+    """#170: read-only detection-source summary for diagnostics (no I/O, no selection)."""
+
+    def test_no_conflict_when_families_match(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.const import CONF_DETECTED_NAVIGATOR_VERSION
+
+        mock_config_entry.data = {CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10"}
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 10")
+        summary = coord.model_conflict_summary
+        assert summary["selected_family"] == "navigator_10"
+        assert summary["stored_family"] == "navigator_10"
+        assert summary["conflict"] is False
+
+    def test_conflict_when_stored_and_modbus_disagree(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.const import CONF_DETECTED_NAVIGATOR_VERSION
+
+        mock_config_entry.data = {CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 20"}
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 10")
+        summary = coord.model_conflict_summary
+        assert summary["conflict"] is True
+        assert summary["selected_family"] == "navigator_10"
+        assert summary["stored_family"] == "navigator_20"
+
+    def test_manual_override_exposed(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.const import CONF_DETECTED_NAVIGATOR_VERSION, CONF_MODEL_OVERRIDE
+
+        mock_config_entry.data = {
+            CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10",
+            CONF_MODEL_OVERRIDE: "navigator_10",
+        }
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 10")
+        summary = coord.model_conflict_summary
+        assert summary["manual_override"] == "navigator_10"
+
+    def test_no_conflict_when_stored_missing(self, mock_hass, mock_config_entry):
+        # Generic model name → navigator_family None → never conflicts.
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 2.0 / 10")
+        mock_config_entry.data = {}
+        summary = coord.model_conflict_summary
+        assert summary["selected_family"] is None
+        assert summary["conflict"] is False

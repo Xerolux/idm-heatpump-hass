@@ -17,6 +17,8 @@ from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_
 from .versions import async_runtime_versions
 
 TO_REDACT = {CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN}
+# Device identifiers must not leak into diagnostics either.
+TO_REDACT.update({"myidm_id", "serial_number", "serial"})
 
 
 def _model_info_diagnostics(model_info: Any) -> dict[str, Any]:
@@ -77,6 +79,33 @@ def _web_supplement_diagnostics(coordinator: Any) -> dict[str, Any]:
     }
 
 
+def _model_conflict_diagnostics(coordinator: Any) -> dict[str, Any]:
+    """Structured, redacted model-conflict summary for #170 diagnostics.
+
+    Only detection-source fields are emitted (selected/stored family, web variant,
+    firmware evidence, manual override, conflict flag). No host, PIN, serial, or
+    other private connection data is included.
+    """
+    summary = getattr(coordinator, "model_conflict_summary", None)
+    if not isinstance(summary, dict):
+        return {
+            "selected_family": None,
+            "stored_family": None,
+            "web_variant": None,
+            "software_version": None,
+            "manual_override": None,
+            "conflict": False,
+        }
+    return {
+        "selected_family": summary.get("selected_family"),
+        "stored_family": summary.get("stored_family"),
+        "web_variant": summary.get("web_variant"),
+        "software_version": summary.get("software_version"),
+        "manual_override": summary.get("manual_override"),
+        "conflict": bool(summary.get("conflict")),
+    }
+
+
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     coordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
@@ -99,6 +128,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                     "pymodbus": versions.pymodbus,
                 },
                 "model_info": _model_info_diagnostics(coordinator.model_info),
+                "model_conflict": _model_conflict_diagnostics(coordinator),
                 "client_diagnostics": async_redact_data(_client_diagnostics(coordinator), TO_REDACT),
                 "web_supplement": _web_supplement_diagnostics(coordinator),
                 "unused_registers": sorted(coordinator.unused_registers),

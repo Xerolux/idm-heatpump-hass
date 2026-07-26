@@ -128,7 +128,7 @@ The advanced raw-write action cannot infer the correct datatype from an address.
 <!-- BEGIN GENERATED REGISTER REFERENCE -->
 ## Complete register catalog
 
-> Generated from `idm-heatpump-api[web]==0.8.4`. Do not edit this section manually.
+> Generated from `idm-heatpump-api[web]==0.8.5`. Do not edit this section manually.
 
 This maximal catalog contains **687 logical register definitions**: all heating circuits A–G, ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. The integration selects only the subset supported and enabled on the detected installation.
 

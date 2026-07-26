@@ -58,8 +58,19 @@ def build_device_info(coordinator: IdmCoordinator) -> DeviceInfo:
     return device_info
 
 
-def should_add_entity(coordinator: IdmCoordinator, register: RegisterDef) -> bool:
-    """Return whether a register should be exposed as an entity."""
+def should_add_entity(
+    coordinator: IdmCoordinator,
+    register: RegisterDef,
+    *,
+    as_writable_control: bool = False,
+) -> bool:
+    """Return whether a register should be exposed as an entity.
+
+    When ``as_writable_control`` is True and the register is writable, a present
+    writable target is still exposed even if its current value is an unset
+    sentinel (#172): external inputs must remain addressable when unset. Absent
+    and Illegal-Data-Address registers are never exposed.
+    """
     if not coordinator.hide_unused:
         return True
 
@@ -68,6 +79,12 @@ def should_add_entity(coordinator: IdmCoordinator, register: RegisterDef) -> boo
         return True
     if register.name not in data:
         return False
+    if as_writable_control and getattr(register, "writable", False):
+        # Unsupported (Illegal Data Address) registers are never exposed, even
+        # as writable controls; a present, supported writable target stays.
+        if register.name in getattr(coordinator, "unsupported_registers", ()):
+            return False
+        return True
     return not coordinator.is_register_unused(register.name, data.get(register.name))
 
 
@@ -88,6 +105,8 @@ class IdmCoordinatorEntityBase(CoordinatorEntity[IdmCoordinator]):
 
 class IdmEntity(IdmCoordinatorEntityBase):
     """Base class for all register-backed IDM Heatpump entities."""
+
+    _writable_control: bool = False
 
     def __init__(
         self,
@@ -130,12 +149,33 @@ class IdmEntity(IdmCoordinatorEntityBase):
                 translation_placeholders=write_error_placeholders(self._register.name),
             ) from err
 
+    def is_writable_control(self) -> bool:
+        """Whether this entity is a writable control that stays available under sentinel."""
+        return self._writable_control and bool(getattr(self._register, "writable", False))
+
+    def _value_is_sentinel(self) -> bool:
+        """Return True if the current register value is an unset sentinel.
+
+        Reuses ``is_register_unused`` so no new sentinel literals are introduced
+        and the read-only filter stays the single authority. Returns False when
+        ``hide_unused`` is off (the user has opted into showing raw values).
+        """
+        data = self.coordinator.data
+        if not data:
+            return False
+        return self.coordinator.is_register_unused(self._register.name, data.get(self._register.name))
+
     @property
     def available(self) -> bool:
         if not super().available:
             return False
         if not self.coordinator.data or self._register.name not in self.coordinator.data:
             return False
+        if self.is_writable_control():
+            # A present writable control stays available even when its value is
+            # an unset sentinel; it reports unknown state instead of going
+            # unavailable (#172).
+            return True
         # The coordinator precomputes the set of unused registers on every
         # successful poll (see IdmCoordinator._async_update_data). Reusing that
         # set here is O(1) and avoids recomputing the unused check for every

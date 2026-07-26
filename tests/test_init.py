@@ -26,6 +26,7 @@ from custom_components.idm_heatpump.const import (
     MODEL_OVERRIDE_NAVIGATOR_10,
     MODEL_OVERRIDE_NAVIGATOR_20,
 )
+from custom_components.idm_heatpump.services import async_setup_services
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
 
 
@@ -436,14 +437,12 @@ class TestAsyncUnloadEntry:
         entry.runtime_data.client.disconnect = AsyncMock()
         mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
-        with patch(
-            "custom_components.idm_heatpump.services.async_unload_services",
-            AsyncMock(),
-        ):
-            result = await async_unload_entry(mock_hass, entry)
+        result = await async_unload_entry(mock_hass, entry)
 
         assert result is True
         mock_hass.config_entries.async_unload_platforms.assert_called_once()
+        # #171: domain services must NOT be removed during entry unload.
+        mock_hass.services.async_remove.assert_not_called()
 
     async def test_disconnects_client_on_success(self, mock_hass):
         entry = MagicMock()
@@ -453,11 +452,7 @@ class TestAsyncUnloadEntry:
         entry.runtime_data.client = mock_client
         mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
-        with patch(
-            "custom_components.idm_heatpump.services.async_unload_services",
-            AsyncMock(),
-        ):
-            await async_unload_entry(mock_hass, entry)
+        await async_unload_entry(mock_hass, entry)
 
         mock_client.disconnect.assert_called_once()
 
@@ -493,14 +488,45 @@ class TestAsyncUnloadEntry:
         entry.runtime_data.coordinator = mock_coordinator
         mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
 
-        with patch(
-            "custom_components.idm_heatpump.services.async_unload_services",
-            AsyncMock(),
-        ):
-            result = await async_unload_entry(mock_hass, entry)
+        result = await async_unload_entry(mock_hass, entry)
 
         assert result is True
         mock_coordinator.async_shutdown.assert_awaited_once()
+
+    async def test_services_survive_entry_unload(self, mock_hass):
+        """#171: unloading an entry must not remove the four domain services."""
+        await async_setup_services(mock_hass)
+        registered_before = mock_hass.services.async_register.call_count
+        assert registered_before == 4
+
+        entry = MagicMock()
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.client = AsyncMock()
+        entry.runtime_data.client.disconnect = AsyncMock()
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        await async_unload_entry(mock_hass, entry)
+
+        # Services are untouched: no removals, registration count unchanged.
+        mock_hass.services.async_remove.assert_not_called()
+        assert mock_hass.services.async_register.call_count == 4
+
+    async def test_services_survive_entry_reload(self, mock_hass):
+        """#171: after unload + re-setup the four services remain registered exactly once."""
+        await async_setup_services(mock_hass)
+        entry = MagicMock()
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.client = AsyncMock()
+        entry.runtime_data.client.disconnect = AsyncMock()
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        await async_unload_entry(mock_hass, entry)
+        # Idempotent re-registration (has_service now reports registered).
+        mock_hass.services.has_service = MagicMock(return_value=True)
+        await async_setup_services(mock_hass)
+
+        mock_hass.services.async_remove.assert_not_called()
+        assert mock_hass.services.async_register.call_count == 4
 
 
 class TestAsyncReloadEntry:
