@@ -6,7 +6,7 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.8.7` and `idm-heatpump-api` `0.8.7` form the current, exactly
+Integration `0.9.0` and `idm-heatpump-api` `0.9.0` form the current, exactly
 pinned pair. The previous beta cycle (`0.8.5-beta.1` through `0.8.5-beta.8`)
 ran the candidate through the gates below; the latest pre-stable candidate
 evidence is preserved at

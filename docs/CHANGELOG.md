@@ -13,6 +13,46 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-07-26
+
+Erste 0.9.x-Stable. Bündelt die 0.8.6-beta- und 0.8.7-Arbeiten (Sentinel-
+Authority, Navigator-10-Erkennung, Service-Lifecycle, schreibbare GLT-Ziele)
+sowie BL-003/BL-005 und erklärt sie für stabil.
+
+> **Compatibility:** API pin auf `idm-heatpump-api[web]==0.9.0`.
+> Entity-Unique-IDs, Entity-IDs, Registeradressen und Schreibpfade unverändert.
+
+### Fixed (seit 0.8.5 stable)
+
+- **#170 Modellkonflikt:** ein echter Navigator 10 ohne Booster im Standby wird
+  nicht mehr als Navigator 2.0 fehlklassifiziert (API-0.9.0-Tertiärindikator
+  4122+4126). Modbus und Web stimmen überein; die fehlenden PV-/Hausverbrauchs-
+  Vorgabewerte sind wieder vorhanden.
+- **#171 Dienste nach Reload:** alle 6 Domain-Services (`set_external_climate`,
+  `set_system_mode`, `acknowledge_errors`, `write_register`, `start_dhw_boost`,
+  `cancel_dhw_boost`) überdauern Reload/Unload ohne Core-Neustart.
+- **#172 Schreibbare GLT-Ziele bei Sentinel:** Number/Select/Switch mit
+  `hide_unused_registers: true` bleiben bei `-1`/`255`/`65535` erstellt und
+  verfügbar (Zustand `unknown`), statt zu verschwinden.
+- **BL-003:** berechnete Sensoren (COP, Spreizung) melden `unknown` statt
+  `unavailable`, wenn die Quellen vorhanden aber der Wert unterdrückt ist.
+- **BL-005:** Sub-Geräte-`via_device`-Referenzen lösen immer auf (Hauptgerät
+  wird vorab angelegt) – keine HA-2025.12-Warnung mehr.
+
+### Changed
+
+- **Sentinel-Authorität in der API:** `is_register_unused` nutzt ausschließlich
+  `RegisterDef.effective_sentinel_values`; die Integrationssseitige
+  `-1/255/65535`-Heuristik und `NEGATIVE_ONE_VALID_REGISTERS` entfallen.
+- **Setup/Erkennung:** realer Config-Flow (Verbindungstest + Web-Supplement-
+  Erkennung) verifiziert; Nav10 wird sicher erkannt.
+
+### Verified live (read-only)
+
+Setup über echten Config-Flow, 182 Entities, 6/6 Dienste nach Reload,
+#172-Ziele verfügbar, 60-min-Stabilität ohne Schreibzugriff; ruff/mypy clean,
+HASS pytest 963, API pytest 306.
+
 ## [0.8.7] - 2026-07-26
 
 Sentinel authority: the "unused / not configured" classification is now
