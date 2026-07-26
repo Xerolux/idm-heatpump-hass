@@ -135,3 +135,56 @@ prepared locally (not pushed, no PR, no GitHub release).
 *Roadmap created: 2026-07-25*
 *Phases planned: 2026-07-25 — 7 plans across 4 phases (1 + 2 + 2 + 2); ready for execution.*
 *Coverage: 16/16 v1 requirements mapped exactly once*
+
+# Milestone 0.8.7: Sentinel Authority in API
+
+## Overview
+
+The v1 milestone (Reliability Bugfixes, shipped as `0.8.6-beta.2`) is complete
+and live-verified. This milestone makes the "unused/sentinel" classification
+data-driven: `idm-heatpump-api` becomes the single authority for sentinel
+values, and the integration consumes that declaration instead of a numeric
+heuristic. Phase numbering continues from the v1 milestone.
+
+## Phases
+
+- [ ] **Phase 6: Sentinel Authority** - Declare sentinel values in the API and consume them in the integration.
+
+## Phase Details
+
+### Phase 6: Sentinel Authority
+**Goal**: A register's "unused/sentinel" state is defined by `idm-heatpump-api`
+and consumed verbatim by the integration; the numeric heuristic is only a
+fallback for undeclared registers.
+**Depends on**: v1 milestone complete (0.8.6-beta.2)
+**Requirements**: SENT-01, SENT-02, SENT-03, SENT-04
+**Success Criteria** (what must be TRUE):
+  1. `RegisterDef` carries an optional, typed `sentinel_values`; the register
+     catalog declares sentinels for every case the integration's heuristic
+     currently handles (and tests prove it).
+  2. The integration classifies unused registers from the API declaration, with
+     the heuristic only as a fallback; writable targets stay callable and
+     read-only sensors of absent hardware stay hidden.
+  3. Cross-repo + release contracts pin the integration to the exact API
+     version providing `sentinel_values`; full gate green; 0.8.7 release.
+**Plans**: 2 plans
+
+Plans:
+
+**Wave 1** (API)
+- [ ] 06-01-PLAN.md — Add `sentinel_values` to `RegisterDef`; populate the
+  register catalog; API tests; release `idm-heatpump-api` 0.8.7.
+
+**Wave 2** _(blocked on Wave 1)_ (Integration)
+- [ ] 06-02-PLAN.md — Consume API-declared sentinels in `is_register_unused`;
+  demote the numeric heuristic to fallback; preserve #172 + `hide_unused`
+  semantics; cross-repo + release contracts; release integration 0.8.7.
+
+## Progress
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 6. Sentinel Authority | 0/2 | Planned | — |
+
+---
+*Milestone planned: 2026-07-26 — 2 plans across 1 phase; ready for `/gsd-plan-phase 6`.*

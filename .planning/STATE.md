@@ -1,12 +1,13 @@
 ---
 gsd_state_version: '1.0'
-status: complete
+status: planning
+milestone: '0.8.7 — Sentinel Authority in API'
 progress:
-  total_phases: 5
-  completed_phases: 5
-  total_plans: 8
-  completed_plans: 8
-  percent: 100
+  total_phases: 1
+  completed_phases: 0
+  total_plans: 2
+  completed_plans: 0
+  percent: 0
 ---
 
 # Project State
@@ -18,14 +19,16 @@ See: .planning/PROJECT.md (updated 2026-07-25)
 **Core value:** Home Assistant must control and monitor the IDM heat pump locally,
 reliably, and safely without reloads, sentinel values, or uncertain model
 detection silently disabling central automations.
-**Current focus:** Milestone complete — #171, #172 and #170 fully resolved and live-verified; `0.8.6-beta.2` release prepared locally (not pushed).
+**Current focus:** v1 milestone complete (0.8.6-beta.2). New milestone 0.8.7
+(Sentinel Authority in API) planned — 2 plans across Phase 6; ready for
+`/gsd-plan-phase 6`.
 
 ## Current Position
 
-Phase: 5 of 5 (complete)
-Plan: 8 of 8 executed (01-01, 02-01, 02-02, 03-01, 03-02, 04-01, 04-02, 05-01)
-Status: Complete — automated gate green; MODEL-03/04 closed with field evidence; `0.8.6-beta.2` artifacts produced locally (not pushed, no PR, no GitHub release)
-Last activity: 2026-07-26 — Phase 05: read-only live validation, Navigator 10 detection fix (API 0.8.6), 0.8.6-beta.2 release; HASS pytest 963, API pytest 289, mypy + ruff clean
+Phase: 6 (planned, not started)
+Plan: 0 of 2 (06-01 API, 06-02 Integration)
+Status: Planning — v1 shipped locally as 0.8.6-beta.2; 0.8.7 milestone scoped.
+Last activity: 2026-07-26 — Phase 5 closed v1 (Nav10 detection fix + live validation); 0.8.7 milestone defined (PROJECT/REQUIREMENTS/ROADMAP).
 
 Progress: [██████████] 100%
 

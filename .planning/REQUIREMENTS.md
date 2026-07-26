@@ -138,3 +138,25 @@ Die Roadmap ordnet jedes v1-Requirement genau einer Phase zu.
 ---
 *Requirements defined: 2026-07-25*
 *Last updated: 2026-07-25 after roadmap creation*
+
+## v0.8.7 Requirements — Sentinel Authority in API
+
+**Scope:** v1 milestone (0.8.6-beta.2) is complete and live-verified. This
+milestone makes the "unused/sentinel" classification data-driven and
+device-specific by moving it into `idm-heatpump-api`.
+
+### Sentinel Authority
+
+- [ ] **SENT-01**: `idm-heatpump-api` deklariert pro `RegisterDef` ein optionales
+  `sentinel_values`-Feld (typisiert) und befüllt es für alle heute per Heuristik
+  behandelten Fälle (FLOAT `-1.0`, UCHAR `255`, UINT16 `65535` sowie
+  dokumentierte Sonderwerte); API-Tests abgedeckt.
+- [ ] **SENT-02**: Die Integration entscheidet „Register unbenutzt" über die
+  API-deklarierten `sentinel_values` (`coordinator.is_register_unused`); die
+  numerische Heuristik bleibt nur noch Fallback für nicht-deklarierte Register.
+- [ ] **SENT-03**: Schreibbare Register bleiben auch mit deklariertem Sentinel
+  Schreibziel (#172 bleibt erhalten); read-only Sensoren nicht vorhandener
+  Hardware werden weiterhin ausgeblendet (keine `hide_unused`-Regression).
+- [ ] **SENT-04**: Cross-Repo- und Release-Vertragstests pinnen die Integration
+  auf die API-Version mit `sentinel_values`; pytest/mypy/ruff grün;
+  reproduzierbares 0.8.7-Release.

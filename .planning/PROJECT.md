@@ -148,3 +148,35 @@ Dieses Dokument entwickelt sich an Phasen- und Meilensteinübergängen weiter.
 
 ---
 *Last updated: 2026-07-25 after GSD brownfield initialization*
+
+## Milestone 0.8.7 — Sentinel Authority in API (2026-07-26, planned)
+
+**Status:** v1 milestone (Reliability Bugfixes, 0.8.6-beta.2) complete and
+live-verified; #170/#171/#172 closed. The v1 "Active" requirements above are
+therefore considered **Validated**.
+
+**Goal (0.8.7):** Move the "unused/sentinel" classification authority from the
+integration's numeric heuristic into `idm-heatpump-api` as declared
+`sentinel_values` per `RegisterDef`, so the filter becomes data-driven and
+device-specific instead of relying on `-1`/`255`/`65535` literals.
+
+**Active (0.8.7):**
+- [ ] **SENT-01:** `idm-heatpump-api` declares an optional `sentinel_values`
+  field on `RegisterDef` and populates it across the register catalog for all
+  cases currently handled by the integration's heuristic (FLOAT `-1.0`, UCHAR
+  `255`, UINT16 `65535`, plus documented special sentinels); covered by tests.
+- [ ] **SENT-02:** The integration resolves "register unused" from the
+  API-declared `sentinel_values` (`coordinator.is_register_unused`); the numeric
+  heuristic remains only as a fallback for registers without a declaration.
+- [ ] **SENT-03:** Writable registers stay callable write targets under a
+  declared sentinel (#172 behaviour preserved); read-only sensors of absent
+  hardware keep being hidden (no `hide_unused` regression).
+- [ ] **SENT-04:** Cross-repository + release-contract tests pin the
+  integration to the exact API version that provides `sentinel_values`;
+  pytest/mypy/ruff green; reproducible 0.8.7 release.
+
+**Out of scope (→ backlog):** 4108 standby decode; `hide_unused_registers`
+simplification; issues #44/#135/#148/#158.
+
+---
+*Last updated: 2026-07-26 — v1 milestone complete (0.8.6-beta.2); 0.8.7 milestone planned.*
