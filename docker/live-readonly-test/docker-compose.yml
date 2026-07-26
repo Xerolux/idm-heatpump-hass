@@ -1,0 +1,139 @@
+# =============================================================================
+# IDM Heatpump — local, READ-ONLY Docker test environment.
+#
+# All traffic to the real heat pump is forced through two read-only proxies:
+#   - modbus-proxy: allows only FC01-04 (reads); blocks every write FC.
+#   - web-proxy:    allows GET/HEAD + the three login POST paths only.
+#
+# Any blocked write is logged to ./logs/<proxy>/*_blocked_writes.jsonl and
+# counted in the health endpoint, so the final report can PROVE that no write
+# ever reached the heat pump.
+#
+# Home Assistant runs the LOCAL integration (mounted read-only from
+# ../custom_components/idm_heatpump) on top of the LOCAL idm-heatpump-api wheel
+# (force-installed in the HA image, so HA never pulls an older PyPI build).
+# =============================================================================
+
+services:
+  modbus-proxy:
+    build:
+      context: ./proxies/modbus-readonly
+    container_name: idm-modbus-ro
+    environment:
+      BACKEND_HOST: ${IDM_HOST:-192.168.178.103}
+      BACKEND_PORT: ${IDM_MODBUS_PORT:-502}
+      LISTEN_HOST: "0.0.0.0"
+      LISTEN_PORT: "5020"
+      LOG_DIR: /var/log/modbus-proxy
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      # Host exposure only for debugging; HA/api-tester use the internal network.
+      - "${MODBUS_PROXY_HOST_PORT:-5020}:5020"
+    volumes:
+      - ./logs/modbus-proxy:/var/log/modbus-proxy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import socket,sys; s=socket.create_connection(('127.0.0.1',5021),3); print(s.recv(200).decode()[:40]); s.close()\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+    restart: unless-stopped
+
+  web-proxy:
+    build:
+      context: ./proxies/web-readonly
+    container_name: idm-web-ro
+    environment:
+      BACKEND_URL: http://${IDM_HOST:-192.168.178.103}:${IDM_WEB_PORT:-80}
+      LISTEN_HOST: "0.0.0.0"
+      # The idm-heatpump-api Nav2.0 web client always uses the default HTTP
+      # port (http://host/path, no explicit port), so the proxy MUST listen on
+      # 80 internally. The host-side debug port is mapped separately below.
+      LISTEN_PORT: "80"
+      # Navigator 10 WebSocket backend (this device is a Nav10). The Nav10
+      # client connects to ws://<web_host>:61220.
+      NAV10_BACKEND_HOST: ${IDM_HOST:-192.168.178.103}
+      NAV10_BACKEND_PORT: "61220"
+      NAV10_LISTEN_PORT: "61220"
+      LOG_DIR: /var/log/web-proxy
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      # Only the HTTP debug port is published to the host. The Nav10 WS port
+      # 61220 stays internal (Windows often reserves 61220 on the host); HA and
+      # api-tester reach it via the docker network as web-proxy:61220.
+      - "${WEB_PROXY_HOST_PORT:-8080}:80"
+    volumes:
+      - ./logs/web-proxy:/var/log/web-proxy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; print(urllib.request.urlopen('http://127.0.0.1:80/__health',timeout=3).status)\" || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 5s
+    restart: unless-stopped
+
+  homeassistant:
+    build:
+      context: ./homeassistant
+      args:
+        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-0.8.5-py3-none-any.whl}
+    container_name: idm-ha-test
+    depends_on:
+      modbus-proxy:
+        condition: service_healthy
+      web-proxy:
+        condition: service_healthy
+    environment:
+      TZ: Europe/Berlin
+      # Tell the integration where its read-only proxies are (service names).
+      # These are consumed only by the preseed script, not by HA itself.
+    ports:
+      - "${HA_HOST_PORT:-8123}:8123"
+    volumes:
+      # Persistent HA config (bind-mounted so we can preseed .storage).
+      - ./homeassistant/config:/config
+      # LOCAL integration code, read-only — never a cached/published build.
+      - ../../custom_components/idm_heatpump:/config/custom_components/idm_heatpump:ro
+      # Capture HA logs for the report (also visible via `docker logs`).
+      - ./logs/homeassistant:/config/logs
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8123/api/',timeout=5)\" || exit 1"]
+      interval: 15s
+      timeout: 8s
+      retries: 40
+      start_period: 60s
+    restart: unless-stopped
+
+  api-tester:
+    build:
+      context: ./api-tester
+      args:
+        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-0.8.5-py3-none-any.whl}
+    container_name: idm-api-tester
+    depends_on:
+      modbus-proxy:
+        condition: service_healthy
+      web-proxy:
+        condition: service_healthy
+    environment:
+      MODBUS_HOST: modbus-proxy
+      MODBUS_PORT: "5020"
+      WEB_HOST: web-proxy
+      WEB_PORT: "80"
+      IDM_HOST: ${IDM_HOST:-192.168.178.103}
+      IDM_WEB_PIN: ${IDM_WEB_PIN:-}
+      HA_URL: http://homeassistant:8123
+      HA_USERNAME: ${HA_USERNAME:-idmadmin}
+      HA_PASSWORD: ${HA_PASSWORD:-ChangeMeTestOnly_2026!}
+      HA_ENTRY_ID: 01JULY2026-IDM-TEST-000000000001
+      # Run modes: api-tests | bootstrap | entities | services | reload | stability | idle
+      MODE: ${API_TESTER_MODE:-api-tests}
+      STABILITY_MINUTES: ${STABILITY_MINUTES:-60}
+      RELOAD_ROUNDS: ${RELOAD_ROUNDS:-3}
+    volumes:
+      - ./results:/results
+    # The local idm-heatpump-api wheel is baked into the image (see
+    # api-tester/Dockerfile), so `import idm_heatpump` resolves to the exact
+    # local code under test — same version HA uses.
+    command: ["python", "-u", "/app/run_api_tests.py"]
+    restart: "no"

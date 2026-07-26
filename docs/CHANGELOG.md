@@ -13,6 +13,57 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.6-beta.2] - 2026-07-26
+
+Beta 2 of the 0.8.6 line. Verified end-to-end against a live Navigator 10
+controller (firmware `NAV10_20.24-880-g265e09c4a`) in a strict read-only Docker
+test bench (read-only Modbus, HTTP and Navigator-10 WebSocket proxies). No
+write ever reached the heat pump during the test.
+
+> **Compatibility:** API pin updated to `idm-heatpump-api[web]==0.8.6`.
+> Entity unique IDs, entity IDs, register addresses, and write paths are unchanged.
+
+### Fixed
+
+- **Navigator 10 in standby without a booster is no longer misclassified as
+  Navigator 2.0 (#170, live regression found during this test).** A genuine
+  Navigator 10 whose `power_limit_hp` (4108) is inactive in standby and which
+  has no booster configured (`booster_fault` 4001 = 255) was misdetected as
+  Navigator 2.0 after the 0.8.5 booster-sentinel tightening, so the wrong
+  register map and the wrong (HTTP) web client were selected. `idm-heatpump-api`
+  0.8.6 adds a strict tertiary indicator: the Navigator-10-only power-measurement
+  registers `power_consumption_hp` (4122) and `thermal_power_flow_sensor` (4126)
+  must BOTH respond. Navigator 2.0 controllers (incl. IDM Terra SWM) reject
+  these with Modbus Exception 2, so the discriminator stays safe. On the test
+  device Modbus now reports `Navigator 10` and agrees with the web interface
+  (no model conflict). The PV-surplus, PV-production and household-consumption
+  setpoints from #170 are present and addressable.
+
+### Verified live (read-only)
+
+- **#170 model conflict:** Modbus and the Navigator 10 web interface now agree
+  on `Navigator 10` (previously Modbus misreported `Navigator 2.0`). The
+  structured `model_conflict` diagnostics block reports `conflict: false`.
+- **#171 service lifecycle:** all six domain services
+  (`set_external_climate`, `set_system_mode`, `acknowledge_errors`,
+  `write_register`, `start_dhw_boost`, `cancel_dhw_boost`) remained registered
+  across three consecutive config-entry reloads (REST
+  `/api/config/config_entries/entry/{id}/reload`).
+- **#172 writable sentinel targets:** with `hide_unused_registers: true` the
+  writable GLT/PV entities `hc_a_ext_room_temp`, `ext_humidity` and
+  `ext_outdoor_temp` (which read the `-1.0` sentinel) stay created and
+  available, reporting `unknown` state instead of going `unavailable`.
+- **Read-only enforcement:** all Modbus and Navigator 10 WebSocket traffic was
+  routed through read-only proxies. The only blocked write attempts recorded
+  were the deliberate synthetic proxy-block verifications (Modbus FC06 to the
+  outdoor-temperature register; Nav10 `setting/save`); zero write attempts from
+  Home Assistant or the real test workflow reached the heat pump.
+
+### Changed
+
+- **API pin bump to `idm-heatpump-api[web]==0.8.6`** for the upstream
+  Navigator 10 standby-detection fix (#170).
+
 ## [0.8.6-beta.1] - 2026-07-25
 
 Beta 1 of the 0.8.6 line: fixes the three issues reported on 2026-07-25

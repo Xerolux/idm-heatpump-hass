@@ -1,0 +1,19 @@
+# Minimal Home Assistant configuration for the read-only IDM test bench.
+# default_config loads frontend, api, websocket_api, config, scene, logbook,
+# history, etc. The IDM integration itself is loaded from a preseeded config
+# entry in .storage/core.config_entries (generated from .env by build.ps1).
+default_config:
+
+api:
+websocket_api:
+
+# Persist a healthy amount of history for the stability test evaluation.
+recorder:
+  purge_keep_days: 2
+  commit_interval: 5
+
+logger:
+  default: info
+  logs:
+    custom_components.idm_heatpump: debug
+    idm_heatpump: info

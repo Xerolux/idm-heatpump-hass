@@ -22,6 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Writable Sentinel Availability** - Preserve safe writable targets without exposing sentinel values as valid state.
 - [x] **Phase 3: Model Conflict Diagnosis and Correction** - Classify #170 after the GLT fix and correct model selection only from reproducible evidence.
 - [x] **Phase 4: Integrated Validation and Release** - Prove the fixes together and publish bounded, reproducible release evidence.
+- [x] **Phase 5: Navigator 10 Live Validation & beta.2** - Field-verify on a live Nav10, close MODEL-03/04, fix the detection regression (API 0.8.6), release 0.8.6-beta.2.
 
 ## Phase Details
 
@@ -100,20 +101,35 @@ Plans:
 
 - [x] 04-02-PLAN.md — Changelog + GitHub issue documentation written; release gate satisfied for a bounded release (#170 model part explicitly open); actual version bump/tag/ZIP pending explicit release instruction.
 
+### Phase 5: Navigator 10 Live Validation & beta.2
+**Goal**: Close the Phase-3 MODEL-03/04 checkpoint with field evidence, correct the detection defect found during validation, and produce `0.8.6-beta.2`.
+**Depends on**: Phase 4
+**Requirements**: MODEL-03, MODEL-04, REL-01, REL-02
+**Success Criteria** (what must be TRUE):
+  1. A strictly read-only Docker bench runs the local integration + local API against a real heat pump and proves (via proxy logs) that no write reached the device.
+  2. The #170 model conflict is field-verified and the root defect is corrected in `idm-heatpump-api` with regression tests; Modbus and web agree on the family.
+  3. A bounded `0.8.6-beta.2` release (ZIP + SHA + evidence) is produced locally.
+**Plans**: 1 plan
+
+Plans:
+
+- [x] 05-01-PLAN.md — Read-only bench + isolated/HA probes; Nav10 detection fix (tertiary 4122/4126 indicator) in API 0.8.6; 4 regression tests; 0.8.6-beta.2 artifacts.
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 → 2 → 3 → 4
+Phases execute in numeric order: 1 → 2 → 3 → 4 → 5
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Service Lifecycle | 1/1 | Complete | 2026-07-25 |
 | 2. Writable Sentinel Availability | 2/2 | Complete | 2026-07-25 |
-| 3. Model Conflict Diagnosis and Correction | 2/2 | Complete* | 2026-07-25 |
-| 4. Integrated Validation and Release | 2/2 | Complete** | 2026-07-25 |
+| 3. Model Conflict Diagnosis and Correction | 2/2 | Complete | 2026-07-25 |
+| 4. Integrated Validation and Release | 2/2 | Complete | 2026-07-25 |
+| 5. Navigator 10 Live Validation & beta.2 | 1/1 | Complete | 2026-07-26 |
 
-\* MODEL-03/04 remain a documented, evidence-gated open checkpoint (no field evidence available).
-\** Automated gate + changelog + release decision done; actual tag/ZIP publish pending explicit instruction.
+MODEL-03/04 closed (Phase 5 field evidence + `idm-heatpump-api` 0.8.6). `0.8.6-beta.2`
+prepared locally (not pushed, no PR, no GitHub release).
 
 ---
 *Roadmap created: 2026-07-25*

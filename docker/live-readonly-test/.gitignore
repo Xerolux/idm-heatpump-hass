@@ -1,0 +1,23 @@
+# Secrets — never commit.
+.env
+
+# Generated / runtime artifacts.
+logs/
+results/
+# HA config is a bind-mounted runtime volume (db, logs, blueprints, .storage).
+# Only the seed configuration.yaml is versioned.
+homeassistant/config/*
+!homeassistant/config/configuration.yaml
+homeassistant/config/.storage/
+homeassistant/config/deps/
+homeassistant/config/tts/
+homeassistant/config/led/
+homeassistant/config/image/
+homeassistant/config/custom_components/
+homeassistant/config/__pycache__/
+homeassistant/wheels/*.whl
+api-tester/wheels/*.whl
+release/
+
+# Reports are generated into results/, which is ignored above. If you want to
+# pin a specific report into git, place it under docs/ instead.
