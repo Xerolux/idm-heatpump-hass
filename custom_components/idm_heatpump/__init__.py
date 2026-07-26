@@ -44,6 +44,7 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
+    CONF_EEPROM_WRITE_INTERVAL,
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
@@ -65,6 +66,7 @@ from .const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     DEFAULT_DEVICE_HIERARCHY,
+    DEFAULT_EEPROM_WRITE_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_MODBUS_MAX_RETRIES,
@@ -548,6 +550,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     )
     modbus_timeout = float(entry.options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT))
     modbus_max_retries = int(entry.options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES))
+    eeprom_write_interval = float(entry.options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL))
 
     if web_pin_configured(web_pin):
         ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
@@ -589,6 +592,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         timeout=modbus_timeout,
         max_retries=modbus_max_retries,
     )
+    # Apply the per-entry EEPROM write interval (power-user override; default
+    # stays 60s to protect the EEPROM's limited write cycles).
+    try:
+        client.eeprom_write_interval = eeprom_write_interval
+    except (AttributeError, ValueError) as err:  # older API without the setter
+        _LOGGER.debug("Could not apply eeprom_write_interval=%.1f: %s", eeprom_write_interval, err)
 
     try:
         await client.connect()

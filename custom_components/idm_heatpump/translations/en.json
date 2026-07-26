@@ -126,11 +126,13 @@
             "description": "The defaults are recommended. Change these only for slow or unreliable networks.",
             "data": {
               "modbus_timeout": "Response timeout",
-              "modbus_retries": "Retries"
+              "modbus_retries": "Retries",
+              "eeprom_write_interval": "EEPROM write protection (seconds)"
             },
             "data_description": {
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
-              "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails."
+              "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
+              "eeprom_write_interval": "Minimum time between two writes to the same EEPROM register (e.g. heating/cooling limit). Default 60s protects the EEPROM's limited write cycles. Lowering it is AT YOUR OWN RISK: it accelerates EEPROM wear. Lower only when you accept that risk."
             }
           }
         }
@@ -282,11 +284,13 @@
             "description": "The defaults are recommended. Change these only for slow or unreliable networks.",
             "data": {
               "modbus_timeout": "Response timeout",
-              "modbus_retries": "Retries"
+              "modbus_retries": "Retries",
+              "eeprom_write_interval": "EEPROM write protection (seconds)"
             },
             "data_description": {
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
-              "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails."
+              "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
+              "eeprom_write_interval": "Minimum time between two writes to the same EEPROM register (e.g. heating/cooling limit). Default 60s protects the EEPROM's limited write cycles. Lowering it is AT YOUR OWN RISK: it accelerates EEPROM wear. Lower only when you accept that risk."
             }
           }
         }

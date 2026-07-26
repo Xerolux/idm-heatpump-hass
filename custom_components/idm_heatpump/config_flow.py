@@ -45,6 +45,7 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
+    CONF_EEPROM_WRITE_INTERVAL,
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
@@ -69,6 +70,7 @@ from .const import (
     CONF_ZONE_ROOMS,
     CONFIG_FLOW_TCP_TIMEOUT,
     DEFAULT_DEVICE_HIERARCHY,
+    DEFAULT_EEPROM_WRITE_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_MODBUS_MAX_RETRIES,
@@ -85,10 +87,12 @@ from .const import (
     DEFAULT_WEB_SCAN_INTERVAL,
     DOMAIN,
     HEATING_CIRCUITS,
+    MAX_EEPROM_WRITE_INTERVAL,
     MAX_MODBUS_MAX_RETRIES,
     MAX_MODBUS_TIMEOUT,
     MAX_ROOM_COUNT,
     MAX_ZONE_COUNT,
+    MIN_EEPROM_WRITE_INTERVAL,
     MIN_MODBUS_MAX_RETRIES,
     MIN_MODBUS_TIMEOUT,
     MODEL_OVERRIDE_OPTIONS,
@@ -411,6 +415,19 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 max=MAX_MODBUS_MAX_RETRIES,
                                 step=1,
                                 mode=NumberSelectorMode.SLIDER,
+                            )
+                        ),
+                        vol.Required(
+                            CONF_EEPROM_WRITE_INTERVAL,
+                            default=float(options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL)),
+                            description={"advanced": True},
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_EEPROM_WRITE_INTERVAL,
+                                max=MAX_EEPROM_WRITE_INTERVAL,
+                                step=5.0,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="s",
                             )
                         ),
                     }
@@ -1063,6 +1080,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                     CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
                     CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
                     CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
+                    CONF_EEPROM_WRITE_INTERVAL: DEFAULT_EEPROM_WRITE_INTERVAL,
                 }
             self._options.update(
                 {

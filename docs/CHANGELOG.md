@@ -13,6 +13,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-07-26
+
+### Added
+
+- **Konfigurierbares EEPROM-Schreib-Cooldown** (erweiterte Option
+  `eeprom_write_interval`, Standard 60s, einstellbar 5–600s) im Abschnitt
+  **Erweiterte Modbus-Einstellungen** des Optionen-Flows. Schreibvorgänge auf
+  dasselbe EEPROM-Register (z. B. Heiz-/Kühlgrenze) innerhalb des Intervalls
+  werden geblockt, um die begrenzten EEPROM-Schreibzyklen zu schonen. Ein Senken
+  des Wertes ist **ausdrücklich auf eigenes Risiko** (beschleunigter
+  EEPROM-Verschleiß) – entsprechend in der UI und in der Hilfe ausgewiesen.
+  Einstellung: *Einstellungen → Geräte & Dienste → IDM Heatpump → Konfigurieren
+  → Erweiterte Modbus-Einstellungen*. (#158)
+
+> **Compatibility:** API pin auf `idm-heatpump-api[web]==0.9.1`.
+
 ## [0.9.0] - 2026-07-26
 
 Erste 0.9.x-Stable. Bündelt die 0.8.6-beta- und 0.8.7-Arbeiten (Sentinel-

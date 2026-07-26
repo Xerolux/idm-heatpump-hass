@@ -89,6 +89,15 @@ MAX_MODBUS_TIMEOUT: float = 30.0
 MIN_MODBUS_MAX_RETRIES: int = 1
 MAX_MODBUS_MAX_RETRIES: int = 5
 
+# EEPROM-Schreibschutz: minimale Sekunden zwischen zwei Schreibvorgängen auf
+# dasselbe EEPROM-Register. Default 60s schont die begrenzten Schreibzyklen des
+# EEPROMs. Power-User dürfen den Wert senken – ausdrücklich auf eigenes Risiko
+# (beschleunigter EEPROM-Verschleiß).
+CONF_EEPROM_WRITE_INTERVAL: str = "eeprom_write_interval"
+DEFAULT_EEPROM_WRITE_INTERVAL: float = 60.0
+MIN_EEPROM_WRITE_INTERVAL: float = 5.0
+MAX_EEPROM_WRITE_INTERVAL: float = 600.0
+
 # Service-spezifische Register-Adressen (werden in services.py verwendet)
 REGISTER_ADDRESS_SYSTEM_MODE: int = 1005
 REGISTER_ADDRESS_ERROR_ACKNOWLEDGE: int = 1999
