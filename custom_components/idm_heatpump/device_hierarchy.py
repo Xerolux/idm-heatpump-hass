@@ -152,7 +152,7 @@ def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> N
     """
     entry = coordinator.config_entry
     dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id,
+        config_entry_id=entry.entry_id,  # type: ignore[union-attr]
         identifiers={main_device_identifier(coordinator)},
     )
 
