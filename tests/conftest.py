@@ -528,7 +528,7 @@ def _stub_homeassistant() -> None:
         def __init__(self):
             self.devices = {}
 
-        def async_get_or_create_device(self, **kwargs):
+        def async_get_or_create(self, **kwargs):
             # Minimal stub mirroring HA's registry: returns a lightweight object
             # keyed by the config entry id, so precreate_main_device works in tests.
             class _DeviceEntry:

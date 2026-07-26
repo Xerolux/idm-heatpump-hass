@@ -151,7 +151,7 @@ def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> N
     are enriched later when the first main-device entity is added.
     """
     entry = coordinator.config_entry
-    dr.async_get(hass).async_get_or_create_device(
+    dr.async_get(hass).async_get_or_create(
         config_entry_id=entry.entry_id,
         identifiers={main_device_identifier(coordinator)},
     )
