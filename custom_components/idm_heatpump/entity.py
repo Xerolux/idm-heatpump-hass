@@ -82,9 +82,7 @@ def should_add_entity(
     if as_writable_control and getattr(register, "writable", False):
         # Unsupported (Illegal Data Address) registers are never exposed, even
         # as writable controls; a present, supported writable target stays.
-        if register.name in getattr(coordinator, "unsupported_registers", ()):
-            return False
-        return True
+        return register.name not in getattr(coordinator, "unsupported_registers", ())
     return not coordinator.is_register_unused(register.name, data.get(register.name))
 
 
