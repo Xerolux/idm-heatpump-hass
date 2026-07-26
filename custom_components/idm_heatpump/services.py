@@ -30,8 +30,6 @@ from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
-_SERVICES = ["set_system_mode", "acknowledge_errors", "write_register", "set_external_climate"]
-
 
 def _encoded_registers_from_safety_result(safety_result: object) -> list[JsonValueType] | None:
     """Extract dry-run encoded registers from idm-heatpump-api write-safety results."""
@@ -72,15 +70,6 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         "set_external_climate",
         partial(_handle_set_external_climate, hass),  # type: ignore[arg-type]
     )
-
-
-async def async_unload_services(hass: HomeAssistant) -> None:
-    """Remove services when no more IDM entries are loaded."""
-    loaded = [entry for entry in hass.config_entries.async_entries(DOMAIN) if entry.state == ConfigEntryState.LOADED]
-    if len(loaded) > 1:
-        return
-    for service in _SERVICES:
-        hass.services.async_remove(DOMAIN, service)
 
 
 async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordinator:

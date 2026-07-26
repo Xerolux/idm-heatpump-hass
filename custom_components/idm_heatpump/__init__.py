@@ -949,9 +949,6 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
             await entry.runtime_data.client.disconnect()
         except Exception:
             _LOGGER.debug("Error disconnecting client for %s", entry.title, exc_info=True)
-        from .services import async_unload_services
-
-        await async_unload_services(hass)
     return unload_ok
 
 

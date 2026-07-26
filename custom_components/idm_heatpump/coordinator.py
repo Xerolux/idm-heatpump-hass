@@ -341,6 +341,33 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return self._web_variant
 
     @property
+    def model_conflict_summary(self) -> dict[str, Any]:
+        """Read-only summary of model detection sources for diagnostics (#170).
+
+        Derives only from existing detection fields; performs no I/O, model
+        selection, or persistence. Used by diagnostics to classify a conflicting
+        model report without exposing private connection data.
+        """
+        from .const import CONF_MODEL_OVERRIDE
+
+        entry = self.config_entry
+        entry_data = getattr(entry, "data", None) if entry is not None else None
+        if not isinstance(entry_data, dict):
+            entry_data = {}
+        stored_version = entry_data.get(CONF_DETECTED_NAVIGATOR_VERSION)
+        modbus_family = navigator_family(self._model_name)
+        stored_family = navigator_family(stored_version) if isinstance(stored_version, str) else None
+        conflict = modbus_family is not None and stored_family is not None and modbus_family != stored_family
+        return {
+            "selected_family": modbus_family,
+            "stored_family": stored_family,
+            "web_variant": self._web_variant,
+            "software_version": self._firmware_version,
+            "manual_override": entry_data.get(CONF_MODEL_OVERRIDE),
+            "conflict": conflict,
+        }
+
+    @property
     def last_web_error(self) -> str | None:
         return self._last_web_error
 

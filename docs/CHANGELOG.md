@@ -13,6 +13,51 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.8.6-beta.1] - 2026-07-25
+
+Beta 1 of the 0.8.6 line: fixes the three issues reported on 2026-07-25
+(#170, #171, #172) and pulls the upstream model-detection fix for #170.
+
+> **Compatibility:** API pin updated to `idm-heatpump-api[web]==0.8.5`.
+> Entity unique IDs, entity IDs, register addresses, and write paths are unchanged.
+
+### Fixed
+
+- **Domain services survive entry reload (#171).** `set_external_climate`,
+  `set_system_mode`, `acknowledge_errors`, and `write_register` are no longer
+  removed when a single config entry is unloaded or reloaded; they remain
+  registered and callable without a Home Assistant core restart. DHW-Boost
+  services keep their separate entry-scoped lifecycle. Workaround previously
+  required: restart Home Assistant after an options change. Verified by
+  lifecycle-invariant regression tests.
+- **Writable GLT/PV targets stay addressable under a sentinel (#172, setpoint
+  part of #170).** When `hide_unused_registers` is enabled, writable Number,
+  Select, and Switch entities whose current value is an unset sentinel
+  (`-1.0`, `255`, `65535`, `-32768`) remain created and available as write
+  targets, reporting unknown state instead of a fabricated value. Read-only
+  sensors, dual-exposed sensor views, and genuinely absent or Illegal-Data-Address
+  registers keep the existing filter. The workaround
+  (`hide_unused_registers: false`) is no longer needed for this defect. Verified
+  by setup, runtime, reload and optimistic-write regression tests.
+- **Model detection no longer misclassifies Navigator 2.0 as Navigator 10 (#170
+  model part).** `idm-heatpump-api` 0.8.5 validates the `booster_fault` register
+  (4001): a `0xFFFF`/255 "not configured" sentinel is no longer treated as a
+  Navigator 10 signal, so a Navigator 2.0 that answers 4001 with a sentinel is
+  correctly classified. Diagnostics also emit a structured, redacted
+  `model_conflict` block (selected/stored Navigator family, web variant,
+  firmware evidence, manual override, conflict flag) and redact the
+  myIDM/serial identifier. The missing PV-surplus, PV-production and
+  household-consumption setpoints from #170 are restored via the #172 fix.
+
+### Changed
+
+- **API pin bump to `idm-heatpump-api[web]==0.8.5`** for the upstream Navigator
+  2.0 model-detection fix (#170). A genuine Navigator 10 **without** a
+  configured booster (4001 = 255) now relies on the primary 4108 power-limit
+  indicator or the web-firmware reconciliation instead of the sentinel-only
+  4001 fallback; the manual model override remains available as a final
+  escape hatch.
+
 ## [0.8.5] - 2026-07-23
 
 First stable release of the 0.8.5 line. It consolidates the eight beta

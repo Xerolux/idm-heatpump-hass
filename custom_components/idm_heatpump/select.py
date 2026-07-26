@@ -30,12 +30,15 @@ async def async_setup_entry(
     entities = [
         IdmSelect(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.select_descriptions)
-        if should_add_entity(coordinator, desc_info["register"]) and desc_info["register"].enum_options
+        if should_add_entity(coordinator, desc_info["register"], as_writable_control=True)
+        and desc_info["register"].enum_options
     ]
     async_add_entities(entities)
 
 
 class IdmSelect(IdmEntity, SelectEntity):
+    _writable_control = True
+
     _enum_slug_map: dict[int, str] | None
     _enum_slug_reverse: dict[str, int] | None
 
@@ -57,6 +60,8 @@ class IdmSelect(IdmEntity, SelectEntity):
     @property
     def current_option(self) -> str | None:
         if not self.coordinator.data:
+            return None
+        if self.is_writable_control() and self._value_is_sentinel():
             return None
         raw = self.coordinator.data.get(self._register.name)
         if raw is None:

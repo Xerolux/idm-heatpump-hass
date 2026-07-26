@@ -30,6 +30,14 @@ def _make_hass_with_coordinator(mock_hass, mock_config_entry):
     )
     coord.unused_registers = {"room_9_temperature"}
     coord.unsupported_registers = {"power_limit_hp"}
+    coord.model_conflict_summary = {
+        "selected_family": "navigator_10",
+        "stored_family": "navigator_10",
+        "web_variant": "nav10",
+        "software_version": "2.34",
+        "manual_override": "auto",
+        "conflict": False,
+    }
     coord.sensor_descriptions = [1, 2, 3]
     coord.binary_sensor_descriptions = [1]
     coord.number_descriptions = [1, 2]
@@ -175,3 +183,59 @@ class TestDiagnostics:
         coord.update_interval = None
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
         assert result["data"]["scan_interval"] is None
+
+    async def test_model_conflict_block_present_and_structured(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        block = result["data"]["model_conflict"]
+        assert set(block) == {
+            "selected_family",
+            "stored_family",
+            "web_variant",
+            "software_version",
+            "manual_override",
+            "conflict",
+        }
+        assert block["selected_family"] == "navigator_10"
+        assert block["web_variant"] == "nav10"
+        assert block["manual_override"] == "auto"
+        assert block["conflict"] is False
+
+    async def test_model_conflict_block_reflects_conflict_and_override(self, mock_hass, mock_config_entry):
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.model_conflict_summary = {
+            "selected_family": "navigator_10",
+            "stored_family": "navigator_20",
+            "web_variant": "nav20",
+            "software_version": "NAV10.2",
+            "manual_override": "navigator_10",
+            "conflict": True,
+        }
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        block = result["data"]["model_conflict"]
+        assert block["conflict"] is True
+        assert block["stored_family"] == "navigator_20"
+        assert block["manual_override"] == "navigator_10"
+
+    async def test_model_conflict_block_redacts_private_data(self, mock_hass, mock_config_entry):
+        """No host/PIN/serial/myIDM identifier may appear in diagnostics."""
+        mock_config_entry.as_dict = MagicMock(
+            return_value={
+                "data": {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    "web_host": "192.168.1.101",
+                    "web_pin": "1234",
+                    "myidm_id": "IDM-SECRET-123",
+                    "serial_number": "SN-456",
+                },
+            }
+        )
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        entry_data = result["entry"].get("data", {})
+        assert "host" not in entry_data
+        assert "web_pin" not in entry_data
+        assert "myidm_id" not in entry_data
+        assert "serial_number" not in entry_data

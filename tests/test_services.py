@@ -5,6 +5,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 
+from custom_components.idm_heatpump.const import DOMAIN
 from custom_components.idm_heatpump.services import (
     _encoded_registers_from_safety_result,
     _get_coordinator,
@@ -13,7 +14,6 @@ from custom_components.idm_heatpump.services import (
     _handle_set_system_mode,
     _handle_write_register,
     async_setup_services,
-    async_unload_services,
 )
 
 
@@ -62,41 +62,26 @@ class TestSetupServices:
         mock_hass.services.async_register.assert_not_called()
 
 
-class TestUnloadServices:
-    async def test_removes_services_when_no_loaded_entries(self, mock_hass):
-        from homeassistant.config_entries import ConfigEntryState
+class TestServiceLifecycleInvariants:
+    """Regression coverage for #171: domain services outlive entry unload/reload."""
 
-        # One entry exists but is NOT_LOADED → last loaded entry was just unloaded
-        entry = MagicMock()
-        entry.state = ConfigEntryState.NOT_LOADED
-        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
-        await async_unload_services(mock_hass)
-        assert mock_hass.services.async_remove.call_count == 4
+    async def test_setup_registers_each_service_exactly_once(self, mock_hass):
+        await async_setup_services(mock_hass)
+        registered = {(c.args[0], c.args[1]) for c in mock_hass.services.async_register.call_args_list}
+        assert registered == {
+            (DOMAIN, "set_system_mode"),
+            (DOMAIN, "acknowledge_errors"),
+            (DOMAIN, "write_register"),
+            (DOMAIN, "set_external_climate"),
+        }
 
-    async def test_removes_services_when_empty(self, mock_hass):
-        mock_hass.config_entries.async_entries = MagicMock(return_value=[])
-        await async_unload_services(mock_hass)
-        assert mock_hass.services.async_remove.call_count == 4
-
-    async def test_keeps_services_when_loaded_entries_remain(self, mock_hass):
-        from homeassistant.config_entries import ConfigEntryState
-
-        entry1 = MagicMock()
-        entry1.state = ConfigEntryState.LOADED
-        entry2 = MagicMock()
-        entry2.state = ConfigEntryState.LOADED
-        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry1, entry2])
-        await async_unload_services(mock_hass)
-        mock_hass.services.async_remove.assert_not_called()
-
-    async def test_removes_services_when_only_one_loaded(self, mock_hass):
-        from homeassistant.config_entries import ConfigEntryState
-
-        entry = MagicMock()
-        entry.state = ConfigEntryState.LOADED
-        mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
-        await async_unload_services(mock_hass)
-        assert mock_hass.services.async_remove.call_count == 4
+    async def test_setup_is_idempotent_when_already_registered(self, mock_hass):
+        await async_setup_services(mock_hass)
+        first_count = mock_hass.services.async_register.call_count
+        # A second setup (e.g. after a reload) must not duplicate registrations.
+        mock_hass.services.has_service = MagicMock(return_value=True)
+        await async_setup_services(mock_hass)
+        assert mock_hass.services.async_register.call_count == first_count
 
 
 class TestGetCoordinator:

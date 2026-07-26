@@ -1,10 +1,12 @@
 """Tests for sensor, binary_sensor, number, select, switch platforms."""
 
+import math
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from idm_heatpump import DataType, RegisterDef
 
+from custom_components.idm_heatpump.const import UNUSED_VALUE
 from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
 
 
@@ -30,9 +32,33 @@ def _make_coordinator(data=None, hide_unused=False, last_update_success=True):
     coord.config_entry.entry_id = "test_entry"
     coord.config_entry.title = "IDM"
     coord.async_write_register = AsyncMock()
-    # Real coordinator precomputes this set on each poll; IdmEntity.available
-    # consumes it directly. Default to empty so entities are available.
-    coord.unused_registers = set()
+    coord.unsupported_registers = set()
+
+    # Mirror the real coordinator's sentinel rules so platform tests exercise
+    # realistic unused detection (consistent with test_entity.py's mock).
+    def _is_unused(register_name, value):
+        if not hide_unused:
+            return False
+        if value is None:
+            return True
+        if isinstance(value, (int, float)):
+            if abs(value - UNUSED_VALUE) < 0.01:
+                return True
+            if value in (255, 65535, -32768):
+                return True
+            if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
+                return True
+        return False
+
+    coord.is_register_unused = MagicMock(side_effect=_is_unused)
+    # The real coordinator precomputes this set on each poll; IdmEntity.available
+    # consumes it directly.
+    unused_set: set = set()
+    if isinstance(coord.data, dict):
+        for register_name, value in coord.data.items():
+            if _is_unused(register_name, value):
+                unused_set.add(register_name)
+    coord.unused_registers = unused_set
     return coord
 
 
@@ -955,11 +981,30 @@ class TestNumberAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
 
-    async def test_skips_unused_entities_when_hide_unused_enabled(self):
+    async def test_creates_writable_entity_under_sentinel_when_hide_unused_enabled(self):
+        # #172: a writable target present in the poll dataset is still created
+        # when hide_unused is enabled, even if its value is an unset sentinel.
         from custom_components.idm_heatpump.number import async_setup_entry
 
         coord = _make_coordinator(data={"dhw_target": 65535}, hide_unused=True)
         coord.is_register_unused = MagicMock(return_value=True)
+        coord.number_descriptions = [
+            {"register": _make_register("dhw_target", writable=True), "description": _make_desc("dhw_target")},
+        ]
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert len(added) == 1
+
+    async def test_skips_absent_register_when_hide_unused_enabled(self):
+        # A writable register missing from a non-empty poll dataset is NOT created.
+        from custom_components.idm_heatpump.number import async_setup_entry
+
+        coord = _make_coordinator(data={"other_register": 1}, hide_unused=True)
         coord.number_descriptions = [
             {"register": _make_register("dhw_target", writable=True), "description": _make_desc("dhw_target")},
         ]
@@ -1302,7 +1347,9 @@ class TestSwitchAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 1
 
-    async def test_skips_unused_entities_when_hide_unused_enabled(self):
+    async def test_creates_writable_entity_under_sentinel_when_hide_unused_enabled(self):
+        # #172: a writable switch present in the poll dataset is still created
+        # when hide_unused is enabled, even if its value is an unset sentinel (255).
         from custom_components.idm_heatpump.switch import async_setup_entry
 
         coord = _make_coordinator(data={"glt_heating": 255}, hide_unused=True)
@@ -1317,7 +1364,7 @@ class TestSwitchAsyncSetupEntry:
         added = []
         async_add = MagicMock(side_effect=lambda e: added.extend(e))
         await async_setup_entry(MagicMock(), entry, async_add)
-        assert added == []
+        assert len(added) == 1
 
     async def test_sorts_entities_into_functional_blocks(self):
         from custom_components.idm_heatpump.switch import async_setup_entry
@@ -1413,3 +1460,119 @@ class TestTechnicianCodes:
         # hours=00 -> hh_last=0, hh_first=0
         assert result["level_2"][0] == "0"
         assert result["level_2"][1] == "0"
+
+
+# ---------------------------------------------------------------------------
+# Writable control sentinel state (#172)
+# ---------------------------------------------------------------------------
+
+
+class TestWritableControlSentinelState:
+    """A writable control reports unknown (None) state under a sentinel and stays available."""
+
+    def test_number_native_value_none_under_sentinel_and_available(self):
+        from custom_components.idm_heatpump.number import IdmNumber
+
+        coord = _make_coordinator(data={"dhw_target": 65535}, hide_unused=True)
+        coord.is_register_unused = MagicMock(return_value=True)
+        coord.unused_registers = {"dhw_target"}
+        reg = _make_register("dhw_target", writable=True)
+        num = IdmNumber(coord, reg, _make_desc("dhw_target"))
+        assert num.is_writable_control() is True
+        assert num.native_value is None
+        assert num.available is True
+
+    def test_switch_is_on_none_under_sentinel_255_and_available(self):
+        from custom_components.idm_heatpump.switch import IdmSwitch
+
+        coord = _make_coordinator(data={"glt_heating": 255}, hide_unused=True)
+        coord.is_register_unused = MagicMock(return_value=True)
+        coord.unused_registers = {"glt_heating"}
+        reg = _make_register("glt_heating", writable=True)
+        sw = IdmSwitch(coord, reg, _make_desc("glt_heating"))
+        assert sw.is_on is None
+        assert sw.available is True
+
+    def test_select_current_option_none_under_sentinel(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        enum_opts = {0: "Standby", 1: "Automatic"}
+        coord = _make_coordinator(data={"system_mode": 65535}, hide_unused=True)
+        coord.is_register_unused = MagicMock(return_value=True)
+        coord.unused_registers = {"system_mode"}
+        reg = _make_register("system_mode", writable=True, enum_options=enum_opts)
+        sel = IdmSelect(coord, reg, _make_desc("system_mode"))
+        assert sel.current_option is None
+
+    def test_number_shows_real_value_when_not_sentinel(self):
+        from custom_components.idm_heatpump.number import IdmNumber
+
+        coord = _make_coordinator(data={"dhw_target": 48.0}, hide_unused=True)
+        reg = _make_register("dhw_target", writable=True)
+        num = IdmNumber(coord, reg, _make_desc("dhw_target"))
+        assert num.native_value == 48.0
+
+
+class TestClassifySetpoints170:
+    """MODEL-01: separates #172-resolved setpoints from a genuine model-exclusion defect."""
+
+    async def test_supported_setpoint_created_under_sentinel(self):
+        # The #170 setpoints are writable; when model-supported (present in the
+        # poll dataset), the #172 fix keeps them as addressable write targets.
+        from custom_components.idm_heatpump.number import async_setup_entry
+
+        coord = _make_coordinator(data={"pv_surplus": -1.0}, hide_unused=True)
+        coord.is_register_unused = MagicMock(return_value=True)
+        coord.number_descriptions = [
+            {"register": _make_register("pv_surplus", writable=True), "description": _make_desc("pv_surplus")},
+        ]
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert len(added) == 1
+
+    async def test_excluded_setpoint_absent_when_not_in_dataset(self):
+        # When the register is not part of the detected model's poll dataset, the
+        # entity is NOT created — a detection defect stays observable and separable
+        # from the #172 filter behavior.
+        from custom_components.idm_heatpump.number import async_setup_entry
+
+        coord = _make_coordinator(data={"unrelated": 1.0}, hide_unused=True)
+        coord.number_descriptions = [
+            {"register": _make_register("pv_surplus", writable=True), "description": _make_desc("pv_surplus")},
+        ]
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+        assert added == []
+
+
+class TestDualExposedGlt:
+    """#172/GLT-04: a dual-exposed GLT register keeps its writable Number while its read-only Sensor stays hidden under a sentinel."""
+
+    async def test_number_present_and_sensor_hidden_under_same_sentinel(self):
+        from custom_components.idm_heatpump.entity import should_add_entity
+        from custom_components.idm_heatpump.number import async_setup_entry as number_setup
+
+        coord = _make_coordinator(data={"pv_surplus": UNUSED_VALUE}, hide_unused=True)
+        assert coord.is_register_unused("pv_surplus", UNUSED_VALUE) is True
+
+        # Sensor side (read-only): the unchanged default filter must hide the sentinel.
+        sensor_reg = _make_register("pv_surplus", writable=False)
+        assert should_add_entity(coord, sensor_reg) is False
+
+        # Number side (writable "Vorgabe"): still created and gets the dual-exposed "_set" suffix.
+        coord.number_descriptions = [
+            {"register": _make_register("pv_surplus", writable=True), "description": _make_desc("pv_surplus")},
+        ]
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await number_setup(MagicMock(), entry, async_add)
+        assert len(added) == 1
+        assert added[0]._attr_unique_id.endswith("pv_surplus_set")

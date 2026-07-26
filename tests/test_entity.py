@@ -330,3 +330,44 @@ class TestIdmEntityAvailable:
         coord = _make_coordinator(data={"sensor": 42.5}, last_update_success=True, hide_unused=True)
         entity = _make_entity(coordinator=coord, reg=_make_register("sensor"))
         assert entity.available is True
+
+
+def _make_writable_register(name="target", address=200):
+    return RegisterDef(address=address, datatype=DataType.FLOAT, name=name, writable=True)
+
+
+class _WritableControlEntity(IdmEntity):
+    """Test stand-in for number/select/switch entities (_writable_control=True)."""
+
+    _writable_control = True
+
+
+def _make_writable_entity(coordinator, reg):
+    desc = MagicMock()
+    desc.key = reg.name
+    return _WritableControlEntity(coordinator, reg, desc)
+
+
+class TestWritableControlAvailability:
+    """#172: writable controls stay available under a sentinel (reporting unknown state)."""
+
+    def test_available_under_sentinel_minus_one(self):
+        coord = _make_coordinator(data={"target": UNUSED_VALUE}, hide_unused=True)
+        entity = _make_writable_entity(coord, _make_writable_register("target"))
+        assert entity.available is True
+
+    def test_available_under_sentinel_255(self):
+        coord = _make_coordinator(data={"target": 255}, hide_unused=True)
+        entity = _make_writable_entity(coord, _make_writable_register("target"))
+        assert entity.available is True
+
+    def test_unavailable_when_register_absent_from_dataset(self):
+        coord = _make_coordinator(data={"other": 1.0}, hide_unused=True)
+        entity = _make_writable_entity(coord, _make_writable_register("target"))
+        assert entity.available is False
+
+    def test_readonly_entity_still_unavailable_under_sentinel(self):
+        # Non-writable controls keep the existing unused filter unchanged.
+        coord = _make_coordinator(data={"target": UNUSED_VALUE}, hide_unused=True)
+        entity = _make_entity(coordinator=coord, reg=_make_register("target"))
+        assert entity.available is False

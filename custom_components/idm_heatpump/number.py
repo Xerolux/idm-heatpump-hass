@@ -30,12 +30,14 @@ async def async_setup_entry(
     entities = [
         IdmNumber(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.number_descriptions)
-        if should_add_entity(coordinator, desc_info["register"])
+        if should_add_entity(coordinator, desc_info["register"], as_writable_control=True)
     ]
     async_add_entities(entities)
 
 
 class IdmNumber(IdmEntity, NumberEntity):
+    _writable_control = True
+
     def __init__(
         self,
         coordinator: IdmCoordinator,
@@ -51,6 +53,8 @@ class IdmNumber(IdmEntity, NumberEntity):
     @property
     def native_value(self) -> float | None:
         if not self.coordinator.data:
+            return None
+        if self.is_writable_control() and self._value_is_sentinel():
             return None
         value = self.coordinator.data.get(self._register.name)
         return float(value) if value is not None else None
