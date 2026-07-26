@@ -384,9 +384,7 @@ class TestIsRegisterUnused:
 
     def test_battery_soc_negative_one_is_unused(self, mock_hass, mock_config_entry):
         # battery_soc: -1 bedeutet "nicht verfügbar" → weiterhin unused.
-        reg = RegisterDef(
-            address=1658, datatype=DataType.INT16, name="battery_soc", sentinel_values=(-1,)
-        )
+        reg = RegisterDef(address=1658, datatype=DataType.INT16, name="battery_soc", sentinel_values=(-1,))
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, hide_unused=True, registers=[reg])
         assert coord.is_register_unused(reg.name, -1) is True
 
@@ -754,11 +752,11 @@ class TestAsyncUpdateData:
             mock_config_entry,
             client=client,
             hide_unused=True,
-                registers=[
-                    RegisterDef(address=1000, datatype=DataType.FLOAT, name="dead"),
-                    RegisterDef(address=1001, datatype=DataType.FLOAT, name="alive"),
-                ],
-            )
+            registers=[
+                RegisterDef(address=1000, datatype=DataType.FLOAT, name="dead"),
+                RegisterDef(address=1001, datatype=DataType.FLOAT, name="alive"),
+            ],
+        )
 
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
@@ -778,11 +776,11 @@ class TestAsyncUpdateData:
             mock_config_entry,
             client=client,
             hide_unused=True,
-                registers=[
-                    RegisterDef(address=1000, datatype=DataType.FLOAT, name="dead"),
-                    RegisterDef(address=1001, datatype=DataType.FLOAT, name="alive"),
-                ],
-            )
+            registers=[
+                RegisterDef(address=1000, datatype=DataType.FLOAT, name="dead"),
+                RegisterDef(address=1001, datatype=DataType.FLOAT, name="alive"),
+            ],
+        )
 
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
