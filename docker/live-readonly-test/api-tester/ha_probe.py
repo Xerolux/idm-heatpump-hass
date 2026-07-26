@@ -193,6 +193,126 @@ async def _load_token() -> str:
         return fh.read().strip()
 
 
+async def cmd_setup(args: argparse.Namespace) -> int:
+    """Drive the REAL idm_heatpump config flow end-to-end via REST (fresh setup).
+
+    Onboards if needed, then walks the flow user -> options -> create_entry,
+    pointing the integration at the read-only proxies. This exercises the actual
+    setup path (connection test through the proxies, web supplement probe,
+    options) instead of a preseeded config entry.
+    """
+    timeout = aiohttp.ClientTimeout(total=30)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        if not await _wait_ha(session):
+            log("HA did not become ready"); return 2
+        # Obtain a token (onboard fresh, or reuse an existing LLAT).
+        token = ""
+        try:
+            access = await _onboard(session)
+            token = await _create_llat(session, access)
+            _save_raw(os.path.join(RESULTS_DIR, ".ha_token"), token)
+        except Exception as e:
+            log(f"onboard/LLAT failed ({e}); trying existing token")
+            try:
+                token = await _load_token()
+            except Exception:
+                log("no token available"); return 3
+
+        headers = {"Authorization": f"Bearer {token}"}
+        report: dict[str, Any] = {"started_at": now_iso()}
+
+        # 1) Start the flow.
+        async with session.post(
+            f"{HA_URL}/api/config/config_entries/flow",
+            json={"handler": "idm_heatpump"},
+            headers=headers,
+            timeout=aiohttp.ClientTimeout(total=120),
+        ) as r:
+            step = await r.json()
+            report["start"] = {"status": r.status, "type": step.get("type"), "step_id": step.get("step_id")}
+            log(f"flow start: status={r.status} type={step.get('type')} step={step.get('step_id')}")
+            if r.status not in (200, 201) or step.get("type") != "form":
+                report["error"] = f"flow start failed: {step}"; _save(_p("setup_report.json"), report); return 4
+            flow_id = step["flow_id"]
+
+        # 2) User step — point at the read-only proxies. modbus_proxy=True means
+        # "web is on a host separate from Modbus" (here: web-proxy != modbus-proxy),
+        # which is exactly the test-bench topology. (model_override is advanced.)
+        user_data = {
+            "name": "IDM Heatpump",
+            "host": os.environ.get("FLOW_MODBUS_HOST", "modbus-proxy"),
+            "port": int(os.environ.get("FLOW_MODBUS_PORT", "5020")),
+            "slave_id": 1,
+            "web_pin": os.environ.get("IDM_WEB_PIN", ""),
+            "web_host": os.environ.get("FLOW_WEB_HOST", "web-proxy"),
+            "modbus_proxy": True,
+        }
+        step = await _flow_submit(session, flow_id, user_data, headers, label="user")
+        report["after_user"] = {"type": step.get("type"), "step_id": step.get("step_id"), "errors": step.get("errors")}
+        if step.get("type") == "form" and step.get("step_id") == "user" and step.get("errors"):
+            report["error"] = f"user step rejected: {step.get('errors')}"; _save(_p("setup_report.json"), report); return 5
+
+        # 3) Options step (sectioned) if offered.
+        steps = 0
+        while step.get("type") == "form" and steps < 6:
+            sid = step.get("step_id")
+            steps += 1
+            if sid == "options":
+                payload = {
+                    "scan_interval": 30,
+                    "hide_unused_registers": True,
+                    "heating_circuits": ["a"],
+                    "zone_count": 0,
+                    "features": {
+                        "device_hierarchy": True,
+                        "short_cycle_minutes": 15,
+                        "technician_codes": False,
+                        "enable_cascade": False,
+                        "web_extra_data": True,
+                        "web_scan_interval": 300,
+                    },
+                    "room_temperature_forwarding": {
+                        "room_temp_forwarding": False,
+                        "room_temp_forwarding_interval": 300,
+                        "room_temp_forwarding_tolerance": 0.2,
+                    },
+                    "advanced_modbus": {"modbus_timeout": 10.0, "modbus_retries": 3},
+                }
+            elif sid == "zones":
+                payload = {}  # zone_count=0 -> normally skipped
+            elif sid == "modbus_failed":
+                payload = {"action": "retry", "web_pin": user_data["web_pin"]}
+            else:
+                payload = {}
+            step = await _flow_submit(session, flow_id, payload, headers, label=str(sid))
+            report[f"after_{sid}"] = {"type": step.get("type"), "step_id": step.get("step_id"), "errors": step.get("errors")}
+            if step.get("type") == "create_entry":
+                break
+
+        report["final"] = {"type": step.get("type"), "title": step.get("title"), "entry_id": step.get("result", {}).get("entry_id") if isinstance(step.get("result"), dict) else None}
+        _save(_p("setup_report.json"), report)
+        log(f"setup final: type={step.get('type')} title={step.get('title')}")
+        if step.get("type") == "create_entry":
+            # Wait for entities.
+            appeared = await _wait_idm_entities(session, token, timeout=180)
+            report["entities_appeared"] = appeared
+            _save(_p("setup_report.json"), report)
+            return 0 if appeared else 6
+        return 7
+
+
+async def _flow_submit(session: aiohttp.ClientSession, flow_id: str, payload: dict, headers, *, label: str) -> dict:
+    async with session.post(
+        f"{HA_URL}/api/config/config_entries/flow/{flow_id}",
+        json=payload,
+        headers=headers,
+        timeout=aiohttp.ClientTimeout(total=120),
+    ) as r:
+        data = await r.json()
+        log(f"flow[{label}]: status={r.status} type={data.get('type')} step={data.get('step_id')} errors={data.get('errors')}")
+        return data
+
+
 async def cmd_bootstrap(args: argparse.Namespace) -> int:
     report: dict[str, Any] = {"started_at": now_iso(), "ha_url": HA_URL}
     timeout = aiohttp.ClientTimeout(total=20)
@@ -456,6 +576,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="cmd", required=True)
     sub.add_parser("bootstrap")
+    sub.add_parser("setup")
     sub.add_parser("entities")
     sub.add_parser("services")
     p_reload = sub.add_parser("reload"); p_reload.add_argument("--rounds", type=int, default=3)
@@ -463,7 +584,7 @@ def main() -> int:
     args = parser.parse_args()
     try:
         rc = asyncio.run({
-            "bootstrap": cmd_bootstrap, "entities": cmd_entities, "services": cmd_services,
+            "bootstrap": cmd_bootstrap, "setup": cmd_setup, "entities": cmd_entities, "services": cmd_services,
             "reload": cmd_reload, "stability": cmd_stability,
         }[args.cmd](args))
     except KeyboardInterrupt:

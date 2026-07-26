@@ -5,6 +5,7 @@ MODE="${MODE:-api-tests}"
 case "$MODE" in
   api-tests)  exec python -u /app/run_api_tests.py ;;
   bootstrap)  exec python -u /app/ha_probe.py bootstrap ;;
+  setup)      exec python -u /app/ha_probe.py setup ;;
   entities)   exec python -u /app/ha_probe.py entities ;;
   services)   exec python -u /app/ha_probe.py services ;;
   reload)     exec python -u /app/ha_probe.py reload --rounds "${RELOAD_ROUNDS:-3}" ;;
