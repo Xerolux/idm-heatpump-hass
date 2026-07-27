@@ -336,3 +336,211 @@ Wenn Nutzer nach Firmware-Updates fragen, ist die Antwort klar:
 Eine Erweiterung der Integration um eigene Update-Funktionen ist nicht
 geplant und würde den bewussten Einschluss von Cloud-Funktionen erfordern
 (siehe Abschnitt „Bewusst nicht implementiert").
+
+## myIDM Cloud-API (Referenz)
+
+Die myIDM-Cloud (`app.myidm.at`, `www.myidm.at`, `a.myidm.at`) ist der
+kanonische Telemetrie- und Steuerungskanal von IDM. Die Integration
+verwendet ihn **nicht** (siehe „Bewusst nicht implementiert"), aber die
+folgenden Erkenntnisse wurden im Juli 2026 durch ein streng lesendes
+Live-Login (nur `/api/user/login` + `/api/installation/values`, kein
+`/api/installation/command`) verifiziert und hier als Referenz
+dokumentiert, um künftige Recherchen zu erleichtern.
+
+### ⚠️ Legacy-API (Stand 2022–2026 verifiziert)
+
+Die hier dokumentierte API ist die **alte v0-API**, die mindestens seit
+2018 (Tom Beyer, [beyer.app](https://beyer.app/posts/2018-10-home-assistant-integration-heatpump-idm-terra-ml-complete/))
+im Einsatz ist und 2022 vom ioBroker-Adapter
+[`lonestar2001/ioBroker.idm`](https://github.com/lonestar2001/ioBroker.idm)
+vollständig reverse-engineered wurde. Sie ist **Stand Juli 2026 noch
+funktionsfähig**, aber es ist davon auszugehen, dass IDM sie mittelfristig
+zugunsten der neuen OAuth2-API (siehe unten) abschaltet.
+
+### Endpoints (alle unter `https://www.myidm.at`)
+
+| Endpoint | Method | Zweck | Body (form-urlencoded) |
+|---|---|---|---|
+| `/api/user/login` | POST | Login, Session-Token + Anlagenliste | `username=<email>&password=<sha1(password)>` |
+| `/api/installation/values` | POST | Aktuelle Werte einer Anlage lesen | `token=<token>&installation=<id>` |
+| `/api/installation/command` | POST | Modus ändern (System/Circuit) | `token`, `installation`, `command`, `value`, optional `circuit` |
+
+**Wichtig**:
+
+- `User-Agent: IDM App (iOS)` (oder `Android`) muss gesetzt sein, sonst
+  reagiert der Server teils nicht.
+- Passwort wird als **SHA1-Hex-Hash** gesendet (veraltetes Verfahren,
+  kein Salt, kein TLS-Pinning).
+- Das SSL-Zertifikat der Domain hat historisch Kettenprobleme; einige
+  Clients (z. B. ioBroker) deaktivieren deshalb die Verifikation.
+
+### `/api/user/login` – Response-Struktur
+
+```json
+{
+  "token": "<64-stelliger Hex-String>",
+  "installations": [
+    {
+      "id": "64618",
+      "name": "<Anlagenname>",
+      "config": { ... },
+      "nav20": "<bool>",
+      "nav20_online": 1,
+      "navpro": "<bool>",
+      "navpro_online": 0,
+      "online": 0
+    }
+  ]
+}
+```
+
+Die Felder `nav20_online` / `navpro_online` sind Cloud-Connectivity-Marker
+und **keine** wörtliche Navigator-Generation - auf einer bestätigten
+Navigator-10-Anlage steht `nav20_online: 1`, weil die Cloud-Connectivity
+wohl generisch über diesen Channel läuft.
+
+### `/api/installation/values` – Response-Struktur
+
+Top-Level-Keys der JSON-Antwort:
+
+| Key | Typ | Bedeutung |
+|---|---|---|
+| `mode` | string | System-Modus (z. B. `icon_12`, `icon_auto`) |
+| `state` | string | System-Status |
+| `sum_heat` | string | Gesamtwärmemenge, z. B. `"31549.6 kWh"` (mit Einheit!) |
+| `temp_outside` | string | Außentemperatur mit Einheit |
+| `temp_heat` | string | Vorlauf/Rücklauf mit Einheit |
+| `temp_hygienic` | string | Hygienische WW-Temperatur mit Einheit |
+| `temp_water` | string | WW-Temperatur mit Einheit |
+| `temp_water_params` | dict | `{default, max, min, value}` für WW-Sollwert |
+| `error` | string/int | Fehleranzahl |
+| `errors` | list[...] | Fehlerdetails |
+| `circuits` | list[dict] | Heizkreise (siehe unten) |
+| `system_mode_params` | list | verfügbare System-Modi |
+| `circuit_mode_params` | list | verfügbare Circuit-Modi |
+| `solar_mode_params` | list | Solar-Modi (falls unterstützt) |
+| `online`, `nav20_online`, `navpro_online` | int | Connectivity-Status |
+
+Pro Circuit (`circuits[i]`):
+
+```
+info, mode, sensor_hum, state, temp_forerun, temp_forerun_actual,
+temp_params_eco, temp_params_normal, temp_room, temp_room_actual,
+temp_room_value
+```
+
+Werte kommen typischerweise als Strings **mit Einheitssuffix** (z. B.
+`"52.7 °C"`), die vom Client abgeschnitten werden müssen.
+
+### Mode-/State-Icon-Mappings
+
+IDM kodiert Modi und Status als Icon-Klassennamen (HTML/CSS-Strings),
+nicht als numerische Werte. Die folgende Tabelle ist die decoderierte
+Belegung aus ioBroker.idm und Beyer 2018:
+
+**System-Mode (`mode`)**
+
+| Icon-String | Bedeutung |
+|---|---|
+| `icon_12` | Aus |
+| `icon_auto` | Automatik |
+| `icon_3` | Warmwasser / Warmwasser einmalig laden |
+
+**System-State (`state`)**
+
+| Icon-String | Bedeutung |
+|---|---|
+| `icon_12` | Aus |
+| `icon_3` | Heizen für WW |
+| `icon_5` | Heizen |
+
+**Circuit-Mode (`circuits[i].mode`)**
+
+| Icon-String | Bedeutung | numerisch (für `/command`) |
+|---|---|---|
+| `icon_12` | Aus | 0 |
+| `icon_24` | Zeitprogramm | 1 |
+| `icon_21` | Normal | 2 |
+| `icon_11` | Eco | 3 |
+| `icon_10` | Manuell Heizen | 4 |
+| `icon_1` | Manuell Kühlen | 5 |
+
+**System-Mode-Werte für `/api/installation/command` (`command=system_mode`)**
+
+| Wert | Bedeutung |
+|---|---|
+| 0 | Aus |
+| 1 | Automatik |
+| 2 | Warmwasser |
+| 3 | Warmwasser einmalig (Button-Charakter; springt zurück zu Automatik) |
+
+### Datenaktualität und Konsistenz
+
+Die Cloud-Daten sind **30–60 Minuten alt**, weil die Wärmepumpe nur in
+diesem Intervall zur Cloud hochlädt. Ein Plausibilitätsabgleich gegen
+lokale Modbus-Reads (Juli 2026,Navigator-10-Anlage) bestätigt semantische
+Konsistenz:
+
+| Cloud-Wert | Modbus-Quelle | Differenz |
+|---|---|---|
+| `sum_heat: 31549.6 kWh` | `total_heat_energy` (Register 4128) | ~1 kWh (Cloud älter) |
+| `temp_outside: 21.6 °C` | `outdoor_temp` (Register 1000) | typische Tagesganglinie |
+| `temp_hygienic: 59 °C` | `dhw_temp_top` (Register 1014) | ±1 K |
+
+### Was die Legacy-API **nicht** bietet
+
+- ❌ **Firmware-Update-Endpoint** - weder Trigger noch Status-Abfrage
+- ❌ Temperatur-Sollwerte schreiben (nur Modus-Commands)
+- ❌ Solar-, ISC-, Booster-, Kaskaden-, Zonen-Daten (nur Basis-Heizkreis)
+- ❌ Live-Daten (30–60 min Älter als lokal)
+- ❌ Authentifizierung auf modernem Stand (SHA1 ohne Salt, ggf. TLS-Kettenprobleme)
+
+### Neue OAuth2-API (Stand Juli 2026: **nicht dokumentiert**)
+
+Das aktuelle myIDM-Web-Frontend (`app.myidm.at`) verwendet eine
+**moderne OAuth2+PKCE-API** unter `a.myidm.at/api/v1/`. Die alte
+SHA1-API und die neue OAuth2-API existieren nebeneinander, aber die
+OAuth2-API ist **noch nicht reverse-engineered**.
+
+Bekannte Pfade der v1-API (nur Verzeichnis, verifiziert per lesendem
+GET auf `/api/v1/` nach Django-Session-Login):
+
+```
+/api/v1/heatpumps/
+/api/v1/heatpumps/errors-log/
+/api/v1/users/
+/api/v1/translations/
+/api/v1/texts/
+/api/v1/errors/
+/api/v1/bookmarks_new/
+/api/v1/bookmarks/
+/api/v1/channels/
+/api/v1/data-act-channels/
+/api/v1/virtual-channels/
+... (Liste unvollständig)
+```
+
+Die Endpoint-Liste lässt mehr Funktionsumfang als die Legacy-API
+vermuten (`virtual-channels`, `data-act-channels`), aber die API
+erfordert ein OAuth2-Bearer-Token, dessen PKCE-Flow in dieser Session
+nicht vollständig nachvollzogen werden konnte (Django-Session wurde
+akzeptiert, aber der `/api/v1/oauth2/authorize`-Endpoint lehnt die
+Wiederverwendung für die SPA-Weiterleitung ab).
+
+**Offen für künftige Recherchen**:
+
+- Vollständiger PKCE-Flow mit korrektem `code_verifier`-Handling
+- Listing aller `/api/v1/...`-Endpoints inkl. Write- und Update-Optionen
+- Reverse-Engineering der SPA `app.myidm.at` nach API-Aufrufmustern
+
+Falls die OAuth2-API in einer künftigen Session entschlüsselt wird,
+sollte die Dokumentation hier ergänzt werden.
+
+### Bezug zur Integration
+
+Diese Integration ist bewusst **100% lokal** (Modbus + Nav10-WS) und
+verwendet keine der beiden Cloud-APIs. Siehe Abschnitt
+„Bewusst nicht implementiert". Die Cloud-API-Dokumentation hier dient
+ausschließlich der Vollständigkeit und als Referenz für Supportzwecke
+sowie für etwaige zukünftige Features (z. B. optionaler Cloud-Fallback
+bei fehlgeschlagener Modbus-Erkennung).
