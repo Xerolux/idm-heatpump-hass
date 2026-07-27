@@ -24,6 +24,8 @@ from custom_components.idm_heatpump.const import (
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
+    CONF_POLLING_JITTER,
+    CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_MODEL_OVERRIDE,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
@@ -36,10 +38,14 @@ from custom_components.idm_heatpump.const import (
     CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
+    CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
+    DEFAULT_POLLING_JITTER,
+    DEFAULT_COMMUNICATION_DIAGNOSTICS,
+    DEFAULT_WRITE_COOLDOWN,
     DEFAULT_WEB_ENABLED,
     MODEL_OVERRIDE_AUTO,
     MODEL_OVERRIDE_NAVIGATOR_10,
@@ -65,6 +71,24 @@ def test_options_translations_match_initial_config_flow() -> None:
         feature_labels = options_flow["sections"]["features"]["data"]
         feature_descriptions = options_flow["sections"]["features"]["data_description"]
         assert feature_labels.keys() == feature_descriptions.keys()
+
+
+def test_advanced_options_explain_operational_effects() -> None:
+    """Power-user settings must state defaults, disable behavior, and safety scope."""
+    for path in TRANSLATION_FILES:
+        translations = json.loads(path.read_text(encoding="utf-8"))
+        advanced = translations["options"]["step"]["options"]["sections"]["advanced_modbus"]
+        descriptions = advanced["data_description"]
+
+        assert "0" in descriptions["polling_jitter"]
+        assert "10" in descriptions["polling_jitter"]
+        assert "20" in descriptions["polling_jitter"]
+        assert "Modbus" in descriptions["communication_diagnostics"]
+        assert "5" in descriptions["write_cooldown"]
+        assert "0" in descriptions["write_cooldown"]
+        assert "600" in descriptions["write_cooldown"]
+        assert "EEPROM" in descriptions["write_cooldown"]
+        assert "EEPROM" in descriptions["eeprom_write_interval"]
 
 
 def _make_flow():
@@ -541,6 +565,9 @@ class TestAsyncStepOptions:
         schema_dict = dict(schema._schema["advanced_modbus"]._schema)
         assert CONF_MODBUS_TIMEOUT in schema_dict
         assert CONF_MODBUS_MAX_RETRIES in schema_dict
+        assert CONF_POLLING_JITTER in schema_dict
+        assert CONF_COMMUNICATION_DIAGNOSTICS in schema_dict
+        assert CONF_WRITE_COOLDOWN in schema_dict
 
     def test_options_schema_applies_defaults_for_timeout_and_retries(self):
         schema = _build_options_schema({})
@@ -548,6 +575,9 @@ class TestAsyncStepOptions:
         markers = {marker.key: marker for marker in schema._schema["advanced_modbus"]._schema}
         assert markers[CONF_MODBUS_TIMEOUT].default == DEFAULT_MODBUS_TIMEOUT
         assert markers[CONF_MODBUS_MAX_RETRIES].default == DEFAULT_MODBUS_MAX_RETRIES
+        assert markers[CONF_POLLING_JITTER].default == DEFAULT_POLLING_JITTER
+        assert markers[CONF_COMMUNICATION_DIAGNOSTICS].default == DEFAULT_COMMUNICATION_DIAGNOSTICS
+        assert markers[CONF_WRITE_COOLDOWN].default == DEFAULT_WRITE_COOLDOWN
 
     async def test_no_zones_creates_entry(self):
         flow = _make_flow()

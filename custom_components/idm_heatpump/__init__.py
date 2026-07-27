@@ -50,6 +50,7 @@ from .const import (
     CONF_HIDE_UNUSED,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_TIMEOUT,
+    CONF_POLLING_JITTER,
     CONF_MODEL_OVERRIDE,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
@@ -63,6 +64,7 @@ from .const import (
     CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
+    CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     DEFAULT_DEVICE_HIERARCHY,
@@ -71,6 +73,7 @@ from .const import (
     DEFAULT_HIDE_UNUSED,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
+    DEFAULT_POLLING_JITTER,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
@@ -80,6 +83,7 @@ from .const import (
     DEFAULT_WEB_ENABLED,
     DEFAULT_WEB_ONLY,
     DEFAULT_WEB_SCAN_INTERVAL,
+    DEFAULT_WRITE_COOLDOWN,
     DOMAIN,
     MODEL,
     MODEL_OVERRIDE_AUTO,
@@ -550,6 +554,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     )
     modbus_timeout = float(entry.options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT))
     modbus_max_retries = int(entry.options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES))
+    polling_jitter = int(entry.options.get(CONF_POLLING_JITTER, DEFAULT_POLLING_JITTER))
+    write_cooldown = float(entry.options.get(CONF_WRITE_COOLDOWN, DEFAULT_WRITE_COOLDOWN))
     eeprom_write_interval = float(entry.options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL))
 
     if web_pin_configured(web_pin):
@@ -846,6 +852,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             web_supplement=web_supplement,
             web_variant=runtime_web_variant,
             device_hierarchy_enabled=device_hierarchy_enabled,
+            polling_jitter_percent=polling_jitter,
+            write_cooldown_seconds=write_cooldown,
         )
         coordinator.setup_registers(
             circuits,

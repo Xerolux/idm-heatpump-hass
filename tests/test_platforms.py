@@ -73,6 +73,32 @@ def _unique_ids(entities):
     return [entity._attr_unique_id for entity in entities]
 
 
+def test_communication_diagnostic_entities_expose_runtime_metrics():
+    from custom_components.idm_heatpump.sensor import _communication_diagnostic_entities
+
+    coordinator = _make_coordinator()
+    coordinator._last_poll_success = None
+    coordinator._last_poll_duration = 0.4567
+    coordinator._consecutive_poll_failures = 2
+    coordinator._total_poll_count = 10
+    coordinator._total_poll_failures = 3
+    coordinator._polling_plan_active_count = 42
+
+    entities = _communication_diagnostic_entities(coordinator)
+    values = {entity.entity_description.key: entity.native_value for entity in entities}
+
+    assert values == {
+        "modbus_last_success": None,
+        "modbus_poll_duration": 0.457,
+        "modbus_consecutive_failures": 2,
+        "modbus_active_registers": 42,
+    }
+    failure_sensor = next(
+        entity for entity in entities if entity.entity_description.key == "modbus_consecutive_failures"
+    )
+    assert failure_sensor.extra_state_attributes == {"total_polls": 10, "total_failures": 3}
+
+
 # ---------------------------------------------------------------------------
 # Sensor platform
 # ---------------------------------------------------------------------------

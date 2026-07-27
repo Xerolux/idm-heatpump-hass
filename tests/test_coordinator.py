@@ -50,6 +50,8 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
         web_host=kwargs.get("web_host"),
         web_supplement=kwargs.get("web_supplement"),
         web_variant=kwargs.get("web_variant"),
+        polling_jitter_percent=kwargs.get("polling_jitter_percent", 0),
+        write_cooldown_seconds=kwargs.get("write_cooldown_seconds", 5.0),
     )
     registers = kwargs.get("registers")
     if registers is not None:
@@ -930,6 +932,62 @@ class TestAsyncUpdateData:
 
 
 class TestAsyncWriteRegister:
+    async def test_write_cooldown_rejects_second_write_to_same_register(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            write_cooldown_seconds=10,
+        )
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
+
+        await coord.async_write_register(reg, 21.0)
+        with pytest.raises(Exception) as err:
+            await coord.async_write_register(reg, 22.0)
+
+        assert getattr(err.value, "translation_key", None) == "write_cooldown_active"
+        assert client.write_register.await_count == 1
+
+    async def test_zero_write_cooldown_allows_immediate_writes(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            write_cooldown_seconds=0,
+        )
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
+
+        await coord.async_write_register(reg, 21.0)
+        await coord.async_write_register(reg, 22.0)
+
+        assert client.write_register.await_count == 2
+
+    async def test_polling_jitter_delays_poll_within_configured_limit(self, mock_hass, mock_config_entry):
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 20.0})
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[reg],
+            polling_jitter_percent=20,
+        )
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.random.uniform", return_value=1.25) as uniform,
+            patch("custom_components.idm_heatpump.coordinator.asyncio.sleep", new_callable=AsyncMock) as sleep,
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord._async_update_data()
+
+        uniform.assert_called_once_with(0, 2.0)
+        sleep.assert_awaited_once_with(1.25)
+
     async def test_write_updates_data_optimistically(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.write_register = AsyncMock()
