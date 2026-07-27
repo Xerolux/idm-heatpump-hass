@@ -3,26 +3,26 @@
     "step": {
       "user": {
         "title": "IDM Navigator Wärmepumpe einrichten",
-        "description": "[Hilfe benötigt? Lies die Dokumentation]({wiki_url})\n\nGib die Verbindungsdaten deiner IDM-Wärmepumpe ein.\n\n**Für den vollen Betrieb zwingend erforderlich:** Aktiviere an der IDM-Navigatorregelung *Gebäudeleittechnik → Modbus TCP → Ein*. Verwende normalerweise Port **502** und Slave-ID **1**. Fehlt der Menüpunkt oder ist er gesperrt, muss dein Heizungsbauer oder der iDM-Service Modbus freischalten.\n\n**Optionaler lokaler Webzugriff:** Ist an der Navigatorregelung ein *Code lokales Netzwerk* gesetzt? Du findest ihn am Display unter *Einstellungen → Allgemeine Einstellungen → Netzwerkeinstellungen → Code lokales Netzwerk*. Cloud-/App-Passwort und Zwei-Faktor-Code werden hier nicht verwendet; leer oder `0` deaktiviert den lokalen Webzugriff.",
+        "description": "[Hilfe benötigt? Dokumentation öffnen]({wiki_url})\n\nGib die Modbus-Verbindungsdaten deiner IDM-Wärmepumpe ein. Standardmäßig richtet der Assistent **Modbus und den lokalen Navigator-Webzugriff gemeinsam** ein. Gib deshalb den lokalen Netzwerkcode als Web-PIN ein. Wenn du bewusst nur Modbus verwenden möchtest, deaktiviere den Webzugriff ausdrücklich.\n\nBei einem Modbus-Proxy aktiviere „Modbus-Proxy verwenden“ und trage als Webadresse die direkte IP beziehungsweise den Hostnamen der Wärmepumpe ein.",
         "data": {
           "name": "Name",
           "host": "Modbus-IP / Hostname",
           "port": "Port",
           "slave_id": "Slave-ID",
+          "setup_web_access": "Lokalen Navigator-Webzugriff verwenden",
           "web_pin": "Lokale Netzwerk-PIN (Navigator-Webzugriff)",
           "modbus_proxy": "Modbus-Proxy verwenden",
-          "web_host": "Original-IP der Wärmepumpe für Webzugriff",
-          "model_override": "Navigator-Modell"
+          "web_host": "Original-IP der Wärmepumpe für Webzugriff"
         },
         "data_description": {
           "name": "Anzeigename des Geräts in Home Assistant, z. B. \"IDM Wärmepumpe\".",
           "host": "IP-Adresse oder Hostname für Modbus TCP. Wenn du einen Modbus-Proxy nutzt, trage hier die Proxy-Adresse ein.",
           "port": "Modbus-TCP-Port der Steuerung. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`. Nur ändern wenn mehrere Geräte am Bus hängen.",
+          "setup_web_access": "Standard: aktiviert. Deaktiviere dies ausdrücklich, wenn du nur Modbus verwenden und keine zusätzlichen lokalen Navigator-Webdaten abrufen möchtest.",
           "web_pin": "Gib den am Navigator-Display gesetzten Code lokales Netzwerk ein. Verwende weder Cloud-/App-Passwort noch Zwei-Faktor-Code. Leer lassen für reinen Modbus-Betrieb; `0` deaktiviert den lokalen Webzugriff an der Regelung.",
           "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
-          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`.",
-          "model_override": "**Nur ändern, wenn die automatische Erkennung nicht korrekt arbeitet.** Das Modell wird in fast allen Fällen automatisch erkannt. Eine falsche manuelle Auswahl kann die Registerkarte verschlechtern und zu fehlenden oder nicht verfügbaren Sensoren führen."
+          "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`."
         }
       },
       "reconfigure": {
@@ -44,6 +44,7 @@
           "host": "Modbus-IP / Hostname",
           "port": "Port",
           "slave_id": "Slave-ID",
+          "setup_web_access": "Lokalen Navigator-Webzugriff verwenden",
           "web_pin": "Lokale Netzwerk-PIN (Navigator-Webzugriff)",
           "modbus_proxy": "Modbus-Proxy verwenden",
           "web_host": "Original-IP der Wärmepumpe für Webzugriff",
@@ -53,6 +54,7 @@
           "host": "IP-Adresse oder Hostname für Modbus TCP. Wenn du einen Modbus-Proxy nutzt, trage hier die Proxy-Adresse ein.",
           "port": "Modbus-TCP-Port. Standard ist `502`.",
           "slave_id": "Modbus-Slave-ID. Standard ist `1`.",
+          "setup_web_access": "Standard: aktiviert. Deaktiviere dies ausdrücklich, wenn du nur Modbus verwenden und keine zusätzlichen lokalen Navigator-Webdaten abrufen möchtest.",
           "web_pin": "Am Navigator-Display gesetzter Code lokales Netzwerk. Cloud-/App-Passwort und Zwei-Faktor-Code funktionieren hier nicht. Leer lassen für reinen Modbus-Betrieb; `0` deaktiviert den lokalen Webzugriff an der Regelung.",
           "modbus_proxy": "Aktivieren, wenn die Modbus-Adresse oben ein Proxy ist und nicht die Wärmepumpe selbst.",
           "web_host": "Nur nötig bei Modbus-Proxy. Trage die originale IP-Adresse oder den Hostnamen der Wärmepumpe ein, z. B. `192.0.2.103`.",
@@ -61,15 +63,15 @@
       },
       "diagnostics_success": {
         "title": "Modbus- und Webverbindung erfolgreich",
-        "description": "Der schreibgeschützte Test war für Modbus **{host}:{port}**, Slave-ID **{slave_id}**, und den konfigurierten lokalen Navigator-Webzugriff erfolgreich.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen."
+        "description": "Der schreibgeschützte Test war für Modbus **{host}:{port}**, Slave-ID **{slave_id}**, und den konfigurierten lokalen Navigator-Webzugriff erfolgreich.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen.\n\n**Ergebnisse**\n- Modbus: **{modbus_status}**\n- Navigator-Web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Dauer: **{duration} s**"
       },
       "diagnostics_modbus_success": {
         "title": "Modbus-Verbindung erfolgreich",
-        "description": "Der schreibgeschützte Modbus-Test war für **{host}:{port}**, Slave-ID **{slave_id}**, erfolgreich. Der Webzugriff wurde übersprungen, weil keine lokale Web-PIN konfiguriert ist.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen."
+        "description": "Der schreibgeschützte Modbus-Test war für **{host}:{port}**, Slave-ID **{slave_id}**, erfolgreich. Der Webzugriff wurde übersprungen, weil keine lokale Web-PIN konfiguriert ist.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen.\n\n**Ergebnisse**\n- Modbus: **{modbus_status}**\n- Navigator-Web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Dauer: **{duration} s**"
       },
       "diagnostics_failed": {
         "title": "Verbindungstest fehlgeschlagen",
-        "description": "Der schreibgeschützte Test für **{host}:{port}**, Slave-ID **{slave_id}**, konnte nicht erfolgreich abgeschlossen werden. Die genaue Ursache und empfohlene Prüfungen stehen oben.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen."
+        "description": "Der schreibgeschützte Test für **{host}:{port}**, Slave-ID **{slave_id}**, konnte nicht erfolgreich abgeschlossen werden. Die genaue Ursache und empfohlene Prüfungen stehen oben.\n\nEs wurden keine Einstellungen geändert und keine Register geschrieben. Sende das Formular erneut ab, um den Test zu wiederholen.\n\n**Ergebnisse**\n- Modbus: **{modbus_status}**\n- Navigator-Web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Dauer: **{duration} s**"
       },
       "options": {
         "title": "Konfiguration – {name}",
@@ -84,7 +86,7 @@
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
-          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul."
+          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht."
         },
         "sections": {
           "features": {
@@ -99,7 +101,7 @@
               "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt"
             },
             "data_description": {
-              "technician_codes": "Erstellt zwei Sensoren mit den zeitabhängigen Zugangscodes für Fachmann-Ebene 1 und 2 und aktualisiert sie jede Minute. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen.",
+              "technician_codes": "Erstellt zwei Sensoren mit den zeitabhängigen Zugangscodes für Fachmann-Ebene 1 und 2 und aktualisiert sie jede Minute. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
               "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
               "web_scan_interval": "Zeit zwischen zwei Abfragen der lokalen Navigator-Weboberfläche. Diese Einstellung wirkt nur bei aktivierten Web-Zusatzdaten. Kürzere Intervalle liefern schneller neue Werte, erzeugen aber mehr Netzwerklast. Standard: 30 Sekunden.",
@@ -215,6 +217,18 @@
         "data_description": {
           "web_scan_interval": "Wie oft Webdaten gelesen werden. Standard: 30 Sekunden. Kürzere Intervalle erzeugen mehr Netzwerklast."
         }
+      },
+      "setup_review": {
+        "title": "IDM-Anlage erkannt",
+        "description": "Modbus und der gewünschte lokale Webzugriff wurden geprüft.\n\n- Endpunkt: **{host}:{port}**\n- Slave-ID: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Lokaler Webzugriff: **{web}**\n\nPrüfe das automatisch erkannte Modell. Übersteuere es nur, wenn die Erkennung nachweislich falsch ist. Wähle danach ein Profil für den schnellen Abschluss oder „Benutzerdefiniert“ für alle Optionen.",
+        "data": {
+          "profile": "Konfigurationsprofil",
+          "model_override": "Navigator-Modell bestätigen"
+        },
+        "data_description": {
+          "profile": "„Empfohlen“ passt für die meisten Anlagen. Die Netzwerkprofile ändern nur Abfrageintervall, Timeout, Wiederholungen und Jitter; alle Werte lassen sich später in den Optionen ändern.",
+          "model_override": "„Automatisch“ verwendet die Erkennung. Wähle ein konkretes Modell nur bei einer falschen oder fehlenden Erkennung; eine falsche Wahl kann Entitäten ausblenden."
+        }
       }
     },
     "error": {
@@ -230,7 +244,8 @@
       "name_required": "Bitte einen Namen für das Gerät eingeben.",
       "web_pin_required": "Gib die lokale Navigator-Web-PIN ein, um im Web-Only-Modus fortzufahren.",
       "web_cannot_connect": "Die lokale Navigator-Weboberfläche konnte nicht gelesen werden. Prüfe die Originaladresse der Wärmepumpe und den Netzwerkzugriff oder entferne die Web-PIN, um nur mit Modbus fortzufahren.",
-      "web_host_required": "Gib die originale Wärmepumpen-IP/den Hostnamen für den Webzugriff ein oder deaktiviere die Modbus-Proxy-Option."
+      "web_host_required": "Gib die originale Wärmepumpen-IP/den Hostnamen für den Webzugriff ein oder deaktiviere die Modbus-Proxy-Option.",
+      "web_pin_required_or_disable": "Gib den lokalen Navigator-Web-PIN ein oder deaktiviere „Lokalen Navigator-Webzugriff verwenden“ ausdrücklich für einen reinen Modbus-Betrieb."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -252,7 +267,7 @@
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
-          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul."
+          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht."
         },
         "sections": {
           "features": {
@@ -267,7 +282,7 @@
               "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt"
             },
             "data_description": {
-              "technician_codes": "Erstellt zwei Sensoren mit den zeitabhängigen Zugangscodes für Fachmann-Ebene 1 und 2 und aktualisiert sie jede Minute. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen.",
+              "technician_codes": "Erstellt zwei Sensoren mit den zeitabhängigen Zugangscodes für Fachmann-Ebene 1 und 2 und aktualisiert sie jede Minute. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
               "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
               "web_scan_interval": "Zeit zwischen zwei Abfragen der lokalen Navigator-Weboberfläche. Diese Einstellung wirkt nur bei aktivierten Web-Zusatzdaten. Kürzere Intervalle liefern schneller neue Werte, erzeugen aber mehr Netzwerklast. Standard: 30 Sekunden.",
@@ -544,6 +559,14 @@
       "options": {
         "retry": "Modbus erneut versuchen",
         "web_only": "Nur Web-Daten (eingeschränkt)"
+      }
+    },
+    "setup_profile": {
+      "options": {
+        "recommended": "Empfohlen – schneller Abschluss",
+        "reliable_network": "Langsames oder instabiles Netzwerk",
+        "multiple_clients": "Mehrere Modbus-Clients",
+        "custom": "Benutzerdefiniert – alle Optionen anzeigen"
       }
     }
   },

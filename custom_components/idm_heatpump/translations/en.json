@@ -3,26 +3,26 @@
     "step": {
       "user": {
         "title": "Set up IDM Navigator Heat Pump",
-        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nEnter the connection details of your IDM heat pump.\n\n**Required for full operation:** On the IDM Navigator/controller, enable *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Usually use port **502** and slave ID **1**. If the menu is missing or locked, your heating installer or iDM service must enable it.\n\n**Optional local web access:** Is a *Local network code* configured on the Navigator? Set it on the controller display under *Settings → General settings → Network settings → Local network code*. Cloud/app passwords and two-factor authentication codes are not used here; an empty value or `0` disables local web access.",
+        "description": "[Need help? Open the documentation]({wiki_url})\n\nEnter the Modbus connection details of your IDM heat pump. By default, the assistant configures **Modbus and local Navigator web access together**, so enter the Local network code as the web PIN. If you deliberately want Modbus only, explicitly disable web access.\n\nWhen using a Modbus proxy, enable “Use a Modbus proxy” and enter the heat pump’s direct IP address or hostname as the web address.",
         "data": {
           "name": "Name",
           "host": "Modbus IP / Hostname",
           "port": "Port",
           "slave_id": "Slave ID",
+          "setup_web_access": "Use local Navigator web access",
           "web_pin": "Local network PIN (Navigator web)",
           "modbus_proxy": "Use a Modbus proxy",
-          "web_host": "Original heat pump IP for web access",
-          "model_override": "Navigator model"
+          "web_host": "Original heat pump IP for web access"
         },
         "data_description": {
           "name": "Display name for the device in Home Assistant, e.g. \"IDM Heat Pump\".",
           "host": "IP address or hostname used for Modbus TCP. If you use a Modbus proxy, enter the proxy address here.",
           "port": "Modbus TCP port of the controller. Default is `502`.",
           "slave_id": "Modbus slave ID. Default is `1`. Only change this if multiple devices share the same bus.",
+          "setup_web_access": "Default: enabled. Explicitly disable this only when you want Modbus without additional local Navigator web data.",
           "web_pin": "Enter the Local network code configured on the Navigator display. Do not enter a cloud/app password or a two-factor code. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
-          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`.",
-          "model_override": "**Only change if the automatic detection does not work correctly.** The model is detected automatically in almost all cases. A wrong manual choice can degrade the register map and lead to missing or unavailable sensors."
+          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
         }
       },
       "reconfigure": {
@@ -44,6 +44,7 @@
           "host": "Modbus IP / Hostname",
           "port": "Port",
           "slave_id": "Slave ID",
+          "setup_web_access": "Use local Navigator web access",
           "web_pin": "Local network PIN (Navigator web)",
           "modbus_proxy": "Use a Modbus proxy",
           "web_host": "Original heat pump IP for web access",
@@ -53,6 +54,7 @@
           "host": "IP address or hostname used for Modbus TCP. If you use a Modbus proxy, enter the proxy address here.",
           "port": "Modbus TCP port. Default is `502`.",
           "slave_id": "Modbus slave ID. Default is `1`.",
+          "setup_web_access": "Default: enabled. Explicitly disable this only when you want Modbus without additional local Navigator web data.",
           "web_pin": "Local network code configured on the Navigator display. Cloud/app passwords and two-factor codes do not work here. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
           "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`.",
@@ -61,15 +63,15 @@
       },
       "diagnostics_success": {
         "title": "Modbus and web connection successful",
-        "description": "The read-only test succeeded for Modbus **{host}:{port}**, slave ID **{slave_id}**, and the configured local Navigator web access.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+        "description": "The read-only test succeeded for Modbus **{host}:{port}**, slave ID **{slave_id}**, and the configured local Navigator web access.\n\nNo settings were changed and no registers were written. Submit again to repeat the test.\n\n**Results**\n- Modbus: **{modbus_status}**\n- Navigator web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duration: **{duration} s**"
       },
       "diagnostics_modbus_success": {
         "title": "Modbus connection successful",
-        "description": "The read-only Modbus test succeeded for **{host}:{port}**, slave ID **{slave_id}**. Web access was skipped because no local web PIN is configured.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+        "description": "The read-only Modbus test succeeded for **{host}:{port}**, slave ID **{slave_id}**. Web access was skipped because no local web PIN is configured.\n\nNo settings were changed and no registers were written. Submit again to repeat the test.\n\n**Results**\n- Modbus: **{modbus_status}**\n- Navigator web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duration: **{duration} s**"
       },
       "diagnostics_failed": {
         "title": "Connection test failed",
-        "description": "The read-only test for **{host}:{port}**, slave ID **{slave_id}**, did not complete successfully. The specific cause and recommended checks are shown above.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+        "description": "The read-only test for **{host}:{port}**, slave ID **{slave_id}**, did not complete successfully. The specific cause and recommended checks are shown above.\n\nNo settings were changed and no registers were written. Submit again to repeat the test.\n\n**Results**\n- Modbus: **{modbus_status}**\n- Navigator web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duration: **{duration} s**"
       },
       "options": {
         "title": "Configuration – {name}",
@@ -84,7 +86,7 @@
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module."
+          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist."
         },
         "sections": {
           "features": {
@@ -99,7 +101,7 @@
               "short_cycle_minutes": "Short compressor-cycle threshold"
             },
             "data_description": {
-              "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant.",
+              "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
               "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
               "web_scan_interval": "Time between reads of the local Navigator web interface. This setting applies only when additional web data is enabled. Shorter intervals provide updates sooner but increase network traffic. Default: 30 seconds.",
@@ -215,6 +217,18 @@
         "data_description": {
           "web_scan_interval": "How often to read web data. Default: 30 seconds. Shorter intervals mean more network traffic."
         }
+      },
+      "setup_review": {
+        "title": "IDM system detected",
+        "description": "Modbus and the requested local web access were verified.\n\n- Endpoint: **{host}:{port}**\n- Slave ID: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Local web access: **{web}**\n\nReview the automatically detected model. Override it only when detection is demonstrably wrong. Then choose a guided profile or Custom for every option.",
+        "data": {
+          "profile": "Configuration profile",
+          "model_override": "Confirm Navigator model"
+        },
+        "data_description": {
+          "profile": "Recommended suits most installations. Network profiles only adjust polling interval, timeout, retries, and jitter; every value remains editable later.",
+          "model_override": "Automatic uses detection. Select a concrete model only when detection is wrong or unavailable; a wrong choice can hide entities."
+        }
       }
     },
     "error": {
@@ -230,7 +244,8 @@
       "name_required": "Please enter a name for the device.",
       "web_pin_required": "Enter the local Navigator web PIN to continue in web-only mode.",
       "web_cannot_connect": "The local Navigator web interface could not be read. Check the original heat pump address and network access, or clear the web PIN to continue with Modbus only.",
-      "web_host_required": "Enter the original heat pump IP/hostname for web access, or disable the Modbus proxy option."
+      "web_host_required": "Enter the original heat pump IP/hostname for web access, or disable the Modbus proxy option.",
+      "web_pin_required_or_disable": "Enter the local Navigator web PIN, or explicitly disable “Use local Navigator web access” for Modbus-only operation."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -252,7 +267,7 @@
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module."
+          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist."
         },
         "sections": {
           "features": {
@@ -267,7 +282,7 @@
               "short_cycle_minutes": "Short compressor-cycle threshold"
             },
             "data_description": {
-              "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant.",
+              "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
               "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
               "web_scan_interval": "Time between reads of the local Navigator web interface. This setting applies only when additional web data is enabled. Shorter intervals provide updates sooner but increase network traffic. Default: 30 seconds.",
@@ -544,6 +559,14 @@
       "options": {
         "retry": "Retry Modbus connection",
         "web_only": "Continue with web data only (limited)"
+      }
+    },
+    "setup_profile": {
+      "options": {
+        "recommended": "Recommended – quick finish",
+        "reliable_network": "Slow or unreliable network",
+        "multiple_clients": "Multiple Modbus clients",
+        "custom": "Custom – show every option"
       }
     }
   },
