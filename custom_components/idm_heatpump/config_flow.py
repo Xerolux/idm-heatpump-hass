@@ -52,6 +52,8 @@ from .const import (
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
+    CONF_POLLING_JITTER,
+    CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_MODEL_OVERRIDE,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
@@ -66,6 +68,7 @@ from .const import (
     CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
+    CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONFIG_FLOW_TCP_TIMEOUT,
@@ -75,6 +78,8 @@ from .const import (
     DEFAULT_HIDE_UNUSED,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
+    DEFAULT_POLLING_JITTER,
+    DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_MODEL_OVERRIDE,
     DEFAULT_PORT,
     DEFAULT_ROOM_TEMP_FORWARDING,
@@ -85,16 +90,21 @@ from .const import (
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
     DEFAULT_WEB_SCAN_INTERVAL,
+    DEFAULT_WRITE_COOLDOWN,
     DOMAIN,
     HEATING_CIRCUITS,
     MAX_EEPROM_WRITE_INTERVAL,
     MAX_MODBUS_MAX_RETRIES,
     MAX_MODBUS_TIMEOUT,
+    MAX_POLLING_JITTER,
+    MAX_WRITE_COOLDOWN,
     MAX_ROOM_COUNT,
     MAX_ZONE_COUNT,
     MIN_EEPROM_WRITE_INTERVAL,
     MIN_MODBUS_MAX_RETRIES,
     MIN_MODBUS_TIMEOUT,
+    MIN_POLLING_JITTER,
+    MIN_WRITE_COOLDOWN,
     MODEL_OVERRIDE_OPTIONS,
     REGISTER_ADDRESS_CONNECTION_PROBE,
     REGISTER_COUNT_CONNECTION_PROBE,
@@ -415,6 +425,37 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 max=MAX_MODBUS_MAX_RETRIES,
                                 step=1,
                                 mode=NumberSelectorMode.SLIDER,
+                            )
+                        ),
+                        vol.Required(
+                            CONF_POLLING_JITTER,
+                            default=int(options.get(CONF_POLLING_JITTER, DEFAULT_POLLING_JITTER)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_POLLING_JITTER,
+                                max=MAX_POLLING_JITTER,
+                                step=1,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="%",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_COMMUNICATION_DIAGNOSTICS,
+                            default=options.get(
+                                CONF_COMMUNICATION_DIAGNOSTICS,
+                                DEFAULT_COMMUNICATION_DIAGNOSTICS,
+                            ),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_WRITE_COOLDOWN,
+                            default=float(options.get(CONF_WRITE_COOLDOWN, DEFAULT_WRITE_COOLDOWN)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_WRITE_COOLDOWN,
+                                max=MAX_WRITE_COOLDOWN,
+                                step=1.0,
+                                mode=NumberSelectorMode.BOX,
+                                unit_of_measurement="s",
                             )
                         ),
                         vol.Required(
@@ -1080,6 +1121,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                     CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
                     CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
                     CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
+                    CONF_POLLING_JITTER: DEFAULT_POLLING_JITTER,
+                    CONF_COMMUNICATION_DIAGNOSTICS: DEFAULT_COMMUNICATION_DIAGNOSTICS,
+                    CONF_WRITE_COOLDOWN: DEFAULT_WRITE_COOLDOWN,
                     CONF_EEPROM_WRITE_INTERVAL: DEFAULT_EEPROM_WRITE_INTERVAL,
                 }
             self._options.update(

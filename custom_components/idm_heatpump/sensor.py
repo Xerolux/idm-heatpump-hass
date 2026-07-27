@@ -32,7 +32,7 @@ else:
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities
-from .const import CONF_TECHNICIAN_CODES, DOMAIN
+from .const import CONF_COMMUNICATION_DIAGNOSTICS, CONF_TECHNICIAN_CODES, DOMAIN
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import (
@@ -379,6 +379,7 @@ async def async_setup_entry(
         | IdmTechnicianCodeSensor
         | IdmWebSensor
         | IdmApiVersionSensor
+        | IdmCommunicationDiagnosticSensor
         | IdmOperationSensor
     ] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
@@ -401,6 +402,8 @@ async def async_setup_entry(
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
     entities.append(IdmApiVersionSensor(coordinator, versions))
+    if entry.options.get(CONF_COMMUNICATION_DIAGNOSTICS, False):
+        entities += _communication_diagnostic_entities(coordinator)
     async_add_entities(entities)
 
 
@@ -436,6 +439,90 @@ class IdmApiVersionSensor(IdmCoordinatorEntityBase, SensorEntity):
             "integration_version": self._versions.integration,
             "pymodbus_version": self._versions.pymodbus,
         }
+
+
+class IdmCommunicationDiagnosticSensor(IdmCoordinatorEntityBase, SensorEntity):
+    """Diagnostic sensor exposing coordinator communication metrics."""
+
+    _attr_available = True
+
+    def __init__(
+        self,
+        coordinator: IdmCoordinator,
+        key: str,
+        *,
+        icon: str,
+        value_fn: Callable[[IdmCoordinator], Any],
+        native_unit_of_measurement: str | None = None,
+        device_class: SensorDeviceClass | None = None,
+        state_class: SensorStateClass | None = None,
+    ) -> None:
+        super().__init__(coordinator)
+        self._value_fn = value_fn
+        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
+        self._attr_unique_id = build_entity_unique_id(entry_id, key)
+        self.entity_description = SensorEntityDescription(
+            key=key,
+            translation_key=key,
+            icon=icon,
+            native_unit_of_measurement=native_unit_of_measurement,
+            device_class=device_class,
+            state_class=state_class,
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+
+    @property
+    def available(self) -> bool:
+        """Communication diagnostics remain visible after a failed poll."""
+        return True
+
+    @property
+    def native_value(self) -> Any:
+        return self._value_fn(self.coordinator)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, int] | None:
+        if self.entity_description.key != "modbus_consecutive_failures":
+            return None
+        return {
+            "total_polls": self.coordinator._total_poll_count,
+            "total_failures": self.coordinator._total_poll_failures,
+        }
+
+
+def _communication_diagnostic_entities(coordinator: IdmCoordinator) -> list[IdmCommunicationDiagnosticSensor]:
+    return [
+        IdmCommunicationDiagnosticSensor(
+            coordinator,
+            "modbus_last_success",
+            icon="mdi:clock-check-outline",
+            device_class=SensorDeviceClass.TIMESTAMP,
+            value_fn=lambda item: item._last_poll_success,
+        ),
+        IdmCommunicationDiagnosticSensor(
+            coordinator,
+            "modbus_poll_duration",
+            icon="mdi:timer-outline",
+            native_unit_of_measurement="s",
+            device_class=SensorDeviceClass.DURATION,
+            state_class=SensorStateClass.MEASUREMENT,
+            value_fn=lambda item: round(item._last_poll_duration, 3) if item._last_poll_duration is not None else None,
+        ),
+        IdmCommunicationDiagnosticSensor(
+            coordinator,
+            "modbus_consecutive_failures",
+            icon="mdi:alert-circle-outline",
+            state_class=SensorStateClass.MEASUREMENT,
+            value_fn=lambda item: item._consecutive_poll_failures,
+        ),
+        IdmCommunicationDiagnosticSensor(
+            coordinator,
+            "modbus_active_registers",
+            icon="mdi:format-list-checks",
+            state_class=SensorStateClass.MEASUREMENT,
+            value_fn=lambda item: item._polling_plan_active_count,
+        ),
+    ]
 
 
 def _technician_code_entities(coordinator: IdmCoordinator) -> list[IdmTechnicianCodeSensor]:

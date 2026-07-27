@@ -120,6 +120,19 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 ),
                 "registers_count": coordinator.registers_count,
                 "last_update_success": coordinator.last_update_success,
+                "communication": {
+                    "last_poll_success": (
+                        coordinator._last_poll_success.isoformat() if coordinator._last_poll_success else None
+                    ),
+                    "last_poll_duration_seconds": coordinator._last_poll_duration,
+                    "consecutive_failures": coordinator._consecutive_poll_failures,
+                    "total_polls": coordinator._total_poll_count,
+                    "total_failures": coordinator._total_poll_failures,
+                    "active_registers": coordinator._polling_plan_active_count,
+                    "total_registers_in_plan": coordinator._polling_plan_total_count,
+                    "polling_jitter_percent": coordinator._polling_jitter_percent,
+                    "write_cooldown_seconds": coordinator._write_cooldown_seconds,
+                },
                 "model_name": coordinator.model_name,
                 "firmware_version": coordinator.firmware_version,
                 "versions": {

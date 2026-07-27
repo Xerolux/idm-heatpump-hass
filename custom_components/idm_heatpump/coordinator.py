@@ -9,13 +9,15 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import random
 import time
 from collections.abc import Mapping
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pymodbus.exceptions import ConnectionException, ModbusException
@@ -177,6 +179,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         web_supplement: IdmWebSupplement | None = None,
         web_variant: str | None = None,
         device_hierarchy_enabled: bool = False,
+        polling_jitter_percent: int = 0,
+        write_cooldown_seconds: float = 5.0,
     ) -> None:
         self._client = client
         self._sensor_descs = sensor_descriptions
@@ -212,10 +216,16 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._entity_aware_polling_manager: EntityAwarePollingManager | None = None
         self._polling_plan_total_count: int = 0
         self._polling_plan_active_count: int = 0
+        self._polling_jitter_percent = max(0, min(20, polling_jitter_percent))
+        self._last_poll_duration: float | None = None
+        self._last_poll_success: datetime | None = None
+        self._consecutive_poll_failures = 0
+        self._total_poll_count = 0
+        self._total_poll_failures = 0
         self._dhw_boost_manager: DhwBoostManager | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         self._write_timestamps: dict[int, float] = {}
-        self._write_cooldown_seconds: float = 5.0
+        self._write_cooldown_seconds = max(0.0, min(600.0, write_cooldown_seconds))
         # Room-mode individual validation is expensive (one Modbus read per
         # register). Run it on the first poll, then only every Nth poll.
         self._room_mode_validation_counter = 0
@@ -611,6 +621,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data[reg.name] = result
 
     async def _async_update_data(self) -> dict[str, Any]:
+        if self._polling_jitter_percent and self.update_interval is not None:
+            maximum_delay = self.update_interval.total_seconds() * self._polling_jitter_percent / 100
+            await asyncio.sleep(random.uniform(0, maximum_delay))
+
+        poll_started = time.monotonic()
+        self._total_poll_count += 1
         try:
             data = await self._async_read_registers_resilient(self._registers)
 
@@ -620,6 +636,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._merge_unsupported_registers()
             await self._async_refresh_zone_room_modes(data)
         except Exception as err:
+            self._last_poll_duration = time.monotonic() - poll_started
+            self._consecutive_poll_failures += 1
+            self._total_poll_failures += 1
             issue_id = _repair_issue_for_error(err)
             friendly_error = _friendly_communication_error(
                 issue_id,
@@ -647,6 +666,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             raise UpdateFailed(friendly_error) from err
 
         if not data:
+            self._last_poll_duration = time.monotonic() - poll_started
+            self._consecutive_poll_failures += 1
+            self._total_poll_failures += 1
             issue_id = "no_data_received"
             ir.async_create_issue(
                 self.hass,
@@ -697,6 +719,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     exc_info=True,
                 )
 
+        self._last_poll_duration = time.monotonic() - poll_started
+        self._last_poll_success = datetime.now(UTC)
+        self._consecutive_poll_failures = 0
         return data
 
     async def async_refresh_web_supplement(self) -> None:
@@ -945,21 +970,30 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         value: Any,
         *,
         allow_custom_register: bool = False,
-    ) -> None:
+    ) -> Any:
         now = time.monotonic()
         last = self._write_timestamps.get(reg.address)
-        if last is not None and (now - last) < self._write_cooldown_seconds:
-            _LOGGER.warning(
-                "Write to register %s (addr %d) within %0.1fs cooldown (last write was %0.1fs ago)",
-                reg.name,
-                reg.address,
-                self._write_cooldown_seconds,
-                now - last,
+        if (
+            self._write_cooldown_seconds > 0
+            and last is not None
+            and (elapsed := now - last) < self._write_cooldown_seconds
+        ):
+            remaining = self._write_cooldown_seconds - elapsed
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="write_cooldown_active",
+                translation_placeholders={
+                    "register": reg.name,
+                    "remaining": f"{remaining:.1f}",
+                    "cooldown": f"{self._write_cooldown_seconds:g}",
+                },
             )
-        self._write_timestamps[reg.address] = now
         try:
-            self.simulate_write(reg, value, allow_custom_register=allow_custom_register)
-            await self._client.write_register(reg, value)
+            safety_result = self.simulate_write(reg, value, allow_custom_register=allow_custom_register)
+            if allow_custom_register:
+                await self._client.write_register(reg, value, allow_custom_register=True)
+            else:
+                await self._client.write_register(reg, value)
         except Exception:
             ir.async_create_issue(
                 self.hass,
@@ -971,6 +1005,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_placeholders={"register": reg.name, "address": str(reg.address)},
             )
             raise
+        self._write_timestamps[reg.address] = time.monotonic()
         # Optimistic update so entities reflect the new value immediately.
         # Replace the snapshot dict (do not mutate in place) so concurrent web
         # merges that re-read self.data cannot race mid-mutation.
@@ -990,6 +1025,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Short-lived confirmation refresh; use asyncio.create_task so unit
         # tests can await the real Task (hass.async_create_task is often a MagicMock).
         self._delayed_refresh_task = asyncio.create_task(self._delayed_refresh())
+        return safety_result
 
     def _invalidate_device_info_cache(self) -> None:
         """Clear cached DeviceInfo so the next access reflects fresh metadata."""

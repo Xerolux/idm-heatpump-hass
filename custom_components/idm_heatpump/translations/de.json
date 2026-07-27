@@ -123,16 +123,22 @@
           },
           "advanced_modbus": {
             "name": "Erweiterte Modbus-Einstellungen",
-            "description": "Die Standardwerte werden empfohlen. Nur bei langsamen oder instabilen Netzwerken ändern.",
+            "description": "Nur für erfahrene Nutzer. Die Standardwerte werden empfohlen. Polling-Jitter verteilt Abfragen, die Diagnoseoption erstellt zusätzliche Entitäten und der Schreib-Cooldown blockiert zu schnelle Wiederholungen. Der allgemeine Schreib-Cooldown und der EEPROM-Schreibschutz wirken unabhängig voneinander.",
             "data": {
               "modbus_timeout": "Antwort-Timeout",
               "modbus_retries": "Wiederholungen",
-              "eeprom_write_interval": "EEPROM-Schreibschutz (Sekunden)"
+              "eeprom_write_interval": "EEPROM-Schreibschutz (Sekunden)",
+              "polling_jitter": "Polling-Jitter (%)",
+              "communication_diagnostics": "Erweiterte Kommunikationsdiagnose",
+              "write_cooldown": "Schreib-Cooldown pro Register (Sekunden)"
             },
             "data_description": {
               "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-Antwort.",
               "modbus_retries": "Wiederholungen mit exponentiellem Backoff, bevor ein Abfragezyklus fehlschlägt.",
-              "eeprom_write_interval": "Mindestzeit zwischen zwei Schreibvorgängen auf dasselbe EEPROM-Register (z. B. Heiz-/Kühlgrenze). Der Standard 60s schont die begrenzten Schreibzyklen des EEPROMs. EIN SENKEN ERFOLGT AUF EIGENES RISIKO: es beschleunigt den EEPROM-Verschleiß. Nur senken, wenn du dieses Risiko akzeptierst."
+              "eeprom_write_interval": "Mindestzeit zwischen zwei Schreibvorgängen auf dasselbe EEPROM-Register (z. B. Heiz-/Kühlgrenze). Standard 60 Sekunden schützt die begrenzten EEPROM-Schreibzyklen. Dieser Schutz wirkt zusätzlich und unabhängig vom allgemeinen Schreib-Cooldown. EIN SENKEN ERFOLGT AUF EIGENES RISIKO und beschleunigt den EEPROM-Verschleiß.",
+              "polling_jitter": "Fügt vor jeder Modbus-Abfrage eine zufällige Verzögerung von 0 bis zum gewählten Prozentsatz des Scanintervalls hinzu. Beispiel: Bei 10 Sekunden Scanintervall und 20 % beträgt die zusätzliche Verzögerung 0–2 Sekunden. Das verteilt gleichzeitige Abfragen mehrerer Anlagen. Standard 0 %: deaktiviert.",
+              "communication_diagnostics": "Erstellt zusätzliche Diagnoseentitäten für die letzte erfolgreiche Abfrage, Abfragedauer, aufeinanderfolgende Fehler und aktive Register. Gesamtzahl der Abfragen und Fehler erscheinen als Attribute. Dafür werden keine zusätzlichen Modbus-Register gelesen. Standard: deaktiviert.",
+              "write_cooldown": "Mindestzeit zwischen zwei Schreibvorgängen auf dieselbe Registeradresse. Ein erneuter Schreibversuch wird vor der Übertragung vollständig abgelehnt; Home Assistant zeigt die verbleibende Wartezeit. Andere Register bleiben beschreibbar. Standard: 5 Sekunden. 0 deaktiviert diesen allgemeinen Schutz vollständig, 1–600 erzwingt ihn. Änderung auf eigenes Risiko; der separate EEPROM-Schreibschutz bleibt davon unberührt."
             }
           }
         }
@@ -285,16 +291,22 @@
           },
           "advanced_modbus": {
             "name": "Erweiterte Modbus-Einstellungen",
-            "description": "Die Standardwerte werden empfohlen. Nur bei langsamen oder instabilen Netzwerken ändern.",
+            "description": "Nur für erfahrene Nutzer. Die Standardwerte werden empfohlen. Polling-Jitter verteilt Abfragen, die Diagnoseoption erstellt zusätzliche Entitäten und der Schreib-Cooldown blockiert zu schnelle Wiederholungen. Der allgemeine Schreib-Cooldown und der EEPROM-Schreibschutz wirken unabhängig voneinander.",
             "data": {
               "modbus_timeout": "Antwort-Timeout",
               "modbus_retries": "Wiederholungen",
-              "eeprom_write_interval": "EEPROM-Schreibschutz (Sekunden)"
+              "eeprom_write_interval": "EEPROM-Schreibschutz (Sekunden)",
+              "polling_jitter": "Polling-Jitter (%)",
+              "communication_diagnostics": "Erweiterte Kommunikationsdiagnose",
+              "write_cooldown": "Schreib-Cooldown pro Register (Sekunden)"
             },
             "data_description": {
               "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-Antwort.",
               "modbus_retries": "Wiederholungen mit exponentiellem Backoff, bevor ein Abfragezyklus fehlschlägt.",
-              "eeprom_write_interval": "Mindestzeit zwischen zwei Schreibvorgängen auf dasselbe EEPROM-Register (z. B. Heiz-/Kühlgrenze). Der Standard 60s schont die begrenzten Schreibzyklen des EEPROMs. EIN SENKEN ERFOLGT AUF EIGENES RISIKO: es beschleunigt den EEPROM-Verschleiß. Nur senken, wenn du dieses Risiko akzeptierst."
+              "eeprom_write_interval": "Mindestzeit zwischen zwei Schreibvorgängen auf dasselbe EEPROM-Register (z. B. Heiz-/Kühlgrenze). Standard 60 Sekunden schützt die begrenzten EEPROM-Schreibzyklen. Dieser Schutz wirkt zusätzlich und unabhängig vom allgemeinen Schreib-Cooldown. EIN SENKEN ERFOLGT AUF EIGENES RISIKO und beschleunigt den EEPROM-Verschleiß.",
+              "polling_jitter": "Fügt vor jeder Modbus-Abfrage eine zufällige Verzögerung von 0 bis zum gewählten Prozentsatz des Scanintervalls hinzu. Beispiel: Bei 10 Sekunden Scanintervall und 20 % beträgt die zusätzliche Verzögerung 0–2 Sekunden. Das verteilt gleichzeitige Abfragen mehrerer Anlagen. Standard 0 %: deaktiviert.",
+              "communication_diagnostics": "Erstellt zusätzliche Diagnoseentitäten für die letzte erfolgreiche Abfrage, Abfragedauer, aufeinanderfolgende Fehler und aktive Register. Gesamtzahl der Abfragen und Fehler erscheinen als Attribute. Dafür werden keine zusätzlichen Modbus-Register gelesen. Standard: deaktiviert.",
+              "write_cooldown": "Mindestzeit zwischen zwei Schreibvorgängen auf dieselbe Registeradresse. Ein erneuter Schreibversuch wird vor der Übertragung vollständig abgelehnt; Home Assistant zeigt die verbleibende Wartezeit. Andere Register bleiben beschreibbar. Standard: 5 Sekunden. 0 deaktiviert diesen allgemeinen Schutz vollständig, 1–600 erzwingt ihn. Änderung auf eigenes Risiko; der separate EEPROM-Schreibschutz bleibt davon unberührt."
             }
           }
         }
@@ -440,6 +452,18 @@
           "normal": "Normal",
           "comfort": "Komfort"
         }
+      },
+      "modbus_last_success": {
+        "name": "Letzte erfolgreiche Modbus-Abfrage"
+      },
+      "modbus_poll_duration": {
+        "name": "Modbus-Abfragedauer"
+      },
+      "modbus_consecutive_failures": {
+        "name": "Aufeinanderfolgende Modbus-Fehler"
+      },
+      "modbus_active_registers": {
+        "name": "Aktive Modbus-Register"
       }
     },
     "binary_sensor": {
@@ -610,6 +634,9 @@
     },
     "dhw_boost_timeout_out_of_range": {
       "message": "Die Boost-Laufzeit muss zwischen {minimum} und {maximum} Minuten liegen."
+    },
+    "write_cooldown_active": {
+      "message": "Register {register} kann noch nicht geschrieben werden. Der konfigurierte Schreib-Cooldown beträgt {cooldown} Sekunden; bitte noch {remaining} Sekunden warten. Bei einem Cooldown von 0 ist der Schutz deaktiviert."
     }
   },
   "issues": {
