@@ -129,13 +129,13 @@ class TestKnxMetadataNonAdoption:
     # 990ec9b368132ba3e4c6f510d118482eb002c06a88a13b6e7d0ad94b50430984).
     # These identify the KNX gateway only, never the IDM controller.
     KNX_BAOS_VALUES: ClassVar[dict[str, str]] = {
-        "application_version": "16",        # KNX app version, NOT IDM firmware
-        "application_number": "1813",       # KNX app identifier
-        "hardware_version_number": "256",   # KNX product DB value, NOT IDM firmware
+        "application_version": "16",  # KNX app version, NOT IDM firmware
+        "application_number": "1813",  # KNX app identifier
+        "hardware_version_number": "256",  # KNX product DB value, NOT IDM firmware
         "hardware_name": "KNX IP BAOS 774",  # Weinzierl gateway product name
         "project_name": "KNX Navigator 2.0",  # ETS project name (NOT a model probe)
         "device_name": "IDM NAV2.0 KNX IP Gateway",  # free-form ETS label
-        "mask_version": "MV-07B0",          # KNX mask version
+        "mask_version": "MV-07B0",  # KNX mask version
         "serial_number_label": "KNX IP BAOS 774",  # product label, not a serial
     }
 
@@ -180,9 +180,7 @@ class TestKnxMetadataNonAdoption:
         still return exactly what ``client.detect_model()`` returned.
         """
         client = AsyncMock()
-        client.detect_model = AsyncMock(
-            return_value=MagicMock(model_name=MODEL_NAVIGATOR_10, firmware_version=None)
-        )
+        client.detect_model = AsyncMock(return_value=MagicMock(model_name=MODEL_NAVIGATOR_10, firmware_version=None))
         model_name, _, _ = await _detect_model_info(client)
         # The KNX project name "KNX Navigator 2.0" must NOT leak in here
         assert model_name == MODEL_NAVIGATOR_10
@@ -194,9 +192,7 @@ class TestKnxMetadataNonAdoption:
         given by the ETS user) must NOT override the Modbus result.
         """
         client = AsyncMock()
-        client.detect_model = AsyncMock(
-            return_value=MagicMock(model_name=MODEL_NAVIGATOR_10, firmware_version=None)
-        )
+        client.detect_model = AsyncMock(return_value=MagicMock(model_name=MODEL_NAVIGATOR_10, firmware_version=None))
         model_name, _, _ = await _detect_model_info(client)
         assert model_name == MODEL_NAVIGATOR_10
         assert "KNX IP Gateway" not in model_name
@@ -212,13 +208,16 @@ class TestKnxMetadataNonAdoption:
         test, even if the specific shape was not anticipated.
         """
         client = AsyncMock()
-        client.detect_model = AsyncMock(
-            return_value=MagicMock(model_name=MODEL_NAVIGATOR_10, firmware_version=None)
-        )
+        client.detect_model = AsyncMock(return_value=MagicMock(model_name=MODEL_NAVIGATOR_10, firmware_version=None))
         model_name, firmware_version, _ = await _detect_model_info(client)
         knx_tokens = (
-            "KNX", "BAOS", "MV-07B0", "1813", "Weinzierl",
-            "KNX Navigator", "NAV2.0 KNX",
+            "KNX",
+            "BAOS",
+            "MV-07B0",
+            "1813",
+            "Weinzierl",
+            "KNX Navigator",
+            "NAV2.0 KNX",
         )
         for tok in knx_tokens:
             assert tok not in (model_name or "")
@@ -266,9 +265,7 @@ class TestLiveVerifiedEnergyRegisters:
         sorted(LIVE_VERIFIED_NAV10_REGISTERS.items()),
         ids=[name for name, _ in sorted(LIVE_VERIFIED_NAV10_REGISTERS.items())],
     )
-    def test_live_verified_register_present_in_default_map(
-        self, name: str, expected: tuple[int, str]
-    ) -> None:
+    def test_live_verified_register_present_in_default_map(self, name: str, expected: tuple[int, str]) -> None:
         expected_type = expected[1]
         """Each live-verified register must still be resolvable by name in
         the default library register map, with the expected datatype.
@@ -286,8 +283,6 @@ class TestLiveVerifiedEnergyRegisters:
                 f"{name!r} not in default map for this library version; "
                 "address/datatype freeze is owned by idm-heatpump-api"
             )
-        assert str(reg.datatype).split(".")[-1] == expected_type or str(
-            reg.datatype
-        ) == expected_type, (
+        assert str(reg.datatype).split(".")[-1] == expected_type or str(reg.datatype) == expected_type, (
             f"{name}: datatype drifted from {expected_type} to {reg.datatype}"
         )

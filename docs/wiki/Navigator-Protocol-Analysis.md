@@ -146,3 +146,107 @@ Code-Pfad, der ETS- oder BAOS-Metadaten auswertet. Die entsprechenden
 Regressions-tests finden sich in `tests/test_knx_evidence.py`. Eine
 Erweiterung um neue Register oder Schreibservices ist aus dieser Datei allein
 nicht gerechtfertigt; siehe Abschnitt „Bewusst nicht implementiert".
+
+## IDM-Controller-ID-Räume
+
+Eine physikalische Größe wird auf einem IDM Navigator Controller von bis zu
+**drei unabhängigen ID-Räumen** adressiert. Diese Räume überlappen sich
+semantisch, sind aber **nicht** 1:1, und die Nummern sind bewusst
+unterschiedlich. Sie dürfen niemals als austauschbare Adressen verwendet
+werden.
+
+| ID-Raum | Verwendung | Beispiel Heizen | Beispiel PV-Überschuss |
+|---|---|---:|---:|
+| **Modbus-Register** | externes Protokoll, via `idm-heatpump-api` | 1748 | 74 |
+| **Interne Stats-ID** | Statistik-Engine, SD-Karte (`stats/amount/<id>_v1.csv`, `last_values.json`) | 477 | 495 (kumuliert: 100495) |
+| **KNX-Kommunikationsobjekt** | ETS-Beispielprojekt (Weinzierl BAOS 774) | 400 | 995 |
+
+### Was das in der Praxis bedeutet
+
+- **KNX-Objektnummer ≠ Modbus-Adresse** (schon im KNX-Abschnitt festgehalten).
+- **Interne Stats-ID ≠ Modbus-Adresse**. Beispiel: Heizenergie hat die interne
+  Stats-ID `477`, aber die Modbus-Adresse `1748`. Eine Fehlermeldung der Form
+  „Stat 477" auf dem Controller-Display entspricht also dem Modbus-Wert unter
+  Adresse `1748` und nicht etwa einer Lücke im Modbus-Adressraum.
+- **Interne Stats-ID ≠ KNX-Objektnummer**. Beispiel: PV-Überschuss hat
+  intern die ID `495`, im KNX-Beispielprojekt aber die Objektnummer `995`.
+- **Kumulierte Stat-IDs** im 100000er-Bereich (z. B. `100495`) sind die
+  Tages-Summen der zugrundeliegenden Serie (`495`), keine eigene physikalische
+  Größe.
+
+### Syscount-Querverweis (Energieregister)
+
+Die Datei `syscount.ini` auf der SD-Karte enthält die semantischen Bezeichnungen
+der kumulierten Zähler. Diese Integration hält eine cross-geprüfte
+Zuordnungstabelle in
+[`custom_components/idm_heatpump/controller_stats_reference.py`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/custom_components/idm_heatpump/controller_stats_reference.py)
+bereit. Sie ist unvollständig dokumentiert: nur Register, die über mindestens
+zwei der drei ID-Räume quergeprüft wurden, sind enthalten.
+
+| Syscount-Key | Stats-ID | Library-Register | Modbus | KNX-Objekt | Bedeutung |
+|---|---:|---|---:|---:|---|
+| `ZQHPH` | 477 | `energy_heating` | 1748 | 400 | Wärmemenge Heizen (Wärmepumpe) |
+| `ZQHPP` | 471 | `energy_dhw` | 1754 | 402 | Wärmemenge Warmwasser / Priority |
+| `ZQHPD` | 472 | `energy_defrost` | 1756 | 403 | Wärmemenge Abtauen |
+| `ZQHPC` | — | `energy_cooling` | 1752 | 401 | Wärmemenge Kühlen |
+| `ZQELH` | — | `energy_electric_heater` | 1762 | 406 | Wärmemenge Elektroheizstab |
+| `ZQHPO` | — | `total_heat_energy` | 4128 | 999 | Wärmemenge gesamt (Nav10) |
+| — | 495 | `pv_surplus` | 74 | 995 | Photovoltaik-Überschuss |
+| — | 496 | `pv_production` | 78 | 996 | Photovoltaik-Leistung |
+| — | — | `house_consumption` | 82 | 992 | Hausverbrauch |
+| — | — | `battery_discharge` | 84 | 993 | Batterieentladung |
+| — | — | `battery_soc` | 86 | 994 | Batterieladezustand (INT16, `-1` = n. v.) |
+| — | — | `power_consumption_hp` | 4122 | 997 | Elektrische Gesamtleistung |
+| — | — | `thermal_power_flow_sensor` | 4126 | 998 | Thermische Leistung |
+
+### Verwendung im Diagnose-Export
+
+Der Diagnose-Export der Integration (``Download diagnostics`` in der
+Integration-Seite) enthält für jeden bekannten Energieregister den
+zusätzlich cross-referenzierten `syscount`-Schlüssel. So lässt sich ein
+Plausibilitätsvergleich zwischen Home-Assistant-Reading und
+Controller-eigenem Zählerstand durchführen, ohne die SD-Karte ausbauen zu
+müssen.
+
+### Begrenzung des Befunds
+
+Diese Tabelle wurde an einer bestätigten Navigator-10-Anlage (Firmware
+`NAV10_20.24-880-g265e09c4a`) erhoben. Für Navigator 2.0 / Pro gelten
+möglicherweise abweichende Stats-IDs; die Syscount-Schlüsselnamen sollten
+dagegen generisch sein. Neue Einträge erfordern stets den Abgleich über
+mindestens zwei der drei ID-Räume (Modbus + syscount, oder Modbus + KNX).
+
+## SD-Karten-Struktur (Navigator 10)
+
+Eine SD-Karte aus einem Navigator 10 enthält typischerweise folgende
+verwertbare Strukturen:
+
+```
+/
+├── log/raw/<controller_id>/<YYMMDD>.mal   # binäre Tageslogs, proprietär
+├── recovery/
+│   ├── Backup/config/<YYYY-MM-DD_HHMM>/   # tägliche 2:00-Uhr-Snapshots
+│   └── autosaveconfig_<controller_id>--<id>/config/<YYYY-MM-DD_HHMM>/
+└── update/backup/backup<YYYYMMDDHHMMSS>.iup   # Firmware-Backup-Pakete
+```
+
+Der Snapshot eines Konfigurations-Backups enthält unter anderem:
+
+| Datei | Inhalt | Verwendbar für |
+|---|---|---|
+| `syscount.ini` | kumulierte Zähler (`ZQHPH`, `ZQHPP` etc.) | semantischer Querverweis |
+| `stats/amount/<id>_v1.csv` | Tageszeitreihe pro Stats-ID | Plausibilitätsvergleich |
+| `stats/amount/last_values.json` | letzter kumulierter Wert pro Stats-ID | Plausibilitätsvergleich |
+| `stats/amount/heating.csv`, `priority.csv` | benannte Tageszeitreihen | Plausibilitätsvergleich |
+| `stats/energy/ba_energy_hp`, `ba_energy_eh` | binäre Energie- und Stablöcher | Strukturverweis |
+| `stats/pv/ba_pv` | binäre PV-Tageszeitreihe (9 Spalten) | Strukturverweis |
+| `stats/runtimes/ba_runtimes`, `bivalence_runtimes` | binäre Laufzeitstatistiken | Strukturverweis |
+| `zone.ini` | konfigurierte Zonen (`size=0` = keine) | Erkennungs-Konsistenz |
+| `heatpump.ini` | Fehlerpuffer-Position (keine Serial!) |_low value_ |
+| `frwaparam.ini` | Firmware-Parameter (FRW*/FRWA*) | low value |
+| `hparam.ini`, `iparam.ini` | Heiz-/Installationsparameter | **nicht committen** (Anlagenspezifika) |
+| `errorLogBuffer.ini`, `paramLogBuffer.ini` | Fehler-/Parameter-Logs | **nicht committen** |
+
+Diese Integration liest keine SD-Karte aus. Die obige Struktur ist lediglich
+für Supportzwecke dokumentiert; wenn User Werte vergleichen möchten, können
+sie die entsprechenden CSV-Dateien manuell against ihre HA-Sensoren prüfen.

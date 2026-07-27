@@ -251,3 +251,59 @@ class TestDiagnostics:
         assert "web_pin" not in entry_data
         assert "myidm_id" not in entry_data
         assert "serial_number" not in entry_data
+
+
+class TestControllerStatsCrossReference:
+    """The diagnostics export emits a cross-reference between library
+    register names and the controller's internal syscount keys / KNX
+    object numbers. Lets users correlate HA readings with on-device
+    counters without pulling the SD card."""
+
+    async def test_block_present_even_when_data_empty(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        # Default MagicMock.data is a MagicMock that iterates as empty.
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        assert "controller_stats_cross_reference" in result["data"]
+        assert result["data"]["controller_stats_cross_reference"] == {}
+
+    async def test_emits_only_registers_present_in_data(self, mock_hass, mock_config_entry):
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.data = {"energy_heating": 27198.71, "pv_surplus": 7.56, "unrelated_register": 0}
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        block = result["data"]["controller_stats_cross_reference"]
+        assert set(block.keys()) == {"energy_heating", "pv_surplus"}
+        # Unrelated registers are omitted.
+        assert "unrelated_register" not in block
+
+    async def test_row_contains_syscount_key_for_energy_register(self, mock_hass, mock_config_entry):
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.data = {"energy_heating": 27198.71}
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        row = result["data"]["controller_stats_cross_reference"]["energy_heating"]
+        assert row["syscount_key"] == "ZQHPH"
+        assert row["internal_stats_id"] == 477
+        assert row["knx_object"] == 400
+        assert "Heizen" in row["label"] or "Wärmemenge" in row["label"]
+
+    async def test_row_handles_register_without_syscount_key(self, mock_hass, mock_config_entry):
+        """pv_surplus has no syscount key but a KNX object number."""
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.data = {"pv_surplus": 7.56}
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        row = result["data"]["controller_stats_cross_reference"]["pv_surplus"]
+        assert row["syscount_key"] is None
+        assert row["internal_stats_id"] == 495
+        assert row["knx_object"] == 995
+
+    async def test_no_register_values_leak_into_cross_reference(self, mock_hass, mock_config_entry):
+        """The cross-reference must emit ONLY labels/keys, never the
+        actual sensor value. Values live elsewhere in diagnostics if at all."""
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.data = {"energy_heating": 27198.71, "pv_surplus": 7.56}
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        block = result["data"]["controller_stats_cross_reference"]
+        # Each row has exactly the four label fields - nothing else.
+        for row in block.values():
+            assert set(row.keys()) == {"syscount_key", "internal_stats_id", "knx_object", "label"}
+            assert 27198.71 not in row.values()
+            assert 7.56 not in row.values()
