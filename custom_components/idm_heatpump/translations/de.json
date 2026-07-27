@@ -73,7 +73,7 @@
       },
       "options": {
         "title": "Konfiguration – {name}",
-        "description": "Passe Abfrageintervall und installierte Komponenten an. Änderungen starten die Integration neu.",
+        "description": "Lege fest, welche Daten die Integration abruft und wie sie in Home Assistant dargestellt werden. Die empfohlenen Standardwerte passen für die meisten Anlagen. Änderungen werden nach dem Speichern durch einen automatischen Neustart der Integration wirksam.",
         "data": {
           "scan_interval": "Abfrageintervall",
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
@@ -84,27 +84,27 @@
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
-          "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden)."
+          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul."
         },
         "sections": {
           "features": {
-            "name": "Optionale Funktionen",
-            "description": "Aktiviere nur Funktionen, die in deiner Anlage vorhanden sind.",
+            "name": "Darstellung und Zusatzfunktionen",
+            "description": "Diese Einstellungen ergänzen Sensoren oder ändern ausschließlich deren Darstellung in Home Assistant. Sie verändern nicht selbst die Regelung der Wärmepumpe. Beachte die Hinweise bei jeder Option.",
             "data": {
-              "technician_codes": "Fachmann-Ebene-Codes anzeigen",
-              "enable_cascade": "Kaskadenregister aktivieren",
-              "web_extra_data": "Web-Zusatzdaten aktivieren",
-              "web_scan_interval": "Web-Abfrageintervall",
-              "device_hierarchy": "Funktionsbereiche als eigene Geräte anzeigen",
-              "short_cycle_minutes": "Kurz-Takt-Schwelle"
+              "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
+              "enable_cascade": "Kaskadenanlage auslesen",
+              "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
+              "web_scan_interval": "Abfrageintervall der Webdaten",
+              "device_hierarchy": "Entitäten nach Anlagenbereichen gruppieren",
+              "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt"
             },
             "data_description": {
-              "technician_codes": "Zeigt die aktuellen Codes für Fachmann-Ebene 1 und 2; Aktualisierung jede Minute.",
-              "enable_cascade": "Nur aktivieren, wenn mehrere Wärmepumpen als Kaskade eingerichtet sind.",
-              "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten, wenn eine lokale Web-PIN hinterlegt ist.",
-              "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden.",
-              "device_hierarchy": "Wenn aktiviert, zeigt Home Assistant Funktionsbereiche wie Heizkreise, Zonenmodule, Räume, Warmwasser, Diagnose, Solar, ISC, Kaskade und Zusatzwärmeerzeuger als eigene Untergeräte der Wärmepumpe an. Das ist keine Entity-Kategorie und keine Sortiergruppe: Es ändert nur, welchem Home-Assistant-Gerät eine Entität zugeordnet ist. Entity-IDs, Verhalten der Entitäten und Steuerung der Wärmepumpe bleiben unverändert. Bestehende Installationen behalten die bisherige Ansicht mit einem Gerät, bis diese Option aktiviert wird.",
-              "short_cycle_minutes": "Der letzte vollständig beobachtete Verdichtertakt wird als Problem gemeldet, wenn er kürzer als diese Dauer war."
+              "technician_codes": "Erstellt zwei Sensoren mit den zeitabhängigen Zugangscodes für Fachmann-Ebene 1 und 2 und aktualisiert sie jede Minute. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen.",
+              "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
+              "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
+              "web_scan_interval": "Zeit zwischen zwei Abfragen der lokalen Navigator-Weboberfläche. Diese Einstellung wirkt nur bei aktivierten Web-Zusatzdaten. Kürzere Intervalle liefern schneller neue Werte, erzeugen aber mehr Netzwerklast. Standard: 30 Sekunden.",
+              "device_hierarchy": "Ordnet Entitäten eigenen Untergeräten für Heizkreise, Zonenmodule, Räume, Warmwasser, Diagnose und weitere erkannte Anlagenbereiche zu. Dadurch wird die Geräteansicht übersichtlicher. Entitäts-IDs, Messwerte und Steuerung bleiben unverändert. Deaktiviert erscheinen alle Entitäten weiterhin direkt unter der Wärmepumpe.",
+              "short_cycle_minutes": "Dauer, unterhalb der ein vollständig beobachteter Verdichtertakt als zu kurz gilt. Die Integration schaltet dadurch nichts ab, sondern aktiviert nur den Diagnose-Binärsensor für kurze Takte. Ein höherer Wert führt entsprechend häufiger zu einem Hinweis."
             }
           },
           "room_temperature_forwarding": {
@@ -235,7 +235,7 @@
     "step": {
       "options": {
         "title": "Konfiguration – {name}",
-        "description": "Passe Abfrageintervall und installierte Komponenten an. Änderungen starten die Integration neu.",
+        "description": "Lege fest, welche Daten die Integration abruft und wie sie in Home Assistant dargestellt werden. Die empfohlenen Standardwerte passen für die meisten Anlagen. Änderungen werden nach dem Speichern durch einen automatischen Neustart der Integration wirksam.",
         "data": {
           "scan_interval": "Abfrageintervall",
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
@@ -246,23 +246,27 @@
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
-          "zone_count": "Anzahl der installierten IDM Zonenmodule (0 wenn keine vorhanden)."
+          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul."
         },
         "sections": {
           "features": {
-            "name": "Optionale Funktionen",
-            "description": "Aktiviere nur Funktionen, die in deiner Anlage vorhanden sind.",
+            "name": "Darstellung und Zusatzfunktionen",
+            "description": "Diese Einstellungen ergänzen Sensoren oder ändern ausschließlich deren Darstellung in Home Assistant. Sie verändern nicht selbst die Regelung der Wärmepumpe. Beachte die Hinweise bei jeder Option.",
             "data": {
-              "technician_codes": "Fachmann-Ebene-Codes anzeigen",
-              "enable_cascade": "Kaskadenregister aktivieren",
-              "web_extra_data": "Web-Zusatzdaten aktivieren",
-              "web_scan_interval": "Web-Abfrageintervall"
+              "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
+              "enable_cascade": "Kaskadenanlage auslesen",
+              "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
+              "web_scan_interval": "Abfrageintervall der Webdaten",
+              "device_hierarchy": "Entitäten nach Anlagenbereichen gruppieren",
+              "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt"
             },
             "data_description": {
-              "technician_codes": "Zeigt die aktuellen Codes für Fachmann-Ebene 1 und 2; Aktualisierung jede Minute.",
-              "enable_cascade": "Nur aktivieren, wenn mehrere Wärmepumpen als Kaskade eingerichtet sind.",
-              "web_extra_data": "Liest zusätzliche lokale Navigator-Webdaten, wenn eine lokale Web-PIN hinterlegt ist.",
-              "web_scan_interval": "Wie oft optionale Webdaten gelesen werden. Standard: 30 Sekunden."
+              "technician_codes": "Erstellt zwei Sensoren mit den zeitabhängigen Zugangscodes für Fachmann-Ebene 1 und 2 und aktualisiert sie jede Minute. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen.",
+              "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
+              "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
+              "web_scan_interval": "Zeit zwischen zwei Abfragen der lokalen Navigator-Weboberfläche. Diese Einstellung wirkt nur bei aktivierten Web-Zusatzdaten. Kürzere Intervalle liefern schneller neue Werte, erzeugen aber mehr Netzwerklast. Standard: 30 Sekunden.",
+              "device_hierarchy": "Ordnet Entitäten eigenen Untergeräten für Heizkreise, Zonenmodule, Räume, Warmwasser, Diagnose und weitere erkannte Anlagenbereiche zu. Dadurch wird die Geräteansicht übersichtlicher. Entitäts-IDs, Messwerte und Steuerung bleiben unverändert. Deaktiviert erscheinen alle Entitäten weiterhin direkt unter der Wärmepumpe.",
+              "short_cycle_minutes": "Dauer, unterhalb der ein vollständig beobachteter Verdichtertakt als zu kurz gilt. Die Integration schaltet dadurch nichts ab, sondern aktiviert nur den Diagnose-Binärsensor für kurze Takte. Ein höherer Wert führt entsprechend häufiger zu einem Hinweis."
             }
           },
           "room_temperature_forwarding": {
