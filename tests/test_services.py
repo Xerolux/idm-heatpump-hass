@@ -294,16 +294,10 @@ class TestWriteRegister:
         call = MagicMock()
         call.data = {"address": 1000, "value": "42", "acknowledge_risk": True}
         result = await _handle_write_register(mock_hass, call)
-        reg = coord.client.write_register.call_args.args[0]
-        coord.client.write_register.assert_called_once_with(
+        reg = coord.async_write_register.call_args.args[0]
+        coord.async_write_register.assert_awaited_once_with(
             reg,
             42,
-            allow_custom_register=True,
-        )
-        coord.simulate_write.assert_called_once_with(
-            reg,
-            42,
-            dry_run=True,
             allow_custom_register=True,
         )
         assert result["success"] is True
@@ -319,12 +313,12 @@ class TestWriteRegister:
             "acknowledge_risk": True,
         }
         result = await _handle_write_register(mock_hass, call)
-        coord.client.write_register.assert_called_once()
+        coord.async_write_register.assert_awaited_once()
         assert result["success"] is True
 
     async def test_raises_on_write_error(self, mock_hass):
         coord = _make_coordinator_in_hass(mock_hass)
-        coord.client.write_register = AsyncMock(side_effect=Exception("write failed"))
+        coord.async_write_register = AsyncMock(side_effect=Exception("write failed"))
         call = MagicMock()
         call.data = {"address": 1000, "value": 1, "acknowledge_risk": True}
         with pytest.raises(HomeAssistantError):
@@ -332,7 +326,7 @@ class TestWriteRegister:
 
     async def test_write_error_creates_write_rejected_issue(self, mock_hass):
         coord = _make_coordinator_in_hass(mock_hass)
-        coord.client.write_register = AsyncMock(side_effect=Exception("write failed"))
+        coord.async_write_register = AsyncMock(side_effect=Exception("write failed"))
         call = MagicMock()
         call.data = {"address": 1000, "value": 1, "acknowledge_risk": True}
 

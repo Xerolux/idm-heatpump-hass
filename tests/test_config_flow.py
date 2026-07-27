@@ -1,6 +1,8 @@
 """Tests for IdmHeatpumpConfigFlow and IdmHeatpumpOptionsFlow."""
 
+import json
 import socket
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.idm_heatpump.config_flow import (
@@ -14,6 +16,7 @@ from custom_components.idm_heatpump.config_flow import (
     _WebSupplementConnectionFailed,
 )
 from custom_components.idm_heatpump.const import (
+    CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
@@ -23,6 +26,7 @@ from custom_components.idm_heatpump.const import (
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
+    CONF_POLLING_JITTER,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -34,15 +38,56 @@ from custom_components.idm_heatpump.const import (
     CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
+    CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
+    DEFAULT_POLLING_JITTER,
     DEFAULT_WEB_ENABLED,
+    DEFAULT_WRITE_COOLDOWN,
     MODEL_OVERRIDE_AUTO,
     MODEL_OVERRIDE_NAVIGATOR_10,
 )
 from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed, IdmWebSupplement
+
+TRANSLATION_FILES = (
+    Path("custom_components/idm_heatpump/strings.json"),
+    Path("custom_components/idm_heatpump/translations/de.json"),
+    Path("custom_components/idm_heatpump/translations/en.json"),
+)
+
+
+def test_options_translations_match_initial_config_flow() -> None:
+    """Both entry points for the shared options schema expose every label."""
+    for path in TRANSLATION_FILES:
+        translations = json.loads(path.read_text(encoding="utf-8"))
+        config_options = translations["config"]["step"]["options"]
+        options_flow = translations["options"]["step"]["options"]
+
+        assert options_flow == config_options
+        feature_labels = options_flow["sections"]["features"]["data"]
+        feature_descriptions = options_flow["sections"]["features"]["data_description"]
+        assert feature_labels.keys() == feature_descriptions.keys()
+
+
+def test_advanced_options_explain_operational_effects() -> None:
+    """Power-user settings must state defaults, disable behavior, and safety scope."""
+    for path in TRANSLATION_FILES:
+        translations = json.loads(path.read_text(encoding="utf-8"))
+        advanced = translations["options"]["step"]["options"]["sections"]["advanced_modbus"]
+        descriptions = advanced["data_description"]
+
+        assert "0" in descriptions["polling_jitter"]
+        assert "10" in descriptions["polling_jitter"]
+        assert "20" in descriptions["polling_jitter"]
+        assert "Modbus" in descriptions["communication_diagnostics"]
+        assert "5" in descriptions["write_cooldown"]
+        assert "0" in descriptions["write_cooldown"]
+        assert "600" in descriptions["write_cooldown"]
+        assert "EEPROM" in descriptions["write_cooldown"]
+        assert "EEPROM" in descriptions["eeprom_write_interval"]
 
 
 def _make_flow():
@@ -172,6 +217,46 @@ class TestAsyncStepUser:
         assert result["type"] == "form"
         assert "host" in result["errors"]
 
+    async def test_default_web_setup_requires_pin_or_explicit_opt_out(self):
+        flow = _make_flow()
+        with patch.object(flow, "_test_connection", return_value=True) as test_connection:
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "setup_web_access": True,
+                    CONF_WEB_PIN: "",
+                }
+            )
+
+        assert result["errors"] == {CONF_WEB_PIN: "web_pin_required_or_disable"}
+        test_connection.assert_not_awaited()
+
+    async def test_explicit_modbus_only_setup_skips_web_detection(self):
+        flow = _make_flow()
+        with (
+            patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
+        ):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "setup_web_access": False,
+                    CONF_WEB_PIN: "ignored",
+                    CONF_MODBUS_PROXY: True,
+                    CONF_WEB_HOST: "ignored.local",
+                }
+            )
+
+        assert result["step_id"] == "setup_review"
+        detect_web.assert_awaited_once_with("192.168.1.100", "", model_hint=None, required=False)
+        assert flow._data[CONF_WEB_PIN] == ""
+        assert flow._data[CONF_MODBUS_PROXY] is False
+        assert flow._data[CONF_WEB_HOST] == ""
+
     async def test_connection_failure_shows_error(self):
         flow = _make_flow()
         with patch.object(flow, "_test_connection", return_value=False):
@@ -252,12 +337,11 @@ class TestAsyncStepUser:
         assert result["errors"]["host"] == "already_configured"
         test_connection.assert_not_awaited()
 
-    async def test_successful_connection_goes_to_options(self):
+    async def test_successful_connection_goes_to_setup_review(self):
         flow = _make_flow()
         flow._async_abort_entries_match = MagicMock()
         with (
             patch.object(flow, "_test_connection", return_value=True),
-            patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}),
         ):
             result = await flow.async_step_user(
                 {
@@ -267,7 +351,7 @@ class TestAsyncStepUser:
                     "slave_id": 1,
                 }
             )
-        assert result["step_id"] == "options"
+        assert result["step_id"] == "setup_review"
         flow._async_abort_entries_match.assert_called_once_with({"host": "192.168.1.100", "port": 502, "slave_id": 1})
 
     async def test_successful_connection_stores_detected_web_metadata(self):
@@ -279,11 +363,6 @@ class TestAsyncStepUser:
         with (
             patch.object(flow, "_test_connection", return_value=True),
             patch.object(flow, "_async_detect_web_supplement", return_value=detected),
-            patch.object(
-                flow,
-                "async_step_options",
-                return_value={"type": "form", "step_id": "options", "errors": {}},
-            ),
         ):
             result = await flow.async_step_user(
                 {
@@ -295,7 +374,7 @@ class TestAsyncStepUser:
                 }
             )
 
-        assert result["step_id"] == "options"
+        assert result["step_id"] == "setup_review"
         assert flow._data[CONF_WEB_PIN] == "1234"
         assert flow._data[CONF_DETECTED_NAVIGATOR_VERSION] == "Navigator 10"
         assert flow._data[CONF_DETECTED_SOFTWARE_VERSION] == "NAV10_20.23"
@@ -333,11 +412,6 @@ class TestAsyncStepUser:
         with (
             patch.object(flow, "_test_connection", return_value=True),
             patch.object(flow, "_async_detect_web_supplement", return_value={}) as detect_web,
-            patch.object(
-                flow,
-                "async_step_options",
-                return_value={"type": "form", "step_id": "options", "errors": {}},
-            ),
         ):
             result = await flow.async_step_user(
                 {
@@ -351,7 +425,7 @@ class TestAsyncStepUser:
                 }
             )
 
-        assert result["step_id"] == "options"
+        assert result["step_id"] == "setup_review"
         detect_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint=None, required=True)
         assert flow._data[CONF_MODBUS_PROXY] is True
         assert flow._data[CONF_WEB_HOST] == "192.168.178.103"
@@ -453,55 +527,30 @@ class TestAsyncStepUser:
 
     async def test_successful_connection_defaults_model_override_to_auto(self):
         flow = _make_flow()
-        flow._async_abort_entries_match = MagicMock()
-        with (
-            patch.object(flow, "_test_connection", return_value=True),
-            patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}),
-        ):
-            await flow.async_step_user(
-                {
-                    "name": "IDM Test",
-                    "host": "192.168.1.100",
-                    "port": 502,
-                    "slave_id": 1,
-                }
-            )
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+
+        await flow.async_step_setup_review({"profile": "recommended"})
+
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
 
     async def test_explicit_model_override_is_stored(self):
         flow = _make_flow()
-        flow._async_abort_entries_match = MagicMock()
-        with (
-            patch.object(flow, "_test_connection", return_value=True),
-            patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}),
-        ):
-            await flow.async_step_user(
-                {
-                    "name": "IDM Test",
-                    "host": "192.168.1.100",
-                    "port": 502,
-                    "slave_id": 1,
-                    CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10,
-                }
-            )
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+
+        await flow.async_step_setup_review(
+            {"profile": "recommended", CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10}
+        )
+
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_NAVIGATOR_10
 
     async def test_invalid_model_override_falls_back_to_auto(self):
         flow = _make_flow()
-        flow._async_abort_entries_match = MagicMock()
-        with (
-            patch.object(flow, "_test_connection", return_value=True),
-            patch.object(flow, "async_step_options", return_value={"type": "form", "step_id": "options", "errors": {}}),
-        ):
-            await flow.async_step_user(
-                {
-                    "name": "IDM Test",
-                    "host": "192.168.1.100",
-                    "port": 502,
-                    "slave_id": 1,
-                    CONF_MODEL_OVERRIDE: "navigator_99_bogus",
-                }
-            )
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+
+        await flow.async_step_setup_review(
+            {"profile": "recommended", CONF_MODEL_OVERRIDE: "navigator_99_bogus"}
+        )
+
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
 
 
@@ -519,6 +568,9 @@ class TestAsyncStepOptions:
         schema_dict = dict(schema._schema["advanced_modbus"]._schema)
         assert CONF_MODBUS_TIMEOUT in schema_dict
         assert CONF_MODBUS_MAX_RETRIES in schema_dict
+        assert CONF_POLLING_JITTER in schema_dict
+        assert CONF_COMMUNICATION_DIAGNOSTICS in schema_dict
+        assert CONF_WRITE_COOLDOWN in schema_dict
 
     def test_options_schema_applies_defaults_for_timeout_and_retries(self):
         schema = _build_options_schema({})
@@ -526,6 +578,9 @@ class TestAsyncStepOptions:
         markers = {marker.key: marker for marker in schema._schema["advanced_modbus"]._schema}
         assert markers[CONF_MODBUS_TIMEOUT].default == DEFAULT_MODBUS_TIMEOUT
         assert markers[CONF_MODBUS_MAX_RETRIES].default == DEFAULT_MODBUS_MAX_RETRIES
+        assert markers[CONF_POLLING_JITTER].default == DEFAULT_POLLING_JITTER
+        assert markers[CONF_COMMUNICATION_DIAGNOSTICS].default == DEFAULT_COMMUNICATION_DIAGNOSTICS
+        assert markers[CONF_WRITE_COOLDOWN].default == DEFAULT_WRITE_COOLDOWN
 
     async def test_no_zones_creates_entry(self):
         flow = _make_flow()
@@ -1488,7 +1543,7 @@ class TestConfigFlowZoneBoundaries:
 
 class TestConfigFlowFullFlow:
     async def test_user_to_options_to_create_entry(self):
-        """Full happy path: user step → options step → create_entry."""
+        """Full custom path: user → review → options → create entry."""
         flow = _make_flow()
         # Step 1: user
         with patch.object(flow, "_test_connection", return_value=True):
@@ -1501,7 +1556,10 @@ class TestConfigFlowFullFlow:
                 }
             )
         assert step1["type"] == "form"
-        assert step1["step_id"] == "options"
+        assert step1["step_id"] == "setup_review"
+
+        review = await flow.async_step_setup_review({"profile": "custom"})
+        assert review["step_id"] == "options"
 
         # Step 2: options (no zones)
         step2 = await flow.async_step_options(
@@ -1515,6 +1573,39 @@ class TestConfigFlowFullFlow:
         )
         assert step2["type"] == "create_entry"
         assert step2["title"] == "IDM Heat"
+
+    async def test_recommended_profile_finishes_setup_from_review(self):
+        """The default guided profile must avoid the expert options form."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM Heat", "host": "192.168.1.100", "port": 502, "slave_id": 1}
+
+        result = await flow.async_step_setup_review({"profile": "recommended"})
+
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_SCAN_INTERVAL] == 10
+        assert result["options"][CONF_HEATING_CIRCUITS] == ["a"]
+        assert result["options"][CONF_ZONE_COUNT] == 0
+
+    async def test_multiple_clients_profile_uses_slower_jittered_polling(self):
+        """The multi-client profile should reduce synchronized Modbus load."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM Heat", "host": "192.168.1.100", "port": 502, "slave_id": 1}
+
+        result = await flow.async_step_setup_review({"profile": "multiple_clients"})
+
+        assert result["options"][CONF_SCAN_INTERVAL] == 30
+        assert result["options"][CONF_POLLING_JITTER] == 20
+
+    async def test_reliable_network_profile_increases_timeout_and_retries(self):
+        """The unreliable-network profile should tolerate slow responses."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM Heat", "host": "192.168.1.100", "port": 502, "slave_id": 1}
+
+        result = await flow.async_step_setup_review({"profile": "reliable_network"})
+
+        assert result["options"][CONF_SCAN_INTERVAL] == 30
+        assert result["options"][CONF_MODBUS_TIMEOUT] == 20.0
+        assert result["options"][CONF_MODBUS_MAX_RETRIES] == 5
 
     async def test_user_to_options_to_zones_to_create_entry(self):
         """Full happy path with zones: user → options → zones → create_entry."""

@@ -3,26 +3,26 @@
     "step": {
       "user": {
         "title": "Set up IDM Navigator Heat Pump",
-        "description": "[Need Help? Read the Documentation]({wiki_url})\n\nEnter the connection details of your IDM heat pump.\n\n**Required for full operation:** On the IDM Navigator/controller, enable *Building management system (Gebäudeleittechnik) → Modbus TCP → On (Ein)*. Usually use port **502** and slave ID **1**. If the menu is missing or locked, your heating installer or iDM service must enable it.\n\n**Optional local web access:** Is a *Local network code* configured on the Navigator? Set it on the controller display under *Settings → General settings → Network settings → Local network code*. Cloud/app passwords and two-factor authentication codes are not used here; an empty value or `0` disables local web access.",
+        "description": "[Need help? Open the documentation]({wiki_url})\n\nEnter the Modbus connection details of your IDM heat pump. By default, the assistant configures **Modbus and local Navigator web access together**, so enter the Local network code as the web PIN. If you deliberately want Modbus only, explicitly disable web access.\n\nWhen using a Modbus proxy, enable “Use a Modbus proxy” and enter the heat pump’s direct IP address or hostname as the web address.",
         "data": {
           "name": "Name",
           "host": "Modbus IP / Hostname",
           "port": "Port",
           "slave_id": "Slave ID",
+          "setup_web_access": "Use local Navigator web access",
           "web_pin": "Local network PIN (Navigator web)",
           "modbus_proxy": "Use a Modbus proxy",
-          "web_host": "Original heat pump IP for web access",
-          "model_override": "Navigator model"
+          "web_host": "Original heat pump IP for web access"
         },
         "data_description": {
           "name": "Display name for the device in Home Assistant, e.g. \"IDM Heat Pump\".",
           "host": "IP address or hostname used for Modbus TCP. If you use a Modbus proxy, enter the proxy address here.",
           "port": "Modbus TCP port of the controller. Default is `502`.",
           "slave_id": "Modbus slave ID. Default is `1`. Only change this if multiple devices share the same bus.",
+          "setup_web_access": "Default: enabled. Explicitly disable this only when you want Modbus without additional local Navigator web data.",
           "web_pin": "Enter the Local network code configured on the Navigator display. Do not enter a cloud/app password or a two-factor code. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
-          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`.",
-          "model_override": "**Only change if the automatic detection does not work correctly.** The model is detected automatically in almost all cases. A wrong manual choice can degrade the register map and lead to missing or unavailable sensors."
+          "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`."
         }
       },
       "reconfigure": {
@@ -44,6 +44,7 @@
           "host": "Modbus IP / Hostname",
           "port": "Port",
           "slave_id": "Slave ID",
+          "setup_web_access": "Use local Navigator web access",
           "web_pin": "Local network PIN (Navigator web)",
           "modbus_proxy": "Use a Modbus proxy",
           "web_host": "Original heat pump IP for web access",
@@ -53,6 +54,7 @@
           "host": "IP address or hostname used for Modbus TCP. If you use a Modbus proxy, enter the proxy address here.",
           "port": "Modbus TCP port. Default is `502`.",
           "slave_id": "Modbus slave ID. Default is `1`.",
+          "setup_web_access": "Default: enabled. Explicitly disable this only when you want Modbus without additional local Navigator web data.",
           "web_pin": "Local network code configured on the Navigator display. Cloud/app passwords and two-factor codes do not work here. Leave empty for Modbus-only operation; `0` disables local web access on the controller.",
           "modbus_proxy": "Enable this when the Modbus address above is a proxy and not the heat pump itself.",
           "web_host": "Only needed when using a Modbus proxy. Enter the original IP address or hostname of the heat pump, for example `192.0.2.103`.",
@@ -61,19 +63,19 @@
       },
       "diagnostics_success": {
         "title": "Modbus and web connection successful",
-        "description": "The read-only test succeeded for Modbus **{host}:{port}**, slave ID **{slave_id}**, and the configured local Navigator web access.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+        "description": "The read-only test succeeded for Modbus **{host}:{port}**, slave ID **{slave_id}**, and the configured local Navigator web access.\n\nNo settings were changed and no registers were written. Submit again to repeat the test.\n\n**Results**\n- Modbus: **{modbus_status}**\n- Navigator web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duration: **{duration} s**"
       },
       "diagnostics_modbus_success": {
         "title": "Modbus connection successful",
-        "description": "The read-only Modbus test succeeded for **{host}:{port}**, slave ID **{slave_id}**. Web access was skipped because no local web PIN is configured.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+        "description": "The read-only Modbus test succeeded for **{host}:{port}**, slave ID **{slave_id}**. Web access was skipped because no local web PIN is configured.\n\nNo settings were changed and no registers were written. Submit again to repeat the test.\n\n**Results**\n- Modbus: **{modbus_status}**\n- Navigator web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duration: **{duration} s**"
       },
       "diagnostics_failed": {
         "title": "Connection test failed",
-        "description": "The read-only test for **{host}:{port}**, slave ID **{slave_id}**, did not complete successfully. The specific cause and recommended checks are shown above.\n\nNo settings were changed and no registers were written. Submit again to repeat the test."
+        "description": "The read-only test for **{host}:{port}**, slave ID **{slave_id}**, did not complete successfully. The specific cause and recommended checks are shown above.\n\nNo settings were changed and no registers were written. Submit again to repeat the test.\n\n**Results**\n- Modbus: **{modbus_status}**\n- Navigator web: **{web_status}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Duration: **{duration} s**"
       },
       "options": {
         "title": "Configuration – {name}",
-        "description": "Adjust the polling interval and installed components. Changes will restart the integration.",
+        "description": "Choose which data the integration reads and how it is presented in Home Assistant. The recommended defaults suit most installations. Saving automatically restarts the integration to apply your changes.",
         "data": {
           "scan_interval": "Scan interval",
           "hide_unused_registers": "Hide unused sensors",
@@ -84,27 +86,27 @@
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of IDM zone modules installed (0 if none)."
+          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist."
         },
         "sections": {
           "features": {
-            "name": "Optional features",
-            "description": "Enable only features that exist in your installation.",
+            "name": "Presentation and additional features",
+            "description": "These settings add sensors or change only how they are presented in Home Assistant. They do not by themselves change heat-pump control. Read the note for each option.",
             "data": {
-              "technician_codes": "Show Installer Level codes",
-              "enable_cascade": "Enable cascade registers",
-              "web_extra_data": "Enable web supplement data",
-              "web_scan_interval": "Web supplement interval",
-              "device_hierarchy": "Show functional areas as separate devices",
-              "short_cycle_minutes": "Short-cycle threshold"
+              "technician_codes": "Show current installer codes as sensors",
+              "enable_cascade": "Read a cascade installation",
+              "web_extra_data": "Read additional Navigator web data",
+              "web_scan_interval": "Web data polling interval",
+              "device_hierarchy": "Group entities by system area",
+              "short_cycle_minutes": "Short compressor-cycle threshold"
             },
             "data_description": {
-              "technician_codes": "Exposes two sensors showing the current Installer Level codes. Codes are refreshed every minute.",
-              "enable_cascade": "Only enable this when multiple heat pumps are configured as a cascade.",
-              "web_extra_data": "Reads additional local Navigator web data when a local web PIN is configured.",
-              "web_scan_interval": "How often to read optional web data. Default: 30 seconds.",
-              "device_hierarchy": "When enabled, Home Assistant shows functional areas such as heating circuits, zone modules, rooms, domestic hot water, diagnostics, solar, ISC, cascade, and auxiliary heat as separate child devices under the heat pump. This is not an entity category or sorting group: it only changes which Home Assistant device an entity belongs to. It does not change entity IDs, entity behavior, or heat-pump control. Existing installations keep the previous single-device layout until you enable this option.",
-              "short_cycle_minutes": "The last fully observed compressor cycle is reported as a problem when it is shorter than this duration."
+              "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
+              "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
+              "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
+              "web_scan_interval": "Time between reads of the local Navigator web interface. This setting applies only when additional web data is enabled. Shorter intervals provide updates sooner but increase network traffic. Default: 30 seconds.",
+              "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
+              "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often."
             }
           },
           "room_temperature_forwarding": {
@@ -123,16 +125,22 @@
           },
           "advanced_modbus": {
             "name": "Advanced Modbus settings",
-            "description": "The defaults are recommended. Change these only for slow or unreliable networks.",
+            "description": "For experienced users only. The defaults are recommended. Polling jitter spreads requests, diagnostics creates extra entities, and the write cooldown blocks rapid repeat writes. The general write cooldown and EEPROM protection operate independently.",
             "data": {
               "modbus_timeout": "Response timeout",
               "modbus_retries": "Retries",
-              "eeprom_write_interval": "EEPROM write protection (seconds)"
+              "eeprom_write_interval": "EEPROM write protection (seconds)",
+              "polling_jitter": "Polling jitter (%)",
+              "communication_diagnostics": "Extended communication diagnostics",
+              "write_cooldown": "Per-register write cooldown (seconds)"
             },
             "data_description": {
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
               "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
-              "eeprom_write_interval": "Minimum time between two writes to the same EEPROM register (e.g. heating/cooling limit). Default 60s protects the EEPROM's limited write cycles. Lowering it is AT YOUR OWN RISK: it accelerates EEPROM wear. Lower only when you accept that risk."
+              "eeprom_write_interval": "Minimum time between writes to the same EEPROM register (for example, a heating/cooling limit). The 60-second default protects the EEPROM's limited write cycles. This protection applies additionally and independently of the general write cooldown. LOWERING IT IS AT YOUR OWN RISK and accelerates EEPROM wear.",
+              "polling_jitter": "Adds a random delay from 0 up to the selected percentage of the scan interval before every Modbus poll. Example: a 10-second scan interval with 20% adds 0–2 seconds. This spreads simultaneous requests from multiple systems. Default 0%: disabled.",
+              "communication_diagnostics": "Creates additional diagnostic entities for the last successful poll, poll duration, consecutive failures, and active registers. Total polls and failures are shown as attributes. No additional Modbus registers are read. Default: disabled.",
+              "write_cooldown": "Minimum time between writes to the same register address. A repeat attempt is completely rejected before transmission and Home Assistant shows the remaining wait. Other registers remain writable. Default: 5 seconds. 0 fully disables this general protection; 1–600 enforces it. Change at your own risk; separate EEPROM protection remains active."
             }
           }
         }
@@ -209,6 +217,18 @@
         "data_description": {
           "web_scan_interval": "How often to read web data. Default: 30 seconds. Shorter intervals mean more network traffic."
         }
+      },
+      "setup_review": {
+        "title": "IDM system detected",
+        "description": "Modbus and the requested local web access were verified.\n\n- Endpoint: **{host}:{port}**\n- Slave ID: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Local web access: **{web}**\n\nReview the automatically detected model. Override it only when detection is demonstrably wrong. Then choose a guided profile or Custom for every option.",
+        "data": {
+          "profile": "Configuration profile",
+          "model_override": "Confirm Navigator model"
+        },
+        "data_description": {
+          "profile": "Recommended suits most installations. Network profiles only adjust polling interval, timeout, retries, and jitter; every value remains editable later.",
+          "model_override": "Automatic uses detection. Select a concrete model only when detection is wrong or unavailable; a wrong choice can hide entities."
+        }
       }
     },
     "error": {
@@ -224,7 +244,8 @@
       "name_required": "Please enter a name for the device.",
       "web_pin_required": "Enter the local Navigator web PIN to continue in web-only mode.",
       "web_cannot_connect": "The local Navigator web interface could not be read. Check the original heat pump address and network access, or clear the web PIN to continue with Modbus only.",
-      "web_host_required": "Enter the original heat pump IP/hostname for web access, or disable the Modbus proxy option."
+      "web_host_required": "Enter the original heat pump IP/hostname for web access, or disable the Modbus proxy option.",
+      "web_pin_required_or_disable": "Enter the local Navigator web PIN, or explicitly disable “Use local Navigator web access” for Modbus-only operation."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -235,7 +256,7 @@
     "step": {
       "options": {
         "title": "Configuration – {name}",
-        "description": "Adjust the polling interval and installed components. Changes will restart the integration.",
+        "description": "Choose which data the integration reads and how it is presented in Home Assistant. The recommended defaults suit most installations. Saving automatically restarts the integration to apply your changes.",
         "data": {
           "scan_interval": "Scan interval",
           "hide_unused_registers": "Hide unused sensors",
@@ -246,23 +267,27 @@
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of IDM zone modules installed (0 if none)."
+          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist."
         },
         "sections": {
           "features": {
-            "name": "Optional features",
-            "description": "Enable only features that exist in your installation.",
+            "name": "Presentation and additional features",
+            "description": "These settings add sensors or change only how they are presented in Home Assistant. They do not by themselves change heat-pump control. Read the note for each option.",
             "data": {
-              "technician_codes": "Show Installer Level codes",
-              "enable_cascade": "Enable cascade registers",
-              "web_extra_data": "Enable web supplement data",
-              "web_scan_interval": "Web supplement interval"
+              "technician_codes": "Show current installer codes as sensors",
+              "enable_cascade": "Read a cascade installation",
+              "web_extra_data": "Read additional Navigator web data",
+              "web_scan_interval": "Web data polling interval",
+              "device_hierarchy": "Group entities by system area",
+              "short_cycle_minutes": "Short compressor-cycle threshold"
             },
             "data_description": {
-              "technician_codes": "Exposes two sensors showing the current Installer Level codes. Codes are refreshed every minute.",
-              "enable_cascade": "Only enable this when multiple heat pumps are configured as a cascade.",
-              "web_extra_data": "Reads additional local Navigator web data when a local web PIN is configured.",
-              "web_scan_interval": "How often to read optional web data. Default: 30 seconds."
+              "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
+              "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
+              "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
+              "web_scan_interval": "Time between reads of the local Navigator web interface. This setting applies only when additional web data is enabled. Shorter intervals provide updates sooner but increase network traffic. Default: 30 seconds.",
+              "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
+              "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often."
             }
           },
           "room_temperature_forwarding": {
@@ -281,16 +306,22 @@
           },
           "advanced_modbus": {
             "name": "Advanced Modbus settings",
-            "description": "The defaults are recommended. Change these only for slow or unreliable networks.",
+            "description": "For experienced users only. The defaults are recommended. Polling jitter spreads requests, diagnostics creates extra entities, and the write cooldown blocks rapid repeat writes. The general write cooldown and EEPROM protection operate independently.",
             "data": {
               "modbus_timeout": "Response timeout",
               "modbus_retries": "Retries",
-              "eeprom_write_interval": "EEPROM write protection (seconds)"
+              "eeprom_write_interval": "EEPROM write protection (seconds)",
+              "polling_jitter": "Polling jitter (%)",
+              "communication_diagnostics": "Extended communication diagnostics",
+              "write_cooldown": "Per-register write cooldown (seconds)"
             },
             "data_description": {
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
               "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
-              "eeprom_write_interval": "Minimum time between two writes to the same EEPROM register (e.g. heating/cooling limit). Default 60s protects the EEPROM's limited write cycles. Lowering it is AT YOUR OWN RISK: it accelerates EEPROM wear. Lower only when you accept that risk."
+              "eeprom_write_interval": "Minimum time between writes to the same EEPROM register (for example, a heating/cooling limit). The 60-second default protects the EEPROM's limited write cycles. This protection applies additionally and independently of the general write cooldown. LOWERING IT IS AT YOUR OWN RISK and accelerates EEPROM wear.",
+              "polling_jitter": "Adds a random delay from 0 up to the selected percentage of the scan interval before every Modbus poll. Example: a 10-second scan interval with 20% adds 0–2 seconds. This spreads simultaneous requests from multiple systems. Default 0%: disabled.",
+              "communication_diagnostics": "Creates additional diagnostic entities for the last successful poll, poll duration, consecutive failures, and active registers. Total polls and failures are shown as attributes. No additional Modbus registers are read. Default: disabled.",
+              "write_cooldown": "Minimum time between writes to the same register address. A repeat attempt is completely rejected before transmission and Home Assistant shows the remaining wait. Other registers remain writable. Default: 5 seconds. 0 fully disables this general protection; 1–600 enforces it. Change at your own risk; separate EEPROM protection remains active."
             }
           }
         }
@@ -436,6 +467,18 @@
           "normal": "Normal",
           "comfort": "Comfort"
         }
+      },
+      "modbus_last_success": {
+        "name": "Last successful Modbus poll"
+      },
+      "modbus_poll_duration": {
+        "name": "Modbus poll duration"
+      },
+      "modbus_consecutive_failures": {
+        "name": "Consecutive Modbus failures"
+      },
+      "modbus_active_registers": {
+        "name": "Active Modbus registers"
       }
     },
     "binary_sensor": {
@@ -516,6 +559,14 @@
       "options": {
         "retry": "Retry Modbus connection",
         "web_only": "Continue with web data only (limited)"
+      }
+    },
+    "setup_profile": {
+      "options": {
+        "recommended": "Recommended – quick finish",
+        "reliable_network": "Slow or unreliable network",
+        "multiple_clients": "Multiple Modbus clients",
+        "custom": "Custom – show every option"
       }
     }
   },
@@ -612,6 +663,9 @@
     },
     "external_power_battery_soc_out_of_range": {
       "message": "Battery state of charge {value} % must be a whole number from 0 to 100."
+    },
+    "write_cooldown_active": {
+      "message": "Register {register} cannot be written yet. The configured write cooldown is {cooldown} seconds; wait another {remaining} seconds. A cooldown of 0 disables this protection."
     }
   },
   "issues": {

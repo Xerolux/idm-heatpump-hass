@@ -10,6 +10,7 @@ import asyncio
 import logging
 import socket
 from enum import StrEnum
+from time import monotonic
 from typing import Any
 
 import voluptuous as vol
@@ -41,6 +42,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
@@ -53,6 +55,7 @@ from .const import (
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
+    CONF_POLLING_JITTER,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -66,9 +69,11 @@ from .const import (
     CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
+    CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONFIG_FLOW_TCP_TIMEOUT,
+    DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_EEPROM_WRITE_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
@@ -76,6 +81,7 @@ from .const import (
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_MODEL_OVERRIDE,
+    DEFAULT_POLLING_JITTER,
     DEFAULT_PORT,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -85,16 +91,21 @@ from .const import (
     DEFAULT_SLAVE_ID,
     DEFAULT_WEB_ENABLED,
     DEFAULT_WEB_SCAN_INTERVAL,
+    DEFAULT_WRITE_COOLDOWN,
     DOMAIN,
     HEATING_CIRCUITS,
     MAX_EEPROM_WRITE_INTERVAL,
     MAX_MODBUS_MAX_RETRIES,
     MAX_MODBUS_TIMEOUT,
+    MAX_POLLING_JITTER,
     MAX_ROOM_COUNT,
+    MAX_WRITE_COOLDOWN,
     MAX_ZONE_COUNT,
     MIN_EEPROM_WRITE_INTERVAL,
     MIN_MODBUS_MAX_RETRIES,
     MIN_MODBUS_TIMEOUT,
+    MIN_POLLING_JITTER,
+    MIN_WRITE_COOLDOWN,
     MODEL_OVERRIDE_OPTIONS,
     REGISTER_ADDRESS_CONNECTION_PROBE,
     REGISTER_COUNT_CONNECTION_PROBE,
@@ -136,11 +147,9 @@ def _connection_error_key(result: _ModbusConnectionStatus | bool) -> str | None:
     return _ModbusConnectionStatus.FAILED.value
 
 
-# Optional manual Navigator model override. Marked ``advanced`` so it is hidden
-# behind the "show advanced" toggle in the config flow UI; automatic detection
-# is correct for the vast majority of installations and a wrong manual choice
-# can degrade the register map. The data_description (strings.json) repeats the
-# "only change if detection fails" warning next to the field.
+# Optional manual Navigator model override. Initial setup asks for it only after
+# automatic detection so users can make an informed choice. Reconfigure keeps it
+# available as an advanced field for repairing an existing entry.
 _MODEL_OVERRIDE_SELECTOR: SelectSelector = SelectSelector(
     SelectSelectorConfig(
         options=list(MODEL_OVERRIDE_OPTIONS),
@@ -150,7 +159,11 @@ _MODEL_OVERRIDE_SELECTOR: SelectSelector = SelectSelector(
 )
 
 
-# Schema for initial setup – no defaults so add_suggested_values_to_schema fills them
+_SETUP_WEB_ACCESS = "setup_web_access"
+
+
+# Initial setup defaults to full local Modbus + Navigator web access. Users who
+# deliberately want Modbus only must switch the web-access field off.
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
         vol.Required(CONF_NAME): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
@@ -158,17 +171,21 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required(CONF_PORT, default=DEFAULT_PORT): NumberSelector(
             NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
         ),
-        vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): NumberSelector(
+        vol.Optional(
+            CONF_SLAVE_ID,
+            default=DEFAULT_SLAVE_ID,
+            description={"advanced": True},
+        ): NumberSelector(
             NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
         ),
-        vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+        vol.Required(_SETUP_WEB_ACCESS, default=True): BooleanSelector(BooleanSelectorConfig()),
+        vol.Optional(CONF_WEB_PIN): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.PASSWORD)
+        ),
         vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
-        vol.Optional(
-            CONF_MODEL_OVERRIDE,
-            default=DEFAULT_MODEL_OVERRIDE,
-            description={"advanced": True},
-        ): _MODEL_OVERRIDE_SELECTOR,
+        vol.Optional(CONF_WEB_HOST): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.TEXT)
+        ),
     }
 )
 
@@ -179,12 +196,21 @@ STEP_RECONFIGURE_SCHEMA = vol.Schema(
         vol.Required(CONF_PORT, default=DEFAULT_PORT): NumberSelector(
             NumberSelectorConfig(min=1, max=65535, mode=NumberSelectorMode.BOX)
         ),
-        vol.Optional(CONF_SLAVE_ID, default=DEFAULT_SLAVE_ID): NumberSelector(
+        vol.Optional(
+            CONF_SLAVE_ID,
+            default=DEFAULT_SLAVE_ID,
+            description={"advanced": True},
+        ): NumberSelector(
             NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
         ),
-        vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+        vol.Required(_SETUP_WEB_ACCESS, default=True): BooleanSelector(BooleanSelectorConfig()),
+        vol.Optional(CONF_WEB_PIN): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.PASSWORD)
+        ),
         vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
+        vol.Optional(CONF_WEB_HOST): TextSelector(
+            TextSelectorConfig(type=TextSelectorType.TEXT)
+        ),
         vol.Optional(
             CONF_MODEL_OVERRIDE,
             default=DEFAULT_MODEL_OVERRIDE,
@@ -244,6 +270,73 @@ _OPTIONS_SECTION_KEYS = (
     _OPTIONS_ROOM_SECTION,
     _OPTIONS_MODBUS_SECTION,
 )
+
+_SETUP_PROFILE = "profile"
+_SETUP_PROFILE_RECOMMENDED = "recommended"
+_SETUP_PROFILE_RELIABLE = "reliable_network"
+_SETUP_PROFILE_MULTI_CLIENT = "multiple_clients"
+_SETUP_PROFILE_CUSTOM = "custom"
+
+
+def _default_options() -> dict[str, Any]:
+    """Return a complete, independent set of recommended options."""
+    return {
+        CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
+        CONF_HIDE_UNUSED: DEFAULT_HIDE_UNUSED,
+        CONF_HEATING_CIRCUITS: ["a"],
+        CONF_ZONE_COUNT: 0,
+        CONF_ZONE_ROOMS: {},
+        CONF_DEVICE_HIERARCHY: DEFAULT_DEVICE_HIERARCHY,
+        CONF_SHORT_CYCLE_MINUTES: DEFAULT_SHORT_CYCLE_MINUTES,
+        CONF_TECHNICIAN_CODES: False,
+        CONF_ENABLE_CASCADE: DEFAULT_ENABLE_CASCADE,
+        CONF_WEB_ENABLED: DEFAULT_WEB_ENABLED,
+        CONF_WEB_SCAN_INTERVAL: DEFAULT_WEB_SCAN_INTERVAL,
+        CONF_ROOM_TEMP_FORWARDING: DEFAULT_ROOM_TEMP_FORWARDING,
+        CONF_ROOM_TEMP_FORWARDING_ENTITIES: {},
+        CONF_ROOM_TEMP_FORWARDING_INTERVAL: DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
+        CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
+        CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
+        CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
+        CONF_POLLING_JITTER: DEFAULT_POLLING_JITTER,
+        CONF_COMMUNICATION_DIAGNOSTICS: DEFAULT_COMMUNICATION_DIAGNOSTICS,
+        CONF_WRITE_COOLDOWN: DEFAULT_WRITE_COOLDOWN,
+        CONF_EEPROM_WRITE_INTERVAL: DEFAULT_EEPROM_WRITE_INTERVAL,
+    }
+
+
+def _options_for_profile(profile: str) -> dict[str, Any]:
+    """Return recommended options adjusted for a guided setup profile."""
+    options = _default_options()
+    if profile == _SETUP_PROFILE_RELIABLE:
+        options.update({CONF_SCAN_INTERVAL: 30, CONF_MODBUS_TIMEOUT: 20.0, CONF_MODBUS_MAX_RETRIES: 5})
+    elif profile == _SETUP_PROFILE_MULTI_CLIENT:
+        options.update({CONF_SCAN_INTERVAL: 30, CONF_POLLING_JITTER: 20})
+    return options
+
+
+def _build_setup_review_schema(data: dict[str, Any]) -> vol.Schema:
+    """Build the post-detection setup profile selector."""
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_MODEL_OVERRIDE,
+                default=data.get(CONF_MODEL_OVERRIDE, DEFAULT_MODEL_OVERRIDE),
+            ): _MODEL_OVERRIDE_SELECTOR,
+            vol.Required(_SETUP_PROFILE, default=_SETUP_PROFILE_RECOMMENDED): SelectSelector(
+                SelectSelectorConfig(
+                    options=[
+                        _SETUP_PROFILE_RECOMMENDED,
+                        _SETUP_PROFILE_RELIABLE,
+                        _SETUP_PROFILE_MULTI_CLIENT,
+                        _SETUP_PROFILE_CUSTOM,
+                    ],
+                    mode=SelectSelectorMode.DROPDOWN,
+                    translation_key="setup_profile",
+                )
+            )
+        }
+    )
 
 
 def _flatten_options_input(user_input: dict[str, Any]) -> dict[str, Any]:
@@ -321,10 +414,12 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Required(
                             CONF_TECHNICIAN_CODES,
                             default=options.get(CONF_TECHNICIAN_CODES, False),
+                            description={"advanced": True},
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
                             CONF_ENABLE_CASCADE,
                             default=options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE),
+                            description={"advanced": True},
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
                             CONF_WEB_ENABLED,
@@ -344,7 +439,7 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ),
                     }
                 ),
-                {"collapsed": False},
+                {"collapsed": True},
             ),
             vol.Required(_OPTIONS_ROOM_SECTION): section(
                 vol.Schema(
@@ -418,6 +513,37 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             )
                         ),
                         vol.Required(
+                            CONF_POLLING_JITTER,
+                            default=int(options.get(CONF_POLLING_JITTER, DEFAULT_POLLING_JITTER)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_POLLING_JITTER,
+                                max=MAX_POLLING_JITTER,
+                                step=1,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="%",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_COMMUNICATION_DIAGNOSTICS,
+                            default=options.get(
+                                CONF_COMMUNICATION_DIAGNOSTICS,
+                                DEFAULT_COMMUNICATION_DIAGNOSTICS,
+                            ),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_WRITE_COOLDOWN,
+                            default=float(options.get(CONF_WRITE_COOLDOWN, DEFAULT_WRITE_COOLDOWN)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_WRITE_COOLDOWN,
+                                max=MAX_WRITE_COOLDOWN,
+                                step=1.0,
+                                mode=NumberSelectorMode.BOX,
+                                unit_of_measurement="s",
+                            )
+                        ),
+                        vol.Required(
                             CONF_EEPROM_WRITE_INTERVAL,
                             default=float(options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL)),
                             description={"advanced": True},
@@ -441,6 +567,21 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
 def _clean_pin(value: Any) -> str:
     """Normalize an optional local web PIN from flow input."""
     return str(value or "").strip()
+
+
+def _web_access_requested(data: dict[str, Any]) -> bool:
+    """Return whether setup should require and verify local Navigator web access."""
+    if _SETUP_WEB_ACCESS in data:
+        return bool(data[_SETUP_WEB_ACCESS])
+    # Config-flow schemas always submit the required toggle. The fallback keeps
+    # older imported/reconfigure data compatible and treats a stored PIN as the
+    # user's existing web-access choice.
+    return web_pin_configured(_clean_pin(data.get(CONF_WEB_PIN)))
+
+
+def _without_setup_fields(data: dict[str, Any]) -> dict[str, Any]:
+    """Remove transient form controls before persisting config-entry data."""
+    return {key: value for key, value in data.items() if key not in {_SETUP_WEB_ACCESS, CONF_MODEL_OVERRIDE}}
 
 
 def _uses_modbus_proxy(data: dict[str, Any]) -> bool:
@@ -629,6 +770,12 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 errors[CONF_NAME] = "name_required"
             elif not host:
                 errors[CONF_HOST] = "host_required"
+            elif _web_access_requested(user_input) and not web_pin_configured(_clean_pin(user_input.get(CONF_WEB_PIN))):
+                errors[CONF_WEB_PIN] = "web_pin_required_or_disable"
+            elif _web_access_requested(user_input) and _uses_modbus_proxy(user_input) and not _web_host_for_input(
+                user_input, host
+            ):
+                errors[CONF_WEB_HOST] = "web_host_required"
             elif _has_duplicate_host(self.hass, host):
                 errors[CONF_HOST] = "already_configured"
             else:
@@ -645,7 +792,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 connection_error = _connection_error_key(await self._test_connection(user_input))
                 if connection_error is not None:
                     self._modbus_error = connection_error
-                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
+                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN)) if _web_access_requested(user_input) else ""
                     if web_pin_configured(web_pin):
                         _LOGGER.info(
                             "IDM Modbus connection to %s failed, but web PIN is configured; offering web-only fallback",
@@ -661,7 +808,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                                 errors=errors,
                             )
                         self._data = {
-                            **user_input,
+                            **_without_setup_fields(user_input),
                             CONF_HOST: host,
                             CONF_NAME: name,
                             CONF_WEB_PIN: web_pin,
@@ -675,8 +822,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                     )
                     errors["base"] = connection_error
                 else:
-                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
-                    web_host = _web_host_for_input(user_input, host)
+                    web_requested = _web_access_requested(user_input)
+                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN)) if web_requested else ""
+                    web_host = _web_host_for_input(user_input, host) if web_requested else host
                     if web_pin and _uses_modbus_proxy(user_input) and not web_host:
                         errors[CONF_WEB_HOST] = "web_host_required"
                         return self.async_show_form(
@@ -690,7 +838,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             web_host,
                             web_pin,
                             model_hint=self._data.get(CONF_DETECTED_NAVIGATOR_VERSION),
-                            required=bool(web_pin),
+                            required=web_requested,
                         )
                     except IdmWebAuthenticationFailed:
                         _LOGGER.warning("IDM Navigator web PIN was rejected during setup for host %s", web_host)
@@ -704,22 +852,47 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                         errors["base"] = "web_cannot_connect"
                     else:
                         self._data = {
-                            **user_input,
+                            **_without_setup_fields(user_input),
                             CONF_HOST: host,
                             CONF_NAME: name,
                             CONF_WEB_PIN: web_pin,
-                            CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
+                            CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input) if web_requested else False,
                             CONF_WEB_HOST: _stored_web_host(web_host, host),
-                            CONF_MODEL_OVERRIDE: _normalize_model_override(user_input),
                             **detected,
                         }
-                        return await self.async_step_options()
+                        return await self.async_step_setup_review()
 
         return self.async_show_form(
             step_id="user",
             data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, user_input or {}),
             description_placeholders={"wiki_url": _MODBUS_SETUP_URL},
             errors=errors,
+        )
+
+    async def async_step_setup_review(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Show detected endpoints and offer a guided configuration profile."""
+        if user_input is not None:
+            profile = str(user_input.get(_SETUP_PROFILE, _SETUP_PROFILE_RECOMMENDED))
+            self._data[CONF_MODEL_OVERRIDE] = _normalize_model_override(user_input)
+            if profile == _SETUP_PROFILE_CUSTOM:
+                self._options = _default_options()
+                return await self.async_step_options()
+            self._options = _options_for_profile(profile)
+            return self._create_flow_entry()
+
+        web_enabled = web_pin_configured(_clean_pin(self._data.get(CONF_WEB_PIN)))
+        return self.async_show_form(
+            step_id="setup_review",
+            data_schema=_build_setup_review_schema(self._data),
+            description_placeholders={
+                "host": str(self._data.get(CONF_HOST, "")),
+                "port": str(self._data.get(CONF_PORT, DEFAULT_PORT)),
+                "slave_id": str(self._data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
+                "navigator": str(self._data.get(CONF_DETECTED_NAVIGATOR_VERSION, "not detected")),
+                "software": str(self._data.get(CONF_DETECTED_SOFTWARE_VERSION, "not detected")),
+                "web": "connected" if web_enabled else "not configured",
+            },
+            errors={},
         )
 
     async def async_step_reconfigure(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -741,13 +914,19 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             host = user_input.get(CONF_HOST, "").strip()
             if not host:
                 errors[CONF_HOST] = "host_required"
+            elif _web_access_requested(user_input) and not web_pin_configured(_clean_pin(user_input.get(CONF_WEB_PIN))):
+                errors[CONF_WEB_PIN] = "web_pin_required_or_disable"
+            elif _web_access_requested(user_input) and _uses_modbus_proxy(user_input) and not _web_host_for_input(
+                user_input, host
+            ):
+                errors[CONF_WEB_HOST] = "web_host_required"
             elif _has_duplicate_host(self.hass, host, entry.entry_id):
                 errors[CONF_HOST] = "already_configured"
             else:
                 connection_error = _connection_error_key(await self._test_connection(user_input))
                 if connection_error is not None:
                     self._modbus_error = connection_error
-                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
+                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN)) if _web_access_requested(user_input) else ""
                     if web_pin_configured(web_pin):
                         _LOGGER.info(
                             "IDM Modbus connection to %s failed during reconfigure, but web PIN is configured; offering web-only fallback",
@@ -758,7 +937,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             errors[CONF_WEB_HOST] = "web_host_required"
                         else:
                             self._data = {
-                                **user_input,
+                                **_without_setup_fields(user_input),
                                 CONF_HOST: host,
                                 CONF_NAME: entry.title,
                                 CONF_WEB_PIN: web_pin,
@@ -769,8 +948,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                     else:
                         errors["base"] = connection_error
                 else:
-                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN))
-                    web_host = _web_host_for_input(user_input, host)
+                    web_requested = _web_access_requested(user_input)
+                    web_pin = _clean_pin(user_input.get(CONF_WEB_PIN)) if web_requested else ""
+                    web_host = _web_host_for_input(user_input, host) if web_requested else host
                     if web_pin and _uses_modbus_proxy(user_input) and not web_host:
                         errors[CONF_WEB_HOST] = "web_host_required"
                         return self.async_show_form(
@@ -788,7 +968,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             web_host,
                             web_pin,
                             model_hint=entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION),
-                            required=bool(web_pin),
+                            required=web_requested,
                         )
                     except IdmWebAuthenticationFailed:
                         _LOGGER.warning(
@@ -818,7 +998,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                                 CONF_PORT: int(user_input.get(CONF_PORT, DEFAULT_PORT)),
                                 CONF_SLAVE_ID: int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
                                 CONF_WEB_PIN: web_pin,
-                                CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
+                                CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input) if web_requested else False,
                                 CONF_WEB_HOST: _stored_web_host(web_host, host),
                                 CONF_MODEL_OVERRIDE: _normalize_model_override(user_input),
                                 CONF_WEB_ONLY: False,
@@ -831,6 +1011,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             CONF_HOST: current_data[CONF_HOST],
             CONF_PORT: current_data.get(CONF_PORT, DEFAULT_PORT),
             CONF_SLAVE_ID: current_data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID),
+            _SETUP_WEB_ACCESS: web_pin_configured(_clean_pin(current_data.get(CONF_WEB_PIN))),
             CONF_WEB_PIN: current_data.get(CONF_WEB_PIN, ""),
             CONF_MODBUS_PROXY: bool(current_data.get(CONF_MODBUS_PROXY) or current_data.get(CONF_WEB_HOST)),
             CONF_WEB_HOST: current_data.get(CONF_WEB_HOST, ""),
@@ -850,9 +1031,11 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
 
     async def async_step_diagnostics(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Test configured endpoints without changing the config entry."""
+        started = monotonic()
         entry = self._get_reconfigure_entry()
         self._reconfigure_entry = entry
         connection_data = dict(entry.data)
+        self._data = connection_data
         host = str(connection_data.get(CONF_HOST, "")).strip()
         port = int(connection_data.get(CONF_PORT, DEFAULT_PORT))
         slave_id = int(connection_data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
@@ -872,6 +1055,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 port,
                 slave_id,
                 errors={"base": connection_error},
+                duration=monotonic() - started,
+                modbus_status="failed",
+                web_status="not tested",
             )
 
         web_pin = _clean_pin(connection_data.get(CONF_WEB_PIN))
@@ -882,7 +1068,15 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 port,
                 slave_id,
             )
-            return self._show_diagnostics_result("diagnostics_modbus_success", host, port, slave_id)
+            return self._show_diagnostics_result(
+                "diagnostics_modbus_success",
+                host,
+                port,
+                slave_id,
+                duration=monotonic() - started,
+                modbus_status="connected",
+                web_status="not configured",
+            )
 
         web_host = str(connection_data.get(CONF_WEB_HOST) or host).strip()
         try:
@@ -900,6 +1094,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 port,
                 slave_id,
                 errors={"base": "invalid_web_pin"},
+                duration=monotonic() - started,
+                modbus_status="connected",
+                web_status="authentication failed",
             )
         except _WebSupplementConnectionFailed:
             _LOGGER.warning("IDM diagnostics test: Navigator web interface %s is unavailable", web_host)
@@ -909,6 +1106,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 port,
                 slave_id,
                 errors={"base": "web_cannot_connect"},
+                duration=monotonic() - started,
+                modbus_status="connected",
+                web_status="unreachable",
             )
 
         _LOGGER.info(
@@ -918,7 +1118,15 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             slave_id,
             web_host,
         )
-        return self._show_diagnostics_result("diagnostics_success", host, port, slave_id)
+        return self._show_diagnostics_result(
+            "diagnostics_success",
+            host,
+            port,
+            slave_id,
+            duration=monotonic() - started,
+            modbus_status="connected",
+            web_status="connected",
+        )
 
     def _show_diagnostics_result(
         self,
@@ -928,6 +1136,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         slave_id: int,
         *,
         errors: dict[str, str] | None = None,
+        duration: float = 0.0,
+        modbus_status: str = "unknown",
+        web_status: str = "unknown",
     ) -> ConfigFlowResult:
         """Render a translated, repeatable diagnostics result."""
         return self.async_show_form(
@@ -937,6 +1148,11 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 "host": host,
                 "port": str(port),
                 "slave_id": str(slave_id),
+                "duration": f"{duration:.2f}",
+                "modbus_status": modbus_status,
+                "web_status": web_status,
+                "navigator": str(self._data.get(CONF_DETECTED_NAVIGATOR_VERSION, "not detected")),
+                "software": str(self._data.get(CONF_DETECTED_SOFTWARE_VERSION, "not detected")),
             },
             errors=errors or {},
         )
@@ -1066,22 +1282,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 # active so they are restored when Modbus is enabled later.
                 self._options = dict(self._reconfigure_entry.options)
             else:
-                self._options = {
-                    CONF_SCAN_INTERVAL: DEFAULT_SCAN_INTERVAL,
-                    CONF_HIDE_UNUSED: DEFAULT_HIDE_UNUSED,
-                    CONF_HEATING_CIRCUITS: ["a"],
-                    CONF_ZONE_COUNT: 0,
-                    CONF_ZONE_ROOMS: {},
-                    CONF_TECHNICIAN_CODES: False,
-                    CONF_ENABLE_CASCADE: False,
-                    CONF_ROOM_TEMP_FORWARDING: False,
-                    CONF_ROOM_TEMP_FORWARDING_ENTITIES: {},
-                    CONF_ROOM_TEMP_FORWARDING_INTERVAL: DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
-                    CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
-                    CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
-                    CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
-                    CONF_EEPROM_WRITE_INTERVAL: DEFAULT_EEPROM_WRITE_INTERVAL,
-                }
+                self._options = _default_options()
             self._options.update(
                 {
                     CONF_WEB_ENABLED: True,

@@ -159,6 +159,8 @@ async def _async_write_register(
             value,
             allow_custom_register=allow_custom_register,
         )
+    except HomeAssistantError:
+        raise
     except Exception as err:
         translation_key = classify_write_error(err)
         raise HomeAssistantError(
@@ -270,13 +272,7 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
     )
 
     try:
-        safety_result = coordinator.simulate_write(
-            reg,
-            value,
-            dry_run=True,
-            allow_custom_register=True,
-        )
-        await coordinator.client.write_register(
+        safety_result = await coordinator.async_write_register(
             reg,
             value,
             allow_custom_register=True,
@@ -287,6 +283,8 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
         if encoded_registers is not None:
             response["encoded_registers"] = encoded_registers
         return response
+    except HomeAssistantError:
+        raise
     except Exception as err:
         ir.async_create_issue(
             hass,

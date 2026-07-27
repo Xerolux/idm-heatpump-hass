@@ -53,6 +53,9 @@ CONF_ROOM_TEMP_FORWARDING_ENTITIES: str = "room_temp_forwarding_entities"
 CONF_WEB_ONLY: str = "web_only_mode"
 CONF_MODBUS_TIMEOUT: str = "modbus_timeout"
 CONF_MODBUS_MAX_RETRIES: str = "modbus_retries"
+CONF_POLLING_JITTER: str = "polling_jitter"
+CONF_COMMUNICATION_DIAGNOSTICS: str = "communication_diagnostics"
+CONF_WRITE_COOLDOWN: str = "write_cooldown"
 
 DEFAULT_HOST: str = ""
 DEFAULT_WEB_ONLY: bool = False
@@ -84,10 +87,17 @@ DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE: float = 0.2
 DEFAULT_MODBUS_TIMEOUT: float = 10.0
 DEFAULT_MODBUS_MAX_RETRIES: int = 3
+DEFAULT_POLLING_JITTER: int = 0
+DEFAULT_COMMUNICATION_DIAGNOSTICS: bool = False
+DEFAULT_WRITE_COOLDOWN: float = 5.0
 MIN_MODBUS_TIMEOUT: float = 3.0
 MAX_MODBUS_TIMEOUT: float = 30.0
 MIN_MODBUS_MAX_RETRIES: int = 1
 MAX_MODBUS_MAX_RETRIES: int = 5
+MIN_POLLING_JITTER: int = 0
+MAX_POLLING_JITTER: int = 20
+MIN_WRITE_COOLDOWN: float = 0.0
+MAX_WRITE_COOLDOWN: float = 600.0
 
 # EEPROM-Schreibschutz: minimale Sekunden zwischen zwei Schreibvorgängen auf
 # dasselbe EEPROM-Register. Default 60s schont die begrenzten Schreibzyklen des

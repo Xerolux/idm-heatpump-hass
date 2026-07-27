@@ -166,6 +166,29 @@ so they are available again after Modbus is restored.
 Use **Configure** for scan interval, heating circuits, zones, technician codes,
 optional web supplement settings, and optional room temperature forwarding.
 
+### Advanced Modbus options
+
+The collapsed **Advanced Modbus settings** section also provides power-user
+controls in addition to timeout and retry settings:
+
+- **Polling jitter (0–20%)** adds a random delay of up to the selected
+  percentage of the scan interval to every poll. This spreads network and
+  controller load when several heat pumps start polling at the same time.
+  `0%` disables jitter.
+- **Extended communication diagnostics** creates diagnostic entities for the
+  last successful poll, poll duration, consecutive failures, and the active
+  register count. Total polls and failures are included as attributes and in
+  downloaded diagnostics.
+- **Write cooldown (0–600 seconds)** applies per register. A second write to
+  the same register during the configured interval is rejected without sending
+  anything to the heat pump, and Home Assistant reports the remaining wait.
+  `0` completely disables this protection; changing it is at the user's own
+  risk. Different register addresses do not block one another.
+
+The general write cooldown is independent of the API's EEPROM protection.
+EEPROM-sensitive registers can therefore still be subject to the separately
+configured EEPROM interval and its safety rules.
+
 ## Runtime and API versions
 
 IDM Heatpump is a Home Assistant custom integration rather than an add-on.
