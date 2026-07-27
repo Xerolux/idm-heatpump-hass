@@ -2,10 +2,10 @@
 #
 # The official HA image installs custom-integration requirements from PyPI at
 # startup (homeassistant.util.package). To guarantee we test the CURRENT LOCAL
-# API (HEAD == v0.8.5 tag, includes the Navigator 2.0 model-detection fix) and
-# not an older/cached published build, we force-install the locally built wheel
-# into the HA Python environment. HA's requirement check then sees
-# `idm-heatpump-api[web]==0.8.5` as already satisfied and will NOT fetch PyPI.
+# API (HEAD == v0.9.1 tag) and not an older/cached published build, we
+# force-install the locally built wheel into the HA Python environment. HA's
+# requirement check then sees `idm-heatpump-api[web]==0.9.1` as already
+# satisfied and will NOT fetch PyPI.
 #
 # The integration itself is mounted read-only at runtime via docker-compose
 # (../custom_components/idm_heatpump -> /config/custom_components/idm_heatpump),
@@ -13,7 +13,7 @@
 
 FROM ghcr.io/home-assistant/home-assistant:stable
 
-ARG API_WHEEL=idm_heatpump_api-0.9.0-py3-none-any.whl
+ARG API_WHEEL=idm_heatpump_api-0.9.1-py3-none-any.whl
 
 # Verify the wheel is present in the build context, then install it (no-deps:
 # pymodbus + aiohttp already ship with Home Assistant).
