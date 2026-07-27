@@ -537,9 +537,7 @@ class TestAsyncStepUser:
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
 
-        await flow.async_step_setup_review(
-            {"profile": "recommended", CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10}
-        )
+        await flow.async_step_setup_review({"profile": "recommended", CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10})
 
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_NAVIGATOR_10
 
@@ -547,9 +545,7 @@ class TestAsyncStepUser:
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
 
-        await flow.async_step_setup_review(
-            {"profile": "recommended", CONF_MODEL_OVERRIDE: "navigator_99_bogus"}
-        )
+        await flow.async_step_setup_review({"profile": "recommended", CONF_MODEL_OVERRIDE: "navigator_99_bogus"})
 
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
 

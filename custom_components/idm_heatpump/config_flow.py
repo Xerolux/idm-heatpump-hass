@@ -175,17 +175,11 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
             CONF_SLAVE_ID,
             default=DEFAULT_SLAVE_ID,
             description={"advanced": True},
-        ): NumberSelector(
-            NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
-        ),
+        ): NumberSelector(NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)),
         vol.Required(_SETUP_WEB_ACCESS, default=True): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_PIN): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.PASSWORD)
-        ),
+        vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
         vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_HOST): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
+        vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
     }
 )
 
@@ -200,17 +194,11 @@ STEP_RECONFIGURE_SCHEMA = vol.Schema(
             CONF_SLAVE_ID,
             default=DEFAULT_SLAVE_ID,
             description={"advanced": True},
-        ): NumberSelector(
-            NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
-        ),
+        ): NumberSelector(NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)),
         vol.Required(_SETUP_WEB_ACCESS, default=True): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_PIN): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.PASSWORD)
-        ),
+        vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
         vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_HOST): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
+        vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
         vol.Optional(
             CONF_MODEL_OVERRIDE,
             default=DEFAULT_MODEL_OVERRIDE,
@@ -334,7 +322,7 @@ def _build_setup_review_schema(data: dict[str, Any]) -> vol.Schema:
                     mode=SelectSelectorMode.DROPDOWN,
                     translation_key="setup_profile",
                 )
-            )
+            ),
         }
     )
 
@@ -772,8 +760,10 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 errors[CONF_HOST] = "host_required"
             elif _web_access_requested(user_input) and not web_pin_configured(_clean_pin(user_input.get(CONF_WEB_PIN))):
                 errors[CONF_WEB_PIN] = "web_pin_required_or_disable"
-            elif _web_access_requested(user_input) and _uses_modbus_proxy(user_input) and not _web_host_for_input(
-                user_input, host
+            elif (
+                _web_access_requested(user_input)
+                and _uses_modbus_proxy(user_input)
+                and not _web_host_for_input(user_input, host)
             ):
                 errors[CONF_WEB_HOST] = "web_host_required"
             elif _has_duplicate_host(self.hass, host):
@@ -916,8 +906,10 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 errors[CONF_HOST] = "host_required"
             elif _web_access_requested(user_input) and not web_pin_configured(_clean_pin(user_input.get(CONF_WEB_PIN))):
                 errors[CONF_WEB_PIN] = "web_pin_required_or_disable"
-            elif _web_access_requested(user_input) and _uses_modbus_proxy(user_input) and not _web_host_for_input(
-                user_input, host
+            elif (
+                _web_access_requested(user_input)
+                and _uses_modbus_proxy(user_input)
+                and not _web_host_for_input(user_input, host)
             ):
                 errors[CONF_WEB_HOST] = "web_host_required"
             elif _has_duplicate_host(self.hass, host, entry.entry_id):
