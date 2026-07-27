@@ -53,7 +53,8 @@ rules:
     status: done
     comment: >
       services.yaml documents domain service actions (set_system_mode,
-      acknowledge_errors, write_register, set_external_climate, DHW boost
+      acknowledge_errors, write_register, set_external_climate,
+      set_external_power, DHW boost
       start/cancel) with field descriptions. de.json includes translated
       service documentation.
 

@@ -9,8 +9,8 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
-from time import monotonic
 from enum import StrEnum
+from time import monotonic
 from typing import Any
 
 import voluptuous as vol
@@ -42,6 +42,7 @@ from homeassistant.helpers.selector import (
 )
 
 from .const import (
+    CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
@@ -53,9 +54,8 @@ from .const import (
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
-    CONF_POLLING_JITTER,
-    CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_MODEL_OVERRIDE,
+    CONF_POLLING_JITTER,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -73,15 +73,15 @@ from .const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONFIG_FLOW_TCP_TIMEOUT,
+    DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_EEPROM_WRITE_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
-    DEFAULT_POLLING_JITTER,
-    DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_MODEL_OVERRIDE,
+    DEFAULT_POLLING_JITTER,
     DEFAULT_PORT,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -98,8 +98,8 @@ from .const import (
     MAX_MODBUS_MAX_RETRIES,
     MAX_MODBUS_TIMEOUT,
     MAX_POLLING_JITTER,
-    MAX_WRITE_COOLDOWN,
     MAX_ROOM_COUNT,
+    MAX_WRITE_COOLDOWN,
     MAX_ZONE_COUNT,
     MIN_EEPROM_WRITE_INTERVAL,
     MIN_MODBUS_MAX_RETRIES,
@@ -175,17 +175,11 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
             CONF_SLAVE_ID,
             default=DEFAULT_SLAVE_ID,
             description={"advanced": True},
-        ): NumberSelector(
-            NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
-        ),
+        ): NumberSelector(NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)),
         vol.Required(_SETUP_WEB_ACCESS, default=True): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_PIN): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.PASSWORD)
-        ),
+        vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
         vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_HOST): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
+        vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
     }
 )
 
@@ -200,17 +194,11 @@ STEP_RECONFIGURE_SCHEMA = vol.Schema(
             CONF_SLAVE_ID,
             default=DEFAULT_SLAVE_ID,
             description={"advanced": True},
-        ): NumberSelector(
-            NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)
-        ),
+        ): NumberSelector(NumberSelectorConfig(min=1, max=247, mode=NumberSelectorMode.BOX)),
         vol.Required(_SETUP_WEB_ACCESS, default=True): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_PIN): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.PASSWORD)
-        ),
+        vol.Optional(CONF_WEB_PIN): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
         vol.Optional(CONF_MODBUS_PROXY, default=False): BooleanSelector(BooleanSelectorConfig()),
-        vol.Optional(CONF_WEB_HOST): TextSelector(
-            TextSelectorConfig(type=TextSelectorType.TEXT)
-        ),
+        vol.Optional(CONF_WEB_HOST): TextSelector(TextSelectorConfig(type=TextSelectorType.TEXT)),
         vol.Optional(
             CONF_MODEL_OVERRIDE,
             default=DEFAULT_MODEL_OVERRIDE,
@@ -334,7 +322,7 @@ def _build_setup_review_schema(data: dict[str, Any]) -> vol.Schema:
                     mode=SelectSelectorMode.DROPDOWN,
                     translation_key="setup_profile",
                 )
-            )
+            ),
         }
     )
 
@@ -772,8 +760,10 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 errors[CONF_HOST] = "host_required"
             elif _web_access_requested(user_input) and not web_pin_configured(_clean_pin(user_input.get(CONF_WEB_PIN))):
                 errors[CONF_WEB_PIN] = "web_pin_required_or_disable"
-            elif _web_access_requested(user_input) and _uses_modbus_proxy(user_input) and not _web_host_for_input(
-                user_input, host
+            elif (
+                _web_access_requested(user_input)
+                and _uses_modbus_proxy(user_input)
+                and not _web_host_for_input(user_input, host)
             ):
                 errors[CONF_WEB_HOST] = "web_host_required"
             elif _has_duplicate_host(self.hass, host):
@@ -916,8 +906,10 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 errors[CONF_HOST] = "host_required"
             elif _web_access_requested(user_input) and not web_pin_configured(_clean_pin(user_input.get(CONF_WEB_PIN))):
                 errors[CONF_WEB_PIN] = "web_pin_required_or_disable"
-            elif _web_access_requested(user_input) and _uses_modbus_proxy(user_input) and not _web_host_for_input(
-                user_input, host
+            elif (
+                _web_access_requested(user_input)
+                and _uses_modbus_proxy(user_input)
+                and not _web_host_for_input(user_input, host)
             ):
                 errors[CONF_WEB_HOST] = "web_host_required"
             elif _has_duplicate_host(self.hass, host, entry.entry_id):

@@ -13,6 +13,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **External power GLT service (#176):** `idm_heatpump.set_external_power`
+  accepts any available subset of PV surplus, PV production, house
+  consumption, battery discharge, battery SOC and electric-heater power
+  without depending on `number` entity availability. The service documentation
+  records the current API contract-fixture metadata and the non-atomic behavior
+  of its separate Modbus writes. Direct verification against the published API
+  0.9.1 artifact remains an explicit pre-release check.
+
 ## [0.9.1] - 2026-07-26
 
 ### Added

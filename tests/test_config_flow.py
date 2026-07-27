@@ -16,6 +16,7 @@ from custom_components.idm_heatpump.config_flow import (
     _WebSupplementConnectionFailed,
 )
 from custom_components.idm_heatpump.const import (
+    CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
@@ -24,9 +25,8 @@ from custom_components.idm_heatpump.const import (
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
-    CONF_POLLING_JITTER,
-    CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_MODEL_OVERRIDE,
+    CONF_POLLING_JITTER,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -41,17 +41,16 @@ from custom_components.idm_heatpump.const import (
     CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_POLLING_JITTER,
-    DEFAULT_COMMUNICATION_DIAGNOSTICS,
-    DEFAULT_WRITE_COOLDOWN,
     DEFAULT_WEB_ENABLED,
+    DEFAULT_WRITE_COOLDOWN,
     MODEL_OVERRIDE_AUTO,
     MODEL_OVERRIDE_NAVIGATOR_10,
 )
 from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed, IdmWebSupplement
-
 
 TRANSLATION_FILES = (
     Path("custom_components/idm_heatpump/strings.json"),
@@ -538,9 +537,7 @@ class TestAsyncStepUser:
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
 
-        await flow.async_step_setup_review(
-            {"profile": "recommended", CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10}
-        )
+        await flow.async_step_setup_review({"profile": "recommended", CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10})
 
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_NAVIGATOR_10
 
@@ -548,9 +545,7 @@ class TestAsyncStepUser:
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
 
-        await flow.async_step_setup_review(
-            {"profile": "recommended", CONF_MODEL_OVERRIDE: "navigator_99_bogus"}
-        )
+        await flow.async_step_setup_review({"profile": "recommended", CONF_MODEL_OVERRIDE: "navigator_99_bogus"})
 
         assert flow._data[CONF_MODEL_OVERRIDE] == MODEL_OVERRIDE_AUTO
 

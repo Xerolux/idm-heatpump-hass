@@ -4,16 +4,16 @@ from __future__ import annotations
 
 import re
 
-_GLT_MEASUREMENT_NAMES: frozenset[str] = frozenset(
-    {
-        "pv_surplus",
-        "pv_production",
-        "house_consumption",
-        "battery_discharge",
-        "battery_soc",
-        "electric_heater_power",
-    }
+EXTERNAL_POWER_MEASUREMENT_NAMES: tuple[str, ...] = (
+    "pv_surplus",
+    "pv_production",
+    "house_consumption",
+    "battery_discharge",
+    "battery_soc",
+    "electric_heater_power",
 )
+
+_GLT_MEASUREMENT_NAMES = frozenset(EXTERNAL_POWER_MEASUREMENT_NAMES)
 
 _ZONE_ROOM_MEASUREMENT_RE = re.compile(r"zm\d+_room\d+_(temp|humidity)$")
 

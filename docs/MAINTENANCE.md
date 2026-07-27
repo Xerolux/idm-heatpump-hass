@@ -32,6 +32,18 @@ Changes in these areas require maintainer review before merge:
 - Release workflows, dependency pins, and package metadata.
 - Diagnostics redaction and repair issue handling.
 
+## Open Release Checks
+
+- **External power service (#176):** Install the exact pinned
+  `idm-heatpump-api[web]==0.9.1` PyPI artifact in a network-enabled clean
+  environment and inspect `datatype`, `min_val`, `max_val` and sentinel metadata
+  for `pv_surplus`, `pv_production`, `house_consumption`,
+  `battery_discharge`, `battery_soc` and `electric_heater_power`. The local
+  contract fixture currently records no `min_val`/`max_val` for these six
+  registers. Reconcile any difference in the service validation, fixtures and
+  Wiki before release. This is a release-verification task, not a reason to add
+  guessed power limits.
+
 ## Repository Settings
 
 Maintain these settings in both repositories:

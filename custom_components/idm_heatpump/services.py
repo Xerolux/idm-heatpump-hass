@@ -24,6 +24,7 @@ from homeassistant.util.json import JsonValueType
 
 from idm_heatpump import DataType, RegisterDef
 
+from .adapter_glt import EXTERNAL_POWER_MEASUREMENT_NAMES
 from .const import DOMAIN, HEATING_CIRCUITS, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
 from .coordinator import IdmCoordinator
 from .error_messages import classify_write_error, write_error_placeholders
@@ -69,6 +70,11 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         "set_external_climate",
         partial(_handle_set_external_climate, hass),  # type: ignore[arg-type]
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "set_external_power",
+        partial(_handle_set_external_power, hass),  # type: ignore[arg-type]
     )
 
 
@@ -323,8 +329,8 @@ def _coerce_float_field(call: ServiceCall, field: str) -> float:
     return value
 
 
-def _external_climate_register(coordinator: IdmCoordinator, register_name: str) -> RegisterDef:
-    """Return a writable external climate register exposed by the library map."""
+def _writable_library_register(coordinator: IdmCoordinator, register_name: str) -> RegisterDef:
+    """Return a writable register exposed by the library map."""
     reg = coordinator.get_register(register_name)
     if reg is None or not reg.writable:
         raise ServiceValidationError(
@@ -356,7 +362,7 @@ async def _handle_set_external_climate(hass: HomeAssistant, call: ServiceCall) -
         )
 
     writes: list[tuple[RegisterDef, float]] = [
-        (_external_climate_register(coordinator, f"hc_{circuit}_ext_room_temp"), room_temperature)
+        (_writable_library_register(coordinator, f"hc_{circuit}_ext_room_temp"), room_temperature)
     ]
 
     if "humidity" in call.data and call.data.get("humidity") is not None:
@@ -367,7 +373,42 @@ async def _handle_set_external_climate(hass: HomeAssistant, call: ServiceCall) -
                 translation_key="external_climate_humidity_out_of_range",
                 translation_placeholders={"value": str(humidity)},
             )
-        writes.append((_external_climate_register(coordinator, "ext_humidity"), humidity))
+        writes.append((_writable_library_register(coordinator, "ext_humidity"), humidity))
+
+    for reg, value in writes:
+        await _async_write_register(coordinator, reg, value)
+
+
+async def _handle_set_external_power(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Write the supplied external energy measurements via known GLT registers."""
+    coordinator = await _get_coordinator(hass, call)
+    supplied_fields = [
+        field for field in EXTERNAL_POWER_MEASUREMENT_NAMES if field in call.data and call.data.get(field) is not None
+    ]
+    if not supplied_fields:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="external_power_no_values",
+        )
+
+    writes: list[tuple[RegisterDef, float]] = []
+    for field in supplied_fields:
+        value = _coerce_float_field(call, field)
+        if field == "battery_soc" and (not value.is_integer() or not 0.0 <= value <= 100.0):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="external_power_battery_soc_out_of_range",
+                translation_placeholders={"value": str(value)},
+            )
+
+        reg = _writable_library_register(coordinator, field)
+        if (reg.min_val is not None and value < reg.min_val) or (reg.max_val is not None and value > reg.max_val):
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="write_out_of_range",
+                translation_placeholders=write_error_placeholders(field),
+            )
+        writes.append((reg, value))
 
     for reg, value in writes:
         await _async_write_register(coordinator, reg, value)

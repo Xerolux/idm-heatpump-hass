@@ -658,6 +658,12 @@
     "dhw_boost_timeout_out_of_range": {
       "message": "Die Boost-Laufzeit muss zwischen {minimum} und {maximum} Minuten liegen."
     },
+    "external_power_no_values": {
+      "message": "Mindestens ein externer Leistungs- oder Batteriewert muss angegeben werden."
+    },
+    "external_power_battery_soc_out_of_range": {
+      "message": "Batterieladezustand {value} % muss eine Ganzzahl zwischen 0 und 100 sein."
+    },
     "write_cooldown_active": {
       "message": "Register {register} kann noch nicht geschrieben werden. Der konfigurierte Schreib-Cooldown beträgt {cooldown} Sekunden; bitte noch {remaining} Sekunden warten. Bei einem Cooldown von 0 ist der Schutz deaktiviert."
     }
@@ -809,6 +815,36 @@
         "humidity": {
           "name": "Feuchte",
           "description": "Optionale externe relative Feuchte in % (0…100)."
+        }
+      }
+    },
+    "set_external_power": {
+      "name": "Externe Leistungswerte setzen",
+      "description": "Schreibt externe Leistungs- und Batteriemesswerte in die IDM-GLT-Register.",
+      "fields": {
+        "pv_surplus": {
+          "name": "PV-Überschuss",
+          "description": "Aktueller Photovoltaiküberschuss in kW."
+        },
+        "pv_production": {
+          "name": "PV-Produktion",
+          "description": "Aktuelle Photovoltaikproduktion in kW."
+        },
+        "house_consumption": {
+          "name": "Hausverbrauch",
+          "description": "Aktueller Hausverbrauch in kW."
+        },
+        "battery_discharge": {
+          "name": "Batterieentladung",
+          "description": "Aktuelle Batterieentladeleistung in kW."
+        },
+        "battery_soc": {
+          "name": "Batterieladezustand",
+          "description": "Aktueller Batterieladezustand in % (Ganzzahl von 0 bis 100)."
+        },
+        "electric_heater_power": {
+          "name": "E-Heizstab-Leistung",
+          "description": "Aktuelle Leistung des elektrischen Heizstabs in kW."
         }
       }
     }

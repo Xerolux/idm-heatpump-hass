@@ -118,6 +118,70 @@ set_external_climate:
           unit_of_measurement: "%"
           mode: box
 
+set_external_power:
+  name: "Set External Power"
+  description: "Write external power and battery measurements to IDM GLT registers"
+  target:
+    entity:
+      integration: idm_heatpump
+  fields:
+    pv_surplus:
+      name: "PV Surplus"
+      description: "Current photovoltaic surplus in kW"
+      required: false
+      selector:
+        number:
+          step: any
+          unit_of_measurement: "kW"
+          mode: box
+    pv_production:
+      name: "PV Production"
+      description: "Current photovoltaic production in kW"
+      required: false
+      selector:
+        number:
+          step: any
+          unit_of_measurement: "kW"
+          mode: box
+    house_consumption:
+      name: "House Consumption"
+      description: "Current house consumption in kW"
+      required: false
+      selector:
+        number:
+          step: any
+          unit_of_measurement: "kW"
+          mode: box
+    battery_discharge:
+      name: "Battery Discharge"
+      description: "Current battery discharge power in kW"
+      required: false
+      selector:
+        number:
+          step: any
+          unit_of_measurement: "kW"
+          mode: box
+    battery_soc:
+      name: "Battery State of Charge"
+      description: "Current battery state of charge in %"
+      required: false
+      selector:
+        number:
+          min: 0
+          max: 100
+          step: 1
+          unit_of_measurement: "%"
+          mode: box
+    electric_heater_power:
+      name: "Electric Heater Power"
+      description: "Current electric-heater power in kW"
+      required: false
+      selector:
+        number:
+          step: any
+          unit_of_measurement: "kW"
+          mode: box
+
 start_dhw_boost:
   name: "Start DHW Boost"
   description: "Temporarily prioritize domestic hot water and restore the exact previous mode and setpoint afterwards"
