@@ -59,7 +59,17 @@
 
 - The current firmware version is read as a diagnostic sensor (`firmware_version`)
 - Firmware updates directly from Home Assistant are **not** possible
-- Updates are done via the IDM web interface or USB
+- Updates are done via the **myIDM cloud portal** or via a **USB stick using the
+  controller display's service menu** (unlocked with the *Fachmann Ebene* codes
+  the integration can calculate).
+- The three local interfaces exposed by the controller (Modbus TCP 502,
+  Navigator HTTP 80, Navigator 10 WebSocket 61220) **do not** carry any
+  firmware-update endpoint. All candidate WebSocket controllers
+  (`firmware`, `update`, `upgrade`, `software`, `usb`, `upload`,
+  `maintenance`, `system.update`, `system.firmware`, `system.software`,
+  `system.usb`) respond with `provided controller [...] is not supported!`.
+  See [Navigator Protocol Analysis](Navigator-Protocol-Analysis) for the
+  full verified controller catalog.
 
 ## Deliberately Not Implemented
 
