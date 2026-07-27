@@ -76,7 +76,7 @@ services:
     build:
       context: ./homeassistant
       args:
-        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-0.8.5-py3-none-any.whl}
+        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-0.9.1-py3-none-any.whl}
     container_name: idm-ha-test
     depends_on:
       modbus-proxy:
@@ -97,7 +97,11 @@ services:
       # Capture HA logs for the report (also visible via `docker logs`).
       - ./logs/homeassistant:/config/logs
     healthcheck:
-      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://127.0.0.1:8123/api/',timeout=5)\" || exit 1"]
+      # HA is "alive" when its HTTP port accepts TCP connections. The
+      # previous check hit /api/ which returns 401 without a token and
+      # was logged by HA as an invalid-auth attempt; a TCP-port check
+      # is sufficient and side-effect free.
+      test: ["CMD-SHELL", "python -c \"import socket; s=socket.create_connection(('127.0.0.1',8123),5); s.close()\" || exit 1"]
       interval: 15s
       timeout: 8s
       retries: 40
@@ -108,7 +112,7 @@ services:
     build:
       context: ./api-tester
       args:
-        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-0.8.5-py3-none-any.whl}
+        API_WHEEL: ${API_WHEEL:-idm_heatpump_api-0.9.1-py3-none-any.whl}
     container_name: idm-api-tester
     depends_on:
       modbus-proxy:
