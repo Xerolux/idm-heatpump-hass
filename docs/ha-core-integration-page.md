@@ -223,6 +223,34 @@ data:
   humidity: 58.4
 ```
 
+### `idm_heatpump.set_external_power`
+
+Write any available subset of external PV, consumption, battery and
+electric-heater measurements through known GLT/BMS register definitions. At
+least one measurement must be supplied.
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `pv_surplus` | number | no | Current PV surplus in kW |
+| `pv_production` | number | no | Current PV production in kW |
+| `house_consumption` | number | no | Current house consumption in kW |
+| `battery_discharge` | number | no | Current battery discharge power in kW |
+| `battery_soc` | integer | no | Battery state of charge (`0`…`100` %) |
+| `electric_heater_power` | number | no | Electric-heater power in kW |
+
+```yaml
+action: idm_heatpump.set_external_power
+data:
+  pv_surplus: 1.537
+  pv_production: 1.686
+  house_consumption: 0.386
+```
+
+All fields and register availability are checked before writing. The values
+are then sent as separate Modbus writes, not as an atomic transaction. If the
+connection fails partway through a call, retry the complete current set on the
+next cyclic update.
+
 ### `idm_heatpump.write_register`
 
 Write a value directly to a Modbus register. **For advanced users only.**

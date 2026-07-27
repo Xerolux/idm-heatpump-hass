@@ -77,31 +77,36 @@ automation:
 
 ---
 
-## Forward PV surplus through the supported GLT entity
+## Forward energy-management measurements through the GLT service
 
-Register 74 is designed to receive the current PV surplus from one energy
-manager. Use the generated writable `number` entity so FLOAT word order and
-validation remain inside the integration. Replace the example entity IDs with
-your actual IDs. Do not run this automation if an inverter, E3DC, Smartfox or
-another controller already writes the same register.
+The `set_external_power` action forwards any available subset of PV, house and
+battery measurements without depending on generated `number` entities. The
+integration keeps datatype, register-availability and write-safety checks in
+the write path. Replace the example sensor IDs with your actual IDs. Do not run
+this automation if an inverter, E3DC, Smartfox or another controller already
+writes the same registers.
 
 ```yaml
 automation:
-  - alias: "Heat pump: Forward PV surplus"
+  - alias: "Heat pump: Forward external power measurements"
     mode: restart
     trigger:
       - platform: state
         entity_id: sensor.house_pv_surplus_kw
-    condition:
-      - condition: template
-        value_template: "{{ is_number(states('sensor.house_pv_surplus_kw')) }}"
     action:
-      - service: number.set_value
-        target:
-          entity_id: number.idm_heatpump_pv_surplus_set
+      - action: idm_heatpump.set_external_power
         data:
-          value: "{{ [states('sensor.house_pv_surplus_kw') | float(0), 0] | max }}"
+          pv_surplus: "{{ states('sensor.house_pv_surplus_kw') }}"
+          pv_production: "{{ states('sensor.house_pv_production_kw') }}"
+          house_consumption: "{{ states('sensor.house_consumption_kw') }}"
 ```
+
+Invalid, unavailable, NaN or infinite inputs are rejected by the action. If a
+source sensor can be unavailable independently, either omit that field in a
+separate call or build the action data dynamically rather than replacing it
+with zero. Multiple fields are validated before writing, but their individual
+Modbus writes are not atomic; the next cyclic update should resend the complete
+current set after a connection failure. See [Services Reference](Services#set_external_power).
 
 Thresholds at which a heat pump starts, stops or modulates depend on the exact
 model, firmware, temperatures and controller configuration. A fixed 2–3 kW

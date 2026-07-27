@@ -115,6 +115,84 @@ action:
       humidity: "{{ states('sensor.living_room_humidity') | float }}"
 ```
 
+## set_external_power
+
+Writes external PV, consumption, battery and electric-heater measurements to
+the known IDM GLT/BMS input registers. The action addresses the library
+registers directly, so it does not depend on the corresponding `number`
+entities being enabled or currently having a state.
+
+**Service:** `idm_heatpump.set_external_power`
+
+**Target:** Entity of the integration, or provide `entry_id` when multiple IDM entries are loaded
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `pv_surplus` | number | Optional current PV surplus in kW |
+| `pv_production` | number | Optional current PV production in kW |
+| `house_consumption` | number | Optional current house consumption in kW |
+| `battery_discharge` | number | Optional current battery discharge power in kW |
+| `battery_soc` | integer | Optional battery state of charge (`0`…`100` %) |
+| `electric_heater_power` | number | Optional electric-heater power in kW |
+
+Every measurement field is optional, but each call must contain at least one
+measurement. For example, an energy manager that only knows three values can
+send just those values:
+
+```yaml
+action: idm_heatpump.set_external_power
+data:
+  pv_surplus: 1.537
+  pv_production: 1.686
+  house_consumption: 0.386
+```
+
+### Validation and API range metadata
+
+The integration's API 0.9.1 contract fixture currently records the following
+range metadata:
+
+| Register | API `min_val` | API `max_val` | Integration validation |
+|----------|---------------|---------------|------------------------|
+| `pv_surplus` | not set | not set | finite number |
+| `pv_production` | not set | not set | finite number |
+| `house_consumption` | not set | not set | finite number |
+| `battery_discharge` | not set | not set | finite number |
+| `battery_soc` | not set | not set | whole number `0`…`100` |
+| `electric_heater_power` | not set | not set | finite number |
+
+The valid physical range of the five power measurements can depend on the
+connected energy manager and on whether the installation uses a signed value
+to describe the direction of energy flow. The integration therefore does not
+invent universal limits for those fields; it rejects non-numeric, NaN and
+infinite values and applies library limits automatically if a future tested API
+release supplies them.
+
+> **Open release check:** Before releasing this service, repeat this metadata
+> audit against the installed, published `idm-heatpump-api[web]==0.9.1`
+> artifact. The development environment used for the initial implementation
+> could not download the PyPI artifact. If its register definitions differ from
+> the table, update the validation, tests and this documentation together.
+
+`battery_soc` is a signed INT16 register whose documented valid input is a
+whole percentage from `0` to `100`; `-1` is its unavailable sentinel. The
+action enforces `0`…`100` explicitly rather than accepting the sentinel as an
+external input. See [Modbus Registers](Modbus-Register#pvenergy-management-datatype-reference)
+for the register datatypes.
+
+### Multiple values and partial failures
+
+The action validates **all** supplied values and verifies that all requested
+registers are available and writable before the first Modbus write. A
+validation or unsupported-register error therefore writes nothing.
+
+The subsequent device writes are separate Modbus operations and are not an
+atomic transaction. If the connection fails after one or more successful
+writes, earlier values may already have reached the heat pump while later
+values have not. Home Assistant reports the write failure; the caller should
+retry the complete current measurement set on its next update. This action is
+intended for cyclic live measurements, not one-time transactional changes.
+
 ## write_register
 
 Writes a value directly to a Modbus register (advanced).

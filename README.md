@@ -168,7 +168,7 @@ Home Assistant
     |       |
     |       +-- Entities (sensor, binary_sensor, number, select, switch, climate, water_heater, button)
     |
-    +-- Services (set_system_mode, acknowledge_errors, write_register, set_external_climate, start_dhw_boost, cancel_dhw_boost)
+    +-- Services (set_system_mode, acknowledge_errors, write_register, set_external_climate, set_external_power, start_dhw_boost, cancel_dhw_boost)
     |
     +-- Diagnostics (JSON export via HA UI)
 ```

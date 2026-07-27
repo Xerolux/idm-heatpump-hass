@@ -606,6 +606,12 @@
     },
     "dhw_boost_timeout_out_of_range": {
       "message": "Boost duration must be between {minimum} and {maximum} minutes."
+    },
+    "external_power_no_values": {
+      "message": "At least one external power or battery value must be provided."
+    },
+    "external_power_battery_soc_out_of_range": {
+      "message": "Battery state of charge {value} % must be a whole number from 0 to 100."
     }
   },
   "issues": {
@@ -755,6 +761,36 @@
         "humidity": {
           "name": "Humidity",
           "description": "Optional external relative humidity in % (0…100)."
+        }
+      }
+    },
+    "set_external_power": {
+      "name": "Set External Power",
+      "description": "Writes external power and battery measurements to the IDM GLT registers.",
+      "fields": {
+        "pv_surplus": {
+          "name": "PV surplus",
+          "description": "Current photovoltaic surplus in kW."
+        },
+        "pv_production": {
+          "name": "PV production",
+          "description": "Current photovoltaic production in kW."
+        },
+        "house_consumption": {
+          "name": "House consumption",
+          "description": "Current house consumption in kW."
+        },
+        "battery_discharge": {
+          "name": "Battery discharge",
+          "description": "Current battery discharge power in kW."
+        },
+        "battery_soc": {
+          "name": "Battery state of charge",
+          "description": "Current battery state of charge in % (whole number from 0 to 100)."
+        },
+        "electric_heater_power": {
+          "name": "Electric heater power",
+          "description": "Current electric-heater power in kW."
         }
       }
     }

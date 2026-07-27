@@ -11,6 +11,7 @@ from custom_components.idm_heatpump.services import (
     _get_coordinator,
     _handle_acknowledge_errors,
     _handle_set_external_climate,
+    _handle_set_external_power,
     _handle_set_system_mode,
     _handle_write_register,
     async_setup_services,
@@ -54,7 +55,7 @@ class TestWriteSafetyHelpers:
 class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
-        assert mock_hass.services.async_register.call_count == 4
+        assert mock_hass.services.async_register.call_count == 5
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -73,6 +74,7 @@ class TestServiceLifecycleInvariants:
             (DOMAIN, "acknowledge_errors"),
             (DOMAIN, "write_register"),
             (DOMAIN, "set_external_climate"),
+            (DOMAIN, "set_external_power"),
         }
 
     async def test_setup_is_idempotent_when_already_registered(self, mock_hass):
@@ -547,5 +549,95 @@ class TestSetExternalClimate:
 
         with pytest.raises(HomeAssistantError) as exc_info:
             await _handle_set_external_climate(mock_hass, call)
+
+        assert exc_info.value.translation_key == "write_connection_failed"
+
+
+class TestSetExternalPower:
+    def _setup_registers(self, coord):
+        from idm_heatpump import DataType, RegisterDef
+
+        registers = {
+            "pv_surplus": RegisterDef(1650, DataType.FLOAT, "pv_surplus", unit="kW", writable=True),
+            "pv_production": RegisterDef(1652, DataType.FLOAT, "pv_production", unit="kW", writable=True),
+            "house_consumption": RegisterDef(
+                1654,
+                DataType.FLOAT,
+                "house_consumption",
+                unit="kW",
+                writable=True,
+                min_val=0,
+            ),
+            "battery_discharge": RegisterDef(1656, DataType.FLOAT, "battery_discharge", unit="kW", writable=True),
+            "battery_soc": RegisterDef(1658, DataType.INT16, "battery_soc", unit="%", writable=True),
+            "electric_heater_power": RegisterDef(
+                1660, DataType.FLOAT, "electric_heater_power", unit="kW", writable=True
+            ),
+        }
+        coord.get_register.side_effect = registers.get
+        return registers
+
+    async def test_writes_only_supplied_measurements(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        self._setup_registers(coord)
+        call = MagicMock()
+        call.data = {"pv_surplus": 1.537, "house_consumption": "0.386", "battery_soc": 72}
+
+        await _handle_set_external_power(mock_hass, call)
+
+        assert coord.async_write_register.await_count == 3
+        assert [(args.args[0].name, args.args[1]) for args in coord.async_write_register.await_args_list] == [
+            ("pv_surplus", 1.537),
+            ("house_consumption", 0.386),
+            ("battery_soc", 72.0),
+        ]
+
+    @pytest.mark.parametrize(
+        "data,translation_key",
+        [
+            ({}, "external_power_no_values"),
+            ({"pv_surplus": None}, "external_power_no_values"),
+            ({"pv_surplus": "nan"}, "invalid_value"),
+            ({"pv_production": "inf"}, "invalid_value"),
+            ({"battery_soc": -1}, "external_power_battery_soc_out_of_range"),
+            ({"battery_soc": 101}, "external_power_battery_soc_out_of_range"),
+            ({"battery_soc": 72.5}, "external_power_battery_soc_out_of_range"),
+            ({"house_consumption": -0.1}, "write_out_of_range"),
+        ],
+    )
+    async def test_validates_all_inputs_before_writing(self, mock_hass, data, translation_key):
+        coord = _make_coordinator_in_hass(mock_hass)
+        self._setup_registers(coord)
+        call = MagicMock()
+        call.data = data
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_set_external_power(mock_hass, call)
+
+        assert exc_info.value.translation_key == translation_key
+        coord.async_write_register.assert_not_awaited()
+
+    async def test_validates_all_registers_before_writing(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        registers = self._setup_registers(coord)
+        del registers["battery_soc"]
+        call = MagicMock()
+        call.data = {"pv_surplus": 1.5, "battery_soc": 72}
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_set_external_power(mock_hass, call)
+
+        assert exc_info.value.translation_key == "write_not_supported"
+        coord.async_write_register.assert_not_awaited()
+
+    async def test_write_error_is_translated(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        self._setup_registers(coord)
+        coord.async_write_register = AsyncMock(side_effect=Exception("connection lost"))
+        call = MagicMock()
+        call.data = {"pv_surplus": 1.5}
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await _handle_set_external_power(mock_hass, call)
 
         assert exc_info.value.translation_key == "write_connection_failed"
