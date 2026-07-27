@@ -250,3 +250,89 @@ Der Snapshot eines Konfigurations-Backups enthält unter anderem:
 Diese Integration liest keine SD-Karte aus. Die obige Struktur ist lediglich
 für Supportzwecke dokumentiert; wenn User Werte vergleichen möchten, können
 sie die entsprechenden CSV-Dateien manuell against ihre HA-Sensoren prüfen.
+
+## Navigator 10 WebSocket – Controller-Katalog
+
+Die Navigator-10-Weboberfläche spricht ein WebSocket-Protokoll auf Port
+`61220`. Jeder Frame hat die Form `{"controller": "<name>", "command":
+"<verb>", "data": {...}}`. Authentifizierung erfolgt per Query-Parameter
+`?auth_code=<PIN>` beim Verbindungsaufbau.
+
+Die folgende Tabelle ist das Ergebnis einer streng lesenden Live-Erkundung
+(`overview`/`detail` nur) an einer bestätigten Navigator-10-Anlage (Firmware
+`NAV10_20.24-880-g265e09c4a`, Juli 2026). Sie ersetzt das frühere, unvollständige
+Bild aus der statischen EXE-Analyse.
+
+### Unterstützte Controller
+
+| Controller | Commands | Bedeutung |
+|---|---|---|
+| `status` | `overview` | Authorisierungsstatus (`{"authorized":true}`) |
+| `home` | `overview`, `detail` | Startbildschirm-Status (Frostschutzinfo, Auth aktiv, Demo-Modus, Header) und Detaildaten inkl. Energy-Flow (PV, Hausverbrauch, Grid) |
+| `system` | `overview` | System-Detailblock (Energiemengen heute, Typ-Wörterbuch) |
+| `system.freshwater` | `overview` | DHW-Detail (Zirkulation, StatusInfo, SystemMode, Temperaturen) |
+| `setting` | `detail`, `save`, `execute` | Settings lesen (`detail`), schreiben (`save`), Aktionen auslösen (`execute`) |
+| `statistic` | `overview`, `detail` | Statistikblöcke |
+| `notification` | `overview`, `save` | Meldungsübersicht, Meldungsänderung |
+| `authentication` | `overview` | Systeminformation (buffer.systemMode, temperatures, energyflow) |
+| `showcase` | `overview` | Demo-/Info-Sequenzen |
+| `frostprotection` | `overview` | Frostschutz-Wizard (nur aktiv im Frostfall) |
+| `relaytest` | `overview` | Relaistest-Wizard (nur im Service-Fall aktiv) |
+
+**Subcontroller-Muster**: Die `system.*`-Subcontroller (z. B. `system.freshwater`)
+nutzen im `data`-Block `parameterId` statt `settingId`. Die Bibliothek
+verwendet derzeit nur `setting/detail`, `statistic/detail` und
+`notification/overview`.
+
+**Setting-Aktionstypen** (via `setting/execute`): Der SPA-Code ordnet Settings
+anhand ihres `type`-Feld bestimmten UI-Komponenten zu. Bekannte Aktionstypen
+sind `restart`, `actioncode`, `execute`, `relaytest`, `tt1`, `ttw`, `ttboost`.
+`execute` ist dabei der generische „Aktion auslösen"-Typ, der die im Setting
+hinterlegte Funktion serverseitig anstößt. Beispielsweise ist der
+„Display neu starten"-Button als Setting vom Typ `restart` implementiert und
+wird über `setting/save` mit dem zugehörigen Setting-ID ausgelöst.
+
+### Nicht unterstützte Controller
+
+Folgende Controller-Namen wurden probiert und vom Navigator 10 **ausdrücklich
+als nicht unterstützt** zurückgewiesen (`provided controller [...] is not
+supported!`):
+
+```
+controller        firmware         update          upgrade
+software          usb              upload          maintenance
+system.update     system.firmware  system.software system.usb
+does.not.exist    (Negativkontrolle)
+```
+
+### Konsequenz: Firmware-Update
+
+Die Navigator-10-WebSocket-Schnittstelle **bietet keinen Update-Endpunkt**.
+Dasselbe gilt für die HTTP-Oberfläche (Port 80, reine SPA, keine serverseitigen
+Update-Routen) und Modbus TCP (Port 502). Die drei lokalen Schnittstellen des
+Controllers decken den normalen Lese-/Schreibbetrieb ab, aber keine
+Firmware-Operationen.
+
+Firmware-Updates beim Navigator 10 erfolgen dementsprechend über:
+
+1. **myIDM Cloud-Portal** (`app.myidm.at`) – das kanonische Web-Interface, das
+   im Framework als „IDM web interface" bezeichnet wird. Push-Aktualisierungen
+   laufen in der Regel automatisch über diesen Kanal ein.
+2. **USB-Stick** über den Controller-Display-Service-Menü (Fachmann-Ebene).
+   Die Integration berechnet die zeitabhängigen *Fachmann Ebene* Codes
+   (L1/L2) und stellt sie als optionale Sensoren zur Verfügung. Am Display
+   selbst lässt sich dann nach einem „Update" / „Software" / „USB"-Menüpunkt
+   suchen.
+
+### Erkundungs-Hinweise für Support
+
+Wenn Nutzer nach Firmware-Updates fragen, ist die Antwort klar:
+
+- Lokal über Web oder WebSocket: **nicht möglich**, alle Update-Controller
+  werden vom Gerät abgelehnt.
+- Cloud (myIDM): primärer Update-Kanal.
+- USB + Display: sekundärer Service-Kanal.
+
+Eine Erweiterung der Integration um eigene Update-Funktionen ist nicht
+geplant und würde den bewussten Einschluss von Cloud-Funktionen erfordern
+(siehe Abschnitt „Bewusst nicht implementiert").
