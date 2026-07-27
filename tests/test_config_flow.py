@@ -1,6 +1,8 @@
 """Tests for IdmHeatpumpConfigFlow and IdmHeatpumpOptionsFlow."""
 
+import json
 import socket
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 from custom_components.idm_heatpump.config_flow import (
@@ -43,6 +45,26 @@ from custom_components.idm_heatpump.const import (
     MODEL_OVERRIDE_NAVIGATOR_10,
 )
 from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed, IdmWebSupplement
+
+
+TRANSLATION_FILES = (
+    Path("custom_components/idm_heatpump/strings.json"),
+    Path("custom_components/idm_heatpump/translations/de.json"),
+    Path("custom_components/idm_heatpump/translations/en.json"),
+)
+
+
+def test_options_translations_match_initial_config_flow() -> None:
+    """Both entry points for the shared options schema expose every label."""
+    for path in TRANSLATION_FILES:
+        translations = json.loads(path.read_text(encoding="utf-8"))
+        config_options = translations["config"]["step"]["options"]
+        options_flow = translations["options"]["step"]["options"]
+
+        assert options_flow == config_options
+        feature_labels = options_flow["sections"]["features"]["data"]
+        feature_descriptions = options_flow["sections"]["features"]["data_description"]
+        assert feature_labels.keys() == feature_descriptions.keys()
 
 
 def _make_flow():
