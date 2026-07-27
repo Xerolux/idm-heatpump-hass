@@ -15,13 +15,103 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
-- **External power GLT service (#176):** `idm_heatpump.set_external_power`
-  accepts any available subset of PV surplus, PV production, house
-  consumption, battery discharge, battery SOC and electric-heater power
-  without depending on `number` entity availability. The service documentation
-  records the current API contract-fixture metadata and the non-atomic behavior
-  of its separate Modbus writes. Direct verification against the published API
-  0.9.1 artifact remains an explicit pre-release check.
+- _Nothing yet._
+
+## [0.10.0] - 2026-07-27
+
+Erste 0.10.x-Stable. Bringt den neuen `set_external_power`-Service, einen
+pro-Register-Schreib-Cooldown mit Polling-Jitter, ein überarbeitetes
+Config-Flow-Profil mit ausdrücklicher Web-Zugangsentscheidung, sowie einen
+Diagnose-Querverweis zwischen Modbus-Register, internen Controller-Stats-IDs
+und KNX-Kommunikationsobjekten. API-Pin bleibt bei `idm-heatpump-api[web]==0.9.1`
+(keine API-Änderung in diesem Release).
+
+> **Compatibility:** API-Pin unverändert auf `idm-heatpump-api[web]==0.9.1`.
+> Entity-Unique-IDs, Entity-IDs, Registeradressen und Schreibpfade unverändert.
+
+### Added
+
+- **External-Power-GLT-Service (#182):** Neue Domain-Service
+  `idm_heatpump.set_external_power` schreibt beliebige Teilmengen von
+  PV-Überschuss, PV-Produktion, Hausverbrauch, Batterieentladung,
+  Batterie-SOC und E-Heizstabs-Leistung in die API-definierten GLT-
+  Messwert-Register (74, 76, 78, 82, 84, 86), ohne von den generierten
+  `number`-Entities abzuhängen. Strikte NaN/Inf-Rejektion, library-seitige
+  `min_val`/`max_val`-Prüfung, `battery_soc` auf ganze Zahlen 0–100
+  eingeschränkt. Schreibpfad läuft über `coordinator.async_write_register`
+  und erbt damit automatisch den pro-Register-Schreib-Cooldown und die
+  EEPROM-Sicherheitsprüfung.
+
+- **Pro-Register-Schreib-Cooldown (#184):** Neue erweiterte Option
+  `write_cooldown` (Standard 5s, einstellbar 0–600s; 0 deaktiviert den
+  Schutz vollständig). Wiederholte Schreibversuche auf dieselbe
+  Registeradresse innerhalb des Intervalls werden vor der Übertragung
+  abgelehnt, HA zeigt die verbleibende Wartezeit. Andere Register bleiben
+  beschreibbar. Der separate EEPROM-Schutz bleibt unberührt.
+
+- **Polling-Jitter & Kommunikations-Diagnose (#184):** Konfigurierbarer
+  Jitter reduziert lastspitzen bei mehreren Integrationen; neue
+  Kommunikations-Diagnose-Felder (`last_poll_success`, `last_poll_duration`,
+  `consecutive_failures`, `total_polls`, `total_failures`,
+  `active_registers`, `total_registers_in_plan`, `polling_jitter_percent`,
+  `write_cooldown_seconds`) im Diagnose-Export.
+
+- **Controller-Stats-Querverweis (#186):** Neuer Diagnose-Block
+  `controller_stats_cross_reference` im Diagnose-Export. Emitiert für
+  jeden bekannten Energie-Register die Kreuzreferenz zwischen
+  Modbus-Adresse, internem Controller-Stats-ID (SD-Karten-Statistik-Engine)
+  und KNX-Kommunikationsobjekt-Nummer, sodass Anwender ihre HA-Sensoren
+  ohne SD-Karten-Ausbau gegen die controller-eigenen `syscount.ini`-Zähler
+  abgleichen können. Label-only, keine Sensorwerte. Konstanten-Modul
+  `controller_stats_reference.py` hält die verified Cross-Reference-Tabelle.
+
+- **Drei-ID-Räume-Dokumentation (#186):** Neue Wiki-Sektion
+  „IDM-Controller-ID-Räume" in `Navigator-Protocol-Analysis.md`.
+  Dokumentiert die drei unabhängigen Nummernräume (Modbus / interne
+  Stats-ID / KNX-Objekt) und warnt vor der Verwechslung, die das
+  KNX-Analysepaket angemerkt hat. SD-Karten-Struktur und
+  Syscount-Schlüssel-Querverweis mit aufgenommen.
+
+- **KNX-Evidence-Regressions-Tests (#186):** Neues Testmodul
+  `test_knx_evidence.py` friert die Verträge aus dem KNX-Handoff ein:
+  `battery_soc` INT16-Rohwert 65535 → −1 → Sentinel (fängt Regression
+  auf UINT16/`65535 %`), KNX-BAOS-Metadaten (`ApplicationVersion=16`,
+  `VersionNumber=256`, Projektname `KNX Navigator 2.0`) werden niemals
+  als IDM-Modell oder Firmware übernommen.
+
+### Changed
+
+- **Config-Flow-Overhaul (#183, #185):** Optionen-Beschreibungen klarer
+  und einheitlicher; ausdrückliche Entscheidung über den Web-Zugang
+  während des Setup (aktivieren / deaktivieren / Modbus-only), separates
+  Setup-Review und Profiling für wiederkehrende Nutzer, i18n für alle
+  neuen Optionen in DE und EN.
+
+### Internal
+
+- **Docker-Read-Only-Test-Bench (#187):** Bench auf
+  `idm-heatpump-api-0.9.1` aktualisiert (vorher 0.9.0/0.8.5-Mix), HA-Healthcheck
+  von kaputter `/api/`-urlopen-Variante auf TCP-Port-8123-Reichweitentest
+  umgestellt. Kein Laufzeitcode berührt.
+
+### Verified live (read-only)
+
+Live-Verifikation auf einer bestätigten Navigator-10-Anlage (Firmware
+`NAV10_20.24-880-g265e09c4a`) via Docker-Read-Only-Bench:
+
+- 11/11 api-tester Probes grün (`modbus_connect`, `detect_model=Navigator 10`,
+  `batch_read_all=151 Register in 2.45 s`, `single_vs_batch=0 Mismatches`,
+  `illegal_data_address`-Behandlung, `web_nav10_ws_read`,
+  `web_modbus_model_consistency=agree`, `proxy_write_block_verification=
+  value_unchanged`).
+- 11.679 Modbus-Transaktionen, 0 nicht autorisierte Schreibvorgänge
+  (die einzigen 2 BLOCKED_WRITE-Einträge sind die synthetischen
+  Kontrolltests aus `run_api_tests.py`).
+- Neuer `controller_stats_cross_reference`-Block in der Live-Diagnose
+  sichtbar (10 von 13 Referenzreihen für die aktiv in `coordinator.data`
+  befindlichen Register).
+- pytest 1047 passed / 2 skipped, ruff format+check clean, mypy strict
+  clean (42 Dateien), Hassfest pass, Sourcery pass, pip-audit pass.
 
 ## [0.9.1] - 2026-07-26
 
