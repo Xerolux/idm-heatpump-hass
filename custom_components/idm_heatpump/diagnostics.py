@@ -106,6 +106,36 @@ def _model_conflict_diagnostics(coordinator: Any) -> dict[str, Any]:
     }
 
 
+def _controller_stats_cross_reference(coordinator: Any) -> dict[str, Any]:
+    """Emit the syscount cross-reference for every known register that is
+    currently present in the coordinator's data.
+
+    Lets users correlate their Home Assistant reading with the controller's
+    on-device ``syscount.ini`` counter and the KNX example-project object
+    number, without having to pull the SD card. Only registers that are
+    actually in ``coordinator.data`` are listed; absent registers are
+    omitted so the diagnostics stay focused on what the integration can
+    really see on this plant.
+
+    No values are emitted here - this is purely a label cross-reference.
+    """
+    from .controller_stats_reference import SYSCOUNT_REGISTER_REFERENCE
+
+    data = getattr(coordinator, "data", None) or {}
+    rows: dict[str, Any] = {}
+    for register_name in sorted(SYSCOUNT_REGISTER_REFERENCE):
+        if register_name not in data:
+            continue
+        ref = SYSCOUNT_REGISTER_REFERENCE[register_name]
+        rows[register_name] = {
+            "syscount_key": ref.syscount_key,
+            "internal_stats_id": ref.internal_stats_id,
+            "knx_object": ref.knx_object,
+            "label": ref.semantic_label,
+        }
+    return rows
+
+
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     coordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
@@ -142,6 +172,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 },
                 "model_info": _model_info_diagnostics(coordinator.model_info),
                 "model_conflict": _model_conflict_diagnostics(coordinator),
+                "controller_stats_cross_reference": _controller_stats_cross_reference(coordinator),
                 "client_diagnostics": async_redact_data(_client_diagnostics(coordinator), TO_REDACT),
                 "web_supplement": _web_supplement_diagnostics(coordinator),
                 "unused_registers": sorted(coordinator.unused_registers),
