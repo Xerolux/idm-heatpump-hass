@@ -65,10 +65,13 @@ nicht finalen Home-Assistant-Modbus-Vertrags blockiert bleibt.
       **Breiter Datensatz (31.07.2026, Nav 10):** 15-tägige 30-s-Aufzeichnung
       aus VictoriaMetrics ausgewertet (Firmware NAV10_20.24, −7…+7 °C).
       Warmwasser-COP-Median 2,62 (n=1 217), Heiz-COP-Median 3,00 (n=30 551),
-      Abtau-Erkennung bestätigt (1 156 Samples, Ø −16,9 kW, min −48,1 kW),
-      SCOP (integral) 2,62, Energiezähler-Delta +2 548 kWh. E-Heizstab über
-      den gesamten Zeitraum 0,0 kW (inaktiv). Offen bleiben nur andere
-      Firmwares als NAV10_20.24.
+      reale thermische Leistung liegt zu 97 % im Nennbereich 0–16 kW
+      (elektrisch 0–10 kW); wenige Samples während Abtau-/Übergangsphasen
+      lesen außerhalb dieses Bereichs (Messartefakte der Durchfluss/ΔT-Rechnung,
+      keine reale Leistung – korrekt vom COP-Guard verworfen), SCOP (integral)
+      2,62, Energiezähler-Delta +2 548 kWh. E-Heizstab über den gesamten
+      Zeitraum 0,0 kW (inaktiv). Offen bleiben nur andere Firmwares als
+      NAV10_20.24.
 
 Zusätzliche Nutzerdaten:
 
