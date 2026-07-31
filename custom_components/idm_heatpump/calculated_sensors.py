@@ -62,6 +62,16 @@ def _difference(first_key: str, second_key: str) -> Callable[[Mapping[str, Any]]
 # implemented and return plausible values. The road-map rule "no estimated
 # values as measurements" (issue #135) is enforced inside _cop: while the
 # heat pump is idle both sources report 0 kW and COP is suppressed (None).
+#
+# Broad 15-day field verification (Navigator 10, firmware NAV10_20.24,
+# -7...+7 degC outdoor, 30 s sampling): the two source registers are stable
+# across heating, DHW, defrost and standby. Observed momentary COP medians
+# are ~3.0 (heating) and ~2.6 (DHW); integrated seasonal COP ~2.6. During
+# reverse-cycle defrost thermal_power_flow_sensor goes negative (down to
+# ~-48 kW) and the "thermal <= 0" guard below correctly suppresses COP.
+# Transient mode-switch samples can produce out-of-band ratios (both
+# directions); these are left unfiltered because smoothing/estimation is
+# explicitly disallowed by issue #135.
 _COP_ELECTRIC_POWER_REGISTER = "power_consumption_hp"
 _COP_THERMAL_POWER_REGISTER = "thermal_power_flow_sensor"
 # Very low electrical input (<50 W) indicates standby/commissioning rather
