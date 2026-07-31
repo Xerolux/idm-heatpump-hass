@@ -1,0 +1,218 @@
+name: Bug report
+description: Report reproducible incorrect behavior in the IDM Heatpump integration
+title: "[BUG] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem.
+
+        Complete every required field. Reports without versions, reproduction steps, logs, or diagnostics are usually impossible to investigate.
+
+        **Never post passwords, web PINs, access tokens, public hostnames, serial numbers, or unredacted IP addresses.** The integration diagnostics redact known network fields, but please review files before uploading them.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before submitting
+      description: These checks avoid duplicate or already-fixed reports.
+      options:
+        - label: I searched existing open and closed issues for the same problem.
+          required: true
+        - label: I tested with the latest available integration version, or explained below why I cannot update.
+          required: true
+        - label: I reviewed the uploaded logs and diagnostics and removed secrets and personal data.
+          required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      description: Select the closest match.
+      options:
+        - Initial setup or reconfiguration
+        - Modbus connection or polling
+        - Local Navigator web supplement
+        - Missing or unavailable entity
+        - Incorrect sensor value or unit
+        - Number, select, switch, or write operation
+        - Room-temperature forwarding
+        - Repair notification or diagnostics
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What happened?
+      description: Describe the actual behavior, when it started, and how often it occurs. Do not only paste an error message.
+      placeholder: |
+        After updating/restarting/changing ..., the integration ...
+        The problem occurs on every poll / only during setup / intermittently ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: Explain the behavior or value you expected instead.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: Provide exact steps, beginning from a loaded integration or a new setup.
+      placeholder: |
+        1. Open Settings → Devices & services → IDM Heatpump
+        2. ...
+        3. Observe ...
+    validations:
+      required: true
+
+  - type: input
+    id: home_assistant_version
+    attributes:
+      label: Home Assistant version
+      description: Find this under Settings → About. Use the complete version, for example 2026.5.0.
+      placeholder: "2026.5.0"
+    validations:
+      required: true
+
+  - type: input
+    id: integration_version
+    attributes:
+      label: IDM Heatpump integration version
+      description: Find it in HACS, the integration diagnostics, or the IDM API Version diagnostic entity attributes.
+      placeholder: "0.8.1-beta.22"
+    validations:
+      required: true
+
+  - type: input
+    id: runtime_versions
+    attributes:
+      label: API and pymodbus versions
+      description: Copy both from the IDM API Version diagnostic entity or downloaded diagnostics.
+      placeholder: "idm-heatpump-api 0.7.1; pymodbus 3.13.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: navigator_family
+    attributes:
+      label: Navigator family
+      options:
+        - Navigator 2.0
+        - Navigator 10
+        - Navigator Pro
+        - Other or unknown
+    validations:
+      required: true
+
+  - type: input
+    id: heatpump_model
+    attributes:
+      label: Exact heat-pump model
+      description: Use the model shown on the unit, Navigator, or diagnostics. Do not include a serial number.
+      placeholder: "Example: iPump A 3-11"
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Navigator and firmware/software version
+      description: Copy the exact values from the Navigator UI or integration diagnostics. Write "unknown" only if they cannot be found.
+      placeholder: "Navigator ..., software/firmware ..."
+    validations:
+      required: true
+
+  - type: dropdown
+    id: installation_type
+    attributes:
+      label: Home Assistant installation type
+      options:
+        - Home Assistant OS
+        - Home Assistant Container
+        - Home Assistant Supervised
+        - Home Assistant Core
+        - Other or unknown
+    validations:
+      required: true
+
+  - type: dropdown
+    id: connection_path
+    attributes:
+      label: Connection path
+      description: Do not enter the device IP address.
+      options:
+        - Direct Modbus TCP connection
+        - Modbus TCP proxy or gateway
+        - Web-only mode
+        - Modbus plus local web supplement
+        - Other or unknown
+    validations:
+      required: true
+
+  - type: input
+    id: modbus_endpoint
+    attributes:
+      label: Modbus settings (without IP address)
+      description: Provide only port, slave/unit ID, configured timeout, and retry count. For web-only mode write "not used".
+      placeholder: "Port 502; slave ID 1; timeout 5 s; retries 2"
+    validations:
+      required: true
+
+  - type: textarea
+    id: relevant_configuration
+    attributes:
+      label: Relevant integration configuration
+      description: List enabled circuits, zones/rooms, cascade, web supplement, forwarding, proxy use, and options related to the problem. Never paste the raw config entry.
+      placeholder: |
+        Heating circuits: A, B
+        Zones/rooms: ...
+        Web supplement: enabled/disabled
+        Cascade: enabled/disabled
+        Other relevant options: ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Debug logs
+      description: |
+        On the integration page, select **Enable debug logging**, reproduce the issue, then select **Disable debug logging** to download the log. Drag the relevant log file here or paste the complete section in a fenced code block. Include the first error and its traceback, not only the final line. If logging cannot be enabled, explain why.
+      placeholder: Drag the debug log here, paste the relevant complete section, or explain why no log is available.
+      render: text
+    validations:
+      required: true
+
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Integration diagnostics
+      description: |
+        Open Settings → Devices & services → IDM Heatpump → three-dot menu → **Download diagnostics** and drag the JSON file here. Review it before uploading. If setup never completed and diagnostics are unavailable, state that explicitly.
+      placeholder: Drag the diagnostics JSON here, or explain exactly why it is unavailable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Add screenshots, timestamps, recent configuration/firmware/network changes, or anything else that may help. Remove personal information first.
+
+  - type: checkboxes
+    id: final_confirmation
+    attributes:
+      label: Final confirmation
+      options:
+        - label: I did not include a web PIN, password, token, serial number, or unredacted private network details.
+          required: true

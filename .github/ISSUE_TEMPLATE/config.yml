@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Installation and troubleshooting guide
+    url: https://github.com/Xerolux/idm-heatpump-hass/wiki/Troubleshooting
+    about: Check common setup, connection, and Modbus problems before opening an issue.
+  - name: Security vulnerability
+    url: https://github.com/Xerolux/idm-heatpump-hass/security/policy
+    about: Report security problems privately instead of creating a public issue.

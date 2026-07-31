@@ -1,0 +1,91 @@
+name: Feature request
+description: Propose a concrete improvement to the integration
+title: "[FEATURE] "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the user problem first, then the proposed solution. For new Modbus registers, use the dedicated **Register issue** form instead.
+
+  - type: checkboxes
+    id: preflight
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched existing issues and the roadmap for this request.
+          required: true
+        - label: This request preserves local operation and does not require a cloud service.
+          required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or use case
+      description: Who needs this, and what cannot currently be achieved?
+      placeholder: "As a user with ..., I need ... because ..."
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: Describe the desired UI, entity, service, option, or behavior precisely.
+    validations:
+      required: true
+
+  - type: textarea
+    id: example
+    attributes:
+      label: Example workflow
+      description: Show how a user would configure and use the feature from start to finish.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Describe current workarounds and why they are insufficient.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Affected area
+      options:
+        - Entities or register metadata
+        - Configuration or options flow
+        - Service or write behavior
+        - Diagnostics or repairs
+        - Local web supplement
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Relevant device and integration versions
+      description: Provide the heat-pump/Navigator family, firmware, and integration version if the request is hardware-dependent; otherwise write "not hardware-dependent".
+      placeholder: "Navigator 10, firmware ..., integration 0.8.1-beta.22"
+    validations:
+      required: true
+
+  - type: textarea
+    id: migration
+    attributes:
+      label: Compatibility and migration considerations
+      description: Could this rename entities, change defaults, alter writes, or require user migration? Write "none known" if not applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional_context
+    attributes:
+      label: Additional context
+      description: Add mockups, screenshots, documentation links, or examples. Remove personal data.

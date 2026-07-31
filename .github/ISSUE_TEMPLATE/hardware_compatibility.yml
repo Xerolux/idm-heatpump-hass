@@ -1,0 +1,118 @@
+name: Hardware compatibility report
+description: Report a tested IDM model, Navigator, and firmware combination
+title: "[HARDWARE] "
+labels:
+  - compatibility
+  - hardware
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this form for both working and non-working hardware combinations. For a specific broken register, use the **Register issue** form.
+
+  - type: input
+    id: heatpump_model
+    attributes:
+      label: Exact heat-pump model
+      description: Do not include the serial number.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: navigator_family
+    attributes:
+      label: Navigator family
+      options:
+        - Navigator 2.0
+        - Navigator 10
+        - Navigator Pro
+        - Other or unknown
+    validations:
+      required: true
+
+  - type: input
+    id: firmware
+    attributes:
+      label: Navigator and firmware/software version
+      placeholder: "Navigator ..., software/firmware ..."
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Installed software versions
+      description: Include Home Assistant, integration, idm-heatpump-api, and pymodbus versions from diagnostics.
+      placeholder: "HA 2026.5.0; integration 0.8.1-beta.22; API 0.7.1; pymodbus 3.13.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: connection_path
+    attributes:
+      label: Connection path
+      options:
+        - Direct Modbus TCP connection
+        - Modbus TCP proxy or gateway
+        - Web-only mode
+        - Modbus plus local web supplement
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: system_configuration
+    attributes:
+      label: System configuration
+      description: List active heating circuits, zones/rooms, solar, ISC, PV, cascade, and other relevant modules.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: overall_result
+    attributes:
+      label: Overall result
+      options:
+        - Fully working
+        - Mostly working with minor limitations
+        - Setup works but polling/entities have major problems
+        - Setup or connection fails
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: test_results
+    attributes:
+      label: Tested functions
+      description: Select everything you verified. Leaving an item unchecked means it was not verified or did not work; explain below.
+      options:
+        - label: Setup or reconfiguration succeeds
+        - label: Initial Modbus poll succeeds
+        - label: Sensor and binary-sensor values are plausible
+        - label: Writable entities work as expected
+        - label: Local web supplement works
+        - label: Reload and Home Assistant restart work
+
+  - type: textarea
+    id: limitations
+    attributes:
+      label: Missing entities, failures, or limitations
+      description: List exact entity names, repair messages, and behavior. Write "none observed" for a fully working report.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Diagnostics and supporting evidence
+      description: Attach the redacted integration diagnostics file. For failures, also attach debug logs. Explain if either is unavailable.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I reviewed all attachments and removed PINs, passwords, tokens, serial numbers, and unredacted network details.
+          required: true
