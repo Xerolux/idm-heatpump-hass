@@ -17,6 +17,35 @@ All notable changes to this project will be documented in this file.
 
 - _Nothing yet._
 
+## [0.10.1] - 2026-07-31
+
+Dokumentations- und Wartungs-Release. Keine Änderung am
+Integrationsverhalten; API-Pin bleibt `idm-heatpump-api[web]==0.9.1`,
+Entity-IDs, Registeradressen und Schreibpfade unverändert.
+
+> **Compatibility:** API-Pin unverändert auf `idm-heatpump-api[web]==0.9.1`.
+> Keine funktionalen Änderungen gegenüber 0.10.0.
+
+### Changed
+
+- **COP-Quellregister feldbestätigt:** Die Quellregister des momentanen COP
+  (`power_consumption_hp` @4122, `thermal_power_flow_sensor` @4126) und die
+  Standby-/Abtau-Guards des `calculated_cop`-Sensors wurden an einer
+  15-tägigen 30-s-Aufzeichnung einer Live-Anlage (Navigator 10, Firmware
+  NAV10_20.24, −7…+7 °C Außentemperatur) verifiziert. Heiz-COP-Median ~3,0,
+  Warmwasser-COP-Median ~2,6, integrierter SCOP ~2,6. Reale thermische
+  Leistung liegt zu ~97 % im Nennbereich 0–16 kW (elektrisch 0–10 kW);
+  außerhalb liegende Samples während Abtau-/Übergangsphasen sind
+  Messartefakte der Durchfluss/ΔT-Rechnung und werden vom `thermal <= 0`-Guard
+  korrekt verworfen. E-Heizstab über den gesamten Zeitraum 0,0 kW (inaktiv).
+  Auch `temp_flow_target_circuit_a` wurde als angeforderter Vorlauf-Sollwert
+  bestätigt. Keine Verhaltensänderung, nur Kommentar/Dokumentation.
+
+### Added
+
+- GitHub Issue-Templates (Bug, Feature, Hardware-Kompatibilität, Register,
+  Konfiguration) unter `.github/ISSUE_TEMPLATE/`.
+
 ## [0.10.0] - 2026-07-27
 
 Erste 0.10.x-Stable. Bringt den neuen `set_external_power`-Service, einen
