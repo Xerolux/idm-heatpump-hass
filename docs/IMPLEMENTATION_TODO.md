@@ -61,7 +61,17 @@ nicht finalen Home-Assistant-Modbus-Vertrags blockiert bleibt.
       **Teilverifiziert (22.07.2026, Nav 10):** COP-Quellregister
       `power_consumption_hp` (@4122) und `thermal_power_flow_sensor` (@4126)
       sind live bestätigt; Standby-Nullfall wird durch die 50-W-Schranke
-      abgefangen. Breitere Datensätze für Warmwasser/Abtauen bleiben offen.
+      abgefangen.
+      **Breiter Datensatz (31.07.2026, Nav 10):** 15-tägige 30-s-Aufzeichnung
+      aus VictoriaMetrics ausgewertet (Firmware NAV10_20.24, −7…+7 °C).
+      Warmwasser-COP-Median 2,62 (n=1 217), Heiz-COP-Median 3,00 (n=30 551),
+      reale thermische Leistung liegt zu 97 % im Nennbereich 0–16 kW
+      (elektrisch 0–10 kW); wenige Samples während Abtau-/Übergangsphasen
+      lesen außerhalb dieses Bereichs (Messartefakte der Durchfluss/ΔT-Rechnung,
+      keine reale Leistung – korrekt vom COP-Guard verworfen), SCOP (integral)
+      2,62, Energiezähler-Delta +2 548 kWh. E-Heizstab über den gesamten
+      Zeitraum 0,0 kW (inaktiv). Offen bleiben nur andere Firmwares als
+      NAV10_20.24.
 
 Zusätzliche Nutzerdaten:
 
@@ -78,6 +88,12 @@ Zusätzliche Nutzerdaten:
       `hc_{a..g}_setpoint_flow_temp` (Adresse 1378 ff., FLOAT, nur lesend) als
       berechneter Vorlauf-Sollwert. Sentinel `0.0` im Standby, `-1.0` für
       nicht aktivierte Heizkreise. Siehe `docs/dev/open-work-audit.md`.
+      **Feldbestätigt (31.07.2026, Nav 10):** über die 15-tägige
+      30-s-Aufzeichnung verhält sich `temp_flow_target_circuit_a` wie der
+      angeforderte Vorlauf-Sollwert (Heizbetrieb ~47–48 °C, gegen 0 bzw. ~29 °C
+      außerhalb der Anforderung). Der Ist-Vorlauf läuft im Heizbetrieb
+      erwartungsgemäß 0,2–2,9 K unter dem Soll (größte Unterschreitung am
+      kältesten Tag).
 - [ ] Abgrenzung zu Heizkurve, Mischer-Sollwert, maximalem Vorlauf und
       Heizkreis-Sollwert dokumentieren.
 - [ ] Verhalten bei mehreren Heizkreisen und Kaskaden prüfen.

@@ -1,0 +1,104 @@
+name: Modbus register issue
+description: Report a wrong, missing, unsafe, or unsupported IDM register
+title: "[REGISTER] "
+labels:
+  - register
+  - compatibility
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Provide evidence from IDM documentation, the Navigator UI, diagnostics, or a **read-only** capture. Never experiment with writes to unknown, service, or EEPROM-sensitive registers.
+
+  - type: dropdown
+    id: issue_type
+    attributes:
+      label: Register problem
+      options:
+        - Missing register or entity
+        - Illegal Data Address or unsupported register
+        - Wrong value, scaling, sign, or byte order
+        - Wrong unit, device class, icon, or name
+        - Incorrect read/write capability
+        - Unsafe or unexpected write behavior
+        - Model filtering or availability problem
+        - Other
+    validations:
+      required: true
+
+  - type: input
+    id: register_identity
+    attributes:
+      label: Register key and address
+      description: Provide both when known. Do not guess an address.
+      placeholder: "outside_air_temperature, address 1000"
+    validations:
+      required: true
+
+  - type: input
+    id: register_metadata
+    attributes:
+      label: Documented register metadata
+      description: Include function/read-write mode, data type, length, unit, scaling, and valid range when known.
+      placeholder: "Read-only; FLOAT; 2 registers; °C; range ..."
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device, Navigator, and firmware
+      description: Include exact heat-pump model, Navigator family/version, and firmware/software version. Do not include a serial number.
+    validations:
+      required: true
+
+  - type: input
+    id: versions
+    attributes:
+      label: Integration and API versions
+      description: Copy the integration, idm-heatpump-api, and pymodbus versions from diagnostics.
+      placeholder: "Integration 0.8.1-beta.22; API 0.7.1; pymodbus 3.13.1"
+    validations:
+      required: true
+
+  - type: textarea
+    id: configuration
+    attributes:
+      label: Relevant hardware and integration configuration
+      description: List circuits, zones, modules, cascade/model filtering, and options that determine whether this register exists.
+    validations:
+      required: true
+
+  - type: textarea
+    id: observed
+    attributes:
+      label: Observed behavior
+      description: Include the exact Home Assistant entity state, raw read result or Modbus exception, and when it occurs.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: Explain what the Navigator UI or IDM documentation shows and how it maps to the expected Home Assistant value.
+    validations:
+      required: true
+
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence
+      description: Attach redacted diagnostics, debug logs, documentation excerpt/screenshot, and/or a read-only Modbus capture. Explain if evidence cannot be shared.
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety and privacy confirmation
+      options:
+        - label: I did not write to an unknown, service, or EEPROM-sensitive register to produce this report.
+          required: true
+        - label: I removed PINs, passwords, tokens, serial numbers, and unredacted network details from all text and attachments.
+          required: true

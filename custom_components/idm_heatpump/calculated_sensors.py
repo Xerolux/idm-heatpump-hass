@@ -62,6 +62,17 @@ def _difference(first_key: str, second_key: str) -> Callable[[Mapping[str, Any]]
 # implemented and return plausible values. The road-map rule "no estimated
 # values as measurements" (issue #135) is enforced inside _cop: while the
 # heat pump is idle both sources report 0 kW and COP is suppressed (None).
+#
+# Broad 15-day field verification (Navigator 10, firmware NAV10_20.24,
+# -7...+7 degC outdoor, 30 s sampling): the two source registers are stable
+# in normal operation. Real thermal output reads in the unit's rated range
+# 0..~16 kW for ~97% of samples (median ~6.7 kW, p99 ~13 kW); electrical
+# input 0..~10 kW (p99 ~5 kW). The remaining samples sit outside that range
+# during defrost / operating-state transitions and are measurement artefacts
+# of the flow/delta-T calculation, NOT real power (e.g. isolated spikes to
+# ~-48 kW). The "thermal <= 0" guard below correctly suppresses COP during
+# these phases, and no smoothing is applied because estimating values is
+# explicitly disallowed by issue #135.
 _COP_ELECTRIC_POWER_REGISTER = "power_consumption_hp"
 _COP_THERMAL_POWER_REGISTER = "thermal_power_flow_sensor"
 # Very low electrical input (<50 W) indicates standby/commissioning rather
