@@ -15,6 +15,49 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.11.0-beta.2] - 2026-08-04
+
+Zweite Beta der 0.11.x-Linie. Wechselt auf die stabile API 1.0.0 und macht
+`IdmModbusConnectionClient` zu einem dünnen Wrapper, der den tmodbus-Transport
+über den neuen API-1.0-`transport=`-Konstruktorparameter injiziert, statt
+private API-Hooks zu überschreiben und einen eigenen Retry-Loop zu pflegen.
+
+### Added
+
+- **API-1.0-Transport-Injektion:** `IdmModbusConnectionClient` injiziert jetzt
+  eine `ModbusConnectionTransport`-Instanz über `super().__init__(transport=…)`.
+  Die API besitzt nun den vollständigen Lifecycle, Retry-Loop, Batching,
+  Modellerkennung und Schreibschutz. Diese Klasse fügt nur noch
+  transportbezogene Diagnose hinzu.
+- **Exception-Translation im Transport:** Backend-neutrale `ModbusError`-
+  Fehler werden jetzt *innerhalb* des Transports in die API-Ausnahme-Hierarchie
+  übersetzt (`IllegalAddressError` für Code 2, `ModbusIOException` für
+  transiente Codes 5/6/10/11, `ConnectionException`/`TimeoutError` für
+  Transportfehler), bevor sie den API-Retry-Loop erreichen.
+
+### Changed
+
+- **`idm-heatpump-api[web]==0.9.1` → `==1.0.0`:** Die Integration pinnt jetzt
+  die stabile API 1.0.0. `pymodbus>=3.12.1,<4.0` bleibt vorübergehend als
+  Kompatibilitätsabhängigkeit bestehen.
+- **Netto -208 Zeilen:** Der eigene Retry-Loop (`_run_transport_command`), die
+  Error-Translation (`_translate_transport_error`) und alle Private-Methoden-
+  Overrides (`_ensure_connected`, `_try_reconnect`, `_read_registers`,
+  `_write_registers`) wurden entfernt. `modbus_client.py` schrumpfte von 306
+  auf 76 Zeilen.
+- `ModbusConnectionTransport` implementiert jetzt das API-1.0-Protocol
+  (`connect`/`close`/`connected`, keyword-only `read_*`/`write_registers` mit
+  `list[int]`-Rückgaben) statt des lokalen `async_*`-Protocols.
+
+### Compatibility
+
+- Vollständig abwärtskompatibel für Nutzer: bestehende Config-Entries
+  funktionieren unverändert. Die öffentliche Client-Oberfläche
+  (`read_batch`, `write_register`, `detect_model`, `connect`, `disconnect`,
+  `is_connected`, `transport_diagnostics`) ist identisch.
+- Die Coordinator-Marker-Strings (`exception_code=2`, `illegal data address`)
+  für die Bisect-Logik sind unverändert erhalten.
+
 ## [0.11.0-beta.1] - 2026-08-04
 
 Erste Beta der 0.11.x-Linie. Der direkte Modbus-TCP-Socket wechselt auf
