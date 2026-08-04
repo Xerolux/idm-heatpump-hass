@@ -7,8 +7,7 @@ from importlib.metadata import PackageNotFoundError, version
 from unittest.mock import AsyncMock, MagicMock, call, patch
 
 import pytest
-
-from idm_heatpump import DataType, IllegalAddressError, RegisterDef, RETRY_BACKOFF_BASE, RegisterType
+from idm_heatpump import RETRY_BACKOFF_BASE, DataType, IllegalAddressError, RegisterDef, RegisterType
 from modbus_connection import (
     ModbusConnectionError,
     ModbusError,
@@ -20,7 +19,6 @@ from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOEx
 
 from custom_components.idm_heatpump.error_messages import classify_write_error
 from custom_components.idm_heatpump.modbus_client import IdmModbusConnectionClient
-
 
 try:
     _IDM_API_VERSION = version("idm-heatpump-api")

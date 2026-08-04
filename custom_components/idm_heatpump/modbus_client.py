@@ -6,12 +6,6 @@ import asyncio
 from collections.abc import Awaitable, Callable
 from typing import Any, TypeVar
 
-from idm_heatpump import (
-    RETRY_BACKOFF_BASE,
-    IdmModbusClient,
-    IllegalAddressError,
-    RegisterType,
-)
 from modbus_connection import (
     ModbusConnectionError,
     ModbusError,
@@ -20,6 +14,13 @@ from modbus_connection import (
     ModbusTimeoutError,
 )
 from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
+
+from idm_heatpump import (
+    RETRY_BACKOFF_BASE,
+    IdmModbusClient,
+    IllegalAddressError,
+    RegisterType,
+)
 
 from .modbus_transport import ModbusConnectionTransport, ModbusTcpEndpoint
 
