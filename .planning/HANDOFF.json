@@ -1,0 +1,80 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-08-04T12:21:58.108Z",
+  "phase": "api-1.0-beta2",
+  "phase_name": "API 1.0 transport contract and add-on beta 2",
+  "phase_dir": ".planning",
+  "plan": 1,
+  "task": 2,
+  "total_tasks": 6,
+  "status": "paused",
+  "completed_tasks": [
+    {
+      "id": 1,
+      "name": "Audit API and add-on transport/version contracts",
+      "status": "done",
+      "commit": "a423f8c"
+    },
+    {
+      "id": 2,
+      "name": "Design public API transport boundary and release sequence",
+      "status": "in_progress",
+      "progress": "Design and risk audit are complete; implementation was intentionally stopped before any runtime files changed."
+    }
+  ],
+  "remaining_tasks": [
+    {
+      "id": 3,
+      "name": "Implement and test idm-heatpump-api 1.0.0 transport injection",
+      "status": "not_started"
+    },
+    {
+      "id": 4,
+      "name": "Publish and verify API 1.0.0",
+      "status": "not_started"
+    },
+    {
+      "id": 5,
+      "name": "Refactor add-on adapter and pin API 1.0.0 in 0.11.0-beta.2",
+      "status": "not_started"
+    },
+    {
+      "id": 6,
+      "name": "Publish and verify add-on 0.11.0-beta.2",
+      "status": "not_started"
+    }
+  ],
+  "blockers": [
+    {
+      "description": "Older add-on releases use open-ended API requirements and may resolve a stable API 1.0.0.",
+      "type": "technical",
+      "workaround": "Keep API 1.0.0 backward compatible with the legacy IdmModbusClient(host) Pymodbus path, or use a prerelease if strict beta-only resolution is required."
+    },
+    {
+      "description": "API main currently fails ruff format --check for idm_heatpump/registers.py.",
+      "type": "technical",
+      "workaround": "Apply the formatter-only change in the API feature PR and rerun the full matrix."
+    }
+  ],
+  "human_actions_pending": [],
+  "decisions": [
+    {
+      "decision": "Keep v0.10.1 and v0.11.0-beta.1 unchanged on the exact API 0.9.1 pin.",
+      "rationale": "Released users must retain a reproducible dependency pair.",
+      "phase": "api-1.0-beta2"
+    },
+    {
+      "decision": "Only add-on 0.11.0-beta.2 will explicitly pin idm-heatpump-api[web]==1.0.0.",
+      "rationale": "The API and add-on must be promoted as one tested pair.",
+      "phase": "api-1.0-beta2"
+    },
+    {
+      "decision": "The API keeps direct Pymodbus as its backward-compatible default and accepts an optional public raw transport.",
+      "rationale": "Standalone and older consumers must keep working while the add-on stops overriding private API internals.",
+      "phase": "api-1.0-beta2"
+    }
+  ],
+  "uncommitted_files": [],
+  "next_action": "Resume in the API repository on Codex/api-1.0.0-transport and implement the public transport Protocol plus injected-client tests before changing this add-on.",
+  "context_notes": "The current tmodbus bridge passed 21 focused adapter tests against API 0.9.1, but it overrides several private API members. API issue #60 describes the intended injection architecture. No API 1.0 or beta.2 runtime implementation was committed before this pause."
+}
