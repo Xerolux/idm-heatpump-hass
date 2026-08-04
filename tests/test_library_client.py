@@ -1,7 +1,7 @@
 """Tests for IdmModbusClient."""
 
 import struct
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, patch
 
 import pytest
 from idm_heatpump import DataType, IdmModbusClient, RegisterDef
@@ -30,10 +30,12 @@ def _make_reg(address, datatype, name="reg", writable=False, multiplier=1.0, min
 
 
 def _mock_read_result(registers):
-    result = MagicMock()
-    result.isError = MagicMock(return_value=False)
-    result.registers = registers
-    return result
+    """Return raw register words (API 1.0 transport contract).
+
+    Transports return ``list[int]`` directly, not pymodbus response objects,
+    so the helper just returns the list the test wants the transport to yield.
+    """
+    return list(registers)
 
 
 # ---------------------------------------------------------------------------
@@ -207,9 +209,8 @@ class TestReadRegister:
 
     async def test_read_raises_on_modbus_error(self, client_and_tcp):
         client, tcp = client_and_tcp
-        error_result = MagicMock()
-        error_result.isError = MagicMock(return_value=True)
-        tcp.read_input_registers.return_value = error_result
+        # API 1.0 transport contract: device errors surface as exceptions.
+        tcp.read_input_registers.side_effect = ModbusException("device error")
         reg = _make_reg(1000, DataType.UCHAR)
         with pytest.raises(ModbusException):
             await client.read_register(reg)
@@ -223,9 +224,8 @@ class TestReadRegister:
 class TestWriteRegister:
     async def test_write_float(self, client_and_tcp):
         client, tcp = client_and_tcp
-        ok_result = MagicMock()
-        ok_result.isError = MagicMock(return_value=False)
-        tcp.write_registers.return_value = ok_result
+        # API 1.0 transport contract: successful writes return None (no
+        # response object); the default fixture already sets this.
 
         reg = _make_reg(1000, DataType.FLOAT, writable=True)
         await client.write_register(reg, 25.5)
@@ -251,9 +251,8 @@ class TestWriteRegister:
 
     async def test_write_modbus_error_raises(self, client_and_tcp):
         client, tcp = client_and_tcp
-        error_result = MagicMock()
-        error_result.isError = MagicMock(return_value=True)
-        tcp.write_registers.return_value = error_result
+        # API 1.0 transport contract: device write errors raise.
+        tcp.write_registers.side_effect = ModbusException("write error")
         reg = _make_reg(1000, DataType.UCHAR, writable=True)
         with pytest.raises(ModbusException):
             await client.write_register(reg, 1)
@@ -301,8 +300,6 @@ class TestReadBatch:
     async def test_batch_partial_failure_continues(self, client_and_tcp):
         client, tcp = client_and_tcp
         client._max_retries = 1
-        error_result = MagicMock()
-        error_result.isError = MagicMock(return_value=True)
         ok_result = _mock_read_result([42])
         tcp.read_input_registers.side_effect = [
             ModbusException("err"),
@@ -325,7 +322,9 @@ class TestReadBatch:
 
 class TestConnectDisconnect:
     async def test_connect(self):
-        with patch("idm_heatpump.client.AsyncModbusTcpClient") as mock_class:
+        # API 1.0: AsyncModbusTcpClient is instantiated inside _PymodbusTransport
+        # (idm_heatpump.transport), not directly in the client module.
+        with patch("idm_heatpump.transport.AsyncModbusTcpClient") as mock_class:
             mock_tcp = AsyncMock()
             mock_tcp.connected = True
             mock_class.return_value = mock_tcp
@@ -335,21 +334,25 @@ class TestConnectDisconnect:
             mock_tcp.connect.assert_called_once()
 
     async def test_connect_skips_if_already_connected(self):
-        with patch("idm_heatpump.client.AsyncModbusTcpClient") as mock_class:
-            mock_tcp = AsyncMock()
-            mock_tcp.connected = True
-            mock_class.return_value = mock_tcp
+        # API 1.0: inject a transport that reports connected; connect() must
+        # be a no-op because _connect_internal sees connected=True.
+        from idm_heatpump.transport import IdmModbusTransport
 
-            client = IdmModbusClient("192.168.1.1")
-            client._client = mock_tcp
-            await client.connect()
-            mock_tcp.connect.assert_not_called()
+        transport = AsyncMock(spec=IdmModbusTransport)
+        transport.connected = True
+
+        client = IdmModbusClient("192.168.1.1", transport=transport)
+        await client.connect()
+        transport.connect.assert_not_called()
 
     async def test_disconnect(self, client_and_tcp):
         client, tcp = client_and_tcp
         await client.disconnect()
         tcp.close.assert_called_once()
-        assert client._client is None
+        # API 1.0: disconnect closes the transport; configure the mock so
+        # is_connected reflects the closed state.
+        tcp.connected = False
+        assert client.is_connected is False
 
     async def test_get_client_raises_when_not_connected(self):
         client = IdmModbusClient("192.168.1.1")
