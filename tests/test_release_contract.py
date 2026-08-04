@@ -14,6 +14,8 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 
 EXPECTED_RUNTIME_REQUIREMENTS = [
+    "modbus-connection==4.0.0a3",
+    "tmodbus==0.5.0",
     "pymodbus>=3.12.1,<4.0",
     "idm-heatpump-api[web]==0.9.1",
 ]
@@ -93,6 +95,8 @@ def test_ci_and_release_share_complete_python_quality_workflow() -> None:
     assert "ruff check custom_components/idm_heatpump tests" in quality
     assert "ruff format custom_components/idm_heatpump tests --check" in quality
     assert "mypy custom_components/idm_heatpump" in quality
+    assert "Smoke test production Modbus backend" in quality
+    assert "from modbus_connection.tmodbus import ModbusConnection" in quality
     assert "pytest tests/" in quality
     assert "--cov=custom_components/idm_heatpump" in quality
     assert 'home-assistant-version: "2026.5.0"' in release
@@ -386,7 +390,9 @@ def test_user_facing_dependency_docs_match_manifest() -> None:
     for requirement in EXPECTED_RUNTIME_REQUIREMENTS:
         assert all(requirement in _read(path) for path in runtime_docs)
 
-    api_requirement = EXPECTED_RUNTIME_REQUIREMENTS[1]
+    api_requirement = next(
+        requirement for requirement in EXPECTED_RUNTIME_REQUIREMENTS if requirement.startswith("idm-heatpump-api")
+    )
     assert all(api_requirement in _read(path).replace(" == ", "==") for path in api_pin_docs)
 
     api_version = api_requirement.partition("==")[2]

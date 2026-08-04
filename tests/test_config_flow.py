@@ -1268,7 +1268,7 @@ class TestTestConnection:
         mock_client.is_connected = True
         mock_client.probe_register = AsyncMock(return_value=[0, 0])
         with patch(
-            "idm_heatpump.IdmModbusClient",
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
             return_value=mock_client,
         ):
             result = await flow._test_connection(
@@ -1286,7 +1286,7 @@ class TestTestConnection:
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(side_effect=Exception("connection refused"))
         with patch(
-            "idm_heatpump.IdmModbusClient",
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
             return_value=mock_client,
         ):
             result = await flow._test_connection(
@@ -1305,7 +1305,7 @@ class TestTestConnection:
         mock_client.is_connected = True
         mock_client.probe_register = AsyncMock(return_value=None)
         with patch(
-            "idm_heatpump.IdmModbusClient",
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
             return_value=mock_client,
         ):
             result = await flow._test_connection(
@@ -1323,7 +1323,10 @@ class TestTestConnection:
         mock_client = AsyncMock()
         mock_client.is_connected = False
 
-        with patch("idm_heatpump.IdmModbusClient", return_value=mock_client):
+        with patch(
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
+            return_value=mock_client,
+        ):
             result = await flow._test_connection(
                 {
                     "host": "192.168.1.100",
@@ -1339,7 +1342,10 @@ class TestTestConnection:
         flow = _make_flow()
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(side_effect=ConnectionRefusedError("connection refused"))
-        with patch("idm_heatpump.IdmModbusClient", return_value=mock_client):
+        with patch(
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
+            return_value=mock_client,
+        ):
             result = await flow._test_connection(
                 {
                     "host": "192.168.1.100",
@@ -1354,7 +1360,10 @@ class TestTestConnection:
         flow = _make_flow()
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(side_effect=TimeoutError("timed out"))
-        with patch("idm_heatpump.IdmModbusClient", return_value=mock_client):
+        with patch(
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
+            return_value=mock_client,
+        ):
             result = await flow._test_connection(
                 {
                     "host": "192.168.1.100",
@@ -1371,7 +1380,7 @@ class TestTestConnection:
         mock_client.is_connected = True
         mock_client.probe_register = AsyncMock(return_value=[0, 0])
         with patch(
-            "idm_heatpump.IdmModbusClient",
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
             return_value=mock_client,
         ):
             await flow._test_connection(
@@ -1388,7 +1397,7 @@ class TestTestConnection:
         mock_client = AsyncMock()
         mock_client.connect = AsyncMock(side_effect=Exception("connection refused"))
         with patch(
-            "idm_heatpump.IdmModbusClient",
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
             return_value=mock_client,
         ):
             await flow._test_connection(

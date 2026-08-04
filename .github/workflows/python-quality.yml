@@ -69,6 +69,33 @@ jobs:
             "pymodbus>=3.12.1,<4.0" \
             "git+https://github.com/Xerolux/idm-heatpump-api.git@main"
 
+      - name: Smoke test production Modbus backend
+        run: |
+          python - <<'PY'
+          import asyncio
+          from importlib.metadata import version
+
+          from modbus_connection import ModbusTcpParams
+          from modbus_connection.tmodbus import ModbusConnection
+
+          from custom_components.idm_heatpump.modbus_client import IdmModbusConnectionClient
+
+          connection = ModbusConnection(
+              ModbusTcpParams(host="192.0.2.1", port=502),
+              timeout=1.0,
+          )
+          assert type(connection).__module__ == "modbus_connection.tmodbus"
+          assert connection.for_unit(1).__class__.__module__ == "modbus_connection.tmodbus"
+
+          client = IdmModbusConnectionClient("192.0.2.1")
+          asyncio.run(client.disconnect())
+          print(
+              "Production Modbus imports OK:",
+              version("modbus-connection"),
+              version("tmodbus"),
+          )
+          PY
+
       - name: Lint with Ruff
         run: ruff check custom_components/idm_heatpump tests --line-length=120 --output-format=github
 

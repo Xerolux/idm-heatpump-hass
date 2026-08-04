@@ -352,10 +352,8 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     from .log_filter import install_pymodbus_log_filter
     from .services import async_setup_services
 
-    # pymodbus logs routine connection drops at ERROR level and appends up
-    # to 20 buffered raw frame dumps to each record. The coordinator already
-    # converts these failures into a single UpdateFailed warning, so the
-    # pymodbus records are redundant and would otherwise flood the HA log.
+    # Keep the narrow compatibility filters while idm-heatpump-api 0.9.1 still
+    # imports pymodbus. The active Modbus socket itself is owned by tmodbus.
     install_pymodbus_log_filter()
 
     await async_setup_services(hass)
@@ -519,10 +517,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     integration = await async_get_integration(hass, DOMAIN)
     versions = await async_runtime_versions(integration.manifest.get("version"))
     _LOGGER.info(
-        "Setting up %s v%s (idm-heatpump-api v%s, pymodbus v%s)",
+        "Setting up %s v%s (idm-heatpump-api v%s, modbus-connection v%s, tmodbus v%s, pymodbus compatibility v%s)",
         NAME,
         versions.integration,
         versions.api,
+        versions.modbus_connection,
+        versions.tmodbus,
         versions.pymodbus,
     )
 

@@ -47,7 +47,10 @@ rules:
   dependency-transparency:
     status: done
     comment: >
-      pymodbus>=3.12.1,<4.0 is declared in manifest.json requirements.
+      manifest.json declares the exact direct transport pair
+      modbus-connection==4.0.0a3 and tmodbus==0.5.0, followed by the
+      temporary pymodbus>=3.12.1,<4.0 compatibility requirement and pinned
+      idm-heatpump-api[web]==0.9.1 device/web library.
 
   docs-actions:
     status: done
@@ -335,7 +338,9 @@ rules:
   async-dependency:
     status: done
     comment: >
-      pymodbus provides AsyncModbusTcpClient. All I/O is non-blocking async.
+      ModbusConnectionTransport uses the async modbus-connection/tmodbus
+      backend for direct socket I/O. idm-heatpump-api remains responsible for
+      device logic, and all Modbus and optional web I/O is non-blocking async.
 
   inject-websession:
     status: done

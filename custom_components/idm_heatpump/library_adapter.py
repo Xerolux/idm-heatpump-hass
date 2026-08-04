@@ -61,6 +61,7 @@ from .adapter_metadata import (
 )
 from .adapter_names import _get_german_name
 from .adapter_registers import build_filtered_register_map
+from .modbus_client import IdmModbusConnectionClient
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -573,7 +574,7 @@ def get_idm_client(
         kwargs["timeout"] = float(timeout)
     if max_retries is not None:
         kwargs["max_retries"] = int(max_retries)
-    return LibIdmModbusClient(host=host, port=port, slave_id=slave_id, **kwargs)
+    return IdmModbusConnectionClient(host=host, port=port, slave_id=slave_id, **kwargs)
 
 
 __all__ = [

@@ -43,7 +43,7 @@
 | **🛡️ Fehlermanagement** | Fehlererkennung, lesbare interne Meldungen, Fehlerquittierung, Diagnosedaten-Export |
 | **🧭 Geführte Einrichtungsdiagnose** | Unterscheidet unbekannte Hosts, abgelehntes/deaktiviertes Modbus TCP, Timeouts, Netzwerkfehler, falsche Slave-ID, falsche Web-PIN und nicht erreichbare Weboberfläche |
 | **🧪 Schreibgeschützter Verbindungstest** | Das Rekonfigurationsmenü testet die gespeicherte Modbus- und optionale Webverbindung, ohne Einstellungen zu ändern oder Register zu schreiben |
-| **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api` und `pymodbus` |
+| **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api`, `modbus-connection`, `tmodbus` und die Pymodbus-Kompatibilitätsversion |
 | **🔑 Fachmann-Ebene** | Optionale Sensoren für die aktuellen Zugangscodes der Ebenen 1 & 2 (standardmäßig aus, minütlich aktualisiert und ganz oben angeheftet) |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
 
@@ -129,7 +129,8 @@ Maintainer sollten vor einem stabilen Release den
 - IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.13+ (wird von Home Assistant bereitgestellt)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.9.1` (automatisch installiert)
+- `modbus-connection==4.0.0a3` · `tmodbus==0.5.0` (direkter Modbus-Socket)
+- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==0.9.1` (vorübergehend gepinnte API-Kompatibilitätsabhängigkeiten)
 
 ---
 
@@ -156,12 +157,14 @@ Home Assistant
     │
     ├── IdmCoordinator (DataUpdateCoordinator, konfigurierbares Polling)
     │       │
-    │       ├── IdmModbusClient (pymodbus, async, Batch-Lesung)
+    │       ├── IdmModbusConnectionClient (Gerätelogik aus idm-heatpump-api)
     │       │       │
-    │       │       └── IDM Navigator 2.0 / 10 (Modbus TCP, Port 502, Slave ID 1)
-    │       │               FC 04: Read Input Registers
-    │       │               FC 03: Read Holding Registers
-    │       │               FC 16: Write Multiple Registers
+    │       │       └── modbus-connection 4.0.0a3 + tmodbus 0.5.0
+    │       │               │
+    │       │               └── IDM Navigator 2.0 / 10 / Pro (TCP 502, Slave ID 1)
+    │       │                       FC 04: Read Input Registers
+    │       │                       FC 03: Read Holding Registers
+    │       │                       FC 16: Write Multiple Registers
     │       │
     │       ├── Optionale lokale Web-Zusatzdaten (PIN, read-only, eigenes Intervall)
     │       │
@@ -181,11 +184,15 @@ Home Assistant
 - **Werte-Sicherheit**: deklarierte Nicht-verfügbar-Sentinels gelten als unbenutzt; unplausible Batch-Werte werden einzeln geprüft und für die laufende Verbindung aus Batches ausgeschlossen
 - **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
-- **Auto-Recovery**: Exponentielles Backoff bei Verbindungsfehlern
+- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über `modbus-connection==4.0.0a3` und `tmodbus==0.5.0`; `4.0.0a3` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
+- **API-Kompatibilität**: `idm-heatpump-api[web]==0.9.1` bleibt für Register, Batchplanung, Encoding/Decoding, Modellerkennung und Schreibschutz zuständig; `pymodbus>=3.12.1,<4.0` bleibt vorübergehend installiert, weil die API es weiterhin importiert, besitzt aber nicht den direkten Socket
+- **Auto-Recovery**: API-Retry/Backoff plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
 - **Optionale Web-Zusatzdaten**: Die Einrichtung erkennt lokal Navigator-2.0-HTTP oder Navigator-10/Pro-WebSocket, speichert das erfolgreiche Protokoll, nutzt die Sitzung weiter und verbindet im Normalbetrieb nur diese bekannte Variante neu; Modbus bleibt führend
 - **Verständliche Verbindungsdiagnose**: Setup, Reconfigure, Logs und Reparaturmeldungen unterscheiden DNS-/Hostnamefehler, abgelehnte TCP-Verbindungen, Timeouts, nicht erreichbare Endpunkte, fehlende Modbus-Antworten, falsche Web-PINs und Webfehler
 - **Eingebautes Testmenü**: „Neu konfigurieren“ bietet einen zerstörungsfreien Test eines bekannten IDM-Modbus-Registers, gezielte DNS/TCP-Fehlerklassifizierung und – falls eingerichtet – die lokale Navigator-Webanmeldung
-- **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations- sowie `pymodbus`-Version als Attribute; dieselben Angaben stehen im Diagnoseexport und Startlog
+- **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations-, `modbus-connection`-, `tmodbus`- sowie Pymodbus-Kompatibilitätsversion als Attribute; dieselben Angaben stehen im Diagnoseexport und Startlog
+- **Verbindungsbesitz**: Jede Config-Entry besitzt ihren tmodbus-Socket; zentrales Entry-übergreifendes Home-Assistant-Sharing ist derzeit nicht verfügbar, daher meldet die Diagnose `supports_shared_connection: false`
+- **Validierungsstand**: Der Adapter ist implementiert und automatisiert getestet; die read-only Prüfung des neuen tmodbus-Pfads an realer Navigator-Hardware steht noch aus
 - **Raumtemperatur-Weitergabe**: standardmäßig deaktiviert; kann ausgewählte Home-Assistant-Temperatursensoren pro Heizkreis an die externen IDM-Raumtemperaturregister weitergeben, mit 300 Sekunden Standardintervall, sofortiger Weitergabe bei Zustandsänderung, 0,2 °C Standardtoleranz und Bereichsprüfung
 - **Lesbare Diagnose**: der Sensor `internal_message` zeigt Klartext und liefert zusätzlich die Attribute `message_code` und `message_text` statt nur einer nackten Nummer
 - **Entity-Ordnung**: Fachmann-Code-Sensoren sind ganz oben angeheftet, danach folgen sinnvolle Funktionsgruppen für Konfiguration, Schalter, schreibbare Werte und Diagnose

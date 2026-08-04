@@ -1,10 +1,13 @@
 # IDM Heatpump – offene TODO-Liste
 
-Stand: 21.07.2026
+Stand: 04.08.2026
 
 Die großen strategischen Optimierungsblöcke sind umgesetzt. Dieses
 Dokument enthält nur noch Punkte, die tatsächlich offen, datenabhängig oder durch
-einen externen Home-Assistant-Entscheid blockiert sind.
+einen externen Home-Assistant-Entscheid blockiert sind. Der lokale
+`modbus-connection`-/tmodbus-Adapter ist inzwischen umgesetzt; nur zentrales
+Entry-Sharing und die read-only Hardware-Verifikation dieses neuen Pfads sind
+noch offen.
 
 
 ## Design-Dokument
@@ -17,7 +20,8 @@ Phasen, Sicherheitsregeln und blockierte Datenpunkte.
 Die aktuelle Prüfung der noch offenen Arbeit steht in
 [`docs/dev/open-work-audit.md`](dev/open-work-audit.md). Dort ist getrennt, was
 lokal erledigt ist und was wegen fehlender realer Anlagendaten oder eines noch
-nicht finalen Home-Assistant-Modbus-Vertrags blockiert bleibt.
+nicht verfügbaren zentralen Home-Assistant-Shared-Connection-Vertrags blockiert
+bleibt.
 
 ## Erledigt
 
@@ -137,23 +141,39 @@ Benötigte Nutzerdaten:
 - [x] Diagnosedaten-Anforderungen und Datenschutzregeln für Felddiagnosen
       dokumentieren.
 
-## Blockiert – Home Assistant
+## Modbus-Transport – umgesetzt und verbleibend
 
-- [x] Minimalen Transportvertrag für spätere Adapter im HASS-Repository
-      dokumentieren, ohne ihn produktiv einzubinden.
-- [ ] Transportzugriffe in `idm-heatpump-api` weiter abstrahieren, ohne die
-      direkte Pymodbus-Nutzung zu verlieren; integrationsseitig sind Vertrag,
-      Endpoint-Validierung und redigierte Diagnose-Helfer vorbereitet.
-- [ ] Optionalen `modbus-connection`-Transportadapter erst implementieren, wenn
-      Home Assistant den überarbeiteten offiziellen Integrationsvertrag
-      veröffentlicht hat; bis dahin den Issue mit der vorbereiteten Vorlage,
-      Vertrag, Akzeptanzkriterien und Migrationsfragen pflegen.
-- [x] Bis dahin keine harte oder vorzeitige Abhängigkeit einführen.
+- [x] Backend-neutralen Transportvertrag mit getrennten FC03-/FC04-Lesewegen,
+      FC16-Schreibweg, Endpoint-Validierung und redigierten Capabilities
+      implementieren.
+- [x] Produktiven Adapter `IdmModbusConnectionClient` verdrahten. Die API 0.9.1
+      behält Registermodell, Batchplanung, Encoding/Decoding, Modellerkennung
+      und Schreibschutz; rohe I/O läuft über `ModbusConnectionTransport`.
+- [x] Direkten Socket reproduzierbar auf
+      `modbus-connection==4.0.0a3` und `tmodbus==0.5.0` pinnen.
+      `4.0.0a3` ist die Bibliotheksversion, nicht die Integrationsversion; der
+      Laufzeitpfad wird erstmals mit `0.11.0-beta.1` ausgeliefert.
+- [x] `idm-heatpump-api[web]==0.9.1` und `pymodbus>=3.12.1,<4.0`
+      vorübergehend als Kompatibilitätspaar beibehalten, weil die API Pymodbus
+      weiterhin importiert. Pymodbus besitzt nicht den direkten Socket.
+- [x] Transportquelle, Socket-Besitz, Verbindungsstatus,
+      `supports_shared_connection=False` und alle Laufzeitversionen redigiert
+      diagnostizierbar machen.
+- [ ] Den neuen tmodbus-Laufzeitpfad read-only an realer Navigator-Hardware für
+      Setup, FC03, FC04, Verbindungsabbruch und Reconnect validieren. Keine
+      Hardware-Schreibtests ohne ausdrückliche Freigabe.
+- [ ] `idm-heatpump-api` auf einen öffentlichen transportneutralen I/O-Vertrag
+      umstellen und den Pymodbus-Kompatibilitätspin erst danach entfernen.
+- [ ] Einen zentralen Home-Assistant-Shared-Connection-Provider nur dann
+      ergänzen, wenn dieser für Custom Integrations stabil verfügbar ist. Bis
+      dahin besitzt jede Entry ihren eigenen Socket und meldet kein Sharing.
 
 ## Unveränderte Release-Regeln
 
 - Add-on-Version bleibt unabhängig von der API-Version.
 - Der API-Pin wird nur in einem eigenen, vollständig geprüften Add-on-PR
+  geändert.
+- Die beiden Transportpins werden nur als gemeinsam getestetes, exaktes Paar
   geändert.
 - Keine Schätzung wird als Messwert veröffentlicht.
 - Keine bestehende Unique ID wird ohne Migration geändert.

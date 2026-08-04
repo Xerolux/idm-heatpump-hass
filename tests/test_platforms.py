@@ -298,6 +298,8 @@ class TestSensorAsyncSetupEntry:
         assert version_sensor._attr_unique_id == "test_entry_idm_api_version"
         assert isinstance(version_sensor.native_value, str)
         assert version_sensor.extra_state_attributes["integration_version"] == "0.5.0"
+        assert isinstance(version_sensor.extra_state_attributes["modbus_connection_version"], str)
+        assert isinstance(version_sensor.extra_state_attributes["tmodbus_version"], str)
         assert isinstance(version_sensor.extra_state_attributes["pymodbus_version"], str)
         assert version_sensor.available is True
 

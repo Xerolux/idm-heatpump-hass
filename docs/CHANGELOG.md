@@ -13,9 +13,56 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+Noch keine Änderungen.
+
+## [0.11.0-beta.1] - 2026-08-04
+
+Erste Beta der 0.11.x-Linie. Der direkte Modbus-TCP-Socket wechselt auf
+`modbus-connection==4.0.0a3` mit `tmodbus==0.5.0`, während
+`idm-heatpump-api[web]==0.9.1` weiterhin die IDM-Gerätelogik bereitstellt.
+
+> **Beta-Hinweis:** Die vollständigen automatisierten Prüfungen sind
+> Voraussetzung für die Veröffentlichung. Die read-only Verifikation des neuen
+> Transportpfads an realer Navigator-Hardware und der Stable-Soak stehen noch
+> aus; reale Schreibtests sind ohne ausdrückliche Freigabe ausgeschlossen.
+
 ### Added
 
-- _Nothing yet._
+- **Direkter tmodbus-Laufzeitpfad:** Die Integration verwendet jetzt
+  `IdmModbusConnectionClient` und `ModbusConnectionTransport`, um rohe
+  FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe über
+  `modbus-connection==4.0.0a3` und den separat fest gepinnten Backend-
+  Stand `tmodbus==0.5.0` auszuführen. `4.0.0a3` ist die Version der
+  Transportbibliothek, nicht die Version der IDM-Integration; diese Beta trägt
+  die Integrationsversion `0.11.0-beta.1`.
+- **Transportdiagnose:** Diagnoseexport, Startlog und der bestehende
+  API-Versionssensor zeigen nun zusätzlich die installierten Versionen von
+  `modbus-connection` und `tmodbus`. Der redigierte Client-Diagnoseblock meldet
+  außerdem Transportquelle, Socket-Besitz, Verbindungsstatus und
+  `supports_shared_connection: false`.
+
+### Changed
+
+- `idm-heatpump-api[web]==0.9.1` bleibt für Registermodell, Batchplanung,
+  Encoding/Decoding, Modellerkennung und Schreibschutz zuständig. Der Pin
+  `pymodbus>=3.12.1,<4.0` bleibt vorübergehend als Kompatibilitätsabhängigkeit
+  bestehen, weil API 0.9.1 Pymodbus weiterhin importiert; der direkte Socket
+  wird jedoch von tmodbus betrieben.
+- Jede Config-Entry besitzt weiterhin ihre eigene Verbindung. Eine zentrale
+  Home-Assistant-Verbindung mit Entry-übergreifendem Sharing ist derzeit nicht
+  verfügbar und wird vom Adapter nicht behauptet. Die Adapter-Implementierung
+  ist automatisiert getestet; eine read-only Hardware-Verifikation des neuen
+  Transportpfads steht noch aus.
+
+### Fixed
+
+- **Transiente Modbus-Antworten bleiben transportweit:** Acknowledge (Code 5),
+  Server Device Busy (Code 6) sowie Gateway Path/Target Unavailable (Codes 10
+  und 11) lösen keinen Einzelregister-Fallback und keine dauerhafte Quarantäne
+  valider Register aus. Der tmodbus-Backend-Retry für Code 6 wird nicht durch
+  eine zweite Adapter-Retry-Schleife vervielfacht; Codes 5/10/11 behalten den
+  konfigurierten Adapter-Backoff, ohne die bestehende TCP-Verbindung unnötig
+  neu aufzubauen.
 
 ## [0.10.1] - 2026-07-31
 

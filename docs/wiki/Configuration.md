@@ -14,6 +14,11 @@ Leave the web PIN empty if you want Modbus-only operation. Modbus remains the
 baseline path and works without a PIN. Providing a PIN also enables the setup
 flow to offer a limited web-only fallback when Modbus is unavailable.
 
+The direct Modbus socket is local to this integration and uses
+`modbus-connection` with the tmodbus backend. Each config entry owns its own
+connection; Home Assistant central cross-entry sharing is not currently
+available.
+
 ## Options
 
 The Home Assistant form groups settings into four areas so the common choices
@@ -197,7 +202,9 @@ The integration creates a diagnostic sensor named **IDM Heatpump API version**
 `idm-heatpump-api` distribution version. The sensor attributes also show:
 
 - `integration_version`: installed custom integration version
-- `pymodbus_version`: installed Modbus runtime version
+- `modbus_connection_version`: installed connection-library version
+- `tmodbus_version`: installed direct socket-backend version
+- `pymodbus_version`: installed compatibility-library version
 
 The same version set is included in downloaded diagnostics and written to the
 Home Assistant log when the config entry starts. This is the authoritative way
@@ -211,14 +218,27 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.8.5` | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
-| Python register/web library | `idm-heatpump-api[web]==0.9.1` | Register schema, encoding/decoding, Modbus client or reusable web-client implementation changes |
+| Home Assistant custom integration | `0.11.0-beta.1` (latest stable: `0.10.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Connection library | `modbus-connection==4.0.0a3` | Transport contract, connection lifecycle or error semantics change |
+| Direct socket backend | `tmodbus==0.5.0` | Wire/backend implementation changes |
+| Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API 0.9.1 imports and exception types |
+| Python register/web library | `idm-heatpump-api[web]==0.9.1` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
-Every integration release pins the exact API version it was tested with. The
-integration pins the tested `idm-heatpump-api[web]==0.9.1`, which adds
-non-contiguous heating-circuit detection and exposes Navigator 10 web data for
-heating circuits B–G. IDM Heatpump is a custom integration, not
-a Home Assistant add-on.
+The manifest lists the tested runtime in this order:
+`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`,
+`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==0.9.1`.
+The first two packages own the direct socket. API 0.9.1 remains responsible for
+IDM-specific device logic; pymodbus is temporarily retained because that API
+still imports it. `4.0.0a3` is the version of `modbus-connection`, not an IDM
+integration version. The transport is first shipped by IDM integration beta
+`0.11.0-beta.1`.
+
+The adapter is implemented and covered by automated tests. Its redacted
+diagnostics report `source: modbus_connection.tmodbus`, `owns_socket: true` and
+`supports_shared_connection: false`. Read-only validation of this new transport
+path on real Navigator hardware is still pending; real-hardware writes remain
+out of scope unless explicitly authorized. IDM Heatpump is a custom
+integration, not a Home Assistant add-on.
 
 ## Debug Logging
 

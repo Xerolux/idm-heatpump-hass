@@ -65,6 +65,8 @@ installation test.
        (Path(os.environ["UNPACK_DIR"]) / "manifest.json").read_text(encoding="utf-8")
    )
    assert manifest["requirements"] == [
+       "modbus-connection==4.0.0a3",
+       "tmodbus==0.5.0",
        "pymodbus>=3.12.1,<4.0",
        "idm-heatpump-api[web]==0.9.1",
    ]
@@ -83,9 +85,14 @@ installation test.
    `custom_components/idm_heatpump`.
 2. Restart Home Assistant.
 3. Confirm Home Assistant starts without setup import errors for
-   `idm_heatpump`, `idm_heatpump_api`, or `pymodbus`.
+   `idm_heatpump`, `idm_heatpump_api`, `modbus_connection`, `tmodbus`, or
+   `pymodbus`.
 4. Record the installed integration and dependency versions from diagnostics;
    they must match the candidate and manifest.
+5. Confirm diagnostics identify `source: modbus_connection.tmodbus`,
+   `owns_socket: true`, and `supports_shared_connection: false`. The current
+   runtime uses one private socket per config entry; central Home Assistant
+   cross-entry sharing is not available.
 
 ## 3. Config Flow and First Poll
 
@@ -97,6 +104,16 @@ installation test.
 4. Confirm detected model and capabilities match the connected device.
 5. For Navigator 2.0 / Terra SWM, confirm no Navigator-10-only registers are
    polled during the first refresh.
+6. Confirm at least one FC04 input-register read and one safe FC03
+   holding-register read complete through the tmodbus-backed transport and
+   return the expected word counts.
+7. Interrupt the network path without writing to the device, restore it, and
+   confirm the next operation reconnects without replacing the config entry.
+
+The tmodbus adapter is implemented and automatically tested, but this
+real-hardware check remains a required, read-only release gate for the new
+transport. `modbus-connection` version `4.0.0a3` is a dependency version, not
+the IDM integration release version.
 
 ## 4. Optional Web Supplement Path
 
@@ -165,6 +182,10 @@ specifically changes EEPROM protection.
 
 - Home Assistant version.
 - Integration version and artifact checksum.
+- Installed `modbus-connection`, `tmodbus`, compatibility `pymodbus`, and
+  `idm-heatpump-api` versions.
+- Redacted transport capabilities and the result of read-only FC03/FC04 and
+  reconnect validation.
 - Detected heat pump model, firmware if available, and active capabilities.
 - Web supplement enabled/disabled state, detected Navigator generation,
   software version, and PIN-validation result if tested.

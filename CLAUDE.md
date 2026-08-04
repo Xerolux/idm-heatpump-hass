@@ -7,13 +7,15 @@ This file is a short pointer for Claude-compatible agents.
 ## Snapshot (keep in sync with `manifest.json`)
 
 - **Domain**: `idm_heatpump`
-- **Version**: `0.9.1` (beta; see `docs/release-evidence/0.8.5-beta.8.md` for the latest pre-stable candidate evidence)
+- **Version**: `0.11.0-beta.1` (latest stable: `0.10.1`)
 - **Min HA**: 2026.5.0
 - **Python**: 3.13+
-- **Dependencies**: `pymodbus>=3.12.1,<4.0`, `idm-heatpump-api[web]==0.9.1`
+- **Dependencies**: `modbus-connection==4.0.0a3`, `tmodbus==0.5.0`,
+  `pymodbus>=3.12.1,<4.0` (API compatibility), `idm-heatpump-api[web]==0.9.1`
 - **Platforms**: sensor, binary_sensor, number, select, switch, climate, water_heater, button
-- **Transports**: Modbus TCP (primary) + optional local Navigator web supplement / web-only mode
+- **Transports**: Modbus TCP through `modbus-connection`/tmodbus (primary) + optional local Navigator web supplement / web-only mode
 - **Active roadmap**: `docs/dev/heatpump-feature-roadmap.md`
 - **Open work audit**: `docs/dev/open-work-audit.md`
 
-Do not reintroduce a local `modbus_client.py`; protocol and register maps live in `idm-heatpump-api`.
+Keep protocol semantics and register maps in `idm-heatpump-api`; the local
+`modbus_client.py` is only the pin-specific raw-I/O bridge to tmodbus.

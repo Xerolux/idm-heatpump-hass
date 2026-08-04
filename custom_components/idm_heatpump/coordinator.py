@@ -90,6 +90,8 @@ _ZONE_ROOM_MODE_SUFFIX = "_mode"
 
 def _is_illegal_address_error(err: ModbusException) -> bool:
     """Return whether a Modbus exception reports an unsupported address."""
+    if bool(getattr(err, "is_illegal_address", False)):
+        return True
     message = str(err).casefold()
     return any(marker in message for marker in _ILLEGAL_ADDRESS_MARKERS)
 
@@ -952,17 +954,23 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
     def client_diagnostics(self) -> Mapping[str, Any]:
         """Return redaction-safe diagnostics exposed by newer idm-heatpump-api versions."""
+        result: dict[str, Any] = {}
         getter = getattr(self._client, "get_diagnostics", None)
-        if not callable(getter):
-            return {}
-        diagnostics = getter()
-        if hasattr(diagnostics, "to_dict"):
-            diagnostics = diagnostics.to_dict()
-        if isinstance(diagnostics, Mapping):
-            return diagnostics
-        if hasattr(diagnostics, "__dict__"):
-            return dict(vars(diagnostics))
-        return {}
+        if callable(getter):
+            diagnostics = getter()
+            if hasattr(diagnostics, "to_dict"):
+                diagnostics = diagnostics.to_dict()
+            if isinstance(diagnostics, Mapping):
+                result.update(diagnostics)
+            elif hasattr(diagnostics, "__dict__"):
+                result.update(vars(diagnostics))
+
+        transport_getter = getattr(self._client, "transport_diagnostics", None)
+        if callable(transport_getter):
+            transport = transport_getter()
+            if isinstance(transport, Mapping):
+                result["transport"] = dict(transport)
+        return result
 
     async def async_write_register(
         self,

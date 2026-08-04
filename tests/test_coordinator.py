@@ -9,6 +9,7 @@ from idm_heatpump import (
     MODEL_NAVIGATOR_20,
     DataType,
     IdmModelInfo,
+    IllegalAddressError,
     RegisterDef,
 )
 from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
@@ -17,6 +18,7 @@ from custom_components.idm_heatpump.const import UNUSED_VALUE
 from custom_components.idm_heatpump.coordinator import (
     IdmCoordinator,
     _friendly_communication_error,
+    _is_illegal_address_error,
     _repair_issue_for_error,
     navigator_family,
 )
@@ -139,6 +141,27 @@ class TestCoordinatorInit:
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
         assert coord.client is client
 
+    def test_client_diagnostics_include_transport_details(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.get_diagnostics.return_value = {
+            "navigator_type": "Navigator 10",
+            "modbus_connected": True,
+        }
+        client.transport_diagnostics.return_value = {
+            "endpoint": {"host": "**REDACTED**"},
+            "capabilities": {
+                "source": "modbus_connection.tmodbus",
+                "supports_shared_connection": False,
+            },
+        }
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        diagnostics = coord.client_diagnostics()
+
+        assert diagnostics["modbus_connected"] is True
+        assert diagnostics["transport"]["endpoint"]["host"] == "**REDACTED**"
+        assert diagnostics["transport"]["capabilities"]["source"] == "modbus_connection.tmodbus"
+
     def test_config_entry_stored(self, mock_hass, mock_config_entry):
         coord, _ = _make_coordinator(mock_hass, mock_config_entry)
         assert coord.config_entry is mock_config_entry
@@ -157,6 +180,9 @@ class TestCoordinatorInit:
 
 
 class TestRepairIssueClassification:
+    def test_illegal_address_marker_attribute_is_recognized(self):
+        assert _is_illegal_address_error(IllegalAddressError("device rejected request"))
+
     @pytest.mark.parametrize(
         ("error", "issue_id"),
         [

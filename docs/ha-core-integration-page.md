@@ -25,8 +25,10 @@ ha_platforms:
 ha_integration_type: device
 ha_quality_scale: gold
 ha_requirements:
+  - modbus-connection==4.0.0a3
+  - tmodbus==0.5.0
   - pymodbus>=3.12.1,<4.0
-  - idm-heatpump-api[web]==0.8.5
+  - idm-heatpump-api[web]==0.9.1
 ---
 
 > Draft for a possible future Home Assistant Core documentation page. The
@@ -338,7 +340,8 @@ logger:
   default: info
   logs:
     custom_components.idm_heatpump: debug
-    pymodbus: debug
+    modbus_connection: debug
+    tmodbus: debug
 ```
 
 ### Download diagnostics

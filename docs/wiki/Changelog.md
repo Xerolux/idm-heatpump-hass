@@ -5,6 +5,29 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.11.0-beta.1 — 2026-08-04
+
+- This is the first IDM integration beta whose direct Modbus TCP socket runs
+  through
+  `modbus-connection==4.0.0a3` with the separately pinned
+  `tmodbus==0.5.0` backend. `4.0.0a3` is the transport library version; the IDM
+  integration version is `0.11.0-beta.1` (latest stable: `0.10.1`).
+- `idm-heatpump-api[web]==0.9.1` continues to own the register model, batching,
+  encoding/decoding, model detection and write safety. Its
+  `pymodbus>=3.12.1,<4.0` dependency remains temporarily pinned because API
+  0.9.1 still imports it, but pymodbus no longer owns the direct socket.
+- Diagnostics and the API-version sensor now include `modbus-connection` and
+  `tmodbus` versions plus redacted transport capabilities.
+- The adapter is implemented and covered by automated tests. Each config entry
+  still owns its socket and reports `supports_shared_connection: false` because
+  Home Assistant central cross-entry sharing is not available; read-only
+  validation of the new path on real Navigator hardware remains pending.
+- Transient Modbus responses 5 (Acknowledge), 6 (Server Device Busy), 10
+  (Gateway Path Unavailable), and 11 (Gateway Target Failed to Respond) escape
+  the batch layer without individual-read fallback or permanent register
+  quarantine. Backend-owned busy retries are not duplicated by the adapter.
+- This beta does not satisfy the stable hardware-smoke and soak gates yet.
+
 ## v0.8.5 — 2026-07-23
 
 First stable release of the 0.8.5 line. Consolidates the eight beta candidates
