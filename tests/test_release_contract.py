@@ -17,7 +17,7 @@ EXPECTED_RUNTIME_REQUIREMENTS = [
     "modbus-connection==4.0.0a3",
     "tmodbus==0.5.0",
     "pymodbus>=3.12.1,<4.0",
-    "idm-heatpump-api[web]==0.9.1",
+    "idm-heatpump-api[web]==1.0.0",
 ]
 
 

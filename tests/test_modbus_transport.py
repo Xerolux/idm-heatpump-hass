@@ -3,11 +3,15 @@
 from __future__ import annotations
 
 from dataclasses import FrozenInstanceError
+from typing import Any
 
 import pytest
+from idm_heatpump import IllegalAddressError
+from idm_heatpump.transport import IdmModbusTransport
+from modbus_connection import ModbusExceptionError
+from pymodbus.exceptions import ModbusIOException
 
 from custom_components.idm_heatpump.modbus_transport import (
-    IdmModbusTransport,
     ModbusConnectionTransport,
     ModbusTcpEndpoint,
     ModbusTransportCapabilities,
@@ -15,26 +19,23 @@ from custom_components.idm_heatpump.modbus_transport import (
 
 
 class FakeTransport:
-    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 1, 10.0, 3)
-    capabilities = ModbusTransportCapabilities(
-        source="test",
-        owns_socket=True,
-        supports_shared_connection=False,
-    )
+    """Minimal transport double satisfying the API 1.0 protocol."""
 
-    async def async_connect(self) -> None:
+    connected = True
+
+    async def connect(self) -> None:
         return None
 
-    async def async_close(self) -> None:
-        return None
+    async def close(self) -> None:
+        self.connected = False
 
-    async def async_read_holding_registers(self, address: int, count: int) -> tuple[int, ...]:
-        return tuple(address + offset for offset in range(count))
+    async def read_holding_registers(self, *, address: int, count: int) -> list[int]:
+        return [address + offset for offset in range(count)]
 
-    async def async_read_input_registers(self, address: int, count: int) -> tuple[int, ...]:
-        return tuple(0x1000 + address + offset for offset in range(count))
+    async def read_input_registers(self, *, address: int, count: int) -> list[int]:
+        return [0x1000 + address + offset for offset in range(count)]
 
-    async def async_write_registers(self, address: int, values: tuple[int, ...]) -> None:
+    async def write_registers(self, *, address: int, values: list[int]) -> None:
         return None
 
 
@@ -89,15 +90,12 @@ class RecordingConnection:
 class RecordingConnectionFactory:
     """Create a fresh recording connection for each transport generation."""
 
-    def __init__(self, *, fail_first_close: bool = False) -> None:
+    def __init__(self) -> None:
         self.endpoints: list[ModbusTcpEndpoint] = []
         self.connections: list[RecordingConnection] = []
-        self.fail_first_close = fail_first_close
 
     def __call__(self, endpoint: ModbusTcpEndpoint) -> RecordingConnection:
-        connection = RecordingConnection(
-            fail_on_close=self.fail_first_close and not self.connections,
-        )
+        connection = RecordingConnection()
         self.endpoints.append(endpoint)
         self.connections.append(connection)
         return connection
@@ -167,6 +165,7 @@ def test_capabilities_diagnostics_are_plain_values() -> None:
 
 
 def test_protocol_accepts_matching_transport() -> None:
+    """The concrete transport must satisfy the API 1.0 IdmModbusTransport protocol."""
     assert isinstance(FakeTransport(), IdmModbusTransport)
 
 
@@ -174,8 +173,8 @@ def test_protocol_accepts_matching_transport() -> None:
 async def test_transport_keeps_input_and_holding_reads_distinct() -> None:
     transport = FakeTransport()
 
-    assert await transport.async_read_holding_registers(100, 2) == (100, 101)
-    assert await transport.async_read_input_registers(100, 2) == (4196, 4197)
+    assert await transport.read_holding_registers(address=100, count=2) == [100, 101]
+    assert await transport.read_input_registers(address=100, count=2) == [4196, 4197]
 
 
 @pytest.mark.asyncio
@@ -188,18 +187,18 @@ async def test_tmodbus_transport_owns_lifecycle_and_binds_configured_slave() -> 
     connection = factory.connections[0]
     assert connection.bound_unit_ids == [37]
     assert transport.endpoint is endpoint
-    assert transport.is_connected is False
+    assert transport.connected is False
 
-    await transport.async_connect()
+    await transport.connect()
 
     assert connection.connect_calls == 1
-    assert transport.is_connected is True
+    assert transport.connected is True
 
-    await transport.async_close()
-    await transport.async_close()
+    await transport.close()
+    await transport.close()
 
     assert connection.close_calls == 1
-    assert transport.is_connected is False
+    assert transport.connected is False
 
 
 @pytest.mark.asyncio
@@ -207,15 +206,15 @@ async def test_tmodbus_transport_can_open_a_new_generation_after_close() -> None
     endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 37, 10.0, 3)
     factory = RecordingConnectionFactory()
     transport = ModbusConnectionTransport(endpoint, connection_factory=factory)
-    await transport.async_connect()
-    await transport.async_close()
+    await transport.connect()
+    await transport.close()
 
-    await transport.async_connect()
+    await transport.connect()
 
     assert len(factory.connections) == 2
     assert factory.connections[1].bound_unit_ids == [37]
     assert factory.connections[1].connect_calls == 1
-    assert transport.is_connected is True
+    assert transport.connected is True
 
 
 @pytest.mark.asyncio
@@ -226,11 +225,11 @@ async def test_tmodbus_transport_routes_fc03_and_fc04_to_distinct_unit_methods()
     unit = factory.connections[0].unit
     assert unit is not None
 
-    holding = await transport.async_read_holding_registers(100, 3)
-    input_words = await transport.async_read_input_registers(200, 2)
+    holding = await transport.read_holding_registers(address=100, count=3)
+    input_words = await transport.read_input_registers(address=200, count=2)
 
-    assert holding == (100, 101, 102)
-    assert input_words == (4296, 4297)
+    assert holding == [100, 101, 102]
+    assert input_words == [4296, 4297]
     assert unit.holding_reads == [(100, 3)]
     assert unit.input_reads == [(200, 2)]
 
@@ -243,20 +242,22 @@ async def test_tmodbus_transport_uses_fc16_for_multi_register_write() -> None:
     unit = factory.connections[0].unit
     assert unit is not None
 
-    await transport.async_write_registers(1200, (0, 65535, 42))
+    await transport.write_registers(address=1200, values=[0, 65535, 42])
 
     assert unit.writes == [(1200, [0, 65535, 42])]
 
 
 @pytest.mark.asyncio
-async def test_tmodbus_transport_reconnects_with_fresh_connection_and_same_slave() -> None:
+async def test_tmodbus_transport_close_then_connect_replaces_connection() -> None:
+    """Reconnect is now close+connect; verify it builds a fresh generation."""
     endpoint = ModbusTcpEndpoint("192.0.2.10", 1502, 9, 4.5, 2)
     factory = RecordingConnectionFactory()
     transport = ModbusConnectionTransport(endpoint, connection_factory=factory)
     first_connection = factory.connections[0]
-    await transport.async_connect()
+    await transport.connect()
 
-    await transport.async_reconnect()
+    await transport.close()
+    await transport.connect()
 
     assert len(factory.connections) == 2
     second_connection = factory.connections[1]
@@ -266,22 +267,95 @@ async def test_tmodbus_transport_reconnects_with_fresh_connection_and_same_slave
     assert second_connection.connect_calls == 1
     assert second_connection.connected is True
     assert factory.endpoints == [endpoint, endpoint]
-    assert transport.is_connected is True
+    assert transport.connected is True
 
 
 @pytest.mark.asyncio
-async def test_tmodbus_transport_reconnects_even_when_old_close_fails() -> None:
+async def test_tmodbus_transport_satisfies_api_protocol_after_lifecycle() -> None:
+    """The concrete transport must satisfy the API protocol throughout its lifecycle."""
     endpoint = ModbusTcpEndpoint("192.0.2.10", 1502, 9, 4.5, 2)
-    factory = RecordingConnectionFactory(fail_first_close=True)
+    factory = RecordingConnectionFactory()
     transport = ModbusConnectionTransport(endpoint, connection_factory=factory)
-    await transport.async_connect()
 
-    await transport.async_reconnect()
+    assert isinstance(transport, IdmModbusTransport)
+    await transport.connect()
+    assert isinstance(transport, IdmModbusTransport)
 
-    assert len(factory.connections) == 2
-    assert factory.connections[0].close_calls == 1
-    assert factory.connections[1].connect_calls == 1
-    assert transport.is_connected is True
+
+@pytest.mark.asyncio
+async def test_transport_translates_exception_code_2_to_illegal_address() -> None:
+    """Backend code 2 must surface as IllegalAddressError with the coordinator marker."""
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 1, 1.0, 0)
+
+    class FailingUnit:
+        async def read_input_registers(self, address: int, count: int) -> list[int]:
+            raise ModbusExceptionError(exception_code=2, message="illegal address")
+
+        async def read_holding_registers(self, address: int, count: int) -> list[int]:
+            raise ModbusExceptionError(exception_code=2, message="illegal address")
+
+        async def write_registers(self, address: int, values: list[int]) -> None:
+            raise ModbusExceptionError(exception_code=2, message="illegal address")
+
+    class FailingConnection:
+        connected = False
+
+        def __init__(self, *_: Any) -> None: ...
+
+        def for_unit(self, _unit_id: int) -> FailingUnit:
+            return FailingUnit()
+
+        async def connect(self) -> None:
+            self.connected = True
+
+        async def close(self) -> None:
+            self.connected = False
+
+    transport = ModbusConnectionTransport(endpoint, connection_factory=lambda _: FailingConnection())  # type: ignore[arg-type]
+
+    with pytest.raises(IllegalAddressError, match="exception_code=2"):
+        await transport.read_input_registers(address=1000, count=1)
+
+
+def _make_failing_transport(exception_code: int) -> ModbusConnectionTransport:
+    """Build a transport whose unit always raises a given backend exception code."""
+
+    class FailingUnit:
+        async def read_holding_registers(self, address: int, count: int) -> list[int]:
+            raise ModbusExceptionError(exception_code=exception_code, message="busy")
+
+        async def read_input_registers(self, address: int, count: int) -> list[int]:
+            raise ModbusExceptionError(exception_code=exception_code, message="busy")
+
+        async def write_registers(self, address: int, values: list[int]) -> None:
+            raise ModbusExceptionError(exception_code=exception_code, message="busy")
+
+    class FailingConnection:
+        connected = False
+
+        def __init__(self, *_: Any) -> None: ...
+
+        def for_unit(self, _unit_id: int) -> FailingUnit:
+            return FailingUnit()
+
+        async def connect(self) -> None:
+            self.connected = True
+
+        async def close(self) -> None:
+            self.connected = False
+
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 1, 1.0, 0)
+    return ModbusConnectionTransport(endpoint, connection_factory=lambda _: FailingConnection())  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_transport_translates_transient_codes_to_modbus_io_exception() -> None:
+    """Codes 5/6/10/11 must surface as ModbusIOException with the marker string."""
+    for code in (5, 6, 10, 11):
+        transport = _make_failing_transport(code)
+
+        with pytest.raises(ModbusIOException, match=f"exception_code={code}"):
+            await transport.read_holding_registers(address=2000, count=1)
 
 
 @pytest.mark.asyncio
@@ -289,7 +363,7 @@ async def test_tmodbus_transport_diagnostics_are_redacted_and_backend_neutral() 
     endpoint = ModbusTcpEndpoint("private-heatpump.example", 1502, 6, 7.5, 1)
     factory = RecordingConnectionFactory()
     transport = ModbusConnectionTransport(endpoint, connection_factory=factory)
-    await transport.async_connect()
+    await transport.connect()
 
     diagnostics = transport.as_redacted_diagnostics()
 

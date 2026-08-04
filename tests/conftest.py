@@ -9,7 +9,7 @@ from datetime import datetime
 from enum import Enum
 from types import ModuleType
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
@@ -1488,15 +1488,24 @@ def mock_config_entry():
 
 @pytest.fixture
 def mock_modbus_client():
-    with patch("idm_heatpump.client.AsyncModbusTcpClient") as mock_class:
-        mock_instance = AsyncMock()
-        mock_instance.connected = True
-        mock_instance.isError = MagicMock(return_value=False)
-        mock_instance.close = MagicMock()
-        mock_class.return_value = mock_instance
+    """Yield (client, transport_mock) wired through the API 1.0 transport seam.
 
-        from idm_heatpump import IdmModbusClient
+    The mock acts as an ``IdmModbusTransport`` (returns raw ``list[int]``,
+    raises exceptions on device errors) rather than a pymodbus client
+    (response objects). Tests set ``tcp.read_input_registers.return_value``
+    to a raw register list, or ``.side_effect`` to an exception.
+    """
+    from idm_heatpump import IdmModbusClient
+    from idm_heatpump.transport import IdmModbusTransport
 
-        client = IdmModbusClient(host="192.168.1.100", port=502, slave_id=1)
-        client._client = mock_instance
-        yield client, mock_instance
+    # spec=IdmModbusTransport so runtime_checkable isinstance() accepts it.
+    transport = AsyncMock(spec=IdmModbusTransport)
+    transport.connected = True
+    # Default happy-path: return an empty list so calls without an explicit
+    # return_value don't blow up with "object of type 'MagicMock' has no len()".
+    transport.read_input_registers.return_value = []
+    transport.read_holding_registers.return_value = []
+    transport.write_registers.return_value = None
+
+    client = IdmModbusClient(host="192.168.1.100", port=502, slave_id=1, transport=transport)
+    yield client, transport
