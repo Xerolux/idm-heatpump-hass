@@ -105,6 +105,112 @@ _stub_pymodbus()
 
 
 # ---------------------------------------------------------------------------
+# Stub modbus-connection so tests run without the optional runtime package
+# ---------------------------------------------------------------------------
+
+
+def _stub_modbus_connection() -> None:
+    if "modbus_connection" in sys.modules:
+        return
+
+    modbus_connection = ModuleType("modbus_connection")
+    sys.modules["modbus_connection"] = modbus_connection
+
+    @dataclass(frozen=True, kw_only=True)
+    class _ModbusTcpParams:
+        host: str
+        port: int = 502
+        framer: str = "socket"
+
+    class _ModbusError(Exception):
+        pass
+
+    class _ModbusConnectionError(_ModbusError):
+        pass
+
+    class _ClientClosedError(_ModbusConnectionError):
+        pass
+
+    class _ModbusTimeoutError(_ModbusError, TimeoutError):
+        pass
+
+    class _ModbusProtocolError(_ModbusError):
+        pass
+
+    class _ModbusExceptionError(_ModbusError):
+        def __init__(self, exception_code: int | None, message: str | None = None) -> None:
+            self.exception_code = exception_code
+            super().__init__(message or f"Device returned Modbus exception code {exception_code}")
+
+    class _ModbusUnit:
+        def __init__(self, connection: "_ModbusConnection", unit_id: int) -> None:
+            self._connection = connection
+            self.unit_id = unit_id
+
+        @property
+        def connected(self) -> bool:
+            return self._connection.connected
+
+        async def read_holding_registers(self, address: int, count: int) -> list[int]:
+            raise _ModbusConnectionError("test Modbus unit has no configured holding data")
+
+        async def read_input_registers(self, address: int, count: int) -> list[int]:
+            raise _ModbusConnectionError("test Modbus unit has no configured input data")
+
+        async def write_registers(self, address: int, values: list[int]) -> None:
+            raise _ModbusConnectionError("test Modbus unit has no configured write target")
+
+    class _ModbusConnection:
+        def __init__(self, params: _ModbusTcpParams, *, timeout: float = 3, message_spacing: float = 0) -> None:
+            self.params = params
+            self.timeout = timeout
+            self.message_spacing = message_spacing
+            self.connected = False
+            self.closed = False
+
+        def for_unit(self, unit_id: int) -> _ModbusUnit:
+            return _ModbusUnit(self, unit_id)
+
+        async def connect(self) -> None:
+            if self.closed:
+                raise _ClientClosedError("connection is closed")
+            self.connected = True
+
+        async def close(self) -> None:
+            self.connected = False
+            self.closed = True
+
+    modbus_connection.ModbusTcpParams = _ModbusTcpParams
+    modbus_connection.ModbusUnit = _ModbusUnit
+    modbus_connection.ModbusError = _ModbusError
+    modbus_connection.ModbusConnectionError = _ModbusConnectionError
+    modbus_connection.ClientClosedError = _ClientClosedError
+    modbus_connection.ModbusTimeoutError = _ModbusTimeoutError
+    modbus_connection.ModbusProtocolError = _ModbusProtocolError
+    modbus_connection.ModbusExceptionError = _ModbusExceptionError
+
+    exceptions_mod = ModuleType("modbus_connection.exceptions")
+    sys.modules["modbus_connection.exceptions"] = exceptions_mod
+    for name in (
+        "ModbusError",
+        "ModbusConnectionError",
+        "ClientClosedError",
+        "ModbusTimeoutError",
+        "ModbusProtocolError",
+        "ModbusExceptionError",
+    ):
+        setattr(exceptions_mod, name, getattr(modbus_connection, name))
+
+    tmodbus_mod = ModuleType("modbus_connection.tmodbus")
+    tmodbus_mod.ModbusConnection = _ModbusConnection
+    sys.modules["modbus_connection.tmodbus"] = tmodbus_mod
+    modbus_connection.tmodbus = tmodbus_mod
+
+
+_stub_modbus_connection()
+
+
+# ---------------------------------------------------------------------------
 # Stub voluptuous
 # ---------------------------------------------------------------------------
 
@@ -758,19 +864,35 @@ _stub_homeassistant()
 
 
 # ---------------------------------------------------------------------------
-# Stub idm_heatpump library (only when real library is not installed)
+# Stub idm_heatpump library when the pinned-compatible API is unavailable
 # ---------------------------------------------------------------------------
 
 
 def _stub_idm_heatpump() -> None:
-    """Stub for idm_heatpump library when the real package is not available."""
+    """Stub idm_heatpump when the installed package lacks the pinned API contract."""
     try:
         import idm_heatpump
 
-        if hasattr(idm_heatpump, "DataType") and hasattr(idm_heatpump, "RegisterDef"):
+        if all(
+            hasattr(idm_heatpump, attribute)
+            for attribute in (
+                "DataType",
+                "RegisterDef",
+                "RegisterType",
+                "IllegalAddressError",
+                "RETRY_BACKOFF_BASE",
+            )
+        ):
             return  # Real library installed — don't override
     except ImportError:
         pass
+
+    # A locally installed but incompatible API may already have populated
+    # package submodules before the capability check above rejected it. Purge
+    # the whole tree so later imports cannot mix those modules with this stub.
+    for module_name in tuple(sys.modules):
+        if module_name == "idm_heatpump" or module_name.startswith("idm_heatpump."):
+            sys.modules.pop(module_name, None)
 
     class DataType(Enum):
         FLOAT = "FLOAT"
@@ -780,6 +902,15 @@ def _stub_idm_heatpump() -> None:
         UINT16 = "UINT16"
         BOOL = "BOOL"
         BITFLAG = "BITFLAG"
+
+    class RegisterType(Enum):
+        INPUT = "input"
+        HOLDING = "holding"
+
+    from pymodbus.exceptions import ModbusException
+
+    class IllegalAddressError(ModbusException):
+        is_illegal_address = True
 
     # Mirror of idm_heatpump.client.DATATYPE_SENTINEL_DEFAULTS (Phase 6 / SENT-01).
     _STUB_DATATYPE_SENTINEL_DEFAULTS: dict[Any, tuple[int | float, ...]] = {
@@ -853,13 +984,22 @@ def _stub_idm_heatpump() -> None:
         connection_suspect: bool = False
 
     class IdmModbusClient:
-        def __init__(self, host: str = "", port: int = 502, slave_id: int = 1) -> None:
+        def __init__(
+            self,
+            host: str = "",
+            port: int = 502,
+            slave_id: int = 1,
+            timeout: float = 10.0,
+            max_retries: int = 3,
+        ) -> None:
             self.host = host
             self.port = port
             self.slave_id = slave_id
+            self.timeout = timeout
             self._model_info: IdmModelInfo | None = None
             self._client = None
-            self._max_retries = 3
+            self._max_retries = max_retries
+            self._lock = asyncio.Lock()
             self._register_failures: dict[str, int] = {}
             self._permanently_failed_registers: set[str] = set()
 
@@ -1242,11 +1382,14 @@ def _stub_idm_heatpump() -> None:
 
     idm_mod = ModuleType("idm_heatpump")
     idm_mod.DataType = DataType  # type: ignore[attr-defined]
+    idm_mod.RegisterType = RegisterType  # type: ignore[attr-defined]
     idm_mod.RegisterDef = RegisterDef  # type: ignore[attr-defined]
     idm_mod.IdmModbusClient = IdmModbusClient  # type: ignore[attr-defined]
     idm_mod.IdmModelInfo = IdmModelInfo  # type: ignore[attr-defined]
     idm_mod.WriteSafetyResult = WriteSafetyResult  # type: ignore[attr-defined]
     idm_mod.IdmClientDiagnostics = IdmClientDiagnostics  # type: ignore[attr-defined]
+    idm_mod.IllegalAddressError = IllegalAddressError  # type: ignore[attr-defined]
+    idm_mod.RETRY_BACKOFF_BASE = 0.001  # type: ignore[attr-defined]
     # Match real idm-heatpump-api human-readable model labels used in production
     # and asserted by the unit tests (not the config-flow override slugs).
     idm_mod.MODEL_NAVIGATOR_10 = "Navigator 10"  # type: ignore[attr-defined]
@@ -1265,6 +1408,15 @@ def _stub_idm_heatpump() -> None:
     idm_mod.RECOMMENDED_WEB_SCAN_INTERVAL = 30.0  # type: ignore[attr-defined]
     idm_mod.WEB_VALUE_DESCRIPTIONS = {}  # type: ignore[attr-defined]
     sys.modules["idm_heatpump"] = idm_mod
+
+    registers_mod = ModuleType("idm_heatpump.registers")
+
+    def get_register(name: str, model_info: Any = None) -> RegisterDef | None:
+        return build_register_map(model_info=model_info).get(name)
+
+    registers_mod.get_register = get_register  # type: ignore[attr-defined]
+    sys.modules["idm_heatpump.registers"] = registers_mod
+    idm_mod.registers = registers_mod  # type: ignore[attr-defined]
 
     client_mod = ModuleType("idm_heatpump.client")
     client_mod.DataType = DataType  # type: ignore[attr-defined]

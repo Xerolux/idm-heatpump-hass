@@ -1,11 +1,12 @@
 # Open Work Audit
 
-Stand: 21.07.2026
+Stand: 04.08.2026
 
 Diese Prüfung trennt lokal erledigbare Arbeit von Punkten, die ohne reale
-Anlagendaten oder ohne finalen Home-Assistant-Vertrag nicht sicher abgeschlossen
-werden können. Ziel ist, keine Schätzung als fertiges Feature auszugeben und
-keine riskante Modbus-Änderung vorzeitig produktiv zu verdrahten.
+Anlagendaten oder ohne zentralen Home-Assistant-Shared-Connection-Vertrag nicht
+sicher abgeschlossen werden können. Der lokale tmodbus-Adapter ist produktiv
+verdrahtet; Ziel bleibt, keine Schätzung oder noch nicht hardwarevalidierte
+Transporteigenschaft als abgeschlossen auszugeben.
 
 ## Lokal erledigt
 
@@ -15,9 +16,19 @@ keine riskante Modbus-Änderung vorzeitig produktiv zu verdrahten.
   `scripts/generate_modbus_register_reference.py` an den gepinnten
   `idm-heatpump-api`-Stand gekoppelt.
 - Feld-Diagnoseleitfaden und Issue-Vorlage für reale Anlagenmessungen.
-- Nicht verdrahteter Modbus-Transportvertrag mit Endpoint-Validierung,
-  Konfliktkennung und privacy-sicheren Diagnose-Helfern.
-- Issue-Vorlage für die spätere Home-Assistant-Modbus-Modernisierung.
+- Verdrahteter `IdmModbusConnectionClient` mit backend-neutralem
+  Modbus-Transportvertrag, Endpoint-Validierung, Konfliktkennung und
+  privacy-sicheren Diagnose-Helfern.
+- Direkter Socket über `modbus-connection==4.0.0a3` und den separat
+  gepinnten Backend-Stand `tmodbus==0.5.0`; die erste ausliefernde
+  Integrationsversion ist `0.11.0-beta.1`.
+- API-Gerätelogik bleibt bei `idm-heatpump-api[web]==0.9.1`. Der
+  Pymodbus-Pin bleibt nur vorübergehend bestehen, weil diese API-Version ihn
+  weiterhin importiert; die physische Verbindung gehört tmodbus.
+- Diagnoseexport für Transportquelle, Socket-Besitz, Verbindungsstatus,
+  fehlendes zentrales Sharing sowie alle Laufzeitversionen.
+- Issue-Vorlage für read-only Hardware-Verifikation und eine spätere zentrale
+  Home-Assistant-Modbus-Verbindung.
 
 ## Live-verifiziert (Navigator 10, read-only Modbus FC04 + Web-Supplement)
 
@@ -28,6 +39,10 @@ Schreibzugriffe, keine EEPROM-Kandidaten) und zusätzlich über das lokale
 Navigator-10-Web-Supplement (Port 61220, WebSocket-Authentifizierung per PIN).
 Die Verifikation bestätigt die Code-Annahmen; sie ersetzt aber nicht die
 breitere Feld-Diagnose für andere Navigator-Typen und Firmware-Stände.
+
+> Diese Messung fand vor der Umstellung des direkten Sockets auf tmodbus statt.
+> Sie bestätigt Registerdefinitionen und Gerätelogik, ist aber keine
+> Hardware-Verifikation des neuen `modbus-connection`-/tmodbus-Pfads.
 
 ### Modellerkennung
 
@@ -114,25 +129,42 @@ mindestens einem passenden System vorliegen:
 - Binary-Register-Verifikation auf Navigator 10 und Navigator 2.0,
   einschließlich Active-Low- und Sonderwerten.
 - Lasttests mit maximaler Zahl an Heizkreisen, Zonen und Räumen.
+- Read-only Transporttest des neuen tmodbus-Pfads an realer Hardware: Setup,
+  FC03, FC04, Verbindungsabbruch und Reconnect. Schreibtests bleiben ohne
+  ausdrückliche Freigabe ausgeschlossen.
 
 Benötigte Artefakte sind in der Field-Diagnostics-Vorlage und im
 Field-Diagnostics-Guide beschrieben. Ohne diese Daten bleibt die sichere
 Entscheidung: nicht veröffentlichen, nicht schätzen und keine Schreibpfade
 ändern.
 
-### Home Assistant Modbus-Vertrag
+### Home Assistant Shared-Connection-Vertrag
 
-Diese Punkte bleiben blockiert, bis Home Assistant den finalen offiziellen
-Shared-Connection-Vertrag veröffentlicht und Custom Integrations ihn stabil
-nutzen dürfen:
+Der lokale Adapter ist umgesetzt. Nur die folgenden zentralen Sharing-Punkte
+bleiben blockiert, bis Home Assistant einen stabilen Vertrag für Custom
+Integrations veröffentlicht:
 
-- Adapter zwischen Home-Assistant-Connection-Objekt und `IdmModbusTransport`.
-- Runtime-Option für einen optionalen Shared-Connection-Transport.
-- Diagnoseexport der tatsächlich genutzten Transportquelle.
+Derzeit gibt es keinen finalen offiziellen
+Shared-Connection-Vertrag, auf den dieser Provider sicher aufbauen könnte.
+
+- Provider zwischen einem künftigen zentralen Home-Assistant-Connection-Objekt
+  und `IdmModbusTransport`.
+- Ownership- und Lifecycle-Regeln für mehrere Config-Entries.
 - Migrationspfad ohne neue Unique IDs und ohne neuen Schreibpfad.
+- Erst ein real integrierter zentraler Provider darf
+  `supports_shared_connection=True` und `owns_socket=False` melden.
 
-Bis dahin bleibt die Integration beim bestehenden, getesteten
-`idm-heatpump-api`-/Pymodbus-Pfad.
+Bis dahin besitzt jede Config-Entry ihren direkten tmodbus-Socket und meldet
+`supports_shared_connection=False`. Es gibt keine Transportoption und keinen
+zweiten Pymodbus-Socketpfad.
+
+### API-Entkopplung
+
+`idm-heatpump-api` 0.9.1 stellt noch keinen öffentlichen transportneutralen
+Client-Vertrag bereit und importiert Pymodbus. Die Integration überbrückt das
+gezielt über geschützte Raw-I/O-Hooks. Ein späteres API-Release soll diesen
+Adapterpunkt öffentlich machen; erst nach Kompatibilitätsprüfung darf der
+temporäre Pymodbus-Pin entfallen.
 
 ## Entscheidungsregel
 
@@ -141,7 +173,8 @@ eines erfüllt ist:
 
 1. Die benötigten realen Messdaten liegen als redigierter Diagnoseexport und
    Rohdatenserie vor.
-2. Die finale Home-Assistant-Dokumentation ist verlinkt und der Adapter ist
-   feature-gated implementiert.
+2. Die finale Home-Assistant-Dokumentation ist verlinkt und ein zentraler
+   Shared-Connection-Provider ist getrennt vom bereits vorhandenen lokalen
+   tmodbus-Adapter implementiert.
 3. Ein Test oder Generator belegt reproduzierbar, dass die Dokumentation mit dem
    Code übereinstimmt.

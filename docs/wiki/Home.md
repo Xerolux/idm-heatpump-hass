@@ -23,11 +23,13 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Integration version** | 0.9.1 |
+| **Integration version** | 0.11.0-beta.1 (latest stable: 0.10.1) |
 | **Supported/tested HA baseline** | 2026.5.0 |
 | **Python** | 3.13+ (managed by Home Assistant) |
-| **pymodbus** | pymodbus>=3.12.1,<4.0 |
-| **Library** | idm-heatpump-api[web]==0.9.1 |
+| **Connection library** | modbus-connection==4.0.0a3 |
+| **Socket backend** | tmodbus==0.5.0 |
+| **pymodbus compatibility** | pymodbus>=3.12.1,<4.0 |
+| **Device/web library** | idm-heatpump-api[web]==0.9.1 |
 | **License** | MIT |
 | **Languages** | DE, EN |
 | **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects, switches, climate, water heater, and buttons |
@@ -47,6 +49,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **Optional Web Supplement**: Navigator generation, software version, heat pump model, compact myIDM ID, web-only diagnostics, and Navigator 10 infosystem notifications without replacing Modbus values; default interval 30 seconds
 - **Room Temperature Forwarding**: Optional forwarding of Home Assistant temperature sensors to IDM external room temperature registers per heating circuit
 - **Readable Diagnostics**: Internal IDM messages are shown with text plus structured code/text attributes
+- **Direct local Modbus runtime**: `modbus-connection` and tmodbus own the per-entry socket; `idm-heatpump-api` keeps the IDM register and safety logic
 
 ---
 
@@ -92,10 +95,14 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **Value validation**: Unavailable sentinels are omitted as unused; suspicious grouped values are checked individually and quarantined for the client session
 - **Library-powered**: All registers from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api)
 - **Actionable setup diagnostics**: Separate messages for hostname/DNS errors, refused or disabled Modbus TCP, timeouts, unreachable endpoints, wrong slave IDs, invalid web PINs, and unavailable web interfaces
-- **Runtime version visibility**: Integration, `idm-heatpump-api`, and `pymodbus` versions are available in a diagnostic sensor, diagnostics exports, and startup logs
+- **Runtime version visibility**: Integration, `idm-heatpump-api`, `modbus-connection`, `tmodbus`, and compatibility `pymodbus` versions are available in a diagnostic sensor, diagnostics exports, and startup logs
 - **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers tracked and protected
-- **Auto-recovery**: Exponential backoff on connection errors
+- **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.0.0a3` / `tmodbus==0.5.0` pair; `4.0.0a3` is the connection-library version, not the IDM integration version
+- **Compatibility boundary**: `idm-heatpump-api[web]==0.9.1` still provides batching, decoding and write safety. `pymodbus>=3.12.1,<4.0` remains temporarily pinned because that API still imports it, but the direct socket is tmodbus-backed
+- **Auto-recovery**: API retry/backoff plus reconnect-on-demand in the tmodbus-backed connection
+- **Connection ownership**: Each config entry owns one socket and reports `supports_shared_connection: false`; Home Assistant central cross-entry sharing is not currently available
+- **Validation status**: The adapter is implemented and automatically tested; read-only validation of the new transport on real Navigator hardware remains pending
 - **Navigator 10**: Heat sink sensors, flow rate (Sieb monitoring), groundwater temps, booster A/B
 - **Web supplement**: Setup tests both supported local protocols when needed, stores the successful Navigator family, reuses its session and retries only that same protocol during normal runtime recovery
 - **Room forwarding**: Optional write path with state-change updates, periodic refresh, tolerance and range checks

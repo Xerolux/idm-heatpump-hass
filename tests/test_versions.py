@@ -13,12 +13,19 @@ from custom_components.idm_heatpump.versions import (
 def test_runtime_versions_exposes_integration_and_dependencies() -> None:
     with patch(
         "custom_components.idm_heatpump.versions.distribution_version",
-        side_effect=lambda name: {"idm-heatpump-api": "0.7.5", "pymodbus": "3.13.1"}[name],
+        side_effect=lambda name: {
+            "idm-heatpump-api": "0.7.5",
+            "modbus-connection": "4.0.0a3",
+            "tmodbus": "0.5.0",
+            "pymodbus": "3.13.1",
+        }[name],
     ):
         versions = runtime_versions("0.8.1-beta.23")
 
     assert versions.integration == "0.8.1-beta.23"
     assert versions.api == "0.7.5"
+    assert versions.modbus_connection == "4.0.0a3"
+    assert versions.tmodbus == "0.5.0"
     assert versions.pymodbus == "3.13.1"
 
 

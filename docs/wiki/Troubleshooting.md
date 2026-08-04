@@ -54,7 +54,14 @@ operating system reported a network/routing failure.
 - Check the network connection (LAN cable recommended)
 - Increase the scan interval (e.g., to 30 seconds)
 - Enable debug logging (see [Configuration](Configuration))
-- The integration automatically optimizes Modbus connections to avoid constant reconnections (`self._client.connected` checks). If drops still occur, check the stability of your local network or WiFi.
+- The tmodbus-backed connection marks a dropped link as disconnected and
+  reconnects on the next operation; the API retry/backoff policy remains in
+  effect. If drops continue, check the stability of the local network or WiFi.
+
+Each IDM config entry currently owns its direct tmodbus socket. Home Assistant
+central cross-entry connection sharing is not available, and diagnostics
+therefore report `supports_shared_connection: false`. Avoid running another
+Modbus client against the same endpoint while diagnosing connection loss.
 
 ### "No valid IDM register response"
 
@@ -184,7 +191,6 @@ logger:
   default: info
   logs:
     custom_components.idm_heatpump: debug
-    pymodbus: debug
 ```
 
 Look for in the logs:
@@ -200,9 +206,12 @@ Look for in the logs:
 3. Click **Download diagnostics**
 4. Attach the file to your [bug report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 
-The export includes the installed integration, `idm-heatpump-api`, and
-`pymodbus` versions. They are also visible on the **IDM Heatpump API version**
-diagnostic sensor.
+The export includes the installed integration, `idm-heatpump-api`,
+`modbus-connection`, `tmodbus`, and compatibility `pymodbus` versions. They are
+also visible on the **IDM Heatpump API version** diagnostic sensor. The client
+diagnostic block additionally reports a redacted endpoint, transport source,
+socket ownership, current connection state, and whether central sharing is
+supported.
 
 ## Bug Report Checklist
 
@@ -210,7 +219,8 @@ Please include:
 
 - Heat pump model and Navigator/controller model.
 - Firmware version from the diagnostics export.
-- Home Assistant version, integration version and `idm-heatpump-api` version.
+- Home Assistant version plus integration, `idm-heatpump-api`,
+  `modbus-connection`, `tmodbus` and compatibility `pymodbus` versions.
 - Active heating circuits, zone modules, PV, Solar, ISC and Cascade flags.
 - The redacted diagnostics export.
 - Relevant log lines around the first error.
@@ -220,7 +230,7 @@ Do not include private IP addresses, hostnames, serial numbers, installer/custom
 
 ## 👩‍💻 For Developers (Mock Tests)
 
-Please **never** run write operations on Modbus (`write_register`) live against a real heat pump when testing code changes to base logic. Use the repository test suite and the API fake transport for decoding, encoding and write-safety tests. Hardware validation for register reads must remain read-only unless the owner explicitly authorizes a specific write.
+Please **never** run write operations on Modbus (`write_register`) live against a real heat pump when testing code changes to base logic. Use the repository test suite and fake transports for decoding, encoding, retry, reconnect and write-safety tests. The tmodbus adapter is implemented and automatically tested, but read-only real-hardware validation of its setup, FC03, FC04 and reconnect paths remains pending. Hardware validation must remain read-only unless the owner explicitly authorizes a specific write.
 
 ## Common Errors and Solutions
 

@@ -89,6 +89,8 @@ class TestDiagnostics:
         assert data["firmware_version"] == "2.34"
         assert data["versions"]["integration"] == "0.5.0"
         assert isinstance(data["versions"]["idm_heatpump_api"], str)
+        assert isinstance(data["versions"]["modbus_connection"], str)
+        assert isinstance(data["versions"]["tmodbus"], str)
         assert isinstance(data["versions"]["pymodbus"], str)
         assert data["web_supplement"] == {
             "enabled": True,

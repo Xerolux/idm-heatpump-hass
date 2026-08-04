@@ -1,6 +1,6 @@
 # IDM Heatpump Feature Roadmap
 
-Stand: 21.07.2026
+Stand: 04.08.2026
 
 Dieses Dokument bündelt die nächsten sicheren und sinnvollen Arbeitspakete für
 `idm-heatpump-hass`. Der Fokus liegt auf lokaler Funktion, nachvollziehbarem
@@ -20,9 +20,10 @@ Verhalten, Schutz der Anlage und einer Architektur, die spätere Home-Assistant-
 - **Bestehende Installationen schützen:** Unique IDs, Entity-Registry-Entscheide
   und Nutzeroptionen bleiben migrationssicher; Details stehen im
   Entity-Registry-Migrationsvertrag.
-- **Modbus-Zukunft offenhalten:** Die aktuelle Pymodbus-basierte Verbindung
-  bleibt stabil; ein späterer `modbus-connection`-Adapter wird erst nach einem
-  finalen Home-Assistant-Vertrag umgesetzt.
+- **Transportgrenzen beibehalten:** Der direkte Socket läuft über den
+  implementierten `modbus-connection`-/tmodbus-Adapter. Gerätelogik bleibt in
+  `idm-heatpump-api`; zentrales Entry-übergreifendes Sharing wird erst mit
+  einem stabilen Home-Assistant-Vertrag ergänzt.
 
 ## Phasenplan
 
@@ -80,27 +81,39 @@ begrenzt und wiederherstellbar sind.
 
 ### Phase 3 – Architektur und Home-Assistant-Modbus-Zukunft
 
-Home Assistant hat im Juli 2026 eine Modernisierung der Modbus-Anbindung
-angekündigt und kurz danach darauf hingewiesen, dass der Integrationsvertrag
-noch überarbeitet wird. Deshalb wird aktuell keine harte Abhängigkeit auf eine
-neue HA-seitige Modbus-Verbindungsintegration eingeführt.
+Der lokale Adapter ist umgesetzt und der direkte Socket verwendet tmodbus.
+Home Assistants zentraler Vertrag für Entry-übergreifendes Sharing steht Custom
+Integrations dagegen weiterhin nicht stabil zur Verfügung. Diese beiden Ebenen
+dürfen in Planung und Diagnose nicht miteinander verwechselt werden.
 
 - [x] Aktuelle Integration bleibt über `idm-heatpump-api` und den zentralen
   Coordinator gekapselt.
 - [x] Plattformdateien führen keine direkten Modbus-Transporte ein.
 - [x] Manifest pinnt die getestete API-Version reproduzierbar.
-- [x] Minimalen, noch nicht eingebundenen Transportvertrag für spätere Adapter
-  dokumentieren und im Integrationscode ablegen.
-- [ ] `idm-heatpump-api` weiter transportneutral strukturieren:
+- [x] Backend-neutralen Transportvertrag mit FC03, FC04, FC16,
+  Endpoint-Validierung und redigierten Capabilities implementieren.
+- [x] `IdmModbusConnectionClient` als produktiven Adapter verdrahten und rohe
+  I/O über `modbus-connection==4.0.0a3` sowie `tmodbus==0.5.0`
+  ausführen. Der Pfad wird erstmals mit `0.11.0-beta.1` ausgeliefert.
+- [x] `idm-heatpump-api[web]==0.9.1` für Gerätelogik und
+  `pymodbus>=3.12.1,<4.0` vorübergehend für dessen Imports/Fehlervertrag
+  beibehalten; Pymodbus besitzt nicht den direkten Socket.
+- [x] Pro Entry privaten Socket-Besitz und fehlendes zentrales Sharing als
+  `owns_socket=True` / `supports_shared_connection=False` diagnostizieren.
+- [ ] Den neuen tmodbus-Pfad read-only an realer Navigator-Hardware validieren;
+  keine Schreibtests ohne ausdrückliche Freigabe.
+- [ ] `idm-heatpump-api` weiter transportneutral strukturieren und einen
+  öffentlichen I/O-Vertrag bereitstellen:
   - Registermodell,
   - Encoding/Decoding,
   - Batchplanung,
   - Fehlerklassifikation,
   - Transportadapter.
-- [ ] Optionalen `modbus-connection`-Transportadapter erst implementieren, wenn die
-  Home-Assistant-Schnittstelle final dokumentiert ist.
-- [ ] Migration bestehender Nutzer separat planen, falls ein Shared-Connection-
-  Modell später stabil empfohlen wird.
+- [ ] Einen zusätzlichen zentralen Home-Assistant-Connection-Provider erst
+  implementieren, wenn die Schnittstelle für Custom Integrations stabil
+  dokumentiert ist.
+- [ ] Migration bestehender Nutzer separat planen, falls ein zentrales
+  Shared-Connection-Modell später stabil empfohlen wird.
 
 ## Sicherheitsregeln für alle neuen Schreibfunktionen
 
@@ -144,7 +157,10 @@ oder firmwareabhängigen Sonderwerten.
 1. API-weite Entity-Dokumentation auf Basis des neuen Metadatenkatalogs ausbauen.
 2. Reale Diagnoseexports für Vorlauf-Abweichung und Binärregister über die
    Field-Diagnostics-Vorlage sammeln.
-3. Den bestehenden Modbus-Issue mit der vorbereiteten Issue-Vorlage pflegen,
-   bis die offenen HA-Entscheidungen final sind.
-4. `idm-heatpump-api` auf Transportgrenzen auditieren und einen späteren
-   Adapterpunkt dokumentieren.
+3. Den neuen tmodbus-Pfad für Setup, FC03, FC04, Verbindungsabbruch und
+   Reconnect read-only an realer Hardware validieren.
+4. `idm-heatpump-api` um einen öffentlichen transportneutralen I/O-Vertrag
+   erweitern und erst danach den Pymodbus-Kompatibilitätspin neu bewerten.
+5. Den bestehenden Modbus-Issue für die offene zentrale Home-Assistant-
+   Shared-Connection sowie eine migrationssichere Provider-Implementierung
+   pflegen.

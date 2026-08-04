@@ -437,6 +437,8 @@ class IdmApiVersionSensor(IdmCoordinatorEntityBase, SensorEntity):
     def extra_state_attributes(self) -> dict[str, str]:
         return {
             "integration_version": self._versions.integration,
+            "modbus_connection_version": self._versions.modbus_connection,
+            "tmodbus_version": self._versions.tmodbus,
             "pymodbus_version": self._versions.pymodbus,
         }
 

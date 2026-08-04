@@ -7,12 +7,13 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.9.1` (defined in `custom_components/idm_heatpump/manifest.json`)
+- **Current Version**: `0.11.0-beta.1` (defined in `custom_components/idm_heatpump/manifest.json`; latest stable: `0.10.1`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.5.0
 - **Python**: 3.13+
-- **Key Dependencies**: `pymodbus >= 3.12.1, < 4.0`, `idm-heatpump-api[web]==0.9.1`
+- **Direct Modbus Runtime**: `modbus-connection==4.0.0a3`, `tmodbus==0.5.0`
+- **Compatibility Dependencies**: `pymodbus>=3.12.1,<4.0`, `idm-heatpump-api[web]==0.9.1` (pymodbus is temporarily required because the pinned API still imports it)
 
 ---
 
@@ -41,6 +42,9 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── repairs.py                    # Repair flows (e.g. missing web PIN)
 │   ├── registers.py                  # Collects entity descriptions from idm-heatpump-api
 │   ├── library_adapter.py            # Adapter between idm-heatpump-api and HA EntityDescriptions
+│   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
+│   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
+│   ├── versions.py                   # Runtime dependency versions for logs, sensors, and diagnostics
 │   ├── adapter_descriptions.py       # HA description helpers (icons, device classes)
 │   ├── adapter_enums.py              # Enum slug maps and translation keys
 │   ├── adapter_registers.py          # Register-map filtering by model
@@ -58,7 +62,7 @@ This file provides guidance for AI assistants working on this codebase.
 │       └── en.json                   # English translations
 │
 ├── tests/                            # Pytest test suite
-│   ├── conftest.py                   # Shared fixtures, HA mocks, pymodbus/idm-heatpump-api stubs
+│   ├── conftest.py                   # Shared fixtures and HA/API/Modbus runtime stubs
 │   ├── test_init.py
 │   ├── test_config_flow.py
 │   ├── test_const.py
@@ -104,7 +108,9 @@ Home Assistant
     │
     ├── IdmCoordinator (DataUpdateCoordinator) [coordinator.py]
     │       │
-    │       ├── IdmModbusClient (from idm-heatpump-api, wrapped via library_adapter.py)
+    │       ├── IdmModbusConnectionClient (modbus_client.py)
+    │       │       ├── idm-heatpump-api 0.9.1 (device logic)
+    │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket)
     │       │
     │       ├── Entity Descriptions from registers.py / library_adapter.py
     │       │
@@ -140,11 +146,15 @@ Home Assistant
 
 4. **Resilient Polling**: `IdmCoordinator._async_read_registers_resilient()` bisects register ranges on Modbus exception code 2 (`Illegal Data Address`) so unsupported optional registers are isolated without breaking the whole poll.
 
-5. **Async I/O**: All Modbus and web communication is async. The library handles connection locking internally.
+5. **Transport Adapter**: `IdmModbusConnectionClient` subclasses the pinned API client and replaces its raw-I/O hooks. Register metadata, batching, decoding, model detection and write safety remain in `idm-heatpump-api`; FC03/FC04/FC16 socket I/O uses `ModbusConnectionTransport` and tmodbus.
 
-6. **Optimistic Updates**: Write operations update the coordinator data immediately before the device confirms the change.
+6. **Async I/O**: All Modbus and web communication is async. The adapter keeps the API request lock, and `modbus-connection` serializes physical requests and reconnects on demand.
 
-7. **Web-only Mode**: When Modbus is unavailable but a local web PIN is configured, the integration can run in a web-only fallback that exposes sensors from the Navigator's local web interface.
+7. **Private Socket Ownership**: Each config entry owns one tmodbus-backed socket. Home Assistant central cross-entry sharing is not available; `supports_shared_connection` must remain `False` until a real shared provider is integrated.
+
+8. **Optimistic Updates**: Write operations update the coordinator data immediately before the device confirms the change.
+
+9. **Web-only Mode**: When Modbus is unavailable but a local web PIN is configured, the integration can run in a web-only fallback that exposes sensors from the Navigator's local web interface.
 
 ---
 
@@ -152,8 +162,9 @@ Home Assistant
 
 Registers are sourced from `idm-heatpump-api` and support the data types defined there (typically `FLOAT`, `UCHAR`, `INT16`, `UINT16`, `BOOL`, `BITFLAG`).
 
-- **Read**: function code 03 (handled by the library)
-- **Write**: function code 16 (handled by the library)
+- **Read input registers**: function code 04 (API chooses the register type; tmodbus performs raw I/O)
+- **Read holding registers**: function code 03 (API chooses the register type; tmodbus performs raw I/O)
+- **Write holding registers**: function code 16 (encoded and safety-checked by the API, transmitted by tmodbus)
 - **Batch size**: configured by the library
 - **Local filtering**: `adapter_registers.py` removes registers known to be unsupported on a specific Navigator family (e.g. Navigator 2.0).
 
@@ -167,7 +178,7 @@ Never hardcode Modbus register addresses in platform files. Service-specific reg
 ```bash
 pytest tests/
 ```
-The `pytest.ini` disables `homeassistant` and `socket` plugins. Tests use stubs from `conftest.py` for `pymodbus`, `idm-heatpump-api`, and the entire Home Assistant package tree.
+The `pytest.ini` disables `homeassistant` and `socket` plugins. Tests use stubs from `conftest.py` for `modbus-connection`, tmodbus, pymodbus, `idm-heatpump-api`, and the entire Home Assistant package tree.
 
 ### Type Checking
 ```bash
@@ -227,6 +238,8 @@ ruff check custom_components tests
 - Bump version there before creating a release and update `CHANGELOG.md`
 - Pin the `idm-heatpump-api` requirement for every released integration version to the exact PyPI version that is current at release time or has been explicitly tested for that release. Do not publish a release with an open-ended API lower bound such as `idm-heatpump-api>=x.y.z`; the integration release and API version must remain a reproducible pair.
 - When updating to a newer `idm-heatpump-api`, verify compatibility before widening or changing the pin, then document the tested API version in the changelog/release notes.
+- Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.0.0a3` is the `modbus-connection` library version, not the integration version. Do not add the `tmodbus` extra for this TCP-only integration; the backend is pinned directly so the serial-only `serialx` dependency is not installed unnecessarily.
+- Do not remove the pymodbus compatibility pin until the pinned `idm-heatpump-api` version no longer imports it and the adapter's error contract has been updated and tested.
 
 ---
 
@@ -252,6 +265,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Zone management | `config_flow.py`, `library_adapter.py` | Up to 10 zones × 8 rooms |
 | Web supplement | `web_data.py`, `coordinator.py` | Optional local Navigator web data (Nav 2.0 / Nav 10 / Pro) |
 | Web-only fallback | `__init__.py`, `config_flow.py` | Runs without Modbus when only web access is available |
+| tmodbus transport | `modbus_client.py`, `modbus_transport.py` | Default direct socket path; per-entry ownership, no central cross-entry sharing |
 | Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps to GLT registers |
 | Climate entities | `climate.py` | Heating-circuit + zone-module room climates; routes writes through `coordinator.async_write_register` |
 | Water heater entity | `water_heater.py` | DHW target setpoint; only set up when both `dhw_temp_top` and `dhw_setpoint` exist |
@@ -260,13 +274,13 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Diagnostics export | `diagnostics.py` | Redacts host/port/slave for privacy |
 | Unused register filtering | `entity.py`, `coordinator.py` | Entities become unavailable when their register indicates "unused" |
 | Repair issues | `repairs.py`, `coordinator.py` | User-fixable issues (e.g. missing web PIN) |
-| pymodbus log filter | `log_filter.py` | Suppresses routine connection-drop ERROR spam |
+| pymodbus compatibility log filter | `log_filter.py` | Suppresses noisy records from the temporarily retained API dependency |
 
 ---
 
 ## Testing Infrastructure
 
-- **No real HA installation required**: `conftest.py` stubs the entire `homeassistant` package tree, `pymodbus`, and `idm-heatpump-api`.
+- **No real HA installation required**: `conftest.py` stubs the entire `homeassistant` package tree, `modbus-connection`, tmodbus, pymodbus, and `idm-heatpump-api`.
 - **Async tests**: `pytest-asyncio` with `asyncio_mode = auto`.
 - **Cross-platform**: Event loop policy supports both Windows and Linux.
 - Tests correspond 1:1 (or close to it) with integration modules.
@@ -279,7 +293,9 @@ The config flow (defined in `config_flow.py`) has these steps:
 - **Do not add cloud/external API calls** — this integration is intentionally 100% local.
 - **Do not skip type hints** — mypy strict mode will fail CI.
 - **Do not hardcode register addresses** in platform files — reference `const.py` or `registers.py`.
+- **Do not bypass `ModbusConnectionTransport`** with a second direct socket path. The current runtime is tmodbus-backed and deliberately reports `supports_shared_connection=False`.
 - **Do not write to EEPROM-sensitive registers** without proper guards.
+- **Keep real-hardware transport validation read-only** unless the owner explicitly authorizes a specific write.
 - **Keep entity names consistent** with `strings.json` and `translations/`.
 - **Test new functionality** — untested code will not pass CI on the main branch.
 

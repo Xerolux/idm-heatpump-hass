@@ -2,13 +2,11 @@
 
 Two sources of log spam are suppressed here:
 
-1. **pymodbus** (used via idm-heatpump-api) logs routine connection drops at
-   ERROR level and, when DEBUG logging is disabled, appends up to 20 buffered
-   raw frame dumps to each record (``pymodbus/logging.py`` -> ``Log.error``).
-   This floods the Home Assistant log with byte-for-byte Modbus frames after
-   every transient disconnect. The integration's coordinator already converts
-   communication failures into a single ``UpdateFailed`` warning, so these
-   pymodbus records are redundant.
+1. **pymodbus** remains imported by ``idm-heatpump-api`` 0.9.1 for
+   compatibility, although the integration's active socket now uses tmodbus.
+   Keep the existing narrow filters until that compatibility dependency can be
+   removed, so an older or fallback API path cannot reintroduce its routine
+   connection-drop frame dumps.
 
 2. **idm-heatpump-api** logs a WARNING "Modbus read at address X failed after N
    attempts: ..." whenever a register read exhausts its retries. For registers
@@ -35,8 +33,8 @@ PYMODBUS_LOGGER_NAME = "pymodbus.logging"
 LIBRARY_LOGGER_NAME = "idm_heatpump.client"
 
 _NOISY_ERROR_PREFIXES: tuple[str, ...] = (
-    # pymodbus transport.py logs the raw socket error before the coordinator
-    # reports the same failure with an actionable message and repair issue.
+    # Compatibility path: pymodbus may log the raw socket error before the
+    # coordinator reports the same failure with an actionable repair issue.
     "Failed to connect ",
     # pymodbus transport.py: Log.error("Cancel send, because not connected!")
     "Cancel send, because not connected!",

@@ -122,7 +122,7 @@ def test_get_idm_client_forwards_timeout_and_max_retries() -> None:
     def _fake_client(*args: object, **kwargs: object) -> None:
         captured.update(kwargs)
 
-    with patch("custom_components.idm_heatpump.library_adapter.LibIdmModbusClient", side_effect=_fake_client):
+    with patch("custom_components.idm_heatpump.library_adapter.IdmModbusConnectionClient", side_effect=_fake_client):
         get_idm_client(host="10.0.0.5", port=502, slave_id=1, timeout=15.0, max_retries=2)
 
     assert captured["timeout"] == 15.0
@@ -136,7 +136,7 @@ def test_get_idm_client_omits_unset_optional_params() -> None:
     def _fake_client(*args: object, **kwargs: object) -> None:
         captured.update(kwargs)
 
-    with patch("custom_components.idm_heatpump.library_adapter.LibIdmModbusClient", side_effect=_fake_client):
+    with patch("custom_components.idm_heatpump.library_adapter.IdmModbusConnectionClient", side_effect=_fake_client):
         get_idm_client(host="10.0.0.5")
 
     assert "timeout" not in captured

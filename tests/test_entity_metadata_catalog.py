@@ -55,9 +55,10 @@ def test_field_diagnostics_template_is_read_only_and_privacy_safe() -> None:
 def test_modbus_transport_issue_template_keeps_runtime_guardrails() -> None:
     template = (ROOT / ".github" / "ISSUE_TEMPLATE" / "modbus_transport_modernization.md").read_text(encoding="utf-8")
 
-    assert "No new manifest requirement" in template
-    assert "No direct import of a non-final Home Assistant Modbus API" in template
-    assert "Existing entities keep the same Unique IDs" in template
+    assert "modbus-connection==4.0.0a3" in template
+    assert "tmodbus==0.5.0" in template
+    assert "supports_shared_connection=False" in template
+    assert "Existing config entries and entity Unique IDs need no user migration" in template
     assert "IdmCoordinator.async_write_register" in template
 
 
@@ -69,4 +70,5 @@ def test_open_work_audit_separates_local_work_from_external_blockers() -> None:
     assert "Lokal erledigt" in audit
     assert "Extern blockiert" in audit
     assert "nicht veröffentlichen, nicht schätzen und keine Schreibpfade" in audit
-    assert "finalen offiziellen\nShared-Connection-Vertrag" in audit
+    assert "stabilen Vertrag für Custom\nIntegrations" in audit
+    assert "supports_shared_connection=False" in audit
