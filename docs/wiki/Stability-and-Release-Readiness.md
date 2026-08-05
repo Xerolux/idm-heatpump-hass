@@ -6,14 +6,14 @@ a normal changelog.
 
 ## Current Status
 
-Integration beta `0.11.0-beta.2` and `idm-heatpump-api` `1.0.0` form the
+Integration beta `0.11.0-beta.3` and `idm-heatpump-api` `1.0.0` form the
 current exactly pinned integration/API pair; the latest stable integration is
 `0.10.1`. The beta additionally pins `modbus-connection==4.0.0a3` and
 `tmodbus==0.5.0` for the direct socket. Its candidate evidence is maintained at
-[candidate evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.11.0-beta.1.md).
+[candidate evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.11.0-beta.3.md).
 
 The previous beta cycle (`0.8.5-beta.1` through `0.8.5-beta.8`) remains
-preserved in its historical evidence files. For `0.11.0-beta.1`, automated
+preserved in its historical evidence files. For `0.11.0-beta.3`, automated
 preflight may permit beta publication while read-only hardware validation and
 the stable soak remain open.
 

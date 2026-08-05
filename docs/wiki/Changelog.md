@@ -5,6 +5,19 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.11.0-beta.3 - 2026-08-05
+
+- Continues the direct `modbus-connection==4.0.0a3` / `tmodbus==0.5.0` socket
+  with the stable `idm-heatpump-api[web]==1.0.0`.
+- Transient Modbus exception codes 5 (Acknowledge), 6 (Server Device Busy), 10
+  (Gateway Path Unavailable) and 11 (Gateway Target Failed to Respond) are now
+  translated to `ModbusException`, so the API retry loop repeats them in place
+  on the same connection instead of forcing a hard reconnect — matching the
+  API 1.0 transport contract (retry-in-place path). Code 2 remains
+  `IllegalAddressError` for the coordinator bisect logic.
+- Removed the dead `_NON_RETRYABLE_DEVICE_EXCEPTION_CODES` set and corrected
+  comments that misdescribed the API retry behavior.
+
 ## v0.11.0-beta.1 — 2026-08-04
 
 - This is the first IDM integration beta whose direct Modbus TCP socket runs

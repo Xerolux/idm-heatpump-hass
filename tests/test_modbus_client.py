@@ -19,7 +19,7 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from idm_heatpump import DataType, IllegalAddressError, RegisterDef, RegisterType
 from idm_heatpump.transport import IdmModbusTransport
-from pymodbus.exceptions import ModbusIOException
+from pymodbus.exceptions import ModbusException, ModbusIOException
 
 from custom_components.idm_heatpump.error_messages import classify_write_error
 from custom_components.idm_heatpump.modbus_client import IdmModbusConnectionClient
@@ -164,15 +164,21 @@ async def test_exception_code_2_surfaces_as_illegal_address_error() -> None:
 
 
 @pytest.mark.asyncio
-async def test_transient_code_6_surfaces_as_modbus_io_exception() -> None:
-    """Code 6 must surface as ModbusIOException with the marker string."""
+async def test_transient_code_6_surfaces_as_modbus_exception_after_in_place_retries() -> None:
+    """Code 6 (translated by the transport to ModbusException) must reach
+    callers as ModbusException with the marker string and be retried in place
+    by the API retry loop (no reconnect, no quarantine)."""
     transport = _make_transport()
-    transport.read_input_registers.side_effect = ModbusIOException("...address 411... (exception_code=6)")
-    client = _make_client(transport, max_retries=1)
+    transport.read_input_registers.side_effect = ModbusException("...address 411... (exception_code=6)")
+    client = _make_client(transport, max_retries=3)
 
     reg = RegisterDef(411, DataType.UCHAR, "uc")
-    with pytest.raises(ModbusIOException, match="exception_code=6"):
+    with pytest.raises(ModbusException, match="exception_code=6") as exc_info:
         await client.read_register(reg)
+
+    assert not isinstance(exc_info.value, ModbusIOException)
+    assert transport.read_input_registers.await_count == 3
+    assert transport.close.await_count == 0
 
 
 @pytest.mark.asyncio

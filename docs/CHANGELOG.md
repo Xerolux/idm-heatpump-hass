@@ -15,6 +15,44 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.11.0-beta.3] - 2026-08-05
+
+Dritte Beta der 0.11.x-Linie. Behält den tmodbus-Laufzeitpfad
+(`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`) mit der stabilen
+`idm-heatpump-api[web]==1.0.0` bei und korrigiert die Zuordnung transienter
+Modbus-Exception-Codes zum dokumentierten API-1.0-Transportvertrag.
+
+### Changed
+
+- **Transiente Exception-Codes 5/6/10/11 → `ModbusException` statt
+  `ModbusIOException`:** Der Transport übersetzt Acknowledge, Server Device
+  Busy und Gateway-Verfügbarkeitsfehler jetzt in `ModbusException`, damit der
+  API-Retry-Loop sie *in place* wiederholt (gleiche Verbindung, exponentieller
+  Backoff) statt die Verbindung hart zu schließen und neu aufzubauen. Das
+  entspricht dem API-1.0-Vertrag („transient codes 5/6/10/11 belong to the
+  retry-in-place path") und vermeidet Socket-Churn bei Geräten, deren
+  Busy-Antworten tmodbus intern bereits wiederholt. Die Marker-Strings
+  (`exception_code=5|6|10|11`) bleiben für die Fehlerklassifizierung erhalten;
+  `IllegalAddressError` für Code 2 (Coordinator-Bisect) ist unverändert.
+
+### Fixed
+
+- **Toten Code entfernt:** `_NON_RETRYABLE_DEVICE_EXCEPTION_CODES` war
+  nirgends referenziert. Die Kommentare behaupteten fälschlich, Code 6 komme
+  „ohne zweiten API-Retry" durch und `ModbusIOException` werde „in place ohne
+  Reconnect" geretryed — beides traf auf den API-Retry-Loop nicht zu und ist
+  jetzt korrigiert.
+- Die changelog-Aussage der 0.11.0-beta.2 („`ModbusIOException` für transiente
+  Codes 5/6/10/11") war insofern irreführend, als `ModbusIOException` im
+  API-Retry-Loop den harten Reconnect-Pfad auslöst.
+
+### Compatibility
+
+- Vollständig abwärtskompatibel für Nutzer: Fehlerklassifizierung
+  (`error_messages.py`) und Coordinator-Bisect-Logik unverändert; Tests wurden
+  an das vertragskonforme Mapping angepasst (1072 passed, ruff + strict mypy
+  sauber).
+
 ## [0.11.0-beta.2] - 2026-08-04
 
 Zweite Beta der 0.11.x-Linie. Wechselt auf die stabile API 1.0.0 und macht
@@ -31,7 +69,7 @@ private API-Hooks zu überschreiben und einen eigenen Retry-Loop zu pflegen.
   transportbezogene Diagnose hinzu.
 - **Exception-Translation im Transport:** Backend-neutrale `ModbusError`-
   Fehler werden jetzt *innerhalb* des Transports in die API-Ausnahme-Hierarchie
-  übersetzt (`IllegalAddressError` für Code 2, `ModbusIOException` für
+  übersetzt (`IllegalAddressError` für Code 2, `ModbusException` für
   transiente Codes 5/6/10/11, `ConnectionException`/`TimeoutError` für
   Transportfehler), bevor sie den API-Retry-Loop erreichen.
 

@@ -9,7 +9,7 @@ The transport implements the API 1.0 ``IdmModbusTransport`` protocol
 methods returning ``list[int]``).  Backend-neutral ``ModbusError`` failures are
 translated to the API's established exception contract
 (:class:`~idm_heatpump.IllegalAddressError` for code 2,
-:class:`~pymodbus.exceptions.ModbusIOException` for transient device codes 5/6/10/11,
+:class:`~pymodbus.exceptions.ModbusException` for transient device codes 5/6/10/11,
 :class:`~pymodbus.exceptions.ConnectionException`/``TimeoutError`` for transport
 failures) before they leave the transport, so the API retry loop classifies
 them correctly.  The string markers (``exception_code=2`` etc.) are preserved
@@ -41,15 +41,13 @@ type ModbusTransportDiagnosticValue = bool | float | int | str
 
 _LOGGER = logging.getLogger(__name__)
 
-# Exception codes that are permanent for a given address (code 2) or that the
-# tmodbus backend already retries internally (code 6, Slave Device Busy).  Both
-# must surface without a second API retry so retries are not stacked.
-_NON_RETRYABLE_DEVICE_EXCEPTION_CODES = frozenset({2, 6})
-
 # Exception codes that are transient for the endpoint, not evidence that any
 # register in the requested batch is unsupported.  The transport maps these to
-# ``ModbusIOException`` so the API retry loop treats them as transport-level
-# failures (retry in place, no per-register fallback, no quarantine).
+# ``ModbusException`` so the API retry loop retries them in place (exponential
+# backoff on the same connection, no reconnect, no per-register fallback, no
+# quarantine).  A hard reconnect would add socket churn without helping: the
+# tmodbus backend already retries device-busy responses internally, and codes
+# 5/10/11 are device-side states, not stale-session evidence.
 _TRANSIENT_DEVICE_EXCEPTION_CODES = frozenset({5, 6, 10, 11})
 
 _T = TypeVar("_T")
@@ -68,12 +66,14 @@ def _translate_backend_error(error: ModbusError, operation: str, address: int) -
             return IllegalAddressError(f"Illegal Data Address (exception_code=2): {message}")
         if error.exception_code in _TRANSIENT_DEVICE_EXCEPTION_CODES:
             # Acknowledge, Server Device Busy, and gateway availability errors
-            # are transient for the endpoint.  Map to ModbusIOException so the
-            # API retry loop retries in place without reconnecting, without
-            # fanning out into per-register reads, and without permanently
-            # quarantining registers.  Code 6 remains non-retryable here because
-            # the tmodbus backend owns its busy-response policy.
-            return ModbusIOException(f"{message} (exception_code={error.exception_code})")
+            # are transient for the endpoint.  Map to ModbusException so the
+            # API retry loop retries in place (same connection, backoff)
+            # without reconnecting, without fanning out into per-register
+            # reads, and without permanently quarantining registers.  Per the
+            # API 1.0 transport contract, codes 5/6/10/11 belong to the
+            # retry-in-place path and must never be classified as an
+            # unsupported individual register.
+            return ModbusException(f"{message} (exception_code={error.exception_code})")
         return ModbusException(f"{message} (exception_code={error.exception_code})")
     if isinstance(error, ModbusTimeoutError):
         return TimeoutError(message)
