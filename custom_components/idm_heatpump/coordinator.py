@@ -214,6 +214,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._alias_primary_map: dict[int, str] | None = None
         self._room_mode_registers: list[RegisterDef] = []
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
+        self._hierarchy_device_ids: dict[tuple[str, str], str] = {}
         self._operation_analysis: OperationAnalysis | None = None
         self._entity_aware_polling_manager: EntityAwarePollingManager | None = None
         self._polling_plan_total_count: int = 0

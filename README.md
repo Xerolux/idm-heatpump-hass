@@ -126,7 +126,7 @@ before publishing a stable release.
 
 ## 🔑 Requirements
 
-- Home Assistant **2026.5.0+**
+- Home Assistant **2026.8.1+**
 - HACS ([Installation guide](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502)
 - Optional local Navigator web PIN for additional read-only web diagnostics

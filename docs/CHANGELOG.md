@@ -13,6 +13,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Min. Home Assistant auf `2026.8.1` angehoben; `via_device` → `via_device_id`
+  migriert:** HA Core 2026.8 deprecatet `DeviceInfo["via_device"]` zugunsten
+  von `via_device_id` (siehe [Home Assistant Developer Blog: Devices are
+  restricted to a single config entry and at most one
+  subentry](https://developers.home-assistant.io/blog/2026/07/21/device-registry-single-config-entry/)),
+  weil Geräte-Identifier ab 2026.8 nicht mehr global, sondern nur noch pro
+  Config Entry eindeutig sind. `device_hierarchy.py` erzeugt jetzt beim Setup
+  (`precreate_main_device`) das Hauptgerät **und** alle erwarteten
+  Sub-Geräte (Heizkreise, Zonenmodule, Zonenräume, optionale Module) im
+  Voraus, cacht deren registry-vergebene Geräte-IDs auf dem Coordinator und
+  verlinkt Sub-Geräte darüber per `via_device_id` statt per
+  Identifier-Tupel. `build_subdevice_info()` bleibt dadurch weiterhin eine
+  reine, registry-freie Funktion (keine Signaturänderung an den
+  Aufrufstellen in `entity.py`/`climate.py`/`water_heater.py`/`button.py`
+  nötig). `hacs.json`, CI- und Release-Workflows, README/Wiki und
+  `AGENTS.md`/`CLAUDE.md` sind auf `2026.8.1` (aktuell gepinnte, reale
+  PyPI-Stable-Version) angehoben. `via_device` selbst wird von Home Assistant
+  erst in `2027.8` entfernt; diese Migration ist also vorausschauend, nicht
+  akut erzwungen.
+
 ### Fixed
 
 - **Veraltete `idm-heatpump-api[web]==0.9.1`-Referenzen korrigiert:** Kommentare
@@ -31,7 +53,7 @@ All notable changes to this project will be documented in this file.
   echten tmodbus-TCP-Server geprüft: Connect, FC03/FC04-Reads, FC16-Write,
   Illegal-Address-Mapping (`exception_code=2` → `IllegalAddressError`) und
   Reconnect nach `close()` funktionieren wie im API-1.0-Vertrag dokumentiert.
-  mypy (strict) und ruff bleiben gegen die echten Pakete sauber; 1074/1074
+  mypy (strict) und ruff bleiben gegen die echten Pakete sauber; 1076/1076
   Tests grün.
 
 ## [0.11.0-beta.3] - 2026-08-05

@@ -186,6 +186,25 @@ class TestBuildDeviceInfoCache:
         assert rebuilt is not first
         assert rebuilt["model"] == "Navigator 10"
 
+    def test_renamed_config_entry_invalidates_cache_without_manual_clear(self):
+        """A config-entry rename changes only ``entry.title``, with no full
+        reload (``_entry_reload_fingerprint`` deliberately excludes title so a
+        rename does not tear down Modbus/web/DHW tasks). The device name must
+        still follow the rename on the very next call, without anything
+        explicitly clearing ``_device_info_cache`` first.
+        """
+        from custom_components.idm_heatpump.entity import build_device_info
+
+        coord = self._make_cacheable_coordinator(title="IDM Test")
+        first = build_device_info(coord)
+        assert first["name"] == "IDM Test"
+
+        coord.config_entry.title = "Keller Wärmepumpe"
+        renamed = build_device_info(coord)
+
+        assert renamed is not first
+        assert renamed["name"] == "Keller Wärmepumpe"
+
 
 class TestIdmEntityAvailable:
     def test_unavailable_when_coordinator_unavailable(self):

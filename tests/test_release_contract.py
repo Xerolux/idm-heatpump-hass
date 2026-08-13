@@ -99,7 +99,7 @@ def test_ci_and_release_share_complete_python_quality_workflow() -> None:
     assert "from modbus_connection.tmodbus import ModbusConnection" in quality
     assert "pytest tests/" in quality
     assert "--cov=custom_components/idm_heatpump" in quality
-    assert 'home-assistant-version: "2026.5.0"' in release
+    assert 'home-assistant-version: "2026.8.1"' in release
     assert "api-dependency-mode: manifest-pinned" in release
 
 
