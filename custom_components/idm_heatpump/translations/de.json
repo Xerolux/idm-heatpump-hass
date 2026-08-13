@@ -586,6 +586,9 @@
     "acknowledge_risk_required": {
       "message": "Du musst acknowledge_risk auf true setzen, um den Dienst write_register verwenden zu können."
     },
+    "preset_mode_unavailable_while_cooling": {
+      "message": "Heizkreis {circuit} befindet sich aktuell im Kühlmodus; der Voreinstellungsmodus gilt nur beim Heizen. Wechsle zuerst in den Heizmodus."
+    },
     "write_failed": {
       "message": "Register {register} konnte nicht geschrieben werden. Prüfe den Wert und versuche es erneut. Aktiviere bei wiederholtem Auftreten das Debug-Protokoll."
     },
@@ -606,6 +609,12 @@
     },
     "invalid_datatype": {
       "message": "Ungültiger Datentyp: \"{datatype}\". Gültige Werte: uint16, int16, float, uchar, bool."
+    },
+    "write_register_missing_fields": {
+      "message": "Der Dienst write_register benötigt sowohl address als auch value."
+    },
+    "invalid_address": {
+      "message": "Ungültige Registeradresse \"{value}\". Gib eine numerische Registeradresse an."
     },
     "invalid_value": {
       "message": "Ungültiger Wert \"{value}\" für den Datentyp {datatype}."

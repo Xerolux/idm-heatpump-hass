@@ -236,8 +236,27 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
             translation_key="acknowledge_risk_required",
         )
 
-    address = int(call.data["address"])
-    value = call.data["value"]
+    _MISSING = object()
+    address_raw = call.data.get("address", _MISSING)
+    value = call.data.get("value", _MISSING)
+    if address_raw is _MISSING or value is _MISSING:
+        # services.yaml marks both required, but hass.services.async_register
+        # is called below without a schema=, so that is UI-only guidance, not
+        # a server-side guarantee (e.g. a script/automation calling the
+        # service directly can omit either field).
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="write_register_missing_fields",
+        )
+
+    try:
+        address = int(address_raw)
+    except (ValueError, TypeError) as err:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="invalid_address",
+            translation_placeholders={"value": str(address_raw)},
+        ) from err
 
     _DATATYPE_MAP = {
         "uint16": DataType.UINT16,

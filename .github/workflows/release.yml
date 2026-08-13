@@ -39,7 +39,7 @@ jobs:
     uses: ./.github/workflows/python-quality.yml
     with:
       python-version: "3.14"
-      home-assistant-version: "2026.5.0"
+      home-assistant-version: "2026.8.1"
       api-dependency-mode: manifest-pinned
 
   prepare-release:

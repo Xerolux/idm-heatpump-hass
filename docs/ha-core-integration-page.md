@@ -6,7 +6,7 @@ ha_category:
   - Energy
   - Sensor
   - Water Heater
-ha_release: "2026.5.0"
+ha_release: "2026.8.1"
 ha_iot_class: Local Polling
 ha_config_flow: true
 ha_codeowners:

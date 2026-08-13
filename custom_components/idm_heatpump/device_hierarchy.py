@@ -140,21 +140,34 @@ def main_device_identifier(coordinator: IdmCoordinator) -> tuple[str, str]:
 
 
 def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
-    """Ensure the main device exists before sub-devices reference it.
+    """Ensure the main device and every expected sub-device exist up front.
 
-    Sub-device ``DeviceInfo`` uses ``via_device=main_device_identifier(...)``.
-    Home Assistant logs a warning (and from 2025.12 will reject it) when a
-    ``via_device`` target does not exist yet. Platforms are forwarded in an
+    Sub-device ``DeviceInfo`` links to its parent via ``via_device_id``, which
+    needs the parent's actual registry-assigned device ID (a plain identifier
+    tuple is no longer enough since Home Assistant 2026.8, where identifiers
+    are only unique per config entry). Platforms are forwarded in an
     unspecified order, so the first entity added may be a sub-device (e.g. a
-    binary_sensor). Pre-creating the main device here from the stable identifier
-    makes the ``via_device`` reference always resolve. Name/model/manufacturer
-    are enriched later when the first main-device entity is added.
+    binary_sensor) whose parent has not been created yet. Pre-creating the
+    main device and every expected sub-device here — keyed by the same stable
+    identifiers ``build_subdevice_info`` uses — guarantees every parent lookup
+    resolves and caches the IDs on the coordinator so ``build_subdevice_info``
+    stays a cheap, registry-free lookup. Name/model/manufacturer are enriched
+    later when each device's first entity is added.
     """
     entry = coordinator.config_entry
-    dr.async_get(hass).async_get_or_create(
-        config_entry_id=entry.entry_id,  # type: ignore[union-attr]
-        identifiers={main_device_identifier(coordinator)},
-    )
+    if entry is None:
+        return
+    registry = dr.async_get(hass)
+    device_ids: dict[tuple[str, str], str] = {}
+
+    for identifier in {main_device_identifier(coordinator), *expected_subdevice_identifiers(coordinator)}:
+        device = registry.async_get_or_create(
+            config_entry_id=entry.entry_id,
+            identifiers={identifier},
+        )
+        device_ids[identifier] = device.id
+
+    coordinator._hierarchy_device_ids = device_ids
 
 
 def heating_circuit_identifier(coordinator: IdmCoordinator, circuit: str) -> tuple[str, str]:
@@ -250,6 +263,17 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
             )
 
 
+def _via_device_id(coordinator: IdmCoordinator, parent_identifier: tuple[str, str]) -> str | None:
+    """Return the cached registry device ID for a hierarchy parent, if known.
+
+    Populated by :func:`precreate_main_device` before entities are added. A
+    missing entry (e.g. hierarchy mode toggled on without a reload) simply
+    means the sub-device is created without a ``via_device_id`` link this
+    round; the next reload/precreate pass fills it in.
+    """
+    return coordinator._hierarchy_device_ids.get(parent_identifier)
+
+
 def build_subdevice_info(coordinator: IdmCoordinator, entity_key: str) -> DeviceInfo | None:
     """Build subdevice information when hierarchy mode is enabled."""
     if coordinator.device_hierarchy_enabled is not True:
@@ -262,41 +286,49 @@ def build_subdevice_info(coordinator: IdmCoordinator, entity_key: str) -> Device
     main_identifier = main_device_identifier(coordinator)
     if scope.kind == "heating_circuit":
         circuit = scope.primary.upper()
-        return DeviceInfo(
+        info = DeviceInfo(
             identifiers={heating_circuit_identifier(coordinator, circuit)},
             name=f"Heizkreis {circuit}",
             manufacturer=MANUFACTURER,
             model="Heizkreis",
-            via_device=main_identifier,
         )
+        if (via_device_id := _via_device_id(coordinator, main_identifier)) is not None:
+            info["via_device_id"] = via_device_id
+        return info
 
     if scope.kind in _MODULE_DEVICE_METADATA:
         module, name, model = _MODULE_DEVICE_METADATA[scope.kind]
-        return DeviceInfo(
+        info = DeviceInfo(
             identifiers={optional_module_identifier(coordinator, module)},
             name=name,
             manufacturer=MANUFACTURER,
             model=model,
-            via_device=main_identifier,
         )
+        if (via_device_id := _via_device_id(coordinator, main_identifier)) is not None:
+            info["via_device_id"] = via_device_id
+        return info
 
     zone = int(scope.primary)
     if scope.kind == "zone_module":
-        return DeviceInfo(
+        info = DeviceInfo(
             identifiers={zone_module_identifier(coordinator, zone)},
             name=f"Zonenmodul {zone}",
             manufacturer=MANUFACTURER,
             model="Zonenmodul",
-            via_device=main_identifier,
         )
+        if (via_device_id := _via_device_id(coordinator, main_identifier)) is not None:
+            info["via_device_id"] = via_device_id
+        return info
 
     room = scope.secondary
     if room is None:
         return None
-    return DeviceInfo(
+    info = DeviceInfo(
         identifiers={zone_room_identifier(coordinator, zone, room)},
         name=f"Zonenmodul {zone} Raum {room}",
         manufacturer=MANUFACTURER,
         model="Raumregelung",
-        via_device=zone_module_identifier(coordinator, zone),
     )
+    if (via_device_id := _via_device_id(coordinator, zone_module_identifier(coordinator, zone))) is not None:
+        info["via_device_id"] = via_device_id
+    return info

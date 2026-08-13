@@ -53,7 +53,13 @@ class IdmSelect(IdmEntity, SelectEntity):
             self._attr_options = [v for k, v in slug_map.items() if k not in excluded]
             self._attr_translation_key = t_key
         elif reg.enum_options is not None:
-            self._attr_options = list(reg.enum_options.values())
+            # Mirror the slug-map branch above: exclude_from_write must be
+            # honored regardless of whether this register has a translation
+            # slug map, or a forbidden/reserved enum value becomes selectable
+            # and writable here even though library_adapter.py's own
+            # description builder already filters it out.
+            excluded = set(getattr(reg, "exclude_from_write", None) or [])
+            self._attr_options = [v for k, v in reg.enum_options.items() if k not in excluded]
         else:
             self._attr_options = []
 

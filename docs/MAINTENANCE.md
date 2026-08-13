@@ -35,7 +35,7 @@ Changes in these areas require maintainer review before merge:
 ## Open Release Checks
 
 - **External power service (#176):** Install the exact pinned
-  `idm-heatpump-api[web]==0.9.1` PyPI artifact in a network-enabled clean
+  `idm-heatpump-api[web]==1.0.0` PyPI artifact in a network-enabled clean
   environment and inspect `datatype`, `min_val`, `max_val` and sentinel metadata
   for `pv_surplus`, `pv_production`, `house_consumption`,
   `battery_discharge`, `battery_soc` and `electric_heater_power`. The local

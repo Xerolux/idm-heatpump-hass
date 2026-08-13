@@ -23,6 +23,7 @@ def _coordinator(*, registers: tuple[str, ...] = ()) -> MagicMock:
     for register, key in zip(coordinator._registers, registers, strict=True):
         register.name = key
     coordinator.web_supplement = None
+    coordinator._hierarchy_device_ids = {(DOMAIN, "entry"): "main-device-id"}
     return coordinator
 
 
@@ -87,29 +88,29 @@ def test_optional_module_devices_are_linked_to_navigator() -> None:
     assert solar is not None
     assert solar["identifiers"] == {(DOMAIN, "entry_module_solar")}
     assert solar["name"] == "Solaranlage"
-    assert solar["via_device"] == (DOMAIN, "entry")
+    assert solar["via_device_id"] == "main-device-id"
 
     assert isc is not None
     assert isc["identifiers"] == {(DOMAIN, "entry_module_isc")}
-    assert isc["via_device"] == (DOMAIN, "entry")
+    assert isc["via_device_id"] == "main-device-id"
 
     assert cascade is not None
     assert cascade["identifiers"] == {(DOMAIN, "entry_module_cascade")}
-    assert cascade["via_device"] == (DOMAIN, "entry")
+    assert cascade["via_device_id"] == "main-device-id"
 
     assert auxiliary is not None
     assert auxiliary["identifiers"] == {(DOMAIN, "entry_module_auxiliary_heat")}
-    assert auxiliary["via_device"] == (DOMAIN, "entry")
+    assert auxiliary["via_device_id"] == "main-device-id"
 
     assert dhw is not None
     assert dhw["identifiers"] == {(DOMAIN, "entry_module_domestic_hot_water")}
     assert dhw["name"] == "Warmwasser"
-    assert dhw["via_device"] == (DOMAIN, "entry")
+    assert dhw["via_device_id"] == "main-device-id"
 
     assert diagnostics is not None
     assert diagnostics["identifiers"] == {(DOMAIN, "entry_module_diagnostics")}
     assert diagnostics["name"] == "Diagnose"
-    assert diagnostics["via_device"] == (DOMAIN, "entry")
+    assert diagnostics["via_device_id"] == "main-device-id"
 
 
 def test_expected_modules_are_created_only_when_sources_exist() -> None:

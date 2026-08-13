@@ -124,7 +124,7 @@ Maintainer sollten vor einem stabilen Release den
 
 ## 🔑 Voraussetzungen
 
-- Home Assistant **2026.5.0+**
+- Home Assistant **2026.8.1+**
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen

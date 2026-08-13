@@ -282,6 +282,20 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         await self._async_write_mode(val)
 
     async def async_set_preset_mode(self, preset_mode: str) -> None:
+        """Set the preset mode, without silently reversing an active cooling circuit.
+
+        ECO/NORMAL are heating-only register values (see ``hvac_mode``); there
+        is no cooling-side ECO. Writing either while the circuit is in
+        ``MANUAL_COOL`` would silently switch it from cooling to heating, so
+        that case is rejected instead of overwritten.
+        """
+        if self.hvac_mode == HVACMode.COOL:
+            raise HomeAssistantError(
+                translation_domain=DOMAIN,
+                translation_key="preset_mode_unavailable_while_cooling",
+                translation_placeholders={"circuit": self._circuit},
+            )
+
         if preset_mode == PRESET_ECO:
             val = CircuitMode.ECO
         else:

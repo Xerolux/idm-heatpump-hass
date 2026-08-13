@@ -15,6 +15,146 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.11.0-beta.4] - 2026-08-13
+
+Vierte Beta der 0.11.x-Linie. Vollständige Codeprüfung der gesamten
+Integration (nicht nur des tmodbus-Transports): acht real bestätigte,
+unabhängig gefundene Fehler behoben, dazu die `via_device`→
+`via_device_id`-Migration und die angehobene HA-Mindestversion.
+
+### Changed
+
+- **Min. Home Assistant auf `2026.8.1` angehoben; `via_device` → `via_device_id`
+  migriert:** HA Core 2026.8 deprecatet `DeviceInfo["via_device"]` zugunsten
+  von `via_device_id` (siehe [Home Assistant Developer Blog: Devices are
+  restricted to a single config entry and at most one
+  subentry](https://developers.home-assistant.io/blog/2026/07/21/device-registry-single-config-entry/)),
+  weil Geräte-Identifier ab 2026.8 nicht mehr global, sondern nur noch pro
+  Config Entry eindeutig sind. `device_hierarchy.py` erzeugt jetzt beim Setup
+  (`precreate_main_device`) das Hauptgerät **und** alle erwarteten
+  Sub-Geräte (Heizkreise, Zonenmodule, Zonenräume, optionale Module) im
+  Voraus, cacht deren registry-vergebene Geräte-IDs auf dem Coordinator und
+  verlinkt Sub-Geräte darüber per `via_device_id` statt per
+  Identifier-Tupel. `build_subdevice_info()` bleibt dadurch weiterhin eine
+  reine, registry-freie Funktion (keine Signaturänderung an den
+  Aufrufstellen in `entity.py`/`climate.py`/`water_heater.py`/`button.py`
+  nötig). `hacs.json`, CI- und Release-Workflows, README/Wiki und
+  `AGENTS.md`/`CLAUDE.md` sind auf `2026.8.1` (aktuell gepinnte, reale
+  PyPI-Stable-Version) angehoben. `via_device` selbst wird von Home Assistant
+  erst in `2027.8` entfernt; diese Migration ist also vorausschauend, nicht
+  akut erzwungen.
+
+### Fixed
+
+- **Veraltete `idm-heatpump-api[web]==0.9.1`-Referenzen korrigiert:** Kommentare
+  und Dokumentation (`__init__.py`, `log_filter.py`, `quality_scale.yaml`,
+  `docs/MAINTENANCE.md`, `.github/ISSUE_TEMPLATE/modbus_transport_modernization.md`)
+  nannten noch den vor der 0.11.0-beta.2-Umstellung gepinnten API-Stand
+  `0.9.1`, obwohl `manifest.json` seither `idm-heatpump-api[web]==1.0.0`
+  verlangt. Funktional ohne Auswirkung (nur Kommentare/Doku); behoben, um
+  Verwechslungen bei zukünftigen Release-Checks zu vermeiden.
+- **`climate.py`: Voreinstellungsmodus konnte einen kühlenden Heizkreis
+  stillschweigend auf Heizen umschalten.** `IdmHeatingCircuitClimate.
+  async_set_preset_mode` schrieb bei jeder Preset-Auswahl unbedingt
+  `CircuitMode.ECO`/`NORMAL` — beide dekodieren zu `HVACMode.HEAT`. War der
+  Heizkreis gerade in `MANUAL_COOL` (Sommerkühlung), schaltete ein einfacher
+  `climate.set_preset_mode`-Aufruf (z. B. aus einer Automatisierung) den
+  Kreis unbemerkt von Kühlen auf Heizen um, weil es keinen
+  Kühl-Eco-Registerwert gibt. Preset-Wechsel im Kühlmodus werden jetzt mit
+  einer übersetzten `HomeAssistantError` abgelehnt statt den Modus
+  umzuschreiben.
+- **`services.py`: `write_register` konnte mit unbehandeltem `KeyError`
+  abstürzen.** Die Dienstregistrierung übergibt kein `schema=`, daher ist
+  `required: true` in `services.yaml` nur UI-Hinweis, kein serverseitiger
+  Zwang — ein Skript/eine Automatisierung, die `address` oder `value`
+  auslässt, löste zuvor einen rohen `KeyError` statt der überall sonst in
+  dieser Datei verwendeten `ServiceValidationError` aus. Fehlende Felder und
+  eine nicht-numerische `address` liefern jetzt übersetzte
+  `ServiceValidationError`s.
+- **`diagnostics.py`: Host/Port des Modbus-Clients konnten über `last_error`
+  ungeschwärzt exportiert werden.** `async_redact_data` schwärzt nur nach
+  Dict-Schlüssel, nicht nach Inhalt. Ein Verbindungsfehler wie
+  `"could not connect to 192.168.1.100:502"` landete unverändert unter dem
+  Schlüssel `last_error` (nicht in `TO_REDACT`) im Diagnose-Export — im
+  Gegensatz zum Web-Fehlerpfad, der dafür bereits eine eigene Sanitisierung
+  hatte. `last_error` wird jetzt genau wie der Web-Fehler auf eine sichere
+  Kategorie-Bezeichnung reduziert, bevor die Schlüssel-Schwärzung greift.
+- **`adapter_registers.py`: `id()`-basierter Cache-Schlüssel konnte
+  Registerkarten zwischen Config Entries/Reloads vertauschen.**
+  `_FILTERED_REGISTER_MAP_CACHE` nutzte `id(model_info)` als Teil des
+  Cache-Schlüssels; `id()` ist nur eindeutig unter gleichzeitig lebenden
+  Objekten. Nach einem Reload oder einer Web-Modellkorrektur wird das alte
+  `IdmModelInfo`-Objekt verworfen, und CPython kann dessen Adresse für ein
+  neues Objekt eines *anderen* Config Entry wiederverwenden — bei einer
+  Adresskollision hätte z. B. ein Navigator-20-Entry die
+  Navigator-10-spezifische Registerkarte (inkl. Booster-Registern) eines
+  anderen Entries geerbt. Der Cache vergleicht jetzt `model_info` selbst
+  (Dataclass-`__eq__`) statt seiner Objektadresse.
+- **`select.py`: `exclude_from_write` wurde für nicht slug-gemappte
+  Enum-Register ignoriert.** Nur Register mit Übersetzungs-Slug-Map (z. B.
+  `system_mode`, `hc_*_mode`) filterten ausgeschlossene Werte aus
+  `_attr_options`; alle anderen schreibbaren Enum-Register übernahmen
+  `reg.enum_options` ungefiltert, obwohl `library_adapter.py` dieselben
+  Werte in der Entity-Beschreibung bereits korrekt herausfiltert. Mit den
+  aktuell gepinnten Registerdaten aktuell nicht ausnutzbar (das einzige
+  `exclude_from_write`-Register ist slug-gemappt), aber ein latenter Fehler,
+  der beim nächsten `idm-heatpump-api`-Update sofort wieder aktiv werden
+  konnte. Die Filterung gilt jetzt unabhängig von einer Slug-Map.
+- **`config_flow.py`: Der Reconfigure-„connection"-Schritt verwarf gerade
+  eingegebene Werte bei den meisten Validierungsfehlern.** Das erneute
+  Rendern des Formulars nach einem Fehler baute die vorausgefüllten Werte
+  aus `self._data or entry.data` statt aus dem gerade abgeschickten
+  `user_input` — `self._data` wird nur bei Erfolg befüllt. Bei einem
+  falschen Web-PIN, einem doppelten Host o. ä. sprang das Host-Feld
+  unbemerkt auf den alten gespeicherten Wert zurück, auch wenn der
+  Nutzer ihn gerade korrigiert hatte. `async_step_user` machte das bereits
+  richtig (`user_input or {}`); `async_step_connection` folgt jetzt demselben
+  Muster.
+- **`entity.py`: `build_device_info()` cachte `DeviceInfo` dauerhaft, auch
+  nach einer Entry-Umbenennung.** Der Cache berechnete einen `cache_key` zur
+  Änderungserkennung, verglich ihn aber nie mit dem gespeicherten Eintrag —
+  nur dessen bloße Existenz wurde geprüft. Eine Config-Entry-Umbenennung
+  ändert ausschließlich `entry.title` (bewusst nicht Teil des
+  Reload-Fingerprints, damit ein Rename keinen Reload mit Abbruch von
+  Modbus/Web/DHW-Boost-Tasks auslöst), sodass der zwischengespeicherte alte
+  Gerätename nie aktualisiert wurde. Der Cache vergleicht den `cache_key`
+  jetzt tatsächlich, bevor er den zwischengespeicherten Wert zurückgibt.
+- **`coordinator.py`: `_room_mode_validation_counter` wurde bei
+  `setup_registers()` nicht zurückgesetzt.** Nach einer Rekonfiguration
+  (z. B. neue Zone hinzugefügt) konnte der Zähler mitten im
+  Skip-Zyklus stehen, sodass ein frisch hinzugefügtes
+  Zonenraum-Mode-Register bis zu 5 Polling-Zyklen auf seine erste
+  Einzelvalidierung warten musste, statt sie sofort zu bekommen. Der Zähler
+  wird jetzt bei jedem `setup_registers()`-Aufruf zurückgesetzt.
+- **`CLAUDE.md`/`AGENTS.md`: Versions-Snapshot war zwei Releases veraltet.**
+  Beide Dateien nannten noch `0.11.0-beta.1`, obwohl `manifest.json` bereits
+  bei `0.11.0-beta.3` war.
+
+### Verified
+
+- Vollständige, mehrstufige Codeprüfung der gesamten Integration (nicht nur
+  des Diffs): config_flow.py, coordinator.py, alle Entity-Plattformen,
+  climate/water_heater/button/services, Adapter-/Registermapping-Dateien
+  sowie web_data/diagnostics/repairs auf konkrete, reproduzierbare Fehler
+  geprüft. 1082/1082 Tests grün (inkl. neuer Regressionstests für jeden
+  behobenen Fehler), mypy (strict) und ruff sauber.
+- Der tmodbus-Transport (`modbus_transport.py`/`modbus_client.py`) wurde gegen
+  die real gepinnten Pakete (`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`,
+  `idm-heatpump-api[web]==1.0.0`, nicht die Test-Stubs) end-to-end gegen einen
+  echten tmodbus-TCP-Server geprüft: Connect, FC03/FC04-Reads, FC16-Write,
+  Illegal-Address-Mapping (`exception_code=2` → `IllegalAddressError`) und
+  Reconnect nach `close()` funktionieren wie im API-1.0-Vertrag dokumentiert.
+- Bekannt und bewusst zurückgestellt (kein akuter Fix in dieser Version):
+  `repairs.py`/`coordinator.py` verwenden globale, nicht pro Config-Entry
+  skopierte Repair-Issue-IDs (`web_pin_missing`,
+  `web_authentication_failed`) — bei zwei Wärmepumpen mit gleichzeitig
+  fehlendem Web-PIN kann der zweite Entry das Issue des ersten überschreiben.
+  `coordinator.py`s breites `except Exception` in `_async_update_data`/
+  `async_refresh_web_supplement` klassifiziert auch echte Programmfehler als
+  „cannot_connect"/„web_supplement_failed" statt sie sichtbar zu machen —
+  eine bewusste Resilienz-Abwägung, die eine gezielte Unterscheidung
+  „Kommunikationsfehler vs. Programmfehler" erfordert.
+
 ## [0.11.0-beta.3] - 2026-08-05
 
 Dritte Beta der 0.11.x-Linie. Behält den tmodbus-Laufzeitpfad

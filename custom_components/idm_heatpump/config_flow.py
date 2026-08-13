@@ -999,7 +999,11 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             },
                         )
 
-        current_data = self._data or entry.data
+        # Re-show the user's just-typed values on a validation/detection
+        # failure, not the stale stored entry data — self._data is only
+        # populated on success paths above, so falling back to it here would
+        # silently discard whatever the user just corrected and re-submitted.
+        current_data = user_input or self._data or entry.data
         suggested = {
             CONF_HOST: current_data[CONF_HOST],
             CONF_PORT: current_data.get(CONF_PORT, DEFAULT_PORT),
