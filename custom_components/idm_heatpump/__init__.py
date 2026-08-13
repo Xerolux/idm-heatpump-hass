@@ -216,10 +216,8 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, 
     (e.g. older firmware, transient Modbus error) or is inconclusive, so setup
     never fails because of this.
 
-    firmware_version is read via getattr defensively: idm-heatpump-api 0.3.4
-    does not expose it on IdmModelInfo yet, but a future release is expected
-    to add it. This picks it up automatically once available, without a
-    version bump here or raising on the current release.
+    firmware_version is read via getattr defensively so a test double or a
+    future IdmModelInfo shape that omits the field never raises here.
     """
     try:
         try:
@@ -352,8 +350,8 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     from .log_filter import install_pymodbus_log_filter
     from .services import async_setup_services
 
-    # Keep the narrow compatibility filters while idm-heatpump-api 0.9.1 still
-    # imports pymodbus. The active Modbus socket itself is owned by tmodbus.
+    # Keep the narrow compatibility filters while the pinned idm-heatpump-api
+    # still imports pymodbus. The active Modbus socket itself is owned by tmodbus.
     install_pymodbus_log_filter()
 
     await async_setup_services(hass)

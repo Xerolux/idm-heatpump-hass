@@ -2,7 +2,7 @@
 
 Two sources of log spam are suppressed here:
 
-1. **pymodbus** remains imported by ``idm-heatpump-api`` 0.9.1 for
+1. **pymodbus** remains imported by the pinned ``idm-heatpump-api`` for
    compatibility, although the integration's active socket now uses tmodbus.
    Keep the existing narrow filters until that compatibility dependency can be
    removed, so an older or fallback API path cannot reintroduce its routine

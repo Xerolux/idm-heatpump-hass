@@ -13,7 +13,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-Noch keine Änderungen.
+### Fixed
+
+- **Veraltete `idm-heatpump-api[web]==0.9.1`-Referenzen korrigiert:** Kommentare
+  und Dokumentation (`__init__.py`, `log_filter.py`, `quality_scale.yaml`,
+  `docs/MAINTENANCE.md`, `.github/ISSUE_TEMPLATE/modbus_transport_modernization.md`)
+  nannten noch den vor der 0.11.0-beta.2-Umstellung gepinnten API-Stand
+  `0.9.1`, obwohl `manifest.json` seither `idm-heatpump-api[web]==1.0.0`
+  verlangt. Funktional ohne Auswirkung (nur Kommentare/Doku); behoben, um
+  Verwechslungen bei zukünftigen Release-Checks zu vermeiden.
+
+### Verified
+
+- Der tmodbus-Transport (`modbus_transport.py`/`modbus_client.py`) wurde gegen
+  die real gepinnten Pakete (`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`,
+  `idm-heatpump-api[web]==1.0.0`, nicht die Test-Stubs) end-to-end gegen einen
+  echten tmodbus-TCP-Server geprüft: Connect, FC03/FC04-Reads, FC16-Write,
+  Illegal-Address-Mapping (`exception_code=2` → `IllegalAddressError`) und
+  Reconnect nach `close()` funktionieren wie im API-1.0-Vertrag dokumentiert.
+  mypy (strict) und ruff bleiben gegen die echten Pakete sauber; 1074/1074
+  Tests grün.
 
 ## [0.11.0-beta.3] - 2026-08-05
 
