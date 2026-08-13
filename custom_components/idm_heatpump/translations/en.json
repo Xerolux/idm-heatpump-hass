@@ -586,6 +586,9 @@
     "acknowledge_risk_required": {
       "message": "You must set acknowledge_risk to true to use the write_register service."
     },
+    "preset_mode_unavailable_while_cooling": {
+      "message": "Heating circuit {circuit} is currently in cooling mode; preset mode only applies while heating. Switch to heat mode first."
+    },
     "write_failed": {
       "message": "Register {register} could not be written. Check the value and try again. Enable debug logging if the problem continues."
     },
@@ -606,6 +609,12 @@
     },
     "invalid_datatype": {
       "message": "Invalid datatype: \"{datatype}\". Valid values: uint16, int16, float, uchar, bool."
+    },
+    "write_register_missing_fields": {
+      "message": "The write_register service requires both address and value."
+    },
+    "invalid_address": {
+      "message": "Invalid register address \"{value}\". Provide a numeric register address."
     },
     "invalid_value": {
       "message": "Invalid value \"{value}\" for datatype {datatype}."

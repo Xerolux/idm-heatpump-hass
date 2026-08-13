@@ -289,6 +289,32 @@ class TestWriteRegister:
         with pytest.raises(ServiceValidationError):
             await _handle_write_register(mock_hass, call)
 
+    async def test_missing_address_raises_service_validation_error(self, mock_hass):
+        """hass.services.async_register is called without a schema=, so
+        services.yaml's required: true is UI-only, not server-enforced; a
+        caller omitting a required field must get a translated
+        ServiceValidationError, not an unhandled KeyError.
+        """
+        _make_coordinator_in_hass(mock_hass)
+        call = MagicMock()
+        call.data = {"value": 5, "acknowledge_risk": True}
+        with pytest.raises(ServiceValidationError):
+            await _handle_write_register(mock_hass, call)
+
+    async def test_missing_value_raises_service_validation_error(self, mock_hass):
+        _make_coordinator_in_hass(mock_hass)
+        call = MagicMock()
+        call.data = {"address": 1000, "acknowledge_risk": True}
+        with pytest.raises(ServiceValidationError):
+            await _handle_write_register(mock_hass, call)
+
+    async def test_non_numeric_address_raises_service_validation_error(self, mock_hass):
+        _make_coordinator_in_hass(mock_hass)
+        call = MagicMock()
+        call.data = {"address": "not-a-number", "value": 5, "acknowledge_risk": True}
+        with pytest.raises(ServiceValidationError):
+            await _handle_write_register(mock_hass, call)
+
     async def test_writes_int_value(self, mock_hass):
         coord = _make_coordinator_in_hass(mock_hass)
         call = MagicMock()

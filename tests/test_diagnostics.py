@@ -153,6 +153,26 @@ class TestDiagnostics:
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
         assert result["data"]["web_supplement"]["last_error"] == "Web supplement error"
 
+    async def test_client_diagnostics_last_error_does_not_expose_host(self, mock_hass, mock_config_entry):
+        """A raw transport connection error carries the plaintext host:port
+        (e.g. "could not connect to 192.168.1.100:502"). async_redact_data
+        only redacts by dict key, so this free-text field must be sanitized
+        before it ever reaches the exported diagnostics.
+        """
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.client_diagnostics = MagicMock(
+            return_value={
+                "last_error": "could not connect to 192.168.1.100:502",
+                "transport": {"host": "192.168.1.100", "connected": False},
+            }
+        )
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        client_diag = result["data"]["client_diagnostics"]
+        assert "192.168.1.100" not in str(client_diag)
+        assert client_diag["last_error"] == "Connection error"
+
     async def test_contains_detected_model_details(self, mock_hass, mock_config_entry):
         _make_hass_with_coordinator(mock_hass, mock_config_entry)
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)

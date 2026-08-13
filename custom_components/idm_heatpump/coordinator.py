@@ -272,6 +272,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # time), so precompute them once instead of re-scanning all registers
         # on every poll.
         self._room_mode_registers = [reg for reg in self._registers if _is_zone_room_mode_register(reg)]
+        # Reset so the next poll always individually validates the (possibly
+        # new) room-mode register set, instead of picking up mid-cycle where
+        # a reconfigure (e.g. adding a zone) could skip a newly added
+        # register's first read for up to _room_mode_validation_interval polls.
+        self._room_mode_validation_counter = 0
         self._invalidate_device_info_cache()
 
     def attach_operation_analysis(self, analysis: OperationAnalysis) -> None:

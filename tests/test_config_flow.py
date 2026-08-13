@@ -897,9 +897,20 @@ class TestAsyncStepReconfigure:
         entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
         entry.title = "IDM"
 
+        # Spy on add_suggested_values_to_schema (the stub is a passthrough
+        # that drops data_schema from the returned form result, so the
+        # suggested values must be captured at the call site instead).
+        captured_suggested = {}
+        original_add_suggested = flow.add_suggested_values_to_schema
+
+        def _capture_suggested(schema, suggested_values):
+            captured_suggested.update(suggested_values)
+            return original_add_suggested(schema, suggested_values)
+
         with (
             patch.object(flow, "_get_reconfigure_entry", return_value=entry),
             patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "add_suggested_values_to_schema", side_effect=_capture_suggested),
             patch.object(
                 flow,
                 "_async_detect_web_supplement",
@@ -917,6 +928,11 @@ class TestAsyncStepReconfigure:
 
         assert result["type"] == "form"
         assert result["errors"][CONF_WEB_PIN] == "invalid_web_pin"
+        # The just-typed host must survive the error round-trip, not revert to
+        # the entry's stale stored host (self._data is only populated on
+        # success paths, so falling back to it/entry.data here would
+        # silently discard the user's correction).
+        assert captured_suggested["host"] == "idm.local"
 
     async def test_reconfigure_unreachable_web_interface_shows_error(self):
         flow = _make_flow()
