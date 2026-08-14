@@ -123,6 +123,20 @@
               "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
             }
           },
+          "humidity_forwarding_section": {
+            "name": "External humidity",
+            "description": "Optional forwarding of one Home Assistant humidity sensor to the IDM GLT humidity register.",
+            "data": {
+              "humidity_forwarding": "Forward external humidity",
+              "humidity_forwarding_interval": "Forwarding interval",
+              "humidity_forwarding_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "humidity_forwarding": "Writes a selected Home Assistant humidity sensor to the global GLT humidity register.",
+              "humidity_forwarding_interval": "How often the selected humidity is checked; state changes are also forwarded immediately.",
+              "humidity_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+            }
+          },
           "advanced_modbus": {
             "name": "Advanced Modbus settings",
             "description": "For experienced users only. The defaults are recommended. Polling jitter spreads requests, diagnostics creates extra entities, and the write cooldown blocks rapid repeat writes. The general write cooldown and EEPROM protection operate independently.",
@@ -193,6 +207,16 @@
           "room_temp_forwarding_e": "Forward this sensor to hc_e_ext_room_temp.",
           "room_temp_forwarding_f": "Forward this sensor to hc_f_ext_room_temp.",
           "room_temp_forwarding_g": "Forward this sensor to hc_g_ext_room_temp."
+        }
+      },
+      "humidity_forwarding": {
+        "title": "External humidity forwarding – {name}",
+        "description": "Select one Home Assistant humidity sensor. The integration writes this value to the IDM GLT humidity register. Leave it empty to skip humidity forwarding.",
+        "data": {
+          "humidity_forwarding_entity": "Humidity sensor"
+        },
+        "data_description": {
+          "humidity_forwarding_entity": "Forward this sensor to ext_humidity."
         }
       },
       "modbus_failed": {
@@ -302,6 +326,20 @@
               "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
               "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
               "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+            }
+          },
+          "humidity_forwarding_section": {
+            "name": "External humidity",
+            "description": "Optional forwarding of one Home Assistant humidity sensor to the IDM GLT humidity register.",
+            "data": {
+              "humidity_forwarding": "Forward external humidity",
+              "humidity_forwarding_interval": "Forwarding interval",
+              "humidity_forwarding_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "humidity_forwarding": "Writes a selected Home Assistant humidity sensor to the global GLT humidity register.",
+              "humidity_forwarding_interval": "How often the selected humidity is checked; state changes are also forwarded immediately.",
+              "humidity_forwarding_tolerance": "Only write again after the value changed by at least this amount."
             }
           },
           "advanced_modbus": {

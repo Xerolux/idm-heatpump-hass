@@ -123,6 +123,20 @@
               "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
             }
           },
+          "humidity_forwarding_section": {
+            "name": "Externe Feuchte",
+            "description": "Optionale Weitergabe eines Home-Assistant-Feuchtesensors an das IDM-GLT-Feuchteregister.",
+            "data": {
+              "humidity_forwarding": "Externe Feuchte weitergeben",
+              "humidity_forwarding_interval": "Prüfintervall",
+              "humidity_forwarding_tolerance": "Änderungstoleranz"
+            },
+            "data_description": {
+              "humidity_forwarding": "Schreibt einen ausgewählten Home-Assistant-Feuchtesensor an das globale GLT-Feuchteregister.",
+              "humidity_forwarding_interval": "Wie oft die Feuchte geprüft wird; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
+              "humidity_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
+            }
+          },
           "advanced_modbus": {
             "name": "Erweiterte Modbus-Einstellungen",
             "description": "Nur für erfahrene Nutzer. Die Standardwerte werden empfohlen. Polling-Jitter verteilt Abfragen, die Diagnoseoption erstellt zusätzliche Entitäten und der Schreib-Cooldown blockiert zu schnelle Wiederholungen. Der allgemeine Schreib-Cooldown und der EEPROM-Schreibschutz wirken unabhängig voneinander.",
@@ -171,6 +185,16 @@
           "zone_7_rooms": "Anzahl der aktiven Raumfühler in Zone 8 (1–8).",
           "zone_8_rooms": "Anzahl der aktiven Raumfühler in Zone 9 (1–8).",
           "zone_9_rooms": "Anzahl der aktiven Raumfühler in Zone 10 (1–8)."
+        }
+      },
+      "humidity_forwarding": {
+        "title": "Externe Feuchte weitergeben – {name}",
+        "description": "Wähle einen Home-Assistant-Feuchtesensor aus. Die Integration schreibt diesen Wert in das IDM-GLT-Feuchteregister. Leer lassen, um die Feuchteweitergabe zu überspringen.",
+        "data": {
+          "humidity_forwarding_entity": "Feuchtesensor"
+        },
+        "data_description": {
+          "humidity_forwarding_entity": "Gibt diesen Sensor an ext_humidity weiter."
         }
       },
       "room_temp_forwarding": {
@@ -304,6 +328,20 @@
               "room_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
             }
           },
+          "humidity_forwarding_section": {
+            "name": "Externe Feuchte",
+            "description": "Optionale Weitergabe eines Home-Assistant-Feuchtesensors an das IDM-GLT-Feuchteregister.",
+            "data": {
+              "humidity_forwarding": "Externe Feuchte weitergeben",
+              "humidity_forwarding_interval": "Prüfintervall",
+              "humidity_forwarding_tolerance": "Änderungstoleranz"
+            },
+            "data_description": {
+              "humidity_forwarding": "Schreibt einen ausgewählten Home-Assistant-Feuchtesensor an das globale GLT-Feuchteregister.",
+              "humidity_forwarding_interval": "Wie oft die Feuchte geprüft wird; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
+              "humidity_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
+            }
+          },
           "advanced_modbus": {
             "name": "Erweiterte Modbus-Einstellungen",
             "description": "Nur für erfahrene Nutzer. Die Standardwerte werden empfohlen. Polling-Jitter verteilt Abfragen, die Diagnoseoption erstellt zusätzliche Entitäten und der Schreib-Cooldown blockiert zu schnelle Wiederholungen. Der allgemeine Schreib-Cooldown und der EEPROM-Schreibschutz wirken unabhängig voneinander.",
@@ -352,6 +390,16 @@
           "zone_7_rooms": "Anzahl der aktiven Raumfühler in Zone 8 (1–8).",
           "zone_8_rooms": "Anzahl der aktiven Raumfühler in Zone 9 (1–8).",
           "zone_9_rooms": "Anzahl der aktiven Raumfühler in Zone 10 (1–8)."
+        }
+      },
+      "humidity_forwarding": {
+        "title": "Externe Feuchte weitergeben – {name}",
+        "description": "Wähle einen Home-Assistant-Feuchtesensor aus. Die Integration schreibt diesen Wert in das IDM-GLT-Feuchteregister. Leer lassen, um die Feuchteweitergabe zu überspringen.",
+        "data": {
+          "humidity_forwarding_entity": "Feuchtesensor"
+        },
+        "data_description": {
+          "humidity_forwarding_entity": "Gibt diesen Sensor an ext_humidity weiter."
         }
       },
       "room_temp_forwarding": {

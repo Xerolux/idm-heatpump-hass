@@ -48,6 +48,10 @@ from .const import (
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_HUMIDITY_FORWARDING,
+    CONF_HUMIDITY_FORWARDING_ENTITY,
+    CONF_HUMIDITY_FORWARDING_INTERVAL,
+    CONF_HUMIDITY_FORWARDING_TOLERANCE,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
@@ -71,6 +75,9 @@ from .const import (
     DEFAULT_EEPROM_WRITE_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
+    DEFAULT_HUMIDITY_FORWARDING,
+    DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
+    DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_POLLING_JITTER,
@@ -111,7 +118,12 @@ from .registers import (
     get_all_switch_descriptions,
     normalize_zone_rooms,
 )
-from .room_temp_forwarding import RoomTempForwarder, RoomTempForwardingConfig
+from .room_temp_forwarding import (
+    HumidityForwarder,
+    HumidityForwardingConfig,
+    RoomTempForwarder,
+    RoomTempForwardingConfig,
+)
 from .versions import async_runtime_versions
 from .web_data import (
     IdmWebAuthenticationFailed,
@@ -157,6 +169,7 @@ class IdmHeatpumpData:
     client: IdmModbusClient
     web_task: asyncio.Task[None] | None = None
     room_temp_forwarding_task: asyncio.Task[None] | None = None
+    humidity_forwarding_task: asyncio.Task[None] | None = None
     operation_analysis: OperationAnalysis | None = None
     reload_fingerprint: str | None = None
     loaded_platforms: tuple[Platform, ...] = ()
@@ -550,6 +563,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     room_temp_forwarding_tolerance = float(
         entry.options.get(CONF_ROOM_TEMP_FORWARDING_TOLERANCE, DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE)
     )
+    humidity_forwarding_enabled = bool(entry.options.get(CONF_HUMIDITY_FORWARDING, DEFAULT_HUMIDITY_FORWARDING))
+    humidity_forwarding_entity = str(entry.options.get(CONF_HUMIDITY_FORWARDING_ENTITY, "")).strip()
+    humidity_forwarding_interval = int(
+        entry.options.get(CONF_HUMIDITY_FORWARDING_INTERVAL, DEFAULT_HUMIDITY_FORWARDING_INTERVAL)
+    )
+    humidity_forwarding_tolerance = float(
+        entry.options.get(CONF_HUMIDITY_FORWARDING_TOLERANCE, DEFAULT_HUMIDITY_FORWARDING_TOLERANCE)
+    )
     modbus_timeout = float(entry.options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT))
     modbus_max_retries = int(entry.options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES))
     polling_jitter = int(entry.options.get(CONF_POLLING_JITTER, DEFAULT_POLLING_JITTER))
@@ -918,6 +939,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     forwarder.async_run(),
                     name=f"{DOMAIN}_room_temp_{entry.entry_id}",
                 )
+
+        if humidity_forwarding_enabled and humidity_forwarding_entity:
+            humidity_forwarder = HumidityForwarder(
+                hass,
+                coordinator,
+                HumidityForwardingConfig(
+                    entity_id=humidity_forwarding_entity,
+                    interval=humidity_forwarding_interval,
+                    tolerance=humidity_forwarding_tolerance,
+                ),
+            )
+            entry.runtime_data.humidity_forwarding_task = _create_entry_background_task(
+                hass,
+                entry,
+                humidity_forwarder.async_run(),
+                name=f"{DOMAIN}_humidity_{entry.entry_id}",
+            )
     except Exception:
         try:
             await client.disconnect()
@@ -960,6 +998,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
             room_temp_forwarding_task.cancel()
             try:
                 await room_temp_forwarding_task
+            except asyncio.CancelledError:
+                pass
+        humidity_forwarding_task = getattr(entry.runtime_data, "humidity_forwarding_task", None)
+        if isinstance(humidity_forwarding_task, asyncio.Task):
+            humidity_forwarding_task.cancel()
+            try:
+                await humidity_forwarding_task
             except asyncio.CancelledError:
                 pass
         try:
