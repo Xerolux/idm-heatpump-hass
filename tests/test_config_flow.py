@@ -22,6 +22,10 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_WEB_VARIANT,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_HUMIDITY_FORWARDING,
+    CONF_HUMIDITY_FORWARDING_ENTITY,
+    CONF_HUMIDITY_FORWARDING_INTERVAL,
+    CONF_HUMIDITY_FORWARDING_TOLERANCE,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
@@ -625,6 +629,73 @@ class TestAsyncStepOptions:
             "a": "sensor.living_room_temperature",
         }
 
+    async def test_humidity_forwarding_goes_to_sensor_selection_step(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_WEB_ENABLED: True,
+                CONF_WEB_SCAN_INTERVAL: 30,
+                CONF_HUMIDITY_FORWARDING: True,
+                CONF_HUMIDITY_FORWARDING_INTERVAL: 300,
+                CONF_HUMIDITY_FORWARDING_TOLERANCE: 2.0,
+            }
+        )
+        assert result["type"] == "form"
+        assert result["step_id"] == "humidity_forwarding"
+
+        result = await flow.async_step_humidity_forwarding(
+            {CONF_HUMIDITY_FORWARDING_ENTITY: "sensor.living_room_humidity"}
+        )
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_HUMIDITY_FORWARDING_ENTITY] == "sensor.living_room_humidity"
+
+    async def test_humidity_forwarding_entity_left_empty_is_stored_as_empty(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {CONF_HEATING_CIRCUITS: ["a"], CONF_HUMIDITY_FORWARDING: True}
+        result = await flow.async_step_humidity_forwarding({CONF_HUMIDITY_FORWARDING_ENTITY: ""})
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_HUMIDITY_FORWARDING_ENTITY] == ""
+
+    async def test_room_temp_then_humidity_forwarding_when_both_enabled(self):
+        """Both forwarding steps must chain in sequence when both are enabled."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_WEB_ENABLED: True,
+                CONF_WEB_SCAN_INTERVAL: 30,
+                CONF_ROOM_TEMP_FORWARDING: True,
+                CONF_ROOM_TEMP_FORWARDING_INTERVAL: 300,
+                CONF_ROOM_TEMP_FORWARDING_TOLERANCE: 0.2,
+                CONF_HUMIDITY_FORWARDING: True,
+                CONF_HUMIDITY_FORWARDING_INTERVAL: 300,
+                CONF_HUMIDITY_FORWARDING_TOLERANCE: 2.0,
+            }
+        )
+        assert result["step_id"] == "room_temp_forwarding"
+
+        result = await flow.async_step_room_temp_forwarding({"room_temp_forwarding_a": ""})
+        assert result["type"] == "form"
+        assert result["step_id"] == "humidity_forwarding"
+
+        result = await flow.async_step_humidity_forwarding(
+            {CONF_HUMIDITY_FORWARDING_ENTITY: "sensor.living_room_humidity"}
+        )
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_HUMIDITY_FORWARDING_ENTITY] == "sensor.living_room_humidity"
+
     async def test_with_zones_goes_to_zones_step(self):
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
@@ -679,6 +750,20 @@ class TestAsyncStepZones:
         result = await flow.async_step_zones({"zone_0_rooms": 3})
         assert result["type"] == "form"
         assert result["step_id"] == "room_temp_forwarding"
+        assert flow._options[CONF_ZONE_ROOMS] == {0: 3}
+
+    async def test_zones_then_humidity_forwarding_step_when_room_temp_disabled(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 1,
+            CONF_HUMIDITY_FORWARDING: True,
+        }
+        result = await flow.async_step_zones({"zone_0_rooms": 3})
+        assert result["type"] == "form"
+        assert result["step_id"] == "humidity_forwarding"
         assert flow._options[CONF_ZONE_ROOMS] == {0: 3}
 
 

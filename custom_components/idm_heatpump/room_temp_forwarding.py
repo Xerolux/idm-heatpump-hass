@@ -1,4 +1,14 @@
-"""Forward Home Assistant room sensor temperatures to IDM GLT registers."""
+"""Forward Home Assistant sensor values to IDM GLT registers.
+
+Two independent forwarders live here: ``RoomTempForwarder`` (one HA entity
+per heating circuit, into ``hc_{circuit}_ext_room_temp``) and
+``HumidityForwarder`` (a single HA entity into the one global
+``ext_humidity`` register — humidity has no per-circuit register). They stay
+as separate, small classes rather than one generalized multi-channel
+abstraction: the humidity case has no per-circuit loop or per-circuit
+tolerance keying, so unifying them would add indirection without a second
+concrete per-circuit use case to justify it.
+"""
 
 from __future__ import annotations
 
@@ -37,6 +47,15 @@ def _coerce_temperature(value: Any) -> float | None:
     if math.isnan(temperature) or abs(temperature) == float("inf"):
         return None
     return temperature
+
+
+def _coerce_humidity(value: Any) -> float | None:
+    humidity = _coerce_temperature(value)  # same float-parse/NaN/inf guard
+    if humidity is None:
+        return None
+    if not 0.0 <= humidity <= 100.0:
+        return None
+    return humidity
 
 
 def _register_for_circuit(coordinator: IdmCoordinator, circuit: str) -> RegisterDef | None:
@@ -168,3 +187,124 @@ class RoomTempForwarder:
 
         self._last_written[circuit] = temperature
         _LOGGER.debug("Forwarded room temperature %.2f from %s to %s", temperature, entity_id, reg.name)
+
+
+@dataclass(frozen=True)
+class HumidityForwardingConfig:
+    """Runtime configuration for external humidity forwarding."""
+
+    entity_id: str
+    interval: int
+    tolerance: float
+
+
+class HumidityForwarder:
+    """Copies one HA humidity sensor into the global IDM ext_humidity GLT register."""
+
+    def __init__(
+        self,
+        hass: HomeAssistant,
+        coordinator: IdmCoordinator,
+        config: HumidityForwardingConfig,
+    ) -> None:
+        self._hass = hass
+        self._coordinator = coordinator
+        self._config = config
+        self._last_written: float | None = None
+        self._unsub_state: Callable[[], None] | None = None
+        self._pending_forward_task: asyncio.Task[None] | None = None
+        self._debounce_seconds = 1.0
+
+    async def async_run(self) -> None:
+        """Run forwarding until cancelled."""
+        if self._config.entity_id:
+            self._unsub_state = async_track_state_change_event(
+                self._hass, [self._config.entity_id], self._handle_state_change
+            )
+        try:
+            await self.async_forward()
+            while True:
+                await asyncio.sleep(self._config.interval)
+                try:
+                    await self.async_forward()
+                except Exception:
+                    _LOGGER.exception("IDM humidity forwarding cycle failed; retrying next interval")
+        finally:
+            if self._pending_forward_task is not None and not self._pending_forward_task.done():
+                self._pending_forward_task.cancel()
+            self._pending_forward_task = None
+            if self._unsub_state is not None:
+                self._unsub_state()
+                self._unsub_state = None
+
+    def _handle_state_change(self, event: Any) -> None:
+        entity_id = event.data.get("entity_id")
+        if not isinstance(entity_id, str):
+            return
+        if self._pending_forward_task is not None and not self._pending_forward_task.done():
+            self._pending_forward_task.cancel()
+
+        async def _debounced() -> None:
+            try:
+                await asyncio.sleep(self._debounce_seconds)
+                await self.async_forward()
+            finally:
+                if self._pending_forward_task is not None and self._pending_forward_task.done():
+                    self._pending_forward_task = None
+
+        self._pending_forward_task = self._hass.async_create_task(_debounced())
+
+    async def async_forward(self) -> None:
+        entity_id = self._config.entity_id
+        if not entity_id:
+            return
+        state = self._hass.states.get(entity_id)
+        humidity = _coerce_humidity(getattr(state, "state", None))
+        if humidity is None:
+            _LOGGER.debug("Skipping IDM humidity forwarding from %s: invalid state", entity_id)
+            return
+
+        reg = self._coordinator.get_register("ext_humidity")
+        if reg is None:
+            _LOGGER.warning("Skipping IDM humidity forwarding: ext_humidity register not available")
+            return
+
+        if reg.min_val is not None and humidity < float(reg.min_val):
+            _LOGGER.warning(
+                "Skipping IDM humidity forwarding from %s to %s: %.2f is below %.2f",
+                entity_id,
+                reg.name,
+                humidity,
+                float(reg.min_val),
+            )
+            return
+        if reg.max_val is not None and humidity > float(reg.max_val):
+            _LOGGER.warning(
+                "Skipping IDM humidity forwarding from %s to %s: %.2f is above %.2f",
+                entity_id,
+                reg.name,
+                humidity,
+                float(reg.max_val),
+            )
+            return
+
+        if self._last_written is not None and abs(self._last_written - humidity) < self._config.tolerance:
+            return
+
+        try:
+            await self._coordinator.async_write_register(reg, humidity)
+        except Exception as err:
+            error_kind = classify_write_error(err)
+            _LOGGER.warning(
+                "Could not forward humidity %.2f from %s to %s because %s. "
+                "Check the source sensor and integration configuration",
+                humidity,
+                entity_id,
+                reg.name,
+                friendly_write_error(error_kind, reg.name),
+            )
+            _LOGGER.debug("Technical humidity forwarding error", exc_info=True)
+            return
+
+        self._last_written = humidity
+        _LOGGER.debug("Forwarded humidity %.2f from %s to %s", humidity, entity_id, reg.name)

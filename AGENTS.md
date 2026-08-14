@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.11.0-beta.4` (defined in `custom_components/idm_heatpump/manifest.json`; latest stable: `0.10.1`)
+- **Current Version**: `0.11.0-beta.5` (defined in `custom_components/idm_heatpump/manifest.json`; latest stable: `0.10.1`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
@@ -50,7 +50,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── adapter_registers.py          # Register-map filtering by model
 │   ├── adapter_glt.py                # GLT measurement detection helpers
 │   ├── web_data.py                   # Optional local Navigator web supplement client
-│   ├── room_temp_forwarding.py       # Forward HA room temperatures to GLT registers
+│   ├── room_temp_forwarding.py       # Forward HA room temperatures (per circuit) and humidity (global) to GLT registers
 │   ├── technician_codes.py           # Time-based Fachmann Ebene code calculation
 │   ├── internal_messages.py          # Human-readable labels for internal message codes
 │   ├── log_filter.py                 # Filters noisy pymodbus ERROR log records
@@ -76,6 +76,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_registers.py
 │   ├── test_repairs.py
 │   ├── test_room_temp_forwarding.py
+│   ├── test_humidity_forwarding.py
 │   ├── test_services.py
 │   ├── test_web_data.py
 │   ├── test_adapter_helpers.py
@@ -266,7 +267,8 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Web supplement | `web_data.py`, `coordinator.py` | Optional local Navigator web data (Nav 2.0 / Nav 10 / Pro) |
 | Web-only fallback | `__init__.py`, `config_flow.py` | Runs without Modbus when only web access is available |
 | tmodbus transport | `modbus_client.py`, `modbus_transport.py` | Default direct socket path; per-entry ownership, no central cross-entry sharing |
-| Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps to GLT registers |
+| Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps (per heating circuit) to GLT registers |
+| Humidity forwarding | `room_temp_forwarding.py` | Forwards one HA humidity sensor (global `ext_humidity`) to the GLT humidity register |
 | Climate entities | `climate.py` | Heating-circuit + zone-module room climates; routes writes through `coordinator.async_write_register` |
 | Water heater entity | `water_heater.py` | DHW target setpoint; only set up when both `dhw_temp_top` and `dhw_setpoint` exist |
 | Acknowledge-errors button | `button.py` | One-shot button writing the centralized acknowledge register |
