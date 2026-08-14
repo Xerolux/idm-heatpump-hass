@@ -8,9 +8,11 @@ import pytest
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.room_temp_forwarding import (
+    STORAGE_TEMP_REGISTER_NAMES,
     RoomTempForwarder,
     RoomTempForwardingConfig,
     _coerce_temperature,
+    register_for_storage_temp_key,
 )
 
 
@@ -148,6 +150,69 @@ async def test_run_loop_continues_after_forward_all_failure():
         pass
 
     assert forwarder.async_forward_all.await_count >= 2
+
+
+def _make_storage_coordinator():
+    reg = RegisterDef(
+        1716,
+        DataType.FLOAT,
+        "glt_heat_storage_temp",
+        unit="°C",
+        writable=True,
+    )
+    coord = MagicMock()
+    coord.get_register = MagicMock(side_effect=lambda name: reg if name == reg.name else None)
+    coord.async_write_register = AsyncMock()
+    return coord, reg
+
+
+class TestStorageTempKeyResolution:
+    def test_register_for_storage_key_resolves_all_fixed_keys(self):
+        coord = MagicMock()
+        coord.get_register = MagicMock(side_effect=lambda name: name)
+
+        for key, register_name in STORAGE_TEMP_REGISTER_NAMES.items():
+            assert register_for_storage_temp_key(coord, key) == register_name
+
+    def test_register_for_storage_key_returns_none_for_unknown_key(self):
+        coord = MagicMock()
+        assert register_for_storage_temp_key(coord, "unknown_key") is None
+        coord.get_register.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_forward_entity_writes_to_storage_register_via_injected_resolver():
+    """RoomTempForwarder reused for storage temps via register_for_key/key_label/value_label."""
+    coord, reg = _make_storage_coordinator()
+    hass = _make_hass("48.5")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(entities={"heat_storage": "sensor.heat_storage"}, interval=300, tolerance=0.2),
+        register_for_key=register_for_storage_temp_key,
+        key_label="storage key",
+        value_label="storage temperature",
+    )
+
+    await forwarder.async_forward_entity("sensor.heat_storage")
+
+    coord.async_write_register.assert_awaited_once_with(reg, 48.5)
+
+
+@pytest.mark.asyncio
+async def test_forward_entity_skips_unresolvable_storage_key():
+    coord, _reg = _make_storage_coordinator()
+    hass = _make_hass("48.5")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(entities={"unknown_key": "sensor.mystery"}, interval=300, tolerance=0.2),
+        register_for_key=register_for_storage_temp_key,
+    )
+
+    await forwarder.async_forward_entity("sensor.mystery")
+
+    coord.async_write_register.assert_not_awaited()
 
 
 def _make_event(entity_id):

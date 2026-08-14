@@ -137,6 +137,20 @@
               "humidity_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
             }
           },
+          "storage_temp_forwarding_section": {
+            "name": "Externe Speichertemperaturen (GLT)",
+            "description": "Optionale Weitergabe von Home-Assistant-Temperatursensoren an die IDM-GLT-Speicherregister.",
+            "data": {
+              "storage_temp_forwarding": "Externe Speichertemperaturen weitergeben",
+              "storage_temp_forwarding_interval": "Prüfintervall",
+              "storage_temp_forwarding_tolerance": "Änderungstoleranz"
+            },
+            "data_description": {
+              "storage_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die GLT-Register für Wärme-/Kälte-/Warmwasserspeicher.",
+              "storage_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
+              "storage_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
+            }
+          },
           "advanced_modbus": {
             "name": "Erweiterte Modbus-Einstellungen",
             "description": "Nur für erfahrene Nutzer. Die Standardwerte werden empfohlen. Polling-Jitter verteilt Abfragen, die Diagnoseoption erstellt zusätzliche Entitäten und der Schreib-Cooldown blockiert zu schnelle Wiederholungen. Der allgemeine Schreib-Cooldown und der EEPROM-Schreibschutz wirken unabhängig voneinander.",
@@ -195,6 +209,22 @@
         },
         "data_description": {
           "humidity_forwarding_entity": "Gibt diesen Sensor an ext_humidity weiter."
+        }
+      },
+      "storage_temp_forwarding": {
+        "title": "Externe Speichertemperaturen weitergeben – {name}",
+        "description": "Wähle je GLT-Speicherregister einen Home-Assistant-Temperatursensor aus. Die Integration schreibt diese Werte in die IDM-GLT-Speicherregister. Leere Felder werden übersprungen.",
+        "data": {
+          "storage_temp_forwarding_heat_storage": "Temperatursensor Wärmespeicher",
+          "storage_temp_forwarding_cold_storage": "Temperatursensor Kältespeicher",
+          "storage_temp_forwarding_dhw_bottom": "Temperatursensor Warmwasserspeicher unten",
+          "storage_temp_forwarding_dhw_top": "Temperatursensor Warmwasserspeicher oben"
+        },
+        "data_description": {
+          "storage_temp_forwarding_heat_storage": "Gibt diesen Sensor an glt_heat_storage_temp weiter.",
+          "storage_temp_forwarding_cold_storage": "Gibt diesen Sensor an glt_cold_storage_temp weiter.",
+          "storage_temp_forwarding_dhw_bottom": "Gibt diesen Sensor an glt_dhw_temp_bottom weiter.",
+          "storage_temp_forwarding_dhw_top": "Gibt diesen Sensor an glt_dhw_temp_top weiter."
         }
       },
       "room_temp_forwarding": {
@@ -342,6 +372,20 @@
               "humidity_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
             }
           },
+          "storage_temp_forwarding_section": {
+            "name": "Externe Speichertemperaturen (GLT)",
+            "description": "Optionale Weitergabe von Home-Assistant-Temperatursensoren an die IDM-GLT-Speicherregister.",
+            "data": {
+              "storage_temp_forwarding": "Externe Speichertemperaturen weitergeben",
+              "storage_temp_forwarding_interval": "Prüfintervall",
+              "storage_temp_forwarding_tolerance": "Änderungstoleranz"
+            },
+            "data_description": {
+              "storage_temp_forwarding": "Schreibt ausgewählte Home-Assistant-Temperatursensoren an die GLT-Register für Wärme-/Kälte-/Warmwasserspeicher.",
+              "storage_temp_forwarding_interval": "Wie oft die Temperaturen geprüft werden; Zustandsänderungen werden zusätzlich sofort weitergegeben.",
+              "storage_temp_forwarding_tolerance": "Erst erneut schreiben, wenn sich der Wert mindestens um diesen Betrag geändert hat."
+            }
+          },
           "advanced_modbus": {
             "name": "Erweiterte Modbus-Einstellungen",
             "description": "Nur für erfahrene Nutzer. Die Standardwerte werden empfohlen. Polling-Jitter verteilt Abfragen, die Diagnoseoption erstellt zusätzliche Entitäten und der Schreib-Cooldown blockiert zu schnelle Wiederholungen. Der allgemeine Schreib-Cooldown und der EEPROM-Schreibschutz wirken unabhängig voneinander.",
@@ -400,6 +444,22 @@
         },
         "data_description": {
           "humidity_forwarding_entity": "Gibt diesen Sensor an ext_humidity weiter."
+        }
+      },
+      "storage_temp_forwarding": {
+        "title": "Externe Speichertemperaturen weitergeben – {name}",
+        "description": "Wähle je GLT-Speicherregister einen Home-Assistant-Temperatursensor aus. Die Integration schreibt diese Werte in die IDM-GLT-Speicherregister. Leere Felder werden übersprungen.",
+        "data": {
+          "storage_temp_forwarding_heat_storage": "Temperatursensor Wärmespeicher",
+          "storage_temp_forwarding_cold_storage": "Temperatursensor Kältespeicher",
+          "storage_temp_forwarding_dhw_bottom": "Temperatursensor Warmwasserspeicher unten",
+          "storage_temp_forwarding_dhw_top": "Temperatursensor Warmwasserspeicher oben"
+        },
+        "data_description": {
+          "storage_temp_forwarding_heat_storage": "Gibt diesen Sensor an glt_heat_storage_temp weiter.",
+          "storage_temp_forwarding_cold_storage": "Gibt diesen Sensor an glt_cold_storage_temp weiter.",
+          "storage_temp_forwarding_dhw_bottom": "Gibt diesen Sensor an glt_dhw_temp_bottom weiter.",
+          "storage_temp_forwarding_dhw_top": "Gibt diesen Sensor an glt_dhw_temp_top weiter."
         }
       },
       "room_temp_forwarding": {

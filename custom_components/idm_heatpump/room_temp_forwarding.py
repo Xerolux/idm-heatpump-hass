@@ -1,13 +1,19 @@
 """Forward Home Assistant sensor values to IDM GLT registers.
 
-Two independent forwarders live here: ``RoomTempForwarder`` (one HA entity
-per heating circuit, into ``hc_{circuit}_ext_room_temp``) and
-``HumidityForwarder`` (a single HA entity into the one global
-``ext_humidity`` register — humidity has no per-circuit register). They stay
-as separate, small classes rather than one generalized multi-channel
-abstraction: the humidity case has no per-circuit loop or per-circuit
-tolerance keying, so unifying them would add indirection without a second
-concrete per-circuit use case to justify it.
+Two independent forwarder shapes live here:
+
+- ``RoomTempForwarder`` — N keyed HA entities into N fixed target registers,
+  looked up via an injectable ``register_for_key`` resolver. Used for
+  per-heating-circuit room temperatures (``hc_{circuit}_ext_room_temp``, the
+  default resolver) and for external storage temperatures
+  (``glt_heat_storage_temp`` etc., via ``register_for_storage_temp_key``) — both
+  are the same "N keys -> N registers, periodic + debounced" shape, so they
+  share this implementation instead of duplicating it.
+- ``HumidityForwarder`` — a single HA entity into the one global
+  ``ext_humidity`` register. Kept as its own small class rather than folded
+  into the keyed shape above: humidity has no per-key loop or per-key
+  tolerance keying, so unifying it would add indirection without a second
+  concrete single-entity use case to justify it.
 """
 
 from __future__ import annotations
@@ -65,18 +71,48 @@ def _register_for_circuit(coordinator: IdmCoordinator, circuit: str) -> Register
     return coordinator.get_register(register_name)
 
 
+# Fixed GLT storage-temperature registers, keyed the same way heating
+# circuits are keyed for room temperature forwarding above.
+STORAGE_TEMP_REGISTER_NAMES: dict[str, str] = {
+    "heat_storage": "glt_heat_storage_temp",
+    "cold_storage": "glt_cold_storage_temp",
+    "dhw_bottom": "glt_dhw_temp_bottom",
+    "dhw_top": "glt_dhw_temp_top",
+}
+
+
+def register_for_storage_temp_key(coordinator: IdmCoordinator, key: str) -> RegisterDef | None:
+    register_name = STORAGE_TEMP_REGISTER_NAMES.get(key)
+    if register_name is None:
+        return None
+    return coordinator.get_register(register_name)
+
+
 class RoomTempForwarder:
-    """Copies selected HA room temperatures into heating-circuit GLT registers."""
+    """Copies selected HA temperature sensors into N fixed GLT registers.
+
+    ``register_for_key`` resolves each configured key (a heating circuit
+    letter by default) to its target register; pass
+    ``register_for_storage_temp_key`` to reuse this same class for the fixed
+    storage-temperature registers instead.
+    """
 
     def __init__(
         self,
         hass: HomeAssistant,
         coordinator: IdmCoordinator,
         config: RoomTempForwardingConfig,
+        *,
+        register_for_key: Callable[[IdmCoordinator, str], RegisterDef | None] = _register_for_circuit,
+        key_label: str = "HK",
+        value_label: str = "room temperature",
     ) -> None:
         self._hass = hass
         self._coordinator = coordinator
         self._config = config
+        self._register_for_key = register_for_key
+        self._key_label = key_label
+        self._value_label = value_label
         self._last_written: dict[str, float] = {}
         self._unsub_state: list[Callable[[], None]] = []
         self._pending_forward_tasks: dict[str, asyncio.Task[None]] = {}
@@ -94,7 +130,7 @@ class RoomTempForwarder:
                 try:
                     await self.async_forward_all()
                 except Exception:
-                    _LOGGER.exception("IDM room temperature forwarding cycle failed; retrying next interval")
+                    _LOGGER.exception("IDM %s forwarding cycle failed; retrying next interval", self._value_label)
         finally:
             for task in self._pending_forward_tasks.values():
                 if not task.done():
@@ -135,21 +171,27 @@ class RoomTempForwarder:
         state = self._hass.states.get(entity_id)
         temperature = _coerce_temperature(getattr(state, "state", None))
         if temperature is None:
-            _LOGGER.debug("Skipping IDM room temperature forwarding from %s: invalid state", entity_id)
+            _LOGGER.debug("Skipping IDM %s forwarding from %s: invalid state", self._value_label, entity_id)
             return
 
         for circuit in circuits:
             await self._async_write_circuit(circuit, temperature, entity_id)
 
     async def _async_write_circuit(self, circuit: str, temperature: float, entity_id: str) -> None:
-        reg = _register_for_circuit(self._coordinator, circuit)
+        reg = self._register_for_key(self._coordinator, circuit)
         if reg is None:
-            _LOGGER.warning("Skipping IDM room temperature forwarding for HK %s: register not available", circuit)
+            _LOGGER.warning(
+                "Skipping IDM %s forwarding for %s %s: register not available",
+                self._value_label,
+                self._key_label,
+                circuit,
+            )
             return
 
         if reg.min_val is not None and temperature < float(reg.min_val):
             _LOGGER.warning(
-                "Skipping IDM room temperature forwarding from %s to %s: %.2f is below %.2f",
+                "Skipping IDM %s forwarding from %s to %s: %.2f is below %.2f",
+                self._value_label,
                 entity_id,
                 reg.name,
                 temperature,
@@ -158,7 +200,8 @@ class RoomTempForwarder:
             return
         if reg.max_val is not None and temperature > float(reg.max_val):
             _LOGGER.warning(
-                "Skipping IDM room temperature forwarding from %s to %s: %.2f is above %.2f",
+                "Skipping IDM %s forwarding from %s to %s: %.2f is above %.2f",
+                self._value_label,
                 entity_id,
                 reg.name,
                 temperature,
@@ -175,18 +218,19 @@ class RoomTempForwarder:
         except Exception as err:
             error_kind = classify_write_error(err)
             _LOGGER.warning(
-                "Could not forward room temperature %.2f from %s to %s because %s. "
+                "Could not forward %s %.2f from %s to %s because %s. "
                 "Check the source sensor and integration configuration",
+                self._value_label,
                 temperature,
                 entity_id,
                 reg.name,
                 friendly_write_error(error_kind, reg.name),
             )
-            _LOGGER.debug("Technical room temperature forwarding error", exc_info=True)
+            _LOGGER.debug("Technical %s forwarding error", self._value_label, exc_info=True)
             return
 
         self._last_written[circuit] = temperature
-        _LOGGER.debug("Forwarded room temperature %.2f from %s to %s", temperature, entity_id, reg.name)
+        _LOGGER.debug("Forwarded %s %.2f from %s to %s", self._value_label, temperature, entity_id, reg.name)
 
 
 @dataclass(frozen=True)
