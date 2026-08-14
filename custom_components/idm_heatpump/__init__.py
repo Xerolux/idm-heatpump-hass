@@ -63,6 +63,10 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SHORT_CYCLE_MINUTES,
     CONF_SLAVE_ID,
+    CONF_STORAGE_TEMP_FORWARDING,
+    CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
+    CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
+    CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
     CONF_WEB_ONLY,
@@ -87,6 +91,9 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_SLAVE_ID,
+    DEFAULT_STORAGE_TEMP_FORWARDING,
+    DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
+    DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_WEB_ENABLED,
     DEFAULT_WEB_ONLY,
     DEFAULT_WEB_SCAN_INTERVAL,
@@ -106,6 +113,7 @@ from .error_messages import (
     classify_web_error,
     friendly_communication_error,
     friendly_web_error,
+    scoped_issue_id,
 )
 from .library_adapter import get_idm_client
 from .operation_analysis import OperationAnalysis
@@ -123,6 +131,7 @@ from .room_temp_forwarding import (
     HumidityForwardingConfig,
     RoomTempForwarder,
     RoomTempForwardingConfig,
+    register_for_storage_temp_key,
 )
 from .versions import async_runtime_versions
 from .web_data import (
@@ -170,6 +179,7 @@ class IdmHeatpumpData:
     web_task: asyncio.Task[None] | None = None
     room_temp_forwarding_task: asyncio.Task[None] | None = None
     humidity_forwarding_task: asyncio.Task[None] | None = None
+    storage_temp_forwarding_task: asyncio.Task[None] | None = None
     operation_analysis: OperationAnalysis | None = None
     reload_fingerprint: str | None = None
     loaded_platforms: tuple[Platform, ...] = ()
@@ -389,7 +399,7 @@ async def _async_setup_web_only_entry(
         entry.title,
         web_host,
     )
-    ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+    ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
 
     web_supplement = None
     model_name: str = MODEL
@@ -571,6 +581,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     humidity_forwarding_tolerance = float(
         entry.options.get(CONF_HUMIDITY_FORWARDING_TOLERANCE, DEFAULT_HUMIDITY_FORWARDING_TOLERANCE)
     )
+    storage_temp_forwarding_enabled = bool(
+        entry.options.get(CONF_STORAGE_TEMP_FORWARDING, DEFAULT_STORAGE_TEMP_FORWARDING)
+    )
+    storage_temp_forwarding_entities = entry.options.get(CONF_STORAGE_TEMP_FORWARDING_ENTITIES, {})
+    storage_temp_forwarding_interval = int(
+        entry.options.get(CONF_STORAGE_TEMP_FORWARDING_INTERVAL, DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL)
+    )
+    storage_temp_forwarding_tolerance = float(
+        entry.options.get(CONF_STORAGE_TEMP_FORWARDING_TOLERANCE, DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE)
+    )
     modbus_timeout = float(entry.options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT))
     modbus_max_retries = int(entry.options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES))
     polling_jitter = int(entry.options.get(CONF_POLLING_JITTER, DEFAULT_POLLING_JITTER))
@@ -578,12 +598,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     eeprom_write_interval = float(entry.options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL))
 
     if web_pin_configured(web_pin):
-        ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+        ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
     elif web_enabled:
         ir.async_create_issue(
             hass,
             DOMAIN,
-            "web_pin_missing",
+            scoped_issue_id(entry.entry_id, "web_pin_missing"),
             is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="web_pin_missing",
@@ -591,7 +611,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             translation_placeholders={"name": entry.title},
         )
     else:
-        ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+        ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
 
     web_only = bool(entry.data.get(CONF_WEB_ONLY, DEFAULT_WEB_ONLY))
 
@@ -956,6 +976,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 humidity_forwarder.async_run(),
                 name=f"{DOMAIN}_humidity_{entry.entry_id}",
             )
+
+        if storage_temp_forwarding_enabled and isinstance(storage_temp_forwarding_entities, dict):
+            storage_forwarding_entities = {
+                str(key): str(entity_id)
+                for key, entity_id in storage_temp_forwarding_entities.items()
+                if str(entity_id).strip()
+            }
+            if storage_forwarding_entities:
+                storage_forwarder = RoomTempForwarder(
+                    hass,
+                    coordinator,
+                    RoomTempForwardingConfig(
+                        entities=storage_forwarding_entities,
+                        interval=storage_temp_forwarding_interval,
+                        tolerance=storage_temp_forwarding_tolerance,
+                    ),
+                    register_for_key=register_for_storage_temp_key,
+                    key_label="storage key",
+                    value_label="storage temperature",
+                )
+                entry.runtime_data.storage_temp_forwarding_task = _create_entry_background_task(
+                    hass,
+                    entry,
+                    storage_forwarder.async_run(),
+                    name=f"{DOMAIN}_storage_temp_{entry.entry_id}",
+                )
     except Exception:
         try:
             await client.disconnect()
@@ -1005,6 +1051,13 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
             humidity_forwarding_task.cancel()
             try:
                 await humidity_forwarding_task
+            except asyncio.CancelledError:
+                pass
+        storage_temp_forwarding_task = getattr(entry.runtime_data, "storage_temp_forwarding_task", None)
+        if isinstance(storage_temp_forwarding_task, asyncio.Task):
+            storage_temp_forwarding_task.cancel()
+            try:
+                await storage_temp_forwarding_task
             except asyncio.CancelledError:
                 pass
         try:

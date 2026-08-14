@@ -29,6 +29,7 @@ from .const import (
     CONF_WEB_PIN,
     DOMAIN,
 )
+from .error_messages import scoped_issue_id
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
 if TYPE_CHECKING:
@@ -157,8 +158,8 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
 
                     options = {**entry.options, CONF_WEB_ENABLED: True}
                     self.hass.config_entries.async_update_entry(entry, data=data, options=options)
-                    ir.async_delete_issue(self.hass, DOMAIN, _ISSUE_WEB_PIN_MISSING)
-                    ir.async_delete_issue(self.hass, DOMAIN, _ISSUE_WEB_AUTH_FAILED)
+                    ir.async_delete_issue(self.hass, DOMAIN, scoped_issue_id(entry.entry_id, _ISSUE_WEB_PIN_MISSING))
+                    ir.async_delete_issue(self.hass, DOMAIN, scoped_issue_id(entry.entry_id, _ISSUE_WEB_AUTH_FAILED))
                     await self.hass.config_entries.async_reload(entry.entry_id)
                     return self.async_create_entry(title="", data={})
 
@@ -180,8 +181,8 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             data = {**entry.data, CONF_WEB_PIN: ""}
             options = {**entry.options, CONF_WEB_ENABLED: False}
             self.hass.config_entries.async_update_entry(entry, data=data, options=options)
-            ir.async_delete_issue(self.hass, DOMAIN, _ISSUE_WEB_PIN_MISSING)
-            ir.async_delete_issue(self.hass, DOMAIN, _ISSUE_WEB_AUTH_FAILED)
+            ir.async_delete_issue(self.hass, DOMAIN, scoped_issue_id(entry.entry_id, _ISSUE_WEB_PIN_MISSING))
+            ir.async_delete_issue(self.hass, DOMAIN, scoped_issue_id(entry.entry_id, _ISSUE_WEB_AUTH_FAILED))
             await self.hass.config_entries.async_reload(entry.entry_id)
             return self.async_create_entry(title="", data={})
 

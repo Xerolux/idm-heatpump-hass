@@ -37,6 +37,7 @@ from .error_messages import (
 from .error_messages import (
     classify_web_error,
     friendly_web_error,
+    scoped_issue_id,
 )
 from .error_messages import (
     friendly_communication_error as _friendly_communication_error,
@@ -469,6 +470,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Registers without a numeric sentinel (BOOL/BITFLAG): only NaN/inf count.
         return isinstance(value, float) and (math.isnan(value) or math.isinf(value))
 
+    def _scoped_issue_id(self, issue_id: str) -> str:
+        """Return `issue_id` scoped to this coordinator's config entry."""
+        entry_id = self.config_entry.entry_id if self.config_entry is not None else None
+        return scoped_issue_id(entry_id, issue_id)
+
     async def _async_read_registers_resilient(self, registers: list[RegisterDef]) -> dict[str, Any]:
         """Read registers while isolating addresses unsupported by this device.
 
@@ -496,7 +502,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 ir.async_create_issue(
                     self.hass,
                     DOMAIN,
-                    f"register_not_supported_{reg.name}",
+                    self._scoped_issue_id(f"register_not_supported_{reg.name}"),
                     is_fixable=False,
                     severity=ir.IssueSeverity.WARNING,
                     translation_key="register_not_supported",
@@ -643,7 +649,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # communication error boundary as the main batch read.
             self._merge_unsupported_registers()
             await self._async_refresh_zone_room_modes(data)
-        except Exception as err:
+        except (ModbusException, OSError) as err:
             self._last_poll_duration = time.monotonic() - poll_started
             self._consecutive_poll_failures += 1
             self._total_poll_failures += 1
@@ -656,11 +662,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             for stale_issue_id in _CONNECTIVITY_REPAIR_ISSUES:
                 if stale_issue_id != issue_id:
-                    ir.async_delete_issue(self.hass, DOMAIN, stale_issue_id)
+                    ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(stale_issue_id))
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                issue_id,
+                self._scoped_issue_id(issue_id),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
@@ -681,7 +687,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                issue_id,
+                self._scoped_issue_id(issue_id),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
@@ -693,7 +699,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
 
         for issue_id in _CONNECTIVITY_REPAIR_ISSUES:
-            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
 
         # Apply aliases: when multiple register names share an address,
         # ensure all names appear in the data dict.
@@ -756,11 +762,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_web_error = error
             for issue_id in _WEB_REPAIR_ISSUES:
                 if issue_id != _WEB_AUTH_FAILED_ISSUE:
-                    ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+                    ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                _WEB_AUTH_FAILED_ISSUE,
+                self._scoped_issue_id(_WEB_AUTH_FAILED_ISSUE),
                 is_fixable=True,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=_WEB_AUTH_FAILED_ISSUE,
@@ -781,11 +787,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_web_error = error
             for stale_issue_id in _WEB_REPAIR_ISSUES:
                 if stale_issue_id != issue_id:
-                    ir.async_delete_issue(self.hass, DOMAIN, stale_issue_id)
+                    ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(stale_issue_id))
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                issue_id,
+                self._scoped_issue_id(issue_id),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
@@ -799,7 +805,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._last_web_error = None
         for issue_id in _WEB_REPAIR_ISSUES:
-            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
         self._web_supplement = web_supplement
         # Cache which web variant succeeded so the next poll skips the other
         # (WebSocket vs. HTTP have completely different login mechanisms).
@@ -1012,7 +1018,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                "write_rejected",
+                self._scoped_issue_id("write_rejected"),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key="write_rejected",

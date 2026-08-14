@@ -108,6 +108,44 @@ Important behavior:
 - This feature writes Modbus values. Use sensors that represent the actual room
   temperature you want the heat pump to see.
 
+### External Humidity Forwarding
+
+External humidity forwarding is optional and disabled by default. When
+enabled, the integration forwards one selected Home Assistant humidity sensor
+to the global IDM GLT humidity register (`ext_humidity`). Unlike room
+temperature, humidity has no per-heating-circuit register, so only a single
+sensor can be selected.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Humidity forwarding | Enables forwarding of the selected sensor | off |
+| Forwarding interval | Periodic refresh interval | 300 seconds |
+| Forwarding tolerance | Minimum change before a repeated value is written again | 2.0 % |
+| Humidity sensor | Home Assistant humidity entity to forward | empty |
+
+The same behavior notes as room temperature forwarding apply: values are
+written on state changes and refreshed periodically, invalid or out-of-range
+values are skipped, and leaving the sensor field empty disables forwarding.
+
+### External Storage Temperature Forwarding
+
+External storage temperature forwarding is optional and disabled by default.
+When enabled, the integration forwards up to four selected Home Assistant
+temperature sensors to the fixed IDM GLT storage registers: heat storage
+(`glt_heat_storage_temp`), cold storage (`glt_cold_storage_temp`), and DHW
+storage bottom/top (`glt_dhw_temp_bottom` / `glt_dhw_temp_top`).
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Storage temperature forwarding | Enables forwarding for selected registers | off |
+| Forwarding interval | Periodic refresh interval | 300 seconds |
+| Forwarding tolerance | Minimum change before a repeated value is written again | 0.5 °C |
+| Sensor per storage register | Home Assistant temperature entity to forward | empty |
+
+The same behavior notes as room temperature forwarding apply: values are
+written on state changes and refreshed periodically, invalid or out-of-range
+values are skipped, and leaving a register's field empty keeps it untouched.
+
 ### Heating Circuits
 
 Select the active heating circuits (A through G). Only enabled circuits create entities in Home Assistant.

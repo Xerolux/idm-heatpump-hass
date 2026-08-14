@@ -49,8 +49,10 @@ async def test_web_pin_missing_repair_disables_web_supplement(mock_hass, repair_
     _, kwargs = mock_hass.config_entries.async_update_entry.call_args
     assert kwargs["data"][CONF_WEB_PIN] == ""
     assert kwargs["options"][CONF_WEB_ENABLED] is False
-    ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_pin_missing")
-    ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_authentication_failed")
+    ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", f"web_pin_missing_{repair_entry.entry_id}")
+    ir.async_delete_issue.assert_any_call(
+        mock_hass, "idm_heatpump", f"web_authentication_failed_{repair_entry.entry_id}"
+    )
     mock_hass.config_entries.async_reload.assert_awaited_once_with(repair_entry.entry_id)
 
 
@@ -78,8 +80,10 @@ async def test_web_pin_missing_repair_sets_valid_pin(mock_hass, repair_entry) ->
     assert kwargs["data"][CONF_DETECTED_SOFTWARE_VERSION] == "NAV10_20.24"
     assert kwargs["data"][CONF_DETECTED_WEB_VARIANT] == "nav10"
     assert kwargs["options"][CONF_WEB_ENABLED] is True
-    ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_pin_missing")
-    ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_authentication_failed")
+    ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", f"web_pin_missing_{repair_entry.entry_id}")
+    ir.async_delete_issue.assert_any_call(
+        mock_hass, "idm_heatpump", f"web_authentication_failed_{repair_entry.entry_id}"
+    )
 
 
 @pytest.mark.asyncio
