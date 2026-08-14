@@ -626,7 +626,7 @@ class TestAsyncSetupEntryOptions:
         ir.async_create_issue.assert_any_call(
             mock_hass,
             "idm_heatpump",
-            "web_pin_missing",
+            f"web_pin_missing_{entry.entry_id}",
             is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="web_pin_missing",
@@ -655,10 +655,10 @@ class TestAsyncSetupEntryOptions:
             await async_setup_entry(mock_hass, entry)
 
         assert not any(
-            call.args[:3] == (mock_hass, "idm_heatpump", "web_pin_missing")
+            call.args[:3] == (mock_hass, "idm_heatpump", f"web_pin_missing_{entry.entry_id}")
             for call in ir.async_create_issue.call_args_list
         )
-        ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_pin_missing")
+        ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", f"web_pin_missing_{entry.entry_id}")
 
     async def test_default_port_used_when_missing(self, mock_hass):
         """When port is absent from entry.data, default 502 is used."""

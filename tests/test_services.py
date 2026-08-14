@@ -33,6 +33,7 @@ def _make_coordinator_in_hass(mock_hass, entry_id: str = "entry-1"):
     entry.entry_id = entry_id
     entry.runtime_data = MagicMock()
     entry.runtime_data.coordinator = coord
+    coord.config_entry = entry
 
     mock_hass.config_entries.async_entries = MagicMock(return_value=[entry])
     return coord
@@ -362,7 +363,7 @@ class TestWriteRegister:
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
             "idm_heatpump",
-            "write_rejected",
+            "write_rejected_entry-1",
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="write_rejected",

@@ -106,6 +106,7 @@ from .error_messages import (
     classify_web_error,
     friendly_communication_error,
     friendly_web_error,
+    scoped_issue_id,
 )
 from .library_adapter import get_idm_client
 from .operation_analysis import OperationAnalysis
@@ -389,7 +390,7 @@ async def _async_setup_web_only_entry(
         entry.title,
         web_host,
     )
-    ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+    ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
 
     web_supplement = None
     model_name: str = MODEL
@@ -578,12 +579,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     eeprom_write_interval = float(entry.options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL))
 
     if web_pin_configured(web_pin):
-        ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+        ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
     elif web_enabled:
         ir.async_create_issue(
             hass,
             DOMAIN,
-            "web_pin_missing",
+            scoped_issue_id(entry.entry_id, "web_pin_missing"),
             is_fixable=True,
             severity=ir.IssueSeverity.WARNING,
             translation_key="web_pin_missing",
@@ -591,7 +592,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             translation_placeholders={"name": entry.title},
         )
     else:
-        ir.async_delete_issue(hass, DOMAIN, "web_pin_missing")
+        ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
 
     web_only = bool(entry.data.get(CONF_WEB_ONLY, DEFAULT_WEB_ONLY))
 

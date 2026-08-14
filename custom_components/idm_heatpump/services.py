@@ -27,7 +27,7 @@ from idm_heatpump import DataType, RegisterDef
 from .adapter_glt import EXTERNAL_POWER_MEASUREMENT_NAMES
 from .const import DOMAIN, HEATING_CIRCUITS, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
 from .coordinator import IdmCoordinator
-from .error_messages import classify_write_error, write_error_placeholders
+from .error_messages import classify_write_error, scoped_issue_id, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -305,10 +305,11 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
     except HomeAssistantError:
         raise
     except Exception as err:
+        entry_id = coordinator.config_entry.entry_id if coordinator.config_entry is not None else None
         ir.async_create_issue(
             hass,
             DOMAIN,
-            "write_rejected",
+            scoped_issue_id(entry_id, "write_rejected"),
             is_fixable=False,
             severity=ir.IssueSeverity.WARNING,
             translation_key="write_rejected",

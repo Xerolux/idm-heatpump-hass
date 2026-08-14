@@ -472,13 +472,13 @@ class TestAsyncUpdateData:
         ):
             await coord._async_update_data()
 
-        assert mock_ir.async_create_issue.call_args.args[2] == "no_data_received"
+        assert mock_ir.async_create_issue.call_args.args[2] == "no_data_received_test_entry_id"
 
     async def test_exception_raises_update_failed(self, mock_hass, mock_config_entry):
         from homeassistant.helpers.update_coordinator import UpdateFailed
 
         client = MagicMock()
-        client.read_batch = AsyncMock(side_effect=Exception("connection lost"))
+        client.read_batch = AsyncMock(side_effect=ConnectionException("connection lost"))
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
@@ -489,6 +489,21 @@ class TestAsyncUpdateData:
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(UpdateFailed):
             await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
+
+    async def test_unexpected_exception_propagates_uncaught(self, mock_hass, mock_config_entry):
+        """A programming bug (not a communication error) must not be misclassified as cannot_connect."""
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=ValueError("boom"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(ValueError, match="boom"):
+            await coord._async_update_data()
+        mock_ir.async_create_issue.assert_not_called()
 
     async def test_illegal_address_is_isolated_and_skipped(self, mock_hass, mock_config_entry):
         good_a = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a")
@@ -537,7 +552,7 @@ class TestAsyncUpdateData:
         mock_ir.async_create_issue.assert_any_call(
             mock_hass,
             "idm_heatpump",
-            "register_not_supported_power_limit_hp",
+            "register_not_supported_power_limit_hp_test_entry_id",
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="register_not_supported",
@@ -707,7 +722,7 @@ class TestAsyncUpdateData:
         ):
             await coord._async_update_data()
 
-        assert mock_ir.async_create_issue.call_args.args[2] == "modbus_timeout"
+        assert mock_ir.async_create_issue.call_args.args[2] == "modbus_timeout_test_entry_id"
         assert client.read_register.await_count == 1
 
     async def test_invalid_zone_room_mode_is_omitted_without_losing_other_data(self, mock_hass, mock_config_entry):
@@ -828,7 +843,7 @@ class TestAsyncUpdateData:
 
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             await coord._async_update_data()
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "cannot_connect")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "cannot_connect_test_entry_id")
 
     async def test_connectivity_issues_deleted_on_success(self, mock_hass, mock_config_entry):
         client = MagicMock()
@@ -843,16 +858,16 @@ class TestAsyncUpdateData:
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             await coord._async_update_data()
 
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "cannot_connect")
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "host_not_found")
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "modbus_connection_refused")
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "modbus_timeout")
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "wrong_slave_id")
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "incompatible_firmware")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "cannot_connect_test_entry_id")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "host_not_found_test_entry_id")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "modbus_connection_refused_test_entry_id")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "modbus_timeout_test_entry_id")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "wrong_slave_id_test_entry_id")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "incompatible_firmware_test_entry_id")
 
     async def test_issue_created_on_failure(self, mock_hass, mock_config_entry):
         client = MagicMock()
-        client.read_batch = AsyncMock(side_effect=Exception("timeout"))
+        client.read_batch = AsyncMock(side_effect=TimeoutError("timeout"))
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
@@ -879,7 +894,7 @@ class TestAsyncUpdateData:
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(Exception):  # noqa: B017
             await coord._async_update_data()
 
-        assert mock_ir.async_create_issue.call_args.args[2] == "wrong_slave_id"
+        assert mock_ir.async_create_issue.call_args.args[2] == "wrong_slave_id_test_entry_id"
         assert mock_ir.async_create_issue.call_args.kwargs["translation_key"] == "wrong_slave_id"
 
     async def test_incompatible_firmware_issue_created_on_illegal_function(self, mock_hass, mock_config_entry):
@@ -895,7 +910,7 @@ class TestAsyncUpdateData:
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(Exception):  # noqa: B017
             await coord._async_update_data()
 
-        assert mock_ir.async_create_issue.call_args.args[2] == "incompatible_firmware"
+        assert mock_ir.async_create_issue.call_args.args[2] == "incompatible_firmware_test_entry_id"
         assert mock_ir.async_create_issue.call_args.kwargs["translation_key"] == "incompatible_firmware"
 
     async def test_zone_room_modes_read_individually_for_multiple_zones(self, mock_hass, mock_config_entry):
@@ -1119,7 +1134,7 @@ class TestAsyncWriteRegister:
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
             "idm_heatpump",
-            "write_rejected",
+            "write_rejected_test_entry_id",
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="write_rejected",
@@ -1195,7 +1210,7 @@ class TestAsyncRefreshWebSupplement:
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
             "idm_heatpump",
-            "web_authentication_failed",
+            "web_authentication_failed_test_entry_id",
             is_fixable=True,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="web_authentication_failed",
@@ -1232,7 +1247,7 @@ class TestAsyncRefreshWebSupplement:
         mock_ir.async_create_issue.assert_called_once_with(
             mock_hass,
             "idm_heatpump",
-            "web_timeout",
+            "web_timeout_test_entry_id",
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="web_timeout",
@@ -1270,8 +1285,8 @@ class TestAsyncRefreshWebSupplement:
         assert coord.data["web_software_version"] == "NAV10_20.24"
         assert coord.data is not previous_data
         assert previous_data == {}
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_authentication_failed")
-        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_supplement_failed")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_authentication_failed_test_entry_id")
+        mock_ir.async_delete_issue.assert_any_call(mock_hass, "idm_heatpump", "web_supplement_failed_test_entry_id")
         coord.async_update_listeners.assert_called_once()
 
     async def test_web_refresh_merges_into_live_modbus_snapshot(self, mock_hass, mock_config_entry):
