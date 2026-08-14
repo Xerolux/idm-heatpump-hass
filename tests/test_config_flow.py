@@ -712,6 +712,34 @@ class TestAsyncStepOptions:
         assert result["step_id"] == "zones"
 
 
+class TestContinueOptionalSteps:
+    """Direct coverage of the table-driven optional-step dispatcher itself.
+
+    The higher-level chaining tests above already exercise this indirectly
+    through async_step_options/zones/room_temp_forwarding/humidity_forwarding;
+    these test the dispatcher's own contract (unknown step id, all-disabled).
+    """
+
+    async def test_unknown_after_step_id_raises(self):
+        flow = _make_flow()
+        flow._options = {}
+        try:
+            await flow._async_continue_optional_steps("not_a_real_step")
+        except ValueError as err:
+            assert "not_a_real_step" in str(err)
+        else:
+            raise AssertionError("expected ValueError for an unknown step id")
+
+    async def test_creates_entry_when_every_optional_step_is_disabled(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {CONF_ROOM_TEMP_FORWARDING: False, CONF_HUMIDITY_FORWARDING: False}
+
+        result = await flow._async_continue_optional_steps()
+
+        assert result["type"] == "create_entry"
+
+
 class TestAsyncStepZones:
     async def test_shows_form_without_input(self):
         flow = _make_flow()
