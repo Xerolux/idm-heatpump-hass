@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
+from collections.abc import Callable
 from enum import StrEnum
 from time import monotonic
 from typing import Any
@@ -759,14 +760,26 @@ def _store_humidity_forwarding_entity(options: dict[str, Any], user_input: dict[
     options[CONF_HUMIDITY_FORWARDING_ENTITY] = str(user_input.get(CONF_HUMIDITY_FORWARDING_ENTITY, "")).strip()
 
 
+# Optional follow-up steps shown after the base options/zones steps, tried in
+# this order. Each entry's predicate decides whether its step is shown at
+# all. Adding a future GLT forwarding channel (or any other optional step)
+# means adding one entry here and one async_step_<step_id> method below -
+# no other step needs to know it exists, since _async_continue_optional_steps
+# looks steps up by name instead of each step hardcoding what comes next.
+_OPTIONAL_FLOW_STEPS: tuple[tuple[str, Callable[[dict[str, Any]], bool]], ...] = (
+    ("room_temp_forwarding", _room_temp_forwarding_enabled),
+    ("humidity_forwarding", _humidity_forwarding_enabled),
+)
+
+
 class _IdmOptionsStepsMixin:
     """Shared option/zone/forwarding step handlers for config and options flows.
 
     Both IdmHeatpumpConfigFlow and IdmHeatpumpOptionsFlow walk the same
-    options -> zones -> room_temp_forwarding -> humidity_forwarding sequence
-    (each forwarding step only shown when its toggle is enabled). Centralizing
-    the step bodies here keeps them in lockstep instead of drifting (the two
-    copies had already diverged subtly in description_placeholders).
+    options -> zones -> (optional steps from _OPTIONAL_FLOW_STEPS) sequence.
+    Centralizing the step bodies here keeps them in lockstep instead of
+    drifting (the two copies had already diverged subtly in
+    description_placeholders).
     """
 
     # Shared mutable state provided by the concrete flow.
@@ -778,12 +791,28 @@ class _IdmOptionsStepsMixin:
     def _create_flow_entry(self) -> ConfigFlowResult:
         raise NotImplementedError
 
-    async def _async_step_after_zones(self) -> ConfigFlowResult:
-        """Route to the next optional forwarding step, or finish the flow."""
-        if _room_temp_forwarding_enabled(self._options):
-            return await self.async_step_room_temp_forwarding()  # type: ignore[attr-defined]
-        if _humidity_forwarding_enabled(self._options):
-            return await self.async_step_humidity_forwarding()  # type: ignore[attr-defined]
+    async def _async_continue_optional_steps(self, after_step_id: str | None = None) -> ConfigFlowResult:
+        """Show the next enabled optional step after ``after_step_id``, or finish.
+
+        ``after_step_id=None`` starts from the beginning of
+        _OPTIONAL_FLOW_STEPS (called once, right after options/zones). Each
+        optional step then calls this again with its own step_id once
+        submitted, so the steps stay chained in table order without any of
+        them naming the next one directly.
+        """
+        start = 0
+        if after_step_id is not None:
+            for index, (step_id, _) in enumerate(_OPTIONAL_FLOW_STEPS):
+                if step_id == after_step_id:
+                    start = index + 1
+                    break
+            else:
+                raise ValueError(f"Unknown optional flow step: {after_step_id!r}")
+
+        for step_id, is_enabled in _OPTIONAL_FLOW_STEPS[start:]:
+            if is_enabled(self._options):
+                handler = getattr(self, f"async_step_{step_id}")
+                return await handler()  # type: ignore[no-any-return]
         return self._create_flow_entry()
 
     async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -793,7 +822,7 @@ class _IdmOptionsStepsMixin:
             if int(submitted_options.get(CONF_ZONE_COUNT, 0)) > 0:
                 return await self.async_step_zones()  # type: ignore[attr-defined]
             self._options[CONF_ZONE_ROOMS] = {}
-            return await self._async_step_after_zones()
+            return await self._async_continue_optional_steps()
 
         return self.async_show_form(  # type: ignore[attr-defined]
             step_id="options",
@@ -807,7 +836,7 @@ class _IdmOptionsStepsMixin:
         if user_input is not None:
             zone_rooms: dict[int, int] = {z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)}
             self._options[CONF_ZONE_ROOMS] = zone_rooms
-            return await self._async_step_after_zones()
+            return await self._async_continue_optional_steps()
 
         return self.async_show_form(  # type: ignore[attr-defined]
             step_id="zones",
@@ -819,9 +848,7 @@ class _IdmOptionsStepsMixin:
     async def async_step_room_temp_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             _store_room_temp_forwarding_entities(self._options, user_input)
-            if _humidity_forwarding_enabled(self._options):
-                return await self.async_step_humidity_forwarding()  # type: ignore[attr-defined]
-            return self._create_flow_entry()
+            return await self._async_continue_optional_steps("room_temp_forwarding")
 
         return self.async_show_form(  # type: ignore[attr-defined]
             step_id="room_temp_forwarding",
@@ -833,7 +860,7 @@ class _IdmOptionsStepsMixin:
     async def async_step_humidity_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             _store_humidity_forwarding_entity(self._options, user_input)
-            return self._create_flow_entry()
+            return await self._async_continue_optional_steps("humidity_forwarding")
 
         return self.async_show_form(  # type: ignore[attr-defined]
             step_id="humidity_forwarding",
