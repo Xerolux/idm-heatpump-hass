@@ -15,6 +15,37 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.11.0-beta.5] - 2026-08-14
+
+Fünfte Beta der 0.11.x-Linie. Neues optionales GLT-Feature: externe Feuchte
+weiterleiten, als zweiter Kanal neben der bereits bestehenden
+Raumtemperatur-Weiterleitung pro Heizkreis.
+
+### Added
+
+- **Externe Feuchte-Weiterleitung (GLT):** Analog zur bestehenden
+  Raumtemperatur-Weiterleitung kann jetzt optional ein einzelner
+  Home-Assistant-Feuchtesensor an das globale IDM-GLT-Register
+  `ext_humidity` geschrieben werden. Anders als Raumtemperatur gibt es in
+  `idm-heatpump-api` kein Feuchte-Register pro Heizkreis — daher genau ein
+  Auswahlfeld statt eines pro Heizkreis. Aktivierbar per Checkbox in den
+  Integrations-Optionen (`Konfigurieren` → jederzeit nach dem Setup
+  änderbar, wie bei der Raumtemperatur-Weiterleitung); anschließend folgt
+  ein eigener Schritt mit einem durchsuchbaren HA-Entity-Selector
+  (`domain=sensor`, `device_class=humidity`). Leer lassen deaktiviert die
+  Weiterleitung. Nutzt denselben bewährten Mechanismus wie die
+  Raumtemperatur-Weiterleitung (Debounce bei Zustandsänderung, periodischer
+  Sicherheitslauf, Änderungstoleranz, Register-Grenzwertprüfung vor jedem
+  Schreibvorgang) über eine neue, eigenständige `HumidityForwarder`-Klasse
+  in `room_temp_forwarding.py`. Weitere GLT-Schreibregister (z. B.
+  Speichertemperaturen, Bedarfsanforderungen) sind bewusst noch nicht im
+  Flow sichtbar.
+
+### Verified
+
+- 1096/1096 Tests grün (14 neu für den Feuchte-Kanal), mypy (strict) und
+  ruff sauber.
+
 ## [0.11.0-beta.4] - 2026-08-13
 
 Vierte Beta der 0.11.x-Linie. Vollständige Codeprüfung der gesamten
