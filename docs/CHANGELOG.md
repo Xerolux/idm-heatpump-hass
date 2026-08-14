@@ -15,6 +15,32 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.11.0-beta.6] - 2026-08-14
+
+Sechste Beta der 0.11.x-Linie. Internes Refactoring des Options-/Config-Flows,
+keine funktionale Änderung.
+
+### Changed
+
+- **Config-Flow: tabellengesteuertes Verketten der optionalen Folgeschritte
+  statt hartkodierter if/elif-Kette.** Die optionalen Schritte
+  (`room_temp_forwarding`, `humidity_forwarding`) kannten bisher jeweils
+  explizit, welcher Schritt als Nächstes drankommt, wenn er aktiviert ist.
+  Jeder neue optionale Schritt hätte damit den *vorherigen* Schritt in der
+  Kette anfassen müssen. Jetzt gibt es eine einzige geordnete Tabelle
+  (`_OPTIONAL_FLOW_STEPS`) plus einen generischen Dispatcher
+  (`_async_continue_optional_steps`), der anhand des Namens nachschlägt, was
+  als Nächstes kommt. Ein zukünftiger weiterer GLT-Weiterleitungskanal
+  bedeutet damit nur noch einen neuen Tabelleneintrag plus die
+  `async_step_<id>`-Methode selbst — kein bestehender Schritt muss geändert
+  werden. Rein intern; alle Step-IDs, Formulare und das Verhalten nach außen
+  bleiben unverändert.
+
+### Verified
+
+- 1098/1098 Tests grün (2 neu, direkt für den Dispatcher: unbekannte
+  Schritt-ID, alle Schritte deaktiviert), mypy (strict) und ruff sauber.
+
 ## [0.11.0-beta.5] - 2026-08-14
 
 Fünfte Beta der 0.11.x-Linie. Neues optionales GLT-Feature: externe Feuchte
