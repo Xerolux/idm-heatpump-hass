@@ -15,6 +15,34 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.11.0-beta.7] - 2026-08-14
+
+Siebte Beta der 0.11.x-Linie. Zwei bewusst zurückgestellte Punkte aus dem
+Bug-Hunt der letzten Betas werden jetzt behoben.
+
+### Fixed
+
+- **Repair-Issue-IDs sind jetzt pro Config-Entry skopiert.** Home Assistants
+  Issue-Registry schlüsselt ausschließlich über `(domain, issue_id)` — ohne
+  implizite Bindung an einen Config-Entry. Wenn zwei Wärmepumpen gleichzeitig
+  z. B. einen fehlenden Web-PIN, einen Verbindungsfehler oder einen
+  abgelehnten Schreibzugriff meldeten, überschrieb der zweite Entry das
+  Issue des ersten in der Registry — das Problem der ersten Wärmepumpe wurde
+  unsichtbar, und ein Beheben beim zweiten Entry löschte fälschlich auch das
+  Issue des ersten. Alle betroffenen Stellen (`__init__.py`, `coordinator.py`,
+  `repairs.py`, `services.py`) hängen die `entry_id` jetzt über einen
+  gemeinsamen `scoped_issue_id()`-Helfer an die Issue-ID an. Übersetzungen
+  (`translation_key`) bleiben unverändert, da diese weiterhin auf feste
+  i18n-Strings verweisen.
+- **`coordinator._async_update_data` fängt keine echten Programmfehler mehr
+  als „cannot_connect" ab.** Das bisherige breite `except Exception` beim
+  Poll-Zyklus klassifizierte jede unerwartete Ausnahme — auch einen
+  tatsächlichen Bug in der Poll-Pipeline — automatisch als Verbindungsfehler
+  und legte ein entsprechendes Repair-Issue an. Jetzt werden ausschließlich
+  `ModbusException` und `OSError` (inkl. `TimeoutError`) abgefangen; jede
+  andere Ausnahme propagiert unverändert nach oben, statt stillschweigend als
+  Konnektivitätsproblem maskiert zu werden.
+
 ## [0.11.0-beta.6] - 2026-08-14
 
 Sechste Beta der 0.11.x-Linie. Internes Refactoring des Options-/Config-Flows,
