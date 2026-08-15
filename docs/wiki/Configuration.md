@@ -256,20 +256,21 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.11.0-beta.1` (latest stable: `0.10.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | `0.11.0` (previous stable: `0.10.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.0.0a3` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus==0.5.0` | Wire/backend implementation changes |
-| Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API 0.9.1 imports and exception types |
-| Python register/web library | `idm-heatpump-api[web]==1.0.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
+| Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
+| Python register/web library | `idm-heatpump-api[web]==1.0.1` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
 `modbus-connection==4.0.0a3`, `tmodbus==0.5.0`,
-`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.0`.
-The first two packages own the direct socket. API 0.9.1 remains responsible for
-IDM-specific device logic; pymodbus is temporarily retained because that API
-still imports it. `4.0.0a3` is the version of `modbus-connection`, not an IDM
-integration version. The transport is first shipped by IDM integration beta
-`0.11.0-beta.1`.
+`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.1`.
+The first two packages own the direct socket. `idm-heatpump-api` remains
+responsible for IDM-specific device logic; pymodbus is temporarily retained
+because that API still imports it. `4.0.0a3` is the version of
+`modbus-connection`, not an IDM integration version. The transport was first
+shipped by IDM integration beta `0.11.0-beta.1` and is now part of the stable
+`0.11.0` release.
 
 The adapter is implemented and covered by automated tests. Its redacted
 diagnostics report `source: modbus_connection.tmodbus`, `owns_socket: true` and

@@ -6,16 +6,31 @@ a normal changelog.
 
 ## Current Status
 
-Integration beta `0.11.0-beta.3` and `idm-heatpump-api` `1.0.0` form the
-current exactly pinned integration/API pair; the latest stable integration is
-`0.10.1`. The beta additionally pins `modbus-connection==4.0.0a3` and
-`tmodbus==0.5.0` for the direct socket. Its candidate evidence is maintained at
-[candidate evidence](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.11.0-beta.3.md).
+Integration `0.11.0` (stable) and `idm-heatpump-api` `1.0.1` form the current
+exactly pinned integration/API pair. `0.11.0` additionally pins
+`modbus-connection==4.0.0a3` and `tmodbus==0.5.0` for the direct socket.
+`idm-heatpump-api` `1.0.1` is a patch release over `1.0.0` (two internal bug
+fixes: a raw `AttributeError` now surfaces as `ConnectionException` when a
+pre-1.0 reset pattern hits `connect()`, and write exception code 2 is
+classified as `IllegalAddressError` via the same helper used for reads); no
+behavior change for this integration's usage.
 
-The previous beta cycle (`0.8.5-beta.1` through `0.8.5-beta.8`) remains
-preserved in its historical evidence files. For `0.11.0-beta.3`, automated
-preflight may permit beta publication while read-only hardware validation and
-the stable soak remain open.
+**Maintainer decision on the stable-release gates below:** `0.11.0` was
+published as stable without waiting out gate 6 (the seven-day soak, reset by
+the `0.11.0-beta.7`/`beta.8` candidate changes shipped the same day) and
+without closing gate 3's live follow-up,
+[#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192) (a
+Navigator 2.0/Terra SWM model-detection display mismatch; the original
+[#44](https://github.com/Xerolux/idm-heatpump-hass/issues/44) is closed, but
+the underlying detection topic has an open recurrence). This is a conscious
+maintainer call, not an oversight — recorded here so it stays visible.
+Gates 1, 4, 5 and 7 are satisfied; gate 2 (clean-install smoke test) was not
+independently re-run as part of this cut.
+
+The previous beta cycle (`0.11.0-beta.1` through `0.11.0-beta.8`,
+04.–14.08.2026) is preserved in `docs/CHANGELOG.md`, and the `0.8.5-beta.1`
+through `0.8.5-beta.8` cycle before it remains preserved in its historical
+evidence files.
 
 The July 2026 stability audit verified:
 
