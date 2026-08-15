@@ -1783,6 +1783,34 @@ class TestAsyncRefreshWebSupplement:
 
         mock_dr.async_get.return_value.async_update_device.assert_not_called()
 
+    async def test_web_refresh_newly_available_serial_syncs_device_registry(self, mock_hass, mock_config_entry):
+        """A newly available myidm_id alone (model/firmware unchanged) still syncs the registry."""
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 10",
+            model_info=None,
+            web_pin="1234",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        coord._hierarchy_device_ids = {("idm_heatpump", mock_config_entry.entry_id): "registry-device-1"}
+        supplement = IdmWebSupplement(navigator_version="Navigator 10", myidm_id="ABC123")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            patch("custom_components.idm_heatpump.coordinator.dr") as mock_dr,
+        ):
+            await coord.async_refresh_web_supplement()
+
+        mock_dr.async_get.return_value.async_update_device.assert_called_once_with(
+            "registry-device-1", model="Navigator 10", serial_number="ABC123"
+        )
+
     async def test_web_model_correction_without_registered_device_is_a_noop(self, mock_hass, mock_config_entry):
         """Missing hierarchy device id (e.g. device not yet precreated) must not raise."""
         coord, _ = _make_coordinator(

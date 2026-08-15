@@ -807,13 +807,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_web_error = None
         for issue_id in _WEB_REPAIR_ISSUES:
             ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
+        previous_model_name = self._model_name
+        previous_firmware_version = self._firmware_version
+        previous_myidm_id = self.myidm_id
         self._web_supplement = web_supplement
         # Cache which web variant succeeded so the next poll skips the other
         # (WebSocket vs. HTTP have completely different login mechanisms).
         if web_variant := _web_variant_from_supplement(web_supplement):
             self._web_variant = web_variant
-        previous_model_name = self._model_name
-        previous_firmware_version = self._firmware_version
         web_model_name = web_supplement.model_name
         modbus_family = navigator_family(getattr(self._model_info, "model_name", None) or self._model_name)
         web_model_family = navigator_family(web_model_name)
@@ -876,7 +877,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Model metadata changed; invalidate cached device info so the next
         # entity state update publishes the new model/firmware/serial number.
         self._invalidate_device_info_cache()
-        if self._model_name != previous_model_name or self._firmware_version != previous_firmware_version:
+        if (
+            self._model_name != previous_model_name
+            or self._firmware_version != previous_firmware_version
+            or self.myidm_id != previous_myidm_id
+        ):
             # Push the correction directly into the Device Registry too: it was
             # only populated once at entity-setup time, and this change alone
             # does not trigger a reload (see the docstring on
