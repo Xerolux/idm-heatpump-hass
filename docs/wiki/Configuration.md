@@ -256,7 +256,7 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.11.0` (previous stable: `0.10.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | `0.11.1` (previous stable: `0.10.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.0.0a3` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus==0.5.0` | Wire/backend implementation changes |
 | Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
@@ -270,7 +270,7 @@ responsible for IDM-specific device logic; pymodbus is temporarily retained
 because that API still imports it. `4.0.0a3` is the version of
 `modbus-connection`, not an IDM integration version. The transport was first
 shipped by IDM integration beta `0.11.0-beta.1` and is now part of the stable
-`0.11.0` release.
+`0.11.x` line.
 
 The adapter is implemented and covered by automated tests. Its redacted
 diagnostics report `source: modbus_connection.tmodbus`, `owns_socket: true` and
