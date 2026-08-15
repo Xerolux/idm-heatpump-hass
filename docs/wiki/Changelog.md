@@ -5,6 +5,19 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.11.1 — 2026-08-15
+
+Patch release fixing [#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192):
+a runtime model correction from the web supplement (e.g. Navigator 2.0 →
+Navigator 10 based on a NAV10 firmware-string match) updated the
+coordinator's live state, but Home Assistant's Device Registry — populated
+once at entity-setup time — never received the correction, since that
+detection key is deliberately excluded from the reload fingerprint to avoid
+tearing down active connections. The device page kept showing the original
+model while diagnostics already showed the corrected one. The coordinator
+now pushes a changed model/firmware/serial number directly into the Device
+Registry whenever a correction actually changes one of them.
+
 ## v0.11.0 — 2026-08-15
 
 First stable release of the 0.11.x line, after eight betas
