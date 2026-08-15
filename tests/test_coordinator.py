@@ -1723,6 +1723,92 @@ class TestAsyncRefreshWebSupplement:
         assert coord.web_supplement is supplement
         assert coord.data["web_navigator_version"] == "Navigator 10"
 
+    async def test_web_model_correction_syncs_device_registry(self, mock_hass, mock_config_entry):
+        """A runtime model correction must reach the already-registered device (#192).
+
+        entry_id-scoped registration only happens once, when platforms are set
+        up; a later retroactive correction from the web supplement does not by
+        itself trigger a reload, so without an explicit registry sync the HA
+        device page would keep showing the original (possibly wrong) model
+        indefinitely while diagnostics already reflects the correction.
+        """
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0 / 10",
+            model_info=None,
+            web_pin="1234",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        coord._hierarchy_device_ids = {("idm_heatpump", mock_config_entry.entry_id): "registry-device-1"}
+        supplement = IdmWebSupplement(navigator_version="Navigator 10")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            patch("custom_components.idm_heatpump.coordinator.dr") as mock_dr,
+        ):
+            await coord.async_refresh_web_supplement()
+
+        mock_registry = mock_dr.async_get.return_value
+        mock_registry.async_update_device.assert_called_once_with("registry-device-1", model="Navigator 10")
+
+    async def test_web_refresh_without_model_change_skips_device_registry_sync(self, mock_hass, mock_config_entry):
+        """No registry write when the corrected model matches what was already stored."""
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 10",
+            model_info=None,
+            web_pin="1234",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        coord._hierarchy_device_ids = {("idm_heatpump", mock_config_entry.entry_id): "registry-device-1"}
+        supplement = IdmWebSupplement(navigator_version="Navigator 10")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            patch("custom_components.idm_heatpump.coordinator.dr") as mock_dr,
+        ):
+            await coord.async_refresh_web_supplement()
+
+        mock_dr.async_get.return_value.async_update_device.assert_not_called()
+
+    async def test_web_model_correction_without_registered_device_is_a_noop(self, mock_hass, mock_config_entry):
+        """Missing hierarchy device id (e.g. device not yet precreated) must not raise."""
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0 / 10",
+            model_info=None,
+            web_pin="1234",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(navigator_version="Navigator 10")
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            patch("custom_components.idm_heatpump.coordinator.dr") as mock_dr,
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.model_name == "Navigator 10"
+        mock_dr.async_get.return_value.async_update_device.assert_not_called()
+
 
 class TestCoordinatorProperties:
     def test_client_property(self, mock_hass, mock_config_entry):

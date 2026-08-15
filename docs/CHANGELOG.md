@@ -13,7 +13,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-Noch keine Änderungen.
+### Fixed
+
+- **Modellkorrektur zur Laufzeit erreichte nicht die Home-Assistant-
+  Geräteansicht ([#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192)).**
+  Home Assistant übernimmt `device_info` (u. a. `model`) nur einmal in die
+  Geräteregistrierung, beim Einrichten der Plattformen. Eine spätere
+  rückwirkende Modellkorrektur durch das Web-Supplement (z. B. Navigator 2.0
+  → Navigator 10 anhand eines NAV10-Firmware-Präfix) aktualisierte bisher
+  nur den In-Memory-Zustand des Coordinators — `CONF_DETECTED_NAVIGATOR_VERSION`
+  ist bewusst vom Reload-Fingerprint ausgenommen, damit das Persistieren
+  keine aktiven Modbus-/Web-Verbindungen abbricht, löst dadurch aber auch
+  keinen Reload aus, der die Geräteregistrierung erneuern würde. Die
+  Geräteansicht zeigte dadurch dauerhaft das ursprüngliche (ggf. falsche)
+  Modell, während der Diagnose-Export korrekt den live berechneten Wert
+  zeigte. Der Coordinator schreibt eine geänderte Modell-/Firmware-/
+  Seriennummer jetzt zusätzlich direkt in die Geräteregistrierung
+  (`device_registry.async_update_device`), sobald sich der Wert tatsächlich
+  ändert.
 
 ## [0.11.0] - 2026-08-15
 

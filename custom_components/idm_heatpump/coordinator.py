@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, cast
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pymodbus.exceptions import ConnectionException, ModbusException
@@ -811,6 +812,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # (WebSocket vs. HTTP have completely different login mechanisms).
         if web_variant := _web_variant_from_supplement(web_supplement):
             self._web_variant = web_variant
+        previous_model_name = self._model_name
+        previous_firmware_version = self._firmware_version
         web_model_name = web_supplement.model_name
         modbus_family = navigator_family(getattr(self._model_info, "model_name", None) or self._model_name)
         web_model_family = navigator_family(web_model_name)
@@ -873,6 +876,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Model metadata changed; invalidate cached device info so the next
         # entity state update publishes the new model/firmware/serial number.
         self._invalidate_device_info_cache()
+        if self._model_name != previous_model_name or self._firmware_version != previous_firmware_version:
+            # Push the correction directly into the Device Registry too: it was
+            # only populated once at entity-setup time, and this change alone
+            # does not trigger a reload (see the docstring on
+            # _sync_main_device_registry).
+            self._sync_main_device_registry()
 
         # Persist retroactively detected model/firmware so it survives reloads.
         # Detection keys alone must not trigger a config-entry reload (see
@@ -1050,6 +1059,35 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _invalidate_device_info_cache(self) -> None:
         """Clear cached DeviceInfo so the next access reflects fresh metadata."""
         self._device_info_cache = None
+
+    def _sync_main_device_registry(self) -> None:
+        """Push a corrected model/firmware/serial to the already-registered main device.
+
+        Home Assistant copies an entity's ``device_info`` into the Device
+        Registry once, when platforms are set up. A later retroactive model
+        correction (e.g. from the web supplement) only updates this
+        coordinator's in-memory state — ``CONF_DETECTED_NAVIGATOR_VERSION`` is
+        deliberately excluded from the reload fingerprint (see
+        ``_entry_reload_fingerprint`` in ``__init__.py``) so persisting it does
+        not tear down active Modbus/web connections, but that also means no
+        reload re-runs entity setup to refresh the registry. Without this, the
+        Home Assistant device page keeps showing the original, possibly wrong,
+        model indefinitely while diagnostics (which reads live coordinator
+        state) already shows the corrected one (#192).
+        """
+        entry = self.config_entry
+        if entry is None:
+            return
+        device_id = self._hierarchy_device_ids.get((DOMAIN, entry.entry_id))
+        if device_id is None:
+            return
+        registry = dr.async_get(self.hass)
+        updates: dict[str, Any] = {"model": self.model_name}
+        if self.firmware_version:
+            updates["sw_version"] = self.firmware_version
+        if self.myidm_id:
+            updates["serial_number"] = self.myidm_id
+        registry.async_update_device(device_id, **updates)
 
     async def async_shutdown(self) -> None:
         """Cancel pending background tasks and release resources.
