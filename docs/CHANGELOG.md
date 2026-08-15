@@ -15,393 +15,188 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
-## [0.11.0-beta.8] - 2026-08-14
+## [0.11.0] - 2026-08-15
 
-Achte Beta der 0.11.x-Linie. Erweitert die GLT-Weiterleitung um externe
-Speichertemperaturen.
-
-### Added
-
-- **Externe Speichertemperatur-Weiterleitung.** Neuer optionaler
-  Options-Flow-Schritt „Externe Speichertemperaturen (GLT)“, analog zu
-  Raumtemperatur- und Feuchte-Weiterleitung: bis zu vier
-  Home-Assistant-Temperatursensoren können an die festen
-  GLT-Speicherregister `glt_heat_storage_temp`, `glt_cold_storage_temp`,
-  `glt_dhw_temp_bottom` und `glt_dhw_temp_top` weitergegeben werden.
-  `RoomTempForwarder` wurde dafür so verallgemeinert, dass er über einen
-  injizierbaren Register-Resolver sowohl Heizkreise als auch die festen
-  Speicherregister bedienen kann, statt die Forwarder-Logik zu duplizieren.
-  Bewusst außerhalb des Umfangs: Bedarfsanforderungs-Register
-  (`demand_heating`/`demand_cooling`/`demand_dhw_charging`/
-  `demand_onetime_dhw`) sowie die EEPROM-sensitiven bzw. zyklisch zu
-  schreibenden GLT-Bedarfstemperatur-Register — diese benötigen eigene
-  Schreibschutz-Überlegungen und folgen ggf. in einer späteren Beta.
-
-### Fixed
-
-- Die Übersetzung für den `humidity_forwarding`-Schritt fehlte im
-  Options-Flow-Teil von `strings.json`/`en.json` (nur im Config-Flow-Teil
-  vorhanden), wodurch der Schritt beim nachträglichen Aktivieren über die
-  Optionen ohne Titel/Beschreibung erschien. Ergänzt für Feuchte- und
-  Speichertemperatur-Weiterleitung in beiden Flow-Teilen.
-- Raumtemperatur- und Feuchte-Weiterleitung waren im Wiki
-  (`docs/wiki/Configuration.md`) nicht bzw. nur teilweise dokumentiert;
-  beide Abschnitte sind jetzt vollständig beschrieben.
-
-## [0.11.0-beta.7] - 2026-08-14
-
-Siebte Beta der 0.11.x-Linie. Zwei bewusst zurückgestellte Punkte aus dem
-Bug-Hunt der letzten Betas werden jetzt behoben.
-
-### Fixed
-
-- **Repair-Issue-IDs sind jetzt pro Config-Entry skopiert.** Home Assistants
-  Issue-Registry schlüsselt ausschließlich über `(domain, issue_id)` — ohne
-  implizite Bindung an einen Config-Entry. Wenn zwei Wärmepumpen gleichzeitig
-  z. B. einen fehlenden Web-PIN, einen Verbindungsfehler oder einen
-  abgelehnten Schreibzugriff meldeten, überschrieb der zweite Entry das
-  Issue des ersten in der Registry — das Problem der ersten Wärmepumpe wurde
-  unsichtbar, und ein Beheben beim zweiten Entry löschte fälschlich auch das
-  Issue des ersten. Alle betroffenen Stellen (`__init__.py`, `coordinator.py`,
-  `repairs.py`, `services.py`) hängen die `entry_id` jetzt über einen
-  gemeinsamen `scoped_issue_id()`-Helfer an die Issue-ID an. Übersetzungen
-  (`translation_key`) bleiben unverändert, da diese weiterhin auf feste
-  i18n-Strings verweisen.
-- **`coordinator._async_update_data` fängt keine echten Programmfehler mehr
-  als „cannot_connect" ab.** Das bisherige breite `except Exception` beim
-  Poll-Zyklus klassifizierte jede unerwartete Ausnahme — auch einen
-  tatsächlichen Bug in der Poll-Pipeline — automatisch als Verbindungsfehler
-  und legte ein entsprechendes Repair-Issue an. Jetzt werden ausschließlich
-  `ModbusException` und `OSError` (inkl. `TimeoutError`) abgefangen; jede
-  andere Ausnahme propagiert unverändert nach oben, statt stillschweigend als
-  Konnektivitätsproblem maskiert zu werden.
-
-## [0.11.0-beta.6] - 2026-08-14
-
-Sechste Beta der 0.11.x-Linie. Internes Refactoring des Options-/Config-Flows,
-keine funktionale Änderung.
-
-### Changed
-
-- **Config-Flow: tabellengesteuertes Verketten der optionalen Folgeschritte
-  statt hartkodierter if/elif-Kette.** Die optionalen Schritte
-  (`room_temp_forwarding`, `humidity_forwarding`) kannten bisher jeweils
-  explizit, welcher Schritt als Nächstes drankommt, wenn er aktiviert ist.
-  Jeder neue optionale Schritt hätte damit den *vorherigen* Schritt in der
-  Kette anfassen müssen. Jetzt gibt es eine einzige geordnete Tabelle
-  (`_OPTIONAL_FLOW_STEPS`) plus einen generischen Dispatcher
-  (`_async_continue_optional_steps`), der anhand des Namens nachschlägt, was
-  als Nächstes kommt. Ein zukünftiger weiterer GLT-Weiterleitungskanal
-  bedeutet damit nur noch einen neuen Tabelleneintrag plus die
-  `async_step_<id>`-Methode selbst — kein bestehender Schritt muss geändert
-  werden. Rein intern; alle Step-IDs, Formulare und das Verhalten nach außen
-  bleiben unverändert.
-
-### Verified
-
-- 1098/1098 Tests grün (2 neu, direkt für den Dispatcher: unbekannte
-  Schritt-ID, alle Schritte deaktiviert), mypy (strict) und ruff sauber.
-
-## [0.11.0-beta.5] - 2026-08-14
-
-Fünfte Beta der 0.11.x-Linie. Neues optionales GLT-Feature: externe Feuchte
-weiterleiten, als zweiter Kanal neben der bereits bestehenden
-Raumtemperatur-Weiterleitung pro Heizkreis.
+Erste stabile Version der 0.11.x-Linie nach acht Betas
+(`0.11.0-beta.1` – `0.11.0-beta.8`, 04.–14.08.2026). Größte Änderung ist der
+Wechsel des direkten Modbus-TCP-Sockets von reinem Pymodbus auf
+`modbus-connection`/`tmodbus`, begleitet vom Umstieg auf die stabile
+`idm-heatpump-api` 1.x-Linie. Vollständig abwärtskompatibel: bestehende
+Config-Entries, Entity-IDs, Registeradressen und Schreibpfade funktionieren
+unverändert weiter.
 
 ### Added
 
-- **Externe Feuchte-Weiterleitung (GLT):** Analog zur bestehenden
-  Raumtemperatur-Weiterleitung kann jetzt optional ein einzelner
-  Home-Assistant-Feuchtesensor an das globale IDM-GLT-Register
-  `ext_humidity` geschrieben werden. Anders als Raumtemperatur gibt es in
-  `idm-heatpump-api` kein Feuchte-Register pro Heizkreis — daher genau ein
-  Auswahlfeld statt eines pro Heizkreis. Aktivierbar per Checkbox in den
-  Integrations-Optionen (`Konfigurieren` → jederzeit nach dem Setup
-  änderbar, wie bei der Raumtemperatur-Weiterleitung); anschließend folgt
-  ein eigener Schritt mit einem durchsuchbaren HA-Entity-Selector
-  (`domain=sensor`, `device_class=humidity`). Leer lassen deaktiviert die
-  Weiterleitung. Nutzt denselben bewährten Mechanismus wie die
-  Raumtemperatur-Weiterleitung (Debounce bei Zustandsänderung, periodischer
-  Sicherheitslauf, Änderungstoleranz, Register-Grenzwertprüfung vor jedem
-  Schreibvorgang) über eine neue, eigenständige `HumidityForwarder`-Klasse
-  in `room_temp_forwarding.py`. Weitere GLT-Schreibregister (z. B.
-  Speichertemperaturen, Bedarfsanforderungen) sind bewusst noch nicht im
-  Flow sichtbar.
-
-### Verified
-
-- 1096/1096 Tests grün (14 neu für den Feuchte-Kanal), mypy (strict) und
-  ruff sauber.
-
-## [0.11.0-beta.4] - 2026-08-13
-
-Vierte Beta der 0.11.x-Linie. Vollständige Codeprüfung der gesamten
-Integration (nicht nur des tmodbus-Transports): acht real bestätigte,
-unabhängig gefundene Fehler behoben, dazu die `via_device`→
-`via_device_id`-Migration und die angehobene HA-Mindestversion.
+- **Direkter tmodbus-Laufzeitpfad.** Der Modbus-TCP-Socket läuft jetzt über
+  `modbus-connection==4.0.0a3` mit dem separat gepinnten Backend
+  `tmodbus==0.5.0`, statt direkt über Pymodbus. `idm-heatpump-api` besitzt
+  über den API-1.0-`transport=`-Konstruktorparameter den vollständigen
+  Lifecycle, Retry-Loop, Batching, Modellerkennung und Schreibschutz;
+  `ModbusConnectionTransport` übersetzt Backend-Fehler in die
+  API-Ausnahme-Hierarchie (`IllegalAddressError` für Code 2, `ModbusException`
+  für die transienten Codes 5/6/10/11 im Retry-in-Place-Pfad,
+  `ConnectionException`/`TimeoutError` für Transportfehler). Der Ende-zu-Ende-
+  Pfad wurde gegen einen echten tmodbus-TCP-Server geprüft (Connect,
+  FC03/FC04-Reads, FC16-Write, Illegal-Address-Mapping, Reconnect nach
+  `close()`); eine read-only Verifikation an realer Navigator-Hardware sowie
+  der Stable-Soak dieses konkreten Kandidaten stehen noch aus (siehe
+  [Stability & Release
+  Readiness](https://github.com/Xerolux/idm-heatpump-hass/wiki/Stability-and-Release-Readiness)).
+- **Transportdiagnose:** Diagnoseexport, Startlog und der API-Versionssensor
+  zeigen zusätzlich die installierten Versionen von `modbus-connection` und
+  `tmodbus`. Der redigierte Client-Diagnoseblock meldet außerdem
+  Transportquelle, Socket-Besitz, Verbindungsstatus und
+  `supports_shared_connection: false` (jede Config-Entry besitzt weiterhin
+  ihre eigene Verbindung; zentrales Entry-übergreifendes Sharing ist mangels
+  eines stabilen Home-Assistant-Vertrags dafür weiterhin nicht verfügbar).
+- **Externe Feuchte-Weiterleitung (GLT):** Ein einzelner
+  Home-Assistant-Feuchtesensor kann optional an das globale IDM-GLT-Register
+  `ext_humidity` geschrieben werden (kein Feuchte-Register pro Heizkreis in
+  `idm-heatpump-api`, daher genau ein Auswahlfeld). Aktivierbar per Checkbox
+  in den Integrations-Optionen, mit durchsuchbarem HA-Entity-Selector,
+  Debounce bei Zustandsänderung, periodischem Sicherheitslauf,
+  Änderungstoleranz und Register-Grenzwertprüfung vor jedem Schreibvorgang.
+- **Externe Speichertemperatur-Weiterleitung (GLT):** Bis zu vier
+  Home-Assistant-Temperatursensoren können an die festen GLT-Speicherregister
+  `glt_heat_storage_temp`, `glt_cold_storage_temp`, `glt_dhw_temp_bottom` und
+  `glt_dhw_temp_top` weitergegeben werden — analog zur bestehenden
+  Raumtemperatur-Weiterleitung pro Heizkreis und über denselben
+  verallgemeinerten `RoomTempForwarder` (injizierbarer Register-Resolver
+  statt duplizierter Forwarder-Logik). Bewusst außerhalb des Umfangs bleiben
+  die Bedarfsanforderungs-Register (`demand_heating`/`demand_cooling`/
+  `demand_dhw_charging`/`demand_onetime_dhw`) sowie die EEPROM-sensitiven
+  bzw. zyklisch zu schreibenden GLT-Bedarfstemperatur-Register — diese
+  benötigen eigene Schreibschutz-Überlegungen.
 
 ### Changed
 
-- **Min. Home Assistant auf `2026.8.1` angehoben; `via_device` → `via_device_id`
-  migriert:** HA Core 2026.8 deprecatet `DeviceInfo["via_device"]` zugunsten
-  von `via_device_id` (siehe [Home Assistant Developer Blog: Devices are
-  restricted to a single config entry and at most one
-  subentry](https://developers.home-assistant.io/blog/2026/07/21/device-registry-single-config-entry/)),
-  weil Geräte-Identifier ab 2026.8 nicht mehr global, sondern nur noch pro
-  Config Entry eindeutig sind. `device_hierarchy.py` erzeugt jetzt beim Setup
-  (`precreate_main_device`) das Hauptgerät **und** alle erwarteten
-  Sub-Geräte (Heizkreise, Zonenmodule, Zonenräume, optionale Module) im
-  Voraus, cacht deren registry-vergebene Geräte-IDs auf dem Coordinator und
-  verlinkt Sub-Geräte darüber per `via_device_id` statt per
-  Identifier-Tupel. `build_subdevice_info()` bleibt dadurch weiterhin eine
-  reine, registry-freie Funktion (keine Signaturänderung an den
-  Aufrufstellen in `entity.py`/`climate.py`/`water_heater.py`/`button.py`
-  nötig). `hacs.json`, CI- und Release-Workflows, README/Wiki und
-  `AGENTS.md`/`CLAUDE.md` sind auf `2026.8.1` (aktuell gepinnte, reale
-  PyPI-Stable-Version) angehoben. `via_device` selbst wird von Home Assistant
-  erst in `2027.8` entfernt; diese Migration ist also vorausschauend, nicht
+- **`idm-heatpump-api[web]` `0.9.1` → `1.0.1`:** Die Integration pinnt jetzt
+  die stabile API-1.x-Linie. API 1.0.0 führte die öffentliche
+  `IdmModbusTransport`-Protocol-Injektion ein (Grundlage für den neuen
+  tmodbus-Pfad) und fixierte die Exception-Code-Taxonomie (Code 2 permanent
+  `IllegalAddressError`; Codes 5/6/10/11 transient, Retry-in-Place ohne
+  Reconnect/Quarantäne; Verbindungs-/Timeout-/Protokollfehler mit Reconnect).
+  API 1.0.1 ist ein reiner Patch-Release ohne Verhaltensänderung für diese
+  Integration (`ConnectionException` statt rohem `AttributeError` bei einem
+  `client._client = None`-Testmuster; Schreibfehler mit Exception-Code 2
+  klassifizieren jetzt wie Lesefehler konsistent als permanenten
+  `IllegalAddressError`). `pymodbus>=3.12.1,<4.0` bleibt vorübergehend als
+  Kompatibilitätsabhängigkeit bestehen, weil die API diesen Import weiterhin
+  benötigt; der direkte Socket wird davon nicht mehr betrieben.
+- **Minimale Home-Assistant-Version auf `2026.8.1` angehoben;
+  `via_device` → `via_device_id` migriert.** HA Core 2026.8 deprecatet
+  `DeviceInfo["via_device"]` zugunsten von `via_device_id`, weil
+  Geräte-Identifier ab 2026.8 nicht mehr global, sondern nur noch pro Config
+  Entry eindeutig sind. `device_hierarchy.py` erzeugt beim Setup jetzt das
+  Hauptgerät **und** alle erwarteten Sub-Geräte (Heizkreise, Zonenmodule,
+  Zonenräume, optionale Module) im Voraus und verlinkt sie über
+  `via_device_id` statt per Identifier-Tupel. `via_device` selbst entfernt
+  Home Assistant erst in `2027.8`; diese Migration ist vorausschauend, nicht
   akut erzwungen.
+- **Config-Flow: tabellengesteuertes Verketten der optionalen
+  Folgeschritte** (Raumtemperatur-/Feuchte-/Speichertemperatur-Weiterleitung)
+  statt einer hartkodierten if/elif-Kette, über eine geordnete Tabelle
+  (`_OPTIONAL_FLOW_STEPS`) plus generischen Dispatcher. Rein intern; Step-IDs,
+  Formulare und das Verhalten nach außen bleiben unverändert.
 
 ### Fixed
 
-- **Veraltete `idm-heatpump-api[web]==0.9.1`-Referenzen korrigiert:** Kommentare
-  und Dokumentation (`__init__.py`, `log_filter.py`, `quality_scale.yaml`,
-  `docs/MAINTENANCE.md`, `.github/ISSUE_TEMPLATE/modbus_transport_modernization.md`)
-  nannten noch den vor der 0.11.0-beta.2-Umstellung gepinnten API-Stand
-  `0.9.1`, obwohl `manifest.json` seither `idm-heatpump-api[web]==1.0.0`
-  verlangt. Funktional ohne Auswirkung (nur Kommentare/Doku); behoben, um
-  Verwechslungen bei zukünftigen Release-Checks zu vermeiden.
-- **`climate.py`: Voreinstellungsmodus konnte einen kühlenden Heizkreis
-  stillschweigend auf Heizen umschalten.** `IdmHeatingCircuitClimate.
-  async_set_preset_mode` schrieb bei jeder Preset-Auswahl unbedingt
-  `CircuitMode.ECO`/`NORMAL` — beide dekodieren zu `HVACMode.HEAT`. War der
-  Heizkreis gerade in `MANUAL_COOL` (Sommerkühlung), schaltete ein einfacher
-  `climate.set_preset_mode`-Aufruf (z. B. aus einer Automatisierung) den
-  Kreis unbemerkt von Kühlen auf Heizen um, weil es keinen
-  Kühl-Eco-Registerwert gibt. Preset-Wechsel im Kühlmodus werden jetzt mit
-  einer übersetzten `HomeAssistantError` abgelehnt statt den Modus
-  umzuschreiben.
-- **`services.py`: `write_register` konnte mit unbehandeltem `KeyError`
-  abstürzen.** Die Dienstregistrierung übergibt kein `schema=`, daher ist
-  `required: true` in `services.yaml` nur UI-Hinweis, kein serverseitiger
-  Zwang — ein Skript/eine Automatisierung, die `address` oder `value`
-  auslässt, löste zuvor einen rohen `KeyError` statt der überall sonst in
-  dieser Datei verwendeten `ServiceValidationError` aus. Fehlende Felder und
-  eine nicht-numerische `address` liefern jetzt übersetzte
+Aus dem vollständigen Codeaudit der gesamten Integration (nicht nur des
+tmodbus-Diffs) behobene, real bestätigte Fehler:
+
+- **`climate.py`:** Der Voreinstellungsmodus konnte einen kühlenden Heizkreis
+  stillschweigend auf Heizen umschalten, weil `async_set_preset_mode` bei
+  jeder Preset-Auswahl unbedingt `CircuitMode.ECO`/`NORMAL` schrieb (beide
+  dekodieren zu `HVACMode.HEAT`, es gibt keinen Kühl-Eco-Registerwert).
+  Preset-Wechsel im Kühlmodus (`MANUAL_COOL`) werden jetzt mit einer
+  übersetzten `HomeAssistantError` abgelehnt statt den Modus umzuschreiben.
+- **`services.py`:** `write_register` konnte mit unbehandeltem `KeyError`
+  abstürzen, wenn `address` oder `value` fehlte, weil die Dienstregistrierung
+  kein serverseitiges `schema=` erzwingt. Fehlende Felder und eine
+  nicht-numerische `address` liefern jetzt übersetzte
   `ServiceValidationError`s.
-- **`diagnostics.py`: Host/Port des Modbus-Clients konnten über `last_error`
-  ungeschwärzt exportiert werden.** `async_redact_data` schwärzt nur nach
-  Dict-Schlüssel, nicht nach Inhalt. Ein Verbindungsfehler wie
-  `"could not connect to 192.168.1.100:502"` landete unverändert unter dem
-  Schlüssel `last_error` (nicht in `TO_REDACT`) im Diagnose-Export — im
-  Gegensatz zum Web-Fehlerpfad, der dafür bereits eine eigene Sanitisierung
-  hatte. `last_error` wird jetzt genau wie der Web-Fehler auf eine sichere
-  Kategorie-Bezeichnung reduziert, bevor die Schlüssel-Schwärzung greift.
-- **`adapter_registers.py`: `id()`-basierter Cache-Schlüssel konnte
-  Registerkarten zwischen Config Entries/Reloads vertauschen.**
-  `_FILTERED_REGISTER_MAP_CACHE` nutzte `id(model_info)` als Teil des
-  Cache-Schlüssels; `id()` ist nur eindeutig unter gleichzeitig lebenden
-  Objekten. Nach einem Reload oder einer Web-Modellkorrektur wird das alte
-  `IdmModelInfo`-Objekt verworfen, und CPython kann dessen Adresse für ein
-  neues Objekt eines *anderen* Config Entry wiederverwenden — bei einer
-  Adresskollision hätte z. B. ein Navigator-20-Entry die
-  Navigator-10-spezifische Registerkarte (inkl. Booster-Registern) eines
-  anderen Entries geerbt. Der Cache vergleicht jetzt `model_info` selbst
-  (Dataclass-`__eq__`) statt seiner Objektadresse.
-- **`select.py`: `exclude_from_write` wurde für nicht slug-gemappte
-  Enum-Register ignoriert.** Nur Register mit Übersetzungs-Slug-Map (z. B.
-  `system_mode`, `hc_*_mode`) filterten ausgeschlossene Werte aus
-  `_attr_options`; alle anderen schreibbaren Enum-Register übernahmen
-  `reg.enum_options` ungefiltert, obwohl `library_adapter.py` dieselben
-  Werte in der Entity-Beschreibung bereits korrekt herausfiltert. Mit den
-  aktuell gepinnten Registerdaten aktuell nicht ausnutzbar (das einzige
-  `exclude_from_write`-Register ist slug-gemappt), aber ein latenter Fehler,
-  der beim nächsten `idm-heatpump-api`-Update sofort wieder aktiv werden
-  konnte. Die Filterung gilt jetzt unabhängig von einer Slug-Map.
-- **`config_flow.py`: Der Reconfigure-„connection"-Schritt verwarf gerade
-  eingegebene Werte bei den meisten Validierungsfehlern.** Das erneute
-  Rendern des Formulars nach einem Fehler baute die vorausgefüllten Werte
-  aus `self._data or entry.data` statt aus dem gerade abgeschickten
-  `user_input` — `self._data` wird nur bei Erfolg befüllt. Bei einem
-  falschen Web-PIN, einem doppelten Host o. ä. sprang das Host-Feld
-  unbemerkt auf den alten gespeicherten Wert zurück, auch wenn der
-  Nutzer ihn gerade korrigiert hatte. `async_step_user` machte das bereits
-  richtig (`user_input or {}`); `async_step_connection` folgt jetzt demselben
-  Muster.
-- **`entity.py`: `build_device_info()` cachte `DeviceInfo` dauerhaft, auch
-  nach einer Entry-Umbenennung.** Der Cache berechnete einen `cache_key` zur
-  Änderungserkennung, verglich ihn aber nie mit dem gespeicherten Eintrag —
-  nur dessen bloße Existenz wurde geprüft. Eine Config-Entry-Umbenennung
-  ändert ausschließlich `entry.title` (bewusst nicht Teil des
-  Reload-Fingerprints, damit ein Rename keinen Reload mit Abbruch von
-  Modbus/Web/DHW-Boost-Tasks auslöst), sodass der zwischengespeicherte alte
-  Gerätename nie aktualisiert wurde. Der Cache vergleicht den `cache_key`
-  jetzt tatsächlich, bevor er den zwischengespeicherten Wert zurückgibt.
-- **`coordinator.py`: `_room_mode_validation_counter` wurde bei
-  `setup_registers()` nicht zurückgesetzt.** Nach einer Rekonfiguration
-  (z. B. neue Zone hinzugefügt) konnte der Zähler mitten im
-  Skip-Zyklus stehen, sodass ein frisch hinzugefügtes
-  Zonenraum-Mode-Register bis zu 5 Polling-Zyklen auf seine erste
-  Einzelvalidierung warten musste, statt sie sofort zu bekommen. Der Zähler
-  wird jetzt bei jedem `setup_registers()`-Aufruf zurückgesetzt.
-- **`CLAUDE.md`/`AGENTS.md`: Versions-Snapshot war zwei Releases veraltet.**
-  Beide Dateien nannten noch `0.11.0-beta.1`, obwohl `manifest.json` bereits
-  bei `0.11.0-beta.3` war.
+- **`diagnostics.py`:** Host/Port des Modbus-Clients konnten über
+  `last_error` ungeschwärzt exportiert werden, weil `async_redact_data` nur
+  nach Dict-Schlüssel schwärzt, nicht nach Inhalt. `last_error` wird jetzt
+  wie der Web-Fehlerpfad auf eine sichere Kategorie-Bezeichnung reduziert.
+- **`adapter_registers.py`:** Ein `id()`-basierter Cache-Schlüssel konnte
+  nach einem Reload oder einer Web-Modellkorrektur Registerkarten zwischen
+  Config Entries vertauschen, weil CPython eine freigegebene Objektadresse
+  für ein neues Objekt eines *anderen* Entry wiederverwenden kann. Der Cache
+  vergleicht `model_info` jetzt per Wert (Dataclass-`__eq__`) statt per
+  Objektadresse.
+- **`select.py`:** `exclude_from_write` wurde für nicht slug-gemappte
+  Enum-Register ignoriert; die Filterung gilt jetzt unabhängig von einer
+  Übersetzungs-Slug-Map.
+- **`config_flow.py`:** Der Reconfigure-„Connection"-Schritt verwarf gerade
+  eingegebene Werte bei den meisten Validierungsfehlern (falscher Web-PIN,
+  doppelter Host o. ä.), weil das erneute Rendern des Formulars die
+  vorausgefüllten Werte aus `self._data or entry.data` statt aus dem gerade
+  abgeschickten `user_input` baute. Folgt jetzt demselben Muster wie
+  `async_step_user`.
+- **`entity.py`:** `build_device_info()` cachte `DeviceInfo` dauerhaft auch
+  nach einer Config-Entry-Umbenennung, weil ein berechneter `cache_key` nie
+  mit dem gespeicherten Eintrag verglichen wurde. Der Cache vergleicht den
+  `cache_key` jetzt tatsächlich, bevor er den zwischengespeicherten Wert
+  zurückgibt.
+- **`coordinator.py` (mehrere Fixe):**
+  - `_room_mode_validation_counter` wurde bei `setup_registers()` nicht
+    zurückgesetzt, sodass ein nach einer Rekonfiguration neu hinzugefügtes
+    Zonenraum-Mode-Register bis zu 5 Polling-Zyklen auf seine erste
+    Einzelvalidierung warten musste. Der Zähler wird jetzt bei jedem
+    `setup_registers()`-Aufruf zurückgesetzt.
+  - Die transienten Exception-Codes 5/6/10/11 wurden zwischenzeitlich als
+    `ModbusIOException` klassifiziert, was im API-Retry-Loop fälschlich den
+    harten Reconnect-Pfad statt Retry-in-Place auslöste; korrigiert auf
+    `ModbusException`, passend zum dokumentierten API-1.0-Vertrag.
+  - **Repair-Issue-IDs sind jetzt pro Config-Entry skopiert.** Home
+    Assistants Issue-Registry schlüsselt ausschließlich über
+    `(domain, issue_id)`, ohne implizite Bindung an einen Config-Entry. Bei
+    zwei Wärmepumpen mit z. B. gleichzeitig fehlendem Web-PIN,
+    Verbindungsfehler oder abgelehntem Schreibzugriff überschrieb der zweite
+    Entry das Issue des ersten. Alle betroffenen Stellen (`__init__.py`,
+    `coordinator.py`, `repairs.py`, `services.py`) hängen die `entry_id`
+    jetzt über einen gemeinsamen `scoped_issue_id()`-Helfer an die Issue-ID
+    an.
+  - `_async_update_data` fing echte Programmfehler fälschlich als
+    „cannot_connect" ab, weil ein breites `except Exception` beim Poll-Zyklus
+    jede unerwartete Ausnahme automatisch als Verbindungsfehler klassifizierte.
+    Jetzt werden ausschließlich `ModbusException` und `OSError` (inkl.
+    `TimeoutError`) abgefangen; jede andere Ausnahme propagiert unverändert
+    nach oben.
+- **Übersetzungslücke im Options-Flow:** Die Übersetzung für den
+  `humidity_forwarding`-Schritt fehlte im Options-Flow-Teil von
+  `strings.json`/`en.json` (nur im Config-Flow-Teil vorhanden), wodurch der
+  Schritt beim nachträglichen Aktivieren über die Optionen ohne
+  Titel/Beschreibung erschien. Ergänzt für Feuchte- und
+  Speichertemperatur-Weiterleitung in beiden Flow-Teilen.
+- Veraltete Versions-Referenzen in Kommentaren, Wiki und internen
+  Versions-Snapshots (`idm-heatpump-api` 0.9.1 statt 1.0.0/1.0.1,
+  `CLAUDE.md`/`AGENTS.md` mehrere Releases hinterher) korrigiert; tote
+  Code-Reste (`_NON_RETRYABLE_DEVICE_EXCEPTION_CODES`) entfernt. Funktional
+  ohne Auswirkung.
 
-### Verified
+### Documentation
 
-- Vollständige, mehrstufige Codeprüfung der gesamten Integration (nicht nur
-  des Diffs): config_flow.py, coordinator.py, alle Entity-Plattformen,
-  climate/water_heater/button/services, Adapter-/Registermapping-Dateien
-  sowie web_data/diagnostics/repairs auf konkrete, reproduzierbare Fehler
-  geprüft. 1082/1082 Tests grün (inkl. neuer Regressionstests für jeden
-  behobenen Fehler), mypy (strict) und ruff sauber.
-- Der tmodbus-Transport (`modbus_transport.py`/`modbus_client.py`) wurde gegen
-  die real gepinnten Pakete (`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`,
-  `idm-heatpump-api[web]==1.0.0`, nicht die Test-Stubs) end-to-end gegen einen
-  echten tmodbus-TCP-Server geprüft: Connect, FC03/FC04-Reads, FC16-Write,
-  Illegal-Address-Mapping (`exception_code=2` → `IllegalAddressError`) und
-  Reconnect nach `close()` funktionieren wie im API-1.0-Vertrag dokumentiert.
-- Bekannt und bewusst zurückgestellt (kein akuter Fix in dieser Version):
-  `repairs.py`/`coordinator.py` verwenden globale, nicht pro Config-Entry
-  skopierte Repair-Issue-IDs (`web_pin_missing`,
-  `web_authentication_failed`) — bei zwei Wärmepumpen mit gleichzeitig
-  fehlendem Web-PIN kann der zweite Entry das Issue des ersten überschreiben.
-  `coordinator.py`s breites `except Exception` in `_async_update_data`/
-  `async_refresh_web_supplement` klassifiziert auch echte Programmfehler als
-  „cannot_connect"/„web_supplement_failed" statt sie sichtbar zu machen —
-  eine bewusste Resilienz-Abwägung, die eine gezielte Unterscheidung
-  „Kommunikationsfehler vs. Programmfehler" erfordert.
+- Raumtemperatur-, Feuchte- und Speichertemperatur-Weiterleitung sind jetzt
+  vollständig im Wiki (`docs/wiki/Configuration.md`) beschrieben; zuvor war
+  nur die Raumtemperatur-Weiterleitung teilweise dokumentiert.
 
-## [0.11.0-beta.3] - 2026-08-05
+### Known limitation
 
-Dritte Beta der 0.11.x-Linie. Behält den tmodbus-Laufzeitpfad
-(`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`) mit der stabilen
-`idm-heatpump-api[web]==1.0.0` bei und korrigiert die Zuordnung transienter
-Modbus-Exception-Codes zum dokumentierten API-1.0-Transportvertrag.
-
-### Changed
-
-- **Transiente Exception-Codes 5/6/10/11 → `ModbusException` statt
-  `ModbusIOException`:** Der Transport übersetzt Acknowledge, Server Device
-  Busy und Gateway-Verfügbarkeitsfehler jetzt in `ModbusException`, damit der
-  API-Retry-Loop sie *in place* wiederholt (gleiche Verbindung, exponentieller
-  Backoff) statt die Verbindung hart zu schließen und neu aufzubauen. Das
-  entspricht dem API-1.0-Vertrag („transient codes 5/6/10/11 belong to the
-  retry-in-place path") und vermeidet Socket-Churn bei Geräten, deren
-  Busy-Antworten tmodbus intern bereits wiederholt. Die Marker-Strings
-  (`exception_code=5|6|10|11`) bleiben für die Fehlerklassifizierung erhalten;
-  `IllegalAddressError` für Code 2 (Coordinator-Bisect) ist unverändert.
-
-### Fixed
-
-- **Toten Code entfernt:** `_NON_RETRYABLE_DEVICE_EXCEPTION_CODES` war
-  nirgends referenziert. Die Kommentare behaupteten fälschlich, Code 6 komme
-  „ohne zweiten API-Retry" durch und `ModbusIOException` werde „in place ohne
-  Reconnect" geretryed — beides traf auf den API-Retry-Loop nicht zu und ist
-  jetzt korrigiert.
-- Die changelog-Aussage der 0.11.0-beta.2 („`ModbusIOException` für transiente
-  Codes 5/6/10/11") war insofern irreführend, als `ModbusIOException` im
-  API-Retry-Loop den harten Reconnect-Pfad auslöst.
+- Ein Modellerkennungs-Nachfolgeproblem bei bestimmten Navigator-2.0/
+  Terra-SWM-Systemen (Geräteansicht zeigt ein anderes Modell als der
+  Diagnose-Export) ist als
+  [#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192) offen und
+  wird nach diesem Release weiter untersucht.
 
 ### Compatibility
 
-- Vollständig abwärtskompatibel für Nutzer: Fehlerklassifizierung
-  (`error_messages.py`) und Coordinator-Bisect-Logik unverändert; Tests wurden
-  an das vertragskonforme Mapping angepasst (1072 passed, ruff + strict mypy
-  sauber).
-
-## [0.11.0-beta.2] - 2026-08-04
-
-Zweite Beta der 0.11.x-Linie. Wechselt auf die stabile API 1.0.0 und macht
-`IdmModbusConnectionClient` zu einem dünnen Wrapper, der den tmodbus-Transport
-über den neuen API-1.0-`transport=`-Konstruktorparameter injiziert, statt
-private API-Hooks zu überschreiben und einen eigenen Retry-Loop zu pflegen.
-
-### Added
-
-- **API-1.0-Transport-Injektion:** `IdmModbusConnectionClient` injiziert jetzt
-  eine `ModbusConnectionTransport`-Instanz über `super().__init__(transport=…)`.
-  Die API besitzt nun den vollständigen Lifecycle, Retry-Loop, Batching,
-  Modellerkennung und Schreibschutz. Diese Klasse fügt nur noch
-  transportbezogene Diagnose hinzu.
-- **Exception-Translation im Transport:** Backend-neutrale `ModbusError`-
-  Fehler werden jetzt *innerhalb* des Transports in die API-Ausnahme-Hierarchie
-  übersetzt (`IllegalAddressError` für Code 2, `ModbusException` für
-  transiente Codes 5/6/10/11, `ConnectionException`/`TimeoutError` für
-  Transportfehler), bevor sie den API-Retry-Loop erreichen.
-
-### Changed
-
-- **`idm-heatpump-api[web]==0.9.1` → `==1.0.0`:** Die Integration pinnt jetzt
-  die stabile API 1.0.0. `pymodbus>=3.12.1,<4.0` bleibt vorübergehend als
-  Kompatibilitätsabhängigkeit bestehen.
-- **Netto -208 Zeilen:** Der eigene Retry-Loop (`_run_transport_command`), die
-  Error-Translation (`_translate_transport_error`) und alle Private-Methoden-
-  Overrides (`_ensure_connected`, `_try_reconnect`, `_read_registers`,
-  `_write_registers`) wurden entfernt. `modbus_client.py` schrumpfte von 306
-  auf 76 Zeilen.
-- `ModbusConnectionTransport` implementiert jetzt das API-1.0-Protocol
-  (`connect`/`close`/`connected`, keyword-only `read_*`/`write_registers` mit
-  `list[int]`-Rückgaben) statt des lokalen `async_*`-Protocols.
-
-### Compatibility
-
-- Vollständig abwärtskompatibel für Nutzer: bestehende Config-Entries
-  funktionieren unverändert. Die öffentliche Client-Oberfläche
-  (`read_batch`, `write_register`, `detect_model`, `connect`, `disconnect`,
-  `is_connected`, `transport_diagnostics`) ist identisch.
-- Die Coordinator-Marker-Strings (`exception_code=2`, `illegal data address`)
-  für die Bisect-Logik sind unverändert erhalten.
-
-## [0.11.0-beta.1] - 2026-08-04
-
-Erste Beta der 0.11.x-Linie. Der direkte Modbus-TCP-Socket wechselt auf
-`modbus-connection==4.0.0a3` mit `tmodbus==0.5.0`, während
-`idm-heatpump-api[web]==0.9.1` weiterhin die IDM-Gerätelogik bereitstellt.
-
-> **Beta-Hinweis:** Die vollständigen automatisierten Prüfungen sind
-> Voraussetzung für die Veröffentlichung. Die read-only Verifikation des neuen
-> Transportpfads an realer Navigator-Hardware und der Stable-Soak stehen noch
-> aus; reale Schreibtests sind ohne ausdrückliche Freigabe ausgeschlossen.
-
-### Added
-
-- **Direkter tmodbus-Laufzeitpfad:** Die Integration verwendet jetzt
-  `IdmModbusConnectionClient` und `ModbusConnectionTransport`, um rohe
-  FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe über
-  `modbus-connection==4.0.0a3` und den separat fest gepinnten Backend-
-  Stand `tmodbus==0.5.0` auszuführen. `4.0.0a3` ist die Version der
-  Transportbibliothek, nicht die Version der IDM-Integration; diese Beta trägt
-  die Integrationsversion `0.11.0-beta.1`.
-- **Transportdiagnose:** Diagnoseexport, Startlog und der bestehende
-  API-Versionssensor zeigen nun zusätzlich die installierten Versionen von
-  `modbus-connection` und `tmodbus`. Der redigierte Client-Diagnoseblock meldet
-  außerdem Transportquelle, Socket-Besitz, Verbindungsstatus und
-  `supports_shared_connection: false`.
-
-### Changed
-
-- `idm-heatpump-api[web]==0.9.1` bleibt für Registermodell, Batchplanung,
-  Encoding/Decoding, Modellerkennung und Schreibschutz zuständig. Der Pin
-  `pymodbus>=3.12.1,<4.0` bleibt vorübergehend als Kompatibilitätsabhängigkeit
-  bestehen, weil API 0.9.1 Pymodbus weiterhin importiert; der direkte Socket
-  wird jedoch von tmodbus betrieben.
-- Jede Config-Entry besitzt weiterhin ihre eigene Verbindung. Eine zentrale
-  Home-Assistant-Verbindung mit Entry-übergreifendem Sharing ist derzeit nicht
-  verfügbar und wird vom Adapter nicht behauptet. Die Adapter-Implementierung
-  ist automatisiert getestet; eine read-only Hardware-Verifikation des neuen
-  Transportpfads steht noch aus.
-
-### Fixed
-
-- **Transiente Modbus-Antworten bleiben transportweit:** Acknowledge (Code 5),
-  Server Device Busy (Code 6) sowie Gateway Path/Target Unavailable (Codes 10
-  und 11) lösen keinen Einzelregister-Fallback und keine dauerhafte Quarantäne
-  valider Register aus. Der tmodbus-Backend-Retry für Code 6 wird nicht durch
-  eine zweite Adapter-Retry-Schleife vervielfacht; Codes 5/10/11 behalten den
-  konfigurierten Adapter-Backoff, ohne die bestehende TCP-Verbindung unnötig
-  neu aufzubauen.
+- Vollständig abwärtskompatibel: bestehende Config-Entries, Entity-IDs,
+  Registeradressen, Fehlerklassifizierung und Schreibpfade sind unverändert.
+  Die öffentliche Client-Oberfläche (`read_batch`, `write_register`,
+  `detect_model`, `connect`, `disconnect`, `is_connected`,
+  `transport_diagnostics`) ist identisch zur letzten stabilen Version.
 
 ## [0.10.1] - 2026-07-31
 
