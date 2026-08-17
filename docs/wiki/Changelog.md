@@ -5,6 +5,39 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.12.0 — 2026-08-17
+
+Minor release with two new features and one polling fix. Fully backward
+compatible: config entries, entity IDs, unique IDs, register addresses and
+write paths are unchanged, and the tested dependency pairing is identical to
+0.11.1.
+
+### Added
+
+- **Flow deviation per heating circuit** (`calculated_hc_{a..g}_flow_deviation`):
+  the measured flow temperature of a circuit minus the flow setpoint the
+  controller requests for that same circuit. Positive means overshoot, negative
+  means the circuit does not reach its setpoint — the key figure when tuning a
+  heating curve. Nothing is estimated; both operands are decoded registers of
+  one circuit. Idle (`0.0`) and unconfigured (`-1.0`) circuits report
+  `unavailable` instead of a meaningless deviation. With device hierarchy
+  enabled the sensor sits on its heating-circuit device.
+- **Self-diagnosis for a scan interval that is too short**: when polling takes
+  at least 80% of its own interval for several cycles in a row, a repair issue
+  explains the situation and names the three effective remedies. This
+  saturation is what turns into timeouts, especially when a second Modbus
+  client shares the controller.
+
+### Fixed
+
+- Calculated sensors could lose their source registers under entity-aware
+  polling — `calculated_cop` was missing from the hand-maintained dependency
+  list, so disabling the two power sensors made the COP sensor permanently
+  unavailable. Dependencies are now derived from the sensor definitions.
+
+See [`docs/CHANGELOG.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CHANGELOG.md#0120---2026-08-17)
+for the full entry including test and CI changes.
+
 ## v0.11.1 — 2026-08-15
 
 Patch release fixing [#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192):

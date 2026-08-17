@@ -114,7 +114,7 @@ See [Troubleshooting](Troubleshooting) for categorized errors and
 ## Version pairing
 
 The sticky protocol selection was introduced in integration version
-`0.8.1-beta.29`. The current stable release is `0.11.1` and ships the
+`0.8.1-beta.29`. The current stable release is `0.12.0` and ships the
 tested `idm-heatpump-api[web]==1.0.1` web clients, which additionally expose
 Navigator 10 heating-circuit data for circuits B–G.
 
