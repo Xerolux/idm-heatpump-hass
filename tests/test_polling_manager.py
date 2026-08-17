@@ -103,3 +103,55 @@ def test_ensure_rejects_magicmock_with_coordinator_spec() -> None:
 
     assert isinstance(coordinator, IdmCoordinator)
     assert ensure_entity_aware_polling(coordinator) is None
+
+
+class TestCalculatedSensorDependencies:
+    """Derived sensors must keep their source registers inside the poll plan.
+
+    Entity-aware polling drops every register no enabled entity asks for. A
+    calculated sensor is not itself a register, so its sources are only polled
+    because they are declared as its dependencies — a missing declaration
+    leaves the sensor permanently unavailable as soon as the user disables the
+    source entities.
+    """
+
+    def test_every_calculated_sensor_declares_its_sources(self) -> None:
+        from custom_components.idm_heatpump.calculated_sensors import (
+            CALCULATED_SENSOR_DEFINITIONS,
+            FLOW_DEVIATION_DEFINITIONS,
+        )
+
+        for definition in (*CALCULATED_SENSOR_DEFINITIONS, *FLOW_DEVIATION_DEFINITIONS):
+            declared = polling_plan._entity_dependencies(definition.key)
+            assert declared == set(definition.sources), f"{definition.key} would lose its source registers"
+
+    @staticmethod
+    def _registry(unique_id: str) -> MagicMock:
+        """Registry double shaped like the entity-registry stub in conftest."""
+        registry = MagicMock()
+        registry.entities = {unique_id: _RegistryEntry(unique_id)}
+        return registry
+
+    def test_cop_sources_are_required_without_their_own_entities(self) -> None:
+        """The COP sensor alone must keep both power registers in the plan."""
+        registry = self._registry("entry_calculated_cop")
+
+        required = polling_plan.build_required_register_names(
+            registry,
+            "entry",
+            {"power_consumption_hp", "thermal_power_flow_sensor", "outdoor_temp"},
+        )
+
+        assert {"power_consumption_hp", "thermal_power_flow_sensor"} <= required
+
+    def test_flow_deviation_keeps_the_circuit_setpoint_register(self) -> None:
+        registry = self._registry("entry_calculated_hc_a_flow_deviation")
+
+        required = polling_plan.build_required_register_names(
+            registry,
+            "entry",
+            {"hc_a_flow_temp", "hc_a_setpoint_flow_temp", "hc_b_flow_temp"},
+        )
+
+        assert {"hc_a_flow_temp", "hc_a_setpoint_flow_temp"} <= required
+        assert "hc_b_flow_temp" not in required

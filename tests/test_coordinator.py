@@ -1977,3 +1977,99 @@ class TestModelConflictSummary:
         summary = coord.model_conflict_summary
         assert summary["selected_family"] is None
         assert summary["conflict"] is False
+
+
+class TestScanIntervalSelfDiagnosis:
+    """Polls that saturate their own interval must be reported, not absorbed."""
+
+    _ISSUE_ID = "scan_interval_too_low_test_entry_id"
+
+    def _poll(self, coord, mock_ir, duration: float, times: int = 1) -> None:
+        for _ in range(times):
+            coord._evaluate_poll_duration(duration)
+
+    def test_single_slow_poll_does_not_warn(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            self._poll(coord, mock_ir, 9.5)
+
+        mock_ir.async_create_issue.assert_not_called()
+
+    def test_sustained_slow_polls_create_the_issue_once(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            self._poll(coord, mock_ir, 9.5, times=25)
+
+        mock_ir.async_create_issue.assert_called_once()
+        assert mock_ir.async_create_issue.call_args.args[2] == self._ISSUE_ID
+        placeholders = mock_ir.async_create_issue.call_args.kwargs["translation_placeholders"]
+        assert placeholders["duration"] == "9.5"
+        assert placeholders["interval"] == "10"
+
+    def test_fast_polls_below_the_ratio_never_warn(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            self._poll(coord, mock_ir, 7.9, times=50)
+
+        mock_ir.async_create_issue.assert_not_called()
+
+    def test_occasional_slow_poll_does_not_accumulate(self, mock_hass, mock_config_entry):
+        """A slow poll every other cycle must not add up to a warning."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            for _ in range(30):
+                coord._evaluate_poll_duration(9.5)
+                coord._evaluate_poll_duration(1.0)
+
+        mock_ir.async_create_issue.assert_not_called()
+
+    def test_issue_clears_only_after_a_sustained_fast_streak(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            self._poll(coord, mock_ir, 9.5, times=10)
+            mock_ir.async_create_issue.assert_called_once()
+
+            # A short recovery must not clear the issue yet (no flapping).
+            self._poll(coord, mock_ir, 1.0, times=9)
+            mock_ir.async_delete_issue.assert_not_called()
+
+            self._poll(coord, mock_ir, 1.0)
+            mock_ir.async_delete_issue.assert_called_once_with(mock_hass, "idm_heatpump", self._ISSUE_ID)
+
+    def test_issue_is_raised_again_after_recovery(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            self._poll(coord, mock_ir, 9.5, times=10)
+            self._poll(coord, mock_ir, 1.0, times=10)
+            self._poll(coord, mock_ir, 9.5, times=10)
+
+        assert mock_ir.async_create_issue.call_count == 2
+
+    def test_web_only_entries_without_interval_are_skipped(self, mock_hass, mock_config_entry):
+        """Web-only mode disables the Modbus interval; nothing to compare against."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coord.update_interval = None
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            self._poll(coord, mock_ir, 60.0, times=50)
+
+        mock_ir.async_create_issue.assert_not_called()
+
+    async def test_successful_poll_feeds_the_evaluation(self, mock_hass, mock_config_entry):
+        """The metric comes from the real poll path, not only from unit calls."""
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 21.0})
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[reg])
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            await coord._async_update_data()
+
+        assert coord._fast_poll_streak == 1
+        assert coord._slow_poll_streak == 0

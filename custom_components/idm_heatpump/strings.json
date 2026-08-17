@@ -871,6 +871,10 @@
       "title": "IDM connection returned no usable data",
       "description": "Home Assistant connected to **{host}**, but received no usable Modbus register values.\n\nPlease check:\n- Slave/unit ID is normally 1\n- The Modbus proxy forwards to the correct heat pump\n- The configured Navigator model and heating circuits match the device\n- No other Modbus client is blocking communication"
     },
+    "scan_interval_too_low": {
+      "title": "IDM polling barely fits into the scan interval",
+      "description": "Reading the registers of **{host}** currently takes about {duration} s of the configured {interval} s scan interval, and has done so for several polls in a row.\n\nThe heat pump controller then gets almost no idle time between requests, which typically shows up as timeouts — especially when another Modbus client shares the controller.\n\nWhat helps:\n- Increase the scan interval in the integration options\n- Disable entities you do not use (polling skips their registers)\n- Check whether another Modbus client is querying the heat pump at the same time"
+    },
     "register_not_supported": {
       "title": "IDM register not supported by this device",
       "description": "The heat pump rejected register **{register}** at address **{address}**. The integration will skip this register and continue polling supported values.\n\nThis usually means the feature is not available on this model, firmware, or installed hardware configuration."

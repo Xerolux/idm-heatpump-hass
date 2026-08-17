@@ -871,6 +871,10 @@
       "title": "IDM-Verbindung liefert keine verwertbaren Daten",
       "description": "Home Assistant konnte **{host}** verbinden, erhielt aber keine verwertbaren Modbus-Registerwerte.\n\nBitte prüfen:\n- Slave-/Unit-ID ist normalerweise 1\n- Der Modbus-Proxy leitet an die richtige Wärmepumpe weiter\n- Navigator-Modell und Heizkreise passen zum Gerät\n- Kein anderer Modbus-Client blockiert die Kommunikation"
     },
+    "scan_interval_too_low": {
+      "title": "IDM-Abfrage passt kaum in das Abfrageintervall",
+      "description": "Das Lesen der Register von **{host}** dauert derzeit rund {duration} s bei einem eingestellten Abfrageintervall von {interval} s – und das über mehrere Abfragen hinweg.\n\nDamit bleibt der Wärmepumpenregelung fast keine Pause zwischen den Anfragen, was sich typischerweise als Timeouts zeigt – besonders, wenn ein weiterer Modbus-Client dieselbe Regelung abfragt.\n\nDas hilft:\n- Abfrageintervall in den Integrationsoptionen erhöhen\n- Nicht genutzte Entitäten deaktivieren (deren Register werden dann nicht mehr gelesen)\n- Prüfen, ob ein weiterer Modbus-Client die Wärmepumpe gleichzeitig abfragt"
+    },
     "register_not_supported": {
       "title": "IDM-Register wird von diesem Gerät nicht unterstützt",
       "description": "Die Wärmepumpe hat Register **{register}** an Adresse **{address}** abgelehnt. Die Integration überspringt dieses Register und liest unterstützte Werte weiter aus.\n\nMeist bedeutet das, dass die Funktion auf diesem Modell, dieser Firmware oder dieser Hardwareausstattung nicht verfügbar ist."

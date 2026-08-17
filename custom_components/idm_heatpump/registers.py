@@ -371,12 +371,26 @@ def _build_alias_map(
     sensor shows the current value, while a number entity allows setting it).
     Since ``read_batch`` returns data keyed by *register name*, we need to
     ensure that every entity can find its value under the name it expects.
+
+    Only addresses shared by *different* register names are kept, and each name
+    appears once. Two entries carrying the same name are not an alias: one
+    register legitimately appears in several platform description lists (a
+    writable GLT value is both a sensor and a number), which made every such
+    address look shared while copying a value onto the name it already had.
+    A single-name entry carries no aliasing information either, and every
+    consumer treats a missing entry exactly like a single-name one.
+
+    Dropping both keeps the per-poll alias pass and the polling-plan alias
+    expansion proportional to the handful of genuinely aliased addresses
+    instead of to the full register set (~690 on a maximum configuration).
     """
     addr_to_names: dict[int, list[str]] = {}
     for desc in all_descriptions:
         reg: RegisterDef = desc["register"]
-        addr_to_names.setdefault(reg.address, []).append(reg.name)
-    return addr_to_names
+        names = addr_to_names.setdefault(reg.address, [])
+        if reg.name not in names:
+            names.append(reg.name)
+    return {address: names for address, names in addr_to_names.items() if len(names) > 1}
 
 
 def _collect_all_descriptions(
@@ -431,11 +445,7 @@ def collect_aliases_from_descriptions(
     descriptions: list[dict[str, Any]],
 ) -> dict[int, list[str]]:
     """Extract alias map from pre-built entity descriptions."""
-    addr_to_names: dict[int, list[str]] = {}
-    for desc in descriptions:
-        reg: RegisterDef = desc["register"]
-        addr_to_names.setdefault(reg.address, []).append(reg.name)
-    return addr_to_names
+    return _build_alias_map(descriptions)
 
 
 def collect_alias_map(
