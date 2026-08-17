@@ -23,10 +23,14 @@ jobs:
         language: [actions, python]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: github/codeql-action/init@f205ea1c3313d32999d8d6a48b4f6530d4437b38
+      # init and analyze must stay on the SAME codeql-action version. A version
+      # skew fails the job with "Loaded a configuration file for version X, but
+      # running version Y", so bump both lines together — Dependabot proposes
+      # them as two separate pull requests, each of which is red on its own.
+      - uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           languages: ${{ matrix.language }}
-      - uses: github/codeql-action/analyze@f205ea1c3313d32999d8d6a48b4f6530d4437b38
+      - uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           category: "/language:${{ matrix.language }}"
 
