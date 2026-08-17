@@ -85,6 +85,16 @@ _WEB_REPAIR_ISSUES = (
     "web_invalid_response",
 )
 _WEB_CORE_VALUE_KEYS = ("navigator_version", "software_version", "heatpump_model")
+_SCAN_INTERVAL_TOO_LOW_ISSUE = "scan_interval_too_low"
+# A poll that occupies most of its own interval leaves the controller no idle
+# time between requests: the next poll starts almost immediately after the
+# previous one finished. Warn only on a sustained streak so a single slow poll
+# (a retry, a reconnect, an unrelated network hiccup) never raises an issue,
+# and require an equally long fast streak before clearing it so the issue
+# cannot flap around the threshold.
+_SLOW_POLL_RATIO = 0.8
+_SLOW_POLL_STREAK_TO_WARN = 10
+_FAST_POLL_STREAK_TO_CLEAR = 10
 _ZONE_ROOM_MODE_PREFIX = "zm"
 _ZONE_ROOM_MODE_MARKER = "_room"
 _ZONE_ROOM_MODE_SUFFIX = "_mode"
@@ -227,6 +237,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._consecutive_poll_failures = 0
         self._total_poll_count = 0
         self._total_poll_failures = 0
+        self._slow_poll_streak = 0
+        self._fast_poll_streak = 0
+        self._scan_interval_issue_active = False
         self._dhw_boost_manager: DhwBoostManager | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         self._write_timestamps: dict[int, float] = {}
@@ -737,7 +750,59 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_poll_duration = time.monotonic() - poll_started
         self._last_poll_success = datetime.now(UTC)
         self._consecutive_poll_failures = 0
+        self._evaluate_poll_duration(self._last_poll_duration)
         return data
+
+    def _evaluate_poll_duration(self, duration: float) -> None:
+        """Raise or clear a repair issue when polling saturates its own interval.
+
+        The heat pump controller tolerates only a limited request rate. When a
+        poll regularly needs most of the configured scan interval, the next poll
+        starts almost immediately after the previous one — which shows up as
+        timeouts, especially when a second Modbus client (an energy manager, a
+        second Home Assistant integration) shares the controller. The user fix
+        is a longer scan interval or fewer enabled entities, so this is reported
+        as a non-fixable repair issue rather than silently absorbed.
+        """
+        if self.update_interval is None:
+            return
+        interval = self.update_interval.total_seconds()
+        if interval <= 0:
+            return
+
+        if duration >= interval * _SLOW_POLL_RATIO:
+            self._slow_poll_streak += 1
+            self._fast_poll_streak = 0
+        else:
+            self._fast_poll_streak += 1
+            self._slow_poll_streak = 0
+
+        if not self._scan_interval_issue_active and self._slow_poll_streak >= _SLOW_POLL_STREAK_TO_WARN:
+            self._scan_interval_issue_active = True
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self._scoped_issue_id(_SCAN_INTERVAL_TOO_LOW_ISSUE),
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=_SCAN_INTERVAL_TOO_LOW_ISSUE,
+                translation_placeholders={
+                    "host": self._client.host,
+                    "duration": f"{duration:.1f}",
+                    "interval": f"{interval:g}",
+                },
+            )
+            _LOGGER.warning(
+                "IDM polling of %s took %.1fs of its %gs scan interval for %d consecutive polls; "
+                "increase the scan interval or disable unused entities",
+                self._client.host,
+                duration,
+                interval,
+                self._slow_poll_streak,
+            )
+        elif self._scan_interval_issue_active and self._fast_poll_streak >= _FAST_POLL_STREAK_TO_CLEAR:
+            self._scan_interval_issue_active = False
+            ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(_SCAN_INTERVAL_TOO_LOW_ISSUE))
 
     async def async_refresh_web_supplement(self) -> None:
         """Refresh optional local web data without affecting Modbus updates."""

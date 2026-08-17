@@ -13,7 +13,74 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-Noch keine Änderungen.
+### Added
+
+- **Vorlauf-Abweichung je Heizkreis.** Neue berechnete Sensoren
+  `calculated_hc_{a..g}_flow_deviation` zeigen die Differenz zwischen der
+  gemessenen Vorlauftemperatur eines Heizkreises (`hc_{x}_flow_temp`) und dem
+  Vorlauf-Sollwert, den die Regelung für genau diesen Heizkreis anfordert
+  (`hc_{x}_setpoint_flow_temp`, Adresse 1378 ff., live auf Navigator-10-Hardware
+  verifiziert). Positiv bedeutet Überschwingen, negativ bedeutet, dass der
+  Heizkreis seinen Sollwert nicht erreicht — die zentrale Größe beim Einstellen
+  der Heizkurve. Es wird nichts geschätzt: beide Operanden sind dekodierte
+  Registerwerte desselben Heizkreises. Im Stillstand (`0.0`) und bei nicht
+  konfigurierten Heizkreisen (`-1.0`) greift der zentrale Sentinel-Filter, der
+  Sensor meldet dann `unavailable` statt einer Scheinabweichung. Die Entität
+  entsteht bereits bei vorhandenen Registern, damit ein Neustart im Standby sie
+  nicht verschwinden lässt. Bei aktiver Gerätehierarchie liegt der Sensor am
+  jeweiligen Heizkreis-Gerät, direkt neben Vorlauf- und Solltemperatur;
+  bestehende berechnete Sensoren behalten ihre Zuordnung zum Hauptgerät
+  unverändert. Die noch offene Abweichung auf **Wärmepumpenebene**
+  bleibt bewusst unberührt: dafür fehlt weiterhin ein eindeutiges Register für
+  den von der Wärmepumpe selbst angeforderten Vorlauf-Sollwert.
+- **Selbstdiagnose für ein zu kurzes Abfrageintervall.** Braucht ein Poll über
+  mehrere Zyklen hinweg mindestens 80 % seines eigenen Abfrageintervalls, legt
+  die Integration ein Reparatur-Hinweis (`scan_interval_too_low`) an, das
+  Intervall, gemessene Dauer und die drei wirksamen Gegenmaßnahmen nennt. Genau
+  diese Sättigung führt zu Timeouts, weil der Regelung keine Pause zwischen den
+  Anfragen bleibt — besonders wenn ein zweiter Modbus-Client dieselbe Anlage
+  abfragt. Warnung erst nach zehn aufeinanderfolgenden langsamen Abfragen und
+  Auflösung erst nach zehn schnellen, damit ein einzelner Ausreißer nichts
+  auslöst und der Hinweis an der Schwelle nicht flattert. Die zugrunde liegenden
+  Messwerte gab es bereits im Diagnose-Export; neu ist, dass die Integration von
+  sich aus darauf hinweist.
+
+### Fixed
+
+- **Berechnete Sensoren konnten ihre Quellregister verlieren.** Die
+  Abhängigkeiten für das entitätsbewusste Polling waren als separate Liste
+  gepflegt, in der `calculated_cop` fehlte. Deaktivierte ein Nutzer die beiden
+  Leistungssensoren, fielen deren Register aus dem Abfrageplan und der
+  COP-Sensor wurde dauerhaft `unavailable`. Die Abhängigkeiten werden jetzt
+  direkt aus den Sensordefinitionen abgeleitet, sodass ein neuer berechneter
+  Sensor diese Lücke nicht wieder aufreißen kann.
+
+### Changed
+
+- **Alias-Map nur noch für tatsächlich geteilte Adressen.** Die Adress-zu-Namen-
+  Zuordnung enthielt jeden Eintrag, auch Adressen mit nur einem Namen sowie
+  Doppeleinträge desselben Namens (ein schreibbarer GLT-Wert erscheint als
+  Sensor *und* als Number). In einer Maximalkonfiguration waren das ~690
+  Einträge, von denen keiner ein echtes Alias war: Der Alias-Durchlauf kopierte
+  bei jedem Poll Werte auf Namen, die sie bereits trugen. Die Map enthält jetzt
+  ausschließlich Adressen mit mehreren *verschiedenen* Namen; der Mechanismus
+  bleibt für echte Aliase vollständig erhalten.
+
+### Tests
+
+- **Lasttest für die maximal ausgebaute Anlage** (7 Heizkreise, 10 Zonen à 8
+  Räume, Kaskade aktiv) — bislang ein offener Roadmap-Punkt. Geprüft werden
+  Registeranzahl, Eindeutigkeit von Namen und Adressen, Unique-ID-Kollisionen je
+  Plattform, vollständige Coordinator-Indizes sowie die Laufzeit von Aufbau und
+  Snapshot-Auswertung. Der Test ersetzt keine Messung an realer Hardware; er
+  sichert die Skalierungseigenschaften ab, die lokal beweisbar sind.
+- **Datenschutz- und Vollständigkeitstest für den Diagnose-Export.** Der Export
+  wird aus einem Coordinator gebaut, dessen private Felder jeweils eine
+  eindeutige Markierung tragen (Host, Web-Host, PIN, myIDM-ID, Seriennummer,
+  dazu Fehlertexte mit eingebetteter Verbindungsangabe). Keine dieser
+  Markierungen darf im serialisierten Ergebnis auftauchen, während die für den
+  Support nötigen Abschnitte vorhanden bleiben müssen. Damit ist die bisher
+  manuelle, wiederkehrende Prüfung ein automatischer Regressionsschutz.
 
 ## [0.11.1] - 2026-08-15
 

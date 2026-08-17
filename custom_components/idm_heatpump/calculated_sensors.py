@@ -14,8 +14,10 @@ from homeassistant.components.sensor import (
     SensorStateClass,
 )
 from homeassistant.const import UnitOfTemperature
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .coordinator import IdmCoordinator
+from .device_hierarchy import build_subdevice_info
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 
 
@@ -31,6 +33,19 @@ class CalculatedSensorDefinition:
     suggested_display_precision: int = 1
     native_unit_of_measurement: str | None = UnitOfTemperature.CELSIUS
     device_class: SensorDeviceClass | None = SensorDeviceClass.TEMPERATURE
+    # Register name used to resolve the subdevice this sensor belongs to when
+    # device hierarchy is enabled. ``None`` keeps the sensor on the main device.
+    # Only set for sensors introduced together with this field: changing it for
+    # an existing sensor would move an already-registered entity to a different
+    # device.
+    device_scope_source: str | None = None
+    # When False, the sensor is created as soon as every source register is
+    # present in the snapshot, even if a source currently reads its unused
+    # sentinel. Required for sources that legitimately report a sentinel while
+    # the heat pump is idle: creating the entity only when it happens to be
+    # running would make its existence depend on the moment Home Assistant
+    # restarts. Runtime availability still requires usable sources.
+    require_sources_used: bool = True
 
 
 def _temperature(data: Mapping[str, Any], key: str) -> float | None:
@@ -147,11 +162,58 @@ CALCULATED_SENSOR_DEFINITIONS: tuple[CalculatedSensorDefinition, ...] = (
 )
 
 
+# Heating-circuit flow deviation = actual flow temperature minus the flow
+# setpoint the controller currently requests for that circuit. Both source
+# registers were verified on live Navigator 10 hardware (see
+# docs/dev/open-work-audit.md): ``hc_{x}_setpoint_flow_temp`` (1378 ff., FLOAT,
+# read-only) is the setpoint the heating curve computes for the circuit, and
+# ``hc_{x}_flow_temp`` is the measured flow temperature of the same circuit.
+#
+# Scope note: this deliberately stays *per heating circuit*. The still-open
+# roadmap item is the deviation at heat-pump level, which needs an unambiguous
+# register for the flow setpoint the heat pump itself requests; heating-curve,
+# mixer and maximum values must not be mixed there. Nothing is estimated here —
+# both operands are decoded register values of one circuit.
+#
+# Sentinels observed on real hardware: an idle circuit reports 0.0 and an
+# unconfigured circuit reports -1.0. Both are caught by the central
+# ``is_register_unused`` filter, so the sensor reports unavailable instead of a
+# meaningless deviation. Because that idle 0.0 is a normal operating state, the
+# entity is created from register *presence* (``require_sources_used=False``)
+# rather than from the momentary value.
+FLOW_DEVIATION_CIRCUITS: tuple[str, ...] = ("a", "b", "c", "d", "e", "f", "g")
+
+
+def flow_deviation_definition(circuit: str) -> CalculatedSensorDefinition:
+    """Build the flow-deviation definition for one heating circuit."""
+    flow_register = f"hc_{circuit}_flow_temp"
+    setpoint_register = f"hc_{circuit}_setpoint_flow_temp"
+    return CalculatedSensorDefinition(
+        key=f"calculated_hc_{circuit}_flow_deviation",
+        name=f"Heizkreis {circuit.upper()} Vorlauf-Abweichung",
+        sources=(flow_register, setpoint_register),
+        # Positive = flow runs above the requested setpoint (overshoot),
+        # negative = the circuit does not reach its requested setpoint.
+        calculate=_difference(flow_register, setpoint_register),
+        icon="mdi:thermometer-chevron-up",
+        # Belongs next to the other values of its circuit, not on the main device.
+        device_scope_source=flow_register,
+        require_sources_used=False,
+    )
+
+
+FLOW_DEVIATION_DEFINITIONS: tuple[CalculatedSensorDefinition, ...] = tuple(
+    flow_deviation_definition(circuit) for circuit in FLOW_DEVIATION_CIRCUITS
+)
+
+
 def _definition_supported(coordinator: IdmCoordinator, definition: CalculatedSensorDefinition) -> bool:
     """Return whether all required source registers exist on this installation."""
     data = coordinator.data
     if not data:
         return False
+    if not definition.require_sources_used:
+        return all(source in data for source in definition.sources)
     unused = coordinator.unused_registers
     return all(source in data and source not in unused for source in definition.sources)
 
@@ -160,7 +222,7 @@ def calculated_sensor_entities(coordinator: IdmCoordinator) -> list[IdmCalculate
     """Create only calculated sensors supported by the detected installation."""
     return [
         IdmCalculatedSensor(coordinator, definition)
-        for definition in CALCULATED_SENSOR_DEFINITIONS
+        for definition in (*CALCULATED_SENSOR_DEFINITIONS, *FLOW_DEVIATION_DEFINITIONS)
         if _definition_supported(coordinator, definition)
     ]
 
@@ -182,6 +244,14 @@ class IdmCalculatedSensor(IdmCoordinatorEntityBase, SensorEntity):
             suggested_display_precision=definition.suggested_display_precision,
             icon=definition.icon,
         )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Place the sensor on its subdevice when the definition names one."""
+        scope_source = self._definition.device_scope_source
+        if scope_source is not None and (subdevice := build_subdevice_info(self.coordinator, scope_source)):
+            return subdevice
+        return super().device_info
 
     def _sources_available(self) -> bool:
         """Return True when every source register is present, not unused, and finite.
