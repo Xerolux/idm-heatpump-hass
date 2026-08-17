@@ -13,6 +13,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+Noch keine Änderungen.
+
+## [0.12.0] - 2026-08-17
+
+Minor-Release: zwei neue Funktionen, ein Fix am entitätsbewussten Polling und
+Aufräumarbeiten an der CI. Vollständig abwärtskompatibel — bestehende Config
+Entries, Entity-IDs, Unique IDs, Registeradressen und Schreibpfade bleiben
+unverändert. Die getestete API-Paarung (`idm-heatpump-api[web]==1.0.1`,
+`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`) ist gegenüber 0.11.1
+unverändert.
+
 ### Added
 
 - **Vorlauf-Abweichung je Heizkreis.** Neue berechnete Sensoren
@@ -81,6 +92,26 @@ All notable changes to this project will be documented in this file.
   Markierungen darf im serialisierten Ergebnis auftauchen, während die für den
   Support nötigen Abschnitte vorhanden bleiben müssen. Damit ist die bisher
   manuelle, wiederkehrende Prüfung ein automatischer Regressionsschutz.
+
+### CI
+
+Ohne Auswirkung auf die ausgelieferte Integration; hier dokumentiert, weil
+beides den Zustand der Absicherung betrifft.
+
+- **CodeQL wieder lauffähig bei Action-Updates.** `codeql-action/init` und
+  `analyze` müssen dieselbe Version haben, Dependabot schlägt sie aber als zwei
+  getrennte PRs vor. Jeder für sich erzeugt eine Versionsdifferenz, und CodeQL
+  bricht mit `Loaded a configuration file for version X, but running version Y`
+  ab — einzeln gemergt hätte jeder der beiden PRs die CodeQL-Analyse auf `main`
+  lahmgelegt. Beide Referenzen zeigen jetzt gemeinsam auf v4.37.7, und ein
+  Kommentar im Workflow hält die Kopplung fest.
+- **Fehlalarm der Secret-Erkennung auf gepinnte Action-SHAs abgestellt.**
+  guardrails meldete einen 40-stelligen Commit-Hash in `uses: owner/action@…`
+  als „Hard-Coded Secret". Da der Scanner nur neu geänderte Zeilen meldet, traf
+  das bei jedem Action-Bump erneut zu. Die 21 SHA-Pins tragen jetzt einen
+  zeilenweisen `# guardrails-disable-line`-Marker — bewusst statt einer
+  `.guardrails/ignore`-Regel für `.github/workflows/`, die die kompletten
+  Dateien vom Scan genommen und damit auch echte Funde verdeckt hätte.
 
 ## [0.11.1] - 2026-08-15
 
