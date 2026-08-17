@@ -45,18 +45,16 @@ def _model_info_diagnostics(model_info: Any) -> dict[str, Any]:
     }
 
 
-def _client_diagnostics(coordinator: Any) -> dict[str, Any]:
-    getter = getattr(coordinator, "client_diagnostics", None)
-    if not callable(getter):
-        return {}
-    diagnostics = getter()
-    if isinstance(diagnostics, dict):
-        return diagnostics
-    return {}
+def _sanitized_error_message(error: Any, *, fallback: str) -> str | None:
+    """Return a useful error category without URLs, hosts, PINs or query data.
 
-
-def _sanitized_web_error(error: Any) -> str | None:
-    """Return a useful error category without URLs, hosts, PINs or query data."""
+    Error strings from the underlying web or Modbus transport clients can
+    embed host, IP, port or other connection details (e.g. "could not
+    connect to 192.168.1.10:502"). Only a leading identifier-shaped
+    ``SomeError: ...`` token is kept as a category label; anything else —
+    which is exactly where private data would live — is replaced by
+    ``fallback``.
+    """
     if not isinstance(error, str) or not error.strip():
         return None
     clean_error = error.strip()
@@ -66,7 +64,32 @@ def _sanitized_web_error(error: Any) -> str | None:
     clean_type = error_type.strip()
     if clean_type.isidentifier() and clean_type.endswith(("Error", "Exception", "Failed", "Failure")):
         return clean_type
-    return "Web supplement error"
+    return fallback
+
+
+def _client_diagnostics(coordinator: Any) -> dict[str, Any]:
+    """Return the API client's diagnostics with free-text error content sanitized.
+
+    ``async_redact_data`` (applied by the caller) only redacts by dict key, so
+    it cannot catch a host/port embedded inside ``last_error``'s free-text
+    message (e.g. "could not connect to 192.168.1.10:502"). That field is
+    sanitized here to a safe category label before redaction ever runs.
+    """
+    getter = getattr(coordinator, "client_diagnostics", None)
+    if not callable(getter):
+        return {}
+    diagnostics = getter()
+    if not isinstance(diagnostics, dict):
+        return {}
+    diagnostics = dict(diagnostics)
+    if "last_error" in diagnostics:
+        diagnostics["last_error"] = _sanitized_error_message(diagnostics["last_error"], fallback="Connection error")
+    return diagnostics
+
+
+def _sanitized_web_error(error: Any) -> str | None:
+    """Return a useful error category without URLs, hosts, PINs or query data."""
+    return _sanitized_error_message(error, fallback="Web supplement error")
 
 
 def _web_supplement_diagnostics(coordinator: Any) -> dict[str, Any]:

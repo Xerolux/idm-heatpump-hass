@@ -18,6 +18,7 @@ from typing import TYPE_CHECKING, Any, cast
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 from pymodbus.exceptions import ConnectionException, ModbusException
@@ -37,6 +38,7 @@ from .error_messages import (
 from .error_messages import (
     classify_web_error,
     friendly_web_error,
+    scoped_issue_id,
 )
 from .error_messages import (
     friendly_communication_error as _friendly_communication_error,
@@ -83,6 +85,16 @@ _WEB_REPAIR_ISSUES = (
     "web_invalid_response",
 )
 _WEB_CORE_VALUE_KEYS = ("navigator_version", "software_version", "heatpump_model")
+_SCAN_INTERVAL_TOO_LOW_ISSUE = "scan_interval_too_low"
+# A poll that occupies most of its own interval leaves the controller no idle
+# time between requests: the next poll starts almost immediately after the
+# previous one finished. Warn only on a sustained streak so a single slow poll
+# (a retry, a reconnect, an unrelated network hiccup) never raises an issue,
+# and require an equally long fast streak before clearing it so the issue
+# cannot flap around the threshold.
+_SLOW_POLL_RATIO = 0.8
+_SLOW_POLL_STREAK_TO_WARN = 10
+_FAST_POLL_STREAK_TO_CLEAR = 10
 _ZONE_ROOM_MODE_PREFIX = "zm"
 _ZONE_ROOM_MODE_MARKER = "_room"
 _ZONE_ROOM_MODE_SUFFIX = "_mode"
@@ -214,6 +226,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._alias_primary_map: dict[int, str] | None = None
         self._room_mode_registers: list[RegisterDef] = []
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
+        self._hierarchy_device_ids: dict[tuple[str, str], str] = {}
         self._operation_analysis: OperationAnalysis | None = None
         self._entity_aware_polling_manager: EntityAwarePollingManager | None = None
         self._polling_plan_total_count: int = 0
@@ -224,6 +237,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._consecutive_poll_failures = 0
         self._total_poll_count = 0
         self._total_poll_failures = 0
+        self._slow_poll_streak = 0
+        self._fast_poll_streak = 0
+        self._scan_interval_issue_active = False
         self._dhw_boost_manager: DhwBoostManager | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         self._write_timestamps: dict[int, float] = {}
@@ -271,6 +287,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # time), so precompute them once instead of re-scanning all registers
         # on every poll.
         self._room_mode_registers = [reg for reg in self._registers if _is_zone_room_mode_register(reg)]
+        # Reset so the next poll always individually validates the (possibly
+        # new) room-mode register set, instead of picking up mid-cycle where
+        # a reconfigure (e.g. adding a zone) could skip a newly added
+        # register's first read for up to _room_mode_validation_interval polls.
+        self._room_mode_validation_counter = 0
         self._invalidate_device_info_cache()
 
     def attach_operation_analysis(self, analysis: OperationAnalysis) -> None:
@@ -463,6 +484,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Registers without a numeric sentinel (BOOL/BITFLAG): only NaN/inf count.
         return isinstance(value, float) and (math.isnan(value) or math.isinf(value))
 
+    def _scoped_issue_id(self, issue_id: str) -> str:
+        """Return `issue_id` scoped to this coordinator's config entry."""
+        entry_id = self.config_entry.entry_id if self.config_entry is not None else None
+        return scoped_issue_id(entry_id, issue_id)
+
     async def _async_read_registers_resilient(self, registers: list[RegisterDef]) -> dict[str, Any]:
         """Read registers while isolating addresses unsupported by this device.
 
@@ -490,7 +516,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 ir.async_create_issue(
                     self.hass,
                     DOMAIN,
-                    f"register_not_supported_{reg.name}",
+                    self._scoped_issue_id(f"register_not_supported_{reg.name}"),
                     is_fixable=False,
                     severity=ir.IssueSeverity.WARNING,
                     translation_key="register_not_supported",
@@ -637,7 +663,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # communication error boundary as the main batch read.
             self._merge_unsupported_registers()
             await self._async_refresh_zone_room_modes(data)
-        except Exception as err:
+        except (ModbusException, OSError) as err:
             self._last_poll_duration = time.monotonic() - poll_started
             self._consecutive_poll_failures += 1
             self._total_poll_failures += 1
@@ -650,11 +676,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             for stale_issue_id in _CONNECTIVITY_REPAIR_ISSUES:
                 if stale_issue_id != issue_id:
-                    ir.async_delete_issue(self.hass, DOMAIN, stale_issue_id)
+                    ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(stale_issue_id))
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                issue_id,
+                self._scoped_issue_id(issue_id),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
@@ -675,7 +701,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                issue_id,
+                self._scoped_issue_id(issue_id),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
@@ -687,7 +713,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
 
         for issue_id in _CONNECTIVITY_REPAIR_ISSUES:
-            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
 
         # Apply aliases: when multiple register names share an address,
         # ensure all names appear in the data dict.
@@ -724,7 +750,59 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_poll_duration = time.monotonic() - poll_started
         self._last_poll_success = datetime.now(UTC)
         self._consecutive_poll_failures = 0
+        self._evaluate_poll_duration(self._last_poll_duration)
         return data
+
+    def _evaluate_poll_duration(self, duration: float) -> None:
+        """Raise or clear a repair issue when polling saturates its own interval.
+
+        The heat pump controller tolerates only a limited request rate. When a
+        poll regularly needs most of the configured scan interval, the next poll
+        starts almost immediately after the previous one — which shows up as
+        timeouts, especially when a second Modbus client (an energy manager, a
+        second Home Assistant integration) shares the controller. The user fix
+        is a longer scan interval or fewer enabled entities, so this is reported
+        as a non-fixable repair issue rather than silently absorbed.
+        """
+        if self.update_interval is None:
+            return
+        interval = self.update_interval.total_seconds()
+        if interval <= 0:
+            return
+
+        if duration >= interval * _SLOW_POLL_RATIO:
+            self._slow_poll_streak += 1
+            self._fast_poll_streak = 0
+        else:
+            self._fast_poll_streak += 1
+            self._slow_poll_streak = 0
+
+        if not self._scan_interval_issue_active and self._slow_poll_streak >= _SLOW_POLL_STREAK_TO_WARN:
+            self._scan_interval_issue_active = True
+            ir.async_create_issue(
+                self.hass,
+                DOMAIN,
+                self._scoped_issue_id(_SCAN_INTERVAL_TOO_LOW_ISSUE),
+                is_fixable=False,
+                severity=ir.IssueSeverity.WARNING,
+                translation_key=_SCAN_INTERVAL_TOO_LOW_ISSUE,
+                translation_placeholders={
+                    "host": self._client.host,
+                    "duration": f"{duration:.1f}",
+                    "interval": f"{interval:g}",
+                },
+            )
+            _LOGGER.warning(
+                "IDM polling of %s took %.1fs of its %gs scan interval for %d consecutive polls; "
+                "increase the scan interval or disable unused entities",
+                self._client.host,
+                duration,
+                interval,
+                self._slow_poll_streak,
+            )
+        elif self._scan_interval_issue_active and self._fast_poll_streak >= _FAST_POLL_STREAK_TO_CLEAR:
+            self._scan_interval_issue_active = False
+            ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(_SCAN_INTERVAL_TOO_LOW_ISSUE))
 
     async def async_refresh_web_supplement(self) -> None:
         """Refresh optional local web data without affecting Modbus updates."""
@@ -750,11 +828,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_web_error = error
             for issue_id in _WEB_REPAIR_ISSUES:
                 if issue_id != _WEB_AUTH_FAILED_ISSUE:
-                    ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+                    ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                _WEB_AUTH_FAILED_ISSUE,
+                self._scoped_issue_id(_WEB_AUTH_FAILED_ISSUE),
                 is_fixable=True,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=_WEB_AUTH_FAILED_ISSUE,
@@ -775,11 +853,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._last_web_error = error
             for stale_issue_id in _WEB_REPAIR_ISSUES:
                 if stale_issue_id != issue_id:
-                    ir.async_delete_issue(self.hass, DOMAIN, stale_issue_id)
+                    ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(stale_issue_id))
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                issue_id,
+                self._scoped_issue_id(issue_id),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key=issue_id,
@@ -793,7 +871,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._last_web_error = None
         for issue_id in _WEB_REPAIR_ISSUES:
-            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
+        previous_model_name = self._model_name
+        previous_firmware_version = self._firmware_version
+        previous_myidm_id = self.myidm_id
         self._web_supplement = web_supplement
         # Cache which web variant succeeded so the next poll skips the other
         # (WebSocket vs. HTTP have completely different login mechanisms).
@@ -861,6 +942,16 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Model metadata changed; invalidate cached device info so the next
         # entity state update publishes the new model/firmware/serial number.
         self._invalidate_device_info_cache()
+        if (
+            self._model_name != previous_model_name
+            or self._firmware_version != previous_firmware_version
+            or self.myidm_id != previous_myidm_id
+        ):
+            # Push the correction directly into the Device Registry too: it was
+            # only populated once at entity-setup time, and this change alone
+            # does not trigger a reload (see the docstring on
+            # _sync_main_device_registry).
+            self._sync_main_device_registry()
 
         # Persist retroactively detected model/firmware so it survives reloads.
         # Detection keys alone must not trigger a config-entry reload (see
@@ -1006,7 +1097,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
-                "write_rejected",
+                self._scoped_issue_id("write_rejected"),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key="write_rejected",
@@ -1038,6 +1129,35 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _invalidate_device_info_cache(self) -> None:
         """Clear cached DeviceInfo so the next access reflects fresh metadata."""
         self._device_info_cache = None
+
+    def _sync_main_device_registry(self) -> None:
+        """Push a corrected model/firmware/serial to the already-registered main device.
+
+        Home Assistant copies an entity's ``device_info`` into the Device
+        Registry once, when platforms are set up. A later retroactive model
+        correction (e.g. from the web supplement) only updates this
+        coordinator's in-memory state — ``CONF_DETECTED_NAVIGATOR_VERSION`` is
+        deliberately excluded from the reload fingerprint (see
+        ``_entry_reload_fingerprint`` in ``__init__.py``) so persisting it does
+        not tear down active Modbus/web connections, but that also means no
+        reload re-runs entity setup to refresh the registry. Without this, the
+        Home Assistant device page keeps showing the original, possibly wrong,
+        model indefinitely while diagnostics (which reads live coordinator
+        state) already shows the corrected one (#192).
+        """
+        entry = self.config_entry
+        if entry is None:
+            return
+        device_id = self._hierarchy_device_ids.get((DOMAIN, entry.entry_id))
+        if device_id is None:
+            return
+        registry = dr.async_get(self.hass)
+        updates: dict[str, Any] = {"model": self.model_name}
+        if self.firmware_version:
+            updates["sw_version"] = self.firmware_version
+        if self.myidm_id:
+            updates["serial_number"] = self.myidm_id
+        registry.async_update_device(device_id, **updates)
 
     async def async_shutdown(self) -> None:
         """Cancel pending background tasks and release resources.

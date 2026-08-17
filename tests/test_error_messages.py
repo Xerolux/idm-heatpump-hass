@@ -13,6 +13,7 @@ from custom_components.idm_heatpump.error_messages import (
     classify_write_error,
     friendly_web_error,
     friendly_write_error,
+    scoped_issue_id,
 )
 
 
@@ -59,3 +60,18 @@ def test_classifies_web_errors(error: Exception, issue_id: str) -> None:
 def test_classifies_write_errors(error: Exception, translation_key: str) -> None:
     assert classify_write_error(error) == translation_key
     assert friendly_write_error(translation_key, "test_register")
+
+
+def test_scoped_issue_id_embeds_entry_id() -> None:
+    assert scoped_issue_id("entry-1", "web_pin_missing") == "web_pin_missing_entry-1"
+
+
+def test_scoped_issue_id_differs_across_entries() -> None:
+    """Two heat pumps hitting the same condition must not collide in the issue registry."""
+    first = scoped_issue_id("entry-1", "web_pin_missing")
+    second = scoped_issue_id("entry-2", "web_pin_missing")
+    assert first != second
+
+
+def test_scoped_issue_id_falls_back_without_entry_id() -> None:
+    assert scoped_issue_id(None, "web_pin_missing") == "web_pin_missing"

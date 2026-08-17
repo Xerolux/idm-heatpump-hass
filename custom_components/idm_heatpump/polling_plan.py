@@ -12,6 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 
+from .calculated_sensors import CALCULATED_SENSOR_DEFINITIONS, FLOW_DEVIATION_DEFINITIONS
 from .coordinator import IdmCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,10 +35,13 @@ _ALWAYS_REQUIRED = frozenset(
     }
 )
 
+# Derived from the calculated-sensor definitions themselves so a new derived
+# sensor can never be silently starved of its source registers: an entry
+# missing here would drop those registers from the entity-aware poll plan and
+# leave the calculated sensor permanently unavailable.
 _CALCULATED_DEPENDENCIES: dict[str, frozenset[str]] = {
-    "calculated_hp_temperature_delta": frozenset({"hp_flow_temp", "hp_return_temp"}),
-    "calculated_heat_source_temperature_delta": frozenset({"heat_source_inlet_temp", "heat_source_outlet_temp"}),
-    "calculated_dhw_setpoint_deviation": frozenset({"dhw_temp_top", "dhw_setpoint"}),
+    definition.key: frozenset(definition.sources)
+    for definition in (*CALCULATED_SENSOR_DEFINITIONS, *FLOW_DEVIATION_DEFINITIONS)
 }
 
 _HEATING_CLIMATE = re.compile(r"^climate_hc_([a-g])$")

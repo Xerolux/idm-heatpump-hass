@@ -141,10 +141,17 @@ belastbarer Kleinstleistung wird kein Wert veröffentlicht.
 
 ### Vorlauf-Abweichung
 
-Ein Sensor für `Ist-Vorlauf minus angeforderter Vorlauf` benötigt zuerst ein
-eindeutiges Register für den tatsächlich von der Wärmepumpe angeforderten
-Vorlauf-Sollwert. Heizkurven-, Mischer- und Maximalwerte dürfen nicht vermischt
-werden.
+Auf **Heizkreisebene** ist die Abweichung umgesetzt: `hc_{x}_flow_temp` minus
+`hc_{x}_setpoint_flow_temp` vergleicht zwei Register desselben Heizkreises, und
+der von der Heizkurve berechnete Sollwert ist für diesen Heizkreis eindeutig.
+Sentinelwerte (`0.0` im Stillstand, `-1.0` bei nicht konfiguriertem Heizkreis)
+laufen über den zentralen `is_register_unused`-Filter, der Sensor meldet dann
+`unavailable`.
+
+Auf **Wärmepumpenebene** bleibt der Punkt offen: Ein Sensor für
+`Ist-Vorlauf minus angeforderter Vorlauf` benötigt zuerst ein eindeutiges
+Register für den tatsächlich von der Wärmepumpe angeforderten Vorlauf-Sollwert.
+Heizkurven-, Mischer- und Maximalwerte dürfen nicht vermischt werden.
 
 ### Binärregister-Semantik
 

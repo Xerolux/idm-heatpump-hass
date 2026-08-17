@@ -212,3 +212,141 @@ def test_cop_not_registered_when_source_registers_unused():
     )
 
     assert "calculated_cop" not in _entities_by_key(coordinator)
+
+
+def _flow_deviation_key(circuit: str) -> str:
+    return f"calculated_hc_{circuit}_flow_deviation"
+
+
+def test_flow_deviation_is_actual_minus_requested_setpoint():
+    """Positive = the circuit runs above the flow setpoint it was asked for."""
+    coordinator = _coordinator({"hc_a_flow_temp": 34.5, "hc_a_setpoint_flow_temp": 32.0})
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
+
+    assert sensor.native_value == 2.5
+    assert sensor.available is True
+
+
+def test_flow_deviation_is_negative_when_the_circuit_falls_short():
+    coordinator = _coordinator({"hc_b_flow_temp": 28.0, "hc_b_setpoint_flow_temp": 32.0})
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("b")]
+
+    assert sensor.native_value == -4.0
+
+
+def test_flow_deviation_created_for_every_configured_circuit_only():
+    """Registers exist only for configured circuits, so only those get a sensor."""
+    coordinator = _coordinator(
+        {
+            "hc_a_flow_temp": 34.0,
+            "hc_a_setpoint_flow_temp": 32.0,
+            "hc_c_flow_temp": 30.0,
+            "hc_c_setpoint_flow_temp": 30.0,
+        }
+    )
+
+    keys = set(_entities_by_key(coordinator))
+
+    assert _flow_deviation_key("a") in keys
+    assert _flow_deviation_key("c") in keys
+    assert _flow_deviation_key("b") not in keys
+
+
+def test_flow_deviation_needs_both_source_registers():
+    coordinator = _coordinator({"hc_a_flow_temp": 34.0})
+
+    assert _flow_deviation_key("a") not in _entities_by_key(coordinator)
+
+
+def test_flow_deviation_survives_a_restart_while_the_circuit_is_idle():
+    """An idle circuit reports the 0.0 sentinel; the entity must still exist.
+
+    Creating it only when the plant happens to be running would make the
+    entity's existence depend on the moment Home Assistant restarts.
+    """
+    coordinator = _coordinator(
+        {"hc_a_flow_temp": 0.0, "hc_a_setpoint_flow_temp": 0.0},
+        unused={"hc_a_flow_temp", "hc_a_setpoint_flow_temp"},
+    )
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
+
+    assert sensor.available is False
+    assert sensor.native_value is None
+
+
+def test_flow_deviation_becomes_available_once_the_circuit_runs():
+    coordinator = _coordinator(
+        {"hc_a_flow_temp": 0.0, "hc_a_setpoint_flow_temp": 0.0},
+        unused={"hc_a_flow_temp", "hc_a_setpoint_flow_temp"},
+    )
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
+
+    coordinator.data = {"hc_a_flow_temp": 33.0, "hc_a_setpoint_flow_temp": 31.5}
+    coordinator.unused_registers = set()
+
+    assert sensor.available is True
+    assert sensor.native_value == 1.5
+
+
+def test_flow_deviation_metadata():
+    coordinator = _coordinator({"hc_a_flow_temp": 34.0, "hc_a_setpoint_flow_temp": 32.0})
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
+
+    assert sensor.entity_description.name == "Heizkreis A Vorlauf-Abweichung"
+    assert sensor.entity_description.native_unit_of_measurement == UnitOfTemperature.CELSIUS
+    assert sensor.entity_description.device_class == SensorDeviceClass.TEMPERATURE
+    assert sensor.entity_description.state_class == SensorStateClass.MEASUREMENT
+    assert sensor._attr_unique_id == "test_entry_calculated_hc_a_flow_deviation"
+
+
+def test_unconfigured_circuit_sentinel_stays_unavailable():
+    """A circuit that is not configured reports -1.0 permanently."""
+    coordinator = _coordinator(
+        {"hc_g_flow_temp": -1.0, "hc_g_setpoint_flow_temp": -1.0},
+        unused={"hc_g_flow_temp", "hc_g_setpoint_flow_temp"},
+    )
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("g")]
+
+    assert sensor.available is False
+
+
+def test_flow_deviation_joins_its_heating_circuit_subdevice():
+    """With hierarchy enabled the sensor belongs next to its circuit's values."""
+    coordinator = _coordinator({"hc_a_flow_temp": 34.0, "hc_a_setpoint_flow_temp": 32.0})
+    coordinator.device_hierarchy_enabled = True
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
+
+    assert sensor.device_info["name"] == "Heizkreis A"
+
+
+def test_flow_deviation_stays_on_the_main_device_without_hierarchy():
+    coordinator = _coordinator({"hc_a_flow_temp": 34.0, "hc_a_setpoint_flow_temp": 32.0})
+    coordinator.device_hierarchy_enabled = False
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
+
+    assert sensor.device_info["name"] == coordinator.config_entry.title
+
+
+def test_existing_calculated_sensors_keep_the_main_device():
+    """Moving an already-registered entity to another device is out of scope."""
+    coordinator = _coordinator(
+        {
+            "hp_flow_temp": 35.0,
+            "hp_return_temp": 30.0,
+            "dhw_temp_top": 48.0,
+            "dhw_setpoint": 52.0,
+        }
+    )
+    coordinator.device_hierarchy_enabled = True
+
+    entities = _entities_by_key(coordinator)
+
+    for key in ("calculated_hp_temperature_delta", "calculated_dhw_setpoint_deviation"):
+        assert entities[key].device_info["name"] == coordinator.config_entry.title

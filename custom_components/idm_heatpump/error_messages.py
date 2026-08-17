@@ -202,3 +202,16 @@ def friendly_write_error(translation_key: str, register_name: str) -> str:
 def write_error_placeholders(register_name: str) -> dict[str, str]:
     """Return safe placeholders without exposing a raw library exception."""
     return {"register": register_name}
+
+
+def scoped_issue_id(entry_id: str | None, issue_id: str) -> str:
+    """Scope a repair-issue id to one config entry.
+
+    Home Assistant's issue registry is keyed by (domain, issue_id) with no
+    implicit per-entry scoping. Every repair issue this integration creates
+    must therefore embed the entry id itself, or two heat pumps hitting the
+    same condition (e.g. both missing a web PIN) silently overwrite each
+    other's registry entry - the second entry's problem becomes invisible
+    and clearing it also clears the first entry's issue.
+    """
+    return f"{issue_id}_{entry_id}" if entry_id else issue_id

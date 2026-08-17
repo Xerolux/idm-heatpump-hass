@@ -9,6 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
+from collections.abc import Callable
 from enum import StrEnum
 from time import monotonic
 from typing import Any
@@ -51,6 +52,10 @@ from .const import (
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_HUMIDITY_FORWARDING,
+    CONF_HUMIDITY_FORWARDING_ENTITY,
+    CONF_HUMIDITY_FORWARDING_INTERVAL,
+    CONF_HUMIDITY_FORWARDING_TOLERANCE,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
@@ -63,6 +68,10 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SHORT_CYCLE_MINUTES,
     CONF_SLAVE_ID,
+    CONF_STORAGE_TEMP_FORWARDING,
+    CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
+    CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
+    CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
     CONF_TECHNICIAN_CODES,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
@@ -78,6 +87,9 @@ from .const import (
     DEFAULT_EEPROM_WRITE_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
+    DEFAULT_HUMIDITY_FORWARDING,
+    DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
+    DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_MODEL_OVERRIDE,
@@ -89,6 +101,9 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_SLAVE_ID,
+    DEFAULT_STORAGE_TEMP_FORWARDING,
+    DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
+    DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_WEB_ENABLED,
     DEFAULT_WEB_SCAN_INTERVAL,
     DEFAULT_WRITE_COOLDOWN,
@@ -229,6 +244,25 @@ _ROOM_TEMPERATURE_SELECTOR = EntitySelector(
     )
 )
 
+# Single global GLT humidity register (ext_humidity), so unlike
+# _ROOM_TEMPERATURE_SELECTOR this is used once, not once per heating circuit.
+_HUMIDITY_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        domain="sensor",
+        device_class="humidity",
+    )
+)
+
+# Four fixed GLT storage-temperature registers (heat/cold/DHW top/bottom
+# storage), so like _ROOM_TEMPERATURE_SELECTOR this is used once per key, but
+# the keys are fixed instead of the configured heating circuits.
+_STORAGE_TEMPERATURE_SELECTOR = EntitySelector(
+    EntitySelectorConfig(
+        domain="sensor",
+        device_class="temperature",
+    )
+)
+
 
 def _build_modbus_failed_schema(data: dict[str, Any]) -> vol.Schema:
     """Build the recovery form shown after a failed Modbus check."""
@@ -253,10 +287,14 @@ def _build_modbus_failed_schema(data: dict[str, Any]) -> vol.Schema:
 
 _OPTIONS_FEATURES_SECTION = "features"
 _OPTIONS_ROOM_SECTION = "room_temperature_forwarding"
+_OPTIONS_HUMIDITY_SECTION = "humidity_forwarding_section"
+_OPTIONS_STORAGE_SECTION = "storage_temp_forwarding_section"
 _OPTIONS_MODBUS_SECTION = "advanced_modbus"
 _OPTIONS_SECTION_KEYS = (
     _OPTIONS_FEATURES_SECTION,
     _OPTIONS_ROOM_SECTION,
+    _OPTIONS_HUMIDITY_SECTION,
+    _OPTIONS_STORAGE_SECTION,
     _OPTIONS_MODBUS_SECTION,
 )
 
@@ -285,6 +323,14 @@ def _default_options() -> dict[str, Any]:
         CONF_ROOM_TEMP_FORWARDING_ENTITIES: {},
         CONF_ROOM_TEMP_FORWARDING_INTERVAL: DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
         CONF_ROOM_TEMP_FORWARDING_TOLERANCE: DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
+        CONF_HUMIDITY_FORWARDING: DEFAULT_HUMIDITY_FORWARDING,
+        CONF_HUMIDITY_FORWARDING_ENTITY: "",
+        CONF_HUMIDITY_FORWARDING_INTERVAL: DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
+        CONF_HUMIDITY_FORWARDING_TOLERANCE: DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
+        CONF_STORAGE_TEMP_FORWARDING: DEFAULT_STORAGE_TEMP_FORWARDING,
+        CONF_STORAGE_TEMP_FORWARDING_ENTITIES: {},
+        CONF_STORAGE_TEMP_FORWARDING_INTERVAL: DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
+        CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
         CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
         CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
         CONF_POLLING_JITTER: DEFAULT_POLLING_JITTER,
@@ -460,6 +506,96 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 options.get(
                                     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
                                     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
+                                )
+                            ),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=0.1,
+                                max=2.0,
+                                step=0.1,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="°C",
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
+            vol.Required(_OPTIONS_HUMIDITY_SECTION): section(
+                vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_HUMIDITY_FORWARDING,
+                            default=options.get(CONF_HUMIDITY_FORWARDING, DEFAULT_HUMIDITY_FORWARDING),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_HUMIDITY_FORWARDING_INTERVAL,
+                            default=int(
+                                options.get(
+                                    CONF_HUMIDITY_FORWARDING_INTERVAL,
+                                    DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
+                                )
+                            ),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=30,
+                                max=3600,
+                                step=30,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="s",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_HUMIDITY_FORWARDING_TOLERANCE,
+                            default=float(
+                                options.get(
+                                    CONF_HUMIDITY_FORWARDING_TOLERANCE,
+                                    DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
+                                )
+                            ),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=0.5,
+                                max=10.0,
+                                step=0.5,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="%",
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
+            vol.Required(_OPTIONS_STORAGE_SECTION): section(
+                vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_STORAGE_TEMP_FORWARDING,
+                            default=options.get(CONF_STORAGE_TEMP_FORWARDING, DEFAULT_STORAGE_TEMP_FORWARDING),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
+                            default=int(
+                                options.get(
+                                    CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
+                                    DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
+                                )
+                            ),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=30,
+                                max=3600,
+                                step=30,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="s",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
+                            default=float(
+                                options.get(
+                                    CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
+                                    DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
                                 )
                             ),
                         ): NumberSelector(
@@ -673,13 +809,76 @@ def _store_room_temp_forwarding_entities(options: dict[str, Any], user_input: di
     }
 
 
+def _humidity_forwarding_enabled(options: dict[str, Any]) -> bool:
+    return bool(options.get(CONF_HUMIDITY_FORWARDING, DEFAULT_HUMIDITY_FORWARDING))
+
+
+def _build_humidity_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
+    return vol.Schema(
+        {
+            vol.Optional(
+                CONF_HUMIDITY_FORWARDING_ENTITY,
+                default=str(options.get(CONF_HUMIDITY_FORWARDING_ENTITY, "")),
+            ): _HUMIDITY_SELECTOR,
+        }
+    )
+
+
+def _store_humidity_forwarding_entity(options: dict[str, Any], user_input: dict[str, Any]) -> None:
+    options[CONF_HUMIDITY_FORWARDING_ENTITY] = str(user_input.get(CONF_HUMIDITY_FORWARDING_ENTITY, "")).strip()
+
+
+# Fixed keys for the GLT storage-temperature registers, matching
+# room_temp_forwarding.STORAGE_TEMP_REGISTER_NAMES.
+_STORAGE_TEMP_KEYS: tuple[str, ...] = ("heat_storage", "cold_storage", "dhw_bottom", "dhw_top")
+
+
+def _storage_temp_forwarding_enabled(options: dict[str, Any]) -> bool:
+    return bool(options.get(CONF_STORAGE_TEMP_FORWARDING, DEFAULT_STORAGE_TEMP_FORWARDING))
+
+
+def _build_storage_temp_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
+    configured_entities = options.get(CONF_STORAGE_TEMP_FORWARDING_ENTITIES, {})
+    schema_dict: dict[Any, Any] = {}
+    for key in _STORAGE_TEMP_KEYS:
+        schema_dict[
+            vol.Optional(
+                f"storage_temp_forwarding_{key}",
+                default=str(configured_entities.get(key, "")),
+            )
+        ] = _STORAGE_TEMPERATURE_SELECTOR
+    return vol.Schema(schema_dict)
+
+
+def _store_storage_temp_forwarding_entities(options: dict[str, Any], user_input: dict[str, Any]) -> None:
+    options[CONF_STORAGE_TEMP_FORWARDING_ENTITIES] = {
+        key: str(user_input.get(f"storage_temp_forwarding_{key}", "")).strip()
+        for key in _STORAGE_TEMP_KEYS
+        if str(user_input.get(f"storage_temp_forwarding_{key}", "")).strip()
+    }
+
+
+# Optional follow-up steps shown after the base options/zones steps, tried in
+# this order. Each entry's predicate decides whether its step is shown at
+# all. Adding a future GLT forwarding channel (or any other optional step)
+# means adding one entry here and one async_step_<step_id> method below -
+# no other step needs to know it exists, since _async_continue_optional_steps
+# looks steps up by name instead of each step hardcoding what comes next.
+_OPTIONAL_FLOW_STEPS: tuple[tuple[str, Callable[[dict[str, Any]], bool]], ...] = (
+    ("room_temp_forwarding", _room_temp_forwarding_enabled),
+    ("humidity_forwarding", _humidity_forwarding_enabled),
+    ("storage_temp_forwarding", _storage_temp_forwarding_enabled),
+)
+
+
 class _IdmOptionsStepsMixin:
-    """Shared option/zone/room-temp step handlers for config and options flows.
+    """Shared option/zone/forwarding step handlers for config and options flows.
 
     Both IdmHeatpumpConfigFlow and IdmHeatpumpOptionsFlow walk the same
-    options -> zones -> room_temp_forwarding sequence. Centralizing the step
-    bodies here keeps them in lockstep instead of drifting (the two copies had
-    already diverged subtly in description_placeholders).
+    options -> zones -> (optional steps from _OPTIONAL_FLOW_STEPS) sequence.
+    Centralizing the step bodies here keeps them in lockstep instead of
+    drifting (the two copies had already diverged subtly in
+    description_placeholders).
     """
 
     # Shared mutable state provided by the concrete flow.
@@ -691,6 +890,30 @@ class _IdmOptionsStepsMixin:
     def _create_flow_entry(self) -> ConfigFlowResult:
         raise NotImplementedError
 
+    async def _async_continue_optional_steps(self, after_step_id: str | None = None) -> ConfigFlowResult:
+        """Show the next enabled optional step after ``after_step_id``, or finish.
+
+        ``after_step_id=None`` starts from the beginning of
+        _OPTIONAL_FLOW_STEPS (called once, right after options/zones). Each
+        optional step then calls this again with its own step_id once
+        submitted, so the steps stay chained in table order without any of
+        them naming the next one directly.
+        """
+        start = 0
+        if after_step_id is not None:
+            for index, (step_id, _) in enumerate(_OPTIONAL_FLOW_STEPS):
+                if step_id == after_step_id:
+                    start = index + 1
+                    break
+            else:
+                raise ValueError(f"Unknown optional flow step: {after_step_id!r}")
+
+        for step_id, is_enabled in _OPTIONAL_FLOW_STEPS[start:]:
+            if is_enabled(self._options):
+                handler = getattr(self, f"async_step_{step_id}")
+                return await handler()  # type: ignore[no-any-return]
+        return self._create_flow_entry()
+
     async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             submitted_options = _flatten_options_input(user_input)
@@ -698,9 +921,7 @@ class _IdmOptionsStepsMixin:
             if int(submitted_options.get(CONF_ZONE_COUNT, 0)) > 0:
                 return await self.async_step_zones()  # type: ignore[attr-defined]
             self._options[CONF_ZONE_ROOMS] = {}
-            if _room_temp_forwarding_enabled(self._options):
-                return await self.async_step_room_temp_forwarding()  # type: ignore[attr-defined]
-            return self._create_flow_entry()
+            return await self._async_continue_optional_steps()
 
         return self.async_show_form(  # type: ignore[attr-defined]
             step_id="options",
@@ -714,9 +935,7 @@ class _IdmOptionsStepsMixin:
         if user_input is not None:
             zone_rooms: dict[int, int] = {z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)}
             self._options[CONF_ZONE_ROOMS] = zone_rooms
-            if _room_temp_forwarding_enabled(self._options):
-                return await self.async_step_room_temp_forwarding()  # type: ignore[attr-defined]
-            return self._create_flow_entry()
+            return await self._async_continue_optional_steps()
 
         return self.async_show_form(  # type: ignore[attr-defined]
             step_id="zones",
@@ -728,11 +947,35 @@ class _IdmOptionsStepsMixin:
     async def async_step_room_temp_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             _store_room_temp_forwarding_entities(self._options, user_input)
-            return self._create_flow_entry()
+            return await self._async_continue_optional_steps("room_temp_forwarding")
 
         return self.async_show_form(  # type: ignore[attr-defined]
             step_id="room_temp_forwarding",
             data_schema=_build_room_temp_forwarding_schema(self._options),
+            description_placeholders={"name": self._flow_name_placeholder()},
+            errors={},
+        )
+
+    async def async_step_humidity_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        if user_input is not None:
+            _store_humidity_forwarding_entity(self._options, user_input)
+            return await self._async_continue_optional_steps("humidity_forwarding")
+
+        return self.async_show_form(  # type: ignore[attr-defined]
+            step_id="humidity_forwarding",
+            data_schema=_build_humidity_forwarding_schema(self._options),
+            description_placeholders={"name": self._flow_name_placeholder()},
+            errors={},
+        )
+
+    async def async_step_storage_temp_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        if user_input is not None:
+            _store_storage_temp_forwarding_entities(self._options, user_input)
+            return await self._async_continue_optional_steps("storage_temp_forwarding")
+
+        return self.async_show_form(  # type: ignore[attr-defined]
+            step_id="storage_temp_forwarding",
+            data_schema=_build_storage_temp_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
             errors={},
         )
@@ -999,7 +1242,11 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             },
                         )
 
-        current_data = self._data or entry.data
+        # Re-show the user's just-typed values on a validation/detection
+        # failure, not the stale stored entry data — self._data is only
+        # populated on success paths above, so falling back to it here would
+        # silently discard whatever the user just corrected and re-submitted.
+        current_data = user_input or self._data or entry.data
         suggested = {
             CONF_HOST: current_data[CONF_HOST],
             CONF_PORT: current_data.get(CONF_PORT, DEFAULT_PORT),
@@ -1168,6 +1415,8 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
     def _create_flow_entry(self) -> ConfigFlowResult:
         if not _room_temp_forwarding_enabled(self._options):
             self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
+        if not _storage_temp_forwarding_enabled(self._options):
+            self._options[CONF_STORAGE_TEMP_FORWARDING_ENTITIES] = {}
         if self._reconfigure_entry is not None:
             _LOGGER.info(
                 "Updating existing IDM entry %s for web-only operation while preserving its Modbus options",
@@ -1508,6 +1757,8 @@ class IdmHeatpumpOptionsFlow(_IdmOptionsStepsMixin, config_entries.OptionsFlow):
     def _create_flow_entry(self) -> ConfigFlowResult:
         if not _room_temp_forwarding_enabled(self._options):
             self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
+        if not _storage_temp_forwarding_enabled(self._options):
+            self._options[CONF_STORAGE_TEMP_FORWARDING_ENTITIES] = {}
         return self.async_create_entry(data=self._options)
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:

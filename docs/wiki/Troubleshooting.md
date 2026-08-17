@@ -174,6 +174,28 @@ the risk-acknowledged IDM action documented under [Services](Services).
 - Check the Home Assistant logs for error messages
 - Reconfigure the integration
 
+### "IDM polling barely fits into the scan interval"
+
+This repair issue appears when reading all registers has taken at least 80% of
+the configured scan interval for several polls in a row. The controller then
+gets almost no idle time between requests, which usually surfaces as timeouts —
+especially when a second Modbus client shares the heat pump.
+
+What helps, in order of effect:
+
+1. **Increase the scan interval** in the integration options. Most values change
+   far more slowly than a 10-second poll suggests.
+2. **Disable entities you do not use.** Polling is entity-aware: a disabled
+   entity's register is dropped from the poll plan, which directly shortens the
+   cycle.
+3. **Check for a second Modbus client** (energy manager, another Home Assistant
+   instance, a KNX gateway) querying the heat pump at the same time.
+
+The issue clears itself once polls have stayed comfortably inside the interval
+again. To see the underlying numbers, enable **Communication diagnostics** in
+the options — it exposes the poll duration and the number of actively polled
+registers as sensors.
+
 ## EEPROM Warnings
 
 If you receive a warning about EEPROM when writing values:

@@ -22,6 +22,10 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_WEB_VARIANT,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_HUMIDITY_FORWARDING,
+    CONF_HUMIDITY_FORWARDING_ENTITY,
+    CONF_HUMIDITY_FORWARDING_INTERVAL,
+    CONF_HUMIDITY_FORWARDING_TOLERANCE,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
@@ -32,6 +36,10 @@ from custom_components.idm_heatpump.const import (
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
+    CONF_STORAGE_TEMP_FORWARDING,
+    CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
+    CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
+    CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
     CONF_TECHNICIAN_CODES,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
@@ -625,6 +633,156 @@ class TestAsyncStepOptions:
             "a": "sensor.living_room_temperature",
         }
 
+    async def test_humidity_forwarding_goes_to_sensor_selection_step(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_WEB_ENABLED: True,
+                CONF_WEB_SCAN_INTERVAL: 30,
+                CONF_HUMIDITY_FORWARDING: True,
+                CONF_HUMIDITY_FORWARDING_INTERVAL: 300,
+                CONF_HUMIDITY_FORWARDING_TOLERANCE: 2.0,
+            }
+        )
+        assert result["type"] == "form"
+        assert result["step_id"] == "humidity_forwarding"
+
+        result = await flow.async_step_humidity_forwarding(
+            {CONF_HUMIDITY_FORWARDING_ENTITY: "sensor.living_room_humidity"}
+        )
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_HUMIDITY_FORWARDING_ENTITY] == "sensor.living_room_humidity"
+
+    async def test_humidity_forwarding_entity_left_empty_is_stored_as_empty(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {CONF_HEATING_CIRCUITS: ["a"], CONF_HUMIDITY_FORWARDING: True}
+        result = await flow.async_step_humidity_forwarding({CONF_HUMIDITY_FORWARDING_ENTITY: ""})
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_HUMIDITY_FORWARDING_ENTITY] == ""
+
+    async def test_storage_temp_forwarding_goes_to_sensor_mapping_step(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_WEB_ENABLED: True,
+                CONF_WEB_SCAN_INTERVAL: 30,
+                CONF_STORAGE_TEMP_FORWARDING: True,
+                CONF_STORAGE_TEMP_FORWARDING_INTERVAL: 300,
+                CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: 0.5,
+            }
+        )
+        assert result["type"] == "form"
+        assert result["step_id"] == "storage_temp_forwarding"
+
+        result = await flow.async_step_storage_temp_forwarding(
+            {
+                "storage_temp_forwarding_heat_storage": "sensor.heat_storage_temperature",
+                "storage_temp_forwarding_cold_storage": "",
+                "storage_temp_forwarding_dhw_bottom": "",
+                "storage_temp_forwarding_dhw_top": "",
+            }
+        )
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_STORAGE_TEMP_FORWARDING_ENTITIES] == {
+            "heat_storage": "sensor.heat_storage_temperature",
+        }
+
+    async def test_storage_temp_forwarding_entities_left_empty_are_cleared_on_finish(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {CONF_HEATING_CIRCUITS: ["a"], CONF_STORAGE_TEMP_FORWARDING: False}
+        result = await flow._async_continue_optional_steps()
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_STORAGE_TEMP_FORWARDING_ENTITIES] == {}
+
+    async def test_room_temp_then_humidity_forwarding_when_both_enabled(self):
+        """Both forwarding steps must chain in sequence when both are enabled."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_WEB_ENABLED: True,
+                CONF_WEB_SCAN_INTERVAL: 30,
+                CONF_ROOM_TEMP_FORWARDING: True,
+                CONF_ROOM_TEMP_FORWARDING_INTERVAL: 300,
+                CONF_ROOM_TEMP_FORWARDING_TOLERANCE: 0.2,
+                CONF_HUMIDITY_FORWARDING: True,
+                CONF_HUMIDITY_FORWARDING_INTERVAL: 300,
+                CONF_HUMIDITY_FORWARDING_TOLERANCE: 2.0,
+            }
+        )
+        assert result["step_id"] == "room_temp_forwarding"
+
+        result = await flow.async_step_room_temp_forwarding({"room_temp_forwarding_a": ""})
+        assert result["type"] == "form"
+        assert result["step_id"] == "humidity_forwarding"
+
+        result = await flow.async_step_humidity_forwarding(
+            {CONF_HUMIDITY_FORWARDING_ENTITY: "sensor.living_room_humidity"}
+        )
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_HUMIDITY_FORWARDING_ENTITY] == "sensor.living_room_humidity"
+
+    async def test_room_temp_then_humidity_then_storage_temp_when_all_enabled(self):
+        """All three optional forwarding steps must chain in table order."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_WEB_ENABLED: True,
+                CONF_WEB_SCAN_INTERVAL: 30,
+                CONF_ROOM_TEMP_FORWARDING: True,
+                CONF_ROOM_TEMP_FORWARDING_INTERVAL: 300,
+                CONF_ROOM_TEMP_FORWARDING_TOLERANCE: 0.2,
+                CONF_HUMIDITY_FORWARDING: True,
+                CONF_HUMIDITY_FORWARDING_INTERVAL: 300,
+                CONF_HUMIDITY_FORWARDING_TOLERANCE: 2.0,
+                CONF_STORAGE_TEMP_FORWARDING: True,
+                CONF_STORAGE_TEMP_FORWARDING_INTERVAL: 300,
+                CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: 0.5,
+            }
+        )
+        assert result["step_id"] == "room_temp_forwarding"
+
+        result = await flow.async_step_room_temp_forwarding({"room_temp_forwarding_a": ""})
+        assert result["type"] == "form"
+        assert result["step_id"] == "humidity_forwarding"
+
+        result = await flow.async_step_humidity_forwarding({CONF_HUMIDITY_FORWARDING_ENTITY: ""})
+        assert result["type"] == "form"
+        assert result["step_id"] == "storage_temp_forwarding"
+
+        result = await flow.async_step_storage_temp_forwarding(
+            {"storage_temp_forwarding_heat_storage": "sensor.heat_storage_temperature"}
+        )
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_STORAGE_TEMP_FORWARDING_ENTITIES] == {
+            "heat_storage": "sensor.heat_storage_temperature",
+        }
+
     async def test_with_zones_goes_to_zones_step(self):
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
@@ -639,6 +797,38 @@ class TestAsyncStepOptions:
                 }
             )
         assert result["step_id"] == "zones"
+
+
+class TestContinueOptionalSteps:
+    """Direct coverage of the table-driven optional-step dispatcher itself.
+
+    The higher-level chaining tests above already exercise this indirectly
+    through async_step_options/zones/room_temp_forwarding/humidity_forwarding;
+    these test the dispatcher's own contract (unknown step id, all-disabled).
+    """
+
+    async def test_unknown_after_step_id_raises(self):
+        flow = _make_flow()
+        flow._options = {}
+        try:
+            await flow._async_continue_optional_steps("not_a_real_step")
+        except ValueError as err:
+            assert "not_a_real_step" in str(err)
+        else:
+            raise AssertionError("expected ValueError for an unknown step id")
+
+    async def test_creates_entry_when_every_optional_step_is_disabled(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {
+            CONF_ROOM_TEMP_FORWARDING: False,
+            CONF_HUMIDITY_FORWARDING: False,
+            CONF_STORAGE_TEMP_FORWARDING: False,
+        }
+
+        result = await flow._async_continue_optional_steps()
+
+        assert result["type"] == "create_entry"
 
 
 class TestAsyncStepZones:
@@ -679,6 +869,34 @@ class TestAsyncStepZones:
         result = await flow.async_step_zones({"zone_0_rooms": 3})
         assert result["type"] == "form"
         assert result["step_id"] == "room_temp_forwarding"
+        assert flow._options[CONF_ZONE_ROOMS] == {0: 3}
+
+    async def test_zones_then_humidity_forwarding_step_when_room_temp_disabled(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 1,
+            CONF_HUMIDITY_FORWARDING: True,
+        }
+        result = await flow.async_step_zones({"zone_0_rooms": 3})
+        assert result["type"] == "form"
+        assert result["step_id"] == "humidity_forwarding"
+        assert flow._options[CONF_ZONE_ROOMS] == {0: 3}
+
+    async def test_zones_then_storage_temp_forwarding_step_when_others_disabled(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 1,
+            CONF_STORAGE_TEMP_FORWARDING: True,
+        }
+        result = await flow.async_step_zones({"zone_0_rooms": 3})
+        assert result["type"] == "form"
+        assert result["step_id"] == "storage_temp_forwarding"
         assert flow._options[CONF_ZONE_ROOMS] == {0: 3}
 
 
@@ -897,9 +1115,20 @@ class TestAsyncStepReconfigure:
         entry.data = {"host": "192.168.1.100", "port": 502, "slave_id": 1}
         entry.title = "IDM"
 
+        # Spy on add_suggested_values_to_schema (the stub is a passthrough
+        # that drops data_schema from the returned form result, so the
+        # suggested values must be captured at the call site instead).
+        captured_suggested = {}
+        original_add_suggested = flow.add_suggested_values_to_schema
+
+        def _capture_suggested(schema, suggested_values):
+            captured_suggested.update(suggested_values)
+            return original_add_suggested(schema, suggested_values)
+
         with (
             patch.object(flow, "_get_reconfigure_entry", return_value=entry),
             patch.object(flow, "_test_connection", return_value=True),
+            patch.object(flow, "add_suggested_values_to_schema", side_effect=_capture_suggested),
             patch.object(
                 flow,
                 "_async_detect_web_supplement",
@@ -917,6 +1146,11 @@ class TestAsyncStepReconfigure:
 
         assert result["type"] == "form"
         assert result["errors"][CONF_WEB_PIN] == "invalid_web_pin"
+        # The just-typed host must survive the error round-trip, not revert to
+        # the entry's stale stored host (self._data is only populated on
+        # success paths, so falling back to it/entry.data here would
+        # silently discard the user's correction).
+        assert captured_suggested["host"] == "idm.local"
 
     async def test_reconfigure_unreachable_web_interface_shows_error(self):
         flow = _make_flow()

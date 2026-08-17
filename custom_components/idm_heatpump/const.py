@@ -50,6 +50,19 @@ CONF_ROOM_TEMP_FORWARDING: str = "room_temp_forwarding"
 CONF_ROOM_TEMP_FORWARDING_INTERVAL: str = "room_temp_forwarding_interval"
 CONF_ROOM_TEMP_FORWARDING_TOLERANCE: str = "room_temp_forwarding_tolerance"
 CONF_ROOM_TEMP_FORWARDING_ENTITIES: str = "room_temp_forwarding_entities"
+# Single global GLT humidity register (ext_humidity), unlike room temperature
+# which is one register per heating circuit.
+CONF_HUMIDITY_FORWARDING: str = "humidity_forwarding"
+CONF_HUMIDITY_FORWARDING_INTERVAL: str = "humidity_forwarding_interval"
+CONF_HUMIDITY_FORWARDING_TOLERANCE: str = "humidity_forwarding_tolerance"
+CONF_HUMIDITY_FORWARDING_ENTITY: str = "humidity_forwarding_entity"
+# One register per fixed storage key (heat/cold/dhw_bottom/dhw_top), like room
+# temperature forwarding, but the keys are fixed GLT storage registers instead
+# of the configured heating circuits.
+CONF_STORAGE_TEMP_FORWARDING: str = "storage_temp_forwarding"
+CONF_STORAGE_TEMP_FORWARDING_INTERVAL: str = "storage_temp_forwarding_interval"
+CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: str = "storage_temp_forwarding_tolerance"
+CONF_STORAGE_TEMP_FORWARDING_ENTITIES: str = "storage_temp_forwarding_entities"
 CONF_WEB_ONLY: str = "web_only_mode"
 CONF_MODBUS_TIMEOUT: str = "modbus_timeout"
 CONF_MODBUS_MAX_RETRIES: str = "modbus_retries"
@@ -85,6 +98,12 @@ DEFAULT_WEB_SCAN_INTERVAL: int = int(RECOMMENDED_WEB_SCAN_INTERVAL)
 DEFAULT_ROOM_TEMP_FORWARDING: bool = False
 DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE: float = 0.2
+DEFAULT_HUMIDITY_FORWARDING: bool = False
+DEFAULT_HUMIDITY_FORWARDING_INTERVAL: int = 300
+DEFAULT_HUMIDITY_FORWARDING_TOLERANCE: float = 2.0
+DEFAULT_STORAGE_TEMP_FORWARDING: bool = False
+DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL: int = 300
+DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE: float = 0.5
 DEFAULT_MODBUS_TIMEOUT: float = 10.0
 DEFAULT_MODBUS_MAX_RETRIES: int = 3
 DEFAULT_POLLING_JITTER: int = 0

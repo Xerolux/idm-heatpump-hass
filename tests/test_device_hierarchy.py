@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 from homeassistant.helpers.entity import EntityDescription
@@ -14,6 +14,7 @@ from custom_components.idm_heatpump.const import CONF_DEVICE_HIERARCHY, DOMAIN
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
 from custom_components.idm_heatpump.device_hierarchy import (
     build_subdevice_info,
+    precreate_main_device,
     resolve_device_scope,
 )
 from custom_components.idm_heatpump.entity import IdmEntity
@@ -32,6 +33,10 @@ def _coordinator(*, enabled: bool = True) -> MagicMock:
     coordinator.unused_registers = set()
     coordinator.last_update_success = True
     coordinator._device_info_cache = None
+    coordinator._hierarchy_device_ids = {
+        (DOMAIN, "entry"): "main-device-id",
+        (DOMAIN, "entry_zone_module_2"): "zone-module-2-device-id",
+    }
     return coordinator
 
 
@@ -70,7 +75,7 @@ def test_heating_circuit_device_is_linked_to_main_device() -> None:
     assert info is not None
     assert info["identifiers"] == {(DOMAIN, "entry_heating_circuit_b")}
     assert info["name"] == "Heizkreis B"
-    assert info["via_device"] == (DOMAIN, "entry")
+    assert info["via_device_id"] == "main-device-id"
 
 
 def test_zone_room_is_linked_through_zone_module() -> None:
@@ -79,7 +84,7 @@ def test_zone_room_is_linked_through_zone_module() -> None:
     assert info is not None
     assert info["identifiers"] == {(DOMAIN, "entry_zone_module_2_room_4")}
     assert info["name"] == "Zonenmodul 2 Raum 4"
-    assert info["via_device"] == (DOMAIN, "entry_zone_module_2")
+    assert info["via_device_id"] == "zone-module-2-device-id"
 
 
 def test_register_entity_keeps_unique_id_when_moved_to_subdevice() -> None:
@@ -128,3 +133,51 @@ async def test_migration_preserves_explicit_hierarchy_choice() -> None:
 
 def test_new_config_entries_use_new_minor_version() -> None:
     assert IdmHeatpumpConfigFlow.MINOR_VERSION == 3
+
+
+def test_missing_hierarchy_device_id_omits_via_device_id_link() -> None:
+    """A subdevice built before precreate_main_device has run stays linkable.
+
+    ``via_device_id`` is simply absent rather than crashing or pointing at a
+    stale/guessed ID; the next precreate pass fills it in.
+    """
+    coordinator = _coordinator()
+    coordinator._hierarchy_device_ids = {}
+
+    info = build_subdevice_info(coordinator, "hc_b_flow_temp")
+
+    assert info is not None
+    assert "via_device_id" not in info
+
+
+def test_precreate_main_device_creates_expected_subdevices_and_caches_ids() -> None:
+    coordinator = _coordinator()
+    coordinator._registers = [
+        RegisterDef(address=1352, datatype=DataType.FLOAT, name="hc_b_flow_temp", unit="°C"),
+    ]
+    coordinator.web_supplement = None
+    registry = MagicMock()
+    created: dict[tuple[str, str], MagicMock] = {}
+
+    def _get_or_create(*, config_entry_id, identifiers):
+        identifier = next(iter(identifiers))
+        if identifier not in created:
+            device = MagicMock()
+            device.id = f"device-{len(created)}"
+            created[identifier] = device
+        return created[identifier]
+
+    registry.async_get_or_create.side_effect = _get_or_create
+
+    with patch(
+        "custom_components.idm_heatpump.device_hierarchy.dr.async_get",
+        return_value=registry,
+    ):
+        precreate_main_device(MagicMock(), coordinator)
+
+    main_id = created[(DOMAIN, "entry")].id
+    circuit_id = created[(DOMAIN, "entry_heating_circuit_b")].id
+
+    assert coordinator._hierarchy_device_ids[(DOMAIN, "entry")] == main_id
+    assert coordinator._hierarchy_device_ids[(DOMAIN, "entry_heating_circuit_b")] == circuit_id
+    assert main_id != circuit_id

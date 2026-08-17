@@ -108,6 +108,44 @@ Important behavior:
 - This feature writes Modbus values. Use sensors that represent the actual room
   temperature you want the heat pump to see.
 
+### External Humidity Forwarding
+
+External humidity forwarding is optional and disabled by default. When
+enabled, the integration forwards one selected Home Assistant humidity sensor
+to the global IDM GLT humidity register (`ext_humidity`). Unlike room
+temperature, humidity has no per-heating-circuit register, so only a single
+sensor can be selected.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Humidity forwarding | Enables forwarding of the selected sensor | off |
+| Forwarding interval | Periodic refresh interval | 300 seconds |
+| Forwarding tolerance | Minimum change before a repeated value is written again | 2.0 % |
+| Humidity sensor | Home Assistant humidity entity to forward | empty |
+
+The same behavior notes as room temperature forwarding apply: values are
+written on state changes and refreshed periodically, invalid or out-of-range
+values are skipped, and leaving the sensor field empty disables forwarding.
+
+### External Storage Temperature Forwarding
+
+External storage temperature forwarding is optional and disabled by default.
+When enabled, the integration forwards up to four selected Home Assistant
+temperature sensors to the fixed IDM GLT storage registers: heat storage
+(`glt_heat_storage_temp`), cold storage (`glt_cold_storage_temp`), and DHW
+storage bottom/top (`glt_dhw_temp_bottom` / `glt_dhw_temp_top`).
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Storage temperature forwarding | Enables forwarding for selected registers | off |
+| Forwarding interval | Periodic refresh interval | 300 seconds |
+| Forwarding tolerance | Minimum change before a repeated value is written again | 0.5 °C |
+| Sensor per storage register | Home Assistant temperature entity to forward | empty |
+
+The same behavior notes as room temperature forwarding apply: values are
+written on state changes and refreshed periodically, invalid or out-of-range
+values are skipped, and leaving a register's field empty keeps it untouched.
+
 ### Heating Circuits
 
 Select the active heating circuits (A through G). Only enabled circuits create entities in Home Assistant.
@@ -218,20 +256,21 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.11.0-beta.1` (latest stable: `0.10.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | `0.11.1` (previous stable: `0.10.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.0.0a3` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus==0.5.0` | Wire/backend implementation changes |
-| Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API 0.9.1 imports and exception types |
-| Python register/web library | `idm-heatpump-api[web]==1.0.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
+| Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
+| Python register/web library | `idm-heatpump-api[web]==1.0.1` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
 `modbus-connection==4.0.0a3`, `tmodbus==0.5.0`,
-`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.0`.
-The first two packages own the direct socket. API 0.9.1 remains responsible for
-IDM-specific device logic; pymodbus is temporarily retained because that API
-still imports it. `4.0.0a3` is the version of `modbus-connection`, not an IDM
-integration version. The transport is first shipped by IDM integration beta
-`0.11.0-beta.1`.
+`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.1`.
+The first two packages own the direct socket. `idm-heatpump-api` remains
+responsible for IDM-specific device logic; pymodbus is temporarily retained
+because that API still imports it. `4.0.0a3` is the version of
+`modbus-connection`, not an IDM integration version. The transport was first
+shipped by IDM integration beta `0.11.0-beta.1` and is now part of the stable
+`0.11.x` line.
 
 The adapter is implemented and covered by automated tests. Its redacted
 diagnostics report `source: modbus_connection.tmodbus`, `owns_socket: true` and

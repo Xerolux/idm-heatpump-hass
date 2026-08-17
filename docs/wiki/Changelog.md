@@ -5,6 +5,61 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.11.1 — 2026-08-15
+
+Patch release fixing [#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192):
+a runtime model correction from the web supplement (e.g. Navigator 2.0 →
+Navigator 10 based on a NAV10 firmware-string match) updated the
+coordinator's live state, but Home Assistant's Device Registry — populated
+once at entity-setup time — never received the correction, since that
+detection key is deliberately excluded from the reload fingerprint to avoid
+tearing down active connections. The device page kept showing the original
+model while diagnostics already showed the corrected one. The coordinator
+now pushes a changed model/firmware/serial number directly into the Device
+Registry whenever a correction actually changes one of them.
+
+## v0.11.0 — 2026-08-15
+
+First stable release of the 0.11.x line, after eight betas
+(`0.11.0-beta.1` – `0.11.0-beta.8`). Fully backward compatible: existing
+config entries, entity IDs, register addresses and write paths are
+unchanged. See [`docs/CHANGELOG.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CHANGELOG.md#0110---2026-08-15)
+for the full consolidated changelog.
+
+### Added
+
+- Direct Modbus TCP socket now runs through `modbus-connection==4.0.0a3`
+  with the `tmodbus==0.5.0` backend, replacing the previous direct-Pymodbus
+  path.
+- External humidity forwarding and external storage-temperature forwarding
+  (GLT), alongside the existing per-heating-circuit room-temperature
+  forwarding.
+- Transport diagnostics (`modbus-connection`/`tmodbus` versions, socket
+  ownership, connection status).
+
+### Changed
+
+- `idm-heatpump-api[web]` pinned `0.9.1` → `1.0.1` (the stable API 1.x line
+  introduces the public transport-injection contract this integration's
+  tmodbus path relies on).
+- Minimum Home Assistant version raised to `2026.8.1`;
+  `via_device` → `via_device_id` device-registry migration.
+
+### Fixed
+
+- Eight confirmed bugs found in a full codebase audit (climate preset-mode
+  safety, a `write_register` `KeyError`, a diagnostics IP-leak, a register-
+  cache collision, a write-filter gap, reconfigure input loss, a stale
+  device-info cache, and a zone-room validation counter reset), plus
+  repair-issue IDs now scoped per config entry and narrower exception
+  handling in the polling coordinator.
+
+### Known limitation
+
+- A Navigator 2.0/Terra SWM model-detection follow-up
+  ([#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192)) remains
+  open and is being investigated post-release.
+
 ## v0.11.0-beta.3 - 2026-08-05
 
 - Continues the direct `modbus-connection==4.0.0a3` / `tmodbus==0.5.0` socket

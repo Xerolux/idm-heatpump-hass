@@ -29,6 +29,18 @@ Transporteigenschaft als abgeschlossen auszugeben.
   fehlendes zentrales Sharing sowie alle Laufzeitversionen.
 - Issue-Vorlage für read-only Hardware-Verifikation und eine spätere zentrale
   Home-Assistant-Modbus-Verbindung.
+- Synthetischer Skalierungstest für die maximal ausgebaute Anlage
+  (`tests/test_scale_load.py`): 7 Heizkreise, 10 Zonen à 8 Räume, Kaskade aktiv.
+  Er sichert Registeranzahl, Eindeutigkeit von Namen und Adressen,
+  Unique-ID-Kollisionen je Plattform, die Vollständigkeit der
+  Coordinator-Indizes sowie Aufbau- und Auswertungslaufzeit ab. Das ist die
+  lokal beweisbare Hälfte des Lasttest-Punkts; die Wirkung auf reale
+  Modbus-Antwortzeiten bleibt weiterhin offen (siehe unten).
+- Automatisierter Datenschutz- und Vollständigkeitstest für den Diagnose-Export
+  (`tests/test_diagnostics_privacy.py`). Host, Web-Host, PIN, myIDM-ID,
+  Seriennummer und Fehlertexte mit eingebetteten Verbindungsangaben dürfen im
+  serialisierten Export nicht vorkommen; die für den Support nötigen Abschnitte
+  müssen erhalten bleiben. Ersetzt die bisher wiederkehrende manuelle Prüfung.
 
 ## Live-verifiziert (Navigator 10, read-only Modbus FC04 + Web-Supplement)
 
@@ -128,7 +140,11 @@ mindestens einem passenden System vorliegen:
   Wärmepumpen-Vorlauf-Sollwerts.
 - Binary-Register-Verifikation auf Navigator 10 und Navigator 2.0,
   einschließlich Active-Low- und Sonderwerten.
-- Lasttests mit maximaler Zahl an Heizkreisen, Zonen und Räumen.
+- Lasttests mit maximaler Zahl an Heizkreisen, Zonen und Räumen **an realer
+  Hardware**. Die Skalierung der Integration selbst ist lokal abgesichert
+  (`tests/test_scale_load.py`); was ein Test ohne Anlage nicht zeigen kann, ist
+  das Verhalten der Regelung unter der resultierenden Anfragelast: reale
+  Antwortzeiten, Batch-Verhalten und Timeout-Grenzen.
 - Read-only Transporttest des neuen tmodbus-Pfads an realer Hardware: Setup,
   FC03, FC04, Verbindungsabbruch und Reconnect. Schreibtests bleiben ohne
   ausdrückliche Freigabe ausgeschlossen.

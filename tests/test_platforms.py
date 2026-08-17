@@ -1147,6 +1147,26 @@ class TestIdmSelect:
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
         assert sel._option_to_value("AUTOMATIC") == 1
 
+    def test_exclude_from_write_is_honored_without_a_slug_map(self):
+        """A writable enum register with no translation slug map must still
+        drop exclude_from_write values from its options, matching what
+        library_adapter.py's own description builder already filters out.
+        """
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        reg = RegisterDef(
+            address=100,
+            datatype=DataType.UCHAR,
+            name="not_a_slug_mapped_register",
+            writable=True,
+            enum_options={0: "Normal", 255: "Reserved"},
+            exclude_from_write={255},
+        )
+        coord = _make_coordinator()
+        sel = IdmSelect(coord, reg, _make_desc("not_a_slug_mapped_register"))
+
+        assert sel._attr_options == ["Normal"]
+
     def test_room_mode_automatic_uses_stable_slug_value(self):
         from custom_components.idm_heatpump.select import IdmSelect
 

@@ -104,7 +104,12 @@ def build_filtered_register_map(
     """
     global _FILTERED_REGISTER_MAP_CACHE
     circuits_tuple = tuple(circuits or [])
-    cache_key = (id(model_info), circuits_tuple, zone_modules)
+    # Compare model_info by value (dataclass __eq__), not id(): id() is only
+    # unique among simultaneously-alive objects, and this cache's single slot
+    # otherwise risks serving one config entry's register map to another
+    # entry (or a later reload) whose freshly-allocated IdmModelInfo happens
+    # to reuse a freed address with a matching id().
+    cache_key = (model_info, circuits_tuple, zone_modules)
     if _FILTERED_REGISTER_MAP_CACHE is not None:
         key, cached = _FILTERED_REGISTER_MAP_CACHE
         if key == cache_key:

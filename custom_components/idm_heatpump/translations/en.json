@@ -123,6 +123,34 @@
               "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
             }
           },
+          "humidity_forwarding_section": {
+            "name": "External humidity",
+            "description": "Optional forwarding of one Home Assistant humidity sensor to the IDM GLT humidity register.",
+            "data": {
+              "humidity_forwarding": "Forward external humidity",
+              "humidity_forwarding_interval": "Forwarding interval",
+              "humidity_forwarding_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "humidity_forwarding": "Writes a selected Home Assistant humidity sensor to the global GLT humidity register.",
+              "humidity_forwarding_interval": "How often the selected humidity is checked; state changes are also forwarded immediately.",
+              "humidity_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+            }
+          },
+          "storage_temp_forwarding_section": {
+            "name": "External storage temperatures (GLT)",
+            "description": "Optional forwarding of Home Assistant temperature sensors to the IDM GLT storage registers.",
+            "data": {
+              "storage_temp_forwarding": "Forward external storage temperatures",
+              "storage_temp_forwarding_interval": "Forwarding interval",
+              "storage_temp_forwarding_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "storage_temp_forwarding": "Writes selected Home Assistant temperature sensors to the GLT heat/cold/DHW storage registers.",
+              "storage_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
+              "storage_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+            }
+          },
           "advanced_modbus": {
             "name": "Advanced Modbus settings",
             "description": "For experienced users only. The defaults are recommended. Polling jitter spreads requests, diagnostics creates extra entities, and the write cooldown blocks rapid repeat writes. The general write cooldown and EEPROM protection operate independently.",
@@ -193,6 +221,32 @@
           "room_temp_forwarding_e": "Forward this sensor to hc_e_ext_room_temp.",
           "room_temp_forwarding_f": "Forward this sensor to hc_f_ext_room_temp.",
           "room_temp_forwarding_g": "Forward this sensor to hc_g_ext_room_temp."
+        }
+      },
+      "humidity_forwarding": {
+        "title": "External humidity forwarding – {name}",
+        "description": "Select one Home Assistant humidity sensor. The integration writes this value to the IDM GLT humidity register. Leave it empty to skip humidity forwarding.",
+        "data": {
+          "humidity_forwarding_entity": "Humidity sensor"
+        },
+        "data_description": {
+          "humidity_forwarding_entity": "Forward this sensor to ext_humidity."
+        }
+      },
+      "storage_temp_forwarding": {
+        "title": "External storage temperature forwarding – {name}",
+        "description": "Select one Home Assistant temperature sensor per GLT storage register. The integration writes these values to the IDM GLT storage registers. Leave a field empty to skip it.",
+        "data": {
+          "storage_temp_forwarding_heat_storage": "Heat storage temperature sensor",
+          "storage_temp_forwarding_cold_storage": "Cold storage temperature sensor",
+          "storage_temp_forwarding_dhw_bottom": "DHW storage bottom temperature sensor",
+          "storage_temp_forwarding_dhw_top": "DHW storage top temperature sensor"
+        },
+        "data_description": {
+          "storage_temp_forwarding_heat_storage": "Forward this sensor to glt_heat_storage_temp.",
+          "storage_temp_forwarding_cold_storage": "Forward this sensor to glt_cold_storage_temp.",
+          "storage_temp_forwarding_dhw_bottom": "Forward this sensor to glt_dhw_temp_bottom.",
+          "storage_temp_forwarding_dhw_top": "Forward this sensor to glt_dhw_temp_top."
         }
       },
       "modbus_failed": {
@@ -304,6 +358,34 @@
               "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
             }
           },
+          "humidity_forwarding_section": {
+            "name": "External humidity",
+            "description": "Optional forwarding of one Home Assistant humidity sensor to the IDM GLT humidity register.",
+            "data": {
+              "humidity_forwarding": "Forward external humidity",
+              "humidity_forwarding_interval": "Forwarding interval",
+              "humidity_forwarding_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "humidity_forwarding": "Writes a selected Home Assistant humidity sensor to the global GLT humidity register.",
+              "humidity_forwarding_interval": "How often the selected humidity is checked; state changes are also forwarded immediately.",
+              "humidity_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+            }
+          },
+          "storage_temp_forwarding_section": {
+            "name": "External storage temperatures (GLT)",
+            "description": "Optional forwarding of Home Assistant temperature sensors to the IDM GLT storage registers.",
+            "data": {
+              "storage_temp_forwarding": "Forward external storage temperatures",
+              "storage_temp_forwarding_interval": "Forwarding interval",
+              "storage_temp_forwarding_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "storage_temp_forwarding": "Writes selected Home Assistant temperature sensors to the GLT heat/cold/DHW storage registers.",
+              "storage_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
+              "storage_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount."
+            }
+          },
           "advanced_modbus": {
             "name": "Advanced Modbus settings",
             "description": "For experienced users only. The defaults are recommended. Polling jitter spreads requests, diagnostics creates extra entities, and the write cooldown blocks rapid repeat writes. The general write cooldown and EEPROM protection operate independently.",
@@ -374,6 +456,32 @@
           "room_temp_forwarding_e": "Forward this sensor to hc_e_ext_room_temp.",
           "room_temp_forwarding_f": "Forward this sensor to hc_f_ext_room_temp.",
           "room_temp_forwarding_g": "Forward this sensor to hc_g_ext_room_temp."
+        }
+      },
+      "humidity_forwarding": {
+        "title": "External humidity forwarding – {name}",
+        "description": "Select one Home Assistant humidity sensor. The integration writes this value to the IDM GLT humidity register. Leave it empty to skip humidity forwarding.",
+        "data": {
+          "humidity_forwarding_entity": "Humidity sensor"
+        },
+        "data_description": {
+          "humidity_forwarding_entity": "Forward this sensor to ext_humidity."
+        }
+      },
+      "storage_temp_forwarding": {
+        "title": "External storage temperature forwarding – {name}",
+        "description": "Select one Home Assistant temperature sensor per GLT storage register. The integration writes these values to the IDM GLT storage registers. Leave a field empty to skip it.",
+        "data": {
+          "storage_temp_forwarding_heat_storage": "Heat storage temperature sensor",
+          "storage_temp_forwarding_cold_storage": "Cold storage temperature sensor",
+          "storage_temp_forwarding_dhw_bottom": "DHW storage bottom temperature sensor",
+          "storage_temp_forwarding_dhw_top": "DHW storage top temperature sensor"
+        },
+        "data_description": {
+          "storage_temp_forwarding_heat_storage": "Forward this sensor to glt_heat_storage_temp.",
+          "storage_temp_forwarding_cold_storage": "Forward this sensor to glt_cold_storage_temp.",
+          "storage_temp_forwarding_dhw_bottom": "Forward this sensor to glt_dhw_temp_bottom.",
+          "storage_temp_forwarding_dhw_top": "Forward this sensor to glt_dhw_temp_top."
         }
       }
     }
@@ -586,6 +694,9 @@
     "acknowledge_risk_required": {
       "message": "You must set acknowledge_risk to true to use the write_register service."
     },
+    "preset_mode_unavailable_while_cooling": {
+      "message": "Heating circuit {circuit} is currently in cooling mode; preset mode only applies while heating. Switch to heat mode first."
+    },
     "write_failed": {
       "message": "Register {register} could not be written. Check the value and try again. Enable debug logging if the problem continues."
     },
@@ -606,6 +717,12 @@
     },
     "invalid_datatype": {
       "message": "Invalid datatype: \"{datatype}\". Valid values: uint16, int16, float, uchar, bool."
+    },
+    "write_register_missing_fields": {
+      "message": "The write_register service requires both address and value."
+    },
+    "invalid_address": {
+      "message": "Invalid register address \"{value}\". Provide a numeric register address."
     },
     "invalid_value": {
       "message": "Invalid value \"{value}\" for datatype {datatype}."
@@ -753,6 +870,10 @@
     "no_data_received": {
       "title": "IDM connection returned no usable data",
       "description": "Home Assistant connected to **{host}**, but received no usable Modbus register values.\n\nPlease check:\n- Slave/unit ID is normally 1\n- The Modbus proxy forwards to the correct heat pump\n- The configured Navigator model and heating circuits match the device\n- No other Modbus client is blocking communication"
+    },
+    "scan_interval_too_low": {
+      "title": "IDM polling barely fits into the scan interval",
+      "description": "Reading the registers of **{host}** currently takes about {duration} s of the configured {interval} s scan interval, and has done so for several polls in a row.\n\nThe heat pump controller then gets almost no idle time between requests, which typically shows up as timeouts — especially when another Modbus client shares the controller.\n\nWhat helps:\n- Increase the scan interval in the integration options\n- Disable entities you do not use (polling skips their registers)\n- Check whether another Modbus client is querying the heat pump at the same time"
     },
     "register_not_supported": {
       "title": "IDM register not supported by this device",

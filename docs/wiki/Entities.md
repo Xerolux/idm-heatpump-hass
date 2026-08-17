@@ -166,6 +166,40 @@ implausible result.
 | `hc_{x}_setpoint_flow_temp` | Current setpoint flow temp |
 | `hc_{x}_active_mode` | Active operating mode |
 
+### Calculated Sensors
+
+These sensors are derived from register values of the same snapshot. Nothing is
+estimated: every operand is a decoded register value, and the sensor reports no
+value rather than a guess when its sources are not meaningful.
+
+| Entity | Description |
+|--------|-------------|
+| `calculated_hp_temperature_delta` | Heat pump spread (flow minus return) |
+| `calculated_heat_source_temperature_delta` | Heat source spread (inlet minus outlet) |
+| `calculated_dhw_setpoint_deviation` | DHW actual minus setpoint |
+| `calculated_cop` | Momentary COP (thermal power / electrical power) |
+| `calculated_hc_{x}_flow_deviation` | Flow deviation per heating circuit |
+
+**Flow deviation per heating circuit** compares the measured flow temperature of
+a circuit (`hc_{x}_flow_temp`) with the flow setpoint the controller currently
+requests for that circuit (`hc_{x}_setpoint_flow_temp`):
+
+- **Positive** — the circuit runs above the requested setpoint (overshoot,
+  typically a heating curve set too high or a mixer that opens too far).
+- **Around zero** — the circuit follows its heating curve.
+- **Negative** — the circuit does not reach its setpoint (undersized heat
+  source, high load, defrost, or a limiting setting).
+
+The sensor becomes **unavailable** while the circuit is idle (the controller
+reports `0.0`) and on circuits that are not configured (`-1.0`). That is
+intentional: a deviation calculated from a placeholder value would be
+meaningless. The entity itself is created as soon as both registers exist, so a
+Home Assistant restart during standby does not make it disappear.
+
+> This deliberately compares values **within one heating circuit**. A deviation
+> at heat-pump level needs an unambiguous register for the flow setpoint the
+> heat pump itself requests and remains an open roadmap item.
+
 ### Optional Web Supplement Sensors
 
 When **Web supplement data** is enabled and a local Navigator web PIN is
