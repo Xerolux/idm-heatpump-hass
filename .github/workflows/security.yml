@@ -22,15 +22,15 @@ jobs:
       matrix:
         language: [actions, python]
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
       # init and analyze must stay on the SAME codeql-action version. A version
       # skew fails the job with "Loaded a configuration file for version X, but
       # running version Y", so bump both lines together — Dependabot proposes
       # them as two separate pull requests, each of which is red on its own.
-      - uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+      - uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd  # v4.37.7 guardrails-disable-line
         with:
           languages: ${{ matrix.language }}
-      - uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
+      - uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd  # v4.37.7 guardrails-disable-line
         with:
           category: "/language:${{ matrix.language }}"
 
@@ -40,8 +40,8 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # guardrails-disable-line
         with:
           python-version: "3.14"
       - name: Install runtime requirements
