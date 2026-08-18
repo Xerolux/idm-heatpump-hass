@@ -1,6 +1,6 @@
 # IDM Heatpump – offene TODO-Liste
 
-Stand: 04.08.2026
+Stand: 18.08.2026
 
 Die großen strategischen Optimierungsblöcke sind umgesetzt. Dieses
 Dokument enthält nur noch Punkte, die tatsächlich offen, datenabhängig oder durch
@@ -45,7 +45,7 @@ bleibt.
 - [x] Schutz-, Alarm-, Analyse- und Restore-Register bleiben immer aktiv.
 - [x] Konservatives Default-Profil für generierte technische/seltene
       Diagnose-Entities ergänzt, ohne bestehende Unique IDs zu ändern.
-- [x] Prüfung mit API-Pin `0.8.1` und separat gegen API-Main.
+- [x] Prüfung mit dem gepinnten API-Stand und separat gegen API-Main.
 - [x] Ruff, Formatter, Mypy, Pytest, Hassfest und Security für alle gemergten
       Arbeitspakete.
 
@@ -140,30 +140,40 @@ Benötigte Nutzerdaten:
       vorliegen.
 - [x] Diagnosedaten-Anforderungen und Datenschutzregeln für Felddiagnosen
       dokumentieren.
+- [x] Vertragstest, der die Web-Wertschlüssel der API gegen die von der
+      Integration ausgegebenen Entitäten prüft
+      (`tests/test_cross_repo_contract.py`). Er fängt den Fall ab, dass ein
+      neuer API-Schlüssel bei jedem Poll ankommt und stillschweigend verworfen
+      wird — die Ursache des Heizkreis-B–G-Fehlers in `0.13.0`.
 
 ## Modbus-Transport – umgesetzt und verbleibend
 
 - [x] Backend-neutralen Transportvertrag mit getrennten FC03-/FC04-Lesewegen,
       FC16-Schreibweg, Endpoint-Validierung und redigierten Capabilities
       implementieren.
-- [x] Produktiven Adapter `IdmModbusConnectionClient` verdrahten. Die API 0.9.1
+- [x] Produktiven Adapter `IdmModbusConnectionClient` verdrahten. Die API 1.0.1
       behält Registermodell, Batchplanung, Encoding/Decoding, Modellerkennung
       und Schreibschutz; rohe I/O läuft über `ModbusConnectionTransport`.
 - [x] Direkten Socket reproduzierbar auf
       `modbus-connection==4.0.0a3` und `tmodbus==0.5.0` pinnen.
       `4.0.0a3` ist die Bibliotheksversion, nicht die Integrationsversion; der
       Laufzeitpfad wird erstmals mit `0.11.0-beta.1` ausgeliefert.
-- [x] `idm-heatpump-api[web]==0.9.1` und `pymodbus>=3.12.1,<4.0`
-      vorübergehend als Kompatibilitätspaar beibehalten, weil die API Pymodbus
-      weiterhin importiert. Pymodbus besitzt nicht den direkten Socket.
+- [x] `idm-heatpump-api[web]==1.0.1` und `pymodbus>=3.12.1,<4.0`
+      vorübergehend als Kompatibilitätspaar beibehalten, weil
+      `idm_heatpump.client` Pymodbus weiterhin auf Modulebene importiert.
+      Pymodbus besitzt nicht den direkten Socket.
 - [x] Transportquelle, Socket-Besitz, Verbindungsstatus,
       `supports_shared_connection=False` und alle Laufzeitversionen redigiert
       diagnostizierbar machen.
 - [ ] Den neuen tmodbus-Laufzeitpfad read-only an realer Navigator-Hardware für
       Setup, FC03, FC04, Verbindungsabbruch und Reconnect validieren. Keine
       Hardware-Schreibtests ohne ausdrückliche Freigabe.
-- [ ] `idm-heatpump-api` auf einen öffentlichen transportneutralen I/O-Vertrag
-      umstellen und den Pymodbus-Kompatibilitätspin erst danach entfernen.
+- [x] `idm-heatpump-api` auf einen öffentlichen transportneutralen I/O-Vertrag
+      umstellen: seit `1.0.1` exportiert die API `IdmModbusTransport` als
+      Protocol, `IdmModbusClient` nimmt den Transport über `transport=`
+      entgegen, und `IdmModbusConnectionClient` nutzt genau diesen Weg.
+- [ ] Den Pymodbus-Kompatibilitätspin entfernen, sobald der Modulimport von
+      `pymodbus` in `idm_heatpump.client` optional ist.
 - [ ] Einen zentralen Home-Assistant-Shared-Connection-Provider nur dann
       ergänzen, wenn dieser für Custom Integrations stabil verfügbar ist. Bis
       dahin besitzt jede Entry ihren eigenen Socket und meldet kein Sharing.

@@ -273,11 +273,18 @@ description.
 | `hc_{x}_room_setpoint_heat_eco` | 1415+ | 10–25 °C |
 | `hc_{x}_room_setpoint_cool_normal` | 1457+ | 15–30 °C |
 | `hc_{x}_room_setpoint_cool_eco` | 1471+ | 15–30 °C |
-| `hc_{x}_heating_curve` | 1429+ | 0.1–3.5 |
+| `hc_{x}_heating_curve` | 1429+ | 0.1–3.5 (step 0.1, expert) |
 | `hc_{x}_heating_limit` | 1442+ | 0–50 °C |
 | `hc_{x}_cooling_limit` | 1484+ | 0–36 °C |
-| `hc_{x}_parallel_shift` | 1505+ | 0–30 |
+| `hc_{x}_parallel_shift` | 1505+ | 0–30 (expert) |
 | `hc_{x}_ext_room_temp` | 1650+ | 15–30 °C |
+
+Entries marked *expert* shape the heating curve of the whole installation and
+write to EEPROM registers. They are created disabled on new installations —
+enable them under Settings -> Devices & Services -> IDM Heatpump -> Entities.
+Existing installations keep whatever state the entity already had.
+`hc_{x}_setpoint_flow_constant` and `hc_{x}_setpoint_flow_cooling` are expert
+entities for the same reason.
 
 `hc_{x}_ext_room_temp` can be controlled manually like any other number entity
 or filled automatically by optional room temperature forwarding. When

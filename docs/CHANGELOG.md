@@ -15,6 +15,50 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.14.0] - 2026-08-18
+
+Minor-Release: ein Bedienfehler an der Heizkurve behoben, die
+Auslegungsparameter der Heizkreise werden zu Expertenwerten, dazu ein
+Dashboard-Beispiel je Heizkreis und ein Vertragstest, der die Ursache des
+Heizkreis-Fehlers aus 0.13.0 künftig in der CI abfängt. Bestehende Config
+Entries, Entity-IDs, Unique IDs, Registeradressen und Schreibpfade bleiben
+unverändert. Die getestete API-Paarung (`idm-heatpump-api[web]==1.0.1`,
+`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`) ist gegenüber 0.13.0
+unverändert.
+
+### Fixed
+
+- **Schrittweite der Heizkurve.** `hc_{a..g}_heating_curve` ist ein
+  FLOAT-Register und bekam damit die Standardschrittweite 0,5, obwohl der
+  Wertebereich 0,1–3,5 beträgt. Übliche Einstellungen wie 0,3 oder 0,4 lagen
+  zwischen zwei Schritten und ließen sich im Eingabefeld nicht setzen. Die
+  Schrittweite ist jetzt 0,1; der Wertebereich kommt unverändert aus
+  `idm-heatpump-api`.
+
+### Changed
+
+- **Heizkurven-Parameter sind Expertenwerte.** `hc_{x}_heating_curve`,
+  `hc_{x}_parallel_shift`, `hc_{x}_setpoint_flow_constant` und
+  `hc_{x}_setpoint_flow_cooling` entstehen für **neue** Installationen
+  deaktiviert, wie schon `power_limit_hp`. Sie bestimmen die Auslegung der
+  gesamten Heizung und schreiben in EEPROM-Register. Bestehende Installationen
+  sind nicht betroffen: `entity_registry_enabled_default` wirkt nur beim
+  erstmaligen Anlegen einer Entität und ändert keine Nutzerentscheidung.
+
+### Added
+
+- **Dashboard-Beispiel je Heizkreis**
+  (`docs/examples/dashboard-idm-heating-circuit.yaml`). Home Assistant sortiert
+  die Geräteseite alphabetisch und mischt dabei Komfort-Sollwerte mit den
+  Auslegungsparametern der Heizkurve. Das Beispiel trennt beides in eigene
+  Abschnitte, mit Verlaufsgrafik aus Vorlauf-Ist, Vorlauf-Soll, Raum- und
+  Außentemperatur.
+- **Vertragstest für die Web-Wertschlüssel** (`tests/test_cross_repo_contract.py`).
+  Er vergleicht die Wertnamen, die `idm-heatpump-api` liefern kann, mit den
+  Schlüsseln, die die Integration als Entität ausgibt, und schlägt fehl, sobald
+  die API einen Wert liefert, den die Integration stillschweigend verwirft —
+  die Ursache des Heizkreis-B–G-Fehlers in 0.13.0.
+
 ## [0.13.0] - 2026-08-18
 
 Minor-Release: ein Fix, der auf Anlagen mit mehr als einem Heizkreis neue

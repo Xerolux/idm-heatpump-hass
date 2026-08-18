@@ -9,6 +9,8 @@ pump, so treat them as starting points and adjust them in the dashboard editor.
 
 - `dashboard-idm-overview.yaml` – safe first dashboard with status, hot water,
   heating-circuit, operation-analysis and diagnostic sections.
+- `dashboard-idm-heating-circuit.yaml` – one heating circuit per view, with
+  comfort setpoints and heating-curve parameters kept apart.
 - `dashboard-idm-hot-water.yaml` – domestic hot-water focused cards including
   boost status and conservative controls.
 - `dashboard-idm-energy.yaml` – energy, PV/GLT and operating-quality cards.
@@ -23,3 +25,7 @@ pump, so treat them as starting points and adjust them in the dashboard editor.
   shared dashboards.
 - Keep PV/GLT control ownership clear: only one controller should write the same
   GLT/PV register.
+- Heating-curve parameters (`heating_curve`, `parallel_shift`,
+  `setpoint_flow_constant`, `setpoint_flow_cooling`) are disabled by default on
+  new installations and must be enabled in the entity settings first. They write
+  to EEPROM registers — set them by hand, do not automate them.

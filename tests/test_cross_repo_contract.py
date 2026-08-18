@@ -5,6 +5,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any
 
+import pytest
 from idm_heatpump import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, IdmModelInfo, build_register_map
 
 from custom_components.idm_heatpump.registers import (
@@ -127,3 +128,33 @@ def test_navigator_20_excludes_navigator_10_entities() -> None:
     assert "outdoor_temp" in entity_names
     assert "power_limit_hp" not in entity_names
     assert "heat_sink_flow_rate" not in entity_names
+
+
+def test_every_navigator_web_value_reaches_an_entity() -> None:
+    """A web value the API can deliver must not be dropped silently.
+
+    The integration filters Navigator web values against static allowlists, so
+    every value name the API learns has to be added there as well. Circuits B-G
+    showed what happens otherwise: `idm-heatpump-api` mapped their pump, mixer
+    and flow-temperature codes, the values arrived on every poll, and the
+    integration discarded them because only the circuit-A keys were listed.
+    """
+    # The stubbed API used when the pinned library is unavailable ships no web
+    # module, so this contract is only checkable against the real package.
+    web = pytest.importorskip("idm_heatpump.web")
+
+    from custom_components.idm_heatpump.sensor import all_supported_web_value_names
+
+    api_value_names = {
+        *getattr(web, "SENSOR_NAME_MAP", {}).values(),
+        *getattr(web, "NAVIGATOR10_SETTING_NAME_MAP", {}).values(),
+        *getattr(web, "WEB_VALUE_DESCRIPTIONS", {}),
+    }
+    assert api_value_names, "idm-heatpump-api exposes no web value names — the contract source moved"
+
+    unexposed = sorted(api_value_names - all_supported_web_value_names())
+    assert not unexposed, (
+        "idm-heatpump-api delivers web values the integration never turns into entities: "
+        f"{unexposed}. Add them to _WEB_VALUE_NAMES (sensor.py) or to the binary sensor "
+        "definitions (web_binary_sensors.py), together with a German name and translations."
+    )

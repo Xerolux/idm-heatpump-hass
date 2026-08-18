@@ -176,6 +176,34 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
     },
 }
 
+_HEATING_CIRCUIT_LETTERS: tuple[str, ...] = ("a", "b", "c", "d", "e", "f", "g")
+
+# Die Wertebereiche der Heizkreis-Register liefert `idm-heatpump-api` selbst
+# (`min_val`/`max_val`) und sie werden unverändert übernommen — Gerätewissen
+# gehört in die API. Nur die Schrittweite braucht eine Korrektur: die Heizkurve
+# ist ein FLOAT-Register und bekommt damit die Standardschrittweite 0,5, obwohl
+# ihr Bereich 0,1–3,5 beträgt. Übliche Einstellungen wie 0,3 oder 0,4 liegen
+# dann zwischen zwei Schritten und lassen sich im Eingabefeld nicht setzen.
+NUMBER_METADATA.update({f"hc_{letter}_heating_curve": {"step": 0.1} for letter in _HEATING_CIRCUIT_LETTERS})
+
+# Diese Register formen die Heizkurve der Anlage. Ein Tippfehler wirkt auf das
+# gesamte Heizverhalten, deshalb entstehen sie — wie `power_limit_hp` — für neue
+# Installationen deaktiviert. Bestehende Entitäten bleiben unberührt:
+# `entity_registry_enabled_default` gilt nur beim erstmaligen Anlegen und ändert
+# keine Nutzerentscheidung.
+_EXPERT_HEATING_CIRCUIT_NUMBERS: frozenset[str] = frozenset(
+    {
+        "heating_curve",
+        "parallel_shift",
+        "setpoint_flow_constant",
+        "setpoint_flow_cooling",
+    }
+)
+
+for _letter in _HEATING_CIRCUIT_LETTERS:
+    for _suffix in sorted(_EXPERT_HEATING_CIRCUIT_NUMBERS):
+        NUMBER_METADATA.setdefault(f"hc_{_letter}_{_suffix}", {})["enabled_by_default"] = False
+
 _INTEGER_REGISTER_DATA_TYPES: frozenset[DataType] = frozenset(
     {DataType.UCHAR, DataType.INT8, DataType.INT16, DataType.UINT16, DataType.BITFLAG}
 )
