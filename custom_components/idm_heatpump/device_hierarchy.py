@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
@@ -184,8 +184,8 @@ def active_heating_circuits(coordinator: IdmCoordinator) -> tuple[str, ...]:
     letters: set[str] = set()
 
     entry = getattr(coordinator, "config_entry", None)
-    options = getattr(entry, "options", None)
-    raw_circuits = options.get(CONF_HEATING_CIRCUITS, ()) if hasattr(options, "get") else ()
+    options: Any = getattr(entry, "options", None) or {}
+    raw_circuits: Any = options.get(CONF_HEATING_CIRCUITS, ()) if hasattr(options, "get") else ()
     try:
         candidates = list(raw_circuits)
     except TypeError:
