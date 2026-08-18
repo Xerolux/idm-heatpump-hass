@@ -13,6 +13,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+Noch keine Änderungen.
+
+## [0.14.0] - 2026-08-18
+
+Minor-Release: ein Bedienfehler an der Heizkurve behoben, die
+Auslegungsparameter der Heizkreise werden zu Expertenwerten, dazu ein
+Dashboard-Beispiel je Heizkreis und ein Vertragstest, der die Ursache des
+Heizkreis-Fehlers aus 0.13.0 künftig in der CI abfängt. Bestehende Config
+Entries, Entity-IDs, Unique IDs, Registeradressen und Schreibpfade bleiben
+unverändert. Die getestete API-Paarung (`idm-heatpump-api[web]==1.0.1`,
+`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`) ist gegenüber 0.13.0
+unverändert.
+
 ### Fixed
 
 - **Schrittweite der Heizkurve.** `hc_{a..g}_heating_curve` ist ein

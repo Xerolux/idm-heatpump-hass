@@ -5,6 +5,45 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.14.0 — 2026-08-18
+
+Minor release: one usability fix on the heating curve, the circuit design
+parameters become expert entities, plus a per-circuit dashboard example and a
+contract test that catches the root cause of the 0.13.0 bug in CI. Config
+entries, entity IDs, unique IDs, register addresses and write paths are
+unchanged, and the tested dependency pairing is identical to 0.13.0.
+
+### Fixed
+
+- **Heating curve step size.** `hc_{a..g}_heating_curve` is a FLOAT register and
+  therefore inherited the default step of 0.5, even though its range is
+  0.1–3.5. Common settings such as 0.3 or 0.4 fell between two steps and could
+  not be entered. The step is now 0.1; the range still comes from
+  `idm-heatpump-api`.
+
+### Changed
+
+- **Heating-curve parameters are expert entities.** `hc_{x}_heating_curve`,
+  `hc_{x}_parallel_shift`, `hc_{x}_setpoint_flow_constant` and
+  `hc_{x}_setpoint_flow_cooling` are created disabled on **new** installations,
+  like `power_limit_hp` already was. They define the design of the whole
+  heating system and write to EEPROM registers. Existing installations are
+  unaffected — `entity_registry_enabled_default` only applies when an entity is
+  first created.
+
+### Added
+
+- **Per-circuit dashboard example**
+  (`docs/examples/dashboard-idm-heating-circuit.yaml`). Home Assistant sorts a
+  device page alphabetically and mixes comfort setpoints with design
+  parameters; the example keeps them in separate sections and adds a history
+  graph of measured flow, requested flow, room and outdoor temperature.
+- **Contract test for the web value keys** (`tests/test_cross_repo_contract.py`).
+  It compares the value names `idm-heatpump-api` can deliver against the keys
+  the integration turns into entities and fails as soon as the API provides a
+  value the integration would silently discard — the root cause of the
+  circuit B–G bug in 0.13.0.
+
 ## v0.13.0 — 2026-08-18
 
 Minor release with one fix that makes new entities appear on systems with more
