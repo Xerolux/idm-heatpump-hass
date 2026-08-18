@@ -15,6 +15,31 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.13.0] - 2026-08-18
+
+Minor-Release: ein Fix, der auf Anlagen mit mehr als einem Heizkreis neue
+Entitäten sichtbar macht, und deutsche Namen für die optionalen Heizkreise.
+Vollständig abwärtskompatibel — bestehende Config Entries, Entity-IDs, Unique
+IDs, Registeradressen und Schreibpfade bleiben unverändert. Die getestete
+API-Paarung (`idm-heatpump-api[web]==1.0.1`, `modbus-connection==4.0.0a3`,
+`tmodbus==0.5.0`) ist gegenüber 0.12.0 unverändert.
+
+### Fixed
+
+- **Web-Entitäten für alle Heizkreise, nicht nur Heizkreis A.** Die Navigator-
+  Web-Werte für Heizkreispumpe (`M31`–`M37`), Mischer (`M41`–`M47`) und
+  Vorlauftemperatur (`B51`–`B57`) liefert `idm-heatpump-api` für die Heizkreise
+  A–G, die Integration hat aber nur die Heizkreis-A-Schlüssel aus einer festen
+  Liste übernommen. Ein später über die Optionen aktivierter Heizkreis bekam
+  dadurch dauerhaft keine `(Web)`-Entitäten — die Werte kamen an und wurden
+  verworfen. Die Web-Entitäten entstehen jetzt je konfiguriertem Heizkreis, also
+  auch nach nachträglicher Aktivierung beim folgenden Reload der Config Entry.
+- **Deutsche Namen für die Heizkreise B–G.** Die Namenstabelle enthielt nur
+  `hc_a_*`-Einträge, alle optionalen Heizkreise fielen auf den englischen
+  Fallback zurück (`Hc D Cooling Limit` statt `Kühlgrenze HK D`). Die Namen für
+  B–G werden jetzt aus der Heizkreis-A-Tabelle abgeleitet. Entity-IDs und
+  Unique IDs bleiben unverändert, nur der angezeigte Name ändert sich.
+
 ## [0.12.0] - 2026-08-17
 
 Minor-Release: zwei neue Funktionen, ein Fix am entitätsbewussten Polling und

@@ -634,6 +634,24 @@
       },
       "web_pump_heating_circuit_a": {
         "name": "Heating circuit A pump (Web)"
+      },
+      "web_pump_heating_circuit_b": {
+        "name": "Heating circuit B pump (Web)"
+      },
+      "web_pump_heating_circuit_c": {
+        "name": "Heating circuit C pump (Web)"
+      },
+      "web_pump_heating_circuit_d": {
+        "name": "Heating circuit D pump (Web)"
+      },
+      "web_pump_heating_circuit_e": {
+        "name": "Heating circuit E pump (Web)"
+      },
+      "web_pump_heating_circuit_f": {
+        "name": "Heating circuit F pump (Web)"
+      },
+      "web_pump_heating_circuit_g": {
+        "name": "Heating circuit G pump (Web)"
       }
     }
   },

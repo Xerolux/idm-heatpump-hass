@@ -5,6 +5,30 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.13.0 — 2026-08-18
+
+Minor release with one fix that makes new entities appear on systems with more
+than one heating circuit, plus German names for the optional circuits. Fully
+backward compatible: config entries, entity IDs, unique IDs, register addresses
+and write paths are unchanged, and the tested dependency pairing is identical
+to 0.12.0.
+
+### Fixed
+
+- **Web entities for every heating circuit, not just circuit A.** The Navigator
+  web values for the circuit pump (`M31`–`M37`), mixer (`M41`–`M47`) and flow
+  temperature (`B51`–`B57`) are provided by `idm-heatpump-api` for circuits
+  A–G, but the integration only picked up the circuit-A keys from a static
+  allowlist. A circuit enabled later through the options flow therefore never
+  received its `(Web)` entities — the values arrived and were discarded. Web
+  entities are now created per configured heating circuit, so they appear on
+  the reload that follows a later activation.
+- **German names for heating circuits B–G.** The name table only contained
+  `hc_a_*` entries, so every optional circuit fell back to the English default
+  (`Hc D Cooling Limit` instead of `Kühlgrenze HK D`). Names for B–G are now
+  derived from the circuit-A table. Entity IDs and unique IDs are unchanged;
+  only the displayed name differs.
+
 ## v0.12.0 — 2026-08-17
 
 Minor release with two new features and one polling fix. Fully backward

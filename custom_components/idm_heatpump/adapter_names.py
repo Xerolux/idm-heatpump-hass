@@ -256,6 +256,18 @@ _GERMAN_NAMES: dict[str, str] = {
     "booster_fault": "Booster Störung",
 }
 
+# Heizkreise B-G verwenden dieselben Registernamen wie Heizkreis A. Sie werden
+# aus der Heizkreis-A-Tabelle abgeleitet, damit optional aktivierte Heizkreise
+# nicht auf den englischen Fallback-Namen zurückfallen.
+_GERMAN_NAMES.update(
+    {
+        f"hc_{letter}_{name.removeprefix('hc_a_')}": f"{label.removesuffix(' HK A')} HK {letter.upper()}"
+        for letter in ("b", "c", "d", "e", "f", "g")
+        for name, label in list(_GERMAN_NAMES.items())
+        if name.startswith("hc_a_") and label.endswith(" HK A")
+    }
+)
+
 
 _ZONE_ROOM_NAME_RE = re.compile(r"zm(\d+)_room(\d+)_(temp|setpoint|humidity|mode|relay)$")
 

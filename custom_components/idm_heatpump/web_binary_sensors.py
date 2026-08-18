@@ -15,7 +15,11 @@ from homeassistant.components.binary_sensor import (
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
 from .coordinator import IdmCoordinator
-from .device_hierarchy import build_subdevice_info
+from .device_hierarchy import (
+    HEATING_CIRCUIT_LETTERS,
+    active_heating_circuits,
+    build_subdevice_info,
+)
 from .entity import IdmCoordinatorEntityBase, build_device_info, build_entity_unique_id
 
 
@@ -102,18 +106,27 @@ WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
         device_class=BinarySensorDeviceClass.RUNNING,
     ),
     WebBinarySensorDefinition(
-        key="pump_heating_circuitA",
-        icon="mdi:pump",
-        device_class=BinarySensorDeviceClass.RUNNING,
-    ),
-    WebBinarySensorDefinition(
         key="siphon_heating",
         icon="mdi:heating-coil",
         device_class=BinarySensorDeviceClass.HEAT,
     ),
 )
 
-WEB_BINARY_VALUE_KEYS: frozenset[str] = frozenset(definition.key for definition in WEB_BINARY_SENSOR_DEFINITIONS)
+
+def _heating_circuit_pump_definition(letter: str) -> WebBinarySensorDefinition:
+    """Return the pump definition for one heating circuit."""
+    return WebBinarySensorDefinition(
+        key=f"pump_heating_circuit{letter}",
+        icon="mdi:pump",
+        device_class=BinarySensorDeviceClass.RUNNING,
+    )
+
+
+# Every heating-circuit pump key must be known here so the sensor platform
+# never creates a duplicate regular sensor for a circuit that is enabled later.
+WEB_BINARY_VALUE_KEYS: frozenset[str] = frozenset(
+    definition.key for definition in WEB_BINARY_SENSOR_DEFINITIONS
+) | frozenset(f"pump_heating_circuit{letter}" for letter in HEATING_CIRCUIT_LETTERS)
 
 _TRUE_TEXT_VALUES = frozenset(
     {
@@ -173,10 +186,18 @@ def normalize_web_binary_value(value: Any) -> bool | None:
 def web_binary_sensor_entities(coordinator: IdmCoordinator) -> list[IdmWebBinarySensor]:
     """Create all web binary sensors when web is enabled.
 
+    Heating-circuit pumps are created for every configured circuit, so a
+    circuit enabled later in the options flow gets its web entities on the
+    reload that follows.
+
     Values may arrive after the first successful web poll; entities stay
     unavailable until a normalized boolean value exists for their key.
     """
-    return [IdmWebBinarySensor(coordinator, definition) for definition in WEB_BINARY_SENSOR_DEFINITIONS]
+    definitions = [
+        *WEB_BINARY_SENSOR_DEFINITIONS,
+        *(_heating_circuit_pump_definition(letter) for letter in active_heating_circuits(coordinator)),
+    ]
+    return [IdmWebBinarySensor(coordinator, definition) for definition in definitions]
 
 
 class IdmWebBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
