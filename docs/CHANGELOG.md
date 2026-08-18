@@ -43,6 +43,10 @@ Schreibpfaden. Die getestete API-Paarung ist gegenüber 0.14.0 unverändert.
   unterdrückt (Zustand `unknown`), solange der Heizkreis nichts anfordert,
   analog zum COP-Sensor im Stillstand. Kommentar und der Changelog-Eintrag zu
   0.12.0 hatten dieses Verhalten fälschlich als bereits abgefangen beschrieben.
+  Auf einer Navigator-10-Anlage mit zwei Heizkreisen im Leerlauf (18.08.2026)
+  meldeten beide Kreise `Sollvorlauftemperatur 0,0 °C`, `Vorlauftemperatur
+  26,1 °C` und daraus `Vorlauf-Abweichung 26,1 °C` — die Vorlauftemperatur
+  selbst, als Abweichung ausgegeben.
 - **„Unbenanntes Gerät" in der Geräteliste.** Sub-Geräte werden vor den
   Plattformen angelegt, damit die `via_device`-Verknüpfung unabhängig von der
   Reihenfolge auflöst; ihren Namen bekommen sie erst mit der ersten Entität.
