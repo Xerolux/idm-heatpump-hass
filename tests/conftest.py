@@ -696,6 +696,12 @@ def _stub_homeassistant() -> None:
     entity_registry_mod.async_entries_for_config_entry = lambda registry, entry_id: [
         entry for entry in registry.entities.values() if entry.config_entry_id == entry_id
     ]
+    entity_registry_mod.async_entries_for_device = lambda registry, device_id, include_disabled_entities=False: [
+        entry
+        for entry in registry.entities.values()
+        if getattr(entry, "device_id", None) == device_id
+        and (include_disabled_entities or not getattr(entry, "disabled_by", None))
+    ]
 
     # homeassistant.helpers.issue_registry
     issue_registry_mod = _make_module("homeassistant.helpers.issue_registry")

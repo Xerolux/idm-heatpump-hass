@@ -5,6 +5,38 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.14.1 — 2026-08-18
+
+Patch release: three bugs around the lifecycle of optional heating circuits. No
+breaking changes; unique IDs, register addresses and write paths are unchanged.
+
+### Fixed
+
+- **Sensors of a circuit enabled later never appeared.** Entities are only built
+  while the config entry loads. If the controller still reported the `-1.0`
+  sentinel in that one poll, the "hide unused sensors" filter dropped the
+  circuit's read-only registers — so the circuit got its controls but neither
+  flow, room nor setpoint temperature, until some later reload happened to catch
+  better values. A configured circuit is now exempt from that filter, the same
+  way writable controls already were. Availability still follows the live value.
+- **Flow deviation showed the flow temperature while idle.** A circuit that asks
+  for nothing reports setpoint `0.0`. That is a normal operating state, not a
+  declared sentinel, so the sensor computed `flow - 0` and published the
+  measured flow temperature as a 26 K deviation. It is now suppressed (state
+  `unknown`) while the circuit requests nothing, like the COP sensor at
+  standstill.
+- **"Unnamed device" in the device list.** Sub-devices are created before the
+  platforms so `via_device` links resolve regardless of platform order; their
+  name only arrives with the first entity. A sub-device that never received one
+  stayed in the list as an unnamed, empty entry. Those are now detached when the
+  config entry loads. A sub-device whose entities the user merely disabled is
+  kept.
+- **Orphaned entities of deselected circuits.** Unchecking a circuit left its
+  entities in the registry as permanently unavailable. They are now removed when
+  the config entry loads, narrowly scoped to register-backed entities of this
+  entry whose register points at an unconfigured circuit. Re-enabling the
+  circuit recreates them under unchanged unique IDs.
+
 ## v0.14.0 — 2026-08-18
 
 Minor release: one usability fix on the heating curve, the circuit design

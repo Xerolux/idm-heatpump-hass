@@ -33,6 +33,13 @@ umbenannte oder in Dashboards verwendete Entities.
 
 ## Erlaubt
 
+- Entity-Registry-Einträge eines Heizkreises entfernen, den der Nutzer in den
+  Optionen **abgewählt** hat. Auslöser ist eine ausdrückliche
+  Konfigurationsentscheidung, kein geändertes Default — die Entitäten werden
+  ohnehin nicht mehr erzeugt und blieben sonst dauerhaft „nicht verfügbar"
+  liegen. Beim Wiederaktivieren entstehen sie unter unveränderter Unique ID neu.
+  Der Umfang ist eng: nur registergestützte Entitäten dieser Config Entry, deren
+  Registername auf einen nicht konfigurierten Heizkreis zeigt.
 - Neue generierte Expertenwerte standardmäßig deaktivieren.
 - Bestehende explizite Metadaten besser klassifizieren.
 - `entity_category`, Icon, Name oder Device Class verbessern, solange Unique ID
@@ -42,7 +49,9 @@ umbenannte oder in Dashboards verwendete Entities.
 ## Nicht erlaubt
 
 - Bestehende Unique IDs ohne Migration ändern.
-- Bestehende Entity-Registry-Einträge wegen neuer Defaults entfernen.
+- Bestehende Entity-Registry-Einträge wegen neuer Defaults entfernen. Das
+  Entfernen abgewählter Heizkreise oben ist die einzige Ausnahme und hängt an
+  einer Nutzerentscheidung, nicht an einem Default.
 - Nutzeraktivierungen anhand des neuen Profils überschreiben.
 - Gerätehierarchie als Vorwand für neue Entity-IDs nutzen.
 

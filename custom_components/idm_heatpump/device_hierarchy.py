@@ -2,18 +2,22 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
+from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import CONF_HEATING_CIRCUITS, CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
 
 if TYPE_CHECKING:
     from .coordinator import IdmCoordinator
+
+_LOGGER = logging.getLogger(__name__)
 
 DeviceScopeKind = Literal[
     "heating_circuit",
@@ -173,6 +177,19 @@ def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> N
 HEATING_CIRCUIT_LETTERS: tuple[str, ...] = ("A", "B", "C", "D", "E", "F", "G")
 
 
+def is_configured_heating_circuit_register(coordinator: IdmCoordinator, register_name: str) -> bool:
+    """Return whether a register belongs to a heating circuit the user configured.
+
+    Enabling a circuit is an explicit statement that it exists, so its registers
+    must not disappear because a single poll happened to read an unused
+    sentinel — see ``should_add_entity``.
+    """
+    match = _HEATING_CIRCUIT_REGISTER.match(register_name)
+    if match is None:
+        return False
+    return match.group(1).upper() in active_heating_circuits(coordinator)
+
+
 def active_heating_circuits(coordinator: IdmCoordinator) -> tuple[str, ...]:
     """Return the configured heating circuits as uppercase letters.
 
@@ -288,15 +305,76 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
     expected = expected_subdevice_identifiers(coordinator)
     registry = dr.async_get(hass)
 
+    entity_registry = er.async_get(hass)
+
     for device in dr.async_entries_for_config_entry(registry, entry_id):
         hierarchy_identifiers = {
             identifier for identifier in device.identifiers if _is_hierarchy_identifier(entry_id, identifier)
         }
-        if hierarchy_identifiers and hierarchy_identifiers.isdisjoint(expected):
+        if not hierarchy_identifiers:
+            continue
+        if hierarchy_identifiers.isdisjoint(expected):
             registry.async_update_device(
                 device.id,
                 remove_config_entry_id=entry_id,
             )
+            continue
+        # Sub-devices are pre-created without a name so ``via_device`` links
+        # resolve regardless of platform order; the name arrives with the first
+        # entity. One that never receives an entity — because its registers are
+        # filtered out or its feature was turned off — would otherwise sit in
+        # the device list forever as an unnamed, empty entry.
+        if not er.async_entries_for_device(entity_registry, device.id, include_disabled_entities=True):
+            registry.async_update_device(
+                device.id,
+                remove_config_entry_id=entry_id,
+            )
+
+
+def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
+    """Remove registry entries of heating circuits the user turned off.
+
+    Unchecking a circuit in the options flow is an explicit statement that it
+    does not exist on this installation. Its entities are no longer created, so
+    without this they linger in the registry forever, permanently unavailable —
+    exactly what happened to installations that were once configured with more
+    circuits than they have.
+
+    This is deliberately narrow. Only register-backed entities of *this* config
+    entry whose register belongs to a heating circuit that is currently not
+    configured are removed. Nothing keyed on a default, a profile or an entity
+    category is touched, and re-enabling the circuit recreates the entities
+    under their unchanged unique IDs.
+    """
+    config_entry = coordinator.config_entry
+    if config_entry is None:
+        return
+
+    entry_id = config_entry.entry_id
+    configured = set(active_heating_circuits(coordinator))
+    registry = er.async_get(hass)
+    prefix = f"{entry_id}_"
+
+    for entity in list(er.async_entries_for_config_entry(registry, entry_id)):
+        unique_id = entity.unique_id
+        if not unique_id.startswith(prefix):
+            continue
+        entity_key = unique_id[len(prefix) :]
+        # Calculated sensors carry their circuit in the same shape behind a
+        # prefix (``calculated_hc_b_flow_deviation``) and are just as absent
+        # once the circuit is gone.
+        register_name = entity_key.removeprefix("calculated_")
+        match = _HEATING_CIRCUIT_REGISTER.match(register_name)
+        if match is None:
+            continue
+        if match.group(1).upper() in configured:
+            continue
+        _LOGGER.debug(
+            "Removing entity %s of deconfigured heating circuit %s",
+            entity.entity_id,
+            match.group(1).upper(),
+        )
+        registry.async_remove(entity.entity_id)
 
 
 def _via_device_id(coordinator: IdmCoordinator, parent_identifier: tuple[str, str]) -> str | None:

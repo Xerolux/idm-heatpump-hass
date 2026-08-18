@@ -291,6 +291,41 @@ def test_flow_deviation_becomes_available_once_the_circuit_runs():
     assert sensor.native_value == 1.5
 
 
+def test_flow_deviation_is_suppressed_while_the_circuit_requests_nothing():
+    """An idle circuit reports setpoint 0.0 — that must not become a deviation.
+
+    0.0 is a normal operating state, not a declared sentinel, so the coordinator
+    does not mark the register unused. Subtracting it published the measured
+    flow temperature as if the circuit were overshooting by 26 K.
+    """
+    coordinator = _coordinator({"hc_d_flow_temp": 26.2, "hc_d_setpoint_flow_temp": 0.0})
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("d")]
+
+    # Sources are present and readable, so the entity stays available and
+    # reports 'unknown' rather than dropping out entirely.
+    assert sensor.available is True
+    assert sensor.native_value is None
+
+
+def test_flow_deviation_returns_once_the_circuit_requests_heat_again():
+    coordinator = _coordinator({"hc_d_flow_temp": 26.2, "hc_d_setpoint_flow_temp": 0.0})
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("d")]
+
+    coordinator.data = {"hc_d_flow_temp": 33.0, "hc_d_setpoint_flow_temp": 35.0}
+
+    assert sensor.native_value == -2.0
+
+
+def test_flow_deviation_keeps_a_genuine_zero_deviation():
+    """Flow exactly on setpoint is a real reading and must not be suppressed."""
+    coordinator = _coordinator({"hc_a_flow_temp": 32.0, "hc_a_setpoint_flow_temp": 32.0})
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
+
+    assert sensor.native_value == 0.0
+
+
 def test_flow_deviation_metadata():
     coordinator = _coordinator({"hc_a_flow_temp": 34.0, "hc_a_setpoint_flow_temp": 32.0})
 
