@@ -1,6 +1,6 @@
 # Open Work Audit
 
-Stand: 04.08.2026
+Stand: 18.08.2026
 
 Diese Prüfung trennt lokal erledigbare Arbeit von Punkten, die ohne reale
 Anlagendaten oder ohne zentralen Home-Assistant-Shared-Connection-Vertrag nicht
@@ -22,9 +22,10 @@ Transporteigenschaft als abgeschlossen auszugeben.
 - Direkter Socket über `modbus-connection==4.0.0a3` und den separat
   gepinnten Backend-Stand `tmodbus==0.5.0`; die erste ausliefernde
   Integrationsversion ist `0.11.0-beta.1`.
-- API-Gerätelogik bleibt bei `idm-heatpump-api[web]==0.9.1`. Der
-  Pymodbus-Pin bleibt nur vorübergehend bestehen, weil diese API-Version ihn
-  weiterhin importiert; die physische Verbindung gehört tmodbus.
+- API-Gerätelogik bleibt bei `idm-heatpump-api[web]==1.0.1`. Der
+  Pymodbus-Pin bleibt nur vorübergehend bestehen, weil `idm_heatpump.client`
+  ihn weiterhin auf Modulebene importiert; die physische Verbindung gehört
+  tmodbus.
 - Diagnoseexport für Transportquelle, Socket-Besitz, Verbindungsstatus,
   fehlendes zentrales Sharing sowie alle Laufzeitversionen.
 - Issue-Vorlage für read-only Hardware-Verifikation und eine spätere zentrale
@@ -36,6 +37,15 @@ Transporteigenschaft als abgeschlossen auszugeben.
   Coordinator-Indizes sowie Aufbau- und Auswertungslaufzeit ab. Das ist die
   lokal beweisbare Hälfte des Lasttest-Punkts; die Wirkung auf reale
   Modbus-Antwortzeiten bleibt weiterhin offen (siehe unten).
+- Web-Entitäten je konfiguriertem Heizkreis statt fest für Heizkreis A
+  (`0.13.0`). Pumpe, Mischer und Vorlauftemperatur der Heizkreise B–G kamen
+  über das Web-Supplement an und wurden von den festen Allowlisten verworfen.
+- Vertragstest für die Web-Wertschlüssel (`tests/test_cross_repo_contract.py`).
+  Er vergleicht die Wertnamen, die `idm-heatpump-api` erzeugen kann, mit der
+  Menge, die die Integration als Entität ausgibt, und schlägt fehl, sobald die
+  API einen Schlüssel liefert, den die Integration stillschweigend wegwirft.
+  Gegen die gestubbte API wird er übersprungen, in der CI läuft er gegen die
+  echte Bibliothek.
 - Automatisierter Datenschutz- und Vollständigkeitstest für den Diagnose-Export
   (`tests/test_diagnostics_privacy.py`). Host, Web-Host, PIN, myIDM-ID,
   Seriennummer und Fehlertexte mit eingebetteten Verbindungsangaben dürfen im
@@ -176,11 +186,15 @@ zweiten Pymodbus-Socketpfad.
 
 ### API-Entkopplung
 
-`idm-heatpump-api` 0.9.1 stellt noch keinen öffentlichen transportneutralen
-Client-Vertrag bereit und importiert Pymodbus. Die Integration überbrückt das
-gezielt über geschützte Raw-I/O-Hooks. Ein späteres API-Release soll diesen
-Adapterpunkt öffentlich machen; erst nach Kompatibilitätsprüfung darf der
-temporäre Pymodbus-Pin entfallen.
+`idm-heatpump-api` 1.0.1 stellt den transportneutralen Vertrag inzwischen
+öffentlich bereit: `IdmModbusTransport` ist ein exportiertes, zur Laufzeit
+prüfbares Protocol, und `IdmModbusClient` nimmt eine Transport-Instanz über den
+öffentlichen Parameter `transport=` entgegen. Die Integration nutzt genau
+diesen Weg; geschützte Raw-I/O-Hooks sind dafür nicht mehr nötig.
+
+Offen bleibt allein der Pymodbus-Pin: `idm_heatpump.client` importiert
+`pymodbus` weiterhin auf Modulebene, unabhängig davon, welcher Transport
+injiziert wird. Der Pin darf erst entfallen, wenn dieser Import optional ist.
 
 ## Entscheidungsregel
 

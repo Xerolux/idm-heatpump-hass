@@ -344,6 +344,11 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
     )
 
 
+def _heating_circuit_value_names(letter: str) -> tuple[str, ...]:
+    """Return the web value keys of one heating circuit."""
+    return (f"mixer_heating_circuit{letter}", f"flow_temp_HK_{letter}")
+
+
 def _web_heating_circuit_value_names(coordinator: IdmCoordinator) -> tuple[str, ...]:
     """Return the web value keys of every configured heating circuit.
 
@@ -353,9 +358,22 @@ def _web_heating_circuit_value_names(coordinator: IdmCoordinator) -> tuple[str, 
     """
     names: list[str] = []
     for letter in active_heating_circuits(coordinator):
-        names.append(f"mixer_heating_circuit{letter}")
-        names.append(f"flow_temp_HK_{letter}")
+        names.extend(_heating_circuit_value_names(letter))
     return tuple(names)
+
+
+def all_supported_web_value_names() -> frozenset[str]:
+    """Return every Navigator web value key the integration can expose.
+
+    Web values are filtered against static allowlists, so a key the API
+    delivers but this set does not contain is discarded on every poll instead
+    of becoming an entity. The cross-repo contract test compares this set
+    against the value names `idm-heatpump-api` can produce.
+    """
+    names = {*_WEB_VALUE_NAMES, *_WEB_ONLY_EXTRA_VALUE_NAMES, *WEB_BINARY_VALUE_KEYS}
+    for letter in HEATING_CIRCUIT_LETTERS:
+        names.update(_heating_circuit_value_names(letter))
+    return frozenset(names)
 
 
 def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefinition]:

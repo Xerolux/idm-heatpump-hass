@@ -1,6 +1,6 @@
 # IDM Heatpump Feature Roadmap
 
-Stand: 04.08.2026
+Stand: 18.08.2026
 
 Dieses Dokument bündelt die nächsten sicheren und sinnvollen Arbeitspakete für
 `idm-heatpump-hass`. Der Fokus liegt auf lokaler Funktion, nachvollziehbarem
@@ -95,20 +95,22 @@ dürfen in Planung und Diagnose nicht miteinander verwechselt werden.
 - [x] `IdmModbusConnectionClient` als produktiven Adapter verdrahten und rohe
   I/O über `modbus-connection==4.0.0a3` sowie `tmodbus==0.5.0`
   ausführen. Der Pfad wird erstmals mit `0.11.0-beta.1` ausgeliefert.
-- [x] `idm-heatpump-api[web]==0.9.1` für Gerätelogik und
+- [x] `idm-heatpump-api[web]==1.0.1` für Gerätelogik und
   `pymodbus>=3.12.1,<4.0` vorübergehend für dessen Imports/Fehlervertrag
   beibehalten; Pymodbus besitzt nicht den direkten Socket.
 - [x] Pro Entry privaten Socket-Besitz und fehlendes zentrales Sharing als
   `owns_socket=True` / `supports_shared_connection=False` diagnostizieren.
 - [ ] Den neuen tmodbus-Pfad read-only an realer Navigator-Hardware validieren;
   keine Schreibtests ohne ausdrückliche Freigabe.
-- [ ] `idm-heatpump-api` weiter transportneutral strukturieren und einen
-  öffentlichen I/O-Vertrag bereitstellen:
-  - Registermodell,
-  - Encoding/Decoding,
-  - Batchplanung,
-  - Fehlerklassifikation,
-  - Transportadapter.
+- [x] `idm-heatpump-api` transportneutral strukturieren und einen
+  öffentlichen I/O-Vertrag bereitstellen: seit `1.0.1` exportiert die API das
+  zur Laufzeit prüfbare Protocol `IdmModbusTransport`, und `IdmModbusClient`
+  nimmt den Transport über den öffentlichen Parameter `transport=` entgegen.
+  Registermodell, Encoding/Decoding, Batchplanung und Fehlerklassifikation
+  bleiben in der API.
+- [ ] Den Pymodbus-Kompatibilitätspin entfernen. Er hängt nicht mehr am
+  Transportvertrag, sondern allein daran, dass `idm_heatpump.client` `pymodbus`
+  auf Modulebene importiert — unabhängig vom injizierten Transport.
 - [ ] Einen zusätzlichen zentralen Home-Assistant-Connection-Provider erst
   implementieren, wenn die Schnittstelle für Custom Integrations stabil
   dokumentiert ist.
@@ -161,13 +163,18 @@ oder firmwareabhängigen Sonderwerten.
 
 ## Nächste konkrete TODOs
 
-1. API-weite Entity-Dokumentation auf Basis des neuen Metadatenkatalogs ausbauen.
+1. Raumtemperatur je Heizkreis im Web-Supplement klären: `idm-heatpump-api`
+   mappt nur `B61` auf `room_temperature_HK_A`. Über Modbus existiert
+   `hc_{a..g}_room_temp` für alle Heizkreise, der Punkt betrifft daher allein
+   den Web-only-Modus. Ob `B62`–`B67` für die übrigen Heizkreise existieren,
+   ist unbestätigt und auf einer Anlage mit mehreren Heizkreisen messbar.
 2. Reale Diagnoseexports für Vorlauf-Abweichung und Binärregister über die
    Field-Diagnostics-Vorlage sammeln.
 3. Den neuen tmodbus-Pfad für Setup, FC03, FC04, Verbindungsabbruch und
    Reconnect read-only an realer Hardware validieren.
-4. `idm-heatpump-api` um einen öffentlichen transportneutralen I/O-Vertrag
-   erweitern und erst danach den Pymodbus-Kompatibilitätspin neu bewerten.
+4. Den Modulimport von `pymodbus` in `idm_heatpump.client` optional machen
+   und erst danach den Kompatibilitätspin entfernen. Der öffentliche
+   Transportvertrag steht seit API `1.0.1` und wird bereits genutzt.
 5. Den bestehenden Modbus-Issue für die offene zentrale Home-Assistant-
    Shared-Connection sowie eine migrationssichere Provider-Implementierung
    pflegen.
