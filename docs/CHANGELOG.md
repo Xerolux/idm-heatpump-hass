@@ -13,6 +13,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+Noch keine Änderungen.
+
+## [0.13.0] - 2026-08-18
+
+Minor-Release: ein Fix, der auf Anlagen mit mehr als einem Heizkreis neue
+Entitäten sichtbar macht, und deutsche Namen für die optionalen Heizkreise.
+Vollständig abwärtskompatibel — bestehende Config Entries, Entity-IDs, Unique
+IDs, Registeradressen und Schreibpfade bleiben unverändert. Die getestete
+API-Paarung (`idm-heatpump-api[web]==1.0.1`, `modbus-connection==4.0.0a3`,
+`tmodbus==0.5.0`) ist gegenüber 0.12.0 unverändert.
+
 ### Fixed
 
 - **Web-Entitäten für alle Heizkreise, nicht nur Heizkreis A.** Die Navigator-
