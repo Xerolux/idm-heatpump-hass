@@ -1,0 +1,168 @@
+# Example Lovelace dashboard for one IDM heating circuit.
+#
+# Home Assistant lists a device's entities alphabetically, which mixes everyday
+# comfort setpoints with the parameters that shape the heating curve. This view
+# separates them: comfort values first, design parameters behind their own
+# heading with a warning.
+#
+# The example is written for heating circuit A. For a second circuit, copy the
+# whole section and replace `hc_a` with `hc_b` (or `hc_d`, …) and
+# `heating_circuit_a` accordingly.
+#
+# As in the other examples here, the entity IDs are placeholders written from
+# the register keys. Home Assistant derives the real IDs from the localized
+# entity names, so pick the entities in the dashboard editor instead of pasting
+# these verbatim.
+#
+# The heating-curve parameters are disabled by default on new installations.
+# Enable them under Settings -> Devices & Services -> IDM Heatpump -> Entities
+# before they can appear on a dashboard.
+
+title: IDM Heating Circuit
+views:
+  - title: Heating circuit A
+    path: idm-heating-circuit-a
+    icon: mdi:radiator
+    type: sections
+    max_columns: 3
+    sections:
+      - type: grid
+        cards:
+          - type: heading
+            heading: Heating circuit A
+            heading_style: title
+            icon: mdi:radiator
+            badges:
+              - type: entity
+                entity: sensor.idm_heatpump_outdoor_temp
+                show_state: true
+
+          - type: tile
+            entity: climate.idm_heatpump_heating_circuit_a
+            name: Heating circuit A
+            features:
+              - type: target-temperature
+              - type: climate-hvac-modes
+                style: dropdown
+
+          - type: tile
+            entity: sensor.idm_heatpump_hc_a_flow_temp
+            name: Flow temperature
+            grid_options:
+              columns: 6
+
+          - type: tile
+            entity: sensor.idm_heatpump_hc_a_setpoint_flow_temp
+            name: Requested flow setpoint
+            grid_options:
+              columns: 6
+
+          - type: tile
+            entity: sensor.idm_heatpump_calculated_hc_a_flow_deviation
+            name: Flow deviation
+            grid_options:
+              columns: 6
+
+          - type: tile
+            entity: sensor.idm_heatpump_hc_a_room_temp
+            name: Room temperature
+            grid_options:
+              columns: 6
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Comfort setpoints
+            heading_style: subtitle
+            icon: mdi:home-thermometer
+
+          - type: tile
+            entity: number.idm_heatpump_hc_a_room_setpoint_heat_normal
+            name: Room setpoint heating normal
+            features:
+              - type: numeric-input
+                style: box
+
+          - type: tile
+            entity: number.idm_heatpump_hc_a_room_setpoint_heat_eco
+            name: Room setpoint heating eco
+            features:
+              - type: numeric-input
+                style: box
+
+          - type: tile
+            entity: number.idm_heatpump_hc_a_room_setpoint_cool_normal
+            name: Room setpoint cooling normal
+            features:
+              - type: numeric-input
+                style: box
+
+          - type: tile
+            entity: number.idm_heatpump_hc_a_ext_room_temp
+            name: External room temperature input
+            features:
+              - type: numeric-input
+                style: box
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: Heating curve (expert)
+            heading_style: subtitle
+            icon: mdi:chart-bell-curve-cumulative
+
+          - type: markdown
+            text_only: true
+            content: >-
+              These values define how the controller derives the flow
+              temperature from the outdoor temperature. Change one parameter at
+              a time and give the system a full day to settle before judging the
+              result. They are written to EEPROM registers, so avoid automating
+              them.
+
+          - type: tile
+            entity: number.idm_heatpump_hc_a_heating_curve
+            name: Heating curve
+            features:
+              - type: numeric-input
+                style: box
+
+          - type: tile
+            entity: number.idm_heatpump_hc_a_parallel_shift
+            name: Parallel shift
+            features:
+              - type: numeric-input
+                style: box
+
+          - type: tile
+            entity: number.idm_heatpump_hc_a_heating_limit
+            name: Heating limit
+            features:
+              - type: numeric-input
+                style: box
+
+          - type: tile
+            entity: number.idm_heatpump_hc_a_setpoint_flow_constant
+            name: Constant flow setpoint
+            features:
+              - type: numeric-input
+                style: box
+
+      - type: grid
+        cards:
+          - type: heading
+            heading: History
+            heading_style: subtitle
+            icon: mdi:chart-line
+
+          - type: history-graph
+            hours_to_show: 24
+            entities:
+              - entity: sensor.idm_heatpump_hc_a_flow_temp
+                name: Flow temperature
+              - entity: sensor.idm_heatpump_hc_a_setpoint_flow_temp
+                name: Requested flow setpoint
+              - entity: sensor.idm_heatpump_hc_a_room_temp
+                name: Room temperature
+              - entity: sensor.idm_heatpump_outdoor_temp
+                name: Outdoor temperature

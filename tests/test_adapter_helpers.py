@@ -222,3 +222,63 @@ def test_float_register_number_defaults_and_overrides_remain_unchanged() -> None
 
     assert descriptions["dhw_setpoint"].native_step == 0.5
     assert descriptions["power_limit_hp"].native_step == 0.1
+
+
+def test_heating_curve_step_matches_its_narrow_value_range() -> None:
+    """The heating curve spans 0.1-3.5, so the FLOAT default step of 0.5 is unusable."""
+    registers = {
+        f"hc_{circuit}_heating_curve": RegisterDef(
+            address=1429 + index * 2,
+            datatype=DataType.FLOAT,
+            name=f"hc_{circuit}_heating_curve",
+            writable=True,
+            min_val=0.1,
+            max_val=3.5,
+        )
+        for index, circuit in enumerate("abcdefg")
+    }
+
+    descriptions = {item["register"].name: item["description"] for item in _numbers_from_register_map(registers)}
+
+    for circuit in "abcdefg":
+        description = descriptions[f"hc_{circuit}_heating_curve"]
+        assert description.native_step == 0.1
+        # Common settings such as 0.3 must be reachable from the minimum.
+        assert round((0.3 - description.native_min_value) / description.native_step, 6).is_integer()
+        # The range itself stays the library's — device knowledge lives in the API.
+        assert description.native_min_value == 0.1
+        assert description.native_max_value == 3.5
+
+
+def test_heating_curve_parameters_are_expert_entities_for_new_installations() -> None:
+    """Curve-shaping registers must not be created enabled on a fresh install."""
+    expert = ("heating_curve", "parallel_shift", "setpoint_flow_constant", "setpoint_flow_cooling")
+    comfort = ("room_setpoint_heat_normal", "room_setpoint_heat_eco", "ext_room_temp", "heating_limit")
+    registers = {
+        f"hc_a_{suffix}": RegisterDef(
+            address=1400 + index,
+            datatype=DataType.FLOAT,
+            name=f"hc_a_{suffix}",
+            writable=True,
+        )
+        for index, suffix in enumerate((*expert, *comfort))
+    }
+
+    descriptions = {item["register"].name: item["description"] for item in _numbers_from_register_map(registers)}
+
+    for suffix in expert:
+        assert descriptions[f"hc_a_{suffix}"].entity_registry_enabled_default is False, suffix
+    for suffix in comfort:
+        assert descriptions[f"hc_a_{suffix}"].entity_registry_enabled_default is True, suffix
+
+
+def test_library_register_limits_are_not_duplicated_in_metadata() -> None:
+    """Ranges belong to the API; the overlay may only carry presentation data."""
+    from custom_components.idm_heatpump.adapter_metadata import NUMBER_METADATA
+
+    for name, meta in NUMBER_METADATA.items():
+        if not name.startswith("hc_"):
+            continue
+        assert "min" not in meta and "max" not in meta, (
+            f"{name} redefines a range that idm-heatpump-api already provides as min_val/max_val"
+        )

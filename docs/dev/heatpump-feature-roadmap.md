@@ -74,10 +74,18 @@ begrenzt und wiederherstellbar sind.
   - Hysterese,
   - Schreibintervallbegrenzung,
   - keine Konkurrenz zu vorhandenen Energie-Managern.
-- [ ] Heizkurven-UX erst nach Registerverifikation:
-  - pro Heizkreis sauber gruppiert,
-  - klare Min/Max/Step-Werte,
-  - als Expertenwerte deaktiviert, wenn das Risiko für Fehlbedienung zu hoch ist.
+- [x] Heizkurven-UX:
+  - Min/Max liefert `idm-heatpump-api` je Register (`min_val`/`max_val`) und
+    wird unverändert übernommen; die Integration dupliziert keine Gerätegrenzen.
+  - Schrittweite der Heizkurve auf 0,1 korrigiert. Als FLOAT-Register bekam sie
+    die Standardschrittweite 0,5, obwohl ihr Bereich 0,1–3,5 beträgt — übliche
+    Werte wie 0,3 lagen zwischen zwei Schritten.
+  - `heating_curve`, `parallel_shift`, `setpoint_flow_constant` und
+    `setpoint_flow_cooling` entstehen für neue Installationen deaktiviert.
+    Bestehende Entitäten bleiben unverändert.
+  - Gruppierung über ein Dashboard-Beispiel je Heizkreis
+    (`docs/examples/dashboard-idm-heating-circuit.yaml`); die Geräteseite in
+    Home Assistant sortiert alphabetisch und kennt keine Untergruppen.
 
 ### Phase 3 – Architektur und Home-Assistant-Modbus-Zukunft
 
