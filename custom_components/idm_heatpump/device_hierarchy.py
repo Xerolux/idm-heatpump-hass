@@ -305,11 +305,26 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
     expected = expected_subdevice_identifiers(coordinator)
     registry = dr.async_get(hass)
 
+    entity_registry = er.async_get(hass)
+
     for device in dr.async_entries_for_config_entry(registry, entry_id):
         hierarchy_identifiers = {
             identifier for identifier in device.identifiers if _is_hierarchy_identifier(entry_id, identifier)
         }
-        if hierarchy_identifiers and hierarchy_identifiers.isdisjoint(expected):
+        if not hierarchy_identifiers:
+            continue
+        if hierarchy_identifiers.isdisjoint(expected):
+            registry.async_update_device(
+                device.id,
+                remove_config_entry_id=entry_id,
+            )
+            continue
+        # Sub-devices are pre-created without a name so ``via_device`` links
+        # resolve regardless of platform order; the name arrives with the first
+        # entity. One that never receives an entity — because its registers are
+        # filtered out or its feature was turned off — would otherwise sit in
+        # the device list forever as an unnamed, empty entry.
+        if not er.async_entries_for_device(entity_registry, device.id, include_disabled_entities=True):
             registry.async_update_device(
                 device.id,
                 remove_config_entry_id=entry_id,

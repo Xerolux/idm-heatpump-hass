@@ -73,6 +73,14 @@ def test_cleanup_detaches_only_stale_hierarchy_devices() -> None:
             "custom_components.idm_heatpump.device_hierarchy.dr.async_entries_for_config_entry",
             return_value=[current, stale, main, unrelated],
         ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_get",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_device",
+            return_value=[MagicMock()],
+        ),
     ):
         cleanup_stale_hierarchy_devices(MagicMock(), coordinator)
 
@@ -184,3 +192,72 @@ def test_cleanup_is_a_no_op_without_a_config_entry() -> None:
     registry = _run_entity_cleanup(coordinator, [])
 
     registry.async_remove.assert_not_called()
+
+
+def test_cleanup_detaches_expected_subdevices_that_never_got_an_entity() -> None:
+    """A pre-created sub-device without entities shows up as 'Unnamed device'.
+
+    Sub-devices are created before the platforms so ``via_device`` links
+    resolve; their name only arrives with the first entity. One that never gets
+    an entity would otherwise linger unnamed and empty.
+    """
+    coordinator = _coordinator(enabled=True, register_names=("hc_a_flow_temp", "cascade_req_heating_temp"))
+    registry = MagicMock()
+    populated = _device((DOMAIN, "entry_heating_circuit_a"), "populated")
+    empty = _device((DOMAIN, "entry_module_cascade"), "empty")
+    main = _device((DOMAIN, "entry"), "main")
+
+    def _entries_for_device(_registry, device_id, include_disabled_entities=False):
+        return [] if device_id == "empty" else [MagicMock()]
+
+    with (
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_get",
+            return_value=registry,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_entries_for_config_entry",
+            return_value=[populated, empty, main],
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_get",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_device",
+            side_effect=_entries_for_device,
+        ),
+    ):
+        cleanup_stale_hierarchy_devices(MagicMock(), coordinator)
+
+    registry.async_update_device.assert_called_once_with("empty", remove_config_entry_id="entry")
+
+
+def test_cleanup_keeps_a_subdevice_whose_entities_are_all_disabled() -> None:
+    """Disabled entities are still the user's entities — the device stays."""
+    coordinator = _coordinator(enabled=True, register_names=("hc_a_flow_temp",))
+    registry = MagicMock()
+    device = _device((DOMAIN, "entry_heating_circuit_a"), "circuit_a")
+
+    with (
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_get",
+            return_value=registry,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_entries_for_config_entry",
+            return_value=[device],
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_get",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_device",
+            return_value=[MagicMock()],
+        ) as entries_for_device,
+    ):
+        cleanup_stale_hierarchy_devices(MagicMock(), coordinator)
+
+    registry.async_update_device.assert_not_called()
+    assert entries_for_device.call_args.kwargs["include_disabled_entities"] is True

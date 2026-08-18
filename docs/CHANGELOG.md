@@ -43,6 +43,14 @@ Schreibpfaden. Die getestete API-Paarung ist gegenüber 0.14.0 unverändert.
   unterdrückt (Zustand `unknown`), solange der Heizkreis nichts anfordert,
   analog zum COP-Sensor im Stillstand. Kommentar und der Changelog-Eintrag zu
   0.12.0 hatten dieses Verhalten fälschlich als bereits abgefangen beschrieben.
+- **„Unbenanntes Gerät" in der Geräteliste.** Sub-Geräte werden vor den
+  Plattformen angelegt, damit die `via_device`-Verknüpfung unabhängig von der
+  Reihenfolge auflöst; ihren Namen bekommen sie erst mit der ersten Entität.
+  Ein Sub-Gerät, das nie eine Entität erhält — weil seine Register
+  herausgefiltert sind oder seine Funktion abgeschaltet wurde — blieb dadurch
+  dauerhaft als namenloser, leerer Eintrag stehen. Solche Geräte werden beim
+  Laden der Config Entry jetzt mit gelöst. Ein Sub-Gerät, dessen Entitäten der
+  Nutzer lediglich deaktiviert hat, bleibt erhalten.
 - **Verwaiste Entitäten abgewählter Heizkreise.** Wer einen Heizkreis in den
   Optionen wieder abwählt, behielt dessen Entitäten dauerhaft als „nicht
   verfügbar" in der Registry — sichtbar auf Anlagen, die früher mit mehr

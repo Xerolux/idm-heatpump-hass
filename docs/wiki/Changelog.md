@@ -25,6 +25,12 @@ breaking changes; unique IDs, register addresses and write paths are unchanged.
   measured flow temperature as a 26 K deviation. It is now suppressed (state
   `unknown`) while the circuit requests nothing, like the COP sensor at
   standstill.
+- **"Unnamed device" in the device list.** Sub-devices are created before the
+  platforms so `via_device` links resolve regardless of platform order; their
+  name only arrives with the first entity. A sub-device that never received one
+  stayed in the list as an unnamed, empty entry. Those are now detached when the
+  config entry loads. A sub-device whose entities the user merely disabled is
+  kept.
 - **Orphaned entities of deselected circuits.** Unchecking a circuit left its
   entities in the registry as permanently unavailable. They are now removed when
   the config entry loads, narrowly scoped to register-backed entities of this
