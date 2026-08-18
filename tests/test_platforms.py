@@ -1599,6 +1599,59 @@ class TestClassifySetpoints170:
         assert added == []
 
 
+class TestConfiguredHeatingCircuitEntities:
+    """A circuit the user enabled must not lose its sensors to one unlucky poll.
+
+    Entities are only built while the config entry loads. A circuit enabled
+    through the options flow typically still reports its unused sentinel in that
+    very snapshot, which used to drop its read-only sensors permanently — the
+    circuit's writable controls appeared, its flow, room and setpoint
+    temperatures did not.
+    """
+
+    def test_read_only_registers_of_a_configured_circuit_are_created_under_a_sentinel(self):
+        from custom_components.idm_heatpump.entity import should_add_entity
+
+        coord = _make_coordinator(
+            data={"hc_d_flow_temp": UNUSED_VALUE, "hc_d_setpoint_flow_temp": UNUSED_VALUE},
+            hide_unused=True,
+        )
+        coord.config_entry.options = {"heating_circuits": ["a", "d"]}
+        coord._registers = []
+        assert coord.is_register_unused("hc_d_flow_temp", UNUSED_VALUE) is True
+
+        for name in ("hc_d_flow_temp", "hc_d_setpoint_flow_temp"):
+            assert should_add_entity(coord, _make_register(name)) is True, name
+
+    def test_registers_of_an_unconfigured_circuit_stay_hidden(self):
+        from custom_components.idm_heatpump.entity import should_add_entity
+
+        coord = _make_coordinator(data={"hc_b_flow_temp": UNUSED_VALUE}, hide_unused=True)
+        coord.config_entry.options = {"heating_circuits": ["a", "d"]}
+        coord._registers = []
+
+        assert should_add_entity(coord, _make_register("hc_b_flow_temp")) is False
+
+    def test_unsupported_circuit_registers_are_never_created(self):
+        from custom_components.idm_heatpump.entity import should_add_entity
+
+        coord = _make_coordinator(data={"hc_d_room_temp": UNUSED_VALUE}, hide_unused=True)
+        coord.config_entry.options = {"heating_circuits": ["a", "d"]}
+        coord._registers = []
+        coord.unsupported_registers = {"hc_d_room_temp"}
+
+        assert should_add_entity(coord, _make_register("hc_d_room_temp")) is False
+
+    def test_non_circuit_registers_keep_the_unchanged_filter(self):
+        from custom_components.idm_heatpump.entity import should_add_entity
+
+        coord = _make_coordinator(data={"pv_surplus": UNUSED_VALUE}, hide_unused=True)
+        coord.config_entry.options = {"heating_circuits": ["a", "d"]}
+        coord._registers = []
+
+        assert should_add_entity(coord, _make_register("pv_surplus")) is False
+
+
 class TestDualExposedGlt:
     """#172/GLT-04: a dual-exposed GLT register keeps its writable Number while its read-only Sensor stays hidden under a sentinel."""
 

@@ -18,7 +18,7 @@ from idm_heatpump import RegisterDef
 
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
-from .device_hierarchy import build_subdevice_info
+from .device_hierarchy import build_subdevice_info, is_configured_heating_circuit_register
 from .error_messages import classify_write_error, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
@@ -73,6 +73,14 @@ def should_add_entity(
     writable target is still exposed even if its current value is an unset
     sentinel (#172): external inputs must remain addressable when unset. Absent
     and Illegal-Data-Address registers are never exposed.
+
+    The same exemption applies to every register of a heating circuit the user
+    configured. Entities are only built while the config entry loads, so a
+    circuit that reports its unused sentinel in that one snapshot — the normal
+    state right after enabling it, or while it sits idle — would lose its
+    read-only sensors until some later reload happens to catch better values.
+    Availability still follows the live value, so a circuit without a physical
+    sensor keeps reporting unavailable instead of a made-up reading.
     """
     if not coordinator.hide_unused:
         return True
@@ -85,6 +93,8 @@ def should_add_entity(
     if as_writable_control and getattr(register, "writable", False):
         # Unsupported (Illegal Data Address) registers are never exposed, even
         # as writable controls; a present, supported writable target stays.
+        return register.name not in getattr(coordinator, "unsupported_registers", ())
+    if is_configured_heating_circuit_register(coordinator, register.name):
         return register.name not in getattr(coordinator, "unsupported_registers", ())
     return not coordinator.is_register_unused(register.name, data.get(register.name))
 

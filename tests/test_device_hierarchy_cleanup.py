@@ -9,6 +9,7 @@ from idm_heatpump import DataType, RegisterDef
 from custom_components.idm_heatpump.const import DOMAIN
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
 from custom_components.idm_heatpump.device_hierarchy import (
+    cleanup_deconfigured_heating_circuit_entities,
     cleanup_stale_hierarchy_devices,
     expected_subdevice_identifiers,
 )
@@ -109,3 +110,77 @@ def test_disabling_hierarchy_detaches_all_subdevices_but_not_main() -> None:
         "room",
         remove_config_entry_id="entry",
     )
+
+
+def _entity(unique_id: str, entity_id: str) -> MagicMock:
+    entity = MagicMock()
+    entity.unique_id = unique_id
+    entity.entity_id = entity_id
+    return entity
+
+
+def _circuit_coordinator(circuits: list[str]) -> MagicMock:
+    coordinator = MagicMock(spec=IdmCoordinator)
+    coordinator.config_entry = MagicMock()
+    coordinator.config_entry.entry_id = "entry"
+    coordinator.config_entry.options = {"heating_circuits": circuits}
+    coordinator._registers = []
+    return coordinator
+
+
+def _run_entity_cleanup(coordinator: MagicMock, entities: list[MagicMock]) -> MagicMock:
+    registry = MagicMock()
+    with (
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_get",
+            return_value=registry,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_config_entry",
+            return_value=entities,
+        ),
+    ):
+        cleanup_deconfigured_heating_circuit_entities(MagicMock(), coordinator)
+    return registry
+
+
+def test_entities_of_deconfigured_circuits_are_removed() -> None:
+    """Unchecking a circuit must not leave permanently unavailable entities behind."""
+    coordinator = _circuit_coordinator(["a", "d"])
+    entities = [
+        _entity("entry_hc_a_flow_temp", "sensor.a_flow"),
+        _entity("entry_hc_d_heating_curve", "number.d_curve"),
+        _entity("entry_hc_b_heating_curve", "number.b_curve"),
+        _entity("entry_hc_g_mode", "select.g_mode"),
+        # Calculated sensors of a circuit go the same way as its registers.
+        _entity("entry_calculated_hc_b_flow_deviation", "sensor.calc_b"),
+        _entity("entry_calculated_hc_d_flow_deviation", "sensor.calc_d"),
+    ]
+
+    registry = _run_entity_cleanup(coordinator, entities)
+
+    removed = {call.args[0] for call in registry.async_remove.call_args_list}
+    assert removed == {"number.b_curve", "select.g_mode", "sensor.calc_b"}
+
+
+def test_cleanup_keeps_entities_that_are_not_heating_circuit_registers() -> None:
+    """Only heating-circuit registers are in scope — nothing else is touched."""
+    coordinator = _circuit_coordinator(["a"])
+    entities = [
+        _entity("entry_pv_surplus", "sensor.pv"),
+        _entity("entry_web_compressor_1", "binary_sensor.compressor"),
+        _entity("other_entry_hc_b_flow_temp", "sensor.foreign"),
+    ]
+
+    registry = _run_entity_cleanup(coordinator, entities)
+
+    registry.async_remove.assert_not_called()
+
+
+def test_cleanup_is_a_no_op_without_a_config_entry() -> None:
+    coordinator = _circuit_coordinator(["a"])
+    coordinator.config_entry = None
+
+    registry = _run_entity_cleanup(coordinator, [])
+
+    registry.async_remove.assert_not_called()

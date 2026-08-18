@@ -59,6 +59,28 @@ def _temperature(data: Mapping[str, Any], key: str) -> float | None:
     return numeric
 
 
+# A circuit that is not currently asking for heat reports a flow setpoint of
+# 0.0. That is a normal operating state, not a sentinel, so the central unused
+# filter lets it through — subtracting it would publish the measured flow
+# temperature as if it were a deviation.
+_NO_FLOW_REQUEST: float = 0.0
+
+
+def _flow_deviation(flow_key: str, setpoint_key: str) -> Callable[[Mapping[str, Any]], float | None]:
+    """Build the flow deviation, suppressed while the circuit requests nothing."""
+
+    def calculate(data: Mapping[str, Any]) -> float | None:
+        setpoint = _temperature(data, setpoint_key)
+        if setpoint is None or setpoint == _NO_FLOW_REQUEST:
+            return None
+        flow = _temperature(data, flow_key)
+        if flow is None:
+            return None
+        return round(flow - setpoint, 2)
+
+    return calculate
+
+
 def _difference(first_key: str, second_key: str) -> Callable[[Mapping[str, Any]], float | None]:
     """Build a signed temperature-difference calculation."""
 
@@ -175,12 +197,18 @@ CALCULATED_SENSOR_DEFINITIONS: tuple[CalculatedSensorDefinition, ...] = (
 # mixer and maximum values must not be mixed there. Nothing is estimated here —
 # both operands are decoded register values of one circuit.
 #
-# Sentinels observed on real hardware: an idle circuit reports 0.0 and an
-# unconfigured circuit reports -1.0. Both are caught by the central
-# ``is_register_unused`` filter, so the sensor reports unavailable instead of a
-# meaningless deviation. Because that idle 0.0 is a normal operating state, the
-# entity is created from register *presence* (``require_sources_used=False``)
-# rather than from the momentary value.
+# Values observed on real hardware: an unconfigured circuit reports -1.0 and an
+# idle circuit reports 0.0. Only -1.0 is a declared sentinel, so the central
+# ``is_register_unused`` filter catches that case and the sensor goes
+# unavailable. The idle 0.0 is a normal operating state and passes that filter,
+# which is why ``_flow_deviation`` suppresses it explicitly: without the guard
+# the sensor published ``flow - 0`` and presented the measured flow temperature
+# as a deviation. Suppressed means no value (state ``unknown``), matching how
+# the COP sensor behaves while the heat pump is idle.
+#
+# Because the idle 0.0 is a normal operating state, the entity is created from
+# register *presence* (``require_sources_used=False``) rather than from the
+# momentary value.
 FLOW_DEVIATION_CIRCUITS: tuple[str, ...] = ("a", "b", "c", "d", "e", "f", "g")
 
 
@@ -194,7 +222,7 @@ def flow_deviation_definition(circuit: str) -> CalculatedSensorDefinition:
         sources=(flow_register, setpoint_register),
         # Positive = flow runs above the requested setpoint (overshoot),
         # negative = the circuit does not reach its requested setpoint.
-        calculate=_difference(flow_register, setpoint_register),
+        calculate=_flow_deviation(flow_register, setpoint_register),
         icon="mdi:thermometer-chevron-up",
         # Belongs next to the other values of its circuit, not on the main device.
         device_scope_source=flow_register,

@@ -15,6 +15,43 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.14.1] - 2026-08-18
+
+Patch-Release: drei Fehler rund um den Lebenszyklus optionaler Heizkreise. Keine
+Breaking Changes, keine Änderung an Unique IDs, Registeradressen oder
+Schreibpfaden. Die getestete API-Paarung ist gegenüber 0.14.0 unverändert.
+
+### Fixed
+
+- **Sensoren eines später aktivierten Heizkreises fehlten dauerhaft.**
+  Entitäten entstehen nur beim Laden der Config Entry. Wer einen Heizkreis in
+  den Optionen aktiviert, löst zwar einen Reload aus — meldet der Regler in
+  genau diesem Poll aber noch den Sentinel `-1.0`, verwarf der Filter
+  „Unbenutzte Sensoren ausblenden" dessen nur-lesende Register. Ergebnis: der
+  Heizkreis bekam seine Bedienelemente (die sind seit #172 vom Filter
+  ausgenommen), aber weder Vorlauf- noch Raum- noch Solltemperatur, und zwar
+  bis zu einem späteren Reload zu einem zufällig günstigeren Zeitpunkt. Für
+  einen konfigurierten Heizkreis gilt diese Ausnahme jetzt ebenfalls: die
+  Entität entsteht, sobald das Register vorhanden und unterstützt ist. Die
+  Verfügbarkeit folgt weiterhin dem Live-Wert, ein Heizkreis ohne Fühler meldet
+  also `unavailable` statt eines erfundenen Werts.
+- **Vorlauf-Abweichung zeigte im Stillstand die Vorlauftemperatur.** Ein
+  Heizkreis ohne Anforderung meldet den Sollwert `0.0`. Das ist ein normaler
+  Betriebszustand und kein deklarierter Sentinel, der zentrale Filter ließ ihn
+  also durch — der Sensor rechnete `Vorlauf − 0` und veröffentlichte die
+  gemessene Vorlauftemperatur als Abweichung von 26 K. Der Wert wird jetzt
+  unterdrückt (Zustand `unknown`), solange der Heizkreis nichts anfordert,
+  analog zum COP-Sensor im Stillstand. Kommentar und der Changelog-Eintrag zu
+  0.12.0 hatten dieses Verhalten fälschlich als bereits abgefangen beschrieben.
+- **Verwaiste Entitäten abgewählter Heizkreise.** Wer einen Heizkreis in den
+  Optionen wieder abwählt, behielt dessen Entitäten dauerhaft als „nicht
+  verfügbar" in der Registry — sichtbar auf Anlagen, die früher mit mehr
+  Heizkreisen konfiguriert waren. Sie werden beim Laden der Config Entry jetzt
+  entfernt, eng begrenzt auf registergestützte Entitäten dieser Entry, deren
+  Register auf einen nicht konfigurierten Heizkreis zeigt. Beim Wiederaktivieren
+  entstehen sie unter unveränderter Unique ID neu. Die Sub-Geräte wurden schon
+  vorher gelöst, ihre Entitäten blieben bisher liegen.
+
 ## [0.14.0] - 2026-08-18
 
 Minor-Release: ein Bedienfehler an der Heizkurve behoben, die
