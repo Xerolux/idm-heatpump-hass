@@ -116,9 +116,13 @@ breitere Feld-Diagnose für andere Navigator-Typen und Firmware-Stände.
   Zustände sind damit unterscheidbar von „nicht vorhanden".
 - `evu_lock = 1 -> Not Locked` bestätigt die inverse Active-High-Logik
   (`0 = Locked`, `1 = Not Locked`), die in den Enum-Maps korrekt hinterlegt ist.
-- Die `idm-heatpump-api` definiert für diese Register aktuell keine
-  `sentinel_values`; die Integration erkennt die Sentinels daher eigenständig
-  über den numerischen Filter. Das ist ein bekannter Folge-Punkt für die API.
+- Diese Sentinels sind inzwischen in der API hinterlegt und nicht mehr offen:
+  `RegisterDef.effective_sentinel_values` liefert je Datentyp den
+  dokumentierten Standard (`FLOAT` → `-1.0`, `UCHAR` → `255`, `UINT16` →
+  `65535`, `INT16` → `-1`/`-32768`), zusätzlich zu den explizit deklarierten
+  Werten einzelner Register. `is_register_unused` in `coordinator.py` nutzt
+  seit 0.8.7 ausschließlich diese Angabe; der frühere eigene numerische Filter
+  wird nicht mehr ausgewertet.
 
 ### Web-Supplement (Navigator 10)
 
