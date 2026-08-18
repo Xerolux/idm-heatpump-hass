@@ -34,7 +34,7 @@ from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities
 from .const import CONF_COMMUNICATION_DIAGNOSTICS, CONF_TECHNICIAN_CODES, DOMAIN
 from .coordinator import IdmCoordinator
-from .device_hierarchy import build_subdevice_info
+from .device_hierarchy import HEATING_CIRCUIT_LETTERS, active_heating_circuits, build_subdevice_info
 from .entity import (
     IdmCoordinatorEntityBase,
     IdmEntity,
@@ -105,8 +105,6 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "flow_pump_on",
     "flow_pump_output",
     "flow_pump_percentage",
-    "flow_temp_HK_A",
-    "flow_temp_HK_C",
     "flow_temperature",
     "flowmeter",
     "heat_generator_2nd",
@@ -128,10 +126,8 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "infosystem_notifications",
     "liquid_line_temperature",
     "loading_temperature",
-    "mixer_heating_circuitA",
     "myidm_id",
     "outside_air_temperature",
-    "pump_heating_circuitA",
     "return_temperature",
     "room_temperature_HK_A",
     "runtime_cooling_hours",
@@ -157,8 +153,6 @@ _WEB_ONLY_EXTRA_VALUE_NAMES: tuple[str, ...] = ("navigator_version",)
 _WEB_MODBUS_DUPLICATE_VALUES: frozenset[str] = frozenset(
     {
         "current_electrical_power",
-        "flow_temp_HK_A",
-        "flow_temp_HK_C",
         "flow_temperature",
         "flowmeter",
         "heatstore_temperature",
@@ -168,6 +162,7 @@ _WEB_MODBUS_DUPLICATE_VALUES: frozenset[str] = frozenset(
         "room_temperature_HK_A",
         "water_temp_bottom",
         "water_temp_top",
+        *(f"flow_temp_HK_{letter}" for letter in HEATING_CIRCUIT_LETTERS),
     }
 )
 
@@ -186,7 +181,9 @@ _WEB_VALUE_UNITS: dict[str, str] = {
     "evaporator_outlet_temperature": "°C",
     "flow_pump_percentage": "%",
     "flow_temperature": "°C",
+    **{f"flow_temp_HK_{letter}": "°C" for letter in HEATING_CIRCUIT_LETTERS},
     "flowmeter": "L/min",
+    "room_temperature_HK_A": "°C",
     "heating_water_outlet_temperature": "°C",
     "hotgas_temperature": "°C",
     "hotwater_circulation_heat_quantity": "kWh",
@@ -255,10 +252,12 @@ _WEB_VALUE_NAMES_DE: dict[str, str] = {
     "infosystem_notifications": "Infosystem Meldungen",
     "liquid_line_temperature": "Flüssigkeitsleitung Temperatur",
     "loading_temperature": "Ladetemperatur",
-    "mixer_heating_circuitA": "Mischer Heizkreis A",
+    **{f"mixer_heating_circuit{letter}": f"Mischer Heizkreis {letter}" for letter in HEATING_CIRCUIT_LETTERS},
+    **{f"flow_temp_HK_{letter}": f"Vorlauftemperatur HK {letter}" for letter in HEATING_CIRCUIT_LETTERS},
+    "room_temperature_HK_A": "Raumtemperatur HK A",
     "myidm_id": "myIDM ID",
     "navigator_version": "Navigator Version",
-    "pump_heating_circuitA": "Pumpe Heizkreis A",
+    **{f"pump_heating_circuit{letter}": f"Pumpe Heizkreis {letter}" for letter in HEATING_CIRCUIT_LETTERS},
     "runtime_cooling_hours": "Laufzeit Kühlen",
     "runtime_defrosting_hours": "Laufzeit Abtauen",
     "runtime_heating_hours": "Laufzeit Heizen",
@@ -345,11 +344,33 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
     )
 
 
+def _web_heating_circuit_value_names(coordinator: IdmCoordinator) -> tuple[str, ...]:
+    """Return the web value keys of every configured heating circuit.
+
+    The Navigator only reports codes for circuits that exist, and circuits can
+    be enabled long after the first setup, so these keys are derived from the
+    current configuration instead of a static list.
+    """
+    names: list[str] = []
+    for letter in active_heating_circuits(coordinator):
+        names.append(f"mixer_heating_circuit{letter}")
+        names.append(f"flow_temp_HK_{letter}")
+    return tuple(names)
+
+
 def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefinition]:
     modbus_register_names = {reg.name for reg in getattr(coordinator, "_registers", [])}
     has_modbus = len(modbus_register_names) > 0
     definitions = []
-    for key in (*_WEB_VALUE_NAMES, *_WEB_ONLY_EXTRA_VALUE_NAMES):
+    seen: set[str] = set()
+    for key in (
+        *_WEB_VALUE_NAMES,
+        *_web_heating_circuit_value_names(coordinator),
+        *_WEB_ONLY_EXTRA_VALUE_NAMES,
+    ):
+        if key in seen:
+            continue
+        seen.add(key)
         if key in WEB_BINARY_VALUE_KEYS:
             continue
         if key in modbus_register_names:

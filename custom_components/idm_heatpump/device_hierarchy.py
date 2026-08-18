@@ -10,7 +10,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from .const import CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
+from .const import CONF_HEATING_CIRCUITS, CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
 
 if TYPE_CHECKING:
     from .coordinator import IdmCoordinator
@@ -168,6 +168,42 @@ def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> N
         device_ids[identifier] = device.id
 
     coordinator._hierarchy_device_ids = device_ids
+
+
+HEATING_CIRCUIT_LETTERS: tuple[str, ...] = ("A", "B", "C", "D", "E", "F", "G")
+
+
+def active_heating_circuits(coordinator: IdmCoordinator) -> tuple[str, ...]:
+    """Return the configured heating circuits as uppercase letters.
+
+    Circuits can be enabled at any time through the options flow, so this
+    reads the current config entry options and falls back to the Modbus
+    register names when options are unavailable. Circuit A is always assumed
+    because every IDM controller has it.
+    """
+    letters: set[str] = set()
+
+    entry = getattr(coordinator, "config_entry", None)
+    options = getattr(entry, "options", None)
+    raw_circuits = options.get(CONF_HEATING_CIRCUITS, ()) if hasattr(options, "get") else ()
+    try:
+        candidates = list(raw_circuits)
+    except TypeError:
+        candidates = []
+    for candidate in candidates:
+        if not isinstance(candidate, str):
+            continue
+        letter = candidate.strip().upper()
+        if letter in HEATING_CIRCUIT_LETTERS:
+            letters.add(letter)
+
+    for register in getattr(coordinator, "_registers", ()) or ():
+        match = _HEATING_CIRCUIT_REGISTER.match(str(getattr(register, "name", "")))
+        if match is not None:
+            letters.add(match.group(1).upper())
+
+    letters.add("A")
+    return tuple(sorted(letters))
 
 
 def heating_circuit_identifier(coordinator: IdmCoordinator, circuit: str) -> tuple[str, str]:

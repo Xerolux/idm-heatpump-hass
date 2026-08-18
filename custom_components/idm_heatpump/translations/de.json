@@ -634,6 +634,24 @@
       },
       "web_pump_heating_circuit_a": {
         "name": "Pumpe Heizkreis A (Web)"
+      },
+      "web_pump_heating_circuit_b": {
+        "name": "Pumpe Heizkreis B (Web)"
+      },
+      "web_pump_heating_circuit_c": {
+        "name": "Pumpe Heizkreis C (Web)"
+      },
+      "web_pump_heating_circuit_d": {
+        "name": "Pumpe Heizkreis D (Web)"
+      },
+      "web_pump_heating_circuit_e": {
+        "name": "Pumpe Heizkreis E (Web)"
+      },
+      "web_pump_heating_circuit_f": {
+        "name": "Pumpe Heizkreis F (Web)"
+      },
+      "web_pump_heating_circuit_g": {
+        "name": "Pumpe Heizkreis G (Web)"
       }
     }
   },

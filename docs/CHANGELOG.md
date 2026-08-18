@@ -13,7 +13,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-Noch keine Änderungen.
+### Fixed
+
+- **Web-Entitäten für alle Heizkreise, nicht nur Heizkreis A.** Die Navigator-
+  Web-Werte für Heizkreispumpe (`M31`–`M37`), Mischer (`M41`–`M47`) und
+  Vorlauftemperatur (`B51`–`B57`) liefert `idm-heatpump-api` für die Heizkreise
+  A–G, die Integration hat aber nur die Heizkreis-A-Schlüssel aus einer festen
+  Liste übernommen. Ein später über die Optionen aktivierter Heizkreis bekam
+  dadurch dauerhaft keine `(Web)`-Entitäten — die Werte kamen an und wurden
+  verworfen. Die Web-Entitäten entstehen jetzt je konfiguriertem Heizkreis, also
+  auch nach nachträglicher Aktivierung beim folgenden Reload der Config Entry.
+- **Deutsche Namen für die Heizkreise B–G.** Die Namenstabelle enthielt nur
+  `hc_a_*`-Einträge, alle optionalen Heizkreise fielen auf den englischen
+  Fallback zurück (`Hc D Cooling Limit` statt `Kühlgrenze HK D`). Die Namen für
+  B–G werden jetzt aus der Heizkreis-A-Tabelle abgeleitet. Entity-IDs und
+  Unique IDs bleiben unverändert, nur der angezeigte Name ändert sich.
 
 ## [0.12.0] - 2026-08-17
 

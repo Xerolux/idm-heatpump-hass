@@ -41,3 +41,22 @@ def test_control_entities_do_not_override_their_translated_names() -> None:
     assert "_attr_name = None" not in water_heater_source
     assert "STATE_HEAT_PUMP" in water_heater_source
     assert "STATE_PERFORMANCE" not in water_heater_source
+
+
+def test_optional_heating_circuits_get_german_register_names() -> None:
+    """Circuits B-G must not fall back to the title-cased English register name."""
+    from custom_components.idm_heatpump.adapter_names import _get_german_name
+
+    assert _get_german_name("hc_a_cooling_limit") == "Kühlgrenze HK A"
+    assert _get_german_name("hc_d_cooling_limit") == "Kühlgrenze HK D"
+    assert _get_german_name("hc_d_heating_curve") == "Heizkurve HK D"
+    assert _get_german_name("hc_b_room_setpoint_heat_eco") == "Raumsoll Heizen Eco HK B"
+    assert _get_german_name("hc_g_ext_room_temp") == "Externe Raumtemperatur HK G"
+
+
+def test_web_heating_circuit_pump_names_exist_for_every_circuit() -> None:
+    """Every heating-circuit pump web entity needs a translated name."""
+    for translations in ("strings.json", "translations/de.json", "translations/en.json"):
+        binary_sensors = _load_json(translations)["entity"]["binary_sensor"]
+        for letter in "abcdefg":
+            assert f"web_pump_heating_circuit_{letter}" in binary_sensors

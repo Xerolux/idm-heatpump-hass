@@ -9,16 +9,25 @@ from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.helpers.entity import EntityCategory
 
 from custom_components.idm_heatpump.web_binary_sensors import (
+    WEB_BINARY_SENSOR_DEFINITIONS,
     WEB_BINARY_VALUE_KEYS,
     normalize_web_binary_value,
     web_binary_sensor_entities,
 )
 from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
 
+# One heating-circuit pump entity is created per configured circuit.
+_SINGLE_CIRCUIT_ENTITY_COUNT = len(WEB_BINARY_SENSOR_DEFINITIONS) + 1
 
-def _coordinator(sensor_values: dict[str, IdmWebSensorValue]) -> MagicMock:
+
+def _coordinator(
+    sensor_values: dict[str, IdmWebSensorValue],
+    circuits: list[str] | None = None,
+) -> MagicMock:
     coordinator = MagicMock()
     coordinator.web_supplement = IdmWebSupplement(sensor_values=sensor_values)
+    coordinator.config_entry.options = {"heating_circuits": circuits if circuits is not None else ["a"]}
+    coordinator._registers = []
     coordinator.last_update_success = True
     coordinator.config_entry.entry_id = "test_entry"
     coordinator.config_entry.title = "IDM"
@@ -67,7 +76,7 @@ def test_creates_all_definitions_and_availability_tracks_values():
 
     assert "web_compressor_1" in entities
     assert "web_high_pressure_error" in entities
-    assert len(entities) == len(WEB_BINARY_VALUE_KEYS)
+    assert len(entities) == _SINGLE_CIRCUIT_ENTITY_COUNT
     assert entities["web_compressor_1"].is_on is True
     assert entities["web_compressor_1"].available is True
     assert entities["web_high_pressure_error"].is_on is False
@@ -106,7 +115,7 @@ def test_missing_web_supplement_keeps_entities_unavailable():
     coordinator.web_supplement = None
     entities = web_binary_sensor_entities(coordinator)
 
-    assert len(entities) == len(WEB_BINARY_VALUE_KEYS)
+    assert len(entities) == _SINGLE_CIRCUIT_ENTITY_COUNT
     assert all(entity.available is False for entity in entities)
 
 
@@ -119,8 +128,37 @@ def test_web_binary_available_when_modbus_update_failed():
     assert sensor.is_on is True
 
 
-def test_binary_keys_are_unique():
-    assert len(WEB_BINARY_VALUE_KEYS) == 15
+def test_binary_keys_cover_every_heating_circuit_pump():
+    # 14 shared values plus one pump key per heating circuit A-G.
+    assert len(WEB_BINARY_VALUE_KEYS) == 21
+    assert {f"pump_heating_circuit{letter}" for letter in "ABCDEFG"} <= WEB_BINARY_VALUE_KEYS
+
+
+def test_circuit_enabled_later_gets_its_pump_entity():
+    entities = _entities_by_key(
+        _coordinator(
+            {"pump_heating_circuitD": IdmWebSensorValue("Ein", 1.0)},
+            circuits=["a", "d"],
+        )
+    )
+
+    assert "web_pump_heating_circuitD" in entities
+    assert entities["web_pump_heating_circuitD"].is_on is True
+    assert entities["web_pump_heating_circuitD"].entity_description.translation_key == "web_pump_heating_circuit_d"
+    # Circuits that are not configured stay out of the entity list.
+    assert "web_pump_heating_circuitB" not in entities
+
+
+def test_circuits_are_derived_from_modbus_registers_without_options():
+    coordinator = _coordinator({})
+    coordinator.config_entry.options = {}
+    coordinator._registers = [MagicMock(name="reg")]
+    coordinator._registers[0].name = "hc_d_flow_temp"
+
+    entities = _entities_by_key(coordinator)
+
+    assert "web_pump_heating_circuitA" in entities
+    assert "web_pump_heating_circuitD" in entities
 
 
 def test_binary_web_values_are_not_created_as_regular_sensors():
@@ -133,13 +171,25 @@ def test_binary_web_values_are_not_created_as_regular_sensors():
             "hotgas_temperature": IdmWebSensorValue("72.5°C", 72.5, "°C"),
         }
     )
-    coordinator._registers = []
-
     keys = {definition.key for definition in _web_sensor_definitions(coordinator)}
 
     assert "compressor_1" not in keys
     assert "high_pressure_error" not in keys
     assert "hotgas_temperature" in keys
+
+
+def test_mixer_sensor_is_created_for_every_configured_circuit():
+    from custom_components.idm_heatpump.sensor import _web_sensor_definitions
+
+    coordinator = _coordinator({}, circuits=["a", "d"])
+
+    definitions = {definition.key: definition for definition in _web_sensor_definitions(coordinator)}
+
+    assert definitions["mixer_heating_circuitD"].name == "Mischer Heizkreis D (Web)"
+    assert "mixer_heating_circuitA" in definitions
+    assert "mixer_heating_circuitB" not in definitions
+    # Web flow temperatures duplicate the Modbus registers only when Modbus is used.
+    assert "flow_temp_HK_D" in definitions
 
 
 def test_camel_case_source_key_uses_normalized_translation_key():
