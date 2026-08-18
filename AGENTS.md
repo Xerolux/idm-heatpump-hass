@@ -193,11 +193,14 @@ ruff check custom_components tests
 ```
 
 ### CI/CD (GitHub Actions)
-- **validate.yml**: Runs pytest and mypy
-- **hacs-validation.yml**: HACS compatibility check
-- **hassfest-validation.yml**: Home Assistant integration validator
-- **release.yml**: Creates ZIP release artifacts
-- **wiki-sync.yml**: Syncs `docs/wiki/` to GitHub Wiki
+- **ci.yml**: Runs the python-quality matrix (pytest, mypy, ruff; manifest-pinned + api-main) plus HACS validation and hassfest
+- **python-quality.yml**: Reusable workflow (workflow_call) with the actual lint/type/test steps
+- **api-dependency-update.yml**: Opens a PR that re-pins `idm-heatpump-api` when a new stable API release is announced
+- **release.yml**: Validates tag/manifest/CHANGELOG, creates ZIP release artifacts, announces in Discussions
+- **security.yml**: CodeQL (actions, python) + pip-audit
+- **stale.yml**: Marks inactive issues/PRs as stale
+- **pages.yml**: Deploys `docs/wiki/` + images to GitHub Pages
+- **wiki-sync.yml**: Syncs `docs/wiki/` to the GitHub Wiki
 
 ---
 
