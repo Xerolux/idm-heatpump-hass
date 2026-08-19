@@ -196,6 +196,7 @@ ruff check custom_components tests
 - **ci.yml**: Runs the python-quality matrix (pytest, mypy, ruff; manifest-pinned + api-main) plus HACS validation and hassfest
 - **python-quality.yml**: Reusable workflow (workflow_call) with the actual lint/type/test steps
 - **api-dependency-update.yml**: Opens a PR that re-pins `idm-heatpump-api` when a new stable API release is announced
+- **dependency-freshness.yml**: Checks the pinned runtime dependencies against PyPI daily and opens a PR that re-pins `modbus-connection`/`tmodbus` to the newest stable release (`scripts/check_dependency_pins.py`)
 - **release.yml**: Validates tag/manifest/CHANGELOG, creates ZIP release artifacts, announces in Discussions
 - **security.yml**: CodeQL (actions, python) + pip-audit
 - **stale.yml**: Marks inactive issues/PRs as stale
@@ -242,6 +243,8 @@ ruff check custom_components tests
 - Bump version there before creating a release and update `CHANGELOG.md`
 - Pin the `idm-heatpump-api` requirement for every released integration version to the exact PyPI version that is current at release time or has been explicitly tested for that release. Do not publish a release with an open-ended API lower bound such as `idm-heatpump-api>=x.y.z`; the integration release and API version must remain a reproducible pair.
 - When updating to a newer `idm-heatpump-api`, verify compatibility before widening or changing the pin, then document the tested API version in the changelog/release notes.
+- Never bump a runtime pin by hand without checking PyPI first: `python scripts/check_dependency_pins.py` reports every pin that is behind, `--update` rewrites the transport pins and every document that states them. The daily `dependency-freshness.yml` workflow does exactly this and opens a PR; the release workflow refuses to publish stale pins unless `allow_stale_pins` is set. Automation never selects a pre-release for a stable pin — that is how the `4.0.0a3` alpha stayed pinned for two weeks.
+- A document that states the current pins belongs in `PIN_DOCUMENTS` in `scripts/check_dependency_pins.py`; `tests/test_dependency_pins.py` fails when a new one is missing there.
 - Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.8.1` is the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
 - Do not remove the pymodbus compatibility pin until the pinned `idm-heatpump-api` version no longer imports it and the adapter's error contract has been updated and tested.
 

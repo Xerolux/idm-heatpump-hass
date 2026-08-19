@@ -13,7 +13,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-Noch keine Änderungen.
+### Added
+
+- **Automatische Aktualität der Laufzeit-Pins.** Die exakten Pins machen ein
+  Release reproduzierbar, aber nichts im Repository hat gemerkt, wenn eine
+  gepinnte Bibliothek weiterzieht — genau so blieb der Transport-Pin zwei Wochen
+  auf dem Alpha `modbus-connection==4.0.0a3`, während 4.8.1 aktuell war. Neu:
+  - `scripts/check_dependency_pins.py` vergleicht jeden exakt gepinnten
+    Requirement des Manifests mit PyPI. `--update` schreibt die Transport-Pins
+    fort, im Manifest und in allen 16 Dokumenten, die den Stand nennen;
+    Changelogs und Release-Evidenzen bleiben als Historie unangetastet.
+    Pre-Releases werden nie automatisch ausgewählt, solange der Pin selbst
+    stabil ist.
+  - `.github/workflows/dependency-freshness.yml` läuft täglich, importiert bei
+    einer Änderung das echte `modbus_connection.tmodbus`-Backend (genau der
+    Test, der den `serialx`-Import ab 4.7.0 auffällig gemacht hätte), fährt die
+    Vertragstests und öffnet einen Pull Request.
+  - Die Release-Pipeline bricht ab, wenn ein Pin veraltet ist. Für den bewusst
+    abweichenden Fall gibt es den Workflow-Eingang `allow_stale_pins`.
+  - `tests/test_dependency_pins.py` sichert die Regeln ab, inklusive der Prüfung,
+    dass kein neues Dokument den Pin nennt, ohne von der Automatik erfasst zu
+    sein.
 
 ## [0.15.0-beta.1] - 2026-08-19
 

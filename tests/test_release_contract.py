@@ -402,6 +402,40 @@ def test_user_facing_dependency_docs_match_manifest() -> None:
     assert f"`idm-heatpump-api` `{api_version}`" in stability
 
 
+def test_dependency_freshness_workflow_proposes_current_pins() -> None:
+    """Pins must be checked on a schedule, not only when somebody remembers."""
+    workflow = _read(ROOT / ".github" / "workflows" / "dependency-freshness.yml")
+
+    assert "schedule:" in _workflow_preamble(workflow)
+    assert 'cron: "0 4 * * *"' in workflow
+    assert "workflow_dispatch:" in workflow
+    assert "  pull-requests: write" in workflow
+    assert "python scripts/check_dependency_pins.py --update" in workflow
+    assert "peter-evans/create-pull-request" in workflow
+    # The import that catches an upstream release needing a new extra.
+    assert "from modbus_connection.tmodbus import ModbusConnection" in workflow
+    for test_file in (
+        "tests/test_dependency_pins.py",
+        "tests/test_release_contract.py",
+        "tests/test_cross_repo_contract.py",
+    ):
+        assert test_file in workflow
+
+
+def test_release_refuses_stale_runtime_pins_unless_overridden() -> None:
+    """A release must not silently ship a pin that upstream has moved past."""
+    workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+
+    assert "allow_stale_pins" in workflow
+    assert "Check runtime dependency pins are current" in workflow
+    assert "python scripts/check_dependency_pins.py" in workflow
+    # The check only degrades to a warning when the override is set explicitly.
+    assert 'if [ "$ALLOW_STALE_PINS" = "true" ]; then' in workflow
+    assert "python scripts/check_dependency_pins.py --warn-only" in workflow
+    # The guard runs before anything is built or published.
+    assert workflow.index("Check runtime dependency pins are current") < workflow.index("Create ZIP artifact")
+
+
 def test_modbus_activation_guidance_is_consistent_in_ui_and_docs() -> None:
     paths = [
         ROOT / "README.md",
