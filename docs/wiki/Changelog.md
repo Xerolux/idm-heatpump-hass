@@ -5,6 +5,43 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.15.0-beta.1 — 2026-08-19
+
+Beta candidate: the transport pin moves off the `modbus-connection==4.0.0a3`
+alpha onto `4.8.1`, plus two new pacing options that are off by default. Because
+this changes the runtime dependency of the direct Modbus socket, it ships
+through the pre-release channel — the soak clock for a stable tag restarts with
+this candidate. No breaking changes; unique IDs, entity IDs, register addresses
+and write paths are unchanged, and an existing config entry polls exactly as
+before without any action.
+
+### Changed
+
+- **Transport pinned to `modbus-connection==4.8.1` and
+  `tmodbus[async-serial]==0.5.1`** (previously `4.0.0a3` / `0.5.0`). The newer
+  library adds a typed error hierarchy, connection-wide pacing, and — since
+  4.8.0 — `ModbusDesyncError`: when a peer answers a different request than the
+  one sent (typical for a gateway serving several Modbus clients at once), the
+  backend drops the link instead of decoding the foreign reply. The
+  `async-serial` extra is not optional even though this integration is TCP-only:
+  since `modbus-connection` 4.7.0 the backend module imports `serialx` at module
+  level.
+- **Transport error translation now uses the typed exceptions** instead of
+  comparing `exception_code` numbers. The contract is unchanged: code 2 stays
+  `IllegalAddressError` (coordinator bisect), codes 5/6/10/11 stay on the
+  retry-in-place path, and the `exception_code=<N>` marker the coordinator
+  matches on is still rendered as a number.
+
+### Added
+
+- **Two options under "Advanced Modbus settings"**, both `0` by default:
+  **pause between requests** (0–0.5 s, minimum gap from the end of one request
+  to the start of the next) and **pause after connect** (0–5 s, once per
+  connect and reconnect). Raise them for controllers or gateways that answer
+  "device busy", drop requests, or time out under a dense request stream. The
+  guided setup profiles set the request pause along: "unreliable network"
+  0.05 s, "multiple clients" 0.1 s.
+
 ## v0.14.1 — 2026-08-18
 
 Patch release: three bugs around the lifecycle of optional heating circuits. No

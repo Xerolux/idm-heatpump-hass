@@ -13,6 +13,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+Noch keine Änderungen.
+
+## [0.15.0-beta.1] - 2026-08-19
+
+Beta-Kandidat: der Transport-Pin wandert vom Alpha-Stand
+`modbus-connection==4.0.0a3` auf `4.8.1`, dazu zwei neue, standardmäßig
+inaktive Pacing-Optionen. Weil sich damit die Laufzeitabhängigkeit des
+direkten Modbus-Sockets ändert, läuft das nach `docs/RELEASE_PROCESS.md`
+über den Pre-Release-Kanal: die Soak-Uhr für einen stabilen Tag startet mit
+diesem Kandidaten neu. Keine Breaking Changes; Unique IDs, Entity-IDs,
+Registeradressen und Schreibpfade bleiben unverändert, bestehende Config
+Entries pollen ohne Zutun exakt wie vorher.
+
 ### Changed
 
 - **Transport-Pin auf `modbus-connection==4.8.1` und
@@ -54,6 +67,17 @@ All notable changes to this project will be documented in this file.
   Die geführten Setup-Profile setzen sie mit: „Unzuverlässiges Netzwerk"
   auf 0,05 s Anfragepause, „Mehrere Clients" auf 0,1 s. Beide Werte erscheinen
   außerdem im Diagnose-Export des Transports.
+
+### Documentation
+
+- **Component-Modell von `modbus-connection` bewertet und verworfen.** Die
+  Registerkarte passt vollständig (586 von 586 Datenpunkten, 0
+  Decoding-Abweichungen), die Leseplanung der Bibliothek führt die drei
+  dokumentierten logischen Überlappungen der offiziellen IDM-Karte aber zu je
+  einer Anfrage zusammen, die einzeln angefragt werden müssen. Messung,
+  Begründung und Neubewertungskriterium stehen in
+  `docs/dev/component-model-evaluation.md`, reproduzierbar über
+  `scripts/evaluate_component_model.py`.
 
 ## [0.14.1] - 2026-08-18
 

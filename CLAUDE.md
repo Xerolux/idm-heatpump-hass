@@ -7,7 +7,7 @@ This file is a short pointer for Claude-compatible agents.
 ## Snapshot (keep in sync with `manifest.json`)
 
 - **Domain**: `idm_heatpump`
-- **Version**: `0.14.1` (previous stable: `0.14.0`)
+- **Version**: `0.15.0-beta.1` (previous stable: `0.14.1`)
 - **Min HA**: 2026.8.1
 - **Python**: 3.13+
 - **Dependencies**: `modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.1`,

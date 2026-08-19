@@ -123,4 +123,4 @@ For the independent Modbus path, the tested manifest order is
 `pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.1`. The first two own
 the direct Modbus socket; pymodbus remains temporarily present because the
 pinned API still imports it. This does not change the web protocol or make
-version `4.0.0a3` an IDM integration release.
+version `4.8.1` an IDM integration release.

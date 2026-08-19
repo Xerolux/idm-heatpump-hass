@@ -269,7 +269,7 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.14.1` (previous stable: `0.14.0`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | `0.15.0-beta.1` (previous stable: `0.14.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.8.1` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]==0.5.1` | Wire/backend implementation changes |
 | Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
