@@ -16,6 +16,7 @@ This file is a short pointer for Claude-compatible agents.
 - **Transports**: Modbus TCP through `modbus-connection`/tmodbus (primary) + optional local Navigator web supplement / web-only mode
 - **Active roadmap**: `docs/dev/heatpump-feature-roadmap.md`
 - **Open work audit**: `docs/dev/open-work-audit.md`
+- **Component-Modell-Bewertung**: `docs/dev/component-model-evaluation.md`
 
 Keep protocol semantics and register maps in `idm-heatpump-api`; the local
 `modbus_client.py` is only the pin-specific raw-I/O bridge to tmodbus.

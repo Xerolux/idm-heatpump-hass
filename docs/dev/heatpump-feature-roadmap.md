@@ -119,6 +119,14 @@ dürfen in Planung und Diagnose nicht miteinander verwechselt werden.
 - [ ] Den Pymodbus-Kompatibilitätspin entfernen. Er hängt nicht mehr am
   Transportvertrag, sondern allein daran, dass `idm_heatpump.client` `pymodbus`
   auf Modulebene importiert — unabhängig vom injizierten Transport.
+- [x] Das Component-/Planungsmodul von `modbus-connection`
+  (`modbus_connection.model`) als Ersatz für Batching und Decoding in
+  `idm-heatpump-api` bewerten. Ergebnis: nicht umsetzen — die Registerkarte
+  passt vollständig (586/586 Datenpunkte, 0 Decoding-Abweichungen), aber die
+  Leseplanung führt die drei dokumentierten logischen Überlappungen zu einer
+  Anfrage zusammen, die laut Registerinvarianten einzeln angefragt werden
+  müssen. Messung und Neubewertungskriterium:
+  `docs/dev/component-model-evaluation.md`.
 - [ ] Einen zusätzlichen zentralen Home-Assistant-Connection-Provider erst
   implementieren, wenn die Schnittstelle für Custom Integrations stabil
   dokumentiert ist.
