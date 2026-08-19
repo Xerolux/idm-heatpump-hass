@@ -26,7 +26,9 @@ from custom_components.idm_heatpump.const import (
     CONF_HUMIDITY_FORWARDING_ENTITY,
     CONF_HUMIDITY_FORWARDING_INTERVAL,
     CONF_HUMIDITY_FORWARDING_TOLERANCE,
+    CONF_MODBUS_CONNECT_DELAY,
     CONF_MODBUS_MAX_RETRIES,
+    CONF_MODBUS_MESSAGE_SPACING,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
@@ -50,7 +52,9 @@ from custom_components.idm_heatpump.const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     DEFAULT_COMMUNICATION_DIAGNOSTICS,
+    DEFAULT_MODBUS_CONNECT_DELAY,
     DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_MESSAGE_SPACING,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_POLLING_JITTER,
     DEFAULT_WEB_ENABLED,
@@ -96,6 +100,8 @@ def test_advanced_options_explain_operational_effects() -> None:
         assert "600" in descriptions["write_cooldown"]
         assert "EEPROM" in descriptions["write_cooldown"]
         assert "EEPROM" in descriptions["eeprom_write_interval"]
+        assert "0" in descriptions["modbus_message_spacing"]
+        assert "0" in descriptions["modbus_connect_delay"]
 
 
 def _make_flow():
@@ -572,6 +578,8 @@ class TestAsyncStepOptions:
         schema_dict = dict(schema._schema["advanced_modbus"]._schema)
         assert CONF_MODBUS_TIMEOUT in schema_dict
         assert CONF_MODBUS_MAX_RETRIES in schema_dict
+        assert CONF_MODBUS_MESSAGE_SPACING in schema_dict
+        assert CONF_MODBUS_CONNECT_DELAY in schema_dict
         assert CONF_POLLING_JITTER in schema_dict
         assert CONF_COMMUNICATION_DIAGNOSTICS in schema_dict
         assert CONF_WRITE_COOLDOWN in schema_dict
@@ -582,6 +590,10 @@ class TestAsyncStepOptions:
         markers = {marker.key: marker for marker in schema._schema["advanced_modbus"]._schema}
         assert markers[CONF_MODBUS_TIMEOUT].default == DEFAULT_MODBUS_TIMEOUT
         assert markers[CONF_MODBUS_MAX_RETRIES].default == DEFAULT_MODBUS_MAX_RETRIES
+        # Pacing stays off unless the user asks for it, so an update never
+        # slows down an installation that polls fine today.
+        assert markers[CONF_MODBUS_MESSAGE_SPACING].default == DEFAULT_MODBUS_MESSAGE_SPACING == 0.0
+        assert markers[CONF_MODBUS_CONNECT_DELAY].default == DEFAULT_MODBUS_CONNECT_DELAY == 0.0
         assert markers[CONF_POLLING_JITTER].default == DEFAULT_POLLING_JITTER
         assert markers[CONF_COMMUNICATION_DIAGNOSTICS].default == DEFAULT_COMMUNICATION_DIAGNOSTICS
         assert markers[CONF_WRITE_COOLDOWN].default == DEFAULT_WRITE_COOLDOWN
@@ -1834,6 +1846,7 @@ class TestConfigFlowFullFlow:
 
         assert result["options"][CONF_SCAN_INTERVAL] == 30
         assert result["options"][CONF_POLLING_JITTER] == 20
+        assert result["options"][CONF_MODBUS_MESSAGE_SPACING] == 0.1
 
     async def test_reliable_network_profile_increases_timeout_and_retries(self):
         """The unreliable-network profile should tolerate slow responses."""
@@ -1845,6 +1858,7 @@ class TestConfigFlowFullFlow:
         assert result["options"][CONF_SCAN_INTERVAL] == 30
         assert result["options"][CONF_MODBUS_TIMEOUT] == 20.0
         assert result["options"][CONF_MODBUS_MAX_RETRIES] == 5
+        assert result["options"][CONF_MODBUS_MESSAGE_SPACING] == 0.05
 
     async def test_user_to_options_to_zones_to_create_entry(self):
         """Full happy path with zones: user → options → zones → create_entry."""

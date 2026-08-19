@@ -233,3 +233,27 @@ def test_backend_exception_constants_are_not_duplicated_in_client() -> None:
     assert not hasattr(client_module, "_TRANSIENT_DEVICE_EXCEPTION_CODES")
     assert not hasattr(client_module, "_translate_transport_error")
     assert not hasattr(client_module, "_run_transport_command")
+
+
+def test_client_hands_pacing_to_its_own_transport() -> None:
+    """Per-entry pacing must reach the owned transport's endpoint."""
+    client = IdmModbusConnectionClient(
+        host="192.0.2.1",
+        message_spacing=0.05,
+        connect_delay=1.0,
+    )
+
+    endpoint = client._owned_transport.endpoint
+    assert endpoint.message_spacing == 0.05
+    assert endpoint.connect_delay == 1.0
+    diagnostics = client.transport_diagnostics()
+    assert diagnostics["endpoint"]["message_spacing"] == 0.05  # type: ignore[index]
+    assert diagnostics["endpoint"]["connect_delay"] == 1.0  # type: ignore[index]
+
+
+def test_client_defaults_to_an_unpaced_link() -> None:
+    """Without explicit pacing the link keeps its current back-to-back behaviour."""
+    endpoint = IdmModbusConnectionClient(host="192.0.2.1")._owned_transport.endpoint
+
+    assert endpoint.message_spacing == 0.0
+    assert endpoint.connect_delay == 0.0

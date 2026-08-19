@@ -26,6 +26,10 @@ class IdmModbusConnectionClient(IdmModbusClient):
     :class:`ModbusConnectionTransport`.  All public operations (model detection,
     batch planning, decoding, write safety, retry, reconnect) are implemented by
     the API; this class only adds transport-aware diagnostics.
+
+    ``message_spacing`` and ``connect_delay`` are connection-wide pacing applied
+    by ``modbus-connection`` itself; they only reach the owned transport and are
+    ignored when a ready-made ``transport`` is injected.
     """
 
     def __init__(
@@ -36,6 +40,8 @@ class IdmModbusConnectionClient(IdmModbusClient):
         timeout: float = 10.0,
         max_retries: int = 3,
         *,
+        message_spacing: float = 0.0,
+        connect_delay: float = 0.0,
         transport: ModbusConnectionTransport | None = None,
     ) -> None:
         endpoint = ModbusTcpEndpoint(
@@ -44,6 +50,8 @@ class IdmModbusConnectionClient(IdmModbusClient):
             slave_id=slave_id,
             timeout=timeout,
             retries=max_retries,
+            message_spacing=message_spacing,
+            connect_delay=connect_delay,
         )
         owned_transport = transport or ModbusConnectionTransport(endpoint)
         super().__init__(

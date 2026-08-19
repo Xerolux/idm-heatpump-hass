@@ -157,6 +157,8 @@
             "data": {
               "modbus_timeout": "Response timeout",
               "modbus_retries": "Retries",
+              "modbus_message_spacing": "Pause between requests (seconds)",
+              "modbus_connect_delay": "Pause after connect (seconds)",
               "eeprom_write_interval": "EEPROM write protection (seconds)",
               "polling_jitter": "Polling jitter (%)",
               "communication_diagnostics": "Extended communication diagnostics",
@@ -165,6 +167,8 @@
             "data_description": {
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
               "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
+              "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
+              "modbus_connect_delay": "Pause after the connection is established, before the first request is sent. Applies to the first connect and to every reconnect, not to individual requests. Default 0 seconds: disabled. Helps with gateways that need a moment after connecting before they answer reliably.",
               "eeprom_write_interval": "Minimum time between writes to the same EEPROM register (for example, a heating/cooling limit). The 60-second default protects the EEPROM's limited write cycles. This protection applies additionally and independently of the general write cooldown. LOWERING IT IS AT YOUR OWN RISK and accelerates EEPROM wear.",
               "polling_jitter": "Adds a random delay from 0 up to the selected percentage of the scan interval before every Modbus poll. Example: a 10-second scan interval with 20% adds 0–2 seconds. This spreads simultaneous requests from multiple systems. Default 0%: disabled.",
               "communication_diagnostics": "Creates additional diagnostic entities for the last successful poll, poll duration, consecutive failures, and active registers. Total polls and failures are shown as attributes. No additional Modbus registers are read. Default: disabled.",
@@ -392,6 +396,8 @@
             "data": {
               "modbus_timeout": "Response timeout",
               "modbus_retries": "Retries",
+              "modbus_message_spacing": "Pause between requests (seconds)",
+              "modbus_connect_delay": "Pause after connect (seconds)",
               "eeprom_write_interval": "EEPROM write protection (seconds)",
               "polling_jitter": "Polling jitter (%)",
               "communication_diagnostics": "Extended communication diagnostics",
@@ -400,6 +406,8 @@
             "data_description": {
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
               "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
+              "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
+              "modbus_connect_delay": "Pause after the connection is established, before the first request is sent. Applies to the first connect and to every reconnect, not to individual requests. Default 0 seconds: disabled. Helps with gateways that need a moment after connecting before they answer reliably.",
               "eeprom_write_interval": "Minimum time between writes to the same EEPROM register (for example, a heating/cooling limit). The 60-second default protects the EEPROM's limited write cycles. This protection applies additionally and independently of the general write cooldown. LOWERING IT IS AT YOUR OWN RISK and accelerates EEPROM wear.",
               "polling_jitter": "Adds a random delay from 0 up to the selected percentage of the scan interval before every Modbus poll. Example: a 10-second scan interval with 20% adds 0–2 seconds. This spreads simultaneous requests from multiple systems. Default 0%: disabled.",
               "communication_diagnostics": "Creates additional diagnostic entities for the last successful poll, poll duration, consecutive failures, and active registers. Total polls and failures are shown as attributes. No additional Modbus registers are read. Default: disabled.",

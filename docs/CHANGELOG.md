@@ -15,6 +15,70 @@ All notable changes to this project will be documented in this file.
 
 Noch keine Änderungen.
 
+## [0.15.0-beta.1] - 2026-08-19
+
+Beta-Kandidat: der Transport-Pin wandert vom Alpha-Stand
+`modbus-connection==4.0.0a3` auf `4.8.1`, dazu zwei neue, standardmäßig
+inaktive Pacing-Optionen. Weil sich damit die Laufzeitabhängigkeit des
+direkten Modbus-Sockets ändert, läuft das nach `docs/RELEASE_PROCESS.md`
+über den Pre-Release-Kanal: die Soak-Uhr für einen stabilen Tag startet mit
+diesem Kandidaten neu. Keine Breaking Changes; Unique IDs, Entity-IDs,
+Registeradressen und Schreibpfade bleiben unverändert, bestehende Config
+Entries pollen ohne Zutun exakt wie vorher.
+
+### Changed
+
+- **Transport-Pin auf `modbus-connection==4.8.1` und
+  `tmodbus[async-serial]==0.5.1` angehoben** (vorher `4.0.0a3` / `0.5.0`, ein
+  Alpha-Stand). Die Bibliothek liefert seitdem eine typisierte
+  Fehlerhierarchie (`IllegalDataAddressError`, `ServerDeviceBusyError`,
+  `GatewayTargetError` …), Verbindungs-Pacing (siehe unten) und seit 4.8.0
+  `ModbusDesyncError`: antwortet eine Gegenstelle auf eine andere Anfrage als
+  die gesendete — typisch für ein Gateway, das mehrere Modbus-Clients
+  gleichzeitig bedient —, verwirft das Backend die Verbindung, statt die
+  fremde Antwort zu dekodieren. Der `tmodbus`-Extra `async-serial` ist dabei
+  nicht optional: seit `modbus-connection` 4.7.0 importiert das Backend-Modul
+  `serialx` auf Modulebene, der Import scheitert sonst. Registeradressen,
+  Unique IDs, Entity-IDs und Schreibpfade bleiben unverändert.
+- **Fehlerübersetzung im Transport nutzt die typisierten Exceptions.** Statt
+  Zahlenvergleichen auf `exception_code` klassifiziert
+  `modbus_transport.py` jetzt per `isinstance`. Der Vertrag zur API und zum
+  Coordinator bleibt exakt gleich: Code 2 wird weiterhin `IllegalAddressError`,
+  die Codes 5/6/10/11 bleiben auf dem Retry-in-Place-Pfad, und die Marker
+  `exception_code=<N>`, auf die der Coordinator seine Batch-Bisect-Logik
+  stützt, werden weiterhin als Zahl gerendert (der Code ist inzwischen ein
+  `IntEnum`). Ein Response, der nur den Zahlencode ohne passende Unterklasse
+  trägt, wird unverändert genauso eingeordnet.
+
+### Added
+
+- **Zwei neue Optionen unter „Erweiterte Modbus-Einstellungen".** Beide steuern
+  das Pacing der Verbindung selbst und stehen standardmäßig auf `0`, eine
+  bestehende Installation pollt also unverändert schnell weiter:
+  - **Pause zwischen Anfragen (0–0,5 s)** — Mindestabstand vom Ende einer
+    Anfrage bis zum Start der nächsten. Für Regler oder Gateways, die bei dicht
+    aufeinanderfolgenden Anfragen „Gerät beschäftigt" melden, Anfragen verwerfen
+    oder in Timeouts laufen. Die Pause gilt je Anfrage, ein kompletter
+    Abfragezyklus dauert entsprechend länger.
+  - **Pause nach Verbindungsaufbau (0–5 s)** — einmalige Wartezeit nach jedem
+    (Wieder-)Verbinden, bevor die erste Anfrage rausgeht. Für Gateways, die eine
+    Verbindung annehmen, bevor sie antwortbereit sind.
+
+  Die geführten Setup-Profile setzen sie mit: „Unzuverlässiges Netzwerk"
+  auf 0,05 s Anfragepause, „Mehrere Clients" auf 0,1 s. Beide Werte erscheinen
+  außerdem im Diagnose-Export des Transports.
+
+### Documentation
+
+- **Component-Modell von `modbus-connection` bewertet und verworfen.** Die
+  Registerkarte passt vollständig (586 von 586 Datenpunkten, 0
+  Decoding-Abweichungen), die Leseplanung der Bibliothek führt die drei
+  dokumentierten logischen Überlappungen der offiziellen IDM-Karte aber zu je
+  einer Anfrage zusammen, die einzeln angefragt werden müssen. Messung,
+  Begründung und Neubewertungskriterium stehen in
+  `docs/dev/component-model-evaluation.md`, reproduzierbar über
+  `scripts/evaluate_component_model.py`.
+
 ## [0.14.1] - 2026-08-18
 
 Patch-Release: drei Fehler rund um den Lebenszyklus optionaler Heizkreise. Keine

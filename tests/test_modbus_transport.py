@@ -8,9 +8,18 @@ from typing import Any
 import pytest
 from idm_heatpump import IllegalAddressError
 from idm_heatpump.transport import IdmModbusTransport
-from modbus_connection import ModbusExceptionError
+from modbus_connection import (
+    AcknowledgeError,
+    GatewayPathUnavailableError,
+    GatewayTargetError,
+    IllegalDataAddressError,
+    IllegalDataValueError,
+    ModbusExceptionError,
+    ServerDeviceBusyError,
+)
 from pymodbus.exceptions import ModbusException, ModbusIOException
 
+from custom_components.idm_heatpump import modbus_transport
 from custom_components.idm_heatpump.modbus_transport import (
     ModbusConnectionTransport,
     ModbusTcpEndpoint,
@@ -117,6 +126,28 @@ def test_endpoint_is_immutable() -> None:
         ({"host": "192.0.2.10", "port": 502, "slave_id": 248, "timeout": 10.0, "retries": 3}, "slave_id"),
         ({"host": "192.0.2.10", "port": 502, "slave_id": 1, "timeout": 0.0, "retries": 3}, "timeout"),
         ({"host": "192.0.2.10", "port": 502, "slave_id": 1, "timeout": 10.0, "retries": -1}, "retries"),
+        (
+            {
+                "host": "192.0.2.10",
+                "port": 502,
+                "slave_id": 1,
+                "timeout": 10.0,
+                "retries": 3,
+                "message_spacing": -0.01,
+            },
+            "message_spacing",
+        ),
+        (
+            {
+                "host": "192.0.2.10",
+                "port": 502,
+                "slave_id": 1,
+                "timeout": 10.0,
+                "retries": 3,
+                "connect_delay": -1.0,
+            },
+            "connect_delay",
+        ),
     ],
 )
 def test_endpoint_rejects_invalid_values(kwargs: dict[str, object], message: str) -> None:
@@ -139,6 +170,8 @@ def test_endpoint_diagnostics_redact_host() -> None:
         "slave_id": 2,
         "timeout": 5.5,
         "retries": 1,
+        "message_spacing": 0.0,
+        "connect_delay": 0.0,
     }
 
 
@@ -381,6 +414,8 @@ async def test_tmodbus_transport_diagnostics_are_redacted_and_backend_neutral() 
             "slave_id": 6,
             "timeout": 7.5,
             "retries": 1,
+            "message_spacing": 0.0,
+            "connect_delay": 0.0,
         },
         "capabilities": {
             "source": "modbus_connection.tmodbus",
@@ -390,3 +425,126 @@ async def test_tmodbus_transport_diagnostics_are_redacted_and_backend_neutral() 
         "connected": True,
     }
     assert endpoint.host not in repr(diagnostics)
+
+
+@pytest.mark.parametrize(
+    ("error", "expected_code"),
+    [
+        (IllegalDataValueError(message="rejected value"), 3),
+        (AcknowledgeError(message="accepted, needs time"), 5),
+        (ServerDeviceBusyError(message="busy"), 6),
+        (GatewayPathUnavailableError(message="no path"), 10),
+        (GatewayTargetError(message="target silent"), 11),
+        (ModbusExceptionError(exception_code=99, message="vendor specific"), 99),
+    ],
+)
+@pytest.mark.asyncio
+async def test_typed_backend_errors_keep_the_numeric_marker(
+    error: ModbusExceptionError,
+    expected_code: int,
+) -> None:
+    """The typed subclasses of 4.x must still render ``exception_code=<N>``.
+
+    The coordinator matches that marker, and ``exception_code`` is an ``IntEnum``
+    member for standard codes, so the transport has to render the number.
+    """
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 1, 1.0, 0)
+
+    class FailingUnit:
+        async def read_holding_registers(self, address: int, count: int) -> list[int]:
+            raise error
+
+        async def read_input_registers(self, address: int, count: int) -> list[int]:
+            raise error
+
+        async def write_registers(self, address: int, values: list[int]) -> None:
+            raise error
+
+    class FailingConnection:
+        connected = False
+
+        def for_unit(self, _unit_id: int) -> FailingUnit:
+            return FailingUnit()
+
+        async def connect(self) -> None:
+            self.connected = True
+
+        async def close(self) -> None:
+            self.connected = False
+
+    transport = ModbusConnectionTransport(endpoint, connection_factory=lambda _: FailingConnection())  # type: ignore[arg-type]
+
+    with pytest.raises(ModbusException, match=rf"exception_code={expected_code}\)$"):
+        await transport.read_holding_registers(address=2000, count=1)
+
+
+@pytest.mark.asyncio
+async def test_typed_illegal_data_address_maps_to_illegal_address_error() -> None:
+    """The 4.x subclass for code 2 keeps the API's permanent-failure contract."""
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 1, 1.0, 0)
+
+    class FailingUnit:
+        async def read_input_registers(self, address: int, count: int) -> list[int]:
+            raise IllegalDataAddressError(message="unsupported register")
+
+        async def read_holding_registers(self, address: int, count: int) -> list[int]:
+            raise IllegalDataAddressError(message="unsupported register")
+
+        async def write_registers(self, address: int, values: list[int]) -> None:
+            raise IllegalDataAddressError(message="unsupported register")
+
+    class FailingConnection:
+        connected = False
+
+        def for_unit(self, _unit_id: int) -> FailingUnit:
+            return FailingUnit()
+
+        async def connect(self) -> None:
+            self.connected = True
+
+        async def close(self) -> None:
+            self.connected = False
+
+    transport = ModbusConnectionTransport(endpoint, connection_factory=lambda _: FailingConnection())  # type: ignore[arg-type]
+
+    with pytest.raises(IllegalAddressError, match="exception_code=2"):
+        await transport.read_input_registers(address=1000, count=1)
+
+
+def test_backend_connection_receives_configured_pacing(monkeypatch: pytest.MonkeyPatch) -> None:
+    """``message_spacing``/``connect_delay`` must reach the backend connection.
+
+    The pacing is implemented by ``modbus-connection`` itself, so the only thing
+    this integration owns is handing the configured values to the constructor.
+    """
+    recorded: dict[str, Any] = {}
+
+    def _record(params: Any, **kwargs: Any) -> Any:
+        recorded["params"] = params
+        recorded.update(kwargs)
+        return RecordingConnection()
+
+    monkeypatch.setattr(modbus_transport, "ModbusConnection", _record)
+
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 1, 7.5, 3, message_spacing=0.1, connect_delay=1.5)
+    modbus_transport._create_tmodbus_connection(endpoint)
+
+    assert recorded["timeout"] == 7.5
+    assert recorded["message_spacing"] == 0.1
+    assert recorded["connect_delay"] == 1.5
+
+
+def test_backend_connection_stays_unpaced_by_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    """An endpoint without pacing options must not slow the link down."""
+    recorded: dict[str, Any] = {}
+
+    def _record(params: Any, **kwargs: Any) -> Any:
+        recorded.update(kwargs)
+        return RecordingConnection()
+
+    monkeypatch.setattr(modbus_transport, "ModbusConnection", _record)
+
+    modbus_transport._create_tmodbus_connection(ModbusTcpEndpoint("192.0.2.10", 502, 1, 10.0, 3))
+
+    assert recorded["message_spacing"] == 0.0
+    assert recorded["connect_delay"] == 0.0

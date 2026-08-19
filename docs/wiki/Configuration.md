@@ -214,6 +214,19 @@ optional web supplement settings, and optional room temperature forwarding.
 The collapsed **Advanced Modbus settings** section also provides power-user
 controls in addition to timeout and retry settings:
 
+- **Pause between requests (0–0.5 seconds)** is the minimum gap the connection
+  keeps between two Modbus requests, measured from the end of one request to
+  the start of the next. `0 s` (the default) sends requests back-to-back, as
+  every release before this option did. Raise it when the controller or a
+  Modbus gateway answers "device busy", drops requests, or times out under a
+  dense request stream. The pause applies to every request, so a full polling
+  cycle takes correspondingly longer: with roughly 40 batches, `0.1 s` adds
+  about 4 seconds per cycle. Start at `0.05 s`.
+- **Pause after connect (0–5 seconds)** is awaited once after the link is
+  established, before the first request is sent — on the first connect and on
+  every reconnect, not per request. `0 s` (the default) sends immediately.
+  Raise it for gateways that accept a connection before they are ready to
+  answer.
 - **Polling jitter (0–20%)** adds a random delay of up to the selected
   percentage of the scan interval to every poll. This spreads network and
   controller load when several heat pumps start polling at the same time.
@@ -256,18 +269,18 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.14.1` (previous stable: `0.14.0`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
-| Connection library | `modbus-connection==4.0.0a3` | Transport contract, connection lifecycle or error semantics change |
-| Direct socket backend | `tmodbus==0.5.0` | Wire/backend implementation changes |
+| Home Assistant custom integration | `0.15.0-beta.1` (previous stable: `0.14.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Connection library | `modbus-connection==4.8.1` | Transport contract, connection lifecycle or error semantics change |
+| Direct socket backend | `tmodbus[async-serial]==0.5.1` | Wire/backend implementation changes |
 | Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
 | Python register/web library | `idm-heatpump-api[web]==1.0.1` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
-`modbus-connection==4.0.0a3`, `tmodbus==0.5.0`,
+`modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.1`,
 `pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.1`.
 The first two packages own the direct socket. `idm-heatpump-api` remains
 responsible for IDM-specific device logic; pymodbus is temporarily retained
-because that API still imports it. `4.0.0a3` is the version of
+because that API still imports it. `4.8.1` is the version of
 `modbus-connection`, not an IDM integration version. The transport was first
 shipped by IDM integration beta `0.11.0-beta.1` and is now part of the stable
 `0.11.x` line.

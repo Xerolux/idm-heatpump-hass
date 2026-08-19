@@ -56,7 +56,9 @@ from .const import (
     CONF_HUMIDITY_FORWARDING_ENTITY,
     CONF_HUMIDITY_FORWARDING_INTERVAL,
     CONF_HUMIDITY_FORWARDING_TOLERANCE,
+    CONF_MODBUS_CONNECT_DELAY,
     CONF_MODBUS_MAX_RETRIES,
+    CONF_MODBUS_MESSAGE_SPACING,
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
@@ -90,7 +92,9 @@ from .const import (
     DEFAULT_HUMIDITY_FORWARDING,
     DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
     DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
+    DEFAULT_MODBUS_CONNECT_DELAY,
     DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_MESSAGE_SPACING,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_MODEL_OVERRIDE,
     DEFAULT_POLLING_JITTER,
@@ -110,14 +114,18 @@ from .const import (
     DOMAIN,
     HEATING_CIRCUITS,
     MAX_EEPROM_WRITE_INTERVAL,
+    MAX_MODBUS_CONNECT_DELAY,
     MAX_MODBUS_MAX_RETRIES,
+    MAX_MODBUS_MESSAGE_SPACING,
     MAX_MODBUS_TIMEOUT,
     MAX_POLLING_JITTER,
     MAX_ROOM_COUNT,
     MAX_WRITE_COOLDOWN,
     MAX_ZONE_COUNT,
     MIN_EEPROM_WRITE_INTERVAL,
+    MIN_MODBUS_CONNECT_DELAY,
     MIN_MODBUS_MAX_RETRIES,
+    MIN_MODBUS_MESSAGE_SPACING,
     MIN_MODBUS_TIMEOUT,
     MIN_POLLING_JITTER,
     MIN_WRITE_COOLDOWN,
@@ -333,6 +341,8 @@ def _default_options() -> dict[str, Any]:
         CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
         CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
         CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
+        CONF_MODBUS_MESSAGE_SPACING: DEFAULT_MODBUS_MESSAGE_SPACING,
+        CONF_MODBUS_CONNECT_DELAY: DEFAULT_MODBUS_CONNECT_DELAY,
         CONF_POLLING_JITTER: DEFAULT_POLLING_JITTER,
         CONF_COMMUNICATION_DIAGNOSTICS: DEFAULT_COMMUNICATION_DIAGNOSTICS,
         CONF_WRITE_COOLDOWN: DEFAULT_WRITE_COOLDOWN,
@@ -344,9 +354,28 @@ def _options_for_profile(profile: str) -> dict[str, Any]:
     """Return recommended options adjusted for a guided setup profile."""
     options = _default_options()
     if profile == _SETUP_PROFILE_RELIABLE:
-        options.update({CONF_SCAN_INTERVAL: 30, CONF_MODBUS_TIMEOUT: 20.0, CONF_MODBUS_MAX_RETRIES: 5})
+        # A slow endpoint gets air between requests as well as more patience per
+        # request: 50 ms costs a fraction of a second over a full poll, but keeps
+        # a busy controller from answering "device busy" to the next batch.
+        options.update(
+            {
+                CONF_SCAN_INTERVAL: 30,
+                CONF_MODBUS_TIMEOUT: 20.0,
+                CONF_MODBUS_MAX_RETRIES: 5,
+                CONF_MODBUS_MESSAGE_SPACING: 0.05,
+            }
+        )
     elif profile == _SETUP_PROFILE_MULTI_CLIENT:
-        options.update({CONF_SCAN_INTERVAL: 30, CONF_POLLING_JITTER: 20})
+        # A gateway shared with other Modbus clients benefits most from pacing:
+        # jitter spreads the polls, spacing keeps this integration from filling
+        # the link back-to-back while another client waits for its turn.
+        options.update(
+            {
+                CONF_SCAN_INTERVAL: 30,
+                CONF_POLLING_JITTER: 20,
+                CONF_MODBUS_MESSAGE_SPACING: 0.1,
+            }
+        )
     return options
 
 
@@ -635,6 +664,30 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 max=MAX_MODBUS_MAX_RETRIES,
                                 step=1,
                                 mode=NumberSelectorMode.SLIDER,
+                            )
+                        ),
+                        vol.Required(
+                            CONF_MODBUS_MESSAGE_SPACING,
+                            default=float(options.get(CONF_MODBUS_MESSAGE_SPACING, DEFAULT_MODBUS_MESSAGE_SPACING)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_MODBUS_MESSAGE_SPACING,
+                                max=MAX_MODBUS_MESSAGE_SPACING,
+                                step=0.01,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="s",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_MODBUS_CONNECT_DELAY,
+                            default=float(options.get(CONF_MODBUS_CONNECT_DELAY, DEFAULT_MODBUS_CONNECT_DELAY)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_MODBUS_CONNECT_DELAY,
+                                max=MAX_MODBUS_CONNECT_DELAY,
+                                step=0.1,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="s",
                             )
                         ),
                         vol.Required(

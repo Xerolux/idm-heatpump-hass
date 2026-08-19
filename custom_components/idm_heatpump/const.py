@@ -66,6 +66,11 @@ CONF_STORAGE_TEMP_FORWARDING_ENTITIES: str = "storage_temp_forwarding_entities"
 CONF_WEB_ONLY: str = "web_only_mode"
 CONF_MODBUS_TIMEOUT: str = "modbus_timeout"
 CONF_MODBUS_MAX_RETRIES: str = "modbus_retries"
+# Connection-wide pacing handed to ``modbus-connection``: the minimum pause
+# between two requests on the link, and a one-off pause after every (re-)
+# connect before the first request uses the link.
+CONF_MODBUS_MESSAGE_SPACING: str = "modbus_message_spacing"
+CONF_MODBUS_CONNECT_DELAY: str = "modbus_connect_delay"
 CONF_POLLING_JITTER: str = "polling_jitter"
 CONF_COMMUNICATION_DIAGNOSTICS: str = "communication_diagnostics"
 CONF_WRITE_COOLDOWN: str = "write_cooldown"
@@ -106,6 +111,12 @@ DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE: float = 0.5
 DEFAULT_MODBUS_TIMEOUT: float = 10.0
 DEFAULT_MODBUS_MAX_RETRIES: int = 3
+# Both pacing defaults stay at 0 so an update never slows down an
+# installation that polls fine today; they are opt-in for endpoints that
+# answer badly under back-to-back requests (busy Navigator controllers,
+# shared gateways, serial bridges).
+DEFAULT_MODBUS_MESSAGE_SPACING: float = 0.0
+DEFAULT_MODBUS_CONNECT_DELAY: float = 0.0
 DEFAULT_POLLING_JITTER: int = 0
 DEFAULT_COMMUNICATION_DIAGNOSTICS: bool = False
 DEFAULT_WRITE_COOLDOWN: float = 5.0
@@ -113,6 +124,13 @@ MIN_MODBUS_TIMEOUT: float = 3.0
 MAX_MODBUS_TIMEOUT: float = 30.0
 MIN_MODBUS_MAX_RETRIES: int = 1
 MAX_MODBUS_MAX_RETRIES: int = 5
+MIN_MODBUS_MESSAGE_SPACING: float = 0.0
+# 0.5 s between requests is already slow enough to stretch a full poll far
+# beyond the scan interval; anything above that is a broken endpoint, not a
+# tuning value.
+MAX_MODBUS_MESSAGE_SPACING: float = 0.5
+MIN_MODBUS_CONNECT_DELAY: float = 0.0
+MAX_MODBUS_CONNECT_DELAY: float = 5.0
 MIN_POLLING_JITTER: int = 0
 MAX_POLLING_JITTER: int = 20
 MIN_WRITE_COOLDOWN: float = 0.0
