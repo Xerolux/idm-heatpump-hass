@@ -14,6 +14,11 @@ translated to the API's established exception contract
 failures) before they leave the transport, so the API retry loop classifies
 them correctly.  The string markers (``exception_code=2`` etc.) are preserved
 verbatim because the Home Assistant coordinator relies on them for bisect logic.
+
+The endpoint also carries the connection-wide pacing the backend applies:
+``message_spacing`` (minimum pause between two requests) and ``connect_delay``
+(pause after every (re-)connect).  Both default to ``0``, so pacing is opt-in
+for endpoints that answer badly under back-to-back requests.
 """
 
 from __future__ import annotations
@@ -24,6 +29,10 @@ from dataclasses import dataclass
 from typing import TypeVar
 
 from modbus_connection import (
+    AcknowledgeError,
+    GatewayPathUnavailableError,
+    GatewayTargetError,
+    IllegalDataAddressError,
     ModbusConnectionError,
     ModbusError,
     ModbusExceptionError,
@@ -31,6 +40,7 @@ from modbus_connection import (
     ModbusTcpParams,
     ModbusTimeoutError,
     ModbusUnit,
+    ServerDeviceBusyError,
 )
 from modbus_connection.tmodbus import ModbusConnection
 from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
@@ -41,16 +51,38 @@ type ModbusTransportDiagnosticValue = bool | float | int | str
 
 _LOGGER = logging.getLogger(__name__)
 
-# Exception codes that are transient for the endpoint, not evidence that any
-# register in the requested batch is unsupported.  The transport maps these to
+# Device-side responses that are transient for the endpoint, not evidence that
+# any register in the requested batch is unsupported.  The transport maps these to
 # ``ModbusException`` so the API retry loop retries them in place (exponential
 # backoff on the same connection, no reconnect, no per-register fallback, no
 # quarantine).  A hard reconnect would add socket churn without helping: the
 # tmodbus backend already retries device-busy responses internally, and codes
 # 5/10/11 are device-side states, not stale-session evidence.
+_TRANSIENT_DEVICE_ERRORS = (
+    AcknowledgeError,  # 5
+    ServerDeviceBusyError,  # 6
+    GatewayPathUnavailableError,  # 10
+    GatewayTargetError,  # 11
+)
+# The same set by code.  ``modbus-connection`` raises the typed subclass for
+# every standard code, but a bare ``ModbusExceptionError`` carrying only a code
+# must be classified identically.
 _TRANSIENT_DEVICE_EXCEPTION_CODES = frozenset({5, 6, 10, 11})
+_ILLEGAL_DATA_ADDRESS_CODE = 2
 
 _T = TypeVar("_T")
+
+
+def _exception_code(error: ModbusExceptionError) -> int | None:
+    """Return the plain integer exception code carried by a device response.
+
+    ``modbus-connection`` reports the code as an ``IntEnum`` member for the
+    standard codes.  The coordinator matches the rendered ``exception_code=<N>``
+    marker, so the integer is taken explicitly instead of relying on how the
+    enum renders itself.
+    """
+    code = error.exception_code
+    return int(code) if code is not None else None
 
 
 def _translate_backend_error(error: ModbusError, operation: str, address: int) -> Exception:
@@ -62,9 +94,10 @@ def _translate_backend_error(error: ModbusError, operation: str, address: int) -
     """
     message = f"Modbus {operation} at address {address} failed: {error}"
     if isinstance(error, ModbusExceptionError):
-        if error.exception_code == 2:
+        code = _exception_code(error)
+        if isinstance(error, IllegalDataAddressError) or code == _ILLEGAL_DATA_ADDRESS_CODE:
             return IllegalAddressError(f"Illegal Data Address (exception_code=2): {message}")
-        if error.exception_code in _TRANSIENT_DEVICE_EXCEPTION_CODES:
+        if isinstance(error, _TRANSIENT_DEVICE_ERRORS) or code in _TRANSIENT_DEVICE_EXCEPTION_CODES:
             # Acknowledge, Server Device Busy, and gateway availability errors
             # are transient for the endpoint.  Map to ModbusException so the
             # API retry loop retries in place (same connection, backoff)
@@ -73,13 +106,16 @@ def _translate_backend_error(error: ModbusError, operation: str, address: int) -
             # API 1.0 transport contract, codes 5/6/10/11 belong to the
             # retry-in-place path and must never be classified as an
             # unsupported individual register.
-            return ModbusException(f"{message} (exception_code={error.exception_code})")
-        return ModbusException(f"{message} (exception_code={error.exception_code})")
+            return ModbusException(f"{message} (exception_code={code})")
+        return ModbusException(f"{message} (exception_code={code})")
     if isinstance(error, ModbusTimeoutError):
         return TimeoutError(message)
     if isinstance(error, ModbusConnectionError):
         return ConnectionException(message)
     if isinstance(error, ModbusProtocolError):
+        # Includes ``ModbusDesyncError``: a reply that answers a different
+        # exchange, which the backend already answers by dropping the link.
+        # Retrying the same read is what the API does next, on a fresh socket.
         return ModbusIOException(message)
     return ModbusException(message)
 
@@ -105,6 +141,14 @@ class ModbusTcpEndpoint:
     slave_id: int
     timeout: float
     retries: int
+    #: Minimum pause between two requests on this link, measured from the end
+    #: of one request to the start of the next.  ``0`` disables pacing and is
+    #: the default, so an endpoint that answers back-to-back requests keeps its
+    #: current poll duration.
+    message_spacing: float = 0.0
+    #: Pause after the link is established, before the first request uses it.
+    #: Awaited on every (re-)connect, not per request.
+    connect_delay: float = 0.0
 
     def __post_init__(self) -> None:
         """Validate the static endpoint definition before any transport uses it."""
@@ -118,6 +162,10 @@ class ModbusTcpEndpoint:
             raise ValueError("timeout must be greater than 0")
         if self.retries < 0:
             raise ValueError("retries must not be negative")
+        if self.message_spacing < 0:
+            raise ValueError("message_spacing must not be negative")
+        if self.connect_delay < 0:
+            raise ValueError("connect_delay must not be negative")
 
     @property
     def connection_key(self) -> tuple[str, int, int]:
@@ -132,6 +180,8 @@ class ModbusTcpEndpoint:
             "slave_id": self.slave_id,
             "timeout": self.timeout,
             "retries": self.retries,
+            "message_spacing": self.message_spacing,
+            "connect_delay": self.connect_delay,
         }
 
 
@@ -160,6 +210,8 @@ def _create_tmodbus_connection(endpoint: ModbusTcpEndpoint) -> ModbusConnection:
     return ModbusConnection(
         ModbusTcpParams(host=endpoint.host.strip(), port=endpoint.port),
         timeout=endpoint.timeout,
+        message_spacing=endpoint.message_spacing,
+        connect_delay=endpoint.connect_delay,
     )
 
 

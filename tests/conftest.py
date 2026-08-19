@@ -6,7 +6,7 @@ import struct
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime
-from enum import Enum
+from enum import Enum, IntEnum
 from types import ModuleType
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock
@@ -137,10 +137,45 @@ def _stub_modbus_connection() -> None:
     class _ModbusProtocolError(_ModbusError):
         pass
 
+    class _ModbusDesyncError(_ModbusProtocolError):
+        pass
+
+    class _ExceptionCode(IntEnum):
+        """Mirror of the library enum, so ``exception_code`` is not a plain int."""
+
+        ILLEGAL_FUNCTION = 1
+        ILLEGAL_DATA_ADDRESS = 2
+        ILLEGAL_DATA_VALUE = 3
+        SERVER_DEVICE_FAILURE = 4
+        ACKNOWLEDGE = 5
+        SERVER_DEVICE_BUSY = 6
+        MEMORY_PARITY_ERROR = 8
+        GATEWAY_PATH_UNAVAILABLE = 10
+        GATEWAY_TARGET_DEVICE_FAILED_TO_RESPOND = 11
+
     class _ModbusExceptionError(_ModbusError):
-        def __init__(self, exception_code: int | None, message: str | None = None) -> None:
-            self.exception_code = exception_code
-            super().__init__(message or f"Device returned Modbus exception code {exception_code}")
+        def __init__(self, exception_code: int | None = None, message: str | None = None) -> None:
+            code: int | _ExceptionCode | None = exception_code
+            if code is None:
+                code = getattr(self, "code", None)
+            if code is not None and code in _ExceptionCode._value2member_map_:
+                code = _ExceptionCode(code)
+            self.exception_code = code
+            super().__init__(message or f"Device returned Modbus exception code {code}")
+
+    def _coded_error(name: str, code: _ExceptionCode) -> type[_ModbusExceptionError]:
+        """Build one fixed-code subclass, as the library does."""
+        return type(name, (_ModbusExceptionError,), {"code": code})
+
+    _IllegalFunctionError = _coded_error("IllegalFunctionError", _ExceptionCode.ILLEGAL_FUNCTION)
+    _IllegalDataAddressError = _coded_error("IllegalDataAddressError", _ExceptionCode.ILLEGAL_DATA_ADDRESS)
+    _IllegalDataValueError = _coded_error("IllegalDataValueError", _ExceptionCode.ILLEGAL_DATA_VALUE)
+    _ServerDeviceFailureError = _coded_error("ServerDeviceFailureError", _ExceptionCode.SERVER_DEVICE_FAILURE)
+    _AcknowledgeError = _coded_error("AcknowledgeError", _ExceptionCode.ACKNOWLEDGE)
+    _ServerDeviceBusyError = _coded_error("ServerDeviceBusyError", _ExceptionCode.SERVER_DEVICE_BUSY)
+    _MemoryParityError = _coded_error("MemoryParityError", _ExceptionCode.MEMORY_PARITY_ERROR)
+    _GatewayPathUnavailableError = _coded_error("GatewayPathUnavailableError", _ExceptionCode.GATEWAY_PATH_UNAVAILABLE)
+    _GatewayTargetError = _coded_error("GatewayTargetError", _ExceptionCode.GATEWAY_TARGET_DEVICE_FAILED_TO_RESPOND)
 
     class _ModbusUnit:
         def __init__(self, connection: "_ModbusConnection", unit_id: int) -> None:
@@ -161,10 +196,18 @@ def _stub_modbus_connection() -> None:
             raise _ModbusConnectionError("test Modbus unit has no configured write target")
 
     class _ModbusConnection:
-        def __init__(self, params: _ModbusTcpParams, *, timeout: float = 3, message_spacing: float = 0) -> None:
+        def __init__(
+            self,
+            params: _ModbusTcpParams,
+            *,
+            timeout: float = 3,
+            message_spacing: float = 0.0,
+            connect_delay: float = 0.0,
+        ) -> None:
             self.params = params
             self.timeout = timeout
             self.message_spacing = message_spacing
+            self.connect_delay = connect_delay
             self.connected = False
             self.closed = False
 
@@ -187,7 +230,18 @@ def _stub_modbus_connection() -> None:
     modbus_connection.ClientClosedError = _ClientClosedError
     modbus_connection.ModbusTimeoutError = _ModbusTimeoutError
     modbus_connection.ModbusProtocolError = _ModbusProtocolError
+    modbus_connection.ModbusDesyncError = _ModbusDesyncError
     modbus_connection.ModbusExceptionError = _ModbusExceptionError
+    modbus_connection.ExceptionCode = _ExceptionCode
+    modbus_connection.IllegalFunctionError = _IllegalFunctionError
+    modbus_connection.IllegalDataAddressError = _IllegalDataAddressError
+    modbus_connection.IllegalDataValueError = _IllegalDataValueError
+    modbus_connection.ServerDeviceFailureError = _ServerDeviceFailureError
+    modbus_connection.AcknowledgeError = _AcknowledgeError
+    modbus_connection.ServerDeviceBusyError = _ServerDeviceBusyError
+    modbus_connection.MemoryParityError = _MemoryParityError
+    modbus_connection.GatewayPathUnavailableError = _GatewayPathUnavailableError
+    modbus_connection.GatewayTargetError = _GatewayTargetError
 
     exceptions_mod = ModuleType("modbus_connection.exceptions")
     sys.modules["modbus_connection.exceptions"] = exceptions_mod
@@ -197,7 +251,18 @@ def _stub_modbus_connection() -> None:
         "ClientClosedError",
         "ModbusTimeoutError",
         "ModbusProtocolError",
+        "ModbusDesyncError",
         "ModbusExceptionError",
+        "ExceptionCode",
+        "IllegalFunctionError",
+        "IllegalDataAddressError",
+        "IllegalDataValueError",
+        "ServerDeviceFailureError",
+        "AcknowledgeError",
+        "ServerDeviceBusyError",
+        "MemoryParityError",
+        "GatewayPathUnavailableError",
+        "GatewayTargetError",
     ):
         setattr(exceptions_mod, name, getattr(modbus_connection, name))
 

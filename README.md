@@ -131,7 +131,7 @@ before publishing a stable release.
 - IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502)
 - Optional local Navigator web PIN for additional read-only web diagnostics
 - Python 3.13+ (provided by Home Assistant)
-- `modbus-connection==4.0.0a3` · `tmodbus==0.5.0` (direct Modbus socket runtime)
+- `modbus-connection==4.8.1` · `tmodbus[async-serial]==0.5.1` (direct Modbus socket runtime)
 - `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==1.0.1` (temporarily pinned API compatibility dependencies)
 
 ---
@@ -161,7 +161,7 @@ Home Assistant
     |       |
     |       +-- IdmModbusConnectionClient (device logic from idm-heatpump-api)
     |       |       |
-    |       |       +-- modbus-connection 4.0.0a3 + tmodbus 0.5.0
+    |       |       +-- modbus-connection 4.8.1 + tmodbus 0.5.1
     |       |               |
     |       |               +-- IDM Navigator 2.0 / 10 / Pro (Modbus TCP, Port 502)
     |       |
@@ -183,7 +183,7 @@ Home Assistant
 - **Value safety**: declared unavailable sentinels are treated as unused; implausible batch values are verified individually and quarantined for the client session
 - **Data types**: FLOAT (IEEE 754), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers are tracked and protected from excessive writing
-- **Direct local transport**: raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.0.0a3` and `tmodbus==0.5.0` runtime; version 4.0.0a3 is the transport library version, not the IDM integration version
+- **Direct local transport**: raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.8.1` and `tmodbus[async-serial]==0.5.1` runtime; version 4.8.1 is the transport library version, not the IDM integration version
 - **API compatibility**: `idm-heatpump-api[web]==1.0.1` still supplies register metadata, batching, encoding/decoding, model detection and write safety; `pymodbus>=3.12.1,<4.0` remains temporarily installed because that API release still imports it, but it no longer owns the direct socket
 - **Auto-recovery**: API retry/backoff policy plus reconnect-on-demand in the tmodbus-backed connection
 - **Library-powered**: All register definitions sourced from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools

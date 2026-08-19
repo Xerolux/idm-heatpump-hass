@@ -157,6 +157,8 @@
             "data": {
               "modbus_timeout": "Antwort-Timeout",
               "modbus_retries": "Wiederholungen",
+              "modbus_message_spacing": "Pause zwischen Anfragen (Sekunden)",
+              "modbus_connect_delay": "Pause nach Verbindungsaufbau (Sekunden)",
               "eeprom_write_interval": "EEPROM-Schreibschutz (Sekunden)",
               "polling_jitter": "Polling-Jitter (%)",
               "communication_diagnostics": "Erweiterte Kommunikationsdiagnose",
@@ -165,6 +167,8 @@
             "data_description": {
               "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-Antwort.",
               "modbus_retries": "Wiederholungen mit exponentiellem Backoff, bevor ein Abfragezyklus fehlschlägt.",
+              "modbus_message_spacing": "Mindestpause zwischen zwei Modbus-Anfragen, gemessen vom Ende einer Anfrage bis zum Start der nächsten. Standard 0 Sekunden: deaktiviert. Hilft bei Reglern oder Gateways, die bei dicht aufeinanderfolgenden Anfragen mit \"Gerät beschäftigt\" antworten oder Anfragen verwerfen. Die Pause gilt für jede Anfrage, ein kompletter Abfragezyklus dauert entsprechend länger.",
+              "modbus_connect_delay": "Pause nach dem Verbindungsaufbau, bevor die erste Anfrage gesendet wird. Gilt beim ersten Verbinden und bei jedem Reconnect, nicht je Anfrage. Standard 0 Sekunden: deaktiviert. Hilft bei Gateways, die nach dem Verbindungsaufbau einen Moment brauchen, bevor sie zuverlässig antworten.",
               "eeprom_write_interval": "Mindestzeit zwischen zwei Schreibvorgängen auf dasselbe EEPROM-Register (z. B. Heiz-/Kühlgrenze). Standard 60 Sekunden schützt die begrenzten EEPROM-Schreibzyklen. Dieser Schutz wirkt zusätzlich und unabhängig vom allgemeinen Schreib-Cooldown. EIN SENKEN ERFOLGT AUF EIGENES RISIKO und beschleunigt den EEPROM-Verschleiß.",
               "polling_jitter": "Fügt vor jeder Modbus-Abfrage eine zufällige Verzögerung von 0 bis zum gewählten Prozentsatz des Scanintervalls hinzu. Beispiel: Bei 10 Sekunden Scanintervall und 20 % beträgt die zusätzliche Verzögerung 0–2 Sekunden. Das verteilt gleichzeitige Abfragen mehrerer Anlagen. Standard 0 %: deaktiviert.",
               "communication_diagnostics": "Erstellt zusätzliche Diagnoseentitäten für die letzte erfolgreiche Abfrage, Abfragedauer, aufeinanderfolgende Fehler und aktive Register. Gesamtzahl der Abfragen und Fehler erscheinen als Attribute. Dafür werden keine zusätzlichen Modbus-Register gelesen. Standard: deaktiviert.",
@@ -392,6 +396,8 @@
             "data": {
               "modbus_timeout": "Antwort-Timeout",
               "modbus_retries": "Wiederholungen",
+              "modbus_message_spacing": "Pause zwischen Anfragen (Sekunden)",
+              "modbus_connect_delay": "Pause nach Verbindungsaufbau (Sekunden)",
               "eeprom_write_interval": "EEPROM-Schreibschutz (Sekunden)",
               "polling_jitter": "Polling-Jitter (%)",
               "communication_diagnostics": "Erweiterte Kommunikationsdiagnose",
@@ -400,6 +406,8 @@
             "data_description": {
               "modbus_timeout": "Maximale Wartezeit auf eine einzelne Modbus-Antwort.",
               "modbus_retries": "Wiederholungen mit exponentiellem Backoff, bevor ein Abfragezyklus fehlschlägt.",
+              "modbus_message_spacing": "Mindestpause zwischen zwei Modbus-Anfragen, gemessen vom Ende einer Anfrage bis zum Start der nächsten. Standard 0 Sekunden: deaktiviert. Hilft bei Reglern oder Gateways, die bei dicht aufeinanderfolgenden Anfragen mit \"Gerät beschäftigt\" antworten oder Anfragen verwerfen. Die Pause gilt für jede Anfrage, ein kompletter Abfragezyklus dauert entsprechend länger.",
+              "modbus_connect_delay": "Pause nach dem Verbindungsaufbau, bevor die erste Anfrage gesendet wird. Gilt beim ersten Verbinden und bei jedem Reconnect, nicht je Anfrage. Standard 0 Sekunden: deaktiviert. Hilft bei Gateways, die nach dem Verbindungsaufbau einen Moment brauchen, bevor sie zuverlässig antworten.",
               "eeprom_write_interval": "Mindestzeit zwischen zwei Schreibvorgängen auf dasselbe EEPROM-Register (z. B. Heiz-/Kühlgrenze). Standard 60 Sekunden schützt die begrenzten EEPROM-Schreibzyklen. Dieser Schutz wirkt zusätzlich und unabhängig vom allgemeinen Schreib-Cooldown. EIN SENKEN ERFOLGT AUF EIGENES RISIKO und beschleunigt den EEPROM-Verschleiß.",
               "polling_jitter": "Fügt vor jeder Modbus-Abfrage eine zufällige Verzögerung von 0 bis zum gewählten Prozentsatz des Scanintervalls hinzu. Beispiel: Bei 10 Sekunden Scanintervall und 20 % beträgt die zusätzliche Verzögerung 0–2 Sekunden. Das verteilt gleichzeitige Abfragen mehrerer Anlagen. Standard 0 %: deaktiviert.",
               "communication_diagnostics": "Erstellt zusätzliche Diagnoseentitäten für die letzte erfolgreiche Abfrage, Abfragedauer, aufeinanderfolgende Fehler und aktive Register. Gesamtzahl der Abfragen und Fehler erscheinen als Attribute. Dafür werden keine zusätzlichen Modbus-Register gelesen. Standard: deaktiviert.",

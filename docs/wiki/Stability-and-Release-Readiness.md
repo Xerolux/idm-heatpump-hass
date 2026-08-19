@@ -8,7 +8,7 @@ a normal changelog.
 
 Integration `0.11.0` (stable) and `idm-heatpump-api` `1.0.1` form the current
 exactly pinned integration/API pair. `0.11.0` additionally pins
-`modbus-connection==4.0.0a3` and `tmodbus==0.5.0` for the direct socket.
+`modbus-connection==4.8.1` and `tmodbus[async-serial]==0.5.1` for the direct socket.
 `idm-heatpump-api` `1.0.1` is a patch release over `1.0.0` (two internal bug
 fixes: a raw `AttributeError` now surfaces as `ConnectionException` when a
 pre-1.0 reset pattern hits `connect()`, and write exception code 2 is

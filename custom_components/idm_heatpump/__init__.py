@@ -52,7 +52,9 @@ from .const import (
     CONF_HUMIDITY_FORWARDING_ENTITY,
     CONF_HUMIDITY_FORWARDING_INTERVAL,
     CONF_HUMIDITY_FORWARDING_TOLERANCE,
+    CONF_MODBUS_CONNECT_DELAY,
     CONF_MODBUS_MAX_RETRIES,
+    CONF_MODBUS_MESSAGE_SPACING,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
     CONF_POLLING_JITTER,
@@ -82,7 +84,9 @@ from .const import (
     DEFAULT_HUMIDITY_FORWARDING,
     DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
     DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
+    DEFAULT_MODBUS_CONNECT_DELAY,
     DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_MESSAGE_SPACING,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_POLLING_JITTER,
     DEFAULT_ROOM_TEMP_FORWARDING,
@@ -598,6 +602,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     )
     modbus_timeout = float(entry.options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT))
     modbus_max_retries = int(entry.options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES))
+    modbus_message_spacing = float(entry.options.get(CONF_MODBUS_MESSAGE_SPACING, DEFAULT_MODBUS_MESSAGE_SPACING))
+    modbus_connect_delay = float(entry.options.get(CONF_MODBUS_CONNECT_DELAY, DEFAULT_MODBUS_CONNECT_DELAY))
     polling_jitter = int(entry.options.get(CONF_POLLING_JITTER, DEFAULT_POLLING_JITTER))
     write_cooldown = float(entry.options.get(CONF_WRITE_COOLDOWN, DEFAULT_WRITE_COOLDOWN))
     eeprom_write_interval = float(entry.options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL))
@@ -641,6 +647,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         slave_id=slave_id,
         timeout=modbus_timeout,
         max_retries=modbus_max_retries,
+        message_spacing=modbus_message_spacing,
+        connect_delay=modbus_connect_delay,
     )
     # Apply the per-entry EEPROM write interval (power-user override; default
     # stays 60s to protect the EEPROM's limited write cycles).

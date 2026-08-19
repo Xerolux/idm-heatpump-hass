@@ -42,8 +42,8 @@
 
 **HA:** 2026.8.1+
 **Python:** 3.13+
-**modbus-connection:** modbus-connection==4.0.0a3
-**tmodbus:** tmodbus==0.5.0
+**modbus-connection:** modbus-connection==4.8.1
+**tmodbus:** tmodbus[async-serial]==0.5.1
 **pymodbus compatibility:** pymodbus>=3.12.1,<4.0
 **idm-heatpump-api[web]:** idm-heatpump-api[web]==1.0.1
 

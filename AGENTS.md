@@ -12,7 +12,7 @@ This file provides guidance for AI assistants working on this codebase.
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
 - **Python**: 3.13+
-- **Direct Modbus Runtime**: `modbus-connection==4.0.0a3`, `tmodbus==0.5.0`
+- **Direct Modbus Runtime**: `modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.1`
 - **Compatibility Dependencies**: `pymodbus>=3.12.1,<4.0`, `idm-heatpump-api[web]==1.0.1` (pymodbus is temporarily required because the pinned API still imports it)
 
 ---
@@ -242,7 +242,7 @@ ruff check custom_components tests
 - Bump version there before creating a release and update `CHANGELOG.md`
 - Pin the `idm-heatpump-api` requirement for every released integration version to the exact PyPI version that is current at release time or has been explicitly tested for that release. Do not publish a release with an open-ended API lower bound such as `idm-heatpump-api>=x.y.z`; the integration release and API version must remain a reproducible pair.
 - When updating to a newer `idm-heatpump-api`, verify compatibility before widening or changing the pin, then document the tested API version in the changelog/release notes.
-- Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.0.0a3` is the `modbus-connection` library version, not the integration version. Do not add the `tmodbus` extra for this TCP-only integration; the backend is pinned directly so the serial-only `serialx` dependency is not installed unnecessarily.
+- Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.8.1` is the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
 - Do not remove the pymodbus compatibility pin until the pinned `idm-heatpump-api` version no longer imports it and the adapter's error contract has been updated and tested.
 
 ---

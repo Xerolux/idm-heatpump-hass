@@ -101,7 +101,7 @@ dürfen in Planung und Diagnose nicht miteinander verwechselt werden.
 - [x] Backend-neutralen Transportvertrag mit FC03, FC04, FC16,
   Endpoint-Validierung und redigierten Capabilities implementieren.
 - [x] `IdmModbusConnectionClient` als produktiven Adapter verdrahten und rohe
-  I/O über `modbus-connection==4.0.0a3` sowie `tmodbus==0.5.0`
+  I/O über `modbus-connection==4.8.1` sowie `tmodbus[async-serial]==0.5.1`
   ausführen. Der Pfad wird erstmals mit `0.11.0-beta.1` ausgeliefert.
 - [x] `idm-heatpump-api[web]==1.0.1` für Gerätelogik und
   `pymodbus>=3.12.1,<4.0` vorübergehend für dessen Imports/Fehlervertrag

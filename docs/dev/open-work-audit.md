@@ -19,8 +19,8 @@ Transporteigenschaft als abgeschlossen auszugeben.
 - Verdrahteter `IdmModbusConnectionClient` mit backend-neutralem
   Modbus-Transportvertrag, Endpoint-Validierung, Konfliktkennung und
   privacy-sicheren Diagnose-Helfern.
-- Direkter Socket über `modbus-connection==4.0.0a3` und den separat
-  gepinnten Backend-Stand `tmodbus==0.5.0`; die erste ausliefernde
+- Direkter Socket über `modbus-connection==4.8.1` und den separat
+  gepinnten Backend-Stand `tmodbus[async-serial]==0.5.1`; die erste ausliefernde
   Integrationsversion ist `0.11.0-beta.1`.
 - API-Gerätelogik bleibt bei `idm-heatpump-api[web]==1.0.1`. Der
   Pymodbus-Pin bleibt nur vorübergehend bestehen, weil `idm_heatpump.client`

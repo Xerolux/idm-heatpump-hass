@@ -562,18 +562,29 @@ def get_idm_client(
     slave_id: int = 1,
     timeout: float | None = None,
     max_retries: int | None = None,
+    message_spacing: float | None = None,
+    connect_delay: float | None = None,
 ) -> LibIdmModbusClient:
     """Factory that returns a properly typed client from the library.
 
     ``timeout`` and ``max_retries`` are passed through when supplied so the
     HA integration can tune them per config entry. They default to the
     library's own defaults (10 s and 3 retries) when ``None``.
+
+    ``message_spacing`` and ``connect_delay`` tune the connection-wide pacing of
+    the underlying ``modbus-connection`` link: the minimum pause between two
+    requests and the pause after every (re-)connect. Both stay unpaced (0 s)
+    when ``None``.
     """
     kwargs: dict[str, Any] = {}
     if timeout is not None:
         kwargs["timeout"] = float(timeout)
     if max_retries is not None:
         kwargs["max_retries"] = int(max_retries)
+    if message_spacing is not None:
+        kwargs["message_spacing"] = float(message_spacing)
+    if connect_delay is not None:
+        kwargs["connect_delay"] = float(connect_delay)
     return IdmModbusConnectionClient(host=host, port=port, slave_id=slave_id, **kwargs)
 
 

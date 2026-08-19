@@ -141,6 +141,22 @@ def test_get_idm_client_omits_unset_optional_params() -> None:
 
     assert "timeout" not in captured
     assert "max_retries" not in captured
+    assert "message_spacing" not in captured
+    assert "connect_delay" not in captured
+
+
+def test_get_idm_client_forwards_connection_pacing() -> None:
+    """Per-entry pacing must reach the library client as connection settings."""
+    captured: dict = {}
+
+    def _fake_client(*args: object, **kwargs: object) -> None:
+        captured.update(kwargs)
+
+    with patch("custom_components.idm_heatpump.library_adapter.IdmModbusConnectionClient", side_effect=_fake_client):
+        get_idm_client(host="10.0.0.5", message_spacing=0.1, connect_delay=2.0)
+
+    assert captured["message_spacing"] == 0.1
+    assert captured["connect_delay"] == 2.0
 
 
 def test_integer_register_numbers_use_whole_number_steps() -> None:
