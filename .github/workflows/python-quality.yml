@@ -105,6 +105,12 @@ jobs:
       - name: Type check with mypy
         run: mypy custom_components/idm_heatpump
 
+      # English is the contract for everything the project publishes about
+      # itself; see docs/RELEASE_PROCESS.md, "Language".  The test suite fails on
+      # this too, but a separate step names the reason in the job list.
+      - name: Check documentation language
+        run: python scripts/check_documentation_language.py
+
       - name: Run unit tests
         run: |
           pytest tests/ \

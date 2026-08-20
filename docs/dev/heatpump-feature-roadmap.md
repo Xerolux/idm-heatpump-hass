@@ -1,196 +1,193 @@
 # IDM Heatpump Feature Roadmap
 
-Stand: 18.08.2026
+Last updated: 2026-08-18
 
-Dieses Dokument bündelt die nächsten sicheren und sinnvollen Arbeitspakete für
-`idm-heatpump-hass`. Der Fokus liegt auf lokaler Funktion, nachvollziehbarem
-Verhalten, Schutz der Anlage und einer Architektur, die spätere Home-Assistant-
-Änderungen beim Modbus-Transport aufnehmen kann.
+This document collects the next safe and worthwhile work packages for
+`idm-heatpump-hass`. The focus is local functionality, comprehensible behavior,
+protection of the installation, and an architecture that can absorb later Home
+Assistant changes to the Modbus transport.
 
-## Leitprinzipien
+## Guiding principles
 
-- **Lokal zuerst:** Keine Cloud-Abhängigkeiten und keine externen Laufzeit-APIs.
-- **Sicher vor komfortabel:** Jede schreibende Funktion braucht klare Register,
-  Grenzwerte, Wiederherstellung und Tests.
-- **Keine geschätzten Messwerte als Fakten:** Abgeleitete Werte werden klar als
-  Analyse- oder berechnete Sensoren gekennzeichnet.
-- **Register gehören in die API:** Gerätewissen, Datentypen und Adressen bleiben
-  in `idm-heatpump-api` oder in zentralen Adapter-/Konstantenmodulen, nicht in
-  Plattformdateien.
-- **Bestehende Installationen schützen:** Unique IDs, Entity-Registry-Entscheide
-  und Nutzeroptionen bleiben migrationssicher; Details stehen im
-  Entity-Registry-Migrationsvertrag.
-- **Transportgrenzen beibehalten:** Der direkte Socket läuft über den
-  implementierten `modbus-connection`-/tmodbus-Adapter. Gerätelogik bleibt in
-  `idm-heatpump-api`; zentrales Entry-übergreifendes Sharing wird erst mit
-  einem stabilen Home-Assistant-Vertrag ergänzt.
+- **Local first:** no cloud dependencies and no external runtime APIs.
+- **Safe before convenient:** every writing feature needs clear registers,
+  limits, restoration and tests.
+- **No estimated readings as facts:** derived values are clearly marked as
+  analysis or calculated sensors.
+- **Registers belong in the API:** device knowledge, data types and addresses
+  stay in `idm-heatpump-api` or in central adapter/constant modules, not in
+  platform files.
+- **Protect existing installations:** unique IDs, entity registry decisions and
+  user options stay migration-safe; the details are in the entity registry
+  migration contract.
+- **Keep the transport boundaries:** the direct socket runs through the
+  implemented `modbus-connection`/tmodbus adapter. Device logic stays in
+  `idm-heatpump-api`; central cross-entry sharing is only added once Home
+  Assistant offers a stable contract.
 
-## Phasenplan
+## Phase plan
 
-### Phase 1 – Nutzwert ohne Anlagenrisiko
+### Phase 1 – value without risk to the installation
 
-Diese Arbeitspakete sind bevorzugt, weil sie hauptsächlich dokumentieren,
-visualisieren oder vorhandene Analysewerte sichtbar machen.
+These work packages come first because they mostly document, visualize or
+surface analysis values that already exist.
 
-- [x] Betriebsanalyse als Sensoren bereitstellen:
-  - erfasste Wärmepumpentakte,
-  - heutige und kurzzeitige Takte,
-  - aktuelle, letzte und durchschnittliche Taktlaufzeit,
-  - Abtauzähler,
-  - Betriebsanteile.
-- [x] Kurz-Takt-Warnung als Problemsensor bereitstellen.
-- [x] Navigator-Webzustände als echte Binary-Sensoren bereitstellen.
-- [x] Device-Hierarchy für große Anlagen optional bereitstellen.
-- [x] Entity-bewusstes Polling verwenden, damit nicht aktivierte Expertenwerte
-  nicht unnötig gelesen werden.
-- [x] Dashboard-Beispiele für Übersicht, Warmwasser, Energie und Diagnose
-  als getrennte, konservative Startpunkte ergänzen.
-- [x] Entity-Katalog konsequent in Basis, Erweitert und Diagnose/Experte
-  klassifizieren; API-weite Erweiterung bleibt dokumentiert offen.
-- [x] Entity-Metadatenkatalog automatisiert aus HA-Metadaten erzeugen;
-  API-weite Entity-Dokumentation bleibt als nächster Ausbau offen.
+- [x] Publish the operation analysis as sensors:
+  - recorded heat pump cycles,
+  - today's and short-term cycles,
+  - current, last and average cycle runtime,
+  - defrost counter,
+  - operating shares.
+- [x] Publish the short-cycle warning as a problem sensor.
+- [x] Publish the Navigator web states as real binary sensors.
+- [x] Offer the device hierarchy for large installations as an option.
+- [x] Use entity-aware polling so that expert values which are not enabled are
+  not read unnecessarily.
+- [x] Add dashboard examples for overview, domestic hot water, energy and
+  diagnostics as separate, conservative starting points.
+- [x] Classify the entity catalog consistently into basic, advanced and
+  diagnostic/expert; the API-wide extension stays documented as open.
+- [x] Generate the entity metadata catalog automatically from HA metadata; the
+  API-wide entity documentation stays open as the next step.
 
-### Phase 2 – Komfortfunktionen mit Schutzmechanismen
+### Phase 2 – convenience features with protection mechanisms
 
-Schreibende Komfortfunktionen sind nur zulässig, wenn sie deterministisch,
-begrenzt und wiederherstellbar sind.
+Writing convenience features are only permitted when they are deterministic,
+bounded and recoverable.
 
-- [x] Sicherer Warmwasser-Boost:
-  - Start nur bei vorhandenen und schreibbaren Registern,
-  - Zieltemperatur- und Laufzeitgrenzen,
-  - Persistenz vor dem ersten Schreibvorgang,
-  - Rollback bei Startfehlern,
-  - Wiederherstellung bei Abbruch, Timeout, Zielerreichung und Neustart.
-- [x] Raumtemperatur-Weiterleitung an GLT-Register:
-  - nur konfigurierte HA-Sensoren,
-  - Grenzwertprüfung aus Registermetadaten,
-  - Toleranz gegen Schreibrauschen,
-  - zyklische und ereignisbasierte Aktualisierung.
-- [x] Dokumentierte PV-/GLT-Beispiele mit Ownership-Hinweis und
-  Schreibschutzempfehlungen.
-- [ ] PV-/Smart-Grid-Assistent erst nach zusätzlicher Sicherheitsprüfung:
-  - eindeutiger Registerbesitz,
-  - Mindestlaufzeiten,
-  - Hysterese,
-  - Schreibintervallbegrenzung,
-  - keine Konkurrenz zu vorhandenen Energie-Managern.
-- [x] Heizkurven-UX:
-  - Min/Max liefert `idm-heatpump-api` je Register (`min_val`/`max_val`) und
-    wird unverändert übernommen; die Integration dupliziert keine Gerätegrenzen.
-  - Schrittweite der Heizkurve auf 0,1 korrigiert. Als FLOAT-Register bekam sie
-    die Standardschrittweite 0,5, obwohl ihr Bereich 0,1–3,5 beträgt — übliche
-    Werte wie 0,3 lagen zwischen zwei Schritten.
-  - `heating_curve`, `parallel_shift`, `setpoint_flow_constant` und
-    `setpoint_flow_cooling` entstehen für neue Installationen deaktiviert.
-    Bestehende Entitäten bleiben unverändert.
-  - Gruppierung über ein Dashboard-Beispiel je Heizkreis
-    (`docs/examples/dashboard-idm-heating-circuit.yaml`); die Geräteseite in
-    Home Assistant sortiert alphabetisch und kennt keine Untergruppen.
+- [x] Safe domestic hot water boost:
+  - start only when the registers exist and are writable,
+  - target temperature and runtime limits,
+  - persistence before the first write,
+  - rollback on start failures,
+  - restoration on cancel, timeout, target reached and restart.
+- [x] Room temperature forwarding to building-management registers:
+  - configured HA sensors only,
+  - limit checks from register metadata,
+  - tolerance against write noise,
+  - cyclic and event-based updates.
+- [x] Documented PV/building-management examples with an ownership note and
+  write protection recommendations.
+- [ ] PV/smart grid assistant only after an additional safety review:
+  - unambiguous register ownership,
+  - minimum runtimes,
+  - hysteresis,
+  - write interval limiting,
+  - no competition with existing energy managers.
+- [x] Heating curve UX:
+  - `idm-heatpump-api` supplies min/max per register (`min_val`/`max_val`) and
+    it is adopted unchanged; the integration does not duplicate device limits.
+  - The heating curve step was corrected to 0.1. As a FLOAT register it got the
+    default step of 0.5, even though its range is 0.1–3.5 — common values such
+    as 0.3 fell between two steps.
+  - `heating_curve`, `parallel_shift`, `setpoint_flow_constant` and
+    `setpoint_flow_cooling` are created disabled for new installations. Existing
+    entities stay unchanged.
+  - Grouping through a dashboard example per heating circuit
+    (`docs/examples/dashboard-idm-heating-circuit.yaml`); the device page in
+    Home Assistant sorts alphabetically and has no sub-groups.
 
-### Phase 3 – Architektur und Home-Assistant-Modbus-Zukunft
+### Phase 3 – architecture and the future of Modbus in Home Assistant
 
-Der lokale Adapter ist umgesetzt und der direkte Socket verwendet tmodbus.
-Home Assistants zentraler Vertrag für Entry-übergreifendes Sharing steht Custom
-Integrations dagegen weiterhin nicht stabil zur Verfügung. Diese beiden Ebenen
-dürfen in Planung und Diagnose nicht miteinander verwechselt werden.
+The local adapter is implemented and the direct socket uses tmodbus. Home
+Assistant's central contract for cross-entry sharing, by contrast, is still not
+stably available to custom integrations. These two levels must not be confused
+in planning or in diagnostics.
 
-- [x] Aktuelle Integration bleibt über `idm-heatpump-api` und den zentralen
-  Coordinator gekapselt.
-- [x] Plattformdateien führen keine direkten Modbus-Transporte ein.
-- [x] Manifest pinnt die getestete API-Version reproduzierbar.
-- [x] Backend-neutralen Transportvertrag mit FC03, FC04, FC16,
-  Endpoint-Validierung und redigierten Capabilities implementieren.
-- [x] `IdmModbusConnectionClient` als produktiven Adapter verdrahten und rohe
-  I/O über `modbus-connection==4.8.1` sowie `tmodbus[async-serial]==0.5.1`
-  ausführen. Der Pfad wird erstmals mit `0.11.0-beta.1` ausgeliefert.
-- [x] `idm-heatpump-api[web]==1.0.1` für Gerätelogik und
-  `pymodbus>=3.12.1,<4.0` vorübergehend für dessen Imports/Fehlervertrag
-  beibehalten; Pymodbus besitzt nicht den direkten Socket.
-- [x] Pro Entry privaten Socket-Besitz und fehlendes zentrales Sharing als
-  `owns_socket=True` / `supports_shared_connection=False` diagnostizieren.
-- [ ] Den neuen tmodbus-Pfad read-only an realer Navigator-Hardware validieren;
-  keine Schreibtests ohne ausdrückliche Freigabe.
-- [x] `idm-heatpump-api` transportneutral strukturieren und einen
-  öffentlichen I/O-Vertrag bereitstellen: seit `1.0.1` exportiert die API das
-  zur Laufzeit prüfbare Protocol `IdmModbusTransport`, und `IdmModbusClient`
-  nimmt den Transport über den öffentlichen Parameter `transport=` entgegen.
-  Registermodell, Encoding/Decoding, Batchplanung und Fehlerklassifikation
-  bleiben in der API.
-- [ ] Den Pymodbus-Kompatibilitätspin entfernen. Er hängt nicht mehr am
-  Transportvertrag, sondern allein daran, dass `idm_heatpump.client` `pymodbus`
-  auf Modulebene importiert — unabhängig vom injizierten Transport.
-- [x] Das Component-/Planungsmodul von `modbus-connection`
-  (`modbus_connection.model`) als Ersatz für Batching und Decoding in
-  `idm-heatpump-api` bewerten. Ergebnis: nicht umsetzen — die Registerkarte
-  passt vollständig (586/586 Datenpunkte, 0 Decoding-Abweichungen), aber die
-  Leseplanung führt die drei dokumentierten logischen Überlappungen zu einer
-  Anfrage zusammen, die laut Registerinvarianten einzeln angefragt werden
-  müssen. Messung und Neubewertungskriterium:
-  `docs/dev/component-model-evaluation.md`.
-- [ ] Einen zusätzlichen zentralen Home-Assistant-Connection-Provider erst
-  implementieren, wenn die Schnittstelle für Custom Integrations stabil
-  dokumentiert ist.
-- [ ] Migration bestehender Nutzer separat planen, falls ein zentrales
-  Shared-Connection-Modell später stabil empfohlen wird.
+- [x] The current integration stays encapsulated behind `idm-heatpump-api` and
+  the central coordinator.
+- [x] Platform files do not introduce direct Modbus transports.
+- [x] The manifest pins the tested API version reproducibly.
+- [x] Implement a backend-neutral transport contract with FC03, FC04, FC16,
+  endpoint validation and redacted capabilities.
+- [x] Wire up `IdmModbusConnectionClient` as the production adapter and run raw
+  I/O through `modbus-connection==4.8.1` and `tmodbus[async-serial]==0.5.1`. The
+  path ships for the first time with `0.11.0-beta.1`.
+- [x] Keep `idm-heatpump-api[web]==1.0.1` for device logic and
+  `pymodbus>=3.12.1,<4.0` temporarily for its imports and error contract;
+  pymodbus does not own the direct socket.
+- [x] Diagnose the private per-entry socket ownership and the missing central
+  sharing as `owns_socket=True` / `supports_shared_connection=False`.
+- [ ] Validate the new tmodbus path read-only on real Navigator hardware; no
+  write tests without an explicit authorization.
+- [x] Structure `idm-heatpump-api` transport-neutrally and provide a public I/O
+  contract: since `1.0.1` the API exports the runtime-checkable protocol
+  `IdmModbusTransport`, and `IdmModbusClient` accepts the transport through the
+  public parameter `transport=`. The register model, encoding/decoding, batch
+  planning and error classification stay in the API.
+- [ ] Remove the pymodbus compatibility pin. It no longer depends on the
+  transport contract, only on `idm_heatpump.client` importing `pymodbus` at
+  module level — independently of the injected transport.
+- [x] Evaluate the component/planning module of `modbus-connection`
+  (`modbus_connection.model`) as a replacement for batching and decoding in
+  `idm-heatpump-api`. Result: do not implement — the register map fits
+  completely (586/586 data points, 0 decoding deviations), but the read planning
+  merges the three documented logical overlaps into one request, while the
+  register invariants require them to be requested individually. Measurement and
+  re-evaluation criterion: `docs/dev/component-model-evaluation.md`.
+- [ ] Only implement an additional central Home Assistant connection provider
+  once the interface is stably documented for custom integrations.
+- [ ] Plan the migration of existing users separately, should a central
+  shared-connection model later be stably recommended.
 
-## Sicherheitsregeln für alle neuen Schreibfunktionen
+## Safety rules for all new write features
 
-Jede neue Schreibfunktion muss folgende Kriterien erfüllen:
+Every new write feature must meet these criteria:
 
-1. Das Register ist bekannt, schreibbar und zentral definiert.
-2. Werte werden gegen Register-Metadaten oder konservative Integrationsgrenzen
-   validiert.
-3. Schnell schwankende Eingangswerte werden gedrosselt oder hysteresegeführt.
-4. Bei temporären Betriebsänderungen wird der vorherige Zustand vorab
-   persistent gespeichert.
-5. Fehler führen zu klaren Home-Assistant-Fehlern, nicht zu stillen Abbrüchen.
-6. Tests decken Erfolg, ungültige Werte, Kommunikationsfehler, Wiederherstellung
-   und Neustart-Recovery ab.
-7. Die Dokumentation erklärt Nutzen, Grenzen und mögliche Anlagenwirkungen.
+1. The register is known, writable and centrally defined.
+2. Values are validated against register metadata or conservative integration
+   limits.
+3. Rapidly changing input values are throttled or hysteresis-controlled.
+4. For temporary operating changes, the previous state is persisted beforehand.
+5. Errors lead to clear Home Assistant errors, not to silent aborts.
+6. Tests cover success, invalid values, communication errors, restoration and
+   restart recovery.
+7. The documentation explains the benefit, the limits and the possible effects
+   on the installation.
 
-## Offene Datenpunkte vor weiteren Messwerten
+## Open data points before further readings
 
-### Momentaner COP
+### Instantaneous COP
 
-Der momentane COP ist umgesetzt, sobald zeitgleiche elektrische und thermische
-Leistungsregister verfügbar und nicht als unbenutzt markiert sind. Der Sensor
-bleibt bewusst defensiv: Bei Stillstand, fehlenden Quellen oder nicht
-belastbarer Kleinstleistung wird kein Wert veröffentlicht.
+The instantaneous COP is implemented as soon as simultaneous electrical and
+thermal power registers are available and not marked unused. The sensor stays
+deliberately defensive: while the system is idle, when sources are missing, or
+when the power is too low to be reliable, no value is published.
 
-### Vorlauf-Abweichung
+### Flow temperature deviation
 
-Auf **Heizkreisebene** ist die Abweichung umgesetzt: `hc_{x}_flow_temp` minus
-`hc_{x}_setpoint_flow_temp` vergleicht zwei Register desselben Heizkreises, und
-der von der Heizkurve berechnete Sollwert ist für diesen Heizkreis eindeutig.
-Sentinelwerte (`0.0` im Stillstand, `-1.0` bei nicht konfiguriertem Heizkreis)
-laufen über den zentralen `is_register_unused`-Filter, der Sensor meldet dann
-`unavailable`.
+At **heating circuit level** the deviation is implemented: `hc_{x}_flow_temp`
+minus `hc_{x}_setpoint_flow_temp` compares two registers of the same heating
+circuit, and the setpoint calculated by the heating curve is unambiguous for
+that circuit. Sentinel values (`0.0` while idle, `-1.0` for a heating circuit
+that is not configured) run through the central `is_register_unused` filter, and
+the sensor then reports `unavailable`.
 
-Auf **Wärmepumpenebene** bleibt der Punkt offen: Ein Sensor für
-`Ist-Vorlauf minus angeforderter Vorlauf` benötigt zuerst ein eindeutiges
-Register für den tatsächlich von der Wärmepumpe angeforderten Vorlauf-Sollwert.
-Heizkurven-, Mischer- und Maximalwerte dürfen nicht vermischt werden.
+At **heat pump level** the point stays open: a sensor for
+`actual flow minus requested flow` first needs an unambiguous register for the
+flow setpoint the heat pump actually requests. Heating curve, mixer and maximum
+values must not be mixed up.
 
-### Binärregister-Semantik
+### Binary register semantics
 
-Binärregister müssen weiter gegen reale Navigator-2.0-, Navigator-10- und
-Navigator-Pro-Anlagen geprüft werden, insbesondere bei Active-Low-, Sentinel-
-oder firmwareabhängigen Sonderwerten.
+Binary registers still have to be verified against real Navigator 2.0,
+Navigator 10 and Navigator Pro installations, in particular for active-low,
+sentinel or firmware-dependent special values.
 
-## Nächste konkrete TODOs
+## Next concrete TODOs
 
-1. Raumtemperatur je Heizkreis im Web-Supplement klären: `idm-heatpump-api`
-   mappt nur `B61` auf `room_temperature_HK_A`. Über Modbus existiert
-   `hc_{a..g}_room_temp` für alle Heizkreise, der Punkt betrifft daher allein
-   den Web-only-Modus. Ob `B62`–`B67` für die übrigen Heizkreise existieren,
-   ist unbestätigt und auf einer Anlage mit mehreren Heizkreisen messbar.
-2. Reale Diagnoseexports für Vorlauf-Abweichung und Binärregister über die
-   Field-Diagnostics-Vorlage sammeln.
-3. Den neuen tmodbus-Pfad für Setup, FC03, FC04, Verbindungsabbruch und
-   Reconnect read-only an realer Hardware validieren.
-4. Den Modulimport von `pymodbus` in `idm_heatpump.client` optional machen
-   und erst danach den Kompatibilitätspin entfernen. Der öffentliche
-   Transportvertrag steht seit API `1.0.1` und wird bereits genutzt.
-5. Den bestehenden Modbus-Issue für die offene zentrale Home-Assistant-
-   Shared-Connection sowie eine migrationssichere Provider-Implementierung
-   pflegen.
+1. Clarify the room temperature per heating circuit in the web supplement:
+   `idm-heatpump-api` only maps `B61` onto `room_temperature_HK_A`. Over Modbus
+   there is `hc_{a..g}_room_temp` for every heating circuit, so the point
+   concerns web-only mode alone. Whether `B62`–`B67` exist for the remaining
+   heating circuits is unconfirmed and measurable on an installation with
+   several heating circuits.
+2. Collect real diagnostics exports for the flow deviation and the binary
+   registers through the field diagnostics template.
+3. Validate the new tmodbus path read-only on real hardware for setup, FC03,
+   FC04, connection loss and reconnect.
+4. Make the module-level import of `pymodbus` in `idm_heatpump.client` optional
+   and only then remove the compatibility pin. The public transport contract has
+   been in place since API `1.0.1` and is already in use.
+5. Maintain the existing Modbus issue for the open central Home Assistant shared
+   connection and for a migration-safe provider implementation.

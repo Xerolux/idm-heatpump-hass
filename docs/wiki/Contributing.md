@@ -20,6 +20,14 @@ We welcome contributions to this project!
 4. Enable debug logging
 5. Restart HA
 
+## Language
+
+The project writes in English: code, comments, documentation, changelog entries,
+commit messages and pull request descriptions. German belongs only in
+`README_de.md` and in the Home Assistant `de` translations. Run
+`python scripts/check_documentation_language.py` before opening a pull request —
+`tests/test_documentation_language.py` fails the build on German prose.
+
 ## Code Style
 
 - Use [Ruff](https://docs.astral.sh/ruff/) for linting and formatting

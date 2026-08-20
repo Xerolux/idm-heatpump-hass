@@ -13,70 +13,108 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-Noch keine Änderungen.
+### Added
+
+- **English is now the contract for the project's documents.** The repository is
+  developed in a German-speaking context, and German prose kept leaking into
+  documents the whole world reads. From now on the changelog, release notes,
+  release evidence, wiki pages, developer notes, issue and pull request
+  templates, commit messages and pull request descriptions are English. German
+  stays where it is a product feature: `README_de.md` and the Home Assistant
+  `de` translations.
+  - `scripts/check_documentation_language.py` looks for German function words in
+    every covered Markdown document, after stripping code spans, fenced blocks
+    and link targets, so German identifiers and register labels inside code do
+    not trip it.
+  - `tests/test_documentation_language.py` fails the build on German prose. New
+    documents are covered by default; an exception has to be declared
+    explicitly, which is how the German pages accumulated unnoticed before.
+  - Released changelog sections stay untouched: they record what a published
+    version said at the time. The check covers the unreleased entries and the
+    section of the version the manifest carries — the text that still becomes
+    release notes.
+  - Translated with this change: the changelog entries that are still open, the
+    developer notes under `docs/dev/`, `docs/IMPLEMENTATION_TODO.md` and the
+    Navigator protocol analysis in the wiki.
+- **Automatic freshness of the runtime pins.** The exact pins make a release
+  reproducible, but nothing in the repository noticed when a pinned library
+  moved on — that is how the transport pin sat on the `modbus-connection==4.0.0a3`
+  alpha for two weeks while 4.8.1 was current. New:
+  - `scripts/check_dependency_pins.py` compares every exactly pinned requirement
+    of the manifest against PyPI. `--update` carries the transport pins forward,
+    in the manifest and in all 16 documents that state them; changelogs and
+    release evidence stay untouched as history. Pre-releases are never selected
+    automatically while the pin itself is stable.
+  - `.github/workflows/dependency-freshness.yml` runs daily, imports the real
+    `modbus_connection.tmodbus` backend on a change (exactly the test that would
+    have made the `serialx` import from 4.7.0 obvious), runs the contract tests
+    and opens a pull request.
+  - The release pipeline aborts when a pin is stale. For the deliberately
+    different case there is the workflow input `allow_stale_pins`.
+  - `tests/test_dependency_pins.py` locks the rules down, including the check
+    that no new document states the pin without being covered by the
+    automation.
 
 ## [0.15.0-beta.1] - 2026-08-19
 
-Beta-Kandidat: der Transport-Pin wandert vom Alpha-Stand
-`modbus-connection==4.0.0a3` auf `4.8.1`, dazu zwei neue, standardmäßig
-inaktive Pacing-Optionen. Weil sich damit die Laufzeitabhängigkeit des
-direkten Modbus-Sockets ändert, läuft das nach `docs/RELEASE_PROCESS.md`
-über den Pre-Release-Kanal: die Soak-Uhr für einen stabilen Tag startet mit
-diesem Kandidaten neu. Keine Breaking Changes; Unique IDs, Entity-IDs,
-Registeradressen und Schreibpfade bleiben unverändert, bestehende Config
-Entries pollen ohne Zutun exakt wie vorher.
+Beta candidate: the transport pin moves from the alpha level
+`modbus-connection==4.0.0a3` onto `4.8.1`, plus two new pacing options that are
+inactive by default. Because this changes the runtime dependency of the direct
+Modbus socket, it ships through the pre-release channel per
+`docs/RELEASE_PROCESS.md`: the soak clock for a stable tag restarts with this
+candidate. No breaking changes; unique IDs, entity IDs, register addresses and
+write paths are unchanged, and existing config entries poll exactly as before
+without any action.
 
 ### Changed
 
-- **Transport-Pin auf `modbus-connection==4.8.1` und
-  `tmodbus[async-serial]==0.5.1` angehoben** (vorher `4.0.0a3` / `0.5.0`, ein
-  Alpha-Stand). Die Bibliothek liefert seitdem eine typisierte
-  Fehlerhierarchie (`IllegalDataAddressError`, `ServerDeviceBusyError`,
-  `GatewayTargetError` …), Verbindungs-Pacing (siehe unten) und seit 4.8.0
-  `ModbusDesyncError`: antwortet eine Gegenstelle auf eine andere Anfrage als
-  die gesendete — typisch für ein Gateway, das mehrere Modbus-Clients
-  gleichzeitig bedient —, verwirft das Backend die Verbindung, statt die
-  fremde Antwort zu dekodieren. Der `tmodbus`-Extra `async-serial` ist dabei
-  nicht optional: seit `modbus-connection` 4.7.0 importiert das Backend-Modul
-  `serialx` auf Modulebene, der Import scheitert sonst. Registeradressen,
-  Unique IDs, Entity-IDs und Schreibpfade bleiben unverändert.
-- **Fehlerübersetzung im Transport nutzt die typisierten Exceptions.** Statt
-  Zahlenvergleichen auf `exception_code` klassifiziert
-  `modbus_transport.py` jetzt per `isinstance`. Der Vertrag zur API und zum
-  Coordinator bleibt exakt gleich: Code 2 wird weiterhin `IllegalAddressError`,
-  die Codes 5/6/10/11 bleiben auf dem Retry-in-Place-Pfad, und die Marker
-  `exception_code=<N>`, auf die der Coordinator seine Batch-Bisect-Logik
-  stützt, werden weiterhin als Zahl gerendert (der Code ist inzwischen ein
-  `IntEnum`). Ein Response, der nur den Zahlencode ohne passende Unterklasse
-  trägt, wird unverändert genauso eingeordnet.
+- **Transport pin raised to `modbus-connection==4.8.1` and
+  `tmodbus[async-serial]==0.5.1`** (previously `4.0.0a3` / `0.5.0`, an alpha
+  level). Since then the library provides a typed error hierarchy
+  (`IllegalDataAddressError`, `ServerDeviceBusyError`, `GatewayTargetError` …),
+  connection pacing (see below) and, since 4.8.0, `ModbusDesyncError`: when a
+  peer answers a different request than the one that was sent — typical for a
+  gateway serving several Modbus clients at once — the backend drops the
+  connection instead of decoding the foreign reply. The `tmodbus` extra
+  `async-serial` is not optional here: since `modbus-connection` 4.7.0 the
+  backend module imports `serialx` at module level, and the import fails
+  without it. Register addresses, unique IDs, entity IDs and write paths stay
+  unchanged.
+- **Error translation in the transport uses the typed exceptions.** Instead of
+  comparing `exception_code` numbers, `modbus_transport.py` now classifies with
+  `isinstance`. The contract towards the API and the coordinator stays exactly
+  the same: code 2 still becomes `IllegalAddressError`, codes 5/6/10/11 stay on
+  the retry-in-place path, and the `exception_code=<N>` markers the coordinator
+  bases its batch bisect logic on are still rendered as a number (the code is an
+  `IntEnum` by now). A response that carries only the numeric code without a
+  matching subclass is classified in exactly the same way as before.
 
 ### Added
 
-- **Zwei neue Optionen unter „Erweiterte Modbus-Einstellungen".** Beide steuern
-  das Pacing der Verbindung selbst und stehen standardmäßig auf `0`, eine
-  bestehende Installation pollt also unverändert schnell weiter:
-  - **Pause zwischen Anfragen (0–0,5 s)** — Mindestabstand vom Ende einer
-    Anfrage bis zum Start der nächsten. Für Regler oder Gateways, die bei dicht
-    aufeinanderfolgenden Anfragen „Gerät beschäftigt" melden, Anfragen verwerfen
-    oder in Timeouts laufen. Die Pause gilt je Anfrage, ein kompletter
-    Abfragezyklus dauert entsprechend länger.
-  - **Pause nach Verbindungsaufbau (0–5 s)** — einmalige Wartezeit nach jedem
-    (Wieder-)Verbinden, bevor die erste Anfrage rausgeht. Für Gateways, die eine
-    Verbindung annehmen, bevor sie antwortbereit sind.
+- **Two new options under "Advanced Modbus settings".** Both control the pacing
+  of the connection itself and are `0` by default, so an existing installation
+  keeps polling exactly as fast as before:
+  - **Pause between requests (0–0.5 s)** — the minimum gap from the end of one
+    request to the start of the next. For controllers or gateways that report
+    "device busy" on requests arriving back to back, discard requests, or run
+    into timeouts. The pause applies per request, so a complete poll cycle takes
+    correspondingly longer.
+  - **Pause after connect (0–5 s)** — a one-off wait after every (re)connect,
+    before the first request goes out. For gateways that accept a connection
+    before they are ready to answer.
 
-  Die geführten Setup-Profile setzen sie mit: „Unzuverlässiges Netzwerk"
-  auf 0,05 s Anfragepause, „Mehrere Clients" auf 0,1 s. Beide Werte erscheinen
-  außerdem im Diagnose-Export des Transports.
+  The guided setup profiles set them too: "unreliable network" uses a 0.05 s
+  request pause, "several clients" uses 0.1 s. Both values also appear in the
+  transport's diagnostics export.
 
 ### Documentation
 
-- **Component-Modell von `modbus-connection` bewertet und verworfen.** Die
-  Registerkarte passt vollständig (586 von 586 Datenpunkten, 0
-  Decoding-Abweichungen), die Leseplanung der Bibliothek führt die drei
-  dokumentierten logischen Überlappungen der offiziellen IDM-Karte aber zu je
-  einer Anfrage zusammen, die einzeln angefragt werden müssen. Messung,
-  Begründung und Neubewertungskriterium stehen in
-  `docs/dev/component-model-evaluation.md`, reproduzierbar über
+- **The `modbus-connection` component model was evaluated and rejected.** The
+  register map fits completely (586 of 586 data points, 0 decoding deviations),
+  but the library's read planning merges the three documented logical overlaps
+  of the official IDM map into one request each, while they have to be requested
+  individually. The measurement, the reasoning and the re-evaluation criterion
+  are in `docs/dev/component-model-evaluation.md`, reproducible with
   `scripts/evaluate_component_model.py`.
 
 ## [0.14.1] - 2026-08-18

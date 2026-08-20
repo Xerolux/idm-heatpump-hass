@@ -35,10 +35,10 @@ def test_entity_metadata_catalog_documents_expert_profile() -> None:
 def test_entity_registry_migration_contract_documents_user_activation_safety() -> None:
     contract = (ROOT / "docs" / "dev" / "entity-registry-migration-contract.md").read_text(encoding="utf-8")
 
-    assert "Unique IDs bleiben stabil" in contract
-    assert "Default-Profile sind nur Defaults" in contract
-    assert "Keine nachträgliche Zwangsdeaktivierung" in contract
-    assert "Keine nachträgliche Zwangsaktivierung" in contract
+    assert "Unique IDs stay stable" in contract
+    assert "Default profiles are defaults only" in contract
+    assert "No retroactive forced disabling" in contract
+    assert "No retroactive forced enabling" in contract
 
 
 def test_field_diagnostics_template_is_read_only_and_privacy_safe() -> None:
@@ -48,8 +48,8 @@ def test_field_diagnostics_template_is_read_only_and_privacy_safe() -> None:
     assert "I only collected read-only data" in template
     assert "I did not run direct `write_register` tests" in template
     assert "Redact host names" in template
-    assert "Keine Live-Schreibtests" in guide
-    assert "Datenschutz" in guide
+    assert "No live write tests" in guide
+    assert "## Privacy" in guide
 
 
 def test_modbus_transport_issue_template_keeps_runtime_guardrails() -> None:
@@ -67,8 +67,8 @@ def test_open_work_audit_separates_local_work_from_external_blockers() -> None:
     audit = (ROOT / "docs" / "dev" / "open-work-audit.md").read_text(encoding="utf-8")
 
     assert "docs/dev/open-work-audit.md" in todo
-    assert "Lokal erledigt" in audit
-    assert "Extern blockiert" in audit
-    assert "nicht veröffentlichen, nicht schätzen und keine Schreibpfade" in audit
-    assert "stabilen Vertrag für Custom\nIntegrations" in audit
+    assert "Done locally" in audit
+    assert "Externally blocked" in audit
+    assert "do not estimate, and do not change write paths" in audit
+    assert "stable contract for custom\nintegrations" in audit
     assert "supports_shared_connection=False" in audit

@@ -45,6 +45,12 @@ must be limited to documented safe registers.
 
 ## Integration Release Checklist
 
+- `python scripts/check_dependency_pins.py` — every exactly pinned runtime
+  dependency is the newest release on PyPI. The release workflow runs this and
+  fails the release when a pin is behind; `allow_stale_pins` overrides it for a
+  deliberate exception. The daily `dependency-freshness.yml` workflow proposes
+  the update as a pull request, and a runtime dependency change restarts the
+  soak clock, so it ships through the pre-release channel.
 - `pytest tests/ -v --tb=short --cov=custom_components/idm_heatpump --cov-report=term-missing`
 - `ruff check custom_components/idm_heatpump tests`
 - `ruff format custom_components/idm_heatpump tests --check`
@@ -83,10 +89,39 @@ Before removing the prerelease suffix:
 `PENDING`, `BLOCKED`, a failed required smoke step, or an unjustified `N/A` is
 an explicit stable-release blocker.
 
+## Language
+
+**Everything the project publishes about itself is written in English.** That is
+a hard rule, not a preference: the changelog, release notes, release evidence,
+the wiki, developer notes under `docs/dev/`, issue and pull request templates,
+commit messages and pull request descriptions. The repository is developed in a
+German-speaking context, so this needs saying — German prose used to leak into
+documents the whole world reads.
+
+German stays exactly where it is a product feature:
+
+- `README_de.md`, the localized counterpart of `README.md`;
+- the Home Assistant `de` translations (`translations/de.json`, German entity
+  and option labels);
+- the "Description (DE)" column of the generated register reference, which
+  carries IDM's own terminology from the official register documentation.
+
+Released changelog sections are history and stay as they were published; a
+released entry records what a version said at the time. The rule applies to the
+unreleased entries and to the section of the version the manifest carries — the
+text that still becomes release notes.
+
+`python scripts/check_documentation_language.py` reports German prose in every
+covered document, and `tests/test_documentation_language.py` fails the build on
+it. A new document is covered automatically; an exception has to be declared
+explicitly in `EXEMPT_FILES`.
+
 ## Changelog Rules
 
 Release notes must be curated by a maintainer. Do not rely only on commit
 keywords.
+
+Write them in English, per the language rule above.
 
 Each release should call out:
 

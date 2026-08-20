@@ -103,9 +103,9 @@ def _access_label(register: RegisterDef) -> str:
         return "RW · EEPROM"
     if write_class == "cyclic":
         ttl = int(register.cyclic_write_ttl or 0)
-        return f"RW · zyklisch ≤ {ttl} s" if ttl else "RW · zyklisch"
+        return f"RW · cyclic ≤ {ttl} s" if ttl else "RW · cyclic"
     if write_class == "write_only":
-        return "W · nur Schreiben"
+        return "W · write-only"
     return "RW"
 
 
@@ -122,9 +122,9 @@ def _notes(register: RegisterDef, navigator_10_only: set[str]) -> str:
     if register.enum_options:
         notes.append("Enum")
     if register.binary:
-        notes.append("Binär")
+        notes.append("Binary")
     if not register.enabled_by_default:
-        notes.append("standardmäßig deaktiviert")
+        notes.append("disabled by default")
     return ", ".join(notes) or "—"
 
 
@@ -177,8 +177,8 @@ def _build_reference() -> str:
             [
                 f"### {address_range} · {title} ({len(group_registers)})",
                 "",
-                "| Adresse(n) | Beschreibung (DE) | Registername | Typ | Einheit | Zugriff | Hinweis |",
-                "|------------|-------------------|--------------|-----|---------|---------|---------|",
+                "| Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |",
+                "|-------------|------------------|---------------|------|------|--------|------|",
             ]
         )
         for register in group_registers:

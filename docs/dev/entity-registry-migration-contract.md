@@ -1,65 +1,64 @@
 # Entity Registry Migration Contract
 
-Stand: 21.07.2026
+Last updated: 2026-07-21
 
-Dieses Dokument beschreibt den verbindlichen Schutzrahmen für zukünftige
-Entity-Profil-, Default- und Gerätehierarchie-Änderungen.
+This document describes the binding safety frame for future changes to entity
+profiles, defaults and the device hierarchy.
 
-## Ziel
+## Goal
 
-Neue Integrationsversionen dürfen bessere Defaults für neue Installationen
-setzen, aber bestehende Nutzerentscheidungen in Home Assistant nicht
-überschreiben. Das betrifft insbesondere manuell aktivierte, deaktivierte,
-umbenannte oder in Dashboards verwendete Entities.
+New integration versions may set better defaults for new installations, but they
+must not overwrite existing user decisions in Home Assistant. That applies in
+particular to entities the user has manually enabled, disabled, renamed, or used
+in dashboards.
 
-## Harte Regeln
+## Hard rules
 
-1. **Unique IDs bleiben stabil.** Register-backed Entities verwenden weiterhin
-   `{entry_id}_{register_name}`. GLT-Messwert-Numbers behalten ihr bewusstes
-   `_set`-Suffix, um Kollisionen mit Sensoren zu vermeiden.
-2. **Default-Profile sind nur Defaults.** Änderungen an
-   `entity_registry_enabled_default` gelten nur für neue Entity-Registry-Einträge
-   oder für Entities, die Home Assistant noch nicht registriert hat.
-3. **Keine nachträgliche Zwangsdeaktivierung.** Eine Migration darf bestehende
-   Entity-Registry-Einträge nicht deaktivieren, nur weil sich das Default-Profil
-   geändert hat.
-4. **Keine nachträgliche Zwangsaktivierung.** Eine Migration darf vom Nutzer
-   deaktivierte Entities nicht wieder aktivieren.
-5. **Subdevices ändern keine Unique IDs.** Gerätehierarchie darf `device_info`
-   verschieben, aber nicht die Entity-Identität ändern.
-6. **Breaking Changes brauchen Migration.** Wenn ein Entity-Key wirklich ersetzt
-   werden muss, braucht es eine explizite Entity-Registry-Migration mit Tests und
-   Changelog-Hinweis.
+1. **Unique IDs stay stable.** Register-backed entities keep using
+   `{entry_id}_{register_name}`. Building-management value numbers keep their
+   deliberate `_set` suffix to avoid collisions with sensors.
+2. **Default profiles are defaults only.** Changes to
+   `entity_registry_enabled_default` apply to new entity registry entries only,
+   or to entities Home Assistant has not registered yet.
+3. **No retroactive forced disabling.** A migration must not disable existing
+   entity registry entries just because the default profile changed.
+4. **No retroactive forced enabling.** A migration must not re-enable entities
+   the user disabled.
+5. **Sub-devices do not change unique IDs.** The device hierarchy may move
+   `device_info`, but it must not change entity identity.
+6. **Breaking changes need a migration.** When an entity key really has to be
+   replaced, it needs an explicit entity registry migration with tests and a
+   changelog note.
 
-## Erlaubt
+## Allowed
 
-- Entity-Registry-Einträge eines Heizkreises entfernen, den der Nutzer in den
-  Optionen **abgewählt** hat. Auslöser ist eine ausdrückliche
-  Konfigurationsentscheidung, kein geändertes Default — die Entitäten werden
-  ohnehin nicht mehr erzeugt und blieben sonst dauerhaft „nicht verfügbar"
-  liegen. Beim Wiederaktivieren entstehen sie unter unveränderter Unique ID neu.
-  Der Umfang ist eng: nur registergestützte Entitäten dieser Config Entry, deren
-  Registername auf einen nicht konfigurierten Heizkreis zeigt.
-- Neue generierte Expertenwerte standardmäßig deaktivieren.
-- Bestehende explizite Metadaten besser klassifizieren.
-- `entity_category`, Icon, Name oder Device Class verbessern, solange Unique ID
-  und Nutzeraktivierung erhalten bleiben.
-- Neue Diagnose-/Support-Dokumentation ergänzen.
+- Removing the entity registry entries of a heating circuit the user has
+  **deselected** in the options. The trigger is an explicit configuration
+  decision, not a changed default — the entities are no longer created anyway
+  and would otherwise stay behind permanently as "unavailable". When the circuit
+  is enabled again they are recreated under their unchanged unique ID. The scope
+  is narrow: only register-backed entities of this config entry whose register
+  name points at a heating circuit that is not configured.
+- Disabling newly generated expert values by default.
+- Classifying existing explicit metadata better.
+- Improving `entity_category`, icon, name or device class, as long as the unique
+  ID and the user's enablement are preserved.
+- Adding new diagnostics or support documentation.
 
-## Nicht erlaubt
+## Not allowed
 
-- Bestehende Unique IDs ohne Migration ändern.
-- Bestehende Entity-Registry-Einträge wegen neuer Defaults entfernen. Das
-  Entfernen abgewählter Heizkreise oben ist die einzige Ausnahme und hängt an
-  einer Nutzerentscheidung, nicht an einem Default.
-- Nutzeraktivierungen anhand des neuen Profils überschreiben.
-- Gerätehierarchie als Vorwand für neue Entity-IDs nutzen.
+- Changing existing unique IDs without a migration.
+- Removing existing entity registry entries because of new defaults. Removing
+  deselected heating circuits above is the only exception, and it depends on a
+  user decision, not on a default.
+- Overwriting user enablement based on the new profile.
+- Using the device hierarchy as a pretext for new entity IDs.
 
-## Prüfhinweise für PRs
+## Review notes for pull requests
 
-- Neue Default-Disabled-Regeln müssen Tests für aktivierte Kernwerte und
-  deaktivierte Expertenwerte enthalten.
-- Änderungen an `build_entity_unique_id`, GLT-`_set`-Suffixen oder Climate-/DHW-
-  Unique IDs brauchen fokussierte Regressionstests.
-- Doku-Generatoren dürfen Profile dokumentieren, aber keine Runtime-Migrationen
-  auslösen.
+- New default-disabled rules must contain tests for enabled core values and
+  disabled expert values.
+- Changes to `build_entity_unique_id`, building-management `_set` suffixes or
+  climate/DHW unique IDs need focused regression tests.
+- Documentation generators may document profiles, but they must not trigger
+  runtime migrations.
