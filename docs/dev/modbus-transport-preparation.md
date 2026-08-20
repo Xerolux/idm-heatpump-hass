@@ -1,69 +1,67 @@
 # Modbus Transport Preparation
 
-Stand: 04.08.2026
+Last updated: 2026-08-04
 
-Dieses Dokument beschreibt den inzwischen implementierten lokalen
-Modbus-Transport und die zwei bewusst noch offenen Schritte: read-only
-Hardware-Verifikation und eine mögliche spätere Home-Assistant-Verbindung mit
-Entry-übergreifendem Sharing.
+This document describes the local Modbus transport, which is implemented by now,
+and the two steps deliberately left open: read-only hardware verification and a
+possible later Home Assistant connection with cross-entry sharing.
 
-## Aktueller Status
+## Current status
 
-- Der direkte Modbus-TCP-Laufzeitpfad verwendet
-  `modbus-connection==4.0.0a3` und den separat exakt gepinnten Backend-
-  Stand `tmodbus==0.5.0`.
-- `IdmModbusConnectionClient` ist der produktive Client der Integration. Er
-  verwendet das Gerätemodell von `idm-heatpump-api[web]==0.9.1`, ersetzt aber
-  dessen rohe I/O-Hooks durch `ModbusConnectionTransport`.
-- `pymodbus>=3.12.1,<4.0` bleibt vorübergehend installiert, weil
-  `idm-heatpump-api` 0.9.1 Pymodbus noch importiert und dessen etablierten
-  Fehlervertrag verwendet. Pymodbus besitzt nicht mehr den direkten Socket.
-- Jede Config-Entry besitzt eine eigene tmodbus-Verbindung. Home Assistants
-  zentrale Entry-übergreifende Modbus-Verbindung steht Custom Integrations
-  derzeit nicht als stabiler Vertrag zur Verfügung; deshalb meldet der Adapter
-  ausdrücklich `supports_shared_connection=False`.
-- Es gibt keine Transportauswahl im Optionsflow und keinen parallelen
-  Pymodbus-Fallback-Pfad.
-- Die erste ausliefernde Integrationsversion ist `0.11.0-beta.1`. `4.0.0a3`
-  ist die Version der Transportbibliothek und kein IDM-Release.
+- The direct Modbus TCP runtime path uses `modbus-connection==4.0.0a3` and the
+  separately, exactly pinned backend level `tmodbus==0.5.0`.
+- `IdmModbusConnectionClient` is the integration's production client. It uses
+  the device model of `idm-heatpump-api[web]==0.9.1`, but replaces its raw I/O
+  hooks with `ModbusConnectionTransport`.
+- `pymodbus>=3.12.1,<4.0` stays installed for the time being, because
+  `idm-heatpump-api` 0.9.1 still imports pymodbus and uses its established error
+  contract. Pymodbus no longer owns the direct socket.
+- Every config entry owns its own tmodbus connection. Home Assistant's central
+  cross-entry Modbus connection is currently not available to custom
+  integrations as a stable contract, which is why the adapter explicitly reports
+  `supports_shared_connection=False`.
+- There is no transport selection in the options flow and no parallel pymodbus
+  fallback path.
+- The first integration version to ship this is `0.11.0-beta.1`. `4.0.0a3` is
+  the version of the transport library, not an IDM release.
 
-## Implementierte Schichtentrennung
+## Implemented layer separation
 
-1. **Home-Assistant-Integration**
-   - Config Flow, Coordinator, Entities, Services, Diagnostics und Repairs.
-   - `library_adapter.create_library_client()` erzeugt immer den neuen
+1. **Home Assistant integration**
+   - config flow, coordinator, entities, services, diagnostics and repairs.
+   - `library_adapter.create_library_client()` always creates the new
      `IdmModbusConnectionClient`.
 2. **idm-heatpump-api 0.9.1**
-   - Registermodell und Registerart,
-   - Batchplanung,
-   - Encoding/Decoding,
-   - Modell-/Firmware-Erkennung,
-   - Schreibsicherheitsregeln,
-   - Retry-/Backoff-Vertrag.
-3. **Lokaler Modbus-Transport**
-   - `ModbusConnectionTransport` reserviert und schließt den Socket,
-   - tmodbus führt rohe FC03-/FC04-/FC16-Operationen aus,
-   - `modbus_client.py` übersetzt Transportfehler in den bestehenden
-     API-/Coordinator-Fehlervertrag,
-   - statische Capabilities dokumentieren Quelle, Socket-Besitz und fehlendes
-     zentrales Sharing.
+   - register model and register type,
+   - batch planning,
+   - encoding/decoding,
+   - model and firmware detection,
+   - write safety rules,
+   - retry/backoff contract.
+3. **Local Modbus transport**
+   - `ModbusConnectionTransport` reserves and closes the socket,
+   - tmodbus performs raw FC03/FC04/FC16 operations,
+   - `modbus_client.py` translates transport errors into the existing
+     API/coordinator error contract,
+   - static capabilities document the source, socket ownership and the missing
+     central sharing.
 
-Der Laufzeitpfad ist damit:
+The runtime path is therefore:
 
 ```text
 IdmCoordinator
   -> IdmModbusConnectionClient
-     -> idm-heatpump-api 0.9.1 (Gerätelogik)
+     -> idm-heatpump-api 0.9.1 (device logic)
      -> ModbusConnectionTransport
         -> modbus-connection 4.0.0a3
            -> tmodbus 0.5.0
               -> IDM Navigator (TCP 502)
 ```
 
-## Transportvertrag
+## Transport contract
 
-Der Vertrag verwendet rohe Registeradressen und rohe 16-Bit-Wörter. Dadurch
-bleibt Gerätewissen in der API und nicht in der Transportklasse.
+The contract uses raw register addresses and raw 16-bit words. That keeps device
+knowledge in the API instead of in the transport class.
 
 ```python
 transport.endpoint
@@ -75,36 +73,35 @@ holding_words = await transport.async_read_holding_registers(address, count)
 await transport.async_write_registers(address, values)
 ```
 
-Input Register (Function Code 04) und Holding Register (Function Code 03)
-bleiben getrennte Leseoperationen. Schreiben verwendet Function Code 16. Der
-Adapter übernimmt jeweils die von der API vorgegebene Registerart und prüft,
-dass die Antwort die erwartete Wortanzahl enthält.
+Input registers (function code 04) and holding registers (function code 03)
+remain separate read operations. Writing uses function code 16. In each case the
+adapter takes the register type the API prescribes and verifies that the answer
+contains the expected number of words.
 
-`ModbusTcpEndpoint` validiert Host, TCP-Port, Slave-ID 1–247, positives Timeout
-und nicht negative Retries. `connection_key` liefert eine normalisierte
-`(host, port, slave_id)`-Kennung für Konfliktprüfungen.
+`ModbusTcpEndpoint` validates the host, the TCP port, slave IDs 1–247, a
+positive timeout and non-negative retries. `connection_key` returns a normalized
+`(host, port, slave_id)` identifier for conflict checks.
 
-## Verbindung und Fehlerverhalten
+## Connection and error behavior
 
-- Setup und Reconfigure verbinden bewusst sofort, damit eine ungültige
-  Zieldefinition vor dem Anlegen oder Aktualisieren der Entry auffällt.
-- Normale Operationen werden serialisiert. Nach einem Verbindungsabbruch
-  verbindet `modbus-connection` bei der nächsten Operation erneut.
-- Die API-Retry-Konfiguration und ihr exponentielles Backoff bleiben erhalten.
-- Illegal Address (Modbus Exception Code 2), Timeout, Verbindungs- und
-  Protokollfehler werden in die bestehenden API-Ausnahmen übersetzt, damit
-  Resilient Polling, Repairs und nutzerfreundliche Config-Flow-Fehler weiter
-  funktionieren.
-- Eine Entry schließt nur ihren eigenen Socket. Der Adapter behauptet weder
-  Pooling noch Entry-übergreifende Wiederverwendung.
+- Setup and reconfigure connect immediately on purpose, so that an invalid
+  target definition surfaces before the entry is created or updated.
+- Normal operations are serialized. After a dropped connection,
+  `modbus-connection` reconnects on the next operation.
+- The API retry configuration and its exponential backoff are preserved.
+- Illegal address (Modbus exception code 2), timeout, connection and protocol
+  errors are translated into the existing API exceptions, so that resilient
+  polling, repairs and user-friendly config flow errors keep working.
+- An entry closes only its own socket. The adapter claims neither pooling nor
+  cross-entry reuse.
 
-## Diagnose und Datenschutz
+## Diagnostics and privacy
 
-`ModbusTcpEndpoint.as_redacted_diagnostics()` ersetzt Host/IP durch einen festen
-Redaction-Wert. Port, Slave-ID, Timeout und Retries bleiben für die Fehlersuche
-sichtbar.
+`ModbusTcpEndpoint.as_redacted_diagnostics()` replaces host/IP with a fixed
+redaction value. Port, slave ID, timeout and retries stay visible for
+troubleshooting.
 
-Der Transportblock meldet:
+The transport block reports:
 
 ```yaml
 source: modbus_connection.tmodbus
@@ -113,41 +110,40 @@ supports_shared_connection: false
 connected: true_or_false
 ```
 
-Diagnoseexport, Startlog und der bestehende API-Versionssensor enthalten
-zusätzlich die installierten Versionen von Integration, `idm-heatpump-api`,
-`modbus-connection`, `tmodbus` und der vorübergehenden
-Pymodbus-Kompatibilitätsabhängigkeit.
+The diagnostics export, the startup log and the existing API version sensor
+additionally contain the installed versions of the integration,
+`idm-heatpump-api`, `modbus-connection`, `tmodbus` and the temporary pymodbus
+compatibility dependency.
 
-## Verifikation
+## Verification
 
-Automatisierte Tests decken Endpoint-Validierung, FC03/FC04-Trennung,
-FC16-Schreiben, Retry-/Fehlerübersetzung, Reconnect, Close-Verhalten,
-Factory-Verdrahtung, Versionsdiagnose und redigierte Capabilities ab.
+Automated tests cover endpoint validation, FC03/FC04 separation, FC16 writes,
+retry and error translation, reconnect, close behavior, factory wiring, version
+diagnostics and redacted capabilities.
 
-Noch offen ist die **read-only Hardware-Verifikation des neuen tmodbus-Pfads**
-an realen Navigator-Systemen. Frühere Hardwaremessungen belegen Register und
-Gerätelogik, wurden aber vor dieser Transportumstellung durchgeführt und
-bestätigen daher nicht automatisch den neuen Socket-Pfad. Schreibtests an
-realen Anlagen bleiben ohne ausdrückliche Freigabe ausgeschlossen.
+Still open is the **read-only hardware verification of the new tmodbus path** on
+real Navigator systems. Earlier hardware measurements prove registers and device
+logic, but they were taken before this transport change and therefore do not
+automatically confirm the new socket path. Write tests on real systems remain
+excluded without an explicit authorization.
 
-## Verbleibende Arbeit
+## Remaining work
 
-1. Setup, FC03, FC04, Verbindungsabbruch und Reconnect read-only gegen reale
-   Navigator-Hardware prüfen und Firmware/Modell dokumentieren.
-2. `idm-heatpump-api` auf einen öffentlichen transportneutralen I/O-Vertrag
-   weiterentwickeln. Erst dann kann die temporäre Pymodbus-Abhängigkeit nach
-   Kompatibilitätsprüfung entfallen.
-3. Home Assistants finalen zentralen Shared-Connection-Vertrag beobachten.
-   Falls er für Custom Integrations stabil verfügbar wird, einen separaten
-   Provider implementieren; erst dieser darf
-   `supports_shared_connection=True` und `owns_socket=False` melden.
-4. Eine eventuelle Migration ohne neue Unique IDs, ohne neuen Schreibpfad und
-   ohne Options-Zwang planen. Bis dahin bleibt der private tmodbus-Socket der
-   einzige produktive Modbus-Pfad.
+1. Verify setup, FC03, FC04, connection loss and reconnect read-only against
+   real Navigator hardware, and document firmware and model.
+2. Evolve `idm-heatpump-api` towards a public, transport-neutral I/O contract.
+   Only then can the temporary pymodbus dependency be dropped, after a
+   compatibility check.
+3. Watch Home Assistant's final central shared-connection contract. If it
+   becomes stably available for custom integrations, implement a separate
+   provider; only that provider may report `supports_shared_connection=True` and
+   `owns_socket=False`.
+4. Plan any migration without new unique IDs, without a new write path and
+   without forcing options changes. Until then the private tmodbus socket
+   remains the only production Modbus path.
 
 ## Issue template
 
-`.github/ISSUE_TEMPLATE/modbus_transport_modernization.md` verfolgt die
-Hardware-Verifikation sowie den späteren zentralen Sharing-Provider. Die Vorlage
-setzt den bereits implementierten tmodbus-Adapter nicht mehr als Zukunftsarbeit
-voraus.
+`.github/ISSUE_TEMPLATE/modbus_transport_modernization.md` tracks the hardware
+verification as well as the later central sharing provider. The template no
+longer treats the already implemented tmodbus adapter as future work.

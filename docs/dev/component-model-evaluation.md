@@ -1,98 +1,97 @@
-# Component-Modell von `modbus-connection`: Bewertung
+# The `modbus-connection` component model: evaluation
 
-Stand: 19.08.2026 · gemessen gegen `modbus-connection` 4.8.1 und
-`idm-heatpump-api` 1.0.1 · reproduzierbar über
+Last updated: 2026-08-19 · measured against `modbus-connection` 4.8.1 and
+`idm-heatpump-api` 1.0.1 · reproducible with
 `python scripts/evaluate_component_model.py`
 
-## Frage
+## Question
 
-solaredge-modbus-multi hat mit v4.0.0-pre.11 alle Lese- und Schreibzugriffe auf
-eine `modbus-connection`-`Component` umgestellt. Der entsprechende Schritt für
-dieses Projekt läge in `idm-heatpump-api`: dort liegen Registerkarte, Batching
-und Decoding. Die Integration selbst hätte danach deutlich weniger Code — der
-Transportvertrag und die Fehlerübersetzung in `modbus_transport.py` wären
-größtenteils überflüssig, weil die Bibliothek Planung und Decoding übernimmt.
+With v4.0.0-pre.11, solaredge-modbus-multi moved all of its reads and writes
+onto a `modbus-connection` `Component`. The equivalent step for this project
+would happen in `idm-heatpump-api`, which owns the register map, the batching
+and the decoding. The integration itself would carry noticeably less code
+afterwards — the transport contract and the error translation in
+`modbus_transport.py` would largely become redundant, because the library takes
+over planning and decoding.
 
-## Ergebnis
+## Result
 
-**Nicht umsetzen.** Nicht weil die Registerkarte nicht passt — sie passt
-vollständig —, sondern weil die Leseplanung der Bibliothek mit den
-Protokollinvarianten der offiziellen IDM-Registerkarte kollidiert.
+**Do not implement.** Not because the register map does not fit — it fits
+completely — but because the library's read planning collides with the protocol
+invariants of the official IDM register map.
 
-## Was gemessen wurde
+## What was measured
 
-Gegen die maximal ausgebaute Navigator-10-Karte (7 Heizkreise, 10 Zonenmodule,
-Solar/ISC/PV/Kaskade aktiv), 586 lesbare Datenpunkte:
+Against the maximally equipped Navigator 10 map (7 heating circuits, 10 zone
+modules, solar/ISC/PV/cascade active), 586 readable data points:
 
-| Prüfung | Ergebnis |
+| Check | Result |
 | --- | --- |
-| Register auf Bibliotheksfelder abbildbar | 586 von 586, kein Sonderfall offen |
-| Decodierte Werte gegen `idm-heatpump-api` | 0 Abweichungen |
-| Anfragen je Poll, heutiges API-Batching | 57 |
-| Anfragen je Poll, Bibliotheksplanung `max_gap=1` | 42 |
-| Anfragen je Poll, Bibliotheksplanung `max_gap=16` (Default) | 24, dafür 98 Wörter aus Adressen, die kein Datenpunkt beansprucht |
+| Registers mappable onto library fields | 586 of 586, no special case left open |
+| Decoded values against `idm-heatpump-api` | 0 deviations |
+| Requests per poll, today's API batching | 57 |
+| Requests per poll, library planning `max_gap=1` | 42 |
+| Requests per poll, library planning `max_gap=16` (default) | 24, at the price of 98 words from addresses no data point claims |
 
-Die dynamische Registerkarte ist kein Hindernis: `ManualComponent` nimmt Felder
-zur Laufzeit entgegen, Heizkreise und Zonenräume lassen sich also genauso
-generieren wie heute. IDM-`FLOAT` (IEEE-754, Low Word zuerst) bildet
-`float32(..., word_order="little")` exakt ab; der Multiplikator wird zum
-`scale` des Feldes.
+The dynamic register map is not an obstacle: `ManualComponent` accepts fields at
+runtime, so heating circuits and zone rooms can be generated exactly as they are
+today. IDM `FLOAT` (IEEE-754, low word first) maps exactly onto
+`float32(..., word_order="little")`; the multiplier becomes the field's `scale`.
 
-## Der Blocker
+## The blocker
 
-`docs/Register-Map-Invariants.md` in `idm-heatpump-api` hält drei Regeln fest,
-die aus der offiziellen IDM-Dokumentation und aus Hardwarecaptures stammen:
+`docs/Register-Map-Invariants.md` in `idm-heatpump-api` records three rules that
+come from the official IDM documentation and from hardware captures:
 
-- Gebatcht wird ausschließlich strikt benachbart: `next.address ==
-  previous.address + previous.size`. Lücken werden nie übersprungen.
-- Die offizielle Karte enthält dokumentierte logische Überlappungen —
-  Feuchte `1392 FLOAT` und Heizkreis-A-Modus `1393 UCHAR`, Heizkurve G
-  `1441 FLOAT` und Heizgrenze A `1442 UCHAR`, Kühl-Eco-Sollwert G `1483 FLOAT`
-  und Kühlgrenze A `1484 UCHAR`.
-- Jeder überlappende Datenpunkt wird mit seiner dokumentierten Startadresse und
-  Größe **einzeln** angefragt. Diese Werte sind anfrageabhängig: dieselbe
-  Adresse liefert je nach exakter Anfrage einen Float-Anteil oder einen
-  eigenständigen UCHAR-Wert.
+- Batching is strictly adjacent only: `next.address == previous.address +
+  previous.size`. Gaps are never skipped.
+- The official map contains documented logical overlaps — humidity
+  `1392 FLOAT` and heating circuit A mode `1393 UCHAR`, heating curve G
+  `1441 FLOAT` and heating limit A `1442 UCHAR`, cooling eco setpoint G
+  `1483 FLOAT` and cooling limit A `1484 UCHAR`.
+- Every overlapping data point is requested **individually**, with its
+  documented start address and size. These values are request-sensitive: the
+  same address returns either part of a float or a standalone UCHAR value,
+  depending on the exact request.
 
-Die Planung der Bibliothek arbeitet dagegen rein über Adressspannen
-(`_plan_blocks`: zusammenführen, solange `address - block_end <= max_gap`) und
-decodiert anschließend alle Felder aus dem gelesenen Block. Gemessen:
+The library's planning, by contrast, works purely on address spans
+(`_plan_blocks`: merge while `address - block_end <= max_gap`) and then decodes
+all fields out of the block it read. Measured:
 
 ```
-humidity_sensor + hc_a_mode:                 [(1392, 2)] -> EINE zusammengefasste Anfrage
-hc_g_heating_curve + hc_a_heating_limit:     [(1441, 2)] -> EINE zusammengefasste Anfrage
-hc_g_room_setpoint_cool_eco + hc_a_cooling_limit: [(1483, 2)] -> EINE zusammengefasste Anfrage
+humidity_sensor + hc_a_mode:                 [(1392, 2)] -> ONE merged request
+hc_g_heating_curve + hc_a_heating_limit:     [(1441, 2)] -> ONE merged request
+hc_g_room_setpoint_cool_eco + hc_a_cooling_limit: [(1483, 2)] -> ONE merged request
 ```
 
-Damit bekämen genau diese drei Datenpunkte ihren Wert aus dem zweiten Wort des
-benachbarten Floats statt aus der eigenen dokumentierten Anfrage. Im Mock fällt
-das nicht auf — der Mock ist nicht anfrageabhängig —, am Gerät ist es ein
-falscher Wert.
+Exactly those three data points would therefore take their value from the second
+word of the neighboring float instead of from their own documented request. The
+mock does not show this — the mock is not request-sensitive — but on the device
+it is a wrong value.
 
-Ein Ausweichen über `max_gap=0` löst das nicht: dann führt die Bibliothek gar
-nichts mehr zusammen, auch nicht direkt benachbarte Felder, und der Poll
-zerfällt in 583 Einzelanfragen statt 57. Und `max_gap >= 2` verletzt zusätzlich
-die erste Regel, weil dann Adressen mitgelesen werden, die die Dokumentation
-nicht beschreibt — auf einem Regler, der unbekannte Adressen mit Exception-Code
-2 für den ganzen Block quittiert, kostet das den kompletten Block.
+Falling back to `max_gap=0` does not solve it: the library then merges nothing at
+all, not even directly adjacent fields, and the poll falls apart into 583
+individual requests instead of 57. And `max_gap >= 2` additionally violates the
+first rule, because addresses the documentation does not describe are read along
+with the block — on a controller that answers unknown addresses with exception
+code 2 for the whole block, that costs the entire block.
 
-## Was das nicht bedeutet
+## What this does not mean
 
-- Der Rest von `modbus-connection` bleibt genau das, was die Integration
-  benutzt: Verbindung, Serialisierung, Reconnect, Pacing, typisierte Fehler.
-  Die Bewertung betrifft nur das Modellierungs-/Planungsmodul
-  (`modbus_connection.model`).
-- Die 42 statt 57 Anfragen bei `max_gap=1` sind kein Argument für die
-  Umstellung: die Ersparnis entsteht dort, wo die Bibliothek bis 125 Wörter je
-  Block zusammenfasst, während die API bei 40 Wörtern (`_MAX_GROUP_SIZE`)
-  schneidet. Dieselbe Ersparnis wäre in der API zu haben, ohne die
-  Überlappungsregel aufzugeben — allerdings nur mit Hardwarebeleg, dass der
-  Regler Blöcke über 40 Wörter zuverlässig beantwortet.
+- The rest of `modbus-connection` stays exactly what the integration uses:
+  connection, serialization, reconnect, pacing, typed errors. This evaluation
+  only concerns the modeling and planning module (`modbus_connection.model`).
+- The 42 instead of 57 requests at `max_gap=1` are not an argument for the
+  migration: the saving comes from the library merging up to 125 words per
+  block, while the API cuts at 40 words (`_MAX_GROUP_SIZE`). The same saving
+  would be available inside the API without giving up the overlap rule — but
+  only with hardware evidence that the controller answers blocks above 40 words
+  reliably.
 
-## Wann neu bewerten
+## When to re-evaluate
 
-Sobald `modbus-connection` eine Planung anbietet, die einen Datenpunkt als
-exakte Anfrage festnageln kann (also „dieses Feld nie mit einem anderen Block
-zusammenführen" bzw. explizit anfrageabhängige Datenpunkte kennt). Dann fällt
-der Blocker weg, und die Umstellung wird zur reinen Aufwandsfrage in
-`idm-heatpump-api` 2.0. `scripts/evaluate_component_model.py` misst die Lage neu.
+As soon as `modbus-connection` offers planning that can pin a data point to an
+exact request (that is, "never merge this field with another block", or explicit
+knowledge of request-sensitive data points). The blocker then disappears and the
+migration becomes a pure question of effort in `idm-heatpump-api` 2.0.
+`scripts/evaluate_component_model.py` measures the situation again.

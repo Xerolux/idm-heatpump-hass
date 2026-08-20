@@ -207,6 +207,22 @@ ruff check custom_components tests
 
 ## Code Conventions
 
+### Language
+- **Write in English.** The changelog, release notes, release evidence, the
+  wiki, developer notes, issue and pull request templates, commit messages, pull
+  request descriptions, code comments and docstrings are English — including
+  when the conversation that produced them was in German.
+- German belongs only where it is a product feature: `README_de.md`, the Home
+  Assistant `de` translations, and the "Description (DE)" column of the
+  generated register reference, which carries IDM's own terminology.
+- Released changelog sections stay as published; they are history. The rule
+  applies to the unreleased entries and to the section of the version in the
+  manifest.
+- `python scripts/check_documentation_language.py` reports German prose;
+  `tests/test_documentation_language.py` fails the build on it. New documents
+  are covered automatically — declare an exception in `EXEMPT_FILES` only for
+  documentation that is German on purpose.
+
 ### Python Style
 - `from __future__ import annotations` at the top of every file
 - Full type annotations everywhere (strict mypy)
@@ -306,6 +322,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 - **Keep real-hardware transport validation read-only** unless the owner explicitly authorizes a specific write.
 - **Keep entity names consistent** with `strings.json` and `translations/`.
 - **Test new functionality** — untested code will not pass CI on the main branch.
+- **Do not write German prose into repository documents** — English is the contract for everything except `README_de.md` and the `de` translations.
 
 ---
 
@@ -321,3 +338,4 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Any entity | `icons.json`, translations, `test_platforms.py` |
 | `manifest.json` (version) | `CHANGELOG.md`, release notes |
 | `AGENTS.md` (this file) | Keep it in sync with the actual codebase |
+| Any Markdown document | Keep it English (`scripts/check_documentation_language.py`) |
