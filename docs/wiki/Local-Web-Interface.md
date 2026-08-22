@@ -115,12 +115,12 @@ See [Troubleshooting](Troubleshooting) for categorized errors and
 
 The sticky protocol selection was introduced in integration version
 `0.8.1-beta.29`. The current stable release is `0.15.0` and ships the
-tested `idm-heatpump-api[web]==1.0.2` web clients, which additionally expose
+tested `idm-heatpump-api[web]==1.0.3` web clients, which additionally expose
 Navigator 10 heating-circuit data for circuits B–G.
 
 For the independent Modbus path, the tested manifest order is
 `modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.1`,
-`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.2`. The first two own
+`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.3`. The first two own
 the direct Modbus socket; pymodbus remains temporarily present because the
 pinned API still imports it. This does not change the web protocol or make
 version `4.8.1` an IDM integration release.

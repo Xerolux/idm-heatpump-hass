@@ -22,7 +22,7 @@ not been validated on hardware, as finished.
 - Direct socket through `modbus-connection==4.8.1` and the separately pinned
   backend level `tmodbus[async-serial]==0.5.1`; the first integration version to
   ship it is `0.11.0-beta.1`.
-- API device logic stays with `idm-heatpump-api[web]==1.0.2`. The pymodbus pin
+- API device logic stays with `idm-heatpump-api[web]==1.0.3`. The pymodbus pin
   only remains temporarily because `idm_heatpump.client` still imports it at
   module level; the physical connection belongs to tmodbus.
 - Diagnostics export for the transport source, socket ownership, connection

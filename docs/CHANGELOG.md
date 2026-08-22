@@ -20,7 +20,7 @@ moves the direct Modbus socket off an alpha-level transport pin onto
 `modbus-connection==4.8.1`, adds optional connection pacing, corrects normally
 closed digital inputs in the local web supplement, cleans up entity-registry
 leftovers from the earlier web sensor migration, and maps room temperature
-sensors for all heating circuits A-G through `idm-heatpump-api==1.0.2`.
+sensors for all heating circuits A-G through `idm-heatpump-api`.
 
 No breaking changes. Unique IDs, entity IDs, register addresses and write paths
 are unchanged; an existing config entry keeps polling exactly as before without
@@ -101,7 +101,11 @@ stable candidate. This is a deliberate maintainer decision, recorded in
 
 - `modbus-connection==4.8.1` (from `4.0.0a3`)
 - `tmodbus[async-serial]==0.5.1` (from `0.5.0`)
-- `idm-heatpump-api[web]==1.0.2` (from `1.0.1`)
+- `idm-heatpump-api[web]==1.0.3` (from `1.0.1`). `1.0.2` added the
+  heating-circuit room temperature mapping; `1.0.3` is a maintenance release of
+  that library with CI and security-toolchain updates only and behavior
+  identical to `1.0.2`. The generated register catalog is unchanged at 687
+  definitions.
 - `pymodbus>=3.12.1,<4.0` unchanged, still required because the pinned API
   imports it
 
