@@ -114,6 +114,7 @@ from .coordinator import IdmCoordinator, navigator_family
 from .device_hierarchy import (
     cleanup_deconfigured_heating_circuit_entities,
     cleanup_stale_hierarchy_devices,
+    cleanup_stale_web_sensor_entities,
     precreate_main_device,
 )
 from .error_messages import (
@@ -499,6 +500,7 @@ async def _async_setup_web_only_entry(
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
     cleanup_stale_hierarchy_devices(hass, coordinator)
     cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
+    cleanup_stale_web_sensor_entities(hass, coordinator)
 
     entry.runtime_data.web_task = _create_entry_background_task(
         hass,
@@ -938,6 +940,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
         cleanup_stale_hierarchy_devices(hass, coordinator)
         cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
+        cleanup_stale_web_sensor_entities(hass, coordinator)
 
         # Activate entity-aware polling after platforms have created registry
         # entries. Idempotent — subsequent calls from operation_entities.py are no-ops.

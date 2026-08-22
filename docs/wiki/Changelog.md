@@ -5,6 +5,28 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.15.0-beta.2 — 2026-08-22
+
+Beta candidate 2: fixes inverted state on normally closed (NC) digital inputs in
+the Navigator web supplement, automatically cleans up orphaned legacy sensor
+entities in Home Assistant's entity registry, and adds automated dependency
+pin freshness checking.
+
+### Fixed
+
+- **Inverted NC digital inputs in Web supplement**: `ew_evu_lock_contact`,
+  `dewpoint_humidity_alarm`, and `failure_eheating` are Normally Closed contacts
+  and now correctly report `off` in normal operation and `on` on alarm/lock.
+- **Orphaned deprecated sensor entities cleanup**: Stale `sensor.*_web` entities
+  migrated to `binary_sensor` are automatically cleaned from Home Assistant's
+  entity registry at startup.
+- **Dependency pin updater platform support**: Normalized paths to POSIX format.
+
+### Added
+
+- **English documentation contract**: Enforced by tests.
+- **Automated dependency freshness checking**: Daily PyPI pin verification.
+
 ## v0.15.0-beta.1 — 2026-08-19
 
 Beta candidate: the transport pin moves off the `modbus-connection==4.0.0a3`

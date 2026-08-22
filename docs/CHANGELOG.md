@@ -13,47 +13,42 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.0-beta.2] - 2026-08-22
+
+Beta candidate 2: fixes inverted state on normally closed (NC) digital inputs in
+the Navigator web supplement, automatically cleans up orphaned legacy sensor
+entities in Home Assistant's entity registry, and adds automated dependency
+pin freshness checking.
+
+### Fixed
+
+- **False alarms on normally closed (NC) digital inputs in Web supplement.**
+  The digital inputs for EVU utility lock contact (`ew_evu_lock_contact`),
+  dew point humidity monitor (`dewpoint_humidity_alarm`), and electric heating
+  element safety limiter (`failure_eheating`) use Normally Closed (NC) physical
+  circuits where raw state `1` indicates normal closed/released operation and `0`
+  indicates open/tripped/locked. These three web binary sensors are now inverted
+  so that `is_on=False` represents normal/clear state and `is_on=True` represents
+  active alarm/lock/fault.
+- **Orphaned deprecated sensor entities in Home Assistant registry.**
+  When web binary sensors were migrated from the `sensor` domain to
+  `binary_sensor`, the old `sensor.*_web` entities with matching unique IDs
+  remained orphaned as unavailable in Home Assistant's entity registry. An
+  automated startup cleanup (`cleanup_stale_web_sensor_entities`) now
+  identifies and removes these stale registry entries automatically during
+  integration setup.
+- **Windows path separator handling in dependency pin updater.**
+  Normalized path output in `scripts/check_dependency_pins.py` to POSIX style so
+  pin assertions and automation work consistently across OS platforms.
+
 ### Added
 
-- **English is now the contract for the project's documents.** The repository is
-  developed in a German-speaking context, and German prose kept leaking into
-  documents the whole world reads. From now on the changelog, release notes,
-  release evidence, wiki pages, developer notes, issue and pull request
-  templates, commit messages and pull request descriptions are English. German
-  stays where it is a product feature: `README_de.md` and the Home Assistant
-  `de` translations.
-  - `scripts/check_documentation_language.py` looks for German function words in
-    every covered Markdown document, after stripping code spans, fenced blocks
-    and link targets, so German identifiers and register labels inside code do
-    not trip it.
-  - `tests/test_documentation_language.py` fails the build on German prose. New
-    documents are covered by default; an exception has to be declared
-    explicitly, which is how the German pages accumulated unnoticed before.
-  - Released changelog sections stay untouched: they record what a published
-    version said at the time. The check covers the unreleased entries and the
-    section of the version the manifest carries — the text that still becomes
-    release notes.
-  - Translated with this change: the changelog entries that are still open, the
-    developer notes under `docs/dev/`, `docs/IMPLEMENTATION_TODO.md` and the
-    Navigator protocol analysis in the wiki.
-- **Automatic freshness of the runtime pins.** The exact pins make a release
-  reproducible, but nothing in the repository noticed when a pinned library
-  moved on — that is how the transport pin sat on the `modbus-connection==4.0.0a3`
-  alpha for two weeks while 4.8.1 was current. New:
-  - `scripts/check_dependency_pins.py` compares every exactly pinned requirement
-    of the manifest against PyPI. `--update` carries the transport pins forward,
-    in the manifest and in all 16 documents that state them; changelogs and
-    release evidence stay untouched as history. Pre-releases are never selected
-    automatically while the pin itself is stable.
-  - `.github/workflows/dependency-freshness.yml` runs daily, imports the real
-    `modbus_connection.tmodbus` backend on a change (exactly the test that would
-    have made the `serialx` import from 4.7.0 obvious), runs the contract tests
-    and opens a pull request.
-  - The release pipeline aborts when a pin is stale. For the deliberately
-    different case there is the workflow input `allow_stale_pins`.
-  - `tests/test_dependency_pins.py` locks the rules down, including the check
-    that no new document states the pin without being covered by the
-    automation.
+- **English documentation contract.** The repository documentation, changelog,
+  developer notes, and workflows are now strictly enforced in English by
+  `scripts/check_documentation_language.py` and `tests/test_documentation_language.py`.
+- **Automated dependency pin freshness checking.** `scripts/check_dependency_pins.py`
+  and `.github/workflows/dependency-freshness.yml` verify daily that pinned
+  runtime dependencies on PyPI stay current.
 
 ## [0.15.0-beta.1] - 2026-08-19
 

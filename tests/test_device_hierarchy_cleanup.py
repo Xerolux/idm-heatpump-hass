@@ -261,3 +261,37 @@ def test_cleanup_keeps_a_subdevice_whose_entities_are_all_disabled() -> None:
 
     registry.async_update_device.assert_not_called()
     assert entries_for_device.call_args.kwargs["include_disabled_entities"] is True
+
+
+def test_cleanup_stale_web_sensor_entities():
+    """Old sensor-domain entities for keys migrated to binary_sensor must be removed."""
+    from custom_components.idm_heatpump.device_hierarchy import cleanup_stale_web_sensor_entities
+
+    coordinator = _circuit_coordinator(["a"])
+    entities = [
+        _entity("entry_web_failure_eheating", "sensor.eheating"),
+        _entity("entry_web_dewpoint_humidity_alarm", "sensor.dewpoint"),
+        _entity("entry_web_compressor_1", "sensor.comp1"),
+        _entity("entry_web_outside_air_temperature", "sensor.outside_temp"),
+        _entity("other_entry_web_failure_eheating", "sensor.other_eheating"),
+    ]
+    for ent in entities[:3]:
+        ent.domain = "sensor"
+    entities[3].domain = "sensor"  # not in WEB_BINARY_VALUE_KEYS
+    entities[4].domain = "sensor"  # different entry
+
+    registry = MagicMock()
+    with (
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_get",
+            return_value=registry,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_config_entry",
+            return_value=entities,
+        ),
+    ):
+        cleanup_stale_web_sensor_entities(MagicMock(), coordinator)
+
+    removed = {call.args[0] for call in registry.async_remove.call_args_list}
+    assert removed == {"sensor.eheating", "sensor.dewpoint", "sensor.comp1"}

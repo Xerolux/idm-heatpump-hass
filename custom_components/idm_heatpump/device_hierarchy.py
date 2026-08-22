@@ -377,6 +377,27 @@ def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinat
         registry.async_remove(entity.entity_id)
 
 
+def cleanup_stale_web_sensor_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
+    """Remove orphaned sensor platform entities for keys migrated to binary_sensor."""
+    config_entry = coordinator.config_entry
+    if config_entry is None:
+        return
+
+    from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
+
+    entry_id = config_entry.entry_id
+    registry = er.async_get(hass)
+    stale_unique_ids = {f"{entry_id}_web_{key}" for key in WEB_BINARY_VALUE_KEYS}
+
+    for entity in list(er.async_entries_for_config_entry(registry, entry_id)):
+        if entity.domain == "sensor" and entity.unique_id in stale_unique_ids:
+            _LOGGER.debug(
+                "Removing orphaned web sensor entity %s (migrated to binary_sensor)",
+                entity.entity_id,
+            )
+            registry.async_remove(entity.entity_id)
+
+
 def _via_device_id(coordinator: IdmCoordinator, parent_identifier: tuple[str, str]) -> str | None:
     """Return the cached registry device ID for a hierarchy parent, if known.
 

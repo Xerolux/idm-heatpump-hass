@@ -10,12 +10,13 @@ Integration `0.14.1` (stable) and `idm-heatpump-api` `1.0.1` form the current
 exactly pinned integration/API pair. Up to and including `0.14.1` the direct
 socket was pinned to `modbus-connection==4.0.0a3` with `tmodbus==0.5.0`.
 
-**Open beta candidate `0.15.0-beta.1`** moves that pair to
+**Open beta candidate `0.15.0-beta.2`** moves that pair to
 `modbus-connection==4.8.1` and `tmodbus[async-serial]==0.5.1` and adds two
-connection-pacing options that are off by default. This is a runtime-dependency
-change, so the seven-day soak clock for the next stable tag starts with this
-candidate; hardware smoke evidence is still open
-(`docs/release-evidence/0.15.0-beta.1.md`).
+connection-pacing options that are off by default, plus NC contact inversion
+and orphaned sensor cleanup. This is a runtime-dependency change, so the
+seven-day soak clock for the next stable tag starts with this candidate;
+hardware smoke evidence is recorded in
+`docs/release-evidence/0.15.0-beta.2.md`.
 
 `idm-heatpump-api` `1.0.1` is a patch release over `1.0.0` (two internal bug
 fixes: a raw `AttributeError` now surfaces as `ConnectionException` when a

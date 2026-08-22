@@ -199,3 +199,36 @@ def test_camel_case_source_key_uses_normalized_translation_key():
 
     assert sensor._attr_unique_id == "test_entry_web_pump_heating_circuitA"
     assert sensor.entity_description.translation_key == "web_pump_heating_circuit_a"
+
+
+def test_inverted_nc_binary_sensors():
+    """Normally closed contacts (1=OK/closed, 0=Alarm/open) must invert their state."""
+    entities = _entities_by_key(
+        _coordinator(
+            {
+                "dewpoint_humidity_alarm": IdmWebSensorValue("1", 1.0),
+                "ew_evu_lock_contact": IdmWebSensorValue("1", 1.0),
+                "failure_eheating": IdmWebSensorValue("1", 1.0),
+            }
+        )
+    )
+
+    # 1.0 = closed / normal operation -> is_on must be False (no alarm/lock/failure)
+    assert entities["web_dewpoint_humidity_alarm"].is_on is False
+    assert entities["web_ew_evu_lock_contact"].is_on is False
+    assert entities["web_failure_eheating"].is_on is False
+
+    # 0.0 = open / triggered -> is_on must be True (alarm/lock/failure active)
+    tripped_entities = _entities_by_key(
+        _coordinator(
+            {
+                "dewpoint_humidity_alarm": IdmWebSensorValue("0", 0.0),
+                "ew_evu_lock_contact": IdmWebSensorValue("0", 0.0),
+                "failure_eheating": IdmWebSensorValue("0", 0.0),
+            }
+        )
+    )
+
+    assert tripped_entities["web_dewpoint_humidity_alarm"].is_on is True
+    assert tripped_entities["web_ew_evu_lock_contact"].is_on is True
+    assert tripped_entities["web_failure_eheating"].is_on is True

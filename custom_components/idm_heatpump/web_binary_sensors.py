@@ -32,6 +32,7 @@ class WebBinarySensorDefinition:
     device_class: BinarySensorDeviceClass | None = None
     entity_category: EntityCategory | None = None
     enabled_by_default: bool = True
+    inverted: bool = False
 
 
 WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
@@ -50,6 +51,7 @@ WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
         icon="mdi:water-alert",
         device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
+        inverted=True,
     ),
     WebBinarySensorDefinition(
         # DeviceClass.LOCK means on=unlocked in HA. EVU "lock contact active"
@@ -57,6 +59,7 @@ WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
         key="ew_evu_lock_contact",
         icon="mdi:lock",
         device_class=BinarySensorDeviceClass.SAFETY,
+        inverted=True,
     ),
     WebBinarySensorDefinition(
         key="ext_hotwater_signal",
@@ -73,6 +76,7 @@ WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
         icon="mdi:alert-circle",
         device_class=BinarySensorDeviceClass.PROBLEM,
         entity_category=EntityCategory.DIAGNOSTIC,
+        inverted=True,
     ),
     WebBinarySensorDefinition(
         key="flow_pump_on",
@@ -238,4 +242,7 @@ class IdmWebBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
 
     @property
     def is_on(self) -> bool | None:
-        return self._normalized_value()
+        val = self._normalized_value()
+        if val is None:
+            return None
+        return not val if self._definition.inverted else val

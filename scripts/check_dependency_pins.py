@@ -286,7 +286,7 @@ def apply_update(requirement: Requirement, new_version: str, root: Path = ROOT) 
     manifest_path.write_text(manifest_text.replace(quoted_old, quoted_new), encoding="utf-8")
     if new_requirement not in json.loads(manifest_path.read_text(encoding="utf-8"))["requirements"]:
         raise RuntimeError(f"{new_requirement} missing from {manifest_path.name} after the update")
-    changed.append(str(manifest_path.relative_to(root)))
+    changed.append(manifest_path.relative_to(root).as_posix())
 
     for relative_path in PIN_DOCUMENTS:
         path = root / relative_path
@@ -300,7 +300,7 @@ def apply_update(requirement: Requirement, new_version: str, root: Path = ROOT) 
             text = re.sub(pattern.replace("{version}", re.escape(old_version)), new_version, text)
         if text != original:
             path.write_text(text, encoding="utf-8")
-            changed.append(relative_path)
+            changed.append(Path(relative_path).as_posix())
 
     residual = residual_mentions(root, requirement.name, old_version)
     if residual:
