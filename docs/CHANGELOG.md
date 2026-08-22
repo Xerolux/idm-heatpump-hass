@@ -13,6 +13,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A stable release published by a tag push was never marked as the latest
+  release.** `make_latest` in `.github/workflows/release.yml` was guarded on
+  `inputs.make_latest != false`; on a tag push that input is null, GitHub
+  coerces null to false, and the guard therefore evaluated to false for every
+  tag-pushed stable release. `v0.15.0` was published this way and had to be
+  promoted to latest by hand. The guard now falls back to true for pushes and
+  still honours an explicit `false` from a manual dispatch.
+
 ## [0.15.0] - 2026-08-22
 
 Stable release closing the `0.15.0-beta.1` through `0.15.0-beta.3` cycle. It

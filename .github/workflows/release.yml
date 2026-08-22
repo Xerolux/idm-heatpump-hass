@@ -268,7 +268,11 @@ jobs:
           body: ${{ steps.generate.outputs.release-notes }}
           draft: ${{ steps.version.outputs.is_draft == 'true' }}
           prerelease: ${{ steps.version.outputs.is_prerelease == 'true' }}
-          make_latest: ${{ inputs.make_latest != false && steps.version.outputs.release_type == 'stable' }}
+          # `inputs.make_latest` is null on a tag push and GitHub coerces null to
+          # false, so comparing the input against false left every tag-pushed
+          # stable release off the latest pointer. Fall back to true for pushes
+          # and honour the input on a manual dispatch.
+          make_latest: ${{ (inputs.make_latest || github.event_name == 'push') && steps.version.outputs.release_type == 'stable' }}
 
       - name: Announce published release in GitHub Discussions
         if: steps.version.outputs.is_draft == 'false'

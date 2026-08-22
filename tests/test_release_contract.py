@@ -127,6 +127,22 @@ def test_release_has_one_tag_trigger_and_serializes_each_version() -> None:
     assert "cancel-in-progress: false" in release
 
 
+def test_stable_tag_push_is_published_as_the_latest_release() -> None:
+    """A stable release nobody can find as "latest" is not released.
+
+    `inputs.make_latest` is null for a tag push and GitHub coerces null to
+    false, so guarding on `inputs.make_latest != false` silently left every
+    tag-pushed stable release off the latest pointer.
+    """
+    release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
+
+    assert (
+        "make_latest: ${{ (inputs.make_latest || github.event_name == 'push') "
+        "&& steps.version.outputs.release_type == 'stable' }}" in release_workflow
+    )
+    assert "inputs.make_latest != false" not in release_workflow
+
+
 @pytest.mark.skipif(sys.platform == "win32", reason="Bash script tests require a POSIX environment")
 def test_release_type_is_derived_only_from_validated_tag(tmp_path: Path) -> None:
     workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
