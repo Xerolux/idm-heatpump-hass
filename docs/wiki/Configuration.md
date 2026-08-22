@@ -273,11 +273,11 @@ This project has two independently versioned packages:
 | Connection library | `modbus-connection==4.8.1` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]==0.5.1` | Wire/backend implementation changes |
 | Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
-| Python register/web library | `idm-heatpump-api[web]==1.0.1` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
+| Python register/web library | `idm-heatpump-api[web]==1.0.2` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
 `modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.1`,
-`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.1`.
+`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.2`.
 The first two packages own the direct socket. `idm-heatpump-api` remains
 responsible for IDM-specific device logic; pymodbus is temporarily retained
 because that API still imports it. `4.8.1` is the version of

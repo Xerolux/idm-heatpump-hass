@@ -68,7 +68,7 @@ installation test.
        "modbus-connection==4.8.1",
        "tmodbus[async-serial]==0.5.1",
        "pymodbus>=3.12.1,<4.0",
-       "idm-heatpump-api[web]==1.0.1",
+       "idm-heatpump-api[web]==1.0.2",
    ]
    assert manifest["version"] == os.environ["RELEASE_VERSION"]
    print("artifact metadata ok")

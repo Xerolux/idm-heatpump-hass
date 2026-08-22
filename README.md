@@ -132,7 +132,7 @@ before publishing a stable release.
 - Optional local Navigator web PIN for additional read-only web diagnostics
 - Python 3.13+ (provided by Home Assistant)
 - `modbus-connection==4.8.1` · `tmodbus[async-serial]==0.5.1` (direct Modbus socket runtime)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==1.0.1` (temporarily pinned API compatibility dependencies)
+- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==1.0.2` (temporarily pinned API compatibility dependencies)
 
 ---
 
@@ -184,7 +184,7 @@ Home Assistant
 - **Data types**: FLOAT (IEEE 754), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers are tracked and protected from excessive writing
 - **Direct local transport**: raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.8.1` and `tmodbus[async-serial]==0.5.1` runtime; version 4.8.1 is the transport library version, not the IDM integration version
-- **API compatibility**: `idm-heatpump-api[web]==1.0.1` still supplies register metadata, batching, encoding/decoding, model detection and write safety; `pymodbus>=3.12.1,<4.0` remains temporarily installed because that API release still imports it, but it no longer owns the direct socket
+- **API compatibility**: `idm-heatpump-api[web]==1.0.2` still supplies register metadata, batching, encoding/decoding, model detection and write safety; `pymodbus>=3.12.1,<4.0` remains temporarily installed because that API release still imports it, but it no longer owns the direct socket
 - **Auto-recovery**: API retry/backoff policy plus reconnect-on-demand in the tmodbus-backed connection
 - **Library-powered**: All register definitions sourced from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools
 - **Navigator 10 support**: Heat sink (Trennwärmetauscher) sensors, flow rate monitoring (Sieb detection), groundwater temperatures, booster A/B diagnostics

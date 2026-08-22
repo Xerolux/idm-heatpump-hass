@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.15.0-beta.3 — 2026-08-22
+
+Beta candidate 3: adds room temperature sensors for all heating circuits (A–G)
+in the optional Navigator web supplement, bumps `idm-heatpump-api` to 1.0.2.
+
+### Added
+
+- **Web room temperature sensors for all heating circuits A–G**: Support for `B61`–`B67`
+  (`room_temperature_HK_A`..`G`), verified live on Navigator 10 ALM 6-15 (`B64 = 21.8 °C`).
+- **`idm-heatpump-api[web]`**: Bumped to `1.0.2`.
+
 ## v0.15.0-beta.2 — 2026-08-22
 
 Beta candidate 2: fixes inverted state on normally closed (NC) digital inputs in

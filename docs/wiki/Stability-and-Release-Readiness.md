@@ -6,23 +6,19 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.14.1` (stable) and `idm-heatpump-api` `1.0.1` form the current
+Integration `0.14.1` (stable) and `idm-heatpump-api` `1.0.2` form the current
 exactly pinned integration/API pair. Up to and including `0.14.1` the direct
 socket was pinned to `modbus-connection==4.0.0a3` with `tmodbus==0.5.0`.
 
-**Open beta candidate `0.15.0-beta.2`** moves that pair to
-`modbus-connection==4.8.1` and `tmodbus[async-serial]==0.5.1` and adds two
-connection-pacing options that are off by default, plus NC contact inversion
-and orphaned sensor cleanup. This is a runtime-dependency change, so the
-seven-day soak clock for the next stable tag starts with this candidate;
-hardware smoke evidence is recorded in
-`docs/release-evidence/0.15.0-beta.2.md`.
+**Open beta candidate `0.15.0-beta.3`** moves that pair to
+`modbus-connection==4.8.1` and `tmodbus[async-serial]==0.5.1`, adds room temperature
+sensors for all heating circuits (A–G) via `idm-heatpump-api==1.0.2`, connection-pacing
+options, NC contact inversion and orphaned sensor cleanup. Hardware smoke evidence
+is recorded in `docs/release-evidence/0.15.0-beta.2.md`.
 
-`idm-heatpump-api` `1.0.1` is a patch release over `1.0.0` (two internal bug
-fixes: a raw `AttributeError` now surfaces as `ConnectionException` when a
-pre-1.0 reset pattern hits `connect()`, and write exception code 2 is
-classified as `IllegalAddressError` via the same helper used for reads); no
-behavior change for this integration's usage.
+`idm-heatpump-api` `1.0.2` expands the optional local web client to map heating-circuit
+room temperatures `B61`–`B67` (`room_temperature_HK_A` through `G`), verified live on a
+Navigator 10 ALM 6-15 (`B64 = 21.8 °C`).
 
 **Maintainer decision on the stable-release gates below:** `0.11.0` was
 published as stable without waiting out gate 6 (the seven-day soak, reset by

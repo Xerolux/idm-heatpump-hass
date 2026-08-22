@@ -13,6 +13,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.0-beta.3] - 2026-08-22
+
+Beta candidate 3: adds room temperature sensors for all heating circuits (A–G)
+in the optional Navigator web supplement, bumps `idm-heatpump-api` to 1.0.2.
+
+### Added
+
+- **Web room temperature sensors for all heating circuits A–G (`room_temperature_HK_A`..`G`).**
+  The local Navigator web supplement now maps room temperature sensors across all
+  heating circuits (`B61`..`B67`). Verified live on a Navigator 10 ALM 6-15 heat
+  pump with heating circuits A and D (`B64 = 21.8 °C`).
+
+### Dependencies
+
+- **`idm-heatpump-api[web]` bumped to `1.0.2`.**
+
 ## [0.15.0-beta.2] - 2026-08-22
 
 Beta candidate 2: fixes inverted state on normally closed (NC) digital inputs in
