@@ -6,15 +6,26 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.14.1` (stable) and `idm-heatpump-api` `1.0.2` form the current
+Integration `0.15.0` (stable) and `idm-heatpump-api` `1.0.2` form the current
 exactly pinned integration/API pair. Up to and including `0.14.1` the direct
 socket was pinned to `modbus-connection==4.0.0a3` with `tmodbus==0.5.0`.
 
-**Open beta candidate `0.15.0-beta.3`** moves that pair to
-`modbus-connection==4.8.1` and `tmodbus[async-serial]==0.5.1`, adds room temperature
-sensors for all heating circuits (A–G) via `idm-heatpump-api==1.0.2`, connection-pacing
-options, NC contact inversion and orphaned sensor cleanup. Hardware smoke evidence
-is recorded in `docs/release-evidence/0.15.0-beta.2.md`.
+**`0.15.0`** moves that pair to `modbus-connection==4.8.1` and
+`tmodbus[async-serial]==0.5.1`, adds room temperature sensors for all heating
+circuits (A–G) via `idm-heatpump-api==1.0.2`, connection-pacing options, NC
+contact inversion and orphaned sensor cleanup. It closes the `0.15.0-beta.1`
+through `0.15.0-beta.3` cycle. Hardware smoke evidence for the cycle is recorded
+in `docs/release-evidence/0.15.0-beta.2.md`; the stable cut is recorded in
+`docs/release-evidence/0.15.0.md`.
+
+**Maintainer decision on `0.15.0`:** the stable tag was cut on the same day
+`0.15.0-beta.3` was published, so gate 6 (seven consecutive 24-hour periods of
+soak on an unchanged candidate) was not satisfied, and no signed
+clean-Home-Assistant smoke test exists for the stable candidate itself
+(gate 2). Automated preflight, dependency-pin freshness and the beta-cycle
+hardware verification did pass. This is a conscious maintainer call taken at
+release time, not an oversight — recorded here and in
+`docs/release-evidence/0.15.0.md` so it stays visible.
 
 `idm-heatpump-api` `1.0.2` expands the optional local web client to map heating-circuit
 room temperatures `B61`–`B67` (`room_temperature_HK_A` through `G`), verified live on a

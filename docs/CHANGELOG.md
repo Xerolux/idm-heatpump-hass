@@ -13,6 +13,109 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-08-22
+
+Stable release closing the `0.15.0-beta.1` through `0.15.0-beta.3` cycle. It
+moves the direct Modbus socket off an alpha-level transport pin onto
+`modbus-connection==4.8.1`, adds optional connection pacing, corrects normally
+closed digital inputs in the local web supplement, cleans up entity-registry
+leftovers from the earlier web sensor migration, and maps room temperature
+sensors for all heating circuits A-G through `idm-heatpump-api==1.0.2`.
+
+No breaking changes. Unique IDs, entity IDs, register addresses and write paths
+are unchanged; an existing config entry keeps polling exactly as before without
+any action. Users upgrading from `0.14.1` get the fixes and the new sensors on
+the next restart; the new pacing options stay inactive unless enabled.
+
+**Release gate note.** This stable tag was cut without the seven-day soak
+required by `docs/RELEASE_PROCESS.md` - `0.15.0-beta.3` was published the same
+day - and without a completed, signed clean-Home-Assistant smoke test for the
+stable candidate. This is a deliberate maintainer decision, recorded in
+`docs/release-evidence/0.15.0.md` and in
+`docs/wiki/Stability-and-Release-Readiness.md` rather than left implicit.
+
+### Changed
+
+- **Transport pin raised to `modbus-connection==4.8.1` and
+  `tmodbus[async-serial]==0.5.1`** (previously `4.0.0a3` / `0.5.0`, an alpha
+  level). The newer library provides a typed error hierarchy, connection-wide
+  pacing, and - since 4.8.0 - `ModbusDesyncError`: when a peer answers a
+  different request than the one that was sent, typical for a gateway serving
+  several Modbus clients at once, the backend drops the connection instead of
+  decoding the foreign reply. The `async-serial` extra is not optional despite
+  this integration being TCP-only, because the backend module imports `serialx`
+  at module level.
+- **Error translation in the transport uses the typed exceptions** via
+  `isinstance` instead of comparing `exception_code` numbers. The contract
+  towards the API and the coordinator is unchanged, including the
+  `exception_code=<N>` markers the coordinator's batch bisect logic relies on.
+
+### Added
+
+- **Web room temperature sensors for all heating circuits A-G**
+  (`room_temperature_HK_A`..`G`, registers `B61`..`B67`) in the optional local
+  Navigator web supplement. Verified live on a Navigator 10 ALM 6-15 with
+  heating circuits A and D (`B64 = 21.8 °C`).
+- **Two options under "Advanced Modbus settings"**, both `0` by default so an
+  existing installation keeps its current polling speed:
+  - **Pause between requests (0-0.5 s)** - the minimum gap from the end of one
+    request to the start of the next, for controllers or gateways that report
+    "device busy" on back-to-back requests, discard requests, or time out. The
+    pause applies per request, so a full poll cycle takes correspondingly
+    longer.
+  - **Pause after connect (0-5 s)** - a one-off wait after every (re)connect
+    before the first request, for gateways that accept a connection before they
+    are ready to answer.
+
+  The guided setup profiles set them too: "unreliable network" uses a 0.05 s
+  request pause, "several clients" uses 0.1 s. Both values appear in the
+  transport diagnostics export.
+- **English documentation contract**, enforced by
+  `scripts/check_documentation_language.py` and
+  `tests/test_documentation_language.py`.
+- **Automated dependency pin freshness checking.**
+  `scripts/check_dependency_pins.py` and
+  `.github/workflows/dependency-freshness.yml` verify daily that exactly pinned
+  runtime dependencies are still the newest release on PyPI, and the release
+  workflow refuses a stale pin unless `allow_stale_pins` is set explicitly.
+
+### Fixed
+
+- **False alarms on normally closed (NC) digital inputs in the web supplement.**
+  The EVU utility lock contact (`ew_evu_lock_contact`), dew point humidity
+  monitor (`dewpoint_humidity_alarm`) and electric heating element safety
+  limiter (`failure_eheating`) use NC circuits, where raw state `1` means normal
+  closed operation and `0` means open, tripped or locked. These three binary
+  sensors are now inverted, so `off` represents the normal state and `on` an
+  active alarm, lock or fault.
+- **Orphaned deprecated sensor entities in the entity registry.** When web
+  binary sensors moved from the `sensor` domain to `binary_sensor`, the old
+  `sensor.*_web` entities stayed behind as permanently unavailable registry
+  entries. `cleanup_stale_web_sensor_entities` now removes them during
+  integration setup.
+- **Windows path separator handling in the dependency pin updater.** Path output
+  in `scripts/check_dependency_pins.py` is normalized to POSIX style so pin
+  assertions and automation behave the same across platforms.
+
+### Dependencies
+
+- `modbus-connection==4.8.1` (from `4.0.0a3`)
+- `tmodbus[async-serial]==0.5.1` (from `0.5.0`)
+- `idm-heatpump-api[web]==1.0.2` (from `1.0.1`)
+- `pymodbus>=3.12.1,<4.0` unchanged, still required because the pinned API
+  imports it
+
+### Documentation
+
+- **The `modbus-connection` component model was evaluated and rejected.** The
+  register map fits completely (586 of 586 data points, 0 decoding deviations),
+  but the library's read planning merges the three documented logical overlaps
+  of the official IDM map into one request each, while they have to be requested
+  individually. Measurement, reasoning and re-evaluation criterion are in
+  `docs/dev/component-model-evaluation.md`, reproducible with
+  `scripts/evaluate_component_model.py`.
+
+
 ## [0.15.0-beta.3] - 2026-08-22
 
 Beta candidate 3: adds room temperature sensors for all heating circuits (A–G)

@@ -5,6 +5,41 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.15.0 — 2026-08-22
+
+Stable release closing the `0.15.0-beta.1`..`beta.3` cycle. No breaking changes:
+unique IDs, entity IDs, register addresses and write paths are unchanged, and an
+existing config entry keeps polling exactly as before.
+
+### Changed
+
+- **Transport off the alpha pin**: `modbus-connection==4.8.1` and
+  `tmodbus[async-serial]==0.5.1` (previously `4.0.0a3` / `0.5.0`), with a typed
+  error hierarchy and `ModbusDesyncError` for gateways serving several clients.
+
+### Added
+
+- **Web room temperature sensors for all heating circuits A–G**: `B61`–`B67`
+  (`room_temperature_HK_A`..`G`), verified live on Navigator 10 ALM 6-15.
+- **Connection pacing options** under "Advanced Modbus settings": pause between
+  requests (0–0.5 s) and pause after connect (0–5 s), both `0` by default.
+- **Automated dependency pin freshness checking** and an English documentation
+  contract, both enforced in CI.
+
+### Fixed
+
+- **Inverted NC digital inputs in the web supplement**: `ew_evu_lock_contact`,
+  `dewpoint_humidity_alarm` and `failure_eheating` now report `off` in normal
+  operation and `on` on alarm, lock or fault.
+- **Orphaned deprecated sensor entities**: stale `sensor.*_web` entries left
+  over from the `binary_sensor` migration are cleaned from the entity registry
+  at startup.
+
+> **Release gate note**: this stable tag was cut without the seven-day soak and
+> without a signed stable-candidate smoke test — a deliberate maintainer
+> decision, recorded in `docs/release-evidence/0.15.0.md` and on
+> [Stability and Release Readiness](Stability-and-Release-Readiness).
+
 ## v0.15.0-beta.3 — 2026-08-22
 
 Beta candidate 3: adds room temperature sensors for all heating circuits (A–G)
