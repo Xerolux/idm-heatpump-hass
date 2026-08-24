@@ -129,7 +129,7 @@ Maintainer sollten vor einem stabilen Release den
 - IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.13+ (wird von Home Assistant bereitgestellt)
-- `modbus-connection==4.8.1` · `tmodbus[async-serial]==0.5.1` (direkter Modbus-Socket)
+- `modbus-connection==4.8.1` · `tmodbus[async-serial]==0.5.2` (direkter Modbus-Socket)
 - `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==1.0.3` (vorübergehend gepinnte API-Kompatibilitätsabhängigkeiten)
 
 ---
@@ -159,7 +159,7 @@ Home Assistant
     │       │
     │       ├── IdmModbusConnectionClient (Gerätelogik aus idm-heatpump-api)
     │       │       │
-    │       │       └── modbus-connection 4.8.1 + tmodbus 0.5.1
+    │       │       └── modbus-connection 4.8.1 + tmodbus 0.5.2
     │       │               │
     │       │               └── IDM Navigator 2.0 / 10 / Pro (TCP 502, Slave ID 1)
     │       │                       FC 04: Read Input Registers
@@ -184,7 +184,7 @@ Home Assistant
 - **Werte-Sicherheit**: deklarierte Nicht-verfügbar-Sentinels gelten als unbenutzt; unplausible Batch-Werte werden einzeln geprüft und für die laufende Verbindung aus Batches ausgeschlossen
 - **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
-- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über `modbus-connection==4.8.1` und `tmodbus[async-serial]==0.5.1`; `4.8.1` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
+- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über `modbus-connection==4.8.1` und `tmodbus[async-serial]==0.5.2`; `4.8.1` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
 - **API-Kompatibilität**: `idm-heatpump-api[web]==1.0.3` bleibt für Register, Batchplanung, Encoding/Decoding, Modellerkennung und Schreibschutz zuständig; `pymodbus>=3.12.1,<4.0` bleibt vorübergehend installiert, weil die API es weiterhin importiert, besitzt aber nicht den direkten Socket
 - **Auto-Recovery**: API-Retry/Backoff plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
 - **Optionale Web-Zusatzdaten**: Die Einrichtung erkennt lokal Navigator-2.0-HTTP oder Navigator-10/Pro-WebSocket, speichert das erfolgreiche Protokoll, nutzt die Sitzung weiter und verbindet im Normalbetrieb nur diese bekannte Variante neu; Modbus bleibt führend

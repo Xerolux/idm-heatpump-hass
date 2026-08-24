@@ -271,12 +271,12 @@ This project has two independently versioned packages:
 |---------|------------------------|-----------------------------|
 | Home Assistant custom integration | `0.15.0` (previous stable: `0.14.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.8.1` | Transport contract, connection lifecycle or error semantics change |
-| Direct socket backend | `tmodbus[async-serial]==0.5.1` | Wire/backend implementation changes |
+| Direct socket backend | `tmodbus[async-serial]==0.5.2` | Wire/backend implementation changes |
 | Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
 | Python register/web library | `idm-heatpump-api[web]==1.0.3` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
-`modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.1`,
+`modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.2`,
 `pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.3`.
 The first two packages own the direct socket. `idm-heatpump-api` remains
 responsible for IDM-specific device logic; pymodbus is temporarily retained

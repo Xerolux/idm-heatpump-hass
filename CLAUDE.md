@@ -10,7 +10,7 @@ This file is a short pointer for Claude-compatible agents.
 - **Version**: `0.15.0` (previous stable: `0.14.1`)
 - **Min HA**: 2026.8.1
 - **Python**: 3.13+
-- **Dependencies**: `modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.1`,
+- **Dependencies**: `modbus-connection==4.8.1`, `tmodbus[async-serial]==0.5.2`,
   `pymodbus>=3.12.1,<4.0` (API compatibility), `idm-heatpump-api[web]==1.0.3`
 - **Platforms**: sensor, binary_sensor, number, select, switch, climate, water_heater, button
 - **Transports**: Modbus TCP through `modbus-connection`/tmodbus (primary) + optional local Navigator web supplement / web-only mode

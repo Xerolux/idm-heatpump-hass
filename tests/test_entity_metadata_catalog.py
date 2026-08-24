@@ -56,7 +56,7 @@ def test_modbus_transport_issue_template_keeps_runtime_guardrails() -> None:
     template = (ROOT / ".github" / "ISSUE_TEMPLATE" / "modbus_transport_modernization.md").read_text(encoding="utf-8")
 
     assert "modbus-connection==4.8.1" in template
-    assert "tmodbus[async-serial]==0.5.1" in template
+    assert "tmodbus[async-serial]==0.5.2" in template
     assert "supports_shared_connection=False" in template
     assert "Existing config entries and entity Unique IDs need no user migration" in template
     assert "IdmCoordinator.async_write_register" in template

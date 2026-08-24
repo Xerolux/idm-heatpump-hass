@@ -12,7 +12,7 @@ assignees: ''
       `idm-heatpump-api[web]==1.0.0` and routes raw I/O through
       `ModbusConnectionTransport`.
 - [x] The direct socket uses the exact
-      `modbus-connection==4.8.1` / `tmodbus[async-serial]==0.5.1` pair.
+      `modbus-connection==4.8.1` / `tmodbus[async-serial]==0.5.2` pair.
 - [x] `pymodbus>=3.12.1,<4.0` remains temporarily pinned because the pinned
       API version still imports it; pymodbus does not own the direct socket.
 - [x] Each config entry owns its socket. Capabilities report
