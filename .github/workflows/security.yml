@@ -27,7 +27,7 @@ jobs:
       # skew fails the job with "Loaded a configuration file for version X, but
       # running version Y", so bump both lines together — Dependabot proposes
       # them as two separate pull requests, each of which is red on its own.
-      - uses: github/codeql-action/init@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd  # v4.37.7 guardrails-disable-line
+      - uses: github/codeql-action/init@db488ddef3bf6cb639b32c2e9a7c0a7ea8271d28  # v4.37.7 guardrails-disable-line
         with:
           languages: ${{ matrix.language }}
       - uses: github/codeql-action/analyze@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd  # v4.37.7 guardrails-disable-line
