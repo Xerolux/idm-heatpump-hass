@@ -975,6 +975,39 @@ class TestIdmNumber:
             "detail": "Exception: write failed",
         }
 
+    async def test_translated_coordinator_error_is_not_replaced(self):
+        """An already-actionable error must survive the platform write helper.
+
+        The coordinator raises a translated ``HomeAssistantError`` for the write
+        cooldown that names the remaining wait. Reclassifying it into the
+        generic ``write_failed`` key threw that away and left the user without
+        the actual reason (#237).
+        """
+        from homeassistant.exceptions import HomeAssistantError
+
+        from custom_components.idm_heatpump.number import IdmNumber
+
+        cooldown_error = HomeAssistantError(
+            translation_domain="idm_heatpump",
+            translation_key="write_cooldown_active",
+            translation_placeholders={"register": "dhw_target", "remaining": "2.3", "cooldown": "5"},
+        )
+        coord = _make_coordinator()
+        coord.async_write_register = AsyncMock(side_effect=cooldown_error)
+        reg = _make_register("dhw_target", writable=True)
+        num = IdmNumber(coord, reg, _make_desc("dhw_target"))
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await num.async_set_native_value(55.0)
+
+        assert exc_info.value is cooldown_error
+        assert exc_info.value.translation_key == "write_cooldown_active"
+        assert exc_info.value.translation_placeholders == {
+            "register": "dhw_target",
+            "remaining": "2.3",
+            "cooldown": "5",
+        }
+
     def test_glt_measurement_number_gets_unique_id_suffix(self):
         # GLT-Messwerte existieren zusätzlich als Sensor — die Number braucht
         # ein "_set"-Suffix, damit die unique_ids nicht kollidieren.

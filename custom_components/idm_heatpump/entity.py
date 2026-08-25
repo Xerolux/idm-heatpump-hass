@@ -145,6 +145,12 @@ class IdmEntity(IdmCoordinatorEntityBase):
         """
         try:
             await self.coordinator.async_write_register(self._register, value)
+        except HomeAssistantError:
+            # The coordinator already raised a translated, actionable error —
+            # the write cooldown names the remaining wait. Reclassifying it
+            # replaced that with the generic "could not be written" message and
+            # hid the real reason from the user (#237).
+            raise
         except Exception as err:
             translation_key = classify_write_error(err)
             _LOGGER.error(

@@ -13,6 +13,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.1-beta.2] - 2026-08-25
+
+Follow-up beta for [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
+The diagnostics added in `0.15.1-beta.1` showed that the write itself reaches
+the controller and succeeds; what the reporter still saw was the write cooldown,
+reported under the wrong message.
+
+### Fixed
+
+- **The writable platforms replaced an already-actionable error with the generic
+  "could not be written" message.** `number`, `select`, `switch`, `climate`,
+  `water_heater` and `button` caught every exception from
+  `IdmCoordinator.async_write_register`, ran it back through
+  `classify_write_error` and re-raised it under the `write_failed` key. That
+  path also swallowed the translated `HomeAssistantError` the coordinator
+  raises for the write cooldown, so a user who changed a setpoint twice within
+  the cooldown was told to "check the value" instead of being told how long to
+  wait. All six platforms now re-raise a `HomeAssistantError` unchanged, the way
+  `services.py` already did. Reported in
+  [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
+
 ## [0.15.1-beta.1] - 2026-08-25
 
 Diagnostic beta for [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
