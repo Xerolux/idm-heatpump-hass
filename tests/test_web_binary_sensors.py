@@ -232,3 +232,29 @@ def test_inverted_nc_binary_sensors():
     assert tripped_entities["web_dewpoint_humidity_alarm"].is_on is True
     assert tripped_entities["web_ew_evu_lock_contact"].is_on is True
     assert tripped_entities["web_failure_eheating"].is_on is True
+
+
+class TestExpectedPowerNaming:
+    """The three "mom./prog. Leistung" web values are not live measurements.
+
+    IDM reports the current *or projected* power for a mode, so the value stays
+    non-zero while that mode is idle. Naming them "Momentane Leistung ..."
+    promised a measurement the value does not deliver and read as a fault
+    (#237).
+    """
+
+    def test_expected_power_names_do_not_promise_a_live_measurement(self):
+        from custom_components.idm_heatpump.sensor import _humanize_web_name
+
+        for key, mode in (
+            ("current_expected_power_heating", "Heizen"),
+            ("current_expected_power_cooling", "Kühlen"),
+            ("current_expected_power_hotwater", "Warmwasser"),
+        ):
+            name = _humanize_web_name(key)
+            assert name == f"Momentane/prognostizierte Leistung {mode}"
+
+    def test_actual_electrical_power_stays_distinct(self):
+        from custom_components.idm_heatpump.sensor import _humanize_web_name
+
+        assert "prognostiziert" not in _humanize_web_name("current_electrical_power")
