@@ -69,6 +69,11 @@ def test_ci_installs_runtime_dependencies_from_manifest() -> None:
     assert "manifest.json" in quality
     assert 'json.load(manifest_file)["requirements"]' in quality
     assert 'pip", "install", *requirements' in quality
+    # The api-main leg installs the API from git in the following step, so the
+    # pinned API is skipped here. Without that, the leg dies on the manifest
+    # install whenever the pin points at a version that is not on PyPI yet -
+    # exactly the situation during a breaking API transition.
+    assert 'requirement.startswith("idm-heatpump-api")' in quality
 
 
 def test_ci_tests_pinned_and_compatible_api_dependencies() -> None:

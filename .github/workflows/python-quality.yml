@@ -50,14 +50,28 @@ jobs:
           pip install ruff mypy pytest pytest-cov pytest-asyncio pytest-homeassistant-custom-component
 
       - name: Install manifest runtime dependencies
+        env:
+          API_DEPENDENCY_MODE: ${{ inputs.api-dependency-mode }}
         run: |
           python - <<'PY'
           import json
+          import os
           import subprocess
           import sys
 
           with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
               requirements = json.load(manifest_file)["requirements"]
+
+          # In api-main mode the API comes from git in the next step. Skipping the
+          # pinned API here keeps that leg meaningful while the pin points at a
+          # version that is not on PyPI yet - which is exactly the situation
+          # during a breaking API transition, when its signal matters most.
+          if os.environ["API_DEPENDENCY_MODE"] == "api-main":
+              requirements = [
+                  requirement
+                  for requirement in requirements
+                  if not requirement.startswith("idm-heatpump-api")
+              ]
 
           subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
           PY
