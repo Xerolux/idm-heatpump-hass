@@ -55,7 +55,6 @@ def test_manifest_requirements_are_all_parsable() -> None:
     assert {requirement.name for requirement in requirements} >= {
         "modbus-connection",
         "tmodbus",
-        "pymodbus",
         "idm-heatpump-api",
     }
 

@@ -255,7 +255,6 @@ The integration creates a diagnostic sensor named **IDM Heatpump API version**
 - `integration_version`: installed custom integration version
 - `modbus_connection_version`: installed connection-library version
 - `tmodbus_version`: installed direct socket-backend version
-- `pymodbus_version`: installed compatibility-library version
 
 The same version set is included in downloaded diagnostics and written to the
 Home Assistant log when the config entry starts. This is the authoritative way
@@ -273,14 +272,14 @@ This project has two independently versioned packages:
 | Connection library | `modbus-connection==4.10.0` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]==0.6.1` | Wire/backend implementation changes |
 | Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
-| Python register/web library | `idm-heatpump-api[web]==1.0.3` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
+| Python register/web library | `idm-heatpump-api[web]==2.0.0b1` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
 `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.1`,
-`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.3`.
+`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==2.0.0b1`.
 The first two packages own the direct socket. `idm-heatpump-api` remains
 responsible for IDM-specific device logic; pymodbus is temporarily retained
-because that API still imports it. `4.10.0` is the version of
+because that API still imports it. `4.8.1` is the version of
 `modbus-connection`, not an IDM integration version. The transport was first
 shipped by IDM integration beta `0.11.0-beta.1` and is now part of the stable
 `0.11.x` line.

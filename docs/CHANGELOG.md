@@ -13,6 +13,75 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0-beta.1] - 2026-08-25
+
+> ## ⚠️ BREAKING CHANGE — read before updating to `0.16.x`
+>
+> **`0.16.0` moves to `modbus-connection`/tmodbus only and requires
+> `idm-heatpump-api` `2.0.0`. `pymodbus` is removed from the manifest.**
+>
+> - **`0.15.1` is the last release line that carries `pymodbus`.** It stays
+>   pinned to `idm-heatpump-api` `1.0.3` and keeps working. If you need
+>   pymodbus in your setup for any other reason, stay on `0.15.1`.
+> - **There is no backwards compatibility layer.** `idm-heatpump-api` `2.0.0`
+>   is a breaking release of the library: it owns its exception hierarchy
+>   (`IdmConnectionError`, `IdmTransportError`, `IdmDeviceError`,
+>   `IllegalAddressError`) instead of rooting it in `pymodbus`. `0.16.0` will
+>   not run against API `1.x`, and `0.15.x` will not run against API `2.x`.
+> - **Home Assistant installs the new requirements on first start after the
+>   update.** Give it a restart and one poll cycle before judging the result.
+> - **Nothing on the wire changes.** Register addresses, datatypes, unique IDs,
+>   entity IDs and the write path are identical. Your entities, history,
+>   automations and dashboards survive the update untouched — no reconfiguration,
+>   no re-adding the integration.
+> - **Rolling back is a downgrade to `0.15.1`**, which restores the API `1.0.3`
+>   pin. Do it through HACS like any other version change.
+
+**pymodbus is gone.** The integration speaks Modbus TCP through
+`modbus-connection`/tmodbus and has done so since `0.15.0`, but it still had to
+ship `pymodbus` because `idm-heatpump-api` rooted its public exception
+hierarchy in it. `idm-heatpump-api` `2.0.0` owns its errors, so the dependency
+goes.
+
+The `0.15.1` line is the last one with pymodbus, pinned to
+`idm-heatpump-api` `1.0.3`. Nothing on the wire changes here: register
+addresses, datatypes, unique IDs, entity IDs and the write path are identical.
+
+### Changed
+
+- **`idm-heatpump-api[web]` pinned to `2.0.0b1`, `pymodbus` removed from the
+  manifest.** `beta.1` pins the API prerelease; the `0.16.0` stable release will
+  pin `2.0.0`. The transport now maps `modbus-connection` errors straight onto
+  the library's own types (`IdmConnectionError`, `IdmTransportError`,
+  `IdmDeviceError`, `IllegalAddressError`) instead of translating them into
+  pymodbus exceptions first. `coordinator.py` and `error_messages.py` catch the
+  library types. See
+  [idm-heatpump-api#85](https://github.com/Xerolux/idm-heatpump-api/issues/85).
+
+- **The Modbus exception code is read from the error, not parsed out of it.**
+  `IdmDeviceError.exception_code` carries the code the controller answered
+  with; the `exception_code=<N>` text match added in `0.15.1-beta.1` remains
+  only as a fallback. The user-facing write messages introduced for
+  [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237) are unchanged.
+
+- **`AGENTS.md` states three rules it relied on but never wrote down:** prose
+  baked into workflows and scripts is English too, prereleases are SemVer
+  (`v0.16.0-beta.1`) for the integration and PEP 440 (`2.0.0b1`) for
+  `idm-heatpump-api`, and every release carries the support links.
+
+### Removed
+
+- **The pymodbus log filter.** `log_filter.py` existed partly to silence
+  `pymodbus.logging` connection-drop noise from a library that performed no I/O
+  for this integration. With the dependency gone there is no such logger; the
+  filter for repeated `idm-heatpump-api` register-failure warnings stays and
+  `install_pymodbus_log_filter()` is now `install_library_log_filter()`.
+
+- **The `pymodbus` runtime-version field.** The diagnostic *IDM Heatpump API
+  version* sensor, the diagnostics download and the startup log line no longer
+  report a pymodbus version, because there is none. The integration,
+  `idm-heatpump-api`, `modbus-connection` and `tmodbus` versions are unchanged.
+
 ### Fixed
 
 - **A curated release no longer drops the support links.**
@@ -21,13 +90,6 @@ All notable changes to this project will be documented in this file.
   `release_notes` input — which is how every stable release is cut — went out
   without it. The section is now appended to both paths, and it is English like
   the rest of the release text.
-
-### Changed
-
-- **`AGENTS.md` states three rules it relied on but never wrote down:** prose
-  baked into workflows and scripts is English too, prereleases are SemVer
-  (`v0.16.0-beta.1`) for the integration and PEP 440 (`2.0.0b1`) for
-  `idm-heatpump-api`, and every release carries the support links.
 
 ## [0.15.1] - 2026-08-25
 

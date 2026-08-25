@@ -16,7 +16,6 @@ class RuntimeVersions:
     api: str
     modbus_connection: str
     tmodbus: str
-    pymodbus: str
 
 
 @cache
@@ -35,7 +34,6 @@ def runtime_versions(integration_version: object) -> RuntimeVersions:
         api=distribution_version("idm-heatpump-api"),
         modbus_connection=distribution_version("modbus-connection"),
         tmodbus=distribution_version("tmodbus"),
-        pymodbus=distribution_version("pymodbus"),
     )
 
 

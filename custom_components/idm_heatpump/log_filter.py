@@ -1,26 +1,21 @@
-"""Logging filters for noisy third-party dependencies.
+"""Logging filter for repeated register-failure warnings.
 
-Two sources of log spam are suppressed here:
-
-1. **pymodbus** remains imported by the pinned ``idm-heatpump-api`` for
-   compatibility, although the integration's active socket now uses tmodbus.
-   Keep the existing narrow filters until that compatibility dependency can be
-   removed, so an older or fallback API path cannot reintroduce its routine
-   connection-drop frame dumps.
-
-2. **idm-heatpump-api** logs a WARNING "Modbus read at address X failed after N
+``idm-heatpump-api`` logs a WARNING "Modbus read at address X failed after N
    attempts: ..." whenever a register read exhausts its retries. For registers
    the device does not implement (Modbus ``Illegal Data Address`` / exception
    code 2) this is a permanent condition that is retried on every poll,
    producing thousands of identical warnings over hours (e.g. 6000+ entries for
    a handful of optional registers on a Navigator 2.0). The coordinator and the
    library already isolate these addresses and stop reading them, so the
-   repeated warnings carry no actionable information. They are suppressed
-   entirely.
+repeated warnings carry no actionable information. They are suppressed entirely.
 
-All other logging from both libraries (genuine ERRORs, DEBUG frame dumps,
-decoding warnings) is left untouched, and DEBUG-level detail remains available
-when the user explicitly enables debug logging.
+All other logging from the library (genuine ERRORs, DEBUG frame dumps, decoding
+warnings) is left untouched, and DEBUG-level detail remains available when the
+user explicitly enables debug logging.
+
+The pymodbus filter that used to live here went away with the dependency:
+``idm-heatpump-api`` 2.0.0 no longer imports pymodbus, so there is no
+``pymodbus.logging`` logger to quieten.
 """
 
 from __future__ import annotations
@@ -29,18 +24,7 @@ import logging
 
 _LOGGER = logging.getLogger(__name__)
 
-PYMODBUS_LOGGER_NAME = "pymodbus.logging"
 LIBRARY_LOGGER_NAME = "idm_heatpump.client"
-
-_NOISY_ERROR_PREFIXES: tuple[str, ...] = (
-    # Compatibility path: pymodbus may log the raw socket error before the
-    # coordinator reports the same failure with an actionable repair issue.
-    "Failed to connect ",
-    # pymodbus transport.py: Log.error("Cancel send, because not connected!")
-    "Cancel send, because not connected!",
-    # pymodbus transaction.py: Log.error("No response received after N retries, ...")
-    "No response received after ",
-)
 
 # idm-heatpump-api retry-exhaustion warnings for individual registers. These are
 # emitted from IdmModbusClient._retry_command on every poll for addresses the
@@ -51,26 +35,6 @@ _ILLEGAL_ADDRESS_LIBRARY_MARKERS: tuple[str, ...] = (
     "failed after",
     "has failed",
 )
-
-
-class _PymodbusNoiseFilter(logging.Filter):
-    """Drop pymodbus ERROR records that are routine connection noise.
-
-    Only matches the two specific ERROR-level messages that pymodbus
-    emits during transient disconnects. Each match returns False so the
-    record is suppressed before reaching Home Assistant's log. Every
-    other record (DEBUG frame dumps, real ERRORs, warnings) flows
-    through unchanged.
-    """
-
-    def filter(self, record: logging.LogRecord) -> bool:
-        if record.levelno < logging.ERROR:
-            return True
-        message = record.getMessage()
-        for prefix in _NOISY_ERROR_PREFIXES:
-            if message.startswith(prefix):
-                return False
-        return True
 
 
 class _LibraryIllegalAddressFilter(logging.Filter):
@@ -98,25 +62,21 @@ class _LibraryIllegalAddressFilter(logging.Filter):
 _INSTALLED = False
 
 
-def install_pymodbus_log_filter() -> None:
-    """Install the log filters once on the third-party loggers.
+def install_library_log_filter() -> None:
+    """Install the log filter once on the ``idm-heatpump-api`` logger.
 
-    Safe to call multiple times: each filter is added only once even if the
-    integration is reloaded. This keeps the global loggers clean across HA
+    Safe to call multiple times: the filter is added only once even if the
+    integration is reloaded. This keeps the global logger clean across HA
     restarts without stacking duplicate filters.
 
-    Installs two filters:
-      * ``pymodbus.logging``: suppresses routine connection-drop ERROR records.
-      * ``idm_heatpump.client``: suppresses repeated register-failure WARNINGs
-        for ``Illegal Data Address`` registers so they do not flood the log.
+    Suppresses repeated register-failure WARNINGs for ``Illegal Data Address``
+    registers so they do not flood the log.
     """
     global _INSTALLED
     if _INSTALLED:
         return
-    logging.getLogger(PYMODBUS_LOGGER_NAME).addFilter(_PymodbusNoiseFilter())
     logging.getLogger(LIBRARY_LOGGER_NAME).addFilter(_LibraryIllegalAddressFilter())
     _INSTALLED = True
     _LOGGER.debug(
-        "Installed noise filters on pymodbus and idm-heatpump-api loggers "
-        "(suppressing routine connection-drop ERRORs and repeated register-failure WARNINGs)",
+        "Installed the idm-heatpump-api noise filter (suppressing repeated register-failure WARNINGs)",
     )

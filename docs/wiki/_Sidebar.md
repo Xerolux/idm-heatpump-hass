@@ -44,7 +44,6 @@
 **Python:** 3.13+
 **modbus-connection:** modbus-connection==4.10.0
 **tmodbus:** tmodbus[async-serial]==0.6.1
-**pymodbus compatibility:** pymodbus>=3.12.1,<4.0
-**idm-heatpump-api[web]:** idm-heatpump-api[web]==1.0.3
+**idm-heatpump-api[web]:** idm-heatpump-api[web]==2.0.0b1
 
 [GitHub](https://github.com/Xerolux/idm-heatpump-hass) · [Discussions](https://github.com/Xerolux/idm-heatpump-hass/discussions) · [Issues](https://github.com/Xerolux/idm-heatpump-hass/issues) · [HACS](https://hacs.xyz/)

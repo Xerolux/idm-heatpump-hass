@@ -130,7 +130,7 @@ Maintainer sollten vor einem stabilen Release den
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.13+ (wird von Home Assistant bereitgestellt)
 - `modbus-connection==4.10.0` · `tmodbus[async-serial]==0.6.1` (direkter Modbus-Socket)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==1.0.3` (vorübergehend gepinnte API-Kompatibilitätsabhängigkeiten)
+- `idm-heatpump-api[web]==2.0.0b1` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
 
 ---
 
@@ -185,7 +185,7 @@ Home Assistant
 - **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
 - **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über `modbus-connection==4.10.0` und `tmodbus[async-serial]==0.6.1`; `4.10.0` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
-- **API-Kompatibilität**: `idm-heatpump-api[web]==1.0.3` bleibt für Register, Batchplanung, Encoding/Decoding, Modellerkennung und Schreibschutz zuständig; `pymodbus>=3.12.1,<4.0` bleibt vorübergehend installiert, weil die API es weiterhin importiert, besitzt aber nicht den direkten Socket
+- **API-Grenze**: `idm-heatpump-api[web]==2.0.0b1` bleibt für Register, Batchplanung, Encoding/Decoding, Modellerkennung und Schreibschutz zuständig. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
 - **Auto-Recovery**: API-Retry/Backoff plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
 - **Optionale Web-Zusatzdaten**: Die Einrichtung erkennt lokal Navigator-2.0-HTTP oder Navigator-10/Pro-WebSocket, speichert das erfolgreiche Protokoll, nutzt die Sitzung weiter und verbindet im Normalbetrieb nur diese bekannte Variante neu; Modbus bleibt führend
 - **Verständliche Verbindungsdiagnose**: Setup, Reconfigure, Logs und Reparaturmeldungen unterscheiden DNS-/Hostnamefehler, abgelehnte TCP-Verbindungen, Timeouts, nicht erreichbare Endpunkte, fehlende Modbus-Antworten, falsche Web-PINs und Webfehler

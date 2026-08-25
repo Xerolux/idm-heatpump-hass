@@ -280,7 +280,7 @@ Look for in the logs:
 4. Attach the file to your [bug report](https://github.com/Xerolux/idm-heatpump-hass/issues/new?template=bug_report.md)
 
 The export includes the installed integration, `idm-heatpump-api`,
-`modbus-connection`, `tmodbus`, and compatibility `pymodbus` versions. They are
+`modbus-connection` and `tmodbus` versions. They are
 also visible on the **IDM Heatpump API version** diagnostic sensor. The client
 diagnostic block additionally reports a redacted endpoint, transport source,
 socket ownership, current connection state, and whether central sharing is
@@ -293,7 +293,7 @@ Please include:
 - Heat pump model and Navigator/controller model.
 - Firmware version from the diagnostics export.
 - Home Assistant version plus integration, `idm-heatpump-api`,
-  `modbus-connection`, `tmodbus` and compatibility `pymodbus` versions.
+  `modbus-connection` and `tmodbus` versions.
 - Active heating circuits, zone modules, PV, Solar, ISC and Cascade flags.
 - The redacted diagnostics export.
 - Relevant log lines around the first error.

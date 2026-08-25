@@ -67,8 +67,7 @@ installation test.
    assert manifest["requirements"] == [
        "modbus-connection==4.10.0",
        "tmodbus[async-serial]==0.6.1",
-       "pymodbus>=3.12.1,<4.0",
-       "idm-heatpump-api[web]==1.0.3",
+       "idm-heatpump-api[web]==2.0.0b1",
    ]
    assert manifest["version"] == os.environ["RELEASE_VERSION"]
    print("artifact metadata ok")
@@ -86,7 +85,7 @@ installation test.
 2. Restart Home Assistant.
 3. Confirm Home Assistant starts without setup import errors for
    `idm_heatpump`, `idm_heatpump_api`, `modbus_connection`, `tmodbus`, or
-   `pymodbus`.
+   the API.
 4. Record the installed integration and dependency versions from diagnostics;
    they must match the candidate and manifest.
 5. Confirm diagnostics identify `source: modbus_connection.tmodbus`,
@@ -182,7 +181,7 @@ specifically changes EEPROM protection.
 
 - Home Assistant version.
 - Integration version and artifact checksum.
-- Installed `modbus-connection`, `tmodbus`, compatibility `pymodbus`, and
+- Installed `modbus-connection`, `tmodbus`, and
   `idm-heatpump-api` versions.
 - Redacted transport capabilities and the result of read-only FC03/FC04 and
   reconnect validation.

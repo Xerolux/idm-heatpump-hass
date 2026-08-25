@@ -134,7 +134,7 @@ from .const import (
     REGISTER_COUNT_CONNECTION_PROBE,
 )
 from .library_adapter import get_idm_client
-from .log_filter import install_pymodbus_log_filter
+from .log_filter import install_library_log_filter
 from .registers import normalize_zone_rooms
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
@@ -1671,7 +1671,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         return _ModbusConnectionStatus.SUCCESS
 
     async def _test_connection(self, data: dict[str, Any]) -> _ModbusConnectionStatus:
-        install_pymodbus_log_filter()
+        install_library_log_filter()
         host = str(data[CONF_HOST]).strip()
         port = int(data.get(CONF_PORT, DEFAULT_PORT))
         slave_id = int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))

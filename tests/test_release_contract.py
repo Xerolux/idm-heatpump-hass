@@ -16,8 +16,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "modbus-connection==4.10.0",
     "tmodbus[async-serial]==0.6.1",
-    "pymodbus>=3.12.1,<4.0",
-    "idm-heatpump-api[web]==1.0.3",
+    "idm-heatpump-api[web]==2.0.0b1",
 ]
 
 
@@ -70,6 +69,11 @@ def test_ci_installs_runtime_dependencies_from_manifest() -> None:
     assert "manifest.json" in quality
     assert 'json.load(manifest_file)["requirements"]' in quality
     assert 'pip", "install", *requirements' in quality
+    # The api-main leg installs the API from git in the following step, so the
+    # pinned API is skipped here. Without that, the leg dies on the manifest
+    # install whenever the pin points at a version that is not on PyPI yet -
+    # exactly the situation during a breaking API transition.
+    assert 'requirement.startswith("idm-heatpump-api")' in quality
 
 
 def test_ci_tests_pinned_and_compatible_api_dependencies() -> None:
@@ -79,7 +83,6 @@ def test_ci_tests_pinned_and_compatible_api_dependencies() -> None:
     assert "api-dependency-mode" in ci
     assert "manifest-pinned" in ci
     assert "api-main" in ci
-    assert "pymodbus>=3.12.1,<4.0" in quality
     assert "idm-heatpump-api.git@main" in quality
 
 

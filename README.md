@@ -43,7 +43,7 @@
 | **🛡️ Error Management** | Error detection, readable internal messages, error acknowledgment, diagnostics export |
 | **🧭 Guided Setup Diagnostics** | Distinguishes unknown hosts, refused/disabled Modbus TCP, timeouts, unreachable networks, wrong slave IDs, invalid web PINs and unavailable web interfaces |
 | **🧪 Read-only Connection Test** | Reconfigure menu can test the saved Modbus and optional local web connection without changing settings or writing registers |
-| **📦 Runtime Versions** | Diagnostic sensor and export show the installed integration, `idm-heatpump-api`, `modbus-connection`, `tmodbus` and compatibility `pymodbus` versions |
+| **📦 Runtime Versions** | Diagnostic sensor and export show the installed integration, `idm-heatpump-api`, `modbus-connection` and `tmodbus` versions |
 | **🔑 Technician Level** | Optional sensors for the current level 1 & 2 access codes (disabled by default, updated every minute and pinned first) |
 | **🔒 Security** | 100% local, Modbus TCP, EEPROM protection, EEPROM-sensitive registers |
 
@@ -132,7 +132,7 @@ before publishing a stable release.
 - Optional local Navigator web PIN for additional read-only web diagnostics
 - Python 3.13+ (provided by Home Assistant)
 - `modbus-connection==4.10.0` · `tmodbus[async-serial]==0.6.1` (direct Modbus socket runtime)
-- `pymodbus>=3.12.1,<4.0` · `idm-heatpump-api[web]==1.0.3` (temporarily pinned API compatibility dependencies)
+- `idm-heatpump-api[web]==2.0.0b1` (device logic: register metadata, batching, decoding, model detection, write safety)
 
 ---
 
@@ -184,7 +184,7 @@ Home Assistant
 - **Data types**: FLOAT (IEEE 754), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers are tracked and protected from excessive writing
 - **Direct local transport**: raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.1` runtime; version 4.10.0 is the transport library version, not the IDM integration version
-- **API compatibility**: `idm-heatpump-api[web]==1.0.3` still supplies register metadata, batching, encoding/decoding, model detection and write safety; `pymodbus>=3.12.1,<4.0` remains temporarily installed because that API release still imports it, but it no longer owns the direct socket
+- **API boundary**: `idm-heatpump-api[web]==2.0.0b1` supplies register metadata, batching, encoding/decoding, model detection and write safety. Since that release the API owns its own exception hierarchy and pymodbus is gone: this integration installs no Modbus stack it does not speak
 - **Auto-recovery**: API retry/backoff policy plus reconnect-on-demand in the tmodbus-backed connection
 - **Library-powered**: All register definitions sourced from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools
 - **Navigator 10 support**: Heat sink (Trennwärmetauscher) sensors, flow rate monitoring (Sieb detection), groundwater temperatures, booster A/B diagnostics
@@ -193,7 +193,7 @@ Home Assistant
 - **Readable diagnostics**: the `internal_message` sensor shows clear message text and exposes `message_code` / `message_text` attributes instead of a bare numeric code
 - **Actionable connection diagnostics**: setup, reconfigure, logs and repairs distinguish DNS/hostname errors, refused TCP connections, timeouts, unreachable endpoints, missing Modbus replies, wrong web PINs and web-interface failures
 - **Built-in test menu**: Reconfigure offers a non-destructive connection test for a known IDM Modbus register, targeted DNS/TCP failure classification and, when configured, local Navigator web authentication
-- **Visible runtime stack**: the diagnostic `IDM Heatpump API version` sensor exposes the installed API version and includes the integration, `modbus-connection`, `tmodbus` and compatibility `pymodbus` versions as attributes; the same versions are included in diagnostics exports and startup logs
+- **Visible runtime stack**: the diagnostic `IDM Heatpump API version` sensor exposes the installed API version and includes the integration, `modbus-connection` and `tmodbus` versions as attributes; the same versions are included in diagnostics exports and startup logs
 - **Connection ownership**: each config entry owns its tmodbus socket; Home Assistant central cross-entry sharing is not currently available, so diagnostics report `supports_shared_connection: false`
 - **Validation status**: the adapter is implemented and covered by automated tests; read-only validation of the new tmodbus path on real Navigator hardware is still pending
 - **Entity organization**: technician code sensors are pinned at the top, followed by functional groups for configuration, switches, writable values and diagnostics

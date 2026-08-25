@@ -105,7 +105,7 @@ does not discard the rest of a valid web snapshot.
 5. If the Navigator or its local web protocol changed, use **Change connection
    settings** so protocol discovery runs again.
 6. Download redacted diagnostics and include the integration,
-   `modbus-connection`, `tmodbus`, compatibility `pymodbus` and API versions,
+   `modbus-connection`, `tmodbus` and API versions,
    plus Navigator model and firmware, when reporting a problem.
 
 See [Troubleshooting](Troubleshooting) for categorized errors and
@@ -115,12 +115,12 @@ See [Troubleshooting](Troubleshooting) for categorized errors and
 
 The sticky protocol selection was introduced in integration version
 `0.8.1-beta.29`. The current stable release is `0.15.0` and ships the
-tested `idm-heatpump-api[web]==1.0.3` web clients, which additionally expose
+tested `idm-heatpump-api[web]==2.0.0b1` web clients, which additionally expose
 Navigator 10 heating-circuit data for circuits B–G.
 
 For the independent Modbus path, the tested manifest order is
 `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.1`,
-`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==1.0.3`. The first two own
-the direct Modbus socket; pymodbus remains temporarily present because the
-pinned API still imports it. This does not change the web protocol or make
-version `4.10.0` an IDM integration release.
+and `idm-heatpump-api[web]==2.0.0b1`. The first two own the direct Modbus socket;
+since API 2.0.0 pymodbus is no longer installed at all. This does not change
+the web protocol or make
+version `4.8.1` an IDM integration release.

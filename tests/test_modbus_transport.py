@@ -6,7 +6,7 @@ from dataclasses import FrozenInstanceError
 from typing import Any
 
 import pytest
-from idm_heatpump import IllegalAddressError
+from idm_heatpump import IdmModbusError, IdmTransportError, IllegalAddressError
 from idm_heatpump.transport import IdmModbusTransport
 from modbus_connection import (
     AcknowledgeError,
@@ -17,7 +17,6 @@ from modbus_connection import (
     ModbusExceptionError,
     ServerDeviceBusyError,
 )
-from pymodbus.exceptions import ModbusException, ModbusIOException
 
 from custom_components.idm_heatpump import modbus_transport
 from custom_components.idm_heatpump.modbus_transport import (
@@ -383,19 +382,19 @@ def _make_failing_transport(exception_code: int) -> ModbusConnectionTransport:
 
 @pytest.mark.asyncio
 async def test_transport_translates_transient_codes_to_modbus_exception() -> None:
-    """Codes 5/6/10/11 must surface as ModbusException (retry-in-place path).
+    """Codes 5/6/10/11 must surface as IdmModbusError (retry-in-place path).
 
-    ModbusIOException derives from ModbusException but triggers the API's hard
+    IdmTransportError derives from IdmModbusError but triggers the API's hard
     reconnect path; the API 1.0 contract assigns codes 5/6/10/11 to the
-    retry-in-place path, so they must not surface as ModbusIOException.
+    retry-in-place path, so they must not surface as IdmTransportError.
     """
     for code in (5, 6, 10, 11):
         transport = _make_failing_transport(code)
 
-        with pytest.raises(ModbusException, match=f"exception_code={code}") as exc_info:
+        with pytest.raises(IdmModbusError, match=f"exception_code={code}") as exc_info:
             await transport.read_holding_registers(address=2000, count=1)
 
-        assert not isinstance(exc_info.value, ModbusIOException)
+        assert not isinstance(exc_info.value, IdmTransportError)
 
 
 @pytest.mark.asyncio
@@ -474,7 +473,7 @@ async def test_typed_backend_errors_keep_the_numeric_marker(
 
     transport = ModbusConnectionTransport(endpoint, connection_factory=lambda _: FailingConnection())  # type: ignore[arg-type]
 
-    with pytest.raises(ModbusException, match=rf"exception_code={expected_code}\)$"):
+    with pytest.raises(IdmModbusError, match=rf"exception_code={expected_code}\)$"):
         await transport.read_holding_registers(address=2000, count=1)
 
 
