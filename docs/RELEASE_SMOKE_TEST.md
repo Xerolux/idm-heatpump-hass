@@ -65,8 +65,8 @@ installation test.
        (Path(os.environ["UNPACK_DIR"]) / "manifest.json").read_text(encoding="utf-8")
    )
    assert manifest["requirements"] == [
-       "modbus-connection==4.8.1",
-       "tmodbus[async-serial]==0.5.1",
+       "modbus-connection==4.10.0",
+       "tmodbus[async-serial]==0.6.1",
        "pymodbus>=3.12.1,<4.0",
        "idm-heatpump-api[web]==1.0.3",
    ]
