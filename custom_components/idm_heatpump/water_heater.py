@@ -27,7 +27,7 @@ from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import build_device_info
-from .error_messages import classify_write_error, write_error_placeholders
+from .error_messages import classify_write_error, write_error_detail, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -139,14 +139,15 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         except Exception as err:
             translation_key = classify_write_error(err)
             _LOGGER.error(
-                "Could not set water heater target temperature for %s; Home Assistant will show %s",
+                "Could not set water heater target temperature for %s (%s); Home Assistant will show %s",
                 self._target_reg.name,
+                write_error_detail(err),
                 translation_key,
             )
             _LOGGER.debug("Technical IDM water heater write error", exc_info=True)
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key=translation_key,
-                translation_placeholders=write_error_placeholders(self._target_reg.name),
+                translation_placeholders=write_error_placeholders(self._target_reg.name, err),
             ) from err
         _LOGGER.debug("Set water heater target temperature to %s", temp)

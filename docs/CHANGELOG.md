@@ -15,6 +15,31 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Room temperature forwarding called `hass.async_create_task` from a worker
+  thread.** The state-change listeners in `room_temp_forwarding.py` were plain
+  functions, so Home Assistant classified them as executor jobs and ran them off
+  the event loop; scheduling the debounced forward from there is a thread-safety
+  violation that Home Assistant reports and that can corrupt loop state. Both
+  listeners (room temperature and humidity) are now marked with `@callback` and
+  run on the event loop. Reported in
+  [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
+- **A rejected register write said nothing about why it was rejected.** The
+  technical reason existed only behind `logger: debug`, which is exactly what a
+  bug report filed against a default installation does not contain. Write
+  failures are now logged at warning level with the register, address, value and
+  reason, the reason is included in the Home Assistant message and in the
+  `write_rejected` repair issue, and the last failure is kept in the diagnostics
+  download as `last_write_error`. Modbus exception codes are decoded by name, so
+  a refusal reads "Modbus exception code 4 (Server Device Failure)" instead of
+  "could not be written". Reported in
+  [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
+- **A locally blocked write was reported as a rejection by the heat pump.** A
+  value the write-safety layer refuses never reaches the controller, but it still
+  raised the "the heat pump rejected a write" repair issue and pointed the user
+  at the device. Local guards and device answers are now separated: only a real
+  controller answer creates that issue, and the EEPROM write protection has its
+  own message (`write_eeprom_blocked`) that explains the wait instead of
+  suggesting a device fault.
 - **A stable release published by a tag push was never marked as the latest
   release.** `make_latest` in `.github/workflows/release.yml` was guarded on
   `inputs.make_latest != false`; on a tag push that input is null, GitHub
@@ -22,6 +47,14 @@ All notable changes to this project will be documented in this file.
   tag-pushed stable release. `v0.15.0` was published this way and had to be
   promoted to latest by hand. The guard now falls back to true for pushes and
   still honours an explicit `false` from a manual dispatch.
+
+### Changed
+
+- **The `write_rejected` repair issue now names the likely cause.** Its checklist
+  starts with the Navigator's per-register GLT access setting, which refuses a
+  write even when address, datatype and value are all correct, and it carries the
+  technical detail of the refusal. A new troubleshooting section documents the
+  same checklist.
 
 ## [0.15.0] - 2026-08-22
 

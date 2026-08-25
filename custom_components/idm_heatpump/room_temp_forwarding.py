@@ -25,13 +25,13 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-from homeassistant.core import HomeAssistant
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
 
 from idm_heatpump import RegisterDef
 
 from .coordinator import IdmCoordinator
-from .error_messages import classify_write_error, friendly_write_error
+from .error_messages import classify_write_error, friendly_write_error, write_error_detail
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -140,7 +140,16 @@ class RoomTempForwarder:
                 unsub()
             self._unsub_state.clear()
 
+    @callback
     def _handle_state_change(self, event: Any) -> None:
+        """Schedule a debounced forward for the entity that changed.
+
+        ``@callback`` is required, not decorative: Home Assistant builds a
+        ``HassJob`` from this listener, and a plain function without the marker
+        is classified as an executor job and run in a worker thread. From there
+        ``hass.async_create_task`` is a thread-safety violation that Home
+        Assistant reports and that can corrupt loop state (#237).
+        """
         entity_id = event.data.get("entity_id")
         if not isinstance(entity_id, str):
             return
@@ -226,6 +235,7 @@ class RoomTempForwarder:
                 reg.name,
                 friendly_write_error(error_kind, reg.name),
             )
+            _LOGGER.warning("Technical IDM write error for %s: %s", reg.name, write_error_detail(err))
             _LOGGER.debug("Technical %s forwarding error", self._value_label, exc_info=True)
             return
 
@@ -281,7 +291,16 @@ class HumidityForwarder:
                 self._unsub_state()
                 self._unsub_state = None
 
+    @callback
     def _handle_state_change(self, event: Any) -> None:
+        """Schedule a debounced humidity forward.
+
+        ``@callback`` is required, not decorative: Home Assistant builds a
+        ``HassJob`` from this listener, and a plain function without the marker
+        is classified as an executor job and run in a worker thread. From there
+        ``hass.async_create_task`` is a thread-safety violation that Home
+        Assistant reports and that can corrupt loop state (#237).
+        """
         entity_id = event.data.get("entity_id")
         if not isinstance(entity_id, str):
             return
@@ -347,6 +366,7 @@ class HumidityForwarder:
                 reg.name,
                 friendly_write_error(error_kind, reg.name),
             )
+            _LOGGER.warning("Technical IDM write error for %s: %s", reg.name, write_error_detail(err))
             _LOGGER.debug("Technical humidity forwarding error", exc_info=True)
             return
 

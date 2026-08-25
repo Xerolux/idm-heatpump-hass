@@ -27,7 +27,12 @@ from idm_heatpump import DataType, RegisterDef
 from .adapter_glt import EXTERNAL_POWER_MEASUREMENT_NAMES
 from .const import DOMAIN, HEATING_CIRCUITS, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
 from .coordinator import IdmCoordinator
-from .error_messages import classify_write_error, scoped_issue_id, write_error_placeholders
+from .error_messages import (
+    classify_write_error,
+    scoped_issue_id,
+    write_error_detail,
+    write_error_placeholders,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -166,7 +171,7 @@ async def _async_write_register(
         raise HomeAssistantError(
             translation_domain=DOMAIN,
             translation_key=translation_key,
-            translation_placeholders=write_error_placeholders(reg.name),
+            translation_placeholders=write_error_placeholders(reg.name, err),
         ) from err
 
 
@@ -313,13 +318,17 @@ async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> Serv
             is_fixable=False,
             severity=ir.IssueSeverity.WARNING,
             translation_key="write_rejected",
-            translation_placeholders={"register": reg.name, "address": str(reg.address)},
+            translation_placeholders={
+                "register": reg.name,
+                "address": str(reg.address),
+                "detail": write_error_detail(err),
+            },
         )
         translation_key = classify_write_error(err)
         raise HomeAssistantError(
             translation_domain=DOMAIN,
             translation_key=translation_key,
-            translation_placeholders=write_error_placeholders(reg.name),
+            translation_placeholders=write_error_placeholders(reg.name, err),
         ) from err
 
 

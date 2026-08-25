@@ -280,3 +280,35 @@ async def test_run_unsubscribes_state_listeners_on_cancel():
 
     unsub.assert_called_once()
     assert forwarder._unsub_state == []
+
+
+class TestStateListenerRunsOnEventLoop:
+    """The state listener must be a Home Assistant callback, not an executor job.
+
+    Without ``@callback`` Home Assistant classifies the listener as an executor
+    job and runs it in a worker thread, where its ``hass.async_create_task``
+    call is a thread-safety violation (#237).
+    """
+
+    def test_room_temp_listener_is_marked_as_callback(self):
+        coord, _ = _make_coordinator()
+        forwarder = RoomTempForwarder(
+            _make_hass(),
+            coord,
+            RoomTempForwardingConfig(entities={"a": "sensor.room_temp"}, interval=300, tolerance=0.2),
+        )
+        assert getattr(forwarder._handle_state_change, "_hass_callback", False) is True
+
+    def test_humidity_listener_is_marked_as_callback(self):
+        from custom_components.idm_heatpump.room_temp_forwarding import (
+            HumidityForwarder,
+            HumidityForwardingConfig,
+        )
+
+        coord, _ = _make_coordinator()
+        forwarder = HumidityForwarder(
+            _make_hass(),
+            coord,
+            HumidityForwardingConfig(entity_id="sensor.humidity", interval=300, tolerance=2.0),
+        )
+        assert getattr(forwarder._handle_state_change, "_hass_callback", False) is True

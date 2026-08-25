@@ -110,7 +110,10 @@ class TestIdmAcknowledgeErrorsButton:
             await button.async_press()
         # classify_write_error produces a write_* translation key
         assert exc_info.value.translation_key.startswith("write_")
-        assert exc_info.value.translation_placeholders == {"register": "error_acknowledge"}
+        assert exc_info.value.translation_placeholders == {
+            "register": "error_acknowledge",
+            "detail": "Exception: write failed",
+        }
 
 
 # ---------------------------------------------------------------------------

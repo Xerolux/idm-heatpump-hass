@@ -34,7 +34,7 @@ from .const import DOMAIN, CircuitMode, HeatPumpStatus, RoomMode
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import build_device_info
-from .error_messages import classify_write_error, write_error_placeholders
+from .error_messages import classify_write_error, write_error_detail, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -138,16 +138,17 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         except Exception as err:
             translation_key = classify_write_error(err)
             _LOGGER.error(
-                "Could not %s %s; Home Assistant will show the actionable %s message",
+                "Could not %s %s (%s); Home Assistant will show the actionable %s message",
                 action_label,
                 reg.name,
+                write_error_detail(err),
                 translation_key,
             )
             _LOGGER.debug("Technical IDM climate register write error", exc_info=True)
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key=translation_key,
-                translation_placeholders=write_error_placeholders(reg.name),
+                translation_placeholders=write_error_placeholders(reg.name, err),
             ) from err
 
     @property

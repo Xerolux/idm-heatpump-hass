@@ -199,6 +199,10 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "model_conflict": _model_conflict_diagnostics(coordinator),
                 "controller_stats_cross_reference": _controller_stats_cross_reference(coordinator),
                 "client_diagnostics": async_redact_data(_client_diagnostics(coordinator), TO_REDACT),
+                # The reason the last write failed. Without it a "write rejected"
+                # bug report carries no evidence at all unless the reporter had
+                # debug logging on before the failure (#237).
+                "last_write_error": getattr(coordinator, "last_write_error", None),
                 "web_supplement": _web_supplement_diagnostics(coordinator),
                 "unused_registers": sorted(coordinator.unused_registers),
                 "unsupported_registers": sorted(coordinator.unsupported_registers),

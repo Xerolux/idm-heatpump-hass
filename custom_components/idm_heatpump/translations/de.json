@@ -726,6 +726,12 @@
     "write_failed": {
       "message": "Register {register} konnte nicht geschrieben werden. Prüfe den Wert und versuche es erneut. Aktiviere bei wiederholtem Auftreten das Debug-Protokoll."
     },
+    "write_eeprom_blocked": {
+      "message": "Register {register} wurde erst vor Kurzem geschrieben. Es liegt im EEPROM der Steuerung, deshalb hält die Integration einen Mindestabstand zwischen zwei Schreibvorgängen ein, um die Hardware zu schonen. Warte das EEPROM-Schreibintervall ab und versuche es erneut. Technisches Detail: {detail}"
+    },
+    "write_rejected_by_device": {
+      "message": "Die Wärmepumpe hat den Schreibvorgang auf Register {register} abgelehnt. Prüfe am Navigator unter Gebäudeleittechnik, ob dieses Register zum Schreiben freigegeben ist (GLT-Zugriff) und ob die Funktion für diesen Heizkreis aktiviert ist. Technisches Detail: {detail}"
+    },
     "write_connection_failed": {
       "message": "Register {register} konnte nicht geschrieben werden, weil die Verbindung zur Wärmepumpe unterbrochen ist. Prüfe die Modbus-TCP-Verbindung und versuche es erneut."
     },
@@ -907,7 +913,7 @@
     },
     "write_rejected": {
       "title": "IDM-Registerschreibvorgang abgelehnt",
-      "description": "Die Wärmepumpe hat einen Schreibvorgang auf Register **{register}** an Adresse **{address}** abgelehnt.\n\nBitte prüfen:\n- Der Wert liegt im dokumentierten Bereich\n- Die Funktion ist auf diesem Gerät aktiviert\n- Die Steuerung erlaubt diesen Schreibvorgang aktuell"
+      "description": "Die Wärmepumpe hat einen Schreibvorgang auf Register **{register}** an Adresse **{address}** nicht angenommen.\n\nTechnisches Detail: `{detail}`\n\nBitte prüfen:\n- Das Register ist am Navigator unter **Gebäudeleittechnik** zum Schreiben freigegeben (die GLT-Registerliste hat je Register eine Zugriffseinstellung; ein dort nicht freigegebenes Register wird auch bei gültigem Wert abgelehnt)\n- Die Funktion ist für diesen Heizkreis bzw. diese Komponente aktiviert\n- Der Wert liegt im dokumentierten Bereich\n- Kein zweites Gebäudeleitsystem, kein Energiemanager und kein Wechselrichter schreibt dasselbe Register"
     }
   },
   "services": {

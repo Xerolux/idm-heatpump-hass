@@ -19,7 +19,7 @@ from idm_heatpump import RegisterDef
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info, is_configured_heating_circuit_register
-from .error_messages import classify_write_error, write_error_placeholders
+from .error_messages import classify_write_error, write_error_detail, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -148,16 +148,17 @@ class IdmEntity(IdmCoordinatorEntityBase):
         except Exception as err:
             translation_key = classify_write_error(err)
             _LOGGER.error(
-                "Could not %s %s; Home Assistant will show the actionable %s message",
+                "Could not %s %s (%s); Home Assistant will show the actionable %s message",
                 action_label,
                 self._register.name,
+                write_error_detail(err),
                 translation_key,
             )
             _LOGGER.debug("Technical IDM register write error", exc_info=True)
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key=translation_key,
-                translation_placeholders=write_error_placeholders(self._register.name),
+                translation_placeholders=write_error_placeholders(self._register.name, err),
             ) from err
 
     def is_writable_control(self) -> bool:
