@@ -221,9 +221,14 @@ _WEB_VALUE_NAMES_DE: dict[str, str] = {
     "condenser_pressure": "Kondensator Druck",
     "condenser_temperature": "Kondensator Temperatur",
     "controller_online_hours": "Regler Online",
-    "current_expected_power_cooling": "Momentane Leistung Kühlen",
-    "current_expected_power_heating": "Momentane Leistung Heizen",
-    "current_expected_power_hotwater": "Momentane Leistung Warmwasser",
+    # IDM labels these "mom./prog. Leistung ..." on the Navigator web page: the
+    # current *or projected* power for that mode, not a measured instantaneous
+    # one. They stay non-zero while the mode is idle, so the old name
+    # ("Momentane Leistung ...") read as a live measurement and looked broken
+    # (#237). Spell IDM's own meaning out instead.
+    "current_expected_power_cooling": "Momentane/prognostizierte Leistung Kühlen",
+    "current_expected_power_heating": "Momentane/prognostizierte Leistung Heizen",
+    "current_expected_power_hotwater": "Momentane/prognostizierte Leistung Warmwasser",
     "dewpoint_humidity_alarm": "Taupunkt Feuchte Alarm",
     "evaporation_temperature": "Verdampfungstemperatur",
     "evaporator_outlet_temperature": "Verdampfer Austrittstemperatur",

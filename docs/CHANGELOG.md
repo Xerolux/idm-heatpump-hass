@@ -13,6 +13,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.1-beta.3] - 2026-08-25
+
+### Fixed
+
+- **Three web power sensors were named as live measurements although they are
+  not.** The Navigator reports `mom./prog. Leistung Heizen`, `... Kühlen` and
+  `... Vorrang` — the current *or projected* thermal power for that mode. The
+  integration mapped them to "Momentane Leistung Heizen/Kühlen/Warmwasser",
+  which promises an instantaneous measurement, so a non-zero reading while
+  heating or cooling was switched off looked like a decoding fault. They are now
+  named "Momentane/prognostizierte Leistung ...", matching what the controller
+  actually reports, and the wiki explains why an idle mode still shows a value
+  and which entity to use for real electrical draw. Existing entity IDs are
+  unchanged; only the display name changes. Reported in
+  [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
+
 ## [0.15.1-beta.2] - 2026-08-25
 
 Follow-up beta for [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).

@@ -219,6 +219,19 @@ Typical web-only sensors include:
 | Heißgastemperatur (Web) | Web-only diagnostic temperature when available |
 | Verdampfer Druck (Web) | Web-only refrigerant pressure when available |
 | Platinentemperatur (Web) | Controller board temperature when available |
+| Momentane/prognostizierte Leistung Heizen / Kühlen / Warmwasser (Web) | The controller's current **or projected** thermal power for that mode |
+
+#### "Momentane/prognostizierte Leistung" is not a live measurement
+
+The Navigator labels these three values `mom./prog. Leistung Heizen`,
+`mom./prog. Leistung Kühlen` and `mom./prog. Leistung Vorrang` — *momentane bzw.
+prognostizierte* power. They report what the controller currently expects to
+deliver for that mode, so a non-zero value while heating or cooling is switched
+off is normal and not a fault. A value that changes while the compressor is
+idle is the controller re-planning, not the heat pump running.
+
+For actual electrical draw, use **Wärmepumpe Aufnahmeleistung** /
+`current_electrical_power` instead.
 
 If a web value duplicates an existing Modbus entity, the web entity is skipped.
 This prevents duplicate dashboard values and keeps Modbus as the authoritative
