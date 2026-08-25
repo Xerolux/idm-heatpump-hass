@@ -6,11 +6,14 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.16.0` and `idm-heatpump-api` `2.0.0` form the current exactly
-pinned integration/API pair. Up to and including `0.14.1` the direct socket was
-pinned to `modbus-connection==4.0.0a3` with `tmodbus==0.5.0`.
+Integration `0.16.0-beta.1` and `idm-heatpump-api` `2.0.0b1` form the current
+exactly pinned integration/API pair. The API version is written in PEP 440 form
+because that is what pip resolves; the integration keeps SemVer tags for HACS.
+Up to and including `0.14.1` the direct socket was pinned to
+`modbus-connection==4.0.0a3` with `tmodbus==0.5.0`.
 
-**`0.16.0`** drops pymodbus entirely. `idm-heatpump-api` `2.0.0` owns its own
+**`0.16.0`** drops pymodbus entirely — a breaking change, and the reason the
+line opens with a beta. `idm-heatpump-api` `2.0.0b1` owns its own
 exception hierarchy (`IdmModbusError` and subclasses) instead of inheriting
 from pymodbus, and moves its built-in Modbus TCP transport behind an optional
 extra. This integration injects a tmodbus-backed transport, so it now installs
