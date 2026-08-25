@@ -204,11 +204,13 @@ jobs:
                   len(changelog_lines),
               )
               release_notes = "\n".join(changelog_lines[start:end]).strip()
-              release_notes += """
+
+          # Every release carries the support links, curated notes included.
+          release_notes += """
 
           ### Support
 
-          Diese Integration wird in meiner Freizeit entwickelt. Wenn sie dir hilft, freue ich mich über Unterstützung:
+          This integration is built in my spare time. If it helps you, I would be glad about support:
 
           - [GitHub Sponsors](https://github.com/sponsors/xerolux)
           - [Ko-Fi](https://ko-fi.com/xerolux)

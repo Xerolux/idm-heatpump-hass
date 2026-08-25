@@ -64,6 +64,11 @@ addresses, datatypes, unique IDs, entity IDs and the write path are identical.
   only as a fallback. The user-facing write messages introduced for
   [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237) are unchanged.
 
+- **`AGENTS.md` states three rules it relied on but never wrote down:** prose
+  baked into workflows and scripts is English too, prereleases are SemVer
+  (`v0.16.0-beta.1`) for the integration and PEP 440 (`2.0.0b1`) for
+  `idm-heatpump-api`, and every release carries the support links.
+
 ### Removed
 
 - **The pymodbus log filter.** `log_filter.py` existed partly to silence
@@ -76,6 +81,15 @@ addresses, datatypes, unique IDs, entity IDs and the write path are identical.
   version* sensor, the diagnostics download and the startup log line no longer
   report a pymodbus version, because there is none. The integration,
   `idm-heatpump-api`, `modbus-connection` and `tmodbus` versions are unchanged.
+
+### Fixed
+
+- **A curated release no longer drops the support links.**
+  `.github/workflows/release.yml` appended the `Support` section only to the
+  notes it generated from the changelog; a release published with the
+  `release_notes` input — which is how every stable release is cut — went out
+  without it. The section is now appended to both paths, and it is English like
+  the rest of the release text.
 
 ## [0.15.1] - 2026-08-25
 
