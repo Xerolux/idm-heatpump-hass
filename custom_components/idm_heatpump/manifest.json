@@ -1,7 +1,9 @@
 {
   "domain": "idm_heatpump",
   "name": "IDM Heatpump",
-  "codeowners": ["@xerolux"],
+  "codeowners": [
+    "@xerolux"
+  ],
   "config_flow": true,
   "documentation": "https://xerolux.github.io/idm-heatpump-hass/docs/#/home",
   "integration_type": "device",
@@ -14,5 +16,5 @@
     "pymodbus>=3.12.1,<4.0",
     "idm-heatpump-api[web]==1.0.3"
   ],
-  "version": "0.15.1-beta.5"
+  "version": "0.15.1"
 }

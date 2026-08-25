@@ -13,6 +13,46 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.1] - 2026-08-25
+
+Stable release closing the `0.15.1-beta.1` through `0.15.1-beta.5` cycle.
+
+It started from one bug report — a heating-circuit room setpoint that could not
+be written ([#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237)) —
+and the write turned out to be working already: `0.15.0` had replaced the
+`modbus-connection==4.0.0a3` alpha the reporter was still running under
+`0.14.1`. What the reporter actually hit was our own write cooldown, described
+by the wrong message. Chasing that produced four real fixes, three of which
+were only visible because the first one made failures legible.
+
+No breaking changes. Unique IDs, entity IDs, register addresses and write paths
+are unchanged; an existing config entry keeps polling exactly as before.
+
+### Fixed
+
+- Room temperature forwarding no longer schedules work from a worker thread
+  (`beta.1`).
+- A rejected register write now reports why, in the log, in the Home Assistant
+  message, in the `write_rejected` repair issue and in diagnostics as
+  `last_write_error`, with Modbus exception codes decoded by name (`beta.1`).
+- Local write guards are no longer reported as a rejection by the heat pump,
+  and the EEPROM write protection has its own message (`beta.1`).
+- The writable platforms no longer replace an already-actionable error — such
+  as the write cooldown naming the remaining wait — with the generic "could
+  not be written" message (`beta.2`).
+- Three web power sensors are named for what they report: the controller's
+  current *or projected* power for a mode, not a live measurement (`beta.3`).
+- The model-conflict summary weighs the web variant, so a controller answering
+  the nav20 web client under a "Navigator 10" detection is no longer summarized
+  as `conflict: false` (`beta.4`, works towards
+  [#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192)).
+
+### Changed
+
+- Transport pins moved to `modbus-connection==4.10.0` and
+  `tmodbus[async-serial]==0.6.1` (`beta.5`). `idm-heatpump-api[web]==1.0.3` is
+  unchanged, and this is the last release line that carries `pymodbus`.
+
 ## [0.15.1-beta.5] - 2026-08-25
 
 ### Changed
