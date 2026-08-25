@@ -411,7 +411,18 @@ def _stub_homeassistant() -> None:
 
     # homeassistant.core
     ha.core.HomeAssistant = MagicMock
-    ha.core.callback = lambda f: f
+
+    def _callback(func):
+        """Mirror homeassistant.core.callback: mark the function as loop-safe.
+
+        Home Assistant decides from this marker whether a listener runs on the
+        event loop or in an executor thread, so the stub has to set it too or
+        tests cannot tell a decorated listener from an undecorated one.
+        """
+        func._hass_callback = True
+        return func
+
+    ha.core.callback = _callback
     ha.core.ServiceCall = MagicMock
     ha.core.ServiceResponse = MagicMock
     ha.core.SupportsResponse = MagicMock()

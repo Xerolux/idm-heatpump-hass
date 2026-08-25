@@ -367,7 +367,11 @@ class TestWriteRegister:
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="write_rejected",
-            translation_placeholders={"register": "manual_1000", "address": "1000"},
+            translation_placeholders={
+                "register": "manual_1000",
+                "address": "1000",
+                "detail": "Exception: write failed",
+            },
         )
 
     async def test_returns_value_in_result(self, mock_hass):

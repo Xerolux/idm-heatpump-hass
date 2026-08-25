@@ -726,6 +726,12 @@
     "write_failed": {
       "message": "Register {register} could not be written. Check the value and try again. Enable debug logging if the problem continues."
     },
+    "write_eeprom_blocked": {
+      "message": "Register {register} was written too recently. It is stored in the controller's EEPROM, so the integration spaces writes out to protect the hardware. Wait for the EEPROM write interval to pass and try again. Technical detail: {detail}"
+    },
+    "write_rejected_by_device": {
+      "message": "The heat pump refused the write to register {register}. Check on the Navigator under Building management system whether this register is released for writing (GLT access) and whether the function is enabled for this heating circuit. Technical detail: {detail}"
+    },
     "write_connection_failed": {
       "message": "Register {register} could not be written because the connection to the heat pump failed. Check the Modbus TCP connection and try again."
     },
@@ -907,7 +913,7 @@
     },
     "write_rejected": {
       "title": "IDM register write rejected",
-      "description": "The heat pump rejected a write to register **{register}** at address **{address}**.\n\nPlease check:\n- The value is within the documented range\n- The feature is enabled on this device\n- The controller currently allows this write operation"
+      "description": "The heat pump did not accept a write to register **{register}** at address **{address}**.\n\nTechnical detail: `{detail}`\n\nPlease check:\n- The register is released for writing on the Navigator under **Building management system** (the GLT register list has a per-register access setting; a register that is not released there is rejected even though the value is valid)\n- The function is enabled for this heating circuit or component\n- The value is within the documented range\n- No second building-management system, energy manager or inverter is writing the same register"
     }
   },
   "services": {

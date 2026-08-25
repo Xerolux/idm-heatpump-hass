@@ -37,8 +37,10 @@ from .error_messages import (
 )
 from .error_messages import (
     classify_web_error,
+    classify_write_error,
     friendly_web_error,
     scoped_issue_id,
+    write_error_detail,
 )
 from .error_messages import (
     friendly_communication_error as _friendly_communication_error,
@@ -243,6 +245,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._dhw_boost_manager: DhwBoostManager | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         self._write_timestamps: dict[int, float] = {}
+        self._last_write_error: dict[str, Any] | None = None
         self._write_cooldown_seconds = max(0.0, min(600.0, write_cooldown_seconds))
         # Room-mode individual validation is expensive (one Modbus read per
         # register). Run it on the first poll, then only every Nth poll.
@@ -1017,6 +1020,63 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         except asyncio.CancelledError:
             pass
 
+    def _record_write_error(
+        self,
+        reg: RegisterDef,
+        value: Any,
+        err: Exception,
+        *,
+        reached_device: bool,
+    ) -> None:
+        """Log and remember why a write failed, at a level bug reports capture.
+
+        The technical reason used to exist only behind ``logger: debug``, which
+        is exactly what a bug report filed against a default installation does
+        not contain (#237). It is now logged at warning level and kept for the
+        diagnostics download.
+        """
+        detail = write_error_detail(err)
+        translation_key = classify_write_error(err)
+        self._last_write_error = {
+            "register": reg.name,
+            "address": reg.address,
+            "value": value,
+            "reached_device": reached_device,
+            "translation_key": translation_key,
+            "detail": detail,
+        }
+        if not reached_device:
+            _LOGGER.warning(
+                "The write of %s to %s (address %s) was blocked before it was sent: %s",
+                value,
+                reg.name,
+                reg.address,
+                detail,
+            )
+        elif translation_key == "write_connection_failed":
+            # The request never got an answer, so this is not a refusal.
+            _LOGGER.warning(
+                "The write of %s to %s (address %s) could not be delivered to the IDM controller: %s",
+                value,
+                reg.name,
+                reg.address,
+                detail,
+            )
+        else:
+            _LOGGER.warning(
+                "The IDM controller refused the write of %s to %s (address %s): %s",
+                value,
+                reg.name,
+                reg.address,
+                detail,
+            )
+        _LOGGER.debug("Technical IDM write error for %s", reg.name, exc_info=err)
+
+    @property
+    def last_write_error(self) -> dict[str, Any] | None:
+        """Return the most recent write failure, or None after a successful write."""
+        return self._last_write_error
+
     def simulate_write(
         self,
         reg: RegisterDef,
@@ -1087,13 +1147,22 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     "cooldown": f"{self._write_cooldown_seconds:g}",
                 },
             )
+        # Local write safety runs first and separately from the network write:
+        # a value the library refuses never reaches the controller, so reporting
+        # it as "the heat pump rejected the write" sent users hunting for a
+        # device fault that does not exist (#237).
         try:
             safety_result = self.simulate_write(reg, value, allow_custom_register=allow_custom_register)
+        except Exception as err:
+            self._record_write_error(reg, value, err, reached_device=False)
+            raise
+        try:
             if allow_custom_register:
                 await self._client.write_register(reg, value, allow_custom_register=True)
             else:
                 await self._client.write_register(reg, value)
-        except Exception:
+        except Exception as err:
+            self._record_write_error(reg, value, err, reached_device=True)
             ir.async_create_issue(
                 self.hass,
                 DOMAIN,
@@ -1101,9 +1170,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
                 translation_key="write_rejected",
-                translation_placeholders={"register": reg.name, "address": str(reg.address)},
+                translation_placeholders={
+                    "register": reg.name,
+                    "address": str(reg.address),
+                    "detail": write_error_detail(err),
+                },
             )
             raise
+        self._last_write_error = None
         self._write_timestamps[reg.address] = time.monotonic()
         # Optimistic update so entities reflect the new value immediately.
         # Replace the snapshot dict (do not mutate in place) so concurrent web

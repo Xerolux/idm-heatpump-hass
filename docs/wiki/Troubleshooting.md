@@ -196,6 +196,57 @@ again. To see the underlying numbers, enable **Communication diagnostics** in
 the options — it exposes the poll duration and the number of actively polled
 registers as sensors.
 
+## A register write is rejected
+
+Symptom: changing a value (for example the target temperature of a heating
+circuit in the climate card) fails immediately, Home Assistant shows a write
+error, and the Navigator does not change. Reading the same register keeps
+working.
+
+The integration distinguishes two very different causes, and the message says
+which one applies:
+
+**1. The write was blocked before it was sent.** No Modbus request left Home
+Assistant. Typical reasons and their messages:
+
+| Message | Cause | What to do |
+| --- | --- | --- |
+| "was written too recently" | EEPROM write protection | Wait for the EEPROM write interval (60 s by default) |
+| "cannot be written yet" | The **Write cooldown** option | Wait the reported time or lower the cooldown |
+| "outside the permitted range" | The value is outside the register's documented range | Choose a value inside the entity limits |
+| "not supported by this heat pump model" | The register is not part of the detected model's map | Check the detected Navigator model in diagnostics |
+
+**2. The heat pump answered with an error.** The request reached the controller
+and it refused it. The message names the Modbus exception code, and the same
+detail is written to the log and to the diagnostics download as
+`last_write_error`.
+
+A read-only value that is nevertheless documented as writable almost always
+comes down to the controller's own access rules, not the integration:
+
+- **Check the GLT access setting on the Navigator.** Under the building
+  management (GLT) area the controller keeps a register list with a per-register
+  access column. A register that is not released for writing there is refused
+  even when the address, datatype and value are all correct. This is the most
+  common cause when some writes work (operating mode, external room
+  temperature) while others on the same device do not.
+- **Check that the function is enabled for that heating circuit or component.**
+  A circuit that is not configured, or a feature the installer has not enabled,
+  rejects writes to its registers.
+- **Check for a second writer.** Another building management system, an energy
+  manager or an inverter writing the same register can make a write look like it
+  was refused or immediately reverted.
+- **Compare with the GLT Monitor** as described above. It shows the value and
+  the access rights the controller itself sees.
+
+When reporting this, include the exact log line — it now contains the register
+name, the address, the value and the technical reason, for example:
+
+```text
+The IDM controller refused the write of 24.0 to hc_c_room_setpoint_heat_normal
+(address 1405): ModbusException: ... [Modbus exception code 4 (Server Device Failure)]
+```
+
 ## EEPROM Warnings
 
 If you receive a warning about EEPROM when writing values:

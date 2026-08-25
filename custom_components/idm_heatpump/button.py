@@ -109,7 +109,7 @@ class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key=translation_key,
-                translation_placeholders=write_error_placeholders(self._register.name),
+                translation_placeholders=write_error_placeholders(self._register.name, err),
             ) from err
 
 

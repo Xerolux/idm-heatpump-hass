@@ -2,9 +2,32 @@
 
 from __future__ import annotations
 
+import re
 import socket
 
 from pymodbus.exceptions import ConnectionException, ModbusIOException
+
+# Modbus exception codes as rendered by ``modbus_transport._translate_backend_error``
+# ("... (exception_code=<N>)"). Naming the code in the user-facing message and in
+# the log is the difference between "the write failed" and a report a maintainer
+# can act on, so the code is parsed back out of the message chain.
+_EXCEPTION_CODE_PATTERN = re.compile(r"exception_code=(\d+)")
+
+MODBUS_EXCEPTION_NAMES: dict[int, str] = {
+    1: "Illegal Function",
+    2: "Illegal Data Address",
+    3: "Illegal Data Value",
+    4: "Server Device Failure",
+    5: "Acknowledge",
+    6: "Server Device Busy",
+    8: "Memory Parity Error",
+    10: "Gateway Path Unavailable",
+    11: "Gateway Target Device Failed To Respond",
+}
+
+# Upper bound for the technical detail shown in a Home Assistant message. Long
+# library messages must not push the actionable part of the text off screen.
+_MAX_DETAIL_LENGTH = 200
 
 
 def _error_chain_text(err: BaseException) -> str:
@@ -163,17 +186,69 @@ def friendly_web_error(issue_id: str, host: str) -> str:
     )
 
 
+def modbus_exception_code(err: BaseException) -> int | None:
+    """Return the Modbus exception code carried by an error chain, if any.
+
+    The transport preserves the ``exception_code=<N>`` marker verbatim (see
+    :mod:`.modbus_transport`), so the code the controller actually answered
+    with survives all the way up to the user-facing message.
+    """
+    match = _EXCEPTION_CODE_PATTERN.search(_error_chain_text(err))
+    if match is None:
+        return None
+    try:
+        return int(match.group(1))
+    except ValueError:  # pragma: no cover - the pattern only matches digits
+        return None
+
+
+def write_error_detail(err: BaseException) -> str:
+    """Return a compact technical summary of a write failure.
+
+    Without this, the only trace of *why* a write failed was a debug-level
+    ``exc_info`` line, so a bug report filed at default log level contained
+    nothing a maintainer could act on (#237). The summary is short enough to
+    carry in a Home Assistant message and in downloaded diagnostics.
+    """
+    detail = f"{type(err).__name__}: {err}".strip()
+    code = modbus_exception_code(err)
+    if code is not None:
+        name = MODBUS_EXCEPTION_NAMES.get(code)
+        rendered = f"Modbus exception code {code}" + (f" ({name})" if name else "")
+        if rendered.casefold() not in detail.casefold():
+            detail = f"{detail} [{rendered}]"
+    if len(detail) > _MAX_DETAIL_LENGTH:
+        detail = f"{detail[: _MAX_DETAIL_LENGTH - 1]}\u2026"
+    return detail
+
+
 def classify_write_error(err: Exception) -> str:
     """Return a translated Home Assistant exception key for a write failure."""
     message = _error_chain_text(err)
+    # Local guards first: these never reach the wire, so reporting them as a
+    # controller rejection sends the user looking in the wrong place.
+    if "eeprom" in message and any(marker in message for marker in ("too recently", "write cycle")):
+        return "write_eeprom_blocked"
     if any(marker in message for marker in ("read only", "readonly", "not writable", "write protected")):
         return "write_read_only"
     if any(marker in message for marker in ("out of range", "outside", "minimum", "maximum", "min_val", "max_val")):
         return "write_out_of_range"
-    if any(marker in message for marker in ("illegal data address", "exception_code=2", "unsupported register")):
+    if any(
+        marker in message
+        for marker in (
+            "illegal data address",
+            "exception_code=2",
+            "unsupported register",
+            "not available for detected model",
+        )
+    ):
         return "write_not_supported"
     if any(marker in message for marker in ("invalid value", "invalid type", "cannot encode", "conversion")):
         return "write_invalid_value"
+    # Any other Modbus exception code means the controller answered and
+    # refused the write; that is a different problem from "no connection".
+    if modbus_exception_code(err) is not None:
+        return "write_rejected_by_device"
     communication_issue = classify_communication_error(err)
     if (
         communication_issue != "cannot_connect"
@@ -195,13 +270,22 @@ def friendly_write_error(translation_key: str, register_name: str) -> str:
         "write_out_of_range": "the temperature is outside the permitted register range",
         "write_not_supported": "the target register is not supported by this heat pump",
         "write_invalid_value": "the value has an invalid format or data type",
+        "write_eeprom_blocked": "the EEPROM write protection is still blocking this register",
+        "write_rejected_by_device": "the heat pump answered the write with a Modbus exception",
     }
     return messages.get(translation_key, f"register {register_name} rejected the value")
 
 
-def write_error_placeholders(register_name: str) -> dict[str, str]:
-    """Return safe placeholders without exposing a raw library exception."""
-    return {"register": register_name}
+def write_error_placeholders(register_name: str, err: BaseException | None = None) -> dict[str, str]:
+    """Return safe placeholders for a write-failure message.
+
+    ``detail`` carries the technical summary for the message templates that ask
+    for it; templates that do not reference it simply ignore the extra key.
+    """
+    return {
+        "register": register_name,
+        "detail": write_error_detail(err) if err is not None else "no technical detail available",
+    }
 
 
 def scoped_issue_id(entry_id: str | None, issue_id: str) -> str:

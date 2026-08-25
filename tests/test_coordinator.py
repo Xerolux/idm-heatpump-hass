@@ -1138,8 +1138,73 @@ class TestAsyncWriteRegister:
             is_fixable=False,
             severity=mock_ir.IssueSeverity.WARNING,
             translation_key="write_rejected",
-            translation_placeholders={"register": "system_mode", "address": "1005"},
+            translation_placeholders={
+                "register": "system_mode",
+                "address": "1005",
+                "detail": "Exception: write rejected",
+            },
         )
+
+    async def test_local_write_guard_does_not_claim_the_device_rejected_it(self, mock_hass, mock_config_entry):
+        """A value the library refuses never reaches the controller (#237).
+
+        Raising the "the heat pump rejected the write" repair issue for it sent
+        users looking for a device fault that does not exist.
+        """
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        client.simulate_write = MagicMock(
+            side_effect=ValueError("EEPROM-sensitive register 'system_mode' was written too recently")
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        reg = RegisterDef(address=1005, datatype=DataType.UCHAR, name="system_mode", writable=True)
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+            pytest.raises(ValueError, match="too recently"),
+        ):
+            await coord.async_write_register(reg, 1)
+
+        mock_ir.async_create_issue.assert_not_called()
+        client.write_register.assert_not_awaited()
+        assert coord.last_write_error is not None
+        assert coord.last_write_error["reached_device"] is False
+        assert coord.last_write_error["translation_key"] == "write_eeprom_blocked"
+
+    async def test_device_rejection_is_recorded_for_diagnostics(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.write_register = AsyncMock(
+            side_effect=ModbusException("Modbus write at address 1405 failed: refused (exception_code=4)")
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        reg = RegisterDef(address=1405, datatype=DataType.FLOAT, name="hc_c_room_setpoint_heat_normal", writable=True)
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            pytest.raises(ModbusException),
+        ):
+            await coord.async_write_register(reg, 24.0)
+
+        recorded = coord.last_write_error
+        assert recorded is not None
+        assert recorded["register"] == "hc_c_room_setpoint_heat_normal"
+        assert recorded["address"] == 1405
+        assert recorded["value"] == 24.0
+        assert recorded["reached_device"] is True
+        assert recorded["translation_key"] == "write_rejected_by_device"
+        assert "Modbus exception code 4" in recorded["detail"]
+
+    async def test_successful_write_clears_the_last_write_error(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord.async_request_refresh = AsyncMock()
+        coord._last_write_error = {"register": "system_mode"}
+
+        reg = RegisterDef(address=1005, datatype=DataType.UCHAR, name="system_mode", writable=True)
+        await coord.async_write_register(reg, 1)
+
+        assert coord.last_write_error is None
 
     async def test_multiple_writes_update_data_and_listeners(self, mock_hass, mock_config_entry):
         """Multiple consecutive writes each update data and notify listeners."""
