@@ -13,6 +13,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A curated release no longer drops the support links.**
+  `.github/workflows/release.yml` appended the `Support` section only to the
+  notes it generated from the changelog; a release published with the
+  `release_notes` input — which is how every stable release is cut — went out
+  without it. The section is now appended to both paths, and it is English like
+  the rest of the release text.
+
+### Changed
+
+- **`AGENTS.md` states three rules it relied on but never wrote down:** prose
+  baked into workflows and scripts is English too, prereleases are SemVer
+  (`v0.16.0-beta.1`) for the integration and PEP 440 (`2.0.0b1`) for
+  `idm-heatpump-api`, and every release carries the support links.
+
 ## [0.15.1] - 2026-08-25
 
 Stable release closing the `0.15.1-beta.1` through `0.15.1-beta.5` cycle.
