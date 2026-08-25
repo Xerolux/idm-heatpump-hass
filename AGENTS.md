@@ -222,6 +222,10 @@ ruff check custom_components tests
   `tests/test_documentation_language.py` fails the build on it. New documents
   are covered automatically — declare an exception in `EXEMPT_FILES` only for
   documentation that is German on purpose.
+- **Text that tooling emits is text this rule covers.** Prose baked into a
+  workflow, a script or a template — release notes, issue bodies, generated
+  reports — is English too, even though the language checker only reads Markdown
+  and cannot see it.
 
 ### Python Style
 - `from __future__ import annotations` at the top of every file
@@ -263,6 +267,28 @@ ruff check custom_components tests
 - A document that states the current pins belongs in `PIN_DOCUMENTS` in `scripts/check_dependency_pins.py`; `tests/test_dependency_pins.py` fails when a new one is missing there.
 - Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.10.0` is the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
 - Do not remove the pymodbus compatibility pin until the pinned `idm-heatpump-api` version no longer imports it and the adapter's error contract has been updated and tested.
+
+#### Prerelease naming
+
+- **The integration uses SemVer tags:** `v0.16.0-beta.1`, `v0.16.0-rc.1`. The
+  `manifest.json` version matches the tag without the `v`. This is what HACS and
+  Home Assistant read, so it does not change.
+- **`idm-heatpump-api` uses PEP 440:** `2.0.0b1`, `2.0.0a1`, `2.0.0rc1` — no
+  hyphen, no dot before the number. PyPI normalises `2.0.0-beta.1` to `2.0.0b1`
+  anyway, so writing the normalised form is the only way the tag, the
+  `pyproject.toml` version, the PyPI filename and the manifest pin all read the
+  same. Tag the API repository with the PEP 440 version (`v2.0.0b1`).
+- **The manifest pins the PEP 440 form**, because that is what pip resolves:
+  `idm-heatpump-api[web]==2.0.0b1`, never `==2.0.0-beta.1`.
+
+#### Release notes
+
+- **Every release carries the support links.** The `Support` section is appended
+  by `.github/workflows/release.yml` to both the generated and the curated
+  release notes, so passing `release_notes` never drops it. The changelog keeps
+  its own support header at the top of `docs/CHANGELOG.md`. Do not remove either
+  when reworking release tooling, and keep the four links (GitHub Sponsors,
+  Ko-Fi, Buy Me A Coffee, PayPal) in step with `.github/FUNDING.yml`.
 
 ---
 
