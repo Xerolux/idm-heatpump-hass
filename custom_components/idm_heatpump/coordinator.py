@@ -164,6 +164,20 @@ def _web_variant_from_family(family: str | None) -> str | None:
     return None
 
 
+def _expected_web_variant(families: set[str]) -> str | None:
+    """Return the web variant the detected families imply, or None if ambiguous.
+
+    ``navigator_10`` and ``navigator_pro`` both answer the nav10 client, so a
+    Navigator Pro selection paired with a nav10 web variant is agreement, not a
+    conflict. Returns None when the families disagree among themselves or imply
+    nothing, so the caller does not read a second conflict out of the first.
+    """
+    variants = {variant for family in families if (variant := _web_variant_from_family(family)) is not None}
+    if len(variants) != 1:
+        return None
+    return variants.pop()
+
+
 def _web_variant_from_supplement(supplement: IdmWebSupplement) -> str | None:
     """Return the best web access variant detected from a web supplement."""
     if supplement.web_variant in ("nav10", "nav20"):
@@ -246,6 +260,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._delayed_refresh_task: asyncio.Task[None] | None = None
         self._write_timestamps: dict[int, float] = {}
         self._last_write_error: dict[str, Any] | None = None
+        self._web_variant_conflict_logged = False
         self._write_cooldown_seconds = max(0.0, min(600.0, write_cooldown_seconds))
         # Room-mode individual validation is expensive (one Modbus read per
         # register). Run it on the first poll, then only every Nth poll.
@@ -391,14 +406,32 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         stored_version = entry_data.get(CONF_DETECTED_NAVIGATOR_VERSION)
         modbus_family = navigator_family(self._model_name)
         stored_family = navigator_family(stored_version) if isinstance(stored_version, str) else None
-        conflict = modbus_family is not None and stored_family is not None and modbus_family != stored_family
+        detected_families = {family for family in (modbus_family, stored_family) if family is not None}
+        conflict = len(detected_families) > 1
+
+        # The web variant is independent hard evidence and must be weighed here.
+        # The nav10 client speaks a WebSocket on port 61220, the nav20 client
+        # local HTTP with CSRF handling - the one that actually connected
+        # identifies the controller generation. Comparing only the Modbus and
+        # stored families left exactly the mismatch this summary exists to
+        # surface invisible (#192): a controller answering the nav20 web client
+        # while Modbus detection reported Navigator 10 was summarized as
+        # "conflict: false", so every bug report filed with it looked clean.
+        expected_web_variant = _expected_web_variant(detected_families)
+        web_variant_conflict = (
+            expected_web_variant is not None
+            and self._web_variant is not None
+            and expected_web_variant != self._web_variant
+        )
         return {
             "selected_family": modbus_family,
             "stored_family": stored_family,
             "web_variant": self._web_variant,
+            "expected_web_variant": expected_web_variant,
+            "web_variant_conflict": web_variant_conflict,
             "software_version": self._firmware_version,
             "manual_override": entry_data.get(CONF_MODEL_OVERRIDE),
-            "conflict": conflict,
+            "conflict": conflict or web_variant_conflict,
         }
 
     @property
@@ -883,6 +916,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # (WebSocket vs. HTTP have completely different login mechanisms).
         if web_variant := _web_variant_from_supplement(web_supplement):
             self._web_variant = web_variant
+        self._warn_once_on_web_variant_conflict()
         web_model_name = web_supplement.model_name
         modbus_family = navigator_family(getattr(self._model_info, "model_name", None) or self._model_name)
         web_model_family = navigator_family(web_model_name)
@@ -1199,6 +1233,29 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # tests can await the real Task (hass.async_create_task is often a MagicMock).
         self._delayed_refresh_task = asyncio.create_task(self._delayed_refresh())
         return safety_result
+
+    def _warn_once_on_web_variant_conflict(self) -> None:
+        """Log once when the connected web client contradicts the detected model.
+
+        The controller answers only one of the two web protocols, so this is the
+        clearest evidence available that model detection picked the wrong
+        generation. It was previously visible nowhere - not in the log, and not
+        in diagnostics, which summarized it as "conflict: false" (#192).
+        """
+        if self._web_variant_conflict_logged:
+            return
+        summary = self.model_conflict_summary
+        if not summary.get("web_variant_conflict"):
+            return
+        self._web_variant_conflict_logged = True
+        _LOGGER.warning(
+            "IDM model detection selected %s, but the controller answered the %s web client "
+            "(expected %s). The register map may not match this controller. "
+            "Please report this with diagnostics; a manual model override is available in the options",
+            self._model_name,
+            summary.get("web_variant"),
+            summary.get("expected_web_variant"),
+        )
 
     def _invalidate_device_info_cache(self) -> None:
         """Clear cached DeviceInfo so the next access reflects fresh metadata."""
