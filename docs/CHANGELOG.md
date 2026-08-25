@@ -13,6 +13,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.1-beta.5] - 2026-08-25
+
+### Changed
+
+- **Transport pins moved to the current releases:** `modbus-connection`
+  `4.8.1` -> `4.10.0` and `tmodbus[async-serial]` `0.5.1` -> `0.6.1`, rewritten
+  by `scripts/check_dependency_pins.py --update` so the manifest and every
+  document stating the pins stay in step. `idm-heatpump-api[web]==1.0.3` is
+  already current and the `pymodbus>=3.12.1,<4.0` compatibility range is
+  unchanged: the pinned API still imports pymodbus, so the range stays until it
+  does not.
+
+  Verified against the installed libraries before the bump, not only through
+  the stubs: `modbus_transport`, `modbus_client` and `error_messages` import
+  cleanly, the `ModbusUnit.read_holding_registers` / `read_input_registers` /
+  `write_registers` signatures the transport depends on are unchanged, and the
+  error-translation contract still maps every device exception code the
+  coordinator relies on (illegal data address to `write_not_supported`, codes
+  3/5/6/10/11 to `write_rejected_by_device`).
+
+  The `0.15.1-beta.1` through `beta.4` prereleases were published with
+  `allow_stale_pins` on purpose, so that the write-diagnostics work under
+  investigation in [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237)
+  could not be confounded by a transport change. This release closes that gap
+  before the stable `0.15.1`.
+
 ## [0.15.1-beta.4] - 2026-08-25
 
 ### Fixed
