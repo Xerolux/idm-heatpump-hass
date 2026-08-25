@@ -115,6 +115,8 @@ def _model_conflict_diagnostics(coordinator: Any) -> dict[str, Any]:
             "selected_family": None,
             "stored_family": None,
             "web_variant": None,
+            "expected_web_variant": None,
+            "web_variant_conflict": False,
             "software_version": None,
             "manual_override": None,
             "conflict": False,
@@ -123,6 +125,10 @@ def _model_conflict_diagnostics(coordinator: Any) -> dict[str, Any]:
         "selected_family": summary.get("selected_family"),
         "stored_family": summary.get("stored_family"),
         "web_variant": summary.get("web_variant"),
+        # Names which source disagrees, so a report shows whether the web
+        # variant or the stored family drove the conflict (#192).
+        "expected_web_variant": summary.get("expected_web_variant"),
+        "web_variant_conflict": bool(summary.get("web_variant_conflict")),
         "software_version": summary.get("software_version"),
         "manual_override": summary.get("manual_override"),
         "conflict": bool(summary.get("conflict")),

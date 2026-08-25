@@ -226,6 +226,8 @@ class TestDiagnostics:
             "selected_family",
             "stored_family",
             "web_variant",
+            "expected_web_variant",
+            "web_variant_conflict",
             "software_version",
             "manual_override",
             "conflict",

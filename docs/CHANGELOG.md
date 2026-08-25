@@ -13,6 +13,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.1-beta.4] - 2026-08-25
+
+### Fixed
+
+- **The model-conflict summary ignored the one source that settles the
+  question.** `model_conflict_summary` compared only the Modbus-detected family
+  against the stored one, even though it reported the web variant in the same
+  dict. The nav10 web client speaks a WebSocket on port 61220 and the nav20
+  client local HTTP with CSRF handling, so the client the controller actually
+  answered identifies its generation — yet a plant answering the nav20 client
+  while Modbus detection said "Navigator 10" was summarized as
+  `conflict: false`. Every bug report filed with that diagnostic looked clean.
+  The summary now weighs the web variant, reports `expected_web_variant` and
+  `web_variant_conflict` so a report names which source disagrees, and the
+  coordinator logs the mismatch once per setup with a pointer to the manual
+  model override. Navigator Pro answering the nav10 client stays agreement, and
+  families that already disagree are not counted twice. Works towards
+  [#192](https://github.com/Xerolux/idm-heatpump-hass/issues/192).
+
 ## [0.15.1-beta.3] - 2026-08-25
 
 ### Fixed

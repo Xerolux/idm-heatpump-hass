@@ -2044,6 +2044,86 @@ class TestModelConflictSummary:
         assert summary["conflict"] is False
 
 
+class TestWebVariantModelConflict:
+    """#192: the connected web client is evidence about the controller generation.
+
+    The nav10 client speaks a WebSocket on port 61220, the nav20 client local
+    HTTP with CSRF handling, so the one that answered identifies the generation.
+    Weighing only the Modbus and stored families reported "conflict: false" for
+    a Navigator 2.0 that Modbus detection had labelled Navigator 10 — the exact
+    case this summary exists to surface.
+    """
+
+    def test_web_variant_contradicting_the_model_is_a_conflict(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.const import CONF_DETECTED_NAVIGATOR_VERSION
+
+        mock_config_entry.data = {CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10"}
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 10")
+        coord._web_variant = "nav20"
+
+        summary = coord.model_conflict_summary
+
+        assert summary["selected_family"] == "navigator_10"
+        assert summary["stored_family"] == "navigator_10"
+        assert summary["web_variant"] == "nav20"
+        assert summary["expected_web_variant"] == "nav10"
+        assert summary["web_variant_conflict"] is True
+        assert summary["conflict"] is True
+
+    def test_matching_web_variant_is_not_a_conflict(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.const import CONF_DETECTED_NAVIGATOR_VERSION
+
+        mock_config_entry.data = {CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10"}
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 10")
+        coord._web_variant = "nav10"
+
+        summary = coord.model_conflict_summary
+
+        assert summary["web_variant_conflict"] is False
+        assert summary["conflict"] is False
+
+    def test_navigator_pro_on_the_nav10_client_is_not_a_conflict(self, mock_hass, mock_config_entry):
+        """Navigator Pro answers the nav10 client, so that pairing is agreement."""
+        from custom_components.idm_heatpump.const import CONF_DETECTED_NAVIGATOR_VERSION
+
+        mock_config_entry.data = {CONF_DETECTED_NAVIGATOR_VERSION: "Navigator Pro"}
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator Pro")
+        coord._web_variant = "nav10"
+
+        summary = coord.model_conflict_summary
+
+        assert summary["expected_web_variant"] == "nav10"
+        assert summary["web_variant_conflict"] is False
+        assert summary["conflict"] is False
+
+    def test_no_web_variant_leaves_the_verdict_unchanged(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.const import CONF_DETECTED_NAVIGATOR_VERSION
+
+        mock_config_entry.data = {CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10"}
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 10")
+        coord._web_variant = None
+
+        summary = coord.model_conflict_summary
+
+        assert summary["web_variant_conflict"] is False
+        assert summary["conflict"] is False
+
+    def test_ambiguous_families_do_not_invent_a_web_conflict(self, mock_hass, mock_config_entry):
+        """Families that already disagree must not also be read as a variant conflict."""
+        from custom_components.idm_heatpump.const import CONF_DETECTED_NAVIGATOR_VERSION
+
+        mock_config_entry.data = {CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 2.0"}
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 10")
+        coord._web_variant = "nav20"
+
+        summary = coord.model_conflict_summary
+
+        assert summary["expected_web_variant"] is None
+        assert summary["web_variant_conflict"] is False
+        # The family disagreement itself is still reported.
+        assert summary["conflict"] is True
+
+
 class TestScanIntervalSelfDiagnosis:
     """Polls that saturate their own interval must be reported, not absorbed."""
 
