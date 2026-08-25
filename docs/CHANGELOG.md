@@ -13,6 +13,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.15.1-beta.1] - 2026-08-25
+
+Diagnostic beta for [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
+A rejected register write now says why it was rejected, and the room
+temperature forwarder no longer schedules work from a worker thread. Register
+addresses, datatypes, unique IDs and write paths are unchanged, so an existing
+config entry keeps polling exactly as before.
+
 ### Fixed
 
 - **Room temperature forwarding called `hass.async_create_task` from a worker
