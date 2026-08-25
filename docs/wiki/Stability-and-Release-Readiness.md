@@ -6,12 +6,24 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.15.0` (stable) and `idm-heatpump-api` `1.0.3` form the current
-exactly pinned integration/API pair. Up to and including `0.14.1` the direct
-socket was pinned to `modbus-connection==4.0.0a3` with `tmodbus==0.5.0`.
+Integration `0.16.0` and `idm-heatpump-api` `2.0.0` form the current exactly
+pinned integration/API pair. Up to and including `0.14.1` the direct socket was
+pinned to `modbus-connection==4.0.0a3` with `tmodbus==0.5.0`.
 
-**`0.15.0`** moves that pair to `modbus-connection==4.10.0` and
-`tmodbus[async-serial]==0.6.1`, adds room temperature sensors for all heating
+**`0.16.0`** drops pymodbus entirely. `idm-heatpump-api` `2.0.0` owns its own
+exception hierarchy (`IdmModbusError` and subclasses) instead of inheriting
+from pymodbus, and moves its built-in Modbus TCP transport behind an optional
+extra. This integration injects a tmodbus-backed transport, so it now installs
+no Modbus stack it does not speak. The transport pins are
+`modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.1`.
+
+**`0.15.1`** was the last line with pymodbus: it pinned `idm-heatpump-api`
+`1.0.3`, moved the transport pair to `modbus-connection==4.10.0` /
+`tmodbus[async-serial]==0.6.1`, and carried the write-diagnostics work from
+[#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
+
+**`0.15.0`** moved that pair to `modbus-connection==4.8.1` and
+`tmodbus[async-serial]==0.5.1`, adds room temperature sensors for all heating
 circuits (A–G) via `idm-heatpump-api`, connection-pacing options, NC
 contact inversion and orphaned sensor cleanup. It closes the `0.15.0-beta.1`
 through `0.15.0-beta.3` cycle. Hardware smoke evidence for the cycle is recorded

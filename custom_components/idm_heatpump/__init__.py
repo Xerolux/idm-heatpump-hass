@@ -379,12 +379,10 @@ async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
     Services are registered here (action-setup rule) so they are available
     as soon as the domain loads, independently of config entries.
     """
-    from .log_filter import install_pymodbus_log_filter
+    from .log_filter import install_library_log_filter
     from .services import async_setup_services
 
-    # Keep the narrow compatibility filters while the pinned idm-heatpump-api
-    # still imports pymodbus. The active Modbus socket itself is owned by tmodbus.
-    install_pymodbus_log_filter()
+    install_library_log_filter()
 
     await async_setup_services(hass)
     return True
@@ -549,13 +547,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     integration = await async_get_integration(hass, DOMAIN)
     versions = await async_runtime_versions(integration.manifest.get("version"))
     _LOGGER.info(
-        "Setting up %s v%s (idm-heatpump-api v%s, modbus-connection v%s, tmodbus v%s, pymodbus compatibility v%s)",
+        "Setting up %s v%s (idm-heatpump-api v%s, modbus-connection v%s, tmodbus v%s)",
         NAME,
         versions.integration,
         versions.api,
         versions.modbus_connection,
         versions.tmodbus,
-        versions.pymodbus,
     )
 
     host = str(entry.data[CONF_HOST])

@@ -66,8 +66,7 @@ jobs:
         if: inputs.api-dependency-mode == 'api-main'
         run: |
           pip install --upgrade \
-            "pymodbus>=3.12.1,<4.0" \
-            "git+https://github.com/Xerolux/idm-heatpump-api.git@main"
+            "git+https://github.com/Xerolux/idm-heatpump-api.git@main#egg=idm-heatpump-api[web]"
 
       - name: Smoke test production Modbus backend
         run: |

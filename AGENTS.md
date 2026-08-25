@@ -7,13 +7,13 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.15.1-beta.5` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.15.0`)
+- **Current Version**: `0.15.1-beta.4` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.15.0`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
 - **Python**: 3.13+
 - **Direct Modbus Runtime**: `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.1`
-- **Compatibility Dependencies**: `pymodbus>=3.12.1,<4.0`, `idm-heatpump-api[web]==1.0.3` (pymodbus is temporarily required because the pinned API still imports it)
+- **Device Logic**: `idm-heatpump-api[web]==2.0.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 
 ---
 
@@ -53,7 +53,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── room_temp_forwarding.py       # Forward HA room temperatures (per circuit) and humidity (global) to GLT registers
 │   ├── technician_codes.py           # Time-based Fachmann Ebene code calculation
 │   ├── internal_messages.py          # Human-readable labels for internal message codes
-│   ├── log_filter.py                 # Filters noisy pymodbus ERROR log records
+│   ├── log_filter.py                 # Filters repeated idm-heatpump-api register-failure warnings
 │   ├── icons.json                    # Entity icon mappings
 │   ├── strings.json                  # UI strings for config flow & services
 │   ├── quality_scale.yaml            # Gold-scale compliance documentation
@@ -179,7 +179,7 @@ Never hardcode Modbus register addresses in platform files. Service-specific reg
 ```bash
 pytest tests/
 ```
-The `pytest.ini` disables `homeassistant` and `socket` plugins. Tests use stubs from `conftest.py` for `modbus-connection`, tmodbus, pymodbus, `idm-heatpump-api`, and the entire Home Assistant package tree.
+The `pytest.ini` disables `homeassistant` and `socket` plugins. Tests use stubs from `conftest.py` for `modbus-connection`, tmodbus and the entire Home Assistant package tree; `idm-heatpump-api` is installed for real.
 
 ### Type Checking
 ```bash
@@ -262,7 +262,7 @@ ruff check custom_components tests
 - Never bump a runtime pin by hand without checking PyPI first: `python scripts/check_dependency_pins.py` reports every pin that is behind, `--update` rewrites the transport pins and every document that states them. The daily `dependency-freshness.yml` workflow does exactly this and opens a PR; the release workflow refuses to publish stale pins unless `allow_stale_pins` is set. Automation never selects a pre-release for a stable pin — that is how the `4.0.0a3` alpha stayed pinned for two weeks.
 - A document that states the current pins belongs in `PIN_DOCUMENTS` in `scripts/check_dependency_pins.py`; `tests/test_dependency_pins.py` fails when a new one is missing there.
 - Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.10.0` is the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
-- Do not remove the pymodbus compatibility pin until the pinned `idm-heatpump-api` version no longer imports it and the adapter's error contract has been updated and tested.
+- pymodbus is gone as of `idm-heatpump-api` 2.0.0 / integration 0.16.0. Do not reintroduce it: the API owns `IdmModbusError` and its subclasses, and this integration's transport maps `modbus-connection` errors straight onto them.
 
 ---
 
@@ -298,13 +298,13 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Diagnostics export | `diagnostics.py` | Redacts host/port/slave for privacy |
 | Unused register filtering | `entity.py`, `coordinator.py` | Entities become unavailable when their register indicates "unused" |
 | Repair issues | `repairs.py`, `coordinator.py` | User-fixable issues (e.g. missing web PIN) |
-| pymodbus compatibility log filter | `log_filter.py` | Suppresses noisy records from the temporarily retained API dependency |
+| API register-failure log filter | `log_filter.py` | Suppresses repeated retry-exhaustion warnings for unsupported registers |
 
 ---
 
 ## Testing Infrastructure
 
-- **No real HA installation required**: `conftest.py` stubs the entire `homeassistant` package tree, `modbus-connection`, tmodbus, pymodbus, and `idm-heatpump-api`.
+- **No real HA installation required**: `conftest.py` stubs the entire `homeassistant` package tree, `modbus-connection` and tmodbus.
 - **Async tests**: `pytest-asyncio` with `asyncio_mode = auto`.
 - **Cross-platform**: Event loop policy supports both Windows and Linux.
 - Tests correspond 1:1 (or close to it) with integration modules.

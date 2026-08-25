@@ -35,76 +35,6 @@ except AttributeError:
 
 
 # ---------------------------------------------------------------------------
-# Stub pymodbus so tests run without the real package installed
-# ---------------------------------------------------------------------------
-
-
-def _stub_pymodbus() -> None:
-    if "pymodbus" in sys.modules:
-        return
-
-    pymodbus = ModuleType("pymodbus")
-    pymodbus.__version__ = "3.11.2"
-    sys.modules["pymodbus"] = pymodbus
-
-    # pymodbus.client
-    client_mod = ModuleType("pymodbus.client")
-    sys.modules["pymodbus.client"] = client_mod
-    pymodbus.client = client_mod
-
-    class _AsyncModbusTcpClient:
-        def __init__(self, host="", port=502, timeout=10):
-            self.connected = False
-
-        async def connect(self):
-            self.connected = True
-
-        def close(self):
-            self.connected = False
-
-        async def read_input_registers(self, address, count, **kwargs):
-            raise NotImplementedError("use mock in tests")
-
-        async def write_registers(self, address, values, **kwargs):
-            raise NotImplementedError("use mock in tests")
-
-    client_mod.AsyncModbusTcpClient = _AsyncModbusTcpClient
-
-    # pymodbus.client.mixin
-    mixin_mod = ModuleType("pymodbus.client.mixin")
-    sys.modules["pymodbus.client.mixin"] = mixin_mod
-    client_mod.mixin = mixin_mod
-
-    class _ModbusClientMixin:
-        @staticmethod
-        def read_input_registers(address, count, slave=1):
-            pass
-
-    mixin_mod.ModbusClientMixin = _ModbusClientMixin
-
-    # pymodbus.exceptions
-    exceptions_mod = ModuleType("pymodbus.exceptions")
-    sys.modules["pymodbus.exceptions"] = exceptions_mod
-    pymodbus.exceptions = exceptions_mod
-
-    class _ModbusException(Exception):
-        pass
-
-    class _ConnectionException(_ModbusException):
-        pass
-
-    class _ModbusIOException(_ModbusException):
-        pass
-
-    exceptions_mod.ModbusException = _ModbusException
-    exceptions_mod.ConnectionException = _ConnectionException
-    exceptions_mod.ModbusIOException = _ModbusIOException
-
-
-_stub_pymodbus()
-
-
-# ---------------------------------------------------------------------------
 # Stub modbus-connection so tests run without the optional runtime package
 # ---------------------------------------------------------------------------
 
@@ -1004,9 +934,9 @@ def _stub_idm_heatpump() -> None:
         INPUT = "input"
         HOLDING = "holding"
 
-    from pymodbus.exceptions import ModbusException
+    from idm_heatpump import IdmModbusError
 
-    class IllegalAddressError(ModbusException):
+    class IllegalAddressError(IdmModbusError):
         is_illegal_address = True
 
     # Mirror of idm_heatpump.client.DATATYPE_SENTINEL_DEFAULTS (Phase 6 / SENT-01).
@@ -1121,10 +1051,10 @@ def _stub_idm_heatpump() -> None:
                 self._client = None
 
         def _require_client(self) -> Any:
-            from pymodbus.exceptions import ConnectionException
+            from idm_heatpump import IdmConnectionError
 
             if self._client is None or not getattr(self._client, "connected", False):
-                raise ConnectionException("Modbus client is not connected")
+                raise IdmConnectionError("Modbus client is not connected")
             return self._client
 
         def decode_value(self, registers: list[int], reg: RegisterDef) -> Any:
@@ -1166,9 +1096,9 @@ def _stub_idm_heatpump() -> None:
             client = self._require_client()
             result = await client.read_input_registers(reg.address, reg.size, slave=self.slave_id)
             if result.isError():
-                from pymodbus.exceptions import ModbusException
+                from idm_heatpump import IdmDeviceError
 
-                raise ModbusException("Modbus read error")
+                raise IdmDeviceError("Modbus read error")
             return self.decode_value(result.registers, reg)
 
         def simulate_write(self, reg: RegisterDef, value: Any, *, dry_run: bool = True) -> WriteSafetyResult:
@@ -1196,9 +1126,9 @@ def _stub_idm_heatpump() -> None:
                 slave=self.slave_id,
             )
             if result.isError():
-                from pymodbus.exceptions import ModbusException
+                from idm_heatpump import IdmDeviceError
 
-                raise ModbusException("Modbus write error")
+                raise IdmDeviceError("Modbus write error")
 
         def _group_registers(self, regs: list[RegisterDef]) -> list[list[RegisterDef]]:
             groups: list[list[RegisterDef]] = []
@@ -1233,9 +1163,9 @@ def _stub_idm_heatpump() -> None:
                 try:
                     result = await client.read_input_registers(start, end - start, slave=self.slave_id)
                     if result.isError():
-                        from pymodbus.exceptions import ModbusException
+                        from idm_heatpump import IdmDeviceError
 
-                        raise ModbusException("Modbus read error")
+                        raise IdmDeviceError("Modbus read error")
                     break
                 except Exception:  # noqa: BLE001
                     if attempt < self._max_retries:

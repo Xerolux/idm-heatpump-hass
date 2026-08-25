@@ -13,6 +13,47 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-08-25
+
+**pymodbus is gone.** The integration speaks Modbus TCP through
+`modbus-connection`/tmodbus and has done so since `0.15.0`, but it still had to
+ship `pymodbus` because `idm-heatpump-api` rooted its public exception
+hierarchy in it. `idm-heatpump-api` `2.0.0` owns its errors, so the dependency
+goes.
+
+The `0.15.1` line is the last one with pymodbus, pinned to
+`idm-heatpump-api` `1.0.3`. Nothing on the wire changes here: register
+addresses, datatypes, unique IDs, entity IDs and the write path are identical.
+
+### Changed
+
+- **`idm-heatpump-api[web]` pinned to `2.0.0`, `pymodbus` removed from the
+  manifest.** The transport now maps `modbus-connection` errors straight onto
+  the library's own types (`IdmConnectionError`, `IdmTransportError`,
+  `IdmDeviceError`, `IllegalAddressError`) instead of translating them into
+  pymodbus exceptions first. `coordinator.py` and `error_messages.py` catch the
+  library types. See
+  [idm-heatpump-api#85](https://github.com/Xerolux/idm-heatpump-api/issues/85).
+
+- **The Modbus exception code is read from the error, not parsed out of it.**
+  `IdmDeviceError.exception_code` carries the code the controller answered
+  with; the `exception_code=<N>` text match added in `0.15.1-beta.1` remains
+  only as a fallback. The user-facing write messages introduced for
+  [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237) are unchanged.
+
+### Removed
+
+- **The pymodbus log filter.** `log_filter.py` existed partly to silence
+  `pymodbus.logging` connection-drop noise from a library that performed no I/O
+  for this integration. With the dependency gone there is no such logger; the
+  filter for repeated `idm-heatpump-api` register-failure warnings stays and
+  `install_pymodbus_log_filter()` is now `install_library_log_filter()`.
+
+- **The `pymodbus` runtime-version field.** The diagnostic *IDM Heatpump API
+  version* sensor, the diagnostics download and the startup log line no longer
+  report a pymodbus version, because there is none. The integration,
+  `idm-heatpump-api`, `modbus-connection` and `tmodbus` versions are unchanged.
+
 ## [0.15.1-beta.5] - 2026-08-25
 
 ### Changed

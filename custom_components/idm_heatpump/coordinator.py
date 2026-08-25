@@ -21,9 +21,14 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
-from pymodbus.exceptions import ConnectionException, ModbusException
 
-from idm_heatpump import IdmModbusClient, IdmModelInfo, RegisterDef
+from idm_heatpump import (
+    IdmConnectionError,
+    IdmModbusClient,
+    IdmModbusError,
+    IdmModelInfo,
+    RegisterDef,
+)
 
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -102,7 +107,7 @@ _ZONE_ROOM_MODE_MARKER = "_room"
 _ZONE_ROOM_MODE_SUFFIX = "_mode"
 
 
-def _is_illegal_address_error(err: ModbusException) -> bool:
+def _is_illegal_address_error(err: IdmModbusError) -> bool:
     """Return whether a Modbus exception reports an unsupported address."""
     if bool(getattr(err, "is_illegal_address", False)):
         return True
@@ -541,9 +546,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         try:
             return await self._client.read_batch(readable)
-        except ConnectionException:
+        except IdmConnectionError:
             raise
-        except ModbusException as err:
+        except IdmModbusError as err:
             if not _is_illegal_address_error(err):
                 raise
             if len(readable) == 1:
@@ -646,7 +651,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 result = await self._client.read_register(reg)
             except asyncio.CancelledError:
                 raise
-            except ModbusException as err:
+            except IdmModbusError as err:
                 if _is_illegal_address_error(err):
                     self._unsupported_registers.add(reg.name)
                     data.pop(reg.name, None)
@@ -699,7 +704,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # communication error boundary as the main batch read.
             self._merge_unsupported_registers()
             await self._async_refresh_zone_room_modes(data)
-        except (ModbusException, OSError) as err:
+        except (IdmModbusError, OSError) as err:
             self._last_poll_duration = time.monotonic() - poll_started
             self._consecutive_poll_failures += 1
             self._total_poll_failures += 1

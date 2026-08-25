@@ -1,15 +1,38 @@
 """Tests for IdmModbusClient."""
 
 import struct
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
-from idm_heatpump import DataType, IdmModbusClient, RegisterDef
-from pymodbus.exceptions import ConnectionException, ModbusException
+from idm_heatpump import DataType, IdmConnectionError, IdmDeviceError, IdmModbusClient, IdmModbusError, RegisterDef
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
+
+def _stub_transport():
+    """Return a stand-in transport.
+
+    Since idm-heatpump-api 2.0.0 the built-in Modbus TCP transport lives behind
+    the optional ``[pymodbus]`` extra, which this integration does not install:
+    it injects its own tmodbus-backed transport. A client built without one
+    therefore raises ImportError, so these tests pass a stub.
+    """
+    from idm_heatpump.transport import IdmModbusTransport
+
+    transport = AsyncMock(spec=IdmModbusTransport)
+    transport.connected = True
+    transport.read_input_registers.return_value = []
+    transport.read_holding_registers.return_value = []
+    transport.write_registers.return_value = None
+    return transport
+
+
+def _client(*args, **kwargs):
+    """Build an IdmModbusClient with an injected transport by default."""
+    kwargs.setdefault("transport", _stub_transport())
+    return IdmModbusClient(*args, **kwargs)
 
 
 @pytest.fixture
@@ -61,7 +84,7 @@ class TestRegisterDef:
 
 class TestDecodeValue:
     def setup_method(self):
-        self.client = IdmModbusClient("127.0.0.1")
+        self.client = _client("127.0.0.1")
 
     def test_float(self):
         raw = struct.pack("<f", 25.5)
@@ -134,7 +157,7 @@ class TestDecodeValue:
 
 class TestEncodeValue:
     def setup_method(self):
-        self.client = IdmModbusClient("127.0.0.1")
+        self.client = _client("127.0.0.1")
 
     def test_float_roundtrip(self):
         reg = _make_reg(0, DataType.FLOAT, writable=True)
@@ -210,9 +233,9 @@ class TestReadRegister:
     async def test_read_raises_on_modbus_error(self, client_and_tcp):
         client, tcp = client_and_tcp
         # API 1.0 transport contract: device errors surface as exceptions.
-        tcp.read_input_registers.side_effect = ModbusException("device error")
+        tcp.read_input_registers.side_effect = IdmDeviceError("device error")
         reg = _make_reg(1000, DataType.UCHAR)
-        with pytest.raises(ModbusException):
+        with pytest.raises(IdmModbusError):
             await client.read_register(reg)
 
 
@@ -252,9 +275,9 @@ class TestWriteRegister:
     async def test_write_modbus_error_raises(self, client_and_tcp):
         client, tcp = client_and_tcp
         # API 1.0 transport contract: device write errors raise.
-        tcp.write_registers.side_effect = ModbusException("write error")
+        tcp.write_registers.side_effect = IdmDeviceError("write error")
         reg = _make_reg(1000, DataType.UCHAR, writable=True)
-        with pytest.raises(ModbusException):
+        with pytest.raises(IdmModbusError):
             await client.write_register(reg, 1)
 
 
@@ -302,8 +325,8 @@ class TestReadBatch:
         client._max_retries = 1
         ok_result = _mock_read_result([42])
         tcp.read_input_registers.side_effect = [
-            ModbusException("err"),
-            ModbusException("err"),
+            IdmDeviceError("err"),
+            IdmDeviceError("err"),
             ok_result,
         ]
 
@@ -322,12 +345,17 @@ class TestReadBatch:
 
 class TestConnectDisconnect:
     async def test_connect(self):
-        # API 1.0: AsyncModbusTcpClient is instantiated inside _PymodbusTransport
-        # (idm_heatpump.transport), not directly in the client module.
-        with patch("idm_heatpump.transport.AsyncModbusTcpClient") as mock_class:
+        """The built-in transport wires connect() through to its Modbus client.
+
+        Constructed without ``transport=`` on purpose: this is the one place
+        that still exercises the library's built-in path, which resolves its
+        client class lazily since API 2.0.0.
+        """
+        with patch("idm_heatpump.transport._require_pymodbus") as require_pymodbus:
             mock_tcp = AsyncMock()
             mock_tcp.connected = True
-            mock_class.return_value = mock_tcp
+            mock_tcp.connect.return_value = True
+            require_pymodbus.return_value = MagicMock(return_value=mock_tcp)
 
             client = IdmModbusClient("192.168.1.1", 502, 1)
             await client.connect()
@@ -341,7 +369,7 @@ class TestConnectDisconnect:
         transport = AsyncMock(spec=IdmModbusTransport)
         transport.connected = True
 
-        client = IdmModbusClient("192.168.1.1", transport=transport)
+        client = _client("192.168.1.1", transport=transport)
         await client.connect()
         transport.connect.assert_not_called()
 
@@ -355,8 +383,10 @@ class TestConnectDisconnect:
         assert client.is_connected is False
 
     async def test_get_client_raises_when_not_connected(self):
-        client = IdmModbusClient("192.168.1.1")
-        with pytest.raises(ConnectionException):
+        transport = _stub_transport()
+        transport.connected = False
+        client = _client("192.168.1.1", transport=transport)
+        with pytest.raises(IdmConnectionError):
             client._require_client()
 
 
@@ -367,15 +397,15 @@ class TestConnectDisconnect:
 
 class TestClientProperties:
     def test_host_property(self):
-        client = IdmModbusClient("10.0.0.1")
+        client = _client("10.0.0.1")
         assert client.host == "10.0.0.1"
 
     def test_port_property(self):
-        client = IdmModbusClient("10.0.0.1", port=1234)
+        client = _client("10.0.0.1", port=1234)
         assert client.port == 1234
 
     def test_default_port(self):
-        client = IdmModbusClient("10.0.0.1")
+        client = _client("10.0.0.1")
         assert client.port == 502
 
 
@@ -386,7 +416,7 @@ class TestClientProperties:
 
 class TestBitflagCodec:
     def setup_method(self):
-        self.client = IdmModbusClient("127.0.0.1")
+        self.client = _client("127.0.0.1")
 
     def test_decode_bitflag_returns_raw_int(self):
         reg = _make_reg(0, DataType.BITFLAG)
@@ -481,7 +511,7 @@ class TestReadGroupFailureTracking:
     async def test_first_failure_increments_count(self, client_and_tcp):
         client, tcp = client_and_tcp
         client._max_retries = 1
-        tcp.read_input_registers.side_effect = ModbusException("err")
+        tcp.read_input_registers.side_effect = IdmDeviceError("err")
         regs = [_make_reg(1000, DataType.UCHAR, "x")]
         result = await client._read_group(regs)
         assert result == {}
@@ -490,7 +520,7 @@ class TestReadGroupFailureTracking:
     async def test_second_failure_increments_to_two(self, client_and_tcp):
         client, tcp = client_and_tcp
         client._max_retries = 1
-        tcp.read_input_registers.side_effect = ModbusException("err")
+        tcp.read_input_registers.side_effect = IdmDeviceError("err")
         regs = [_make_reg(1000, DataType.UCHAR, "x")]
         await client._read_group(regs)
         await client._read_group(regs)
@@ -499,11 +529,11 @@ class TestReadGroupFailureTracking:
 
     async def test_third_failure_marks_permanent(self):
         """After 3 failures, register is marked permanently failed."""
-        client = IdmModbusClient("127.0.0.1")
+        client = _client("127.0.0.1")
         client._max_retries = 1
         mock_tcp = AsyncMock()
         mock_tcp.connected = True
-        mock_tcp.read_input_registers.side_effect = ModbusException("err")
+        mock_tcp.read_input_registers.side_effect = IdmDeviceError("err")
         client._client = mock_tcp
         regs = [_make_reg(1000, DataType.UCHAR, "x")]
         for _ in range(3):

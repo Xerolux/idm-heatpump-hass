@@ -8,11 +8,14 @@ import pytest
 from idm_heatpump import (
     MODEL_NAVIGATOR_20,
     DataType,
+    IdmConnectionError,
+    IdmDeviceError,
+    IdmModbusError,
     IdmModelInfo,
+    IdmTransportError,
     IllegalAddressError,
     RegisterDef,
 )
-from pymodbus.exceptions import ConnectionException, ModbusException, ModbusIOException
 
 from custom_components.idm_heatpump.const import UNUSED_VALUE
 from custom_components.idm_heatpump.coordinator import (
@@ -186,9 +189,9 @@ class TestRepairIssueClassification:
     @pytest.mark.parametrize(
         ("error", "issue_id"),
         [
-            (ConnectionException("connection lost"), "cannot_connect"),
+            (IdmConnectionError("connection lost"), "cannot_connect"),
             (
-                ConnectionException(
+                IdmConnectionError(
                     "Modbus Error: [Connection] Failed to connect [Errno 111] "
                     "Connect call failed ('192.168.178.196', 5020)"
                 ),
@@ -197,9 +200,9 @@ class TestRepairIssueClassification:
             (socket.gaierror("name or service not known"), "host_not_found"),
             (ConnectionRefusedError("connection refused"), "modbus_connection_refused"),
             (TimeoutError("timed out"), "modbus_timeout"),
-            (ModbusIOException("No response received after 0 retries"), "modbus_timeout"),
-            (ModbusException("no response from slave 2"), "wrong_slave_id"),
-            (ModbusException("ExceptionResponse(exception_code=1) illegal function"), "incompatible_firmware"),
+            (IdmTransportError("No response received after 0 retries"), "modbus_timeout"),
+            (IdmDeviceError("no response from slave 2"), "wrong_slave_id"),
+            (IdmDeviceError("ExceptionResponse(exception_code=1) illegal function"), "incompatible_firmware"),
             (Exception("timeout"), "modbus_timeout"),
         ],
     )
@@ -211,7 +214,7 @@ class TestRepairIssueClassification:
             "modbus_connection_refused",
             "192.168.178.196",
             5020,
-            ConnectionException("connect call failed"),
+            IdmConnectionError("connect call failed"),
         )
 
         assert "192.168.178.196:5020" in message
@@ -221,9 +224,9 @@ class TestRepairIssueClassification:
     @pytest.mark.parametrize(
         ("error", "expected"),
         [
-            (ConnectionException("connection reset by peer"), "was interrupted"),
-            (ConnectionException("No route to host (Errno 113)"), "no working network route"),
-            (ModbusException("Modbus response CRC error"), "response that could not be read"),
+            (IdmConnectionError("connection reset by peer"), "was interrupted"),
+            (IdmConnectionError("No route to host (Errno 113)"), "no working network route"),
+            (IdmDeviceError("Modbus response CRC error"), "response that could not be read"),
         ],
     )
     def test_generic_communication_errors_are_actionable(self, error, expected):
@@ -478,7 +481,7 @@ class TestAsyncUpdateData:
         from homeassistant.helpers.update_coordinator import UpdateFailed
 
         client = MagicMock()
-        client.read_batch = AsyncMock(side_effect=ConnectionException("connection lost"))
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
@@ -514,7 +517,7 @@ class TestAsyncUpdateData:
         async def read_batch(registers):
             calls.append([reg.name for reg in registers])
             if any(reg.name == "power_limit_hp" for reg in registers):
-                raise ModbusException(
+                raise IdmDeviceError(
                     "Modbus error reading address 4108: "
                     "ExceptionResponse(dev_id=1, function_code=132, exception_code=2)"
                 )
@@ -541,7 +544,7 @@ class TestAsyncUpdateData:
 
         client = MagicMock()
         client.read_batch = AsyncMock(
-            side_effect=ModbusException("Modbus error reading address 4108: ExceptionResponse(exception_code=2)")
+            side_effect=IdmDeviceError("Modbus error reading address 4108: ExceptionResponse(exception_code=2)")
         )
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
         coord._registers = [unsupported]
@@ -603,8 +606,8 @@ class TestAsyncUpdateData:
     @pytest.mark.parametrize(
         "error",
         [
-            ConnectionException("connection lost"),
-            ModbusException("Modbus response CRC error"),
+            IdmConnectionError("connection lost"),
+            IdmModbusError("Modbus response CRC error"),
         ],
     )
     async def test_non_address_modbus_errors_remain_fatal(
@@ -689,7 +692,7 @@ class TestAsyncUpdateData:
         good = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good")
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={room_mode.name: 2, good.name: 7})
-        client.read_register = AsyncMock(side_effect=ModbusException("Illegal Data Address exception_code=2"))
+        client.read_register = AsyncMock(side_effect=IdmDeviceError("Illegal Data Address exception_code=2"))
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
@@ -708,7 +711,7 @@ class TestAsyncUpdateData:
         later_room_mode = RegisterDef(address=2026, datatype=DataType.UCHAR, name="zm1_room4_mode")
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={room_mode.name: 2, later_room_mode.name: 3})
-        client.read_register = AsyncMock(side_effect=ModbusIOException("No response received"))
+        client.read_register = AsyncMock(side_effect=IdmTransportError("No response received"))
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
@@ -883,7 +886,7 @@ class TestAsyncUpdateData:
 
     async def test_wrong_slave_id_issue_created_on_no_response(self, mock_hass, mock_config_entry):
         client = MagicMock()
-        client.read_batch = AsyncMock(side_effect=ModbusException("no response from slave 3"))
+        client.read_batch = AsyncMock(side_effect=IdmDeviceError("no response from slave 3"))
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
@@ -899,7 +902,7 @@ class TestAsyncUpdateData:
 
     async def test_incompatible_firmware_issue_created_on_illegal_function(self, mock_hass, mock_config_entry):
         client = MagicMock()
-        client.read_batch = AsyncMock(side_effect=ModbusException("ExceptionResponse(exception_code=1)"))
+        client.read_batch = AsyncMock(side_effect=IdmDeviceError("ExceptionResponse(exception_code=1)"))
         coord, _ = _make_coordinator(
             mock_hass,
             mock_config_entry,
@@ -1174,14 +1177,14 @@ class TestAsyncWriteRegister:
     async def test_device_rejection_is_recorded_for_diagnostics(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.write_register = AsyncMock(
-            side_effect=ModbusException("Modbus write at address 1405 failed: refused (exception_code=4)")
+            side_effect=IdmDeviceError("Modbus write at address 1405 failed: refused (exception_code=4)")
         )
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
 
         reg = RegisterDef(address=1405, datatype=DataType.FLOAT, name="hc_c_room_setpoint_heat_normal", writable=True)
         with (
             patch("custom_components.idm_heatpump.coordinator.ir"),
-            pytest.raises(ModbusException),
+            pytest.raises(IdmModbusError),
         ):
             await coord.async_write_register(reg, 24.0)
 

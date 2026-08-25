@@ -16,8 +16,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "modbus-connection==4.10.0",
     "tmodbus[async-serial]==0.6.1",
-    "pymodbus>=3.12.1,<4.0",
-    "idm-heatpump-api[web]==1.0.3",
+    "idm-heatpump-api[web]==2.0.0",
 ]
 
 
@@ -79,7 +78,6 @@ def test_ci_tests_pinned_and_compatible_api_dependencies() -> None:
     assert "api-dependency-mode" in ci
     assert "manifest-pinned" in ci
     assert "api-main" in ci
-    assert "pymodbus>=3.12.1,<4.0" in quality
     assert "idm-heatpump-api.git@main" in quality
 
 

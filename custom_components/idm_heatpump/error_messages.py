@@ -5,12 +5,14 @@ from __future__ import annotations
 import re
 import socket
 
-from pymodbus.exceptions import ConnectionException, ModbusIOException
+from idm_heatpump import IdmConnectionError, IdmDeviceError, IdmTransportError
 
-# Modbus exception codes as rendered by ``modbus_transport._translate_backend_error``
-# ("... (exception_code=<N>)"). Naming the code in the user-facing message and in
-# the log is the difference between "the write failed" and a report a maintainer
-# can act on, so the code is parsed back out of the message chain.
+# Since idm-heatpump-api 2.0.0 the device's exception code arrives as
+# ``IdmDeviceError.exception_code``. The rendered ``exception_code=<N>`` marker
+# is still parsed as a fallback: transports and library versions that only put
+# the code in the message text stay readable. Naming the code in the
+# user-facing message and in the log is the difference between "the write
+# failed" and a report a maintainer can act on.
 _EXCEPTION_CODE_PATTERN = re.compile(r"exception_code=(\d+)")
 
 MODBUS_EXCEPTION_NAMES: dict[int, str] = {
@@ -69,9 +71,9 @@ def classify_communication_error(err: Exception) -> str:
         marker in message for marker in ("timed out", "timeout", "errno 110", "winerror 10060")
     ):
         return "modbus_timeout"
-    if isinstance(err, ModbusIOException):
+    if isinstance(err, IdmTransportError):
         return "modbus_timeout"
-    if isinstance(err, ConnectionException):
+    if isinstance(err, IdmConnectionError):
         return "cannot_connect"
     if any(marker in message for marker in ("slave", "unit id", "device id", "no response", "no reply")):
         return "wrong_slave_id"
@@ -189,10 +191,17 @@ def friendly_web_error(issue_id: str, host: str) -> str:
 def modbus_exception_code(err: BaseException) -> int | None:
     """Return the Modbus exception code carried by an error chain, if any.
 
-    The transport preserves the ``exception_code=<N>`` marker verbatim (see
-    :mod:`.modbus_transport`), so the code the controller actually answered
-    with survives all the way up to the user-facing message.
+    Prefers the structured ``IdmDeviceError.exception_code`` attribute and
+    falls back to the ``exception_code=<N>`` marker the transport keeps in the
+    message, so the code the controller actually answered with survives all the
+    way up to the user-facing message either way.
     """
+    current: BaseException | None = err
+    while current is not None:
+        code = getattr(current, "exception_code", None)
+        if isinstance(code, int):
+            return code
+        current = current.__cause__ or current.__context__
     match = _EXCEPTION_CODE_PATTERN.search(_error_chain_text(err))
     if match is None:
         return None
@@ -245,14 +254,15 @@ def classify_write_error(err: Exception) -> str:
         return "write_not_supported"
     if any(marker in message for marker in ("invalid value", "invalid type", "cannot encode", "conversion")):
         return "write_invalid_value"
-    # Any other Modbus exception code means the controller answered and
-    # refused the write; that is a different problem from "no connection".
-    if modbus_exception_code(err) is not None:
+    # The controller answered and refused the write; that is a different
+    # problem from "no connection". Recognised structurally via the library's
+    # device-error type, and by a rendered exception code as a fallback.
+    if isinstance(err, IdmDeviceError) or modbus_exception_code(err) is not None:
         return "write_rejected_by_device"
     communication_issue = classify_communication_error(err)
     if (
         communication_issue != "cannot_connect"
-        or isinstance(err, (ConnectionException, ConnectionError, OSError))
+        or isinstance(err, (IdmConnectionError, IdmTransportError, ConnectionError, OSError))
         or any(
             marker in message
             for marker in ("connection lost", "connection reset", "broken pipe", "not connected", "disconnected")

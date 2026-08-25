@@ -5,7 +5,7 @@ from __future__ import annotations
 import socket
 
 import pytest
-from pymodbus.exceptions import ConnectionException, ModbusException
+from idm_heatpump import IdmConnectionError, IdmDeviceError, IdmModbusError
 
 from custom_components.idm_heatpump.error_messages import (
     classify_communication_error,
@@ -24,10 +24,10 @@ from custom_components.idm_heatpump.error_messages import (
     ("error", "issue_id"),
     [
         (socket.gaierror("getaddrinfo failed"), "host_not_found"),
-        (ConnectionException("WinError 10061 actively refused"), "modbus_connection_refused"),
-        (ConnectionException("WinError 10060 timeout"), "modbus_timeout"),
-        (ModbusException("no response from slave 1"), "wrong_slave_id"),
-        (ModbusException("unsupported function"), "incompatible_firmware"),
+        (IdmConnectionError("WinError 10061 actively refused"), "modbus_connection_refused"),
+        (IdmConnectionError("WinError 10060 timeout"), "modbus_timeout"),
+        (IdmDeviceError("no response from slave 1"), "wrong_slave_id"),
+        (IdmDeviceError("unsupported function"), "incompatible_firmware"),
     ],
 )
 def test_classifies_common_communication_variants(error: Exception, issue_id: str) -> None:
@@ -52,10 +52,10 @@ def test_classifies_web_errors(error: Exception, issue_id: str) -> None:
 @pytest.mark.parametrize(
     ("error", "translation_key"),
     [
-        (ConnectionException("connection lost"), "write_connection_failed"),
+        (IdmConnectionError("connection lost"), "write_connection_failed"),
         (ValueError("value out of range"), "write_out_of_range"),
         (PermissionError("register is read only"), "write_read_only"),
-        (ModbusException("Illegal Data Address exception_code=2"), "write_not_supported"),
+        (IdmDeviceError("Illegal Data Address exception_code=2"), "write_not_supported"),
         (ValueError("cannot encode invalid value"), "write_invalid_value"),
         (RuntimeError("unknown failure"), "write_failed"),
         (
@@ -67,11 +67,11 @@ def test_classifies_web_errors(error: Exception, issue_id: str) -> None:
             "write_not_supported",
         ),
         (
-            ModbusException("Modbus write at address 1405 failed: refused (exception_code=4)"),
+            IdmModbusError("Modbus write at address 1405 failed: refused (exception_code=4)"),
             "write_rejected_by_device",
         ),
         (
-            ModbusException("Modbus write at address 1405 failed: busy (exception_code=6)"),
+            IdmModbusError("Modbus write at address 1405 failed: busy (exception_code=6)"),
             "write_rejected_by_device",
         ),
     ],
@@ -89,7 +89,7 @@ class TestWriteErrorDetail:
     """
 
     def test_reads_back_the_modbus_exception_code(self) -> None:
-        error = ModbusException("Modbus write at address 1405 failed: refused (exception_code=4)")
+        error = IdmDeviceError("Modbus write at address 1405 failed: refused (exception_code=4)")
         assert modbus_exception_code(error) == 4
         detail = write_error_detail(error)
         assert "Modbus exception code 4" in detail

@@ -300,7 +300,6 @@ class TestSensorAsyncSetupEntry:
         assert version_sensor.extra_state_attributes["integration_version"] == "0.5.0"
         assert isinstance(version_sensor.extra_state_attributes["modbus_connection_version"], str)
         assert isinstance(version_sensor.extra_state_attributes["tmodbus_version"], str)
-        assert isinstance(version_sensor.extra_state_attributes["pymodbus_version"], str)
         assert version_sensor.available is True
 
     async def test_unused_sensor_is_not_registered_when_hide_unused_enabled(self):
