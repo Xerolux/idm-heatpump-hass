@@ -104,6 +104,12 @@ class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity
                 allow_custom_register=self._allow_custom_register,
             )
             _LOGGER.debug("Acknowledged errors via button")
+        except HomeAssistantError:
+            # The coordinator already raised a translated, actionable error —
+            # the write cooldown names the remaining wait. Reclassifying it
+            # replaced that with the generic "could not be written" message and
+            # hid the real reason from the user (#237).
+            raise
         except Exception as err:
             translation_key = classify_write_error(err)
             raise HomeAssistantError(

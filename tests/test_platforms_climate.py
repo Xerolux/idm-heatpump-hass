@@ -97,6 +97,26 @@ class TestIdmAcknowledgeErrorsButton:
         assert written_reg is button._register
         assert written_value == 1
 
+    async def test_translated_coordinator_error_is_not_replaced(self):
+        """The button must not reclassify an already-actionable error (#237)."""
+        from homeassistant.exceptions import HomeAssistantError
+
+        cooldown_error = HomeAssistantError(
+            translation_domain="idm_heatpump",
+            translation_key="write_cooldown_active",
+            translation_placeholders={"register": "error_acknowledge", "remaining": "2.3", "cooldown": "5"},
+        )
+        from custom_components.idm_heatpump.button import IdmAcknowledgeErrorsButton
+
+        coord = _make_coordinator()
+        coord.async_write_register = AsyncMock(side_effect=cooldown_error)
+        button = IdmAcknowledgeErrorsButton(coord)
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await button.async_press()
+
+        assert exc_info.value is cooldown_error
+
     async def test_async_press_raises_translated_error(self):
         from homeassistant.exceptions import HomeAssistantError
 
