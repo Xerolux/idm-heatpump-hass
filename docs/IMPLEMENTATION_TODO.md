@@ -153,24 +153,25 @@ Required user data:
       keeps the register model, batch planning, encoding/decoding, model
       detection and write protection; raw I/O runs through
       `ModbusConnectionTransport`.
-- [x] Pin the direct socket reproducibly to `modbus-connection==4.0.0a3` and
-      `tmodbus==0.5.0`. `4.0.0a3` is the library version, not the integration
+- [x] Pin the direct socket reproducibly to `modbus-connection==4.10.0` and
+      `tmodbus[async-serial]==0.6.1`. `4.10.0` is the library version, not the integration
       version; the runtime path ships for the first time with `0.11.0-beta.1`.
-- [x] Keep `idm-heatpump-api[web]==1.0.1` and `pymodbus>=3.12.1,<4.0`
-      temporarily as a compatibility pair, because `idm_heatpump.client` still
-      imports pymodbus at module level. Pymodbus does not own the direct socket.
+- [x] Pin `idm-heatpump-api[web]==2.0.0` for device logic. Its injected
+      transport path uses the API's own exception hierarchy and does not install
+      pymodbus.
 - [x] Make the transport source, socket ownership, connection status,
       `supports_shared_connection=False` and all runtime versions diagnosable in
       redacted form.
-- [ ] Validate the new tmodbus runtime path read-only on real Navigator
-      hardware for setup, FC03, FC04, connection loss and reconnect. No hardware
-      write tests without an explicit authorization.
+- [x] Validate ordinary read-only tmodbus polling, the web supplement and
+      redacted diagnostics on the maintainer Navigator 10.
+- [ ] Repeat the smoke test on Navigator 2.0/Pro and validate intentional
+      connection loss/reconnect. No hardware write tests without explicit
+      authorization.
 - [x] Move `idm-heatpump-api` onto a public, transport-neutral I/O contract:
       since `1.0.1` the API exports `IdmModbusTransport` as a protocol,
       `IdmModbusClient` accepts the transport through `transport=`, and
       `IdmModbusConnectionClient` uses exactly that path.
-- [ ] Remove the pymodbus compatibility pin as soon as the module-level import
-      of `pymodbus` in `idm_heatpump.client` is optional.
+- [x] Remove the pymodbus compatibility pin with API `2.0.0`.
 - [ ] Only add a central Home Assistant shared-connection provider once it is
       stably available for custom integrations. Until then every entry owns its
       own socket and reports no sharing.

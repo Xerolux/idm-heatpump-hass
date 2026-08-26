@@ -103,21 +103,22 @@ in planning or in diagnostics.
 - [x] Wire up `IdmModbusConnectionClient` as the production adapter and run raw
   I/O through `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.1`. The
   path ships for the first time with `0.11.0-beta.1`.
-- [x] Keep `idm-heatpump-api[web]==2.0.0b1` for device logic and
-  `pymodbus>=3.12.1,<4.0` temporarily for its imports and error contract;
-  pymodbus does not own the direct socket.
+- [x] Pin `idm-heatpump-api[web]==2.0.0` for device logic. The API owns its
+  exception hierarchy and accepts the injected transport without importing or
+  installing pymodbus.
 - [x] Diagnose the private per-entry socket ownership and the missing central
   sharing as `owns_socket=True` / `supports_shared_connection=False`.
-- [ ] Validate the new tmodbus path read-only on real Navigator hardware; no
-  write tests without an explicit authorization.
+- [x] Validate ordinary read-only tmodbus polling, the web supplement and
+  redacted diagnostics on the maintainer Navigator 10; no write tests were run.
+- [ ] Validate an intentional connection loss/reconnect and repeat the transport
+  smoke test on Navigator 2.0/Pro hardware.
 - [x] Structure `idm-heatpump-api` transport-neutrally and provide a public I/O
   contract: since `1.0.1` the API exports the runtime-checkable protocol
   `IdmModbusTransport`, and `IdmModbusClient` accepts the transport through the
   public parameter `transport=`. The register model, encoding/decoding, batch
   planning and error classification stay in the API.
-- [ ] Remove the pymodbus compatibility pin. It no longer depends on the
-  transport contract, only on `idm_heatpump.client` importing `pymodbus` at
-  module level — independently of the injected transport.
+- [x] Remove the pymodbus compatibility pin with API `2.0.0`; caller-supplied
+  transports use the API's own exception hierarchy.
 - [x] Evaluate the component/planning module of `modbus-connection`
   (`modbus_connection.model`) as a replacement for batching and decoding in
   `idm-heatpump-api`. Result: do not implement — the register map fits
@@ -176,18 +177,9 @@ sentinel or firmware-dependent special values.
 
 ## Next concrete TODOs
 
-1. Clarify the room temperature per heating circuit in the web supplement:
-   `idm-heatpump-api` only maps `B61` onto `room_temperature_HK_A`. Over Modbus
-   there is `hc_{a..g}_room_temp` for every heating circuit, so the point
-   concerns web-only mode alone. Whether `B62`–`B67` exist for the remaining
-   heating circuits is unconfirmed and measurable on an installation with
-   several heating circuits.
-2. Collect real diagnostics exports for the flow deviation and the binary
+1. Collect real diagnostics exports for the flow deviation and the binary
    registers through the field diagnostics template.
-3. Validate the new tmodbus path read-only on real hardware for setup, FC03,
-   FC04, connection loss and reconnect.
-4. Make the module-level import of `pymodbus` in `idm_heatpump.client` optional
-   and only then remove the compatibility pin. The public transport contract has
-   been in place since API `1.0.1` and is already in use.
-5. Maintain the existing Modbus issue for the open central Home Assistant shared
+2. Repeat the read-only tmodbus smoke test on Navigator 2.0/Pro hardware and
+   validate intentional connection loss/reconnect on a controlled system.
+3. Maintain the existing Modbus issue for the open central Home Assistant shared
    connection and for a migration-safe provider implementation.

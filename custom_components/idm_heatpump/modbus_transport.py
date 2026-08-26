@@ -211,10 +211,10 @@ class ModbusConnectionTransport:
     on the next request after a dropped link.  Cross-entry sharing is not claimed
     here because Home Assistant's central sharing layer is not public.
 
-    Backend-neutral ``ModbusError`` failures are translated to the API's exception
-    contract (``IllegalAddressError``/``ModbusException``/``ConnectionException``/
-    ``ModbusIOException``/``TimeoutError``) before they propagate, so the API
-    retry loop classifies them correctly without any private-method overrides.
+    Backend-neutral ``ModbusError`` failures are translated to the API's own
+    exception contract (``IllegalAddressError``/``IdmDeviceError``/
+    ``IdmConnectionError``/``IdmTransportError``) before they propagate, so the
+    API retry loop classifies them correctly without private-method overrides.
     """
 
     capabilities = ModbusTransportCapabilities(

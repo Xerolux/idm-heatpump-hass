@@ -268,27 +268,26 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.15.0` (previous stable: `0.14.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | `0.16.0-rc.1` (previous stable: `0.15.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.10.0` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]==0.6.1` | Wire/backend implementation changes |
-| Compatibility library | `pymodbus>=3.12.1,<4.0` | Temporary compatibility with API imports and exception types |
-| Python register/web library | `idm-heatpump-api[web]==2.0.0b1` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
+| Python register/web library | `idm-heatpump-api[web]==2.0.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
 `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.1`,
-`pymodbus>=3.12.1,<4.0`, and `idm-heatpump-api[web]==2.0.0b1`.
-The first two packages own the direct socket. `idm-heatpump-api` remains
-responsible for IDM-specific device logic; pymodbus is temporarily retained
-because that API still imports it. `4.8.1` is the version of
-`modbus-connection`, not an IDM integration version. The transport was first
-shipped by IDM integration beta `0.11.0-beta.1` and is now part of the stable
-`0.11.x` line.
+and `idm-heatpump-api[web]==2.0.0`. The first two packages own the direct
+socket. `idm-heatpump-api` remains responsible for IDM-specific device logic
+and owns its exception hierarchy; the integration no longer installs
+pymodbus. `4.10.0` is the version of `modbus-connection`, not an IDM integration
+version. The transport was first shipped by IDM integration beta
+`0.11.0-beta.1`.
 
-The adapter is implemented and covered by automated tests. Its redacted
+The adapter is implemented, covered by automated tests and live-verified on a
+Navigator 10. Its redacted
 diagnostics report `source: modbus_connection.tmodbus`, `owns_socket: true` and
-`supports_shared_connection: false`. Read-only validation of this new transport
-path on real Navigator hardware is still pending; real-hardware writes remain
-out of scope unless explicitly authorized. IDM Heatpump is a custom
+`supports_shared_connection: false`. Navigator 2.0/Pro coverage and an
+intentional connection-loss/reconnect test remain open; real-hardware writes
+stay out of scope unless explicitly authorized. IDM Heatpump is a custom
 integration, not a Home Assistant add-on.
 
 ## Debug Logging

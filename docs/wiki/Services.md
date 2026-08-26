@@ -168,11 +168,10 @@ invent universal limits for those fields; it rejects non-numeric, NaN and
 infinite values and applies library limits automatically if a future tested API
 release supplies them.
 
-> **Open release check:** Before releasing this service, repeat this metadata
-> audit against the installed, published `idm-heatpump-api[web]==0.9.1`
-> artifact. The development environment used for the initial implementation
-> could not download the PyPI artifact. If its register definitions differ from
-> the table, update the validation, tests and this documentation together.
+The table was rechecked against the published
+`idm-heatpump-api[web]==2.0.0` artifact. Those GLT power registers still do not
+declare universal minimum or maximum values; the integration therefore keeps
+the finite-number validation described above.
 
 `battery_soc` is a signed INT16 register whose documented valid input is a
 whole percentage from `0` to `100`; `-1` is its unavailable sentinel. The
