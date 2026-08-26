@@ -6,14 +6,14 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.16.0-beta.1` and `idm-heatpump-api` `2.0.0b1` form the current
+Integration `0.16.0-rc.1` and `idm-heatpump-api` `2.0.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
 `modbus-connection==4.0.0a3` with `tmodbus==0.5.0`.
 
 **`0.16.0`** drops pymodbus entirely — a breaking change, and the reason the
-line opens with a beta. `idm-heatpump-api` `2.0.0b1` owns its own
+line opened with a beta. `idm-heatpump-api` `2.0.0` owns its own
 exception hierarchy (`IdmModbusError` and subclasses) instead of inheriting
 from pymodbus, and moves its built-in Modbus TCP transport behind an optional
 extra. This integration injects a tmodbus-backed transport, so it now installs
@@ -94,6 +94,16 @@ from 170 to 153 definitions. Three complete read-only polls averaged about
 2.38 seconds; 151 values were returned, no register was batch-quarantined and
 only the firmware register unsupported by that firmware was isolated. These
 numbers describe one system and are not universal performance guarantees.
+
+On 2026-08-26 the maintainer Home Assistant instance ran integration
+`0.16.0-beta.1` with API `2.0.0b1` through the production tmodbus adapter. The
+redacted diagnostics reported 8,836 successful polls, zero failures, a 12.4 ms
+last poll, no consecutive failures or model conflict, and a connected Navigator
+10 web supplement. Home Assistant exposed 8 devices and 218 entities, showed no
+IDM integration log errors, and the run performed no Modbus writes. The RC only
+changes the exact API pin from the validated beta to the stable API artifact and
+updates release documentation; the API stable release has no runtime changes
+from its beta.
 
 ## Stable-release Gates
 

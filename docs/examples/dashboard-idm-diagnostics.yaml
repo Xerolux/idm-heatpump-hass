@@ -19,8 +19,6 @@ views:
             name: Software version
           - entity: sensor.idm_heatpump_idm_heatpump_api_version
             name: API version
-          - entity: sensor.idm_heatpump_pymodbus_version
-            name: Pymodbus version
 
       - type: entities
         title: Communication and web supplement

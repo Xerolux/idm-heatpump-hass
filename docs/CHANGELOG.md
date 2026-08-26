@@ -13,6 +13,50 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0-rc.1] - 2026-08-26
+
+> ## ⚠️ BREAKING CHANGE — read before updating to `0.16.x`
+>
+> **`0.16.0` removes pymodbus from the integration and requires
+> `idm-heatpump-api` `2.0.0`.** The last pymodbus-based release line is `0.15.1`.
+> Entity IDs, register addresses, history, automations and dashboards are not
+> migrated or renamed. Roll back through HACS to `0.15.1` if another component
+> in the same environment still requires the old dependency pair.
+
+This release candidate promotes the runtime exercised by `0.16.0-beta.1` to
+the final, reproducible API artifact. API `2.0.0` contains no register-map,
+encoding, write-safety or wire-protocol changes from `2.0.0b1`; the integration
+code path is unchanged apart from the exact dependency and release version.
+
+### Changed
+
+- **Pin `idm-heatpump-api[web]==2.0.0`.** The stable API artifact was published,
+  installed in a clean environment and verified without pymodbus before this RC
+  was prepared. The direct socket remains the exact
+  `modbus-connection==4.10.0` / `tmodbus[async-serial]==0.6.1` pair.
+
+### Documentation
+
+- **Use the API `2.0` exception hierarchy consistently.** Transport comments,
+  troubleshooting examples and retry guidance now name `IdmConnectionError`,
+  `IdmTransportError`, `IdmDeviceError` and `IllegalAddressError`, rather than
+  the removed pymodbus exception contract.
+- **Remove stale current-runtime references.** The Wiki, release smoke test,
+  quality-scale notes, planning records and example dashboards now agree that
+  pymodbus is absent and that the API version sensor exposes only the integration,
+  `modbus-connection` and tmodbus runtime attributes.
+
+### Validation
+
+- `0.16.0-beta.1` ran read-only on the maintainer Navigator 10 with 8,836
+  successful polls, zero failures, no model conflict and a connected web
+  supplement. Home Assistant exposed 8 devices and 218 entities and logged no
+  IDM integration errors.
+- The published API `2.0.0` wheel installs with the `[web]` extra without
+  pymodbus and exports the expected independent exception hierarchy.
+- Navigator 2.0/Pro hardware coverage and the stable-release soak remain open
+  gates; this tag is deliberately a release candidate, not the stable cut.
+
 ## [0.16.0-beta.1] - 2026-08-25
 
 > ## ⚠️ BREAKING CHANGE — read before updating to `0.16.x`

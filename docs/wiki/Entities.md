@@ -31,11 +31,10 @@ entities, switches, writable values, live measurements and diagnostics.
 
 | Entity | State | Attributes | Category |
 |--------|-------|------------|----------|
-| IDM Heatpump API version | Installed `idm-heatpump-api` version | `integration_version`, `modbus_connection_version`, `tmodbus_version`, `pymodbus_version` | Diagnostic |
+| IDM Heatpump API version | Installed `idm-heatpump-api` version | `integration_version`, `modbus_connection_version`, `tmodbus_version` | Diagnostic |
 
 This sensor remains available even if heat-pump polling fails, making it useful
-when collecting information for a bug report. `pymodbus_version` describes the
-temporarily retained API compatibility dependency; the direct socket runtime is
+when collecting information for a bug report. The direct socket runtime is
 identified by the `modbus_connection_version` and `tmodbus_version` attributes.
 
 ### Technician-level access codes

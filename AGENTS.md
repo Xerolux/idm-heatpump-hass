@@ -7,13 +7,13 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.16.0-beta.1` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.15.1`, the last line with pymodbus)
+- **Current Version**: `0.16.0-rc.1` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.15.1`, the last line with pymodbus)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
 - **Python**: 3.13+
 - **Direct Modbus Runtime**: `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.1`
-- **Device Logic**: `idm-heatpump-api[web]==2.0.0b1` (owns its own exception hierarchy; pymodbus is no longer a dependency)
+- **Device Logic**: `idm-heatpump-api[web]==2.0.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 
 ---
 
@@ -278,8 +278,9 @@ ruff check custom_components tests
   anyway, so writing the normalised form is the only way the tag, the
   `pyproject.toml` version, the PyPI filename and the manifest pin all read the
   same. Tag the API repository with the PEP 440 version (`v2.0.0b1`).
-- **The manifest pins the PEP 440 form**, because that is what pip resolves:
-  `idm-heatpump-api[web]==2.0.0b1`, never `==2.0.0-beta.1`.
+- **The manifest pins the exact published API version** in PEP 440 form,
+  because that is what pip resolves. For example, the `0.16.0-rc.1` manifest
+  pins `idm-heatpump-api[web]==2.0.0`.
 
 #### Release notes
 

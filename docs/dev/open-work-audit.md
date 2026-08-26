@@ -1,6 +1,6 @@
 # Open Work Audit
 
-Last updated: 2026-08-18
+Last updated: 2026-08-26
 
 This audit separates work that can be finished locally from items that cannot be
 completed safely without real-system data or without a central Home Assistant
@@ -22,9 +22,9 @@ not been validated on hardware, as finished.
 - Direct socket through `modbus-connection==4.10.0` and the separately pinned
   backend level `tmodbus[async-serial]==0.6.1`; the first integration version to
   ship it is `0.11.0-beta.1`.
-- API device logic stays with `idm-heatpump-api[web]==2.0.0b1`. The pymodbus pin
-  only remains temporarily because `idm_heatpump.client` still imports it at
-  module level; the physical connection belongs to tmodbus.
+- API device logic stays with `idm-heatpump-api[web]==2.0.0`. The API owns its
+  exception hierarchy and the injected transport path does not install or
+  import pymodbus; the physical connection belongs to tmodbus.
 - Diagnostics export for the transport source, socket ownership, connection
   status, the missing central sharing and all runtime versions.
 - Issue template for the read-only hardware verification and for a later central
@@ -61,9 +61,12 @@ supplement (port 61220, WebSocket authentication by PIN). The verification
 confirms the code's assumptions; it does not replace the broader field
 diagnostics for other Navigator types and firmware levels.
 
-> This measurement was taken before the direct socket moved to tmodbus. It
-> confirms register definitions and device logic, but it is not a hardware
-> verification of the new `modbus-connection`/tmodbus path.
+The original measurement was taken before the direct socket moved to tmodbus.
+On 2026-08-26 integration `0.16.0-beta.1` with API `2.0.0b1` was additionally
+verified through the production tmodbus path on the same Navigator 10: the
+redacted diagnostics reported 8,836 successful polls, zero failures, no model
+conflict, a connected web supplement and no last write error. The run remained
+strictly read-only.
 
 ### Model detection
 
@@ -161,9 +164,10 @@ system is available:
   (`tests/test_scale_load.py`); what a test without an installation cannot show
   is how the controller behaves under the resulting request load: real response
   times, batch behavior and timeout limits.
-- Read-only transport test of the new tmodbus path on real hardware: setup,
-  FC03, FC04, connection loss and reconnect. Write tests remain excluded without
-  an explicit authorization.
+- Repeat the read-only transport test on Navigator 2.0/Pro hardware and validate
+  intentional connection loss/reconnect on a controlled system. Ordinary
+  Navigator 10 polling through the tmodbus path is verified. Write tests remain
+  excluded without explicit authorization.
 
 The required artifacts are described in the field diagnostics template and in
 the field diagnostics guide. Without that data the safe decision stands: do not
@@ -189,17 +193,17 @@ Until then every config entry owns its direct tmodbus socket and reports
 `supports_shared_connection=False`. There is no transport option and no second
 pymodbus socket path.
 
-### API decoupling
+### API decoupling (completed)
 
-`idm-heatpump-api` 1.0.1 now provides the transport-neutral contract publicly:
+`idm-heatpump-api` 2.0.0 provides the transport-neutral contract publicly:
 `IdmModbusTransport` is an exported, runtime-checkable protocol, and
 `IdmModbusClient` accepts a transport instance through the public parameter
 `transport=`. The integration uses exactly that path; protected raw I/O hooks
 are no longer needed for it.
 
-The only thing left open is the pymodbus pin: `idm_heatpump.client` still
-imports `pymodbus` at module level, regardless of which transport is injected.
-The pin may only be dropped once that import is optional.
+The API now owns `IdmModbusError` and its subclasses. Its built-in pymodbus
+transport is an optional extra, while this integration injects the tmodbus
+adapter and therefore carries no pymodbus dependency.
 
 ## Decision rule
 

@@ -9,12 +9,12 @@ assignees: ''
 ## Implemented runtime boundary
 
 - [x] `IdmModbusConnectionClient` keeps IDM device logic in
-      `idm-heatpump-api[web]==1.0.0` and routes raw I/O through
+      `idm-heatpump-api[web]==2.0.0` and routes raw I/O through
       `ModbusConnectionTransport`.
 - [x] The direct socket uses the exact
       `modbus-connection==4.10.0` / `tmodbus[async-serial]==0.6.1` pair.
-- [x] `pymodbus>=3.12.1,<4.0` remains temporarily pinned because the pinned
-      API version still imports it; pymodbus does not own the direct socket.
+- [x] API `2.0.0` owns its exception hierarchy; the integration's injected
+      transport path no longer installs pymodbus.
 - [x] Each config entry owns its socket. Capabilities report
       `source=modbus_connection.tmodbus`, `owns_socket=True`, and
       `supports_shared_connection=False`.

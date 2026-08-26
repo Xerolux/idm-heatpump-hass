@@ -244,7 +244,7 @@ name, the address, the value and the technical reason, for example:
 
 ```text
 The IDM controller refused the write of 24.0 to hc_c_room_setpoint_heat_normal
-(address 1405): ModbusException: ... [Modbus exception code 4 (Server Device Failure)]
+(address 1405): IdmDeviceError: ... [Modbus exception code 4 (Server Device Failure)]
 ```
 
 ## EEPROM Warnings
