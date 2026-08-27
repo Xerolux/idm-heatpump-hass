@@ -13,6 +13,32 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0-rc.6] - 2026-08-27
+
+Release candidate 6 fixes a KNX startup race found by installing RC5 on the
+live Home Assistant reference system.
+
+### Fixed
+
+- Home Assistant can expose the `knx.send` and `knx.event_register` services
+  before the KNX runtime itself has finished loading. If that happens, the
+  bridge now retries event registration every five seconds until KNX is ready
+  instead of leaving incoming group addresses inactive until a manual IDM
+  integration reload.
+- The bridge subscribes to Home Assistant's internal `knx_event` immediately,
+  even while the external group-address registration is waiting. If one DPT
+  batch succeeds and another is temporarily unavailable, only the missing
+  batch is retried; unload cancels the retry and deregisters every successful
+  batch.
+
+### Safety
+
+- RC5's latest-value KNX command queue, official EEPROM-sensitive register
+  classification and all coordinator/API write guards are unchanged.
+- The conservative EEPROM default remains 60 seconds and configurable. This
+  startup fix does not send a KNX telegram and does not write a heat-pump
+  register by itself.
+
 ## [0.16.0-rc.5] - 2026-08-27
 
 Release candidate 5 improves incoming commands for the experimental KNX

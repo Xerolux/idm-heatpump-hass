@@ -51,6 +51,12 @@ DEFAULT_SEND_GAP: float = 0.05
 # only the final value consumes a write cycle on the controller.
 DEFAULT_WRITE_DEBOUNCE: float = 1.0
 
+# Home Assistant can mark the KNX component and its services as available
+# before the KNX module itself has finished loading. Retry event registration
+# after that startup race instead of leaving incoming group addresses inactive
+# until the IDM integration is reloaded manually.
+KNX_EVENT_REGISTRATION_RETRY_SECONDS: float = 5.0
+
 # Leave a small margin after a locally reported cooldown. The displayed
 # remaining time is rounded, so retrying at the exact value can still arrive a
 # fraction too early and need another avoidable attempt.
@@ -164,6 +170,8 @@ class KnxBridge:
         self._queue: asyncio.Queue[str] = asyncio.Queue()
         self._unsubscribers: list[Callable[[], None]] = []
         self._worker: asyncio.Task[None] | None = None
+        self._registration_worker: asyncio.Task[None] | None = None
+        self._registered_event_groups: set[tuple[str | None, tuple[str, ...]]] = set()
         self._pending_writes: dict[str, _PendingKnxWrite] = {}
         self._write_tasks: dict[str, asyncio.Task[None]] = {}
         self._last_write_completed_at: dict[str, float] = {}
@@ -243,8 +251,9 @@ class KnxBridge:
         self._started = True
 
         if self._config.receive_enabled:
-            await self._async_register_events()
             self._unsubscribers.append(self._hass.bus.async_listen(EVENT_KNX, self._handle_knx_event))
+            if not await self._async_register_events():
+                self._registration_worker = self._hass.async_create_task(self._async_registration_worker())
 
         if self._config.send_enabled:
             self._worker = asyncio.create_task(self._async_send_worker())
@@ -256,6 +265,12 @@ class KnxBridge:
         for unsubscribe in self._unsubscribers:
             unsubscribe()
         self._unsubscribers.clear()
+        registration_worker = self._registration_worker
+        self._registration_worker = None
+        if registration_worker is not None:
+            registration_worker.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await registration_worker
         worker = self._worker
         self._worker = None
         if worker is not None:
@@ -269,17 +284,23 @@ class KnxBridge:
             task.cancel()
         if write_tasks:
             await asyncio.gather(*write_tasks, return_exceptions=True)
-        if self._started and self._config.receive_enabled:
+        if self._started and self._config.receive_enabled and self._registered_event_groups:
             await self._async_register_events(remove=True)
         self._started = False
 
-    async def _async_register_events(self, *, remove: bool = False) -> None:
-        """Ask the KNX integration to raise ``knx_event`` for writable objects.
+    async def _async_registration_worker(self) -> None:
+        """Retry event registration until the KNX runtime is fully ready."""
+        while True:
+            await asyncio.sleep(KNX_EVENT_REGISTRATION_RETRY_SECONDS)
+            if await self._async_register_events(log_failure=False):
+                _LOGGER.info(
+                    "Registered KNX group addresses for %s after the KNX integration became ready",
+                    self._entry_id,
+                )
+                return
 
-        Registering explicitly is what makes the commands work without the
-        user having to widen the KNX integration's own event filter, and it
-        gives us decoded values instead of raw payloads.
-        """
+    def _event_registration_groups(self) -> list[tuple[str | None, tuple[str, ...]]]:
+        """Return stable DPT/address batches required by ``knx.event_register``."""
         by_dpt: dict[str | None, list[str]] = {}
         for register, obj in self._objects.items():
             # Writable objects are registered so commands arrive. Read-only
@@ -288,21 +309,48 @@ class KnxBridge:
             if not obj.writable and not self._answers_reads():
                 continue
             by_dpt.setdefault(obj.dpt, []).append(self._addresses[register])
-        for dpt, addresses in by_dpt.items():
-            data: dict[str, Any] = {"address": sorted(addresses)}
+        return [(dpt, tuple(sorted(addresses))) for dpt, addresses in by_dpt.items()]
+
+    async def _async_register_events(
+        self,
+        *,
+        remove: bool = False,
+        log_failure: bool = True,
+    ) -> bool:
+        """Ask the KNX integration to raise ``knx_event`` for writable objects.
+
+        Registering explicitly is what makes the commands work without the
+        user having to widen the KNX integration's own event filter, and it
+        gives us decoded values instead of raw payloads.
+        """
+        groups = list(self._registered_event_groups) if remove else self._event_registration_groups()
+        all_succeeded = True
+        for group in groups:
+            if not remove and group in self._registered_event_groups:
+                continue
+            dpt, addresses = group
+            data: dict[str, Any] = {"address": list(addresses)}
             if dpt is not None:
                 data["type"] = dpt
             if remove:
                 data["remove"] = True
             try:
                 await self._hass.services.async_call(KNX_DOMAIN, SERVICE_EVENT_REGISTER, data, blocking=True)
-            except Exception:
-                _LOGGER.warning(
+            except Exception:  # noqa: BLE001 - HA service failures share no stable public base
+                all_succeeded = False
+                log = _LOGGER.warning if log_failure else _LOGGER.debug
+                log(
                     "Failed to %s %d KNX group addresses for events",
                     "deregister" if remove else "register",
                     len(addresses),
                     exc_info=True,
                 )
+            else:
+                if remove:
+                    self._registered_event_groups.discard(group)
+                else:
+                    self._registered_event_groups.add(group)
+        return all_succeeded
 
     @callback
     def _handle_coordinator_update(self) -> None:

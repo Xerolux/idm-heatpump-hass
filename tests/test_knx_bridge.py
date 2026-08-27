@@ -654,6 +654,41 @@ class TestResilienceAndEdges:
         bridge = KnxBridge(hass, _make_coordinator(), _config(send_enabled=False), entry_id="e")
         await bridge.async_start()
         assert bridge.group_addresses  # resolved despite the failure
+        hass.bus.async_listen.assert_called_once_with(EVENT_KNX, bridge._handle_knx_event)
+        await bridge.async_stop()
+
+    async def test_retries_event_registration_after_knx_finishes_starting(self, monkeypatch):
+        monkeypatch.setattr(
+            "custom_components.idm_heatpump.knx_bridge.KNX_EVENT_REGISTRATION_RETRY_SECONDS",
+            0.01,
+        )
+        hass = _make_hass()
+        hass.services.async_call = AsyncMock(
+            side_effect=[
+                HomeAssistantError(translation_domain="knx", translation_key="integration_not_loaded"),
+                None,
+                None,
+                None,
+                None,
+            ]
+        )
+        bridge = KnxBridge(hass, _make_coordinator(), _config(send_enabled=False), entry_id="e")
+
+        await bridge.async_start()
+        assert bridge._registration_worker is not None
+        await asyncio.sleep(0.03)
+
+        registrations = [
+            call
+            for call in hass.services.async_call.call_args_list
+            if call.args[1] == "event_register" and not call.args[2].get("remove")
+        ]
+        assert len(registrations) == 3
+        assert [call.args[2]["type"] for call in registrations].count("5.010") == 2
+        assert [call.args[2]["type"] for call in registrations].count("7.001") == 1
+        assert bridge._registration_worker.done()
+        assert bridge._registration_worker.exception() is None
+        assert len(bridge._registered_event_groups) == 2
         await bridge.async_stop()
 
     async def test_a_failing_send_does_not_kill_the_worker(self):
