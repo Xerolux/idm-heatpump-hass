@@ -51,10 +51,11 @@ declared minimum stays Home Assistant `2026.8.1`.
   declared minimum stays `2026.8.1` instead of jumping to a Home Assistant
   release that is not out yet. Both paths are covered by tests.
 - **Home Assistant `2026.9` needs no other integration change.** The full suite
-  (1,230 tests), strict mypy and Ruff were run against `2026.9.0b0` on Python
-  `3.14.2` with the pinned runtime, all green. None of the backward-incompatible
-  changes in `2026.9` touch this integration: it has no `vacuum` platform, no
-  `update` entity, no persistent notifications and no LLM tools.
+  (1,239 tests), strict mypy and Ruff were run against both `2026.8.1` and
+  `2026.9.0b0` on Python `3.14.2` with the pinned runtime, all green. None of
+  the backward-incompatible changes in `2026.9` touch this integration: it has
+  no `vacuum` platform, no `update` entity, no persistent notifications and no
+  LLM tools.
 - **The device registry deprecations that land in `2026.9` were already
   handled.** The `via_device` to `via_device_id` migration shipped for
   `2026.8`; in `2026.9` `via_device` is gone from the `DeviceInfo` typed
