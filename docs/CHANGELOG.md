@@ -13,6 +13,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **ETS group address files for the KNX bridge.** The bridge sends on group
+  addresses, but ETS needs them to exist in the project before a
+  push-button, a visualisation or a logic module can be linked to one — several
+  hundred addresses to type by hand.
+  `scripts/generate_knx_group_addresses.py` writes them instead, as an ETS 6
+  group address import (native `GroupAddress-Export` XML) plus a CSV
+  reference carrying object number, register and direction. It takes a base
+  address, a profile, or an explicit group or register selection, so a
+  project where `8/0/0` is already taken generates its own file.
+- Two generated examples ship in `docs/examples/knx/`: a curated 43-address
+  subset of what a display realistically shows plus the values KNX can feed
+  back into the heat pump, and the full 654.
+- Names come from the integration's own German name table, so an address
+  reads in ETS the way the matching entity reads in Home Assistant. The
+  twenty-one registers that table does not cover get curated names in the
+  generator, and a test fails if the catalogue grows an object neither
+  source names.
+
 ## [0.16.0-rc.3] - 2026-08-27
 
 Release candidate 3 adds the KNX bridge. Everything `0.16.0-rc.2` shipped is
