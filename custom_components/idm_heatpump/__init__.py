@@ -52,9 +52,6 @@ from .const import (
     CONF_HUMIDITY_FORWARDING_ENTITY,
     CONF_HUMIDITY_FORWARDING_INTERVAL,
     CONF_HUMIDITY_FORWARDING_TOLERANCE,
-    CONF_MODBUS_CONNECT_DELAY,
-    CONF_MODBUS_MAX_RETRIES,
-    CONF_MODBUS_MESSAGE_SPACING,
     CONF_KNX_BASE_ADDRESS,
     CONF_KNX_BRIDGE,
     CONF_KNX_GROUPS,
@@ -63,6 +60,9 @@ from .const import (
     CONF_KNX_RESEND_INTERVAL,
     CONF_KNX_SEND,
     CONF_KNX_TOLERANCE,
+    CONF_MODBUS_CONNECT_DELAY,
+    CONF_MODBUS_MAX_RETRIES,
+    CONF_MODBUS_MESSAGE_SPACING,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
     CONF_POLLING_JITTER,
@@ -92,15 +92,15 @@ from .const import (
     DEFAULT_HUMIDITY_FORWARDING,
     DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
     DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
-    DEFAULT_MODBUS_CONNECT_DELAY,
-    DEFAULT_MODBUS_MAX_RETRIES,
-    DEFAULT_MODBUS_MESSAGE_SPACING,
     DEFAULT_KNX_BASE_ADDRESS,
     DEFAULT_KNX_BRIDGE,
     DEFAULT_KNX_RECEIVE,
     DEFAULT_KNX_RESEND_INTERVAL,
     DEFAULT_KNX_SEND,
     DEFAULT_KNX_TOLERANCE,
+    DEFAULT_MODBUS_CONNECT_DELAY,
+    DEFAULT_MODBUS_MAX_RETRIES,
+    DEFAULT_MODBUS_MESSAGE_SPACING,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_POLLING_JITTER,
     DEFAULT_ROOM_TEMP_FORWARDING,
@@ -125,8 +125,6 @@ from .const import (
     NAME,
 )
 from .coordinator import IdmCoordinator, navigator_family
-from .knx_bridge import KnxBridge, KnxBridgeConfig
-from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
 from .device_hierarchy import (
     cleanup_deconfigured_heating_circuit_entities,
     cleanup_stale_hierarchy_devices,
@@ -140,6 +138,8 @@ from .error_messages import (
     friendly_web_error,
     scoped_issue_id,
 )
+from .knx_bridge import KnxBridge, KnxBridgeConfig
+from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
 from .library_adapter import get_idm_client
 from .operation_analysis import OperationAnalysis
 from .polling_plan import ensure_entity_aware_polling

@@ -30,7 +30,7 @@ from idm_heatpump import DataType, RegisterDef
 
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
-from .error_messages import classify_write_error, friendly_write_error
+from .error_messages import classify_write_error, friendly_write_error, write_error_detail
 from .knx_catalog import KNX_OBJECTS, KnxObject, object_for_register, resolve_group_addresses
 
 _LOGGER = logging.getLogger(__name__)
@@ -90,7 +90,7 @@ def _coerce_outgoing(value: Any, dpt: str | None) -> float | int | None:
         return 1 if number else 0
     if _is_float_dpt(dpt):
         return number
-    return int(round(number))
+    return round(number)
 
 
 def _coerce_incoming(value: Any, register: RegisterDef) -> float | int | bool | None:
@@ -110,7 +110,7 @@ def _coerce_incoming(value: Any, register: RegisterDef) -> float | int | bool | 
         return bool(number)
     if register.datatype is DataType.FLOAT:
         return number
-    return int(round(number))
+    return round(number)
 
 
 class KnxBridge:
@@ -358,11 +358,13 @@ class KnxBridge:
             await self._coordinator.async_write_register(register, value)
         except Exception as err:
             _LOGGER.warning(
-                "KNX command on %s could not be written to %s: %s",
+                "KNX command on %s could not be written to %s because %s",
                 destination,
                 register.name,
                 friendly_write_error(classify_write_error(err), register.name),
             )
+            _LOGGER.warning("Technical IDM write error for %s: %s", register.name, write_error_detail(err))
+            _LOGGER.debug("Technical KNX command error for %s", destination, exc_info=True)
         else:
             _LOGGER.debug("KNX command on %s wrote %s = %s", destination, register.name, value)
 

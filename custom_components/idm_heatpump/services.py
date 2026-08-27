@@ -36,17 +36,17 @@ from .const import (
     REGISTER_ADDRESS_SYSTEM_MODE,
 )
 from .coordinator import IdmCoordinator
-from .knx_catalog import (
-    KNX_OBJECTS,
-    OBJECT_GROUPS,
-    InvalidGroupAddressError,
-    resolve_group_addresses,
-)
 from .error_messages import (
     classify_write_error,
     scoped_issue_id,
     write_error_detail,
     write_error_placeholders,
+)
+from .knx_catalog import (
+    KNX_OBJECTS,
+    OBJECT_GROUPS,
+    InvalidGroupAddressError,
+    resolve_group_addresses,
 )
 
 _LOGGER = logging.getLogger(__name__)
