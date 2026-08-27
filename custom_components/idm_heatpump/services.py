@@ -25,13 +25,28 @@ from homeassistant.util.json import JsonValueType
 from idm_heatpump import DataType, RegisterDef
 
 from .adapter_glt import EXTERNAL_POWER_MEASUREMENT_NAMES
-from .const import DOMAIN, HEATING_CIRCUITS, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE, REGISTER_ADDRESS_SYSTEM_MODE
+from .const import (
+    CONF_KNX_BASE_ADDRESS,
+    CONF_KNX_GROUPS,
+    CONF_KNX_OVERRIDES,
+    DEFAULT_KNX_BASE_ADDRESS,
+    DOMAIN,
+    HEATING_CIRCUITS,
+    REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
+    REGISTER_ADDRESS_SYSTEM_MODE,
+)
 from .coordinator import IdmCoordinator
 from .error_messages import (
     classify_write_error,
     scoped_issue_id,
     write_error_detail,
     write_error_placeholders,
+)
+from .knx_catalog import (
+    KNX_OBJECTS,
+    OBJECT_GROUPS,
+    InvalidGroupAddressError,
+    resolve_group_addresses,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -80,6 +95,12 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         "set_external_power",
         partial(_handle_set_external_power, hass),  # type: ignore[arg-type]
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "export_knx_group_addresses",
+        partial(_handle_export_knx_group_addresses, hass),  # type: ignore[arg-type]
+        supports_response=SupportsResponse.ONLY,
     )
 
 
@@ -441,3 +462,75 @@ async def _handle_set_external_power(hass: HomeAssistant, call: ServiceCall) -> 
 
     for reg, value in writes:
         await _async_write_register(coordinator, reg, value)
+
+
+async def _handle_export_knx_group_addresses(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
+    """Return the KNX object table so it can be imported into ETS.
+
+    Answers for the objects this controller actually exposes, which is the
+    list a fresh ETS project needs: object number, IDM label, datapoint
+    type, direction and the group address the bridge uses.
+    """
+    coordinator = await _get_coordinator(hass, call)
+    call_data = call.data if isinstance(call.data, Mapping) else {}
+
+    # The coordinator already holds its entry; going back through
+    # hass.config_entries would only re-find the same object. It is typed
+    # optional, so fall back to the defaults when it is not there.
+    config_entry = coordinator.config_entry
+    options: Mapping[str, object] = config_entry.options if config_entry is not None else {}
+
+    base_address = str(call_data.get(CONF_KNX_BASE_ADDRESS) or options.get(CONF_KNX_BASE_ADDRESS) or "").strip()
+    if not base_address:
+        base_address = DEFAULT_KNX_BASE_ADDRESS
+    requested_groups = call_data.get(CONF_KNX_GROUPS) or options.get(CONF_KNX_GROUPS) or list(OBJECT_GROUPS)
+    # A single group may arrive as a bare string from a YAML call. str is a
+    # Sequence, so iterating it would silently ask for the groups "s", "o",
+    # "l", "a", "r" and answer with nothing.
+    if isinstance(requested_groups, str):
+        groups = [requested_groups]
+    elif isinstance(requested_groups, Sequence):
+        groups = [str(group) for group in requested_groups]
+    else:
+        groups = list(OBJECT_GROUPS)
+    overrides = options.get(CONF_KNX_OVERRIDES) or {}
+
+    available = {register for register in (coordinator.data or {}) if coordinator.get_register(register) is not None}
+    for obj in KNX_OBJECTS:
+        definition = coordinator.get_register(obj.register)
+        if definition is not None and definition.write_only:
+            available.add(obj.register)
+
+    try:
+        addresses = resolve_group_addresses(
+            base_address,
+            overrides=overrides if isinstance(overrides, Mapping) else {},
+            registers=available,
+            groups=groups,
+        )
+    except InvalidGroupAddressError as err:
+        raise ServiceValidationError(str(err)) from err
+
+    rows: list[JsonValueType] = []
+    for obj in KNX_OBJECTS:
+        address = addresses.get(obj.register)
+        if address is None:
+            continue
+        definition = coordinator.get_register(obj.register)
+        rows.append(
+            {
+                "object": obj.number,
+                "group_address": address,
+                "register": obj.register,
+                "dpt": obj.dpt or "1.001",
+                "group": obj.group,
+                "writable": bool(obj.writable and definition is not None and definition.writable),
+                "unit": (definition.unit or "") if definition is not None else "",
+            }
+        )
+
+    return {
+        "base_address": base_address,
+        "count": len(rows),
+        "objects": rows,
+    }

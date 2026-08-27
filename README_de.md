@@ -27,6 +27,36 @@
 
 ---
 
+## 🚌 Neu (experimentell): KNX ohne das IDM-Gateway-Modul
+
+IDM verkauft die KNX-Anbindung des Navigators als **Weinzierl KNX IP BAOS 774**
+Modul. Die optionale **[KNX-Bridge][wiki-knx]** macht dieses Modul überflüssig:
+Sie bildet die Wärmepumpe mit **denselben Kommunikationsobjekten, Objektnummern
+und Datenpunkttypen** auf dem Bus ab wie IDMs eigenes ETS-Beispielprojekt und
+schreibt Befehle vom Bus zurück in den Regler.
+
+Sie bringt keinen eigenen KNX-Stack mit, sondern nutzt die vorhandene
+**[KNX-Integration von Home Assistant](https://www.home-assistant.io/integrations/knx/)** —
+Tunneling, Routing und **KNX Secure** kommen von dort.
+
+| | |
+|---|---|
+| **Objekte** | 654 IDM-Kommunikationsobjekte, abgebildet auf die Modbus-Register des Navigators |
+| **Richtung** | Lesende Objekte werden gesendet; die von IDM als schreibbar geführten nehmen zusätzlich Befehle an |
+| **Gruppenadressen** | Eine Basisadresse, je Objekt `Basis + Objektnummer` — der gesamte Katalog passt in eine Hauptgruppe |
+| **ETS** | `idm_heatpump.export_knx_group_addresses` liefert die vollständige Tabelle für den eigenen Regler |
+| **Voraussetzung** | Die KNX-Integration von Home Assistant, eingerichtet und verbunden |
+
+> [!WARNING]
+> **Experimentell.** Durch Unit-Tests abgesichert, aber noch nie an einem echten
+> KNX-Bus erprobt. Ausprobieren und berichten — Rückmeldungen aus einer Anlage mit
+> ETS-Zugang machen daraus eine unterstützte Funktion.
+
+Aktivierung unter **Einstellungen → Geräte & Dienste → IDM Heatpump →
+Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-knx]**.
+
+---
+
 ## 🌟 Features
 
 | Kategorie | Was ist enthalten |
@@ -45,6 +75,7 @@
 | **🧪 Schreibgeschützter Verbindungstest** | Das Rekonfigurationsmenü testet die gespeicherte Modbus- und optionale Webverbindung, ohne Einstellungen zu ändern oder Register zu schreiben |
 | **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api`, `modbus-connection`, `tmodbus` und die Pymodbus-Kompatibilitätsversion |
 | **🔑 Fachmann-Ebene** | Optionale Sensoren für die aktuellen Zugangscodes der Ebenen 1 & 2 (standardmäßig aus, minütlich aktualisiert und ganz oben angeheftet) |
+| **🚌 KNX-Bridge** *(experimentell)* | Optional: stellt die IDM-KNX-Kommunikationsobjekte über die KNX-Integration von Home Assistant bereit (inkl. KNX Secure) — ersetzt das Weinzierl-BAOS-Gateway-Modul. [Details][wiki-knx] |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
 
 ---
@@ -263,6 +294,7 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [wiki-selects]: https://xerolux.github.io/idm-heatpump-hass/docs/#/entities/selects
 [wiki-numbers]: https://xerolux.github.io/idm-heatpump-hass/docs/#/entities/numbers
 [wiki-services]: https://xerolux.github.io/idm-heatpump-hass/docs/#/services
+[wiki-knx]: https://xerolux.github.io/idm-heatpump-hass/docs/#/knx-bridge
 [wiki-trouble]: https://xerolux.github.io/idm-heatpump-hass/docs/#/troubleshooting
 [wiki-stability]: https://xerolux.github.io/idm-heatpump-hass/docs/#/stability-and-release-readiness
 [idm-modbus-source]: https://www.idm-energie.at/wp-content/uploads/2021/04/PV_Nutzung_GLT-Smartfox.pdf

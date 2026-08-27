@@ -10,6 +10,7 @@ from custom_components.idm_heatpump.services import (
     _encoded_registers_from_safety_result,
     _get_coordinator,
     _handle_acknowledge_errors,
+    _handle_export_knx_group_addresses,
     _handle_set_external_climate,
     _handle_set_external_power,
     _handle_set_system_mode,
@@ -56,7 +57,7 @@ class TestWriteSafetyHelpers:
 class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
-        assert mock_hass.services.async_register.call_count == 5
+        assert mock_hass.services.async_register.call_count == 6
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -76,6 +77,7 @@ class TestServiceLifecycleInvariants:
             (DOMAIN, "write_register"),
             (DOMAIN, "set_external_climate"),
             (DOMAIN, "set_external_power"),
+            (DOMAIN, "export_knx_group_addresses"),
         }
 
     async def test_setup_is_idempotent_when_already_registered(self, mock_hass):
@@ -666,3 +668,71 @@ class TestSetExternalPower:
             await _handle_set_external_power(mock_hass, call)
 
         assert exc_info.value.translation_key == "write_connection_failed"
+
+
+class TestExportKnxGroupAddresses:
+    """The ETS export answers for the objects this controller exposes."""
+
+    def _coordinator(self, mock_hass, *, options=None):
+        from idm_heatpump import DataType, RegisterDef
+
+        registers = {
+            "outdoor_temp": RegisterDef(1000, DataType.FLOAT, "outdoor_temp", unit="°C"),
+            "hc_a_mode": RegisterDef(1393, DataType.UCHAR, "hc_a_mode", writable=True),
+            "solar_mode": RegisterDef(1856, DataType.UCHAR, "solar_mode", writable=True),
+            "error_acknowledge": RegisterDef(1999, DataType.UCHAR, "error_acknowledge", writable=True, write_only=True),
+        }
+        coordinator = _make_coordinator_in_hass(mock_hass)
+        coordinator.data = {"outdoor_temp": 7.5, "hc_a_mode": 2, "solar_mode": 1}
+        coordinator.get_register = MagicMock(side_effect=registers.get)
+        coordinator.config_entry.options = options or {}
+        return coordinator
+
+    def _call(self, data=None):
+        call = MagicMock()
+        call.data = data or {}
+        return call
+
+    async def test_answers_with_the_exposed_objects(self, mock_hass):
+        self._coordinator(mock_hass)
+        response = await _handle_export_knx_group_addresses(mock_hass, self._call({"knx_base_address": "8/0/0"}))
+
+        assert response["base_address"] == "8/0/0"
+        by_register = {row["register"]: row for row in response["objects"]}
+        assert by_register["outdoor_temp"]["group_address"] == "8/0/1"
+        assert by_register["outdoor_temp"]["dpt"] == "9.001"
+        assert by_register["outdoor_temp"]["writable"] is False
+        assert by_register["hc_a_mode"]["group_address"] == "8/0/222"
+        assert by_register["hc_a_mode"]["writable"] is True
+        assert response["count"] == len(response["objects"])
+
+    async def test_includes_write_only_registers(self, mock_hass):
+        """error_acknowledge carries no value but is reachable from the bus."""
+        self._coordinator(mock_hass)
+        response = await _handle_export_knx_group_addresses(mock_hass, self._call())
+        assert "error_acknowledge" in {row["register"] for row in response["objects"]}
+
+    async def test_falls_back_to_the_configured_options(self, mock_hass):
+        self._coordinator(mock_hass, options={"knx_base_address": "1/0/0", "knx_groups": ["solar"]})
+        response = await _handle_export_knx_group_addresses(mock_hass, self._call())
+
+        assert response["base_address"] == "1/0/0"
+        assert {row["register"] for row in response["objects"]} == {"solar_mode"}
+        assert response["objects"][0]["group_address"] == "1/1/197"
+
+    async def test_a_single_group_may_arrive_as_a_bare_string(self, mock_hass):
+        """A YAML call can pass one group unwrapped; str must not be iterated."""
+        self._coordinator(mock_hass)
+        response = await _handle_export_knx_group_addresses(mock_hass, self._call({"knx_groups": "solar"}))
+        assert {row["register"] for row in response["objects"]} == {"solar_mode"}
+
+    async def test_rejects_an_unusable_base_address(self, mock_hass):
+        self._coordinator(mock_hass)
+        with pytest.raises(ServiceValidationError):
+            await _handle_export_knx_group_addresses(mock_hass, self._call({"knx_base_address": "0/0/0"}))
+
+    async def test_survives_a_coordinator_without_a_config_entry(self, mock_hass):
+        coordinator = self._coordinator(mock_hass)
+        coordinator.config_entry = None
+        response = await _handle_export_knx_group_addresses(mock_hass, self._call())
+        assert response["base_address"] == "8/0/0"

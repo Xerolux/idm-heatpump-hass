@@ -20,6 +20,7 @@
 - [Button](Entities#button)
 
 ## Automation
+- [KNX Bridge](KNX-Bridge)
 - [Services Reference](Services)
 - [Example Automations](Examples)
 

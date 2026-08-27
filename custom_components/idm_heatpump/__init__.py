@@ -52,6 +52,14 @@ from .const import (
     CONF_HUMIDITY_FORWARDING_ENTITY,
     CONF_HUMIDITY_FORWARDING_INTERVAL,
     CONF_HUMIDITY_FORWARDING_TOLERANCE,
+    CONF_KNX_BASE_ADDRESS,
+    CONF_KNX_BRIDGE,
+    CONF_KNX_GROUPS,
+    CONF_KNX_OVERRIDES,
+    CONF_KNX_RECEIVE,
+    CONF_KNX_RESEND_INTERVAL,
+    CONF_KNX_SEND,
+    CONF_KNX_TOLERANCE,
     CONF_MODBUS_CONNECT_DELAY,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_MESSAGE_SPACING,
@@ -84,6 +92,12 @@ from .const import (
     DEFAULT_HUMIDITY_FORWARDING,
     DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
     DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
+    DEFAULT_KNX_BASE_ADDRESS,
+    DEFAULT_KNX_BRIDGE,
+    DEFAULT_KNX_RECEIVE,
+    DEFAULT_KNX_RESEND_INTERVAL,
+    DEFAULT_KNX_SEND,
+    DEFAULT_KNX_TOLERANCE,
     DEFAULT_MODBUS_CONNECT_DELAY,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_MESSAGE_SPACING,
@@ -124,6 +138,8 @@ from .error_messages import (
     friendly_web_error,
     scoped_issue_id,
 )
+from .knx_bridge import KnxBridge, KnxBridgeConfig
+from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
 from .library_adapter import get_idm_client
 from .operation_analysis import OperationAnalysis
 from .polling_plan import ensure_entity_aware_polling
@@ -189,6 +205,7 @@ class IdmHeatpumpData:
     room_temp_forwarding_task: asyncio.Task[None] | None = None
     humidity_forwarding_task: asyncio.Task[None] | None = None
     storage_temp_forwarding_task: asyncio.Task[None] | None = None
+    knx_bridge: KnxBridge | None = None
     operation_analysis: OperationAnalysis | None = None
     reload_fingerprint: str | None = None
     loaded_platforms: tuple[Platform, ...] = ()
@@ -408,6 +425,16 @@ async def _async_setup_web_only_entry(
     )
     ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
 
+    if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
+        # The bridge serves Modbus register values; a web-only entry has none,
+        # so it would come up with nothing to publish. Say so instead of
+        # leaving an enabled option looking active.
+        _LOGGER.warning(
+            "KNX bridge for %s is enabled but stays off in web-only mode: it serves Modbus "
+            "register values, which a web-only entry does not read",
+            entry.title,
+        )
+
     web_supplement = None
     model_name: str = MODEL
     firmware_version: str | None = None
@@ -599,6 +626,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     storage_temp_forwarding_tolerance = float(
         entry.options.get(CONF_STORAGE_TEMP_FORWARDING_TOLERANCE, DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE)
     )
+    knx_bridge_enabled = bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE))
+    knx_base_address = str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip()
+    knx_send = bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND))
+    knx_receive = bool(entry.options.get(CONF_KNX_RECEIVE, DEFAULT_KNX_RECEIVE))
+    knx_groups = tuple(str(group) for group in (entry.options.get(CONF_KNX_GROUPS) or OBJECT_GROUPS))
+    knx_overrides = entry.options.get(CONF_KNX_OVERRIDES) or {}
+    knx_resend_interval = int(entry.options.get(CONF_KNX_RESEND_INTERVAL, DEFAULT_KNX_RESEND_INTERVAL))
+    knx_tolerance = float(entry.options.get(CONF_KNX_TOLERANCE, DEFAULT_KNX_TOLERANCE))
     modbus_timeout = float(entry.options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT))
     modbus_max_retries = int(entry.options.get(CONF_MODBUS_MAX_RETRIES, DEFAULT_MODBUS_MAX_RETRIES))
     modbus_message_spacing = float(entry.options.get(CONF_MODBUS_MESSAGE_SPACING, DEFAULT_MODBUS_MESSAGE_SPACING))
@@ -1016,6 +1051,32 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     storage_forwarder.async_run(),
                     name=f"{DOMAIN}_storage_temp_{entry.entry_id}",
                 )
+        if knx_bridge_enabled and (knx_send or knx_receive):
+            bridge = KnxBridge(
+                hass,
+                coordinator,
+                KnxBridgeConfig(
+                    base_address=knx_base_address,
+                    send_enabled=knx_send,
+                    receive_enabled=knx_receive,
+                    groups=knx_groups,
+                    overrides=dict(knx_overrides) if isinstance(knx_overrides, Mapping) else {},
+                    resend_interval=knx_resend_interval,
+                    tolerance=knx_tolerance,
+                ),
+                entry_id=entry.entry_id,
+            )
+            try:
+                await bridge.async_start()
+            except InvalidGroupAddressError:
+                _LOGGER.error(
+                    "KNX bridge for %s not started: base address %s is not usable",
+                    entry.title,
+                    knx_base_address,
+                )
+            else:
+                entry.runtime_data.knx_bridge = bridge
+
     except Exception:
         try:
             await client.disconnect()
@@ -1074,6 +1135,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
                 await storage_temp_forwarding_task
             except asyncio.CancelledError:
                 pass
+        knx_bridge = getattr(entry.runtime_data, "knx_bridge", None)
+        if knx_bridge is not None:
+            try:
+                await knx_bridge.async_stop()
+            except Exception:
+                _LOGGER.debug("Error stopping the KNX bridge for %s", entry.title, exc_info=True)
         try:
             await entry.runtime_data.client.disconnect()
         except Exception:

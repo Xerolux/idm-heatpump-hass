@@ -146,6 +146,35 @@ The same behavior notes as room temperature forwarding apply: values are
 written on state changes and refreshed periodically, invalid or out-of-range
 values are skipped, and leaving a register's field empty keeps it untouched.
 
+### KNX Bridge
+
+The KNX bridge is optional and disabled by default. When enabled, the
+integration publishes the IDM KNX communication objects on a KNX bus and
+accepts commands from it — replacing the Weinzierl KNX IP BAOS gateway
+module IDM sells for the Navigator. It drives the Home Assistant
+[KNX integration](https://www.home-assistant.io/integrations/knx/), which
+must be set up: gateway, tunnelling and KNX Secure come from there.
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Enable KNX bridge | Turns the bridge on and shows the group address step | off |
+| Send values to KNX | Publish a telegram whenever a value changes | on |
+| Accept commands from KNX | Write incoming values on writable objects into the heat pump | on |
+| Full resend interval | Resend every value periodically; 0 sends only on change | 0 seconds |
+| Change tolerance | Minimum change before a numeric value is sent again | 0.1 |
+| Base group address | Object numbers are added to this address | `8/0/0` |
+| Object groups | Which parts of the catalogue take part | all |
+| Group address overrides | `register = address` per line for objects addressed differently | empty |
+
+Group addresses are derived as `base address + IDM object number`, so with
+the default base object 1 (outdoor temperature) lands on `8/0/1` and object
+222 (heating circuit A mode) on `8/0/222`. The whole catalogue fits inside
+one main group. Use `idm_heatpump.export_knx_group_addresses` to get the
+full table for your controller.
+
+Full details, including the object groups and datapoint types, are in
+[KNX Bridge](KNX-Bridge).
+
 ### Heating Circuits
 
 Select the active heating circuits (A through G). Only enabled circuits create entities in Home Assistant.
@@ -268,7 +297,7 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.16.0-rc.2` (previous stable: `0.15.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | `0.16.0-rc.3` (previous stable: `0.15.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.10.0` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]==0.6.1` | Wire/backend implementation changes |
 | Python register/web library | `idm-heatpump-api[web]==2.0.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |

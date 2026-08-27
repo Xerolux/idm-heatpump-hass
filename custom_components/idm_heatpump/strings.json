@@ -174,6 +174,24 @@
               "communication_diagnostics": "Creates additional diagnostic entities for the last successful poll, poll duration, consecutive failures, and active registers. Total polls and failures are shown as attributes. No additional Modbus registers are read. Default: disabled.",
               "write_cooldown": "Minimum time between writes to the same register address. A repeat attempt is completely rejected before transmission and Home Assistant shows the remaining wait. Other registers remain writable. Default: 5 seconds. 0 fully disables this general protection; 1–600 enforces it. Change at your own risk; separate EEPROM protection remains active."
             }
+          },
+          "knx_bridge_section": {
+            "name": "KNX bridge (experimental)",
+            "description": "Experimental: verified by tests only, never yet against a real KNX bus. Please report what you see. Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
+            "data": {
+              "knx_bridge": "Enable KNX bridge",
+              "knx_send": "Send values to KNX",
+              "knx_receive": "Accept commands from KNX",
+              "knx_resend_interval": "Full resend interval",
+              "knx_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "knx_bridge": "Mirrors the IDM KNX communication objects onto the bus, so a KNX installation reaches the heat pump without a separate BAOS gateway.",
+              "knx_send": "Send a telegram whenever a value changes.",
+              "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
+              "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
+              "knx_tolerance": "Only send a numeric value again once it moved by at least this much."
+            }
           }
         }
       },
@@ -287,6 +305,20 @@
           "profile": "Recommended suits most installations. Network profiles only adjust polling interval, timeout, retries, and jitter; every value remains editable later.",
           "model_override": "Automatic uses detection. Select a concrete model only when detection is wrong or unavailable; a wrong choice can hide entities."
         }
+      },
+      "knx_bridge": {
+        "title": "KNX group addresses (experimental) – {name}",
+        "description": "The {object_count} IDM KNX objects are laid out above a base address: each object number is added to it, so 8/0/0 puts object 1 on 8/0/1 and object 222 on 8/0/222. Use the override list for objects your ETS project already addresses differently — one `register = address` per line.",
+        "data": {
+          "knx_base_address": "Base group address",
+          "knx_groups": "Object groups",
+          "knx_overrides": "Group address overrides"
+        },
+        "data_description": {
+          "knx_base_address": "Three-level (8/0/0), two-level (8/0) or free (16384) notation.",
+          "knx_groups": "Only objects from the selected groups are published and registered.",
+          "knx_overrides": "One `register = address` per line, for example `outdoor_temp = 1/2/3`. Lines starting with # are ignored. Leave empty to derive every address from the base address."
+        }
       }
     },
     "error": {
@@ -303,7 +335,10 @@
       "web_pin_required": "Enter the local Navigator web PIN to continue in web-only mode.",
       "web_cannot_connect": "The local Navigator web interface could not be read. Check the original heat pump address and network access, or clear the web PIN to continue with Modbus only.",
       "web_host_required": "Enter the original heat pump IP/hostname for web access, or disable the Modbus proxy option.",
-      "web_pin_required_or_disable": "Enter the local Navigator web PIN, or explicitly disable “Use local Navigator web access” for Modbus-only operation."
+      "web_pin_required_or_disable": "Enter the local Navigator web PIN, or explicitly disable “Use local Navigator web access” for Modbus-only operation.",
+      "invalid_knx_base_address": "Not a usable base group address. Use three-level (8/0/0), two-level (8/0) or free notation, and leave room for 999 addresses above it.",
+      "invalid_knx_overrides": "Could not read the override list. Use one `register = address` per line with a known IDM register name, and do not assign one address twice.",
+      "no_knx_groups": "Select at least one object group."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -413,6 +448,24 @@
               "communication_diagnostics": "Creates additional diagnostic entities for the last successful poll, poll duration, consecutive failures, and active registers. Total polls and failures are shown as attributes. No additional Modbus registers are read. Default: disabled.",
               "write_cooldown": "Minimum time between writes to the same register address. A repeat attempt is completely rejected before transmission and Home Assistant shows the remaining wait. Other registers remain writable. Default: 5 seconds. 0 fully disables this general protection; 1–600 enforces it. Change at your own risk; separate EEPROM protection remains active."
             }
+          },
+          "knx_bridge_section": {
+            "name": "KNX bridge (experimental)",
+            "description": "Experimental: verified by tests only, never yet against a real KNX bus. Please report what you see. Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
+            "data": {
+              "knx_bridge": "Enable KNX bridge",
+              "knx_send": "Send values to KNX",
+              "knx_receive": "Accept commands from KNX",
+              "knx_resend_interval": "Full resend interval",
+              "knx_tolerance": "Change tolerance"
+            },
+            "data_description": {
+              "knx_bridge": "Mirrors the IDM KNX communication objects onto the bus, so a KNX installation reaches the heat pump without a separate BAOS gateway.",
+              "knx_send": "Send a telegram whenever a value changes.",
+              "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
+              "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
+              "knx_tolerance": "Only send a numeric value again once it moved by at least this much."
+            }
           }
         }
       },
@@ -491,7 +544,26 @@
           "storage_temp_forwarding_dhw_bottom": "Forward this sensor to glt_dhw_temp_bottom.",
           "storage_temp_forwarding_dhw_top": "Forward this sensor to glt_dhw_temp_top."
         }
+      },
+      "knx_bridge": {
+        "title": "KNX group addresses (experimental) – {name}",
+        "description": "The {object_count} IDM KNX objects are laid out above a base address: each object number is added to it, so 8/0/0 puts object 1 on 8/0/1 and object 222 on 8/0/222. Use the override list for objects your ETS project already addresses differently — one `register = address` per line.",
+        "data": {
+          "knx_base_address": "Base group address",
+          "knx_groups": "Object groups",
+          "knx_overrides": "Group address overrides"
+        },
+        "data_description": {
+          "knx_base_address": "Three-level (8/0/0), two-level (8/0) or free (16384) notation.",
+          "knx_groups": "Only objects from the selected groups are published and registered.",
+          "knx_overrides": "One `register = address` per line, for example `outdoor_temp = 1/2/3`. Lines starting with # are ignored. Leave empty to derive every address from the base address."
+        }
       }
+    },
+    "error": {
+      "invalid_knx_base_address": "Not a usable base group address. Use three-level (8/0/0), two-level (8/0) or free notation, and leave room for 999 addresses above it.",
+      "invalid_knx_overrides": "Could not read the override list. Use one `register = address` per line with a known IDM register name, and do not assign one address twice.",
+      "no_knx_groups": "Select at least one object group."
     }
   },
   "entity": {
@@ -701,6 +773,22 @@
         "reliable_network": "Slow or unreliable network",
         "multiple_clients": "Multiple Modbus clients",
         "custom": "Custom – show every option"
+      }
+    },
+    "knx_object_group": {
+      "options": {
+        "system": "System",
+        "heat_pump": "Heat pump",
+        "dhw": "Hot water",
+        "heating_circuits": "Heating circuits",
+        "zones": "Zone modules",
+        "glt": "Building management (GLT)",
+        "energy": "Heat quantities and power",
+        "solar": "Solar",
+        "isc": "ISC cooling",
+        "cascade": "Cascade",
+        "booster": "Booster",
+        "pv": "PV and battery"
       }
     }
   },
@@ -914,6 +1002,10 @@
     "write_rejected": {
       "title": "IDM register write rejected",
       "description": "The heat pump did not accept a write to register **{register}** at address **{address}**.\n\nTechnical detail: `{detail}`\n\nPlease check:\n- The register is released for writing on the Navigator under **Building management system** (the GLT register list has a per-register access setting; a register that is not released there is rejected even though the value is valid)\n- The function is enabled for this heating circuit or component\n- The value is within the documented range\n- No second building-management system, energy manager or inverter is writing the same register"
+    },
+    "knx_not_available": {
+      "title": "KNX bridge inactive",
+      "description": "The KNX bridge is enabled for the IDM heat pump, but the Home Assistant KNX integration is not set up. Add the KNX integration (it also provides KNX Secure and the gateway connection), then reload the IDM Heatpump entry."
     }
   },
   "services": {
@@ -998,6 +1090,20 @@
         "electric_heater_power": {
           "name": "Electric heater power",
           "description": "Current electric-heater power in kW."
+        }
+      }
+    },
+    "export_knx_group_addresses": {
+      "name": "Export KNX group addresses",
+      "description": "Return the IDM KNX object table for this controller so it can be recreated in ETS.",
+      "fields": {
+        "knx_base_address": {
+          "name": "Base group address",
+          "description": "Base address the object numbers are added to."
+        },
+        "knx_groups": {
+          "name": "Object groups",
+          "description": "Limit the export to these catalogue groups."
         }
       }
     }

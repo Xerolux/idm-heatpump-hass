@@ -9,7 +9,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from enum import StrEnum
 from time import monotonic
 from typing import Any
@@ -56,6 +56,14 @@ from .const import (
     CONF_HUMIDITY_FORWARDING_ENTITY,
     CONF_HUMIDITY_FORWARDING_INTERVAL,
     CONF_HUMIDITY_FORWARDING_TOLERANCE,
+    CONF_KNX_BASE_ADDRESS,
+    CONF_KNX_BRIDGE,
+    CONF_KNX_GROUPS,
+    CONF_KNX_OVERRIDES,
+    CONF_KNX_RECEIVE,
+    CONF_KNX_RESEND_INTERVAL,
+    CONF_KNX_SEND,
+    CONF_KNX_TOLERANCE,
     CONF_MODBUS_CONNECT_DELAY,
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_MESSAGE_SPACING,
@@ -92,6 +100,12 @@ from .const import (
     DEFAULT_HUMIDITY_FORWARDING,
     DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
     DEFAULT_HUMIDITY_FORWARDING_TOLERANCE,
+    DEFAULT_KNX_BASE_ADDRESS,
+    DEFAULT_KNX_BRIDGE,
+    DEFAULT_KNX_RECEIVE,
+    DEFAULT_KNX_RESEND_INTERVAL,
+    DEFAULT_KNX_SEND,
+    DEFAULT_KNX_TOLERANCE,
     DEFAULT_MODBUS_CONNECT_DELAY,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_MESSAGE_SPACING,
@@ -114,6 +128,8 @@ from .const import (
     DOMAIN,
     HEATING_CIRCUITS,
     MAX_EEPROM_WRITE_INTERVAL,
+    MAX_KNX_RESEND_INTERVAL,
+    MAX_KNX_TOLERANCE,
     MAX_MODBUS_CONNECT_DELAY,
     MAX_MODBUS_MAX_RETRIES,
     MAX_MODBUS_MESSAGE_SPACING,
@@ -123,6 +139,8 @@ from .const import (
     MAX_WRITE_COOLDOWN,
     MAX_ZONE_COUNT,
     MIN_EEPROM_WRITE_INTERVAL,
+    MIN_KNX_RESEND_INTERVAL,
+    MIN_KNX_TOLERANCE,
     MIN_MODBUS_CONNECT_DELAY,
     MIN_MODBUS_MAX_RETRIES,
     MIN_MODBUS_MESSAGE_SPACING,
@@ -132,6 +150,13 @@ from .const import (
     MODEL_OVERRIDE_OPTIONS,
     REGISTER_ADDRESS_CONNECTION_PROBE,
     REGISTER_COUNT_CONNECTION_PROBE,
+)
+from .knx_catalog import (
+    KNX_OBJECTS,
+    OBJECT_GROUPS,
+    InvalidGroupAddressError,
+    validate_base_address,
+    validate_overrides,
 )
 from .library_adapter import get_idm_client
 from .log_filter import install_library_log_filter
@@ -297,12 +322,14 @@ _OPTIONS_FEATURES_SECTION = "features"
 _OPTIONS_ROOM_SECTION = "room_temperature_forwarding"
 _OPTIONS_HUMIDITY_SECTION = "humidity_forwarding_section"
 _OPTIONS_STORAGE_SECTION = "storage_temp_forwarding_section"
+_OPTIONS_KNX_SECTION = "knx_bridge_section"
 _OPTIONS_MODBUS_SECTION = "advanced_modbus"
 _OPTIONS_SECTION_KEYS = (
     _OPTIONS_FEATURES_SECTION,
     _OPTIONS_ROOM_SECTION,
     _OPTIONS_HUMIDITY_SECTION,
     _OPTIONS_STORAGE_SECTION,
+    _OPTIONS_KNX_SECTION,
     _OPTIONS_MODBUS_SECTION,
 )
 
@@ -339,6 +366,14 @@ def _default_options() -> dict[str, Any]:
         CONF_STORAGE_TEMP_FORWARDING_ENTITIES: {},
         CONF_STORAGE_TEMP_FORWARDING_INTERVAL: DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
         CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
+        CONF_KNX_BRIDGE: DEFAULT_KNX_BRIDGE,
+        CONF_KNX_BASE_ADDRESS: DEFAULT_KNX_BASE_ADDRESS,
+        CONF_KNX_SEND: DEFAULT_KNX_SEND,
+        CONF_KNX_RECEIVE: DEFAULT_KNX_RECEIVE,
+        CONF_KNX_GROUPS: list(OBJECT_GROUPS),
+        CONF_KNX_RESEND_INTERVAL: DEFAULT_KNX_RESEND_INTERVAL,
+        CONF_KNX_TOLERANCE: DEFAULT_KNX_TOLERANCE,
+        CONF_KNX_OVERRIDES: {},
         CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
         CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
         CONF_MODBUS_MESSAGE_SPACING: DEFAULT_MODBUS_MESSAGE_SPACING,
@@ -640,6 +675,48 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                 ),
                 {"collapsed": True},
             ),
+            vol.Required(_OPTIONS_KNX_SECTION): section(
+                vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_KNX_BRIDGE,
+                            default=options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_KNX_SEND,
+                            default=options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_KNX_RECEIVE,
+                            default=options.get(CONF_KNX_RECEIVE, DEFAULT_KNX_RECEIVE),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_KNX_RESEND_INTERVAL,
+                            default=int(options.get(CONF_KNX_RESEND_INTERVAL, DEFAULT_KNX_RESEND_INTERVAL)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_KNX_RESEND_INTERVAL,
+                                max=MAX_KNX_RESEND_INTERVAL,
+                                step=60,
+                                mode=NumberSelectorMode.BOX,
+                                unit_of_measurement="s",
+                            )
+                        ),
+                        vol.Required(
+                            CONF_KNX_TOLERANCE,
+                            default=float(options.get(CONF_KNX_TOLERANCE, DEFAULT_KNX_TOLERANCE)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_KNX_TOLERANCE,
+                                max=MAX_KNX_TOLERANCE,
+                                step=0.1,
+                                mode=NumberSelectorMode.SLIDER,
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
             vol.Required(_OPTIONS_MODBUS_SECTION): section(
                 vol.Schema(
                     {
@@ -911,6 +988,69 @@ def _store_storage_temp_forwarding_entities(options: dict[str, Any], user_input:
     }
 
 
+def _knx_bridge_enabled(options: dict[str, Any]) -> bool:
+    return bool(options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE))
+
+
+_KNX_GROUP_SELECTOR: SelectSelector = SelectSelector(
+    SelectSelectorConfig(
+        options=list(OBJECT_GROUPS),
+        multiple=True,
+        mode=SelectSelectorMode.LIST,
+        translation_key="knx_object_group",
+    )
+)
+
+_KNX_OVERRIDES_SELECTOR: TextSelector = TextSelector(TextSelectorConfig(multiline=True))
+
+
+def _format_knx_overrides(overrides: Mapping[str, str]) -> str:
+    """Render the override map as one ``register = address`` line each."""
+    return "\n".join(f"{register} = {address}" for register, address in sorted(overrides.items()))
+
+
+def _parse_knx_overrides(text: str) -> dict[str, str]:
+    """Parse the override text area into a validated override map.
+
+    Blank lines and ``#`` comments are ignored so a user can annotate the
+    list. Raises InvalidGroupAddressError for anything else that does not
+    resolve to a known object and a usable group address.
+    """
+    parsed: dict[str, str] = {}
+    for line in text.splitlines():
+        entry = line.split("#", 1)[0].strip()
+        if not entry:
+            continue
+        separator = "=" if "=" in entry else ":"
+        register, _, address = entry.partition(separator)
+        register = register.strip()
+        address = address.strip()
+        if not register or not address:
+            raise InvalidGroupAddressError(f"not a 'register = address' line: {line!r}")
+        parsed[register] = address
+    return validate_overrides(parsed)
+
+
+def _build_knx_bridge_schema(options: dict[str, Any]) -> vol.Schema:
+    overrides = options.get(CONF_KNX_OVERRIDES) or {}
+    return vol.Schema(
+        {
+            vol.Required(
+                CONF_KNX_BASE_ADDRESS,
+                default=str(options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)),
+            ): str,
+            vol.Required(
+                CONF_KNX_GROUPS,
+                default=list(options.get(CONF_KNX_GROUPS) or OBJECT_GROUPS),
+            ): _KNX_GROUP_SELECTOR,
+            vol.Optional(
+                CONF_KNX_OVERRIDES,
+                default=_format_knx_overrides(overrides if isinstance(overrides, Mapping) else {}),
+            ): _KNX_OVERRIDES_SELECTOR,
+        }
+    )
+
+
 # Optional follow-up steps shown after the base options/zones steps, tried in
 # this order. Each entry's predicate decides whether its step is shown at
 # all. Adding a future GLT forwarding channel (or any other optional step)
@@ -921,6 +1061,7 @@ _OPTIONAL_FLOW_STEPS: tuple[tuple[str, Callable[[dict[str, Any]], bool]], ...] =
     ("room_temp_forwarding", _room_temp_forwarding_enabled),
     ("humidity_forwarding", _humidity_forwarding_enabled),
     ("storage_temp_forwarding", _storage_temp_forwarding_enabled),
+    ("knx_bridge", _knx_bridge_enabled),
 )
 
 
@@ -1031,6 +1172,40 @@ class _IdmOptionsStepsMixin:
             data_schema=_build_storage_temp_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
             errors={},
+        )
+
+    async def async_step_knx_bridge(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        errors: dict[str, str] = {}
+        if user_input is not None:
+            base_address = str(user_input.get(CONF_KNX_BASE_ADDRESS, "")).strip()
+            try:
+                validate_base_address(base_address)
+            except InvalidGroupAddressError:
+                errors[CONF_KNX_BASE_ADDRESS] = "invalid_knx_base_address"
+            try:
+                overrides = _parse_knx_overrides(str(user_input.get(CONF_KNX_OVERRIDES, "")))
+            except InvalidGroupAddressError:
+                errors[CONF_KNX_OVERRIDES] = "invalid_knx_overrides"
+                overrides = {}
+            groups = [group for group in user_input.get(CONF_KNX_GROUPS) or [] if group in OBJECT_GROUPS]
+            if not groups:
+                errors[CONF_KNX_GROUPS] = "no_knx_groups"
+            if not errors:
+                self._options[CONF_KNX_BASE_ADDRESS] = base_address
+                self._options[CONF_KNX_GROUPS] = groups
+                self._options[CONF_KNX_OVERRIDES] = overrides
+                return await self._async_continue_optional_steps("knx_bridge")
+            self._options[CONF_KNX_BASE_ADDRESS] = base_address
+            self._options[CONF_KNX_GROUPS] = groups or list(OBJECT_GROUPS)
+
+        return self.async_show_form(  # type: ignore[attr-defined]
+            step_id="knx_bridge",
+            data_schema=_build_knx_bridge_schema(self._options),
+            description_placeholders={
+                "name": self._flow_name_placeholder(),
+                "object_count": str(len(KNX_OBJECTS)),
+            },
+            errors=errors,
         )
 
 
