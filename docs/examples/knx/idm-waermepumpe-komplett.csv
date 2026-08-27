@@ -1,0 +1,655 @@
+Hauptgruppe;Mittelgruppe;Gruppenadresse;Name;DPT;IDM-Objekt;Register;Richtung
+Wärmepumpe;System;8/0/1;WP Außentemperatur;9.001;1;outdoor_temp;lesen
+Wärmepumpe;System;8/0/2;WP Gemittelte Außentemperatur;9.001;2;outdoor_temp_avg;lesen
+Wärmepumpe;System;8/0/3;WP Interne Meldung;7.001;3;internal_message;lesen
+Wärmepumpe;System;8/0/4;WP Systembetriebsart;5.010;4;system_mode;lesen/schreiben
+Wärmepumpe;System;8/0/5;WP Smart Grid Status;7.001;5;smart_grid_status;lesen
+Wärmepumpe;System;8/0/6;WP Wärmespeichertemperatur;9.001;6;storage_temp;lesen
+Wärmepumpe;System;8/0/7;WP Kältespeichertemperatur;9.001;7;cold_storage_temp;lesen
+Wärmepumpe;Warmwasser;8/0/8;WP Trinkwassererwärmer unten;9.001;8;dhw_temp_bottom;lesen
+Wärmepumpe;Warmwasser;8/0/9;WP Trinkwassererwärmer oben;9.001;9;dhw_temp_top;lesen
+Wärmepumpe;Warmwasser;8/0/20;WP Warmwasser Zapftemperatur;9.001;20;dhw_tapping_temp;lesen
+Wärmepumpe;Warmwasser;8/0/21;WP Warmwasser Sollwert;9.001;21;dhw_setpoint;lesen/schreiben
+Wärmepumpe;Wärmepumpe;8/0/30;WP Wärmepumpen Vorlauftemperatur;9.001;30;hp_flow_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/31;WP Wärmepumpen Rücklauftemperatur;9.001;31;hp_return_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/32;WP HGL Vorlauftemperatur B35;9.001;32;hgl_flow_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/33;WP Wärmequelleneintritt;9.001;33;heat_source_inlet_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/34;WP Wärmequellenaustritt;9.001;34;heat_source_outlet_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/35;WP Luftansaugtemperatur;9.001;35;air_intake_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/36;WP Luftwärmetauscher Temperatur;9.001;36;air_heat_exchanger_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/38;WP Ladefühler Temperatur;9.001;38;charging_sensor_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/40;WP Vorlauftemperatur Wärmesenke;9.001;40;heat_sink_flow_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/41;WP Durchfluss Wärmesenke (B2);7.001;41;heat_sink_flow_rate;lesen
+Wärmepumpe;Wärmepumpe;8/0/42;WP Ladepumpe Wärmesenke;5.001;42;heat_sink_charging_pump_signal;lesen
+Wärmepumpe;Wärmepumpe;8/0/48;WP Grundwassereintrittstemperatur 1;9.001;48;groundwater_inlet_temp_1;lesen
+Wärmepumpe;Wärmepumpe;8/0/49;WP Grundwassereintrittstemperatur 2;9.001;49;groundwater_inlet_temp_2;lesen
+Wärmepumpe;Wärmepumpe;8/0/50;WP Wärmepumpen Betriebsart;7.001;50;hp_operating_mode;lesen
+Wärmepumpe;Wärmepumpe;8/0/51;WP Heizanforderung;7.001;51;heating_demand;lesen
+Wärmepumpe;Wärmepumpe;8/0/52;WP Kühlanforderung;7.001;52;cooling_demand;lesen
+Wärmepumpe;Wärmepumpe;8/0/53;WP Warmwasseranforderung;7.001;53;dhw_demand;lesen
+Wärmepumpe;Wärmepumpe;8/0/60;WP Verdichter 1;7.001;60;compressor_status_1;lesen
+Wärmepumpe;Wärmepumpe;8/0/61;WP Verdichter 2;7.001;61;compressor_status_2;lesen
+Wärmepumpe;Wärmepumpe;8/0/62;WP Verdichter 3;7.001;62;compressor_status_3;lesen
+Wärmepumpe;Wärmepumpe;8/0/63;WP Verdichter 4;7.001;63;compressor_status_4;lesen
+Wärmepumpe;Wärmepumpe;8/0/78;WP Zirkulationspumpe M64;7.001;78;circulation_pump;lesen
+Wärmepumpe;Wärmepumpe;8/0/80;WP Bivalenzpunkt 1 (2. WE);8.001;80;bivalence_point_1_2nd_gen;lesen/schreiben
+Wärmepumpe;Wärmepumpe;8/0/81;WP Bivalenzpunkt 2 (2. WE);8.001;81;bivalence_point_2_2nd_gen;lesen/schreiben
+Wärmepumpe;Wärmepumpe;8/0/82;WP Bivalenzpunkt 1 (3. WE);8.001;82;bivalence_point_1_3rd_gen;lesen/schreiben
+Wärmepumpe;Wärmepumpe;8/0/83;WP Bivalenzpunkt 2 (3. WE);8.001;83;bivalence_point_2_3rd_gen;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/97;WP Kaskade verfügbar Heizen;7.001;97;cascade_available_heating;lesen
+Wärmepumpe;Kaskade;8/0/98;WP Kaskade verfügbar Kühlen;7.001;98;cascade_available_cooling;lesen
+Wärmepumpe;Kaskade;8/0/99;WP Kaskade verfügbar Warmwasser;7.001;99;cascade_available_dhw;lesen
+Wärmepumpe;Kaskade;8/0/100;WP Kaskade in Betrieb Heizen;7.001;100;cascade_running_heating;lesen
+Wärmepumpe;Kaskade;8/0/101;WP Kaskade in Betrieb Kühlen;7.001;101;cascade_running_cooling;lesen
+Wärmepumpe;Kaskade;8/0/102;WP Kaskade in Betrieb Warmwasser;7.001;102;cascade_running_dhw;lesen
+Wärmepumpe;Kaskade;8/0/150;WP Kaskade Angeforderte Heiztemperatur;9.001;150;cascade_req_heating_temp;lesen
+Wärmepumpe;Kaskade;8/0/151;WP Kaskade Angeforderte Kühltemperatur;9.001;151;cascade_req_cooling_temp;lesen
+Wärmepumpe;Kaskade;8/0/152;WP Kaskade Angeforderte WW-Temperatur;9.001;152;cascade_req_dhw_temp;lesen
+Wärmepumpe;Kaskade;8/0/153;WP Kaskade Gemittelte VL-Temp Heizen;9.001;153;cascade_avg_flow_heating;lesen
+Wärmepumpe;Kaskade;8/0/154;WP Kaskade Gemittelte VL-Temp Kühlen;9.001;154;cascade_avg_flow_cooling;lesen
+Wärmepumpe;Kaskade;8/0/155;WP Kaskade Gemittelte VL-Temp Warmwasser;9.001;155;cascade_avg_flow_dhw;lesen
+Wärmepumpe;Kaskade;8/0/160;WP Kaskade Mindestleistung Heizen;5.001;160;cascade_min_power_heating;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/161;WP Kaskade Maximalleistung Heizen;5.001;161;cascade_max_power_heating;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/162;WP Kaskade Mindestleistung Kühlen;5.001;162;cascade_min_power_cooling;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/163;WP Kaskade Maximalleistung Kühlen;5.001;163;cascade_max_power_cooling;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/164;WP Kaskade Mindestleistung Warmwasser;5.001;164;cascade_min_power_dhw;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/165;WP Kaskade Maximalleistung Warmwasser;5.001;165;cascade_max_power_dhw;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/166;WP Kaskade Bivalenz Heizen Parallel;8.001;166;cascade_bivalence_heating_parallel;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/167;WP Kaskade Bivalenz Heizen Alternativ;8.001;167;cascade_bivalence_heating_alternative;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/168;WP Kaskade Bivalenz Kühlen Parallel;8.001;168;cascade_bivalence_cooling_parallel;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/169;WP Kaskade Bivalenz Kühlen Alternativ;8.001;169;cascade_bivalence_cooling_alternative;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/170;WP Kaskade Bivalenz WW Parallel;8.001;170;cascade_bivalence_dhw_parallel;lesen/schreiben
+Wärmepumpe;Kaskade;8/0/171;WP Kaskade Bivalenz WW Alternativ;8.001;171;cascade_bivalence_dhw_alternative;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/200;WP Vorlauftemperatur HK A;9.001;200;hc_a_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/201;WP Vorlauftemperatur HK B;9.001;201;hc_b_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/202;WP Vorlauftemperatur HK C;9.001;202;hc_c_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/203;WP Vorlauftemperatur HK D;9.001;203;hc_d_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/204;WP Vorlauftemperatur HK E;9.001;204;hc_e_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/205;WP Vorlauftemperatur HK F;9.001;205;hc_f_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/206;WP Vorlauftemperatur HK G;9.001;206;hc_g_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/207;WP Raumtemperatur HK A;9.001;207;hc_a_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/208;WP Raumtemperatur HK B;9.001;208;hc_b_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/209;WP Raumtemperatur HK C;9.001;209;hc_c_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/210;WP Raumtemperatur HK D;9.001;210;hc_d_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/211;WP Raumtemperatur HK E;9.001;211;hc_e_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/212;WP Raumtemperatur HK F;9.001;212;hc_f_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/213;WP Raumtemperatur HK G;9.001;213;hc_g_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/214;WP Sollvorlauftemperatur HK A;9.001;214;hc_a_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/215;WP Sollvorlauftemperatur HK B;9.001;215;hc_b_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/216;WP Sollvorlauftemperatur HK C;9.001;216;hc_c_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/217;WP Sollvorlauftemperatur HK D;9.001;217;hc_d_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/218;WP Sollvorlauftemperatur HK E;9.001;218;hc_e_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/219;WP Sollvorlauftemperatur HK F;9.001;219;hc_f_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/220;WP Sollvorlauftemperatur HK G;9.001;220;hc_g_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/221;WP Feuchtesensor;9.007;221;humidity_sensor;lesen
+Wärmepumpe;Heizkreise;8/0/222;WP Betriebsart HK A;7.001;222;hc_a_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/223;WP Betriebsart HK B;7.001;223;hc_b_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/224;WP Betriebsart HK C;7.001;224;hc_c_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/225;WP Betriebsart HK D;7.001;225;hc_d_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/226;WP Betriebsart HK E;7.001;226;hc_e_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/227;WP Betriebsart HK F;7.001;227;hc_f_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/228;WP Betriebsart HK G;7.001;228;hc_g_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/229;WP Raumsoll Heizen Normal HK A;9.001;229;hc_a_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/230;WP Raumsoll Heizen Normal HK B;9.001;230;hc_b_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/231;WP Raumsoll Heizen Normal HK C;9.001;231;hc_c_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/232;WP Raumsoll Heizen Normal HK D;9.001;232;hc_d_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/233;WP Raumsoll Heizen Normal HK E;9.001;233;hc_e_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/234;WP Raumsoll Heizen Normal HK F;9.001;234;hc_f_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/235;WP Raumsoll Heizen Normal HK G;9.001;235;hc_g_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/236;WP Raumsoll Heizen Eco HK A;9.001;236;hc_a_room_setpoint_heat_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/237;WP Raumsoll Heizen Eco HK B;9.001;237;hc_b_room_setpoint_heat_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/238;WP Raumsoll Heizen Eco HK C;9.001;238;hc_c_room_setpoint_heat_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/239;WP Raumsoll Heizen Eco HK D;9.001;239;hc_d_room_setpoint_heat_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/240;WP Raumsoll Heizen Eco HK E;9.001;240;hc_e_room_setpoint_heat_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/241;WP Raumsoll Heizen Eco HK F;9.001;241;hc_f_room_setpoint_heat_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/242;WP Raumsoll Heizen Eco HK G;9.001;242;hc_g_room_setpoint_heat_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/243;WP Heizkurve HK A;9.001;243;hc_a_heating_curve;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/244;WP Heizkurve HK B;9.001;244;hc_b_heating_curve;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/245;WP Heizkurve HK C;9.001;245;hc_c_heating_curve;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/246;WP Heizkurve HK D;9.001;246;hc_d_heating_curve;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/247;WP Heizkurve HK E;9.001;247;hc_e_heating_curve;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/248;WP Heizkurve HK F;9.001;248;hc_f_heating_curve;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/249;WP Heizkurve HK G;9.001;249;hc_g_heating_curve;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/250;WP Heizgrenze HK A;7.001;250;hc_a_heating_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/251;WP Heizgrenze HK B;7.001;251;hc_b_heating_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/252;WP Heizgrenze HK C;7.001;252;hc_c_heating_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/253;WP Heizgrenze HK D;7.001;253;hc_d_heating_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/254;WP Heizgrenze HK E;7.001;254;hc_e_heating_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/255;WP Heizgrenze HK F;7.001;255;hc_f_heating_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/0;WP Heizgrenze HK G;7.001;256;hc_g_heating_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/1;WP Festwertvorlauf HK A;7.001;257;hc_a_setpoint_flow_constant;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/2;WP Festwertvorlauf HK B;7.001;258;hc_b_setpoint_flow_constant;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/3;WP Festwertvorlauf HK C;7.001;259;hc_c_setpoint_flow_constant;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/4;WP Festwertvorlauf HK D;7.001;260;hc_d_setpoint_flow_constant;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/5;WP Festwertvorlauf HK E;7.001;261;hc_e_setpoint_flow_constant;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/6;WP Festwertvorlauf HK F;7.001;262;hc_f_setpoint_flow_constant;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/7;WP Festwertvorlauf HK G;7.001;263;hc_g_setpoint_flow_constant;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/8;WP Raumsoll Kühlen Normal HK A;9.001;264;hc_a_room_setpoint_cool_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/9;WP Raumsoll Kühlen Normal HK B;9.001;265;hc_b_room_setpoint_cool_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/10;WP Raumsoll Kühlen Normal HK C;9.001;266;hc_c_room_setpoint_cool_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/11;WP Raumsoll Kühlen Normal HK D;9.001;267;hc_d_room_setpoint_cool_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/12;WP Raumsoll Kühlen Normal HK E;9.001;268;hc_e_room_setpoint_cool_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/13;WP Raumsoll Kühlen Normal HK F;9.001;269;hc_f_room_setpoint_cool_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/14;WP Raumsoll Kühlen Normal HK G;9.001;270;hc_g_room_setpoint_cool_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/15;WP Raumsoll Kühlen Eco HK A;9.001;271;hc_a_room_setpoint_cool_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/16;WP Raumsoll Kühlen Eco HK B;9.001;272;hc_b_room_setpoint_cool_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/17;WP Raumsoll Kühlen Eco HK C;9.001;273;hc_c_room_setpoint_cool_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/18;WP Raumsoll Kühlen Eco HK D;9.001;274;hc_d_room_setpoint_cool_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/19;WP Raumsoll Kühlen Eco HK E;9.001;275;hc_e_room_setpoint_cool_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/20;WP Raumsoll Kühlen Eco HK F;9.001;276;hc_f_room_setpoint_cool_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/21;WP Raumsoll Kühlen Eco HK G;9.001;277;hc_g_room_setpoint_cool_eco;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/22;WP Kühlgrenze HK A;7.001;278;hc_a_cooling_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/23;WP Kühlgrenze HK B;7.001;279;hc_b_cooling_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/24;WP Kühlgrenze HK C;7.001;280;hc_c_cooling_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/25;WP Kühlgrenze HK D;7.001;281;hc_d_cooling_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/26;WP Kühlgrenze HK E;7.001;282;hc_e_cooling_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/27;WP Kühlgrenze HK F;7.001;283;hc_f_cooling_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/28;WP Kühlgrenze HK G;7.001;284;hc_g_cooling_limit;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/29;WP Kühlvorlauf HK A;7.001;285;hc_a_setpoint_flow_cooling;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/30;WP Kühlvorlauf HK B;7.001;286;hc_b_setpoint_flow_cooling;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/31;WP Kühlvorlauf HK C;7.001;287;hc_c_setpoint_flow_cooling;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/32;WP Kühlvorlauf HK D;7.001;288;hc_d_setpoint_flow_cooling;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/33;WP Kühlvorlauf HK E;7.001;289;hc_e_setpoint_flow_cooling;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/34;WP Kühlvorlauf HK F;7.001;290;hc_f_setpoint_flow_cooling;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/35;WP Kühlvorlauf HK G;7.001;291;hc_g_setpoint_flow_cooling;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/36;WP Aktive Betriebsart HK A;7.001;292;hc_a_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/37;WP Aktive Betriebsart HK B;7.001;293;hc_b_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/38;WP Aktive Betriebsart HK C;7.001;294;hc_c_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/39;WP Aktive Betriebsart HK D;7.001;295;hc_d_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/40;WP Aktive Betriebsart HK E;7.001;296;hc_e_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/41;WP Aktive Betriebsart HK F;7.001;297;hc_f_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/42;WP Aktive Betriebsart HK G;7.001;298;hc_g_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/43;WP Parallelverschiebung HK A;7.001;299;hc_a_parallel_shift;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/44;WP Parallelverschiebung HK B;7.001;300;hc_b_parallel_shift;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/45;WP Parallelverschiebung HK C;7.001;301;hc_c_parallel_shift;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/46;WP Parallelverschiebung HK D;7.001;302;hc_d_parallel_shift;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/47;WP Parallelverschiebung HK E;7.001;303;hc_e_parallel_shift;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/48;WP Parallelverschiebung HK F;7.001;304;hc_f_parallel_shift;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/49;WP Parallelverschiebung HK G;7.001;305;hc_g_parallel_shift;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/94;WP Externe Raumtemperatur HK A;9.001;350;hc_a_ext_room_temp;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/95;WP Externe Raumtemperatur HK B;9.001;351;hc_b_ext_room_temp;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/96;WP Externe Raumtemperatur HK C;9.001;352;hc_c_ext_room_temp;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/97;WP Externe Raumtemperatur HK D;9.001;353;hc_d_ext_room_temp;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/98;WP Externe Raumtemperatur HK E;9.001;354;hc_e_ext_room_temp;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/99;WP Externe Raumtemperatur HK F;9.001;355;hc_f_ext_room_temp;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/100;WP Externe Raumtemperatur HK G;9.001;356;hc_g_ext_room_temp;lesen/schreiben
+Wärmepumpe;Wärmepumpe;8/1/103;WP Störung Ladepumpe 1 Zwischenkreis;7.001;359;fault_charging_pump_1_intermediate;lesen
+Wärmepumpe;Wärmepumpe;8/1/104;WP Störung Ladepumpe 2 Zwischenkreis;7.001;360;fault_charging_pump_2_intermediate;lesen
+Wärmepumpe;Gebäudeleittechnik;8/1/114;WP Externe Außentemperatur (GLT);9.001;370;ext_outdoor_temp;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/115;WP Externe Feuchte (GLT);9.007;371;ext_humidity;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/116;WP Externe Anforderungstemperatur Heizen;7.001;372;ext_demand_temp_heating;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/117;WP Externe Anforderungstemperatur Kühlen;7.001;373;ext_demand_temp_cooling;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/118;WP GLT Temperaturanforderung Heizen;9.001;374;glt_temp_demand_heating;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/119;WP GLT Temperaturanforderung Kühlen;9.001;375;glt_temp_demand_cooling;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/124;WP Externe Heizanforderung;1.001;380;demand_heating;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/125;WP Externe Kühlanforderung;1.001;381;demand_cooling;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/126;WP Externe WW-Ladeanforderung;1.001;382;demand_dhw_charging;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/127;WP Einmalige WW-Anforderung;1.001;383;demand_onetime_dhw;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/130;WP GLT Wärmespeichertemperatur;9.001;386;glt_heat_storage_temp;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/131;WP GLT Kältespeichertemperatur;9.001;387;glt_cold_storage_temp;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/132;WP GLT Warmwasser unten;9.001;388;glt_dhw_temp_bottom;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/133;WP GLT Warmwasser oben;9.001;389;glt_dhw_temp_top;lesen/schreiben
+Wärmepumpe;Wärmemengen;8/1/144;WP Wärmemenge Heizen;14.031;400;energy_heating;lesen
+Wärmepumpe;Wärmemengen;8/1/145;WP Wärmemenge Kühlen;14.031;401;energy_cooling;lesen
+Wärmepumpe;Wärmemengen;8/1/146;WP Wärmemenge Warmwasser;14.031;402;energy_dhw;lesen
+Wärmepumpe;Wärmemengen;8/1/147;WP Wärmemenge Abtauen;14.031;403;energy_defrost;lesen
+Wärmepumpe;Wärmemengen;8/1/148;WP Wärmemenge Passive Kühlung;14.031;404;energy_passive_cooling;lesen
+Wärmepumpe;Wärmemengen;8/1/149;WP Wärmemenge Solar;14.031;405;energy_solar;lesen
+Wärmepumpe;Wärmemengen;8/1/150;WP Wärmemenge E-Heizstab;14.031;406;energy_electric_heater;lesen
+Wärmepumpe;Wärmemengen;8/1/164;WP Thermische Momentanleistung;9.024;420;current_power;lesen
+Wärmepumpe;Wärmemengen;8/1/165;WP Aktuelle Solarleistung;9.024;421;current_power_solar;lesen
+Wärmepumpe;Solar;8/1/194;WP Solar Kollektortemperatur;9.001;450;solar_collector_temp;lesen
+Wärmepumpe;Solar;8/1/195;WP Solar Rücklauftemperatur;9.001;451;solar_return_temp;lesen
+Wärmepumpe;Solar;8/1/196;WP Solar Ladetemperatur;9.001;452;solar_charging_temp;lesen
+Wärmepumpe;Solar;8/1/197;WP Solar Betriebsart;7.001;453;solar_mode;lesen/schreiben
+Wärmepumpe;Solar;8/1/198;WP Solar WQ-Referenztemperatur/Pooltemperatur;9.001;454;solar_wq_pool_temp;lesen
+Wärmepumpe;ISC;8/1/204;WP ISC Ladetemperatur Kühlen;9.001;460;isc_charging_temp_cooling;lesen
+Wärmepumpe;ISC;8/1/205;WP ISC Rückkühltemperatur;9.001;461;isc_recooling_temp;lesen
+Wärmepumpe;ISC;8/1/206;WP ISC Modus;7.001;462;isc_mode;lesen
+Wärmepumpe;System;8/1/243;WP Fehlerquittierung;7.001;499;error_acknowledge;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/244;WP Zone 1 Heizen/Kühlen;7.001;500;zm1_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/1/245;WP Zone 1 Entfeuchtung;7.001;501;zm1_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/1/246;WP Zone 1 Raum 1 Raumtemperatur;9.001;502;zm1_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/247;WP Zone 1 Raum 1 Raumsolltemperatur;9.001;503;zm1_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/248;WP Zone 1 Raum 1 Raumfeuchte;9.007;504;zm1_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/249;WP Zone 1 Raum 1 Raumbetriebsart;7.001;505;zm1_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/250;WP Zone 1 Raum 1 Relais;7.001;506;zm1_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/1/251;WP Zone 1 Raum 2 Raumtemperatur;9.001;507;zm1_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/252;WP Zone 1 Raum 2 Raumsolltemperatur;9.001;508;zm1_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/253;WP Zone 1 Raum 2 Raumfeuchte;9.007;509;zm1_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/254;WP Zone 1 Raum 2 Raumbetriebsart;7.001;510;zm1_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/1/255;WP Zone 1 Raum 2 Relais;7.001;511;zm1_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/0;WP Zone 1 Raum 3 Raumtemperatur;9.001;512;zm1_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/1;WP Zone 1 Raum 3 Raumsolltemperatur;9.001;513;zm1_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/2;WP Zone 1 Raum 3 Raumfeuchte;9.007;514;zm1_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/3;WP Zone 1 Raum 3 Raumbetriebsart;7.001;515;zm1_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/4;WP Zone 1 Raum 3 Relais;7.001;516;zm1_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/5;WP Zone 1 Raum 4 Raumtemperatur;9.001;517;zm1_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/6;WP Zone 1 Raum 4 Raumsolltemperatur;9.001;518;zm1_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/7;WP Zone 1 Raum 4 Raumfeuchte;9.007;519;zm1_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/8;WP Zone 1 Raum 4 Raumbetriebsart;7.001;520;zm1_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/9;WP Zone 1 Raum 4 Relais;7.001;521;zm1_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/10;WP Zone 1 Raum 5 Raumtemperatur;9.001;522;zm1_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/11;WP Zone 1 Raum 5 Raumsolltemperatur;9.001;523;zm1_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/12;WP Zone 1 Raum 5 Raumfeuchte;9.007;524;zm1_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/13;WP Zone 1 Raum 5 Raumbetriebsart;7.001;525;zm1_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/14;WP Zone 1 Raum 5 Relais;7.001;526;zm1_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/15;WP Zone 1 Raum 6 Raumtemperatur;9.001;527;zm1_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/16;WP Zone 1 Raum 6 Raumsolltemperatur;9.001;528;zm1_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/17;WP Zone 1 Raum 6 Raumfeuchte;9.007;529;zm1_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/18;WP Zone 1 Raum 6 Raumbetriebsart;7.001;530;zm1_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/19;WP Zone 1 Raum 6 Relais;7.001;531;zm1_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/20;WP Zone 1 Raum 7 Raumtemperatur;9.001;532;zm1_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/21;WP Zone 1 Raum 7 Raumsolltemperatur;9.001;533;zm1_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/22;WP Zone 1 Raum 7 Raumfeuchte;9.007;534;zm1_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/23;WP Zone 1 Raum 7 Raumbetriebsart;7.001;535;zm1_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/24;WP Zone 1 Raum 7 Relais;7.001;536;zm1_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/25;WP Zone 1 Raum 8 Raumtemperatur;9.001;537;zm1_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/26;WP Zone 1 Raum 8 Raumsolltemperatur;9.001;538;zm1_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/27;WP Zone 1 Raum 8 Raumfeuchte;9.007;539;zm1_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/28;WP Zone 1 Raum 8 Raumbetriebsart;7.001;540;zm1_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/29;WP Zone 1 Raum 8 Relais;7.001;541;zm1_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/35;WP Zone 2 Heizen/Kühlen;7.001;547;zm2_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/2/36;WP Zone 2 Entfeuchtung;7.001;548;zm2_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/2/37;WP Zone 2 Raum 1 Raumtemperatur;9.001;549;zm2_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/38;WP Zone 2 Raum 1 Raumsolltemperatur;9.001;550;zm2_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/39;WP Zone 2 Raum 1 Raumfeuchte;9.007;551;zm2_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/40;WP Zone 2 Raum 1 Raumbetriebsart;7.001;552;zm2_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/41;WP Zone 2 Raum 1 Relais;7.001;553;zm2_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/42;WP Zone 2 Raum 2 Raumtemperatur;9.001;554;zm2_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/43;WP Zone 2 Raum 2 Raumsolltemperatur;9.001;555;zm2_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/44;WP Zone 2 Raum 2 Raumfeuchte;9.007;556;zm2_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/45;WP Zone 2 Raum 2 Raumbetriebsart;7.001;557;zm2_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/46;WP Zone 2 Raum 2 Relais;7.001;558;zm2_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/47;WP Zone 2 Raum 3 Raumtemperatur;9.001;559;zm2_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/48;WP Zone 2 Raum 3 Raumsolltemperatur;9.001;560;zm2_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/49;WP Zone 2 Raum 3 Raumfeuchte;9.007;561;zm2_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/50;WP Zone 2 Raum 3 Raumbetriebsart;7.001;562;zm2_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/51;WP Zone 2 Raum 3 Relais;7.001;563;zm2_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/52;WP Zone 2 Raum 4 Raumtemperatur;9.001;564;zm2_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/53;WP Zone 2 Raum 4 Raumsolltemperatur;9.001;565;zm2_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/54;WP Zone 2 Raum 4 Raumfeuchte;9.007;566;zm2_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/55;WP Zone 2 Raum 4 Raumbetriebsart;7.001;567;zm2_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/56;WP Zone 2 Raum 4 Relais;7.001;568;zm2_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/57;WP Zone 2 Raum 5 Raumtemperatur;9.001;569;zm2_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/58;WP Zone 2 Raum 5 Raumsolltemperatur;9.001;570;zm2_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/59;WP Zone 2 Raum 5 Raumfeuchte;9.007;571;zm2_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/60;WP Zone 2 Raum 5 Raumbetriebsart;7.001;572;zm2_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/61;WP Zone 2 Raum 5 Relais;7.001;573;zm2_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/62;WP Zone 2 Raum 6 Raumtemperatur;9.001;574;zm2_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/63;WP Zone 2 Raum 6 Raumsolltemperatur;9.001;575;zm2_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/64;WP Zone 2 Raum 6 Raumfeuchte;9.007;576;zm2_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/65;WP Zone 2 Raum 6 Raumbetriebsart;7.001;577;zm2_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/66;WP Zone 2 Raum 6 Relais;7.001;578;zm2_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/67;WP Zone 2 Raum 7 Raumtemperatur;9.001;579;zm2_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/68;WP Zone 2 Raum 7 Raumsolltemperatur;9.001;580;zm2_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/69;WP Zone 2 Raum 7 Raumfeuchte;9.007;581;zm2_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/70;WP Zone 2 Raum 7 Raumbetriebsart;7.001;582;zm2_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/71;WP Zone 2 Raum 7 Relais;7.001;583;zm2_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/72;WP Zone 2 Raum 8 Raumtemperatur;9.001;584;zm2_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/73;WP Zone 2 Raum 8 Raumsolltemperatur;9.001;585;zm2_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/74;WP Zone 2 Raum 8 Raumfeuchte;9.007;586;zm2_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/75;WP Zone 2 Raum 8 Raumbetriebsart;7.001;587;zm2_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/76;WP Zone 2 Raum 8 Relais;7.001;588;zm2_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/82;WP Zone 3 Heizen/Kühlen;7.001;594;zm3_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/2/83;WP Zone 3 Entfeuchtung;7.001;595;zm3_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/2/84;WP Zone 3 Raum 1 Raumtemperatur;9.001;596;zm3_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/85;WP Zone 3 Raum 1 Raumsolltemperatur;9.001;597;zm3_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/86;WP Zone 3 Raum 1 Raumfeuchte;9.007;598;zm3_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/87;WP Zone 3 Raum 1 Raumbetriebsart;7.001;599;zm3_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/88;WP Zone 3 Raum 1 Relais;7.001;600;zm3_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/89;WP Zone 3 Raum 2 Raumtemperatur;9.001;601;zm3_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/90;WP Zone 3 Raum 2 Raumsolltemperatur;9.001;602;zm3_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/91;WP Zone 3 Raum 2 Raumfeuchte;9.007;603;zm3_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/92;WP Zone 3 Raum 2 Raumbetriebsart;7.001;604;zm3_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/93;WP Zone 3 Raum 2 Relais;7.001;605;zm3_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/94;WP Zone 3 Raum 3 Raumtemperatur;9.001;606;zm3_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/95;WP Zone 3 Raum 3 Raumsolltemperatur;9.001;607;zm3_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/96;WP Zone 3 Raum 3 Raumfeuchte;9.007;608;zm3_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/97;WP Zone 3 Raum 3 Raumbetriebsart;7.001;609;zm3_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/98;WP Zone 3 Raum 3 Relais;7.001;610;zm3_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/99;WP Zone 3 Raum 4 Raumtemperatur;9.001;611;zm3_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/100;WP Zone 3 Raum 4 Raumsolltemperatur;9.001;612;zm3_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/101;WP Zone 3 Raum 4 Raumfeuchte;9.007;613;zm3_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/102;WP Zone 3 Raum 4 Raumbetriebsart;7.001;614;zm3_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/103;WP Zone 3 Raum 4 Relais;7.001;615;zm3_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/104;WP Zone 3 Raum 5 Raumtemperatur;9.001;616;zm3_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/105;WP Zone 3 Raum 5 Raumsolltemperatur;9.001;617;zm3_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/106;WP Zone 3 Raum 5 Raumfeuchte;9.007;618;zm3_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/107;WP Zone 3 Raum 5 Raumbetriebsart;7.001;619;zm3_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/108;WP Zone 3 Raum 5 Relais;7.001;620;zm3_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/109;WP Zone 3 Raum 6 Raumtemperatur;9.001;621;zm3_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/110;WP Zone 3 Raum 6 Raumsolltemperatur;9.001;622;zm3_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/111;WP Zone 3 Raum 6 Raumfeuchte;9.007;623;zm3_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/112;WP Zone 3 Raum 6 Raumbetriebsart;7.001;624;zm3_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/113;WP Zone 3 Raum 6 Relais;7.001;625;zm3_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/114;WP Zone 3 Raum 7 Raumtemperatur;9.001;626;zm3_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/115;WP Zone 3 Raum 7 Raumsolltemperatur;9.001;627;zm3_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/116;WP Zone 3 Raum 7 Raumfeuchte;9.007;628;zm3_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/117;WP Zone 3 Raum 7 Raumbetriebsart;7.001;629;zm3_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/118;WP Zone 3 Raum 7 Relais;7.001;630;zm3_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/119;WP Zone 3 Raum 8 Raumtemperatur;9.001;631;zm3_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/120;WP Zone 3 Raum 8 Raumsolltemperatur;9.001;632;zm3_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/121;WP Zone 3 Raum 8 Raumfeuchte;9.007;633;zm3_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/122;WP Zone 3 Raum 8 Raumbetriebsart;7.001;634;zm3_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/123;WP Zone 3 Raum 8 Relais;7.001;635;zm3_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/129;WP Zone 4 Heizen/Kühlen;7.001;641;zm4_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/2/130;WP Zone 4 Entfeuchtung;7.001;642;zm4_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/2/131;WP Zone 4 Raum 1 Raumtemperatur;9.001;643;zm4_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/132;WP Zone 4 Raum 1 Raumsolltemperatur;9.001;644;zm4_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/133;WP Zone 4 Raum 1 Raumfeuchte;9.007;645;zm4_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/134;WP Zone 4 Raum 1 Raumbetriebsart;7.001;646;zm4_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/135;WP Zone 4 Raum 1 Relais;7.001;647;zm4_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/136;WP Zone 4 Raum 2 Raumtemperatur;9.001;648;zm4_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/137;WP Zone 4 Raum 2 Raumsolltemperatur;9.001;649;zm4_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/138;WP Zone 4 Raum 2 Raumfeuchte;9.007;650;zm4_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/139;WP Zone 4 Raum 2 Raumbetriebsart;7.001;651;zm4_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/140;WP Zone 4 Raum 2 Relais;7.001;652;zm4_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/141;WP Zone 4 Raum 3 Raumtemperatur;9.001;653;zm4_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/142;WP Zone 4 Raum 3 Raumsolltemperatur;9.001;654;zm4_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/143;WP Zone 4 Raum 3 Raumfeuchte;9.007;655;zm4_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/144;WP Zone 4 Raum 3 Raumbetriebsart;7.001;656;zm4_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/145;WP Zone 4 Raum 3 Relais;7.001;657;zm4_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/146;WP Zone 4 Raum 4 Raumtemperatur;9.001;658;zm4_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/147;WP Zone 4 Raum 4 Raumsolltemperatur;9.001;659;zm4_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/148;WP Zone 4 Raum 4 Raumfeuchte;9.007;660;zm4_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/149;WP Zone 4 Raum 4 Raumbetriebsart;7.001;661;zm4_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/150;WP Zone 4 Raum 4 Relais;7.001;662;zm4_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/151;WP Zone 4 Raum 5 Raumtemperatur;9.001;663;zm4_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/152;WP Zone 4 Raum 5 Raumsolltemperatur;9.001;664;zm4_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/153;WP Zone 4 Raum 5 Raumfeuchte;9.007;665;zm4_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/154;WP Zone 4 Raum 5 Raumbetriebsart;7.001;666;zm4_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/155;WP Zone 4 Raum 5 Relais;7.001;667;zm4_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/156;WP Zone 4 Raum 6 Raumtemperatur;9.001;668;zm4_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/157;WP Zone 4 Raum 6 Raumsolltemperatur;9.001;669;zm4_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/158;WP Zone 4 Raum 6 Raumfeuchte;9.007;670;zm4_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/159;WP Zone 4 Raum 6 Raumbetriebsart;7.001;671;zm4_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/160;WP Zone 4 Raum 6 Relais;7.001;672;zm4_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/161;WP Zone 4 Raum 7 Raumtemperatur;9.001;673;zm4_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/162;WP Zone 4 Raum 7 Raumsolltemperatur;9.001;674;zm4_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/163;WP Zone 4 Raum 7 Raumfeuchte;9.007;675;zm4_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/164;WP Zone 4 Raum 7 Raumbetriebsart;7.001;676;zm4_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/165;WP Zone 4 Raum 7 Relais;7.001;677;zm4_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/166;WP Zone 4 Raum 8 Raumtemperatur;9.001;678;zm4_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/167;WP Zone 4 Raum 8 Raumsolltemperatur;9.001;679;zm4_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/168;WP Zone 4 Raum 8 Raumfeuchte;9.007;680;zm4_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/169;WP Zone 4 Raum 8 Raumbetriebsart;7.001;681;zm4_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/170;WP Zone 4 Raum 8 Relais;7.001;682;zm4_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/176;WP Zone 5 Heizen/Kühlen;7.001;688;zm5_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/2/177;WP Zone 5 Entfeuchtung;7.001;689;zm5_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/2/178;WP Zone 5 Raum 1 Raumtemperatur;9.001;690;zm5_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/179;WP Zone 5 Raum 1 Raumsolltemperatur;9.001;691;zm5_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/180;WP Zone 5 Raum 1 Raumfeuchte;9.007;692;zm5_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/181;WP Zone 5 Raum 1 Raumbetriebsart;7.001;693;zm5_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/182;WP Zone 5 Raum 1 Relais;7.001;694;zm5_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/183;WP Zone 5 Raum 2 Raumtemperatur;9.001;695;zm5_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/184;WP Zone 5 Raum 2 Raumsolltemperatur;9.001;696;zm5_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/185;WP Zone 5 Raum 2 Raumfeuchte;9.007;697;zm5_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/186;WP Zone 5 Raum 2 Raumbetriebsart;7.001;698;zm5_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/187;WP Zone 5 Raum 2 Relais;7.001;699;zm5_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/188;WP Zone 5 Raum 3 Raumtemperatur;9.001;700;zm5_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/189;WP Zone 5 Raum 3 Raumsolltemperatur;9.001;701;zm5_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/190;WP Zone 5 Raum 3 Raumfeuchte;9.007;702;zm5_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/191;WP Zone 5 Raum 3 Raumbetriebsart;7.001;703;zm5_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/192;WP Zone 5 Raum 3 Relais;7.001;704;zm5_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/193;WP Zone 5 Raum 4 Raumtemperatur;9.001;705;zm5_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/194;WP Zone 5 Raum 4 Raumsolltemperatur;9.001;706;zm5_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/195;WP Zone 5 Raum 4 Raumfeuchte;9.007;707;zm5_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/196;WP Zone 5 Raum 4 Raumbetriebsart;7.001;708;zm5_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/197;WP Zone 5 Raum 4 Relais;7.001;709;zm5_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/198;WP Zone 5 Raum 5 Raumtemperatur;9.001;710;zm5_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/199;WP Zone 5 Raum 5 Raumsolltemperatur;9.001;711;zm5_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/200;WP Zone 5 Raum 5 Raumfeuchte;9.007;712;zm5_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/201;WP Zone 5 Raum 5 Raumbetriebsart;7.001;713;zm5_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/202;WP Zone 5 Raum 5 Relais;7.001;714;zm5_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/203;WP Zone 5 Raum 6 Raumtemperatur;9.001;715;zm5_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/204;WP Zone 5 Raum 6 Raumsolltemperatur;9.001;716;zm5_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/205;WP Zone 5 Raum 6 Raumfeuchte;9.007;717;zm5_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/206;WP Zone 5 Raum 6 Raumbetriebsart;7.001;718;zm5_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/207;WP Zone 5 Raum 6 Relais;7.001;719;zm5_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/208;WP Zone 5 Raum 7 Raumtemperatur;9.001;720;zm5_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/209;WP Zone 5 Raum 7 Raumsolltemperatur;9.001;721;zm5_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/210;WP Zone 5 Raum 7 Raumfeuchte;9.007;722;zm5_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/211;WP Zone 5 Raum 7 Raumbetriebsart;7.001;723;zm5_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/212;WP Zone 5 Raum 7 Relais;7.001;724;zm5_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/213;WP Zone 5 Raum 8 Raumtemperatur;9.001;725;zm5_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/214;WP Zone 5 Raum 8 Raumsolltemperatur;9.001;726;zm5_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/215;WP Zone 5 Raum 8 Raumfeuchte;9.007;727;zm5_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/216;WP Zone 5 Raum 8 Raumbetriebsart;7.001;728;zm5_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/217;WP Zone 5 Raum 8 Relais;7.001;729;zm5_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/223;WP Zone 6 Heizen/Kühlen;7.001;735;zm6_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/2/224;WP Zone 6 Entfeuchtung;7.001;736;zm6_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/2/225;WP Zone 6 Raum 1 Raumtemperatur;9.001;737;zm6_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/226;WP Zone 6 Raum 1 Raumsolltemperatur;9.001;738;zm6_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/227;WP Zone 6 Raum 1 Raumfeuchte;9.007;739;zm6_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/228;WP Zone 6 Raum 1 Raumbetriebsart;7.001;740;zm6_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/229;WP Zone 6 Raum 1 Relais;7.001;741;zm6_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/230;WP Zone 6 Raum 2 Raumtemperatur;9.001;742;zm6_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/231;WP Zone 6 Raum 2 Raumsolltemperatur;9.001;743;zm6_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/232;WP Zone 6 Raum 2 Raumfeuchte;9.007;744;zm6_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/233;WP Zone 6 Raum 2 Raumbetriebsart;7.001;745;zm6_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/234;WP Zone 6 Raum 2 Relais;7.001;746;zm6_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/235;WP Zone 6 Raum 3 Raumtemperatur;9.001;747;zm6_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/236;WP Zone 6 Raum 3 Raumsolltemperatur;9.001;748;zm6_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/237;WP Zone 6 Raum 3 Raumfeuchte;9.007;749;zm6_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/238;WP Zone 6 Raum 3 Raumbetriebsart;7.001;750;zm6_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/239;WP Zone 6 Raum 3 Relais;7.001;751;zm6_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/240;WP Zone 6 Raum 4 Raumtemperatur;9.001;752;zm6_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/241;WP Zone 6 Raum 4 Raumsolltemperatur;9.001;753;zm6_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/242;WP Zone 6 Raum 4 Raumfeuchte;9.007;754;zm6_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/243;WP Zone 6 Raum 4 Raumbetriebsart;7.001;755;zm6_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/244;WP Zone 6 Raum 4 Relais;7.001;756;zm6_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/245;WP Zone 6 Raum 5 Raumtemperatur;9.001;757;zm6_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/246;WP Zone 6 Raum 5 Raumsolltemperatur;9.001;758;zm6_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/247;WP Zone 6 Raum 5 Raumfeuchte;9.007;759;zm6_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/248;WP Zone 6 Raum 5 Raumbetriebsart;7.001;760;zm6_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/249;WP Zone 6 Raum 5 Relais;7.001;761;zm6_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/250;WP Zone 6 Raum 6 Raumtemperatur;9.001;762;zm6_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/251;WP Zone 6 Raum 6 Raumsolltemperatur;9.001;763;zm6_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/252;WP Zone 6 Raum 6 Raumfeuchte;9.007;764;zm6_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/253;WP Zone 6 Raum 6 Raumbetriebsart;7.001;765;zm6_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/2/254;WP Zone 6 Raum 6 Relais;7.001;766;zm6_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/2/255;WP Zone 6 Raum 7 Raumtemperatur;9.001;767;zm6_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/0;WP Zone 6 Raum 7 Raumsolltemperatur;9.001;768;zm6_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/1;WP Zone 6 Raum 7 Raumfeuchte;9.007;769;zm6_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/2;WP Zone 6 Raum 7 Raumbetriebsart;7.001;770;zm6_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/3;WP Zone 6 Raum 7 Relais;7.001;771;zm6_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/4;WP Zone 6 Raum 8 Raumtemperatur;9.001;772;zm6_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/5;WP Zone 6 Raum 8 Raumsolltemperatur;9.001;773;zm6_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/6;WP Zone 6 Raum 8 Raumfeuchte;9.007;774;zm6_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/7;WP Zone 6 Raum 8 Raumbetriebsart;7.001;775;zm6_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/8;WP Zone 6 Raum 8 Relais;7.001;776;zm6_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/14;WP Zone 7 Heizen/Kühlen;7.001;782;zm7_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/3/15;WP Zone 7 Entfeuchtung;7.001;783;zm7_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/3/16;WP Zone 7 Raum 1 Raumtemperatur;9.001;784;zm7_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/17;WP Zone 7 Raum 1 Raumsolltemperatur;9.001;785;zm7_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/18;WP Zone 7 Raum 1 Raumfeuchte;9.007;786;zm7_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/19;WP Zone 7 Raum 1 Raumbetriebsart;7.001;787;zm7_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/20;WP Zone 7 Raum 1 Relais;7.001;788;zm7_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/21;WP Zone 7 Raum 2 Raumtemperatur;9.001;789;zm7_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/22;WP Zone 7 Raum 2 Raumsolltemperatur;9.001;790;zm7_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/23;WP Zone 7 Raum 2 Raumfeuchte;9.007;791;zm7_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/24;WP Zone 7 Raum 2 Raumbetriebsart;7.001;792;zm7_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/25;WP Zone 7 Raum 2 Relais;7.001;793;zm7_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/26;WP Zone 7 Raum 3 Raumtemperatur;9.001;794;zm7_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/27;WP Zone 7 Raum 3 Raumsolltemperatur;9.001;795;zm7_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/28;WP Zone 7 Raum 3 Raumfeuchte;9.007;796;zm7_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/29;WP Zone 7 Raum 3 Raumbetriebsart;7.001;797;zm7_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/30;WP Zone 7 Raum 3 Relais;7.001;798;zm7_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/31;WP Zone 7 Raum 4 Raumtemperatur;9.001;799;zm7_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/32;WP Zone 7 Raum 4 Raumsolltemperatur;9.001;800;zm7_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/33;WP Zone 7 Raum 4 Raumfeuchte;9.007;801;zm7_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/34;WP Zone 7 Raum 4 Raumbetriebsart;7.001;802;zm7_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/35;WP Zone 7 Raum 4 Relais;7.001;803;zm7_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/36;WP Zone 7 Raum 5 Raumtemperatur;9.001;804;zm7_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/37;WP Zone 7 Raum 5 Raumsolltemperatur;9.001;805;zm7_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/38;WP Zone 7 Raum 5 Raumfeuchte;9.007;806;zm7_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/39;WP Zone 7 Raum 5 Raumbetriebsart;7.001;807;zm7_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/40;WP Zone 7 Raum 5 Relais;7.001;808;zm7_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/41;WP Zone 7 Raum 6 Raumtemperatur;9.001;809;zm7_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/42;WP Zone 7 Raum 6 Raumsolltemperatur;9.001;810;zm7_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/43;WP Zone 7 Raum 6 Raumfeuchte;9.007;811;zm7_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/44;WP Zone 7 Raum 6 Raumbetriebsart;7.001;812;zm7_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/45;WP Zone 7 Raum 6 Relais;7.001;813;zm7_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/46;WP Zone 7 Raum 7 Raumtemperatur;9.001;814;zm7_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/47;WP Zone 7 Raum 7 Raumsolltemperatur;9.001;815;zm7_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/48;WP Zone 7 Raum 7 Raumfeuchte;9.007;816;zm7_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/49;WP Zone 7 Raum 7 Raumbetriebsart;7.001;817;zm7_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/50;WP Zone 7 Raum 7 Relais;7.001;818;zm7_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/51;WP Zone 7 Raum 8 Raumtemperatur;9.001;819;zm7_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/52;WP Zone 7 Raum 8 Raumsolltemperatur;9.001;820;zm7_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/53;WP Zone 7 Raum 8 Raumfeuchte;9.007;821;zm7_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/54;WP Zone 7 Raum 8 Raumbetriebsart;7.001;822;zm7_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/55;WP Zone 7 Raum 8 Relais;7.001;823;zm7_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/61;WP Zone 8 Heizen/Kühlen;7.001;829;zm8_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/3/62;WP Zone 8 Entfeuchtung;7.001;830;zm8_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/3/63;WP Zone 8 Raum 1 Raumtemperatur;9.001;831;zm8_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/64;WP Zone 8 Raum 1 Raumsolltemperatur;9.001;832;zm8_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/65;WP Zone 8 Raum 1 Raumfeuchte;9.007;833;zm8_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/66;WP Zone 8 Raum 1 Raumbetriebsart;7.001;834;zm8_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/67;WP Zone 8 Raum 1 Relais;7.001;835;zm8_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/68;WP Zone 8 Raum 2 Raumtemperatur;9.001;836;zm8_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/69;WP Zone 8 Raum 2 Raumsolltemperatur;9.001;837;zm8_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/70;WP Zone 8 Raum 2 Raumfeuchte;9.007;838;zm8_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/71;WP Zone 8 Raum 2 Raumbetriebsart;7.001;839;zm8_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/72;WP Zone 8 Raum 2 Relais;7.001;840;zm8_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/73;WP Zone 8 Raum 3 Raumtemperatur;9.001;841;zm8_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/74;WP Zone 8 Raum 3 Raumsolltemperatur;9.001;842;zm8_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/75;WP Zone 8 Raum 3 Raumfeuchte;9.007;843;zm8_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/76;WP Zone 8 Raum 3 Raumbetriebsart;7.001;844;zm8_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/77;WP Zone 8 Raum 3 Relais;7.001;845;zm8_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/78;WP Zone 8 Raum 4 Raumtemperatur;9.001;846;zm8_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/79;WP Zone 8 Raum 4 Raumsolltemperatur;9.001;847;zm8_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/80;WP Zone 8 Raum 4 Raumfeuchte;9.007;848;zm8_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/81;WP Zone 8 Raum 4 Raumbetriebsart;7.001;849;zm8_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/82;WP Zone 8 Raum 4 Relais;7.001;850;zm8_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/83;WP Zone 8 Raum 5 Raumtemperatur;9.001;851;zm8_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/84;WP Zone 8 Raum 5 Raumsolltemperatur;9.001;852;zm8_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/85;WP Zone 8 Raum 5 Raumfeuchte;9.007;853;zm8_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/86;WP Zone 8 Raum 5 Raumbetriebsart;7.001;854;zm8_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/87;WP Zone 8 Raum 5 Relais;7.001;855;zm8_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/88;WP Zone 8 Raum 6 Raumtemperatur;9.001;856;zm8_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/89;WP Zone 8 Raum 6 Raumsolltemperatur;9.001;857;zm8_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/90;WP Zone 8 Raum 6 Raumfeuchte;9.007;858;zm8_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/91;WP Zone 8 Raum 6 Raumbetriebsart;7.001;859;zm8_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/92;WP Zone 8 Raum 6 Relais;7.001;860;zm8_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/93;WP Zone 8 Raum 7 Raumtemperatur;9.001;861;zm8_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/94;WP Zone 8 Raum 7 Raumsolltemperatur;9.001;862;zm8_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/95;WP Zone 8 Raum 7 Raumfeuchte;9.007;863;zm8_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/96;WP Zone 8 Raum 7 Raumbetriebsart;7.001;864;zm8_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/97;WP Zone 8 Raum 7 Relais;7.001;865;zm8_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/98;WP Zone 8 Raum 8 Raumtemperatur;9.001;866;zm8_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/99;WP Zone 8 Raum 8 Raumsolltemperatur;9.001;867;zm8_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/100;WP Zone 8 Raum 8 Raumfeuchte;9.007;868;zm8_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/101;WP Zone 8 Raum 8 Raumbetriebsart;7.001;869;zm8_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/102;WP Zone 8 Raum 8 Relais;7.001;870;zm8_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/108;WP Zone 9 Heizen/Kühlen;7.001;876;zm9_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/3/109;WP Zone 9 Entfeuchtung;7.001;877;zm9_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/3/110;WP Zone 9 Raum 1 Raumtemperatur;9.001;878;zm9_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/111;WP Zone 9 Raum 1 Raumsolltemperatur;9.001;879;zm9_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/112;WP Zone 9 Raum 1 Raumfeuchte;9.007;880;zm9_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/113;WP Zone 9 Raum 1 Raumbetriebsart;7.001;881;zm9_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/114;WP Zone 9 Raum 1 Relais;7.001;882;zm9_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/115;WP Zone 9 Raum 2 Raumtemperatur;9.001;883;zm9_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/116;WP Zone 9 Raum 2 Raumsolltemperatur;9.001;884;zm9_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/117;WP Zone 9 Raum 2 Raumfeuchte;9.007;885;zm9_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/118;WP Zone 9 Raum 2 Raumbetriebsart;7.001;886;zm9_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/119;WP Zone 9 Raum 2 Relais;7.001;887;zm9_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/120;WP Zone 9 Raum 3 Raumtemperatur;9.001;888;zm9_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/121;WP Zone 9 Raum 3 Raumsolltemperatur;9.001;889;zm9_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/122;WP Zone 9 Raum 3 Raumfeuchte;9.007;890;zm9_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/123;WP Zone 9 Raum 3 Raumbetriebsart;7.001;891;zm9_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/124;WP Zone 9 Raum 3 Relais;7.001;892;zm9_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/125;WP Zone 9 Raum 4 Raumtemperatur;9.001;893;zm9_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/126;WP Zone 9 Raum 4 Raumsolltemperatur;9.001;894;zm9_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/127;WP Zone 9 Raum 4 Raumfeuchte;9.007;895;zm9_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/128;WP Zone 9 Raum 4 Raumbetriebsart;7.001;896;zm9_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/129;WP Zone 9 Raum 4 Relais;7.001;897;zm9_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/130;WP Zone 9 Raum 5 Raumtemperatur;9.001;898;zm9_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/131;WP Zone 9 Raum 5 Raumsolltemperatur;9.001;899;zm9_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/132;WP Zone 9 Raum 5 Raumfeuchte;9.007;900;zm9_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/133;WP Zone 9 Raum 5 Raumbetriebsart;7.001;901;zm9_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/134;WP Zone 9 Raum 5 Relais;7.001;902;zm9_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/135;WP Zone 9 Raum 6 Raumtemperatur;9.001;903;zm9_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/136;WP Zone 9 Raum 6 Raumsolltemperatur;9.001;904;zm9_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/137;WP Zone 9 Raum 6 Raumfeuchte;9.007;905;zm9_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/138;WP Zone 9 Raum 6 Raumbetriebsart;7.001;906;zm9_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/139;WP Zone 9 Raum 6 Relais;7.001;907;zm9_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/140;WP Zone 9 Raum 7 Raumtemperatur;9.001;908;zm9_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/141;WP Zone 9 Raum 7 Raumsolltemperatur;9.001;909;zm9_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/142;WP Zone 9 Raum 7 Raumfeuchte;9.007;910;zm9_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/143;WP Zone 9 Raum 7 Raumbetriebsart;7.001;911;zm9_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/144;WP Zone 9 Raum 7 Relais;7.001;912;zm9_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/145;WP Zone 9 Raum 8 Raumtemperatur;9.001;913;zm9_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/146;WP Zone 9 Raum 8 Raumsolltemperatur;9.001;914;zm9_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/147;WP Zone 9 Raum 8 Raumfeuchte;9.007;915;zm9_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/148;WP Zone 9 Raum 8 Raumbetriebsart;7.001;916;zm9_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/149;WP Zone 9 Raum 8 Relais;7.001;917;zm9_room8_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/155;WP Zone 10 Heizen/Kühlen;7.001;923;zm10_mode_heat_cool;lesen
+Wärmepumpe;Zonenmodule;8/3/156;WP Zone 10 Entfeuchtung;7.001;924;zm10_dehumidification;lesen
+Wärmepumpe;Zonenmodule;8/3/157;WP Zone 10 Raum 1 Raumtemperatur;9.001;925;zm10_room1_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/158;WP Zone 10 Raum 1 Raumsolltemperatur;9.001;926;zm10_room1_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/159;WP Zone 10 Raum 1 Raumfeuchte;9.007;927;zm10_room1_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/160;WP Zone 10 Raum 1 Raumbetriebsart;7.001;928;zm10_room1_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/161;WP Zone 10 Raum 1 Relais;7.001;929;zm10_room1_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/162;WP Zone 10 Raum 2 Raumtemperatur;9.001;930;zm10_room2_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/163;WP Zone 10 Raum 2 Raumsolltemperatur;9.001;931;zm10_room2_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/164;WP Zone 10 Raum 2 Raumfeuchte;9.007;932;zm10_room2_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/165;WP Zone 10 Raum 2 Raumbetriebsart;7.001;933;zm10_room2_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/166;WP Zone 10 Raum 2 Relais;7.001;934;zm10_room2_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/167;WP Zone 10 Raum 3 Raumtemperatur;9.001;935;zm10_room3_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/168;WP Zone 10 Raum 3 Raumsolltemperatur;9.001;936;zm10_room3_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/169;WP Zone 10 Raum 3 Raumfeuchte;9.007;937;zm10_room3_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/170;WP Zone 10 Raum 3 Raumbetriebsart;7.001;938;zm10_room3_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/171;WP Zone 10 Raum 3 Relais;7.001;939;zm10_room3_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/172;WP Zone 10 Raum 4 Raumtemperatur;9.001;940;zm10_room4_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/173;WP Zone 10 Raum 4 Raumsolltemperatur;9.001;941;zm10_room4_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/174;WP Zone 10 Raum 4 Raumfeuchte;9.007;942;zm10_room4_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/175;WP Zone 10 Raum 4 Raumbetriebsart;7.001;943;zm10_room4_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/176;WP Zone 10 Raum 4 Relais;7.001;944;zm10_room4_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/177;WP Zone 10 Raum 5 Raumtemperatur;9.001;945;zm10_room5_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/178;WP Zone 10 Raum 5 Raumsolltemperatur;9.001;946;zm10_room5_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/179;WP Zone 10 Raum 5 Raumfeuchte;9.007;947;zm10_room5_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/180;WP Zone 10 Raum 5 Raumbetriebsart;7.001;948;zm10_room5_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/181;WP Zone 10 Raum 5 Relais;7.001;949;zm10_room5_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/182;WP Zone 10 Raum 6 Raumtemperatur;9.001;950;zm10_room6_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/183;WP Zone 10 Raum 6 Raumsolltemperatur;9.001;951;zm10_room6_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/184;WP Zone 10 Raum 6 Raumfeuchte;9.007;952;zm10_room6_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/185;WP Zone 10 Raum 6 Raumbetriebsart;7.001;953;zm10_room6_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/186;WP Zone 10 Raum 6 Relais;7.001;954;zm10_room6_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/187;WP Zone 10 Raum 7 Raumtemperatur;9.001;955;zm10_room7_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/188;WP Zone 10 Raum 7 Raumsolltemperatur;9.001;956;zm10_room7_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/189;WP Zone 10 Raum 7 Raumfeuchte;9.007;957;zm10_room7_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/190;WP Zone 10 Raum 7 Raumbetriebsart;7.001;958;zm10_room7_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/191;WP Zone 10 Raum 7 Relais;7.001;959;zm10_room7_relay;lesen
+Wärmepumpe;Zonenmodule;8/3/192;WP Zone 10 Raum 8 Raumtemperatur;9.001;960;zm10_room8_temp;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/193;WP Zone 10 Raum 8 Raumsolltemperatur;9.001;961;zm10_room8_setpoint;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/194;WP Zone 10 Raum 8 Raumfeuchte;9.007;962;zm10_room8_humidity;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/195;WP Zone 10 Raum 8 Raumbetriebsart;7.001;963;zm10_room8_mode;lesen/schreiben
+Wärmepumpe;Zonenmodule;8/3/196;WP Zone 10 Raum 8 Relais;7.001;964;zm10_room8_relay;lesen
+Wärmepumpe;Booster;8/3/202;WP Booster Störung;7.001;970;booster_fault;lesen
+Wärmepumpe;Booster;8/3/203;WP Booster Verriegelung;7.001;971;booster_interlock;lesen
+Wärmepumpe;Booster;8/3/207;WP Booster A Wärmequelleneintritt;9.001;975;booster_a_source_inlet_temp;lesen
+Wärmepumpe;Booster;8/3/208;WP Booster A Wärmequellenaustritt;9.001;976;booster_a_source_outlet_temp;lesen
+Wärmepumpe;Booster;8/3/209;WP Booster A Speichertemperatur;9.001;977;booster_a_storage_temp;lesen
+Wärmepumpe;Booster;8/3/210;WP Booster A Vorlauftemperatur;9.001;978;booster_a_flow_temp;lesen
+Wärmepumpe;Booster;8/3/211;WP Booster A Rücklauftemperatur;9.001;979;booster_a_return_temp;lesen
+Wärmepumpe;Booster;8/3/212;WP Booster A Wärmequellenpumpe;5.001;980;booster_a_source_pump;lesen
+Wärmepumpe;Booster;8/3/213;WP Booster A Ladepumpe;5.001;981;booster_a_charging_pump;lesen
+Wärmepumpe;Booster;8/3/214;WP Booster A Verdichter;7.001;982;booster_a_compressor;lesen
+Wärmepumpe;Booster;8/3/215;WP Booster B Verdichter;7.001;983;booster_b_compressor;lesen
+Wärmepumpe;Booster;8/3/217;WP Booster B Wärmequelleneintritt;9.001;985;booster_b_source_inlet_temp;lesen
+Wärmepumpe;Booster;8/3/218;WP Booster B Wärmequellenaustritt;9.001;986;booster_b_source_outlet_temp;lesen
+Wärmepumpe;Booster;8/3/219;WP Booster B Speichertemperatur;9.001;987;booster_b_storage_temp;lesen
+Wärmepumpe;Booster;8/3/220;WP Booster B Vorlauftemperatur;9.001;988;booster_b_flow_temp;lesen
+Wärmepumpe;Booster;8/3/221;WP Booster B Rücklauftemperatur;9.001;989;booster_b_return_temp;lesen
+Wärmepumpe;Booster;8/3/222;WP Booster B Wärmequellenpumpe;5.001;990;booster_b_source_pump;lesen
+Wärmepumpe;Booster;8/3/223;WP Booster B Ladepumpe;5.001;991;booster_b_charging_pump;lesen
+Wärmepumpe;PV und Batterie;8/3/224;WP Hausverbrauch;9.024;992;house_consumption;lesen/schreiben
+Wärmepumpe;PV und Batterie;8/3/225;WP Batterie Entladung;9.024;993;battery_discharge;lesen/schreiben
+Wärmepumpe;PV und Batterie;8/3/226;WP Batterie SOC;5.001;994;battery_soc;lesen/schreiben
+Wärmepumpe;PV und Batterie;8/3/227;WP PV Überschuss;9.024;995;pv_surplus;lesen/schreiben
+Wärmepumpe;PV und Batterie;8/3/228;WP PV Produktion;9.024;996;pv_production;lesen/schreiben
+Wärmepumpe;PV und Batterie;8/3/229;WP Elektrische Leistungsaufnahme Wärmepumpe;9.024;997;power_consumption_hp;lesen
+Wärmepumpe;PV und Batterie;8/3/230;WP Thermische Leistung (Durchflusssensor);9.024;998;thermal_power_flow_sensor;lesen
+Wärmepumpe;PV und Batterie;8/3/231;WP Gesamte Wärmemenge (Vortex);14.031;999;total_heat_energy;lesen

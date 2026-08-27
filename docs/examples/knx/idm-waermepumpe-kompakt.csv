@@ -1,0 +1,44 @@
+Hauptgruppe;Mittelgruppe;Gruppenadresse;Name;DPT;IDM-Objekt;Register;Richtung
+Wärmepumpe;System;8/0/1;WP Außentemperatur;9.001;1;outdoor_temp;lesen
+Wärmepumpe;System;8/0/2;WP Gemittelte Außentemperatur;9.001;2;outdoor_temp_avg;lesen
+Wärmepumpe;System;8/0/3;WP Interne Meldung;7.001;3;internal_message;lesen
+Wärmepumpe;System;8/0/4;WP Systembetriebsart;5.010;4;system_mode;lesen/schreiben
+Wärmepumpe;System;8/0/6;WP Wärmespeichertemperatur;9.001;6;storage_temp;lesen
+Wärmepumpe;Warmwasser;8/0/8;WP Trinkwassererwärmer unten;9.001;8;dhw_temp_bottom;lesen
+Wärmepumpe;Warmwasser;8/0/9;WP Trinkwassererwärmer oben;9.001;9;dhw_temp_top;lesen
+Wärmepumpe;Warmwasser;8/0/20;WP Warmwasser Zapftemperatur;9.001;20;dhw_tapping_temp;lesen
+Wärmepumpe;Warmwasser;8/0/21;WP Warmwasser Sollwert;9.001;21;dhw_setpoint;lesen/schreiben
+Wärmepumpe;Wärmepumpe;8/0/30;WP Wärmepumpen Vorlauftemperatur;9.001;30;hp_flow_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/31;WP Wärmepumpen Rücklauftemperatur;9.001;31;hp_return_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/33;WP Wärmequelleneintritt;9.001;33;heat_source_inlet_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/34;WP Wärmequellenaustritt;9.001;34;heat_source_outlet_temp;lesen
+Wärmepumpe;Wärmepumpe;8/0/50;WP Wärmepumpen Betriebsart;7.001;50;hp_operating_mode;lesen
+Wärmepumpe;Wärmepumpe;8/0/51;WP Heizanforderung;7.001;51;heating_demand;lesen
+Wärmepumpe;Wärmepumpe;8/0/52;WP Kühlanforderung;7.001;52;cooling_demand;lesen
+Wärmepumpe;Wärmepumpe;8/0/53;WP Warmwasseranforderung;7.001;53;dhw_demand;lesen
+Wärmepumpe;Wärmepumpe;8/0/60;WP Verdichter 1;7.001;60;compressor_status_1;lesen
+Wärmepumpe;Heizkreise;8/0/200;WP Vorlauftemperatur HK A;9.001;200;hc_a_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/201;WP Vorlauftemperatur HK B;9.001;201;hc_b_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/207;WP Raumtemperatur HK A;9.001;207;hc_a_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/208;WP Raumtemperatur HK B;9.001;208;hc_b_room_temp;lesen
+Wärmepumpe;Heizkreise;8/0/214;WP Sollvorlauftemperatur HK A;9.001;214;hc_a_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/215;WP Sollvorlauftemperatur HK B;9.001;215;hc_b_setpoint_flow_temp;lesen
+Wärmepumpe;Heizkreise;8/0/222;WP Betriebsart HK A;7.001;222;hc_a_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/223;WP Betriebsart HK B;7.001;223;hc_b_mode;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/229;WP Raumsoll Heizen Normal HK A;9.001;229;hc_a_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/0/230;WP Raumsoll Heizen Normal HK B;9.001;230;hc_b_room_setpoint_heat_normal;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/36;WP Aktive Betriebsart HK A;7.001;292;hc_a_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/37;WP Aktive Betriebsart HK B;7.001;293;hc_b_active_mode;lesen
+Wärmepumpe;Heizkreise;8/1/94;WP Externe Raumtemperatur HK A;9.001;350;hc_a_ext_room_temp;lesen/schreiben
+Wärmepumpe;Heizkreise;8/1/95;WP Externe Raumtemperatur HK B;9.001;351;hc_b_ext_room_temp;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/114;WP Externe Außentemperatur (GLT);9.001;370;ext_outdoor_temp;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/115;WP Externe Feuchte (GLT);9.007;371;ext_humidity;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/124;WP Externe Heizanforderung;1.001;380;demand_heating;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/125;WP Externe Kühlanforderung;1.001;381;demand_cooling;lesen/schreiben
+Wärmepumpe;Gebäudeleittechnik;8/1/126;WP Externe WW-Ladeanforderung;1.001;382;demand_dhw_charging;lesen/schreiben
+Wärmepumpe;Wärmemengen;8/1/144;WP Wärmemenge Heizen;14.031;400;energy_heating;lesen
+Wärmepumpe;Wärmemengen;8/1/145;WP Wärmemenge Kühlen;14.031;401;energy_cooling;lesen
+Wärmepumpe;Wärmemengen;8/1/146;WP Wärmemenge Warmwasser;14.031;402;energy_dhw;lesen
+Wärmepumpe;Wärmemengen;8/1/164;WP Thermische Momentanleistung;9.024;420;current_power;lesen
+Wärmepumpe;System;8/1/243;WP Fehlerquittierung;7.001;499;error_acknowledge;lesen/schreiben
+Wärmepumpe;PV und Batterie;8/3/229;WP Elektrische Leistungsaufnahme Wärmepumpe;9.024;997;power_consumption_hp;lesen
