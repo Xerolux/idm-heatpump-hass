@@ -177,7 +177,7 @@
           },
           "knx_bridge_section": {
             "name": "KNX-Bridge (experimentell)",
-            "description": "Experimentell: bislang nur durch Tests abgesichert, noch nie an einem echten KNX-Bus erprobt. Rückmeldungen sind willkommen. Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
+            "description": "Experimentell: Das automatisierte Verhalten ist getestet; Einrichtung und Neuladen wurden mit einer aktiven KNX-Integration in Home Assistant im reinen Empfangsmodus geprüft. Echte Gruppenadress-Telegramme und die Buslast sind noch nicht verifiziert. Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
             "data": {
               "knx_bridge": "KNX-Bridge aktivieren",
               "knx_send": "Werte auf KNX senden",
@@ -453,7 +453,7 @@
           },
           "knx_bridge_section": {
             "name": "KNX-Bridge (experimentell)",
-            "description": "Experimentell: bislang nur durch Tests abgesichert, noch nie an einem echten KNX-Bus erprobt. Rückmeldungen sind willkommen. Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
+            "description": "Experimentell: Das automatisierte Verhalten ist getestet; Einrichtung und Neuladen wurden mit einer aktiven KNX-Integration in Home Assistant im reinen Empfangsmodus geprüft. Echte Gruppenadress-Telegramme und die Buslast sind noch nicht verifiziert. Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
             "data": {
               "knx_bridge": "KNX-Bridge aktivieren",
               "knx_send": "Werte auf KNX senden",

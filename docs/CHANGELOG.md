@@ -13,6 +13,37 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0-rc.5] - 2026-08-27
+
+Release candidate 5 improves incoming commands for the experimental KNX
+bridge without weakening the heat pump's write protection.
+
+### Changed
+
+- Rapid KNX commands for the same register are now coalesced for a one-second
+  quiet period, so a setpoint sequence such as `22.0 -> 22.5 -> 23.0` consumes
+  one controller write and applies only `23.0`.
+- When the integration's general write cooldown or the API's EEPROM guard is
+  still active, the newest KNX value remains queued and is retried after the
+  reported wait. A later telegram replaces the pending value instead of being
+  rejected and lost. Invalid values, unsupported registers and communication
+  failures are still reported and are not retried indefinitely.
+- Incoming values that already match the coordinator state are ignored, and
+  unloading the integration cancels every pending delayed KNX write.
+- The KNX option text and documentation now record the live evidence precisely:
+  setup and reload passed with an active Home Assistant KNX interface in safe
+  receive-only mode. Physical group-address telegram interoperability and bus
+  load remain unverified because no IDM group addresses were imported into ETS.
+
+### Safety
+
+- The official EEPROM-sensitive register classification is unchanged.
+- The conservative default EEPROM interval remains 60 seconds and is still
+  configurable in the integration options. The improved queue removes the
+  need to shorten the default merely to avoid losing a second setpoint.
+- The exact runtime pins remain `idm-heatpump-api[web]==2.0.0`,
+  `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.1`.
+
 ## [0.16.0-rc.4] - 2026-08-27
 
 Release candidate 4 is a quality-scale candidate: it makes the Home Assistant

@@ -48,9 +48,10 @@ Tunneling, Routing und **KNX Secure** kommen von dort.
 | **Voraussetzung** | Die KNX-Integration von Home Assistant, eingerichtet und verbunden |
 
 > [!WARNING]
-> **Experimentell.** Durch Unit-Tests abgesichert, aber noch nie an einem echten
-> KNX-Bus erprobt. Ausprobieren und berichten — Rückmeldungen aus einer Anlage mit
-> ETS-Zugang machen daraus eine unterstützte Funktion.
+> **Experimentell.** Das automatisierte Verhalten ist durch Tests abgesichert;
+> Einrichtung und Neuladen wurden mit einer aktiven KNX-Integration in Home
+> Assistant im reinen Empfangsmodus geprüft. Echte Gruppenadress-Telegramme und
+> die Buslast benötigen weiterhin eine Anlage mit ETS-Zugang.
 
 Aktivierung unter **Einstellungen → Geräte & Dienste → IDM Heatpump →
 Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-knx]**.

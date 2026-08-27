@@ -48,9 +48,10 @@ have, so tunnelling, routing and **KNX Secure** all come from there.
 | **Requirement** | The Home Assistant KNX integration, set up and connected |
 
 > [!WARNING]
-> **Experimental.** Covered by unit tests, but never yet exercised against a real
-> KNX bus. Try it and report what you see — feedback from an installation with ETS
-> access is what turns it into a supported feature.
+> **Experimental.** Automated behavior is covered by tests, and setup/reload was
+> verified with a live Home Assistant KNX interface in receive-only mode. Physical
+> group-address telegram interoperability and bus load still need an ETS-equipped
+> installation before this becomes a supported feature.
 
 Enable it under **Settings → Devices & Services → IDM Heatpump → Configure →
 KNX bridge**. Full details: **[KNX Bridge documentation][wiki-knx]**.

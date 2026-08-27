@@ -177,7 +177,7 @@
           },
           "knx_bridge_section": {
             "name": "KNX bridge (experimental)",
-            "description": "Experimental: verified by tests only, never yet against a real KNX bus. Please report what you see. Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
+            "description": "Experimental: automated behavior is tested, and setup/reload was verified with a live Home Assistant KNX interface in receive-only mode. Physical group-address telegram interoperability and bus load have not been verified. Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
             "data": {
               "knx_bridge": "Enable KNX bridge",
               "knx_send": "Send values to KNX",
@@ -453,7 +453,7 @@
           },
           "knx_bridge_section": {
             "name": "KNX bridge (experimental)",
-            "description": "Experimental: verified by tests only, never yet against a real KNX bus. Please report what you see. Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
+            "description": "Experimental: automated behavior is tested, and setup/reload was verified with a live Home Assistant KNX interface in receive-only mode. Physical group-address telegram interoperability and bus load have not been verified. Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
             "data": {
               "knx_bridge": "Enable KNX bridge",
               "knx_send": "Send values to KNX",
