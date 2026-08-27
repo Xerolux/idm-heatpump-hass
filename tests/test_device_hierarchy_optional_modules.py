@@ -75,7 +75,7 @@ def test_auxiliary_heat_scope_covers_modbus_and_web_keys() -> None:
         assert scope.kind == "auxiliary_heat"
 
 
-def test_optional_module_devices_are_linked_to_navigator() -> None:
+def test_optional_module_devices_are_children_of_the_navigator() -> None:
     coordinator = _coordinator()
 
     solar = build_subdevice_info(coordinator, "solar_collector_temp")
@@ -88,29 +88,29 @@ def test_optional_module_devices_are_linked_to_navigator() -> None:
     assert solar is not None
     assert solar["identifiers"] == {(DOMAIN, "entry_module_solar")}
     assert solar["name"] == "Solaranlage"
-    assert solar["via_device_id"] == "main-device-id"
+    assert solar["parent_device_id"] == "main-device-id"
 
     assert isc is not None
     assert isc["identifiers"] == {(DOMAIN, "entry_module_isc")}
-    assert isc["via_device_id"] == "main-device-id"
+    assert isc["parent_device_id"] == "main-device-id"
 
     assert cascade is not None
     assert cascade["identifiers"] == {(DOMAIN, "entry_module_cascade")}
-    assert cascade["via_device_id"] == "main-device-id"
+    assert cascade["parent_device_id"] == "main-device-id"
 
     assert auxiliary is not None
     assert auxiliary["identifiers"] == {(DOMAIN, "entry_module_auxiliary_heat")}
-    assert auxiliary["via_device_id"] == "main-device-id"
+    assert auxiliary["parent_device_id"] == "main-device-id"
 
     assert dhw is not None
     assert dhw["identifiers"] == {(DOMAIN, "entry_module_domestic_hot_water")}
     assert dhw["name"] == "Warmwasser"
-    assert dhw["via_device_id"] == "main-device-id"
+    assert dhw["parent_device_id"] == "main-device-id"
 
     assert diagnostics is not None
     assert diagnostics["identifiers"] == {(DOMAIN, "entry_module_diagnostics")}
     assert diagnostics["name"] == "Diagnose"
-    assert diagnostics["via_device_id"] == "main-device-id"
+    assert diagnostics["parent_device_id"] == "main-device-id"
 
 
 def test_expected_modules_are_created_only_when_sources_exist() -> None:

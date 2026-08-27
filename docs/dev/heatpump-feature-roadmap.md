@@ -130,6 +130,24 @@ in planning or in diagnostics.
   once the interface is stably documented for custom integrations.
 - [ ] Plan the migration of existing users separately, should a central
   shared-connection model later be stably recommended.
+- [x] Adopt child devices for the device hierarchy. Home Assistant 2026.9
+  introduces `ChildDeviceInfo` with `parent_device_id` and
+  `async_get_or_create_child()`, and draws the line explicitly: `via_device_id`
+  describes *connectivity* — one device reached through another — while a child
+  device describes *composition*, the logical parts of a single product. Since
+  `0.16.0-rc.2` the heating circuits, the optional modules and the rooms are
+  child devices; the zone module stays an ordinary `via_device_id`-linked device
+  because it is separate hardware wired to the controller, and because a child
+  device can't be the parent of another child device — the rooms below it need a
+  real device as their parent.
+- [x] Keep 2026.8 working while doing so. `device_hierarchy.child_devices_supported()`
+  probes the API and falls back to the previous `via_device_id` links, so the
+  declared minimum stays 2026.8.1 rather than jumping to a Home Assistant
+  release that is not out yet. The fallback is not a dead end: Home Assistant
+  converts a device whose identifiers already exist into a child device and
+  keeps its device ID, so the switch costs no entity, area or automation. This
+  was verified end to end against a real 2026.9 device registry, upgrading from
+  a `via_device_id` hierarchy with every device ID preserved.
 
 ## Safety rules for all new write features
 
@@ -183,3 +201,6 @@ sentinel or firmware-dependent special values.
    validate intentional connection loss/reconnect on a controlled system.
 3. Maintain the existing Modbus issue for the open central Home Assistant shared
    connection and for a migration-safe provider implementation.
+4. Drop the `via_device_id` fallback in `device_hierarchy.py` once the declared
+   minimum reaches Home Assistant 2026.9. Custom integrations keep `via_device_id`
+   until Core 2027.8, so there is no deadline pressure.

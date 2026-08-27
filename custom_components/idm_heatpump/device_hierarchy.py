@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Literal
+from typing import TYPE_CHECKING, Any, Literal, cast
 
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import device_registry as dr
@@ -112,6 +112,38 @@ _MODULE_DEVICE_METADATA: dict[DeviceScopeKind, tuple[str, str, str]] = {
     "diagnostics": ("diagnostics", "Diagnose", "Diagnose"),
 }
 
+# Every sub-device except the zone module is a *logical part* of the controller
+# it hangs under, not a device reached through it. Home Assistant 2026.9 draws
+# exactly that line: ``via_device_id`` describes connectivity, a child device
+# describes composition. A zone module is separate hardware wired to the
+# controller, so it stays an ordinary device linked by ``via_device_id``; the
+# rooms below it are logical parts of that module and become its children.
+_CHILD_DEVICE_KINDS: frozenset[DeviceScopeKind] = frozenset(
+    {
+        "heating_circuit",
+        "zone_room",
+        "solar",
+        "isc",
+        "cascade",
+        "auxiliary_heat",
+        "domestic_hot_water",
+        "diagnostics",
+    }
+)
+
+
+def child_devices_supported() -> bool:
+    """Return whether this Home Assistant provides the child-device API.
+
+    Child devices arrived in Home Assistant 2026.9. The integration still
+    supports 2026.8, so the hierarchy falls back to ``via_device_id`` links
+    there. The fallback is not a dead end: when the same installation later
+    runs 2026.9, ``async_get_or_create_child`` converts a device whose
+    identifiers already exist into a child device and keeps its device ID, so
+    entities, areas and automations survive the switch untouched.
+    """
+    return hasattr(dr, "ChildDeviceInfo")
+
 
 def resolve_device_scope(entity_key: str) -> DeviceScope | None:
     """Return the subdevice scope for a register or web-value key."""
@@ -146,17 +178,20 @@ def main_device_identifier(coordinator: IdmCoordinator) -> tuple[str, str]:
 def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
     """Ensure the main device and every expected sub-device exist up front.
 
-    Sub-device ``DeviceInfo`` links to its parent via ``via_device_id``, which
-    needs the parent's actual registry-assigned device ID (a plain identifier
-    tuple is no longer enough since Home Assistant 2026.8, where identifiers
-    are only unique per config entry). Platforms are forwarded in an
-    unspecified order, so the first entity added may be a sub-device (e.g. a
-    binary_sensor) whose parent has not been created yet. Pre-creating the
-    main device and every expected sub-device here — keyed by the same stable
-    identifiers ``build_subdevice_info`` uses — guarantees every parent lookup
-    resolves and caches the IDs on the coordinator so ``build_subdevice_info``
-    stays a cheap, registry-free lookup. Name/model/manufacturer are enriched
-    later when each device's first entity is added.
+    Both link kinds need the parent's actual registry-assigned device ID rather
+    than an identifier tuple: ``via_device_id`` since Home Assistant 2026.8,
+    where identifiers are only unique per config entry, and ``parent_device_id``
+    always. Platforms are forwarded in an unspecified order, so the first entity
+    added may be a sub-device (e.g. a binary_sensor) whose parent has not been
+    created yet. Pre-creating the main device and every expected sub-device
+    here — keyed by the same stable identifiers ``build_subdevice_info`` uses —
+    guarantees every parent lookup resolves and caches the IDs on the
+    coordinator so ``build_subdevice_info`` stays a cheap, registry-free lookup.
+    Names are enriched later when each device's first entity is added.
+
+    Creation order is not cosmetic. A child device can only be created once its
+    parent is registered, so the main device comes first, then the zone modules,
+    then everything that hangs below one of them.
     """
     entry = coordinator.config_entry
     if entry is None:
@@ -164,12 +199,54 @@ def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> N
     registry = dr.async_get(hass)
     device_ids: dict[tuple[str, str], str] = {}
 
-    for identifier in {main_device_identifier(coordinator), *expected_subdevice_identifiers(coordinator)}:
-        device = registry.async_get_or_create(
+    main_identifier = main_device_identifier(coordinator)
+    device_ids[main_identifier] = registry.async_get_or_create(
+        config_entry_id=entry.entry_id,
+        identifiers={main_identifier},
+    ).id
+
+    subdevices = expected_subdevices(coordinator)
+    # Resolved dynamically because Home Assistant 2026.8 has no such method and
+    # the integration still supports it; ``child_devices_supported`` gates the
+    # same capability for the entity-facing device info.
+    get_or_create_child = getattr(registry, "async_get_or_create_child", None)
+    use_child_devices = child_devices_supported() and get_or_create_child is not None
+
+    # Ordinary devices first — a zone module is the parent of its rooms.
+    for identifier, placement in sorted(subdevices.items()):
+        if use_child_devices and placement.is_child_device:
+            continue
+        device_ids[identifier] = registry.async_get_or_create(
             config_entry_id=entry.entry_id,
             identifiers={identifier},
-        )
-        device_ids[identifier] = device.id
+        ).id
+
+    if not use_child_devices:
+        coordinator._hierarchy_device_ids = device_ids
+        return
+
+    for identifier, placement in sorted(subdevices.items()):
+        if not placement.is_child_device:
+            continue
+        parent_identifier = placement.parent
+        parent_device_id = device_ids.get(parent_identifier)
+        if parent_device_id is None:
+            # The parent is missing from this round (a room whose zone module no
+            # longer has any register of its own, say). Skip rather than raise:
+            # ``build_subdevice_info`` then falls back to an unlinked ordinary
+            # device, and the next reload creates the child once the parent is
+            # back.
+            _LOGGER.debug(
+                "Skipping child device %s: parent %s was not created",
+                identifier,
+                parent_identifier,
+            )
+            continue
+        device_ids[identifier] = get_or_create_child(
+            config_entry_id=entry.entry_id,
+            identifiers={identifier},
+            parent_device_id=parent_device_id,
+        ).id
 
     coordinator._hierarchy_device_ids = device_ids
 
@@ -247,24 +324,60 @@ def optional_module_identifier(coordinator: IdmCoordinator, module: str) -> tupl
     return DOMAIN, f"{entry_id}_module_{module}"
 
 
-def _scope_identifiers(coordinator: IdmCoordinator, scope: DeviceScope) -> set[tuple[str, str]]:
-    """Return all device identifiers required by one entity scope."""
+@dataclass(frozen=True)
+class SubdevicePlacement:
+    """Where one subdevice belongs in the hierarchy."""
+
+    kind: DeviceScopeKind
+    parent: tuple[str, str]
+
+    @property
+    def is_child_device(self) -> bool:
+        """Return whether this subdevice is a logical part of its parent."""
+        return self.kind in _CHILD_DEVICE_KINDS
+
+
+def _scope_subdevices(
+    coordinator: IdmCoordinator, scope: DeviceScope
+) -> tuple[tuple[tuple[str, str], SubdevicePlacement], ...]:
+    """Return every device one entity scope requires, with its placement.
+
+    A room yields two entries, because the room cannot exist without its zone
+    module: the module first, then the room. Callers that create devices rely on
+    that order — a child device can only be created once its parent exists. The
+    scope's own device is always the last entry.
+    """
+    main = main_device_identifier(coordinator)
     if scope.kind == "heating_circuit":
-        return {heating_circuit_identifier(coordinator, scope.primary)}
+        placement = SubdevicePlacement(scope.kind, main)
+        return ((heating_circuit_identifier(coordinator, scope.primary), placement),)
     if scope.kind in _MODULE_DEVICE_METADATA:
-        return {optional_module_identifier(coordinator, scope.primary)}
+        placement = SubdevicePlacement(scope.kind, main)
+        return ((optional_module_identifier(coordinator, scope.primary), placement),)
 
     zone = int(scope.primary)
-    identifiers = {zone_module_identifier(coordinator, zone)}
+    module_identifier = zone_module_identifier(coordinator, zone)
+    module = (module_identifier, SubdevicePlacement("zone_module", main))
     if scope.kind == "zone_room" and scope.secondary is not None:
-        identifiers.add(zone_room_identifier(coordinator, zone, scope.secondary))
-    return identifiers
+        room_identifier = zone_room_identifier(coordinator, zone, scope.secondary)
+        return (module, (room_identifier, SubdevicePlacement(scope.kind, module_identifier)))
+    return (module,)
 
 
-def expected_subdevice_identifiers(coordinator: IdmCoordinator) -> set[tuple[str, str]]:
-    """Return subdevices justified by the current register and web-value set."""
+def _scope_identifiers(coordinator: IdmCoordinator, scope: DeviceScope) -> set[tuple[str, str]]:
+    """Return all device identifiers required by one entity scope."""
+    return {identifier for identifier, _placement in _scope_subdevices(coordinator, scope)}
+
+
+def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], SubdevicePlacement]:
+    """Map every justified subdevice identifier to its placement.
+
+    The placement decides how the device is registered: a child device for the
+    logical parts of a controller, an ordinary ``via_device_id``-linked device
+    for the zone modules.
+    """
     if coordinator.device_hierarchy_enabled is not True:
-        return set()
+        return {}
 
     entity_keys = {register.name for register in coordinator._registers}
     supplement = coordinator.web_supplement
@@ -276,11 +389,17 @@ def expected_subdevice_identifiers(coordinator: IdmCoordinator) -> set[tuple[str
         entity_keys.add("technician_codes")
     entity_keys.add("error_acknowledge")
 
-    identifiers: set[tuple[str, str]] = set()
-    for entity_key in entity_keys:
+    subdevices: dict[tuple[str, str], SubdevicePlacement] = {}
+    for entity_key in sorted(entity_keys):
         if scope := resolve_device_scope(entity_key):
-            identifiers.update(_scope_identifiers(coordinator, scope))
-    return identifiers
+            for identifier, placement in _scope_subdevices(coordinator, scope):
+                subdevices.setdefault(identifier, placement)
+    return subdevices
+
+
+def expected_subdevice_identifiers(coordinator: IdmCoordinator) -> set[tuple[str, str]]:
+    """Return subdevices justified by the current register and web-value set."""
+    return set(expected_subdevices(coordinator))
 
 
 def _is_hierarchy_identifier(entry_id: str, identifier: tuple[str, str]) -> bool:
@@ -292,6 +411,36 @@ def _is_hierarchy_identifier(entry_id: str, identifier: tuple[str, str]) -> bool
             f"{entry_id}_zone_module_",
             f"{entry_id}_module_",
         )
+    )
+
+
+def _hierarchy_devices_for_entry(registry: dr.DeviceRegistry, entry_id: str) -> list[Any]:
+    """Return every device of this entry that can hold a hierarchy identifier.
+
+    ``async_entries_for_config_entry`` returns ordinary devices only, so the
+    child devices — which is what the heating circuits, modules and rooms are on
+    Home Assistant 2026.9 and newer — have to be collected separately.
+    """
+    devices: list[Any] = list(dr.async_entries_for_config_entry(registry, entry_id))
+    child_entries = getattr(dr, "async_child_entries_for_config_entry", None)
+    if child_entries is not None:
+        devices.extend(child_entries(registry, entry_id))
+    return devices
+
+
+def _detach_hierarchy_device(registry: dr.DeviceRegistry, device: Any, entry_id: str) -> None:
+    """Drop one stale hierarchy device from this config entry.
+
+    A child device belongs to its parent's config entry and has no membership of
+    its own to remove, so it is deleted outright. Removing an ordinary device
+    from its only config entry deletes it as well.
+    """
+    if getattr(device, "parent_device_id", None) is not None:
+        registry.async_remove_device(device.id)
+        return
+    registry.async_update_device(
+        device.id,
+        remove_config_entry_id=entry_id,
     )
 
 
@@ -307,28 +456,49 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
 
     entity_registry = er.async_get(hass)
 
-    for device in dr.async_entries_for_config_entry(registry, entry_id):
+    devices = _hierarchy_devices_for_entry(registry, entry_id)
+
+    # Deleting an ordinary device cascades to its child devices, so a zone module
+    # must not be collected while a room below it is still in use. Count the
+    # children this config entry has per parent up front and decrement as they
+    # are removed, rather than asking the registry again mid-pass: the count then
+    # reflects this pass's own removals, so a module whose rooms all disappear in
+    # the same run is still collected in that run.
+    surviving_children: dict[str, int] = {}
+    for device in devices:
+        parent_device_id = getattr(device, "parent_device_id", None)
+        if parent_device_id is not None:
+            surviving_children[parent_device_id] = surviving_children.get(parent_device_id, 0) + 1
+
+    # Children before parents, so the counts above are already settled when a
+    # parent is considered.
+    devices.sort(key=lambda device: getattr(device, "parent_device_id", None) is None)
+
+    for device in devices:
         hierarchy_identifiers = {
             identifier for identifier in device.identifiers if _is_hierarchy_identifier(entry_id, identifier)
         }
         if not hierarchy_identifiers:
             continue
-        if hierarchy_identifiers.isdisjoint(expected):
-            registry.async_update_device(
-                device.id,
-                remove_config_entry_id=entry_id,
-            )
+
+        parent_device_id = getattr(device, "parent_device_id", None)
+        if parent_device_id is None and surviving_children.get(device.id):
+            # A module that still carries rooms stays, even without an entity of
+            # its own: the rooms below it are the reason it exists.
             continue
-        # Sub-devices are pre-created without a name so ``via_device`` links
-        # resolve regardless of platform order; the name arrives with the first
-        # entity. One that never receives an entity — because its registers are
-        # filtered out or its feature was turned off — would otherwise sit in
-        # the device list forever as an unnamed, empty entry.
-        if not er.async_entries_for_device(entity_registry, device.id, include_disabled_entities=True):
-            registry.async_update_device(
-                device.id,
-                remove_config_entry_id=entry_id,
-            )
+
+        stale = hierarchy_identifiers.isdisjoint(expected)
+        # Sub-devices are pre-created without a name so the parent links resolve
+        # regardless of platform order; the name arrives with the first entity.
+        # One that never receives an entity — because its registers are filtered
+        # out or its feature was turned off — would otherwise sit in the device
+        # list forever as an unnamed, empty entry.
+        if not stale and er.async_entries_for_device(entity_registry, device.id, include_disabled_entities=True):
+            continue
+
+        _detach_hierarchy_device(registry, device, entry_id)
+        if parent_device_id is not None and parent_device_id in surviving_children:
+            surviving_children[parent_device_id] -= 1
 
 
 def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
@@ -409,8 +579,32 @@ def _via_device_id(coordinator: IdmCoordinator, parent_identifier: tuple[str, st
     return coordinator._hierarchy_device_ids.get(parent_identifier)
 
 
+def _subdevice_labels(coordinator: IdmCoordinator, scope: DeviceScope) -> tuple[str, str] | None:
+    """Return the display name and model for one subdevice scope."""
+    if scope.kind == "heating_circuit":
+        circuit = scope.primary.upper()
+        return f"Heizkreis {circuit}", "Heizkreis"
+    if scope.kind in _MODULE_DEVICE_METADATA:
+        _module, name, model = _MODULE_DEVICE_METADATA[scope.kind]
+        return name, model
+
+    zone = int(scope.primary)
+    if scope.kind == "zone_module":
+        return f"Zonenmodul {zone}", "Zonenmodul"
+    if scope.secondary is None:
+        return None
+    return f"Zonenmodul {zone} Raum {scope.secondary}", "Raumregelung"
+
+
 def build_subdevice_info(coordinator: IdmCoordinator, entity_key: str) -> DeviceInfo | None:
-    """Build subdevice information when hierarchy mode is enabled."""
+    """Build subdevice information when hierarchy mode is enabled.
+
+    Returns a ``ChildDeviceInfo``-shaped mapping for the logical parts of a
+    controller when Home Assistant supports child devices, and the classic
+    ``via_device_id`` ``DeviceInfo`` otherwise. Both are typed as ``DeviceInfo``
+    here because that is what every caller assigns to ``_attr_device_info``,
+    which Home Assistant itself types as ``DeviceInfo | ChildDeviceInfo``.
+    """
     if coordinator.device_hierarchy_enabled is not True:
         return None
 
@@ -418,52 +612,33 @@ def build_subdevice_info(coordinator: IdmCoordinator, entity_key: str) -> Device
     if scope is None:
         return None
 
-    main_identifier = main_device_identifier(coordinator)
-    if scope.kind == "heating_circuit":
-        circuit = scope.primary.upper()
-        info = DeviceInfo(
-            identifiers={heating_circuit_identifier(coordinator, circuit)},
-            name=f"Heizkreis {circuit}",
-            manufacturer=MANUFACTURER,
-            model="Heizkreis",
-        )
-        if (via_device_id := _via_device_id(coordinator, main_identifier)) is not None:
-            info["via_device_id"] = via_device_id
-        return info
-
-    if scope.kind in _MODULE_DEVICE_METADATA:
-        module, name, model = _MODULE_DEVICE_METADATA[scope.kind]
-        info = DeviceInfo(
-            identifiers={optional_module_identifier(coordinator, module)},
-            name=name,
-            manufacturer=MANUFACTURER,
-            model=model,
-        )
-        if (via_device_id := _via_device_id(coordinator, main_identifier)) is not None:
-            info["via_device_id"] = via_device_id
-        return info
-
-    zone = int(scope.primary)
-    if scope.kind == "zone_module":
-        info = DeviceInfo(
-            identifiers={zone_module_identifier(coordinator, zone)},
-            name=f"Zonenmodul {zone}",
-            manufacturer=MANUFACTURER,
-            model="Zonenmodul",
-        )
-        if (via_device_id := _via_device_id(coordinator, main_identifier)) is not None:
-            info["via_device_id"] = via_device_id
-        return info
-
-    room = scope.secondary
-    if room is None:
+    labels = _subdevice_labels(coordinator, scope)
+    if labels is None:
         return None
+    name, model = labels
+
+    identifier, placement = _scope_subdevices(coordinator, scope)[-1]
+    parent_device_id = _via_device_id(coordinator, placement.parent)
+
+    if placement.is_child_device and child_devices_supported() and parent_device_id is not None:
+        # A child device carries no hardware metadata of its own — no
+        # manufacturer, model, connections or via_device_id — because it is a
+        # part of the parent product rather than a device in its own right.
+        # Home Assistant rejects those fields here, so the model label is
+        # dropped deliberately, not by oversight.
+        child_info: dict[str, Any] = {
+            "identifiers": {identifier},
+            "name": name,
+            "parent_device_id": parent_device_id,
+        }
+        return cast("DeviceInfo", child_info)
+
     info = DeviceInfo(
-        identifiers={zone_room_identifier(coordinator, zone, room)},
-        name=f"Zonenmodul {zone} Raum {room}",
+        identifiers={identifier},
+        name=name,
         manufacturer=MANUFACTURER,
-        model="Raumregelung",
+        model=model,
     )
-    if (via_device_id := _via_device_id(coordinator, zone_module_identifier(coordinator, zone))) is not None:
-        info["via_device_id"] = via_device_id
+    if parent_device_id is not None:
+        info["via_device_id"] = parent_device_id
     return info

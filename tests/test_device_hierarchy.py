@@ -2,9 +2,11 @@
 
 from __future__ import annotations
 
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
+from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers.entity import EntityDescription
 from idm_heatpump import DataType, RegisterDef
 
@@ -69,22 +71,78 @@ def test_disabled_hierarchy_never_returns_subdevice() -> None:
     assert build_subdevice_info(_coordinator(enabled=False), "zm1_room1_temp") is None
 
 
-def test_heating_circuit_device_is_linked_to_main_device() -> None:
+def test_heating_circuit_is_a_child_of_the_main_device() -> None:
+    """A heating circuit is a logical part of the controller, not a device behind it."""
     info = build_subdevice_info(_coordinator(), "hc_b_flow_temp")
 
     assert info is not None
     assert info["identifiers"] == {(DOMAIN, "entry_heating_circuit_b")}
     assert info["name"] == "Heizkreis B"
+    assert info["parent_device_id"] == "main-device-id"
+    # A child device carries no hardware metadata of its own; Home Assistant
+    # rejects these fields outright.
+    assert "via_device_id" not in info
+    assert "manufacturer" not in info
+    assert "model" not in info
+
+
+def test_zone_module_stays_an_ordinary_device_behind_the_controller() -> None:
+    """A zone module is separate hardware, so the link is connectivity, not composition."""
+    info = build_subdevice_info(_coordinator(), "zm2_mode_heat_cool")
+
+    assert info is not None
+    assert info["identifiers"] == {(DOMAIN, "entry_zone_module_2")}
+    assert info["name"] == "Zonenmodul 2"
     assert info["via_device_id"] == "main-device-id"
+    assert info["model"] == "Zonenmodul"
+    assert "parent_device_id" not in info
 
 
-def test_zone_room_is_linked_through_zone_module() -> None:
+def test_zone_room_is_a_child_of_its_zone_module() -> None:
     info = build_subdevice_info(_coordinator(), "zm2_room4_setpoint")
 
     assert info is not None
     assert info["identifiers"] == {(DOMAIN, "entry_zone_module_2_room_4")}
     assert info["name"] == "Zonenmodul 2 Raum 4"
-    assert info["via_device_id"] == "zone-module-2-device-id"
+    assert info["parent_device_id"] == "zone-module-2-device-id"
+    assert "via_device_id" not in info
+
+
+def test_hierarchy_falls_back_to_via_device_links_without_child_device_support() -> None:
+    """Home Assistant 2026.8 has no child devices; the hierarchy still has to work."""
+    with patch(
+        "custom_components.idm_heatpump.device_hierarchy.child_devices_supported",
+        return_value=False,
+    ):
+        circuit = build_subdevice_info(_coordinator(), "hc_b_flow_temp")
+        room = build_subdevice_info(_coordinator(), "zm2_room4_setpoint")
+
+    assert circuit is not None
+    assert circuit["via_device_id"] == "main-device-id"
+    assert circuit["model"] == "Heizkreis"
+    assert "parent_device_id" not in circuit
+
+    assert room is not None
+    assert room["via_device_id"] == "zone-module-2-device-id"
+    assert "parent_device_id" not in room
+
+
+def test_child_device_falls_back_to_an_unlinked_device_when_the_parent_is_unknown() -> None:
+    """A missing parent must not produce a child device without ``parent_device_id``.
+
+    Home Assistant requires the parent to exist, so the entity is attached to an
+    ordinary unlinked device this round; the next reload precreates the parent
+    and the device is converted into a child, keeping its id.
+    """
+    coordinator = _coordinator()
+    coordinator._hierarchy_device_ids = {}
+
+    info = build_subdevice_info(coordinator, "hc_b_flow_temp")
+
+    assert info is not None
+    assert "parent_device_id" not in info
+    assert "via_device_id" not in info
+    assert info["identifiers"] == {(DOMAIN, "entry_heating_circuit_b")}
 
 
 def test_register_entity_keeps_unique_id_when_moved_to_subdevice() -> None:
@@ -150,34 +208,94 @@ def test_missing_hierarchy_device_id_omits_via_device_id_link() -> None:
     assert "via_device_id" not in info
 
 
-def test_precreate_main_device_creates_expected_subdevices_and_caches_ids() -> None:
-    coordinator = _coordinator()
-    coordinator._registers = [
-        RegisterDef(address=1352, datatype=DataType.FLOAT, name="hc_b_flow_temp", unit="°C"),
-    ]
-    coordinator.web_supplement = None
-    registry = MagicMock()
-    created: dict[tuple[str, str], MagicMock] = {}
+def _stub_registry() -> Any:
+    """Return a fresh instance of the device-registry stub from ``conftest``.
 
-    def _get_or_create(*, config_entry_id, identifiers):
-        identifier = next(iter(identifiers))
-        if identifier not in created:
-            device = MagicMock()
-            device.id = f"device-{len(created)}"
-            created[identifier] = device
-        return created[identifier]
+    The stub enforces the constraints Home Assistant enforces — a parent must
+    already be registered, a child device can't be a parent, reparenting is
+    rejected — so precreate order is genuinely tested rather than assumed.
+    """
+    return type(dr.async_get(MagicMock()))()
 
-    registry.async_get_or_create.side_effect = _get_or_create
 
+def _precreate(coordinator: MagicMock, registry: Any) -> None:
     with patch(
         "custom_components.idm_heatpump.device_hierarchy.dr.async_get",
         return_value=registry,
     ):
         precreate_main_device(MagicMock(), coordinator)
 
-    main_id = created[(DOMAIN, "entry")].id
-    circuit_id = created[(DOMAIN, "entry_heating_circuit_b")].id
 
-    assert coordinator._hierarchy_device_ids[(DOMAIN, "entry")] == main_id
-    assert coordinator._hierarchy_device_ids[(DOMAIN, "entry_heating_circuit_b")] == circuit_id
-    assert main_id != circuit_id
+def _hierarchy_coordinator() -> MagicMock:
+    coordinator = _coordinator()
+    coordinator._registers = [
+        RegisterDef(address=1352, datatype=DataType.FLOAT, name="hc_b_flow_temp", unit="°C"),
+        RegisterDef(address=2000, datatype=DataType.FLOAT, name="zm2_room4_setpoint", unit="°C"),
+    ]
+    coordinator.web_supplement = None
+    coordinator._hierarchy_device_ids = {}
+    return coordinator
+
+
+def test_precreate_registers_the_main_device_then_modules_then_children() -> None:
+    coordinator = _hierarchy_coordinator()
+    registry = _stub_registry()
+
+    _precreate(coordinator, registry)
+
+    ids = coordinator._hierarchy_device_ids
+    main_id = ids[(DOMAIN, "entry")]
+    circuit_id = ids[(DOMAIN, "entry_heating_circuit_b")]
+    module_id = ids[(DOMAIN, "entry_zone_module_2")]
+    room_id = ids[(DOMAIN, "entry_zone_module_2_room_4")]
+
+    assert len({main_id, circuit_id, module_id, room_id}) == 4
+    # Composition hangs below the part it belongs to...
+    assert registry.devices[circuit_id].parent_device_id == main_id
+    assert registry.devices[room_id].parent_device_id == module_id
+    # ...while the zone module stays an ordinary device linked by connectivity.
+    assert registry.devices[module_id].parent_device_id is None
+
+
+def test_precreate_converts_an_existing_subdevice_and_keeps_its_device_id() -> None:
+    """Upgrading from a ``via_device_id`` hierarchy must not orphan entities.
+
+    Home Assistant converts a device whose identifiers already exist into a
+    child device and preserves its id, so entity links, areas and automations
+    survive the switch.
+    """
+    coordinator = _hierarchy_coordinator()
+    registry = _stub_registry()
+    existing = registry.async_get_or_create(
+        config_entry_id="entry",
+        identifiers={(DOMAIN, "entry_heating_circuit_b")},
+    )
+    existing_id = existing.id
+
+    _precreate(coordinator, registry)
+
+    assert coordinator._hierarchy_device_ids[(DOMAIN, "entry_heating_circuit_b")] == existing_id
+    assert registry.devices[existing_id].parent_device_id == coordinator._hierarchy_device_ids[(DOMAIN, "entry")]
+
+
+def test_precreate_without_child_device_support_creates_ordinary_devices() -> None:
+    coordinator = _hierarchy_coordinator()
+    registry = _stub_registry()
+
+    with patch(
+        "custom_components.idm_heatpump.device_hierarchy.child_devices_supported",
+        return_value=False,
+    ):
+        _precreate(coordinator, registry)
+
+    ids = coordinator._hierarchy_device_ids
+    assert set(ids) == {
+        (DOMAIN, "entry"),
+        (DOMAIN, "entry_heating_circuit_b"),
+        (DOMAIN, "entry_zone_module_2"),
+        (DOMAIN, "entry_zone_module_2_room_4"),
+        # ``error_acknowledge`` is always offered, so the diagnostics module is
+        # always justified.
+        (DOMAIN, "entry_module_diagnostics"),
+    }
+    assert all(registry.devices[device_id].parent_device_id is None for device_id in ids.values())
