@@ -183,14 +183,16 @@
               "knx_send": "Werte auf KNX senden",
               "knx_receive": "Befehle von KNX annehmen",
               "knx_resend_interval": "Intervall für vollständiges Neusenden",
-              "knx_tolerance": "Änderungstoleranz"
+              "knx_tolerance": "Änderungstoleranz",
+              "knx_respond_to_read": "Auf Leseanfragen antworten"
             },
             "data_description": {
               "knx_bridge": "Bildet die IDM-KNX-Kommunikationsobjekte auf dem Bus ab, damit eine KNX-Installation die Wärmepumpe ohne separates BAOS-Gateway erreicht.",
               "knx_send": "Bei jeder Wertänderung ein Telegramm senden.",
               "knx_receive": "Werte, die auf einem schreibbaren Objekt eintreffen, in die Wärmepumpe schreiben. Registriert werden nur von IDM als schreibbar geführte Objekte.",
               "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
-              "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern."
+              "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
+              "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben."
             }
           }
         }
@@ -457,14 +459,16 @@
               "knx_send": "Werte auf KNX senden",
               "knx_receive": "Befehle von KNX annehmen",
               "knx_resend_interval": "Intervall für vollständiges Neusenden",
-              "knx_tolerance": "Änderungstoleranz"
+              "knx_tolerance": "Änderungstoleranz",
+              "knx_respond_to_read": "Auf Leseanfragen antworten"
             },
             "data_description": {
               "knx_bridge": "Bildet die IDM-KNX-Kommunikationsobjekte auf dem Bus ab, damit eine KNX-Installation die Wärmepumpe ohne separates BAOS-Gateway erreicht.",
               "knx_send": "Bei jeder Wertänderung ein Telegramm senden.",
               "knx_receive": "Werte, die auf einem schreibbaren Objekt eintreffen, in die Wärmepumpe schreiben. Registriert werden nur von IDM als schreibbar geführte Objekte.",
               "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
-              "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern."
+              "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
+              "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben."
             }
           }
         }

@@ -62,6 +62,7 @@ class KnxBridgeConfig:
     base_address: str
     send_enabled: bool = True
     receive_enabled: bool = True
+    respond_to_read: bool = True
     groups: tuple[str, ...] | None = None
     overrides: Mapping[str, str] = field(default_factory=dict)
     resend_interval: int = 0
@@ -245,7 +246,10 @@ class KnxBridge:
         """
         by_dpt: dict[str | None, list[str]] = {}
         for register, obj in self._objects.items():
-            if not obj.writable:
+            # Writable objects are registered so commands arrive. Read-only
+            # ones are registered too when the bridge answers read requests,
+            # because a GroupValueRead on them has to reach us as well.
+            if not obj.writable and not self._answers_reads():
                 continue
             by_dpt.setdefault(obj.dpt, []).append(self._addresses[register])
         for dpt, addresses in by_dpt.items():
@@ -317,15 +321,32 @@ class KnxBridge:
             if self._config.send_gap > 0:
                 await asyncio.sleep(self._config.send_gap)
 
+    def _answers_reads(self) -> bool:
+        """Whether the bridge should reply to GroupValueRead telegrams."""
+        return self._config.send_enabled and self._config.respond_to_read
+
     @callback
     def _handle_knx_event(self, event: Event) -> None:
-        """Turn an incoming group write into a heat pump register write."""
+        """Act on a telegram for one of our group addresses.
+
+        A group write on a writable object becomes a register write; a read
+        request on any object we publish is answered with the current value.
+        """
         data = event.data
         if data.get("direction") != "Incoming":
             return
-        if data.get("telegramtype") not in (None, "GroupValueWrite"):
-            return
+        telegram_type = data.get("telegramtype")
         destination = str(data.get("destination", ""))
+
+        if telegram_type == "GroupValueRead":
+            if self._answers_reads():
+                self._handle_read_request(destination)
+            return
+        if telegram_type not in (None, "GroupValueWrite"):
+            # A GroupValueResponse carries a valid value too, but it is an
+            # answer to somebody else's question rather than an instruction
+            # to us. Only an explicit write reaches the controller.
+            return
         obj = self._address_to_object.get(destination)
         if obj is None or not obj.writable:
             return
@@ -354,6 +375,45 @@ class KnxBridge:
             return
 
         self._hass.async_create_task(self._async_write(definition, value, destination))
+
+    @callback
+    def _handle_read_request(self, destination: str) -> None:
+        """Answer a GroupValueRead with the value we currently hold.
+
+        Without this a device that asks for the value after a restart --
+        a push-button refreshing its display, a visualisation coming back
+        up -- would stay blank until the next change happened to be sent.
+        The reply goes out directly rather than through the paced send
+        queue: a read request is answered now or not usefully at all, and
+        the number of them is bounded by the devices asking.
+        """
+        obj = self._address_to_object.get(destination)
+        if obj is None:
+            return
+        definition = self._coordinator.get_register(obj.register)
+        if definition is None or definition.write_only:
+            return
+        value = (self._coordinator.data or {}).get(obj.register)
+        if value is None or self._coordinator.is_register_unused(obj.register, value):
+            return
+        payload = _coerce_outgoing(value, obj.dpt)
+        if payload is None:
+            return
+        self._hass.async_create_task(self._async_send_response(destination, obj, payload))
+
+    async def _async_send_response(self, destination: str, obj: KnxObject, payload: float) -> None:
+        data: dict[str, Any] = {"address": destination, "response": True}
+        if obj.dpt is None:
+            data["payload"] = int(payload)
+        else:
+            data["type"] = obj.dpt
+            data["payload"] = payload if _is_float_dpt(obj.dpt) else int(payload)
+        try:
+            await self._hass.services.async_call(KNX_DOMAIN, SERVICE_SEND, data, blocking=False)
+        except Exception:
+            _LOGGER.debug("Failed to answer a KNX read request on %s", destination, exc_info=True)
+        else:
+            _LOGGER.debug("Answered KNX read request on %s with %s", destination, payload)
 
     async def _async_write(self, register: RegisterDef, value: Any, destination: str) -> None:
         try:

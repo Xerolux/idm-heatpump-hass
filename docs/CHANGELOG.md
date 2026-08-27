@@ -98,6 +98,19 @@ so dashboards, automations and long-term statistics keep working.
   twenty-one registers that table does not cover get curated names in the
   generator, and a test fails if the catalogue grows an object neither
   source names.
+- **The KNX bridge answers read requests.** A KNX device that asks for a
+  value — a push-button refreshing its display after a restart, a
+  visualisation coming back up — sends a `GroupValueRead`. `0.16.0-rc.3`
+  ignored those, so such a device stayed blank until the next change
+  happened to be sent; the BAOS gateway the bridge replaces answers them.
+  The bridge now replies with the value the heat pump currently reads, as a
+  `GroupValueResponse`. New option **Answer read requests**, on by default.
+- The reply goes out immediately rather than through the paced send queue: a
+  read request is answered now or not usefully at all, and the number of them
+  is bounded by the devices asking. Write-only objects and values the
+  controller reports as unused are not answered. A `GroupValueResponse` from
+  another device is still never written into the heat pump — it answers
+  somebody else's question rather than instructing us.
 
 ### Fixed
 

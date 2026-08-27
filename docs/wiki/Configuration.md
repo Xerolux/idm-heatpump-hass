@@ -160,6 +160,7 @@ must be set up: gateway, tunnelling and KNX Secure come from there.
 | Enable KNX bridge | Turns the bridge on and shows the group address step | off |
 | Send values to KNX | Publish a telegram whenever a value changes | on |
 | Accept commands from KNX | Write incoming values on writable objects into the heat pump | on |
+| Answer read requests | Reply to a KNX read request with the current value | on |
 | Full resend interval | Resend every value periodically; 0 sends only on change | 0 seconds |
 | Change tolerance | Minimum change before a numeric value is sent again | 0.1 |
 | Base group address | Object numbers are added to this address | `8/0/0` |

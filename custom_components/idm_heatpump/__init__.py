@@ -58,6 +58,7 @@ from .const import (
     CONF_KNX_OVERRIDES,
     CONF_KNX_RECEIVE,
     CONF_KNX_RESEND_INTERVAL,
+    CONF_KNX_RESPOND_TO_READ,
     CONF_KNX_SEND,
     CONF_KNX_TOLERANCE,
     CONF_MODBUS_CONNECT_DELAY,
@@ -96,6 +97,7 @@ from .const import (
     DEFAULT_KNX_BRIDGE,
     DEFAULT_KNX_RECEIVE,
     DEFAULT_KNX_RESEND_INTERVAL,
+    DEFAULT_KNX_RESPOND_TO_READ,
     DEFAULT_KNX_SEND,
     DEFAULT_KNX_TOLERANCE,
     DEFAULT_MODBUS_CONNECT_DELAY,
@@ -631,6 +633,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     knx_base_address = str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip()
     knx_send = bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND))
     knx_receive = bool(entry.options.get(CONF_KNX_RECEIVE, DEFAULT_KNX_RECEIVE))
+    knx_respond_to_read = bool(entry.options.get(CONF_KNX_RESPOND_TO_READ, DEFAULT_KNX_RESPOND_TO_READ))
     knx_groups = tuple(str(group) for group in (entry.options.get(CONF_KNX_GROUPS) or OBJECT_GROUPS))
     knx_overrides = entry.options.get(CONF_KNX_OVERRIDES) or {}
     knx_resend_interval = int(entry.options.get(CONF_KNX_RESEND_INTERVAL, DEFAULT_KNX_RESEND_INTERVAL))
@@ -1061,6 +1064,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     base_address=knx_base_address,
                     send_enabled=knx_send,
                     receive_enabled=knx_receive,
+                    respond_to_read=knx_respond_to_read,
                     groups=knx_groups,
                     overrides=dict(knx_overrides) if isinstance(knx_overrides, Mapping) else {},
                     resend_interval=knx_resend_interval,
