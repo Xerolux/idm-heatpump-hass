@@ -425,6 +425,16 @@ async def _async_setup_web_only_entry(
     )
     ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
 
+    if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
+        # The bridge serves Modbus register values; a web-only entry has none,
+        # so it would come up with nothing to publish. Say so instead of
+        # leaving an enabled option looking active.
+        _LOGGER.warning(
+            "KNX bridge for %s is enabled but stays off in web-only mode: it serves Modbus "
+            "register values, which a web-only entry does not read",
+            entry.title,
+        )
+
     web_supplement = None
     model_name: str = MODEL
     firmware_version: str | None = None

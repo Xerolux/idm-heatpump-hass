@@ -1789,6 +1789,71 @@ class TestOptionsFlow:
             )
         assert result["step_id"] == "zones"
 
+    async def test_knx_bridge_step_is_reachable_from_the_options_flow(self):
+        """Reconfiguring an existing entry reaches the same KNX step."""
+        flow = IdmHeatpumpOptionsFlow()
+        flow.config_entry = MagicMock()
+        flow.config_entry.title = "IDM"
+        flow.config_entry.options = {}
+        flow._options = {}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 15,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_KNX_BRIDGE: True,
+            }
+        )
+        assert result["type"] == "form"
+        assert result["step_id"] == "knx_bridge"
+
+    async def test_knx_settings_survive_a_second_options_run(self):
+        """Re-opening the options keeps the addresses already configured."""
+        flow = IdmHeatpumpOptionsFlow()
+        flow.config_entry = MagicMock()
+        flow.config_entry.title = "IDM"
+        flow.config_entry.options = {
+            CONF_KNX_BRIDGE: True,
+            CONF_KNX_BASE_ADDRESS: "3/0/0",
+            CONF_KNX_GROUPS: ["solar"],
+            CONF_KNX_OVERRIDES: {"outdoor_temp": "1/2/3"},
+        }
+        await flow.async_step_init(None)
+        assert flow._options[CONF_KNX_BASE_ADDRESS] == "3/0/0"
+        assert flow._options[CONF_KNX_OVERRIDES] == {"outdoor_temp": "1/2/3"}
+
+    async def test_disabling_the_knx_bridge_keeps_the_configured_addresses(self):
+        """Unlike forwarding entities, addresses are worth keeping.
+
+        A forwarding entity that is switched off points at a sensor the user
+        may remove, so the options flow clears it. Group addresses describe
+        the KNX installation, not this integration, so switching the bridge
+        off and on again must not cost the user their ETS mapping.
+        """
+        flow = IdmHeatpumpOptionsFlow()
+        flow.config_entry = MagicMock()
+        flow.config_entry.title = "IDM"
+        flow.config_entry.options = {}
+        flow._options = {
+            CONF_KNX_BASE_ADDRESS: "3/0/0",
+            CONF_KNX_OVERRIDES: {"outdoor_temp": "1/2/3"},
+        }
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 15,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                CONF_KNX_BRIDGE: False,
+            }
+        )
+        assert result["type"] == "create_entry"
+        assert result["data"][CONF_KNX_BASE_ADDRESS] == "3/0/0"
+        assert result["data"][CONF_KNX_OVERRIDES] == {"outdoor_temp": "1/2/3"}
+
     async def test_step_zones_no_input_shows_form(self):
         flow = IdmHeatpumpOptionsFlow()
         flow._options = {CONF_ZONE_COUNT: 2}

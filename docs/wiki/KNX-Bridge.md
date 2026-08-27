@@ -39,6 +39,24 @@ controllers and logic blocks keep working — the gateway is just gone.
 
 ---
 
+## Where it lives in the UI
+
+The bridge is part of the integration's **options**, so it appears in two
+places and nowhere else:
+
+| Flow | KNX bridge |
+|---|---|
+| Initial setup (adding the integration) | Yes — after the main options step |
+| **Configure** on an existing entry | Yes — same step, prefilled with what is stored |
+| **Reconfigure** menu | No. That menu edits connection settings (host, port, slave ID) and runs diagnostics; it does not touch options at all, the same way room temperature forwarding and the web supplement are not there either. |
+
+Switching the bridge off keeps the configured base address, object groups and
+overrides, so turning it back on does not cost you the ETS mapping.
+
+In **web-only mode** the bridge stays off regardless of the setting: it serves
+Modbus register values, which a web-only entry does not read. The log says so
+at startup.
+
 ## Enabling it
 
 1. **Settings → Devices & Services → IDM Heatpump → Configure**
