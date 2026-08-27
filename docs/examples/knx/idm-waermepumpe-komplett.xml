@@ -1,0 +1,667 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<GroupAddress-Export xmlns="http://knx.org/xml/ga-export/01">
+  <GroupRange Name="Wärmepumpe" RangeStart="16384" RangeEnd="18431">
+    <GroupRange Name="Objekte 1–255" RangeStart="16384" RangeEnd="16639">
+      <GroupAddress Name="WP Außentemperatur" Address="8/0/1" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Gemittelte Außentemperatur" Address="8/0/2" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Interne Meldung" Address="8/0/3" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Systembetriebsart" Address="8/0/4" DPTs="DPST-5-10" />
+      <GroupAddress Name="WP Smart Grid Status" Address="8/0/5" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Wärmespeichertemperatur" Address="8/0/6" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Kältespeichertemperatur" Address="8/0/7" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Trinkwassererwärmer unten" Address="8/0/8" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Trinkwassererwärmer oben" Address="8/0/9" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Warmwasser Zapftemperatur" Address="8/0/20" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Warmwasser Sollwert" Address="8/0/21" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Wärmepumpen Vorlauftemperatur" Address="8/0/30" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Wärmepumpen Rücklauftemperatur" Address="8/0/31" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP HGL Vorlauftemperatur B35" Address="8/0/32" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Wärmequelleneintritt" Address="8/0/33" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Wärmequellenaustritt" Address="8/0/34" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Luftansaugtemperatur" Address="8/0/35" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Luftwärmetauscher Temperatur" Address="8/0/36" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Ladefühler Temperatur" Address="8/0/38" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Vorlauftemperatur Wärmesenke" Address="8/0/40" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Durchfluss Wärmesenke (B2)" Address="8/0/41" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Ladepumpe Wärmesenke" Address="8/0/42" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Grundwassereintrittstemperatur 1" Address="8/0/48" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Grundwassereintrittstemperatur 2" Address="8/0/49" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Wärmepumpen Betriebsart" Address="8/0/50" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Heizanforderung" Address="8/0/51" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlanforderung" Address="8/0/52" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Warmwasseranforderung" Address="8/0/53" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Verdichter 1" Address="8/0/60" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Verdichter 2" Address="8/0/61" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Verdichter 3" Address="8/0/62" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Verdichter 4" Address="8/0/63" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zirkulationspumpe M64" Address="8/0/78" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Bivalenzpunkt 1 (2. WE)" Address="8/0/80" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Bivalenzpunkt 2 (2. WE)" Address="8/0/81" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Bivalenzpunkt 1 (3. WE)" Address="8/0/82" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Bivalenzpunkt 2 (3. WE)" Address="8/0/83" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Kaskade verfügbar Heizen" Address="8/0/97" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kaskade verfügbar Kühlen" Address="8/0/98" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kaskade verfügbar Warmwasser" Address="8/0/99" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kaskade in Betrieb Heizen" Address="8/0/100" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kaskade in Betrieb Kühlen" Address="8/0/101" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kaskade in Betrieb Warmwasser" Address="8/0/102" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kaskade Angeforderte Heiztemperatur" Address="8/0/150" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Kaskade Angeforderte Kühltemperatur" Address="8/0/151" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Kaskade Angeforderte WW-Temperatur" Address="8/0/152" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Kaskade Gemittelte VL-Temp Heizen" Address="8/0/153" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Kaskade Gemittelte VL-Temp Kühlen" Address="8/0/154" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Kaskade Gemittelte VL-Temp Warmwasser" Address="8/0/155" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Kaskade Mindestleistung Heizen" Address="8/0/160" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Kaskade Maximalleistung Heizen" Address="8/0/161" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Kaskade Mindestleistung Kühlen" Address="8/0/162" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Kaskade Maximalleistung Kühlen" Address="8/0/163" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Kaskade Mindestleistung Warmwasser" Address="8/0/164" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Kaskade Maximalleistung Warmwasser" Address="8/0/165" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Kaskade Bivalenz Heizen Parallel" Address="8/0/166" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Kaskade Bivalenz Heizen Alternativ" Address="8/0/167" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Kaskade Bivalenz Kühlen Parallel" Address="8/0/168" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Kaskade Bivalenz Kühlen Alternativ" Address="8/0/169" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Kaskade Bivalenz WW Parallel" Address="8/0/170" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Kaskade Bivalenz WW Alternativ" Address="8/0/171" DPTs="DPST-8-1" />
+      <GroupAddress Name="WP Vorlauftemperatur HK A" Address="8/0/200" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Vorlauftemperatur HK B" Address="8/0/201" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Vorlauftemperatur HK C" Address="8/0/202" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Vorlauftemperatur HK D" Address="8/0/203" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Vorlauftemperatur HK E" Address="8/0/204" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Vorlauftemperatur HK F" Address="8/0/205" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Vorlauftemperatur HK G" Address="8/0/206" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumtemperatur HK A" Address="8/0/207" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumtemperatur HK B" Address="8/0/208" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumtemperatur HK C" Address="8/0/209" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumtemperatur HK D" Address="8/0/210" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumtemperatur HK E" Address="8/0/211" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumtemperatur HK F" Address="8/0/212" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumtemperatur HK G" Address="8/0/213" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Sollvorlauftemperatur HK A" Address="8/0/214" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Sollvorlauftemperatur HK B" Address="8/0/215" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Sollvorlauftemperatur HK C" Address="8/0/216" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Sollvorlauftemperatur HK D" Address="8/0/217" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Sollvorlauftemperatur HK E" Address="8/0/218" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Sollvorlauftemperatur HK F" Address="8/0/219" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Sollvorlauftemperatur HK G" Address="8/0/220" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Feuchtesensor" Address="8/0/221" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Betriebsart HK A" Address="8/0/222" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Betriebsart HK B" Address="8/0/223" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Betriebsart HK C" Address="8/0/224" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Betriebsart HK D" Address="8/0/225" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Betriebsart HK E" Address="8/0/226" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Betriebsart HK F" Address="8/0/227" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Betriebsart HK G" Address="8/0/228" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Normal HK A" Address="8/0/229" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Normal HK B" Address="8/0/230" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Normal HK C" Address="8/0/231" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Normal HK D" Address="8/0/232" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Normal HK E" Address="8/0/233" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Normal HK F" Address="8/0/234" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Normal HK G" Address="8/0/235" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Eco HK A" Address="8/0/236" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Eco HK B" Address="8/0/237" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Eco HK C" Address="8/0/238" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Eco HK D" Address="8/0/239" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Eco HK E" Address="8/0/240" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Eco HK F" Address="8/0/241" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Heizen Eco HK G" Address="8/0/242" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Heizkurve HK A" Address="8/0/243" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Heizkurve HK B" Address="8/0/244" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Heizkurve HK C" Address="8/0/245" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Heizkurve HK D" Address="8/0/246" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Heizkurve HK E" Address="8/0/247" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Heizkurve HK F" Address="8/0/248" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Heizkurve HK G" Address="8/0/249" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Heizgrenze HK A" Address="8/0/250" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Heizgrenze HK B" Address="8/0/251" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Heizgrenze HK C" Address="8/0/252" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Heizgrenze HK D" Address="8/0/253" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Heizgrenze HK E" Address="8/0/254" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Heizgrenze HK F" Address="8/0/255" DPTs="DPST-7-1" />
+    </GroupRange>
+    <GroupRange Name="Objekte 256–511" RangeStart="16640" RangeEnd="16895">
+      <GroupAddress Name="WP Heizgrenze HK G" Address="8/1/0" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Festwertvorlauf HK A" Address="8/1/1" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Festwertvorlauf HK B" Address="8/1/2" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Festwertvorlauf HK C" Address="8/1/3" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Festwertvorlauf HK D" Address="8/1/4" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Festwertvorlauf HK E" Address="8/1/5" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Festwertvorlauf HK F" Address="8/1/6" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Festwertvorlauf HK G" Address="8/1/7" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Normal HK A" Address="8/1/8" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Normal HK B" Address="8/1/9" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Normal HK C" Address="8/1/10" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Normal HK D" Address="8/1/11" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Normal HK E" Address="8/1/12" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Normal HK F" Address="8/1/13" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Normal HK G" Address="8/1/14" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Eco HK A" Address="8/1/15" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Eco HK B" Address="8/1/16" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Eco HK C" Address="8/1/17" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Eco HK D" Address="8/1/18" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Eco HK E" Address="8/1/19" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Eco HK F" Address="8/1/20" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Raumsoll Kühlen Eco HK G" Address="8/1/21" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Kühlgrenze HK A" Address="8/1/22" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlgrenze HK B" Address="8/1/23" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlgrenze HK C" Address="8/1/24" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlgrenze HK D" Address="8/1/25" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlgrenze HK E" Address="8/1/26" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlgrenze HK F" Address="8/1/27" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlgrenze HK G" Address="8/1/28" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlvorlauf HK A" Address="8/1/29" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlvorlauf HK B" Address="8/1/30" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlvorlauf HK C" Address="8/1/31" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlvorlauf HK D" Address="8/1/32" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlvorlauf HK E" Address="8/1/33" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlvorlauf HK F" Address="8/1/34" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Kühlvorlauf HK G" Address="8/1/35" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Aktive Betriebsart HK A" Address="8/1/36" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Aktive Betriebsart HK B" Address="8/1/37" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Aktive Betriebsart HK C" Address="8/1/38" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Aktive Betriebsart HK D" Address="8/1/39" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Aktive Betriebsart HK E" Address="8/1/40" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Aktive Betriebsart HK F" Address="8/1/41" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Aktive Betriebsart HK G" Address="8/1/42" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Parallelverschiebung HK A" Address="8/1/43" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Parallelverschiebung HK B" Address="8/1/44" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Parallelverschiebung HK C" Address="8/1/45" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Parallelverschiebung HK D" Address="8/1/46" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Parallelverschiebung HK E" Address="8/1/47" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Parallelverschiebung HK F" Address="8/1/48" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Parallelverschiebung HK G" Address="8/1/49" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Externe Raumtemperatur HK A" Address="8/1/94" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Externe Raumtemperatur HK B" Address="8/1/95" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Externe Raumtemperatur HK C" Address="8/1/96" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Externe Raumtemperatur HK D" Address="8/1/97" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Externe Raumtemperatur HK E" Address="8/1/98" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Externe Raumtemperatur HK F" Address="8/1/99" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Externe Raumtemperatur HK G" Address="8/1/100" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Störung Ladepumpe 1 Zwischenkreis" Address="8/1/103" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Störung Ladepumpe 2 Zwischenkreis" Address="8/1/104" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Externe Außentemperatur (GLT)" Address="8/1/114" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Externe Feuchte (GLT)" Address="8/1/115" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Externe Anforderungstemperatur Heizen" Address="8/1/116" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Externe Anforderungstemperatur Kühlen" Address="8/1/117" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP GLT Temperaturanforderung Heizen" Address="8/1/118" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP GLT Temperaturanforderung Kühlen" Address="8/1/119" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Externe Heizanforderung" Address="8/1/124" DPTs="DPST-1-1" />
+      <GroupAddress Name="WP Externe Kühlanforderung" Address="8/1/125" DPTs="DPST-1-1" />
+      <GroupAddress Name="WP Externe WW-Ladeanforderung" Address="8/1/126" DPTs="DPST-1-1" />
+      <GroupAddress Name="WP Einmalige WW-Anforderung" Address="8/1/127" DPTs="DPST-1-1" />
+      <GroupAddress Name="WP GLT Wärmespeichertemperatur" Address="8/1/130" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP GLT Kältespeichertemperatur" Address="8/1/131" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP GLT Warmwasser unten" Address="8/1/132" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP GLT Warmwasser oben" Address="8/1/133" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Wärmemenge Heizen" Address="8/1/144" DPTs="DPST-14-31" />
+      <GroupAddress Name="WP Wärmemenge Kühlen" Address="8/1/145" DPTs="DPST-14-31" />
+      <GroupAddress Name="WP Wärmemenge Warmwasser" Address="8/1/146" DPTs="DPST-14-31" />
+      <GroupAddress Name="WP Wärmemenge Abtauen" Address="8/1/147" DPTs="DPST-14-31" />
+      <GroupAddress Name="WP Wärmemenge Passive Kühlung" Address="8/1/148" DPTs="DPST-14-31" />
+      <GroupAddress Name="WP Wärmemenge Solar" Address="8/1/149" DPTs="DPST-14-31" />
+      <GroupAddress Name="WP Wärmemenge E-Heizstab" Address="8/1/150" DPTs="DPST-14-31" />
+      <GroupAddress Name="WP Thermische Momentanleistung" Address="8/1/164" DPTs="DPST-9-24" />
+      <GroupAddress Name="WP Aktuelle Solarleistung" Address="8/1/165" DPTs="DPST-9-24" />
+      <GroupAddress Name="WP Solar Kollektortemperatur" Address="8/1/194" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Solar Rücklauftemperatur" Address="8/1/195" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Solar Ladetemperatur" Address="8/1/196" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Solar Betriebsart" Address="8/1/197" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Solar WQ-Referenztemperatur/Pooltemperatur" Address="8/1/198" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP ISC Ladetemperatur Kühlen" Address="8/1/204" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP ISC Rückkühltemperatur" Address="8/1/205" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP ISC Modus" Address="8/1/206" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Fehlerquittierung" Address="8/1/243" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Heizen/Kühlen" Address="8/1/244" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Entfeuchtung" Address="8/1/245" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 1 Raumtemperatur" Address="8/1/246" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 1 Raumsolltemperatur" Address="8/1/247" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 1 Raumfeuchte" Address="8/1/248" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 1 Raum 1 Raumbetriebsart" Address="8/1/249" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 1 Relais" Address="8/1/250" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 2 Raumtemperatur" Address="8/1/251" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 2 Raumsolltemperatur" Address="8/1/252" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 2 Raumfeuchte" Address="8/1/253" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 1 Raum 2 Raumbetriebsart" Address="8/1/254" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 2 Relais" Address="8/1/255" DPTs="DPST-7-1" />
+    </GroupRange>
+    <GroupRange Name="Zonenmodule" RangeStart="16896" RangeEnd="17151">
+      <GroupAddress Name="WP Zone 1 Raum 3 Raumtemperatur" Address="8/2/0" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 3 Raumsolltemperatur" Address="8/2/1" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 3 Raumfeuchte" Address="8/2/2" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 1 Raum 3 Raumbetriebsart" Address="8/2/3" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 3 Relais" Address="8/2/4" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 4 Raumtemperatur" Address="8/2/5" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 4 Raumsolltemperatur" Address="8/2/6" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 4 Raumfeuchte" Address="8/2/7" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 1 Raum 4 Raumbetriebsart" Address="8/2/8" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 4 Relais" Address="8/2/9" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 5 Raumtemperatur" Address="8/2/10" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 5 Raumsolltemperatur" Address="8/2/11" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 5 Raumfeuchte" Address="8/2/12" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 1 Raum 5 Raumbetriebsart" Address="8/2/13" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 5 Relais" Address="8/2/14" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 6 Raumtemperatur" Address="8/2/15" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 6 Raumsolltemperatur" Address="8/2/16" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 6 Raumfeuchte" Address="8/2/17" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 1 Raum 6 Raumbetriebsart" Address="8/2/18" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 6 Relais" Address="8/2/19" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 7 Raumtemperatur" Address="8/2/20" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 7 Raumsolltemperatur" Address="8/2/21" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 7 Raumfeuchte" Address="8/2/22" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 1 Raum 7 Raumbetriebsart" Address="8/2/23" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 7 Relais" Address="8/2/24" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 8 Raumtemperatur" Address="8/2/25" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 8 Raumsolltemperatur" Address="8/2/26" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 1 Raum 8 Raumfeuchte" Address="8/2/27" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 1 Raum 8 Raumbetriebsart" Address="8/2/28" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 1 Raum 8 Relais" Address="8/2/29" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Heizen/Kühlen" Address="8/2/35" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Entfeuchtung" Address="8/2/36" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 1 Raumtemperatur" Address="8/2/37" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 1 Raumsolltemperatur" Address="8/2/38" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 1 Raumfeuchte" Address="8/2/39" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 2 Raum 1 Raumbetriebsart" Address="8/2/40" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 1 Relais" Address="8/2/41" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 2 Raumtemperatur" Address="8/2/42" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 2 Raumsolltemperatur" Address="8/2/43" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 2 Raumfeuchte" Address="8/2/44" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 2 Raum 2 Raumbetriebsart" Address="8/2/45" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 2 Relais" Address="8/2/46" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 3 Raumtemperatur" Address="8/2/47" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 3 Raumsolltemperatur" Address="8/2/48" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 3 Raumfeuchte" Address="8/2/49" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 2 Raum 3 Raumbetriebsart" Address="8/2/50" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 3 Relais" Address="8/2/51" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 4 Raumtemperatur" Address="8/2/52" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 4 Raumsolltemperatur" Address="8/2/53" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 4 Raumfeuchte" Address="8/2/54" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 2 Raum 4 Raumbetriebsart" Address="8/2/55" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 4 Relais" Address="8/2/56" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 5 Raumtemperatur" Address="8/2/57" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 5 Raumsolltemperatur" Address="8/2/58" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 5 Raumfeuchte" Address="8/2/59" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 2 Raum 5 Raumbetriebsart" Address="8/2/60" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 5 Relais" Address="8/2/61" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 6 Raumtemperatur" Address="8/2/62" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 6 Raumsolltemperatur" Address="8/2/63" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 6 Raumfeuchte" Address="8/2/64" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 2 Raum 6 Raumbetriebsart" Address="8/2/65" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 6 Relais" Address="8/2/66" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 7 Raumtemperatur" Address="8/2/67" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 7 Raumsolltemperatur" Address="8/2/68" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 7 Raumfeuchte" Address="8/2/69" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 2 Raum 7 Raumbetriebsart" Address="8/2/70" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 7 Relais" Address="8/2/71" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 8 Raumtemperatur" Address="8/2/72" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 8 Raumsolltemperatur" Address="8/2/73" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 2 Raum 8 Raumfeuchte" Address="8/2/74" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 2 Raum 8 Raumbetriebsart" Address="8/2/75" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 2 Raum 8 Relais" Address="8/2/76" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Heizen/Kühlen" Address="8/2/82" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Entfeuchtung" Address="8/2/83" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 1 Raumtemperatur" Address="8/2/84" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 1 Raumsolltemperatur" Address="8/2/85" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 1 Raumfeuchte" Address="8/2/86" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 3 Raum 1 Raumbetriebsart" Address="8/2/87" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 1 Relais" Address="8/2/88" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 2 Raumtemperatur" Address="8/2/89" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 2 Raumsolltemperatur" Address="8/2/90" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 2 Raumfeuchte" Address="8/2/91" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 3 Raum 2 Raumbetriebsart" Address="8/2/92" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 2 Relais" Address="8/2/93" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 3 Raumtemperatur" Address="8/2/94" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 3 Raumsolltemperatur" Address="8/2/95" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 3 Raumfeuchte" Address="8/2/96" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 3 Raum 3 Raumbetriebsart" Address="8/2/97" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 3 Relais" Address="8/2/98" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 4 Raumtemperatur" Address="8/2/99" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 4 Raumsolltemperatur" Address="8/2/100" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 4 Raumfeuchte" Address="8/2/101" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 3 Raum 4 Raumbetriebsart" Address="8/2/102" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 4 Relais" Address="8/2/103" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 5 Raumtemperatur" Address="8/2/104" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 5 Raumsolltemperatur" Address="8/2/105" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 5 Raumfeuchte" Address="8/2/106" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 3 Raum 5 Raumbetriebsart" Address="8/2/107" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 5 Relais" Address="8/2/108" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 6 Raumtemperatur" Address="8/2/109" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 6 Raumsolltemperatur" Address="8/2/110" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 6 Raumfeuchte" Address="8/2/111" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 3 Raum 6 Raumbetriebsart" Address="8/2/112" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 6 Relais" Address="8/2/113" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 7 Raumtemperatur" Address="8/2/114" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 7 Raumsolltemperatur" Address="8/2/115" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 7 Raumfeuchte" Address="8/2/116" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 3 Raum 7 Raumbetriebsart" Address="8/2/117" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 7 Relais" Address="8/2/118" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 8 Raumtemperatur" Address="8/2/119" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 8 Raumsolltemperatur" Address="8/2/120" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 3 Raum 8 Raumfeuchte" Address="8/2/121" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 3 Raum 8 Raumbetriebsart" Address="8/2/122" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 3 Raum 8 Relais" Address="8/2/123" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Heizen/Kühlen" Address="8/2/129" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Entfeuchtung" Address="8/2/130" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 1 Raumtemperatur" Address="8/2/131" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 1 Raumsolltemperatur" Address="8/2/132" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 1 Raumfeuchte" Address="8/2/133" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 4 Raum 1 Raumbetriebsart" Address="8/2/134" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 1 Relais" Address="8/2/135" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 2 Raumtemperatur" Address="8/2/136" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 2 Raumsolltemperatur" Address="8/2/137" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 2 Raumfeuchte" Address="8/2/138" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 4 Raum 2 Raumbetriebsart" Address="8/2/139" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 2 Relais" Address="8/2/140" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 3 Raumtemperatur" Address="8/2/141" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 3 Raumsolltemperatur" Address="8/2/142" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 3 Raumfeuchte" Address="8/2/143" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 4 Raum 3 Raumbetriebsart" Address="8/2/144" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 3 Relais" Address="8/2/145" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 4 Raumtemperatur" Address="8/2/146" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 4 Raumsolltemperatur" Address="8/2/147" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 4 Raumfeuchte" Address="8/2/148" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 4 Raum 4 Raumbetriebsart" Address="8/2/149" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 4 Relais" Address="8/2/150" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 5 Raumtemperatur" Address="8/2/151" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 5 Raumsolltemperatur" Address="8/2/152" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 5 Raumfeuchte" Address="8/2/153" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 4 Raum 5 Raumbetriebsart" Address="8/2/154" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 5 Relais" Address="8/2/155" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 6 Raumtemperatur" Address="8/2/156" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 6 Raumsolltemperatur" Address="8/2/157" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 6 Raumfeuchte" Address="8/2/158" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 4 Raum 6 Raumbetriebsart" Address="8/2/159" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 6 Relais" Address="8/2/160" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 7 Raumtemperatur" Address="8/2/161" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 7 Raumsolltemperatur" Address="8/2/162" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 7 Raumfeuchte" Address="8/2/163" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 4 Raum 7 Raumbetriebsart" Address="8/2/164" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 7 Relais" Address="8/2/165" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 8 Raumtemperatur" Address="8/2/166" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 8 Raumsolltemperatur" Address="8/2/167" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 4 Raum 8 Raumfeuchte" Address="8/2/168" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 4 Raum 8 Raumbetriebsart" Address="8/2/169" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 4 Raum 8 Relais" Address="8/2/170" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Heizen/Kühlen" Address="8/2/176" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Entfeuchtung" Address="8/2/177" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 1 Raumtemperatur" Address="8/2/178" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 1 Raumsolltemperatur" Address="8/2/179" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 1 Raumfeuchte" Address="8/2/180" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 5 Raum 1 Raumbetriebsart" Address="8/2/181" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 1 Relais" Address="8/2/182" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 2 Raumtemperatur" Address="8/2/183" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 2 Raumsolltemperatur" Address="8/2/184" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 2 Raumfeuchte" Address="8/2/185" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 5 Raum 2 Raumbetriebsart" Address="8/2/186" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 2 Relais" Address="8/2/187" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 3 Raumtemperatur" Address="8/2/188" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 3 Raumsolltemperatur" Address="8/2/189" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 3 Raumfeuchte" Address="8/2/190" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 5 Raum 3 Raumbetriebsart" Address="8/2/191" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 3 Relais" Address="8/2/192" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 4 Raumtemperatur" Address="8/2/193" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 4 Raumsolltemperatur" Address="8/2/194" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 4 Raumfeuchte" Address="8/2/195" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 5 Raum 4 Raumbetriebsart" Address="8/2/196" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 4 Relais" Address="8/2/197" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 5 Raumtemperatur" Address="8/2/198" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 5 Raumsolltemperatur" Address="8/2/199" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 5 Raumfeuchte" Address="8/2/200" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 5 Raum 5 Raumbetriebsart" Address="8/2/201" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 5 Relais" Address="8/2/202" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 6 Raumtemperatur" Address="8/2/203" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 6 Raumsolltemperatur" Address="8/2/204" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 6 Raumfeuchte" Address="8/2/205" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 5 Raum 6 Raumbetriebsart" Address="8/2/206" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 6 Relais" Address="8/2/207" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 7 Raumtemperatur" Address="8/2/208" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 7 Raumsolltemperatur" Address="8/2/209" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 7 Raumfeuchte" Address="8/2/210" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 5 Raum 7 Raumbetriebsart" Address="8/2/211" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 7 Relais" Address="8/2/212" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 8 Raumtemperatur" Address="8/2/213" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 8 Raumsolltemperatur" Address="8/2/214" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 5 Raum 8 Raumfeuchte" Address="8/2/215" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 5 Raum 8 Raumbetriebsart" Address="8/2/216" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 5 Raum 8 Relais" Address="8/2/217" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Heizen/Kühlen" Address="8/2/223" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Entfeuchtung" Address="8/2/224" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 1 Raumtemperatur" Address="8/2/225" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 1 Raumsolltemperatur" Address="8/2/226" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 1 Raumfeuchte" Address="8/2/227" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 6 Raum 1 Raumbetriebsart" Address="8/2/228" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 1 Relais" Address="8/2/229" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 2 Raumtemperatur" Address="8/2/230" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 2 Raumsolltemperatur" Address="8/2/231" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 2 Raumfeuchte" Address="8/2/232" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 6 Raum 2 Raumbetriebsart" Address="8/2/233" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 2 Relais" Address="8/2/234" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 3 Raumtemperatur" Address="8/2/235" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 3 Raumsolltemperatur" Address="8/2/236" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 3 Raumfeuchte" Address="8/2/237" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 6 Raum 3 Raumbetriebsart" Address="8/2/238" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 3 Relais" Address="8/2/239" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 4 Raumtemperatur" Address="8/2/240" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 4 Raumsolltemperatur" Address="8/2/241" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 4 Raumfeuchte" Address="8/2/242" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 6 Raum 4 Raumbetriebsart" Address="8/2/243" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 4 Relais" Address="8/2/244" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 5 Raumtemperatur" Address="8/2/245" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 5 Raumsolltemperatur" Address="8/2/246" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 5 Raumfeuchte" Address="8/2/247" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 6 Raum 5 Raumbetriebsart" Address="8/2/248" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 5 Relais" Address="8/2/249" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 6 Raumtemperatur" Address="8/2/250" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 6 Raumsolltemperatur" Address="8/2/251" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 6 Raumfeuchte" Address="8/2/252" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 6 Raum 6 Raumbetriebsart" Address="8/2/253" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 6 Relais" Address="8/2/254" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 7 Raumtemperatur" Address="8/2/255" DPTs="DPST-9-1" />
+    </GroupRange>
+    <GroupRange Name="Zonenmodule · Booster · PV und Batterie" RangeStart="17152" RangeEnd="17407">
+      <GroupAddress Name="WP Zone 6 Raum 7 Raumsolltemperatur" Address="8/3/0" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 7 Raumfeuchte" Address="8/3/1" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 6 Raum 7 Raumbetriebsart" Address="8/3/2" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 7 Relais" Address="8/3/3" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 8 Raumtemperatur" Address="8/3/4" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 8 Raumsolltemperatur" Address="8/3/5" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 6 Raum 8 Raumfeuchte" Address="8/3/6" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 6 Raum 8 Raumbetriebsart" Address="8/3/7" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 6 Raum 8 Relais" Address="8/3/8" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Heizen/Kühlen" Address="8/3/14" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Entfeuchtung" Address="8/3/15" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 1 Raumtemperatur" Address="8/3/16" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 1 Raumsolltemperatur" Address="8/3/17" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 1 Raumfeuchte" Address="8/3/18" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 7 Raum 1 Raumbetriebsart" Address="8/3/19" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 1 Relais" Address="8/3/20" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 2 Raumtemperatur" Address="8/3/21" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 2 Raumsolltemperatur" Address="8/3/22" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 2 Raumfeuchte" Address="8/3/23" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 7 Raum 2 Raumbetriebsart" Address="8/3/24" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 2 Relais" Address="8/3/25" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 3 Raumtemperatur" Address="8/3/26" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 3 Raumsolltemperatur" Address="8/3/27" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 3 Raumfeuchte" Address="8/3/28" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 7 Raum 3 Raumbetriebsart" Address="8/3/29" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 3 Relais" Address="8/3/30" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 4 Raumtemperatur" Address="8/3/31" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 4 Raumsolltemperatur" Address="8/3/32" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 4 Raumfeuchte" Address="8/3/33" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 7 Raum 4 Raumbetriebsart" Address="8/3/34" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 4 Relais" Address="8/3/35" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 5 Raumtemperatur" Address="8/3/36" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 5 Raumsolltemperatur" Address="8/3/37" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 5 Raumfeuchte" Address="8/3/38" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 7 Raum 5 Raumbetriebsart" Address="8/3/39" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 5 Relais" Address="8/3/40" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 6 Raumtemperatur" Address="8/3/41" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 6 Raumsolltemperatur" Address="8/3/42" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 6 Raumfeuchte" Address="8/3/43" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 7 Raum 6 Raumbetriebsart" Address="8/3/44" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 6 Relais" Address="8/3/45" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 7 Raumtemperatur" Address="8/3/46" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 7 Raumsolltemperatur" Address="8/3/47" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 7 Raumfeuchte" Address="8/3/48" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 7 Raum 7 Raumbetriebsart" Address="8/3/49" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 7 Relais" Address="8/3/50" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 8 Raumtemperatur" Address="8/3/51" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 8 Raumsolltemperatur" Address="8/3/52" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 7 Raum 8 Raumfeuchte" Address="8/3/53" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 7 Raum 8 Raumbetriebsart" Address="8/3/54" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 7 Raum 8 Relais" Address="8/3/55" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Heizen/Kühlen" Address="8/3/61" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Entfeuchtung" Address="8/3/62" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 1 Raumtemperatur" Address="8/3/63" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 1 Raumsolltemperatur" Address="8/3/64" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 1 Raumfeuchte" Address="8/3/65" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 8 Raum 1 Raumbetriebsart" Address="8/3/66" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 1 Relais" Address="8/3/67" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 2 Raumtemperatur" Address="8/3/68" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 2 Raumsolltemperatur" Address="8/3/69" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 2 Raumfeuchte" Address="8/3/70" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 8 Raum 2 Raumbetriebsart" Address="8/3/71" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 2 Relais" Address="8/3/72" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 3 Raumtemperatur" Address="8/3/73" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 3 Raumsolltemperatur" Address="8/3/74" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 3 Raumfeuchte" Address="8/3/75" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 8 Raum 3 Raumbetriebsart" Address="8/3/76" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 3 Relais" Address="8/3/77" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 4 Raumtemperatur" Address="8/3/78" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 4 Raumsolltemperatur" Address="8/3/79" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 4 Raumfeuchte" Address="8/3/80" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 8 Raum 4 Raumbetriebsart" Address="8/3/81" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 4 Relais" Address="8/3/82" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 5 Raumtemperatur" Address="8/3/83" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 5 Raumsolltemperatur" Address="8/3/84" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 5 Raumfeuchte" Address="8/3/85" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 8 Raum 5 Raumbetriebsart" Address="8/3/86" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 5 Relais" Address="8/3/87" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 6 Raumtemperatur" Address="8/3/88" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 6 Raumsolltemperatur" Address="8/3/89" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 6 Raumfeuchte" Address="8/3/90" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 8 Raum 6 Raumbetriebsart" Address="8/3/91" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 6 Relais" Address="8/3/92" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 7 Raumtemperatur" Address="8/3/93" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 7 Raumsolltemperatur" Address="8/3/94" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 7 Raumfeuchte" Address="8/3/95" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 8 Raum 7 Raumbetriebsart" Address="8/3/96" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 7 Relais" Address="8/3/97" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 8 Raumtemperatur" Address="8/3/98" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 8 Raumsolltemperatur" Address="8/3/99" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 8 Raum 8 Raumfeuchte" Address="8/3/100" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 8 Raum 8 Raumbetriebsart" Address="8/3/101" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 8 Raum 8 Relais" Address="8/3/102" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Heizen/Kühlen" Address="8/3/108" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Entfeuchtung" Address="8/3/109" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 1 Raumtemperatur" Address="8/3/110" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 1 Raumsolltemperatur" Address="8/3/111" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 1 Raumfeuchte" Address="8/3/112" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 9 Raum 1 Raumbetriebsart" Address="8/3/113" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 1 Relais" Address="8/3/114" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 2 Raumtemperatur" Address="8/3/115" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 2 Raumsolltemperatur" Address="8/3/116" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 2 Raumfeuchte" Address="8/3/117" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 9 Raum 2 Raumbetriebsart" Address="8/3/118" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 2 Relais" Address="8/3/119" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 3 Raumtemperatur" Address="8/3/120" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 3 Raumsolltemperatur" Address="8/3/121" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 3 Raumfeuchte" Address="8/3/122" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 9 Raum 3 Raumbetriebsart" Address="8/3/123" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 3 Relais" Address="8/3/124" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 4 Raumtemperatur" Address="8/3/125" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 4 Raumsolltemperatur" Address="8/3/126" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 4 Raumfeuchte" Address="8/3/127" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 9 Raum 4 Raumbetriebsart" Address="8/3/128" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 4 Relais" Address="8/3/129" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 5 Raumtemperatur" Address="8/3/130" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 5 Raumsolltemperatur" Address="8/3/131" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 5 Raumfeuchte" Address="8/3/132" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 9 Raum 5 Raumbetriebsart" Address="8/3/133" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 5 Relais" Address="8/3/134" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 6 Raumtemperatur" Address="8/3/135" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 6 Raumsolltemperatur" Address="8/3/136" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 6 Raumfeuchte" Address="8/3/137" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 9 Raum 6 Raumbetriebsart" Address="8/3/138" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 6 Relais" Address="8/3/139" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 7 Raumtemperatur" Address="8/3/140" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 7 Raumsolltemperatur" Address="8/3/141" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 7 Raumfeuchte" Address="8/3/142" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 9 Raum 7 Raumbetriebsart" Address="8/3/143" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 7 Relais" Address="8/3/144" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 8 Raumtemperatur" Address="8/3/145" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 8 Raumsolltemperatur" Address="8/3/146" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 9 Raum 8 Raumfeuchte" Address="8/3/147" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 9 Raum 8 Raumbetriebsart" Address="8/3/148" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 9 Raum 8 Relais" Address="8/3/149" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Heizen/Kühlen" Address="8/3/155" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Entfeuchtung" Address="8/3/156" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 1 Raumtemperatur" Address="8/3/157" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 1 Raumsolltemperatur" Address="8/3/158" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 1 Raumfeuchte" Address="8/3/159" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 10 Raum 1 Raumbetriebsart" Address="8/3/160" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 1 Relais" Address="8/3/161" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 2 Raumtemperatur" Address="8/3/162" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 2 Raumsolltemperatur" Address="8/3/163" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 2 Raumfeuchte" Address="8/3/164" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 10 Raum 2 Raumbetriebsart" Address="8/3/165" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 2 Relais" Address="8/3/166" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 3 Raumtemperatur" Address="8/3/167" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 3 Raumsolltemperatur" Address="8/3/168" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 3 Raumfeuchte" Address="8/3/169" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 10 Raum 3 Raumbetriebsart" Address="8/3/170" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 3 Relais" Address="8/3/171" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 4 Raumtemperatur" Address="8/3/172" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 4 Raumsolltemperatur" Address="8/3/173" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 4 Raumfeuchte" Address="8/3/174" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 10 Raum 4 Raumbetriebsart" Address="8/3/175" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 4 Relais" Address="8/3/176" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 5 Raumtemperatur" Address="8/3/177" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 5 Raumsolltemperatur" Address="8/3/178" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 5 Raumfeuchte" Address="8/3/179" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 10 Raum 5 Raumbetriebsart" Address="8/3/180" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 5 Relais" Address="8/3/181" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 6 Raumtemperatur" Address="8/3/182" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 6 Raumsolltemperatur" Address="8/3/183" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 6 Raumfeuchte" Address="8/3/184" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 10 Raum 6 Raumbetriebsart" Address="8/3/185" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 6 Relais" Address="8/3/186" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 7 Raumtemperatur" Address="8/3/187" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 7 Raumsolltemperatur" Address="8/3/188" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 7 Raumfeuchte" Address="8/3/189" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 10 Raum 7 Raumbetriebsart" Address="8/3/190" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 7 Relais" Address="8/3/191" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 8 Raumtemperatur" Address="8/3/192" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 8 Raumsolltemperatur" Address="8/3/193" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Zone 10 Raum 8 Raumfeuchte" Address="8/3/194" DPTs="DPST-9-7" />
+      <GroupAddress Name="WP Zone 10 Raum 8 Raumbetriebsart" Address="8/3/195" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Zone 10 Raum 8 Relais" Address="8/3/196" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Booster Störung" Address="8/3/202" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Booster Verriegelung" Address="8/3/203" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Booster A Wärmequelleneintritt" Address="8/3/207" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster A Wärmequellenaustritt" Address="8/3/208" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster A Speichertemperatur" Address="8/3/209" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster A Vorlauftemperatur" Address="8/3/210" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster A Rücklauftemperatur" Address="8/3/211" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster A Wärmequellenpumpe" Address="8/3/212" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Booster A Ladepumpe" Address="8/3/213" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Booster A Verdichter" Address="8/3/214" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Booster B Verdichter" Address="8/3/215" DPTs="DPST-7-1" />
+      <GroupAddress Name="WP Booster B Wärmequelleneintritt" Address="8/3/217" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster B Wärmequellenaustritt" Address="8/3/218" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster B Speichertemperatur" Address="8/3/219" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster B Vorlauftemperatur" Address="8/3/220" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster B Rücklauftemperatur" Address="8/3/221" DPTs="DPST-9-1" />
+      <GroupAddress Name="WP Booster B Wärmequellenpumpe" Address="8/3/222" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Booster B Ladepumpe" Address="8/3/223" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP Hausverbrauch" Address="8/3/224" DPTs="DPST-9-24" />
+      <GroupAddress Name="WP Batterie Entladung" Address="8/3/225" DPTs="DPST-9-24" />
+      <GroupAddress Name="WP Batterie SOC" Address="8/3/226" DPTs="DPST-5-1" />
+      <GroupAddress Name="WP PV Überschuss" Address="8/3/227" DPTs="DPST-9-24" />
+      <GroupAddress Name="WP PV Produktion" Address="8/3/228" DPTs="DPST-9-24" />
+      <GroupAddress Name="WP Elektrische Leistungsaufnahme Wärmepumpe" Address="8/3/229" DPTs="DPST-9-24" />
+      <GroupAddress Name="WP Thermische Leistung (Durchflusssensor)" Address="8/3/230" DPTs="DPST-9-24" />
+      <GroupAddress Name="WP Gesamte Wärmemenge (Vortex)" Address="8/3/231" DPTs="DPST-14-31" />
+    </GroupRange>
+  </GroupRange>
+</GroupAddress-Export>

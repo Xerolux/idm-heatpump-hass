@@ -81,6 +81,23 @@ so dashboards, automations and long-term statistics keep working.
   `test-coverage`) and `config_flow.py` at 100 % (`config-flow-test-coverage`).
   Both are now met; the config flow is fully covered including its web-only
   fallback and every connection failure mode.
+- **ETS group address files for the KNX bridge.** The bridge sends on group
+  addresses, but ETS needs them to exist in the project before a
+  push-button, a visualisation or a logic module can be linked to one — several
+  hundred addresses to type by hand.
+  `scripts/generate_knx_group_addresses.py` writes them instead, as an ETS 6
+  group address import (native `GroupAddress-Export` XML) plus a CSV
+  reference carrying object number, register and direction. It takes a base
+  address, a profile, or an explicit group or register selection, so a
+  project where `8/0/0` is already taken generates its own file.
+- Two generated examples ship in `docs/examples/knx/`: a curated 43-address
+  subset of what a display realistically shows plus the values KNX can feed
+  back into the heat pump, and the full 654.
+- Names come from the integration's own German name table, so an address
+  reads in ETS the way the matching entity reads in Home Assistant. The
+  twenty-one registers that table does not cover get curated names in the
+  generator, and a test fails if the catalogue grows an object neither
+  source names.
 - **The KNX bridge answers read requests.** A KNX device that asks for a
   value — a push-button refreshing its display after a restart, a
   visualisation coming back up — sends a `GroupValueRead`. `0.16.0-rc.3`

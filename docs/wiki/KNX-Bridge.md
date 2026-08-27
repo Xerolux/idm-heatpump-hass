@@ -191,6 +191,47 @@ echoes what the bridge published moments earlier is not written back.
 
 ---
 
+## Ready-made ETS import files
+
+The bridge sends on the group addresses, but ETS still needs them to exist in
+the project so the real KNX devices — a push-button showing the flow
+temperature, a visualisation, a logic module — can be linked to them. Two
+generated files are in the repository so nobody types several hundred
+addresses by hand:
+
+| File | Contents |
+|---|---|
+| [`idm-waermepumpe-kompakt.xml`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/examples/knx/idm-waermepumpe-kompakt.xml) | 43 addresses: what a display or visualisation realistically shows, plus the values a KNX installation can feed back into the heat pump. Heating circuits A and B. |
+| [`idm-waermepumpe-komplett.xml`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/examples/knx/idm-waermepumpe-komplett.xml) | all 654 objects |
+
+Both assume the default base address `8/0/0`. The matching `.csv` files are a
+readable reference — object number, register, direction — not import files.
+
+**Import into ETS 6** (three-level group address style): back the project up,
+right-click the top entry under *Group Addresses*, choose *Import Group
+Addresses*, pick the `.xml`, then check the import report against addresses
+that already exist.
+
+### Generating your own
+
+If `8/0/0` is taken in your project, or you want a different selection,
+generate a file for your own base address:
+
+```bash
+# A curated subset on main group 11
+python scripts/generate_knx_group_addresses.py --base 11/0/0 --profile compact --output ./out
+
+# Only what a visualisation needs
+python scripts/generate_knx_group_addresses.py --base 11/0/0 --groups system,dhw,energy --output ./out
+
+# Named registers, whatever you like
+python scripts/generate_knx_group_addresses.py --base 11/0/0 \
+  --registers outdoor_temp,dhw_setpoint,hc_a_mode --output ./out
+```
+
+The names come from the integration's own German name table, so an address
+reads in ETS the way the matching entity reads in Home Assistant.
+
 ## Exporting the object list for ETS
 
 The `idm_heatpump.export_knx_group_addresses` action answers with the table
