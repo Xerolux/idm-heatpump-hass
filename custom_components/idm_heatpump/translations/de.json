@@ -176,8 +176,8 @@
             }
           },
           "knx_bridge_section": {
-            "name": "KNX-Bridge",
-            "description": "Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
+            "name": "KNX-Bridge (experimentell)",
+            "description": "Experimentell: bislang nur durch Tests abgesichert, noch nie an einem echten KNX-Bus erprobt. Rückmeldungen sind willkommen. Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
             "data": {
               "knx_bridge": "KNX-Bridge aktivieren",
               "knx_send": "Werte auf KNX senden",
@@ -307,7 +307,7 @@
         }
       },
       "knx_bridge": {
-        "title": "KNX-Gruppenadressen – {name}",
+        "title": "KNX-Gruppenadressen (experimentell) – {name}",
         "description": "Die {object_count} IDM-KNX-Objekte liegen oberhalb einer Basisadresse: Die Objektnummer wird dazugezählt, 8/0/0 legt also Objekt 1 auf 8/0/1 und Objekt 222 auf 8/0/222. Die Ausnahmeliste ist für Objekte, die im vorhandenen ETS-Projekt andere Adressen haben — eine `Register = Adresse` pro Zeile.",
         "data": {
           "knx_base_address": "Basis-Gruppenadresse",
@@ -450,8 +450,8 @@
             }
           },
           "knx_bridge_section": {
-            "name": "KNX-Bridge",
-            "description": "Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
+            "name": "KNX-Bridge (experimentell)",
+            "description": "Experimentell: bislang nur durch Tests abgesichert, noch nie an einem echten KNX-Bus erprobt. Rückmeldungen sind willkommen. Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
             "data": {
               "knx_bridge": "KNX-Bridge aktivieren",
               "knx_send": "Werte auf KNX senden",
@@ -546,7 +546,7 @@
         }
       },
       "knx_bridge": {
-        "title": "KNX-Gruppenadressen – {name}",
+        "title": "KNX-Gruppenadressen (experimentell) – {name}",
         "description": "Die {object_count} IDM-KNX-Objekte liegen oberhalb einer Basisadresse: Die Objektnummer wird dazugezählt, 8/0/0 legt also Objekt 1 auf 8/0/1 und Objekt 222 auf 8/0/222. Die Ausnahmeliste ist für Objekte, die im vorhandenen ETS-Projekt andere Adressen haben — eine `Register = Adresse` pro Zeile.",
         "data": {
           "knx_base_address": "Basis-Gruppenadresse",

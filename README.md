@@ -27,7 +27,7 @@
 
 ---
 
-## 🚌 New: KNX without the IDM gateway module
+## 🚌 New (experimental): KNX without the IDM gateway module
 
 IDM sells KNX connectivity for the Navigator as a **Weinzierl KNX IP BAOS 774**
 module. The optional **[KNX bridge][wiki-knx]** makes that module unnecessary:
@@ -46,6 +46,11 @@ have, so tunnelling, routing and **KNX Secure** all come from there.
 | **Group addresses** | One base address, `base + object number` per object — the whole catalogue fits in one main group |
 | **ETS** | `idm_heatpump.export_knx_group_addresses` returns the full table for your controller |
 | **Requirement** | The Home Assistant KNX integration, set up and connected |
+
+> [!WARNING]
+> **Experimental.** Covered by unit tests, but never yet exercised against a real
+> KNX bus. Try it and report what you see — feedback from an installation with ETS
+> access is what turns it into a supported feature.
 
 Enable it under **Settings → Devices & Services → IDM Heatpump → Configure →
 KNX bridge**. Full details: **[KNX Bridge documentation][wiki-knx]**.
@@ -70,7 +75,7 @@ KNX bridge**. Full details: **[KNX Bridge documentation][wiki-knx]**.
 | **🧪 Read-only Connection Test** | Reconfigure menu can test the saved Modbus and optional local web connection without changing settings or writing registers |
 | **📦 Runtime Versions** | Diagnostic sensor and export show the installed integration, `idm-heatpump-api`, `modbus-connection` and `tmodbus` versions |
 | **🔑 Technician Level** | Optional sensors for the current level 1 & 2 access codes (disabled by default, updated every minute and pinned first) |
-| **🚌 KNX Bridge** | Optional: serves the IDM KNX communication objects through the Home Assistant KNX integration (incl. KNX Secure) — replaces the Weinzierl BAOS gateway module. [Details][wiki-knx] |
+| **🚌 KNX Bridge** *(experimental)* | Optional: serves the IDM KNX communication objects through the Home Assistant KNX integration (incl. KNX Secure) — replaces the Weinzierl BAOS gateway module. [Details][wiki-knx] |
 | **🔒 Security** | 100% local, Modbus TCP, EEPROM protection, EEPROM-sensitive registers |
 
 ---

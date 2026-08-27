@@ -22,9 +22,9 @@ minimum remains Home Assistant `2026.8.1`. The bridge is opt-in and off by
 default, so an existing installation that does not enable it behaves exactly
 like `0.16.0-rc.2`.
 
-> ### 🚌 Headline feature: KNX without the IDM gateway module
+> ### 🚌 Headline feature: KNX without the IDM gateway module *(experimental)*
 >
-> This release adds an optional **KNX bridge**. It serves the IDM KNX
+> This release adds an optional, **experimental** **KNX bridge**. It serves the IDM KNX
 > communication objects — the same object numbers, datapoint types and
 > read/write directions as IDM's ETS example project — from the Modbus values
 > the integration already reads, so the **Weinzierl `KNX IP BAOS 774` module
@@ -36,11 +36,17 @@ like `0.16.0-rc.2`.
 > → IDM Heatpump → Configure → KNX bridge**, pick one base group address, and
 > the whole object catalogue lands on the bus.
 >
+> **It has never been exercised against a real KNX bus.** Everything below is
+> covered by unit tests, but no telegram has been decoded by a physical device,
+> the datapoint types come from IDM's example project rather than from
+> measurement, and the bus load of a first full export has not been observed on
+> a physical line. Try it and report what you see.
+>
 > Full guide: **[KNX Bridge](https://xerolux.github.io/idm-heatpump-hass/docs/#/knx-bridge)**
 
 ### Added
 
-- **KNX bridge — the IDM KNX gateway module is no longer needed.** IDM sells
+- **KNX bridge (experimental) — the IDM KNX gateway module is no longer needed.** IDM sells
   KNX connectivity for the Navigator as a Weinzierl `KNX IP BAOS 774` module,
   configured in ETS with IDM's own example project. That project defines a
   fixed object list: object 1 is the outdoor temperature, object 4 the system
@@ -82,6 +88,12 @@ like `0.16.0-rc.2`.
 
 ### Known gaps
 
+- **No live KNX verification.** The bridge is marked experimental in the
+  options flow, the documentation and the startup log for exactly this reason:
+  catalogue integrity, address derivation, direction handling and echo
+  suppression are unit-tested, but live bus behaviour, datapoint encoding on the
+  wire and bus load under a first full export are unverified. See
+  `docs/release-evidence/0.16.0-rc.3.md`.
 - External pump demand objects 384 (*brine / intermediate pump*) and 385
   (*groundwater pump*) are deliberately not in the catalogue: IDM's labels do
   not map unambiguously onto the two corresponding registers, and a wrong guess

@@ -176,8 +176,8 @@
             }
           },
           "knx_bridge_section": {
-            "name": "KNX bridge",
-            "description": "Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
+            "name": "KNX bridge (experimental)",
+            "description": "Experimental: verified by tests only, never yet against a real KNX bus. Please report what you see. Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
             "data": {
               "knx_bridge": "Enable KNX bridge",
               "knx_send": "Send values to KNX",
@@ -307,7 +307,7 @@
         }
       },
       "knx_bridge": {
-        "title": "KNX group addresses – {name}",
+        "title": "KNX group addresses (experimental) – {name}",
         "description": "The {object_count} IDM KNX objects are laid out above a base address: each object number is added to it, so 8/0/0 puts object 1 on 8/0/1 and object 222 on 8/0/222. Use the override list for objects your ETS project already addresses differently — one `register = address` per line.",
         "data": {
           "knx_base_address": "Base group address",
@@ -450,8 +450,8 @@
             }
           },
           "knx_bridge_section": {
-            "name": "KNX bridge",
-            "description": "Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
+            "name": "KNX bridge (experimental)",
+            "description": "Experimental: verified by tests only, never yet against a real KNX bus. Please report what you see. Publish heat pump values on a KNX bus and accept commands from it. Uses the Home Assistant KNX integration, which must be set up — gateway, tunnelling and KNX Secure all come from there.",
             "data": {
               "knx_bridge": "Enable KNX bridge",
               "knx_send": "Send values to KNX",
@@ -546,7 +546,7 @@
         }
       },
       "knx_bridge": {
-        "title": "KNX group addresses – {name}",
+        "title": "KNX group addresses (experimental) – {name}",
         "description": "The {object_count} IDM KNX objects are laid out above a base address: each object number is added to it, so 8/0/0 puts object 1 on 8/0/1 and object 222 on 8/0/222. Use the override list for objects your ETS project already addresses differently — one `register = address` per line.",
         "data": {
           "knx_base_address": "Base group address",

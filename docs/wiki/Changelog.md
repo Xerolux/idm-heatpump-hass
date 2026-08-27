@@ -7,13 +7,15 @@ This page only summarizes recent milestones.
 
 ## v0.16.0-rc.3 — 2026-08-27
 
-Optional **KNX bridge**: the integration can serve the IDM KNX communication
+Optional, **experimental** **KNX bridge**: the integration can serve the IDM KNX communication
 objects — same object numbers, datapoint types and read/write directions as
 IDM's ETS example project — through the Home Assistant `knx` integration, so
 the Weinzierl `KNX IP BAOS 774` gateway module is no longer needed. KNX Secure,
 tunnelling and routing come from the `knx` integration. One base group address
 configures all 654 objects, and `idm_heatpump.export_knx_group_addresses`
 returns the table for ETS.
+
+Experimental: unit-tested, but never yet exercised against a real KNX bus.
 
 See [KNX Bridge](KNX-Bridge).
 

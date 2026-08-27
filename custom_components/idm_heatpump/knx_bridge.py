@@ -203,7 +203,9 @@ class KnxBridge:
             return
 
         _LOGGER.info(
-            "KNX bridge for %s serving %d objects from base address %s",
+            "KNX bridge (experimental) for %s serving %d objects from base address %s. "
+            "This path is verified by tests only and has not been exercised against a real "
+            "KNX bus; please report what you observe",
             self._entry_id,
             len(self._objects),
             self._config.base_address,

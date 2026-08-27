@@ -1,5 +1,16 @@
 # KNX Bridge
 
+> [!WARNING]
+> **Experimental.** This feature is covered by unit tests and static analysis,
+> but it has never been exercised against a real KNX bus: no telegram has been
+> decoded by a physical device, the datapoint types come from IDM's ETS example
+> project rather than from measurement, and the bus load of a first full export
+> has not been observed on a physical line. Treat it as something to try and
+> report on, not as something to depend on. Feedback — especially from an
+> installation with ETS access — is what turns it into a supported feature.
+> See [`docs/release-evidence/0.16.0-rc.3.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.16.0-rc.3.md)
+> for exactly what is and is not verified.
+
 Publish the heat pump on a KNX bus and take commands back from it — using
 the KNX integration Home Assistant already has, and **without** the IDM
 KNX gateway module.

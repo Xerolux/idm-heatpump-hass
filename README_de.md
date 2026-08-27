@@ -27,7 +27,7 @@
 
 ---
 
-## 🚌 Neu: KNX ohne das IDM-Gateway-Modul
+## 🚌 Neu (experimentell): KNX ohne das IDM-Gateway-Modul
 
 IDM verkauft die KNX-Anbindung des Navigators als **Weinzierl KNX IP BAOS 774**
 Modul. Die optionale **[KNX-Bridge][wiki-knx]** macht dieses Modul überflüssig:
@@ -46,6 +46,11 @@ Tunneling, Routing und **KNX Secure** kommen von dort.
 | **Gruppenadressen** | Eine Basisadresse, je Objekt `Basis + Objektnummer` — der gesamte Katalog passt in eine Hauptgruppe |
 | **ETS** | `idm_heatpump.export_knx_group_addresses` liefert die vollständige Tabelle für den eigenen Regler |
 | **Voraussetzung** | Die KNX-Integration von Home Assistant, eingerichtet und verbunden |
+
+> [!WARNING]
+> **Experimentell.** Durch Unit-Tests abgesichert, aber noch nie an einem echten
+> KNX-Bus erprobt. Ausprobieren und berichten — Rückmeldungen aus einer Anlage mit
+> ETS-Zugang machen daraus eine unterstützte Funktion.
 
 Aktivierung unter **Einstellungen → Geräte & Dienste → IDM Heatpump →
 Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-knx]**.
@@ -70,7 +75,7 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 | **🧪 Schreibgeschützter Verbindungstest** | Das Rekonfigurationsmenü testet die gespeicherte Modbus- und optionale Webverbindung, ohne Einstellungen zu ändern oder Register zu schreiben |
 | **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api`, `modbus-connection`, `tmodbus` und die Pymodbus-Kompatibilitätsversion |
 | **🔑 Fachmann-Ebene** | Optionale Sensoren für die aktuellen Zugangscodes der Ebenen 1 & 2 (standardmäßig aus, minütlich aktualisiert und ganz oben angeheftet) |
-| **🚌 KNX-Bridge** | Optional: stellt die IDM-KNX-Kommunikationsobjekte über die KNX-Integration von Home Assistant bereit (inkl. KNX Secure) — ersetzt das Weinzierl-BAOS-Gateway-Modul. [Details][wiki-knx] |
+| **🚌 KNX-Bridge** *(experimentell)* | Optional: stellt die IDM-KNX-Kommunikationsobjekte über die KNX-Integration von Home Assistant bereit (inkl. KNX Secure) — ersetzt das Weinzierl-BAOS-Gateway-Modul. [Details][wiki-knx] |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
 
 ---
