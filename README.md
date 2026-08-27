@@ -130,7 +130,7 @@ before publishing a stable release.
 - HACS ([Installation guide](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502)
 - Optional local Navigator web PIN for additional read-only web diagnostics
-- Python 3.13+ (provided by Home Assistant)
+- Python 3.14+ (provided by Home Assistant)
 - `modbus-connection==4.10.0` · `tmodbus[async-serial]==0.6.1` (direct Modbus socket runtime)
 - `idm-heatpump-api[web]==2.0.0` (device logic: register metadata, batching, decoding, model detection, write safety)
 

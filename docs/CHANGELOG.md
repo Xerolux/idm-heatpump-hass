@@ -13,6 +13,87 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0-rc.2] - 2026-08-27
+
+Release candidate 2 brings the device hierarchy onto the child devices that
+Home Assistant `2026.9` introduces, confirms the `0.16.0` runtime against that
+release, and fixes the continuous integration gap that hid which Home Assistant
+version was actually being tested. Entity IDs, unique IDs, register addresses,
+write paths and the dependency pins are unchanged from `0.16.0-rc.1`, and the
+declared minimum stays Home Assistant `2026.8.1`.
+
+### Changed
+
+- **Heating circuits, optional modules and rooms are child devices on Home
+  Assistant `2026.9` and newer.** Home Assistant draws the line explicitly:
+  `via_device_id` describes *connectivity*, one device reached through another,
+  while a child device describes *composition*, the logical parts of a single
+  product. A heating circuit, a solar or cascade module and a room regulation
+  are parts of the controller they belong to, not devices behind it, so they now
+  register through `async_get_or_create_child`. A zone module keeps its
+  `via_device_id` link: it is separate hardware wired to the controller, and a
+  child device cannot be the parent of another child device, so the rooms below
+  it need it to stay an ordinary device.
+- **Nothing is renamed, moved or re-created in the process.** Home Assistant
+  converts a device whose identifiers already exist into a child device and
+  preserves its device ID, so entities, areas, dashboards and automations that
+  point at a heating circuit or a room survive the upgrade untouched. This was
+  verified end to end against a real `2026.9` device registry by upgrading from
+  a `0.16.0-rc.1` `via_device_id` hierarchy: every device ID was preserved.
+- **A child device shows no manufacturer or model of its own**, because Home
+  Assistant does not allow a logical part to carry hardware metadata. The main
+  device and the zone modules keep theirs.
+
+### Verified
+
+- **Home Assistant `2026.8` keeps working.** `child_devices_supported()` probes
+  for the API and falls back to the previous `via_device_id` links, so the
+  declared minimum stays `2026.8.1` instead of jumping to a Home Assistant
+  release that is not out yet. Both paths are covered by tests.
+- **Home Assistant `2026.9` needs no other integration change.** The full suite
+  (1,230 tests), strict mypy and Ruff were run against `2026.9.0b0` on Python
+  `3.14.2` with the pinned runtime, all green. None of the backward-incompatible
+  changes in `2026.9` touch this integration: it has no `vacuum` platform, no
+  `update` entity, no persistent notifications and no LLM tools.
+- **The device registry deprecations that land in `2026.9` were already
+  handled.** The `via_device` to `via_device_id` migration shipped for
+  `2026.8`; in `2026.9` `via_device` is gone from the `DeviceInfo` typed
+  dictionary altogether and only `via_device_id`, which `device_hierarchy.py`
+  uses, remains. Also checked and unused: `default_manufacturer`,
+  `default_model`, `default_name`, `merge_connections`, `merge_identifiers`,
+  `created_at`, `modified_at`, `suggested_area`, `async_get_device`,
+  `deleted_devices`, dictionary access to `registry.devices`,
+  `async_is_composite_device_id` and `add_config_entry_id`. The new validations
+  do not bite either: `precreate_main_device` cannot produce a self-referencing
+  via device, and every entity sets `_attr_unique_id`.
+
+### Fixed
+
+- **The continuous integration Home Assistant version matrix was decorative.**
+  `pytest-homeassistant-custom-component` pins `homeassistant` to one exact
+  version, so installing it replaced whatever version the matrix leg had asked
+  for — every leg silently tested that pinned version instead. The package is
+  no longer installed (its plugin is disabled through `-p no:homeassistant` in
+  `pytest.ini` and no test imports it), and a new step fails the job when the
+  installed Home Assistant version is not the requested one.
+
+### Added
+
+- **A Home Assistant `2026.9` leg in continuous integration**, so its
+  device-registry deprecations and API removals surface in this repository
+  before users meet them. It pins the beta artifact until the stable release is
+  on the Python Package Index.
+
+### Documentation
+
+- **Correct the stated Python requirement from `3.13+` to `3.14+`.** Home
+  Assistant has required `>=3.14.2` since `2026.8`, and continuous integration
+  has been running `3.14` all along, but `README.md`, `README_de.md`,
+  `AGENTS.md`, `CLAUDE.md` and both Wiki pages still promised `3.13`.
+- **Record the remaining `via_device_id` fallback as roadmap work.** It can be
+  dropped once the declared minimum reaches `2026.9`; custom integrations keep
+  `via_device_id` until Core `2027.8`, so nothing forces that date.
+
 ## [0.16.0-rc.1] - 2026-08-26
 
 > ## ⚠️ BREAKING CHANGE — read before updating to `0.16.x`

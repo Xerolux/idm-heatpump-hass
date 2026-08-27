@@ -128,7 +128,7 @@ Maintainer sollten vor einem stabilen Release den
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
-- Python 3.13+ (wird von Home Assistant bereitgestellt)
+- Python 3.14+ (wird von Home Assistant bereitgestellt)
 - `modbus-connection==4.10.0` · `tmodbus[async-serial]==0.6.1` (direkter Modbus-Socket)
 - `idm-heatpump-api[web]==2.0.0` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
 

@@ -7,11 +7,11 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.16.0-rc.1` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.15.1`, the last line with pymodbus)
+- **Current Version**: `0.16.0-rc.2` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.15.1`, the last line with pymodbus)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
-- **Python**: 3.13+
+- **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
 - **Direct Modbus Runtime**: `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.1`
 - **Device Logic**: `idm-heatpump-api[web]==2.0.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 
@@ -325,6 +325,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Diagnostics export | `diagnostics.py` | Redacts host/port/slave for privacy |
 | Unused register filtering | `entity.py`, `coordinator.py` | Entities become unavailable when their register indicates "unused" |
 | Repair issues | `repairs.py`, `coordinator.py` | User-fixable issues (e.g. missing web PIN) |
+| Device hierarchy | `device_hierarchy.py` | Opt-in sub-devices. Heating circuits, optional modules and rooms are *child devices* (`parent_device_id`) on HA 2026.9+; zone modules stay ordinary `via_device_id` devices, because a child device can't parent another child. `child_devices_supported()` falls back to `via_device_id` on 2026.8 |
 | API register-failure log filter | `log_filter.py` | Suppresses repeated retry-exhaustion warnings for unsupported registers |
 
 ---

@@ -25,7 +25,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
 | **Integration version** | 0.15.0 |
 | **Supported/tested HA baseline** | 2026.8.1 |
-| **Python** | 3.13+ (managed by Home Assistant) |
+| **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection==4.10.0 |
 | **Socket backend** | tmodbus[async-serial]==0.6.1 |
 | **Device/web library** | idm-heatpump-api[web]==2.0.0 |

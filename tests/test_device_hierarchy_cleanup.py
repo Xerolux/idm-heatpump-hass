@@ -30,9 +30,25 @@ def _coordinator(*, enabled: bool, register_names: tuple[str, ...] = ()) -> Magi
 
 
 def _device(identifier: tuple[str, str], device_id: str) -> MagicMock:
+    """Build an ordinary device double.
+
+    ``parent_device_id`` is set explicitly: production code tells an ordinary
+    device from a child device by that attribute, and a bare ``MagicMock``
+    would answer every ``getattr`` with a truthy mock.
+    """
     device = MagicMock()
     device.id = device_id
     device.identifiers = {identifier}
+    device.parent_device_id = None
+    return device
+
+
+def _child_device(identifier: tuple[str, str], device_id: str, parent_device_id: str) -> MagicMock:
+    """Build a child device double, as Home Assistant 2026.9 and newer create."""
+    device = MagicMock()
+    device.id = device_id
+    device.identifiers = {identifier}
+    device.parent_device_id = parent_device_id
     return device
 
 
@@ -295,3 +311,116 @@ def test_cleanup_stale_web_sensor_entities():
 
     removed = {call.args[0] for call in registry.async_remove.call_args_list}
     assert removed == {"sensor.eheating", "sensor.dewpoint", "sensor.comp1"}
+
+
+def _run_hierarchy_cleanup(
+    coordinator: MagicMock,
+    *,
+    devices: list[MagicMock],
+    child_devices: list[MagicMock],
+    devices_without_entities: set[str],
+) -> MagicMock:
+    """Run the hierarchy cleanup against explicit ordinary and child device sets."""
+    registry = MagicMock()
+
+    def _entries_for_device(_registry, device_id, include_disabled_entities=False):
+        return [] if device_id in devices_without_entities else [MagicMock()]
+
+    with (
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_get",
+            return_value=registry,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_entries_for_config_entry",
+            return_value=devices,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_child_entries_for_config_entry",
+            return_value=child_devices,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_get",
+            return_value=MagicMock(),
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_device",
+            side_effect=_entries_for_device,
+        ),
+    ):
+        cleanup_stale_hierarchy_devices(MagicMock(), coordinator)
+
+    return registry
+
+
+def test_stale_child_devices_are_removed_not_detached() -> None:
+    """A child device has no config entry membership of its own to drop."""
+    coordinator = _coordinator(enabled=True, register_names=("hc_a_flow_temp",))
+    main = _device((DOMAIN, "entry"), "main")
+    stale = _child_device((DOMAIN, "entry_heating_circuit_g"), "circuit_g", "main")
+
+    registry = _run_hierarchy_cleanup(
+        coordinator,
+        devices=[main],
+        child_devices=[stale],
+        devices_without_entities=set(),
+    )
+
+    registry.async_remove_device.assert_called_once_with("circuit_g")
+    registry.async_update_device.assert_not_called()
+
+
+def test_zone_module_without_own_entities_is_kept_while_its_rooms_live() -> None:
+    """Deleting a module cascades to its rooms, so an in-use module must survive.
+
+    Some installations only expose room registers below a zone module. The
+    module then never receives an entity of its own, but removing it would take
+    the rooms — and the user's entities — with it.
+    """
+    coordinator = _coordinator(enabled=True, register_names=("zm2_room4_temp",))
+    main = _device((DOMAIN, "entry"), "main")
+    module = _device((DOMAIN, "entry_zone_module_2"), "module_2")
+    room = _child_device((DOMAIN, "entry_zone_module_2_room_4"), "room_4", "module_2")
+
+    registry = _run_hierarchy_cleanup(
+        coordinator,
+        devices=[main, module],
+        child_devices=[room],
+        devices_without_entities={"module_2"},
+    )
+
+    registry.async_update_device.assert_not_called()
+    registry.async_remove_device.assert_not_called()
+
+
+def test_zone_module_is_collected_once_its_last_room_goes() -> None:
+    """When the rooms disappear in the same pass, the empty module goes with them."""
+    coordinator = _coordinator(enabled=True, register_names=("hc_a_flow_temp",))
+    main = _device((DOMAIN, "entry"), "main")
+    module = _device((DOMAIN, "entry_zone_module_2"), "module_2")
+    room = _child_device((DOMAIN, "entry_zone_module_2_room_4"), "room_4", "module_2")
+
+    registry = _run_hierarchy_cleanup(
+        coordinator,
+        devices=[main, module],
+        child_devices=[room],
+        devices_without_entities={"module_2"},
+    )
+
+    registry.async_remove_device.assert_called_once_with("room_4")
+    registry.async_update_device.assert_called_once_with("module_2", remove_config_entry_id="entry")
+
+
+def test_cleanup_never_touches_the_main_device() -> None:
+    coordinator = _coordinator(enabled=False)
+    main = _device((DOMAIN, "entry"), "main")
+
+    registry = _run_hierarchy_cleanup(
+        coordinator,
+        devices=[main],
+        child_devices=[],
+        devices_without_entities={"main"},
+    )
+
+    registry.async_remove_device.assert_not_called()
+    registry.async_update_device.assert_not_called()

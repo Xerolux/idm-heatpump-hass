@@ -23,7 +23,13 @@ jobs:
       matrix:
         python-version: ["3.14"]
         home-assistant-version:
+          # The declared minimum in hacs.json/manifest.json, and the version the
+          # release workflow validates against.
           - "2026.8.1"
+          # The next Home Assistant release, so its device-registry deprecations
+          # and API removals surface here before users hit them. Move this to
+          # "2026.9.0" once the stable artifact is on PyPI.
+          - "2026.9.0b0"
         api-dependency-mode:
           - manifest-pinned
           - api-main

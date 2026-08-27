@@ -44,10 +44,36 @@ jobs:
           python-version: ${{ inputs.python-version }}
 
       - name: Install Home Assistant ${{ inputs.home-assistant-version }} and test tools
+        env:
+          HOME_ASSISTANT_VERSION: ${{ inputs.home-assistant-version }}
         run: |
           python -m pip install --upgrade pip setuptools wheel
-          pip install "homeassistant==${{ inputs.home-assistant-version }}" "aiohttp>=3.8.0"
-          pip install ruff mypy pytest pytest-cov pytest-asyncio pytest-homeassistant-custom-component
+          pip install "homeassistant==${HOME_ASSISTANT_VERSION}" "aiohttp>=3.8.0"
+          # pytest-homeassistant-custom-component is deliberately absent: it pins
+          # homeassistant to one exact version, so installing it silently replaced
+          # whatever this matrix leg asked for and made the version matrix
+          # decorative. Its plugin is disabled in pytest.ini (-p no:homeassistant)
+          # and no test imports it, so nothing here needs it.
+          pip install ruff mypy pytest pytest-cov pytest-asyncio
+
+      - name: Verify the requested Home Assistant version is the installed one
+        env:
+          HOME_ASSISTANT_VERSION: ${{ inputs.home-assistant-version }}
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+
+          from homeassistant.const import __version__
+
+          requested = os.environ["HOME_ASSISTANT_VERSION"]
+          if __version__ != requested:
+              # A transitive pin displaced the matrix version. Fail loudly rather
+              # than reporting a green run for a version that was never tested.
+              print(f"Requested Home Assistant {requested}, but {__version__} is installed")
+              sys.exit(1)
+          print(f"Home Assistant {__version__} confirmed")
+          PY
 
       - name: Install manifest runtime dependencies
         env:

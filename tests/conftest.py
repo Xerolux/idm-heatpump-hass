@@ -636,26 +636,31 @@ def _stub_homeassistant() -> None:
 
     device_registry_mod.DeviceInfo = _DeviceInfo
 
+    class _ChildDeviceInfo(dict):
+        """Child device info, as Home Assistant 2026.9 and newer define it.
+
+        A child device is a logical part of its parent, so it carries no
+        manufacturer, model, connections or via_device_id.
+        """
+
+        def __init__(self, identifiers=None, name=None, parent_device_id=None, **kwargs):
+            super().__init__(
+                identifiers=identifiers or set(),
+                name=name,
+                parent_device_id=parent_device_id,
+                **kwargs,
+            )
+
+    device_registry_mod.ChildDeviceInfo = _ChildDeviceInfo
+
     class _DeviceRegistry:
         def __init__(self):
             self.devices = {}
             self._by_identifiers = {}
             self._counter = 0
+            self.removed = []
 
-        def async_get_or_create(self, **kwargs):
-            # Minimal stub mirroring HA's registry: one device per distinct
-            # identifiers set (not per config entry), with a stable, unique
-            # id, so precreate_main_device can cache distinct via_device_id
-            # links for the main device and each sub-device.
-            identifiers = frozenset(kwargs.get("identifiers") or ())
-            config_entry_id = kwargs.get("config_entry_id")
-            existing_id = self._by_identifiers.get(identifiers)
-            if existing_id is not None:
-                entry = self.devices[existing_id]
-                if config_entry_id is not None:
-                    entry.config_entries.add(config_entry_id)
-                return entry
-
+        def _new_entry(self, identifiers, config_entry_id):
             class _DeviceEntry:
                 pass
 
@@ -664,16 +669,85 @@ def _stub_homeassistant() -> None:
             entry.id = f"test-device-{self._counter}"
             entry.config_entries = {config_entry_id} - {None}
             entry.identifiers = set(identifiers)
+            entry.parent_device_id = None
             self.devices[entry.id] = entry
-            self._by_identifiers[identifiers] = entry.id
+            self._by_identifiers[frozenset(identifiers)] = entry.id
+            return entry
+
+        def async_get_or_create(self, **kwargs):
+            # Minimal stub mirroring HA's registry: one device per distinct
+            # identifiers set (not per config entry), with a stable, unique
+            # id, so precreate_main_device can cache distinct parent links for
+            # the main device and each sub-device.
+            identifiers = frozenset(kwargs.get("identifiers") or ())
+            config_entry_id = kwargs.get("config_entry_id")
+            existing_id = self._by_identifiers.get(identifiers)
+            if existing_id is not None:
+                entry = self.devices[existing_id]
+                if entry.parent_device_id is not None:
+                    # Home Assistant refuses to re-register a child device as a
+                    # main device instead of silently converting it back.
+                    raise AssertionError(f"identifiers {sorted(identifiers)} belong to child device {entry.id}")
+                if config_entry_id is not None:
+                    entry.config_entries.add(config_entry_id)
+                return entry
+
+            return self._new_entry(identifiers, config_entry_id)
+
+        def async_get_or_create_child(self, **kwargs):
+            # Mirrors the 2026.9 contract: the parent must already exist and
+            # must not itself be a child, a device whose identifiers already
+            # exist is converted while keeping its id, and reparenting is
+            # rejected.
+            identifiers = frozenset(kwargs.get("identifiers") or ())
+            config_entry_id = kwargs.get("config_entry_id")
+            parent_device_id = kwargs["parent_device_id"]
+
+            parent = self.devices.get(parent_device_id)
+            if parent is None:
+                raise AssertionError(f"parent_device_id {parent_device_id} is not a registered device id")
+            if parent.parent_device_id is not None:
+                raise AssertionError("a child device can't be the parent of another child device")
+
+            existing_id = self._by_identifiers.get(identifiers)
+            if existing_id is not None:
+                entry = self.devices[existing_id]
+                if entry.parent_device_id not in (None, parent_device_id):
+                    raise AssertionError("reparenting is not supported")
+                entry.parent_device_id = parent_device_id
+                if config_entry_id is not None:
+                    entry.config_entries.add(config_entry_id)
+                return entry
+
+            entry = self._new_entry(identifiers, config_entry_id)
+            entry.parent_device_id = parent_device_id
             return entry
 
         def async_update_device(self, device_id, **kwargs):
             return None
 
+        def async_remove_device(self, device_id):
+            self.removed.append(device_id)
+            entry = self.devices.pop(device_id, None)
+            if entry is None:
+                return
+            self._by_identifiers.pop(frozenset(entry.identifiers), None)
+            for child_id in [child.id for child in list(self.devices.values()) if child.parent_device_id == device_id]:
+                self.async_remove_device(child_id)
+
     device_registry_mod.async_get = MagicMock(return_value=_DeviceRegistry())
     device_registry_mod.async_entries_for_config_entry = lambda registry, entry_id: [
-        device for device in registry.devices.values() if entry_id in getattr(device, "config_entries", set())
+        device
+        for device in registry.devices.values()
+        if entry_id in getattr(device, "config_entries", set()) and device.parent_device_id is None
+    ]
+    device_registry_mod.async_child_entries_for_config_entry = lambda registry, entry_id: [
+        device
+        for device in registry.devices.values()
+        if entry_id in getattr(device, "config_entries", set()) and device.parent_device_id is not None
+    ]
+    device_registry_mod.async_entries_for_parent_device = lambda registry, parent_device_id: [
+        device for device in registry.devices.values() if device.parent_device_id == parent_device_id
     ]
 
     # homeassistant.helpers.entity_registry
