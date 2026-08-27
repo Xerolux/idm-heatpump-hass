@@ -1,14 +1,13 @@
 # KNX Bridge
 
 > [!WARNING]
-> **Experimental.** This feature is covered by unit tests and static analysis,
-> but it has never been exercised against a real KNX bus: no telegram has been
-> decoded by a physical device, the datapoint types come from IDM's ETS example
-> project rather than from measurement, and the bus load of a first full export
-> has not been observed on a physical line. Treat it as something to try and
-> report on, not as something to depend on. Feedback — especially from an
-> installation with ETS access — is what turns it into a supported feature.
-> See [`docs/release-evidence/0.16.0-rc.3.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.16.0-rc.3.md)
+> **Experimental.** Automated behavior is covered by tests and static analysis.
+> Setup, safe receive-only configuration and integration reload were also
+> exercised on a live Home Assistant installation with an active KNX interface.
+> No IDM group addresses had been imported into ETS, no physical group-address
+> telegram was sent or decoded, and first-export bus load remains unmeasured.
+> Treat it as something to try and report on, not as something to depend on.
+> See [`docs/release-evidence/0.16.0-rc.5.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.16.0-rc.5.md)
 > for exactly what is and is not verified.
 
 Publish the heat pump on a KNX bus and take commands back from it — using
@@ -163,6 +162,18 @@ Every object carries the direction IDM gave it in the example project:
   register through the normal write path, including its safety checks,
   write cooldown and EEPROM protection.
 
+KNX controls can emit intermediate values while a dial is turned or an arrow
+is tapped. The bridge therefore keeps the newest value per register for a
+one-second quiet period and writes only that final value. If the normal write
+cooldown or the EEPROM interval is still active, the newest value stays queued
+and is applied after the guard expires; a later telegram replaces it. Values
+that already match the current coordinator state do not consume a write cycle.
+
+This changes command handling, not write safety. The EEPROM-sensitive register
+classification and the default 60-second EEPROM interval are unchanged. The
+interval remains configurable in the integration settings for owners who
+deliberately accept a different wear-versus-latency trade-off.
+
 ### Read requests
 
 A KNX device that asks for a value — a push-button refreshing its display
@@ -314,8 +325,9 @@ periodically.
 **A command from KNX has no effect**
 Only objects IDM marks as writable accept commands. Check that *Accept
 commands from KNX* is on, and look for a write error in the log: the write
-goes through the same safety checks as any other write, so a value outside
-the register range or a write cooldown will reject it.
+goes through the same safety checks as any other write. A value outside the
+register range is rejected. An active general or EEPROM cooldown keeps the
+newest valid command queued and applies it when the guard expires.
 
 **Two objects share an address**
 The override list refuses a duplicate address. If the derived addresses

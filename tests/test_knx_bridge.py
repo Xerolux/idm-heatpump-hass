@@ -10,6 +10,7 @@ import asyncio
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from homeassistant.exceptions import HomeAssistantError
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.knx_bridge import (
@@ -19,6 +20,7 @@ from custom_components.idm_heatpump.knx_bridge import (
     KnxBridgeConfig,
     _coerce_incoming,
     _coerce_outgoing,
+    _retry_delay_from_write_error,
 )
 
 OUTDOOR = RegisterDef(1000, DataType.FLOAT, "outdoor_temp", unit="°C")
@@ -26,6 +28,13 @@ SYSTEM_MODE = RegisterDef(1005, DataType.UCHAR, "system_mode", writable=True)
 HC_A_MODE = RegisterDef(1393, DataType.UCHAR, "hc_a_mode", writable=True)
 DEMAND_HEATING = RegisterDef(1710, DataType.BOOL, "demand_heating", writable=True)
 ACK = RegisterDef(1999, DataType.UCHAR, "error_acknowledge", writable=True, write_only=True)
+HC_D_SETPOINT = RegisterDef(
+    1407,
+    DataType.FLOAT,
+    "hc_d_room_setpoint_heat_normal",
+    writable=True,
+    eeprom_sensitive=True,
+)
 
 REGISTERS = {reg.name: reg for reg in (OUTDOOR, SYSTEM_MODE, HC_A_MODE, DEMAND_HEATING, ACK)}
 
@@ -40,10 +49,10 @@ def _make_hass(*, knx_loaded=True):
     return hass
 
 
-def _make_coordinator(data=None):
+def _make_coordinator(data=None, *, registers=REGISTERS):
     coordinator = MagicMock()
     coordinator.data = data if data is not None else {"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": 2}
-    coordinator.get_register = MagicMock(side_effect=REGISTERS.get)
+    coordinator.get_register = MagicMock(side_effect=registers.get)
     coordinator.is_register_unused = MagicMock(return_value=False)
     coordinator.async_add_listener = MagicMock(return_value=MagicMock())
     coordinator.async_write_register = AsyncMock()
@@ -55,6 +64,9 @@ def _config(**kwargs):
         "base_address": "8/0/0",
         "groups": ("system", "heat_pump", "heating_circuits", "glt"),
         "send_gap": 0.0,
+        "write_debounce": 0.0,
+        "write_cooldown": 0.0,
+        "eeprom_write_interval": 0.0,
     }
     defaults.update(kwargs)
     return KnxBridgeConfig(**defaults)
@@ -101,6 +113,29 @@ class TestPayloadCoercion:
     )
     def test_incoming(self, value, register, expected):
         assert _coerce_incoming(value, register) == expected
+
+    def test_production_config_uses_a_write_quiet_period(self):
+        assert KnxBridgeConfig(base_address="8/0/0").write_debounce > 0
+
+
+class TestWriteRetryDelay:
+    def test_reads_the_home_assistant_cooldown_placeholder(self):
+        err = HomeAssistantError(
+            translation_key="write_cooldown_active",
+            translation_placeholders={"remaining": "2.3"},
+        )
+        assert _retry_delay_from_write_error(err) == 2.3
+
+    def test_reads_the_api_eeprom_guard_message(self):
+        err = ValueError("EEPROM-sensitive register was written too recently (try again in 25.5s)")
+        assert _retry_delay_from_write_error(err, eeprom_fallback=60.0) == 25.5
+
+    def test_uses_the_configured_eeprom_interval_as_a_safe_fallback(self):
+        err = ValueError("EEPROM write cycle protection is active")
+        assert _retry_delay_from_write_error(err, eeprom_fallback=60.0) == 60.0
+
+    def test_does_not_retry_a_device_or_connection_error(self):
+        assert _retry_delay_from_write_error(RuntimeError("bus off"), eeprom_fallback=60.0) is None
 
 
 class TestStart:
@@ -225,6 +260,130 @@ class TestReceiving:
         await asyncio.sleep(0)
         coordinator.async_write_register.assert_awaited_once_with(HC_A_MODE, 3)
         await bridge.async_stop()
+
+    async def test_ignores_a_command_that_matches_the_current_value(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        bridge = await self._started(hass, coordinator)
+
+        bridge._handle_knx_event(self._event("8/0/222", 2))
+        await asyncio.sleep(0)
+        coordinator.async_write_register.assert_not_awaited()
+        await bridge.async_stop()
+
+    async def test_rapid_setpoints_are_coalesced_to_the_newest_value(self):
+        hass = _make_hass()
+        registers = dict(REGISTERS, **{HC_D_SETPOINT.name: HC_D_SETPOINT})
+        coordinator = _make_coordinator({HC_D_SETPOINT.name: 22.0}, registers=registers)
+        bridge = KnxBridge(
+            hass,
+            coordinator,
+            _config(send_enabled=False, write_debounce=0.02),
+            entry_id="e",
+        )
+        await bridge.async_start()
+
+        bridge._handle_knx_event(self._event("8/0/232", 22.5))
+        await asyncio.sleep(0.005)
+        bridge._handle_knx_event(self._event("8/0/232", 23.0))
+        await asyncio.sleep(0.04)
+
+        coordinator.async_write_register.assert_awaited_once_with(HC_D_SETPOINT, 23.0)
+        await bridge.async_stop()
+
+    async def test_return_to_current_value_cancels_a_pending_change(self):
+        hass = _make_hass()
+        registers = dict(REGISTERS, **{HC_D_SETPOINT.name: HC_D_SETPOINT})
+        coordinator = _make_coordinator({HC_D_SETPOINT.name: 22.0}, registers=registers)
+        bridge = KnxBridge(
+            hass,
+            coordinator,
+            _config(send_enabled=False, write_debounce=0.02),
+            entry_id="e",
+        )
+        await bridge.async_start()
+
+        bridge._handle_knx_event(self._event("8/0/232", 23.0))
+        await asyncio.sleep(0.005)
+        bridge._handle_knx_event(self._event("8/0/232", 22.0))
+        await asyncio.sleep(0.04)
+
+        coordinator.async_write_register.assert_not_awaited()
+        await bridge.async_stop()
+
+    async def test_general_cooldown_keeps_the_command_queued(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        cooldown = HomeAssistantError(
+            translation_key="write_cooldown_active",
+            translation_placeholders={"remaining": "0.01"},
+        )
+        coordinator.async_write_register = AsyncMock(side_effect=[cooldown, None])
+        bridge = await self._started(hass, coordinator)
+
+        bridge._handle_knx_event(self._event("8/0/222", 3))
+        await asyncio.sleep(0.14)
+
+        assert coordinator.async_write_register.await_count == 2
+        coordinator.async_write_register.assert_awaited_with(HC_A_MODE, 3)
+        await bridge.async_stop()
+
+    async def test_eeprom_cooldown_retries_the_newest_pending_setpoint(self):
+        hass = _make_hass()
+        registers = dict(REGISTERS, **{HC_D_SETPOINT.name: HC_D_SETPOINT})
+        coordinator = _make_coordinator({HC_D_SETPOINT.name: 22.0}, registers=registers)
+        eeprom_guard = ValueError("EEPROM-sensitive register was written too recently (try again in 0.01s)")
+        coordinator.async_write_register = AsyncMock(side_effect=[eeprom_guard, None])
+        bridge = KnxBridge(hass, coordinator, _config(send_enabled=False), entry_id="e")
+        await bridge.async_start()
+
+        bridge._handle_knx_event(self._event("8/0/232", 22.5))
+        await asyncio.sleep(0)
+        bridge._handle_knx_event(self._event("8/0/232", 23.0))
+        await asyncio.sleep(0.14)
+
+        assert coordinator.async_write_register.await_args_list[0].args == (HC_D_SETPOINT, 22.5)
+        assert coordinator.async_write_register.await_args_list[1].args == (HC_D_SETPOINT, 23.0)
+        await bridge.async_stop()
+
+    async def test_successful_eeprom_write_delays_the_next_knx_value(self):
+        hass = _make_hass()
+        registers = dict(REGISTERS, **{HC_D_SETPOINT.name: HC_D_SETPOINT})
+        coordinator = _make_coordinator({HC_D_SETPOINT.name: 22.0}, registers=registers)
+        bridge = KnxBridge(
+            hass,
+            coordinator,
+            _config(send_enabled=False, eeprom_write_interval=0.02),
+            entry_id="e",
+        )
+        await bridge.async_start()
+
+        bridge._handle_knx_event(self._event("8/0/232", 22.5))
+        await asyncio.sleep(0)
+        bridge._handle_knx_event(self._event("8/0/232", 23.0))
+        await asyncio.sleep(0.01)
+        assert coordinator.async_write_register.await_count == 1
+
+        await asyncio.sleep(0.13)
+        assert coordinator.async_write_register.await_args_list[1].args == (HC_D_SETPOINT, 23.0)
+        await bridge.async_stop()
+
+    async def test_stop_cancels_a_debounced_write(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        bridge = KnxBridge(
+            hass,
+            coordinator,
+            _config(send_enabled=False, write_debounce=10.0),
+            entry_id="e",
+        )
+        await bridge.async_start()
+
+        bridge._handle_knx_event(self._event("8/0/222", 3))
+        await asyncio.sleep(0)
+        await bridge.async_stop()
+
+        coordinator.async_write_register.assert_not_awaited()
 
     async def test_ignores_outgoing_telegrams(self):
         hass = _make_hass()

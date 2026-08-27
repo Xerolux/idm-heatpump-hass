@@ -18,6 +18,7 @@ import asyncio
 import contextlib
 import logging
 import math
+import re
 import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass, field
@@ -45,6 +46,18 @@ EVENT_KNX = "knx_event"
 # several hundred objects does not saturate the line other devices share.
 DEFAULT_SEND_GAP: float = 0.05
 
+# KNX controls often emit several intermediate setpoints while the user turns
+# a dial or taps an arrow. Keep the newest command for a short quiet period so
+# only the final value consumes a write cycle on the controller.
+DEFAULT_WRITE_DEBOUNCE: float = 1.0
+
+# Leave a small margin after a locally reported cooldown. The displayed
+# remaining time is rounded, so retrying at the exact value can still arrive a
+# fraction too early and need another avoidable attempt.
+WRITE_RETRY_MARGIN: float = 0.1
+MAX_WRITE_RETRY_DELAY: float = 3600.0
+_EEPROM_RETRY_PATTERN = re.compile(r"try again in\s*([0-9]+(?:\.[0-9]+)?)s", re.IGNORECASE)
+
 # A value we just published comes back from a mirroring device or a
 # visualisation often enough that writing it straight back would loop.
 # Ignore an inbound telegram that only repeats what we sent this recently.
@@ -68,6 +81,19 @@ class KnxBridgeConfig:
     resend_interval: int = 0
     tolerance: float = 0.1
     send_gap: float = DEFAULT_SEND_GAP
+    write_debounce: float = DEFAULT_WRITE_DEBOUNCE
+    write_cooldown: float = 5.0
+    eeprom_write_interval: float = 60.0
+
+
+@dataclass(frozen=True, slots=True)
+class _PendingKnxWrite:
+    """Newest KNX command waiting to be applied to one register."""
+
+    register: RegisterDef
+    value: Any
+    destination: str
+    updated_at: float
 
 
 def _is_float_dpt(dpt: str | None) -> bool:
@@ -138,6 +164,9 @@ class KnxBridge:
         self._queue: asyncio.Queue[str] = asyncio.Queue()
         self._unsubscribers: list[Callable[[], None]] = []
         self._worker: asyncio.Task[None] | None = None
+        self._pending_writes: dict[str, _PendingKnxWrite] = {}
+        self._write_tasks: dict[str, asyncio.Task[None]] = {}
+        self._last_write_completed_at: dict[str, float] = {}
         self._started = False
 
     @property
@@ -205,8 +234,8 @@ class KnxBridge:
 
         _LOGGER.info(
             "KNX bridge (experimental) for %s serving %d objects from base address %s. "
-            "This path is verified by tests only and has not been exercised against a real "
-            "KNX bus; please report what you observe",
+            "Configuration and reload have been exercised with a live Home Assistant KNX "
+            "interface; physical group-address telegram interoperability remains unverified",
             self._entry_id,
             len(self._objects),
             self._config.base_address,
@@ -233,6 +262,13 @@ class KnxBridge:
             worker.cancel()
             with contextlib.suppress(asyncio.CancelledError):
                 await worker
+        write_tasks = list(self._write_tasks.values())
+        self._write_tasks.clear()
+        self._pending_writes.clear()
+        for task in write_tasks:
+            task.cancel()
+        if write_tasks:
+            await asyncio.gather(*write_tasks, return_exceptions=True)
         if self._started and self._config.receive_enabled:
             await self._async_register_events(remove=True)
         self._started = False
@@ -374,7 +410,14 @@ class KnxBridge:
             # bounce between the bus and the controller.
             return
 
-        self._hass.async_create_task(self._async_write(definition, value, destination))
+        task = self._write_tasks.get(definition.name)
+        if self._matches_current_value(definition, value) and definition.name not in self._pending_writes:
+            return
+
+        pending = _PendingKnxWrite(definition, value, destination, time.monotonic())
+        self._pending_writes[definition.name] = pending
+        if task is None or task.done():
+            self._write_tasks[definition.name] = self._hass.async_create_task(self._async_write_worker(definition.name))
 
     @callback
     def _handle_read_request(self, destination: str) -> None:
@@ -415,20 +458,112 @@ class KnxBridge:
         else:
             _LOGGER.debug("Answered KNX read request on %s with %s", destination, payload)
 
-    async def _async_write(self, register: RegisterDef, value: Any, destination: str) -> None:
+    def _matches_current_value(self, register: RegisterDef, value: Any) -> bool:
+        """Return whether the coordinator already holds the commanded value."""
+        if register.write_only:
+            return False
+        current = (self._coordinator.data or {}).get(register.name)
+        if current is None:
+            return False
         try:
-            await self._coordinator.async_write_register(register, value)
-        except Exception as err:
-            _LOGGER.warning(
-                "KNX command on %s could not be written to %s because %s",
-                destination,
-                register.name,
-                friendly_write_error(classify_write_error(err), register.name),
-            )
-            _LOGGER.warning("Technical IDM write error for %s: %s", register.name, write_error_detail(err))
-            _LOGGER.debug("Technical KNX command error for %s", destination, exc_info=True)
-        else:
-            _LOGGER.debug("KNX command on %s wrote %s = %s", destination, register.name, value)
+            difference = abs(float(current) - float(value))
+        except (TypeError, ValueError):
+            return bool(current == value)
+        tolerance = self._config.tolerance if register.datatype is DataType.FLOAT else 0.0
+        return difference <= tolerance
+
+    def _known_write_delay(self, pending: _PendingKnxWrite) -> float:
+        """Return the remaining configured guard time after our last write."""
+        last = self._last_write_completed_at.get(pending.register.name)
+        if last is None:
+            return 0.0
+        interval = max(0.0, self._config.write_cooldown)
+        if pending.register.eeprom_sensitive:
+            interval = max(interval, self._config.eeprom_write_interval)
+        return max(0.0, interval - (time.monotonic() - last))
+
+    async def _async_write_worker(self, register_name: str) -> None:
+        """Write the newest KNX value after quiet and safety intervals."""
+        current_task = asyncio.current_task()
+        try:
+            while pending := self._pending_writes.get(register_name):
+                quiet_remaining = self._config.write_debounce - (time.monotonic() - pending.updated_at)
+                if quiet_remaining > 0:
+                    await asyncio.sleep(quiet_remaining)
+                    continue
+                if self._matches_current_value(pending.register, pending.value):
+                    if self._pending_writes.get(register_name) is pending:
+                        self._pending_writes.pop(register_name, None)
+                    continue
+
+                known_delay = self._known_write_delay(pending)
+                if known_delay > 0:
+                    await asyncio.sleep(known_delay + WRITE_RETRY_MARGIN)
+                    continue
+
+                try:
+                    await self._coordinator.async_write_register(pending.register, pending.value)
+                except Exception as err:
+                    retry_delay = _retry_delay_from_write_error(
+                        err,
+                        eeprom_fallback=(
+                            self._config.eeprom_write_interval if pending.register.eeprom_sensitive else None
+                        ),
+                    )
+                    if retry_delay is not None:
+                        _LOGGER.info(
+                            "KNX command on %s for %s remains queued; retrying the newest value in %.1fs",
+                            pending.destination,
+                            pending.register.name,
+                            retry_delay,
+                        )
+                        await asyncio.sleep(retry_delay + WRITE_RETRY_MARGIN)
+                        continue
+                    _LOGGER.warning(
+                        "KNX command on %s could not be written to %s because %s",
+                        pending.destination,
+                        pending.register.name,
+                        friendly_write_error(classify_write_error(err), pending.register.name),
+                    )
+                    _LOGGER.warning(
+                        "Technical IDM write error for %s: %s",
+                        pending.register.name,
+                        write_error_detail(err),
+                    )
+                    _LOGGER.debug("Technical KNX command error for %s", pending.destination, exc_info=True)
+                    if self._pending_writes.get(register_name) is pending:
+                        self._pending_writes.pop(register_name, None)
+                else:
+                    self._last_write_completed_at[register_name] = time.monotonic()
+                    _LOGGER.debug(
+                        "KNX command on %s wrote %s = %s",
+                        pending.destination,
+                        pending.register.name,
+                        pending.value,
+                    )
+                    if self._pending_writes.get(register_name) is pending:
+                        self._pending_writes.pop(register_name, None)
+        finally:
+            if self._write_tasks.get(register_name) is current_task:
+                self._write_tasks.pop(register_name, None)
+
+
+def _retry_delay_from_write_error(err: Exception, *, eeprom_fallback: float | None = None) -> float | None:
+    """Return a safe retry delay for local write guards, never device errors."""
+    if getattr(err, "translation_key", None) == "write_cooldown_active":
+        placeholders = getattr(err, "translation_placeholders", {})
+        try:
+            return min(MAX_WRITE_RETRY_DELAY, max(0.0, float(placeholders["remaining"])))
+        except (KeyError, TypeError, ValueError):
+            return None
+    if classify_write_error(err) != "write_eeprom_blocked":
+        return None
+    match = _EEPROM_RETRY_PATTERN.search(str(err))
+    if match is not None:
+        return min(MAX_WRITE_RETRY_DELAY, max(0.0, float(match.group(1))))
+    if eeprom_fallback is None or eeprom_fallback <= 0:
+        return None
+    return min(MAX_WRITE_RETRY_DELAY, eeprom_fallback)
 
 
 def _catalogue_objects(groups: tuple[str, ...] | None) -> list[KnxObject]:

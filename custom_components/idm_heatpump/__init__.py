@@ -1069,6 +1069,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     overrides=dict(knx_overrides) if isinstance(knx_overrides, Mapping) else {},
                     resend_interval=knx_resend_interval,
                     tolerance=knx_tolerance,
+                    write_cooldown=write_cooldown,
+                    eeprom_write_interval=eeprom_write_interval,
                 ),
                 entry_id=entry.entry_id,
             )

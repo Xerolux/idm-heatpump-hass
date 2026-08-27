@@ -5,6 +5,21 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.16.0-rc.5 — 2026-08-27
+
+Incoming commands for the experimental KNX bridge now use a latest-value-wins
+queue. Rapid intermediate setpoints are coalesced for one second, and a valid
+command that encounters the general cooldown or EEPROM protection remains
+queued until the guard expires instead of being lost. The EEPROM-sensitive
+register classification and the configurable 60-second default are unchanged.
+
+The options text now distinguishes the live evidence precisely: setup and
+reload were verified with an active Home Assistant KNX interface in safe
+receive-only mode, while physical group-address telegram interoperability and
+bus load remain open because no IDM group addresses were imported into ETS.
+
+See [KNX Bridge](KNX-Bridge).
+
 ## v0.16.0-rc.4 — 2026-08-27
 
 **Entity names are translated.** Until now only a handful of control entities
