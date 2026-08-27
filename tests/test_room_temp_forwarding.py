@@ -312,3 +312,208 @@ class TestStateListenerRunsOnEventLoop:
             HumidityForwardingConfig(entity_id="sensor.humidity", interval=300, tolerance=2.0),
         )
         assert getattr(forwarder._handle_state_change, "_hass_callback", False) is True
+
+
+class TestForwardingLifecycle:
+    """Debounce, range checks and write failures of both forwarders.
+
+    Forwarding writes to the heat pump, so a value outside the register range
+    or a failed write must never be silently retried in a loop.
+    """
+
+    def _forwarder(self, hass, coordinator, entities=None):
+        return RoomTempForwarder(
+            hass,
+            coordinator,
+            RoomTempForwardingConfig(
+                entities=entities or {"a": "sensor.living_room_temperature"},
+                interval=300,
+                tolerance=0.2,
+            ),
+        )
+
+    @pytest.mark.asyncio
+    async def test_state_changes_are_debounced_into_one_write(self):
+        coord, reg = _make_coordinator()
+        hass = _make_hass("22.3")
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        forwarder = self._forwarder(hass, coord)
+        forwarder._debounce_seconds = 0
+
+        event = SimpleNamespace(data={"entity_id": "sensor.living_room_temperature"})
+        forwarder._handle_state_change(event)
+        first = forwarder._pending_forward_tasks["sensor.living_room_temperature"]
+        forwarder._handle_state_change(event)
+        second = forwarder._pending_forward_tasks["sensor.living_room_temperature"]
+
+        await asyncio.gather(first, second, return_exceptions=True)
+
+        assert first.cancelled()
+        coord.async_write_register.assert_awaited_once_with(reg, 22.3)
+
+    @pytest.mark.asyncio
+    async def test_events_without_an_entity_id_are_ignored(self):
+        coord, _reg = _make_coordinator()
+        forwarder = self._forwarder(_make_hass(), coord)
+
+        forwarder._handle_state_change(SimpleNamespace(data={}))
+
+        assert forwarder._pending_forward_tasks == {}
+
+    @pytest.mark.asyncio
+    async def test_forward_all_covers_every_configured_circuit(self):
+        coord, reg = _make_coordinator()
+        hass = _make_hass("21.0")
+        forwarder = self._forwarder(hass, coord, entities={"a": "sensor.living_room_temperature", "b": ""})
+
+        await forwarder.async_forward_all()
+
+        coord.async_write_register.assert_awaited_once_with(reg, 21.0)
+
+    @pytest.mark.asyncio
+    async def test_values_below_the_register_range_are_skipped(self):
+        coord, _reg = _make_coordinator()
+        forwarder = self._forwarder(_make_hass("5.0"), coord)
+
+        await forwarder.async_forward_entity("sensor.living_room_temperature")
+
+        coord.async_write_register.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_a_failed_write_is_reported_and_not_remembered(self):
+        coord, _reg = _make_coordinator()
+        coord.async_write_register = AsyncMock(side_effect=RuntimeError("write rejected"))
+        forwarder = self._forwarder(_make_hass("22.0"), coord)
+
+        await forwarder.async_forward_entity("sensor.living_room_temperature")
+
+        assert forwarder._last_written == {}
+
+    @pytest.mark.asyncio
+    async def test_run_cancels_pending_work_when_cancelled(self):
+        coord, _reg = _make_coordinator()
+        hass = _make_hass("22.0")
+        unsub = MagicMock()
+        forwarder = self._forwarder(hass, coord)
+
+        with patch(
+            "custom_components.idm_heatpump.room_temp_forwarding.async_track_state_change_event",
+            return_value=unsub,
+        ):
+            task = asyncio.get_running_loop().create_task(forwarder.async_run())
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        unsub.assert_called_once()
+        assert forwarder._pending_forward_tasks == {}
+
+
+class TestHumidityForwarding:
+    def _forwarder(self, hass, coordinator, entity_id="sensor.living_room_humidity"):
+        from custom_components.idm_heatpump.room_temp_forwarding import (
+            HumidityForwarder,
+            HumidityForwardingConfig,
+        )
+
+        return HumidityForwarder(
+            hass,
+            coordinator,
+            HumidityForwardingConfig(entity_id=entity_id, interval=300, tolerance=1.0),
+        )
+
+    def _coordinator(self, *, min_val=0, max_val=100):
+        reg = RegisterDef(
+            1655,
+            DataType.FLOAT,
+            "ext_humidity",
+            unit="%",
+            writable=True,
+            min_val=min_val,
+            max_val=max_val,
+        )
+        coord = MagicMock()
+        coord.get_register = MagicMock(side_effect=lambda name: reg if name == "ext_humidity" else None)
+        coord.async_write_register = AsyncMock()
+        return coord, reg
+
+    @pytest.mark.asyncio
+    async def test_missing_register_skips_forwarding(self):
+        coord, _reg = self._coordinator()
+        coord.get_register = MagicMock(return_value=None)
+        forwarder = self._forwarder(_make_hass("55"), coord)
+
+        await forwarder.async_forward()
+
+        coord.async_write_register.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_values_outside_the_register_range_are_skipped(self):
+        coord, _reg = self._coordinator(min_val=20, max_val=80)
+        below = self._forwarder(_make_hass("5"), coord)
+        above = self._forwarder(_make_hass("95"), coord)
+
+        await below.async_forward()
+        await above.async_forward()
+
+        coord.async_write_register.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_a_failed_write_is_reported_and_not_remembered(self):
+        coord, _reg = self._coordinator()
+        coord.async_write_register = AsyncMock(side_effect=RuntimeError("write rejected"))
+        forwarder = self._forwarder(_make_hass("55"), coord)
+
+        await forwarder.async_forward()
+
+        assert forwarder._last_written is None
+
+    @pytest.mark.asyncio
+    async def test_state_changes_are_debounced_into_one_write(self):
+        coord, reg = self._coordinator()
+        hass = _make_hass("55")
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        forwarder = self._forwarder(hass, coord)
+        forwarder._debounce_seconds = 0
+
+        event = SimpleNamespace(data={"entity_id": "sensor.living_room_humidity"})
+        forwarder._handle_state_change(event)
+        first = forwarder._pending_forward_task
+        forwarder._handle_state_change(event)
+        second = forwarder._pending_forward_task
+
+        await asyncio.gather(first, second, return_exceptions=True)
+
+        assert first is not None and first.cancelled()
+        coord.async_write_register.assert_awaited_once_with(reg, 55.0)
+
+    @pytest.mark.asyncio
+    async def test_events_without_an_entity_id_are_ignored(self):
+        coord, _reg = self._coordinator()
+        forwarder = self._forwarder(_make_hass("55"), coord)
+
+        forwarder._handle_state_change(SimpleNamespace(data={}))
+
+        assert forwarder._pending_forward_task is None
+
+    @pytest.mark.asyncio
+    async def test_run_cancels_pending_work_when_cancelled(self):
+        coord, _reg = self._coordinator()
+        unsub = MagicMock()
+        forwarder = self._forwarder(_make_hass("55"), coord)
+
+        with patch(
+            "custom_components.idm_heatpump.room_temp_forwarding.async_track_state_change_event",
+            return_value=unsub,
+        ):
+            task = asyncio.get_running_loop().create_task(forwarder.async_run())
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+            task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await task
+
+        unsub.assert_called_once()
+        assert forwarder._pending_forward_task is None

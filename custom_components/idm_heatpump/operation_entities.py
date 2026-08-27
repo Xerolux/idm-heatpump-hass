@@ -33,7 +33,6 @@ class OperationSensorDefinition:
     """Metadata and value function for one operating-analysis sensor."""
 
     key: str
-    name: str
     value: Callable[[OperationAnalysis], AnalysisValue]
     icon: str
     source: str
@@ -47,7 +46,6 @@ class OperationSensorDefinition:
 _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     OperationSensorDefinition(
         key="analysis_heat_pump_cycles_recorded",
-        name="Wärmepumpentakte erfasst",
         value=lambda analysis: analysis.total_compressor_starts,
         icon="mdi:counter",
         source="compressor",
@@ -55,7 +53,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_heat_pump_cycles_today",
-        name="Wärmepumpentakte heute",
         value=lambda analysis: analysis.compressor_starts_today(),
         icon="mdi:calendar-today",
         source="compressor",
@@ -63,7 +60,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_heat_pump_cycles_2h",
-        name="Wärmepumpentakte letzte 2 Stunden",
         value=lambda analysis: analysis.compressor_starts_last_hours(2),
         icon="mdi:history",
         source="compressor",
@@ -72,7 +68,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_heat_pump_cycles_4h",
-        name="Wärmepumpentakte letzte 4 Stunden",
         value=lambda analysis: analysis.compressor_starts_last_hours(4),
         icon="mdi:history",
         source="compressor",
@@ -81,7 +76,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_current_cycle_duration",
-        name="Aktuelle Taktlaufzeit",
         value=lambda analysis: analysis.current_cycle_minutes(),
         icon="mdi:timer-play-outline",
         source="compressor",
@@ -92,7 +86,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_average_cycle_duration",
-        name="Durchschnittliche Taktlaufzeit",
         value=lambda analysis: analysis.average_cycle_minutes(),
         icon="mdi:timer-sand-complete",
         source="compressor",
@@ -103,7 +96,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_last_compressor_start",
-        name="Letzter Verdichterstart",
         value=lambda analysis: analysis.last_compressor_start,
         icon="mdi:clock-start",
         source="compressor",
@@ -111,7 +103,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_last_cycle_duration",
-        name="Letzte Taktlaufzeit",
         value=lambda analysis: (
             round(analysis.last_cycle_duration / 60.0, 1) if analysis.last_cycle_duration is not None else None
         ),
@@ -125,7 +116,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_defrost_starts_recorded",
-        name="Abtauvorgänge erfasst",
         value=lambda analysis: analysis.total_defrost_starts,
         icon="mdi:snowflake-melt",
         source="mode",
@@ -134,7 +124,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_defrost_starts_today",
-        name="Abtauvorgänge heute",
         value=lambda analysis: analysis.defrost_starts_today(),
         icon="mdi:snowflake-melt",
         source="mode",
@@ -142,7 +131,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_last_defrost_start",
-        name="Letzter Abtaustart",
         value=lambda analysis: analysis.last_defrost_start,
         icon="mdi:snowflake-clock",
         source="mode",
@@ -150,7 +138,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     ),
     OperationSensorDefinition(
         key="analysis_time_since_last_defrost",
-        name="Zeit seit letztem Abtaustart",
         value=lambda analysis: analysis.minutes_since_last_defrost(),
         icon="mdi:timer-snowflake",
         source="mode",
@@ -162,7 +149,6 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     *(
         OperationSensorDefinition(
             key=f"analysis_operating_share_{mode}",
-            name=f"Betriebsanteil {label}",
             value=lambda analysis, mode=mode: analysis.operating_share(mode),
             icon=icon,
             source="mode",
@@ -171,11 +157,11 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
             enabled_by_default=False,
             precision=1,
         )
-        for mode, label, icon in (
-            ("heating", "Heizen", "mdi:radiator"),
-            ("dhw", "Warmwasser", "mdi:water-boiler"),
-            ("cooling", "Kühlen", "mdi:snowflake"),
-            ("defrost", "Abtauen", "mdi:snowflake-melt"),
+        for mode, icon in (
+            ("heating", "mdi:radiator"),
+            ("dhw", "mdi:water-boiler"),
+            ("cooling", "mdi:snowflake"),
+            ("defrost", "mdi:snowflake-melt"),
         )
     ),
 )
@@ -219,7 +205,7 @@ class IdmOperationSensor(IdmCoordinatorEntityBase, SensorEntity):
         self._attr_unique_id = build_entity_unique_id(entry_id, definition.key)
         self.entity_description = SensorEntityDescription(
             key=definition.key,
-            name=definition.name,
+            translation_key=definition.key,
             icon=definition.icon,
             native_unit_of_measurement=definition.unit,
             device_class=definition.device_class,

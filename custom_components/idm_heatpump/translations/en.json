@@ -567,109 +567,34 @@
     }
   },
   "entity": {
-    "climate": {
-      "heating_circuit": {
-        "name": "Heating Circuit {circuit}"
-      },
-      "zone_room": {
-        "name": "Zone {zone} Room {room}"
-      }
-    },
-    "water_heater": {
-      "water_heater": {
-        "name": "Domestic Hot Water"
-      }
-    },
-    "button": {
-      "acknowledge_errors": {
-        "name": "Acknowledge Errors"
-      },
-      "dhw_boost_start": {
-        "name": "Start DHW boost"
-      },
-      "dhw_boost_cancel": {
-        "name": "Cancel DHW boost"
-      }
-    },
-    "select": {
-      "system_mode": {
-        "state": {
-          "standby": "Standby",
-          "automatic": "Automatic",
-          "absent": "Absent",
-          "holiday": "Holiday",
-          "hot_water_only": "Hot Water Only",
-          "heating_cooling_only": "Heating/Cooling Only"
-        }
-      },
-      "circuit_mode": {
-        "state": {
-          "off": "Off",
-          "timed_program": "Time Program",
-          "normal": "Normal",
-          "eco": "Eco",
-          "manual_heating": "Manual Heating",
-          "manual_cooling": "Manual Cooling",
-          "not_configured": "Not Configured"
-        }
-      },
-      "room_mode": {
-        "state": {
-          "off": "Off",
-          "automatic": "Automatic",
-          "eco": "Eco",
-          "normal": "Normal",
-          "comfort": "Comfort"
-        }
-      },
-      "solar_mode": {
-        "state": {
-          "automatic": "Automatic",
-          "hot_water": "Hot Water",
-          "heating": "Heating",
-          "hot_water_and_heating": "Hot Water & Heating",
-          "heat_source_pool": "Heat Source / Pool"
-        }
-      }
-    },
-    "sensor": {
-      "idm_api_version": {
-        "name": "IDM Heatpump API version"
-      },
-      "circuit_mode": {
-        "state": {
-          "off": "Off",
-          "timed_program": "Time Program",
-          "normal": "Normal",
-          "eco": "Eco",
-          "manual_heating": "Manual Heating",
-          "manual_cooling": "Manual Cooling",
-          "not_configured": "Not Configured"
-        }
-      },
-      "room_mode": {
-        "state": {
-          "off": "Off",
-          "automatic": "Automatic",
-          "eco": "Eco",
-          "normal": "Normal",
-          "comfort": "Comfort"
-        }
-      },
-      "modbus_last_success": {
-        "name": "Last successful Modbus poll"
-      },
-      "modbus_poll_duration": {
-        "name": "Modbus poll duration"
-      },
-      "modbus_consecutive_failures": {
-        "name": "Consecutive Modbus failures"
-      },
-      "modbus_active_registers": {
-        "name": "Active Modbus registers"
-      }
-    },
     "binary_sensor": {
+      "analysis_last_cycle_short": {
+        "name": "Last compressor cycle too short"
+      },
+      "compressor_status_1": {
+        "name": "Compressor 1"
+      },
+      "compressor_status_2": {
+        "name": "Compressor 2"
+      },
+      "compressor_status_3": {
+        "name": "Compressor 3"
+      },
+      "compressor_status_4": {
+        "name": "Compressor 4"
+      },
+      "cooling_demand": {
+        "name": "Cooling demand"
+      },
+      "dhw_demand": {
+        "name": "Hot water demand"
+      },
+      "heating_demand": {
+        "name": "Heating demand"
+      },
+      "hp_sum_alarm": {
+        "name": "Collective fault"
+      },
       "web_compressor_1": {
         "name": "Compressor 1 (Web)"
       },
@@ -709,29 +634,863 @@
       "web_hotwater_station_flow_switch": {
         "name": "Hot water station flow switch (Web)"
       },
+      "web_pump_heating_circuit": {
+        "name": "Heating circuit {circuit} pump (Web)"
+      },
       "web_siphon_heating": {
         "name": "Siphon heater (Web)"
       },
-      "web_pump_heating_circuit_a": {
-        "name": "Heating circuit A pump (Web)"
+      "zone_room_relay": {
+        "name": "Zone {zone} room {room} relay"
+      }
+    },
+    "button": {
+      "acknowledge_errors": {
+        "name": "Acknowledge Errors"
       },
-      "web_pump_heating_circuit_b": {
-        "name": "Heating circuit B pump (Web)"
+      "dhw_boost_start": {
+        "name": "Start DHW boost"
       },
-      "web_pump_heating_circuit_c": {
-        "name": "Heating circuit C pump (Web)"
+      "dhw_boost_cancel": {
+        "name": "Cancel DHW boost"
+      }
+    },
+    "climate": {
+      "heating_circuit": {
+        "name": "Heating Circuit {circuit}"
       },
-      "web_pump_heating_circuit_d": {
-        "name": "Heating circuit D pump (Web)"
+      "zone_room": {
+        "name": "Zone {zone} Room {room}"
+      }
+    },
+    "number": {
+      "battery_discharge": {
+        "name": "Battery discharge (external setpoint)"
       },
-      "web_pump_heating_circuit_e": {
-        "name": "Heating circuit E pump (Web)"
+      "battery_soc": {
+        "name": "Battery state of charge (external setpoint)"
       },
-      "web_pump_heating_circuit_f": {
-        "name": "Heating circuit F pump (Web)"
+      "bivalence_point_1_2nd_gen": {
+        "name": "Bivalence point 1 (2nd heat generator)"
       },
-      "web_pump_heating_circuit_g": {
-        "name": "Heating circuit G pump (Web)"
+      "bivalence_point_1_3rd_gen": {
+        "name": "Bivalence point 1 (3rd heat generator)"
+      },
+      "bivalence_point_2_2nd_gen": {
+        "name": "Bivalence point 2 (2nd heat generator)"
+      },
+      "bivalence_point_2_3rd_gen": {
+        "name": "Bivalence point 2 (3rd heat generator)"
+      },
+      "cascade_bivalence_cooling_alternative": {
+        "name": "Cascade bivalence cooling alternative"
+      },
+      "cascade_bivalence_cooling_parallel": {
+        "name": "Cascade bivalence cooling parallel"
+      },
+      "cascade_bivalence_dhw_alternative": {
+        "name": "Cascade bivalence hot water alternative"
+      },
+      "cascade_bivalence_dhw_parallel": {
+        "name": "Cascade bivalence hot water parallel"
+      },
+      "cascade_bivalence_heating_alternative": {
+        "name": "Cascade bivalence heating alternative"
+      },
+      "cascade_bivalence_heating_parallel": {
+        "name": "Cascade bivalence heating parallel"
+      },
+      "cascade_max_power_cooling": {
+        "name": "Cascade maximum power cooling"
+      },
+      "cascade_max_power_dhw": {
+        "name": "Cascade maximum power hot water"
+      },
+      "cascade_max_power_heating": {
+        "name": "Cascade maximum power heating"
+      },
+      "cascade_min_power_cooling": {
+        "name": "Cascade minimum power cooling"
+      },
+      "cascade_min_power_dhw": {
+        "name": "Cascade minimum power hot water"
+      },
+      "cascade_min_power_heating": {
+        "name": "Cascade minimum power heating"
+      },
+      "dhw_charge_off_temp": {
+        "name": "Hot water charge stop temperature"
+      },
+      "dhw_charge_on_temp": {
+        "name": "Hot water charge start temperature"
+      },
+      "dhw_setpoint": {
+        "name": "Hot water setpoint"
+      },
+      "electric_heater_power": {
+        "name": "Electric heater power (external setpoint)"
+      },
+      "ext_demand_groundwater_pump_m15": {
+        "name": "External demand groundwater pump M15"
+      },
+      "ext_demand_groundwater_pump_m15_sw_max": {
+        "name": "External demand groundwater pump M15 (SW max)"
+      },
+      "ext_demand_temp_cooling": {
+        "name": "External demand temperature cooling"
+      },
+      "ext_demand_temp_heating": {
+        "name": "External demand temperature heating"
+      },
+      "ext_humidity": {
+        "name": "External humidity (BMS)"
+      },
+      "ext_outdoor_temp": {
+        "name": "External outdoor temperature (BMS)"
+      },
+      "glt_cold_storage_temp": {
+        "name": "BMS cold storage temperature"
+      },
+      "glt_dhw_temp_bottom": {
+        "name": "BMS hot water tank bottom"
+      },
+      "glt_dhw_temp_top": {
+        "name": "BMS hot water tank top"
+      },
+      "glt_heat_storage_temp": {
+        "name": "BMS heat storage temperature"
+      },
+      "glt_temp_demand_cooling": {
+        "name": "BMS temperature demand cooling"
+      },
+      "glt_temp_demand_heating": {
+        "name": "BMS temperature demand heating"
+      },
+      "hc_cooling_limit": {
+        "name": "Heating circuit {circuit} cooling limit"
+      },
+      "hc_ext_room_temp": {
+        "name": "Heating circuit {circuit} external room temperature"
+      },
+      "hc_heating_curve": {
+        "name": "Heating circuit {circuit} heating curve"
+      },
+      "hc_heating_limit": {
+        "name": "Heating circuit {circuit} heating limit"
+      },
+      "hc_parallel_shift": {
+        "name": "Heating circuit {circuit} parallel shift"
+      },
+      "hc_room_setpoint_cool_eco": {
+        "name": "Heating circuit {circuit} room setpoint cooling eco"
+      },
+      "hc_room_setpoint_cool_normal": {
+        "name": "Heating circuit {circuit} room setpoint cooling normal"
+      },
+      "hc_room_setpoint_heat_eco": {
+        "name": "Heating circuit {circuit} room setpoint heating eco"
+      },
+      "hc_room_setpoint_heat_normal": {
+        "name": "Heating circuit {circuit} room setpoint heating normal"
+      },
+      "hc_setpoint_flow_constant": {
+        "name": "Heating circuit {circuit} constant flow setpoint"
+      },
+      "hc_setpoint_flow_cooling": {
+        "name": "Heating circuit {circuit} cooling flow setpoint"
+      },
+      "house_consumption": {
+        "name": "House consumption (external setpoint)"
+      },
+      "power_limit_cascade": {
+        "name": "Cascade power limit"
+      },
+      "power_limit_hp": {
+        "name": "Heat pump power limit"
+      },
+      "pv_production": {
+        "name": "PV production (external setpoint)"
+      },
+      "pv_surplus": {
+        "name": "PV surplus (external setpoint)"
+      },
+      "pv_target_value": {
+        "name": "PV target value"
+      },
+      "zone_room_humidity": {
+        "name": "Zone {zone} room {room} humidity (external setpoint)"
+      },
+      "zone_room_setpoint": {
+        "name": "Zone {zone} room {room} setpoint"
+      },
+      "zone_room_temp": {
+        "name": "Zone {zone} room {room} temperature (external setpoint)"
+      }
+    },
+    "select": {
+      "hc_mode": {
+        "name": "Heating circuit {circuit} mode",
+        "state": {
+          "off": "Off",
+          "timed_program": "Time Program",
+          "normal": "Normal",
+          "eco": "Eco",
+          "manual_heating": "Manual Heating",
+          "manual_cooling": "Manual Cooling",
+          "not_configured": "Not Configured"
+        }
+      },
+      "solar_mode": {
+        "state": {
+          "automatic": "Automatic",
+          "hot_water": "Hot Water",
+          "heating": "Heating",
+          "hot_water_and_heating": "Hot Water & Heating",
+          "heat_source_pool": "Heat Source / Pool"
+        },
+        "name": "Solar mode"
+      },
+      "system_mode": {
+        "state": {
+          "standby": "Standby",
+          "automatic": "Automatic",
+          "absent": "Absent",
+          "holiday": "Holiday",
+          "hot_water_only": "Hot Water Only",
+          "heating_cooling_only": "Heating/Cooling Only"
+        },
+        "name": "System mode"
+      },
+      "zone_room_mode": {
+        "name": "Zone {zone} room {room} mode",
+        "state": {
+          "off": "Off",
+          "automatic": "Automatic",
+          "eco": "Eco",
+          "normal": "Normal",
+          "comfort": "Comfort"
+        }
+      }
+    },
+    "sensor": {
+      "air_heat_exchanger_temp": {
+        "name": "Air heat exchanger temperature"
+      },
+      "air_intake_temp": {
+        "name": "Air intake temperature"
+      },
+      "air_intake_temp_2": {
+        "name": "Air intake temperature 2"
+      },
+      "analysis_average_cycle_duration": {
+        "name": "Average cycle runtime"
+      },
+      "analysis_current_cycle_duration": {
+        "name": "Current cycle runtime"
+      },
+      "analysis_defrost_starts_recorded": {
+        "name": "Defrost cycles recorded"
+      },
+      "analysis_defrost_starts_today": {
+        "name": "Defrost cycles today"
+      },
+      "analysis_heat_pump_cycles_2h": {
+        "name": "Heat pump cycles last 2 hours"
+      },
+      "analysis_heat_pump_cycles_4h": {
+        "name": "Heat pump cycles last 4 hours"
+      },
+      "analysis_heat_pump_cycles_recorded": {
+        "name": "Heat pump cycles recorded"
+      },
+      "analysis_heat_pump_cycles_today": {
+        "name": "Heat pump cycles today"
+      },
+      "analysis_last_compressor_start": {
+        "name": "Last compressor start"
+      },
+      "analysis_last_cycle_duration": {
+        "name": "Last cycle runtime"
+      },
+      "analysis_last_defrost_start": {
+        "name": "Last defrost start"
+      },
+      "analysis_operating_share_cooling": {
+        "name": "Operating share cooling"
+      },
+      "analysis_operating_share_defrost": {
+        "name": "Operating share defrost"
+      },
+      "analysis_operating_share_dhw": {
+        "name": "Operating share hot water"
+      },
+      "analysis_operating_share_heating": {
+        "name": "Operating share heating"
+      },
+      "analysis_time_since_last_defrost": {
+        "name": "Time since last defrost start"
+      },
+      "battery_discharge": {
+        "name": "Battery discharge"
+      },
+      "battery_soc": {
+        "name": "Battery state of charge"
+      },
+      "bivalence_state": {
+        "name": "Bivalence operating state"
+      },
+      "booster_a_charging_pump": {
+        "name": "Booster A charging pump"
+      },
+      "booster_a_compressor": {
+        "name": "Booster A compressor"
+      },
+      "booster_a_flow_temp": {
+        "name": "Booster A flow temperature"
+      },
+      "booster_a_return_temp": {
+        "name": "Booster A return temperature"
+      },
+      "booster_a_source_inlet_temp": {
+        "name": "Booster A heat source inlet"
+      },
+      "booster_a_source_outlet_temp": {
+        "name": "Booster A heat source outlet"
+      },
+      "booster_a_source_pump": {
+        "name": "Booster A heat source pump"
+      },
+      "booster_a_storage_temp": {
+        "name": "Booster A storage temperature"
+      },
+      "booster_b_charging_pump": {
+        "name": "Booster B charging pump"
+      },
+      "booster_b_compressor": {
+        "name": "Booster B compressor"
+      },
+      "booster_b_flow_temp": {
+        "name": "Booster B flow temperature"
+      },
+      "booster_b_return_temp": {
+        "name": "Booster B return temperature"
+      },
+      "booster_b_source_inlet_temp": {
+        "name": "Booster B heat source inlet"
+      },
+      "booster_b_source_outlet_temp": {
+        "name": "Booster B heat source outlet"
+      },
+      "booster_b_source_pump": {
+        "name": "Booster B heat source pump"
+      },
+      "booster_b_storage_temp": {
+        "name": "Booster B storage temperature"
+      },
+      "booster_fault": {
+        "name": "Booster fault"
+      },
+      "booster_interlock": {
+        "name": "Booster interlock"
+      },
+      "brine_pump_status": {
+        "name": "Brine/intermediate circuit pump"
+      },
+      "calculated_cop": {
+        "name": "Coefficient of performance (current)"
+      },
+      "calculated_dhw_setpoint_deviation": {
+        "name": "Hot water deviation from setpoint"
+      },
+      "calculated_hc_flow_deviation": {
+        "name": "Heating circuit {circuit} flow deviation"
+      },
+      "calculated_heat_source_temperature_delta": {
+        "name": "Heat source temperature spread"
+      },
+      "calculated_hp_temperature_delta": {
+        "name": "Heat pump temperature spread"
+      },
+      "cascade_available_cooling": {
+        "name": "Cascade available for cooling"
+      },
+      "cascade_available_dhw": {
+        "name": "Cascade available for hot water"
+      },
+      "cascade_available_heating": {
+        "name": "Cascade available for heating"
+      },
+      "cascade_avg_flow_cooling": {
+        "name": "Cascade average flow temperature cooling"
+      },
+      "cascade_avg_flow_dhw": {
+        "name": "Cascade average flow temperature hot water"
+      },
+      "cascade_avg_flow_heating": {
+        "name": "Cascade average flow temperature heating"
+      },
+      "cascade_req_cooling_temp": {
+        "name": "Cascade requested cooling temperature"
+      },
+      "cascade_req_dhw_temp": {
+        "name": "Cascade requested hot water temperature"
+      },
+      "cascade_req_heating_temp": {
+        "name": "Cascade requested heating temperature"
+      },
+      "cascade_running_cooling": {
+        "name": "Cascade running in cooling"
+      },
+      "cascade_running_dhw": {
+        "name": "Cascade running for hot water"
+      },
+      "cascade_running_heating": {
+        "name": "Cascade running in heating"
+      },
+      "charging_pump_status": {
+        "name": "Charging pump M73"
+      },
+      "charging_sensor_temp": {
+        "name": "Charging sensor temperature"
+      },
+      "circulation_pump": {
+        "name": "Circulation pump M64"
+      },
+      "cold_storage_temp": {
+        "name": "Cold storage temperature"
+      },
+      "current_electricity_price": {
+        "name": "Current electricity price"
+      },
+      "current_power": {
+        "name": "Current thermal power"
+      },
+      "current_power_solar": {
+        "name": "Current solar power"
+      },
+      "dhw_tapping_temp": {
+        "name": "Hot water tapping temperature"
+      },
+      "dhw_temp_bottom": {
+        "name": "Hot water tank bottom"
+      },
+      "dhw_temp_top": {
+        "name": "Hot water tank top"
+      },
+      "electric_heater_power": {
+        "name": "Electric heater power"
+      },
+      "energy_cooling": {
+        "name": "Cooling energy"
+      },
+      "energy_defrost": {
+        "name": "Defrost energy"
+      },
+      "energy_dhw": {
+        "name": "Hot water energy"
+      },
+      "energy_electric_heater": {
+        "name": "Electric heater energy"
+      },
+      "energy_heating": {
+        "name": "Heating energy"
+      },
+      "energy_passive_cooling": {
+        "name": "Passive cooling energy"
+      },
+      "energy_solar": {
+        "name": "Solar energy"
+      },
+      "energy_total": {
+        "name": "Total energy"
+      },
+      "evu_lock": {
+        "name": "Utility lock"
+      },
+      "fault_charging_pump_1_intermediate": {
+        "name": "Charging pump 1 intermediate circuit fault"
+      },
+      "fault_charging_pump_2_intermediate": {
+        "name": "Charging pump 2 intermediate circuit fault"
+      },
+      "fault_heat_source_circuit": {
+        "name": "Heat source circuit fault"
+      },
+      "fault_heat_source_pressure_switch": {
+        "name": "Heat source pressure switch fault"
+      },
+      "firmware_version": {
+        "name": "Navigator firmware version"
+      },
+      "groundwater_inlet_temp_1": {
+        "name": "Groundwater inlet temperature 1"
+      },
+      "groundwater_inlet_temp_2": {
+        "name": "Groundwater inlet temperature 2"
+      },
+      "hc_active_mode": {
+        "name": "Heating circuit {circuit} active mode",
+        "state": {
+          "off": "Off",
+          "timed_program": "Time Program",
+          "normal": "Normal",
+          "eco": "Eco",
+          "manual_heating": "Manual Heating",
+          "manual_cooling": "Manual Cooling",
+          "not_configured": "Not Configured"
+        }
+      },
+      "hc_flow_temp": {
+        "name": "Heating circuit {circuit} flow temperature"
+      },
+      "hc_room_temp": {
+        "name": "Heating circuit {circuit} room temperature"
+      },
+      "hc_setpoint_flow_temp": {
+        "name": "Heating circuit {circuit} flow temperature setpoint"
+      },
+      "heat_sink_charging_pump_signal": {
+        "name": "Heat sink charging pump control signal (M73)"
+      },
+      "heat_sink_flow_rate": {
+        "name": "Heat sink flow rate (B2)"
+      },
+      "heat_sink_flow_temp": {
+        "name": "Heat sink flow temperature (B125)"
+      },
+      "heat_sink_return_temp": {
+        "name": "Heat sink return temperature (B124)"
+      },
+      "heat_source_inlet_temp": {
+        "name": "Heat source inlet"
+      },
+      "heat_source_outlet_temp": {
+        "name": "Heat source outlet"
+      },
+      "heat_source_pump_status": {
+        "name": "Heat source pump M15"
+      },
+      "hgl_flow_temp": {
+        "name": "HGL flow temperature (B35)"
+      },
+      "house_consumption": {
+        "name": "House consumption"
+      },
+      "hp_flow_temp": {
+        "name": "Heat pump flow temperature"
+      },
+      "hp_operating_mode": {
+        "name": "Heat pump operating mode"
+      },
+      "hp_return_temp": {
+        "name": "Heat pump return temperature"
+      },
+      "humidity_sensor": {
+        "name": "Humidity sensor"
+      },
+      "idm_api_version": {
+        "name": "IDM Heatpump API version"
+      },
+      "internal_message": {
+        "name": "Internal message"
+      },
+      "isc_charging_temp_cooling": {
+        "name": "ISC charging temperature cooling"
+      },
+      "isc_cold_storage_pump_status": {
+        "name": "ISC cold storage pump M84"
+      },
+      "isc_mode": {
+        "name": "ISC mode"
+      },
+      "isc_recooling_pump_status": {
+        "name": "ISC recooling pump M17"
+      },
+      "isc_recooling_temp": {
+        "name": "ISC recooling temperature"
+      },
+      "modbus_active_registers": {
+        "name": "Active Modbus registers"
+      },
+      "modbus_consecutive_failures": {
+        "name": "Consecutive Modbus failures"
+      },
+      "modbus_last_success": {
+        "name": "Last successful Modbus poll"
+      },
+      "modbus_poll_duration": {
+        "name": "Modbus poll duration"
+      },
+      "outdoor_temp": {
+        "name": "Outdoor temperature"
+      },
+      "outdoor_temp_avg": {
+        "name": "Average outdoor temperature"
+      },
+      "power_consumption_hp": {
+        "name": "Heat pump power consumption"
+      },
+      "power_consumption_hp_smartfox": {
+        "name": "Smartfox power consumption"
+      },
+      "pv_production": {
+        "name": "PV production"
+      },
+      "pv_surplus": {
+        "name": "PV surplus"
+      },
+      "smart_grid_status": {
+        "name": "Smart grid status"
+      },
+      "solar_charging_temp": {
+        "name": "Solar charging temperature"
+      },
+      "solar_collector_temp": {
+        "name": "Solar collector temperature"
+      },
+      "solar_return_temp": {
+        "name": "Solar return temperature"
+      },
+      "solar_wq_pool_temp": {
+        "name": "Solar heat source reference/pool temperature"
+      },
+      "storage_temp": {
+        "name": "Heat storage temperature"
+      },
+      "technician_level_1": {
+        "name": "Technician level 1 code"
+      },
+      "technician_level_2": {
+        "name": "Technician level 2 code"
+      },
+      "thermal_power_flow_sensor": {
+        "name": "Thermal power (flow sensor)"
+      },
+      "total_heat_energy": {
+        "name": "Total heat energy (Vortex)"
+      },
+      "valve_hc_heat_cool": {
+        "name": "Heating circuit changeover valve heating/cooling"
+      },
+      "valve_heat_dhw": {
+        "name": "Changeover valve heating/hot water"
+      },
+      "valve_heat_source_heat_cool": {
+        "name": "Heat source changeover valve"
+      },
+      "valve_isc_heat_source_cold_storage": {
+        "name": "ISC changeover valve"
+      },
+      "valve_isc_storage_bypass": {
+        "name": "ISC changeover valve storage/bypass"
+      },
+      "valve_solar_heat_dhw": {
+        "name": "Solar changeover valve heating/hot water"
+      },
+      "valve_solar_storage_heat_source": {
+        "name": "Solar storage/heat source valve"
+      },
+      "valve_storage_heat_cool": {
+        "name": "Storage changeover valve heating/cooling"
+      },
+      "variable_input": {
+        "name": "Variable input"
+      },
+      "web_4way_valve_circuit1": {
+        "name": "4-way valve circuit 1 (Web)"
+      },
+      "web_airsource_temperature": {
+        "name": "Air source temperature (Web)"
+      },
+      "web_battery_voltage_central_unit": {
+        "name": "Central unit battery voltage (Web)"
+      },
+      "web_board_temperature": {
+        "name": "Board temperature (Web)"
+      },
+      "web_cold_water_temperature": {
+        "name": "Cold water temperature (Web)"
+      },
+      "web_condenser_pressure": {
+        "name": "Condenser pressure (Web)"
+      },
+      "web_condenser_temperature": {
+        "name": "Condenser temperature (Web)"
+      },
+      "web_controller_online_hours": {
+        "name": "Controller online time (Web)"
+      },
+      "web_current_electrical_power": {
+        "name": "Current electrical power (Web)"
+      },
+      "web_current_expected_power_cooling": {
+        "name": "Current/projected cooling power (Web)"
+      },
+      "web_current_expected_power_heating": {
+        "name": "Current/projected heating power (Web)"
+      },
+      "web_current_expected_power_hotwater": {
+        "name": "Current/projected hot water power (Web)"
+      },
+      "web_evaporation_temperature": {
+        "name": "Evaporation temperature (Web)"
+      },
+      "web_evaporator_outlet_temperature": {
+        "name": "Evaporator outlet temperature (Web)"
+      },
+      "web_ext_switch_heating_cooling": {
+        "name": "External heating/cooling changeover (Web)"
+      },
+      "web_flow_pump_output": {
+        "name": "Flow pump output (Web)"
+      },
+      "web_flow_pump_percentage": {
+        "name": "Flow pump signal (Web)"
+      },
+      "web_flow_temp_hc": {
+        "name": "Heating circuit {circuit} flow temperature (Web)"
+      },
+      "web_flow_temperature": {
+        "name": "Flow temperature (Web)"
+      },
+      "web_flowmeter": {
+        "name": "Flow meter (Web)"
+      },
+      "web_heat_sink_intermediate_circuit_pump_signal": {
+        "name": "Heat sink intermediate circuit pump signal (Web)"
+      },
+      "web_heating_water_outlet_temperature": {
+        "name": "Heating water outlet temperature (Web)"
+      },
+      "web_heatpump_model": {
+        "name": "Heat pump model (Web)"
+      },
+      "web_heatstore_temperature": {
+        "name": "Heat storage temperature (Web)"
+      },
+      "web_hotgas_temperature": {
+        "name": "Hot gas temperature (Web)"
+      },
+      "web_hotwater_circulation_heat_quantity": {
+        "name": "Circulation heat quantity (Web)"
+      },
+      "web_hotwater_station_flowmeter": {
+        "name": "Hot water station flow (Web)"
+      },
+      "web_hotwater_station_pump_percentage": {
+        "name": "Hot water station pump (Web)"
+      },
+      "web_hotwater_tapping_heat_quantity": {
+        "name": "Tapping heat quantity (Web)"
+      },
+      "web_hotwater_temperature": {
+        "name": "Hot water temperature (Web)"
+      },
+      "web_infosystem_notification_count": {
+        "name": "Info system notification count (Web)"
+      },
+      "web_infosystem_notifications": {
+        "name": "Info system notifications (Web)"
+      },
+      "web_liquid_line_temperature": {
+        "name": "Liquid line temperature (Web)"
+      },
+      "web_loading_temperature": {
+        "name": "Charging temperature (Web)"
+      },
+      "web_mixer_heating_circuit": {
+        "name": "Heating circuit {circuit} mixer (Web)"
+      },
+      "web_myidm_id": {
+        "name": "myIDM ID (Web)"
+      },
+      "web_navigator_version": {
+        "name": "Navigator version (Web)"
+      },
+      "web_outside_air_temperature": {
+        "name": "Outside air temperature (Web)"
+      },
+      "web_return_temperature": {
+        "name": "Return temperature (Web)"
+      },
+      "web_room_temperature_hc": {
+        "name": "Heating circuit {circuit} room temperature (Web)"
+      },
+      "web_runtime_cooling_hours": {
+        "name": "Cooling runtime (Web)"
+      },
+      "web_runtime_defrosting_hours": {
+        "name": "Defrost runtime (Web)"
+      },
+      "web_runtime_heating_hours": {
+        "name": "Heating runtime (Web)"
+      },
+      "web_runtime_hotwater_hours": {
+        "name": "Hot water runtime (Web)"
+      },
+      "web_runtime_second_heat_generator_hours": {
+        "name": "Second heat generator runtime (Web)"
+      },
+      "web_runtime_stage_1_hours": {
+        "name": "Stage 1 runtime (Web)"
+      },
+      "web_software_version": {
+        "name": "Software version (Web)"
+      },
+      "web_switch_cycles_second_heat_generator": {
+        "name": "Second heat generator switch cycles (Web)"
+      },
+      "web_switch_cycles_stage_1": {
+        "name": "Stage 1 switch cycles (Web)"
+      },
+      "web_valve_heating_hotwater": {
+        "name": "Heating/hot water valve (Web)"
+      },
+      "web_ventilator_direction_1": {
+        "name": "Fan direction 1 (Web)"
+      },
+      "web_ventilator_voltage": {
+        "name": "Fan voltage (Web)"
+      },
+      "web_verdamper_pressure": {
+        "name": "Evaporator pressure (Web)"
+      },
+      "web_water_temp_bottom": {
+        "name": "Tank temperature bottom (Web)"
+      },
+      "web_water_temp_top": {
+        "name": "Tank temperature top (Web)"
+      },
+      "zone_dehumidification": {
+        "name": "Zone {zone} dehumidification"
+      },
+      "zone_mode_heat_cool": {
+        "name": "Zone {zone} heating/cooling changeover"
+      },
+      "zone_room_humidity": {
+        "name": "Zone {zone} room {room} humidity"
+      },
+      "zone_room_temp": {
+        "name": "Zone {zone} room {room} temperature"
+      }
+    },
+    "switch": {
+      "demand_cooling": {
+        "name": "External cooling demand"
+      },
+      "demand_dhw_charging": {
+        "name": "External hot water charging demand"
+      },
+      "demand_heating": {
+        "name": "External heating demand"
+      },
+      "demand_onetime_dhw": {
+        "name": "One-time hot water demand"
+      }
+    },
+    "water_heater": {
+      "water_heater": {
+        "name": "Domestic Hot Water"
       }
     }
   },

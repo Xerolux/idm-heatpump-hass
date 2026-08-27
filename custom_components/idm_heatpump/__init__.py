@@ -449,6 +449,7 @@ async def _async_setup_web_only_entry(
             model_hint=entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION),
             preferred_variant=stored_web_variant,
             allow_variant_fallback=stored_web_variant is None,
+            hass=hass,
         )
     except Exception as err:
         issue_id = classify_web_error(err)
@@ -780,6 +781,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     model_hint=modbus_model_name,
                     preferred_variant=runtime_web_variant,
                     allow_variant_fallback=runtime_web_variant is None,
+                    hass=hass,
                 )
             except IdmWebAuthenticationFailed:
                 _LOGGER.warning(

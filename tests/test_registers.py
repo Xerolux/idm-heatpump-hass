@@ -1,5 +1,7 @@
 """Tests for register definitions and description builders."""
 
+import json
+from pathlib import Path
 from types import SimpleNamespace
 from typing import ClassVar
 
@@ -15,6 +17,9 @@ from custom_components.idm_heatpump.registers import (
     normalize_zone_rooms,
     sort_entity_descriptions,
 )
+
+
+INTEGRATION_DIR = Path(__file__).resolve().parents[1] / "custom_components" / "idm_heatpump"
 
 
 def _make_order_desc(name: str, address: int) -> dict:
@@ -304,13 +309,33 @@ class TestGltDualExposure:
             assert name not in sensor_names, f"{name} sollte kein Sensor sein"
             assert name in number_names, f"{name} fehlt als Number"
 
-    def test_dual_number_names_are_marked_as_vorgabe(self):
+    def test_dual_number_names_are_marked_as_external_setpoints(self):
+        """The number of a dual-exposed register must not read like its sensor.
+
+        The name comes from the translation files now, so the marker is checked
+        there: the number block carries the external-setpoint suffix while the
+        sensor block keeps the plain measurement name.
+        """
+        strings = json.loads((INTEGRATION_DIR / "strings.json").read_text(encoding="utf-8"))["entity"]
+        german = json.loads((INTEGRATION_DIR / "translations" / "de.json").read_text(encoding="utf-8"))["entity"]
+
         numbers = get_all_number_descriptions(["a"], 0, {})
+        checked = set()
         for d in numbers:
-            if d["register"].name in self.PV_BLOCK:
-                assert d["description"].name.endswith("(Vorgabe)"), (
-                    f"Number {d['register'].name} braucht den Suffix '(Vorgabe)': {d['description'].name}"
-                )
+            name = d["register"].name
+            if name not in self.PV_BLOCK:
+                continue
+            key = d["description"].translation_key
+            assert key == name, f"Number {name} muss über einen Übersetzungsschlüssel benannt werden"
+            assert strings["number"][key]["name"].endswith("(external setpoint)"), (
+                f"Number {name} braucht den Vorgabe-Marker: {strings['number'][key]['name']}"
+            )
+            assert german["number"][key]["name"].endswith("(Vorgabe)"), (
+                f"Number {name} braucht den Vorgabe-Marker: {german['number'][key]['name']}"
+            )
+            assert not strings["sensor"][key]["name"].endswith("(external setpoint)")
+            checked.add(name)
+        assert checked == set(self.PV_BLOCK)
 
     def test_zone_room_numbers_disabled_by_default(self):
         """Raum-Vorgabe (Vorgabe) ist nur wirksam mit externem/GLT-Raumsensor;

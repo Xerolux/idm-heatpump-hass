@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import json
 import math
+from pathlib import Path
 from unittest.mock import MagicMock
 
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
@@ -18,6 +20,15 @@ from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSup
 
 # One heating-circuit pump entity is created per configured circuit.
 _SINGLE_CIRCUIT_ENTITY_COUNT = len(WEB_BINARY_SENSOR_DEFINITIONS) + 1
+
+
+def _translated_sensor_names(language: str) -> dict[str, str]:
+    """Return the shipped sensor entity names of one language."""
+    path = (
+        Path(__file__).resolve().parents[1] / "custom_components" / "idm_heatpump" / "translations" / f"{language}.json"
+    )
+    entity_block = json.loads(path.read_text(encoding="utf-8"))["entity"]["sensor"]
+    return {key: payload["name"] for key, payload in entity_block.items() if "name" in payload}
 
 
 def _coordinator(
@@ -144,7 +155,9 @@ def test_circuit_enabled_later_gets_its_pump_entity():
 
     assert "web_pump_heating_circuitD" in entities
     assert entities["web_pump_heating_circuitD"].is_on is True
-    assert entities["web_pump_heating_circuitD"].entity_description.translation_key == "web_pump_heating_circuit_d"
+    pump = entities["web_pump_heating_circuitD"]
+    assert pump.entity_description.translation_key == "web_pump_heating_circuit"
+    assert pump._attr_translation_placeholders == {"circuit": "D"}
     # Circuits that are not configured stay out of the entity list.
     assert "web_pump_heating_circuitB" not in entities
 
@@ -185,7 +198,7 @@ def test_mixer_sensor_is_created_for_every_configured_circuit():
 
     definitions = {definition.key: definition for definition in _web_sensor_definitions(coordinator)}
 
-    assert definitions["mixer_heating_circuitD"].name == "Mischer Heizkreis D (Web)"
+    assert "mixer_heating_circuitD" in definitions
     assert "mixer_heating_circuitA" in definitions
     assert "mixer_heating_circuitB" not in definitions
     # Web flow temperatures duplicate the Modbus registers only when Modbus is used.
@@ -198,7 +211,8 @@ def test_camel_case_source_key_uses_normalized_translation_key():
     ]
 
     assert sensor._attr_unique_id == "test_entry_web_pump_heating_circuitA"
-    assert sensor.entity_description.translation_key == "web_pump_heating_circuit_a"
+    assert sensor.entity_description.translation_key == "web_pump_heating_circuit"
+    assert sensor._attr_translation_placeholders == {"circuit": "A"}
 
 
 def test_inverted_nc_binary_sensors():
@@ -244,17 +258,15 @@ class TestExpectedPowerNaming:
     """
 
     def test_expected_power_names_do_not_promise_a_live_measurement(self):
-        from custom_components.idm_heatpump.sensor import _humanize_web_name
+        names = _translated_sensor_names("de")
 
         for key, mode in (
-            ("current_expected_power_heating", "Heizen"),
-            ("current_expected_power_cooling", "Kühlen"),
-            ("current_expected_power_hotwater", "Warmwasser"),
+            ("web_current_expected_power_heating", "Heizen"),
+            ("web_current_expected_power_cooling", "Kühlen"),
+            ("web_current_expected_power_hotwater", "Warmwasser"),
         ):
-            name = _humanize_web_name(key)
-            assert name == f"Momentane/prognostizierte Leistung {mode}"
+            assert names[key] == f"Momentane/prognostizierte Leistung {mode} (Web)"
 
     def test_actual_electrical_power_stays_distinct(self):
-        from custom_components.idm_heatpump.sensor import _humanize_web_name
-
-        assert "prognostiziert" not in _humanize_web_name("current_electrical_power")
+        assert "prognostiziert" not in _translated_sensor_names("de")["web_current_electrical_power"]
+        assert "projected" not in _translated_sensor_names("en")["web_current_electrical_power"]

@@ -155,3 +155,141 @@ class TestCalculatedSensorDependencies:
 
         assert {"hc_a_flow_temp", "hc_a_setpoint_flow_temp"} <= required
         assert "hc_b_flow_temp" not in required
+
+
+class TestPollingManagerLifecycle:
+    """Setup, registry events and shutdown of the entity-aware polling manager.
+
+    These paths run entirely in the background, so a failure here shows up as
+    "some entities stopped updating" rather than as an error — they need to be
+    pinned by tests.
+    """
+
+    def _manager(self, monkeypatch, registry, *, hass=None):
+        monkeypatch.setattr(polling_plan.er, "async_get", lambda hass: registry)
+        monkeypatch.setattr(
+            polling_plan.er,
+            "async_entries_for_config_entry",
+            lambda current, entry_id: current.entries,
+        )
+        hass = hass or MagicMock()
+        entry = MagicMock()
+        entry.entry_id = "entry"
+        coordinator = _Coordinator()
+        manager = EntityAwarePollingManager(hass, entry, coordinator, debounce_seconds=0)
+        return manager, coordinator, entry, hass
+
+    @pytest.mark.asyncio
+    async def test_setup_applies_the_plan_and_listens_for_registry_changes(self, monkeypatch) -> None:
+        import asyncio
+
+        registry = _Registry([_RegistryEntry("entry_hp_flow_temp")])
+        hass = MagicMock()
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        unsub = MagicMock()
+        hass.bus.async_listen = MagicMock(return_value=unsub)
+        manager, coordinator, entry, _hass = self._manager(monkeypatch, registry, hass=hass)
+
+        manager.schedule_setup()
+        task = manager._setup_task
+        assert task is not None
+        manager.schedule_setup()  # a second call must not start a second setup
+        assert manager._setup_task is task
+        await task
+
+        assert manager._unsub_registry is unsub
+        assert {register.name for register in coordinator._registers} == {
+            "outdoor_temp",
+            "hp_flow_temp",
+            "hp_return_temp",
+        }
+        entry.async_on_unload.assert_called_once()
+
+        await manager.async_shutdown()
+        unsub.assert_called_once()
+        assert manager._unsub_registry is None
+
+    @pytest.mark.asyncio
+    async def test_registry_events_for_other_entries_are_ignored(self, monkeypatch) -> None:
+        registry = _Registry([_RegistryEntry("entry_hp_flow_temp")])
+        registry.async_get = lambda entity_id: MagicMock(config_entry_id="other-entry")
+        manager, _coordinator, _entry, hass = self._manager(monkeypatch, registry)
+
+        manager._handle_registry_event(MagicMock(data={"entity_id": "sensor.foreign"}))
+
+        hass.async_create_task.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_registry_events_debounce_into_one_refresh(self, monkeypatch) -> None:
+        import asyncio
+
+        registry = _Registry([_RegistryEntry("entry_hp_flow_temp")])
+        registry.async_get = lambda entity_id: MagicMock(config_entry_id="entry")
+        hass = MagicMock()
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        manager, coordinator, _entry, _hass = self._manager(monkeypatch, registry, hass=hass)
+
+        manager._handle_registry_event(MagicMock(data={"entity_id": "sensor.idm_flow"}))
+        first = manager._refresh_task
+        manager._handle_registry_event(MagicMock(data={"entity_id": "sensor.idm_flow"}))
+        assert first is not None and first.cancelled() or first.done() or manager._refresh_task is not first
+
+        task = manager._refresh_task
+        assert task is not None
+        await asyncio.gather(task, return_exceptions=True)
+
+        assert {register.name for register in coordinator._registers} == {
+            "outdoor_temp",
+            "hp_flow_temp",
+            "hp_return_temp",
+        }
+
+    @pytest.mark.asyncio
+    async def test_shutdown_cancels_pending_work(self, monkeypatch) -> None:
+        import asyncio
+
+        registry = _Registry([_RegistryEntry("entry_hp_flow_temp")])
+        hass = MagicMock()
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        manager, _coordinator, _entry, _hass = self._manager(monkeypatch, registry, hass=hass)
+        manager._debounce_seconds = 30
+
+        manager.schedule_setup()
+        manager._handle_registry_event(MagicMock(data={"entity_id": None}))
+        setup_task = manager._setup_task
+        refresh_task = manager._refresh_task
+
+        await manager.async_shutdown()
+
+        assert setup_task is not None and setup_task.cancelled()
+        assert refresh_task is not None and refresh_task.cancelled()
+        assert manager._setup_task is None
+        assert manager._refresh_task is None
+
+    @pytest.mark.asyncio
+    async def test_unload_schedules_the_shutdown(self, monkeypatch) -> None:
+        import asyncio
+
+        registry = _Registry([])
+        hass = MagicMock()
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        manager, _coordinator, _entry, _hass = self._manager(monkeypatch, registry, hass=hass)
+
+        manager._schedule_shutdown()
+
+        assert hass.async_create_task.call_count == 1
+        await asyncio.sleep(0)
+
+    def test_entries_of_other_config_entries_are_skipped(self, monkeypatch) -> None:
+        monkeypatch.setattr(
+            polling_plan.er,
+            "async_entries_for_config_entry",
+            lambda registry, entry_id: [
+                _RegistryEntry("other_entry_hp_flow_temp"),
+                _RegistryEntry(unique_id=None),  # type: ignore[arg-type]
+            ],
+        )
+
+        required = polling_plan.build_required_register_names(object(), "entry", {"hp_flow_temp"})
+
+        assert required == set()

@@ -673,14 +673,14 @@ class TestIdmTechnicianCodeSensor:
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
         assert sensor._attr_unique_id == "test_entry_technician_level_1"
-        assert sensor._attr_name == "00 Fachmann Ebene 1"
+        assert sensor._attr_translation_key == "technician_level_1"
 
     def test_level_2_name(self):
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_2")
-        assert sensor._attr_name == "00 Fachmann Ebene 2"
+        assert sensor._attr_translation_key == "technician_level_2"
 
     def test_available_always_true(self):
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
@@ -1221,6 +1221,47 @@ class TestIdmSelect:
         sel = IdmSelect(coord, reg, _make_desc("system_mode"))
         with pytest.raises(ValueError):
             sel._option_to_value("NonExistent")
+
+    def test_register_without_options_has_no_choices(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        coord = _make_coordinator()
+        reg = _make_register("not_a_slug_mapped_register", writable=True)
+        sel = IdmSelect(coord, reg, _make_desc("not_a_slug_mapped_register"))
+
+        assert sel._attr_options == []
+        with pytest.raises(ValueError, match="No options defined"):
+            sel._option_to_value("Normal")
+
+    def test_a_non_numeric_raw_value_has_no_current_option(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        coord = _make_coordinator(data={"system_mode": "not a number"})
+        reg = _make_register("system_mode", enum_options={0: "Standby"})
+        sel = IdmSelect(coord, reg, _make_desc("system_mode"))
+
+        assert sel.current_option is None
+
+    def test_registers_without_a_slug_map_use_their_library_options(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        coord = _make_coordinator(data={"not_a_slug_mapped_register": 1})
+        reg = _make_register("not_a_slug_mapped_register", writable=True, enum_options={0: "Normal", 1: "Boost"})
+        sel = IdmSelect(coord, reg, _make_desc("not_a_slug_mapped_register"))
+
+        assert sel.current_option == "Boost"
+        assert sel._option_to_value("boost") == 1
+        with pytest.raises(ValueError, match="Unknown option"):
+            sel._option_to_value("Nope")
+
+    def test_a_register_without_options_reports_no_current_option(self):
+        from custom_components.idm_heatpump.select import IdmSelect
+
+        coord = _make_coordinator(data={"not_a_slug_mapped_register": 1})
+        reg = _make_register("not_a_slug_mapped_register", writable=True)
+        sel = IdmSelect(coord, reg, _make_desc("not_a_slug_mapped_register"))
+
+        assert sel.current_option is None
 
     async def test_async_select_option(self):
         from custom_components.idm_heatpump.select import IdmSelect

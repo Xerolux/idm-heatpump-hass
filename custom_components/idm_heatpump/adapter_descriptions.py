@@ -15,6 +15,7 @@ from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTem
 from idm_heatpump import RegisterDef
 
 from .adapter_metadata import entity_enabled_by_default
+from .entity_names import ENGLISH_NAMES, translation_key_for_register
 from .binary_semantics import infer_binary_device_class as infer_binary_device_class  # noqa: PLC0414
 
 # Compatibility export used by tests and downstream consumers that inspect the
@@ -136,6 +137,25 @@ def get_icon_for_register(name: str, unit: str | None = None) -> str:
     return "mdi:information-outline"
 
 
+def name_kwargs(register_name: str, fallback_name: str, *, options_key: str | None = None) -> dict[str, Any]:
+    """Return the description keywords that decide how an entity is named.
+
+    Shipped registers are named from the translation files (Home Assistant
+    quality scale rule ``entity-translations``); the German fallback name is
+    only used for a register that a newer ``idm-heatpump-api`` release adds
+    before its translation exists, so such an entity still shows a readable
+    name instead of the bare device name. ``options_key`` keeps the enum option
+    translations working on that fallback path.
+    """
+    key = translation_key_for_register(register_name)
+    if key in ENGLISH_NAMES:
+        return {"translation_key": key}
+    kwargs: dict[str, Any] = {"name": fallback_name}
+    if options_key is not None:
+        kwargs["translation_key"] = options_key
+    return kwargs
+
+
 def make_sensor_description(
     reg: RegisterDef,
     meta: dict[str, Any],
@@ -158,7 +178,7 @@ def make_sensor_description(
 
     return SensorEntityDescription(
         key=reg.name,
-        name=meta.get("name") or fallback_name,
+        **name_kwargs(reg.name, meta.get("name") or fallback_name),
         native_unit_of_measurement=unit,
         device_class=device_class,
         state_class=state_class,

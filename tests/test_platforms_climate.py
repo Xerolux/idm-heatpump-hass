@@ -725,3 +725,148 @@ class TestIdmZoneRoomClimate:
         coord.async_write_register.assert_awaited_with(climate._mode_reg, RoomMode.COMFORT)
         await climate.async_set_preset_mode(PRESET_ECO)
         coord.async_write_register.assert_awaited_with(climate._mode_reg, RoomMode.ECO)
+
+
+class TestClimateSharedBehaviour:
+    """Availability, write errors and the state paths shared by both climates."""
+
+    def _hc(self, data=None, **coord_kwargs):
+        from custom_components.idm_heatpump.climate import IdmHeatingCircuitClimate
+
+        coord = _make_coordinator(data=data, **coord_kwargs)
+        mode, target, current = _hc_registers("a")
+        return IdmHeatingCircuitClimate(coord, "a", mode, target, current), coord
+
+    def _zone(self, data=None):
+        from custom_components.idm_heatpump.climate import IdmZoneRoomClimate
+
+        coord = _make_coordinator(data=data)
+        mode = _make_register("zm1_room2_mode", 3000, datatype=DataType.UCHAR, writable=True)
+        target = _make_register("zm1_room2_setpoint", 3001)
+        current = _make_register("zm1_room2_temp", 3002)
+        return IdmZoneRoomClimate(coord, 1, 2, mode, target, current), coord
+
+    def test_availability_needs_both_control_registers(self):
+        climate, coord = self._hc(data={"hc_a_mode": CircuitMode.NORMAL})
+        assert climate.available is False, "a missing target register must hide the thermostat"
+
+        climate, coord = self._hc(data={"hc_a_mode": CircuitMode.NORMAL, "hc_a_room_setpoint_heat_normal": 21.0})
+        assert climate.available is True
+
+        coord.unused_registers = {"hc_a_room_setpoint_heat_normal"}
+        assert climate.available is False
+
+    def test_availability_without_data_or_a_failed_poll(self):
+        climate, _coord = self._hc(data={})
+        assert climate.available is False
+
+        climate, _coord = self._hc(data={"hc_a_mode": 1}, last_update_success=False)
+        assert climate.available is False
+
+    def test_device_info_falls_back_to_the_main_device(self):
+        climate, coord = self._hc()
+
+        assert climate.device_info["identifiers"] == {("idm_heatpump", coord.config_entry.entry_id)}
+
+    def test_temperatures_are_none_without_data(self):
+        climate, _coord = self._hc(data={})
+
+        assert climate.current_temperature is None
+        assert climate.target_temperature is None
+        assert climate.hvac_action is None
+
+    async def test_a_translated_write_error_is_passed_through(self):
+        from homeassistant.exceptions import HomeAssistantError
+
+        climate, coord = self._hc(data={"hc_a_mode": CircuitMode.NORMAL})
+        coord.async_write_register = AsyncMock(side_effect=HomeAssistantError("write cooldown"))
+
+        with pytest.raises(HomeAssistantError, match="write cooldown"):
+            await climate._async_write_register(climate._mode_reg, 1, action_label="set mode")
+
+    async def test_an_unknown_write_error_is_translated(self):
+        from homeassistant.exceptions import HomeAssistantError
+
+        climate, coord = self._hc(data={"hc_a_mode": CircuitMode.NORMAL})
+        coord.async_write_register = AsyncMock(side_effect=RuntimeError("bus error"))
+
+        with pytest.raises(HomeAssistantError) as err:
+            await climate._async_write_register(climate._mode_reg, 1, action_label="set mode")
+
+        assert err.value.translation_key
+
+    def test_the_base_class_has_no_mode_mapping(self):
+        from custom_components.idm_heatpump.climate import IdmClimateBase
+
+        climate, coord = self._hc()
+        with pytest.raises(NotImplementedError):
+            IdmClimateBase.async_set_hvac_mode(climate, "heat").send(None)
+
+    def test_an_unmappable_circuit_mode_has_no_hvac_mode(self):
+        climate, _coord = self._hc(data={"hc_a_mode": 254})
+
+        assert climate.hvac_mode is None
+        assert climate.preset_mode is None
+
+    def test_an_unreadable_status_reports_idle(self):
+        from homeassistant.components.climate import HVACAction
+
+        climate, _coord = self._hc(data={"hc_a_mode": CircuitMode.NORMAL, "hp_operating_mode": "not a number"})
+
+        assert climate.hvac_action == HVACAction.IDLE
+
+    async def test_an_unsupported_hvac_mode_is_ignored(self):
+        climate, coord = self._hc(data={"hc_a_mode": CircuitMode.NORMAL})
+
+        await climate.async_set_hvac_mode("dry")
+
+        coord.async_write_register.assert_not_awaited()
+
+    async def test_off_is_written_as_the_circuit_off_mode(self):
+        from homeassistant.components.climate import HVACMode
+
+        climate, coord = self._hc(data={"hc_a_mode": CircuitMode.NORMAL})
+
+        await climate.async_set_hvac_mode(HVACMode.OFF)
+
+        coord.async_write_register.assert_awaited_once_with(climate._mode_reg, CircuitMode.OFF)
+
+    async def test_setting_a_preset_while_cooling_is_refused(self):
+        from homeassistant.components.climate import PRESET_ECO
+        from homeassistant.exceptions import HomeAssistantError
+
+        climate, coord = self._hc(data={"hc_a_mode": CircuitMode.MANUAL_COOL})
+
+        with pytest.raises(HomeAssistantError):
+            await climate.async_set_preset_mode(PRESET_ECO)
+
+        coord.async_write_register.assert_not_awaited()
+
+    def test_zone_room_states_without_data(self):
+        climate, _coord = self._zone(data={})
+
+        assert climate.hvac_mode is None
+        assert climate.preset_mode is None
+        assert climate.hvac_action is None
+
+    def test_an_unmappable_room_mode_has_no_state(self):
+        climate, _coord = self._zone(data={"zm1_room2_mode": 254})
+
+        assert climate.hvac_mode is None
+        assert climate.preset_mode is None
+
+    async def test_zone_room_hvac_modes_are_mapped_to_room_modes(self):
+        from homeassistant.components.climate import HVACMode
+
+        for mode, expected in (
+            (HVACMode.OFF, RoomMode.OFF),
+            (HVACMode.AUTO, RoomMode.AUTOMATIC),
+            (HVACMode.HEAT, RoomMode.NORMAL),
+        ):
+            climate, coord = self._zone(data={"zm1_room2_mode": RoomMode.ECO})
+            await climate.async_set_hvac_mode(mode)
+            coord.async_write_register.assert_awaited_once_with(climate._mode_reg, expected)
+
+        climate, coord = self._zone(data={"zm1_room2_mode": RoomMode.ECO})
+        await climate.async_set_hvac_mode("dry")
+        coord.async_write_register.assert_not_awaited()

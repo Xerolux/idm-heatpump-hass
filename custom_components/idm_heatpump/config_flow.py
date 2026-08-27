@@ -1260,15 +1260,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             "IDM Modbus connection to %s failed, but web PIN is configured; offering web-only fallback",
                             host,
                         )
+                        # A proxy setup without a web host was already rejected
+                        # by the validation above, so the host is usable here.
                         web_host = _web_host_for_input(user_input, host)
-                        if _uses_modbus_proxy(user_input) and not web_host:
-                            errors[CONF_WEB_HOST] = "web_host_required"
-                            return self.async_show_form(
-                                step_id="user",
-                                data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, user_input),
-                                description_placeholders={"wiki_url": _MODBUS_SETUP_URL},
-                                errors=errors,
-                            )
                         self._data = {
                             **_without_setup_fields(user_input),
                             CONF_HOST: host,
@@ -1287,14 +1281,6 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                     web_requested = _web_access_requested(user_input)
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN)) if web_requested else ""
                     web_host = _web_host_for_input(user_input, host) if web_requested else host
-                    if web_pin and _uses_modbus_proxy(user_input) and not web_host:
-                        errors[CONF_WEB_HOST] = "web_host_required"
-                        return self.async_show_form(
-                            step_id="user",
-                            data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, user_input),
-                            description_placeholders={"wiki_url": _MODBUS_SETUP_URL},
-                            errors=errors,
-                        )
                     try:
                         detected = await self._async_detect_web_supplement(
                             web_host,
@@ -1396,37 +1382,24 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             "IDM Modbus connection to %s failed during reconfigure, but web PIN is configured; offering web-only fallback",
                             host,
                         )
+                        # A proxy setup without a web host was already rejected
+                        # by the validation above, so the host is usable here.
                         web_host = _web_host_for_input(user_input, host)
-                        if _uses_modbus_proxy(user_input) and not web_host:
-                            errors[CONF_WEB_HOST] = "web_host_required"
-                        else:
-                            self._data = {
-                                **_without_setup_fields(user_input),
-                                CONF_HOST: host,
-                                CONF_NAME: entry.title,
-                                CONF_WEB_PIN: web_pin,
-                                CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
-                                CONF_WEB_HOST: _stored_web_host(web_host, host),
-                            }
-                            return await self.async_step_modbus_failed()
+                        self._data = {
+                            **_without_setup_fields(user_input),
+                            CONF_HOST: host,
+                            CONF_NAME: entry.title,
+                            CONF_WEB_PIN: web_pin,
+                            CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
+                            CONF_WEB_HOST: _stored_web_host(web_host, host),
+                        }
+                        return await self.async_step_modbus_failed()
                     else:
                         errors["base"] = connection_error
                 else:
                     web_requested = _web_access_requested(user_input)
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN)) if web_requested else ""
                     web_host = _web_host_for_input(user_input, host) if web_requested else host
-                    if web_pin and _uses_modbus_proxy(user_input) and not web_host:
-                        errors[CONF_WEB_HOST] = "web_host_required"
-                        return self.async_show_form(
-                            step_id="connection",
-                            data_schema=self.add_suggested_values_to_schema(STEP_RECONFIGURE_SCHEMA, user_input),
-                            description_placeholders={
-                                "name": entry.title,
-                                "host": entry.data[CONF_HOST],
-                                "wiki_url": _MODBUS_SETUP_URL,
-                            },
-                            errors=errors,
-                        )
                     try:
                         detected = await self._async_detect_web_supplement(
                             web_host,
@@ -1949,7 +1922,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             return {}
 
         try:
-            web_supplement = await async_read_web_supplement(host, pin, model_hint=model_hint)
+            web_supplement = await async_read_web_supplement(host, pin, model_hint=model_hint, hass=self.hass)
         except IdmWebAuthenticationFailed:
             _LOGGER.error("IDM Navigator web PIN was rejected for %s; please re-enter the PIN", host)
             raise

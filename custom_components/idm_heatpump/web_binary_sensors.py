@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import math
-import re
 from dataclasses import dataclass
 from typing import Any
 
@@ -21,6 +20,7 @@ from .device_hierarchy import (
     build_subdevice_info,
 )
 from .entity import IdmCoordinatorEntityBase, build_device_info, build_entity_unique_id
+from .entity_names import web_translation_for_value
 
 
 @dataclass(frozen=True)
@@ -161,11 +161,6 @@ _FALSE_TEXT_VALUES = frozenset(
 )
 
 
-def web_binary_translation_key(entity_key: str) -> str:
-    """Return a lowercase snake-case Home Assistant translation key."""
-    return re.sub(r"(?<!^)(?=[A-Z])", "_", entity_key).lower()
-
-
 def normalize_web_binary_value(value: Any) -> bool | None:
     """Normalize a Navigator web value without inventing an unknown state."""
     if isinstance(value, bool):
@@ -213,9 +208,12 @@ class IdmWebBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
         entity_key = f"web_{definition.key}"
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, entity_key)
+        translation_key, placeholders = web_translation_for_value(definition.key)
+        if placeholders:
+            self._attr_translation_placeholders = placeholders
         self.entity_description = BinarySensorEntityDescription(
             key=entity_key,
-            translation_key=web_binary_translation_key(entity_key),
+            translation_key=translation_key,
             icon=definition.icon,
             device_class=definition.device_class,
             entity_category=definition.entity_category,

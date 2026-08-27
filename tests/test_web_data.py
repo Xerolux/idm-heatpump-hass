@@ -1,10 +1,13 @@
 """Tests for optional IDM local web supplement handling."""
 
+import asyncio
 from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import idm_heatpump
 import pytest
 
+from custom_components.idm_heatpump import web_data
 from custom_components.idm_heatpump.const import MODEL
 from custom_components.idm_heatpump.web_data import (
     IdmWebAuthenticationFailed,
@@ -110,6 +113,65 @@ async def test_nav20_factory_does_not_create_ip_cookie_session_for_hostnames(mon
     monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", create_client, raising=False)
 
     assert _create_nav20_client("idm-navigator.local", "1234") is client
+
+
+async def test_web_client_uses_the_home_assistant_session_for_hostnames(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A hostname reuses Home Assistant's shared client session (inject-websession)."""
+    client = _FakeWebClient()
+    shared = object()
+    used: list[object] = []
+
+    def create_client(host: str, pin: str, *, session: object | None = None) -> _FakeWebClient:
+        used.append(session)
+        return client
+
+    monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", create_client, raising=False)
+    monkeypatch.setattr(web_data, "async_get_clientsession", lambda hass: shared)
+
+    hass = MagicMock()
+    assert _create_nav20_client("idm-navigator.local", "1234", hass) is client
+    assert used == [shared]
+
+
+async def test_web_client_lets_home_assistant_create_the_ip_cookie_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An IP host needs an unsafe cookie jar, still created through Home Assistant."""
+    client = _FakeWebClient()
+    created: list[dict] = []
+
+    class _Session:
+        def __init__(self) -> None:
+            self.closed = False
+
+        async def close(self) -> None:
+            self.closed = True
+
+    session = _Session()
+
+    def create_session(hass: object, **kwargs: object) -> _Session:
+        created.append(kwargs)
+        return session
+
+    def create_client(host: str, pin: str, *, session: object | None = None) -> _FakeWebClient:
+        assert session is not None
+        return client
+
+    class _CookieJar:
+        def __init__(self, unsafe: bool = False) -> None:
+            self.unsafe = unsafe
+
+    monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", create_client, raising=False)
+    monkeypatch.setattr(web_data, "async_create_clientsession", create_session)
+    monkeypatch.setattr(web_data, "_unsafe_cookie_jar", lambda: _CookieJar(unsafe=True))
+
+    wrapped = _create_nav20_client("192.168.1.50", "1234", MagicMock())
+
+    assert wrapped is not None
+    assert created and getattr(created[0]["cookie_jar"], "unsafe", None) is True
+    await wrapped.close()
+    assert client.closed
+    assert session.closed, "a Home Assistant session created per client must be closed with it"
 
 
 def test_web_pin_configured_without_api_symbol() -> None:
@@ -823,3 +885,156 @@ class TestWebClientPool:
         result = await async_read_web_supplement("192.0.2.10", "1234")
         assert result is not None
         assert nav10.closed  # legacy behaviour preserved
+
+
+class TestWebValueNormalisation:
+    """The Navigator web API is loosely typed; every shape must stay usable."""
+
+    def test_myidm_id_is_read_from_mail_style_fields(self) -> None:
+        data = SimpleNamespace(myidm_id=None, myIDMId="   ", myidm_email="m12345@idm-energie.at")
+
+        assert web_data._read_myidm_id(data, {}) == "m12345"
+
+    def test_myidm_id_falls_back_to_value_keys(self) -> None:
+        data = SimpleNamespace()
+
+        assert web_data._read_myidm_id(data, {"myIDMid": "m999"}) == "m999"
+        assert web_data._read_myidm_id(data, {"customer_myidm_account": "m111"}) == "m111"
+        assert web_data._read_myidm_id(data, {"email": "m222@example.org"}) == "m222"
+        assert web_data._read_myidm_id(data, {"email": "someone@example.org"}) is None
+        assert web_data._read_myidm_id(data, {"email": None}) is None
+
+    def test_local_part_rejects_unusable_values(self) -> None:
+        assert web_data._local_part(None) is None
+        assert web_data._local_part("   ") is None
+        assert web_data._local_part("@example.org") is None
+
+    def test_numeric_values_are_used_directly(self) -> None:
+        value = web_data._normalize_sensor_value(SimpleNamespace(value="21.5 °C", numeric_value=21.5, unit="°C"))
+
+        assert value.native_value == 21.5
+        assert value.unit == "°C"
+
+    def test_a_unit_suffix_is_parsed_out_of_the_text(self) -> None:
+        value = web_data._normalize_sensor_value("18,4 °C")
+
+        assert value.native_value == 18.4
+        assert value.unit == "°C"
+
+    def test_text_without_a_number_stays_text(self) -> None:
+        value = web_data._normalize_sensor_value("Heizen")
+
+        assert value.native_value == "Heizen"
+        assert value.unit is None
+
+
+class TestWebSupplementHelpers:
+    async def test_clients_without_notifications_are_accepted(self) -> None:
+        supplement = IdmWebSupplement(values={})
+
+        assert await web_data._read_optional_notifications(SimpleNamespace(), supplement) is supplement
+
+    async def test_a_failing_notification_read_keeps_the_snapshot(self) -> None:
+        supplement = IdmWebSupplement(values={})
+
+        async def _read():
+            raise RuntimeError("no notifications")
+
+        client = SimpleNamespace(read_notifications=_read)
+
+        assert await web_data._read_optional_notifications(client, supplement) is supplement
+
+    def test_an_empty_host_is_not_an_ip_literal(self) -> None:
+        assert web_data._is_ip_literal("   ") is False
+
+    def test_a_factory_without_a_signature_gets_no_session(self) -> None:
+        assert web_data._session_factory_supports_session(print) is False
+
+    def test_a_conflicting_model_hint_picks_no_variant(self) -> None:
+        assert web_data._preferred_web_variant("Navigator 2.0 / 10") is None
+
+    def test_firmware_prefix_identifies_navigator_10(self) -> None:
+        assert web_data._firmware_indicates_nav10("NAV10_20.24-880") is True
+        assert web_data._firmware_indicates_nav10("nav20_1.2") is False
+        assert web_data._firmware_indicates_nav10(None) is False
+
+    def test_merge_keeps_the_modbus_model_for_the_generic_web_name(self) -> None:
+        supplement = IdmWebSupplement(values={}, navigator_version=MODEL, software_version=None)
+
+        assert merge_model_info("Navigator 10", "1.2", supplement) == ("Navigator 10", "1.2")
+
+    async def test_closing_a_broken_client_is_tolerated(self) -> None:
+        class _Client:
+            async def close(self) -> None:
+                raise RuntimeError("already gone")
+
+        await web_data._safe_close(_Client())
+
+    async def test_a_client_wrapper_forwards_reads_and_reports_close_errors(self) -> None:
+        class _Client:
+            model = "Navigator 10"
+
+            async def read_data(self):
+                return {"values": {}}
+
+            async def close(self) -> None:
+                raise RuntimeError("client close failed")
+
+        class _Session:
+            def __init__(self) -> None:
+                self.closed = False
+
+            async def close(self) -> None:
+                self.closed = True
+
+        session = _Session()
+        wrapper = web_data._SessionClosingWebClient(_Client(), session)
+
+        assert wrapper.model == "Navigator 10"
+        assert await wrapper.read_data() == {"values": {}}
+        with pytest.raises(RuntimeError, match="client close failed"):
+            await wrapper.close()
+        assert session.closed, "the session must be closed even when the client fails"
+
+    async def test_a_failing_factory_releases_the_session(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        closed: list[bool] = []
+
+        class _Session:
+            async def close(self) -> None:
+                closed.append(True)
+
+        def factory(host: str, pin: str, *, session: object | None = None):
+            raise RuntimeError("factory failed")
+
+        monkeypatch.setattr(web_data, "_web_session", lambda hass, host: (_Session(), True))
+
+        with pytest.raises(RuntimeError, match="factory failed"):
+            web_data._create_web_client_with_optional_ip_session(factory, "192.168.1.50", "1234", MagicMock())
+        await asyncio.sleep(0)
+
+        assert closed == [True]
+
+    async def test_a_factory_without_a_client_releases_the_session(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        closed: list[bool] = []
+
+        class _Session:
+            async def close(self) -> None:
+                closed.append(True)
+
+        def factory(host: str, pin: str, *, session: object | None = None):
+            return None
+
+        monkeypatch.setattr(web_data, "_web_session", lambda hass, host: (_Session(), True))
+
+        assert (
+            web_data._create_web_client_with_optional_ip_session(factory, "192.168.1.50", "1234", MagicMock()) is None
+        )
+        await asyncio.sleep(0)
+
+        assert closed == [True]
+
+    async def test_without_an_api_web_client_the_supplement_stays_none(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delattr(idm_heatpump, "create_optional_navigator10_web_client", raising=False)
+        monkeypatch.delattr(idm_heatpump, "create_optional_navigator20_web_client", raising=False)
+
+        assert await async_read_web_supplement("192.0.2.10", "1234") is None
