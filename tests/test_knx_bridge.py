@@ -459,3 +459,138 @@ class TestReadRequests:
         assert "8/0/1" not in addresses
         assert "8/0/222" in addresses
         await bridge.async_stop()
+
+
+class TestResilienceAndEdges:
+    """Failure paths: none of them may take the bridge or the entry down."""
+
+    async def test_periodic_resend_repeats_unchanged_values(self):
+        """A visualisation without its own cache needs the value again."""
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        bridge = KnxBridge(hass, coordinator, _config(receive_enabled=False, resend_interval=1), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+        hass.services.async_call.reset_mock()
+
+        # Nothing changed, but the resend window has passed.
+        bridge._last_full_send -= 2
+        bridge._handle_coordinator_update()
+        await _drain(bridge)
+        assert [c for c in hass.services.async_call.call_args_list if c.args[2]["address"] == "8/0/1"]
+        await bridge.async_stop()
+
+    async def test_start_warns_and_stays_idle_without_servable_objects(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator(data={})
+        coordinator.get_register = MagicMock(return_value=None)
+        bridge = KnxBridge(hass, coordinator, _config(), entry_id="e")
+        await bridge.async_start()
+        assert bridge.group_addresses == {}
+        hass.bus.async_listen.assert_not_called()
+
+    async def test_a_failing_event_registration_does_not_abort_start(self):
+        hass = _make_hass()
+        hass.services.async_call = AsyncMock(side_effect=RuntimeError("knx down"))
+        bridge = KnxBridge(hass, _make_coordinator(), _config(send_enabled=False), entry_id="e")
+        await bridge.async_start()
+        assert bridge.group_addresses  # resolved despite the failure
+        await bridge.async_stop()
+
+    async def test_a_failing_send_does_not_kill_the_worker(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        hass.services.async_call = AsyncMock(side_effect=RuntimeError("bus off"))
+        bridge = KnxBridge(hass, coordinator, _config(receive_enabled=False), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+
+        # The worker survived and keeps draining after the failure.
+        coordinator.data = dict(coordinator.data, outdoor_temp=11.0)
+        bridge._handle_coordinator_update()
+        await _drain(bridge)
+        assert bridge._queue.empty()
+        await bridge.async_stop()
+
+    async def test_a_failing_read_answer_is_swallowed(self):
+        hass = _make_hass()
+        bridge = KnxBridge(hass, _make_coordinator(), _config(), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+        hass.services.async_call = AsyncMock(side_effect=RuntimeError("bus off"))
+
+        bridge._handle_read_request("8/0/1")
+        await asyncio.sleep(0)
+        await bridge.async_stop()
+
+    async def test_a_write_to_a_read_only_register_is_refused(self):
+        """The catalogue says writable, the register does not."""
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        read_only = RegisterDef(1393, DataType.UCHAR, "hc_a_mode")
+        coordinator.get_register = MagicMock(
+            side_effect=lambda name: read_only if name == "hc_a_mode" else REGISTERS.get(name)
+        )
+        bridge = KnxBridge(hass, coordinator, _config(send_enabled=False), entry_id="e")
+        await bridge.async_start()
+
+        event = MagicMock()
+        event.data = {
+            "destination": "8/0/222",
+            "value": 3,
+            "direction": "Incoming",
+            "telegramtype": "GroupValueWrite",
+        }
+        bridge._handle_knx_event(event)
+        await asyncio.sleep(0)
+        coordinator.async_write_register.assert_not_awaited()
+        await bridge.async_stop()
+
+    async def test_an_undecodable_payload_is_ignored(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        bridge = KnxBridge(hass, coordinator, _config(send_enabled=False), entry_id="e")
+        await bridge.async_start()
+
+        event = MagicMock()
+        event.data = {
+            "destination": "8/0/222",
+            "value": "not a number",
+            "direction": "Incoming",
+            "telegramtype": "GroupValueWrite",
+        }
+        bridge._handle_knx_event(event)
+        await asyncio.sleep(0)
+        coordinator.async_write_register.assert_not_awaited()
+        await bridge.async_stop()
+
+    async def test_a_group_value_response_is_never_written(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        bridge = KnxBridge(hass, coordinator, _config(send_enabled=False), entry_id="e")
+        await bridge.async_start()
+
+        event = MagicMock()
+        event.data = {
+            "destination": "8/0/222",
+            "value": 3,
+            "direction": "Incoming",
+            "telegramtype": "GroupValueResponse",
+        }
+        bridge._handle_knx_event(event)
+        await asyncio.sleep(0)
+        coordinator.async_write_register.assert_not_awaited()
+        await bridge.async_stop()
+
+    def test_no_group_filter_means_the_whole_catalogue(self):
+        from custom_components.idm_heatpump.knx_bridge import _catalogue_objects
+        from custom_components.idm_heatpump.knx_catalog import KNX_OBJECTS
+
+        assert len(_catalogue_objects(None)) == len(KNX_OBJECTS)
+        assert {o.group for o in _catalogue_objects(("solar",))} == {"solar"}
+
+    def test_outgoing_coercion_survives_an_unconvertible_object(self):
+        assert _coerce_outgoing(object(), "9.001") is None
+
+    def test_incoming_coercion_takes_a_bool(self):
+        assert _coerce_incoming(True, SYSTEM_MODE) == 1
