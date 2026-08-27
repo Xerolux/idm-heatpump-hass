@@ -7,7 +7,7 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 import logging
-from typing import Any, ClassVar
+from typing import Any, Final
 
 from homeassistant.components.water_heater import (
     STATE_HEAT_PUMP,
@@ -52,6 +52,9 @@ async def async_setup_entry(
         _LOGGER.debug("No DHW registers found; not setting up water_heater platform")
 
 
+_OPERATION_LIST: Final[list[str]] = [STATE_HEAT_PUMP]
+
+
 class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
     """Representation of the IDM Domestic Hot Water."""
 
@@ -59,7 +62,6 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
     _attr_translation_key = "water_heater"
     _attr_temperature_unit = UnitOfTemperature.CELSIUS
     _attr_supported_features = WaterHeaterEntityFeature.TARGET_TEMPERATURE
-    _attr_operation_list: ClassVar[list[str]] = [STATE_HEAT_PUMP]
     _attr_current_operation = STATE_HEAT_PUMP
 
     def __init__(
@@ -70,6 +72,7 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
     ) -> None:
         """Initialize the water heater."""
         super().__init__(coordinator)
+        self._attr_operation_list = _OPERATION_LIST
         self._current_reg = current_reg
         self._target_reg = target_reg
         assert coordinator.config_entry is not None

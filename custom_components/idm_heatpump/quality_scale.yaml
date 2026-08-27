@@ -372,11 +372,12 @@ rules:
   strict-typing:
     status: done
     comment: >
-      All integration files have complete type annotations (from __future__ import
-      annotations, explicit return types, no bare dict/list). mypy.ini configures
-      strict=true with allow-subclassing-any and allow-untyped-globals for HA
-      compatibility. validate.yml runs mypy --strict --ignore-missing-imports.
-
+      mypy.ini is plain "strict = true": no disabled error code and no relaxed
+      strictness flag. The CI matrix runs it against the real runtime (Home
+      Assistant 2026.8.1 and the next beta, the pinned idm-heatpump-api and the
+      API main branch) - without the runtime installed every Home Assistant
+      import would be Any and the check would pass without checking anything.
+      idm-heatpump-api ships py.typed.
   # ── FOR HA CORE SUBMISSION (additional requirements) ──────────────────────
   #
   # domain-rename:

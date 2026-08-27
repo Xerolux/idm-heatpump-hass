@@ -13,6 +13,29 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0-rc.4] - 2026-08-27
+
+Release candidate 4 is a quality-scale candidate: it makes the Home Assistant
+quality-scale claims in `quality_scale.yaml` true instead of aspirational. The
+visible change for users is that **entity names are translated** — an English
+Home Assistant now shows English entity names, a German one shows exactly the
+names it showed before. Entity IDs, unique IDs, register addresses, write paths,
+the device hierarchy and the dependency pins are unchanged from `0.16.0-rc.3`,
+so dashboards, automations and long-term statistics keep working.
+
+> ### 🏷️ Headline: every entity is named from the translation files
+>
+> Until now only 38 control entities were translated; the ~190 Modbus register
+> entities, the calculated and operating-analysis sensors, the technician codes
+> and the local web supplement values carried hardcoded German names — in every
+> language. They now all resolve through a Home Assistant translation key, with
+> the heating circuit letter and the zone/room number as placeholders
+> (*Heating circuit A flow temperature*, *Zone 1 room 2 temperature*).
+>
+> Only the displayed name changes. An entity created *after* the switch derives
+> its entity ID from the name in the configured language, as with every Home
+> Assistant integration.
+
 ### Changed
 
 - **Entity names now come from the translation files.** Every entity — the
@@ -34,6 +57,16 @@ All notable changes to this project will be documented in this file.
   `async_create_clientsession` with an unsafe cookie jar for an IP address)
   instead of an integration-owned session (quality-scale rule
   `inject-websession`).
+- **Strict typing is strict now.** `mypy.ini` was `strict = true` with seven
+  disabled error codes and three relaxed flags; it is plain `strict = true`
+  with nothing disabled. The 27 type errors that surfaced were fixed rather
+  than silenced: a `ClassVar` used at module level, a dead `ConfigFlowResult`
+  import fallback, the shared option steps now build on Home Assistant's
+  `ConfigEntryBaseFlow` instead of an untyped mixin, the dynamically resolved
+  child-device API is narrowed before use, a decoded register value is narrowed
+  before it becomes sensor state, and the `_attr_*` lists of the climate and
+  water-heater entities no longer override Home Assistant instance variables
+  with class variables. 13 stale `# type: ignore` comments are gone.
 
 ### Added
 

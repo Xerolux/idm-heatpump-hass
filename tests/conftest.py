@@ -441,14 +441,13 @@ def _stub_homeassistant() -> None:
         def async_on_unload(self, *a, **kw):
             pass
 
-    class _ConfigFlow:
-        VERSION = 1
-        MINOR_VERSION = 1
+    class _ConfigEntryBaseFlow:
+        """Mirror of homeassistant.config_entries.ConfigEntryBaseFlow.
 
-        def __init_subclass__(cls, domain=None, **kwargs):
-            super().__init_subclass__(**kwargs)
-            if domain:
-                cls.DOMAIN = domain
+        Home Assistant shares the form helpers between config and options flows
+        through this base, and the integration builds its own shared option
+        steps on it, so the stub needs the same hierarchy.
+        """
 
         def __init__(self):
             self._data = {}
@@ -465,11 +464,23 @@ def _stub_homeassistant() -> None:
                 "menu_options": menu_options,
             }
 
-        def async_create_entry(self, title="", data=None, options=None):
-            return {"type": "create_entry", "title": title, "data": data or {}, "options": options or {}}
-
         def async_abort(self, reason):
             return {"type": "abort", "reason": reason}
+
+        def add_suggested_values_to_schema(self, schema, suggested_values):
+            return schema
+
+    class _ConfigFlow(_ConfigEntryBaseFlow):
+        VERSION = 1
+        MINOR_VERSION = 1
+
+        def __init_subclass__(cls, domain=None, **kwargs):
+            super().__init_subclass__(**kwargs)
+            if domain:
+                cls.DOMAIN = domain
+
+        def async_create_entry(self, title="", data=None, options=None):
+            return {"type": "create_entry", "title": title, "data": data or {}, "options": options or {}}
 
         def async_update_reload_and_abort(self, entry, data_updates=None, **kwargs):
             return {"type": "abort", "reason": "reconfigure_successful"}
@@ -489,25 +500,21 @@ def _stub_homeassistant() -> None:
         def _get_reconfigure_entry(self):
             return MagicMock()
 
-        def add_suggested_values_to_schema(self, schema, suggested_values):
-            return schema
-
         @staticmethod
         def async_get_options_flow(config_entry):
             return MagicMock()
 
-    class _OptionsFlow:
+    class _OptionsFlow(_ConfigEntryBaseFlow):
         def __init__(self):
-            self._options = {}
+            super().__init__()
             self.config_entry = MagicMock()
-
-        def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
-            return {"type": "form", "step_id": step_id, "errors": errors or {}}
 
         def async_create_entry(self, data=None):
             return {"type": "create_entry", "data": data or {}}
 
     ha.config_entries.ConfigEntry = _ConfigEntry
+    ha.config_entries.ConfigEntryBaseFlow = _ConfigEntryBaseFlow
+    ha.config_entries.ConfigFlowResult = dict
     ha.config_entries.ConfigFlow = _ConfigFlow
     ha.config_entries.OptionsFlow = _OptionsFlow
     ha.config_entries.ConfigEntryState = _ConfigEntryState

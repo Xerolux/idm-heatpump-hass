@@ -221,7 +221,7 @@ def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> N
             identifiers={identifier},
         ).id
 
-    if not use_child_devices:
+    if not use_child_devices or get_or_create_child is None:
         coordinator._hierarchy_device_ids = device_ids
         return
 

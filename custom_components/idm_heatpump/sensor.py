@@ -20,14 +20,8 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.loader import async_get_integration
 from homeassistant.util import dt as dt_util
 
+import idm_heatpump as idm_api
 from idm_heatpump import DataType, RegisterDef
-
-try:
-    import idm_heatpump as idm_api
-except ImportError:
-    WEB_VALUE_DESCRIPTIONS = {}
-else:
-    WEB_VALUE_DESCRIPTIONS = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
 
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
@@ -53,6 +47,23 @@ from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 from .versions import RuntimeVersions, async_runtime_versions
 from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
+
+# Optional per-value metadata: an older idm-heatpump-api release does not carry
+# the web value catalog, and the sensor platform falls back to its own units and
+# device classes then.
+WEB_VALUE_DESCRIPTIONS: dict[str, Any] = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
+
+
+def _as_sensor_state(value: Any) -> str | float | int | None:
+    """Narrow a decoded register value to what a sensor may report.
+
+    Coordinator snapshots are ``dict[str, Any]`` because the library decodes
+    per datatype; anything the sensor platform cannot represent natively is
+    reported as text rather than handed to Home Assistant untyped.
+    """
+    if value is None or isinstance(value, (str, int, float)):
+        return value
+    return str(value)
 
 
 def _decode_bitflag(value: int, options: dict[int, str]) -> str:
@@ -237,7 +248,7 @@ def _coerce_web_state_class(value: object) -> SensorStateClass | None:
 
 
 def _web_sensor_definition(key: str) -> WebSensorDefinition:
-    metadata = WEB_VALUE_DESCRIPTIONS.get(key) if isinstance(WEB_VALUE_DESCRIPTIONS, dict) else None
+    metadata = WEB_VALUE_DESCRIPTIONS.get(key)
     preferred_unit = _web_metadata_value(metadata, "preferred_unit")
     unit = str(preferred_unit) if preferred_unit else _WEB_VALUE_UNITS.get(key)
     device_class = _coerce_web_device_class(_web_metadata_value(metadata, "device_class"))
@@ -535,13 +546,13 @@ class IdmSensor(IdmEntity, SensorEntity):
             try:
                 int_value = int(value)
             except (TypeError, ValueError):
-                return value
+                return _as_sensor_state(value)
             if self._register.datatype == DataType.BITFLAG:
                 return _decode_bitflag(int_value, self._enum_bitflag_labels or self._register.enum_options)
             if self._enum_slug_map is not None:
                 return self._enum_slug_map.get(int_value)
             return self._register.enum_options.get(int_value, f"Unbekannt ({value})")
-        return value
+        return _as_sensor_state(value)
 
     @property
     def extra_state_attributes(self) -> dict[str, str | int] | None:

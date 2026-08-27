@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.16.0-rc.3` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.15.1`, the last line with pymodbus)
+- **Current Version**: `0.16.0-rc.4` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.15.1`, the last line with pymodbus)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
@@ -200,7 +200,13 @@ pytest tests/ --cov=custom_components.idm_heatpump.config_flow --cov-fail-under=
 ```bash
 mypy custom_components/idm_heatpump/
 ```
-The project uses **strict mypy** (`strict=true` in `mypy.ini`) with `allow_subclassing_any=true` for HA compatibility.
+The project uses **strict mypy**: `mypy.ini` is plain `strict = true`, with no
+disabled error code and no relaxed flag (quality-scale rule `strict-typing`).
+
+Run it with the real runtime installed — Home Assistant plus the pinned
+dependencies, as `python-quality.yml` does. Without them every `homeassistant`
+import resolves to `Any` and mypy reports success without having checked the
+integration against Home Assistant at all.
 
 ### Linting
 ```bash

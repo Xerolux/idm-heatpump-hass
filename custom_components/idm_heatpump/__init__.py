@@ -13,7 +13,7 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import timedelta
-from typing import Any, TypeAlias
+from typing import Any, TypeAlias, cast
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_PORT, Platform
@@ -241,10 +241,10 @@ def _create_entry_background_task(
     """
     create_bg = getattr(type(entry), "async_create_background_task", None)
     if callable(create_bg):
-        return create_bg(entry, hass, coro, name)
+        return cast("asyncio.Task[None]", create_bg(entry, hass, coro, name))
     create_task = getattr(hass, "async_create_task", None)
     if callable(create_task):
-        return create_task(coro)
+        return cast("asyncio.Task[None]", create_task(coro))
     return asyncio.create_task(coro)
 
 

@@ -9,23 +9,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
-from collections.abc import Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from enum import StrEnum
 from time import monotonic
 from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.data_entry_flow import section
-
-try:
-    from homeassistant.config_entries import ConfigFlowResult
-except ImportError:
-    from typing import Any
-
-    ConfigFlowResult = dict[str, Any]  # type: ignore[assignment]
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
     BooleanSelector,
     BooleanSelectorConfig,
@@ -1065,7 +1059,7 @@ _OPTIONAL_FLOW_STEPS: tuple[tuple[str, Callable[[dict[str, Any]], bool]], ...] =
 )
 
 
-class _IdmOptionsStepsMixin:
+class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
     """Shared option/zone/forwarding step handlers for config and options flows.
 
     Both IdmHeatpumpConfigFlow and IdmHeatpumpOptionsFlow walk the same
@@ -1104,8 +1098,8 @@ class _IdmOptionsStepsMixin:
 
         for step_id, is_enabled in _OPTIONAL_FLOW_STEPS[start:]:
             if is_enabled(self._options):
-                handler = getattr(self, f"async_step_{step_id}")
-                return await handler()  # type: ignore[no-any-return]
+                handler: Callable[[], Awaitable[ConfigFlowResult]] = getattr(self, f"async_step_{step_id}")
+                return await handler()
         return self._create_flow_entry()
 
     async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -1113,11 +1107,11 @@ class _IdmOptionsStepsMixin:
             submitted_options = _flatten_options_input(user_input)
             self._options.update(submitted_options)
             if int(submitted_options.get(CONF_ZONE_COUNT, 0)) > 0:
-                return await self.async_step_zones()  # type: ignore[attr-defined]
+                return await self.async_step_zones()
             self._options[CONF_ZONE_ROOMS] = {}
             return await self._async_continue_optional_steps()
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="options",
             data_schema=_build_options_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
@@ -1131,7 +1125,7 @@ class _IdmOptionsStepsMixin:
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             return await self._async_continue_optional_steps()
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="zones",
             data_schema=_build_zones_schema(self._options, zone_count),
             description_placeholders={"zone_count": str(zone_count)},
@@ -1143,7 +1137,7 @@ class _IdmOptionsStepsMixin:
             _store_room_temp_forwarding_entities(self._options, user_input)
             return await self._async_continue_optional_steps("room_temp_forwarding")
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="room_temp_forwarding",
             data_schema=_build_room_temp_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
@@ -1155,7 +1149,7 @@ class _IdmOptionsStepsMixin:
             _store_humidity_forwarding_entity(self._options, user_input)
             return await self._async_continue_optional_steps("humidity_forwarding")
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="humidity_forwarding",
             data_schema=_build_humidity_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
@@ -1167,7 +1161,7 @@ class _IdmOptionsStepsMixin:
             _store_storage_temp_forwarding_entities(self._options, user_input)
             return await self._async_continue_optional_steps("storage_temp_forwarding")
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="storage_temp_forwarding",
             data_schema=_build_storage_temp_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
@@ -1198,7 +1192,7 @@ class _IdmOptionsStepsMixin:
             self._options[CONF_KNX_BASE_ADDRESS] = base_address
             self._options[CONF_KNX_GROUPS] = groups or list(OBJECT_GROUPS)
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="knx_bridge",
             data_schema=_build_knx_bridge_schema(self._options),
             description_placeholders={

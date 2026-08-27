@@ -43,6 +43,15 @@ class OperationSensorDefinition:
     precision: int | None = None
 
 
+def _operating_share(mode: str) -> Callable[[OperationAnalysis], AnalysisValue]:
+    """Return the reader for one operating mode's share."""
+
+    def _value(analysis: OperationAnalysis) -> AnalysisValue:
+        return analysis.operating_share(mode)
+
+    return _value
+
+
 _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     OperationSensorDefinition(
         key="analysis_heat_pump_cycles_recorded",
@@ -149,7 +158,7 @@ _OPERATION_SENSOR_DEFINITIONS: tuple[OperationSensorDefinition, ...] = (
     *(
         OperationSensorDefinition(
             key=f"analysis_operating_share_{mode}",
-            value=lambda analysis, mode=mode: analysis.operating_share(mode),
+            value=_operating_share(mode),
             icon=icon,
             source="mode",
             unit=PERCENTAGE,
