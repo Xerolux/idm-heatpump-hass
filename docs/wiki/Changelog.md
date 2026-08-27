@@ -5,7 +5,7 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## Unreleased — KNX bridge
+## v0.16.0-rc.3 — 2026-08-27
 
 Optional **KNX bridge**: the integration can serve the IDM KNX communication
 objects — same object numbers, datapoint types and read/write directions as

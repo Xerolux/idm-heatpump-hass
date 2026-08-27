@@ -13,6 +13,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0-rc.3] - 2026-08-27
+
+Release candidate 3 adds the KNX bridge. Everything `0.16.0-rc.2` shipped is
+unchanged: entity IDs, unique IDs, register addresses, write paths, the device
+hierarchy and the dependency pins all stay as they were, and the declared
+minimum remains Home Assistant `2026.8.1`. The bridge is opt-in and off by
+default, so an existing installation that does not enable it behaves exactly
+like `0.16.0-rc.2`.
+
 > ### 🚌 Headline feature: KNX without the IDM gateway module
 >
 > This release adds an optional **KNX bridge**. It serves the IDM KNX
