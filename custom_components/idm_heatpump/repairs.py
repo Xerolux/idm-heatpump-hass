@@ -116,6 +116,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
                     web_supplement = await async_read_web_supplement(
                         str(entry.data.get(CONF_WEB_HOST) or entry.data[CONF_HOST]),
                         web_pin,
+                        hass=self.hass,
                     )
                 except IdmWebAuthenticationFailed:
                     _LOGGER.warning(

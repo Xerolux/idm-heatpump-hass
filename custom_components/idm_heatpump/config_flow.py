@@ -9,23 +9,17 @@ from __future__ import annotations
 import asyncio
 import logging
 import socket
-from collections.abc import Callable, Mapping
+from collections.abc import Awaitable, Callable, Mapping
 from enum import StrEnum
 from time import monotonic
 from typing import Any
 
 import voluptuous as vol
 from homeassistant import config_entries
-from homeassistant.data_entry_flow import section
-
-try:
-    from homeassistant.config_entries import ConfigFlowResult
-except ImportError:
-    from typing import Any
-
-    ConfigFlowResult = dict[str, Any]  # type: ignore[assignment]
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT
 from homeassistant.core import callback
+from homeassistant.data_entry_flow import section
 from homeassistant.helpers.selector import (
     BooleanSelector,
     BooleanSelectorConfig,
@@ -1065,7 +1059,7 @@ _OPTIONAL_FLOW_STEPS: tuple[tuple[str, Callable[[dict[str, Any]], bool]], ...] =
 )
 
 
-class _IdmOptionsStepsMixin:
+class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
     """Shared option/zone/forwarding step handlers for config and options flows.
 
     Both IdmHeatpumpConfigFlow and IdmHeatpumpOptionsFlow walk the same
@@ -1104,8 +1098,8 @@ class _IdmOptionsStepsMixin:
 
         for step_id, is_enabled in _OPTIONAL_FLOW_STEPS[start:]:
             if is_enabled(self._options):
-                handler = getattr(self, f"async_step_{step_id}")
-                return await handler()  # type: ignore[no-any-return]
+                handler: Callable[[], Awaitable[ConfigFlowResult]] = getattr(self, f"async_step_{step_id}")
+                return await handler()
         return self._create_flow_entry()
 
     async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
@@ -1113,11 +1107,11 @@ class _IdmOptionsStepsMixin:
             submitted_options = _flatten_options_input(user_input)
             self._options.update(submitted_options)
             if int(submitted_options.get(CONF_ZONE_COUNT, 0)) > 0:
-                return await self.async_step_zones()  # type: ignore[attr-defined]
+                return await self.async_step_zones()
             self._options[CONF_ZONE_ROOMS] = {}
             return await self._async_continue_optional_steps()
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="options",
             data_schema=_build_options_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
@@ -1131,7 +1125,7 @@ class _IdmOptionsStepsMixin:
             self._options[CONF_ZONE_ROOMS] = zone_rooms
             return await self._async_continue_optional_steps()
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="zones",
             data_schema=_build_zones_schema(self._options, zone_count),
             description_placeholders={"zone_count": str(zone_count)},
@@ -1143,7 +1137,7 @@ class _IdmOptionsStepsMixin:
             _store_room_temp_forwarding_entities(self._options, user_input)
             return await self._async_continue_optional_steps("room_temp_forwarding")
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="room_temp_forwarding",
             data_schema=_build_room_temp_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
@@ -1155,7 +1149,7 @@ class _IdmOptionsStepsMixin:
             _store_humidity_forwarding_entity(self._options, user_input)
             return await self._async_continue_optional_steps("humidity_forwarding")
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="humidity_forwarding",
             data_schema=_build_humidity_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
@@ -1167,7 +1161,7 @@ class _IdmOptionsStepsMixin:
             _store_storage_temp_forwarding_entities(self._options, user_input)
             return await self._async_continue_optional_steps("storage_temp_forwarding")
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="storage_temp_forwarding",
             data_schema=_build_storage_temp_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
@@ -1198,7 +1192,7 @@ class _IdmOptionsStepsMixin:
             self._options[CONF_KNX_BASE_ADDRESS] = base_address
             self._options[CONF_KNX_GROUPS] = groups or list(OBJECT_GROUPS)
 
-        return self.async_show_form(  # type: ignore[attr-defined]
+        return self.async_show_form(
             step_id="knx_bridge",
             data_schema=_build_knx_bridge_schema(self._options),
             description_placeholders={
@@ -1260,15 +1254,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             "IDM Modbus connection to %s failed, but web PIN is configured; offering web-only fallback",
                             host,
                         )
+                        # A proxy setup without a web host was already rejected
+                        # by the validation above, so the host is usable here.
                         web_host = _web_host_for_input(user_input, host)
-                        if _uses_modbus_proxy(user_input) and not web_host:
-                            errors[CONF_WEB_HOST] = "web_host_required"
-                            return self.async_show_form(
-                                step_id="user",
-                                data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, user_input),
-                                description_placeholders={"wiki_url": _MODBUS_SETUP_URL},
-                                errors=errors,
-                            )
                         self._data = {
                             **_without_setup_fields(user_input),
                             CONF_HOST: host,
@@ -1287,14 +1275,6 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                     web_requested = _web_access_requested(user_input)
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN)) if web_requested else ""
                     web_host = _web_host_for_input(user_input, host) if web_requested else host
-                    if web_pin and _uses_modbus_proxy(user_input) and not web_host:
-                        errors[CONF_WEB_HOST] = "web_host_required"
-                        return self.async_show_form(
-                            step_id="user",
-                            data_schema=self.add_suggested_values_to_schema(STEP_USER_DATA_SCHEMA, user_input),
-                            description_placeholders={"wiki_url": _MODBUS_SETUP_URL},
-                            errors=errors,
-                        )
                     try:
                         detected = await self._async_detect_web_supplement(
                             web_host,
@@ -1396,37 +1376,24 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                             "IDM Modbus connection to %s failed during reconfigure, but web PIN is configured; offering web-only fallback",
                             host,
                         )
+                        # A proxy setup without a web host was already rejected
+                        # by the validation above, so the host is usable here.
                         web_host = _web_host_for_input(user_input, host)
-                        if _uses_modbus_proxy(user_input) and not web_host:
-                            errors[CONF_WEB_HOST] = "web_host_required"
-                        else:
-                            self._data = {
-                                **_without_setup_fields(user_input),
-                                CONF_HOST: host,
-                                CONF_NAME: entry.title,
-                                CONF_WEB_PIN: web_pin,
-                                CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
-                                CONF_WEB_HOST: _stored_web_host(web_host, host),
-                            }
-                            return await self.async_step_modbus_failed()
+                        self._data = {
+                            **_without_setup_fields(user_input),
+                            CONF_HOST: host,
+                            CONF_NAME: entry.title,
+                            CONF_WEB_PIN: web_pin,
+                            CONF_MODBUS_PROXY: _uses_modbus_proxy(user_input),
+                            CONF_WEB_HOST: _stored_web_host(web_host, host),
+                        }
+                        return await self.async_step_modbus_failed()
                     else:
                         errors["base"] = connection_error
                 else:
                     web_requested = _web_access_requested(user_input)
                     web_pin = _clean_pin(user_input.get(CONF_WEB_PIN)) if web_requested else ""
                     web_host = _web_host_for_input(user_input, host) if web_requested else host
-                    if web_pin and _uses_modbus_proxy(user_input) and not web_host:
-                        errors[CONF_WEB_HOST] = "web_host_required"
-                        return self.async_show_form(
-                            step_id="connection",
-                            data_schema=self.add_suggested_values_to_schema(STEP_RECONFIGURE_SCHEMA, user_input),
-                            description_placeholders={
-                                "name": entry.title,
-                                "host": entry.data[CONF_HOST],
-                                "wiki_url": _MODBUS_SETUP_URL,
-                            },
-                            errors=errors,
-                        )
                     try:
                         detected = await self._async_detect_web_supplement(
                             web_host,
@@ -1949,7 +1916,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             return {}
 
         try:
-            web_supplement = await async_read_web_supplement(host, pin, model_hint=model_hint)
+            web_supplement = await async_read_web_supplement(host, pin, model_hint=model_hint, hass=self.hass)
         except IdmWebAuthenticationFailed:
             _LOGGER.error("IDM Navigator web PIN was rejected for %s; please re-enter the PIN", host)
             raise

@@ -8,7 +8,7 @@ from __future__ import annotations
 # Lizenz: MIT
 import logging
 import re
-from typing import Any, ClassVar
+from typing import Any, Final
 
 from homeassistant.components.climate import ClimateEntity
 from homeassistant.components.climate.const import (
@@ -203,11 +203,18 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         raise NotImplementedError()
 
 
+_HEATING_CIRCUIT_HVAC_MODES: Final[list[HVACMode]] = [
+    HVACMode.OFF,
+    HVACMode.AUTO,
+    HVACMode.HEAT,
+    HVACMode.COOL,
+]
+_HEATING_CIRCUIT_PRESET_MODES: Final[list[str]] = [PRESET_NONE, PRESET_ECO]
+
+
 class IdmHeatingCircuitClimate(IdmClimateBase):
     """Climate entity for a heating circuit."""
 
-    _attr_hvac_modes: ClassVar[list[HVACMode]] = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT, HVACMode.COOL]
-    _attr_preset_modes: ClassVar[list[str]] = [PRESET_NONE, PRESET_ECO]
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.PRESET_MODE
@@ -225,6 +232,8 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
     ) -> None:
         """Initialize the heating circuit climate."""
         super().__init__(coordinator, mode_reg, target_reg, current_reg, f"climate_hc_{circuit}")
+        self._attr_hvac_modes = _HEATING_CIRCUIT_HVAC_MODES
+        self._attr_preset_modes = _HEATING_CIRCUIT_PRESET_MODES
         self._circuit = circuit.upper()
         self._attr_translation_key = "heating_circuit"
         self._attr_translation_placeholders = {"circuit": self._circuit}
@@ -311,11 +320,13 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         await self._async_write_mode(val)
 
 
+_ZONE_ROOM_HVAC_MODES: Final[list[HVACMode]] = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT]
+_ZONE_ROOM_PRESET_MODES: Final[list[str]] = [PRESET_NONE, PRESET_ECO, PRESET_COMFORT]
+
+
 class IdmZoneRoomClimate(IdmClimateBase):
     """Climate entity for a zone module room."""
 
-    _attr_hvac_modes: ClassVar[list[HVACMode]] = [HVACMode.OFF, HVACMode.AUTO, HVACMode.HEAT]
-    _attr_preset_modes: ClassVar[list[str]] = [PRESET_NONE, PRESET_ECO, PRESET_COMFORT]
     _attr_supported_features = (
         ClimateEntityFeature.TARGET_TEMPERATURE
         | ClimateEntityFeature.PRESET_MODE
@@ -334,6 +345,8 @@ class IdmZoneRoomClimate(IdmClimateBase):
     ) -> None:
         """Initialize the zone room climate."""
         super().__init__(coordinator, mode_reg, target_reg, current_reg, f"climate_zm{zone}_room{room}")
+        self._attr_hvac_modes = _ZONE_ROOM_HVAC_MODES
+        self._attr_preset_modes = _ZONE_ROOM_PRESET_MODES
         self._zone = zone
         self._room = room
         self._attr_translation_key = "zone_room"
