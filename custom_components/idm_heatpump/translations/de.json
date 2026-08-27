@@ -174,6 +174,24 @@
               "communication_diagnostics": "Erstellt zusätzliche Diagnoseentitäten für die letzte erfolgreiche Abfrage, Abfragedauer, aufeinanderfolgende Fehler und aktive Register. Gesamtzahl der Abfragen und Fehler erscheinen als Attribute. Dafür werden keine zusätzlichen Modbus-Register gelesen. Standard: deaktiviert.",
               "write_cooldown": "Mindestzeit zwischen zwei Schreibvorgängen auf dieselbe Registeradresse. Ein erneuter Schreibversuch wird vor der Übertragung vollständig abgelehnt; Home Assistant zeigt die verbleibende Wartezeit. Andere Register bleiben beschreibbar. Standard: 5 Sekunden. 0 deaktiviert diesen allgemeinen Schutz vollständig, 1–600 erzwingt ihn. Änderung auf eigenes Risiko; der separate EEPROM-Schreibschutz bleibt davon unberührt."
             }
+          },
+          "knx_bridge_section": {
+            "name": "KNX-Bridge",
+            "description": "Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
+            "data": {
+              "knx_bridge": "KNX-Bridge aktivieren",
+              "knx_send": "Werte auf KNX senden",
+              "knx_receive": "Befehle von KNX annehmen",
+              "knx_resend_interval": "Intervall für vollständiges Neusenden",
+              "knx_tolerance": "Änderungstoleranz"
+            },
+            "data_description": {
+              "knx_bridge": "Bildet die IDM-KNX-Kommunikationsobjekte auf dem Bus ab, damit eine KNX-Installation die Wärmepumpe ohne separates BAOS-Gateway erreicht.",
+              "knx_send": "Bei jeder Wertänderung ein Telegramm senden.",
+              "knx_receive": "Werte, die auf einem schreibbaren Objekt eintreffen, in die Wärmepumpe schreiben. Registriert werden nur von IDM als schreibbar geführte Objekte.",
+              "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
+              "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern."
+            }
           }
         }
       },
@@ -287,6 +305,20 @@
           "profile": "„Empfohlen“ passt für die meisten Anlagen. Die Netzwerkprofile ändern nur Abfrageintervall, Timeout, Wiederholungen und Jitter; alle Werte lassen sich später in den Optionen ändern.",
           "model_override": "„Automatisch“ verwendet die Erkennung. Wähle ein konkretes Modell nur bei einer falschen oder fehlenden Erkennung; eine falsche Wahl kann Entitäten ausblenden."
         }
+      },
+      "knx_bridge": {
+        "title": "KNX-Gruppenadressen – {name}",
+        "description": "Die {object_count} IDM-KNX-Objekte liegen oberhalb einer Basisadresse: Die Objektnummer wird dazugezählt, 8/0/0 legt also Objekt 1 auf 8/0/1 und Objekt 222 auf 8/0/222. Die Ausnahmeliste ist für Objekte, die im vorhandenen ETS-Projekt andere Adressen haben — eine `Register = Adresse` pro Zeile.",
+        "data": {
+          "knx_base_address": "Basis-Gruppenadresse",
+          "knx_groups": "Objektgruppen",
+          "knx_overrides": "Abweichende Gruppenadressen"
+        },
+        "data_description": {
+          "knx_base_address": "Dreistufig (8/0/0), zweistufig (8/0) oder frei (16384).",
+          "knx_groups": "Nur Objekte der ausgewählten Gruppen werden gesendet und registriert.",
+          "knx_overrides": "Eine `Register = Adresse` pro Zeile, zum Beispiel `outdoor_temp = 1/2/3`. Zeilen mit # werden ignoriert. Leer lassen, um alle Adressen aus der Basisadresse abzuleiten."
+        }
       }
     },
     "error": {
@@ -303,7 +335,10 @@
       "web_pin_required": "Gib die lokale Navigator-Web-PIN ein, um im Web-Only-Modus fortzufahren.",
       "web_cannot_connect": "Die lokale Navigator-Weboberfläche konnte nicht gelesen werden. Prüfe die Originaladresse der Wärmepumpe und den Netzwerkzugriff oder entferne die Web-PIN, um nur mit Modbus fortzufahren.",
       "web_host_required": "Gib die originale Wärmepumpen-IP/den Hostnamen für den Webzugriff ein oder deaktiviere die Modbus-Proxy-Option.",
-      "web_pin_required_or_disable": "Gib den lokalen Navigator-Web-PIN ein oder deaktiviere „Lokalen Navigator-Webzugriff verwenden“ ausdrücklich für einen reinen Modbus-Betrieb."
+      "web_pin_required_or_disable": "Gib den lokalen Navigator-Web-PIN ein oder deaktiviere „Lokalen Navigator-Webzugriff verwenden“ ausdrücklich für einen reinen Modbus-Betrieb.",
+      "invalid_knx_base_address": "Keine verwendbare Basis-Gruppenadresse. Dreistufig (8/0/0), zweistufig (8/0) oder frei angeben und oberhalb Platz für 999 Adressen lassen.",
+      "invalid_knx_overrides": "Die Ausnahmeliste konnte nicht gelesen werden. Eine `Register = Adresse` pro Zeile mit bekanntem IDM-Registernamen angeben und keine Adresse doppelt vergeben.",
+      "no_knx_groups": "Mindestens eine Objektgruppe auswählen."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -413,6 +448,24 @@
               "communication_diagnostics": "Erstellt zusätzliche Diagnoseentitäten für die letzte erfolgreiche Abfrage, Abfragedauer, aufeinanderfolgende Fehler und aktive Register. Gesamtzahl der Abfragen und Fehler erscheinen als Attribute. Dafür werden keine zusätzlichen Modbus-Register gelesen. Standard: deaktiviert.",
               "write_cooldown": "Mindestzeit zwischen zwei Schreibvorgängen auf dieselbe Registeradresse. Ein erneuter Schreibversuch wird vor der Übertragung vollständig abgelehnt; Home Assistant zeigt die verbleibende Wartezeit. Andere Register bleiben beschreibbar. Standard: 5 Sekunden. 0 deaktiviert diesen allgemeinen Schutz vollständig, 1–600 erzwingt ihn. Änderung auf eigenes Risiko; der separate EEPROM-Schreibschutz bleibt davon unberührt."
             }
+          },
+          "knx_bridge_section": {
+            "name": "KNX-Bridge",
+            "description": "Wärmepumpenwerte auf einen KNX-Bus senden und Befehle von dort annehmen. Nutzt die KNX-Integration von Home Assistant, die eingerichtet sein muss — Gateway, Tunneling und KNX Secure kommen von dort.",
+            "data": {
+              "knx_bridge": "KNX-Bridge aktivieren",
+              "knx_send": "Werte auf KNX senden",
+              "knx_receive": "Befehle von KNX annehmen",
+              "knx_resend_interval": "Intervall für vollständiges Neusenden",
+              "knx_tolerance": "Änderungstoleranz"
+            },
+            "data_description": {
+              "knx_bridge": "Bildet die IDM-KNX-Kommunikationsobjekte auf dem Bus ab, damit eine KNX-Installation die Wärmepumpe ohne separates BAOS-Gateway erreicht.",
+              "knx_send": "Bei jeder Wertänderung ein Telegramm senden.",
+              "knx_receive": "Werte, die auf einem schreibbaren Objekt eintreffen, in die Wärmepumpe schreiben. Registriert werden nur von IDM als schreibbar geführte Objekte.",
+              "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
+              "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern."
+            }
           }
         }
       },
@@ -491,7 +544,26 @@
           "room_temp_forwarding_f": "Gibt diesen Sensor an hc_f_ext_room_temp weiter.",
           "room_temp_forwarding_g": "Gibt diesen Sensor an hc_g_ext_room_temp weiter."
         }
+      },
+      "knx_bridge": {
+        "title": "KNX-Gruppenadressen – {name}",
+        "description": "Die {object_count} IDM-KNX-Objekte liegen oberhalb einer Basisadresse: Die Objektnummer wird dazugezählt, 8/0/0 legt also Objekt 1 auf 8/0/1 und Objekt 222 auf 8/0/222. Die Ausnahmeliste ist für Objekte, die im vorhandenen ETS-Projekt andere Adressen haben — eine `Register = Adresse` pro Zeile.",
+        "data": {
+          "knx_base_address": "Basis-Gruppenadresse",
+          "knx_groups": "Objektgruppen",
+          "knx_overrides": "Abweichende Gruppenadressen"
+        },
+        "data_description": {
+          "knx_base_address": "Dreistufig (8/0/0), zweistufig (8/0) oder frei (16384).",
+          "knx_groups": "Nur Objekte der ausgewählten Gruppen werden gesendet und registriert.",
+          "knx_overrides": "Eine `Register = Adresse` pro Zeile, zum Beispiel `outdoor_temp = 1/2/3`. Zeilen mit # werden ignoriert. Leer lassen, um alle Adressen aus der Basisadresse abzuleiten."
+        }
       }
+    },
+    "error": {
+      "invalid_knx_base_address": "Keine verwendbare Basis-Gruppenadresse. Dreistufig (8/0/0), zweistufig (8/0) oder frei angeben und oberhalb Platz für 999 Adressen lassen.",
+      "invalid_knx_overrides": "Die Ausnahmeliste konnte nicht gelesen werden. Eine `Register = Adresse` pro Zeile mit bekanntem IDM-Registernamen angeben und keine Adresse doppelt vergeben.",
+      "no_knx_groups": "Mindestens eine Objektgruppe auswählen."
     }
   },
   "entity": {
@@ -701,6 +773,22 @@
         "reliable_network": "Langsames oder instabiles Netzwerk",
         "multiple_clients": "Mehrere Modbus-Clients",
         "custom": "Benutzerdefiniert – alle Optionen anzeigen"
+      }
+    },
+    "knx_object_group": {
+      "options": {
+        "system": "System",
+        "heat_pump": "Wärmepumpe",
+        "dhw": "Warmwasser",
+        "heating_circuits": "Heizkreise",
+        "zones": "Zonenmodule",
+        "glt": "Gebäudeleittechnik (GLT)",
+        "energy": "Wärmemengen und Leistung",
+        "solar": "Solar",
+        "isc": "ISC-Kühlung",
+        "cascade": "Kaskade",
+        "booster": "Booster",
+        "pv": "PV und Batterie"
       }
     }
   },
@@ -914,6 +1002,10 @@
     "write_rejected": {
       "title": "IDM-Registerschreibvorgang abgelehnt",
       "description": "Die Wärmepumpe hat einen Schreibvorgang auf Register **{register}** an Adresse **{address}** nicht angenommen.\n\nTechnisches Detail: `{detail}`\n\nBitte prüfen:\n- Das Register ist am Navigator unter **Gebäudeleittechnik** zum Schreiben freigegeben (die GLT-Registerliste hat je Register eine Zugriffseinstellung; ein dort nicht freigegebenes Register wird auch bei gültigem Wert abgelehnt)\n- Die Funktion ist für diesen Heizkreis bzw. diese Komponente aktiviert\n- Der Wert liegt im dokumentierten Bereich\n- Kein zweites Gebäudeleitsystem, kein Energiemanager und kein Wechselrichter schreibt dasselbe Register"
+    },
+    "knx_not_available": {
+      "title": "KNX-Bridge inaktiv",
+      "description": "Die KNX-Bridge ist für die IDM-Wärmepumpe aktiviert, aber die KNX-Integration von Home Assistant ist nicht eingerichtet. KNX-Integration hinzufügen (sie liefert auch KNX Secure und die Gateway-Verbindung) und den IDM-Heatpump-Eintrag neu laden."
     }
   },
   "services": {
@@ -998,6 +1090,20 @@
         "electric_heater_power": {
           "name": "E-Heizstab-Leistung",
           "description": "Aktuelle Leistung des elektrischen Heizstabs in kW."
+        }
+      }
+    },
+    "export_knx_group_addresses": {
+      "name": "KNX-Gruppenadressen exportieren",
+      "description": "Gibt die IDM-KNX-Objekttabelle dieses Reglers zurück, damit sie in ETS nachgebaut werden kann.",
+      "fields": {
+        "knx_base_address": {
+          "name": "Basis-Gruppenadresse",
+          "description": "Basisadresse, zu der die Objektnummern addiert werden."
+        },
+        "knx_groups": {
+          "name": "Objektgruppen",
+          "description": "Export auf diese Katalogruppen beschränken."
         }
       }
     }

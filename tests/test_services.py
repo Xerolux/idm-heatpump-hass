@@ -56,7 +56,7 @@ class TestWriteSafetyHelpers:
 class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
-        assert mock_hass.services.async_register.call_count == 5
+        assert mock_hass.services.async_register.call_count == 6
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -76,6 +76,7 @@ class TestServiceLifecycleInvariants:
             (DOMAIN, "write_register"),
             (DOMAIN, "set_external_climate"),
             (DOMAIN, "set_external_power"),
+            (DOMAIN, "export_knx_group_addresses"),
         }
 
     async def test_setup_is_idempotent_when_already_registered(self, mock_hass):

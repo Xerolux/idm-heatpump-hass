@@ -64,6 +64,7 @@ const PAGES = [
   { slug: 'local-web-interface', file: 'Local-Web-Interface.md', group: 'operation', de: 'Lokale Web-Schnittstelle', en: 'Local web interface' },
   { slug: 'known-limitations', file: 'Known-Limitations.md', group: 'operation', de: 'Bekannte Einschränkungen', en: 'Known limitations' },
   { slug: 'troubleshooting', file: 'Troubleshooting.md', group: 'operation', de: 'Fehlerbehebung', en: 'Troubleshooting' },
+  { slug: 'knx-bridge', file: 'KNX-Bridge.md', group: 'automation', de: 'KNX-Bridge', en: 'KNX bridge' },
   { slug: 'modbus-register', file: 'Modbus-Register.md', group: 'operation', de: 'Modbus-Register', en: 'Modbus registers' },
   { slug: 'stability-and-release-readiness', file: 'Stability-and-Release-Readiness.md', group: 'operation', de: 'Stabilität & Releases', en: 'Stability & releases' },
   { slug: 'navigator-protocol-analysis', file: 'Navigator-Protocol-Analysis.md', group: 'operation', de: 'Navigator-Protokollanalyse', en: 'Navigator protocol analysis' },

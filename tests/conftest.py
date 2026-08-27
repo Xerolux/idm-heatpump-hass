@@ -357,6 +357,16 @@ def _stub_homeassistant() -> None:
     ha.core.ServiceResponse = MagicMock
     ha.core.SupportsResponse = MagicMock()
     ha.core.SupportsResponse.OPTIONAL = "optional"
+    ha.core.SupportsResponse.ONLY = "only"
+
+    class _Event:
+        """Minimal stand-in for homeassistant.core.Event."""
+
+        def __init__(self, event_type="", data=None):
+            self.event_type = event_type
+            self.data = data or {}
+
+    ha.core.Event = _Event
     ha.util.json.JsonValueType = object
     ha.data_entry_flow.section = lambda schema, options=None: schema
 

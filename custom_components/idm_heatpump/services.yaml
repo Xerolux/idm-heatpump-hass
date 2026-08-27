@@ -227,3 +227,43 @@ cancel_dhw_boost:
       required: false
       selector:
         text:
+
+export_knx_group_addresses:
+  name: "Export KNX Group Addresses"
+  description: >-
+    Return the IDM KNX object table for this controller so it can be
+    recreated in ETS. Answers with object number, datapoint type, direction
+    and the group address the KNX bridge uses for each object.
+  target:
+    entity:
+      integration: idm_heatpump
+  fields:
+    knx_base_address:
+      name: "Base group address"
+      description: >-
+        Base address the object numbers are added to. Defaults to the address
+        configured for the KNX bridge.
+      required: false
+      example: "8/0/0"
+      selector:
+        text:
+    knx_groups:
+      name: "Object groups"
+      description: "Limit the export to these catalogue groups. Defaults to the configured selection."
+      required: false
+      selector:
+        select:
+          multiple: true
+          options:
+            - "system"
+            - "heat_pump"
+            - "dhw"
+            - "heating_circuits"
+            - "zones"
+            - "glt"
+            - "energy"
+            - "solar"
+            - "isc"
+            - "cascade"
+            - "booster"
+            - "pv"

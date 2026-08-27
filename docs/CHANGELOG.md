@@ -13,6 +13,72 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+> ### 🚌 Headline feature: KNX without the IDM gateway module
+>
+> This release adds an optional **KNX bridge**. It serves the IDM KNX
+> communication objects — the same object numbers, datapoint types and
+> read/write directions as IDM's ETS example project — from the Modbus values
+> the integration already reads, so the **Weinzierl `KNX IP BAOS 774` module
+> IDM sells for the Navigator is no longer needed**.
+>
+> The bridge brings no KNX stack of its own: it drives the Home Assistant
+> `knx` integration, so IP tunnelling, IP routing and **KNX Secure** are
+> configured there as usual. Turn it on under **Settings → Devices & Services
+> → IDM Heatpump → Configure → KNX bridge**, pick one base group address, and
+> the whole object catalogue lands on the bus.
+>
+> Full guide: **[KNX Bridge](https://xerolux.github.io/idm-heatpump-hass/docs/#/knx-bridge)**
+
+### Added
+
+- **KNX bridge — the IDM KNX gateway module is no longer needed.** IDM sells
+  KNX connectivity for the Navigator as a Weinzierl `KNX IP BAOS 774` module,
+  configured in ETS with IDM's own example project. That project defines a
+  fixed object list: object 1 is the outdoor temperature, object 4 the system
+  mode, object 222 the operating mode of heating circuit A, each with a
+  datapoint type and a direction. The new optional bridge recreates that object
+  list from the Modbus values the integration already reads, so a KNX
+  installation sees the same object numbers, datapoint types and read/write
+  directions as it would with the hardware module.
+- **It is not a KNX stack.** Everything on the bus side goes through the Home
+  Assistant `knx` integration: values are published with `knx.send`, incoming
+  commands are registered with `knx.event_register` and arrive as `knx_event`.
+  IP tunnelling, IP routing, the gateway connection and KNX Secure are
+  configured there and are not reimplemented here. Without the `knx`
+  integration the bridge stays idle and raises a repair issue.
+- **654 communication objects**, transcribed from the ETS example project and
+  cross-checked against the `idm-heatpump-api` register map: system, heat pump,
+  hot water, heating circuits A–G, zone modules 1–10 with up to 8 rooms,
+  building management inputs, heat quantities, solar, ISC, cascade, booster, PV
+  and battery. Objects whose register the connected controller does not expose
+  are skipped, and read-only objects never accept a write from the bus.
+- **One base address configures all of them.** IDM's example project ships with
+  an empty group address table, so the bridge derives each address as
+  `base address + object number` — the layout the objects already have in the
+  BAOS gateway. With the default `8/0/0` the whole catalogue fits inside one
+  main group (`8/0/1` … `8/3/231`). Installations whose ETS project already
+  uses different addresses list the exceptions as `register = address` lines.
+- **New action `idm_heatpump.export_knx_group_addresses`** answers with the
+  object table for the connected controller — object number, group address,
+  datapoint type, direction and unit — so a fresh ETS project can be built from
+  it. It calculates only and never sends on the bus.
+- **Loop and bus-load guards.** Outgoing telegrams are paced at roughly 20 per
+  second so a first full export does not saturate a line other devices share,
+  a numeric value is only sent again once it moved past the configured
+  tolerance, and a telegram that merely echoes what the bridge just published
+  is not written back into the controller.
+- **Documentation**: new [KNX Bridge](../docs/wiki/KNX-Bridge.md) wiki page,
+  covered in the README (EN and DE), the configuration and services references
+  and the project website.
+
+### Known gaps
+
+- External pump demand objects 384 (*brine / intermediate pump*) and 385
+  (*groundwater pump*) are deliberately not in the catalogue: IDM's labels do
+  not map unambiguously onto the two corresponding registers, and a wrong guess
+  would command the wrong pump. `write_register` covers them until the mapping
+  is confirmed on hardware.
+
 ## [0.16.0-rc.2] - 2026-08-27
 
 Release candidate 2 brings the device hierarchy onto the child devices that

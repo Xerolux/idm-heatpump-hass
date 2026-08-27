@@ -14,6 +14,9 @@ This file is a short pointer for Claude-compatible agents.
   `idm-heatpump-api[web]==2.0.0`
 - **Platforms**: sensor, binary_sensor, number, select, switch, climate, water_heater, button
 - **Transports**: Modbus TCP through `modbus-connection`/tmodbus (primary) + optional local Navigator web supplement / web-only mode
+- **Optional KNX bridge**: serves the IDM KNX communication objects through the
+  Home Assistant `knx` integration (`knx_bridge.py`, `knx_catalog.py`). Never add
+  a KNX stack here — KNX Secure, tunnelling and routing belong to that integration.
 - **Active roadmap**: `docs/dev/heatpump-feature-roadmap.md`
 - **Open work audit**: `docs/dev/open-work-audit.md`
 - **Component model evaluation**: `docs/dev/component-model-evaluation.md`

@@ -262,6 +262,47 @@ target:
   device_id: abc123def456
 ```
 
+## export_knx_group_addresses
+
+Returns the IDM KNX object table for this controller so it can be recreated
+in ETS. Read-only: it calculates addresses and never sends anything on the
+bus. See [KNX Bridge](KNX-Bridge) for the bridge itself.
+
+**Service:** `idm_heatpump.export_knx_group_addresses`
+
+**Target:** Entity or device of the integration
+
+**Fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `knx_base_address` | no | Base address the object numbers are added to. Defaults to the configured bridge address. |
+| `knx_groups` | no | Limit the export to these catalogue groups. Defaults to the configured selection. |
+
+**Example:**
+```yaml
+action: idm_heatpump.export_knx_group_addresses
+target:
+  entity_id: sensor.idm_heatpump_outdoor_temperature
+data:
+  knx_base_address: "8/0/0"
+response_variable: knx_objects
+```
+
+**Response:**
+```yaml
+base_address: "8/0/0"
+count: 187
+objects:
+  - object: 1
+    group_address: "8/0/1"
+    register: outdoor_temp
+    dpt: "9.001"
+    group: system
+    writable: false
+    unit: "°C"
+```
+
 ## Automation Examples (Writing Values)
 
 The following examples show how to write values through automations.

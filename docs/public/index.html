@@ -37,6 +37,7 @@
 
         <nav class="nav-links" id="site-nav" aria-label="Hauptnavigation">
           <a href="#features">Funktionen</a>
+          <a href="#knx">KNX</a>
           <a href="#preview">Einblicke</a>
           <a href="#install">Installation</a>
           <a href="docs/">Dokumentation</a>
@@ -225,6 +226,34 @@
                 <div class="auto-node"><i class="sun-node">☀</i><span>PV-Überschuss</span></div>
                 <span class="auto-arrow">→</span>
                 <div class="auto-node"><i class="heat-node">⌁</i><span>Warmwasser</span></div>
+              </div>
+            </article>
+
+            <article class="feature-card feature-card-wide reveal" data-delay="240" id="knx">
+              <div class="feature-copy">
+                <span class="feature-number">04</span>
+                <div class="feature-icon blue">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2"/><circle cx="16" cy="12" r="2"/><circle cx="10" cy="18" r="2"/></svg>
+                </div>
+                <h3>KNX ohne IDM-Modul</h3>
+                <p>Die optionale KNX-Bridge stellt dieselben Kommunikationsobjekte bereit wie IDMs ETS-Beispielprojekt – gleiche Objektnummern, gleiche Datenpunkttypen, gleiche Schreibrichtung. Das kostenpflichtige Weinzierl-BAOS-Gateway wird damit überflüssig.</p>
+                <p>Kein eigener KNX-Stack: Die Bridge nutzt die KNX-Integration von Home Assistant, inklusive Tunneling, Routing und KNX Secure.</p>
+                <ul class="mini-list">
+                  <li>654 Objekte</li>
+                  <li>Senden &amp; Befehle</li>
+                  <li>KNX Secure</li>
+                  <li>ETS-Export</li>
+                </ul>
+              </div>
+              <div class="feature-chart" aria-label="Beispielhafte Zuordnung von IDM-Objekten zu Gruppenadressen">
+                <div class="chart-legend"><span><i class="lime-dot"></i> Basisadresse 8/0/0</span><strong>Objekt + Basis</strong></div>
+                <div class="diagnostic-list">
+                  <div><span class="check">1</span><p><strong>Außentemperatur</strong><small>DPT 9.001 · lesend</small></p><span>8/0/1</span></div>
+                  <div><span class="check">4</span><p><strong>Betriebsart System</strong><small>DPT 5.010 · schreibbar</small></p><span>8/0/4</span></div>
+                  <div><span class="check">21</span><p><strong>Warmwasser-Sollwert</strong><small>DPT 9.001 · schreibbar</small></p><span>8/0/21</span></div>
+                  <div><span class="check">222</span><p><strong>Betriebsart Heizkreis A</strong><small>DPT 7.001 · schreibbar</small></p><span>8/0/222</span></div>
+                </div>
+                <div class="diagnostic-note"><span>i</span> Voraussetzung ist die eingerichtete KNX-Integration in Home Assistant.</div>
               </div>
             </article>
           </div>

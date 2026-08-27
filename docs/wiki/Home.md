@@ -46,6 +46,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **BMS Remote Maintenance**: BMS temperature requests (cyclic writing)
 - **Error Management**: Error detection, error acknowledgment, diagnostics export
 - **Optional Web Supplement**: Navigator generation, software version, heat pump model, compact myIDM ID, web-only diagnostics, and Navigator 10 infosystem notifications without replacing Modbus values; default interval 30 seconds
+- **KNX Bridge** *(optional)*: Serves the IDM KNX communication objects — same object numbers, datapoint types and directions as IDM's ETS example project — through the Home Assistant KNX integration, so the Weinzierl KNX IP BAOS gateway module is no longer needed. See [KNX Bridge](KNX-Bridge).
 - **Room Temperature Forwarding**: Optional forwarding of Home Assistant temperature sensors to IDM external room temperature registers per heating circuit
 - **Readable Diagnostics**: Internal IDM messages are shown with text plus structured code/text attributes
 - **Direct local Modbus runtime**: `modbus-connection` and tmodbus own the per-entry socket; `idm-heatpump-api` keeps the IDM register and safety logic

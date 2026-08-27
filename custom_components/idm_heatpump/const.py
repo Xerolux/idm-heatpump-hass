@@ -63,6 +63,19 @@ CONF_STORAGE_TEMP_FORWARDING: str = "storage_temp_forwarding"
 CONF_STORAGE_TEMP_FORWARDING_INTERVAL: str = "storage_temp_forwarding_interval"
 CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: str = "storage_temp_forwarding_tolerance"
 CONF_STORAGE_TEMP_FORWARDING_ENTITIES: str = "storage_temp_forwarding_entities"
+# KNX bridge: mirror controller values onto a KNX bus through Home
+# Assistant's own ``knx`` integration and accept commands back from it.
+# The base address plus the IDM KNX object number gives every object its
+# group address; the override map covers ETS projects that already use
+# different ones.
+CONF_KNX_BRIDGE: str = "knx_bridge"
+CONF_KNX_BASE_ADDRESS: str = "knx_base_address"
+CONF_KNX_SEND: str = "knx_send"
+CONF_KNX_RECEIVE: str = "knx_receive"
+CONF_KNX_GROUPS: str = "knx_groups"
+CONF_KNX_RESEND_INTERVAL: str = "knx_resend_interval"
+CONF_KNX_TOLERANCE: str = "knx_tolerance"
+CONF_KNX_OVERRIDES: str = "knx_overrides"
 CONF_WEB_ONLY: str = "web_only_mode"
 CONF_MODBUS_TIMEOUT: str = "modbus_timeout"
 CONF_MODBUS_MAX_RETRIES: str = "modbus_retries"
@@ -109,6 +122,20 @@ DEFAULT_HUMIDITY_FORWARDING_TOLERANCE: float = 2.0
 DEFAULT_STORAGE_TEMP_FORWARDING: bool = False
 DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE: float = 0.5
+DEFAULT_KNX_BRIDGE: bool = False
+# 8/0/0 keeps the whole catalogue inside one free main group on a default
+# ETS three-level project (8/0/1 .. 8/3/231).
+DEFAULT_KNX_BASE_ADDRESS: str = "8/0/0"
+DEFAULT_KNX_SEND: bool = True
+DEFAULT_KNX_RECEIVE: bool = True
+# 0 = send only when a value changes. A periodic full resend is what KNX
+# visualisations without their own cache need after a restart.
+DEFAULT_KNX_RESEND_INTERVAL: int = 0
+DEFAULT_KNX_TOLERANCE: float = 0.1
+MIN_KNX_RESEND_INTERVAL: int = 0
+MAX_KNX_RESEND_INTERVAL: int = 86400
+MIN_KNX_TOLERANCE: float = 0.0
+MAX_KNX_TOLERANCE: float = 10.0
 DEFAULT_MODBUS_TIMEOUT: float = 10.0
 DEFAULT_MODBUS_MAX_RETRIES: int = 3
 # Both pacing defaults stay at 0 so an update never slows down an
