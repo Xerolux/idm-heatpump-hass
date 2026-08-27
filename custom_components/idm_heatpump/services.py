@@ -474,13 +474,25 @@ async def _handle_export_knx_group_addresses(hass: HomeAssistant, call: ServiceC
     coordinator = await _get_coordinator(hass, call)
     call_data = call.data if isinstance(call.data, Mapping) else {}
 
-    entry = hass.config_entries.async_get_entry(coordinator.config_entry.entry_id)
-    options: Mapping[str, object] = entry.options if entry is not None else {}
+    # The coordinator already holds its entry; going back through
+    # hass.config_entries would only re-find the same object. It is typed
+    # optional, so fall back to the defaults when it is not there.
+    config_entry = coordinator.config_entry
+    options: Mapping[str, object] = config_entry.options if config_entry is not None else {}
 
     base_address = str(call_data.get(CONF_KNX_BASE_ADDRESS) or options.get(CONF_KNX_BASE_ADDRESS) or "").strip()
     if not base_address:
         base_address = DEFAULT_KNX_BASE_ADDRESS
-    groups = call_data.get(CONF_KNX_GROUPS) or options.get(CONF_KNX_GROUPS) or list(OBJECT_GROUPS)
+    requested_groups = call_data.get(CONF_KNX_GROUPS) or options.get(CONF_KNX_GROUPS) or list(OBJECT_GROUPS)
+    # A single group may arrive as a bare string from a YAML call. str is a
+    # Sequence, so iterating it would silently ask for the groups "s", "o",
+    # "l", "a", "r" and answer with nothing.
+    if isinstance(requested_groups, str):
+        groups = [requested_groups]
+    elif isinstance(requested_groups, Sequence):
+        groups = [str(group) for group in requested_groups]
+    else:
+        groups = list(OBJECT_GROUPS)
     overrides = options.get(CONF_KNX_OVERRIDES) or {}
 
     available = {register for register in (coordinator.data or {}) if coordinator.get_register(register) is not None}
@@ -494,7 +506,7 @@ async def _handle_export_knx_group_addresses(hass: HomeAssistant, call: ServiceC
             base_address,
             overrides=overrides if isinstance(overrides, Mapping) else {},
             registers=available,
-            groups=[str(group) for group in groups] if isinstance(groups, Sequence) else None,
+            groups=groups,
         )
     except InvalidGroupAddressError as err:
         raise ServiceValidationError(str(err)) from err
