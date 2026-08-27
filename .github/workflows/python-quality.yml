@@ -150,6 +150,9 @@ jobs:
       - name: Check documentation language
         run: python scripts/check_documentation_language.py
 
+      # The Home Assistant quality scale asks for more than 95 % test coverage
+      # (Silver "test-coverage"); --cov-fail-under turns that from a number in a
+      # log into a gate, so coverage cannot quietly decay between releases.
       - name: Run unit tests
         run: |
           pytest tests/ \
@@ -157,4 +160,16 @@ jobs:
             --tb=short \
             --cov=custom_components/idm_heatpump \
             --cov-report=xml \
-            --cov-report=term-missing
+            --cov-report=term-missing \
+            --cov-fail-under=95
+
+      # Bronze "config-flow-test-coverage" requires a fully covered config flow.
+      # It is measured over the whole suite, not just tests/test_config_flow.py,
+      # because other tests drive the flow as well.
+      - name: Check config flow coverage
+        run: |
+          pytest tests/ \
+            -q \
+            --cov=custom_components.idm_heatpump.config_flow \
+            --cov-report=term-missing \
+            --cov-fail-under=100

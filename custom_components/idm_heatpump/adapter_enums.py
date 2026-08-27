@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import re
 
+from .entity_names import translation_key_for_register
+
 _SYSTEM_MODE_SLUGS: dict[int, str] = {
     0: "standby",
     1: "automatic",
@@ -56,17 +58,31 @@ _CIRCUIT_ACTIVE_MODE_RE = re.compile(r"^hc_[a-g]_active_mode$")
 _ROOM_MODE_RE = re.compile(r"^zm\d+_room\d+_mode$")
 
 
-def get_slug_map_and_key(name: str) -> tuple[dict[int, str] | None, str | None]:
-    """Return (int-to-slug map, translation_key) for a known enum register."""
+def _slug_map(name: str) -> dict[int, str] | None:
+    """Return the int-to-slug map of a known enum register."""
     if name == "system_mode":
-        return _SYSTEM_MODE_SLUGS, "system_mode"
+        return _SYSTEM_MODE_SLUGS
     if _CIRCUIT_MODE_RE.match(name) or _CIRCUIT_ACTIVE_MODE_RE.match(name):
-        return _CIRCUIT_MODE_SLUGS, "circuit_mode"
+        return _CIRCUIT_MODE_SLUGS
     if _ROOM_MODE_RE.match(name):
-        return _ROOM_MODE_SLUGS, "room_mode"
+        return _ROOM_MODE_SLUGS
     if name == "solar_mode":
-        return _SOLAR_MODE_SLUGS, "solar_mode"
-    return None, None
+        return _SOLAR_MODE_SLUGS
+    return None
+
+
+def get_slug_map_and_key(name: str) -> tuple[dict[int, str] | None, str | None]:
+    """Return (int-to-slug map, translation_key) for a known enum register.
+
+    The translation key is the entity translation key of the register, so the
+    option labels and the entity name live under the same key: one heating
+    circuit mode key with a ``{circuit}`` placeholder instead of one key per
+    circuit.
+    """
+    slug_map = _slug_map(name)
+    if slug_map is None:
+        return None, None
+    return slug_map, translation_key_for_register(name)
 
 
 def get_bitflag_de_labels(name: str) -> dict[int, str] | None:

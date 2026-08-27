@@ -50,6 +50,7 @@ from .adapter_descriptions import (
     infer_sensor_classes,
     infer_suggested_display_precision,
     make_sensor_description,
+    name_kwargs,
 )
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .adapter_glt import is_glt_measurement, is_zone_room_measurement
@@ -186,10 +187,9 @@ def _build_sensor_description(reg: RegisterDef, *, include_enabled_default: bool
     if reg.enum_options and reg.datatype.value != "BITFLAG" and slug_map is not None:
         return SensorEntityDescription(
             key=name,
-            name=_get_german_name(name),
+            **name_kwargs(name, _get_german_name(name), options_key=t_key),
             device_class=SensorDeviceClass.ENUM,
             options=list(slug_map.values()),
-            translation_key=t_key,
             icon=icon,
             entity_category=EntityCategory.DIAGNOSTIC,
             **extra,
@@ -199,7 +199,7 @@ def _build_sensor_description(reg: RegisterDef, *, include_enabled_default: bool
         sc = _coerce_sensor_state_class(reg.state_class)
     return SensorEntityDescription(
         key=name,
-        name=_get_german_name(name),
+        **name_kwargs(name, _get_german_name(name)),
         native_unit_of_measurement=reg.unit,
         device_class=dc,
         state_class=sc,
@@ -346,7 +346,7 @@ def get_library_zone_binary_sensors(zone_idx: int, room_count: int = 6) -> list[
             continue
         desc = BinarySensorEntityDescription(
             key=name,
-            name=_get_german_name(name),
+            **name_kwargs(name, _get_german_name(name)),
             device_class=infer_binary_device_class(name),
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
@@ -382,7 +382,7 @@ def get_library_binary_sensors(
             continue
         desc = BinarySensorEntityDescription(
             key=name,
-            name=_get_german_name(name),
+            **name_kwargs(name, _get_german_name(name)),
             device_class=infer_binary_device_class(name),
             icon=get_icon_for_register(name, reg.unit),
             entity_category=EntityCategory.DIAGNOSTIC,
@@ -428,11 +428,10 @@ def _selects_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
 
         desc = SelectEntityDescription(
             key=name,
-            name=_get_german_name(name),
+            **name_kwargs(name, _get_german_name(name), options_key=t_key),
             options=options,
             icon=reg.icon or get_icon_for_register(name),
             entity_category=EntityCategory.CONFIG,
-            translation_key=t_key,
         )
         selects.append({"register": reg, "description": desc})
     return selects
@@ -469,7 +468,7 @@ def get_library_switches(model_info: Any = None) -> list[dict[str, Any]]:
             continue
         desc = SwitchEntityDescription(
             key=name,
-            name=_get_german_name(name),
+            **name_kwargs(name, _get_german_name(name)),
             icon=get_icon_for_register(name),
             entity_category=EntityCategory.CONFIG,
         )
@@ -535,7 +534,7 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
 
         desc = NumberEntityDescription(
             key=name,
-            name=number_name,
+            **name_kwargs(name, number_name),
             native_min_value=min_val,
             native_max_value=max_val,
             native_step=native_step_for_register(reg, meta),

@@ -5,14 +5,20 @@ import socket
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpConfigFlow,
     IdmHeatpumpOptionsFlow,
+    InvalidGroupAddressError,
+    _build_modbus_failed_schema,
     _build_options_schema,
     _build_zones_schema,
     _flatten_options_input,
     _has_duplicate_host,
+    _IdmOptionsStepsMixin,
     _ModbusConnectionStatus,
+    _parse_knx_overrides,
     _WebSupplementConnectionFailed,
 )
 from custom_components.idm_heatpump.const import (
@@ -22,6 +28,7 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_WEB_VARIANT,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
+    CONF_HOST,
     CONF_HUMIDITY_FORWARDING,
     CONF_HUMIDITY_FORWARDING_ENTITY,
     CONF_HUMIDITY_FORWARDING_INTERVAL,
@@ -36,6 +43,7 @@ from custom_components.idm_heatpump.const import (
     CONF_MODBUS_PROXY,
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
+    CONF_NAME,
     CONF_POLLING_JITTER,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
@@ -420,6 +428,7 @@ class TestAsyncStepUser:
             "192.168.1.100",
             "1234",
             model_hint="Navigator 10",
+            hass=flow.hass,
         )
         assert detected[CONF_DETECTED_WEB_VARIANT] == "nav20"
 
@@ -2081,3 +2090,420 @@ class TestOptionsFlowFull:
         # Should re-display form with existing options pre-filled
         assert result["type"] == "form"
         assert result["step_id"] == "options"
+
+
+class TestConfigFlowCoverageGaps:
+    """Paths that only run on failure, recovery or malformed input.
+
+    The Bronze rule ``config-flow-test-coverage`` asks for a fully covered
+    config flow: every branch a user can reach while setting the integration up
+    or repairing it must be exercised, not only the happy path.
+    """
+
+    def test_modbus_failed_schema_asks_for_the_web_host_behind_a_proxy(self):
+        schema = _build_modbus_failed_schema({CONF_MODBUS_PROXY: True, CONF_WEB_HOST: "navigator.local"})
+
+        assert CONF_WEB_HOST in schema.schema
+
+    def test_modbus_failed_schema_omits_the_web_host_without_a_proxy(self):
+        schema = _build_modbus_failed_schema({CONF_MODBUS_PROXY: False})
+
+        assert CONF_WEB_HOST not in schema.schema
+
+    def test_duplicate_check_ignores_entries_without_a_data_mapping(self):
+        hass = MagicMock()
+        broken = MagicMock()
+        broken.entry_id = "broken"
+        broken.data = None
+        hass.config_entries.async_entries = MagicMock(return_value=[broken])
+
+        assert _has_duplicate_host(hass, "192.168.1.100", None) is False
+
+    def test_duplicate_check_ignores_an_empty_host(self):
+        hass = MagicMock()
+        hass.config_entries.async_entries = MagicMock(return_value=[_make_entry("entry-1", "192.168.1.100")])
+
+        assert _has_duplicate_host(hass, "   ", None) is False
+
+    def test_knx_override_without_an_address_is_rejected(self):
+        with pytest.raises(InvalidGroupAddressError):
+            _parse_knx_overrides("outdoor_temp =")
+
+    def test_shared_step_bodies_require_a_concrete_flow(self):
+        shared = _IdmOptionsStepsMixin()
+
+        with pytest.raises(NotImplementedError):
+            shared._flow_name_placeholder()
+        with pytest.raises(NotImplementedError):
+            shared._create_flow_entry()
+
+
+class TestWebOnlyFallbackDuringSetup:
+    """A failed Modbus check must offer web-only setup instead of dead-ending."""
+
+    async def test_failed_modbus_with_a_pin_offers_the_web_only_form(self):
+        flow = _make_flow()
+
+        with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.CONNECTION_REFUSED):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "setup_web_access": True,
+                    CONF_WEB_PIN: "2634",
+                }
+            )
+
+        assert result["step_id"] == "modbus_failed"
+        assert flow._data[CONF_WEB_PIN] == "2634"
+        assert flow._data[CONF_WEB_HOST] == ""
+
+    async def test_failed_modbus_behind_a_proxy_requires_the_web_host(self):
+        flow = _make_flow()
+
+        with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.CONNECTION_REFUSED):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "setup_web_access": True,
+                    CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: True,
+                    CONF_WEB_HOST: "",
+                }
+            )
+
+        assert result["step_id"] == "user"
+        assert result["errors"] == {CONF_WEB_HOST: "web_host_required"}
+
+    async def test_successful_modbus_behind_a_proxy_requires_the_web_host(self):
+        flow = _make_flow()
+
+        with patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.SUCCESS):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM",
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "setup_web_access": True,
+                    CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: True,
+                    CONF_WEB_HOST: "  ",
+                }
+            )
+
+        assert result["step_id"] == "user"
+        assert result["errors"] == {CONF_WEB_HOST: "web_host_required"}
+
+    async def test_retry_returns_to_the_setup_form(self):
+        flow = _make_flow()
+        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100", CONF_WEB_PIN: "2634"}
+
+        result = await flow.async_step_modbus_failed({"action": "retry", CONF_WEB_PIN: "2634"})
+
+        assert result["type"] == "form"
+        assert result["step_id"] == "user"
+
+    async def test_retry_during_reconfigure_returns_to_the_connection_step(self):
+        flow = _make_flow()
+        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100"}
+        flow._reconfigure_entry = _make_entry("entry-1", "192.168.1.100")
+
+        with patch.object(flow, "async_step_connection", AsyncMock(return_value={"step_id": "connection"})) as step:
+            result = await flow.async_step_modbus_failed({"action": "retry", CONF_WEB_PIN: "2634"})
+
+        assert result["step_id"] == "connection"
+        step.assert_awaited_once()
+
+    async def test_web_only_without_a_pin_asks_for_one(self):
+        flow = _make_flow()
+        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100"}
+
+        result = await flow.async_step_modbus_failed({"action": "web_only", CONF_WEB_PIN: ""})
+
+        assert result["step_id"] == "modbus_failed"
+        assert result["errors"] == {CONF_WEB_PIN: "web_pin_required"}
+
+    async def test_web_only_stores_the_proxy_web_host(self):
+        flow = _make_flow()
+        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100", CONF_MODBUS_PROXY: True}
+
+        with patch.object(
+            flow,
+            "_async_detect_web_supplement",
+            return_value={CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10"},
+        ):
+            result = await flow.async_step_modbus_failed(
+                {"action": "web_only", CONF_WEB_PIN: "2634", CONF_WEB_HOST: " navigator.local "}
+            )
+
+        assert result["step_id"] == "web_only_options"
+        assert flow._data[CONF_WEB_HOST] == "navigator.local"
+        assert flow._data[CONF_WEB_ONLY] is True
+        assert flow._data[CONF_DETECTED_NAVIGATOR_VERSION] == "Navigator 10"
+
+    async def test_web_only_setup_creates_the_entry_with_default_options(self):
+        flow = _make_flow()
+        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100", CONF_WEB_PIN: "2634", CONF_WEB_ONLY: True}
+        flow.async_create_entry = MagicMock(return_value={"type": "create_entry"})
+
+        result = await flow.async_step_web_only_options({CONF_WEB_SCAN_INTERVAL: 45})
+
+        assert result["type"] == "create_entry"
+        _, kwargs = flow.async_create_entry.call_args
+        assert kwargs["options"][CONF_WEB_ENABLED] is True
+        assert kwargs["options"][CONF_WEB_SCAN_INTERVAL] == 45
+        assert CONF_SCAN_INTERVAL in kwargs["options"], "web-only entries still need the Modbus defaults"
+
+
+class TestReconfigureValidation:
+    async def test_web_setup_without_a_pin_is_rejected(self):
+        flow = _make_flow()
+        entry = _make_entry("entry-1", "192.168.1.100")
+
+        with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
+            result = await flow.async_step_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    "setup_web_access": True,
+                    CONF_WEB_PIN: "",
+                }
+            )
+
+        assert result["errors"] == {CONF_WEB_PIN: "web_pin_required_or_disable"}
+
+    async def test_web_setup_behind_a_proxy_requires_the_web_host(self):
+        flow = _make_flow()
+        entry = _make_entry("entry-1", "192.168.1.100")
+
+        with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
+            result = await flow.async_step_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    "setup_web_access": True,
+                    CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: True,
+                    CONF_WEB_HOST: "",
+                }
+            )
+
+        assert result["errors"] == {CONF_WEB_HOST: "web_host_required"}
+
+    async def test_failed_modbus_behind_a_proxy_requires_the_web_host(self):
+        flow = _make_flow()
+        entry = _make_entry("entry-1", "192.168.1.100")
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.CONNECTION_REFUSED),
+        ):
+            result = await flow.async_step_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    "setup_web_access": True,
+                    CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: True,
+                    CONF_WEB_HOST: "   ",
+                }
+            )
+
+        assert result["errors"] == {CONF_WEB_HOST: "web_host_required"}
+
+    async def test_successful_modbus_behind_a_proxy_requires_the_web_host(self):
+        flow = _make_flow()
+        entry = _make_entry("entry-1", "192.168.1.100")
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.SUCCESS),
+        ):
+            result = await flow.async_step_connection(
+                {
+                    "host": "192.168.1.100",
+                    "port": 502,
+                    "slave_id": 1,
+                    "setup_web_access": True,
+                    CONF_WEB_PIN: "2634",
+                    CONF_MODBUS_PROXY: True,
+                    CONF_WEB_HOST: "",
+                }
+            )
+
+        assert result["step_id"] == "connection"
+        assert result["errors"] == {CONF_WEB_HOST: "web_host_required"}
+
+
+class TestDiagnosticsRepeatSteps:
+    async def test_web_unavailable_is_reported_as_a_failed_diagnostics_run(self):
+        flow = _make_flow()
+        entry = _make_entry("entry-1", "192.168.1.100")
+        entry.data[CONF_WEB_PIN] = "2634"
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=_ModbusConnectionStatus.SUCCESS),
+            patch.object(flow, "_async_detect_web_supplement", side_effect=_WebSupplementConnectionFailed),
+        ):
+            result = await flow.async_step_diagnostics()
+
+        assert result["step_id"] == "diagnostics_failed"
+
+    async def test_every_result_form_can_repeat_the_test(self):
+        flow = _make_flow()
+
+        with patch.object(flow, "async_step_diagnostics", AsyncMock(return_value={"step_id": "diagnostics"})) as step:
+            assert (await flow.async_step_diagnostics_success())["step_id"] == "diagnostics"
+            assert (await flow.async_step_diagnostics_modbus_success())["step_id"] == "diagnostics"
+            assert (await flow.async_step_diagnostics_failed())["step_id"] == "diagnostics"
+
+        assert step.await_count == 3
+
+
+class TestConnectionTestFailureModes:
+    async def test_tcp_preflight_reports_an_unreachable_endpoint(self):
+        flow = _make_flow()
+        with patch(
+            "custom_components.idm_heatpump.config_flow.asyncio.open_connection",
+            side_effect=OSError("no route to host"),
+        ):
+            result = await IdmHeatpumpConfigFlow._test_tcp_endpoint(flow, "192.168.1.100", 502)
+
+        assert result is _ModbusConnectionStatus.UNREACHABLE
+
+    async def test_tcp_preflight_survives_a_failing_close(self):
+        flow = _make_flow()
+        writer = MagicMock()
+        writer.wait_closed = AsyncMock(side_effect=OSError("already closed"))
+        with patch(
+            "custom_components.idm_heatpump.config_flow.asyncio.open_connection",
+            return_value=(MagicMock(), writer),
+        ):
+            result = await IdmHeatpumpConfigFlow._test_tcp_endpoint(flow, "192.168.1.100", 502)
+
+        assert result is _ModbusConnectionStatus.SUCCESS
+
+    async def _run_test_connection(self, flow, client):
+        with patch("custom_components.idm_heatpump.config_flow.get_idm_client", return_value=client):
+            return await flow._test_connection({"host": "192.168.1.100", "port": 502, "slave_id": 1})
+
+    async def test_reachable_tcp_without_a_modbus_connection_is_no_response(self):
+        flow = _make_flow()
+        client = AsyncMock()
+        client.is_connected = False
+
+        result = await self._run_test_connection(flow, client)
+
+        assert result is _ModbusConnectionStatus.NO_RESPONSE
+        flow._test_tcp_endpoint.assert_awaited_once()
+
+    async def test_unreachable_tcp_keeps_the_preflight_reason(self):
+        flow = _make_flow()
+        flow._test_tcp_endpoint = AsyncMock(return_value=_ModbusConnectionStatus.CONNECTION_REFUSED)
+        client = AsyncMock()
+        client.is_connected = False
+
+        result = await self._run_test_connection(flow, client)
+
+        assert result is _ModbusConnectionStatus.CONNECTION_REFUSED
+
+    async def test_unresolvable_host_during_the_protocol_check(self):
+        flow = _make_flow()
+        client = AsyncMock()
+        client.connect = AsyncMock(side_effect=socket.gaierror("name not known"))
+
+        assert await self._run_test_connection(flow, client) is _ModbusConnectionStatus.HOST_NOT_FOUND
+
+    async def test_unreachable_endpoint_during_the_protocol_check(self):
+        flow = _make_flow()
+        client = AsyncMock()
+        client.connect = AsyncMock(side_effect=OSError("network is unreachable"))
+
+        assert await self._run_test_connection(flow, client) is _ModbusConnectionStatus.UNREACHABLE
+
+    async def test_unexpected_error_with_reachable_tcp_is_a_generic_failure(self):
+        flow = _make_flow()
+        client = AsyncMock()
+        client.connect = AsyncMock(side_effect=RuntimeError("library exploded"))
+
+        assert await self._run_test_connection(flow, client) is _ModbusConnectionStatus.FAILED
+
+    async def test_unexpected_error_with_unreachable_tcp_keeps_the_preflight_reason(self):
+        flow = _make_flow()
+        flow._test_tcp_endpoint = AsyncMock(return_value=_ModbusConnectionStatus.TIMEOUT)
+        client = AsyncMock()
+        client.connect = AsyncMock(side_effect=RuntimeError("library exploded"))
+
+        assert await self._run_test_connection(flow, client) is _ModbusConnectionStatus.TIMEOUT
+
+    async def test_a_failing_disconnect_does_not_break_the_result(self):
+        flow = _make_flow()
+        client = AsyncMock()
+        client.is_connected = True
+        client.probe_register = AsyncMock(return_value=[0, 0])
+        client.disconnect = AsyncMock(side_effect=Exception("already gone"))
+
+        assert await self._run_test_connection(flow, client) is _ModbusConnectionStatus.SUCCESS
+
+
+class TestWebSupplementDetection:
+    async def test_a_rejected_pin_is_raised_to_the_caller(self):
+        flow = _make_flow()
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.config_flow.async_read_web_supplement",
+                AsyncMock(side_effect=IdmWebAuthenticationFailed("nope")),
+            ),
+            pytest.raises(IdmWebAuthenticationFailed),
+        ):
+            await flow._async_detect_web_supplement("192.168.1.100", "2634")
+
+    async def test_an_optional_detection_failure_is_swallowed(self):
+        flow = _make_flow()
+
+        with patch(
+            "custom_components.idm_heatpump.config_flow.async_read_web_supplement",
+            AsyncMock(side_effect=OSError("unreachable")),
+        ):
+            assert await flow._async_detect_web_supplement("192.168.1.100", "2634") == {}
+
+    async def test_a_required_detection_failure_is_reported(self):
+        flow = _make_flow()
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.config_flow.async_read_web_supplement",
+                AsyncMock(side_effect=OSError("unreachable")),
+            ),
+            pytest.raises(_WebSupplementConnectionFailed),
+        ):
+            await flow._async_detect_web_supplement("192.168.1.100", "2634", required=True)
+
+    async def test_a_missing_snapshot_is_optional_by_default(self):
+        flow = _make_flow()
+
+        with patch(
+            "custom_components.idm_heatpump.config_flow.async_read_web_supplement",
+            AsyncMock(return_value=None),
+        ):
+            assert await flow._async_detect_web_supplement("192.168.1.100", "2634") == {}
+
+    async def test_a_missing_snapshot_fails_a_required_detection(self):
+        flow = _make_flow()
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.config_flow.async_read_web_supplement",
+                AsyncMock(return_value=None),
+            ),
+            pytest.raises(_WebSupplementConnectionFailed),
+        ):
+            await flow._async_detect_web_supplement("192.168.1.100", "2634", required=True)

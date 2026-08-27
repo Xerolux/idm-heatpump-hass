@@ -73,7 +73,7 @@ async def test_web_pin_missing_repair_sets_valid_pin(mock_hass, repair_entry) ->
         result = await flow.async_step_set_pin({CONF_WEB_PIN: " 1234 "})
 
     assert result["type"] == "create_entry"
-    read_web.assert_awaited_once_with("192.168.1.100", "1234")
+    read_web.assert_awaited_once_with("192.168.1.100", "1234", hass=flow.hass)
     _, kwargs = mock_hass.config_entries.async_update_entry.call_args
     assert kwargs["data"][CONF_WEB_PIN] == "1234"
     assert kwargs["data"][CONF_DETECTED_NAVIGATOR_VERSION] == "Navigator 10"
@@ -133,3 +133,62 @@ async def test_web_pin_repair_rejects_unreachable_web_interface(mock_hass, repai
     assert result["type"] == "form"
     assert result["errors"]["base"] == "web_cannot_connect"
     mock_hass.config_entries.async_update_entry.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_repair_aborts_without_its_config_entry(mock_hass) -> None:
+    """A repair for a removed entry must abort instead of writing nowhere."""
+    mock_hass.config_entries.async_entries.return_value = []
+    flow = await async_create_fix_flow(mock_hass, "web_pin_missing", {"entry_id": "gone"})
+
+    assert (await flow.async_step_init())["reason"] == "entry_not_found"
+    assert (await flow.async_step_set_pin())["reason"] == "entry_not_found"
+    assert (await flow.async_step_disable_web())["reason"] == "entry_not_found"
+
+
+@pytest.mark.asyncio
+async def test_repair_finds_the_only_entry_without_an_id(mock_hass, repair_entry) -> None:
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(mock_hass, "web_pin_missing", {})
+
+    result = await flow.async_step_init()
+
+    assert result["step_id"] == "init"
+    # The resolved entry is cached for the following steps.
+    assert flow._get_entry() is repair_entry
+
+
+@pytest.mark.asyncio
+async def test_repair_routes_the_selected_action(mock_hass, repair_entry) -> None:
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(mock_hass, "web_pin_missing", {"entry_id": repair_entry.entry_id})
+
+    set_pin = await flow.async_step_init({"action": "set_pin"})
+    assert set_pin["step_id"] == "set_pin"
+
+    disable = await flow.async_step_init({"action": "disable_web"})
+    assert disable["step_id"] == "disable_web"
+
+    unknown = await flow.async_step_init({"action": "something_else"})
+    assert unknown["step_id"] == "init"
+
+
+@pytest.mark.asyncio
+async def test_repair_rejects_an_empty_pin(mock_hass, repair_entry) -> None:
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(mock_hass, "web_pin_missing", {"entry_id": repair_entry.entry_id})
+
+    result = await flow.async_step_set_pin({CONF_WEB_PIN: "  "})
+
+    assert result["step_id"] == "set_pin"
+    assert result["errors"] == {CONF_WEB_PIN: "web_pin_required"}
+
+
+@pytest.mark.asyncio
+async def test_disable_web_step_shows_its_confirmation(mock_hass, repair_entry) -> None:
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(mock_hass, "web_pin_missing", {"entry_id": repair_entry.entry_id})
+
+    result = await flow.async_step_disable_web(None)
+
+    assert result["step_id"] == "disable_web"

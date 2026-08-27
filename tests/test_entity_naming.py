@@ -55,8 +55,12 @@ def test_optional_heating_circuits_get_german_register_names() -> None:
 
 
 def test_web_heating_circuit_pump_names_exist_for_every_circuit() -> None:
-    """Every heating-circuit pump web entity needs a translated name."""
+    """Every heating-circuit pump web entity needs a translated name.
+
+    All circuits share one key and receive the circuit letter as a placeholder,
+    so the placeholder is what has to survive here.
+    """
     for translations in ("strings.json", "translations/de.json", "translations/en.json"):
         binary_sensors = _load_json(translations)["entity"]["binary_sensor"]
-        for letter in "abcdefg":
-            assert f"web_pump_heating_circuit_{letter}" in binary_sensors
+        assert "web_pump_heating_circuit" in binary_sensors
+        assert "{circuit}" in binary_sensors["web_pump_heating_circuit"]["name"]

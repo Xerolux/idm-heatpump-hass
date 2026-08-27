@@ -858,6 +858,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 preferred_variant=self._web_variant,
                 client_pool=self._web_client_pool,
                 allow_variant_fallback=self._web_variant is None,
+                hass=self.hass,
             )
         except IdmWebAuthenticationFailed as err:
             error = f"{err.__class__.__name__}: {err}"

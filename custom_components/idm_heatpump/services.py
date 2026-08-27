@@ -73,33 +73,33 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN,
         "set_system_mode",
-        partial(_handle_set_system_mode, hass),  # type: ignore[arg-type]
+        partial(_handle_set_system_mode, hass),
     )
     hass.services.async_register(
         DOMAIN,
         "acknowledge_errors",
-        partial(_handle_acknowledge_errors, hass),  # type: ignore[arg-type]
+        partial(_handle_acknowledge_errors, hass),
     )
     hass.services.async_register(
         DOMAIN,
         "write_register",
-        partial(_handle_write_register, hass),  # type: ignore[arg-type]
+        partial(_handle_write_register, hass),
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(
         DOMAIN,
         "set_external_climate",
-        partial(_handle_set_external_climate, hass),  # type: ignore[arg-type]
+        partial(_handle_set_external_climate, hass),
     )
     hass.services.async_register(
         DOMAIN,
         "set_external_power",
-        partial(_handle_set_external_power, hass),  # type: ignore[arg-type]
+        partial(_handle_set_external_power, hass),
     )
     hass.services.async_register(
         DOMAIN,
         "export_knx_group_addresses",
-        partial(_handle_export_knx_group_addresses, hass),  # type: ignore[arg-type]
+        partial(_handle_export_knx_group_addresses, hass),
         supports_response=SupportsResponse.ONLY,
     )
 

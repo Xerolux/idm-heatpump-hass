@@ -23,6 +23,21 @@ Entities are grouped by function in Home Assistant where possible. The optional
 technician code sensors are pinned at the top, followed by configuration
 entities, switches, writable values, live measurements and diagnostics.
 
+## Entity names and languages
+
+Entity names come from the integration's translation files and follow the
+language configured in Home Assistant: an English installation shows English
+names, a German one shows the German names the integration has always used.
+Heating circuits and zone rooms share one name per measurement and fill in their
+circuit letter or zone/room number, for example *Heating circuit A flow
+temperature* and *Zone 1 room 2 temperature*.
+
+Changing the Home Assistant language changes the displayed names only. Entity
+IDs and unique IDs stay exactly as they are, so dashboards, automations and
+long-term statistics keep working. An entity created *after* a language change
+derives its entity ID from the name in that language, as with every Home
+Assistant integration.
+
 ---
 
 ## Sensors
@@ -210,15 +225,15 @@ Typical web-only sensors include:
 | Entity | Description |
 |--------|-------------|
 | Navigator version (Web) | Detected Navigator generation, for example Navigator 2.0 or Navigator 10 |
-| Software Version (Web) | Controller software version reported by the local web interface |
-| Wärmepumpenmodell (Web) | Heat pump model/type reported by the web interface |
+| Software version (Web) | Controller software version reported by the local web interface |
+| Heat pump model (Web) | Heat pump model/type reported by the web interface |
 | myIDM ID (Web) | Compact myIDM ID derived from the local web account value before `@` |
-| Infosystem Meldungen Anzahl (Web) | Number of active Navigator 10 infosystem notifications |
-| Infosystem Meldungen (Web) | Summary of active Navigator 10 infosystem notifications |
-| Heißgastemperatur (Web) | Web-only diagnostic temperature when available |
-| Verdampfer Druck (Web) | Web-only refrigerant pressure when available |
-| Platinentemperatur (Web) | Controller board temperature when available |
-| Momentane/prognostizierte Leistung Heizen / Kühlen / Warmwasser (Web) | The controller's current **or projected** thermal power for that mode |
+| Info system notification count (Web) | Number of active Navigator 10 infosystem notifications |
+| Info system notifications (Web) | Summary of active Navigator 10 infosystem notifications |
+| Hot gas temperature (Web) | Web-only diagnostic temperature when available |
+| Evaporator pressure (Web) | Web-only refrigerant pressure when available |
+| Board temperature (Web) | Controller board temperature when available |
+| Current/projected heating / cooling / hot water power (Web) | The controller's current **or projected** thermal power for that mode |
 
 #### "Momentane/prognostizierte Leistung" is not a live measurement
 

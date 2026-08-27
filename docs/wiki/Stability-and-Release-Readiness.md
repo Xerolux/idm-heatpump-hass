@@ -6,7 +6,7 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.16.0-rc.3` and `idm-heatpump-api` `2.0.0` form the current
+Integration `0.16.0-rc.4` and `idm-heatpump-api` `2.0.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

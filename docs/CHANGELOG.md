@@ -13,6 +13,85 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0-rc.4] - 2026-08-27
+
+Release candidate 4 is a quality-scale candidate: it makes the Home Assistant
+quality-scale claims in `quality_scale.yaml` true instead of aspirational. The
+visible change for users is that **entity names are translated** — an English
+Home Assistant now shows English entity names, a German one shows exactly the
+names it showed before. Entity IDs, unique IDs, register addresses, write paths,
+the device hierarchy and the dependency pins are unchanged from `0.16.0-rc.3`,
+so dashboards, automations and long-term statistics keep working.
+
+> ### 🏷️ Headline: every entity is named from the translation files
+>
+> Until now only 38 control entities were translated; the ~190 Modbus register
+> entities, the calculated and operating-analysis sensors, the technician codes
+> and the local web supplement values carried hardcoded German names — in every
+> language. They now all resolve through a Home Assistant translation key, with
+> the heating circuit letter and the zone/room number as placeholders
+> (*Heating circuit A flow temperature*, *Zone 1 room 2 temperature*).
+>
+> Only the displayed name changes. An entity created *after* the switch derives
+> its entity ID from the name in the configured language, as with every Home
+> Assistant integration.
+
+### Changed
+
+- **Entity names now come from the translation files.** Every entity — the
+  ~190 Modbus registers, the calculated and operating-analysis sensors, the
+  technician codes and the local web supplement values — is named through a
+  Home Assistant translation key instead of a hardcoded German name. An English
+  Home Assistant now shows English entity names; a German one shows exactly the
+  names it showed before. Heating circuits and zone rooms share one key each and
+  receive the circuit letter or the zone/room index as a placeholder
+  (`Heating circuit {circuit} flow temperature`).
+  Existing entities keep their entity IDs and unique IDs: only the displayed
+  name changes, and the friendly name follows the Home Assistant language.
+  Newly created entities derive their entity ID from the translated name.
+- The enum option keys moved to the entity translation key of their register:
+  `circuit_mode` became `hc_mode` (select) and `hc_active_mode` (sensor), and
+  `room_mode` became `zone_room_mode`. Option labels are unchanged.
+- The optional Navigator web clients now use Home Assistant's own aiohttp
+  session helpers (`async_get_clientsession` for a hostname,
+  `async_create_clientsession` with an unsafe cookie jar for an IP address)
+  instead of an integration-owned session (quality-scale rule
+  `inject-websession`).
+- **Strict typing is strict now.** `mypy.ini` was `strict = true` with seven
+  disabled error codes and three relaxed flags; it is plain `strict = true`
+  with nothing disabled. The 27 type errors that surfaced were fixed rather
+  than silenced: a `ClassVar` used at module level, a dead `ConfigFlowResult`
+  import fallback, the shared option steps now build on Home Assistant's
+  `ConfigEntryBaseFlow` instead of an untyped mixin, the dynamically resolved
+  child-device API is narrowed before use, a decoded register value is narrowed
+  before it becomes sensor state, and the `_attr_*` lists of the climate and
+  water-heater entities no longer override Home Assistant instance variables
+  with class variables. 13 stale `# type: ignore` comments are gone.
+
+### Added
+
+- `entity_names.py` with the translation-key rules and the canonical English
+  names, and `scripts/generate_entity_translations.py`, which generates the
+  `entity` blocks of `strings.json` and the `en`/`de` translations from it.
+- `tests/test_entity_translations.py`: an entity of the largest possible plant
+  (7 heating circuits, 10 zone modules with 8 rooms, cascade, web supplement)
+  without a translated name — or with a name template whose placeholders the
+  entity does not supply — now fails the build.
+- Coverage gates in CI: the suite must stay above 95 % (quality-scale rule
+  `test-coverage`) and `config_flow.py` at 100 % (`config-flow-test-coverage`).
+  Both are now met; the config flow is fully covered including its web-only
+  fallback and every connection failure mode.
+
+### Fixed
+
+- `quality_scale.yaml` matched the current Home Assistant rule set: the Bronze
+  rules `docs-triggers` and `docs-conditions` were missing, and two rule ids
+  that do not exist (`entity-state-class`,
+  `entity-suggested-display-precision`) were listed.
+- Removed four unreachable branches in the config flow: a proxy setup without a
+  web host is already rejected by the validation in front of them.
+
+
 ## [0.16.0-rc.3] - 2026-08-27
 
 Release candidate 3 adds the KNX bridge. Everything `0.16.0-rc.2` shipped is

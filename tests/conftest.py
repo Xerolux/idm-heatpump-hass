@@ -256,6 +256,11 @@ def _stub_voluptuous() -> None:
         def __init__(self, schema):
             self._schema = schema
 
+        @property
+        def schema(self):
+            """Mirror voluptuous, which exposes the raw schema mapping."""
+            return self._schema
+
         def __call__(self, data):
             return data
 
@@ -436,14 +441,13 @@ def _stub_homeassistant() -> None:
         def async_on_unload(self, *a, **kw):
             pass
 
-    class _ConfigFlow:
-        VERSION = 1
-        MINOR_VERSION = 1
+    class _ConfigEntryBaseFlow:
+        """Mirror of homeassistant.config_entries.ConfigEntryBaseFlow.
 
-        def __init_subclass__(cls, domain=None, **kwargs):
-            super().__init_subclass__(**kwargs)
-            if domain:
-                cls.DOMAIN = domain
+        Home Assistant shares the form helpers between config and options flows
+        through this base, and the integration builds its own shared option
+        steps on it, so the stub needs the same hierarchy.
+        """
 
         def __init__(self):
             self._data = {}
@@ -460,11 +464,23 @@ def _stub_homeassistant() -> None:
                 "menu_options": menu_options,
             }
 
-        def async_create_entry(self, title="", data=None, options=None):
-            return {"type": "create_entry", "title": title, "data": data or {}, "options": options or {}}
-
         def async_abort(self, reason):
             return {"type": "abort", "reason": reason}
+
+        def add_suggested_values_to_schema(self, schema, suggested_values):
+            return schema
+
+    class _ConfigFlow(_ConfigEntryBaseFlow):
+        VERSION = 1
+        MINOR_VERSION = 1
+
+        def __init_subclass__(cls, domain=None, **kwargs):
+            super().__init_subclass__(**kwargs)
+            if domain:
+                cls.DOMAIN = domain
+
+        def async_create_entry(self, title="", data=None, options=None):
+            return {"type": "create_entry", "title": title, "data": data or {}, "options": options or {}}
 
         def async_update_reload_and_abort(self, entry, data_updates=None, **kwargs):
             return {"type": "abort", "reason": "reconfigure_successful"}
@@ -484,25 +500,21 @@ def _stub_homeassistant() -> None:
         def _get_reconfigure_entry(self):
             return MagicMock()
 
-        def add_suggested_values_to_schema(self, schema, suggested_values):
-            return schema
-
         @staticmethod
         def async_get_options_flow(config_entry):
             return MagicMock()
 
-    class _OptionsFlow:
+    class _OptionsFlow(_ConfigEntryBaseFlow):
         def __init__(self):
-            self._options = {}
+            super().__init__()
             self.config_entry = MagicMock()
-
-        def async_show_form(self, *, step_id, data_schema=None, errors=None, description_placeholders=None):
-            return {"type": "form", "step_id": step_id, "errors": errors or {}}
 
         def async_create_entry(self, data=None):
             return {"type": "create_entry", "data": data or {}}
 
     ha.config_entries.ConfigEntry = _ConfigEntry
+    ha.config_entries.ConfigEntryBaseFlow = _ConfigEntryBaseFlow
+    ha.config_entries.ConfigFlowResult = dict
     ha.config_entries.ConfigFlow = _ConfigFlow
     ha.config_entries.OptionsFlow = _OptionsFlow
     ha.config_entries.ConfigEntryState = _ConfigEntryState
@@ -535,6 +547,31 @@ def _stub_homeassistant() -> None:
             self.data = data_func()
 
     storage_mod.Store = _Store
+
+    # homeassistant.helpers.aiohttp_client
+    aiohttp_client_mod = _make_module("homeassistant.helpers.aiohttp_client")
+    helpers.aiohttp_client = aiohttp_client_mod
+
+    def _async_get_clientsession(hass, *args, **kwargs):
+        """Return one shared session per stubbed hass, like Home Assistant does."""
+        session = getattr(hass, "_stub_shared_session", None)
+        if session is None:
+            session = MagicMock(name="shared_clientsession")
+            session.close = AsyncMock()
+            try:
+                hass._stub_shared_session = session
+            except AttributeError:
+                pass
+        return session
+
+    def _async_create_clientsession(hass, *args, **kwargs):
+        """Return a fresh session that the caller owns, like Home Assistant does."""
+        session = MagicMock(name="created_clientsession")
+        session.close = AsyncMock()
+        return session
+
+    aiohttp_client_mod.async_get_clientsession = _async_get_clientsession
+    aiohttp_client_mod.async_create_clientsession = _async_create_clientsession
 
     # homeassistant.helpers.update_coordinator
     update_coordinator_mod = _make_module("homeassistant.helpers.update_coordinator")
