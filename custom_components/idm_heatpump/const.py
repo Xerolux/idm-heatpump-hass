@@ -72,6 +72,7 @@ CONF_KNX_BRIDGE: str = "knx_bridge"
 CONF_KNX_BASE_ADDRESS: str = "knx_base_address"
 CONF_KNX_SEND: str = "knx_send"
 CONF_KNX_RECEIVE: str = "knx_receive"
+CONF_KNX_RESPOND_TO_READ: str = "knx_respond_to_read"
 CONF_KNX_GROUPS: str = "knx_groups"
 CONF_KNX_RESEND_INTERVAL: str = "knx_resend_interval"
 CONF_KNX_TOLERANCE: str = "knx_tolerance"
@@ -128,6 +129,9 @@ DEFAULT_KNX_BRIDGE: bool = False
 DEFAULT_KNX_BASE_ADDRESS: str = "8/0/0"
 DEFAULT_KNX_SEND: bool = True
 DEFAULT_KNX_RECEIVE: bool = True
+# Answering GroupValueRead is what a KNX device expects; without it a
+# push-button stays blank after a restart until the next change is sent.
+DEFAULT_KNX_RESPOND_TO_READ: bool = True
 # 0 = send only when a value changes. A periodic full resend is what KNX
 # visualisations without their own cache need after a restart.
 DEFAULT_KNX_RESEND_INTERVAL: int = 0

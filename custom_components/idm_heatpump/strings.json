@@ -183,14 +183,16 @@
               "knx_send": "Send values to KNX",
               "knx_receive": "Accept commands from KNX",
               "knx_resend_interval": "Full resend interval",
-              "knx_tolerance": "Change tolerance"
+              "knx_tolerance": "Change tolerance",
+              "knx_respond_to_read": "Answer read requests"
             },
             "data_description": {
               "knx_bridge": "Mirrors the IDM KNX communication objects onto the bus, so a KNX installation reaches the heat pump without a separate BAOS gateway.",
               "knx_send": "Send a telegram whenever a value changes.",
               "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
               "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
-              "knx_tolerance": "Only send a numeric value again once it moved by at least this much."
+              "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
+              "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
             }
           }
         }
@@ -457,14 +459,16 @@
               "knx_send": "Send values to KNX",
               "knx_receive": "Accept commands from KNX",
               "knx_resend_interval": "Full resend interval",
-              "knx_tolerance": "Change tolerance"
+              "knx_tolerance": "Change tolerance",
+              "knx_respond_to_read": "Answer read requests"
             },
             "data_description": {
               "knx_bridge": "Mirrors the IDM KNX communication objects onto the bus, so a KNX installation reaches the heat pump without a separate BAOS gateway.",
               "knx_send": "Send a telegram whenever a value changes.",
               "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
               "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
-              "knx_tolerance": "Only send a numeric value again once it moved by at least this much."
+              "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
+              "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
             }
           }
         }

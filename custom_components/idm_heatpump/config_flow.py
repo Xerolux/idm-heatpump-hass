@@ -62,6 +62,7 @@ from .const import (
     CONF_KNX_OVERRIDES,
     CONF_KNX_RECEIVE,
     CONF_KNX_RESEND_INTERVAL,
+    CONF_KNX_RESPOND_TO_READ,
     CONF_KNX_SEND,
     CONF_KNX_TOLERANCE,
     CONF_MODBUS_CONNECT_DELAY,
@@ -104,6 +105,7 @@ from .const import (
     DEFAULT_KNX_BRIDGE,
     DEFAULT_KNX_RECEIVE,
     DEFAULT_KNX_RESEND_INTERVAL,
+    DEFAULT_KNX_RESPOND_TO_READ,
     DEFAULT_KNX_SEND,
     DEFAULT_KNX_TOLERANCE,
     DEFAULT_MODBUS_CONNECT_DELAY,
@@ -370,6 +372,7 @@ def _default_options() -> dict[str, Any]:
         CONF_KNX_BASE_ADDRESS: DEFAULT_KNX_BASE_ADDRESS,
         CONF_KNX_SEND: DEFAULT_KNX_SEND,
         CONF_KNX_RECEIVE: DEFAULT_KNX_RECEIVE,
+        CONF_KNX_RESPOND_TO_READ: DEFAULT_KNX_RESPOND_TO_READ,
         CONF_KNX_GROUPS: list(OBJECT_GROUPS),
         CONF_KNX_RESEND_INTERVAL: DEFAULT_KNX_RESEND_INTERVAL,
         CONF_KNX_TOLERANCE: DEFAULT_KNX_TOLERANCE,
@@ -689,6 +692,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Required(
                             CONF_KNX_RECEIVE,
                             default=options.get(CONF_KNX_RECEIVE, DEFAULT_KNX_RECEIVE),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_KNX_RESPOND_TO_READ,
+                            default=options.get(CONF_KNX_RESPOND_TO_READ, DEFAULT_KNX_RESPOND_TO_READ),
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
                             CONF_KNX_RESEND_INTERVAL,

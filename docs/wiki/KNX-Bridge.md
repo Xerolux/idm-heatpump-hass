@@ -75,6 +75,7 @@ at startup.
    The section also carries:
    - **Send values to KNX** — publish a telegram whenever a value changes
    - **Accept commands from KNX** — write incoming values into the heat pump
+   - **Answer read requests** — reply to a `GroupValueRead` with the current value
    - **Full resend interval** — resend every value periodically (0 = only on change)
    - **Change tolerance** — how far a numeric value must move before it is sent again
 3. Submit. A **KNX group addresses** step follows with:
@@ -162,6 +163,24 @@ Every object carries the direction IDM gave it in the example project:
   register through the normal write path, including its safety checks,
   write cooldown and EEPROM protection.
 
+### Read requests
+
+A KNX device that asks for a value — a push-button refreshing its display
+after a restart, a visualisation coming back up — sends a `GroupValueRead`.
+The bridge answers it with the value the heat pump currently reads, as a
+`GroupValueResponse`, which is what the BAOS gateway does too.
+
+The reply goes out immediately rather than through the paced send queue: a
+read request is answered now or not usefully at all, and the number of them
+is bounded by the devices asking. Write-only objects and values the
+controller reports as unused are not answered, because there is nothing to
+answer with.
+
+Switching **Answer read requests** off leaves those addresses unregistered
+and the bridge silent on reads. A `GroupValueResponse` from another device
+is never written into the heat pump: it answers somebody else's question
+rather than instructing us.
+
 Incoming registration goes through the KNX integration's
 `knx.event_register` service, so no change to the KNX integration's own
 event filter is needed.
@@ -245,6 +264,11 @@ Heatpump entry.
 Check that *Send values to KNX* is on, that the object's group is selected,
 and that the controller actually reports the value — objects whose register
 is missing or marked unused are skipped.
+
+**A push-button stays blank after a restart**
+Check that *Answer read requests* is on. If the device does not send a read
+request at all, set a **Full resend interval** so every value is repeated
+periodically.
 
 **A command from KNX has no effect**
 Only objects IDM marks as writable accept commands. Check that *Accept

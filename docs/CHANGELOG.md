@@ -13,6 +13,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **The KNX bridge answers read requests.** A KNX device that asks for a
+  value — a push-button refreshing its display after a restart, a
+  visualisation coming back up — sends a `GroupValueRead`. `0.16.0-rc.3`
+  ignored those, so such a device stayed blank until the next change
+  happened to be sent; the BAOS gateway the bridge replaces answers them.
+  The bridge now replies with the value the heat pump currently reads, as a
+  `GroupValueResponse`. New option **Answer read requests**, on by default.
+- The reply goes out immediately rather than through the paced send queue: a
+  read request is answered now or not usefully at all, and the number of them
+  is bounded by the devices asking. Write-only objects and values the
+  controller reports as unused are not answered. A `GroupValueResponse` from
+  another device is still never written into the heat pump — it answers
+  somebody else's question rather than instructing us.
 ## [0.16.0-rc.3] - 2026-08-27
 
 Release candidate 3 adds the KNX bridge. Everything `0.16.0-rc.2` shipped is
