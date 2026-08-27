@@ -331,7 +331,8 @@ def test_flow_deviation_metadata():
 
     sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
 
-    assert sensor.entity_description.name == "Heizkreis A Vorlauf-Abweichung"
+    assert sensor.entity_description.translation_key == "calculated_hc_flow_deviation"
+    assert sensor._attr_translation_placeholders == {"circuit": "A"}
     assert sensor.entity_description.native_unit_of_measurement == UnitOfTemperature.CELSIUS
     assert sensor.entity_description.device_class == SensorDeviceClass.TEMPERATURE
     assert sensor.entity_description.state_class == SensorStateClass.MEASUREMENT

@@ -292,3 +292,119 @@ def test_short_cycle_threshold_is_clamped(monkeypatch) -> None:
     )
 
     assert analysis.short_cycle_minutes == 60
+
+
+@pytest.mark.asyncio
+async def test_persisted_values_are_validated(monkeypatch) -> None:
+    """Restored state is untrusted: broken values must not corrupt the counters."""
+    loaded = {
+        "total_compressor_starts": True,  # a bool is not a counter
+        "completed_cycle_durations": [120.0, "nonsense", -5, float("inf"), 240.0],
+        "mode_durations": {"heating": 600.0, "cooling": "nope", "unknown_mode": 10.0},
+        "last_compressor_start": "not-a-timestamp",
+        "last_defrost_start": "2026-07-20T08:00:00",
+    }
+    analysis, _store = _analysis(monkeypatch, loaded=loaded)
+
+    await analysis.async_load()
+
+    assert analysis.total_compressor_starts == 0
+    assert analysis.completed_cycle_durations == [120.0, 240.0]
+    assert analysis.mode_durations["heating"] == 600.0
+    assert analysis.mode_durations["cooling"] == 0.0
+    assert "unknown_mode" not in analysis.mode_durations
+    assert analysis.last_compressor_start is None
+    assert analysis.last_defrost_start == datetime(2026, 7, 20, 8, 0, tzinfo=UTC)
+
+
+@pytest.mark.asyncio
+async def test_an_unreadable_store_keeps_the_analysis_empty(monkeypatch) -> None:
+    class _BrokenStore(FakeStore):
+        async def async_load(self):
+            raise RuntimeError("store is corrupt")
+
+    monkeypatch.setattr(module, "Store", lambda *args, **kwargs: _BrokenStore())
+    registers = _registers()
+    analysis = OperationAnalysis(object(), "entry", registers.get, short_cycle_minutes=15, expected_poll_interval=10)
+
+    await analysis.async_load()
+
+    assert analysis.total_compressor_starts == 0
+
+
+@pytest.mark.asyncio
+async def test_non_dict_state_is_ignored(monkeypatch) -> None:
+    analysis, _store = _analysis(monkeypatch, loaded=["not", "a", "dict"])  # type: ignore[arg-type]
+
+    await analysis.async_load()
+
+    assert analysis.total_compressor_starts == 0
+
+
+def test_source_capabilities_follow_the_register_map(monkeypatch) -> None:
+    registers = _registers()
+    with_sources = OperationAnalysis(
+        object(), "entry", registers.get, short_cycle_minutes=15, expected_poll_interval=10
+    )
+    without_sources = OperationAnalysis(
+        object(), "entry", lambda name: None, short_cycle_minutes=15, expected_poll_interval=10
+    )
+
+    assert with_sources.supports_compressor is True
+    assert with_sources.supports_operating_mode is True
+    assert without_sources.supports_compressor is False
+    assert without_sources.supports_operating_mode is False
+
+
+@pytest.mark.asyncio
+async def test_unusable_samples_pause_the_accounting(monkeypatch) -> None:
+    analysis, _store = _analysis(monkeypatch)
+    await analysis.async_load()
+    start = datetime(2026, 7, 20, 8, 0, tzinfo=UTC)
+    analysis.process_snapshot(_snapshot(compressor=1, mode=1), set(), now=start)
+
+    # A snapshot whose compressor and mode values are missing keeps the previous
+    # state instead of inventing an off edge or a mode interval.
+    analysis.process_snapshot(
+        {"compressor_status_1": None, "hp_operating_mode": None},
+        set(),
+        now=start + timedelta(seconds=10),
+    )
+
+    assert analysis.total_compressor_starts == 0
+    assert analysis._last_mode is None
+
+
+def test_derived_values_are_none_without_data(monkeypatch) -> None:
+    registers = _registers()
+    analysis = OperationAnalysis(object(), "entry", registers.get, short_cycle_minutes=15, expected_poll_interval=10)
+
+    assert analysis.current_cycle_minutes() is None
+    assert analysis.average_cycle_minutes() is None
+    assert analysis.minutes_since_last_defrost() is None
+    assert analysis.operating_share("nonexistent_mode") is None
+    assert analysis.operating_share("heating") is None
+    assert analysis.last_cycle_was_short is None
+
+
+def test_defrost_age_and_operating_share_are_rounded(monkeypatch) -> None:
+    registers = _registers()
+    analysis = OperationAnalysis(object(), "entry", registers.get, short_cycle_minutes=15, expected_poll_interval=10)
+    now = datetime(2026, 7, 20, 9, 0, tzinfo=UTC)
+    analysis.last_defrost_start = now - timedelta(minutes=42, seconds=30)
+    analysis.mode_durations["heating"] = 300.0
+    analysis.mode_durations["cooling"] = 100.0
+
+    assert analysis.minutes_since_last_defrost(now) == 42.5
+    assert analysis.operating_share("heating") == 75.0
+
+
+def test_value_helpers_reject_unusable_input() -> None:
+    assert module._parse_datetime("not-a-timestamp") is None
+    naive = module._parse_datetime("2026-07-20T08:00:00")
+    assert naive is not None and naive.tzinfo is UTC
+    assert module._finite_non_negative(-1) is None
+    assert module._finite_non_negative(float("nan")) is None
+    assert module._finite_non_negative(float("inf")) is None
+    assert module._finite_non_negative(3.5) == 3.5
+    assert module._non_negative_int(True) == 0

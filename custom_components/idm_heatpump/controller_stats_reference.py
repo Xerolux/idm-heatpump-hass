@@ -48,7 +48,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from dataclasses import dataclass
-from typing import ClassVar
+from typing import Final
 
 
 @dataclass(frozen=True)
@@ -75,7 +75,7 @@ class ControllerStatReference:
 
 # Frozen, indexed by library register name. Order is stable for
 # deterministic diagnostic output. Keep sorted by library_register.
-SYSCOUNT_REGISTER_REFERENCE: ClassVar[Mapping[str, ControllerStatReference]] = {
+SYSCOUNT_REGISTER_REFERENCE: Final[Mapping[str, ControllerStatReference]] = {
     "battery_discharge": ControllerStatReference(
         library_register="battery_discharge",
         syscount_key=None,

@@ -29,19 +29,27 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def test_enum_slug_helpers_keep_stable_translation_keys() -> None:
+    """Option labels live under the entity translation key of the register.
+
+    The keys carry the circuit letter and the zone/room indexes as placeholders,
+    so every heating circuit shares one key instead of one key per circuit.
+    """
     system_slugs, system_key = get_slug_map_and_key("system_mode")
     room_slugs, room_key = get_slug_map_and_key("zm1_room2_mode")
     circuit_slugs, circuit_key = get_slug_map_and_key("hc_a_mode")
+    active_slugs, active_key = get_slug_map_and_key("hc_b_active_mode")
 
     assert system_key == "system_mode"
     assert system_slugs is not None
     assert system_slugs[1] == "automatic"
-    assert room_key == "room_mode"
+    assert room_key == "zone_room_mode"
     assert room_slugs is not None
     assert room_slugs[1] == "automatic"
-    assert circuit_key == "circuit_mode"
+    assert circuit_key == "hc_mode"
     assert circuit_slugs is not None
     assert circuit_slugs[255] == "not_configured"
+    assert active_key == "hc_active_mode"
+    assert active_slugs == circuit_slugs
 
 
 def test_enum_translation_keys_are_present_in_english_and_german() -> None:

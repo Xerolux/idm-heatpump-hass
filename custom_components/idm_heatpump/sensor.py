@@ -20,14 +20,8 @@ from homeassistant.helpers.event import async_track_time_interval
 from homeassistant.loader import async_get_integration
 from homeassistant.util import dt as dt_util
 
+import idm_heatpump as idm_api
 from idm_heatpump import DataType, RegisterDef
-
-try:
-    import idm_heatpump as idm_api
-except ImportError:
-    WEB_VALUE_DESCRIPTIONS = {}
-else:
-    WEB_VALUE_DESCRIPTIONS = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
 
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
@@ -42,6 +36,7 @@ from .entity import (
     build_entity_unique_id,
     should_add_entity,
 )
+from .entity_names import web_translation_for_value
 from .internal_messages import format_internal_message, internal_message_text
 from .operation_entities import (
     IdmOperationSensor,
@@ -52,6 +47,23 @@ from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 from .versions import RuntimeVersions, async_runtime_versions
 from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
+
+# Optional per-value metadata: an older idm-heatpump-api release does not carry
+# the web value catalog, and the sensor platform falls back to its own units and
+# device classes then.
+WEB_VALUE_DESCRIPTIONS: dict[str, Any] = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
+
+
+def _as_sensor_state(value: Any) -> str | float | int | None:
+    """Narrow a decoded register value to what a sensor may report.
+
+    Coordinator snapshots are ``dict[str, Any]`` because the library decodes
+    per datatype; anything the sensor platform cannot represent natively is
+    reported as text rather than handed to Home Assistant untyped.
+    """
+    if value is None or isinstance(value, (str, int, float)):
+        return value
+    return str(value)
 
 
 def _decode_bitflag(value: int, options: dict[int, str]) -> str:
@@ -70,7 +82,6 @@ class WebSensorDefinition:
     """Static metadata for one optional web supplement sensor."""
 
     key: str
-    name: str
     unit: str | None = None
     device_class: SensorDeviceClass | None = None
     state_class: SensorStateClass | None = None
@@ -211,78 +222,6 @@ _WEB_VALUE_UNITS: dict[str, str] = {
 # statistics for existing entities.
 _WEB_LEGACY_UNITLESS_TOTAL_KEYS: frozenset[str] = frozenset({"controller_online_hours"})
 
-_WEB_VALUE_NAMES_DE: dict[str, str] = {
-    "airsource_temperature": "Luftquellen Temperatur",
-    "battery_voltage_central_unit": "Batteriespannung Zentraleinheit",
-    "board_temperature": "Platinentemperatur",
-    "cold_water_temperature": "Kaltwasser Temperatur",
-    "compressor_1": "Verdichter 1",
-    "compressor_heating": "Verdichter Heizung",
-    "condenser_pressure": "Kondensator Druck",
-    "condenser_temperature": "Kondensator Temperatur",
-    "controller_online_hours": "Regler Online",
-    # IDM labels these "mom./prog. Leistung ..." on the Navigator web page: the
-    # current *or projected* power for that mode, not a measured instantaneous
-    # one. They stay non-zero while the mode is idle, so the old name
-    # ("Momentane Leistung ...") read as a live measurement and looked broken
-    # (#237). Spell IDM's own meaning out instead.
-    "current_expected_power_cooling": "Momentane/prognostizierte Leistung Kühlen",
-    "current_expected_power_heating": "Momentane/prognostizierte Leistung Heizen",
-    "current_expected_power_hotwater": "Momentane/prognostizierte Leistung Warmwasser",
-    "dewpoint_humidity_alarm": "Taupunkt Feuchte Alarm",
-    "evaporation_temperature": "Verdampfungstemperatur",
-    "evaporator_outlet_temperature": "Verdampfer Austrittstemperatur",
-    "ew_evu_lock_contact": "EVU Sperrkontakt",
-    "ext_hotwater_signal": "Externe Vorrangladung",
-    "ext_switch_heating_cooling": "Externe Umschaltung Heizen/Kühlen",
-    "external_request": "Externe Anforderung",
-    "failure_eheating": "Störung E-Heizung",
-    "flow_pump_on": "Durchflusspumpe Ein",
-    "flow_pump_output": "Durchflusspumpe Ausgang",
-    "flow_pump_percentage": "Durchflusspumpe Signal",
-    "heat_generator_2nd": "2. Wärmeerzeuger",
-    "heat_generator_2nd_3rd": "2./3. Wärmeerzeuger",
-    "heat_sink_intermediate_circuit_pump_signal": "Wärmesenke Zwischenkreispumpe Signal",
-    "heating_water_outlet_temperature": "Heizwasser Austrittstemperatur",
-    "heatpump_model": "Wärmepumpenmodell",
-    "high_pressure_error": "Hochdruck Störung",
-    "hotgas_temperature": "Heißgastemperatur",
-    "hotwater_circulation_heat_quantity": "Wärmemenge Zirkulation",
-    "hotwater_circulation_pump": "Warmwasser Zirkulationspumpe",
-    "hotwater_station_flow_switch": "Warmwasserstation Strömungsschalter",
-    "hotwater_station_flowmeter": "Warmwasserstation Durchfluss",
-    "hotwater_station_pump_percentage": "Warmwasserstation Pumpe",
-    "hotwater_tapping_heat_quantity": "Wärmemenge Zapfung",
-    "infosystem_notification_count": "Infosystem Meldungen Anzahl",
-    "infosystem_notifications": "Infosystem Meldungen",
-    "liquid_line_temperature": "Flüssigkeitsleitung Temperatur",
-    "loading_temperature": "Ladetemperatur",
-    **{f"mixer_heating_circuit{letter}": f"Mischer Heizkreis {letter}" for letter in HEATING_CIRCUIT_LETTERS},
-    **{f"flow_temp_HK_{letter}": f"Vorlauftemperatur HK {letter}" for letter in HEATING_CIRCUIT_LETTERS},
-    **{f"room_temperature_HK_{letter}": f"Raumtemperatur HK {letter}" for letter in HEATING_CIRCUIT_LETTERS},
-    "myidm_id": "myIDM ID",
-    "navigator_version": "Navigator Version",
-    **{f"pump_heating_circuit{letter}": f"Pumpe Heizkreis {letter}" for letter in HEATING_CIRCUIT_LETTERS},
-    "runtime_cooling_hours": "Laufzeit Kühlen",
-    "runtime_defrosting_hours": "Laufzeit Abtauen",
-    "runtime_heating_hours": "Laufzeit Heizen",
-    "runtime_hotwater_hours": "Laufzeit Warmwasser",
-    "runtime_second_heat_generator_hours": "Laufzeit 2. Wärmeerzeuger",
-    "runtime_stage_1_hours": "Laufzeit Stufe 1",
-    "siphon_heating": "Siphonheizung",
-    "software_version": "Software Version",
-    "switch_cycles_second_heat_generator": "Schaltzyklen 2. Wärmeerzeuger",
-    "switch_cycles_stage_1": "Schaltzyklen Stufe 1",
-    "valve_heating_hotwater": "Ventil Heizung/Warmwasser",
-    "ventilator_direction_1": "Ventilator Richtung 1",
-    "ventilator_voltage": "Ventilator Spannung",
-    "verdamper_pressure": "Verdampfer Druck",
-}
-
-
-def _humanize_web_name(key: str) -> str:
-    return _WEB_VALUE_NAMES_DE.get(key, key.replace("_", " ").title())
-
 
 def _web_metadata_value(metadata: object, attr: str) -> object:
     if isinstance(metadata, dict):
@@ -309,7 +248,7 @@ def _coerce_web_state_class(value: object) -> SensorStateClass | None:
 
 
 def _web_sensor_definition(key: str) -> WebSensorDefinition:
-    metadata = WEB_VALUE_DESCRIPTIONS.get(key) if isinstance(WEB_VALUE_DESCRIPTIONS, dict) else None
+    metadata = WEB_VALUE_DESCRIPTIONS.get(key)
     preferred_unit = _web_metadata_value(metadata, "preferred_unit")
     unit = str(preferred_unit) if preferred_unit else _WEB_VALUE_UNITS.get(key)
     device_class = _coerce_web_device_class(_web_metadata_value(metadata, "device_class"))
@@ -339,7 +278,6 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
     )
     return WebSensorDefinition(
         key=key,
-        name=f"{_humanize_web_name(key)} (Web)",
         unit=unit,
         device_class=device_class,
         state_class=state_class,
@@ -405,8 +343,13 @@ def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefini
 
 
 def _web_sensor_sort_key(definition: WebSensorDefinition) -> tuple[int, int, str]:
+    """Order web sensors inside their functional block.
+
+    The visible name is a translation now, so the stable value key decides the
+    order inside a block instead of a language-dependent label.
+    """
     category_rank = 2 if definition.entity_category == EntityCategory.DIAGNOSTIC else 1
-    return (entity_order_group(definition.key), category_rank, definition.name.casefold())
+    return (entity_order_group(definition.key), category_rank, definition.key.casefold())
 
 
 async def async_setup_entry(
@@ -603,13 +546,13 @@ class IdmSensor(IdmEntity, SensorEntity):
             try:
                 int_value = int(value)
             except (TypeError, ValueError):
-                return value
+                return _as_sensor_state(value)
             if self._register.datatype == DataType.BITFLAG:
                 return _decode_bitflag(int_value, self._enum_bitflag_labels or self._register.enum_options)
             if self._enum_slug_map is not None:
                 return self._enum_slug_map.get(int_value)
             return self._register.enum_options.get(int_value, f"Unbekannt ({value})")
-        return value
+        return _as_sensor_state(value)
 
     @property
     def extra_state_attributes(self) -> dict[str, str | int] | None:
@@ -642,9 +585,12 @@ class IdmWebSensor(IdmCoordinatorEntityBase, SensorEntity):
         entity_key = f"web_{definition.key}"
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, entity_key)
+        translation_key, placeholders = web_translation_for_value(definition.key)
+        if placeholders:
+            self._attr_translation_placeholders = placeholders
         self.entity_description = SensorEntityDescription(
             key=entity_key,
-            name=definition.name,
+            translation_key=translation_key,
             native_unit_of_measurement=definition.unit,
             device_class=definition.device_class,
             state_class=definition.state_class,
@@ -725,17 +671,14 @@ class IdmTechnicianCodeSensor(
 
     _attr_icon = "mdi:key-variant"
 
-    _NAMES: ClassVar[dict[str, str]] = {
-        "level_1": "00 Fachmann Ebene 1",
-        "level_2": "00 Fachmann Ebene 2",
-    }
+    LEVELS: ClassVar[tuple[str, ...]] = ("level_1", "level_2")
 
     def __init__(self, coordinator: IdmCoordinator, level: str) -> None:
         super().__init__(coordinator)
         self._level = level
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, f"technician_{level}")
-        self._attr_name = self._NAMES[level]
+        self._attr_translation_key = f"technician_{level}"
 
     @property
     def native_value(self) -> str:

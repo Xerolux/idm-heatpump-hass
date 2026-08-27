@@ -215,3 +215,332 @@ async def test_target_and_timeout_are_bounded(monkeypatch) -> None:
         await manager.async_start(target_temperature=80, timeout_minutes=30)
     with pytest.raises(DhwBoostError, match="Laufzeit"):
         await manager.async_start(target_temperature=60, timeout_minutes=1)
+
+
+@pytest.mark.asyncio
+async def test_helpers_reject_unusable_values() -> None:
+    """Persisted state and coordinator values arrive untrusted."""
+    assert module._parse_datetime(None) is None
+    assert module._parse_datetime("not-a-timestamp") is None
+    naive = module._parse_datetime("2026-01-01T10:00:00")
+    assert naive is not None and naive.tzinfo is UTC
+    assert module._finite_number(True) is None
+    assert module._finite_number("45") is None
+    assert module._finite_number(float("inf")) is None
+    assert DhwBoostManager._safe_int(True) is None
+    assert DhwBoostManager._safe_int("nope") is None
+    assert DhwBoostManager._safe_int("7") == 7
+
+
+def test_manager_requires_a_config_entry() -> None:
+    coordinator = FakeCoordinator()
+    coordinator.config_entry = None
+
+    with pytest.raises(DhwBoostError, match="Konfigurationseintrag"):
+        DhwBoostManager(coordinator)
+
+
+@pytest.mark.asyncio
+async def test_defaults_are_exposed_for_the_service_schema(monkeypatch) -> None:
+    manager, _coordinator, _store = await _manager(monkeypatch)
+
+    assert manager.default_target_temperature == module._DEFAULT_TARGET
+    assert manager.default_timeout_minutes == module._DEFAULT_TIMEOUT_MINUTES
+
+
+@pytest.mark.asyncio
+async def test_setup_runs_once_and_survives_an_unreadable_store(monkeypatch) -> None:
+    class _BrokenStore(FakeStore):
+        async def async_load(self):
+            raise RuntimeError("store is corrupt")
+
+    store = _BrokenStore()
+    monkeypatch.setattr(module, "Store", lambda *args, **kwargs: store)
+    manager = DhwBoostManager(FakeCoordinator())
+
+    await manager.async_setup()
+    await manager.async_setup()  # second call must not re-read the store
+
+    assert manager.active is False
+
+
+@pytest.mark.asyncio
+async def test_startup_recovery_keeps_the_entry_loading_when_restore_fails(monkeypatch) -> None:
+    loaded = {
+        "active": True,
+        "status": "active",
+        "target_temperature": 60,
+        "timeout_minutes": 30,
+        "previous_mode": 2,
+        "previous_setpoint": 47,
+    }
+    store = FakeStore(loaded=loaded)
+    monkeypatch.setattr(module, "Store", lambda *args, **kwargs: store)
+    coordinator = FakeCoordinator()
+    coordinator.fail_write_name = "dhw_setpoint"
+    manager = DhwBoostManager(coordinator)
+
+    await manager.async_setup()
+
+    assert manager.status == "recovery_required"
+
+
+@pytest.mark.asyncio
+async def test_start_rejects_a_second_boost(monkeypatch) -> None:
+    manager, _coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    with pytest.raises(DhwBoostError, match="bereits aktiv"):
+        await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    await manager.async_cancel()
+
+
+@pytest.mark.asyncio
+async def test_start_requires_the_control_registers(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    coordinator._registers.pop("system_mode")
+
+    with pytest.raises(DhwBoostError, match="Systemmodusregister"):
+        await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+
+@pytest.mark.asyncio
+async def test_start_requires_a_current_temperature(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    coordinator.data["dhw_temp_top"] = None
+
+    with pytest.raises(DhwBoostError, match="Warmwassertemperatur"):
+        await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+
+@pytest.mark.asyncio
+async def test_start_is_a_no_op_when_the_target_is_already_reached(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    coordinator.data["dhw_temp_top"] = 61.0
+
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    assert manager.active is False
+    assert manager.last_reason == "target_already_reached"
+    assert coordinator.data["system_mode"] == 1
+
+
+@pytest.mark.asyncio
+async def test_start_requires_a_known_previous_state(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    coordinator.data["system_mode"] = None
+
+    with pytest.raises(DhwBoostError, match="Systemmodus"):
+        await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+
+@pytest.mark.asyncio
+async def test_start_reports_an_incomplete_rollback(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    coordinator.fail_write_name = "system_mode"
+
+    with pytest.raises(DhwBoostError, match="nicht vollständig"):
+        await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    assert manager.status == "recovery_required"
+
+
+@pytest.mark.asyncio
+async def test_cancel_without_an_active_boost_is_a_no_op(monkeypatch) -> None:
+    manager, _coordinator, _store = await _manager(monkeypatch)
+
+    await manager.async_cancel()
+
+    assert manager.last_reason == "not_active"
+    assert manager.status == "idle"
+
+
+@pytest.mark.asyncio
+async def test_shutdown_restores_an_active_boost(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    await manager.async_shutdown()
+
+    assert coordinator.data["system_mode"] == 1
+    assert coordinator.data["dhw_setpoint"] == 48
+
+
+@pytest.mark.asyncio
+async def test_shutdown_keeps_persisted_recovery_when_restore_fails(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+    coordinator.fail_write_name = "dhw_setpoint"
+
+    await manager.async_shutdown()
+
+    assert manager.status == "recovery_required"
+
+
+@pytest.mark.asyncio
+async def test_coordinator_updates_schedule_one_evaluation(monkeypatch) -> None:
+    manager, _coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    manager._handle_coordinator_update()
+    task = manager._evaluation_task
+    assert task is not None
+    manager._handle_coordinator_update()  # a second update must not queue a task
+    assert manager._evaluation_task is task
+    await task
+
+    await manager.async_cancel()
+
+
+@pytest.mark.asyncio
+async def test_evaluation_is_reentrancy_safe(monkeypatch) -> None:
+    manager, _coordinator, _store = await _manager(monkeypatch)
+    manager._evaluation_in_progress = True
+
+    await manager._async_evaluate()
+
+    assert manager._evaluation_in_progress is True
+    manager._evaluation_in_progress = False
+
+
+@pytest.mark.asyncio
+async def test_evaluation_retries_a_pending_recovery(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+    coordinator.fail_write_name = "dhw_setpoint"
+    coordinator.fail_write_once = True
+    manager.status = "recovery_required"
+
+    await manager._async_evaluate()  # first retry fails and stays pending
+    assert manager.status == "recovery_required"
+
+    await manager._async_evaluate()  # the next update restores the state
+    assert manager.active is False
+    assert coordinator.data["system_mode"] == 1
+
+
+@pytest.mark.asyncio
+async def test_timeout_keeps_recovery_pending_when_the_write_fails(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=5)
+    manager.deadline = datetime.now(UTC) - timedelta(seconds=1)
+    coordinator.fail_write_name = "dhw_setpoint"
+
+    await manager._async_evaluate()
+
+    assert manager.status == "recovery_required"
+
+
+@pytest.mark.asyncio
+async def test_target_reached_keeps_recovery_pending_when_the_write_fails(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=58, timeout_minutes=30)
+    coordinator.data["dhw_temp_top"] = 59.0
+    coordinator.fail_write_name = "dhw_setpoint"
+
+    await manager._async_evaluate()
+
+    assert manager.status == "recovery_required"
+
+
+@pytest.mark.asyncio
+async def test_failed_reassertion_is_retried_on_the_next_update(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+    coordinator.data["dhw_setpoint"] = 50
+    coordinator.fail_write_name = "dhw_setpoint"
+    coordinator.fail_write_once = True
+
+    await manager._async_evaluate()
+
+    assert manager.status == "enforcement_failed"
+    coordinator.fail_write_name = None
+    await manager._async_evaluate()
+    assert coordinator.data["dhw_setpoint"] == 60
+    await manager.async_cancel()
+
+
+@pytest.mark.asyncio
+async def test_deadline_watchdog_evaluates_when_it_expires(monkeypatch) -> None:
+    manager, _coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+    manager.deadline = datetime.now(UTC) - timedelta(seconds=1)
+
+    await manager._async_timeout()
+
+    assert manager.active is False
+    assert manager.last_reason == "timeout"
+
+
+@pytest.mark.asyncio
+async def test_deadline_watchdog_without_a_deadline_returns(monkeypatch) -> None:
+    manager, _coordinator, _store = await _manager(monkeypatch)
+    manager.deadline = None
+
+    await manager._async_timeout()
+
+    assert manager.active is False
+
+
+@pytest.mark.asyncio
+async def test_restore_rejects_an_incomplete_snapshot(monkeypatch) -> None:
+    manager, _coordinator, _store = await _manager(monkeypatch)
+    manager.active = True
+    manager.previous_mode = None
+    manager.previous_setpoint = None
+
+    with pytest.raises(DhwBoostError, match="unvollständig"):
+        await manager._async_restore_locked("manual_cancel")
+
+    assert manager.status == "recovery_invalid"
+    assert manager.active is False
+
+
+@pytest.mark.asyncio
+async def test_writes_require_a_writable_register(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+
+    with pytest.raises(DhwBoostError, match="nicht schreibbar"):
+        await manager._async_write("dhw_temp_top", 60)
+
+    coordinator._registers.pop("dhw_setpoint")
+    with pytest.raises(DhwBoostError, match="nicht schreibbar"):
+        await manager._async_write("dhw_setpoint", 60)
+
+
+@pytest.mark.asyncio
+async def test_target_validation_needs_the_setpoint_register(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+
+    with pytest.raises(DhwBoostError, match="Zieltemperatur"):
+        manager._validated_target("not a number")
+
+    coordinator._registers.pop("dhw_setpoint")
+    with pytest.raises(DhwBoostError, match="Zieltemperatur"):
+        manager._validated_target(60)
+
+
+@pytest.mark.asyncio
+async def test_state_attributes_describe_the_current_boost(monkeypatch) -> None:
+    manager, coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    attributes = manager.state_attributes
+
+    assert attributes["active"] is True
+    assert attributes["target_temperature"] == 60
+    assert attributes["current_temperature"] == coordinator.data["dhw_temp_top"]
+    await manager.async_cancel()
+
+
+@pytest.mark.asyncio
+async def test_one_manager_is_reused_per_coordinator(monkeypatch) -> None:
+    store = FakeStore()
+    monkeypatch.setattr(module, "Store", lambda *args, **kwargs: store)
+    coordinator = FakeCoordinator()
+
+    first = await module.async_get_dhw_boost_manager(coordinator)
+    second = await module.async_get_dhw_boost_manager(coordinator)
+
+    assert first is second

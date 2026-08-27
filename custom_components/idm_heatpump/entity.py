@@ -19,6 +19,7 @@ from idm_heatpump import RegisterDef
 from .const import DOMAIN, MANUFACTURER
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info, is_configured_heating_circuit_register
+from .entity_names import translation_for_register
 from .error_messages import classify_write_error, write_error_detail, write_error_placeholders
 
 _LOGGER = logging.getLogger(__name__)
@@ -44,7 +45,7 @@ def build_device_info(coordinator: IdmCoordinator) -> DeviceInfo:
         coordinator.myidm_id,
         coordinator.config_entry.title if coordinator.config_entry is not None else None,
     )
-    cache = getattr(coordinator, "_device_info_cache", None)
+    cache: tuple[tuple[Any, ...], DeviceInfo] | None = getattr(coordinator, "_device_info_cache", None)
     if cache is not None and cache[0] == cache_key:
         return cache[1]
     device_info = DeviceInfo(
@@ -130,6 +131,12 @@ class IdmEntity(IdmCoordinatorEntityBase):
         self.entity_description = entity_desc
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, reg.name)
+        # Heating circuits and zone rooms share one translation key per
+        # measurement; the circuit letter and the zone/room indexes reach the
+        # translated name as placeholders.
+        _, placeholders = translation_for_register(reg.name)
+        if placeholders:
+            self._attr_translation_placeholders = placeholders
 
     @property
     def device_info(self) -> DeviceInfo:

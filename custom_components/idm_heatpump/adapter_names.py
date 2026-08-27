@@ -279,6 +279,13 @@ _ZONE_ROOM_NAME_SUFFIX: dict[str, str] = {
     "relay": "Relais",
 }
 
+_ZONE_NAME_RE = re.compile(r"zm(\d+)_(dehumidification|mode_heat_cool)$")
+
+_ZONE_NAME_SUFFIX: dict[str, str] = {
+    "dehumidification": "Entfeuchtung",
+    "mode_heat_cool": "Umschaltung Heizen/Kühlen",
+}
+
 
 def _get_german_name(name: str) -> str:
     """Liefert einen schönen deutschen Namen, falls bekannt, sonst eine formatierte Version."""
@@ -288,4 +295,8 @@ def _get_german_name(name: str) -> str:
     if zone_match:
         zone, room, kind = zone_match.groups()
         return f"Zone {zone} Raum {room} {_ZONE_ROOM_NAME_SUFFIX[kind]}"
+    zone_only_match = _ZONE_NAME_RE.match(name)
+    if zone_only_match:
+        zone, kind = zone_only_match.groups()
+        return f"Zone {zone} {_ZONE_NAME_SUFFIX[kind]}"
     return name.replace("_", " ").title()

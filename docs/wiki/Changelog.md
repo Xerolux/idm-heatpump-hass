@@ -5,6 +5,23 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.16.0-rc.4 — 2026-08-27
+
+**Entity names are translated.** Until now only a handful of control entities
+had translations; every other entity — the Modbus registers, the calculated and
+operating-analysis sensors, the technician codes and the local web supplement
+values — carried a hardcoded German name in every language. All of them now
+resolve through a Home Assistant translation key, so an English installation
+shows English names and a German one shows the names it always had. Entity IDs
+and unique IDs are unchanged.
+
+The rest of the candidate is quality-scale work with no user-visible effect:
+the config flow reached 100 % test coverage and the suite 95 %, both enforced in
+CI; the optional web clients use Home Assistant's own aiohttp session; and
+strict typing lost its seven disabled error codes.
+
+See [Entities](Entities#entity-names-and-languages).
+
 ## v0.16.0-rc.3 — 2026-08-27
 
 Optional, **experimental** **KNX bridge**: the integration can serve the IDM KNX communication

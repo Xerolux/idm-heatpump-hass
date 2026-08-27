@@ -812,6 +812,7 @@ class TestAsyncSetupEntryOptions:
             model_hint="Navigator 2.0 / 10",
             preferred_variant=None,
             allow_variant_fallback=True,
+            hass=mock_hass,
         )
         assert captured_kwargs.get("web_host") == "192.0.2.103"
 
@@ -1738,3 +1739,97 @@ class TestAsyncSetupEntryModelOverride:
             await async_setup_entry(mock_hass, entry)
 
         assert captured.get("model_name") == "Navigator 10"
+
+
+class TestBackgroundTaskHelpers:
+    """The entry-scoped helpers that keep optional loops attached to the entry."""
+
+    async def test_prefers_the_entry_background_task_api(self):
+        from custom_components.idm_heatpump import _create_entry_background_task
+
+        class _Entry:
+            def __init__(self) -> None:
+                self.calls: list[str] = []
+
+            def async_create_background_task(self, hass, coro, name):
+                self.calls.append(name)
+                coro.close()
+                return "entry-task"
+
+        entry = _Entry()
+
+        async def _noop() -> None:
+            return None
+
+        assert _create_entry_background_task(MagicMock(), entry, _noop(), name="web") == "entry-task"
+        assert entry.calls == ["web"]
+
+    async def test_falls_back_to_the_event_loop(self):
+        from custom_components.idm_heatpump import _create_entry_background_task
+
+        hass = MagicMock()
+        hass.async_create_task = None
+        done = []
+
+        async def _work() -> None:
+            done.append(True)
+
+        task = _create_entry_background_task(hass, MagicMock(spec=[]), _work(), name="web")
+        await task
+
+        assert done == [True]
+
+    async def test_web_poll_loop_survives_a_failing_refresh(self):
+        import asyncio as _asyncio
+
+        from custom_components.idm_heatpump import _web_poll_loop
+
+        coordinator = MagicMock()
+        coordinator.async_refresh_web_supplement = AsyncMock(side_effect=[RuntimeError("boom"), None])
+        sleeps: list[float] = []
+
+        async def _sleep(delay: float) -> None:
+            sleeps.append(delay)
+            if len(sleeps) >= 3:
+                raise _asyncio.CancelledError
+
+        with (
+            patch("custom_components.idm_heatpump.asyncio.sleep", _sleep),
+            pytest.raises(_asyncio.CancelledError),
+        ):
+            await _web_poll_loop(coordinator, 30)
+
+        assert sleeps == [0.3, 30, 30]
+        assert coordinator.async_refresh_web_supplement.await_count == 2
+
+
+class TestUnloadCancelsBackgroundTasks:
+    """Unloading must stop every optional loop the entry started."""
+
+    async def test_all_entry_tasks_are_cancelled(self, mock_hass):
+        import asyncio as _asyncio
+
+        async def _forever() -> None:
+            await _asyncio.Event().wait()
+
+        entry = MagicMock()
+        entry.runtime_data = MagicMock()
+        entry.runtime_data.client = AsyncMock()
+        tasks = {
+            name: _asyncio.get_running_loop().create_task(_forever())
+            for name in (
+                "web_task",
+                "room_temp_forwarding_task",
+                "humidity_forwarding_task",
+                "storage_temp_forwarding_task",
+            )
+        }
+        for name, task in tasks.items():
+            setattr(entry.runtime_data, name, task)
+        entry.runtime_data.knx_bridge = None
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        assert await async_unload_entry(mock_hass, entry) is True
+
+        for name, task in tasks.items():
+            assert task.cancelled(), f"{name} was left running"

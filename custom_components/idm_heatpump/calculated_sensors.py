@@ -26,7 +26,6 @@ class CalculatedSensorDefinition:
     """Metadata and calculation function for one derived sensor."""
 
     key: str
-    name: str
     sources: tuple[str, ...]
     calculate: Callable[[Mapping[str, Any]], float | None]
     icon: str
@@ -39,6 +38,10 @@ class CalculatedSensorDefinition:
     # an existing sensor would move an already-registered entity to a different
     # device.
     device_scope_source: str | None = None
+    # Entity name source. The translation key defaults to the entity key; the
+    # per-circuit sensors share one key and pass the circuit as a placeholder.
+    translation_key: str | None = None
+    translation_placeholders: dict[str, str] | None = None
     # When False, the sensor is created as soon as every source register is
     # present in the snapshot, even if a source currently reads its unused
     # sentinel. Required for sources that legitimately report a sentinel while
@@ -151,28 +154,24 @@ def _cop(data: Mapping[str, Any]) -> float | None:
 CALCULATED_SENSOR_DEFINITIONS: tuple[CalculatedSensorDefinition, ...] = (
     CalculatedSensorDefinition(
         key="calculated_hp_temperature_delta",
-        name="Wärmepumpen-Spreizung",
         sources=("hp_flow_temp", "hp_return_temp"),
         calculate=_difference("hp_flow_temp", "hp_return_temp"),
         icon="mdi:thermometer-lines",
     ),
     CalculatedSensorDefinition(
         key="calculated_heat_source_temperature_delta",
-        name="Wärmequellen-Spreizung",
         sources=("heat_source_inlet_temp", "heat_source_outlet_temp"),
         calculate=_difference("heat_source_inlet_temp", "heat_source_outlet_temp"),
         icon="mdi:thermometer-water",
     ),
     CalculatedSensorDefinition(
         key="calculated_dhw_setpoint_deviation",
-        name="Warmwasser-Abweichung Ist zu Soll",
         sources=("dhw_temp_top", "dhw_setpoint"),
         calculate=_difference("dhw_temp_top", "dhw_setpoint"),
         icon="mdi:water-thermometer-outline",
     ),
     CalculatedSensorDefinition(
         key="calculated_cop",
-        name="Jahresarbeitszahl (COP, momentan)",
         sources=(_COP_ELECTRIC_POWER_REGISTER, _COP_THERMAL_POWER_REGISTER),
         calculate=_cop,
         icon="mdi:gauge",
@@ -218,7 +217,8 @@ def flow_deviation_definition(circuit: str) -> CalculatedSensorDefinition:
     setpoint_register = f"hc_{circuit}_setpoint_flow_temp"
     return CalculatedSensorDefinition(
         key=f"calculated_hc_{circuit}_flow_deviation",
-        name=f"Heizkreis {circuit.upper()} Vorlauf-Abweichung",
+        translation_key="calculated_hc_flow_deviation",
+        translation_placeholders={"circuit": circuit.upper()},
         sources=(flow_register, setpoint_register),
         # Positive = flow runs above the requested setpoint (overshoot),
         # negative = the circuit does not reach its requested setpoint.
@@ -263,9 +263,11 @@ class IdmCalculatedSensor(IdmCoordinatorEntityBase, SensorEntity):
         self._definition = definition
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, definition.key)
+        if definition.translation_placeholders:
+            self._attr_translation_placeholders = definition.translation_placeholders
         self.entity_description = SensorEntityDescription(
             key=definition.key,
-            name=definition.name,
+            translation_key=definition.translation_key or definition.key,
             native_unit_of_measurement=definition.native_unit_of_measurement,
             device_class=definition.device_class,
             state_class=SensorStateClass.MEASUREMENT,

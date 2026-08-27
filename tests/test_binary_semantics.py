@@ -137,3 +137,50 @@ def test_binary_entity_does_not_turn_on_for_minus_one():
     )
     entity = IdmBinarySensor(_coordinator(-1), register, MagicMock())
     assert entity.is_on is False
+
+
+def test_device_class_inference_covers_every_semantic_group():
+    assert infer_binary_device_class("evu_lock") == BinarySensorDeviceClass.LOCK
+    assert infer_binary_device_class("defrost_active") == BinarySensorDeviceClass.COLD
+    assert infer_binary_device_class("dhw_demand") == BinarySensorDeviceClass.HEAT
+    assert infer_binary_device_class("variable_input") is None
+
+
+def test_unhashable_values_are_never_on():
+    """A decoded list can never be compared against the sentinel set."""
+    assert binary_value_is_on(_register(sentinel_values=(0,)), ["unexpected"]) is False
+
+
+def test_a_non_numeric_value_with_a_bitmask_is_off():
+    assert binary_value_is_on(_register(binary_bitmask=0x02), "not a number") is False
+
+
+def test_boolean_values_are_used_directly():
+    assert binary_value_is_on(_register(), True) is True
+    assert binary_value_is_on(_register(), False) is False
+
+
+def test_non_finite_numbers_are_off():
+    assert binary_value_is_on(_register(), float("nan")) is False
+    assert binary_value_is_on(_register(), float("inf")) is False
+
+
+def test_unknown_text_is_off():
+    assert binary_value_is_on(_register(), "vielleicht") is False
+
+
+def test_other_objects_fall_back_to_truthiness():
+    assert binary_value_is_on(_register(), object()) is True
+
+
+def test_collection_metadata_is_normalized():
+    assert binary_value_is_on(_register(binary_on_values=[3]), 3) is True
+    assert binary_value_is_on(_register(binary_on_value=3), 3) is True
+
+
+def test_library_metadata_is_optional(monkeypatch):
+    """The integration still runs against an API without the binary catalog."""
+    monkeypatch.setattr(binary_semantics, "_GET_LIBRARY_BINARY_METADATA", None)
+
+    assert binary_semantics._library_metadata("compressor_status_1") is None
+    assert binary_value_is_on(_register(), 1) is True

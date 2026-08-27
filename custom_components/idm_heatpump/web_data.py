@@ -9,9 +9,14 @@ import logging
 import re
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+from homeassistant.helpers.aiohttp_client import async_create_clientsession, async_get_clientsession
 
 from .const import MODEL
+
+if TYPE_CHECKING:
+    from homeassistant.core import HomeAssistant
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -266,7 +271,12 @@ def _session_factory_supports_session(factory: Callable[..., Any]) -> bool:
 
 
 def _create_ip_cookie_session(host: str) -> _ClosableSession | None:
-    """Create an aiohttp session that accepts Navigator cookies from IP hosts."""
+    """Create an aiohttp session that accepts Navigator cookies from IP hosts.
+
+    Only used where no Home Assistant instance is available (direct library
+    use and unit tests). Everything running inside Home Assistant goes through
+    :func:`_web_session`, which uses Home Assistant's own session helpers.
+    """
     if not _is_ip_literal(host):
         return None
     try:
@@ -274,6 +284,34 @@ def _create_ip_cookie_session(host: str) -> _ClosableSession | None:
     except ImportError:
         return None
     return aiohttp.ClientSession(cookie_jar=aiohttp.CookieJar(unsafe=True))
+
+
+def _unsafe_cookie_jar() -> Any | None:
+    """Return a cookie jar that keeps cookies a bare IP address sets."""
+    try:
+        import aiohttp
+    except ImportError:  # pragma: no cover - aiohttp ships with Home Assistant
+        return None
+    return aiohttp.CookieJar(unsafe=True)
+
+
+def _web_session(hass: HomeAssistant | None, host: str) -> tuple[Any, bool]:
+    """Return the aiohttp session for a web client and whether we must close it.
+
+    Home Assistant owns the session (quality scale rule ``inject-websession``):
+    a hostname uses the shared client session, while an IP address needs its own
+    session because the Navigator sets cookies for a bare IP, which the shared
+    (safe) cookie jar drops. That per-IP session is still created through Home
+    Assistant, and closed together with the client so a rebuilt client cannot
+    leak it.
+    """
+    if hass is None:
+        session = _create_ip_cookie_session(host)
+        return session, session is not None
+    cookie_jar = _unsafe_cookie_jar() if _is_ip_literal(host) else None
+    if cookie_jar is None:
+        return async_get_clientsession(hass), False
+    return async_create_clientsession(hass, cookie_jar=cookie_jar), True
 
 
 class _SessionClosingWebClient:
@@ -310,43 +348,44 @@ def _create_web_client_with_optional_ip_session(
     factory: Callable[..., _IdmWebClient | None],
     host: str,
     pin: str,
+    hass: HomeAssistant | None = None,
 ) -> _IdmWebClient | None:
-    """Create a web client, passing an IP-safe session when the API supports it."""
-    session = _create_ip_cookie_session(host) if _session_factory_supports_session(factory) else None
+    """Create a web client with the Home Assistant session the API supports."""
+    session, owned = _web_session(hass, host) if _session_factory_supports_session(factory) else (None, False)
     try:
         client = factory(host, pin, session=session) if session is not None else factory(host, pin)
     except Exception:
-        if session is not None:
+        if owned and session is not None:
             # Client construction failed before ownership was transferred.
             _close_session_later(session)
         raise
     if client is None:
-        if session is not None:
+        if owned and session is not None:
             _close_session_later(session)
         return None
-    if session is None:
+    if not owned:
         return client
     return _SessionClosingWebClient(client, session)
 
 
-def _create_nav10_client(host: str, pin: str) -> _IdmWebClient | None:
+def _create_nav10_client(host: str, pin: str, hass: HomeAssistant | None = None) -> _IdmWebClient | None:
     try:
         from idm_heatpump import create_optional_navigator10_web_client
     except ImportError:
         return None
-    return _create_web_client_with_optional_ip_session(create_optional_navigator10_web_client, host, pin)
+    return _create_web_client_with_optional_ip_session(create_optional_navigator10_web_client, host, pin, hass)
 
 
-def _create_nav20_client(host: str, pin: str) -> _IdmWebClient | None:
+def _create_nav20_client(host: str, pin: str, hass: HomeAssistant | None = None) -> _IdmWebClient | None:
     try:
         from idm_heatpump import create_optional_navigator20_web_client
     except ImportError:
         return None
-    return _create_web_client_with_optional_ip_session(create_optional_navigator20_web_client, host, pin)
+    return _create_web_client_with_optional_ip_session(create_optional_navigator20_web_client, host, pin, hass)
 
 
 # Type alias for a web client factory function.
-_WebClientFactory = Callable[[str, str], "_IdmWebClient | None"]
+_WebClientFactory = Callable[..., "_IdmWebClient | None"]
 
 _NAV10_VARIANTS = {"nav10", "navigator_10", "navigator_pro"}
 _NAV20_VARIANTS = {"nav20", "navigator_20"}
@@ -442,6 +481,7 @@ async def async_read_web_supplement(
     client_pool: IdmWebClientPool | None = None,
     *,
     allow_variant_fallback: bool = True,
+    hass: HomeAssistant | None = None,
 ) -> IdmWebSupplement | None:
     """Read one optional local web supplement snapshot.
 
@@ -500,7 +540,7 @@ async def async_read_web_supplement(
     )
     for variant_name, factory in factories:
         tried_variants.append(variant_name)
-        client = factory(host, clean_pin)
+        client = factory(host, clean_pin, hass)
         if client is None:
             continue
         try:
