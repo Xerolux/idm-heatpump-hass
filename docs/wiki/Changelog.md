@@ -5,6 +5,18 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.16.0-rc.6 — 2026-08-27
+
+The KNX bridge now recovers when IDM starts before Home Assistant's KNX runtime
+has finished loading. Group-address event registration is retried every five
+seconds, and partial success is retained so only missing DPT batches are tried
+again. No manual IDM integration reload is required.
+
+RC5's latest-value command queue and all write protections are unchanged. The
+EEPROM-sensitive classification and configurable 60-second default remain as
+before; registration recovery sends no bus telegram and writes no controller
+register by itself.
+
 ## v0.16.0-rc.5 — 2026-08-27
 
 Incoming commands for the experimental KNX bridge now use a latest-value-wins

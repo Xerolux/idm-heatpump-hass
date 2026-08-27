@@ -7,7 +7,7 @@
 > No IDM group addresses had been imported into ETS, no physical group-address
 > telegram was sent or decoded, and first-export bus load remains unmeasured.
 > Treat it as something to try and report on, not as something to depend on.
-> See [`docs/release-evidence/0.16.0-rc.5.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.16.0-rc.5.md)
+> See [`docs/release-evidence/0.16.0-rc.6.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.16.0-rc.6.md)
 > for exactly what is and is not verified.
 
 Publish the heat pump on a KNX bus and take commands back from it — using
