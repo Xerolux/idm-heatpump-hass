@@ -380,7 +380,7 @@ async def test_shutdown_keeps_persisted_recovery_when_restore_fails(monkeypatch)
 
 @pytest.mark.asyncio
 async def test_coordinator_updates_schedule_one_evaluation(monkeypatch) -> None:
-    manager, coordinator, _store = await _manager(monkeypatch)
+    manager, _coordinator, _store = await _manager(monkeypatch)
     await manager.async_start(target_temperature=60, timeout_minutes=30)
 
     manager._handle_coordinator_update()
@@ -463,7 +463,7 @@ async def test_failed_reassertion_is_retried_on_the_next_update(monkeypatch) -> 
 
 @pytest.mark.asyncio
 async def test_deadline_watchdog_evaluates_when_it_expires(monkeypatch) -> None:
-    manager, coordinator, _store = await _manager(monkeypatch)
+    manager, _coordinator, _store = await _manager(monkeypatch)
     await manager.async_start(target_temperature=60, timeout_minutes=30)
     manager.deadline = datetime.now(UTC) - timedelta(seconds=1)
 

@@ -18,7 +18,6 @@ from custom_components.idm_heatpump.registers import (
     sort_entity_descriptions,
 )
 
-
 INTEGRATION_DIR = Path(__file__).resolve().parents[1] / "custom_components" / "idm_heatpump"
 
 

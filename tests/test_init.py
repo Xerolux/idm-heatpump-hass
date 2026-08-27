@@ -1751,7 +1751,7 @@ class TestBackgroundTaskHelpers:
             def __init__(self) -> None:
                 self.calls: list[str] = []
 
-            def async_create_background_task(self, hass, coro, name):  # noqa: D102
+            def async_create_background_task(self, hass, coro, name):
                 self.calls.append(name)
                 coro.close()
                 return "entry-task"

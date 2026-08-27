@@ -15,8 +15,8 @@ from homeassistant.const import PERCENTAGE, UnitOfEnergy, UnitOfPower, UnitOfTem
 from idm_heatpump import RegisterDef
 
 from .adapter_metadata import entity_enabled_by_default
-from .entity_names import ENGLISH_NAMES, translation_key_for_register
 from .binary_semantics import infer_binary_device_class as infer_binary_device_class  # noqa: PLC0414
+from .entity_names import ENGLISH_NAMES, translation_key_for_register
 
 # Compatibility export used by tests and downstream consumers that inspect the
 # legacy keyword table. Actual inference lives in binary_semantics and prefers

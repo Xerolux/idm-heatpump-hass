@@ -798,7 +798,7 @@ class TestClimateSharedBehaviour:
     def test_the_base_class_has_no_mode_mapping(self):
         from custom_components.idm_heatpump.climate import IdmClimateBase
 
-        climate, coord = self._hc()
+        climate, _coord = self._hc()
         with pytest.raises(NotImplementedError):
             IdmClimateBase.async_set_hvac_mode(climate, "heat").send(None)
 
