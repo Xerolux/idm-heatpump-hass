@@ -5,6 +5,38 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.16.0 — 2026-08-28
+
+First stable release of the `0.16.0` line. It closes `0.16.0-beta.1` through
+`0.16.0-rc.6` with no code change since RC6.
+
+**The headline is the experimental KNX bridge.** The integration serves the 654
+IDM KNX communication objects itself — same object numbers, datapoint types and
+read/write directions as IDM's ETS example project — so the Weinzierl
+`KNX IP BAOS 774` gateway module is no longer needed. It is opt-in, off by
+default, and drives the Home Assistant `knx` integration, which is where
+tunnelling, routing and KNX Secure stay. One base group address configures all
+objects; `idm_heatpump.export_knx_group_addresses` and
+`scripts/generate_knx_group_addresses.py` produce the ETS import. Physical-bus
+interoperability is still unverified, which is why the feature is labelled
+experimental.
+
+**Breaking:** pymodbus is gone. The integration requires
+`idm-heatpump-api[web]==2.0.0` and speaks Modbus TCP through
+`modbus-connection==4.10.0` / `tmodbus[async-serial]==0.6.1` only. `0.15.1` is
+the last line with pymodbus. Nothing on the wire changes — register addresses,
+entity IDs, unique IDs and the write path are identical, so entities, history,
+automations and dashboards survive the update.
+
+**Also in the line:** every entity name resolves through a Home Assistant
+translation key, so an English installation finally shows English names;
+heating circuits, optional modules and rooms became child devices on Home
+Assistant `2026.9` without losing a device ID; strict mypy runs with nothing
+disabled; and the test suite is gated at 95 % coverage with `config_flow.py` at
+100 %.
+
+See [KNX Bridge](KNX-Bridge).
+
 ## v0.16.0-rc.6 — 2026-08-27
 
 The KNX bridge now recovers when IDM starts before Home Assistant's KNX runtime

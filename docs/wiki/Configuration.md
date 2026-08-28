@@ -298,7 +298,7 @@ This project has two independently versioned packages:
 
 | Package | Current tested version | When it needs a new version |
 |---------|------------------------|-----------------------------|
-| Home Assistant custom integration | `0.16.0-rc.6` (previous stable: `0.15.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
+| Home Assistant custom integration | `0.16.0` (previous stable: `0.15.1`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.10.0` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]==0.6.1` | Wire/backend implementation changes |
 | Python register/web library | `idm-heatpump-api[web]==2.0.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
