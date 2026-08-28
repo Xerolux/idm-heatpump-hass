@@ -26,7 +26,7 @@ ha_integration_type: device
 ha_quality_scale: gold
 ha_requirements:
   - modbus-connection==4.10.0
-  - tmodbus[async-serial]==0.6.1
+  - tmodbus[async-serial]==0.6.2
   - idm-heatpump-api[web]==2.0.0
 ---
 

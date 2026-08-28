@@ -12,7 +12,7 @@ assignees: ''
       `idm-heatpump-api[web]==2.0.0` and routes raw I/O through
       `ModbusConnectionTransport`.
 - [x] The direct socket uses the exact
-      `modbus-connection==4.10.0` / `tmodbus[async-serial]==0.6.1` pair.
+      `modbus-connection==4.10.0` / `tmodbus[async-serial]==0.6.2` pair.
 - [x] API `2.0.0` owns its exception hierarchy; the integration's injected
       transport path no longer installs pymodbus.
 - [x] Each config entry owns its socket. Capabilities report
