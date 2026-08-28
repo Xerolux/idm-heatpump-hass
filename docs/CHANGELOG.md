@@ -13,6 +13,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.2] - 2026-08-28
+
+Patch release for one defect in the KNX bridge, found during a live review
+of a `0.16.1` installation. No register, entity or dependency change.
+
 ### Fixed
 
 - **KNX group address collisions between overrides and derived addresses.**
