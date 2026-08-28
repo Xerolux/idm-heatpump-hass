@@ -18,7 +18,7 @@ exception hierarchy (`IdmModbusError` and subclasses) instead of inheriting
 from pymodbus, and moves its built-in Modbus TCP transport behind an optional
 extra. This integration injects a tmodbus-backed transport, so it now installs
 no Modbus stack it does not speak. The transport pins are
-`modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.1`.
+`modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.2`.
 
 **`0.16.1`** is a patch on `0.16.0`: with the local web supplement pointed
 at an IP address, the integration closed a Home Assistant aiohttp session
@@ -56,7 +56,7 @@ group-address telegram interoperability and bus load remain open.
 
 **`0.15.1`** was the last line with pymodbus: it pinned `idm-heatpump-api`
 `1.0.3`, moved the transport pair to `modbus-connection==4.10.0` /
-`tmodbus[async-serial]==0.6.1`, and carried the write-diagnostics work from
+`tmodbus[async-serial]==0.6.2`, and carried the write-diagnostics work from
 [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
 
 **`0.15.0`** moved that pair to `modbus-connection==4.8.1` and

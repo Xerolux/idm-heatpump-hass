@@ -12,7 +12,7 @@ This file provides guidance for AI assistants working on this codebase.
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
 - **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
-- **Direct Modbus Runtime**: `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.1`
+- **Direct Modbus Runtime**: `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.2`
 - **Device Logic**: `idm-heatpump-api[web]==2.0.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 
 ---

@@ -101,7 +101,7 @@ in planning or in diagnostics.
 - [x] Implement a backend-neutral transport contract with FC03, FC04, FC16,
   endpoint validation and redacted capabilities.
 - [x] Wire up `IdmModbusConnectionClient` as the production adapter and run raw
-  I/O through `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.1`. The
+  I/O through `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.2`. The
   path ships for the first time with `0.11.0-beta.1`.
 - [x] Pin `idm-heatpump-api[web]==2.0.0` for device logic. The API owns its
   exception hierarchy and accepts the injected transport without importing or
