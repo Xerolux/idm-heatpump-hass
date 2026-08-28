@@ -13,6 +13,264 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-08-28
+
+First stable release of the `0.16.0` line, closing the candidates
+`0.16.0-beta.1` through `0.16.0-rc.6`. Nothing changed in the code since
+`0.16.0-rc.6`: this tag promotes that exact runtime to stable and collects
+everything the line brought into one set of notes.
+
+> ### 🚌 Headline: KNX without the IDM gateway module *(experimental)*
+>
+> The integration can now serve the **IDM KNX communication objects** itself —
+> the same object numbers, datapoint types and read/write directions as IDM's
+> own ETS example project — from the Modbus values it already reads. The
+> **Weinzierl `KNX IP BAOS 774` module IDM sells for the Navigator is no longer
+> needed** to get the heat pump onto a KNX bus.
+>
+> **654 objects**, one base group address. System, heat pump, hot water,
+> heating circuits A–G, zone modules 1–10 with up to eight rooms, building
+> management inputs, heat quantities, solar, ISC, cascade, booster, PV and
+> battery. With the default `8/0/0` the whole catalogue fits inside one main
+> group (`8/0/1` … `8/3/231`); a project whose addresses are already taken
+> lists the exceptions as `register = address` lines.
+>
+> **The bridge brings no KNX stack of its own.** It drives the Home Assistant
+> `knx` integration, so IP tunnelling, IP routing and **KNX Secure** are
+> configured there, exactly as for every other KNX device. Without the `knx`
+> integration the bridge stays idle and raises a repair issue.
+>
+> **It is opt-in and off by default.** Turn it on under **Settings → Devices &
+> Services → IDM Heatpump → Configure → KNX bridge**. An installation that does
+> not enable it behaves exactly as it did before.
+>
+> **It is still marked experimental, and the label is meant literally.** The
+> catalogue, address derivation, direction handling, echo suppression, read
+> answers and the command queue are covered by unit tests, and the bridge has
+> been exercised on a live Home Assistant with an active KNX tunnelling
+> interface in receive-only mode. What remains unverified is the physical bus:
+> no telegram from this bridge has been decoded by a real KNX device, the
+> datapoint types come from IDM's example project rather than from measurement,
+> and the bus load of a first full export has not been observed on a physical
+> line. Try it and report what you see.
+>
+> Full guide: **[KNX Bridge](https://xerolux.github.io/idm-heatpump-hass/docs/#/knx-bridge)**
+
+> ## ⚠️ BREAKING CHANGE — read before updating to `0.16.x`
+>
+> **`0.16.0` removes pymodbus from the integration and requires
+> `idm-heatpump-api` `2.0.0`.** `0.15.1` is the last release line that carries
+> pymodbus; it stays pinned to `idm-heatpump-api` `1.0.3` and keeps working.
+>
+> - **There is no backwards compatibility layer.** `0.16.0` will not run
+>   against API `1.x`, and `0.15.x` will not run against API `2.x`.
+> - **Nothing on the wire changes.** Register addresses, datatypes, unique IDs,
+>   entity IDs and the write path are identical. Entities, history, automations
+>   and dashboards survive the update untouched — no reconfiguration, no
+>   re-adding the integration.
+> - **Home Assistant installs the new requirements on first start after the
+>   update.** Give it a restart and one poll cycle before judging the result.
+> - **Rolling back is a downgrade to `0.15.1`** through HACS, which restores the
+>   API `1.0.3` pin. Do that if another component in the same environment still
+>   requires the old dependency pair.
+
+### Added
+
+- **The experimental KNX bridge** described above, recreating IDM's ETS object
+  list from the Modbus values the integration already reads. Objects whose
+  register the connected controller does not expose are skipped, and read-only
+  objects never accept a write from the bus.
+- **The bridge answers read requests.** A KNX device that asks for a value —
+  a push-button refreshing its display after a restart, a visualisation coming
+  back up — sends a `GroupValueRead`, and the bridge replies with the value the
+  heat pump currently reads. New option **Answer read requests**, on by default.
+  The reply bypasses the paced send queue, because a read request is answered
+  now or not usefully at all. Write-only objects and values the controller
+  reports as unused are not answered, and a `GroupValueResponse` from another
+  device is never written into the heat pump.
+- **New action `idm_heatpump.export_knx_group_addresses`** answers with the
+  object table for the connected controller — object number, group address,
+  datapoint type, direction and unit. It calculates only and never sends on the
+  bus.
+- **ETS group address files.** `scripts/generate_knx_group_addresses.py` writes
+  an ETS 6 group address import (native `GroupAddress-Export` XML) plus a CSV
+  reference carrying object number, register and direction, so several hundred
+  addresses do not have to be typed by hand. It takes a base address, a profile,
+  or an explicit group or register selection. Two generated examples ship in
+  `docs/examples/knx/`: a curated 43-address subset of what a display
+  realistically shows plus the values KNX can feed back into the heat pump, and
+  the full 654. Names come from the integration's own name table, so an address
+  reads in ETS the way the matching entity reads in Home Assistant.
+- **Loop and bus-load guards.** Outgoing telegrams are paced at roughly 20 per
+  second so a first full export does not saturate a line other devices share, a
+  numeric value is only sent again once it moved past the configured tolerance,
+  and a telegram that merely echoes what the bridge just published is not
+  written back into the controller.
+- **`entity_names.py`** with the translation-key rules and the canonical English
+  names, plus `scripts/generate_entity_translations.py`, which generates the
+  `entity` blocks of `strings.json` and the `en`/`de` translations from it.
+- **Coverage gates in continuous integration**: the suite must stay above 95 %
+  (quality-scale rule `test-coverage`) and `config_flow.py` at 100 %
+  (`config-flow-test-coverage`). Both are met, including the config flow's
+  web-only fallback and every connection failure mode.
+- **A Home Assistant `2026.9` leg in continuous integration**, so its
+  device-registry deprecations and API removals surface here before users meet
+  them.
+- **`tests/test_entity_translations.py`**: an entity of the largest possible
+  plant (7 heating circuits, 10 zone modules with 8 rooms, cascade, web
+  supplement) without a translated name — or with a name template whose
+  placeholders the entity does not supply — now fails the build.
+
+### Changed
+
+- **`idm-heatpump-api[web]` is pinned to `2.0.0` and pymodbus is gone from the
+  manifest.** The integration has spoken Modbus TCP through
+  `modbus-connection`/tmodbus since `0.15.0`, but it still had to ship pymodbus
+  because `idm-heatpump-api` rooted its public exception hierarchy in it. API
+  `2.0.0` owns its errors, so the dependency goes. The transport now maps
+  `modbus-connection` errors straight onto the library's own types
+  (`IdmConnectionError`, `IdmTransportError`, `IdmDeviceError`,
+  `IllegalAddressError`), and `coordinator.py` and `error_messages.py` catch
+  those. See
+  [idm-heatpump-api#85](https://github.com/Xerolux/idm-heatpump-api/issues/85).
+- **The exact runtime is `idm-heatpump-api[web]==2.0.0`,
+  `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.1`**, all three
+  the newest stable release on the Python Package Index at release time.
+- **The Modbus exception code is read from the error, not parsed out of it.**
+  `IdmDeviceError.exception_code` carries the code the controller answered with;
+  the `exception_code=<N>` text match remains only as a fallback.
+- **Entity names now come from the translation files.** Every entity — the ~190
+  Modbus registers, the calculated and operating-analysis sensors, the
+  technician codes and the local web supplement values — is named through a Home
+  Assistant translation key instead of a hardcoded German name. An English Home
+  Assistant now shows English entity names; a German one shows exactly the names
+  it showed before. Heating circuits and zone rooms share one key each and
+  receive the circuit letter or the zone/room index as a placeholder
+  (`Heating circuit {circuit} flow temperature`). Existing entities keep their
+  entity IDs and unique IDs: only the displayed name changes. An entity created
+  *after* the switch derives its entity ID from the name in the configured
+  language, as with every Home Assistant integration.
+- **The enum option keys moved to the entity translation key of their
+  register**: `circuit_mode` became `hc_mode` (select) and `hc_active_mode`
+  (sensor), and `room_mode` became `zone_room_mode`. Option labels are
+  unchanged.
+- **Heating circuits, optional modules and rooms are child devices on Home
+  Assistant `2026.9` and newer.** `via_device_id` describes *connectivity*, one
+  device reached through another, while a child device describes *composition*,
+  the logical parts of a single product. A heating circuit, a solar or cascade
+  module and a room regulation are parts of the controller they belong to, so
+  they register through `async_get_or_create_child`. A zone module keeps its
+  `via_device_id` link: it is separate hardware wired to the controller, and a
+  child device cannot be the parent of another child device. Nothing is renamed,
+  moved or re-created in the process — Home Assistant converts a device whose
+  identifiers already exist and preserves its device ID, verified end to end
+  against a real `2026.9` device registry. A child device shows no manufacturer
+  or model of its own, because Home Assistant does not allow a logical part to
+  carry hardware metadata; the main device and the zone modules keep theirs.
+- **Rapid KNX commands for the same register are coalesced** for a one-second
+  quiet period, so a setpoint sequence such as `22.0 → 22.5 → 23.0` consumes one
+  controller write and applies only `23.0`. When the general write cooldown or
+  the API's EEPROM guard is still active, the newest value stays queued and is
+  retried after the reported wait; a later telegram replaces the pending value
+  instead of being rejected and lost. Invalid values, unsupported registers and
+  communication failures are reported and are not retried indefinitely.
+  Incoming values that already match the coordinator state are ignored, and
+  unloading the integration cancels every pending delayed KNX write.
+- **The optional Navigator web clients use Home Assistant's own aiohttp session
+  helpers** (`async_get_clientsession` for a hostname,
+  `async_create_clientsession` with an unsafe cookie jar for an IP address)
+  instead of an integration-owned session (quality-scale rule
+  `inject-websession`).
+- **Strict typing is strict now.** `mypy.ini` was `strict = true` with seven
+  disabled error codes and three relaxed flags; it is plain `strict = true` with
+  nothing disabled. The 27 type errors that surfaced were fixed rather than
+  silenced, and 13 stale `# type: ignore` comments are gone.
+
+### Removed
+
+- **pymodbus**, from the manifest and from the code paths around it.
+- **The pymodbus log filter.** `log_filter.py` existed partly to silence
+  `pymodbus.logging` connection-drop noise from a library that performed no I/O
+  for this integration. With the dependency gone there is no such logger; the
+  filter for repeated `idm-heatpump-api` register-failure warnings stays, and
+  `install_pymodbus_log_filter()` is now `install_library_log_filter()`.
+- **The `pymodbus` runtime-version field.** The diagnostic *IDM Heatpump API
+  version* sensor, the diagnostics download and the startup log line no longer
+  report a pymodbus version, because there is none. The integration,
+  `idm-heatpump-api`, `modbus-connection` and tmodbus versions are unchanged.
+
+### Fixed
+
+- **KNX event registration survives the Home Assistant startup order.** Home
+  Assistant can expose the `knx.send` and `knx.event_register` services before
+  the KNX runtime has finished loading. The bridge now retries event
+  registration every five seconds until KNX is ready, instead of leaving
+  incoming group addresses inactive until a manual IDM integration reload. It
+  subscribes to the internal `knx_event` immediately, even while external
+  registration is still waiting; if one DPT batch succeeds and another is
+  temporarily unavailable, only the missing batch is retried, and unload cancels
+  the retry and deregisters every successful batch.
+- **The continuous integration Home Assistant version matrix was decorative.**
+  `pytest-homeassistant-custom-component` pins `homeassistant` to one exact
+  version, so installing it replaced whatever version the matrix leg had asked
+  for — every leg silently tested that pinned version. The package is no longer
+  installed (its plugin is disabled through `-p no:homeassistant` in
+  `pytest.ini` and no test imports it), and a new step fails the job when the
+  installed Home Assistant version is not the requested one.
+- **A curated release no longer drops the support links.**
+  `.github/workflows/release.yml` appended the `Support` section only to the
+  notes it generated from the changelog; a release published with the
+  `release_notes` input — which is how every stable release is cut — went out
+  without it.
+- `quality_scale.yaml` matched the current Home Assistant rule set: the Bronze
+  rules `docs-triggers` and `docs-conditions` were missing, and two rule ids
+  that do not exist (`entity-state-class`,
+  `entity-suggested-display-precision`) were listed.
+- Removed four unreachable branches in the config flow: a proxy setup without a
+  web host is already rejected by the validation in front of them.
+
+### Safety
+
+- **The write guards are unchanged from `0.15.1`.** The official
+  EEPROM-sensitive register classification, the coordinator write cooldown and
+  the API's write validation all behave as they did; the KNX command queue rides
+  on top of them rather than around them.
+- **The conservative EEPROM default remains 60 seconds** and is configurable in
+  the integration options. The latest-value queue removes the reason to shorten
+  it merely to avoid losing a second setpoint.
+- **The KNX bridge defaults to a safe profile**: off entirely until enabled, and
+  its outgoing values, read answers and periodic resend are each separately
+  controllable.
+
+### Compatibility
+
+- **Minimum Home Assistant `2026.8.1`**, minimum Python `3.14`. Home Assistant
+  has required Python `>=3.14.2` since `2026.8`.
+- **Home Assistant `2026.9` needs no other integration change.** The full suite,
+  strict mypy and Ruff were run against both `2026.8.1` and `2026.9.0b0` on
+  Python `3.14.2` with the pinned runtime, all green.
+  `child_devices_supported()` probes for the child-device API and falls back to
+  the previous `via_device_id` links, so `2026.8` keeps working and both paths
+  are covered by tests.
+
+### Known limitations
+
+- **The KNX bridge has no physical-bus verification.** Live telegram
+  interoperability with a real KNX device, datapoint encoding on the wire and
+  the bus load of a first full export are open. This is why the feature is
+  labelled experimental in the options flow, the documentation and the startup
+  log.
+- **External pump demand objects 384 (*brine / intermediate pump*) and 385
+  (*groundwater pump*) are deliberately not in the KNX catalogue**: IDM's labels
+  do not map unambiguously onto the two corresponding registers, and a wrong
+  guess would command the wrong pump. `write_register` covers them until the
+  mapping is confirmed on hardware.
+- **Navigator 2.0 and Pro hardware coverage remains community-reported.** The
+  maintainer reference system is a Navigator 10.
+- **The seven-day soak of `0.16.0-rc.6` was cut short** by the maintainer, who
+  released on the strength of the candidate line's live evidence instead. See
+  `docs/release-evidence/0.16.0.md`.
+
 ## [0.16.0-rc.6] - 2026-08-27
 
 Release candidate 6 fixes a KNX startup race found by installing RC5 on the

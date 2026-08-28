@@ -6,7 +6,7 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.16.0-rc.6` and `idm-heatpump-api` `2.0.0` form the current
+Integration `0.16.0` and `idm-heatpump-api` `2.0.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
@@ -19,6 +19,24 @@ from pymodbus, and moves its built-in Modbus TCP transport behind an optional
 extra. This integration injects a tmodbus-backed transport, so it now installs
 no Modbus stack it does not speak. The transport pins are
 `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.1`.
+
+**`0.16.0`** is the stable cut of that line, identical in code to
+`0.16.0-rc.6`. Its headline feature is the **experimental KNX bridge**: the
+integration serves the 654 IDM KNX communication objects itself, through the
+Home Assistant `knx` integration, so the Weinzierl `KNX IP BAOS 774` gateway
+module is no longer needed. The bridge is opt-in and off by default, and its
+physical-bus behaviour remains unverified — see the open gates below.
+
+**Maintainer decision on `0.16.0`:** the stable tag was cut on 2026-08-28,
+one day after `0.16.0-rc.6` was published, so gate 6 (seven consecutive
+24-hour periods of soak on an unchanged candidate) was not satisfied — its
+earliest eligible completion was 2026-09-03. Gate 3's live KNX follow-up
+(physical group-address telegram interoperability and first-export bus load)
+and Navigator 2.0/Pro hardware coverage also remain open. Automated preflight,
+dependency-pin freshness and the RC5/RC6 live smoke evidence on the maintainer
+Navigator 10 did pass. This is a conscious maintainer call taken at release
+time, not an oversight — recorded here and in
+`docs/release-evidence/0.16.0.md` so it stays visible.
 
 **`0.16.0-rc.6`** retains RC5's latest-value KNX queue and adds startup
 recovery for the event filter. Home Assistant can expose the KNX services
