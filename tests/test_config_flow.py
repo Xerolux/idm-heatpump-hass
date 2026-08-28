@@ -790,6 +790,21 @@ class TestAsyncStepOptions:
         assert result["type"] == "form"
         assert result["errors"] == {CONF_KNX_OVERRIDES: "invalid_knx_overrides"}
 
+    async def test_knx_bridge_rejects_an_override_colliding_with_a_derived_address(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {CONF_HEATING_CIRCUITS: ["a"], CONF_KNX_BRIDGE: True}
+        result = await flow.async_step_knx_bridge(
+            {
+                CONF_KNX_BASE_ADDRESS: "8/0/0",
+                CONF_KNX_GROUPS: ["system", "heating_circuits"],
+                # 8/0/222 is the derived address of hc_a_mode.
+                CONF_KNX_OVERRIDES: "outdoor_temp = 8/0/222",
+            }
+        )
+        assert result["type"] == "form"
+        assert result["errors"] == {CONF_KNX_OVERRIDES: "invalid_knx_overrides"}
+
     async def test_knx_bridge_requires_at_least_one_object_group(self):
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}

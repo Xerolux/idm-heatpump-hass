@@ -160,6 +160,31 @@ class TestResolveGroupAddresses:
         resolved = resolve_group_addresses("8/0/0")
         assert len(set(resolved.values())) == len(resolved)
 
+    def test_rejects_an_override_colliding_with_a_derived_address(self):
+        # 8/0/222 is where hc_a_mode lives, so outdoor_temp cannot claim it.
+        with pytest.raises(InvalidGroupAddressError):
+            resolve_group_addresses(
+                "8/0/0",
+                overrides={"outdoor_temp": "8/0/222"},
+                registers=["outdoor_temp", "hc_a_mode"],
+            )
+
+    def test_an_override_matching_its_own_derived_address_is_fine(self):
+        resolved = resolve_group_addresses(
+            "8/0/0",
+            overrides={"outdoor_temp": "8/0/1"},
+            registers=["outdoor_temp", "hc_a_mode"],
+        )
+        assert resolved == {"outdoor_temp": "8/0/1", "hc_a_mode": "8/0/222"}
+
+    def test_a_collision_outside_the_served_objects_is_allowed(self):
+        resolved = resolve_group_addresses(
+            "8/0/0",
+            overrides={"outdoor_temp": "8/0/222"},
+            registers=["outdoor_temp"],
+        )
+        assert resolved == {"outdoor_temp": "8/0/222"}
+
 
 class TestValidateOverrides:
     def test_normalizes_and_drops_blanks(self):

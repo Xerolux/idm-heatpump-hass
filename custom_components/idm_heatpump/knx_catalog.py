@@ -820,6 +820,12 @@ def resolve_group_addresses(
     ``registers`` restricts the result to registers the controller
     actually exposes, ``groups`` to selected catalogue groups. Both
     default to the whole catalogue.
+
+    Raises :class:`InvalidGroupAddressError` when two served objects
+    would end up on the same group address — either two overrides, or an
+    override claiming the derived address of another object. The bridge
+    keys its routing by address, so one of them would silently shadow
+    the other.
     """
     base_raw = validate_base_address(base_address)
     override_map = dict(overrides or {})
@@ -827,6 +833,7 @@ def resolve_group_addresses(
     allowed_groups = None if groups is None else set(groups)
 
     resolved: dict[str, str] = {}
+    claimed_by: dict[str, str] = {}
     for obj in KNX_OBJECTS:
         if allowed_registers is not None and obj.register not in allowed_registers:
             continue
@@ -836,9 +843,15 @@ def resolve_group_addresses(
             override = str(override_map[obj.register]).strip()
             if not override:
                 continue
-            resolved[obj.register] = format_group_address(parse_group_address(override))
-            continue
-        resolved[obj.register] = format_group_address(base_raw + obj.number)
+            address = format_group_address(parse_group_address(override))
+        else:
+            address = format_group_address(base_raw + obj.number)
+        if (other := claimed_by.get(address)) is not None:
+            raise InvalidGroupAddressError(
+                f"group address {address} is assigned to both {other!r} and {obj.register!r}"
+            )
+        claimed_by[address] = obj.register
+        resolved[obj.register] = address
     return resolved
 
 
