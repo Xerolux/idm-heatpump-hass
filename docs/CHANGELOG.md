@@ -16,7 +16,7 @@ All notable changes to this project will be documented in this file.
 ## [0.16.2] - 2026-08-28
 
 Patch release for one defect in the KNX bridge, found during a live review
-of a `0.16.1` installation. No register, entity or dependency change.
+of a `0.16.1` installation. No register or entity change.
 
 ### Fixed
 
@@ -28,6 +28,13 @@ of a `0.16.1` installation. No register, entity or dependency change.
   refuses any address claimed twice, the KNX options step rejects such a
   configuration before it is saved, and a bridge that still cannot resolve its
   addresses logs the underlying reason instead of blaming the base address.
+
+### Dependencies
+
+- `tmodbus[async-serial]` re-pinned from `0.6.1` to `0.6.2` (newest stable on
+  PyPI at release time; `modbus-connection==4.10.0` and
+  `idm-heatpump-api[web]==2.0.0` are unchanged). The release workflow refuses
+  stale pins, and `0.6.2` appeared between the `0.16.1` release and this one.
 
 ## [0.16.1] - 2026-08-28
 
