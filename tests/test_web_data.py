@@ -136,16 +136,25 @@ async def test_web_client_uses_the_home_assistant_session_for_hostnames(monkeypa
 async def test_web_client_lets_home_assistant_create_the_ip_cookie_session(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """An IP host needs an unsafe cookie jar, still created through Home Assistant."""
+    """An IP host needs an unsafe cookie jar, still created through Home Assistant.
+
+    Home Assistant wraps ``close()`` on every session its helpers hand out and
+    logs the custom integration that calls it, so the session is released with
+    ``detach()`` — and created with ``auto_cleanup=False``, because a rebuilt
+    client would otherwise pin every session until Home Assistant stops.
+    """
     client = _FakeWebClient()
     created: list[dict] = []
 
     class _Session:
         def __init__(self) -> None:
-            self.closed = False
+            self.detached = False
+
+        def detach(self) -> None:
+            self.detached = True
 
         async def close(self) -> None:
-            self.closed = True
+            raise AssertionError("a Home Assistant session must never be closed")
 
     session = _Session()
 
@@ -169,9 +178,34 @@ async def test_web_client_lets_home_assistant_create_the_ip_cookie_session(
 
     assert wrapped is not None
     assert created and getattr(created[0]["cookie_jar"], "unsafe", None) is True
+    assert created[0]["auto_cleanup"] is False, "Home Assistant must not pin the session until it stops"
     await wrapped.close()
     assert client.closed
-    assert session.closed, "a Home Assistant session created per client must be closed with it"
+    assert session.detached, "a Home Assistant session created per client must be detached with it"
+
+
+async def test_the_shared_home_assistant_session_is_never_released(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A hostname borrows the shared session; closing the client must not touch it."""
+    client = _FakeWebClient()
+
+    class _Shared:
+        def detach(self) -> None:
+            raise AssertionError("the shared session must never be detached")
+
+        async def close(self) -> None:
+            raise AssertionError("the shared session must never be closed")
+
+    def create_client(host: str, pin: str, *, session: object | None = None) -> _FakeWebClient:
+        return client
+
+    monkeypatch.setattr(idm_heatpump, "create_optional_navigator20_web_client", create_client, raising=False)
+    monkeypatch.setattr(web_data, "async_get_clientsession", lambda hass: _Shared())
+
+    wrapped = _create_nav20_client("idm-navigator.local", "1234", MagicMock())
+
+    assert wrapped is client, "no wrapper is needed for a session we do not own"
+    await wrapped.close()
+    assert client.closed
 
 
 def test_web_pin_configured_without_api_symbol() -> None:
@@ -988,13 +1022,13 @@ class TestWebSupplementHelpers:
                 self.closed = True
 
         session = _Session()
-        wrapper = web_data._SessionClosingWebClient(_Client(), session)
+        wrapper = web_data._SessionReleasingWebClient(_Client(), session.close)
 
         assert wrapper.model == "Navigator 10"
         assert await wrapper.read_data() == {"values": {}}
         with pytest.raises(RuntimeError, match="client close failed"):
             await wrapper.close()
-        assert session.closed, "the session must be closed even when the client fails"
+        assert session.closed, "the session must be released even when the client fails"
 
     async def test_a_failing_factory_releases_the_session(self, monkeypatch: pytest.MonkeyPatch) -> None:
         closed: list[bool] = []
@@ -1006,7 +1040,8 @@ class TestWebSupplementHelpers:
         def factory(host: str, pin: str, *, session: object | None = None):
             raise RuntimeError("factory failed")
 
-        monkeypatch.setattr(web_data, "_web_session", lambda hass, host: (_Session(), True))
+        session = _Session()
+        monkeypatch.setattr(web_data, "_web_session", lambda hass, host: (session, session.close))
 
         with pytest.raises(RuntimeError, match="factory failed"):
             web_data._create_web_client_with_optional_ip_session(factory, "192.168.1.50", "1234", MagicMock())
@@ -1024,7 +1059,8 @@ class TestWebSupplementHelpers:
         def factory(host: str, pin: str, *, session: object | None = None):
             return None
 
-        monkeypatch.setattr(web_data, "_web_session", lambda hass, host: (_Session(), True))
+        session = _Session()
+        monkeypatch.setattr(web_data, "_web_session", lambda hass, host: (session, session.close))
 
         assert (
             web_data._create_web_client_with_optional_ip_session(factory, "192.168.1.50", "1234", MagicMock()) is None

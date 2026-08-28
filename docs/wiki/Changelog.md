@@ -5,6 +5,21 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.16.1 — 2026-08-28
+
+Patch on `0.16.0`, from a live Home Assistant log. With the optional web
+supplement pointed at an **IP address**, the integration closed a Home
+Assistant aiohttp session instead of detaching it — Home Assistant wraps
+`close()` on every session its helpers hand out, because the connector below it
+is shared with every other integration. The session is now released with
+`detach()`, and created with `auto_cleanup=False` so a web client rebuilt after
+a failed poll does not leave the previous session pinned until Home Assistant
+stops.
+
+A hostname was never affected; it borrows the shared session, which the
+integration never released. Polling, entity state, writes, the KNX bridge and
+the Modbus path are unchanged, as are the runtime pins.
+
 ## v0.16.0 — 2026-08-28
 
 First stable release of the `0.16.0` line. It closes `0.16.0-beta.1` through

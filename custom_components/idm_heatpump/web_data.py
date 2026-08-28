@@ -7,7 +7,7 @@ import inspect
 import ipaddress
 import logging
 import re
-from collections.abc import Callable
+from collections.abc import Callable, Coroutine
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol
 
@@ -24,6 +24,10 @@ _LOGGER = logging.getLogger(__name__)
 class _ClosableSession(Protocol):
     async def close(self) -> None:
         """Close the HTTP session."""
+
+
+#: Releases one aiohttp session. ``None`` where the session is not ours to release.
+type _SessionRelease = Callable[[], Coroutine[Any, Any, None]]
 
 
 class _IdmWebClient(Protocol):
@@ -295,31 +299,55 @@ def _unsafe_cookie_jar() -> Any | None:
     return aiohttp.CookieJar(unsafe=True)
 
 
-def _web_session(hass: HomeAssistant | None, host: str) -> tuple[Any, bool]:
-    """Return the aiohttp session for a web client and whether we must close it.
+def _detach_home_assistant_session(session: Any) -> _SessionRelease:
+    """Return the release for a session Home Assistant created for us.
+
+    Never ``close()``. Home Assistant wraps ``close()`` on every session its
+    helpers hand out and logs the custom integration that calls it, because the
+    connector underneath belongs to Home Assistant and is shared with everyone
+    else. ``detach()`` is what Home Assistant's own shutdown handler calls, so
+    it is what releases ours.
+    """
+
+    async def _release() -> None:
+        session.detach()
+
+    return _release
+
+
+def _web_session(hass: HomeAssistant | None, host: str) -> tuple[Any, _SessionRelease | None]:
+    """Return the aiohttp session for a web client and how to release it.
 
     Home Assistant owns the session (quality scale rule ``inject-websession``):
-    a hostname uses the shared client session, while an IP address needs its own
-    session because the Navigator sets cookies for a bare IP, which the shared
-    (safe) cookie jar drops. That per-IP session is still created through Home
-    Assistant, and closed together with the client so a rebuilt client cannot
-    leak it.
+    a hostname uses the shared client session, which is never ours to release,
+    while an IP address needs its own session because the Navigator sets cookies
+    for a bare IP, which the shared (safe) cookie jar drops.
+
+    That per-IP session is still created through Home Assistant, but with
+    ``auto_cleanup=False``. The coordinator rebuilds the web client after every
+    failed poll, and Home Assistant's automatic cleanup would pin each rebuilt
+    session in an ``EVENT_HOMEASSISTANT_CLOSE`` listener until it stops, because
+    a poll runs outside the config-entry setup context that would otherwise
+    scope the cleanup to an unload. Releasing each session with its own client
+    is both prompt and complete: the pool closes its client on invalidation and
+    on ``async_shutdown``.
     """
     if hass is None:
         session = _create_ip_cookie_session(host)
-        return session, session is not None
+        return session, (session.close if session is not None else None)
     cookie_jar = _unsafe_cookie_jar() if _is_ip_literal(host) else None
     if cookie_jar is None:
-        return async_get_clientsession(hass), False
-    return async_create_clientsession(hass, cookie_jar=cookie_jar), True
+        return async_get_clientsession(hass), None
+    session = async_create_clientsession(hass, cookie_jar=cookie_jar, auto_cleanup=False)
+    return session, _detach_home_assistant_session(session)
 
 
-class _SessionClosingWebClient:
-    """Close an integration-owned aiohttp session with its web client."""
+class _SessionReleasingWebClient:
+    """Release an integration-owned aiohttp session with its web client."""
 
-    def __init__(self, client: _IdmWebClient, session: _ClosableSession | None) -> None:
+    def __init__(self, client: _IdmWebClient, release: _SessionRelease | None) -> None:
         self._client = client
-        self._session = session
+        self._release = release
 
     def __getattr__(self, name: str) -> Any:
         return getattr(self._client, name)
@@ -333,15 +361,15 @@ class _SessionClosingWebClient:
             await self._client.close()
         except Exception as err:  # noqa: BLE001
             close_error = err
-        if self._session is not None:
-            await self._session.close()
+        if self._release is not None:
+            await self._release()
         if close_error is not None:
             raise close_error
 
 
-def _close_session_later(session: _ClosableSession) -> None:
-    """Schedule session close from synchronous client-factory error paths."""
-    asyncio.create_task(session.close())
+def _release_session_later(release: _SessionRelease) -> None:
+    """Schedule a session release from synchronous client-factory error paths."""
+    asyncio.create_task(release())
 
 
 def _create_web_client_with_optional_ip_session(
@@ -351,21 +379,21 @@ def _create_web_client_with_optional_ip_session(
     hass: HomeAssistant | None = None,
 ) -> _IdmWebClient | None:
     """Create a web client with the Home Assistant session the API supports."""
-    session, owned = _web_session(hass, host) if _session_factory_supports_session(factory) else (None, False)
+    session, release = _web_session(hass, host) if _session_factory_supports_session(factory) else (None, None)
     try:
         client = factory(host, pin, session=session) if session is not None else factory(host, pin)
     except Exception:
-        if owned and session is not None:
+        if release is not None:
             # Client construction failed before ownership was transferred.
-            _close_session_later(session)
+            _release_session_later(release)
         raise
     if client is None:
-        if owned and session is not None:
-            _close_session_later(session)
+        if release is not None:
+            _release_session_later(release)
         return None
-    if not owned:
+    if release is None:
         return client
-    return _SessionClosingWebClient(client, session)
+    return _SessionReleasingWebClient(client, release)
 
 
 def _create_nav10_client(host: str, pin: str, hass: HomeAssistant | None = None) -> _IdmWebClient | None:

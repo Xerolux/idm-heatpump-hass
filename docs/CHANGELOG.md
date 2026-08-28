@@ -13,6 +13,53 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.16.1] - 2026-08-28
+
+Patch release for one regression in `0.16.0`, reported from a live Home
+Assistant log. No register, entity, KNX or dependency change.
+
+### Fixed
+
+- **The integration closed a Home Assistant aiohttp session.** With the local
+  web supplement enabled against an **IP address**, every web client was built
+  on a session from `async_create_clientsession()` and then closed that session
+  when the client went away, which Home Assistant logs as
+  *"Detected that custom integration 'idm_heatpump' closes the Home Assistant
+  aiohttp session at custom_components/idm_heatpump/web_data.py, line 337"*.
+  Home Assistant wraps `close()` on every session its helpers hand out,
+  because the connector underneath belongs to Home Assistant and is shared with
+  every other integration. The session is now released with `detach()` — the
+  same call Home Assistant's own shutdown handler makes — so nothing reaches
+  into the shared connector.
+
+  The regression came in with `0.16.0-rc.4`, which moved the web clients onto
+  Home Assistant's session helpers for quality-scale rule `inject-websession`
+  but kept the close from the integration-owned session it replaced. A
+  hostname was never affected: it borrows the shared session and the
+  integration never released it. Only an IP host reached the closing path,
+  which is why it took a live installation to surface.
+
+- **A rebuilt web client no longer leaves its session behind.** The per-IP
+  session is now created with `auto_cleanup=False`. Home Assistant's automatic
+  cleanup pins each session in an `EVENT_HOMEASSISTANT_CLOSE` listener until it
+  stops whenever the session is created outside config-entry setup — which is
+  exactly what a poll does, and the coordinator rebuilds the web client after
+  every failed poll. The integration releases each session with its client
+  instead, on pool invalidation and on `async_shutdown`.
+
+### Notes
+
+- Only Home Assistant's log noise and that slow session accumulation are
+  affected. Polling, entity state, writes, the KNX bridge and the Modbus path
+  behave exactly as in `0.16.0`, and the runtime pins are unchanged:
+  `idm-heatpump-api[web]==2.0.0`, `modbus-connection==4.10.0`,
+  `tmodbus[async-serial]==0.6.1`.
+- Two other warnings in the same report come from `solaredge_modbus_multi`
+  (deprecated `via_device`) and `spook` (`device_registry.devices` as a
+  mapping), and a third from Home Assistant's own `google_assistant`
+  (`WaterHeaterStateAttribute.TEMPERATURE`). None of them is this integration;
+  `0.16.0` already migrated to `via_device_id` and child devices.
+
 ## [0.16.0] - 2026-08-28
 
 First stable release of the `0.16.0` line, closing the candidates
