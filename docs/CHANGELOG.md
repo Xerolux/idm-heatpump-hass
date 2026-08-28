@@ -13,6 +13,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **KNX group address collisions between overrides and derived addresses.**
+  `validate_overrides` only rejected an address assigned to two overrides; an
+  override claiming the derived address (`base + object number`) of another
+  served object slipped through, and the bridge silently routed that group
+  address to just one of the two registers. `resolve_group_addresses` now
+  refuses any address claimed twice, the KNX options step rejects such a
+  configuration before it is saved, and a bridge that still cannot resolve its
+  addresses logs the underlying reason instead of blaming the base address.
+
 ## [0.16.1] - 2026-08-28
 
 Patch release for one regression in `0.16.0`, reported from a live Home

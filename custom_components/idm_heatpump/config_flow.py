@@ -151,6 +151,7 @@ from .knx_catalog import (
     KNX_OBJECTS,
     OBJECT_GROUPS,
     InvalidGroupAddressError,
+    resolve_group_addresses,
     validate_base_address,
     validate_overrides,
 )
@@ -1191,6 +1192,14 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
             groups = [group for group in user_input.get(CONF_KNX_GROUPS) or [] if group in OBJECT_GROUPS]
             if not groups:
                 errors[CONF_KNX_GROUPS] = "no_knx_groups"
+            if CONF_KNX_BASE_ADDRESS not in errors:
+                # A collision is always caused by an override claiming an
+                # address another served object already uses — derived
+                # addresses are unique by construction.
+                try:
+                    resolve_group_addresses(base_address, overrides=overrides, groups=groups)
+                except InvalidGroupAddressError:
+                    errors[CONF_KNX_OVERRIDES] = "invalid_knx_overrides"
             if not errors:
                 self._options[CONF_KNX_BASE_ADDRESS] = base_address
                 self._options[CONF_KNX_GROUPS] = groups

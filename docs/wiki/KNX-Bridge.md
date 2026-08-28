@@ -330,7 +330,9 @@ register range is rejected. An active general or EEPROM cooldown keeps the
 newest valid command queued and applies it when the guard expires.
 
 **Two objects share an address**
-The override list refuses a duplicate address. If the derived addresses
+The override list refuses a duplicate address, and it also refuses an
+override that claims the derived address of another served object — one
+of the two would silently shadow the other. If the derived addresses
 collide with something else on the bus, move the base address to a free
 main group.
 

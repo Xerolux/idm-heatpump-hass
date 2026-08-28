@@ -1076,11 +1076,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             )
             try:
                 await bridge.async_start()
-            except InvalidGroupAddressError:
+            except InvalidGroupAddressError as err:
                 _LOGGER.error(
-                    "KNX bridge for %s not started: base address %s is not usable",
+                    "KNX bridge for %s not started: %s",
                     entry.title,
-                    knx_base_address,
+                    err,
                 )
             else:
                 entry.runtime_data.knx_bridge = bridge
