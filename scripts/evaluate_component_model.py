@@ -58,6 +58,36 @@ DOCUMENTED_OVERLAPS = (
 )
 
 
+class _NoIoTransport:
+    """Satisfy the API transport contract without ever opening a socket.
+
+    Only ``_group_registers`` is needed here — a pure computation over the
+    register map.  Since ``idm-heatpump-api`` 2.0.0 the built-in pymodbus
+    transport is an optional extra, so constructing a client without an
+    injected transport would raise ``ImportError``.  Injecting this stub keeps
+    the script runnable on the pinned runtime, which installs no pymodbus.
+    """
+
+    @property
+    def connected(self) -> bool:
+        return False
+
+    async def connect(self) -> None:
+        raise NotImplementedError("evaluation script performs no Modbus I/O")
+
+    async def close(self) -> None:
+        return None
+
+    async def read_input_registers(self, *, address: int, count: int) -> list[int]:
+        raise NotImplementedError("evaluation script performs no Modbus I/O")
+
+    async def read_holding_registers(self, *, address: int, count: int) -> list[int]:
+        raise NotImplementedError("evaluation script performs no Modbus I/O")
+
+    async def write_registers(self, *, address: int, values: list[int]) -> None:
+        raise NotImplementedError("evaluation script performs no Modbus I/O")
+
+
 def _word_for(address: int) -> int:
     """Return deterministic pseudo-data, so both decoders see identical words."""
     return (address * 7919) % 65536
@@ -138,7 +168,7 @@ async def main() -> None:
     for row in mismatches[:20]:
         print("   ", row)
 
-    api_requests = len(IdmModbusClient("192.0.2.1")._group_registers(registers))
+    api_requests = len(IdmModbusClient("192.0.2.1", transport=_NoIoTransport())._group_registers(registers))
     documented_words = sum(register.size for register in registers)
     print(f"\nrequests per poll, API batching (strict adjacency, max 40 words): {api_requests}")
     for max_gap in (0, 1, 2, 4, 8, 16):
