@@ -92,7 +92,8 @@ const I18N = {
 };
 
 const pageCache = new Map();
-let language = localStorage.getItem('idm-docs-language') || 'de';
+const browserLanguage = navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en';
+let language = localStorage.getItem('idm-docs-language') || browserLanguage;
 let currentSlug = '';
 let headingObserver;
 

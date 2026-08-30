@@ -6,6 +6,25 @@ const siteNav = document.querySelector('#site-nav');
 const copyButton = document.querySelector('[data-copy]');
 const repoUrl = document.querySelector('[data-repo-url]');
 const toast = document.querySelector('[data-toast]');
+const languageLink = document.querySelector('[data-language-link]');
+const languageSuggestion = document.querySelector('[data-language-suggestion]');
+const languageSuggestionClose = document.querySelector('[data-language-suggestion-close]');
+
+const pageLanguage = root.lang === 'en' ? 'en' : 'de';
+const labels = {
+  de: {
+    darkTheme: 'Dunkles Design aktivieren',
+    lightTheme: 'Helles Design aktivieren',
+    openMenu: 'Menü öffnen',
+    closeMenu: 'Menü schließen',
+  },
+  en: {
+    darkTheme: 'Enable dark theme',
+    lightTheme: 'Enable light theme',
+    openMenu: 'Open menu',
+    closeMenu: 'Close menu',
+  },
+};
 
 const savedTheme = localStorage.getItem('idm-theme');
 const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
@@ -14,7 +33,7 @@ root.dataset.theme = initialTheme;
 
 const updateThemeLabel = () => {
   const lightActive = root.dataset.theme === 'light';
-  themeToggle.setAttribute('aria-label', lightActive ? 'Dunkles Design aktivieren' : 'Helles Design aktivieren');
+  themeToggle.setAttribute('aria-label', lightActive ? labels[pageLanguage].darkTheme : labels[pageLanguage].lightTheme);
   document.querySelector('meta[name="theme-color"]').setAttribute('content', lightActive ? '#f3f7f3' : '#07110f');
 };
 
@@ -29,7 +48,7 @@ themeToggle.addEventListener('click', () => {
 const closeMenu = () => {
   siteNav.classList.remove('is-open');
   menuToggle.setAttribute('aria-expanded', 'false');
-  menuToggle.setAttribute('aria-label', 'Menü öffnen');
+  menuToggle.setAttribute('aria-label', labels[pageLanguage].openMenu);
   document.body.classList.remove('menu-open');
 };
 
@@ -37,11 +56,31 @@ menuToggle.addEventListener('click', () => {
   const willOpen = !siteNav.classList.contains('is-open');
   siteNav.classList.toggle('is-open', willOpen);
   menuToggle.setAttribute('aria-expanded', String(willOpen));
-  menuToggle.setAttribute('aria-label', willOpen ? 'Menü schließen' : 'Menü öffnen');
+  menuToggle.setAttribute('aria-label', willOpen ? labels[pageLanguage].closeMenu : labels[pageLanguage].openMenu);
   document.body.classList.toggle('menu-open', willOpen);
 });
 
 siteNav.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
+
+languageLink.addEventListener('click', () => {
+  localStorage.setItem('idm-site-language', pageLanguage === 'de' ? 'en' : 'de');
+});
+
+const browserPrefersEnglish = !navigator.language.toLowerCase().startsWith('de');
+const hasLanguagePreference = localStorage.getItem('idm-site-language');
+const suggestionDismissed = sessionStorage.getItem('idm-language-suggestion-dismissed');
+if (pageLanguage === 'de' && browserPrefersEnglish && !hasLanguagePreference && !suggestionDismissed) {
+  languageSuggestion.hidden = false;
+}
+
+languageSuggestion.querySelector('a').addEventListener('click', () => {
+  localStorage.setItem('idm-site-language', 'en');
+});
+
+languageSuggestionClose.addEventListener('click', () => {
+  languageSuggestion.hidden = true;
+  sessionStorage.setItem('idm-language-suggestion-dismissed', 'true');
+});
 
 window.addEventListener('resize', () => {
   if (window.innerWidth > 900) closeMenu();
