@@ -53,8 +53,5 @@ def test_crawler_files_reference_all_public_pages() -> None:
 
     sitemap = ElementTree.parse(PUBLIC_DIR / "sitemap.xml")
     namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-    locations = {
-        element.text
-        for element in sitemap.findall("sitemap:url/sitemap:loc", namespace)
-    }
+    locations = {element.text for element in sitemap.findall("sitemap:url/sitemap:loc", namespace)}
     assert locations == {SITE_URL, f"{SITE_URL}docs/"}
