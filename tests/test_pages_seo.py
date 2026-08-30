@@ -16,6 +16,7 @@ def test_homepage_has_search_and_social_metadata() -> None:
     homepage = (PUBLIC_DIR / "index.html").read_text(encoding="utf-8")
 
     assert "<title>IDM Wärmepumpe in Home Assistant | Modbus TCP Integration</title>" in homepage
+    assert '<meta name="google-site-verification" content="' in homepage
     assert f'<link rel="canonical" href="{SITE_URL}" />' in homepage
     assert f'<meta property="og:url" content="{SITE_URL}" />' in homepage
     assert "<h1>IDM Wärmepumpe<br /><span>in Home Assistant</span></h1>" in homepage
