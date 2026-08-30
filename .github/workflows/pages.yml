@@ -10,6 +10,7 @@ on:
       - 'custom_components/idm_heatpump/manifest.json'
       - 'hacs.json'
       - 'scripts/build_pages.py'
+      - 'scripts/render_pages_markdown.cjs'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 

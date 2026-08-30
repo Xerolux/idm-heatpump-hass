@@ -227,4 +227,4 @@ class TestDocumentationWiring:
     def test_both_readmes_point_at_the_page(self):
         for name in ("README.md", "README_de.md"):
             readme = (self.ROOT / name).read_text(encoding="utf-8")
-            assert "docs/#/knx-bridge" in readme, name
+            assert "docs/knx-bridge/" in readme, name

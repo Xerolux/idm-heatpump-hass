@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import argparse
+import html
 import json
 import re
 import shutil
+import subprocess
 from pathlib import Path
+from typing import TypedDict
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DIR = ROOT / "docs" / "public"
@@ -16,6 +19,162 @@ MANIFEST_PATH = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 HACS_PATH = ROOT / "hacs.json"
 
 SITE_URL = "https://xerolux.github.io/idm-heatpump-hass/"
+MARKDOWN_RENDERER = ROOT / "scripts" / "render_pages_markdown.cjs"
+
+
+class DocumentationPage(TypedDict):
+    """Metadata for one crawlable documentation page."""
+
+    slug: str
+    file: str
+    group: str
+    title: str
+    description: str
+
+
+DOCUMENTATION_GROUPS = {
+    "start": "Getting started",
+    "entities": "Entities & devices",
+    "automation": "Automation",
+    "operation": "Operation & maintenance",
+    "development": "Development & community",
+}
+
+DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
+    {
+        "slug": "home",
+        "file": "Home.md",
+        "group": "start",
+        "title": "IDM Heatpump Documentation",
+        "description": "Official documentation for IDM Heatpump, the local Modbus TCP integration for IDM Navigator heat pumps in Home Assistant.",
+    },
+    {
+        "slug": "installation-and-setup",
+        "file": "Installation-and-Setup.md",
+        "group": "start",
+        "title": "Installation and Setup",
+        "description": "Install IDM Heatpump through HACS, enable Modbus TCP on an IDM Navigator controller and connect it to Home Assistant.",
+    },
+    {
+        "slug": "configuration",
+        "file": "Configuration.md",
+        "group": "start",
+        "title": "Configuration",
+        "description": "Configure the IDM Navigator host, polling, heating circuits, zones, web supplement and connection options in Home Assistant.",
+    },
+    {
+        "slug": "entities",
+        "file": "Entities.md",
+        "group": "entities",
+        "title": "IDM Heatpump Entities",
+        "description": "Explore sensors, binary sensors, numbers, selects, switches, climate controls and water-heater entities exposed in Home Assistant.",
+    },
+    {
+        "slug": "supported-devices",
+        "file": "Supported-Devices.md",
+        "group": "entities",
+        "title": "Supported IDM Heat Pumps",
+        "description": "Check support for IDM Navigator 2.0, Navigator 10 and Navigator Pro heat pumps before installing the Home Assistant integration.",
+    },
+    {
+        "slug": "compatibility-matrix",
+        "file": "Compatibility-Matrix.md",
+        "group": "entities",
+        "title": "IDM Compatibility Matrix",
+        "description": "Review confirmed and expected compatibility across IDM heat pump models, Navigator families and firmware variants.",
+    },
+    {
+        "slug": "services",
+        "file": "Services.md",
+        "group": "automation",
+        "title": "Actions and Services",
+        "description": "Use IDM Heatpump actions and Home Assistant services for system modes, hot-water boost, external climate data and diagnostics.",
+    },
+    {
+        "slug": "examples",
+        "file": "Examples.md",
+        "group": "automation",
+        "title": "Home Assistant Automation Examples",
+        "description": "Practical Home Assistant automation examples for IDM heat pump setpoints, modes, hot water and local energy management.",
+    },
+    {
+        "slug": "knx-bridge",
+        "file": "KNX-Bridge.md",
+        "group": "automation",
+        "title": "Experimental KNX Bridge",
+        "description": "Configure the experimental IDM KNX bridge through Home Assistant KNX without a separate Weinzierl BAOS gateway module.",
+    },
+    {
+        "slug": "data-update",
+        "file": "Data-Update.md",
+        "group": "operation",
+        "title": "Data Updates and Polling",
+        "description": "Understand local Modbus TCP polling, update intervals, resilient reads and coordinator behavior in IDM Heatpump.",
+    },
+    {
+        "slug": "local-web-interface",
+        "file": "Local-Web-Interface.md",
+        "group": "operation",
+        "title": "Local Navigator Web Interface",
+        "description": "Use the optional local, read-only IDM Navigator web supplement for additional metadata and diagnostics without cloud access.",
+    },
+    {
+        "slug": "known-limitations",
+        "file": "Known-Limitations.md",
+        "group": "operation",
+        "title": "Known Limitations",
+        "description": "Review current device, firmware, Modbus, KNX and Home Assistant limitations of the IDM Heatpump integration.",
+    },
+    {
+        "slug": "troubleshooting",
+        "file": "Troubleshooting.md",
+        "group": "operation",
+        "title": "IDM Heatpump Troubleshooting",
+        "description": "Diagnose IDM heat pump connection failures, unavailable entities, Modbus errors, web PIN problems and update issues.",
+    },
+    {
+        "slug": "modbus-register",
+        "file": "Modbus-Register.md",
+        "group": "operation",
+        "title": "IDM Modbus Registers",
+        "description": "Understand the model-aware IDM Navigator Modbus register map, batching, function codes, filtering and write safety.",
+    },
+    {
+        "slug": "stability-and-release-readiness",
+        "file": "Stability-and-Release-Readiness.md",
+        "group": "operation",
+        "title": "Stability and Release Readiness",
+        "description": "See the verified test, compatibility and release evidence behind stable IDM Heatpump versions for Home Assistant.",
+    },
+    {
+        "slug": "navigator-protocol-analysis",
+        "file": "Navigator-Protocol-Analysis.md",
+        "group": "operation",
+        "title": "IDM Navigator Protocol Analysis",
+        "description": "Read confirmed findings from static analysis and read-only validation of local IDM Navigator communication protocols.",
+    },
+    {
+        "slug": "community",
+        "file": "Community.md",
+        "group": "development",
+        "title": "Community and Support",
+        "description": "Find the right IDM Heatpump support channel for questions, reproducible bugs, feature ideas and hardware compatibility reports.",
+    },
+    {
+        "slug": "contributing",
+        "file": "Contributing.md",
+        "group": "development",
+        "title": "Contributing",
+        "description": "Contribute code, tests, documentation, translations and compatibility evidence to IDM Heatpump for Home Assistant.",
+    },
+    {
+        "slug": "changelog",
+        "file": "Changelog.md",
+        "group": "development",
+        "title": "IDM Heatpump Changelog",
+        "description": "Review recent IDM Heatpump milestones and follow the complete version history and GitHub releases.",
+    },
+)
 
 
 HOME_TRANSLATIONS = {
@@ -183,6 +342,164 @@ def _replace_element_text(
     return updated
 
 
+def _replace_tag_attribute(
+    document: str,
+    selector_attribute: str,
+    selector_value: str | None,
+    target_attribute: str,
+    value: str,
+) -> str:
+    selector = re.escape(selector_attribute)
+    if selector_value is not None:
+        selector += rf'="{re.escape(selector_value)}"'
+    pattern = re.compile(
+        rf'(<[a-z0-9]+\b(?=[^>]*\b{selector})(?=[^>]*\b{re.escape(target_attribute)}=")[^>]*\b{re.escape(target_attribute)}=")[^"]*(")',
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    updated, count = pattern.subn(rf"\g<1>{value}\g<2>", document)
+    if count == 0:
+        raise ValueError(f"Missing element with {selector_attribute}")
+    return updated
+
+
+def _replace_title(document: str, title: str) -> str:
+    updated, count = re.subn(
+        r"<title>.*?</title>",
+        f"<title>{html.escape(title)}</title>",
+        document,
+        count=1,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+    if count == 0:
+        raise ValueError("Missing title element")
+    return updated
+
+
+def _render_markdown(markdown_path: Path, slug: str) -> tuple[str, list[dict[str, object]]]:
+    result = subprocess.run(
+        ["node", str(MARKDOWN_RENDERER), str(markdown_path), slug],
+        check=True,
+        capture_output=True,
+        encoding="utf-8",
+    )
+    rendered = json.loads(result.stdout)
+    return str(rendered["html"]), list(rendered["headings"])
+
+
+def _documentation_href(current_slug: str, target_slug: str, anchor: str = "") -> str:
+    if target_slug == "home":
+        href = "./" if current_slug == "home" else "../"
+    else:
+        href = f"{target_slug}/" if current_slug == "home" else f"../{target_slug}/"
+    return f"{href}#{anchor}" if anchor else href
+
+
+def _documentation_navigation(current_page: DocumentationPage) -> str:
+    sections: list[str] = []
+    for group, label in DOCUMENTATION_GROUPS.items():
+        links = "".join(
+            (
+                f'<a class="nav-item{" is-active" if page["slug"] == current_page["slug"] else ""}" '
+                f'href="{_documentation_href(current_page["slug"], page["slug"])}" '
+                f'data-page="{page["slug"]}"><span>{html.escape(page["title"])}</span></a>'
+            )
+            for page in DOCUMENTATION_PAGES
+            if page["group"] == group
+        )
+        sections.append(
+            f'<section class="nav-group"><h2 class="nav-group-title"><span>{html.escape(label)}</span></h2>{links}</section>'
+        )
+    return "".join(sections)
+
+
+def _documentation_breadcrumbs(current_page: DocumentationPage) -> str:
+    site_href = "../" if current_page["slug"] == "home" else "../../"
+    first_in_group = next(page for page in DOCUMENTATION_PAGES if page["group"] == current_page["group"])
+    return (
+        f'<a href="{site_href}">IDM Heatpump</a><i>›</i>'
+        f'<a href="{_documentation_href(current_page["slug"], first_in_group["slug"])}">'
+        f"{html.escape(DOCUMENTATION_GROUPS[current_page['group']])}</a><i>›</i>"
+        f"<span>{html.escape(current_page['title'])}</span>"
+    )
+
+
+def _documentation_toc(headings: list[dict[str, object]]) -> str:
+    return "".join(
+        (
+            f'<a class="toc-link" data-level="{heading["level"]}" href="#{heading["id"]}" '
+            f'data-toc-id="{heading["id"]}">{html.escape(str(heading["text"]))}</a>'
+        )
+        for heading in headings
+        if int(str(heading["level"])) <= 3
+    )
+
+
+def _documentation_page_navigation(current_page: DocumentationPage) -> str:
+    index = DOCUMENTATION_PAGES.index(current_page)
+    previous = DOCUMENTATION_PAGES[index - 1] if index else None
+    next_page = DOCUMENTATION_PAGES[index + 1] if index + 1 < len(DOCUMENTATION_PAGES) else None
+    previous_link = "<span></span>"
+    next_link = "<span></span>"
+    if previous is not None:
+        previous_link = (
+            f'<a class="page-nav-link previous" href="{_documentation_href(current_page["slug"], previous["slug"])}">'
+            f"<span>←</span><p><small>Previous page</small><strong>{html.escape(previous['title'])}</strong></p></a>"
+        )
+    if next_page is not None:
+        next_link = (
+            f'<a class="page-nav-link next" href="{_documentation_href(current_page["slug"], next_page["slug"])}">'
+            f"<p><small>Next page</small><strong>{html.escape(next_page['title'])}</strong></p><span>→</span></a>"
+        )
+    return f"{previous_link}{next_link}"
+
+
+def _documentation_structured_data(current_page: DocumentationPage, canonical_url: str) -> str:
+    breadcrumb_items = [
+        {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "IDM Heatpump",
+            "item": SITE_URL,
+        },
+        {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Documentation",
+            "item": f"{SITE_URL}docs/",
+        },
+    ]
+    if current_page["slug"] != "home":
+        breadcrumb_items.append(
+            {
+                "@type": "ListItem",
+                "position": 3,
+                "name": current_page["title"],
+                "item": canonical_url,
+            }
+        )
+    data = {
+        "@context": "https://schema.org",
+        "@graph": [
+            {
+                "@type": "WebPage",
+                "@id": f"{canonical_url}#webpage",
+                "url": canonical_url,
+                "name": current_page["title"],
+                "description": current_page["description"],
+                "inLanguage": "en",
+                "isPartOf": {"@id": f"{SITE_URL}#website"},
+                "breadcrumb": {"@id": f"{canonical_url}#breadcrumb"},
+            },
+            {
+                "@type": "BreadcrumbList",
+                "@id": f"{canonical_url}#breadcrumb",
+                "itemListElement": breadcrumb_items,
+            },
+        ],
+    }
+    return f'<script type="application/ld+json">\n{json.dumps(data, indent=2, ensure_ascii=False)}\n</script>'
+
+
 def _metadata() -> tuple[str, str, str]:
     manifest = json.loads(MANIFEST_PATH.read_text(encoding="utf-8"))
     hacs = json.loads(HACS_PATH.read_text(encoding="utf-8"))
@@ -195,6 +512,8 @@ def _metadata() -> tuple[str, str, str]:
 
 def _inject_metadata(document: str) -> str:
     integration_version, api_version, minimum_ha_version = _metadata()
+    document = document.replace("__INTEGRATION_VERSION__", integration_version)
+    document = document.replace("__MINIMUM_HA_VERSION__", minimum_ha_version)
     document = _replace_element_text(document, "data-integration-version", f"v{integration_version}")
     document = _replace_element_text(
         document,
@@ -216,6 +535,7 @@ def _english_homepage(german_homepage: str) -> str:
         'content="IDM Heatpump für Home Assistant – IDM Wärmepumpen lokal per Modbus TCP überwachen, steuern und automatisieren."': 'content="IDM Heatpump for Home Assistant – monitor, control and automate IDM heat pumps locally via Modbus TCP."',
         'content="IDM Heatpump für Home Assistant"': 'content="IDM Heatpump for Home Assistant"',
         'content="Deine IDM Wärmepumpe. Direkt in Home Assistant. Lokal, transparent und ohne Cloud."': 'content="Your IDM heat pump in Home Assistant. Local, transparent and cloud-free."',
+        'content="IDM Heatpump für Home Assistant – lokale Wärmepumpen-Integration"': 'content="IDM Heatpump for Home Assistant – local heat pump integration"',
         'content="de_DE"': 'content="en_US"',
         "<title>IDM Wärmepumpe in Home Assistant | Modbus TCP Integration</title>": "<title>IDM Heat Pump for Home Assistant | Modbus TCP Integration</title>",
         f'<link rel="canonical" href="{SITE_URL}" />': f'<link rel="canonical" href="{SITE_URL}en/" />',
@@ -236,8 +556,81 @@ def _english_homepage(german_homepage: str) -> str:
         page = page.replace(source, target)
     for german, english in sorted(HOME_TRANSLATIONS.items(), key=lambda item: len(item[0]), reverse=True):
         page = page.replace(german, english)
+    page = page.replace(' oder neuer"', ' or newer"')
     page = page.replace("IDM Energysysteme GmbH", "IDM Energiesysteme GmbH")
     return page
+
+
+def _build_documentation_page(template: str, current_page: DocumentationPage) -> str:
+    markdown_html, headings = _render_markdown(WIKI_DIR / current_page["file"], current_page["slug"])
+    canonical_url = f"{SITE_URL}docs/" if current_page["slug"] == "home" else f"{SITE_URL}docs/{current_page['slug']}/"
+    page_title = f"{current_page['title']} | IDM Heatpump for Home Assistant"
+    page = template
+
+    if current_page["slug"] != "home":
+        page = page.replace('href="docs.css?', 'href="../docs.css?')
+        page = page.replace('src="vendor/', 'src="../vendor/')
+        page = page.replace('src="docs.js?', 'src="../docs.js?')
+        page = page.replace('class="docs-brand" href="../"', 'class="docs-brand" href="../../"')
+        page = page.replace('<div><a href="../">', '<div><a href="../../">')
+        page = page.replace('<a href="./">Dokumentation</a>', '<a href="../">Dokumentation</a>')
+
+    page = _replace_title(page, page_title)
+    page = _replace_tag_attribute(
+        page,
+        "name",
+        "description",
+        "content",
+        html.escape(current_page["description"], quote=True),
+    )
+    for property_name, value in (
+        ("og:title", page_title),
+        ("og:description", current_page["description"]),
+        ("og:url", canonical_url),
+        ("og:image:alt", f"{current_page['title']} – IDM Heatpump documentation"),
+    ):
+        page = _replace_tag_attribute(
+            page,
+            "property",
+            property_name,
+            "content",
+            html.escape(value, quote=True),
+        )
+    for name, value in (
+        ("twitter:title", page_title),
+        ("twitter:description", current_page["description"]),
+    ):
+        page = _replace_tag_attribute(
+            page,
+            "name",
+            name,
+            "content",
+            html.escape(value, quote=True),
+        )
+    page = _replace_tag_attribute(page, "rel", "canonical", "href", canonical_url)
+    page = _replace_element_text(page, "data-navigation", _documentation_navigation(current_page))
+    page = _replace_element_text(page, "data-breadcrumbs", _documentation_breadcrumbs(current_page))
+    page = _replace_element_text(page, "data-toc", _documentation_toc(headings))
+    page = _replace_element_text(page, "data-page-navigation", _documentation_page_navigation(current_page))
+    page = _replace_element_text(page, "data-article", markdown_html)
+    page = page.replace("data-article>", f'data-article data-rendered-slug="{current_page["slug"]}">', 1)
+    page = _replace_tag_attribute(
+        page,
+        "data-edit-link",
+        None,
+        "href",
+        f"https://github.com/Xerolux/idm-heatpump-hass/edit/main/docs/wiki/{current_page['file']}",
+    )
+    structured_data = _documentation_structured_data(current_page, canonical_url)
+    return page.replace("</head>", f"    {structured_data}\n  </head>", 1)
+
+
+def _write_sitemap(output: Path) -> None:
+    urls = [SITE_URL, f"{SITE_URL}en/", f"{SITE_URL}docs/"]
+    urls.extend(f"{SITE_URL}docs/{page['slug']}/" for page in DOCUMENTATION_PAGES if page["slug"] != "home")
+    entries = "\n".join(f"  <url>\n    <loc>{html.escape(url)}</loc>\n  </url>" for url in urls)
+    sitemap = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{entries}\n</urlset>\n'
+    (output / "sitemap.xml").write_text(sitemap, encoding="utf-8")
 
 
 def build_site(output: Path) -> None:
@@ -260,13 +653,20 @@ def build_site(output: Path) -> None:
     homepage = _inject_metadata(homepage_path.read_text(encoding="utf-8"))
     homepage_path.write_text(homepage, encoding="utf-8")
 
-    docs_path = output / "docs" / "index.html"
-    docs_page = _inject_metadata(docs_path.read_text(encoding="utf-8"))
-    docs_path.write_text(docs_page, encoding="utf-8")
+    docs_template = (PUBLIC_DIR / "docs" / "index.html").read_text(encoding="utf-8")
+    for documentation_page in DOCUMENTATION_PAGES:
+        if documentation_page["slug"] == "home":
+            docs_path = output / "docs" / "index.html"
+        else:
+            docs_path = output / "docs" / documentation_page["slug"] / "index.html"
+            docs_path.parent.mkdir(parents=True, exist_ok=True)
+        docs_page = _inject_metadata(_build_documentation_page(docs_template, documentation_page))
+        docs_path.write_text(docs_page, encoding="utf-8")
 
     english_path = output / "en" / "index.html"
     english_path.parent.mkdir(parents=True, exist_ok=True)
     english_path.write_text(_english_homepage(homepage), encoding="utf-8")
+    _write_sitemap(output)
 
 
 def main() -> None:

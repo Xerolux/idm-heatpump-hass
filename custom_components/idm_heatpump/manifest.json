@@ -5,7 +5,7 @@
     "@xerolux"
   ],
   "config_flow": true,
-  "documentation": "https://xerolux.github.io/idm-heatpump-hass/docs/#/home",
+  "documentation": "https://xerolux.github.io/idm-heatpump-hass/docs/",
   "integration_type": "device",
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/Xerolux/idm-heatpump-hass/issues",
