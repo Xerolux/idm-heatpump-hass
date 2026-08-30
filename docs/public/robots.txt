@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://xerolux.github.io/idm-heatpump-hass/sitemap.xml
