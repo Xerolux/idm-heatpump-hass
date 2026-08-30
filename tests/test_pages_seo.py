@@ -7,7 +7,6 @@ import re
 from pathlib import Path
 from xml.etree import ElementTree
 
-
 PUBLIC_DIR = Path(__file__).resolve().parents[1] / "docs" / "public"
 SITE_URL = "https://xerolux.github.io/idm-heatpump-hass/"
 
