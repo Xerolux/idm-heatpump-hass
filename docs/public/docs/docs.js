@@ -17,6 +17,10 @@ const mobileSearchInput = document.querySelector('[data-search-mobile]');
 const mobileSearchResults = document.querySelector('[data-mobile-results]');
 const searchResults = document.querySelector('[data-search-results]');
 const toast = document.querySelector('[data-toast]');
+const docsScript = document.querySelector('script[src*="docs.js"]');
+const docsRootUrl = new URL('./', docsScript.src);
+const docsBasePath = docsRootUrl.pathname;
+const siteRootPath = new URL('../', docsRootUrl).pathname;
 
 const GROUPS = [
   {
@@ -60,14 +64,15 @@ const PAGES = [
   { slug: 'compatibility-matrix', file: 'Compatibility-Matrix.md', group: 'entities', de: 'Kompatibilitätsmatrix', en: 'Compatibility matrix' },
   { slug: 'services', file: 'Services.md', group: 'automation', de: 'Aktionen & Dienste', en: 'Actions & services' },
   { slug: 'examples', file: 'Examples.md', group: 'automation', de: 'Beispiel-Automationen', en: 'Example automations' },
+  { slug: 'knx-bridge', file: 'KNX-Bridge.md', group: 'automation', de: 'KNX-Bridge', en: 'KNX bridge' },
   { slug: 'data-update', file: 'Data-Update.md', group: 'operation', de: 'Datenaktualisierung', en: 'Data update' },
   { slug: 'local-web-interface', file: 'Local-Web-Interface.md', group: 'operation', de: 'Lokale Web-Schnittstelle', en: 'Local web interface' },
   { slug: 'known-limitations', file: 'Known-Limitations.md', group: 'operation', de: 'Bekannte Einschränkungen', en: 'Known limitations' },
   { slug: 'troubleshooting', file: 'Troubleshooting.md', group: 'operation', de: 'Fehlerbehebung', en: 'Troubleshooting' },
-  { slug: 'knx-bridge', file: 'KNX-Bridge.md', group: 'automation', de: 'KNX-Bridge', en: 'KNX bridge' },
   { slug: 'modbus-register', file: 'Modbus-Register.md', group: 'operation', de: 'Modbus-Register', en: 'Modbus registers' },
   { slug: 'stability-and-release-readiness', file: 'Stability-and-Release-Readiness.md', group: 'operation', de: 'Stabilität & Releases', en: 'Stability & releases' },
   { slug: 'navigator-protocol-analysis', file: 'Navigator-Protocol-Analysis.md', group: 'operation', de: 'Navigator-Protokollanalyse', en: 'Navigator protocol analysis' },
+  { slug: 'community', file: 'Community.md', group: 'development', de: 'Community & Hilfe', en: 'Community & support' },
   { slug: 'contributing', file: 'Contributing.md', group: 'development', de: 'Mitwirken', en: 'Contributing' },
   { slug: 'changelog', file: 'Changelog.md', group: 'development', de: 'Änderungsverlauf', en: 'Changelog' },
 ];
@@ -80,6 +85,7 @@ const I18N = {
     search: 'Dokumentation durchsuchen …', searchResults: 'Suchergebnisse', noResults: 'Keine passenden Inhalte gefunden.',
     previous: 'Vorherige Seite', next: 'Nächste Seite', copied: 'Code kopiert', loading: 'Dokumentation wird geladen …',
     error: 'Diese Seite konnte nicht geladen werden.', contentEnglish: 'Technischer Inhalt: EN',
+    enableLight: 'Helles Design aktivieren', enableDark: 'Dunkles Design aktivieren', changeLanguage: 'Sprache wechseln',
   },
   en: {
     docs: 'Documentation', edit: 'Edit on GitHub', onThisPage: 'On this page',
@@ -88,6 +94,7 @@ const I18N = {
     search: 'Search documentation …', searchResults: 'Search results', noResults: 'No matching content found.',
     previous: 'Previous page', next: 'Next page', copied: 'Code copied', loading: 'Loading documentation …',
     error: 'This page could not be loaded.', contentEnglish: '',
+    enableLight: 'Enable light theme', enableDark: 'Enable dark theme', changeLanguage: 'Change language',
   },
 };
 
@@ -110,12 +117,18 @@ const slugify = (value) => value
   .replace(/^-|-$/g, '');
 
 const parseRoute = () => {
-  const route = location.hash.replace(/^#\/?/, '');
-  const [slug = 'home', ...anchorParts] = route.split('/');
-  return { slug: pageFor(slug).slug, anchor: anchorParts.join('/') };
+  const legacyRoute = location.hash.match(/^#\/?([^/]+)?(?:\/(.*))?$/);
+  if (legacyRoute && location.hash.startsWith('#/')) {
+    return { slug: pageFor(legacyRoute[1] || 'home').slug, anchor: legacyRoute[2] || '', legacy: true };
+  }
+  const route = location.pathname.startsWith(docsBasePath)
+    ? location.pathname.slice(docsBasePath.length).replace(/^\/+|\/+$/g, '')
+    : '';
+  const [slug = 'home'] = route.split('/');
+  return { slug: pageFor(slug || 'home').slug, anchor: decodeURIComponent(location.hash.slice(1)), legacy: false };
 };
 
-const routeHref = (slug, anchor = '') => `#/${slug}${anchor ? `/${anchor}` : ''}`;
+const routeHref = (slug, anchor = '') => `${docsBasePath}${slug === 'home' ? '' : `${slug}/`}${anchor ? `#${anchor}` : ''}`;
 
 const rewriteInternalHref = (href) => {
   if (!href || /^(https?:|mailto:|tel:)/i.test(href)) return href;
@@ -130,7 +143,7 @@ const rewriteInternalHref = (href) => {
 
 const fetchPage = async (page) => {
   if (pageCache.has(page.slug)) return pageCache.get(page.slug);
-  const response = await fetch(`content/${page.file}`);
+  const response = await fetch(new URL(`content/${page.file}`, docsRootUrl));
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const markdown = await response.text();
   const record = { markdown, text: markdown.replace(/```[\s\S]*?```/g, ' ').replace(/<[^>]+>/g, ' ').replace(/[#>*_`|\[\]()-]/g, ' ').replace(/\s+/g, ' ').trim() };
@@ -155,7 +168,7 @@ const decorateContent = (html, page) => {
       const anchor = document.createElement('a');
       anchor.className = 'heading-anchor';
       anchor.href = routeHref(page.slug, id);
-      anchor.setAttribute('aria-label', `Link zu ${heading.textContent}`);
+      anchor.setAttribute('aria-label', `${language === 'de' ? 'Link zu' : 'Link to'} ${heading.textContent}`);
       anchor.textContent = '#';
       heading.append(anchor);
     }
@@ -195,7 +208,7 @@ const decorateContent = (html, page) => {
 
   template.content.querySelectorAll('img').forEach((image) => {
     const src = image.getAttribute('src') || '';
-    if (src.startsWith('../images/')) image.src = `images/${src.split('/').pop()}`;
+    if (src.startsWith('../images/')) image.src = new URL(`images/${src.split('/').pop()}`, docsRootUrl).href;
     image.loading = 'lazy';
   });
 
@@ -214,7 +227,7 @@ const renderNavigation = () => {
 
 const renderBreadcrumbs = (page) => {
   const group = groupFor(page.group);
-  breadcrumbs.innerHTML = `<a href="../">IDM Heatpump</a><i>›</i><a href="${routeHref(PAGES.find((item) => item.group === page.group).slug)}">${escapeHtml(group[language])}</a><i>›</i><span>${escapeHtml(titleFor(page))}</span>`;
+  breadcrumbs.innerHTML = `<a href="${siteRootPath}">IDM Heatpump</a><i>›</i><a href="${routeHref(PAGES.find((item) => item.group === page.group).slug)}">${escapeHtml(group[language])}</a><i>›</i><span>${escapeHtml(titleFor(page))}</span>`;
 };
 
 const renderToc = (headings) => {
@@ -243,8 +256,9 @@ const renderPageNavigation = (page) => {
 };
 
 const loadRoute = async () => {
-  const { slug, anchor } = parseRoute();
+  const { slug, anchor, legacy } = parseRoute();
   const page = pageFor(slug);
+  if (legacy) history.replaceState(null, '', routeHref(page.slug, anchor));
   currentSlug = page.slug;
   renderNavigation();
   renderBreadcrumbs(page);
@@ -252,7 +266,9 @@ const loadRoute = async () => {
   editLink.href = `https://github.com/Xerolux/idm-heatpump-hass/edit/main/docs/wiki/${page.file}`;
   contentLanguage.hidden = language === 'en';
   contentLanguage.textContent = I18N[language].contentEnglish;
-  article.innerHTML = `<div class="article-loading"><i></i><span>${I18N[language].loading}</span></div>`;
+  if (article.dataset.renderedSlug !== page.slug) {
+    article.innerHTML = `<div class="article-loading"><i></i><span>${I18N[language].loading}</span></div>`;
+  }
   closeMenu();
 
   try {
@@ -261,8 +277,9 @@ const loadRoute = async () => {
     const { fragment, headings } = decorateContent(rendered, page);
     article.innerHTML = '';
     article.append(fragment);
+    article.dataset.renderedSlug = page.slug;
     renderToc(headings);
-    document.title = `${titleFor(page)} · IDM Heatpump`;
+    document.title = `${titleFor(page)} | IDM Heatpump Documentation`;
     if (anchor) {
       requestAnimationFrame(() => document.getElementById(anchor)?.scrollIntoView());
     } else {
@@ -277,12 +294,14 @@ const loadRoute = async () => {
 const updateLanguage = () => {
   root.lang = language;
   languageButton.textContent = language.toUpperCase();
+  languageButton.setAttribute('aria-label', I18N[language].changeLanguage);
   document.querySelectorAll('[data-i18n]').forEach((element) => {
     const value = I18N[language][element.dataset.i18n];
     if (value) element.textContent = value;
   });
   searchInput.placeholder = I18N[language].search;
   mobileSearchInput.placeholder = I18N[language].search;
+  updateThemeLabel();
 };
 
 const closeMenu = () => {
@@ -343,7 +362,7 @@ const savedTheme = localStorage.getItem('idm-theme');
 root.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 const updateThemeLabel = () => {
   const light = root.dataset.theme === 'light';
-  themeButton.setAttribute('aria-label', light ? 'Dunkles Design aktivieren' : 'Helles Design aktivieren');
+  themeButton.setAttribute('aria-label', light ? I18N[language].enableDark : I18N[language].enableLight);
   document.querySelector('meta[name="theme-color"]').content = light ? '#f6f9f6' : '#07110f';
 };
 updateThemeLabel();
@@ -402,7 +421,7 @@ mobileSearchResults.addEventListener('click', () => {
   closeMenu();
 });
 
-window.addEventListener('hashchange', loadRoute);
+window.addEventListener('popstate', loadRoute);
 window.addEventListener('resize', () => { if (innerWidth > 760) closeMenu(); });
 window.addEventListener('scroll', () => {
   const max = document.documentElement.scrollHeight - innerHeight;

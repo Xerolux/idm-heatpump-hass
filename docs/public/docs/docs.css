@@ -330,6 +330,7 @@ html[data-theme="light"] .moon-icon { display: block; }
 .article-tools a:hover { border-color: var(--line-strong); color: var(--text); }
 .article-tools svg { width: 13px; stroke: currentColor; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
 .content-language { border-color: color-mix(in srgb, var(--orange) 20%, var(--line)); color: var(--orange); }
+.content-language[hidden] { display: none; }
 
 .article-content { min-height: calc(100vh - 260px); }
 .article-content > :first-child { margin-top: 0; }

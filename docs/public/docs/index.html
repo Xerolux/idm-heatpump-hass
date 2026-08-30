@@ -1,28 +1,36 @@
 <!doctype html>
-<html lang="de" data-theme="dark">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Dokumentation der IDM Heatpump Integration für Home Assistant." />
+    <meta name="description" content="Official documentation for IDM Heatpump, the local Modbus TCP integration for IDM Navigator heat pumps in Home Assistant." />
     <meta name="theme-color" content="#07110f" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="IDM Heatpump Dokumentation für Home Assistant" />
-    <meta property="og:description" content="Installation, Konfiguration und Bedienung der lokalen IDM Wärmepumpen-Integration für Home Assistant." />
+    <meta property="og:title" content="IDM Heatpump Documentation for Home Assistant" />
+    <meta property="og:description" content="Install, configure and use the local IDM heat pump integration for Home Assistant." />
     <meta property="og:url" content="https://xerolux.github.io/idm-heatpump-hass/docs/" />
     <meta property="og:site_name" content="IDM Heatpump for Home Assistant" />
-    <meta property="og:locale" content="de_DE" />
-    <title>IDM Heatpump Dokumentation | Home Assistant</title>
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content="https://xerolux.github.io/idm-heatpump-hass/assets/social-card.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="IDM Heatpump for Home Assistant documentation" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="IDM Heatpump Documentation for Home Assistant" />
+    <meta name="twitter:description" content="Install, configure and use the local IDM heat pump integration for Home Assistant." />
+    <meta name="twitter:image" content="https://xerolux.github.io/idm-heatpump-hass/assets/social-card.png" />
+    <title>IDM Heatpump Documentation | Home Assistant</title>
     <link rel="canonical" href="https://xerolux.github.io/idm-heatpump-hass/docs/" />
-    <link rel="icon" href="../assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="docs.css" />
-    <script src="vendor/marked.umd.js" defer></script>
-    <script src="docs.js" defer></script>
+    <link rel="icon" href="https://xerolux.github.io/idm-heatpump-hass/assets/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="docs.css?v=__INTEGRATION_VERSION__" />
+    <script src="vendor/marked.umd.js?v=__INTEGRATION_VERSION__" defer></script>
+    <script src="docs.js?v=__INTEGRATION_VERSION__" defer></script>
   </head>
   <body>
-    <a class="skip-link" href="#article">Zum Inhalt springen</a>
+    <a class="skip-link" href="#article">Skip to content</a>
 
     <header class="docs-header">
-      <a class="docs-brand" href="../" aria-label="Zur IDM Heatpump Startseite">
+      <a class="docs-brand" href="../" aria-label="IDM Heatpump home page">
         <span class="brand-mark" aria-hidden="true">
           <svg viewBox="0 0 32 32" fill="none">
             <path d="M6.5 20.5c0-5.7 4-10.6 9.5-11.7" />
@@ -33,12 +41,12 @@
         </span>
         <span>IDM <strong>Heatpump</strong></span>
         <i></i>
-        <span class="brand-section" data-i18n="docs">Dokumentation</span>
+        <span class="brand-section" data-i18n="docs">Documentation</span>
       </a>
 
       <div class="header-search" data-search-wrap>
         <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="m13 13 4 4"/></svg>
-        <input type="search" placeholder="Dokumentation durchsuchen …" aria-label="Dokumentation durchsuchen" data-search />
+        <input type="search" placeholder="Search documentation …" aria-label="Search documentation" data-search />
         <kbd>/</kbd>
         <div class="search-results" data-search-results hidden></div>
       </div>
@@ -48,12 +56,12 @@
           <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2.8a9.2 9.2 0 0 0-2.9 17.9c.5.1.6-.2.6-.5v-1.8c-2.8.6-3.4-1.2-3.4-1.2-.5-1.1-1.1-1.4-1.1-1.4-.9-.6.1-.6.1-.6 1 0 1.6 1 1.6 1 .9 1.6 2.4 1.1 3 .9.1-.7.4-1.1.7-1.4-2.3-.3-4.6-1.1-4.6-4.9 0-1.1.4-2 1-2.7-.1-.3-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.5 9.5 0 0 1 5 0c2-1.3 2.8-1 2.8-1 .5 1.4.2 2.4.1 2.7.6.7 1 1.6 1 2.7 0 3.8-2.3 4.6-4.6 4.9.4.3.7 1 .7 1.9v2.8c0 .4.2.6.7.5A9.2 9.2 0 0 0 12 2.8Z"/></svg>
           <span>GitHub</span>
         </a>
-        <button class="icon-button language-toggle" type="button" aria-label="Sprache wechseln" data-language>DE</button>
-        <button class="icon-button" type="button" aria-label="Helles Design aktivieren" data-theme-toggle>
+        <button class="icon-button language-toggle" type="button" aria-label="Change language" data-language>EN</button>
+        <button class="icon-button" type="button" aria-label="Enable light theme" data-theme-toggle>
           <svg class="sun-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.65 17.65l1.42 1.42M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.65 6.35l1.42-1.42"/></svg>
           <svg class="moon-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5 8.5 8.5 0 1 0 20.5 14.2Z"/></svg>
         </button>
-        <button class="icon-button mobile-menu" type="button" aria-label="Navigation öffnen" aria-expanded="false" data-menu>
+        <button class="icon-button mobile-menu" type="button" aria-label="Open navigation" aria-expanded="false" data-menu>
           <span></span><span></span>
         </button>
       </div>
@@ -65,11 +73,11 @@
       <aside class="docs-sidebar" data-sidebar>
         <div class="mobile-search">
           <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><circle cx="9" cy="9" r="5.5"/><path d="m13 13 4 4"/></svg>
-          <input type="search" placeholder="Dokumentation durchsuchen …" aria-label="Dokumentation durchsuchen" data-search-mobile />
+          <input type="search" placeholder="Search documentation …" aria-label="Search documentation" data-search-mobile />
         </div>
         <div class="mobile-search-results" data-mobile-results hidden></div>
 
-        <nav class="sidebar-nav" aria-label="Dokumentation" data-navigation></nav>
+        <nav class="sidebar-nav" aria-label="Documentation" data-navigation></nav>
 
         <div class="sidebar-status">
           <span><i></i> <strong data-integration-version>v0.16.2</strong></span>
@@ -77,42 +85,42 @@
         </div>
       </aside>
 
-      <button class="sidebar-overlay" type="button" aria-label="Navigation schließen" data-overlay></button>
+      <button class="sidebar-overlay" type="button" aria-label="Close navigation" data-overlay></button>
 
       <main class="docs-main" id="article">
         <div class="article-toolbar">
-          <nav class="breadcrumbs" aria-label="Brotkrümelnavigation" data-breadcrumbs></nav>
+          <nav class="breadcrumbs" aria-label="Breadcrumb" data-breadcrumbs></nav>
           <div class="article-tools">
-            <span class="content-language" data-content-language hidden>Inhalt: EN</span>
+            <span class="content-language" data-content-language hidden>Content: EN</span>
             <a href="#" target="_blank" rel="noreferrer" data-edit-link>
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m12.5 3.5 4 4M4 16l1-4L13.5 3.5a1.4 1.4 0 0 1 2 0l1 1a1.4 1.4 0 0 1 0 2L8 15l-4 1Z"/></svg>
-              <span data-i18n="edit">Bearbeiten</span>
+              <span data-i18n="edit">Edit on GitHub</span>
             </a>
           </div>
         </div>
 
         <article class="article-content" data-article>
-          <div class="article-loading"><i></i><span>Dokumentation wird geladen …</span></div>
+          <div class="article-loading"><i></i><span>Loading documentation …</span></div>
         </article>
 
-        <nav class="page-navigation" aria-label="Seitennavigation" data-page-navigation></nav>
+        <nav class="page-navigation" aria-label="Page navigation" data-page-navigation></nav>
 
         <footer class="docs-footer">
-          <p data-i18n="footer">Mit Sorgfalt für die Home-Assistant- und Wärmepumpen-Community dokumentiert.</p>
-          <div><a href="../">Startseite</a><a href="https://github.com/Xerolux/idm-heatpump-hass/issues" target="_blank" rel="noreferrer">Support</a><a href="#/home">Dokumentation</a></div>
+          <p data-i18n="footer">Documented with care for the Home Assistant and heat pump community.</p>
+          <div><a href="../">Home</a><a href="https://github.com/Xerolux/idm-heatpump-hass/issues" target="_blank" rel="noreferrer">Support</a><a href="./">Documentation</a></div>
         </footer>
       </main>
 
-      <aside class="docs-toc" aria-label="Auf dieser Seite">
-        <strong data-i18n="onThisPage">Auf dieser Seite</strong>
+      <aside class="docs-toc" aria-label="On this page">
+        <strong data-i18n="onThisPage">On this page</strong>
         <nav data-toc></nav>
         <a class="toc-support" href="https://github.com/Xerolux/idm-heatpump-hass/issues/new" target="_blank" rel="noreferrer">
           <span>?</span>
-          <p><strong data-i18n="needHelp">Hilfe benötigt?</strong><small data-i18n="reportIssue">Problem auf GitHub melden</small></p>
+          <p><strong data-i18n="needHelp">Need help?</strong><small data-i18n="reportIssue">Report a problem on GitHub</small></p>
         </a>
       </aside>
     </div>
 
-    <div class="toast" role="status" aria-live="polite" data-toast>Code kopiert</div>
+    <div class="toast" role="status" aria-live="polite" data-toast>Code copied</div>
   </body>
 </html>

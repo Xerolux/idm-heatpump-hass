@@ -8,7 +8,7 @@
   <p><strong>Deine IDM Navigator Wärmepumpe lokal über Modbus TCP überwachen und steuern — ganz ohne Cloud-Abhängigkeit.</strong></p>
   <p>
     <a href="https://xerolux.github.io/idm-heatpump-hass/"><strong>Website</strong></a> ·
-    <a href="https://xerolux.github.io/idm-heatpump-hass/docs/#/home"><strong>Dokumentation</strong></a> ·
+    <a href="https://xerolux.github.io/idm-heatpump-hass/docs/"><strong>Dokumentation</strong></a> ·
     <a href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest"><strong>Download</strong></a> ·
     <a href="https://github.com/Xerolux/idm-heatpump-hass/discussions"><strong>Community</strong></a>
   </p>
@@ -74,7 +74,7 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 | **🛡️ Fehlermanagement** | Fehlererkennung, lesbare interne Meldungen, Fehlerquittierung, Diagnosedaten-Export |
 | **🧭 Geführte Einrichtungsdiagnose** | Unterscheidet unbekannte Hosts, abgelehntes/deaktiviertes Modbus TCP, Timeouts, Netzwerkfehler, falsche Slave-ID, falsche Web-PIN und nicht erreichbare Weboberfläche |
 | **🧪 Schreibgeschützter Verbindungstest** | Das Rekonfigurationsmenü testet die gespeicherte Modbus- und optionale Webverbindung, ohne Einstellungen zu ändern oder Register zu schreiben |
-| **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api`, `modbus-connection`, `tmodbus` und die Pymodbus-Kompatibilitätsversion |
+| **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api`, `modbus-connection` und `tmodbus` |
 | **🔑 Fachmann-Ebene** | Optionale Sensoren für die aktuellen Zugangscodes der Ebenen 1 & 2 (standardmäßig aus, minütlich aktualisiert und ganz oben angeheftet) |
 | **🚌 KNX-Bridge** *(experimentell)* | Optional: stellt die IDM-KNX-Kommunikationsobjekte über die KNX-Integration von Home Assistant bereit (inkl. KNX Secure) — ersetzt das Weinzierl-BAOS-Gateway-Modul. [Details][wiki-knx] |
 | **🔒 Sicherheit** | 100% lokal, Modbus TCP, EEPROM-Schutz, EEPROM-sensitive Register |
@@ -158,7 +158,7 @@ Maintainer sollten vor einem stabilen Release den
 
 - Home Assistant **2026.8.1+**
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
-- IDM Navigator 2.0 / 10 Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
+- IDM Navigator 2.0 / 10 / Pro Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.14+ (wird von Home Assistant bereitgestellt)
 - `modbus-connection==4.10.0` · `tmodbus[async-serial]==0.6.2` (direkter Modbus-Socket)
@@ -222,7 +222,7 @@ Home Assistant
 - **Optionale Web-Zusatzdaten**: Die Einrichtung erkennt lokal Navigator-2.0-HTTP oder Navigator-10/Pro-WebSocket, speichert das erfolgreiche Protokoll, nutzt die Sitzung weiter und verbindet im Normalbetrieb nur diese bekannte Variante neu; Modbus bleibt führend
 - **Verständliche Verbindungsdiagnose**: Setup, Reconfigure, Logs und Reparaturmeldungen unterscheiden DNS-/Hostnamefehler, abgelehnte TCP-Verbindungen, Timeouts, nicht erreichbare Endpunkte, fehlende Modbus-Antworten, falsche Web-PINs und Webfehler
 - **Eingebautes Testmenü**: „Neu konfigurieren“ bietet einen zerstörungsfreien Test eines bekannten IDM-Modbus-Registers, gezielte DNS/TCP-Fehlerklassifizierung und – falls eingerichtet – die lokale Navigator-Webanmeldung
-- **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations-, `modbus-connection`-, `tmodbus`- sowie Pymodbus-Kompatibilitätsversion als Attribute; dieselben Angaben stehen im Diagnoseexport und Startlog
+- **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations-, `modbus-connection`- und `tmodbus`-Version als Attribute; dieselben Angaben stehen im Diagnoseexport und Startlog
 - **Verbindungsbesitz**: Jede Config-Entry besitzt ihren tmodbus-Socket; zentrales Entry-übergreifendes Home-Assistant-Sharing ist derzeit nicht verfügbar, daher meldet die Diagnose `supports_shared_connection: false`
 - **Validierungsstand**: Der Adapter ist implementiert und automatisiert getestet; die read-only Prüfung des neuen tmodbus-Pfads an realer Navigator-Hardware steht noch aus
 - **Raumtemperatur-Weitergabe**: standardmäßig deaktiviert; kann ausgewählte Home-Assistant-Temperatursensoren pro Heizkreis an die externen IDM-Raumtemperaturregister weitergeben, mit 300 Sekunden Standardintervall, sofortiger Weitergabe bei Zustandsänderung, 0,2 °C Standardtoleranz und Bereichsprüfung
@@ -253,7 +253,7 @@ Diese Integration wird in meiner Freizeit entwickelt:
 
 ## 🔥 Über IDM Navigator
 
-Der **IDM Navigator 2.0 / 10** von [IDM EnergieSysteme GmbH](https://www.idm-energiesysteme.de/) ist ein modulares Wärmepumpen-Steuerungssystem mit Modbus TCP-Schnittstelle für nahtlose Home Assistant Integration.
+Der **IDM Navigator 2.0 / 10 / Pro** von [IDM EnergieSysteme GmbH](https://www.idm-energiesysteme.de/) ist ein modulares Wärmepumpen-Steuerungssystem mit Modbus TCP-Schnittstelle für nahtlose Home Assistant Integration.
 
 - **Offizieller Shop:** [idm-energiesysteme.de](https://www.idm-energiesysteme.de/)
 - **Modbus-Dokumentation:** Navigator 2.0 / 10 Modbus TCP Registerbeschreibung
@@ -285,23 +285,23 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 
 <!-- Documentation Links -->
 [paypal]: https://paypal.me/xerolux
-[wiki]: https://xerolux.github.io/idm-heatpump-hass/docs/#/home
-[wiki-install]: https://xerolux.github.io/idm-heatpump-hass/docs/#/installation-and-setup
-[wiki-install-modbus]: https://xerolux.github.io/idm-heatpump-hass/docs/#/installation-and-setup/enable-modbus-tcp-on-the-idm-heat-pump
-[wiki-config]: https://xerolux.github.io/idm-heatpump-hass/docs/#/configuration
-[wiki-entities]: https://xerolux.github.io/idm-heatpump-hass/docs/#/entities
-[wiki-sensors]: https://xerolux.github.io/idm-heatpump-hass/docs/#/entities/sensors
-[wiki-switches]: https://xerolux.github.io/idm-heatpump-hass/docs/#/entities/switches
-[wiki-selects]: https://xerolux.github.io/idm-heatpump-hass/docs/#/entities/selects
-[wiki-numbers]: https://xerolux.github.io/idm-heatpump-hass/docs/#/entities/numbers
-[wiki-services]: https://xerolux.github.io/idm-heatpump-hass/docs/#/services
-[wiki-knx]: https://xerolux.github.io/idm-heatpump-hass/docs/#/knx-bridge
-[wiki-trouble]: https://xerolux.github.io/idm-heatpump-hass/docs/#/troubleshooting
-[wiki-stability]: https://xerolux.github.io/idm-heatpump-hass/docs/#/stability-and-release-readiness
+[wiki]: https://xerolux.github.io/idm-heatpump-hass/docs/
+[wiki-install]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/
+[wiki-install-modbus]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/#enable-modbus-tcp-on-the-idm-heat-pump
+[wiki-config]: https://xerolux.github.io/idm-heatpump-hass/docs/configuration/
+[wiki-entities]: https://xerolux.github.io/idm-heatpump-hass/docs/entities/
+[wiki-sensors]: https://xerolux.github.io/idm-heatpump-hass/docs/entities/#sensors
+[wiki-switches]: https://xerolux.github.io/idm-heatpump-hass/docs/entities/#switches
+[wiki-selects]: https://xerolux.github.io/idm-heatpump-hass/docs/entities/#selects
+[wiki-numbers]: https://xerolux.github.io/idm-heatpump-hass/docs/entities/#numbers
+[wiki-services]: https://xerolux.github.io/idm-heatpump-hass/docs/services/
+[wiki-knx]: https://xerolux.github.io/idm-heatpump-hass/docs/knx-bridge/
+[wiki-trouble]: https://xerolux.github.io/idm-heatpump-hass/docs/troubleshooting/
+[wiki-stability]: https://xerolux.github.io/idm-heatpump-hass/docs/stability-and-release-readiness/
 [idm-modbus-source]: https://www.idm-energie.at/wp-content/uploads/2021/04/PV_Nutzung_GLT-Smartfox.pdf
-[wiki-registers]: https://xerolux.github.io/idm-heatpump-hass/docs/#/modbus-register
-[wiki-contributing]: https://xerolux.github.io/idm-heatpump-hass/docs/#/contributing
-[wiki-changelog]: https://xerolux.github.io/idm-heatpump-hass/docs/#/changelog
+[wiki-registers]: https://xerolux.github.io/idm-heatpump-hass/docs/modbus-register/
+[wiki-contributing]: https://xerolux.github.io/idm-heatpump-hass/docs/contributing/
+[wiki-changelog]: https://xerolux.github.io/idm-heatpump-hass/docs/changelog/
 [violet]: https://github.com/Xerolux/violet-hass
 
 <!-- Badge Links -->
