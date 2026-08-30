@@ -1,7 +1,7 @@
 # IDM Heatpump - Home Assistant Integration
 
 <p align="center">
-  <img src="../images/heatpump.png" alt="IDM Heatpump" width="300"><br>
+  <img src="../images/heatpump.png" alt="IDM AERO air source heat pump (AI generated illustration)" width="260"><br>
   <small><i>AI generated</i></small>
 </p>
 

@@ -13,6 +13,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Reworked the heat pump header image** (`docs/images/heatpump.png`). The white
+  studio backdrop is matted out into a transparent alpha channel, so the shot no
+  longer sits in a bright box when GitHub, the wiki or the Pages site are rendered
+  in dark mode. The frame is cropped to the unit itself, so it reads roughly twice
+  as large at the same `width="240"`; the contact shadow is kept as neutral density
+  that vanishes on dark backgrounds. Rescaled to 900 px and requantised, the file
+  drops from 770 KB to 367 KB.
+
 ## [0.16.2] - 2026-08-28
 
 Patch release for one defect in the KNX bridge, found during a live review
