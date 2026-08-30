@@ -20,6 +20,9 @@
     <meta property="og:locale" content="de_DE" />
     <title>IDM Wärmepumpe in Home Assistant | Modbus TCP Integration</title>
     <link rel="canonical" href="https://xerolux.github.io/idm-heatpump-hass/" />
+    <link rel="alternate" hreflang="de" href="https://xerolux.github.io/idm-heatpump-hass/" />
+    <link rel="alternate" hreflang="en" href="https://xerolux.github.io/idm-heatpump-hass/en/" />
+    <link rel="alternate" hreflang="x-default" href="https://xerolux.github.io/idm-heatpump-hass/" />
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
     <script src="script.js" defer></script>
@@ -61,6 +64,7 @@
         </nav>
 
         <div class="nav-actions">
+          <a class="icon-button language-toggle" href="en/" hreflang="en" aria-label="English version" data-language-link>EN</a>
           <button class="icon-button theme-toggle" type="button" aria-label="Helles Design aktivieren" data-theme-toggle>
             <svg class="sun-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="12" cy="12" r="4" />
@@ -345,7 +349,7 @@
               <div class="diagnostic-head"><div><small>Systemdiagnose</small><h3>Alles arbeitet wie erwartet</h3></div><span class="health-score">100 %</span></div>
               <div class="diagnostic-list">
                 <div><span class="check">✓</span><p><strong>Modbus TCP</strong><small>Verbindung stabil · 2 ms</small></p><span>Port 502</span></div>
-                <div><span class="check">✓</span><p><strong>IDM Heatpump API</strong><small>Bibliothek erfolgreich geladen</small></p><span>v0.7.6</span></div>
+                <div><span class="check">✓</span><p><strong>IDM Heatpump API</strong><small>Bibliothek erfolgreich geladen</small></p><span data-api-version>v2.0.0</span></div>
                 <div><span class="check">✓</span><p><strong>Entitäten</strong><small>Alle verfügbaren Register eingelesen</small></p><span>Modellabhängig</span></div>
                 <div><span class="check">✓</span><p><strong>Interne Meldungen</strong><small>Keine aktiven Fehler vorhanden</small></p><span>Bereit</span></div>
               </div>
@@ -371,7 +375,7 @@
 
             <div class="requirements">
               <span>Benötigt</span>
-              <p>Home Assistant 2026.5.0+ · HACS · IDM Navigator 2.0 / 10 / Pro</p>
+              <p>Home Assistant <span data-minimum-home-assistant-version>2026.8.1+</span> · HACS · IDM Navigator 2.0 / 10 / Pro</p>
             </div>
           </div>
 
@@ -380,7 +384,7 @@
               <span class="download-mark">
                 <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M20 7v18m0 0 7-7m-7 7-7-7M8 31h24" /></svg>
               </span>
-              <div><small>Aktuelle stabile Version</small><h3>v0.8.2</h3></div>
+              <div><small>Aktuelle stabile Version</small><h3 data-integration-version>v0.16.2</h3></div>
               <span class="stable-badge">Stable</span>
             </div>
             <a class="button button-primary button-full" href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest" target="_blank" rel="noreferrer">
@@ -434,5 +438,10 @@
     </footer>
 
     <div class="toast" role="status" aria-live="polite" data-toast>Repository-URL kopiert</div>
+    <aside class="language-suggestion" data-language-suggestion hidden>
+      <p><strong>English version available</strong><span>Your browser prefers English.</span></p>
+      <a href="en/" hreflang="en">View in English</a>
+      <button type="button" aria-label="Close language suggestion" data-language-suggestion-close>×</button>
+    </aside>
   </body>
 </html>
