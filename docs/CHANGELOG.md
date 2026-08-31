@@ -15,11 +15,16 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Broken header image in the German README and on the wiki home page.** The
+  header moved to `docs/images/idm-home-assistant-hero.png` and the previous
+  `.jpg` was deleted, but only `README.md` was repointed; `README_de.md` and
+  `docs/wiki/Home.md` still requested the deleted file and rendered a broken
+  image. Both now reference the PNG, and `README_de.md` mirrors the width its
+  English counterpart uses.
 - **The Pages SEO test asserted a header image the documentation no longer uses.**
-  The wiki home page moved to `docs/images/idm-home-assistant-hero.jpg`, but
-  `tests/test_pages_seo.py` still required `images/heatpump.png` in the rendered
-  home page, so the suite failed on every build. The assertion now names the image
-  the page actually carries.
+  `tests/test_pages_seo.py` required `images/heatpump.png` in the rendered home
+  page after that page had moved to the hero image, so the suite failed on every
+  build. The assertion now names the image the page actually carries.
 
 ### Changed
 

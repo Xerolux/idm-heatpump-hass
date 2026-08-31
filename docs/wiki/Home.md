@@ -1,7 +1,7 @@
 # IDM Heatpump - Home Assistant Integration
 
 <p align="center">
-  <img src="../images/idm-home-assistant-hero.jpg" alt="IDM Heatpump integration: local Modbus TCP, local Navigator data and optional KNX" width="900"><br>
+  <img src="../images/idm-home-assistant-hero.png" alt="IDM Heatpump integration: local Modbus TCP, local Navigator data and optional KNX" width="900"><br>
   <small><i>AI generated</i></small>
 </p>
 
