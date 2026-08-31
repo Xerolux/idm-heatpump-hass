@@ -2,7 +2,7 @@
 
 <div align="center">
   <a href="https://xerolux.github.io/idm-heatpump-hass/">
-    <img src="https://raw.githubusercontent.com/Xerolux/idm-heatpump-hass/main/docs/images/heatpump.png" alt="IDM Heatpump" width="240">
+    <img src="https://raw.githubusercontent.com/Xerolux/idm-heatpump-hass/main/docs/images/idm-home-assistant-hero.jpg" alt="IDM Heatpump integration: local Modbus TCP, local Navigator data and optional KNX" width="900">
   </a>
   <h1>IDM Heatpump for Home Assistant</h1>
   <p><strong>Monitor and control your IDM Navigator heat pump locally through Modbus TCP — without a cloud dependency.</strong></p>
