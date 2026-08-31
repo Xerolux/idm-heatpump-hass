@@ -13,13 +13,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The Pages SEO test asserted a header image the documentation no longer uses.**
+  The wiki home page moved to `docs/images/idm-home-assistant-hero.jpg`, but
+  `tests/test_pages_seo.py` still required `images/heatpump.png` in the rendered
+  home page, so the suite failed on every build. The assertion now names the image
+  the page actually carries.
+
 ### Changed
 
-- **Reworked the heat pump header image** (`docs/images/heatpump.png`). The white
+- **Reworked the heat pump product shot** (`docs/images/heatpump.png`). The white
   studio backdrop is matted out into a transparent alpha channel, so the shot no
-  longer sits in a bright box when GitHub, the wiki or the Pages site are rendered
-  in dark mode. The frame is cropped to the unit itself, so it reads roughly twice
-  as large at the same `width="240"`; the contact shadow is kept as neutral density
+  longer sits in a bright box when it is rendered on a dark background. The frame
+  is cropped to the unit itself, and the contact shadow is kept as neutral density
   that vanishes on dark backgrounds. Rescaled to 900 px and requantised, the file
   drops from 770 KB to 367 KB.
 

@@ -139,7 +139,7 @@ def test_documentation_pages_are_static_unique_and_indexable(built_public_dir: P
         ).group(0)
         assert '<meta name="twitter:card" content="summary_large_image" />' in documentation
         if page["slug"] == "home":
-            assert 'src="images/heatpump.png"' in documentation
+            assert 'src="images/idm-home-assistant-hero.jpg"' in documentation
 
         graph = _structured_data(documentation)[0]["@graph"]
         web_page = next(item for item in graph if item["@type"] == "WebPage")
