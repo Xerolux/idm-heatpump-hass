@@ -15,25 +15,47 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
-- **Broken header image in the German README and on the wiki home page.** The
-  header moved to `docs/images/idm-home-assistant-hero.png` and the previous
-  `.jpg` was deleted, but only `README.md` was repointed; `README_de.md` and
-  `docs/wiki/Home.md` still requested the deleted file and rendered a broken
-  image. Both now reference the PNG, and `README_de.md` mirrors the width its
-  English counterpart uses.
-- **The Pages SEO test asserted a header image the documentation no longer uses.**
-  `tests/test_pages_seo.py` required `images/heatpump.png` in the rendered home
-  page after that page had moved to the hero image, so the suite failed on every
-  build. The assertion now names the image the page actually carries.
+- **Broken hero image on the German README and the documentation home page.**
+  Both still pointed at `docs/images/idm-home-assistant-hero.jpg`, which was
+  deleted when the file was replaced by `idm-home-assistant-hero.png`. The
+  documentation home page therefore shipped a 404 image, and
+  `test_generated_relative_links_resolve_inside_pages_artifact` was red.
+- **Two documentation links landed on the right page at the wrong place.**
+  `Examples.md` linked to `Services#set_external_power` and `Services.md` to
+  `Modbus-Register#pvenergy-management-datatype-reference`; neither fragment is
+  a heading id the renderer produces. A new test resolves every generated
+  fragment link against the rendered heading ids.
+- **The landing page was blank below the hero without JavaScript.** Everything
+  below the fold starts at `opacity: 0` and is revealed by `script.js`, with no
+  fallback. A `<noscript>` rule now shows the content, the reveal wiring runs
+  before anything else, and every `localStorage`/`sessionStorage` access is
+  guarded so a browser that blocks site data cannot blank the page.
+- **The hero's floating cards covered the mock dashboard's own text.** At every
+  width from 700 px up they hid the "IDM Navigator"/"Heat pump" heading, the
+  operating-mode percentage and the "Sample data" disclaimer. The dashboard
+  window is now in flow and the cards are anchored to its edges with a fixed
+  overlap; below 1200 px, where the window fills its column, they are hidden.
+- **Stale version statements.** `CLAUDE.md`, the documentation home page,
+  `Configuration.md` and `Stability-and-Release-Readiness.md` still named
+  `0.16.1` as the current release, and `Local-Web-Interface.md` still named
+  `modbus-connection` `4.8.1` in a sentence the pin updater rewrites.
 
 ### Changed
 
+- **The German README now matches the English one section for section.** The
+  architecture diagram was missing `set_external_power`, both were missing
+  `export_knx_group_addresses` and the KNX bridge, the German data-type list
+  named a `WORD` type this project does not have while omitting `INT8`,
+  `INT16`, `UINT16` and `BITFLAG`, and four technical-detail entries plus a
+  quick-start paragraph existed only in English.
 - **Reworked the heat pump product shot** (`docs/images/heatpump.png`). The white
   studio backdrop is matted out into a transparent alpha channel, so the shot no
   longer sits in a bright box when it is rendered on a dark background. The frame
   is cropped to the unit itself, and the contact shadow is kept as neutral density
   that vanishes on dark backgrounds. Rescaled to 900 px and requantised, the file
-  drops from 770 KB to 367 KB.
+  drops from 770 KB to 367 KB. The image is currently unreferenced — the READMEs
+  and the documentation home page carry the hero image — so this only keeps the
+  asset itself in good shape.
 
 ## [0.16.2] - 2026-08-28
 

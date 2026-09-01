@@ -139,7 +139,11 @@ def test_documentation_pages_are_static_unique_and_indexable(built_public_dir: P
         ).group(0)
         assert '<meta name="twitter:card" content="summary_large_image" />' in documentation
         if page["slug"] == "home":
-            assert 'src="images/idm-home-assistant-hero.png"' in documentation
+            # Pin the image to the artifact, not to a filename: the hero image has been
+            # swapped before and left the documentation home page pointing at a 404.
+            hero = re.search(r'<img src="images/([^"]+)"', documentation)
+            assert hero, "the documentation home page should open with an image from docs/images"
+            assert (built_public_dir / "docs" / "images" / hero.group(1)).is_file()
 
         graph = _structured_data(documentation)[0]["@graph"]
         web_page = next(item for item in graph if item["@type"] == "WebPage")
@@ -172,7 +176,7 @@ def test_docs_interface_uses_browser_language_without_a_saved_choice() -> None:
     """Documentation navigation should default to the visitor's browser language."""
     script = (PUBLIC_DIR / "docs" / "docs.js").read_text(encoding="utf-8")
     assert "navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en'" in script
-    assert "localStorage.getItem('idm-docs-language') || browserLanguage" in script
+    assert "readStore('localStorage', 'idm-docs-language') || browserLanguage" in script
 
 
 def test_docs_interface_uses_real_paths_and_keeps_legacy_hash_compatibility() -> None:
@@ -236,3 +240,33 @@ def test_generated_relative_links_resolve_inside_pages_artifact(built_public_dir
                 missing.append(f"{relative_document}: {reference} -> {target}")
 
     assert not missing, "Missing generated Pages targets:\n" + "\n".join(missing)
+
+
+def test_generated_fragment_links_resolve_to_real_headings(built_public_dir: Path) -> None:
+    """A ``#fragment`` written by hand in the wiki must match a rendered heading id.
+
+    Heading ids come from the renderer's slugify, so a hand-written anchor such as
+    ``Services#set_external_power`` silently lands on the right page at the wrong
+    place. Only the fragment is checked here; missing files are the test above.
+    """
+    test_origin = "https://pages.test/"
+    documents = {
+        path.relative_to(built_public_dir).as_posix(): path.read_text(encoding="utf-8")
+        for path in built_public_dir.rglob("*.html")
+    }
+    identifiers = {name: set(re.findall(r'id="([^"]+)"', text)) for name, text in documents.items()}
+    missing: list[str] = []
+
+    for relative_document, document in documents.items():
+        base_url = urljoin(test_origin, relative_document)
+        for reference in re.findall(r'\bhref="([^"]+)"', document):
+            resolved = urlparse(urljoin(base_url, reference))
+            if resolved.netloc != "pages.test" or not resolved.fragment:
+                continue
+            target = unquote(resolved.path).lstrip("/")
+            if resolved.path.endswith("/"):
+                target += "index.html"
+            if target in identifiers and resolved.fragment not in identifiers[target]:
+                missing.append(f"{relative_document}: {reference} -> #{resolved.fragment}")
+
+    assert not missing, "Fragment links without a matching heading:\n" + "\n".join(missing)

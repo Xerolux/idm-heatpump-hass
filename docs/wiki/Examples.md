@@ -106,7 +106,7 @@ source sensor can be unavailable independently, either omit that field in a
 separate call or build the action data dynamically rather than replacing it
 with zero. Multiple fields are validated before writing, but their individual
 Modbus writes are not atomic; the next cyclic update should resend the complete
-current set after a connection failure. See [Services Reference](Services#set_external_power).
+current set after a connection failure. See [Services Reference](Services#set-external-power).
 
 Thresholds at which a heat pump starts, stops or modulates depend on the exact
 model, firmware, temperatures and controller configuration. A fixed 2–3 kW

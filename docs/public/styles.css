@@ -459,7 +459,13 @@ html[data-theme="light"] .moon-icon {
 
 .hero-visual {
   position: relative;
-  min-height: 570px;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 21px;
+  /* The dashboard window drives this column's box, so the floating cards can
+     be anchored to its edges and never land on the mock dashboard's text. */
+  --dashboard-width: min(100%, 550px);
+  --card-overlap: 22px;
 }
 
 .visual-orbit {
@@ -479,10 +485,8 @@ html[data-theme="light"] .moon-icon {
 }
 
 .dashboard-window {
-  position: absolute;
-  top: 21px;
-  right: 0;
-  width: min(100%, 550px);
+  position: relative;
+  width: var(--dashboard-width);
   overflow: hidden;
   border: 1px solid var(--line-strong);
   border-radius: 26px;
@@ -750,6 +754,7 @@ html[data-theme="light"] .moon-icon {
 }
 
 .mode-value {
+  white-space: nowrap;
   color: var(--lime);
   font-size: 11px;
   font-weight: 750;
@@ -757,7 +762,7 @@ html[data-theme="light"] .moon-icon {
 
 .demo-label {
   position: absolute;
-  right: 8px;
+  left: 10px;
   bottom: 5px;
   color: var(--muted);
   font-size: 7px;
@@ -778,8 +783,9 @@ html[data-theme="light"] .moon-icon {
 
 .floating-energy {
   top: 92px;
-  left: -10px;
+  right: calc(var(--dashboard-width) - var(--card-overlap));
   flex-direction: column;
+  width: max-content;
   padding: 13px 17px;
 }
 
@@ -804,7 +810,7 @@ html[data-theme="light"] .moon-icon {
 
 .floating-local {
   right: -18px;
-  bottom: 18px;
+  bottom: -38px;
   align-items: center;
   gap: 10px;
   padding: 12px 15px;
@@ -2111,13 +2117,16 @@ html[data-theme="light"] .moon-icon {
   transform: none;
 }
 
+/* Narrower than this the dashboard window fills its column, leaving the floating
+   cards nowhere to hang without covering the mock dashboard or the headline. */
+@media (max-width: 1200px) {
+  .floating-card { display: none; }
+}
+
 @media (max-width: 1050px) {
   .nav-links { gap: 22px; margin-left: 2%; }
   .hero-grid { grid-template-columns: 0.88fr 1.12fr; gap: 22px; }
-  .hero-visual { min-height: 520px; }
-  .dashboard-window { width: 500px; }
-  .floating-energy { left: -5px; }
-  .floating-local { right: -5px; }
+  .hero-visual { --dashboard-width: 500px; }
   .feature-strip > div { padding-inline: 10px; }
   .install-shell { gap: 46px; }
 }
@@ -2165,10 +2174,12 @@ html[data-theme="light"] .moon-icon {
   .hero h1 { margin-inline: auto; }
   .hero-text { margin-inline: auto; }
   .hero-actions, .trust-list { justify-content: center; }
-  .hero-visual { width: min(100%, 620px); min-height: 590px; margin: 28px auto 0; }
-  .dashboard-window { right: 50%; width: 540px; transform: translateX(50%); }
-  .floating-energy { left: 0; }
-  .floating-local { right: 0; }
+  .hero-visual {
+    width: min(100%, 620px);
+    margin: 28px auto 0;
+    justify-content: center;
+    --dashboard-width: min(100%, 540px);
+  }
   .feature-card-wide { grid-template-columns: 1fr; }
   .feature-strip { grid-template-columns: repeat(2, 1fr); }
   .feature-strip > div:nth-child(2) { border-right: 0; }
@@ -2195,8 +2206,8 @@ html[data-theme="light"] .moon-icon {
   .hero-actions { flex-direction: column; }
   .hero-actions .button { width: 100%; }
   .trust-list { gap: 8px 16px; }
-  .hero-visual { min-height: 465px; margin-top: 32px; }
-  .dashboard-window { top: 12px; width: min(100%, 430px); border-radius: 20px; }
+  .hero-visual { margin-top: 32px; padding-top: 12px; --dashboard-width: min(100%, 430px); }
+  .dashboard-window { border-radius: 20px; }
   .window-bar { height: 41px; padding-inline: 13px; }
   .dashboard-content { padding: 17px 17px 14px; }
   .system-visual { height: 180px; }
@@ -2209,7 +2220,6 @@ html[data-theme="light"] .moon-icon {
   .metric-card { min-height: 59px; padding: 9px 10px; }
   .metric-icon { width: 31px; height: 31px; }
   .metric-card.full { min-height: 45px; }
-  .floating-card { display: none; }
   .visual-orbit { display: none; }
   .scroll-cue { display: none; }
   .section { padding: 82px 0; }
