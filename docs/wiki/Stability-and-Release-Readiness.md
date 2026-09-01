@@ -6,7 +6,7 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.16.1` and `idm-heatpump-api` `2.0.0` form the current
+Integration `0.16.2` and `idm-heatpump-api` `2.0.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
@@ -19,6 +19,13 @@ from pymodbus, and moves its built-in Modbus TCP transport behind an optional
 extra. This integration injects a tmodbus-backed transport, so it now installs
 no Modbus stack it does not speak. The transport pins are
 `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.2`.
+
+**`0.16.2`** is a patch on `0.16.1`: `validate_overrides` accepted a KNX
+group-address override that claimed the derived address (`base + object
+number`) of another served object, and the bridge then routed that address to
+only one of the two registers. Address resolution and the KNX options step now
+refuse any address claimed twice. `tmodbus[async-serial]` moved from `0.6.1` to
+`0.6.2`; no register or entity changed.
 
 **`0.16.1`** is a patch on `0.16.0`: with the local web supplement pointed
 at an IP address, the integration closed a Home Assistant aiohttp session

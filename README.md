@@ -188,24 +188,31 @@ before publishing a stable release.
 
 ```
 Home Assistant
-    |
-    +-- IdmCoordinator (DataUpdateCoordinator, configurable polling)
-    |       |
-    |       +-- IdmModbusConnectionClient (device logic from idm-heatpump-api)
-    |       |       |
-    |       |       +-- modbus-connection 4.10.0 + tmodbus 0.6.2
-    |       |               |
-    |       |               +-- IDM Navigator 2.0 / 10 / Pro (Modbus TCP, Port 502)
-    |       |
-    |       +-- Optional local web supplement (PIN, read-only, separate interval)
-    |
-    |       +-- Optional RoomTempForwarder (HA sensors -> external room temp registers)
-    |       |
-    |       +-- Entities (sensor, binary_sensor, number, select, switch, climate, water_heater, button)
-    |
-    +-- Services (set_system_mode, acknowledge_errors, write_register, set_external_climate, set_external_power, start_dhw_boost, cancel_dhw_boost)
-    |
-    +-- Diagnostics (JSON export via HA UI)
+    │
+    ├── IdmCoordinator (DataUpdateCoordinator, configurable polling)
+    │       │
+    │       ├── IdmModbusConnectionClient (device logic from idm-heatpump-api)
+    │       │       │
+    │       │       └── modbus-connection 4.10.0 + tmodbus 0.6.2
+    │       │               │
+    │       │               └── IDM Navigator 2.0 / 10 / Pro (Modbus TCP, port 502, slave ID 1)
+    │       │                       FC 04: Read Input Registers
+    │       │                       FC 03: Read Holding Registers
+    │       │                       FC 16: Write Multiple Registers
+    │       │
+    │       ├── Optional local web supplement (PIN, read-only, separate interval)
+    │       │
+    │       ├── Optional RoomTempForwarder (HA sensors -> external room temperature registers)
+    │       │
+    │       ├── Optional KnxBridge (IDM communication objects via the Home Assistant KNX integration)
+    │       │
+    │       └── Entities (sensor, binary_sensor, number, select, switch, climate, water_heater, button)
+    │
+    ├── Services (set_system_mode, acknowledge_errors, write_register, set_external_climate,
+    │             set_external_power, start_dhw_boost, cancel_dhw_boost,
+    │             export_knx_group_addresses)
+    │
+    └── Diagnostics (JSON export via the HA UI)
 ```
 
 ### Technical Details
@@ -213,13 +220,14 @@ Home Assistant
 - **Dynamic entities** generated from the detected model, enabled circuits, zones and optional capabilities
 - **Batch reading**: only exactly adjacent, non-overlapping register ranges are grouped, up to 40 Modbus words per request
 - **Value safety**: declared unavailable sentinels are treated as unused; implausible batch values are verified individually and quarantined for the client session
-- **Data types**: FLOAT (IEEE 754), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
-- **EEPROM protection**: Sensitive registers are tracked and protected from excessive writing
+- **Data types**: FLOAT (IEEE 754, two registers), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
+- **EEPROM protection**: 88 EEPROM-sensitive registers are tracked and protected from excessive writing
 - **Direct local transport**: raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.2` runtime; version 4.10.0 is the transport library version, not the IDM integration version
 - **API boundary**: `idm-heatpump-api[web]==2.0.0` supplies register metadata, batching, encoding/decoding, model detection and write safety. Since that release the API owns its own exception hierarchy and pymodbus is gone: this integration installs no Modbus stack it does not speak
 - **Auto-recovery**: API retry/backoff policy plus reconnect-on-demand in the tmodbus-backed connection
-- **Library-powered**: All register definitions sourced from [`idm-heatpump`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools
+- **Library-powered**: All register definitions sourced from [`idm-heatpump-api`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools
 - **Navigator 10 support**: Heat sink (Trennwärmetauscher) sensors, flow rate monitoring (Sieb detection), groundwater temperatures, booster A/B diagnostics
+- **Optional KNX bridge**: publishes the 654 IDM communication objects through the Home Assistant KNX integration, so tunnelling, routing and KNX Secure come from there; experimental and disabled by default
 - **Optional web supplement**: setup detects Navigator 2.0 HTTP or Navigator 10/Pro WebSocket locally, remembers the successful protocol, reuses that session and keeps routine reconnects on the known variant; Modbus remains authoritative
 - **Room temperature forwarding**: disabled by default; can forward selected Home Assistant temperature sensors to the IDM external room temperature registers per heating circuit with a 300 second default interval, immediate updates on state change, 0.2 °C default tolerance and range validation
 - **Readable diagnostics**: the `internal_message` sensor shows clear message text and exposes `message_code` / `message_text` attributes instead of a bare numeric code

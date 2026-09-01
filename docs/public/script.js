@@ -1,3 +1,28 @@
+/* Content below the hero starts at opacity 0 and is revealed on scroll, so the
+   reveal wiring runs first: a later failure must never leave the page blank. */
+const revealItems = document.querySelectorAll('.reveal');
+
+revealItems.forEach((item) => {
+  const delay = item.dataset.delay;
+  if (delay) item.style.setProperty('--delay', `${delay}ms`);
+});
+
+if ('IntersectionObserver' in window) {
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add('is-visible');
+        observer.unobserve(entry.target);
+      });
+    },
+    { threshold: 0.12, rootMargin: '0px 0px -40px' },
+  );
+  revealItems.forEach((item) => observer.observe(item));
+} else {
+  revealItems.forEach((item) => item.classList.add('is-visible'));
+}
+
 const root = document.documentElement;
 const header = document.querySelector('[data-header]');
 const themeToggle = document.querySelector('[data-theme-toggle]');
@@ -26,7 +51,25 @@ const labels = {
   },
 };
 
-const savedTheme = localStorage.getItem('idm-theme');
+/* Browsers that block site data throw on any storage access. Preferences are a
+   convenience, so every read and write goes through these helpers. */
+const readStore = (store, key) => {
+  try {
+    return window[store].getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const writeStore = (store, key, value) => {
+  try {
+    window[store].setItem(key, value);
+  } catch {
+    /* The preference just does not persist. */
+  }
+};
+
+const savedTheme = readStore('localStorage', 'idm-theme');
 const prefersLight = window.matchMedia('(prefers-color-scheme: light)').matches;
 const initialTheme = savedTheme || (prefersLight ? 'light' : 'dark');
 root.dataset.theme = initialTheme;
@@ -41,7 +84,7 @@ updateThemeLabel();
 
 themeToggle.addEventListener('click', () => {
   root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('idm-theme', root.dataset.theme);
+  writeStore('localStorage', 'idm-theme', root.dataset.theme);
   updateThemeLabel();
 });
 
@@ -63,23 +106,23 @@ menuToggle.addEventListener('click', () => {
 siteNav.querySelectorAll('a').forEach((link) => link.addEventListener('click', closeMenu));
 
 languageLink.addEventListener('click', () => {
-  localStorage.setItem('idm-site-language', pageLanguage === 'de' ? 'en' : 'de');
+  writeStore('localStorage', 'idm-site-language', pageLanguage === 'de' ? 'en' : 'de');
 });
 
 const browserPrefersEnglish = !navigator.language.toLowerCase().startsWith('de');
-const hasLanguagePreference = localStorage.getItem('idm-site-language');
-const suggestionDismissed = sessionStorage.getItem('idm-language-suggestion-dismissed');
+const hasLanguagePreference = readStore('localStorage', 'idm-site-language');
+const suggestionDismissed = readStore('sessionStorage', 'idm-language-suggestion-dismissed');
 if (pageLanguage === 'de' && browserPrefersEnglish && !hasLanguagePreference && !suggestionDismissed) {
   languageSuggestion.hidden = false;
 }
 
 languageSuggestion.querySelector('a').addEventListener('click', () => {
-  localStorage.setItem('idm-site-language', 'en');
+  writeStore('localStorage', 'idm-site-language', 'en');
 });
 
 languageSuggestionClose.addEventListener('click', () => {
   languageSuggestion.hidden = true;
-  sessionStorage.setItem('idm-language-suggestion-dismissed', 'true');
+  writeStore('sessionStorage', 'idm-language-suggestion-dismissed', 'true');
 });
 
 window.addEventListener('resize', () => {
@@ -129,26 +172,3 @@ copyButton.addEventListener('click', async () => {
   toast.classList.add('is-visible');
   window.setTimeout(() => toast.classList.remove('is-visible'), 2200);
 });
-
-const revealItems = document.querySelectorAll('.reveal');
-
-revealItems.forEach((item) => {
-  const delay = item.dataset.delay;
-  if (delay) item.style.setProperty('--delay', `${delay}ms`);
-});
-
-if ('IntersectionObserver' in window) {
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-visible');
-        observer.unobserve(entry.target);
-      });
-    },
-    { threshold: 0.12, rootMargin: '0px 0px -40px' },
-  );
-  revealItems.forEach((item) => observer.observe(item));
-} else {
-  revealItems.forEach((item) => item.classList.add('is-visible'));
-}

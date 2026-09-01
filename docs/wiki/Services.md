@@ -176,7 +176,7 @@ the finite-number validation described above.
 `battery_soc` is a signed INT16 register whose documented valid input is a
 whole percentage from `0` to `100`; `-1` is its unavailable sentinel. The
 action enforces `0`…`100` explicitly rather than accepting the sentinel as an
-external input. See [Modbus Registers](Modbus-Register#pvenergy-management-datatype-reference)
+external input. See [Modbus Registers](Modbus-Register#pv-energy-management-datatype-reference)
 for the register datatypes.
 
 ### Multiple values and partial failures

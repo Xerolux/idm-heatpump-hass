@@ -1,7 +1,7 @@
 # IDM Heatpump - Home Assistant Integration
 
 <p align="center">
-  <img src="../images/idm-home-assistant-hero.jpg" alt="IDM Heatpump integration: local Modbus TCP, local Navigator data and optional KNX" width="900"><br>
+  <img src="../images/idm-home-assistant-hero.png" alt="IDM Heatpump integration: local Modbus TCP, local Navigator data and optional KNX" width="900"><br>
   <small><i>AI generated</i></small>
 </p>
 
@@ -23,7 +23,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Integration version** | 0.16.1 |
+| **Integration version** | 0.16.2 |
 | **Supported/tested HA baseline** | 2026.8.1 |
 | **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection==4.10.0 |

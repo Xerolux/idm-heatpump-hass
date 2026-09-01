@@ -2,7 +2,7 @@
 
 <div align="center">
   <a href="https://xerolux.github.io/idm-heatpump-hass/">
-    <img src="https://raw.githubusercontent.com/Xerolux/idm-heatpump-hass/main/docs/images/idm-home-assistant-hero.jpg" alt="IDM Heatpump Integration: lokales Modbus TCP, lokale Navigator-Daten und optionales KNX" width="900">
+    <img src="https://raw.githubusercontent.com/Xerolux/idm-heatpump-hass/main/docs/images/idm-home-assistant-hero.png" alt="IDM Heatpump Integration: lokales Modbus TCP, lokale Navigator-Daten und optionales KNX" width="700">
   </a>
   <h1>IDM Heatpump für Home Assistant</h1>
   <p><strong>Deine IDM Navigator Wärmepumpe lokal über Modbus TCP überwachen und steuern — ganz ohne Cloud-Abhängigkeit.</strong></p>
@@ -64,7 +64,7 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 |-----------|-------------------|
 | **🌡️ System-Überwachung** | Vorlauf, Rücklauf, Warmwasser, Außentemperatur, Druck, Durchfluss |
 | **🔧 Heizkreise A–G** | Bis zu 7 Heizkreise mit individueller Sollwert- und Modussteuerung |
-| **🏠 Zonen-Module** | Bis zu 10 Zonen mit bis zu 8 konfigurierbaren Räumen; beim aktuellen Navigator 10 sind 6 Räume der Standard. |
+| **🏠 Zonen-Module** | Bis zu 10 Zonen mit bis zu 8 konfigurierbaren Räumen je Zone (Raumthermostat-Funktion); beim aktuellen Navigator 10 sind 6 Räume der Standard. |
 | **🌡️ Raumtemperatur-Weitergabe** | Optionale Weitergabe von Home-Assistant-Temperatursensoren an die externen IDM-Raumtemperaturregister pro Heizkreis |
 | **💧 Warmwasser** | Warmwasser-Sollwert und Prioritätssteuerung |
 | **☀️ Solar & PV** | Solare Warmwasserbereitung, PV-Überschussnutzung |
@@ -131,6 +131,12 @@ Später kannst du unter **Einstellungen → Geräte & Dienste → IDM Heatpump �
 Neu konfigurieren → Aktuelle Verbindung testen** jederzeit einen sicheren
 Modbus- und optionalen Webtest wiederholen.
 
+Schreibbare Bedienelemente stehen als `number`-, `select`- und `switch`-Entitäten
+bereit und lassen sich auch unter **Automatisierungen → Aktion hinzufügen**
+auswählen. Für die Diagnose auf Registerebene lässt sich der **GLT-Monitor** des
+Navigators mit den Diagnosedaten der Integration vergleichen, ohne Testwerte zu
+schreiben.
+
 **4. Fertig!** 🎉 Deine Wärmepumpe ist jetzt smart.
 
 > Detaillierte Anleitung → **[Installation & Setup][wiki-install]**
@@ -170,11 +176,11 @@ Maintainer sollten vor einem stabilen Release den
 
 | Plattform | Entities | Beschreibung |
 |-----------|----------|--------------|
-| **Sensor** | modellabhängig | Temperaturen, Drücke, Durchflüsse, Energie, PV, Solar, Kaskade, Laufzeitversionen und Diagnose |
-| **Binary Sensor** | modellabhängig | Störungen, Verdichterstatus sowie Heiz-/Kühl-/Warmwasseranforderung, Web-Status |
-| **Number** | modellabhängig | Sollwerte, Temperaturgrenzen, GLT-Parameter und Leistungsgrenzen |
-| **Select** | modellabhängig | Betriebsart, Heizkreis-, Solar- und ISC-Modi |
-| **Switch** | modellabhängig | Externe Heiz-/Kühl-/Warmwasseranforderung und einmalige Warmwasserladung |
+| **Sensor** | modellabhängig | Temperaturen, Drücke, Durchflüsse, Energie, PV, Solar, Kaskade, Booster, Laufzeitversionen und Diagnose |
+| **Binary Sensor** | modellabhängig | Störungsmeldungen, Verdichterstatus, Heiz-/Kühl-/Warmwasseranforderung, Web-Status |
+| **Number** | modellabhängig | Sollwerte, Temperaturen, Grenzwerte, GLT-Parameter, Leistungsgrenzen (schreibbar) |
+| **Select** | modellabhängig | Systembetriebsart, Heizkreis-Betriebsarten, Solarmodus, ISC-Modus |
+| **Switch** | modellabhängig | Externe Heiz-/Kühl-/Warmwasseranforderung, einmalige Warmwasserladung |
 | **Climate** | pro Heizkreis + Zonenraum | Heiz-/Kühlmodus und Zieltemperatur für Heizkreise A–G und Zonenmodule-Räume |
 | **Water Heater** | 1 | Warmwasser-Solltemperatur mit aktueller Ist-Temperatur (sofern DHW-Register verfügbar) |
 | **Button** | 1–3 | Störungen quittieren sowie optional Warmwasser-Boost starten/abbrechen |
@@ -193,7 +199,7 @@ Home Assistant
     │       │       │
     │       │       └── modbus-connection 4.10.0 + tmodbus 0.6.2
     │       │               │
-    │       │               └── IDM Navigator 2.0 / 10 / Pro (TCP 502, Slave ID 1)
+    │       │               └── IDM Navigator 2.0 / 10 / Pro (Modbus TCP, Port 502, Slave-ID 1)
     │       │                       FC 04: Read Input Registers
     │       │                       FC 03: Read Holding Registers
     │       │                       FC 16: Write Multiple Registers
@@ -202,32 +208,41 @@ Home Assistant
     │       │
     │       ├── Optionaler RoomTempForwarder (HA-Sensoren -> externe Raumtemperaturregister)
     │       │
+    │       ├── Optionale KnxBridge (IDM-Kommunikationsobjekte über die KNX-Integration von Home Assistant)
+    │       │
     │       └── Entities (sensor, binary_sensor, number, select, switch, climate, water_heater, button)
     │
-    ├── Services (set_system_mode, acknowledge_errors, write_register, set_external_climate, start_dhw_boost, cancel_dhw_boost)
+    ├── Services (set_system_mode, acknowledge_errors, write_register, set_external_climate,
+    │             set_external_power, start_dhw_boost, cancel_dhw_boost,
+    │             export_knx_group_addresses)
     │
-    └── Diagnostics (JSON-Export via HA UI)
+    └── Diagnostics (JSON-Export über die HA-Oberfläche)
 ```
 
 ### Technische Details
 
-- **Dynamische Registerauswahl** passend zu erkanntem Modell, Heizkreisen, Zonen und optionalen Fähigkeiten
-- **Batch-Lesung**: nur exakt benachbarte, nicht überlappende Bereiche werden bis maximal 40 Modbus-Wörter pro Anfrage gruppiert
-- **Werte-Sicherheit**: deklarierte Nicht-verfügbar-Sentinels gelten als unbenutzt; unplausible Batch-Werte werden einzeln geprüft und für die laufende Verbindung aus Batches ausgeschlossen
-- **Datentypen**: FLOAT (IEEE 754, 2 Register), UCHAR (8-bit), WORD (16-bit), BOOL
-- **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden vor zu häufigem Schreiben geschützt
-- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über `modbus-connection==4.10.0` und `tmodbus[async-serial]==0.6.2`; `4.10.0` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
-- **API-Grenze**: `idm-heatpump-api[web]==2.0.0` bleibt für Register, Batchplanung, Encoding/Decoding, Modellerkennung und Schreibschutz zuständig. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
-- **Auto-Recovery**: API-Retry/Backoff plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
+- **Dynamische Entitäten** passend zu erkanntem Modell, aktivierten Heizkreisen, Zonen und optionalen Fähigkeiten
+- **Batch-Lesung**: nur exakt benachbarte, nicht überlappende Registerbereiche werden gruppiert, maximal 40 Modbus-Wörter pro Anfrage
+- **Werte-Sicherheit**: deklarierte Nicht-verfügbar-Sentinels gelten als unbenutzt; unplausible Batch-Werte werden einzeln geprüft und für die laufende Client-Sitzung aus Batches ausgeschlossen
+- **Datentypen**: FLOAT (IEEE 754, zwei Register), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
+- **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden erfasst und vor zu häufigem Schreiben geschützt
+- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über exakt `modbus-connection==4.10.0` und `tmodbus[async-serial]==0.6.2`; `4.10.0` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
+- **API-Grenze**: `idm-heatpump-api[web]==2.0.0` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
+- **Auto-Recovery**: Retry-/Backoff-Strategie der API plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
+- **Bibliotheksbasiert**: Alle Registerdefinitionen stammen aus [`idm-heatpump-api`](https://github.com/Xerolux/idm-heatpump-api) und bleiben so über alle Werkzeuge hinweg konsistent
+- **Navigator-10-Unterstützung**: Trennwärmetauscher-Sensoren, Durchflussüberwachung (Sieb-Erkennung), Grundwassertemperaturen, Booster-A/B-Diagnose
+- **Optionale KNX-Bridge**: stellt die 654 IDM-Kommunikationsobjekte über die KNX-Integration von Home Assistant bereit, Tunneling, Routing und KNX Secure kommen von dort; experimentell und standardmäßig deaktiviert
 - **Optionale Web-Zusatzdaten**: Die Einrichtung erkennt lokal Navigator-2.0-HTTP oder Navigator-10/Pro-WebSocket, speichert das erfolgreiche Protokoll, nutzt die Sitzung weiter und verbindet im Normalbetrieb nur diese bekannte Variante neu; Modbus bleibt führend
-- **Verständliche Verbindungsdiagnose**: Setup, Reconfigure, Logs und Reparaturmeldungen unterscheiden DNS-/Hostnamefehler, abgelehnte TCP-Verbindungen, Timeouts, nicht erreichbare Endpunkte, fehlende Modbus-Antworten, falsche Web-PINs und Webfehler
-- **Eingebautes Testmenü**: „Neu konfigurieren“ bietet einen zerstörungsfreien Test eines bekannten IDM-Modbus-Registers, gezielte DNS/TCP-Fehlerklassifizierung und – falls eingerichtet – die lokale Navigator-Webanmeldung
-- **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations-, `modbus-connection`- und `tmodbus`-Version als Attribute; dieselben Angaben stehen im Diagnoseexport und Startlog
-- **Verbindungsbesitz**: Jede Config-Entry besitzt ihren tmodbus-Socket; zentrales Entry-übergreifendes Home-Assistant-Sharing ist derzeit nicht verfügbar, daher meldet die Diagnose `supports_shared_connection: false`
-- **Validierungsstand**: Der Adapter ist implementiert und automatisiert getestet; die read-only Prüfung des neuen tmodbus-Pfads an realer Navigator-Hardware steht noch aus
 - **Raumtemperatur-Weitergabe**: standardmäßig deaktiviert; kann ausgewählte Home-Assistant-Temperatursensoren pro Heizkreis an die externen IDM-Raumtemperaturregister weitergeben, mit 300 Sekunden Standardintervall, sofortiger Weitergabe bei Zustandsänderung, 0,2 °C Standardtoleranz und Bereichsprüfung
 - **Lesbare Diagnose**: der Sensor `internal_message` zeigt Klartext und liefert zusätzlich die Attribute `message_code` und `message_text` statt nur einer nackten Nummer
-- **Entity-Ordnung**: Fachmann-Code-Sensoren sind ganz oben angeheftet, danach folgen sinnvolle Funktionsgruppen für Konfiguration, Schalter, schreibbare Werte und Diagnose
+- **Verständliche Verbindungsdiagnose**: Setup, Reconfigure, Logs und Reparaturmeldungen unterscheiden DNS-/Hostnamefehler, abgelehnte TCP-Verbindungen, Timeouts, nicht erreichbare Endpunkte, fehlende Modbus-Antworten, falsche Web-PINs und Webfehler
+- **Eingebautes Testmenü**: „Neu konfigurieren“ bietet einen zerstörungsfreien Verbindungstest über ein bekanntes IDM-Modbus-Register, gezielte DNS-/TCP-Fehlerklassifizierung und – falls eingerichtet – die lokale Navigator-Webanmeldung
+- **Sichtbarer Laufzeit-Stack**: Der Diagnose-Sensor `IDM-Heatpump-API-Version` zeigt die installierte API-Version und führt Integrations-, `modbus-connection`- und `tmodbus`-Version als Attribute; dieselben Angaben stehen im Diagnoseexport und im Startlog
+- **Verbindungsbesitz**: Jede Config-Entry besitzt ihren tmodbus-Socket; zentrales Entry-übergreifendes Home-Assistant-Sharing ist derzeit nicht verfügbar, daher meldet die Diagnose `supports_shared_connection: false`
+- **Validierungsstand**: Der Adapter ist implementiert und automatisiert getestet; die read-only Prüfung des neuen tmodbus-Pfads an realer Navigator-Hardware steht noch aus
+- **Entity-Ordnung**: Fachmann-Code-Sensoren sind ganz oben angeheftet, danach folgen Funktionsgruppen für Konfiguration, Schalter, schreibbare Werte und Diagnose
+- **PV-/GLT-Korrektheit**: Float-Eingaben nutzen die IDM-Wortreihenfolge, der Batterie-SOC ist ein einzelner vorzeichenbehafteter 16-Bit-Prozentwert, und die Dokumentation warnt davor, dasselbe Register von mehreren Energiemanagern schreiben zu lassen
+- **Hardware-gestützte Diagnose**: Die Fehlerbehebung erklärt, wie sich Home-Assistant-Werte und Zeitstempel mit dem GLT-Monitor des Navigators vergleichen lassen
 - **Private Diagnoseexporte**: Modbus-/Web-Host, Port, Slave-ID und lokale Web-PIN werden redigiert; detaillierte Web-Verbindungsfehler werden auf eine sichere Fehlerkategorie reduziert
 
 </details>
