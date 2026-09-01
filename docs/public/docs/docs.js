@@ -1,3 +1,21 @@
+/* Browsers that block site data throw on any storage access. Preferences are a
+   convenience, so every read and write goes through these helpers. */
+const readStore = (store, key) => {
+  try {
+    return window[store].getItem(key);
+  } catch {
+    return null;
+  }
+};
+
+const writeStore = (store, key, value) => {
+  try {
+    window[store].setItem(key, value);
+  } catch {
+    /* The preference just does not persist. */
+  }
+};
+
 const root = document.documentElement;
 const article = document.querySelector('[data-article]');
 const navigation = document.querySelector('[data-navigation]');
@@ -100,7 +118,7 @@ const I18N = {
 
 const pageCache = new Map();
 const browserLanguage = navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en';
-let language = localStorage.getItem('idm-docs-language') || browserLanguage;
+let language = readStore('localStorage', 'idm-docs-language') || browserLanguage;
 let currentSlug = '';
 let headingObserver;
 
@@ -358,7 +376,7 @@ const search = async (query, target = searchResults) => {
   target.hidden = false;
 };
 
-const savedTheme = localStorage.getItem('idm-theme');
+const savedTheme = readStore('localStorage', 'idm-theme');
 root.dataset.theme = savedTheme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
 const updateThemeLabel = () => {
   const light = root.dataset.theme === 'light';
@@ -370,13 +388,13 @@ updateLanguage();
 
 themeButton.addEventListener('click', () => {
   root.dataset.theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-  localStorage.setItem('idm-theme', root.dataset.theme);
+  writeStore('localStorage', 'idm-theme', root.dataset.theme);
   updateThemeLabel();
 });
 
 languageButton.addEventListener('click', () => {
   language = language === 'de' ? 'en' : 'de';
-  localStorage.setItem('idm-docs-language', language);
+  writeStore('localStorage', 'idm-docs-language', language);
   updateLanguage();
   loadRoute();
 });
