@@ -49,8 +49,9 @@ must be limited to documented safe registers.
   dependency is the newest release on PyPI. The release workflow runs this and
   fails the release when a pin is behind; `allow_stale_pins` overrides it for a
   deliberate exception. The daily `dependency-freshness.yml` workflow updates
-  every pin, validates the result against the full CI matrix and merges it into
-  `main` on its own; a major version bump is validated but left open for review.
+  every pin, validates the result (ruff, mypy, the suite with the coverage gates
+  at the minimum supported Home Assistant, hassfest) and merges it into `main` on
+  its own; a major version bump is validated but left open for review.
   A runtime dependency change restarts the soak clock, so it ships through the
   pre-release channel.
 - `pytest tests/ -v --tb=short --cov=custom_components/idm_heatpump --cov-report=term-missing`

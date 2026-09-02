@@ -35,7 +35,10 @@ concurrency:
 jobs:
   update:
     uses: ./.github/workflows/dependency-update.yml
-    secrets: inherit
+    secrets:
+      # Only this one, never `inherit`: the pipeline needs no other
+      # secret, and it is empty when the repository has not set it.
+      DEPENDENCY_UPDATE_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN }}
     permissions:
       contents: write
       pull-requests: write

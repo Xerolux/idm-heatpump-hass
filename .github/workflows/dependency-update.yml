@@ -3,13 +3,21 @@ name: Dependency Update
 # The one pipeline that moves a runtime pin. It re-pins every exactly pinned
 # requirement in manifest.json to the newest stable release on PyPI
 # (modbus-connection, tmodbus, idm-heatpump-api), regenerates the artifacts that
-# are derived from those libraries, runs the full CI gate against the resulting
-# branch and merges the pull request into main.
+# are derived from those libraries, runs the quality gate against the result and
+# merges the pull request into main.
 #
-# Running CI here is not a duplicate of ci.yml: a pull request opened with
-# GITHUB_TOKEN does not start a workflow run of its own, so without this the
-# branch would reach main unvalidated. The validate job therefore calls the same
-# reusable workflow ci.yml calls, pointed at the update branch.
+# Everything happens in one job, on the tree this job produced. That is
+# deliberate: a pull request opened with GITHUB_TOKEN starts no workflow run of
+# its own, so the checks have to run here or nothing validates the change at
+# all — and a second job checking out the pushed branch by name would be a
+# privileged workflow checking out a ref it computed, which is the shape of an
+# untrusted checkout (CodeQL actions/untrusted-checkout) even when the branch
+# was written by this same run.
+#
+# The gate here is the minimum supported Home Assistant against the manifest
+# pins: that is what a pin change can break. The rest of the ci.yml matrix (the
+# next Home Assistant beta, and the API main branch) guards Home Assistant and
+# API drift rather than the pins, and keeps running daily on main.
 #
 # Callers: dependency-freshness.yml (daily) and api-dependency-update.yml (when
 # the API repository announces a release).
@@ -58,16 +66,10 @@ env:
   MINIMUM_HOME_ASSISTANT: "2026.8.1"
 
 jobs:
-  propose:
+  update:
     name: Update pins
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    outputs:
-      updated: ${{ steps.summary.outputs.updated }}
-      title: ${{ steps.summary.outputs.title }}
-      has-major: ${{ steps.summary.outputs.has-major }}
-      branch: ${{ steps.branch.outputs.name }}
-      pull-request: ${{ steps.pull-request.outputs.pull-request-number }}
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
 
@@ -148,6 +150,25 @@ jobs:
           subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
           PY
 
+      # A transitive pin in a new release can displace the Home Assistant this
+      # gate is meant to test against. Fail loudly rather than report green for a
+      # version that was never installed.
+      - name: Verify the requested Home Assistant version is the installed one
+        if: steps.summary.outputs.updated == 'true'
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+
+          from homeassistant.const import __version__
+
+          requested = os.environ["MINIMUM_HOME_ASSISTANT"]
+          if __version__ != requested:
+              print(f"Requested Home Assistant {requested}, but {__version__} is installed")
+              sys.exit(1)
+          print(f"Home Assistant {__version__} confirmed")
+          PY
+
       # A newer API ships a different register set, so the documents generated
       # from it are part of the update. Their --check tests are red otherwise,
       # and the pull request would carry a manifest that disagrees with the
@@ -163,6 +184,7 @@ jobs:
         if: steps.summary.outputs.updated == 'true'
         run: |
           python - <<'PY'
+          import asyncio
           from importlib.metadata import version
 
           # Importing the backend is the check that caught modbus-connection 4.7.0
@@ -170,6 +192,8 @@ jobs:
           # async-serial extra this line raises ModuleNotFoundError.
           from modbus_connection import ModbusTcpParams
           from modbus_connection.tmodbus import ModbusConnection
+
+          from custom_components.idm_heatpump.modbus_client import IdmModbusConnectionClient
 
           connection = ModbusConnection(
               ModbusTcpParams(host="192.0.2.1", port=502),
@@ -179,17 +203,59 @@ jobs:
           )
           assert type(connection).__module__ == "modbus_connection.tmodbus"
           assert connection.for_unit(1).__class__.__module__ == "modbus_connection.tmodbus"
+
+          client = IdmModbusConnectionClient("192.0.2.1")
+          asyncio.run(client.disconnect())
           print("backend imports OK:", version("modbus-connection"), version("tmodbus"))
           PY
 
-      # A fast gate before the branch is pushed. The complete suite runs in the
-      # validate job, against the pushed branch and the whole version matrix.
-      - name: Run dependency contract tests
+      - name: Lint with Ruff
+        if: steps.summary.outputs.updated == 'true'
+        run: ruff check custom_components/idm_heatpump tests --line-length=120 --output-format=github
+
+      - name: Format check with Ruff
+        if: steps.summary.outputs.updated == 'true'
+        run: ruff format custom_components/idm_heatpump tests --check
+
+      - name: Type check with mypy
+        if: steps.summary.outputs.updated == 'true'
+        run: mypy custom_components/idm_heatpump
+
+      - name: Check documentation language
+        if: steps.summary.outputs.updated == 'true'
+        run: python scripts/check_documentation_language.py
+
+      # The same gates ci.yml enforces: a dependency bump must not quietly cost
+      # the coverage the quality scale requires.
+      - name: Run unit tests
         if: steps.summary.outputs.updated == 'true'
         run: |
-          pytest tests/test_dependency_pins.py tests/test_release_contract.py \
-            tests/test_cross_repo_contract.py tests/test_modbus_transport.py \
-            tests/test_modbus_client.py -q
+          pytest tests/ \
+            --tb=short \
+            --cov=custom_components/idm_heatpump \
+            --cov-report=term-missing \
+            --cov-fail-under=95
+
+      - name: Check config flow coverage
+        if: steps.summary.outputs.updated == 'true'
+        run: |
+          pytest tests/ \
+            -q \
+            --cov=custom_components.idm_heatpump.config_flow \
+            --cov-report=term-missing \
+            --cov-fail-under=100
+
+      # Reads the working tree, so it validates the updated manifest without a
+      # second checkout.
+      - name: Hassfest Action
+        if: steps.summary.outputs.updated == 'true'
+        uses: home-assistant/actions/hassfest@a7c616ce81ccda50150bf1595786c71b1883fabb  # guardrails-disable-line
+
+      # pytest-cov leaves .coverage behind, and an untracked file in the
+      # workspace would be committed to the pull request.
+      - name: Drop the coverage state
+        if: steps.summary.outputs.updated == 'true'
+        run: rm -f .coverage coverage.xml
 
       - name: Create the dependency update pull request
         id: pull-request
@@ -213,16 +279,16 @@ jobs:
             entity metadata catalog, entity translations) are regenerated in the
             same commit.
 
-            Checked before this pull request was opened:
-            - the production `modbus_connection.tmodbus` backend imports with the
-              pinned pair, including connection pacing;
-            - `tests/test_dependency_pins.py`, `tests/test_release_contract.py`,
-              `tests/test_cross_repo_contract.py`, `tests/test_modbus_transport.py`
-              and `tests/test_modbus_client.py`.
+            Checked against these pins before this pull request was opened:
+            - the production `modbus_connection.tmodbus` backend imports, and the
+              integration's client builds on it;
+            - ruff, ruff format, mypy and the documentation language check;
+            - the full test suite at the minimum supported Home Assistant, with
+              the coverage gates ci.yml enforces;
+            - hassfest.
 
-            The full CI matrix runs on this branch in the same workflow run, and
-            the pull request is merged automatically once it is green — a major
-            version bump is held back for a human instead.
+            The pull request is merged automatically once that gate is green — a
+            major version bump is held back for a human instead.
 
             Upstream changelogs:
             - https://home-assistant-libs.github.io/modbus-connection/
@@ -232,68 +298,15 @@ jobs:
             Per `docs/RELEASE_PROCESS.md` a runtime dependency change restarts
             the soak clock, so ship it through the pre-release channel.
 
-      - name: Report the proposal
-        if: steps.summary.outputs.updated == 'true'
-        env:
-          # Through the environment, not interpolated into the script: the body
-          # is full of backticks, which the shell would run as commands.
-          BODY: ${{ steps.summary.outputs.body }}
-          PR: ${{ steps.pull-request.outputs.pull-request-number }}
-        run: |
-          {
-            echo ""
-            echo "### Proposed"
-            echo ""
-            echo "$BODY"
-            echo ""
-            echo "Pull request: #$PR"
-          } >> "$GITHUB_STEP_SUMMARY"
-
-  validate:
-    name: CI
-    needs: propose
-    if: needs.propose.outputs.updated == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        home-assistant-version:
-          - "2026.8.1"
-          - "2026.9.0b0"
-        api-dependency-mode:
-          - manifest-pinned
-          - api-main
-    uses: ./.github/workflows/python-quality.yml
-    with:
-      python-version: "3.14"
-      home-assistant-version: ${{ matrix.home-assistant-version }}
-      api-dependency-mode: ${{ matrix.api-dependency-mode }}
-      ref: ${{ needs.propose.outputs.branch }}
-
-  hassfest:
-    name: Hassfest
-    needs: propose
-    if: needs.propose.outputs.updated == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
-        with:
-          ref: ${{ needs.propose.outputs.branch }}
-      - name: Hassfest Action
-        uses: home-assistant/actions/hassfest@a7c616ce81ccda50150bf1595786c71b1883fabb  # guardrails-disable-line
-
-  merge:
-    name: Merge into main
-    needs: [propose, validate, hassfest]
-    if: needs.propose.outputs.updated == 'true'
-    runs-on: ubuntu-latest
-    steps:
       # A major bump is a breaking upstream change; it gets the same validated
       # pull request, but a human reads the changelog before it reaches main.
       - name: Hold a major bump for review
-        if: needs.propose.outputs.has-major == 'true' && inputs.merge-major != true
+        if: >-
+          steps.summary.outputs.updated == 'true'
+          && steps.summary.outputs.has-major == 'true' && inputs.merge-major != true
         env:
           GH_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
-          PR: ${{ needs.propose.outputs.pull-request }}
+          PR: ${{ steps.pull-request.outputs.pull-request-number }}
         run: |
           # The labels endpoint creates a label it does not know yet; a
           # repository without it must not fail an otherwise finished run.
@@ -301,14 +314,16 @@ jobs:
           echo "Major version bump: #$PR is green but stays open for review." >> "$GITHUB_STEP_SUMMARY"
 
       - name: Merge the pull request
-        if: inputs.auto-merge && (needs.propose.outputs.has-major != 'true' || inputs.merge-major)
+        if: >-
+          steps.summary.outputs.updated == 'true' && inputs.auto-merge
+          && (steps.summary.outputs.has-major != 'true' || inputs.merge-major)
         env:
           GH_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
-          PR: ${{ needs.propose.outputs.pull-request }}
+          PR: ${{ steps.pull-request.outputs.pull-request-number }}
         run: |
           # Merging outright is the first choice, because everything this
-          # repository checks has already passed in this workflow run: the full
-          # python-quality matrix and hassfest, against this exact branch.
+          # repository checks for a pin change has already passed above, against
+          # exactly the tree this pull request carries.
           if gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --squash --delete-branch; then
             echo "Merged #$PR into main." >> "$GITHUB_STEP_SUMMARY"
             exit 0
@@ -331,3 +346,20 @@ jobs:
             echo "so those checks are never reported on it."
           } >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+      - name: Report the proposal
+        if: steps.summary.outputs.updated == 'true'
+        env:
+          # Through the environment, not interpolated into the script: the body
+          # is full of backticks, which the shell would run as commands.
+          BODY: ${{ steps.summary.outputs.body }}
+          PR: ${{ steps.pull-request.outputs.pull-request-number }}
+        run: |
+          {
+            echo ""
+            echo "### Proposed"
+            echo ""
+            echo "$BODY"
+            echo ""
+            echo "Pull request: #$PR"
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -22,11 +22,15 @@ All notable changes to this project will be documented in this file.
   exact runtime requirement — `idm-heatpump-api` included, which previously
   moved only when the API repository announced a release. It re-pins,
   regenerates the documents derived from those libraries (register reference,
-  entity metadata catalog, entity translations), runs the full CI matrix and
-  hassfest against its own branch, and merges the pull request. A pull request
-  opened by automation starts no workflow run of its own, so those checks run
-  inside the update run; nothing reaches `main` unvalidated. A **major** version
-  bump is validated and labelled `needs-review`, never merged automatically.
+  entity metadata catalog, entity translations), runs the quality gate — ruff,
+  mypy, the documentation language check, the full suite with the coverage gates
+  `ci.yml` enforces, at the minimum supported Home Assistant, and hassfest — and
+  merges the pull request. A pull request opened by automation starts no
+  workflow run of its own, so those checks run inside the update run, on the
+  tree that run produced: nothing reaches `main` unvalidated, and no job checks
+  out a branch by a name it computed, which is what an untrusted checkout looks
+  like to CodeQL. A **major** version bump is validated and labelled
+  `needs-review`, never merged automatically.
   `dependency-freshness.yml` runs the pipeline daily, `api-dependency-update.yml`
   runs it for an announced API release, and `scripts/check_dependency_pins.py`
   grew `--only`, `--set name==version` and `--report` for both.

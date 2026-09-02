@@ -242,30 +242,55 @@ def test_dependency_update_pipeline_covers_every_runtime_pin() -> None:
         assert generator in workflow
     # The import that catches an upstream release needing a new extra.
     assert "from modbus_connection.tmodbus import ModbusConnection" in workflow
-    for test_file in (
-        "tests/test_dependency_pins.py",
-        "tests/test_release_contract.py",
-        "tests/test_cross_repo_contract.py",
-    ):
-        assert test_file in workflow
     assert "peter-evans/create-pull-request" in workflow
 
 
-def test_dependency_update_runs_real_ci_before_merging() -> None:
+def test_dependency_update_runs_the_quality_gate_before_merging() -> None:
     """A pull request opened with GITHUB_TOKEN starts no workflow of its own.
 
-    Without CI inside this run, an automatically merged pin would reach main
-    having been validated by nothing at all.
+    Without the checks inside this run, an automatically merged pin would reach
+    main having been validated by nothing at all.
     """
     workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
-    validate = workflow.partition("  validate:\n")[2].partition("\n  hassfest:")[0]
-    merge = workflow.partition("  merge:\n")[2]
+    gate = workflow.partition("      - name: Lint with Ruff\n")[2].partition(
+        "      - name: Create the dependency update pull request"
+    )[0]
 
-    assert "uses: ./.github/workflows/python-quality.yml" in validate
-    assert "ref: ${{ needs.propose.outputs.branch }}" in validate
-    assert "api-main" in validate and "manifest-pinned" in validate
-    assert "needs: [propose, validate, hassfest]" in merge
-    assert "--squash" in merge
+    assert "ruff check custom_components/idm_heatpump tests" in gate
+    assert "ruff format custom_components/idm_heatpump tests --check" in gate
+    assert "mypy custom_components/idm_heatpump" in gate
+    assert "python scripts/check_documentation_language.py" in gate
+    assert "--cov-fail-under=95" in gate
+    assert "--cov-fail-under=100" in gate
+    assert "home-assistant/actions/hassfest" in gate
+    # The gate runs against the Home Assistant the release workflow validates.
+    assert 'MINIMUM_HOME_ASSISTANT: "2026.8.1"' in workflow
+    assert "Requested Home Assistant {requested}, but {__version__} is installed" in workflow
+
+
+def test_dependency_update_never_checks_out_a_ref_it_computed() -> None:
+    """A privileged workflow checking out a branch by name is an untrusted
+    checkout (CodeQL actions/untrusted-checkout), even when the branch was
+    written by the same run. The gate therefore runs on the tree in hand.
+    """
+    workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
+    checkouts = workflow.count("actions/checkout@")
+
+    assert checkouts == 1, "the pipeline needs exactly one checkout, of the default ref"
+    assert "ref: ${{" not in workflow
+
+    # python-quality.yml is the shared gate for ci.yml; it must not grow a ref
+    # input for this pipeline's benefit either.
+    quality = _read(ROOT / ".github" / "workflows" / "python-quality.yml")
+    assert "ref: ${{" not in quality
+
+
+def test_dependency_update_passes_one_secret_not_all_of_them() -> None:
+    for name in ("dependency-freshness.yml", "api-dependency-update.yml"):
+        caller = _read(ROOT / ".github" / "workflows" / name)
+
+        assert "secrets: inherit" not in caller
+        assert "DEPENDENCY_UPDATE_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN }}" in caller
 
 
 def test_dependency_update_can_open_the_pull_request_as_a_human_would() -> None:
@@ -286,20 +311,20 @@ def test_dependency_update_can_open_the_pull_request_as_a_human_would() -> None:
 def test_dependency_update_holds_a_major_bump_for_review() -> None:
     """A breaking upstream release is proposed and validated, never merged."""
     workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
-    merge = workflow.partition("  merge:\n")[2]
 
-    assert "needs.propose.outputs.has-major == 'true' && inputs.merge-major != true" in merge
-    assert "if: inputs.auto-merge && (needs.propose.outputs.has-major != 'true' || inputs.merge-major)" in merge
-    assert "needs-review" in merge
+    assert "steps.summary.outputs.has-major == 'true' && inputs.merge-major != true" in workflow
+    assert "(steps.summary.outputs.has-major != 'true' || inputs.merge-major)" in workflow
+    assert "needs-review" in workflow
 
 
-def test_dependency_update_does_not_commit_its_own_reports() -> None:
-    """The report is workflow state; committed, it would land in the release."""
+def test_dependency_update_does_not_commit_its_own_working_files() -> None:
+    """A report or a coverage file committed here would land in the release."""
     workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
 
     assert '--report "$RUNNER_TEMP/update-report.json"' in workflow
     assert '--report "$RUNNER_TEMP/set-report.json"' in workflow
     assert "--report update-report.json" not in workflow
+    assert "rm -f .coverage coverage.xml" in workflow
 
 
 def test_dependabot_pull_requests_merge_without_running_their_code() -> None:

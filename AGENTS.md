@@ -216,7 +216,7 @@ ruff check custom_components tests
 ### CI/CD (GitHub Actions)
 - **ci.yml**: Runs the python-quality matrix (pytest, mypy, ruff; manifest-pinned + api-main) plus HACS validation and hassfest
 - **python-quality.yml**: Reusable workflow (workflow_call) with the actual lint/type/test steps
-- **dependency-update.yml**: Reusable pipeline (workflow_call) that re-pins every exact runtime requirement, regenerates the documents derived from those libraries, runs the full CI matrix plus hassfest against its own branch and merges the pull request into main. A major bump is validated but held for review
+- **dependency-update.yml**: Reusable pipeline (workflow_call) that re-pins every exact runtime requirement, regenerates the documents derived from those libraries, runs the quality gate (ruff, mypy, the suite with ci.yml's coverage gates at the minimum Home Assistant, hassfest) and merges the pull request into main. It all happens in one job on the tree it produced — a pull request opened by automation starts no CI of its own, and a job checking out the pushed branch by name would be an untrusted checkout. A major bump is validated but held for review
 - **dependency-freshness.yml**: Runs that pipeline daily at 04:00 UTC against PyPI
 - **api-dependency-update.yml**: Runs the same pipeline when the API repository announces a stable release, before PyPI shows it
 - **dependabot-auto-merge.yml**: Merges Dependabot's GitHub Actions pull requests once their checks are green
