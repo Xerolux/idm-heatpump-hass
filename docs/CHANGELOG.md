@@ -13,6 +13,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Dependency updates reach `main` on their own.** The daily pin check only
+  covered `modbus-connection` and `tmodbus`, it only opened a pull request, and
+  nothing merged it: an update sat waiting for a maintainer, which is the same
+  way a pin goes stale. `dependency-update.yml` is now one pipeline for every
+  exact runtime requirement — `idm-heatpump-api` included, which previously
+  moved only when the API repository announced a release. It re-pins,
+  regenerates the documents derived from those libraries (register reference,
+  entity metadata catalog, entity translations), runs the full CI matrix and
+  hassfest against its own branch, and merges the pull request. A pull request
+  opened by automation starts no workflow run of its own, so those checks run
+  inside the update run; nothing reaches `main` unvalidated. A **major** version
+  bump is validated and labelled `needs-review`, never merged automatically.
+  `dependency-freshness.yml` runs the pipeline daily, `api-dependency-update.yml`
+  runs it for an announced API release, and `scripts/check_dependency_pins.py`
+  grew `--only`, `--set name==version` and `--report` for both.
+- **Dependabot's pull requests merge themselves once they are green.**
+  `dependabot-auto-merge.yml` arms auto-merge, or waits for the checks where the
+  repository has no auto-merge, and merges. The GitHub Actions updates are now
+  grouped into a single weekly pull request, so pins that must move together —
+  `codeql-action/init` and `codeql-action/analyze`, which fail the job on a
+  version skew — arrive in one change instead of two that are each red alone.
+  The `pip` ecosystem entry is gone: the runtime dependencies live in
+  `manifest.json`, which Dependabot does not read, so the entry never produced
+  anything.
+
 ### Fixed
 
 - **Broken hero image on the German README and the documentation home page.**

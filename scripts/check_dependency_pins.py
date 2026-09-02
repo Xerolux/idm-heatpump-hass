@@ -13,10 +13,13 @@ This script closes that gap:
   ``manifest.json`` against the newest release on PyPI and exits non-zero when a
   pin is behind.  The release workflow runs it, so a release cannot silently
   ship a stale pin.
-* ``check_dependency_pins.py --update`` rewrites the transport pins
-  (``modbus-connection``/``tmodbus``) to the newest release, in the manifest and
-  in every document that states the current pins.  The dependency-freshness
-  workflow runs it and opens a pull request.
+* ``check_dependency_pins.py --update`` rewrites every updatable pin
+  (``modbus-connection``, ``tmodbus`` and ``idm-heatpump-api``) to the newest
+  release, in the manifest and in every document that states the current pins.
+  The dependency-update workflow runs it daily and opens a pull request.
+* ``check_dependency_pins.py --set name==version`` rewrites one pin to a version
+  named by the caller instead of the newest one on PyPI.  The API repository
+  announces a release that way, before the artifact is visible on the index.
 
 Pre-releases are ignored unless the current pin is itself a pre-release — the
 alpha this repository was stuck on must not be selectable by automation.
@@ -24,10 +27,13 @@ Requirements with a version range (``pymodbus>=3.12.1,<4.0``) are reported but
 never fail the check: widening a range is a compatibility decision, not a bump.
 
 Usage:
-  python scripts/check_dependency_pins.py              # check, non-zero if stale
-  python scripts/check_dependency_pins.py --warn-only  # report only, always 0
-  python scripts/check_dependency_pins.py --update     # rewrite transport pins
-  python scripts/check_dependency_pins.py --json       # machine-readable report
+  python scripts/check_dependency_pins.py                 # check, non-zero if stale
+  python scripts/check_dependency_pins.py --warn-only     # report only, always 0
+  python scripts/check_dependency_pins.py --update        # rewrite stale pins
+  python scripts/check_dependency_pins.py --update --only tmodbus
+  python scripts/check_dependency_pins.py --set idm-heatpump-api==2.1.0
+  python scripts/check_dependency_pins.py --json          # machine-readable report
+  python scripts/check_dependency_pins.py --update --report updates.json
 """
 
 from __future__ import annotations
@@ -49,10 +55,10 @@ MANIFEST_PATH = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 PYPI_URL = "https://pypi.org/pypi/{name}/json"
 NETWORK_TIMEOUT = 30.0
 
-# Distributions this script may bump on its own.  The API pin has its own
-# workflow (``api-dependency-update.yml``, triggered by the API repository), and
-# a range requirement is never bumped automatically.
-UPDATABLE = ("modbus-connection", "tmodbus")
+# Distributions this script may bump on its own: everything the integration
+# declares as an exact runtime requirement.  A range requirement is never bumped
+# automatically -- widening a range is a compatibility decision, not a bump.
+UPDATABLE = ("modbus-connection", "tmodbus", "idm-heatpump-api")
 
 # Documents that state the *current* pins.  Changelogs, wiki changelogs and
 # release-evidence records are deliberately absent: they are history and must
@@ -72,6 +78,8 @@ PIN_DOCUMENTS = (
     "docs/wiki/_Sidebar.md",
     "docs/wiki/Configuration.md",
     "docs/wiki/Local-Web-Interface.md",
+    "docs/wiki/Modbus-Register.md",
+    "docs/wiki/Services.md",
     "docs/wiki/Stability-and-Release-Readiness.md",
     ".github/ISSUE_TEMPLATE/modbus_transport_modernization.md",
 )
@@ -100,6 +108,20 @@ BARE_VERSION_STATEMENTS: dict[str, tuple[tuple[str, str], ...]] = {
     ".github/ISSUE_TEMPLATE/modbus_transport_modernization.md": (
         ("modbus-connection", r"(?<=`){version}(?=` is the version of the connection library)"),
     ),
+    "docs/wiki/Stability-and-Release-Readiness.md": (
+        ("idm-heatpump-api", r"(?<=and `idm-heatpump-api` `){version}(?=` form the current)"),
+    ),
+}
+
+# Sentences that name a version as *history* -- the release something changed
+# in, not the pin the integration ships.  They must survive an update, so the
+# residual scan masks them before looking for a leftover old version.  Each
+# pattern is anchored on its own sentence: one that also matched the statement
+# of the current pin would hide a genuinely half-finished rewrite.
+HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
+    "AGENTS.md": (r"pymodbus is gone as of `idm-heatpump-api` [0-9][0-9a-z.]*",),
+    "docs/dev/open-work-audit.md": (r"`idm-heatpump-api` [0-9][0-9a-z.]* provides the transport-neutral contract",),
+    "docs/wiki/Stability-and-Release-Readiness.md": (r"`idm-heatpump-api` `[0-9][0-9a-z.]*` owns its own",),
 }
 
 _REQUIREMENT_RE = re.compile(
@@ -158,9 +180,9 @@ def parse_requirement(raw: str) -> Requirement:
     )
 
 
-def manifest_requirements(manifest_path: Path = MANIFEST_PATH) -> list[Requirement]:
+def manifest_requirements(manifest_path: Path | None = None) -> list[Requirement]:
     """Return every runtime requirement declared by the manifest."""
-    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest = json.loads((manifest_path or MANIFEST_PATH).read_text(encoding="utf-8"))
     return [parse_requirement(raw) for raw in manifest["requirements"]]
 
 
@@ -244,6 +266,13 @@ def check(requirements: list[Requirement]) -> list[Finding]:
     return findings
 
 
+def without_history_statements(relative_path: str, text: str) -> str:
+    """Return ``text`` with this document's known history sentences removed."""
+    for pattern in HISTORY_STATEMENTS.get(relative_path, ()):
+        text = re.sub(pattern, "", text)
+    return text
+
+
 def residual_mentions(root: Path, name: str, version: str) -> list[str]:
     """Return the documents that still state ``name`` at ``version``.
 
@@ -251,24 +280,30 @@ def residual_mentions(root: Path, name: str, version: str) -> list[str]:
     without spaces around ``==``) or in prose (``name 1.2.3``).  After an update
     none of those forms may name the old version any more, so a spelling the
     rewrite does not cover is caught here instead of silently reaching a pull
-    request as a half-updated document.
+    request as a half-updated document.  Sentences listed in
+    ``HISTORY_STATEMENTS`` are exempt: they date a change and keep their version
+    forever.
     """
     pattern = re.compile(rf"{re.escape(name)}(?:\[[^\]]*\])?\s*(?:==\s*|`?\s+)`?{re.escape(version)}\b")
     found = []
     for relative_path in PIN_DOCUMENTS:
         path = root / relative_path
-        if path.exists() and pattern.search(path.read_text(encoding="utf-8")):
+        if not path.exists():
+            continue
+        text = without_history_statements(relative_path, path.read_text(encoding="utf-8"))
+        if pattern.search(text):
             found.append(relative_path)
     return found
 
 
-def apply_update(requirement: Requirement, new_version: str, root: Path = ROOT) -> list[str]:
+def apply_update(requirement: Requirement, new_version: str, root: Path | None = None) -> list[str]:
     """Rewrite one pin in the manifest and in every document stating it.
 
     Returns the paths that changed.  Raises when a document still names the old
     version afterwards, so a half-finished rewrite fails the workflow instead of
     reaching a pull request.
     """
+    root = root if root is not None else ROOT
     old_version = requirement.pinned_version
     if old_version is None:
         raise ValueError(f"{requirement.name} is not exactly pinned")
@@ -311,6 +346,74 @@ def apply_update(requirement: Requirement, new_version: str, root: Path = ROOT) 
     return changed
 
 
+SEMVER_RELEASE = re.compile(r"^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$")
+
+
+def bump_kind(old_version: str, new_version: str) -> str:
+    """Classify a version change, so automation can hold a major bump back."""
+    try:
+        current, target = Version(old_version), Version(new_version)
+    except InvalidVersion:
+        return "unknown"
+    if target.major != current.major:
+        return "major"
+    if target.minor != current.minor:
+        return "minor"
+    if target.micro != current.micro:
+        return "patch"
+    return "other"
+
+
+def parse_set_argument(raw: str) -> tuple[str, str]:
+    """Split a ``--set name==version`` argument, rejecting anything unstable.
+
+    Automation is never allowed to move a pin onto a pre-release, so the
+    requested version has to be a plain ``X.Y.Z`` release even when the caller
+    is the API repository announcing its own build.
+    """
+    name, separator, version = raw.partition("==")
+    name, version = name.strip(), version.strip()
+    if not separator or not name or not version:
+        raise ValueError(f"--set expects 'name==version', got {raw!r}")
+    if SEMVER_RELEASE.match(version) is None:
+        raise ValueError(f"--set version must be a stable release in X.Y.Z form, got {version!r}")
+    return name, version
+
+
+def _apply(requirement: Requirement, new_version: str, root: Path | None = None) -> dict[str, Any]:
+    """Apply one pin update and describe it for the report."""
+    old_version = requirement.pinned_version
+    if old_version is None:
+        raise ValueError(f"{requirement.name} is not exactly pinned")
+    changed = apply_update(requirement, new_version, root=root)
+    return {
+        "name": requirement.name,
+        "from": old_version,
+        "to": new_version,
+        "bump": bump_kind(old_version, new_version),
+        "requirement": requirement.with_version(new_version),
+        "changed": changed,
+    }
+
+
+def _write_report(path: Path, updates: list[dict[str, Any]]) -> None:
+    """Write the applied updates as JSON, for the workflow to read back."""
+    if path.parent != Path(""):
+        path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(updates, indent=2) + "\n", encoding="utf-8")
+
+
+def _summarize(updates: list[dict[str, Any]], report: Path | None) -> None:
+    """Write the report file and print what changed."""
+    if report is not None:
+        _write_report(report, updates)
+    if updates:
+        changed = sorted({path for update in updates for path in update["changed"]})
+        print("changed files: " + ", ".join(changed))
+    else:
+        print("nothing to update")
+
+
 def _report(findings: list[Finding]) -> None:
     for finding in findings:
         marker = {"current": "ok  ", "stale": "STALE", "range": "range", "unknown": "?   "}[finding.status]
@@ -319,10 +422,29 @@ def _report(findings: list[Finding]) -> None:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--update", action="store_true", help="rewrite stale transport pins in place")
+    parser.add_argument("--update", action="store_true", help="rewrite stale pins in place")
+    parser.add_argument(
+        "--only",
+        action="append",
+        metavar="NAME",
+        help="restrict --update to this distribution (repeatable)",
+    )
+    parser.add_argument(
+        "--set",
+        action="append",
+        dest="pin",
+        metavar="NAME==VERSION",
+        help="pin one requirement to an exact stable version instead of the newest on PyPI (repeatable)",
+    )
     parser.add_argument("--warn-only", action="store_true", help="report stale pins without failing")
     parser.add_argument("--json", action="store_true", help="print the report as JSON")
+    parser.add_argument("--report", type=Path, metavar="PATH", help="write the applied updates to PATH as JSON")
     args = parser.parse_args(argv)
+
+    # --set names its own versions, so it must not depend on PyPI being
+    # reachable or on the release being visible there yet.
+    if args.pin:
+        return _run_set(args)
 
     findings = check(manifest_requirements())
 
@@ -347,22 +469,20 @@ def main(argv: list[str] | None = None) -> int:
     stale = [finding for finding in findings if finding.is_stale]
 
     if args.update:
-        updated: list[str] = []
+        selected = {name.strip() for name in args.only} if args.only else None
+        updates: list[dict[str, Any]] = []
         for finding in stale:
-            if finding.requirement.name not in UPDATABLE:
-                print(
-                    f"skip {finding.requirement.name}: not updated here "
-                    f"(see .github/workflows/api-dependency-update.yml)",
-                    file=sys.stderr,
-                )
+            name = finding.requirement.name
+            if name not in UPDATABLE:
+                print(f"skip {name}: not an exact pin this script owns", file=sys.stderr)
+                continue
+            if selected is not None and name not in selected:
+                print(f"skip {name}: not selected by --only", file=sys.stderr)
                 continue
             assert finding.latest is not None
-            updated += apply_update(finding.requirement, finding.latest)
-            print(f"updated {finding.requirement.name} to {finding.latest}")
-        if updated:
-            print("changed files: " + ", ".join(sorted(set(updated))))
-        else:
-            print("nothing to update")
+            updates.append(_apply(finding.requirement, finding.latest))
+            print(f"updated {name} to {finding.latest}")
+        _summarize(updates, args.report)
         return 0
 
     if stale and not args.warn_only:
@@ -373,6 +493,38 @@ def main(argv: list[str] | None = None) -> int:
             file=sys.stderr,
         )
         return 1
+    return 0
+
+
+def _run_set(args: argparse.Namespace) -> int:
+    """Rewrite the pins named on the command line, without asking PyPI.
+
+    The API repository announces a release before pip can see it, so this path
+    deliberately does not consult the index.  It still refuses anything that is
+    not a stable release, and anything the manifest does not pin exactly.
+    """
+    requirements = {requirement.name: requirement for requirement in manifest_requirements()}
+    updates: list[dict[str, Any]] = []
+    for raw in args.pin:
+        try:
+            name, version = parse_set_argument(raw)
+        except ValueError as error:
+            print(f"error: {error}", file=sys.stderr)
+            return 2
+        requirement = requirements.get(name)
+        if requirement is None:
+            print(f"error: {name} is not a runtime requirement of this integration", file=sys.stderr)
+            return 2
+        if requirement.pinned_version is None:
+            print(f"error: {name} is a version range, not an exact pin", file=sys.stderr)
+            return 2
+        if requirement.pinned_version == version:
+            print(f"{name} already pinned to {version}")
+            continue
+        updates.append(_apply(requirement, version))
+        print(f"updated {name} to {version}")
+
+    _summarize(updates, args.report)
     return 0
 
 

@@ -1,5 +1,9 @@
 name: API Dependency Update
 
+# The API repository announces a stable release here instead of waiting for the
+# daily freshness run, because pip can take a while to see a fresh artifact.
+# Everything after resolving the version is the shared update pipeline.
+
 on:
   repository_dispatch:
     types: [idm_heatpump_api_release]
@@ -13,13 +17,21 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  issues: write
+
+concurrency:
+  group: dependency-update
+  cancel-in-progress: false
 
 jobs:
-  update-api:
+  resolve:
+    name: Resolve API version
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.api.outputs.version }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
-
+      # The version arrives from another repository, so it is validated before
+      # it is used for anything at all.
       - name: Resolve API version
         id: api
         env:
@@ -32,108 +44,13 @@ jobs:
           fi
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Update exact API dependency pin
-        env:
-          API_VERSION: ${{ steps.api.outputs.version }}
-        run: |
-          python - <<'PY'
-          from __future__ import annotations
-
-          import json
-          import os
-          import re
-          from pathlib import Path
-
-          version = os.environ["API_VERSION"]
-          root = Path(".")
-          requirement = f"idm-heatpump-api[web]=={version}"
-
-          manifest_path = root / "custom_components" / "idm_heatpump" / "manifest.json"
-          manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
-          api_requirements = [
-              req for req in manifest["requirements"]
-              if req.startswith("idm-heatpump-api")
-          ]
-          if len(api_requirements) != 1:
-              raise RuntimeError("Expected exactly one API requirement in manifest.json")
-          manifest["requirements"] = [
-              requirement if req.startswith("idm-heatpump-api") else req
-              for req in manifest["requirements"]
-          ]
-          manifest_path.write_text(json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-
-          pin_paths = [
-              "tests/test_release_contract.py",
-              "README.md",
-              "README_de.md",
-              "AGENTS.md",
-              "docs/RELEASE_SMOKE_TEST.md",
-              "docs/wiki/Home.md",
-              "docs/wiki/_Sidebar.md",
-              "docs/wiki/Configuration.md",
-              "docs/wiki/Local-Web-Interface.md",
-          ]
-          requirement_pattern = re.compile(
-              r"idm-heatpump-api(?:\[web\])?\s*(?:"
-              r"==\s*[0-9]+\.[0-9]+\.[0-9]+|"
-              r">=\s*[0-9]+\.[0-9]+(?:\.[0-9]+)?\s*,\s*"
-              r"<\s*[0-9]+\.[0-9]+(?:\.[0-9]+)?"
-              r")"
-          )
-          for relative_path in pin_paths:
-              path = root / relative_path
-              text = path.read_text(encoding="utf-8")
-              text, replacements = requirement_pattern.subn(requirement, text)
-              if replacements == 0:
-                  raise RuntimeError(f"No API pin found in {relative_path}")
-              path.write_text(text, encoding="utf-8")
-
-          bare_version_paths = {
-              "docs/wiki/Configuration.md": re.compile(
-                  r"(?<=\bAPI )[0-9]+\.[0-9]+\.[0-9]+(?= unchanged)"
-              ),
-              "docs/wiki/Stability-and-Release-Readiness.md": re.compile(
-                  r"(?<=`idm-heatpump-api` `)[0-9]+\.[0-9]+\.[0-9]+(?=`)"
-              ),
-          }
-          for relative_path, pattern in bare_version_paths.items():
-              path = root / relative_path
-              text = path.read_text(encoding="utf-8")
-              text, replacements = pattern.subn(version, text)
-              if replacements == 0:
-                  raise RuntimeError(f"No API version statement found in {relative_path}")
-              path.write_text(text, encoding="utf-8")
-          PY
-
-      - name: Run dependency contract tests
-        run: |
-          python -m pip install --upgrade pip
-          pip install pytest pytest-asyncio
-          python - <<'PY'
-          import json
-          import subprocess
-          import sys
-
-          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
-              requirements = json.load(manifest_file)["requirements"]
-
-          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
-          PY
-          python scripts/generate_modbus_register_reference.py
-          pytest tests/test_release_contract.py tests/test_cross_repo_contract.py -q
-
-      - name: Create dependency update PR
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # guardrails-disable-line
-        with:
-          branch: automation/idm-heatpump-api-${{ steps.api.outputs.version }}
-          title: "chore: update idm-heatpump-api to ${{ steps.api.outputs.version }}"
-          commit-message: "chore: update idm-heatpump-api to ${{ steps.api.outputs.version }}"
-          body: |
-            Updates the exact, reproducible `idm-heatpump-api` pin to `${{ steps.api.outputs.version }}`.
-
-            Review the API changelog before merging:
-            https://github.com/Xerolux/idm-heatpump-api/blob/main/CHANGELOG.md
-
-            Contract tests run in this workflow:
-            - `tests/test_release_contract.py`
-            - `tests/test_cross_repo_contract.py`
+  update:
+    needs: resolve
+    uses: ./.github/workflows/dependency-update.yml
+    secrets: inherit
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    with:
+      set-pin: idm-heatpump-api==${{ needs.resolve.outputs.version }}

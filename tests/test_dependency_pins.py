@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -240,3 +241,125 @@ def test_every_document_stating_a_pin_is_covered_by_the_updater() -> None:
         f"These documents state the transport pins but are not updated automatically: {sorted(uncovered)}. "
         "Add them to PIN_DOCUMENTS in scripts/check_dependency_pins.py, or to HISTORY_PREFIXES if they are history."
     )
+
+
+def test_the_api_pin_is_updated_by_automation_too() -> None:
+    """The API pin used to be the one nothing checked on a schedule."""
+    assert "idm-heatpump-api" in pins.UPDATABLE
+
+    names = {requirement.name for requirement in pins.manifest_requirements()}
+    assert set(pins.UPDATABLE) >= names - {"pymodbus"}
+
+
+def test_history_statements_survive_an_update(tmp_path: Path, monkeypatch) -> None:
+    """A sentence dating a change keeps its version; the pin next to it moves."""
+    _write(
+        tmp_path,
+        "custom_components/idm_heatpump/manifest.json",
+        '{\n  "requirements": ["idm-heatpump-api[web]==1.4.0"]\n}\n',
+    )
+    document = _write(
+        tmp_path,
+        "docs/pins.md",
+        "current: `idm-heatpump-api[web]==1.4.0`\npymodbus is gone as of `idm-heatpump-api` 1.4.0 / integration 0.16.0.\n",
+    )
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", ("docs/pins.md",))
+    monkeypatch.setattr(
+        pins,
+        "HISTORY_STATEMENTS",
+        {"docs/pins.md": (r"pymodbus is gone as of `idm-heatpump-api` [0-9][0-9a-z.]*",)},
+    )
+
+    pins.apply_update(pins.parse_requirement("idm-heatpump-api[web]==1.4.0"), "1.5.0", root=tmp_path)
+
+    text = document.read_text(encoding="utf-8")
+    assert "current: `idm-heatpump-api[web]==1.5.0`" in text
+    assert "pymodbus is gone as of `idm-heatpump-api` 1.4.0" in text
+
+
+def test_a_history_statement_never_hides_a_half_finished_rewrite(tmp_path: Path, monkeypatch) -> None:
+    """Masking one sentence must not mask the rest of the document."""
+    _write(tmp_path, "docs/pins.md", "history: gone as of 9.0.0\nstill here: `modbus-connection == 9.0.0`\n")
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", ("docs/pins.md",))
+    monkeypatch.setattr(pins, "HISTORY_STATEMENTS", {"docs/pins.md": (r"history: gone as of [0-9.]+",)})
+
+    assert pins.residual_mentions(tmp_path, "modbus-connection", "9.0.0") == ["docs/pins.md"]
+
+
+def test_the_repository_history_statements_are_anchored_on_real_sentences() -> None:
+    """A pattern that matches nothing is a mask nobody notices going stale."""
+    for relative_path, patterns in pins.HISTORY_STATEMENTS.items():
+        text = (ROOT / relative_path).read_text(encoding="utf-8")
+        for pattern in patterns:
+            assert re.search(pattern, text), f"{relative_path}: {pattern} matches nothing"
+
+
+def test_bump_kind_separates_a_breaking_release_from_a_routine_one() -> None:
+    assert pins.bump_kind("1.2.3", "2.0.0") == "major"
+    assert pins.bump_kind("1.2.3", "1.3.0") == "minor"
+    assert pins.bump_kind("1.2.3", "1.2.4") == "patch"
+    assert pins.bump_kind("1.2.3", "1.2.3.post1") == "other"
+    assert pins.bump_kind("not-a-version", "1.0.0") == "unknown"
+
+
+def test_set_argument_refuses_anything_but_a_stable_release() -> None:
+    assert pins.parse_set_argument("idm-heatpump-api==1.5.0") == ("idm-heatpump-api", "1.5.0")
+
+    for rejected in ("idm-heatpump-api==1.5.0b1", "idm-heatpump-api==1.5", "idm-heatpump-api", "==1.5.0"):
+        with pytest.raises(ValueError):
+            pins.parse_set_argument(rejected)
+
+
+def test_set_writes_a_report_the_workflow_can_read(tmp_path: Path, monkeypatch) -> None:
+    manifest = _write(
+        tmp_path,
+        "custom_components/idm_heatpump/manifest.json",
+        '{\n  "requirements": ["idm-heatpump-api[web]==1.4.0"]\n}\n',
+    )
+    monkeypatch.setattr(pins, "ROOT", tmp_path)
+    monkeypatch.setattr(pins, "MANIFEST_PATH", manifest)
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", ())
+    report = tmp_path / "report.json"
+
+    assert pins.main(["--set", "idm-heatpump-api==9.0.0", "--report", str(report)]) == 0
+
+    update = json.loads(report.read_text(encoding="utf-8"))[0]
+    assert update == {
+        "name": "idm-heatpump-api",
+        "from": "1.4.0",
+        "to": "9.0.0",
+        "bump": "major",
+        "requirement": "idm-heatpump-api[web]==9.0.0",
+        "changed": ["custom_components/idm_heatpump/manifest.json"],
+    }
+
+
+def test_set_refuses_a_distribution_the_manifest_does_not_pin(tmp_path: Path, monkeypatch) -> None:
+    manifest = _write(
+        tmp_path,
+        "custom_components/idm_heatpump/manifest.json",
+        '{\n  "requirements": ["idm-heatpump-api[web]==1.4.0"]\n}\n',
+    )
+    monkeypatch.setattr(pins, "MANIFEST_PATH", manifest)
+
+    assert pins.main(["--set", "requests==2.32.0"]) == 2
+
+
+def test_update_can_be_restricted_to_one_distribution(tmp_path: Path, monkeypatch) -> None:
+    """The pipeline bumps everything; a maintainer may want one library only."""
+    manifest = _write(
+        tmp_path,
+        "custom_components/idm_heatpump/manifest.json",
+        '{\n  "requirements": ["modbus-connection==9.0.0", "tmodbus[async-serial]==0.4.0"]\n}\n',
+    )
+    monkeypatch.setattr(pins, "ROOT", tmp_path)
+    monkeypatch.setattr(pins, "MANIFEST_PATH", manifest)
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", ())
+    monkeypatch.setattr(pins, "fetch_project", lambda name: _payload("9.0.0", "9.1.0", "0.4.0", "0.5.0"))
+    report = tmp_path / "report.json"
+
+    assert pins.main(["--update", "--only", "tmodbus", "--report", str(report)]) == 0
+
+    updates = json.loads(report.read_text(encoding="utf-8"))
+    assert [update["name"] for update in updates] == ["tmodbus"]
+    assert json.loads(manifest.read_text(encoding="utf-8"))["requirements"][0] == "modbus-connection==9.0.0"

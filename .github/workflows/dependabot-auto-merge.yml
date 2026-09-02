@@ -1,0 +1,53 @@
+name: Dependabot Auto-merge
+
+# Dependabot owns the GitHub Actions pins (the runtime pins in manifest.json are
+# not a format it reads — dependency-update.yml owns those). Its pull requests
+# were piling up waiting for somebody to press merge, which is how an action pin
+# goes stale in a repository that pins every action by SHA. This merges them as
+# soon as their checks are green.
+#
+# pull_request_target is required: a pull request opened by Dependabot runs with
+# a read-only token, which cannot merge anything. The PR's code is deliberately
+# never checked out here, so nothing from the branch is executed with that
+# write-capable token — this workflow only talks to the GitHub API.
+
+on:
+  pull_request_target:
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependabot-auto-merge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  merge:
+    name: Merge when green
+    if: github.event.pull_request.user.login == 'dependabot[bot]' && !github.event.pull_request.draft
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Merge the Dependabot pull request once its checks pass
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -o pipefail
+
+          # Where the repository has auto-merge enabled, GitHub does the waiting
+          # and merges the moment the required checks report green.
+          if gh pr merge "$PR" --repo "$REPO" --squash --auto; then
+            echo "Auto-merge armed for #$PR." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Otherwise wait here. --fail-fast stops on the first failing check, so
+          # a red pull request fails this job and stays open instead of merging.
+          echo "Repository auto-merge unavailable; watching the checks of #$PR."
+          gh pr checks "$PR" --repo "$REPO" --watch --fail-fast --interval 30
+          gh pr merge "$PR" --repo "$REPO" --squash
+          echo "Merged #$PR into main." >> "$GITHUB_STEP_SUMMARY"

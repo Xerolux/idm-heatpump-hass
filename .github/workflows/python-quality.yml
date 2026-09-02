@@ -15,6 +15,11 @@ on:
         description: Use the manifest pin or the API main branch
         required: true
         type: string
+      ref:
+        description: Git ref to validate; empty checks out the ref that triggered the run
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: read
@@ -25,6 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
+        with:
+          # Empty is checkout's own default, so ci.yml keeps validating the ref
+          # that triggered it. The dependency update pipeline passes its branch
+          # here, because a pull request opened with GITHUB_TOKEN does not start
+          # a workflow run of its own — this is where that branch gets its CI.
+          ref: ${{ inputs.ref }}
 
       - name: Validate API dependency mode
         env:
