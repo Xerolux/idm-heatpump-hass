@@ -79,6 +79,14 @@ All notable changes to this project will be documented in this file.
   named a `WORD` type this project does not have while omitting `INT8`,
   `INT16`, `UINT16` and `BITFLAG`, and four technical-detail entries plus a
   quick-start paragraph existed only in English.
+- **Reworked the heat pump product shot** (`docs/images/heatpump.png`). The white
+  studio backdrop is matted out into a transparent alpha channel, so the shot no
+  longer sits in a bright box when it is rendered on a dark background. The frame
+  is cropped to the unit itself, and the contact shadow is kept as neutral density
+  that vanishes on dark backgrounds. Rescaled to 900 px and requantised, the file
+  drops from 770 KB to 367 KB. The image is currently unreferenced — the READMEs
+  and the documentation home page carry the hero image — so this only keeps the
+  asset itself in good shape.
 
 ## [0.16.2] - 2026-08-28
 
