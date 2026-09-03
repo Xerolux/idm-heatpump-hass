@@ -216,8 +216,10 @@ ruff check custom_components tests
 ### CI/CD (GitHub Actions)
 - **ci.yml**: Runs the python-quality matrix (pytest, mypy, ruff; manifest-pinned + api-main) plus HACS validation and hassfest
 - **python-quality.yml**: Reusable workflow (workflow_call) with the actual lint/type/test steps
-- **api-dependency-update.yml**: Opens a PR that re-pins `idm-heatpump-api` when a new stable API release is announced
-- **dependency-freshness.yml**: Checks the pinned runtime dependencies against PyPI daily and opens a PR that re-pins `modbus-connection`/`tmodbus` to the newest stable release (`scripts/check_dependency_pins.py`)
+- **dependency-update.yml**: Reusable pipeline (workflow_call) that re-pins every exact runtime requirement, regenerates the documents derived from those libraries, runs the quality gate (ruff, mypy, the suite with ci.yml's coverage gates at the minimum Home Assistant, hassfest) and merges the pull request into main. It all happens in one job on the tree it produced — a pull request opened by automation starts no CI of its own, and a job checking out the pushed branch by name would be an untrusted checkout. A major bump is validated but held for review
+- **dependency-freshness.yml**: Runs that pipeline daily at 04:00 UTC against PyPI
+- **api-dependency-update.yml**: Runs the same pipeline when the API repository announces a stable release, before PyPI shows it
+- **dependabot-auto-merge.yml**: Merges Dependabot's GitHub Actions pull requests once their checks are green
 - **release.yml**: Validates tag/manifest/CHANGELOG, creates ZIP release artifacts, announces in Discussions
 - **security.yml**: CodeQL (actions, python) + pip-audit
 - **stale.yml**: Marks inactive issues/PRs as stale
@@ -295,7 +297,8 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 - Bump version there before creating a release and update `CHANGELOG.md`
 - Pin the `idm-heatpump-api` requirement for every released integration version to the exact PyPI version that is current at release time or has been explicitly tested for that release. Do not publish a release with an open-ended API lower bound such as `idm-heatpump-api>=x.y.z`; the integration release and API version must remain a reproducible pair.
 - When updating to a newer `idm-heatpump-api`, verify compatibility before widening or changing the pin, then document the tested API version in the changelog/release notes.
-- Never bump a runtime pin by hand without checking PyPI first: `python scripts/check_dependency_pins.py` reports every pin that is behind, `--update` rewrites the transport pins and every document that states them. The daily `dependency-freshness.yml` workflow does exactly this and opens a PR; the release workflow refuses to publish stale pins unless `allow_stale_pins` is set. Automation never selects a pre-release for a stable pin — that is how the `4.0.0a3` alpha stayed pinned for two weeks.
+- Never bump a runtime pin by hand without checking PyPI first: `python scripts/check_dependency_pins.py` reports every pin that is behind, `--update` rewrites every updatable pin (`modbus-connection`, `tmodbus`, `idm-heatpump-api`) and every document that states them, and `--set name==version` pins a version the caller names. The daily `dependency-freshness.yml` workflow does exactly this, validates the result and merges it; the release workflow refuses to publish stale pins unless `allow_stale_pins` is set. Automation never selects a pre-release for a stable pin — that is how the `4.0.0a3` alpha stayed pinned for two weeks — and it never merges a major bump on its own.
+- A sentence that dates a change (`pymodbus is gone as of idm-heatpump-api 2.0.0`) is history and keeps its version. Those sentences are listed in `HISTORY_STATEMENTS` in `scripts/check_dependency_pins.py`; everything else naming a pin is rewritten. Do not write a document that states the current pin in a spelling the updater does not cover — `tests/test_dependency_pins.py` fails when one appears.
 - A document that states the current pins belongs in `PIN_DOCUMENTS` in `scripts/check_dependency_pins.py`; `tests/test_dependency_pins.py` fails when a new one is missing there.
 - Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.10.0` is the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
 - pymodbus is gone as of `idm-heatpump-api` 2.0.0 / integration 0.16.0. Do not reintroduce it: the API owns `IdmModbusError` and its subclasses, and this integration's transport maps `modbus-connection` errors straight onto them.
@@ -311,8 +314,8 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
   `pyproject.toml` version, the PyPI filename and the manifest pin all read the
   same. Tag the API repository with the PEP 440 version (`v2.0.0b1`).
 - **The manifest pins the exact published API version** in PEP 440 form,
-  because that is what pip resolves. For example, the `0.16.0-rc.1` manifest
-  pins `idm-heatpump-api[web]==2.0.0`.
+  because that is what pip resolves. The manifest currently pins
+  `idm-heatpump-api[web]==2.0.0`.
 
 #### Release notes
 

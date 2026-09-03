@@ -1,0 +1,365 @@
+name: Dependency Update
+
+# The one pipeline that moves a runtime pin. It re-pins every exactly pinned
+# requirement in manifest.json to the newest stable release on PyPI
+# (modbus-connection, tmodbus, idm-heatpump-api), regenerates the artifacts that
+# are derived from those libraries, runs the quality gate against the result and
+# merges the pull request into main.
+#
+# Everything happens in one job, on the tree this job produced. That is
+# deliberate: a pull request opened with GITHUB_TOKEN starts no workflow run of
+# its own, so the checks have to run here or nothing validates the change at
+# all — and a second job checking out the pushed branch by name would be a
+# privileged workflow checking out a ref it computed, which is the shape of an
+# untrusted checkout (CodeQL actions/untrusted-checkout) even when the branch
+# was written by this same run.
+#
+# The gate here is the minimum supported Home Assistant against the manifest
+# pins: that is what a pin change can break. The rest of the ci.yml matrix (the
+# next Home Assistant beta, and the API main branch) guards Home Assistant and
+# API drift rather than the pins, and keeps running daily on main.
+#
+# Callers: dependency-freshness.yml (daily) and api-dependency-update.yml (when
+# the API repository announces a release).
+
+on:
+  workflow_call:
+    inputs:
+      set-pin:
+        description: >-
+          Exact pin to apply as "name==version", for a release that is announced
+          before it is visible on PyPI. Every other stale pin is still bumped to
+          the newest release, so the branch always carries the complete delta.
+        required: false
+        default: ""
+        type: string
+      auto-merge:
+        description: Merge the pull request into main once the checks in this workflow pass
+        required: false
+        default: true
+        type: boolean
+      merge-major:
+        description: Merge a major version bump without a human reading the changelog first
+        required: false
+        default: false
+        type: boolean
+    secrets:
+      # Optional. A pull request opened with GITHUB_TOKEN never starts a
+      # workflow run, so where main requires status checks nothing would ever
+      # report on it and the pull request would sit green-but-blocked forever.
+      # Set DEPENDENCY_UPDATE_TOKEN (a token with contents and pull-requests
+      # write) and the pull request behaves like a human's: ci.yml runs on it and
+      # satisfies the protection rules. Without it the pipeline merges on the
+      # strength of the checks it runs here itself.
+      DEPENDENCY_UPDATE_TOKEN:
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  # Only to label a held-back major bump; the label API is an issues endpoint.
+  issues: write
+
+env:
+  # The declared minimum in hacs.json/manifest.json, and the version the release
+  # workflow validates against.
+  MINIMUM_HOME_ASSISTANT: "2026.8.1"
+
+jobs:
+  update:
+    name: Update pins
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
+
+      # One branch for every runtime pin: a second pull request for the same
+      # manifest line would only race the first one. Each run rebuilds the
+      # branch from main, so it always carries the complete delta.
+      - name: Resolve the update branch
+        id: branch
+        run: echo "name=automation/dependency-pins" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # guardrails-disable-line
+        with:
+          python-version: "3.14"
+
+      - name: Report pin status
+        run: |
+          python -m pip install --upgrade pip
+          pip install packaging
+          {
+            echo "## Runtime dependency pins"
+            echo ""
+            echo '```'
+            python scripts/check_dependency_pins.py --warn-only
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # The reports go to RUNNER_TEMP, not into the workspace: anything written
+      # into the checkout would be committed to the pull request.
+      - name: Apply the announced pin
+        if: inputs.set-pin != ''
+        env:
+          SET_PIN: ${{ inputs.set-pin }}
+        run: python scripts/check_dependency_pins.py --set "$SET_PIN" --report "$RUNNER_TEMP/set-report.json"
+
+      - name: Update stale pins
+        run: python scripts/check_dependency_pins.py --update --report "$RUNNER_TEMP/update-report.json"
+
+      - name: Summarize the updates
+        id: summary
+        run: |
+          python - <<'PY' >> "$GITHUB_OUTPUT"
+          import json
+          import os
+          from pathlib import Path
+
+          updates = []
+          for name in ("set-report.json", "update-report.json"):
+              path = Path(os.environ["RUNNER_TEMP"]) / name
+              if path.exists():
+                  updates += json.loads(path.read_text(encoding="utf-8"))
+
+          print(f"updated={'true' if updates else 'false'}")
+          print(f"has-major={'true' if any(u['bump'] == 'major' for u in updates) else 'false'}")
+
+          changes = ", ".join(f"{u['name']} {u['from']} -> {u['to']}" for u in updates)
+          print(f"title=chore: update runtime pins ({changes})" if updates else "title=")
+
+          body = "\n".join(
+              f"- `{u['name']}` `{u['from']}` -> `{u['to']}` ({u['bump']})" for u in updates
+          )
+          print(f"body<<PR_BODY\n{body}\nPR_BODY")
+          PY
+
+      - name: Install Home Assistant and the updated runtime dependencies
+        if: steps.summary.outputs.updated == 'true'
+        run: |
+          pip install "homeassistant==${MINIMUM_HOME_ASSISTANT}" "aiohttp>=3.8.0"
+          pip install ruff mypy pytest pytest-cov pytest-asyncio
+          python - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
+              requirements = json.load(manifest_file)["requirements"]
+
+          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
+          PY
+
+      # A transitive pin in a new release can displace the Home Assistant this
+      # gate is meant to test against. Fail loudly rather than report green for a
+      # version that was never installed.
+      - name: Verify the requested Home Assistant version is the installed one
+        if: steps.summary.outputs.updated == 'true'
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+
+          from homeassistant.const import __version__
+
+          requested = os.environ["MINIMUM_HOME_ASSISTANT"]
+          if __version__ != requested:
+              print(f"Requested Home Assistant {requested}, but {__version__} is installed")
+              sys.exit(1)
+          print(f"Home Assistant {__version__} confirmed")
+          PY
+
+      # A newer API ships a different register set, so the documents generated
+      # from it are part of the update. Their --check tests are red otherwise,
+      # and the pull request would carry a manifest that disagrees with the
+      # register reference.
+      - name: Regenerate the derived artifacts
+        if: steps.summary.outputs.updated == 'true'
+        run: |
+          python scripts/generate_modbus_register_reference.py
+          python scripts/generate_entity_metadata_catalog.py
+          python scripts/generate_entity_translations.py
+
+      - name: Smoke test the production Modbus backend
+        if: steps.summary.outputs.updated == 'true'
+        run: |
+          python - <<'PY'
+          import asyncio
+          from importlib.metadata import version
+
+          # Importing the backend is the check that caught modbus-connection 4.7.0
+          # moving serialx to a module-level import: without the tmodbus
+          # async-serial extra this line raises ModuleNotFoundError.
+          from modbus_connection import ModbusTcpParams
+          from modbus_connection.tmodbus import ModbusConnection
+
+          from custom_components.idm_heatpump.modbus_client import IdmModbusConnectionClient
+
+          connection = ModbusConnection(
+              ModbusTcpParams(host="192.0.2.1", port=502),
+              timeout=1.0,
+              message_spacing=0.05,
+              connect_delay=0.1,
+          )
+          assert type(connection).__module__ == "modbus_connection.tmodbus"
+          assert connection.for_unit(1).__class__.__module__ == "modbus_connection.tmodbus"
+
+          client = IdmModbusConnectionClient("192.0.2.1")
+          asyncio.run(client.disconnect())
+          print("backend imports OK:", version("modbus-connection"), version("tmodbus"))
+          PY
+
+      - name: Lint with Ruff
+        if: steps.summary.outputs.updated == 'true'
+        run: ruff check custom_components/idm_heatpump tests --line-length=120 --output-format=github
+
+      - name: Format check with Ruff
+        if: steps.summary.outputs.updated == 'true'
+        run: ruff format custom_components/idm_heatpump tests --check
+
+      - name: Type check with mypy
+        if: steps.summary.outputs.updated == 'true'
+        run: mypy custom_components/idm_heatpump
+
+      - name: Check documentation language
+        if: steps.summary.outputs.updated == 'true'
+        run: python scripts/check_documentation_language.py
+
+      # The same gates ci.yml enforces: a dependency bump must not quietly cost
+      # the coverage the quality scale requires.
+      - name: Run unit tests
+        if: steps.summary.outputs.updated == 'true'
+        run: |
+          pytest tests/ \
+            --tb=short \
+            --cov=custom_components/idm_heatpump \
+            --cov-report=term-missing \
+            --cov-fail-under=95
+
+      - name: Check config flow coverage
+        if: steps.summary.outputs.updated == 'true'
+        run: |
+          pytest tests/ \
+            -q \
+            --cov=custom_components.idm_heatpump.config_flow \
+            --cov-report=term-missing \
+            --cov-fail-under=100
+
+      # Reads the working tree, so it validates the updated manifest without a
+      # second checkout.
+      - name: Hassfest Action
+        if: steps.summary.outputs.updated == 'true'
+        uses: home-assistant/actions/hassfest@a7c616ce81ccda50150bf1595786c71b1883fabb  # guardrails-disable-line
+
+      # pytest-cov leaves .coverage behind, and an untracked file in the
+      # workspace would be committed to the pull request.
+      - name: Drop the coverage state
+        if: steps.summary.outputs.updated == 'true'
+        run: rm -f .coverage coverage.xml
+
+      - name: Create the dependency update pull request
+        id: pull-request
+        if: steps.summary.outputs.updated == 'true'
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # guardrails-disable-line
+        with:
+          token: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.branch.outputs.name }}
+          title: ${{ steps.summary.outputs.title }}
+          commit-message: ${{ steps.summary.outputs.title }}
+          labels: |
+            dependencies
+            python
+          body: |
+            Re-pins the exact runtime requirements to the newest stable releases
+            on PyPI. Automation never selects a pre-release for a stable pin.
+
+            ${{ steps.summary.outputs.body }}
+
+            Documents generated from the pinned libraries (register reference,
+            entity metadata catalog, entity translations) are regenerated in the
+            same commit.
+
+            Checked against these pins before this pull request was opened:
+            - the production `modbus_connection.tmodbus` backend imports, and the
+              integration's client builds on it;
+            - ruff, ruff format, mypy and the documentation language check;
+            - the full test suite at the minimum supported Home Assistant, with
+              the coverage gates ci.yml enforces;
+            - hassfest.
+
+            The pull request is merged automatically once that gate is green — a
+            major version bump is held back for a human instead.
+
+            Upstream changelogs:
+            - https://home-assistant-libs.github.io/modbus-connection/
+            - https://github.com/wlcrs/tmodbus/releases
+            - https://github.com/Xerolux/idm-heatpump-api/blob/main/CHANGELOG.md
+
+            Per `docs/RELEASE_PROCESS.md` a runtime dependency change restarts
+            the soak clock, so ship it through the pre-release channel.
+
+      # A major bump is a breaking upstream change; it gets the same validated
+      # pull request, but a human reads the changelog before it reaches main.
+      - name: Hold a major bump for review
+        if: >-
+          steps.summary.outputs.updated == 'true'
+          && steps.summary.outputs.has-major == 'true' && inputs.merge-major != true
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pull-request.outputs.pull-request-number }}
+        run: |
+          # The labels endpoint creates a label it does not know yet; a
+          # repository without it must not fail an otherwise finished run.
+          gh api "repos/$GITHUB_REPOSITORY/issues/$PR/labels" -f "labels[]=needs-review" || true
+          echo "Major version bump: #$PR is green but stays open for review." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Merge the pull request
+        if: >-
+          steps.summary.outputs.updated == 'true' && inputs.auto-merge
+          && (steps.summary.outputs.has-major != 'true' || inputs.merge-major)
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}
+          PR: ${{ steps.pull-request.outputs.pull-request-number }}
+        run: |
+          # Merging outright is the first choice, because everything this
+          # repository checks for a pin change has already passed above, against
+          # exactly the tree this pull request carries.
+          if gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --squash --delete-branch; then
+            echo "Merged #$PR into main." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          # Branch protection can refuse that — required checks are pending, or
+          # the token may not merge. Then arm auto-merge and let GitHub finish
+          # once the pull request's own checks report. That only happens when
+          # DEPENDENCY_UPDATE_TOKEN is set, so say so when it is not.
+          if gh pr merge "$PR" --repo "$GITHUB_REPOSITORY" --squash --delete-branch --auto; then
+            echo "Auto-merge armed for #$PR; GitHub merges it when its checks report." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          {
+            echo "Could not merge #$PR. It is green here and waiting for a maintainer."
+            echo ""
+            echo "If main requires status checks, set the DEPENDENCY_UPDATE_TOKEN secret:"
+            echo "a pull request opened with GITHUB_TOKEN never starts a workflow run,"
+            echo "so those checks are never reported on it."
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+
+      - name: Report the proposal
+        if: steps.summary.outputs.updated == 'true'
+        env:
+          # Through the environment, not interpolated into the script: the body
+          # is full of backticks, which the shell would run as commands.
+          BODY: ${{ steps.summary.outputs.body }}
+          PR: ${{ steps.pull-request.outputs.pull-request-number }}
+        run: |
+          {
+            echo ""
+            echo "### Proposed"
+            echo ""
+            echo "$BODY"
+            echo ""
+            echo "Pull request: #$PR"
+          } >> "$GITHUB_STEP_SUMMARY"

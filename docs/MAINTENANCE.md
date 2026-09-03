@@ -54,7 +54,16 @@ Maintain these settings in both repositories:
   tests as required checks once the workflows are green on the default branch.
 - Use protected release environments for PyPI and GitHub releases.
 - Delete merged branches automatically after merge.
-- Enable Dependabot security and version updates.
+- Enable Dependabot security and version updates, and enable auto-merge for the
+  repository. `dependabot-auto-merge.yml` merges Dependabot's pull requests once
+  their checks pass; without repository auto-merge it waits for the checks in the
+  workflow run instead, which costs a runner for as long as CI takes.
+- Set the `DEPENDENCY_UPDATE_TOKEN` secret (contents and pull-requests write) if
+  `main` requires status checks. The dependency update pipeline validates its
+  branch itself, but a pull request opened with `GITHUB_TOKEN` never starts a
+  workflow run, so the required checks would never report on it and the merge
+  would be blocked. Without the secret the pipeline merges directly instead,
+  which branch protection may refuse.
 - Keep secrets only in GitHub Environments or repository secrets, never in the
   repository.
 

@@ -191,28 +191,22 @@ def test_release_draft_is_independent_and_inputs_are_passed_via_env(
     assert draft_beta["is_draft"] == "true"
 
 
-def test_api_dependency_update_workflow_updates_pin_and_runs_contract_tests() -> None:
+def test_api_dependency_update_workflow_delegates_to_the_shared_pipeline() -> None:
+    """An announced API release takes exactly the path the daily run takes."""
     workflow = _read(ROOT / ".github" / "workflows" / "api-dependency-update.yml")
 
     assert "idm_heatpump_api_release" in workflow
-    assert 'requirement = f"idm-heatpump-api[web]=={version}"' in workflow
-    assert "Expected exactly one API requirement in manifest.json" in workflow
-    assert "compatible lower bound" not in workflow
-    assert "compatible API dependency" not in workflow
-    assert "compatible `idm-heatpump-api` dependency range" not in workflow
-    assert "exact, reproducible `idm-heatpump-api` pin" in workflow
-    assert 'json.load(manifest_file)["requirements"]' in workflow
-    assert 'pip", "install", *requirements' in workflow
-    assert "python scripts/generate_modbus_register_reference.py" in workflow
-    assert "tests/test_release_contract.py tests/test_cross_repo_contract.py" in workflow
-    assert "peter-evans/create-pull-request" in workflow
+    assert "uses: ./.github/workflows/dependency-update.yml" in workflow
+    assert "set-pin: idm-heatpump-api==${{ needs.resolve.outputs.version }}" in workflow
+    # The pipeline validates, opens and merges; nothing rewrites pins here.
+    assert "peter-evans/create-pull-request" not in workflow
+    assert "manifest.json" not in workflow
+    assert "concurrency:\n  group: dependency-update" in workflow
 
 
 def test_api_dependency_update_validates_input_before_output() -> None:
     workflow = _read(ROOT / ".github" / "workflows" / "api-dependency-update.yml")
-    resolve_step = workflow.partition("      - name: Resolve API version\n")[2].partition(
-        "\n      - name: Update exact API dependency pin"
-    )[0]
+    resolve_step = workflow.partition("      - name: Resolve API version\n")[2]
 
     assert "REQUESTED_API_VERSION:" in resolve_step
     assert "github.event.client_payload.version" in resolve_step
@@ -223,39 +217,134 @@ def test_api_dependency_update_validates_input_before_output() -> None:
     )
 
 
-def test_api_dependency_update_passes_version_safely_to_python() -> None:
+def test_api_dependency_update_passes_version_safely_to_the_shell() -> None:
+    """A version from another repository is read from the environment."""
     workflow = _read(ROOT / ".github" / "workflows" / "api-dependency-update.yml")
-    update_step = workflow.partition("      - name: Update exact API dependency pin\n")[2].partition(
-        "\n      - name: Run dependency contract tests"
+    resolve_step = workflow.partition("      - name: Resolve API version\n")[2].partition("\n  update:")[0]
+
+    assert 'VERSION="$REQUESTED_API_VERSION"' in resolve_step
+    assert 'VERSION="${{ github.event.client_payload.version }}"' not in resolve_step
+
+
+def test_dependency_update_pipeline_covers_every_runtime_pin() -> None:
+    """The pipeline that reaches main must update all of the pins, not some."""
+    workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
+
+    assert "python scripts/check_dependency_pins.py --update" in workflow
+    assert 'python scripts/check_dependency_pins.py --set "$SET_PIN"' in workflow
+    # A newer API ships a different register set; the generated documents are
+    # part of the same commit, or their --check tests are red on main.
+    for generator in (
+        "python scripts/generate_modbus_register_reference.py",
+        "python scripts/generate_entity_metadata_catalog.py",
+        "python scripts/generate_entity_translations.py",
+    ):
+        assert generator in workflow
+    # The import that catches an upstream release needing a new extra.
+    assert "from modbus_connection.tmodbus import ModbusConnection" in workflow
+    assert "peter-evans/create-pull-request" in workflow
+
+
+def test_dependency_update_runs_the_quality_gate_before_merging() -> None:
+    """A pull request opened with GITHUB_TOKEN starts no workflow of its own.
+
+    Without the checks inside this run, an automatically merged pin would reach
+    main having been validated by nothing at all.
+    """
+    workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
+    gate = workflow.partition("      - name: Lint with Ruff\n")[2].partition(
+        "      - name: Create the dependency update pull request"
     )[0]
 
-    assert "API_VERSION: ${{ steps.api.outputs.version }}" in update_step
-    assert 'version = os.environ["API_VERSION"]' in update_step
-    assert 'version = "${{ steps.api.outputs.version }}"' not in update_step
+    assert "ruff check custom_components/idm_heatpump tests" in gate
+    assert "ruff format custom_components/idm_heatpump tests --check" in gate
+    assert "mypy custom_components/idm_heatpump" in gate
+    assert "python scripts/check_documentation_language.py" in gate
+    assert "--cov-fail-under=95" in gate
+    assert "--cov-fail-under=100" in gate
+    assert "home-assistant/actions/hassfest" in gate
+    # The gate runs against the Home Assistant the release workflow validates.
+    assert 'MINIMUM_HOME_ASSISTANT: "2026.8.1"' in workflow
+    assert "Requested Home Assistant {requested}, but {__version__} is installed" in workflow
 
 
-def test_api_dependency_update_syncs_all_current_version_sources() -> None:
-    workflow = _read(ROOT / ".github" / "workflows" / "api-dependency-update.yml")
-    current_version_sources = {
-        "tests/test_release_contract.py",
-        "README.md",
-        "README_de.md",
-        "AGENTS.md",
-        "docs/RELEASE_SMOKE_TEST.md",
-        "docs/wiki/Home.md",
-        "docs/wiki/_Sidebar.md",
-        "docs/wiki/Configuration.md",
-        "docs/wiki/Local-Web-Interface.md",
-        "docs/wiki/Stability-and-Release-Readiness.md",
-    }
+def test_dependency_update_never_checks_out_a_ref_it_computed() -> None:
+    """A privileged workflow checking out a branch by name is an untrusted
+    checkout (CodeQL actions/untrusted-checkout), even when the branch was
+    written by the same run. The gate therefore runs on the tree in hand.
+    """
+    workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
+    checkouts = workflow.count("actions/checkout@")
 
-    for relative_path in current_version_sources:
-        assert f'"{relative_path}"' in workflow
+    assert checkouts == 1, "the pipeline needs exactly one checkout, of the default ref"
+    assert "ref: ${{" not in workflow
 
-    assert '"docs/CHANGELOG.md"' not in workflow
-    assert '"docs/wiki/Changelog.md"' not in workflow
-    assert "No API pin found" in workflow
-    assert "No API version statement found" in workflow
+    # python-quality.yml is the shared gate for ci.yml; it must not grow a ref
+    # input for this pipeline's benefit either.
+    quality = _read(ROOT / ".github" / "workflows" / "python-quality.yml")
+    assert "ref: ${{" not in quality
+
+
+def test_dependency_update_passes_one_secret_not_all_of_them() -> None:
+    for name in ("dependency-freshness.yml", "api-dependency-update.yml"):
+        caller = _read(ROOT / ".github" / "workflows" / name)
+
+        assert "secrets: inherit" not in caller
+        assert "DEPENDENCY_UPDATE_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN }}" in caller
+
+
+def test_dependency_update_can_open_the_pull_request_as_a_human_would() -> None:
+    """A pull request opened with GITHUB_TOKEN starts no checks of its own.
+
+    Where main requires status checks, that pull request can never satisfy
+    them, so the pipeline accepts an optional token that can.
+    """
+    workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
+
+    assert "DEPENDENCY_UPDATE_TOKEN:\n        required: false" in workflow
+    assert "token: ${{ secrets.DEPENDENCY_UPDATE_TOKEN || secrets.GITHUB_TOKEN }}" in workflow
+    # Merging outright comes first: this run already produced the evidence.
+    merge = workflow.partition("      - name: Merge the pull request\n")[2]
+    assert merge.index("--squash --delete-branch;") < merge.index("--squash --delete-branch --auto")
+
+
+def test_dependency_update_holds_a_major_bump_for_review() -> None:
+    """A breaking upstream release is proposed and validated, never merged."""
+    workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
+
+    assert "steps.summary.outputs.has-major == 'true' && inputs.merge-major != true" in workflow
+    assert "(steps.summary.outputs.has-major != 'true' || inputs.merge-major)" in workflow
+    assert "needs-review" in workflow
+
+
+def test_dependency_update_does_not_commit_its_own_working_files() -> None:
+    """A report or a coverage file committed here would land in the release."""
+    workflow = _read(ROOT / ".github" / "workflows" / "dependency-update.yml")
+
+    assert '--report "$RUNNER_TEMP/update-report.json"' in workflow
+    assert '--report "$RUNNER_TEMP/set-report.json"' in workflow
+    assert "--report update-report.json" not in workflow
+    assert "rm -f .coverage coverage.xml" in workflow
+
+
+def test_dependabot_pull_requests_merge_without_running_their_code() -> None:
+    """pull_request_target hands out a write token — never to a checkout."""
+    workflow = _read(ROOT / ".github" / "workflows" / "dependabot-auto-merge.yml")
+
+    assert "pull_request_target:" in workflow
+    assert "github.event.pull_request.user.login == 'dependabot[bot]'" in workflow
+    assert "actions/checkout" not in workflow
+    assert "--watch --fail-fast" in workflow
+    assert "--squash" in workflow
+
+
+def test_dependabot_does_not_claim_to_read_the_manifest() -> None:
+    """Dependabot has no pip manifest here; the pin check owns those versions."""
+    config = _read(ROOT / ".github" / "dependabot.yml")
+
+    assert 'package-ecosystem: "github-actions"' in config
+    assert 'package-ecosystem: "pip"' not in config
+    assert "scripts/check_dependency_pins.py" in config
 
 
 def test_release_artifact_is_built_from_manifest_directory() -> None:
@@ -421,7 +510,7 @@ def test_user_facing_dependency_docs_match_manifest() -> None:
     assert f"`idm-heatpump-api` `{api_version}`" in stability
 
 
-def test_dependency_freshness_workflow_proposes_current_pins() -> None:
+def test_dependency_freshness_workflow_runs_the_pipeline_daily() -> None:
     """Pins must be checked on a schedule, not only when somebody remembers."""
     workflow = _read(ROOT / ".github" / "workflows" / "dependency-freshness.yml")
 
@@ -429,16 +518,9 @@ def test_dependency_freshness_workflow_proposes_current_pins() -> None:
     assert 'cron: "0 4 * * *"' in workflow
     assert "workflow_dispatch:" in workflow
     assert "  pull-requests: write" in workflow
-    assert "python scripts/check_dependency_pins.py --update" in workflow
-    assert "peter-evans/create-pull-request" in workflow
-    # The import that catches an upstream release needing a new extra.
-    assert "from modbus_connection.tmodbus import ModbusConnection" in workflow
-    for test_file in (
-        "tests/test_dependency_pins.py",
-        "tests/test_release_contract.py",
-        "tests/test_cross_repo_contract.py",
-    ):
-        assert test_file in workflow
+    assert "uses: ./.github/workflows/dependency-update.yml" in workflow
+    assert "auto-merge: ${{ inputs.auto-merge != false }}" in workflow
+    assert "concurrency:\n  group: dependency-update" in workflow
 
 
 def test_release_refuses_stale_runtime_pins_unless_overridden() -> None:

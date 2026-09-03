@@ -4,144 +4,47 @@ name: Dependency Freshness
 # The pins are what makes a release reproducible, but nothing in the repository
 # notices when a pinned library publishes a new version — that is how the
 # transport pin stayed on the modbus-connection 4.0.0a3 alpha while 4.8.1 was
-# current. This workflow checks PyPI daily and opens a pull request with the
-# updated transport pins; the release workflow refuses to publish stale pins.
+# current. This runs the update pipeline daily: it checks PyPI for every pin the
+# manifest declares, validates the result and merges it into main.
 
 on:
   schedule:
     - cron: "0 4 * * *"
   workflow_dispatch:
+    inputs:
+      auto-merge:
+        description: Merge the pull request into main once the checks pass
+        required: false
+        default: true
+        type: boolean
+      merge-major:
+        description: Merge a major version bump too, without waiting for a review
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
   pull-requests: write
+  issues: write
 
 concurrency:
-  group: dependency-freshness
+  group: dependency-update
   cancel-in-progress: false
 
 jobs:
-  refresh-pins:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
-
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97  # guardrails-disable-line
-        with:
-          python-version: "3.14"
-
-      - name: Report pin status
-        run: |
-          python -m pip install --upgrade pip
-          pip install packaging
-          {
-            echo "## Runtime dependency pins"
-            echo ""
-            echo '```'
-            python scripts/check_dependency_pins.py --warn-only
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Update transport pins
-        run: python scripts/check_dependency_pins.py --update
-
-      - name: Detect changes
-        id: changes
-        run: |
-          if git diff --quiet; then
-            echo "updated=false" >> "$GITHUB_OUTPUT"
-            echo "Pins are current; nothing to propose." >> "$GITHUB_STEP_SUMMARY"
-          else
-            echo "updated=true" >> "$GITHUB_OUTPUT"
-            git diff --name-only >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Read updated pins
-        if: steps.changes.outputs.updated == 'true'
-        id: pins
-        run: |
-          python - <<'PY' >> "$GITHUB_OUTPUT"
-          import json
-          from pathlib import Path
-
-          requirements = json.loads(
-              Path("custom_components/idm_heatpump/manifest.json").read_text(encoding="utf-8")
-          )["requirements"]
-          transport = [req for req in requirements if req.startswith(("modbus-connection", "tmodbus"))]
-          print(f"summary={' / '.join(transport)}")
-          PY
-
-      - name: Install updated runtime dependencies
-        if: steps.changes.outputs.updated == 'true'
-        run: |
-          pip install pytest pytest-asyncio
-          python - <<'PY'
-          import json
-          import subprocess
-          import sys
-
-          with open("custom_components/idm_heatpump/manifest.json", encoding="utf-8") as manifest_file:
-              requirements = json.load(manifest_file)["requirements"]
-
-          subprocess.check_call([sys.executable, "-m", "pip", "install", *requirements])
-          PY
-
-      - name: Smoke test the production Modbus backend
-        if: steps.changes.outputs.updated == 'true'
-        run: |
-          python - <<'PY'
-          from importlib.metadata import version
-
-          # Importing the backend is the check that caught modbus-connection 4.7.0
-          # moving serialx to a module-level import: without the tmodbus
-          # async-serial extra this line raises ModuleNotFoundError.
-          from modbus_connection import ModbusTcpParams
-          from modbus_connection.tmodbus import ModbusConnection
-
-          connection = ModbusConnection(
-              ModbusTcpParams(host="192.0.2.1", port=502),
-              timeout=1.0,
-              message_spacing=0.05,
-              connect_delay=0.1,
-          )
-          assert type(connection).__module__ == "modbus_connection.tmodbus"
-          assert connection.for_unit(1).__class__.__module__ == "modbus_connection.tmodbus"
-          print("backend imports OK:", version("modbus-connection"), version("tmodbus"))
-          PY
-
-      - name: Run dependency contract tests
-        if: steps.changes.outputs.updated == 'true'
-        run: |
-          pytest tests/test_dependency_pins.py tests/test_release_contract.py \
-            tests/test_cross_repo_contract.py tests/test_modbus_transport.py \
-            tests/test_modbus_client.py -q
-
-      - name: Create dependency update PR
-        if: steps.changes.outputs.updated == 'true'
-        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1  # guardrails-disable-line
-        with:
-          branch: automation/transport-dependency-pins
-          title: "chore: update transport pins to ${{ steps.pins.outputs.summary }}"
-          commit-message: "chore: update transport pins to ${{ steps.pins.outputs.summary }}"
-          body: |
-            Updates the exact transport pins to the newest releases on PyPI:
-            `${{ steps.pins.outputs.summary }}`.
-
-            Pre-releases are never selected automatically — the pin only moves to
-            a stable release unless it is itself a pre-release.
-
-            Checked in this workflow before the pull request was opened:
-            - the production `modbus_connection.tmodbus` backend imports with the
-              pinned pair, including connection pacing;
-            - `tests/test_dependency_pins.py`, `tests/test_release_contract.py`,
-              `tests/test_cross_repo_contract.py`, `tests/test_modbus_transport.py`
-              and `tests/test_modbus_client.py`.
-
-            Full CI (HACS, Hassfest, the complete suite against the new pins) runs
-            on this pull request. Review the upstream changelogs before merging:
-            - https://home-assistant-libs.github.io/modbus-connection/
-            - https://github.com/wlcrs/tmodbus/releases
-
-            Per `docs/RELEASE_PROCESS.md` a runtime dependency change restarts the
-            soak clock, so ship it through the pre-release channel.
+  update:
+    uses: ./.github/workflows/dependency-update.yml
+    secrets:
+      # Only this one, never `inherit`: the pipeline needs no other
+      # secret, and it is empty when the repository has not set it.
+      DEPENDENCY_UPDATE_TOKEN: ${{ secrets.DEPENDENCY_UPDATE_TOKEN }}
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    with:
+      # A manual run can say otherwise; the daily run always proposes, validates
+      # and merges on its own.
+      auto-merge: ${{ inputs.auto-merge != false }}
+      merge-major: ${{ inputs.merge-major == true }}
