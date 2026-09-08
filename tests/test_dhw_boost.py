@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from idm_heatpump import DataType, RegisterDef
@@ -557,3 +557,63 @@ async def test_one_manager_is_reused_per_coordinator(monkeypatch) -> None:
     second = await module.async_get_dhw_boost_manager(coordinator)
 
     assert first is second
+
+
+def _active_manager(write_error):
+    """A running boost whose next enforcement write raises ``write_error``."""
+    coordinator = FakeCoordinator()
+
+    async def _raise(register, value):
+        raise write_error
+
+    coordinator.async_write_register = _raise
+    manager = DhwBoostManager(coordinator)
+    manager.active = True
+    manager.status = "active"
+    manager.target_temperature = 60
+    manager.deadline = datetime.now(UTC) + timedelta(minutes=30)
+    # The controller still reports the pre-boost values, so enforcement runs.
+    coordinator.data = {"dhw_temp_top": 45.0, "dhw_setpoint": 48, "system_mode": 1}
+    manager._async_save = AsyncMock()
+    return manager
+
+
+@pytest.mark.asyncio
+async def test_enforcement_treats_write_pacing_as_wait_not_failure():
+    """The controller reports the old value for a poll or two after a write.
+
+    Both the coordinator's per-register cooldown and the API's EEPROM write
+    interval refuse a second write in that window. Counting those as failures
+    flipped the boost status and wrote the store on every poll, with a warning
+    each time.
+    """
+    from homeassistant.exceptions import HomeAssistantError
+
+    cooldown = HomeAssistantError()
+    cooldown.translation_key = "write_cooldown_active"
+    manager = _active_manager(cooldown)
+
+    await manager._async_evaluate()
+
+    assert manager.status == "active", "pacing is not an enforcement failure"
+    manager._async_save.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_enforcement_treats_the_eeprom_interval_as_wait_too():
+    manager = _active_manager(RuntimeError("EEPROM register written too recently; try again in 42s"))
+
+    await manager._async_evaluate()
+
+    assert manager.status == "active"
+    manager._async_save.assert_not_awaited()
+
+
+@pytest.mark.asyncio
+async def test_enforcement_still_reports_a_real_refusal():
+    manager = _active_manager(RuntimeError("controller refused"))
+
+    await manager._async_evaluate()
+
+    assert manager.status == "enforcement_failed"
+    manager._async_save.assert_awaited()

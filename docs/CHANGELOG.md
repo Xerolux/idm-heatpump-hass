@@ -15,6 +15,19 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **The domestic hot water boost stops fighting the write pacing.** While a
+  boost was running, every coordinator update compared the snapshot with the
+  target and re-wrote the setpoint and system mode when they differed. The
+  controller reports the previous value for a poll or two after a write, and
+  both the coordinator's per-register cooldown and the API's EEPROM write
+  interval refuse a second write in that window — so with the default scan
+  interval the boost flipped to `enforcement_failed`, wrote its store and logged
+  a warning every ten seconds. Write pacing is now recognised as "not yet"
+  rather than a failure: no status change, no store write, one debug line. A
+  real refusal is still reported exactly as before. The EEPROM interval is also
+  logged at debug level in the coordinator, since it is a deliberate protection
+  of the controller's limited write cycles rather than a fault.
+
 - **The web supplement backs off and stops retrying a refused PIN.** The poll
   loop slept the configured interval whether the read had succeeded or not, so a
   Navigator that was switched off, or a wrong web host, was probed every 30

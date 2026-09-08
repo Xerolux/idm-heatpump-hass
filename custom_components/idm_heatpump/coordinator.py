@@ -1126,7 +1126,19 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "translation_key": translation_key,
             "detail": detail,
         }
-        if not reached_device:
+        if translation_key == "write_eeprom_blocked":
+            # Deliberate pacing that protects the controller's limited EEPROM
+            # write cycles, not a fault. A caller that re-applies a value on
+            # every poll (the DHW boost) hits it routinely, and reporting each
+            # one as a warning buried the failures that do need attention.
+            _LOGGER.debug(
+                "The write of %s to %s (address %s) is waiting for the EEPROM write interval: %s",
+                value,
+                reg.name,
+                reg.address,
+                detail,
+            )
+        elif not reached_device:
             _LOGGER.warning(
                 "The write of %s to %s (address %s) was blocked before it was sent: %s",
                 value,
