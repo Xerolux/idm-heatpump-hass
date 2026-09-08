@@ -56,7 +56,7 @@ async def async_setup_entry(
 
     # Find heating circuits
     circuits = set()
-    for reg in coordinator._registers:
+    for reg in coordinator.active_registers:
         match = _HC_REGEX.search(reg.name)
         if match:
             circuits.add(match.group(1))
@@ -71,7 +71,7 @@ async def async_setup_entry(
 
     # Find zone rooms
     zone_rooms = set()
-    for reg in coordinator._registers:
+    for reg in coordinator.active_registers:
         match = _ZM_ROOM_REGEX.search(reg.name)
         if match:
             zone_rooms.add((int(match.group(1)), int(match.group(2))))

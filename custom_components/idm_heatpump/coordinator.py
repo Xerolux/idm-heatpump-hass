@@ -11,8 +11,8 @@ import logging
 import math
 import random
 import time
-from collections.abc import Callable, Iterable, Mapping
-from dataclasses import asdict
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
@@ -21,6 +21,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import issue_registry as ir
+from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from idm_heatpump import (
@@ -35,6 +36,7 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     DOMAIN,
+    MANUFACTURER,
     MODEL,
 )
 from .error_messages import (
@@ -191,6 +193,25 @@ def _web_variant_from_supplement(supplement: IdmWebSupplement) -> str | None:
     return _web_variant_from_family(family)
 
 
+@dataclass(frozen=True, slots=True)
+class PollStatistics:
+    """One snapshot of how polling is going, for diagnostics and sensors.
+
+    Grouping these keeps the reporting surface one property instead of nine
+    private attributes read from three other modules.
+    """
+
+    last_success: datetime | None
+    last_duration: float | None
+    consecutive_failures: int
+    total_polls: int
+    total_failures: int
+    planned_registers: int
+    known_registers: int
+    jitter_percent: int
+    write_cooldown_seconds: float
+
+
 class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     """Coordinator to manage data fetching from IDM heat pump."""
 
@@ -246,6 +267,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._register_by_name: dict[str, RegisterDef] = {}
         self._alias_primary_map: dict[int, str] | None = None
         self._room_mode_registers: list[RegisterDef] = []
+        self._all_room_mode_registers: list[RegisterDef] = []
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._hierarchy_device_ids: dict[tuple[str, str], str] = {}
         self._operation_analysis: OperationAnalysis | None = None
@@ -321,6 +343,73 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if manager is not None:
             manager.schedule_replan()
 
+    @property
+    def active_registers(self) -> tuple[RegisterDef, ...]:
+        """Return the registers the next poll will read."""
+        return tuple(self._registers)
+
+    def set_active_registers(self, registers: Sequence[RegisterDef], *, total: int) -> None:
+        """Narrow the poll to ``registers`` out of ``total`` known ones.
+
+        Owned by the coordinator because the room-mode subset and the counters
+        diagnostics reports have to stay consistent with the register list; a
+        caller assigning the list directly had to remember all three.
+        """
+        self._registers = list(registers)
+        selected_names = {register.name for register in self._registers}
+        self._room_mode_registers = [
+            register for register in self._all_room_mode_registers if register.name in selected_names
+        ]
+        self._polling_plan_total_count = total
+        self._polling_plan_active_count = len(self._registers)
+
+    @property
+    def alias_map(self) -> Mapping[int, Sequence[str]]:
+        """Return the register names that share one Modbus address."""
+        return self._alias_map
+
+    @property
+    def poll_statistics(self) -> PollStatistics:
+        """Return a snapshot of the polling counters for diagnostics."""
+        return PollStatistics(
+            last_success=self._last_poll_success,
+            last_duration=self._last_poll_duration,
+            consecutive_failures=self._consecutive_poll_failures,
+            total_polls=self._total_poll_count,
+            total_failures=self._total_poll_failures,
+            planned_registers=self._polling_plan_active_count,
+            known_registers=self._polling_plan_total_count,
+            jitter_percent=self._polling_jitter_percent,
+            write_cooldown_seconds=self._write_cooldown_seconds,
+        )
+
+    @property
+    def hierarchy_device_ids(self) -> Mapping[tuple[str, str], str]:
+        """Return the device registry IDs of the entry's sub-devices."""
+        return self._hierarchy_device_ids
+
+    def set_hierarchy_device_ids(self, device_ids: Mapping[tuple[str, str], str]) -> None:
+        """Remember the sub-device IDs so a later model correction can update them."""
+        self._hierarchy_device_ids = dict(device_ids)
+
+    @property
+    def entity_aware_polling_manager(self) -> EntityAwarePollingManager | None:
+        """Return the polling manager, if one has been attached."""
+        return self._entity_aware_polling_manager
+
+    def attach_entity_aware_polling_manager(self, manager: EntityAwarePollingManager) -> None:
+        """Attach the one polling manager this coordinator answers to."""
+        self._entity_aware_polling_manager = manager
+
+    @property
+    def dhw_boost_manager(self) -> DhwBoostManager | None:
+        """Return the domestic hot water boost manager, if one was created."""
+        return self._dhw_boost_manager
+
+    def attach_dhw_boost_manager(self, manager: DhwBoostManager) -> None:
+        """Attach the one boost manager this coordinator answers to."""
+        self._dhw_boost_manager = manager
+
     def setup_registers(
         self,
         circuits: list[str],
@@ -347,6 +436,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # time), so precompute them once instead of re-scanning all registers
         # on every poll.
         self._room_mode_registers = [reg for reg in self._registers if _is_zone_room_mode_register(reg)]
+        self._all_room_mode_registers = list(self._room_mode_registers)
         # Reset so the next poll always individually validates the (possibly
         # new) room-mode register set, instead of picking up mid-cycle where
         # a reconfigure (e.g. adding a zone) could skip a newly added
@@ -1332,6 +1422,32 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def _invalidate_device_info_cache(self) -> None:
         """Clear cached DeviceInfo so the next access reflects fresh metadata."""
         self._device_info_cache = None
+
+    def device_info(self) -> DeviceInfo:
+        """Return the main device's info, cached on the metadata it derives from.
+
+        Home Assistant asks every entity for this on every state update, so it
+        is cached; the key covers everything that can change without a reload,
+        including a config-entry rename.
+        """
+        entry = self.config_entry
+        assert entry is not None
+        cache_key = (self.model_name, self.firmware_version, self.myidm_id, entry.title)
+        cache = self._device_info_cache
+        if cache is not None and cache[0] == cache_key:
+            return cast("DeviceInfo", cache[1])
+        device_info = DeviceInfo(
+            identifiers={(DOMAIN, entry.entry_id)},
+            name=entry.title,
+            manufacturer=MANUFACTURER,
+            model=self.model_name,
+        )
+        if self.firmware_version:
+            device_info["sw_version"] = self.firmware_version
+        if self.myidm_id:
+            device_info["serial_number"] = self.myidm_id
+        self._device_info_cache = (cache_key, device_info)
+        return device_info
 
     def _sync_main_device_registry(self) -> None:
         """Push a corrected model/firmware/serial to the already-registered main device.

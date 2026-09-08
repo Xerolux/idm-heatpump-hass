@@ -165,8 +165,9 @@ def test_circuit_enabled_later_gets_its_pump_entity():
 def test_circuits_are_derived_from_modbus_registers_without_options():
     coordinator = _coordinator({})
     coordinator.config_entry.options = {}
-    coordinator._registers = [MagicMock(name="reg")]
-    coordinator._registers[0].name = "hc_d_flow_temp"
+    register = MagicMock(name="reg")
+    register.name = "hc_d_flow_temp"
+    coordinator.active_registers = (register,)
 
     entities = _entities_by_key(coordinator)
 

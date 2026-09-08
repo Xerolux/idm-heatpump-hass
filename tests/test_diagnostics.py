@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 from idm_heatpump import IdmModelInfo
 
+from custom_components.idm_heatpump.coordinator import PollStatistics
 from custom_components.idm_heatpump.diagnostics import async_get_config_entry_diagnostics
 
 
@@ -11,15 +12,17 @@ def _make_hass_with_coordinator(mock_hass, mock_config_entry):
     coord.update_interval = timedelta(seconds=10)
     coord.registers_count = 42
     coord.last_update_success = True
-    coord._last_poll_success = datetime(2026, 7, 27, 12, 0, tzinfo=UTC)
-    coord._last_poll_duration = 0.25
-    coord._consecutive_poll_failures = 0
-    coord._total_poll_count = 12
-    coord._total_poll_failures = 1
-    coord._polling_plan_active_count = 40
-    coord._polling_plan_total_count = 42
-    coord._polling_jitter_percent = 10
-    coord._write_cooldown_seconds = 30.0
+    coord.poll_statistics = PollStatistics(
+        last_success=datetime(2026, 7, 27, 12, 0, tzinfo=UTC),
+        last_duration=0.25,
+        consecutive_failures=0,
+        total_polls=12,
+        total_failures=1,
+        planned_registers=40,
+        known_registers=42,
+        jitter_percent=10,
+        write_cooldown_seconds=30.0,
+    )
     coord.model_name = "Navigator 10"
     coord.firmware_version = "2.34"
     coord.web_enabled = True

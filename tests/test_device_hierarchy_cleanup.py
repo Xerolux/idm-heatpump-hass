@@ -24,7 +24,7 @@ def _coordinator(*, enabled: bool, register_names: tuple[str, ...] = ()) -> Magi
     coordinator.device_hierarchy_enabled = enabled
     coordinator.config_entry = MagicMock()
     coordinator.config_entry.entry_id = "entry"
-    coordinator._registers = [_register(name) for name in register_names]
+    coordinator.active_registers = [_register(name) for name in register_names]
     coordinator.web_value_keys = ()
     return coordinator
 
@@ -148,7 +148,7 @@ def _circuit_coordinator(circuits: list[str]) -> MagicMock:
     coordinator.config_entry = MagicMock()
     coordinator.config_entry.entry_id = "entry"
     coordinator.config_entry.options = {"heating_circuits": circuits}
-    coordinator._registers = []
+    coordinator.active_registers = []
     return coordinator
 
 
