@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 
 EXPECTED_RUNTIME_REQUIREMENTS = [
-    "modbus-connection==4.10.0",
+    "modbus-connection==4.11.1",
     "tmodbus[async-serial]==0.6.2",
     "idm-heatpump-api[web]==2.0.0",
 ]
