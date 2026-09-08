@@ -9,9 +9,6 @@ from idm_heatpump import MODEL_UNKNOWN, IdmModelInfo
 from custom_components.idm_heatpump import (
     IdmHeatpumpData,
     _detect_model_info,
-    _model_info_from_detected_name,
-    _model_name_for_override,
-    _resolved_model_override,
     async_migrate_entry,
     async_reload_entry,
     async_setup,
@@ -26,6 +23,12 @@ from custom_components.idm_heatpump.const import (
     MODEL_OVERRIDE_NAVIGATOR_10,
     MODEL_OVERRIDE_NAVIGATOR_20,
     WEB_SETUP_READ_TIMEOUT,
+)
+from custom_components.idm_heatpump.model_resolution import (
+    model_info_from_name,
+    model_name_for_override,
+    plant_shape,
+    resolved_model_override,
 )
 from custom_components.idm_heatpump.services import async_setup_services
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
@@ -1144,8 +1147,8 @@ class TestDetectModelInfo:
 
         client.detect_model.assert_awaited_once_with(read_firmware=False)
 
-    def test_builds_navigator_20_model_info_from_detected_name(self):
-        model_info = _model_info_from_detected_name("Navigator 2.0", ["a", "b"], 0, False)
+    def test_builds_navigator_20_model_info_from_a_name(self):
+        model_info = model_info_from_name("Navigator 2.0", plant_shape(["a", "b"], 0, False))
 
         assert model_info is not None
         assert model_info.model_name == "Navigator 2.0"
@@ -1154,19 +1157,19 @@ class TestDetectModelInfo:
 
     def test_generic_model_name_defaults_to_navigator_20(self):
         """Inconclusive/generic names must default to Nav 2.0 to avoid Nav-10-only crashes."""
-        model_info = _model_info_from_detected_name(MODEL, ["a"], 0, False)
+        model_info = model_info_from_name(MODEL, plant_shape(["a"], 0, False))
 
         assert model_info is not None
         assert model_info.model_name == "Navigator 2.0"
 
     def test_navigator_10_model_name_returns_navigator_10(self):
-        model_info = _model_info_from_detected_name("Navigator 10", ["a"], 0, False)
+        model_info = model_info_from_name("Navigator 10", plant_shape(["a"], 0, False))
 
         assert model_info is not None
         assert model_info.model_name == "Navigator 10"
 
     def test_unknown_model_name_defaults_to_navigator_20(self):
-        model_info = _model_info_from_detected_name("Some Unknown Controller", ["a"], 0, False)
+        model_info = model_info_from_name("Some Unknown Controller", plant_shape(["a"], 0, False))
 
         assert model_info is not None
         assert model_info.model_name == "Navigator 2.0"
@@ -1621,7 +1624,7 @@ class TestAsyncSetupEntryModelDetection:
     async def test_detection_failure_with_stored_navigator_version_builds_fallback_model_info(self, mock_hass):
         """When detect_model fails but stored detected_navigator_version is
         "Navigator 2.0", platform functions must receive a Navigator 2.0
-        model_info via _model_info_from_detected_name()."""
+        model_info via model_info_from_name()."""
         entry = self._make_entry()
         entry.data = {
             **entry.data,
@@ -1667,31 +1670,31 @@ class TestModelOverrideHelpers:
     """Unit tests for the pure override mapping helpers."""
 
     def test_model_name_for_override_maps_known_values(self):
-        assert _model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_10) == "Navigator 10"
-        assert _model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_20) == "Navigator 2.0"
+        assert model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_10) == "Navigator 10"
+        assert model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_20) == "Navigator 2.0"
 
     def test_model_name_for_override_returns_none_for_auto(self):
-        assert _model_name_for_override(MODEL_OVERRIDE_AUTO) is None
+        assert model_name_for_override(MODEL_OVERRIDE_AUTO) is None
 
     def test_model_name_for_override_returns_none_for_unknown(self):
-        assert _model_name_for_override("navigator_99") is None
+        assert model_name_for_override("navigator_99") is None
 
     def test_resolved_override_returns_none_for_auto(self):
-        assert _resolved_model_override({CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_AUTO}) is None
+        assert resolved_model_override({CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_AUTO}) is None
 
     def test_resolved_override_returns_none_for_missing_key(self):
-        assert _resolved_model_override({}) is None
+        assert resolved_model_override({}) is None
 
     def test_resolved_override_returns_none_for_empty_string(self):
-        assert _resolved_model_override({CONF_MODEL_OVERRIDE: ""}) is None
+        assert resolved_model_override({CONF_MODEL_OVERRIDE: ""}) is None
 
     def test_resolved_override_returns_name_for_explicit_value(self):
-        assert _resolved_model_override({CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10}) == "Navigator 10"
+        assert resolved_model_override({CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_NAVIGATOR_10}) == "Navigator 10"
 
     def test_resolved_override_returns_none_for_bogus_value(self):
         # Defensive: an invalid value stored in entry.data must not force a
         # wrong family — it falls back to automatic detection.
-        assert _resolved_model_override({CONF_MODEL_OVERRIDE: "garbage"}) is None
+        assert resolved_model_override({CONF_MODEL_OVERRIDE: "garbage"}) is None
 
 
 class TestAsyncSetupEntryModelOverride:

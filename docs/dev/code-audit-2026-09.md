@@ -9,7 +9,7 @@ the integration, and for each one states what to change, how, why, and how to pr
 
 **Status: most of it is implemented.** Every bug (A1–A8), every robustness item (B1–B6) and
 every performance item (C1–C3) has been fixed on
-`claude/fehlersuche-optimierung-doku-clobcn`, together with the cleanups D1, D2, D4, D6 and D7.
+`claude/fehlersuche-optimierung-doku-clobcn`, together with the cleanups D1, D2, D3, D4, D6 and D7.
 See the "Implementation status" table below for what remains and why. The per-package
 descriptions are kept as written: they are the reasoning the changes rest on, and the
 remaining packages are still work orders.
@@ -26,17 +26,30 @@ remaining packages are still work orders.
 | D6 | done | Module headers, comments and docstrings are English; the German display-name tables and the German fragments the register-name matching searches for stay. |
 | D7 | done | Plus a test that fails when a module or test file is missing from `AGENTS.md`. |
 | D2 | done | Done as its own change. The coordinator now exposes `active_registers`, `set_active_registers()`, `poll_statistics`, `alias_map`, `hierarchy_device_ids`, `device_info()` and the two manager accessors; no module reaches into a private attribute any more. |
-| D3 | open | Extracting model resolution is a day of work on the logic that decides which register map a controller gets. It deserves an unhurried change, not a tail-end one. |
+| D3 | done | `model_resolution.py` holds `resolve_model()`, `plan_web_read()` and the small value types they work on; `async_setup_entry` keeps only the I/O and applies what it gets back. Two things this document predicted did not hold. The coordinator's runtime web correction (`coordinator.py:1080-1110`) was **not** folded into the same function: it corrects an already built model at runtime and has no fresh Modbus probe to reconcile against, so calling `resolve_model(fresh=None, ...)` would mean a second, mostly-empty code path through it. It still calls the shared `_firmware_indicates_nav10()` helper, which is the part that was actually duplicated. And `__init__.py` coverage did not rise above 95 %: the 250 lines that moved out are now covered at 100 %, but the lines that stayed are the I/O and error paths, so the file sits at 90 % on 391 statements instead of 90 % on 467. Overall coverage went from 95.02 % to 95.21 %. |
 | D5 | **attempted, reverted** | Folding `HumidityForwarder` into the keyed forwarder does not merge as cleanly as this document assumed: the humidity forwarder has its own public surface (`async_forward()`, a single entity rather than a key map) that `__init__.py` and the tests use. Wrapping it to preserve that surface restores most of the code the merge was meant to remove. Left as two classes; the docstring at the top of `room_temp_forwarding.py` already explains the split. |
 | E1 | open | The one item whose absence still hides bugs. A cheaper half of it landed instead: the suite now validates against the real voluptuous when it is installed, which immediately caught three assertions written against the stub. A real-Home-Assistant smoke tree remains the right next step. |
 
-Two findings surfaced while implementing that this audit had not recorded:
+Three findings surfaced while implementing that this audit had not recorded:
 
 - The KNX bridge was stored on `runtime_data` only after a successful
   `async_start()`, so a bridge that failed partway through — having already
   registered demand and listeners — was unreachable for any cleanup. Fixed with B1.
 - `_entry_host` in `config_flow.py` repeated the `isinstance` guard its only caller
   performs, leaving a branch no test could reach. Removed with A5.
+- **Open question, deliberately not changed by D3.** When a web supplement corrects
+  the Modbus-detected model *and* the stored config-entry data is stale for the same
+  entry, both blocks write `CONF_DETECTED_NAVIGATOR_VERSION`. Inline, the stale-data
+  block ran second and therefore won, storing the Modbus model even though the web
+  evidence had just overruled it in memory — so the entry data disagrees with the
+  model actually used until the next setup. D3 preserves that ordering exactly (the
+  extraction is behaviour-neutral by construction, and there are no tests pinning the
+  intended outcome). Deciding which source should win is a behaviour change and needs
+  its own package: the likely answer is that the web correction wins, because the
+  branch is only reached when a nav10 web client connected *and* the firmware string
+  says NAV10, which is stronger evidence than a Modbus probe that may have been
+  refused register 4108. Whoever changes it should add a test for the both-apply case
+  first and drop the comment at `model_resolution.py:383`.
 
 
 ## How to use this document
