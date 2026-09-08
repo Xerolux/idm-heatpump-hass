@@ -54,6 +54,8 @@ def _make_coordinator(data=None, *, registers=REGISTERS):
     coordinator.data = data if data is not None else {"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": 2}
     coordinator.get_register = MagicMock(side_effect=registers.get)
     coordinator.is_register_unused = MagicMock(return_value=False)
+    coordinator.unsupported_registers = set()
+    coordinator.register_required_registers = MagicMock(return_value=MagicMock())
     coordinator.async_add_listener = MagicMock(return_value=MagicMock())
     coordinator.async_write_register = AsyncMock()
     return coordinator
@@ -146,7 +148,15 @@ class TestStart:
         hass.services.async_call.assert_not_called()
         assert bridge.group_addresses == {}
 
-    async def test_resolves_only_registers_the_controller_exposes(self):
+    async def test_resolves_every_register_the_controller_implements(self):
+        """Objects follow the register map, not the current snapshot.
+
+        Deriving availability from the snapshot tied the bridge to whatever
+        entity-aware polling happened to be reading when it started, so an
+        object whose Home Assistant entity the user had disabled did not exist
+        on the bus at all. demand_heating is in the register map but absent
+        from this snapshot, and it must still be served.
+        """
         hass = _make_hass()
         bridge = KnxBridge(hass, _make_coordinator(), _config(send_enabled=False, receive_enabled=False), entry_id="e")
         await bridge.async_start()
@@ -154,9 +164,43 @@ class TestStart:
             "outdoor_temp": "8/0/1",
             "system_mode": "8/0/4",
             "hc_a_mode": "8/0/222",
+            "demand_heating": "8/1/124",
             # Write-only: reachable from the bus, never published to it.
             "error_acknowledge": "8/1/243",
         }
+
+    async def test_skips_a_register_the_controller_rejected(self):
+        """An address answered with Illegal Data Address is not on the bus."""
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        coordinator.unsupported_registers = {"demand_heating"}
+        bridge = KnxBridge(hass, coordinator, _config(send_enabled=False, receive_enabled=False), entry_id="e")
+        await bridge.async_start()
+
+        assert "demand_heating" not in bridge.group_addresses
+
+    async def test_declares_its_registers_so_polling_keeps_them(self):
+        """Entity-aware polling must keep every register the bridge serves.
+
+        The bridge owns no Home Assistant entities, so without this declaration
+        a register whose entity the user disabled dropped out of the poll and
+        the bridge published nothing for that object.
+        """
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        release = MagicMock()
+        coordinator.register_required_registers = MagicMock(return_value=release)
+        bridge = KnxBridge(hass, coordinator, _config(send_enabled=False, receive_enabled=False), entry_id="e")
+
+        await bridge.async_start()
+
+        owner, names = coordinator.register_required_registers.call_args.args
+        assert owner == "knx_bridge_e"
+        assert "demand_heating" in set(names)
+        release.assert_not_called()
+
+        await bridge.async_stop()
+        release.assert_called_once()
 
     async def test_registers_writable_objects_for_events(self):
         hass = _make_hass()
@@ -164,7 +208,7 @@ class TestStart:
         await bridge.async_start()
         registered = [c for c in hass.services.async_call.call_args_list if c.args[1] == "event_register"]
         addresses = {address for call in registered for address in call.args[2]["address"]}
-        assert addresses == {"8/0/4", "8/0/222", "8/1/243"}
+        assert addresses == {"8/0/4", "8/0/222", "8/1/124", "8/1/243"}
         hass.bus.async_listen.assert_called_once()
         assert hass.bus.async_listen.call_args.args[0] == EVENT_KNX
         await bridge.async_stop()
@@ -663,15 +707,16 @@ class TestResilienceAndEdges:
             0.01,
         )
         hass = _make_hass()
-        hass.services.async_call = AsyncMock(
-            side_effect=[
-                HomeAssistantError(translation_domain="knx", translation_key="integration_not_loaded"),
-                None,
-                None,
-                None,
-                None,
-            ]
-        )
+        # Only the very first registration fails, as it does while the KNX
+        # module is still loading; everything after it succeeds.
+        calls: list[int] = []
+
+        async def _first_call_fails(*args, **kwargs):
+            calls.append(1)
+            if len(calls) == 1:
+                raise HomeAssistantError(translation_domain="knx", translation_key="integration_not_loaded")
+
+        hass.services.async_call = AsyncMock(side_effect=_first_call_fails)
         bridge = KnxBridge(hass, _make_coordinator(), _config(send_enabled=False), entry_id="e")
 
         await bridge.async_start()
@@ -683,12 +728,12 @@ class TestResilienceAndEdges:
             for call in hass.services.async_call.call_args_list
             if call.args[1] == "event_register" and not call.args[2].get("remove")
         ]
-        assert len(registrations) == 3
-        assert [call.args[2]["type"] for call in registrations].count("5.010") == 2
-        assert [call.args[2]["type"] for call in registrations].count("7.001") == 1
+        groups = bridge._event_registration_groups()
+        # Every group registers once, and the one that failed first is retried.
+        assert len(registrations) == len(groups) + 1
         assert bridge._registration_worker.done()
         assert bridge._registration_worker.exception() is None
-        assert len(bridge._registered_event_groups) == 2
+        assert len(bridge._registered_event_groups) == len(groups)
         await bridge.async_stop()
 
     async def test_a_failing_send_does_not_kill_the_worker(self):

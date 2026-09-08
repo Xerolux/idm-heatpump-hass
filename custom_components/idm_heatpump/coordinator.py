@@ -11,7 +11,7 @@ import logging
 import math
 import random
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
@@ -249,6 +249,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._hierarchy_device_ids: dict[tuple[str, str], str] = {}
         self._operation_analysis: OperationAnalysis | None = None
         self._entity_aware_polling_manager: EntityAwarePollingManager | None = None
+        self._external_register_demand: dict[str, frozenset[str]] = {}
         self._polling_plan_total_count: int = 0
         self._polling_plan_active_count: int = 0
         self._polling_jitter_percent = max(0, min(20, polling_jitter_percent))
@@ -282,6 +283,40 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             name="IDM Heatpump",
             update_interval=scan_interval,
         )
+
+    def register_required_registers(self, owner: str, names: Iterable[str]) -> Callable[[], None]:
+        """Declare registers a non-entity consumer needs polled, and how to undo it.
+
+        Entity-aware polling narrows the poll to what enabled entities need.
+        Consumers that read ``self.data`` without owning an entity — the KNX
+        bridge above all, which serves 654 objects — are invisible to that plan,
+        so a register whose Home Assistant entity the user disabled silently
+        stopped being polled and the bridge published nothing for it. Declaring
+        the demand here keeps those registers in the plan.
+
+        Returns the callable that withdraws this owner's demand again.
+        """
+        self._external_register_demand[owner] = frozenset(names)
+        self._notify_register_demand_changed()
+
+        def _release() -> None:
+            if self._external_register_demand.pop(owner, None) is not None:
+                self._notify_register_demand_changed()
+
+        return _release
+
+    @property
+    def externally_required_registers(self) -> frozenset[str]:
+        """Return every register a non-entity consumer declared it needs."""
+        if not self._external_register_demand:
+            return frozenset()
+        return frozenset().union(*self._external_register_demand.values())
+
+    def _notify_register_demand_changed(self) -> None:
+        """Re-plan polling so a demand change takes effect on the next poll."""
+        manager = self._entity_aware_polling_manager
+        if manager is not None:
+            manager.schedule_replan()
 
     def setup_registers(
         self,

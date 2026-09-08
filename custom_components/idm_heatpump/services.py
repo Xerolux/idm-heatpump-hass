@@ -495,11 +495,15 @@ async def _handle_export_knx_group_addresses(hass: HomeAssistant, call: ServiceC
         groups = list(OBJECT_GROUPS)
     overrides = options.get(CONF_KNX_OVERRIDES) or {}
 
-    available = {register for register in (coordinator.data or {}) if coordinator.get_register(register) is not None}
-    for obj in KNX_OBJECTS:
-        definition = coordinator.get_register(obj.register)
-        if definition is not None and definition.write_only:
-            available.add(obj.register)
+    # Availability follows the register map and the addresses the controller
+    # rejected, not the current snapshot: entity-aware polling narrows that
+    # snapshot to the enabled entities, so an export taken after a user
+    # disabled entities silently omitted their group addresses.
+    available = {
+        obj.register
+        for obj in KNX_OBJECTS
+        if coordinator.get_register(obj.register) is not None and obj.register not in coordinator.unsupported_registers
+    }
 
     try:
         addresses = resolve_group_addresses(

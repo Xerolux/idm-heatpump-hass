@@ -43,6 +43,8 @@ class _Coordinator:
         self._room_mode_registers = [self._registers[3]]
         self._alias_map = {1050: ["hp_flow_temp", "hp_return_temp"]}
         self.async_request_refresh = AsyncMock()
+        # Registers a non-entity consumer (the KNX bridge) declared it needs.
+        self.externally_required_registers: frozenset[str] = frozenset()
 
 
 @pytest.mark.asyncio

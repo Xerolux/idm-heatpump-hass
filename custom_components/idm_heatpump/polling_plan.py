@@ -78,14 +78,22 @@ def build_required_register_names(
     registry: Any,
     entry_id: str,
     known_register_names: Iterable[str],
+    externally_required: Iterable[str] = (),
 ) -> set[str] | None:
-    """Build the required register set or return None until registry data exists."""
+    """Build the required register set or return None until registry data exists.
+
+    ``externally_required`` carries the demand of consumers that read the
+    coordinator snapshot without owning a Home Assistant entity — the KNX
+    bridge above all. Without it, a register whose entity the user disabled
+    dropped out of the poll and the bridge published nothing for that object,
+    with no error anywhere to explain it.
+    """
     known = set(known_register_names)
     entries = list(er.async_entries_for_config_entry(registry, entry_id))
     if not entries:
         return None
 
-    required = set(_ALWAYS_REQUIRED) & known
+    required = (set(_ALWAYS_REQUIRED) | set(externally_required)) & known
     prefix = f"{entry_id}_"
     for registry_entry in entries:
         if getattr(registry_entry, "disabled_by", None) is not None:
@@ -165,6 +173,19 @@ class EntityAwarePollingManager:
         self._refresh_task = None
 
     @callback
+    def schedule_replan(self) -> None:
+        """Re-plan after something other than the entity registry changed.
+
+        A consumer declaring or withdrawing register demand (the KNX bridge
+        starting or stopping) changes the plan without any registry event, so
+        it has to ask for one. Debounced through the same path as a registry
+        change, so a bridge declaring many objects re-plans once.
+        """
+        if self._refresh_task is not None:
+            self._refresh_task.cancel()
+        self._refresh_task = self._hass.async_create_task(self._async_debounced_apply())
+
+    @callback
     def _handle_registry_event(self, event: Any) -> None:
         """Debounce registry changes affecting this config entry."""
         entity_id = event.data.get("entity_id")
@@ -203,6 +224,7 @@ class EntityAwarePollingManager:
             registry,
             self._entry.entry_id,
             known,
+            self._coordinator.externally_required_registers,
         )
         if required is None:
             return

@@ -15,6 +15,20 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **The KNX bridge no longer loses objects to entity-aware polling.** Polling is
+  narrowed to the registers enabled entities need, and the bridge owns no
+  entities, so every object whose Home Assistant entity the user had disabled
+  silently stopped being served: it published nothing, answered no read request,
+  and reported no error. Since the wiki recommends disabling unused entities to
+  relieve the controller, that was the normal configuration for a KNX user. A
+  consumer can now declare the registers it needs (`register_required_registers`
+  on the coordinator), the bridge declares its own on start and withdraws them
+  on stop, and the poll plan honours the declaration. The bridge also decides
+  which objects exist from the register map and the addresses the controller
+  rejected instead of from the current snapshot, so a register that simply had
+  no value yet at start-up is served too. `export_knx_group_addresses` uses the
+  same rule, so an export no longer shrinks with the entity selection.
+
 - **Forwarded temperatures are converted to degrees Celsius.** The GLT
   registers are defined in °C, but the room and storage temperature forwarding
   wrote whatever number the source sensor reported. A sensor in °F sent 68 °F as
