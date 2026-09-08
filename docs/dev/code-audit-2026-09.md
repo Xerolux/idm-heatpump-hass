@@ -4,16 +4,46 @@ Last updated: 2026-09-08
 Audited revision: `main` at `5065bba` (integration `0.16.2`, `idm-heatpump-api[web]==2.0.0`,
 `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.2`).
 
-This document is a **work order, not a change**. It records every defect, weakness and
-cleanup opportunity found in a full read of the integration, and for each one it states what
-to change, how, why, and how to prove it. It is written so that an implementer with less
-context (a person or a cheaper coding agent) can execute the packages one at a time without
-re-deriving the analysis. Nothing in this document has been implemented yet.
+This document records every defect, weakness and cleanup opportunity found in a full read of
+the integration, and for each one states what to change, how, why, and how to prove it.
+
+**Status: most of it is implemented.** Every bug (A1–A8), every robustness item (B1–B6) and
+every performance item (C1–C3) has been fixed on
+`claude/fehlersuche-optimierung-doku-clobcn`, together with the cleanups D1, D4, D6 and D7.
+See the "Implementation status" table below for what remains and why. The per-package
+descriptions are kept as written: they are the reasoning the changes rest on, and the
+remaining packages are still work orders.
+
+## Implementation status
+
+| Package | Status | Notes |
+| --- | --- | --- |
+| A1–A8 | done | All eight bugs fixed, each with a test that fails without the fix. |
+| B1–B6 | done | Includes the per-circuit `hvac_action`; the API does expose `hc_<x>_active_mode`, so B6's "verify first" resolved in favour of fixing it. |
+| C1–C3 | done | The suite went from ~33 s to ~10 s. |
+| D1 | done | Every shim for an API older than the exact pin removed. |
+| D4 | done | One shared translated-write helper for all five writable platforms. |
+| D6 | done | Module headers, comments and docstrings are English; the German display-name tables and the German fragments the register-name matching searches for stay. |
+| D7 | done | Plus a test that fails when a module or test file is missing from `AGENTS.md`. |
+| D2 | open | Encapsulating the coordinator's private attributes touches nearly every module for no user-visible gain. Worth doing, but as its own change with its own review. |
+| D3 | open | Extracting model resolution is a day of work on the logic that decides which register map a controller gets. It deserves an unhurried change, not a tail-end one. |
+| D5 | **attempted, reverted** | Folding `HumidityForwarder` into the keyed forwarder does not merge as cleanly as this document assumed: the humidity forwarder has its own public surface (`async_forward()`, a single entity rather than a key map) that `__init__.py` and the tests use. Wrapping it to preserve that surface restores most of the code the merge was meant to remove. Left as two classes; the docstring at the top of `room_temp_forwarding.py` already explains the split. |
+| E1 | open | The one item whose absence still hides bugs. A cheaper half of it landed instead: the suite now validates against the real voluptuous when it is installed, which immediately caught three assertions written against the stub. A real-Home-Assistant smoke tree remains the right next step. |
+
+Two findings surfaced while implementing that this audit had not recorded:
+
+- The KNX bridge was stored on `runtime_data` only after a successful
+  `async_start()`, so a bridge that failed partway through — having already
+  registered demand and listeners — was unreachable for any cleanup. Fixed with B1.
+- `_entry_host` in `config_flow.py` repeated the `isinstance` guard its only caller
+  performs, leaving a branch no test could reach. Removed with A5.
+
 
 ## How to use this document
 
 - **Work package by package.** Every package (`A1`, `B3`, …) is independent unless its
-  "Depends on" line says otherwise. One package = one pull request. Do not bundle.
+  "Depends on" line says otherwise. For the packages still open, one package = one pull
+  request; do not bundle.
 - **Read the "Verify first" line before coding.** Some findings rest on Home Assistant or
   API behaviour that was read from source but not executed here. The line names the exact
   thing to confirm; if it does not hold, stop and report instead of forcing the change.
