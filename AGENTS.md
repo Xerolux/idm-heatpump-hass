@@ -45,6 +45,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── repairs.py                    # Repair flows (e.g. missing web PIN)
 │   ├── registers.py                  # Collects entity descriptions from idm-heatpump-api
 │   ├── library_adapter.py            # Adapter between idm-heatpump-api and HA EntityDescriptions
+│   ├── model_resolution.py           # Pure rules deciding the Navigator model and register map from probe/stored/web/override
 │   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
 │   ├── versions.py                   # Runtime dependency versions for logs, sensors, and diagnostics
@@ -113,6 +114,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_log_filter.py
 │   ├── test_modbus_client.py
 │   ├── test_modbus_transport.py
+│   ├── test_model_resolution.py
 │   ├── test_operation_analysis.py
 │   ├── test_operation_entities.py
 │   ├── test_pages_seo.py

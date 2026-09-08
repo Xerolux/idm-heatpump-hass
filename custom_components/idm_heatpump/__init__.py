@@ -25,15 +25,6 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.loader import async_get_integration
 
 from idm_heatpump import (
-    FEATURE_CASCADE,
-    FEATURE_HEATING_CIRCUITS,
-    FEATURE_ISC,
-    FEATURE_PV,
-    FEATURE_SOLAR,
-    FEATURE_ZONE_MODULES,
-    MODEL_NAVIGATOR_10,
-    MODEL_NAVIGATOR_20,
-    MODEL_NAVIGATOR_PRO,
     MODEL_UNKNOWN,
     IdmModbusClient,
     IdmModelInfo,
@@ -65,7 +56,6 @@ from .const import (
     CONF_MODBUS_MAX_RETRIES,
     CONF_MODBUS_MESSAGE_SPACING,
     CONF_MODBUS_TIMEOUT,
-    CONF_MODEL_OVERRIDE,
     CONF_POLLING_JITTER,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
@@ -121,14 +111,10 @@ from .const import (
     DOMAIN,
     MAX_WEB_BACKOFF_FACTOR,
     MODEL,
-    MODEL_OVERRIDE_AUTO,
-    MODEL_OVERRIDE_NAVIGATOR_10,
-    MODEL_OVERRIDE_NAVIGATOR_20,
-    MODEL_OVERRIDE_NAVIGATOR_PRO,
     NAME,
     WEB_SETUP_READ_TIMEOUT,
 )
-from .coordinator import IdmCoordinator, navigator_family
+from .coordinator import IdmCoordinator
 from .device_hierarchy import (
     cleanup_deconfigured_heating_circuit_entities,
     cleanup_stale_hierarchy_devices,
@@ -145,6 +131,14 @@ from .error_messages import (
 from .knx_bridge import KnxBridge, KnxBridgeConfig
 from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
 from .library_adapter import get_idm_client
+from .model_resolution import (
+    DetectionResult,
+    StoredDetection,
+    plan_web_read,
+    plant_shape,
+    resolve_model,
+    resolved_model_override,
+)
 from .operation_analysis import OperationAnalysis
 from .polling_plan import ensure_entity_aware_polling
 from .registers import (
@@ -165,9 +159,7 @@ from .room_temp_forwarding import (
 from .versions import async_runtime_versions
 from .web_data import (
     IdmWebAuthenticationFailed,
-    _firmware_indicates_nav10,
     async_read_web_supplement,
-    merge_model_info,
     web_pin_configured,
 )
 
@@ -299,87 +291,6 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, 
     return model_name, firmware_version, detected_model_info
 
 
-def _model_info_from_detected_name(
-    model_name: str,
-    circuits: list[str],
-    zone_count: int,
-    enable_cascade: bool,
-) -> IdmModelInfo:
-    """Build fallback model info from trusted web/config metadata.
-
-    When the name is generic ("Navigator 2.0 / 10"), inconclusive, or unknown,
-    default to Navigator 2.0. That is the safer baseline: Navigator-10-only
-    registers such as 4108 / 4001 cause "Illegal Data Address" errors on older
-    controllers, whereas a Navigator 10 controller simply won't expose a few
-    Navigator-2.0-specific registers.
-    """
-    normalized = model_name.casefold()
-    has_navigator_20 = "navigator 2" in normalized
-    has_navigator_10 = "navigator 10" in normalized
-    has_navigator_pro = "navigator pro" in normalized
-
-    if has_navigator_10 and not has_navigator_20:
-        detected_model = MODEL_NAVIGATOR_10
-    elif has_navigator_pro and not has_navigator_20 and not has_navigator_10:
-        detected_model = MODEL_NAVIGATOR_PRO
-    else:
-        # Generic "Navigator 2.0 / 10", both generations mentioned, or
-        # completely unknown: prefer Navigator 2.0 to avoid first-setup crashes.
-        detected_model = MODEL_NAVIGATOR_20
-
-    features: set[str] = set()
-    if circuits:
-        features.add(FEATURE_HEATING_CIRCUITS)
-    if zone_count > 0:
-        features.add(FEATURE_ZONE_MODULES)
-    features.add(FEATURE_SOLAR)
-    features.add(FEATURE_ISC)
-    features.add(FEATURE_PV)
-    if enable_cascade:
-        features.add(FEATURE_CASCADE)
-
-    return IdmModelInfo(
-        model_name=detected_model,
-        active_heating_circuits=[circuit.upper() for circuit in circuits],
-        zone_modules=zone_count,
-        has_solar=True,
-        has_isc=True,
-        has_pv=True,
-        has_cascade=enable_cascade,
-        features=features,
-    )
-
-
-def _model_name_for_override(override_value: str) -> str | None:
-    """Map a config-flow model override value to a library model name.
-
-    Returns ``None`` for ``auto``/unknown so callers keep using automatic
-    detection. Returning the canonical library string lets the rest of setup
-    (register map, family checks, device info) work unchanged.
-    """
-    mapping = {
-        MODEL_OVERRIDE_NAVIGATOR_10: MODEL_NAVIGATOR_10,
-        MODEL_OVERRIDE_NAVIGATOR_20: MODEL_NAVIGATOR_20,
-        MODEL_OVERRIDE_NAVIGATOR_PRO: MODEL_NAVIGATOR_PRO,
-    }
-    return mapping.get(override_value)
-
-
-def _resolved_model_override(entry_data: Mapping[str, Any]) -> str | None:
-    """Return the configured override model name, or ``None`` for automatic.
-
-    Empty/missing/``auto`` values resolve to ``None`` so the behavior is
-    identical to the pre-override detection path.
-    """
-    raw = entry_data.get(CONF_MODEL_OVERRIDE)
-    if not isinstance(raw, str):
-        return None
-    raw = raw.strip()
-    if raw == MODEL_OVERRIDE_AUTO or not raw:
-        return None
-    return _model_name_for_override(raw)
-
-
 async def _web_poll_loop(coordinator: IdmCoordinator, interval: int) -> None:
     """Poll optional web supplement data independently from Modbus.
 
@@ -503,7 +414,7 @@ async def _async_setup_web_only_entry(
     # A user-configured override is authoritative even in web-only mode (it
     # only affects the device model label here, since web-only has no Modbus
     # register map). The web-supplement firmware version is still kept.
-    override_model_name = _resolved_model_override(entry.data)
+    override_model_name = resolved_model_override(entry.data)
     if override_model_name is not None:
         _LOGGER.warning(
             "IDM Navigator model override active in web-only mode: using %s",
@@ -733,80 +644,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
     try:
         model_name, firmware_version, detected_model_info = await _detect_model_info(client)
-        modbus_model_name = model_name
         _LOGGER.info(
             "IDM Modbus model detection result: model=%s firmware=%s model_info=%s",
-            modbus_model_name,
+            model_name,
             firmware_version or "unknown",
             "available" if detected_model_info is not None else "unavailable",
         )
 
-        # Optional user-configured Navigator model override. An explicit
-        # override wins over both the fresh Modbus detection and any stored/
-        # web-supplement values, because the user explicitly chose it. It only
-        # affects register selection (which registers are polled); unique IDs,
-        # entity IDs and write paths stay unchanged. ``auto`` keeps detection.
-        override_model_name = _resolved_model_override(entry.data)
-        override_active = override_model_name is not None
-        if override_active:
-            assert override_model_name is not None  # for mypy
-            _LOGGER.warning(
-                "IDM Navigator model override active: using %s (automatic detection was %s); "
-                "change the override back to 'Automatic' in the integration settings if it was set "
-                "by mistake",
-                override_model_name,
-                modbus_model_name,
-            )
-            model_name = override_model_name
-            modbus_model_name = override_model_name
+        client_model_info = getattr(client, "model_info", None)
+        detection = DetectionResult(
+            model_name=model_name,
+            firmware_version=firmware_version,
+            model_info=detected_model_info,
+            client_model_info=client_model_info if isinstance(client_model_info, IdmModelInfo) else None,
+        )
+        stored_detection = StoredDetection.from_entry_data(entry.data)
+        override_model_name = resolved_model_override(entry.data)
+        plant = plant_shape(circuits, zone_count, enable_cascade)
 
-        stale_detected_data: dict[str, Any] = {}
-        stored_model_conflict = False
-        detected_model_name = entry.data.get(CONF_DETECTED_NAVIGATOR_VERSION)
-        # When a user override is active, the stored detected value is not a
-        # detection result that could become "stale" — it is whatever the user
-        # last saw. Skip the stored-vs-fresh conflict reconciliation entirely
-        # so we never silently rewrite a user override.
-        if (
-            not override_active
-            and isinstance(detected_model_name, str)
-            and detected_model_name.strip()
-            and (
-                detected_model_info is None
-                or navigator_family(detected_model_name) == navigator_family(modbus_model_name)
-            )
-        ):
-            model_name = detected_model_name.strip()
-            _LOGGER.info(
-                "Using stored IDM Navigator model %s because it matches fresh Modbus detection",
-                model_name,
-            )
-        elif not override_active and isinstance(detected_model_name, str) and detected_model_name.strip():
-            stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = detected_model_name
-            stored_model_conflict = True
-            _LOGGER.info(
-                "Stored IDM Navigator model %s conflicts with fresh Modbus detection %s; correcting stored data",
-                detected_model_name,
-                modbus_model_name,
-            )
-        runtime_web_variant = None if stored_model_conflict else stored_web_variant
-        detected_firmware_version = entry.data.get(CONF_DETECTED_SOFTWARE_VERSION)
-        if (
-            isinstance(detected_firmware_version, str)
-            and detected_firmware_version.strip()
-            and not stored_model_conflict
-        ):
-            firmware_version = detected_firmware_version.strip()
-
+        # The web read is the only I/O in the middle of the decision, so the
+        # plan for it is computed first and its answer handed back below.
+        web_plan = plan_web_read(detection, stored_detection, override_model_name)
         web_supplement = None
         if web_enabled and web_pin_configured(web_pin):
             try:
                 web_supplement = await async_read_web_supplement(
                     web_host,
                     web_pin,
-                    model_hint=modbus_model_name,
-                    preferred_variant=runtime_web_variant,
-                    allow_variant_fallback=runtime_web_variant is None,
+                    model_hint=web_plan.model_hint,
+                    preferred_variant=web_plan.preferred_variant,
+                    allow_variant_fallback=web_plan.allow_variant_fallback,
                     hass=hass,
                     # Setup must not wait on the optional supplement; the poll
                     # loop finishes detection later.
@@ -825,114 +692,26 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     friendly_web_error(issue_id, web_host),
                 )
                 _LOGGER.debug("Technical initial Navigator web error", exc_info=True)
-            if (
-                not override_active
-                and web_supplement is not None
-                and detected_model_info is not None
-                and web_supplement.model_name
-                and navigator_family(web_supplement.model_name) != navigator_family(modbus_model_name)
-            ):
-                # The web supplement disagrees with Modbus detection.
-                # The web variant that succeeded is definitive: nav10 clients
-                # can only connect to Navigator 10 controllers. When the
-                # firmware string additionally carries a NAV10 prefix, the
-                # web evidence is stronger than a potentially failed Modbus
-                # probe (register 4108 is rejected by some Nav10 firmwares).
-                if _firmware_indicates_nav10(web_supplement.software_version):
-                    _LOGGER.info(
-                        "Correcting Modbus-detected model %s to %s based on web firmware string %s",
-                        modbus_model_name,
-                        web_supplement.model_name,
-                        web_supplement.software_version,
-                    )
-                    model_name = web_supplement.model_name
-                    firmware_version = web_supplement.software_version or firmware_version
-                    # Build corrected model_info so register map includes
-                    # Navigator-10-only blocks. The library's client.model_info
-                    # still holds the stale Nav2.0 detection result.
-                    detected_model_info = _model_info_from_detected_name(
-                        model_name,
-                        circuits,
-                        zone_count,
-                        enable_cascade,
-                    )
-                    # Persist the corrected model so it survives reloads.
-                    # Detection-only keys do not trigger a config-entry reload.
-                    _web_correction_updates: dict[str, Any] = {
-                        CONF_DETECTED_NAVIGATOR_VERSION: model_name,
-                    }
-                    if firmware_version:
-                        _web_correction_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
-                    if web_supplement.web_variant:
-                        _web_correction_updates[CONF_DETECTED_WEB_VARIANT] = web_supplement.web_variant
-                    hass.config_entries.async_update_entry(entry, data={**entry.data, **_web_correction_updates})
-                else:
-                    stale_detected_data[CONF_DETECTED_NAVIGATOR_VERSION] = web_supplement.model_name
-                    _LOGGER.warning(
-                        "Ignoring conflicting stored/web Navigator model %s because Modbus detected %s",
-                        web_supplement.model_name,
-                        modbus_model_name,
-                    )
-            elif override_active:
-                # A user override is authoritative for the model. The web
-                # supplement may still contribute the software version, but it
-                # must not change the model name.
-                _, firmware_version = merge_model_info(
-                    model_name,
-                    firmware_version,
-                    web_supplement,
-                )
-            else:
-                model_name, firmware_version = merge_model_info(
-                    model_name,
-                    firmware_version,
-                    web_supplement,
-                )
 
-        if stale_detected_data and detected_model_info is not None:
-            data_updates: dict[str, Any] = {}
-            if CONF_DETECTED_NAVIGATOR_VERSION in stale_detected_data:
-                data_updates[CONF_DETECTED_NAVIGATOR_VERSION] = modbus_model_name
-            if web_supplement is not None and web_supplement.web_variant:
-                data_updates[CONF_DETECTED_WEB_VARIANT] = web_supplement.web_variant
-            if firmware_version:
-                data_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
-            updated_data = {**entry.data, **data_updates}
-            if stored_model_conflict and CONF_DETECTED_SOFTWARE_VERSION not in data_updates:
-                updated_data.pop(CONF_DETECTED_SOFTWARE_VERSION, None)
-                _LOGGER.info(
-                    "Removed stale stored IDM software version because the stored Navigator model was corrected"
-                )
-            if stored_model_conflict and CONF_DETECTED_WEB_VARIANT not in data_updates:
-                updated_data.pop(CONF_DETECTED_WEB_VARIANT, None)
-                _LOGGER.info("Removed stale stored IDM web variant because the stored Navigator model was corrected")
-            _LOGGER.info("Persisting corrected IDM detection data: %s", sorted(data_updates))
+        resolution = resolve_model(
+            detection,
+            stored_detection,
+            web_supplement,
+            override_model_name,
+            plant,
+        )
+        for level, message, args in resolution.log_lines:
+            _LOGGER.log(level, message, *args)
+        model_name = resolution.model_name
+        firmware_version = resolution.firmware_version
+        detected_model_info = resolution.model_info
+        runtime_web_variant = web_plan.preferred_variant
+
+        if resolution.data_updates or resolution.data_removals:
+            updated_data = {**entry.data, **resolution.data_updates}
+            for key in resolution.data_removals:
+                updated_data.pop(key, None)
             hass.config_entries.async_update_entry(entry, data=updated_data)
-
-        client_model_info = getattr(client, "model_info", None)
-        if (
-            not override_active
-            and isinstance(client_model_info, IdmModelInfo)
-            and isinstance(detected_model_info, IdmModelInfo)
-            and navigator_family(client_model_info.model_name) == navigator_family(detected_model_info.model_name)
-        ):
-            # When the library's detection result and the resolved model_info
-            # agree on the Navigator family, prefer the library's richer info
-            # (features, capabilities). Skip when families disagree (e.g. web
-            # evidence corrected a weak Modbus "Navigator 2.0" detection).
-            detected_model_info = client_model_info
-        elif not override_active and isinstance(client_model_info, IdmModelInfo) and detected_model_info is None:
-            detected_model_info = client_model_info
-        if override_active or detected_model_info is None:
-            # With an active override, always (re)build model info from the
-            # authoritative override name so the register map reflects the
-            # user's choice, not whatever the Modbus probe happened to detect.
-            detected_model_info = _model_info_from_detected_name(
-                model_name,
-                circuits,
-                zone_count,
-                enable_cascade,
-            )
 
         sensor_descs = get_all_sensor_descriptions(
             circuits, zone_count, zone_rooms, enable_cascade, detected_model_info

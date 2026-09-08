@@ -15,6 +15,26 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **Model detection is a pure function now.** `async_setup_entry` carried roughly
+  250 lines that reconciled four sources of truth for the heat pump model — the
+  fresh Modbus probe, the values stored in the config entry from an earlier
+  setup, the optional web supplement and the user's manual model override — while
+  also awaiting the web read, logging and writing back to the entry. That is the
+  part of setup most likely to be wrong for a given installation and it was the
+  hardest to test, because reaching any branch meant building a whole config
+  entry and a client double. The decision logic moved to a new
+  `model_resolution.py`: `resolve_model()` takes the four inputs and returns the
+  model name, firmware version, `IdmModelInfo`, the config-entry updates and
+  removals to apply and the log lines to emit, without touching Home Assistant or
+  the network. `plan_web_read()` decides up front which web variant to try and
+  whether a fallback is allowed, so the caller no longer interleaves that choice
+  with the reconciliation. `__init__.py` keeps only the I/O and applies what it
+  gets back. Behaviour is unchanged, including the case where a stale stored
+  model and a web correction both apply — that ordering quirk is preserved
+  deliberately and documented in `docs/dev/code-audit-2026-09.md` rather than
+  quietly fixed inside a refactor. The new module is at 100 % coverage from
+  46 table-driven tests that state only the inputs they vary.
+
 - **The coordinator has a public surface again.** Seven other modules reached
   into its private attributes — `polling_plan.py` replaced `_registers` and
   `_room_mode_registers` and set two counters by hand, `diagnostics.py` read
