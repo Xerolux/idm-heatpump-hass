@@ -132,6 +132,26 @@ def _make_entry(entry_id: str, host: str, port: int = 502, slave_id: int = 1):
     return entry
 
 
+def _marker_defaults(schema) -> dict:
+    """Map key name -> default for the markers of one voluptuous schema.
+
+    Real voluptuous names the key ``Marker.schema`` and stores the default as a
+    callable (or ``vol.UNDEFINED`` when there is none); the local stub used in a
+    checkout without Home Assistant keeps them as ``.key`` and a plain value.
+    Reading both keeps these assertions meaningful under either.
+    """
+    defaults = {}
+    for marker in schema.schema:
+        name = getattr(marker, "schema", None)
+        if not isinstance(name, str):
+            name = getattr(marker, "key", marker)
+        default = getattr(marker, "default", None)
+        if callable(default):
+            default = default()
+        defaults[name] = default
+    return defaults
+
+
 class TestBuildOptionsSchema:
     def test_returns_schema(self):
         schema = _build_options_schema({})
@@ -155,8 +175,7 @@ class TestBuildOptionsSchema:
 
     def test_web_supplement_enabled_by_default(self):
         schema = _build_options_schema({})
-        features_schema = schema._schema["features"]
-        defaults = {key.key: key.default for key in features_schema._schema}
+        defaults = _marker_defaults(schema.schema["features"])
 
         assert DEFAULT_WEB_ENABLED is True
         assert defaults[CONF_WEB_ENABLED] is True
@@ -631,7 +650,7 @@ class TestAsyncStepOptions:
     def test_options_schema_exposes_modbus_timeout_and_retries(self):
         """Timeout/retries must be user-tunable in the options step."""
         schema = _build_options_schema({})
-        schema_dict = dict(schema._schema["advanced_modbus"]._schema)
+        schema_dict = dict(schema.schema["advanced_modbus"].schema)
         assert CONF_MODBUS_TIMEOUT in schema_dict
         assert CONF_MODBUS_MAX_RETRIES in schema_dict
         assert CONF_MODBUS_MESSAGE_SPACING in schema_dict
@@ -642,17 +661,16 @@ class TestAsyncStepOptions:
 
     def test_options_schema_applies_defaults_for_timeout_and_retries(self):
         schema = _build_options_schema({})
-        # The dict keys are _Required markers; extract their defaults by key name.
-        markers = {marker.key: marker for marker in schema._schema["advanced_modbus"]._schema}
-        assert markers[CONF_MODBUS_TIMEOUT].default == DEFAULT_MODBUS_TIMEOUT
-        assert markers[CONF_MODBUS_MAX_RETRIES].default == DEFAULT_MODBUS_MAX_RETRIES
+        defaults = _marker_defaults(schema.schema["advanced_modbus"])
+        assert defaults[CONF_MODBUS_TIMEOUT] == DEFAULT_MODBUS_TIMEOUT
+        assert defaults[CONF_MODBUS_MAX_RETRIES] == DEFAULT_MODBUS_MAX_RETRIES
         # Pacing stays off unless the user asks for it, so an update never
         # slows down an installation that polls fine today.
-        assert markers[CONF_MODBUS_MESSAGE_SPACING].default == DEFAULT_MODBUS_MESSAGE_SPACING == 0.0
-        assert markers[CONF_MODBUS_CONNECT_DELAY].default == DEFAULT_MODBUS_CONNECT_DELAY == 0.0
-        assert markers[CONF_POLLING_JITTER].default == DEFAULT_POLLING_JITTER
-        assert markers[CONF_COMMUNICATION_DIAGNOSTICS].default == DEFAULT_COMMUNICATION_DIAGNOSTICS
-        assert markers[CONF_WRITE_COOLDOWN].default == DEFAULT_WRITE_COOLDOWN
+        assert defaults[CONF_MODBUS_MESSAGE_SPACING] == DEFAULT_MODBUS_MESSAGE_SPACING == 0.0
+        assert defaults[CONF_MODBUS_CONNECT_DELAY] == DEFAULT_MODBUS_CONNECT_DELAY == 0.0
+        assert defaults[CONF_POLLING_JITTER] == DEFAULT_POLLING_JITTER
+        assert defaults[CONF_COMMUNICATION_DIAGNOSTICS] == DEFAULT_COMMUNICATION_DIAGNOSTICS
+        assert defaults[CONF_WRITE_COOLDOWN] == DEFAULT_WRITE_COOLDOWN
 
     async def test_no_zones_creates_entry(self):
         flow = _make_flow()

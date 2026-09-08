@@ -12,6 +12,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+import voluptuous as vol
 
 # ---------------------------------------------------------------------------
 # Cross-platform event loop setup (Windows uses SelectorEventLoop; Linux is fine)
@@ -213,6 +214,17 @@ _stub_modbus_connection()
 def _stub_voluptuous() -> None:
     if "voluptuous" in sys.modules:
         return
+
+    # Prefer the real library when it is installed. It ships with Home
+    # Assistant, so CI always has it, and the stub below only validates by
+    # returning its input unchanged — against it a service schema that
+    # rejected valid calls would look exactly like a correct one.
+    try:
+        import voluptuous  # noqa: F401
+
+        return
+    except ImportError:
+        pass
 
     vol = ModuleType("voluptuous")
     sys.modules["voluptuous"] = vol
@@ -901,6 +913,20 @@ def _stub_homeassistant() -> None:
     cv_mod = _make_module("homeassistant.helpers.config_validation")
     helpers.config_validation = cv_mod
     cv_mod.config_entry_only_config_schema = lambda domain: {}
+    # Mirrors homeassistant.helpers.config_validation: the fields a service
+    # declared with ``target:`` receives alongside its own, plus the handful of
+    # validators the service schemas use.
+    cv_mod.string = str
+    cv_mod.boolean = bool
+    cv_mod.ensure_list = lambda value: value if isinstance(value, list) else [] if value is None else [value]
+    cv_mod.entity_ids = lambda value: value
+    cv_mod.TARGET_SERVICE_FIELDS = {
+        vol.Optional("entity_id"): object,
+        vol.Optional("device_id"): object,
+        vol.Optional("area_id"): object,
+        vol.Optional("floor_id"): object,
+        vol.Optional("label_id"): object,
+    }
 
     # homeassistant.components stubs
     components = _make_module("homeassistant.components")

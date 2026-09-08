@@ -210,39 +210,31 @@ class TestDhwBoostStartButton:
         assert exc_info.value.translation_key == "dhw_boost_already_active"
         assert exc_info.value.translation_domain == "idm_heatpump"
 
-    async def test_async_will_remove_shuts_down_manager_and_services(self):
+    async def test_async_will_remove_only_shuts_down_the_manager(self):
+        """The boost actions are domain services and outlive this entity.
+
+        They used to be registered by this platform and removed when the last
+        entry unloaded, which is the opposite of what the action-setup rule
+        asks for and of what every other service in this integration does.
+        """
         from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-        import custom_components.idm_heatpump.button as button_module
-
-        button, manager, coord = self._make()
-
-        # Stub the async_unload_dhw_boost_services helper so we don't need a
-        # full Home Assistant services registry, and provide a no-op
-        # ``async_will_remove_from_hass`` on the base class so super(). works.
-        unload_called = []
-
-        async def _fake_unload(hass, entry_id):
-            unload_called.append((hass, entry_id))
+        button, manager, _coord = self._make()
 
         async def _no_op_will_remove(self):
             return None
 
-        orig_unload = button_module.async_unload_dhw_boost_services
         orig_super = getattr(CoordinatorEntity, "async_will_remove_from_hass", None)
-        button_module.async_unload_dhw_boost_services = _fake_unload
         CoordinatorEntity.async_will_remove_from_hass = _no_op_will_remove
         try:
             await button.async_will_remove_from_hass()
         finally:
-            button_module.async_unload_dhw_boost_services = orig_unload
             if orig_super is not None:
                 CoordinatorEntity.async_will_remove_from_hass = orig_super
             else:
                 delattr(CoordinatorEntity, "async_will_remove_from_hass")
 
         assert manager.shutdown_called is True
-        assert unload_called == [(coord.hass, "test_entry")]
 
 
 class TestDhwBoostCancelButton:

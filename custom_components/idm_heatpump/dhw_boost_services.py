@@ -5,9 +5,11 @@ from __future__ import annotations
 from collections.abc import Mapping
 from functools import partial
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import config_validation as cv
 
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
@@ -19,6 +21,18 @@ from .dhw_boost import (
 
 _START_SERVICE = "start_dhw_boost"
 _CANCEL_SERVICE = "cancel_dhw_boost"
+
+# Shape only: the ranges mirror services.yaml, while whether the registers
+# allow a given target stays with DhwBoostManager, which answers with a
+# translated message.
+_START_SCHEMA = vol.Schema(
+    {
+        vol.Optional("entry_id"): cv.string,
+        vol.Optional("target_temperature"): vol.All(vol.Coerce(int), vol.Range(min=35, max=65)),
+        vol.Optional("timeout_minutes"): vol.All(vol.Coerce(int), vol.Range(min=5, max=240)),
+    }
+)
+_CANCEL_SCHEMA = vol.Schema({vol.Optional("entry_id"): cv.string})
 
 
 def _translate_boost_error(err: DhwBoostError) -> HomeAssistantError:
@@ -101,27 +115,12 @@ async def async_setup_dhw_boost_services(hass: HomeAssistant) -> None:
             DOMAIN,
             _START_SERVICE,
             partial(_handle_start, hass),
+            schema=_START_SCHEMA,
         )
     if not hass.services.has_service(DOMAIN, _CANCEL_SERVICE):
         hass.services.async_register(
             DOMAIN,
             _CANCEL_SERVICE,
             partial(_handle_cancel, hass),
+            schema=_CANCEL_SCHEMA,
         )
-
-
-async def async_unload_dhw_boost_services(
-    hass: HomeAssistant,
-    unloading_entry_id: str,
-) -> None:
-    """Remove boost services when the final supporting entry unloads."""
-    remaining = [
-        entry
-        for entry in hass.config_entries.async_entries(DOMAIN)
-        if entry.state == ConfigEntryState.LOADED and str(entry.entry_id) != unloading_entry_id
-    ]
-    if remaining:
-        return
-    for service in (_START_SERVICE, _CANCEL_SERVICE):
-        if hass.services.has_service(DOMAIN, service):
-            hass.services.async_remove(DOMAIN, service)

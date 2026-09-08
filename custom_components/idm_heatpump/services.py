@@ -11,6 +11,7 @@ import math
 from collections.abc import Mapping, Sequence
 from functools import partial
 
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import (
     HomeAssistant,
@@ -19,6 +20,7 @@ from homeassistant.core import (
     SupportsResponse,
 )
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
+from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers import issue_registry as ir
 from homeassistant.util.json import JsonValueType
 
@@ -36,6 +38,7 @@ from .const import (
     REGISTER_ADDRESS_SYSTEM_MODE,
 )
 from .coordinator import IdmCoordinator
+from .dhw_boost_services import async_setup_dhw_boost_services
 from .error_messages import (
     classify_write_error,
     scoped_issue_id,
@@ -50,6 +53,52 @@ from .knx_catalog import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Services declared with ``target:`` in services.yaml receive entity_id,
+# device_id, area_id, floor_id and label_id alongside their own fields, so every
+# schema has to accept them.
+_TARGET = cv.TARGET_SERVICE_FIELDS
+
+# The schemas validate shape only: types, ranges and the option sets that
+# services.yaml already advertises. Whether a register exists, is writable or
+# accepts a value stays with the handlers, which answer with a translated,
+# actionable message — a voluptuous error would replace those with
+# "required key not provided".
+_SET_SYSTEM_MODE_SCHEMA = vol.Schema({**_TARGET, vol.Optional("mode"): cv.string})
+
+_WRITE_REGISTER_SCHEMA = vol.Schema(
+    {
+        **_TARGET,
+        vol.Optional("address"): vol.All(vol.Coerce(int), vol.Range(min=0, max=65535)),
+        vol.Optional("value"): vol.Any(cv.string, int, float, bool),
+        vol.Optional("datatype"): cv.string,
+        vol.Optional("acknowledge_risk"): cv.boolean,
+    }
+)
+
+_SET_EXTERNAL_CLIMATE_SCHEMA = vol.Schema(
+    {
+        **_TARGET,
+        vol.Optional("heating_circuit"): cv.string,
+        vol.Optional("room_temperature"): vol.Coerce(float),
+        vol.Optional("humidity"): vol.Coerce(float),
+    }
+)
+
+_SET_EXTERNAL_POWER_SCHEMA = vol.Schema(
+    {
+        **_TARGET,
+        **{vol.Optional(field): vol.Coerce(float) for field in EXTERNAL_POWER_MEASUREMENT_NAMES},
+    }
+)
+
+_EXPORT_KNX_SCHEMA = vol.Schema(
+    {
+        **_TARGET,
+        vol.Optional(CONF_KNX_BASE_ADDRESS): cv.string,
+        vol.Optional(CONF_KNX_GROUPS): vol.All(cv.ensure_list, [cv.string]),
+    }
+)
 
 
 def _encoded_registers_from_safety_result(safety_result: object) -> list[JsonValueType] | None:
@@ -74,34 +123,44 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         DOMAIN,
         "set_system_mode",
         partial(_handle_set_system_mode, hass),
+        schema=_SET_SYSTEM_MODE_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,
         "acknowledge_errors",
         partial(_handle_acknowledge_errors, hass),
+        schema=vol.Schema(dict(_TARGET)),
     )
     hass.services.async_register(
         DOMAIN,
         "write_register",
         partial(_handle_write_register, hass),
+        schema=_WRITE_REGISTER_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
     )
     hass.services.async_register(
         DOMAIN,
         "set_external_climate",
         partial(_handle_set_external_climate, hass),
+        schema=_SET_EXTERNAL_CLIMATE_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,
         "set_external_power",
         partial(_handle_set_external_power, hass),
+        schema=_SET_EXTERNAL_POWER_SCHEMA,
     )
     hass.services.async_register(
         DOMAIN,
         "export_knx_group_addresses",
         partial(_handle_export_knx_group_addresses, hass),
+        schema=_EXPORT_KNX_SCHEMA,
         supports_response=SupportsResponse.ONLY,
     )
+    # Registered here rather than from the button platform: the action-setup
+    # rule wants every action available as soon as the domain loads, and the
+    # handlers resolve their config entry per call anyway.
+    await async_setup_dhw_boost_services(hass)
 
 
 async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordinator:

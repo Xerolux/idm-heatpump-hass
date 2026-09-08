@@ -15,6 +15,25 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Service calls are validated again, and the boost actions load with the
+  domain.** Every service was registered without a schema, so Home Assistant
+  passed whatever a caller sent straight to the handler and `services.yaml`
+  promised fields nothing enforced. Each service now carries a schema covering
+  the fields it documents — types, ranges and the `target:` fields — while the
+  handlers keep their translated, actionable errors for everything a schema
+  cannot express. A test compares `services.yaml` against the schemas so a new
+  documented field cannot be rejected. `start_dhw_boost` and `cancel_dhw_boost`
+  were registered by the button platform and removed when the last entry
+  unloaded; they are now registered in `async_setup` like every other action,
+  as the quality scale's action-setup rule asks.
+- **The test suite validates against the real voluptuous when it is available.**
+  The local stub validated by returning its input unchanged, so a service schema
+  that rejected valid calls would have looked exactly like a correct one — in CI
+  too, where Home Assistant and therefore voluptuous are installed. The stub is
+  now only a fallback for a checkout without them, and it already surfaced three
+  assertions that relied on the stub's private attributes rather than the real
+  library's public ones.
+
 - **The domestic hot water boost stops fighting the write pacing.** While a
   boost was running, every coordinator update compared the snapshot with the
   target and re-wrote the setpoint and system mode when they differed. The
