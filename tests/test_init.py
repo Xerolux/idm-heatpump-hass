@@ -268,6 +268,53 @@ class TestAsyncSetupEntry:
 
         mock_client.disconnect.assert_awaited_once()
 
+    async def test_unwinds_platforms_when_a_later_setup_step_fails(self, mock_hass):
+        """A failure after platform forwarding must not leave entities behind.
+
+        Home Assistant marks the entry failed, but the platforms stay
+        registered against a coordinator whose client setup then disconnects,
+        so the user is left with a wall of unavailable entities and a
+        connection error on every poll.
+        """
+        entry = self._make_entry()
+        entry.options = {**entry.options, "knx_bridge": True, "knx_send": True}
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.host = "192.168.1.100"
+        mock_client.port = 502
+
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+        mock_coordinator.async_shutdown = AsyncMock()
+
+        bridge = MagicMock()
+        bridge.async_start = AsyncMock(side_effect=RuntimeError("knx exploded"))
+        bridge.async_stop = AsyncMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.KnxBridge", return_value=bridge),
+            pytest.raises(RuntimeError, match="knx exploded"),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        mock_hass.config_entries.async_unload_platforms.assert_awaited_once()
+        bridge.async_stop.assert_awaited_once()
+        mock_coordinator.async_shutdown.assert_awaited_once()
+        mock_client.disconnect.assert_awaited()
+
     async def test_disconnects_client_when_first_refresh_fails(self, mock_hass):
         entry = self._make_entry()
         mock_client = AsyncMock()

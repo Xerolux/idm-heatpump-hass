@@ -15,6 +15,25 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **A failed setup no longer leaves live entities behind.** Everything after the
+  platforms are forwarded could still fail — the KNX bridge raising something
+  other than an invalid group address, a malformed option reaching `int()`.
+  Home Assistant then marked the entry failed while its eight platforms stayed
+  registered against a coordinator whose Modbus client setup had just closed, so
+  the user was left with a wall of unavailable entities and a connection error
+  on every poll, and no retry was scheduled. Setup now unwinds what it had
+  already brought up — platforms, background tasks, the KNX bridge, the
+  coordinator — before re-raising. The bridge is also stored before it is
+  started, because `async_start` registers demand and listeners as it goes and a
+  bridge that failed halfway was unreachable for any cleanup.
+- **Background work is tied to the config entry again.** The write-confirmation
+  refresh used a bare `asyncio.create_task`, which Home Assistant does not track
+  or cancel on unload, and the entity-aware polling manager scheduled its own
+  shutdown as a fire-and-forget task, so an unload could finish while a
+  debounced re-plan was still queued — which then asked a shut-down coordinator
+  to refresh. The refresh is now a config-entry background task, and the
+  shutdown is registered as a coroutine `async_on_unload` awaits.
+
 - **The KNX bridge no longer loses objects to entity-aware polling.** Polling is
   narrowed to the registers enabled entities need, and the bridge owns no
   entities, so every object whose Home Assistant entity the user had disabled

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from unittest.mock import AsyncMock, MagicMock
 
@@ -269,18 +270,30 @@ class TestPollingManagerLifecycle:
         assert manager._refresh_task is None
 
     @pytest.mark.asyncio
-    async def test_unload_schedules_the_shutdown(self, monkeypatch) -> None:
-        import asyncio
+    async def test_unload_awaits_the_shutdown(self, monkeypatch) -> None:
+        """Unload must wait for the registry listener to go away.
 
+        async_on_unload accepts a coroutine function and awaits it. Scheduling
+        the shutdown as a fire-and-forget task instead let unload complete while
+        a debounced re-plan was still queued, and that re-plan then asked a
+        shut-down coordinator to refresh.
+        """
         registry = _Registry([])
         hass = MagicMock()
         hass.async_create_task.side_effect = asyncio.ensure_future
-        manager, _coordinator, _entry, _hass = self._manager(monkeypatch, registry, hass=hass)
+        manager, _coordinator, entry, _hass = self._manager(monkeypatch, registry, hass=hass)
+        manager.schedule_setup()
 
-        manager._schedule_shutdown()
+        registered = entry.async_on_unload.call_args.args[0]
+        assert registered == manager.async_shutdown
 
-        assert hass.async_create_task.call_count == 1
-        await asyncio.sleep(0)
+        unsub = MagicMock()
+        manager._unsub_registry = unsub
+        await registered()
+
+        unsub.assert_called_once()
+        assert manager._unsub_registry is None
+        assert manager._setup_task is None
 
     def test_entries_of_other_config_entries_are_skipped(self, monkeypatch) -> None:
         monkeypatch.setattr(

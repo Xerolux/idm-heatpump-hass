@@ -1263,10 +1263,27 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         old_task = self._delayed_refresh_task
         if old_task is not None and not old_task.done():
             old_task.cancel()
-        # Short-lived confirmation refresh; use asyncio.create_task so unit
-        # tests can await the real Task (hass.async_create_task is often a MagicMock).
-        self._delayed_refresh_task = asyncio.create_task(self._delayed_refresh())
+        self._delayed_refresh_task = self._create_confirmation_task()
         return safety_result
+
+    def _create_confirmation_task(self) -> asyncio.Task[None]:
+        """Start the short confirmation refresh as a task the entry owns.
+
+        A bare ``asyncio.create_task`` is invisible to Home Assistant, so the
+        entry could finish unloading while this refresh was still pending.
+        ``async_create_background_task`` is looked up on the entry class so a
+        ``MagicMock`` entry in the tests falls through to a real task instead of
+        swallowing the coroutine.
+        """
+        coro = self._delayed_refresh()
+        entry = self.config_entry
+        create_bg = getattr(type(entry), "async_create_background_task", None) if entry is not None else None
+        if callable(create_bg):
+            return cast(
+                "asyncio.Task[None]",
+                create_bg(entry, self.hass, coro, f"{DOMAIN}_write_confirmation_{entry.entry_id}"),
+            )
+        return asyncio.create_task(coro)
 
     def _warn_once_on_web_variant_conflict(self) -> None:
         """Log once when the connected web client contradicts the detected model.

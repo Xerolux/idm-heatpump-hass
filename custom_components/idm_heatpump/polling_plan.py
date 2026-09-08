@@ -134,7 +134,12 @@ class EntityAwarePollingManager:
         """Start after all platforms had time to create registry entries."""
         if self._setup_task is None:
             self._setup_task = self._hass.async_create_task(self._async_delayed_setup())
-            self._entry.async_on_unload(self._schedule_shutdown)
+            # async_on_unload accepts a coroutine function and awaits it, so the
+            # unload waits for the listener to be removed. Scheduling the
+            # shutdown as a fire-and-forget task instead let unload finish while
+            # a debounced re-plan was still queued, and that re-plan then asked
+            # a shut-down coordinator to refresh.
+            self._entry.async_on_unload(self.async_shutdown)
 
     async def _async_delayed_setup(self) -> None:
         try:
@@ -151,10 +156,6 @@ class EntityAwarePollingManager:
             )
         finally:
             self._setup_task = None
-
-    @callback
-    def _schedule_shutdown(self) -> None:
-        self._hass.async_create_task(self.async_shutdown())
 
     async def async_shutdown(self) -> None:
         """Cancel pending work and remove the entity registry listener."""

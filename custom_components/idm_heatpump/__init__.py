@@ -1074,18 +1074,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 ),
                 entry_id=entry.entry_id,
             )
+            # Store it before starting: async_start registers register demand
+            # and event listeners as it goes, so a bridge that fails halfway
+            # still has to be reachable for the teardown below to stop it.
+            entry.runtime_data.knx_bridge = bridge
             try:
                 await bridge.async_start()
             except InvalidGroupAddressError as err:
+                entry.runtime_data.knx_bridge = None
+                await bridge.async_stop()
                 _LOGGER.error(
                     "KNX bridge for %s not started: %s",
                     entry.title,
                     err,
                 )
-            else:
-                entry.runtime_data.knx_bridge = bridge
 
     except Exception:
+        # Everything after async_forward_entry_setups can still fail — the KNX
+        # bridge raising something other than InvalidGroupAddressError, a
+        # malformed option reaching int()/float(). Home Assistant then marks the
+        # entry failed, but the platforms stay registered against a coordinator
+        # whose client this handler is about to close, leaving the user a wall
+        # of unavailable entities and a connection error on every poll. Take the
+        # platforms and the background tasks down before re-raising.
+        await _async_teardown_partial_setup(hass, entry)
         try:
             await client.disconnect()
         except Exception:
@@ -1095,6 +1107,60 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     _register_update_listener(entry)
 
     return True
+
+
+async def _async_teardown_partial_setup(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
+    """Undo whatever a failed ``async_setup_entry`` had already brought up.
+
+    Best-effort throughout: this runs while an exception is propagating, so a
+    secondary failure here must not replace the original one.
+    """
+    runtime = getattr(entry, "runtime_data", None)
+    if runtime is None:
+        return
+
+    bridge = getattr(runtime, "knx_bridge", None)
+    if bridge is not None:
+        try:
+            await bridge.async_stop()
+        except Exception:
+            _LOGGER.debug("Error stopping the KNX bridge while unwinding setup", exc_info=True)
+
+    await _async_cancel_entry_tasks(runtime)
+
+    coordinator = getattr(runtime, "coordinator", None)
+    shutdown = getattr(coordinator, "async_shutdown", None)
+    if callable(shutdown):
+        try:
+            await shutdown()
+        except TypeError:
+            pass
+        except Exception:
+            _LOGGER.debug("Error shutting the coordinator down while unwinding setup", exc_info=True)
+
+    platforms = getattr(runtime, "loaded_platforms", None)
+    if platforms:
+        try:
+            await hass.config_entries.async_unload_platforms(entry, list(platforms))
+        except Exception:
+            _LOGGER.warning("Failed to unload platforms while unwinding a failed setup", exc_info=True)
+
+
+async def _async_cancel_entry_tasks(runtime: Any) -> None:
+    """Cancel and await every background task an entry owns."""
+    for attribute in (
+        "web_task",
+        "room_temp_forwarding_task",
+        "humidity_forwarding_task",
+        "storage_temp_forwarding_task",
+    ):
+        task = getattr(runtime, attribute, None)
+        if isinstance(task, asyncio.Task):
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
@@ -1115,34 +1181,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
             except TypeError:
                 # Non-awaitable mock or sync cleanup callback; not fatal on unload.
                 pass
-        web_task = getattr(entry.runtime_data, "web_task", None)
-        if isinstance(web_task, asyncio.Task):
-            web_task.cancel()
-            try:
-                await web_task
-            except asyncio.CancelledError:
-                pass
-        room_temp_forwarding_task = getattr(entry.runtime_data, "room_temp_forwarding_task", None)
-        if isinstance(room_temp_forwarding_task, asyncio.Task):
-            room_temp_forwarding_task.cancel()
-            try:
-                await room_temp_forwarding_task
-            except asyncio.CancelledError:
-                pass
-        humidity_forwarding_task = getattr(entry.runtime_data, "humidity_forwarding_task", None)
-        if isinstance(humidity_forwarding_task, asyncio.Task):
-            humidity_forwarding_task.cancel()
-            try:
-                await humidity_forwarding_task
-            except asyncio.CancelledError:
-                pass
-        storage_temp_forwarding_task = getattr(entry.runtime_data, "storage_temp_forwarding_task", None)
-        if isinstance(storage_temp_forwarding_task, asyncio.Task):
-            storage_temp_forwarding_task.cancel()
-            try:
-                await storage_temp_forwarding_task
-            except asyncio.CancelledError:
-                pass
+        await _async_cancel_entry_tasks(entry.runtime_data)
         knx_bridge = getattr(entry.runtime_data, "knx_bridge", None)
         if knx_bridge is not None:
             try:
