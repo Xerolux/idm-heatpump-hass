@@ -253,6 +253,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._polling_plan_total_count: int = 0
         self._polling_plan_active_count: int = 0
         self._polling_jitter_percent = max(0, min(20, polling_jitter_percent))
+        self._refresh_is_on_demand = False
         self._last_poll_duration: float | None = None
         self._last_poll_success: datetime | None = None
         self._consecutive_poll_failures = 0
@@ -730,7 +731,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data[reg.name] = result
 
     async def _async_update_data(self) -> dict[str, Any]:
-        if self._polling_jitter_percent and self.update_interval is not None:
+        # Jitter exists to spread scheduled polls of several entries across the
+        # interval. Applying it to a refresh someone asked for — the 0.5 s
+        # confirmation after a write, or a manual refresh — only delayed the
+        # confirmed value by up to the full jitter window.
+        if self._polling_jitter_percent and self.update_interval is not None and not self._refresh_is_on_demand:
             maximum_delay = self.update_interval.total_seconds() * self._polling_jitter_percent / 100
             await asyncio.sleep(random.uniform(0, maximum_delay))
 
@@ -1097,7 +1102,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _delayed_refresh(self, delay: float = 0.5) -> None:
         try:
             await asyncio.sleep(delay)
-            await self.async_request_refresh()
+            self._refresh_is_on_demand = True
+            try:
+                await self.async_request_refresh()
+            finally:
+                self._refresh_is_on_demand = False
         except asyncio.CancelledError:
             pass
 

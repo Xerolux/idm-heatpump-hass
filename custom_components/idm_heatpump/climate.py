@@ -228,6 +228,11 @@ _HEATING_CIRCUIT_HVAC_MODES: Final[list[HVACMode]] = [
 ]
 _HEATING_CIRCUIT_PRESET_MODES: Final[list[str]] = [PRESET_NONE, PRESET_ECO]
 
+# Values of hc_<x>_active_mode. 0 is off and 255 means "not configured", both
+# of which read as idle for a circuit whose mode is not OFF.
+_CIRCUIT_ACTIVE_HEATING: Final = 1
+_CIRCUIT_ACTIVE_COOLING: Final = 2
+
 
 class IdmHeatingCircuitClimate(IdmClimateBase):
     """Climate entity for a heating circuit."""
@@ -254,6 +259,12 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         self._circuit = circuit.upper()
         self._attr_translation_key = "heating_circuit"
         self._attr_translation_placeholders = {"circuit": self._circuit}
+        # Per-circuit state: 0 off, 1 heating, 2 cooling, 255 not configured.
+        # hvac_action used the plant-wide hp_operating_mode, which reports what
+        # the heat pump is doing, not this circuit — so every circuit showed
+        # "heating" while one was heating, and during a hot water charge as
+        # well, although no circuit water was moving.
+        self._active_mode_register = f"hc_{circuit.lower()}_active_mode"
 
     @property
     def hvac_mode(self) -> HVACMode | None:
@@ -283,12 +294,29 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
 
     @property
     def hvac_action(self) -> HVACAction | None:
-        if not self.coordinator.data:
+        """Report what this circuit is doing, not what the plant is doing."""
+        data = self.coordinator.data
+        if not data:
             return None
         if self.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
 
-        status_val = self.coordinator.data.get("hp_operating_mode")
+        active_mode = data.get(self._active_mode_register)
+        if active_mode is not None and self._active_mode_register not in self.coordinator.unused_registers:
+            try:
+                active = int(active_mode)
+            except (TypeError, ValueError):
+                return HVACAction.IDLE
+            if active == _CIRCUIT_ACTIVE_HEATING:
+                return HVACAction.HEATING
+            if active == _CIRCUIT_ACTIVE_COOLING:
+                return HVACAction.COOLING
+            return HVACAction.IDLE
+
+        # The circuit does not report its own state (older firmware, or the
+        # register is not polled). Fall back to the plant status, which at
+        # least distinguishes an idle plant from a running one.
+        status_val = data.get("hp_operating_mode")
         if status_val is not None:
             try:
                 status = HeatPumpStatus(int(status_val))

@@ -15,6 +15,25 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **A heating circuit reports its own state, not the plant's.** `hvac_action`
+  read the plant-wide `hp_operating_mode`, so with one circuit heating every
+  other circuit's thermostat card also showed "heating" — and during a hot water
+  charge all of them did, although no circuit water was moving. Each circuit now
+  uses its own `hc_<x>_active_mode` register (off / heating / cooling), falling
+  back to the plant status only where a controller does not answer that
+  register. The register is part of the entity-aware poll plan for a circuit's
+  climate entity.
+- **Polling jitter no longer delays a refresh someone asked for.** The jitter
+  sleep sat at the top of every update, so the confirmation refresh issued half
+  a second after a write waited up to the full jitter window before showing the
+  confirmed value — up to 6.5 s at 20 % on a 30 s interval. Jitter now applies
+  only to scheduled polls, which is what it exists for.
+- **The polling plan ignores other integrations' entity removals.** A `remove`
+  event has no registry entry left to look up, so it fell through the ownership
+  filter and scheduled a re-plan — which walks this entry's whole registry — for
+  any entity any integration deleted. Removals are matched against the entity
+  IDs the last plan saw instead.
+
 - **Service calls are validated again, and the boost actions load with the
   domain.** Every service was registered without a schema, so Home Assistant
   passed whatever a caller sent straight to the handler and `services.yaml`

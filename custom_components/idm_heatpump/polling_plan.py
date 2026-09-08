@@ -60,6 +60,9 @@ def _entity_dependencies(unique_suffix: str) -> set[str]:
             f"hc_{circuit}_mode",
             f"hc_{circuit}_room_setpoint_heat_normal",
             f"hc_{circuit}_room_temp",
+            # hvac_action reports what this circuit is doing.
+            f"hc_{circuit}_active_mode",
+            # Fallback for a circuit that does not report its own state.
             "hp_operating_mode",
         }
     if match := _ZONE_CLIMATE.fullmatch(unique_suffix):
@@ -129,6 +132,9 @@ class EntityAwarePollingManager:
         self._refresh_task: asyncio.Task[None] | None = None
         self._setup_task: asyncio.Task[None] | None = None
         self._unsub_registry: Callable[[], None] | None = None
+        # Entity IDs this entry owned when the plan was last applied, so a
+        # removal event can be attributed without a registry lookup.
+        self._known_entity_ids: frozenset[str] = frozenset()
 
     def schedule_setup(self) -> None:
         """Start after all platforms had time to create registry entries."""
@@ -188,9 +194,21 @@ class EntityAwarePollingManager:
 
     @callback
     def _handle_registry_event(self, event: Any) -> None:
-        """Debounce registry changes affecting this config entry."""
+        """Debounce registry changes affecting this config entry.
+
+        A ``remove`` event has no registry entry left to look up, so it used to
+        fall through the ownership filter and schedule a re-plan for another
+        integration's deletion — and each re-plan walks this entry's whole
+        registry. Removals are matched against the entity IDs the last plan saw
+        instead.
+        """
         entity_id = event.data.get("entity_id")
-        if isinstance(entity_id, str):
+        if not isinstance(entity_id, str):
+            return
+        if event.data.get("action") == "remove":
+            if entity_id not in self._known_entity_ids:
+                return
+        else:
             registry = er.async_get(self._hass)
             registry_entry = registry.async_get(entity_id)
             if registry_entry is not None and getattr(
@@ -220,6 +238,11 @@ class EntityAwarePollingManager:
 
     async def _async_apply_plan(self, *, request_refresh: bool) -> None:
         registry = er.async_get(self._hass)
+        self._known_entity_ids = frozenset(
+            entity_id
+            for registry_entry in er.async_entries_for_config_entry(registry, self._entry.entry_id)
+            if isinstance(entity_id := getattr(registry_entry, "entity_id", None), str)
+        )
         known = {register.name for register in self._full_registers}
         required = build_required_register_names(
             registry,

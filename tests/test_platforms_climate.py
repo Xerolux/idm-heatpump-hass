@@ -783,6 +783,54 @@ class TestClimateSharedBehaviour:
         assert climate.target_temperature is None
         assert climate.hvac_action is None
 
+    def test_hvac_action_follows_this_circuit_not_the_plant(self):
+        """A circuit that is idle must not report heating because another is.
+
+        hvac_action read the plant-wide hp_operating_mode, so every circuit
+        showed "heating" whenever any circuit was heating — and during a hot
+        water charge as well, although no circuit water was moving.
+        """
+        from homeassistant.components.climate import HVACAction
+
+        climate, _coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_active_mode": 0,
+                "hp_operating_mode": int(HeatPumpStatus.HEATING),
+            }
+        )
+
+        assert climate.hvac_action == HVACAction.IDLE
+
+    def test_hvac_action_reports_this_circuit_heating_and_cooling(self):
+        from homeassistant.components.climate import HVACAction
+
+        for active, expected in ((1, HVACAction.HEATING), (2, HVACAction.COOLING)):
+            climate, _coord = self._hc(
+                data={
+                    "hc_a_mode": CircuitMode.NORMAL,
+                    "hc_a_room_setpoint_heat_normal": 21.0,
+                    "hc_a_active_mode": active,
+                    "hp_operating_mode": 0,
+                }
+            )
+            assert climate.hvac_action == expected
+
+    def test_hvac_action_falls_back_to_the_plant_without_a_circuit_state(self):
+        """Older firmware may not answer the per-circuit register."""
+        from homeassistant.components.climate import HVACAction
+
+        climate, _coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hp_operating_mode": int(HeatPumpStatus.HEATING),
+            }
+        )
+
+        assert climate.hvac_action == HVACAction.HEATING
+
     def test_current_temperature_none_when_the_room_sensor_is_unused(self):
         """A circuit without a physical room sensor reports no temperature.
 

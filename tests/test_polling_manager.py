@@ -22,6 +22,7 @@ class _RegistryEntry:
     unique_id: str
     disabled_by: object | None = None
     config_entry_id: str = "entry"
+    entity_id: str = "sensor.idm_test"
 
 
 class _Registry:
@@ -258,7 +259,9 @@ class TestPollingManagerLifecycle:
         manager._debounce_seconds = 30
 
         manager.schedule_setup()
-        manager._handle_registry_event(MagicMock(data={"entity_id": None}))
+        manager._handle_registry_event(
+            MagicMock(data={"action": "update", "entity_id": "sensor.idm_test"}),
+        )
         setup_task = manager._setup_task
         refresh_task = manager._refresh_task
 
@@ -308,3 +311,44 @@ class TestPollingManagerLifecycle:
         required = polling_plan.build_required_register_names(object(), "entry", {"hp_flow_temp"})
 
         assert required == set()
+
+
+class TestRegistryEventFiltering:
+    """C1: a removal has no registry entry left, so it must be attributed by id."""
+
+    def _manager(self, monkeypatch, registry):
+        monkeypatch.setattr(polling_plan.er, "async_get", lambda hass: registry)
+        monkeypatch.setattr(
+            polling_plan.er,
+            "async_entries_for_config_entry",
+            lambda current, entry_id: current.entries,
+        )
+        hass = MagicMock()
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        entry = MagicMock(entry_id="entry")
+        return EntityAwarePollingManager(hass, entry, _Coordinator())
+
+    @pytest.mark.asyncio
+    async def test_a_foreign_removal_does_not_schedule_a_replan(self, monkeypatch) -> None:
+        registry = _Registry([_RegistryEntry("entry_hp_flow_temp", entity_id="sensor.idm_test")])
+        manager = self._manager(monkeypatch, registry)
+        await manager._async_apply_plan(request_refresh=False)
+
+        manager._handle_registry_event(
+            MagicMock(data={"action": "remove", "entity_id": "light.someone_elses_lamp"}),
+        )
+
+        assert manager._refresh_task is None
+
+    @pytest.mark.asyncio
+    async def test_removing_one_of_our_entities_schedules_a_replan(self, monkeypatch) -> None:
+        registry = _Registry([_RegistryEntry("entry_hp_flow_temp", entity_id="sensor.idm_test")])
+        manager = self._manager(monkeypatch, registry)
+        await manager._async_apply_plan(request_refresh=False)
+
+        manager._handle_registry_event(
+            MagicMock(data={"action": "remove", "entity_id": "sensor.idm_test"}),
+        )
+
+        assert manager._refresh_task is not None
+        manager._refresh_task.cancel()
