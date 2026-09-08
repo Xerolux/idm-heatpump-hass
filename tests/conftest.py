@@ -12,6 +12,7 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+import voluptuous as vol
 
 # ---------------------------------------------------------------------------
 # Cross-platform event loop setup (Windows uses SelectorEventLoop; Linux is fine)
@@ -214,6 +215,17 @@ def _stub_voluptuous() -> None:
     if "voluptuous" in sys.modules:
         return
 
+    # Prefer the real library when it is installed. It ships with Home
+    # Assistant, so CI always has it, and the stub below only validates by
+    # returning its input unchanged — against it a service schema that
+    # rejected valid calls would look exactly like a correct one.
+    try:
+        import voluptuous  # noqa: F401
+
+        return
+    except ImportError:
+        pass
+
     vol = ModuleType("voluptuous")
     sys.modules["voluptuous"] = vol
 
@@ -309,6 +321,33 @@ def _stub_homeassistant() -> None:
     ha.util.dt = _make_module("homeassistant.util.dt")
     ha.util.dt.now = datetime.now
     ha.util.dt.as_local = lambda value: value.astimezone()
+
+    # homeassistant.util.unit_conversion.TemperatureConverter, reproduced from
+    # the real implementation (homeassistant 2026.8.1): the temperature scales
+    # do not share a zero point, so each pair has its own formula, and an
+    # unknown unit raises rather than returning a wrong number.
+    ha.util.unit_conversion = _make_module("homeassistant.util.unit_conversion")
+
+    class _TemperatureConverter:
+        @staticmethod
+        def convert(value: float, from_unit: str, to_unit: str) -> float:
+            if from_unit == to_unit:
+                return value
+            as_celsius = {
+                "°C": lambda temperature: temperature,
+                "°F": lambda temperature: (temperature - 32.0) / 1.8,
+                "K": lambda temperature: temperature - 273.15,
+            }
+            from_celsius = {
+                "°C": lambda temperature: temperature,
+                "°F": lambda temperature: temperature * 1.8 + 32.0,
+                "K": lambda temperature: temperature + 273.15,
+            }
+            if from_unit not in as_celsius or to_unit not in from_celsius:
+                raise ValueError(f"{from_unit} is not a recognized temperature unit")
+            return from_celsius[to_unit](as_celsius[from_unit](value))
+
+    ha.util.unit_conversion.TemperatureConverter = _TemperatureConverter
     ha.components = _make_module("homeassistant.components")
     ha.components.repairs = _make_module("homeassistant.components.repairs")
 
@@ -318,10 +357,12 @@ def _stub_homeassistant() -> None:
     ha.const.CONF_NAME = "name"
     ha.const.Platform = MagicMock()
     ha.const.PERCENTAGE = "%"
+    ha.const.ATTR_UNIT_OF_MEASUREMENT = "unit_of_measurement"
 
     class _UnitOfTemperature:
         CELSIUS = "°C"
         FAHRENHEIT = "°F"
+        KELVIN = "K"
 
     class _UnitOfPower:
         KILO_WATT = "kW"
@@ -339,6 +380,7 @@ def _stub_homeassistant() -> None:
     units.CONF_NAME = "name"
     units.Platform = MagicMock()
     units.PERCENTAGE = "%"
+    units.ATTR_UNIT_OF_MEASUREMENT = "unit_of_measurement"
     units.UnitOfTemperature = _UnitOfTemperature
     units.UnitOfPower = _UnitOfPower
     units.UnitOfEnergy = _UnitOfEnergy
@@ -586,6 +628,13 @@ def _stub_homeassistant() -> None:
             self.data = None
             self.last_update_success = True
             self._listeners = []
+            # Mirrors homeassistant.helpers.update_coordinator: async_shutdown
+            # sets the flag, and a refresh requested afterwards is ignored.
+            # Without this the stub hid the missing super().async_shutdown()
+            # call that let a scheduled poll outlive a config entry unload.
+            self._shutdown_requested = False
+            self.shutdown_called = False
+            self.refresh_requests = 0
 
         def __class_getitem__(cls, item):
             return cls
@@ -597,7 +646,13 @@ def _stub_homeassistant() -> None:
             pass
 
         async def async_request_refresh(self):
-            pass
+            if self._shutdown_requested:
+                return
+            self.refresh_requests += 1
+
+        async def async_shutdown(self):
+            self._shutdown_requested = True
+            self.shutdown_called = True
 
     class _CoordinatorEntity:
         _attr_has_entity_name = False
@@ -858,6 +913,20 @@ def _stub_homeassistant() -> None:
     cv_mod = _make_module("homeassistant.helpers.config_validation")
     helpers.config_validation = cv_mod
     cv_mod.config_entry_only_config_schema = lambda domain: {}
+    # Mirrors homeassistant.helpers.config_validation: the fields a service
+    # declared with ``target:`` receives alongside its own, plus the handful of
+    # validators the service schemas use.
+    cv_mod.string = str
+    cv_mod.boolean = bool
+    cv_mod.ensure_list = lambda value: value if isinstance(value, list) else [] if value is None else [value]
+    cv_mod.entity_ids = lambda value: value
+    cv_mod.TARGET_SERVICE_FIELDS = {
+        vol.Optional("entity_id"): object,
+        vol.Optional("device_id"): object,
+        vol.Optional("area_id"): object,
+        vol.Optional("floor_id"): object,
+        vol.Optional("label_id"): object,
+    }
 
     # homeassistant.components stubs
     components = _make_module("homeassistant.components")

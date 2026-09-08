@@ -175,6 +175,7 @@ class KnxBridge:
         self._pending_writes: dict[str, _PendingKnxWrite] = {}
         self._write_tasks: dict[str, asyncio.Task[None]] = {}
         self._last_write_completed_at: dict[str, float] = {}
+        self._release_register_demand: Callable[[], None] | None = None
         self._started = False
 
     @property
@@ -189,19 +190,21 @@ class KnxBridge:
         return f"knx_unavailable_{self._entry_id}"
 
     def _resolve(self) -> None:
-        """Work out which objects this controller can actually serve."""
-        available = {
-            register
-            for register in (self._coordinator.data or {})
-            if self._coordinator.get_register(register) is not None
-        }
+        """Work out which objects this controller can actually serve.
+
+        Availability follows the register map and the addresses the controller
+        rejected, never the current snapshot. Deriving it from the snapshot tied
+        the bridge to whichever registers entity-aware polling happened to be
+        reading at start-up, so an object whose Home Assistant entity the user
+        had disabled did not exist on the bus at all. The demand registered in
+        ``async_start`` is what keeps those registers polled.
+        """
+        unsupported = self._coordinator.unsupported_registers
         # Write-only registers (error acknowledge) never carry a value, so
         # they are reachable from the bus but never published to it.
         for obj in _catalogue_objects(self._config.groups):
             register = self._coordinator.get_register(obj.register)
-            if register is None:
-                continue
-            if obj.register not in available and not register.write_only:
+            if register is None or obj.register in unsupported:
                 continue
             self._objects[obj.register] = obj
 
@@ -250,6 +253,14 @@ class KnxBridge:
         )
         self._started = True
 
+        # Entity-aware polling narrows the poll to what enabled entities need.
+        # The bridge owns no entities, so without this every object whose Home
+        # Assistant entity the user had disabled silently stopped being served.
+        self._release_register_demand = self._coordinator.register_required_registers(
+            f"knx_bridge_{self._entry_id}",
+            self._objects.keys(),
+        )
+
         if self._config.receive_enabled:
             self._unsubscribers.append(self._hass.bus.async_listen(EVENT_KNX, self._handle_knx_event))
             if not await self._async_register_events():
@@ -262,6 +273,9 @@ class KnxBridge:
 
     async def async_stop(self) -> None:
         """Unsubscribe, deregister group addresses and stop the sender."""
+        if self._release_register_demand is not None:
+            self._release_register_demand()
+            self._release_register_demand = None
         for unsubscribe in self._unsubscribers:
             unsubscribe()
         self._unsubscribers.clear()

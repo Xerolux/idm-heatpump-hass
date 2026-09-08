@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import logging
 from typing import Any
 
@@ -100,6 +100,45 @@ def should_add_entity(
     return not coordinator.is_register_unused(register.name, data.get(register.name))
 
 
+async def async_write_translated(
+    coordinator: IdmCoordinator,
+    register: RegisterDef,
+    value: Any,
+    *,
+    action_label: str,
+) -> None:
+    """Write one register, reporting failures through the translation contract.
+
+    Every writable platform routes through here, so the contract — pass an
+    already-translated error straight through, and turn anything else into a
+    HomeAssistantError carrying a classified key — is stated once instead of
+    once per platform.
+    """
+    try:
+        await coordinator.async_write_register(register, value)
+    except HomeAssistantError:
+        # The coordinator already raised a translated, actionable error — the
+        # write cooldown names the remaining wait. Reclassifying it replaced
+        # that with the generic "could not be written" message and hid the real
+        # reason from the user (#237).
+        raise
+    except Exception as err:
+        translation_key = classify_write_error(err)
+        _LOGGER.error(
+            "Could not %s %s (%s); Home Assistant will show the actionable %s message",
+            action_label,
+            register.name,
+            write_error_detail(err),
+            translation_key,
+        )
+        _LOGGER.debug("Technical IDM register write error", exc_info=True)
+        raise HomeAssistantError(
+            translation_domain=DOMAIN,
+            translation_key=translation_key,
+            translation_placeholders=write_error_placeholders(register.name, err),
+        ) from err
+
+
 class IdmCoordinatorEntityBase(CoordinatorEntity[IdmCoordinator]):
     """Common base for coordinator entities that are not register-backed.
 
@@ -144,35 +183,8 @@ class IdmEntity(IdmCoordinatorEntityBase):
         return build_subdevice_info(self.coordinator, self._register.name) or build_device_info(self.coordinator)
 
     async def _async_write_register(self, value: Any, *, action_label: str) -> None:
-        """Write a value to this entity's register with centralized error handling.
-
-        All writable platforms route through here so the write-failed translation
-        contract (log + raise HomeAssistantError with the write_failed key) stays
-        identical across number/select/switch.
-        """
-        try:
-            await self.coordinator.async_write_register(self._register, value)
-        except HomeAssistantError:
-            # The coordinator already raised a translated, actionable error —
-            # the write cooldown names the remaining wait. Reclassifying it
-            # replaced that with the generic "could not be written" message and
-            # hid the real reason from the user (#237).
-            raise
-        except Exception as err:
-            translation_key = classify_write_error(err)
-            _LOGGER.error(
-                "Could not %s %s (%s); Home Assistant will show the actionable %s message",
-                action_label,
-                self._register.name,
-                write_error_detail(err),
-                translation_key,
-            )
-            _LOGGER.debug("Technical IDM register write error", exc_info=True)
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key=translation_key,
-                translation_placeholders=write_error_placeholders(self._register.name, err),
-            ) from err
+        """Write a value to this entity's register with centralized error handling."""
+        await async_write_translated(self.coordinator, self._register, value, action_label=action_label)
 
     def is_writable_control(self) -> bool:
         """Whether this entity is a writable control that stays available under sentinel."""

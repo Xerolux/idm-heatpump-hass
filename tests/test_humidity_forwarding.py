@@ -30,9 +30,10 @@ def _make_coordinator():
     return coord, reg
 
 
-def _make_hass(state="45.0"):
+def _make_hass(state="45.0", unit=None):
     hass = MagicMock()
-    hass.states.get = MagicMock(return_value=SimpleNamespace(state=state))
+    attributes = {} if unit is None else {"unit_of_measurement": unit}
+    hass.states.get = MagicMock(return_value=SimpleNamespace(state=state, attributes=attributes))
     return hass
 
 
@@ -208,3 +209,38 @@ async def test_run_unsubscribes_state_listener_on_cancel():
 
     unsub.assert_called_once()
     assert forwarder._unsub_state is None
+
+
+@pytest.mark.asyncio
+async def test_forward_refuses_a_source_that_is_not_a_humidity(caplog):
+    """A temperature entity picked by mistake is refused, and reported once."""
+    coord, _reg = _make_coordinator()
+    hass = _make_hass("21.5", unit="\u00b0C")
+    forwarder = HumidityForwarder(
+        hass,
+        coord,
+        HumidityForwardingConfig(entity_id="sensor.living_room_temperature", interval=300, tolerance=2.0),
+    )
+
+    await forwarder.async_forward()
+    await forwarder.async_forward()
+
+    coord.async_write_register.assert_not_awaited()
+    warnings = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert len(warnings) == 1
+
+
+@pytest.mark.asyncio
+async def test_forward_accepts_percent_and_a_missing_unit():
+    for unit in ("%", None):
+        coord, reg = _make_coordinator()
+        hass = _make_hass("45.0", unit=unit)
+        forwarder = HumidityForwarder(
+            hass,
+            coord,
+            HumidityForwardingConfig(entity_id="sensor.living_room_humidity", interval=300, tolerance=2.0),
+        )
+
+        await forwarder.async_forward()
+
+        coord.async_write_register.assert_awaited_once_with(reg, 45.0)

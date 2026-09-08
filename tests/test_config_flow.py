@@ -15,7 +15,7 @@ from custom_components.idm_heatpump.config_flow import (
     _build_options_schema,
     _build_zones_schema,
     _flatten_options_input,
-    _has_duplicate_host,
+    _has_duplicate_endpoint,
     _IdmOptionsStepsMixin,
     _ModbusConnectionStatus,
     _parse_knx_overrides,
@@ -132,6 +132,26 @@ def _make_entry(entry_id: str, host: str, port: int = 502, slave_id: int = 1):
     return entry
 
 
+def _marker_defaults(schema) -> dict:
+    """Map key name -> default for the markers of one voluptuous schema.
+
+    Real voluptuous names the key ``Marker.schema`` and stores the default as a
+    callable (or ``vol.UNDEFINED`` when there is none); the local stub used in a
+    checkout without Home Assistant keeps them as ``.key`` and a plain value.
+    Reading both keeps these assertions meaningful under either.
+    """
+    defaults = {}
+    for marker in schema.schema:
+        name = getattr(marker, "schema", None)
+        if not isinstance(name, str):
+            name = getattr(marker, "key", marker)
+        default = getattr(marker, "default", None)
+        if callable(default):
+            default = default()
+        defaults[name] = default
+    return defaults
+
+
 class TestBuildOptionsSchema:
     def test_returns_schema(self):
         schema = _build_options_schema({})
@@ -155,8 +175,7 @@ class TestBuildOptionsSchema:
 
     def test_web_supplement_enabled_by_default(self):
         schema = _build_options_schema({})
-        features_schema = schema._schema["features"]
-        defaults = {key.key: key.default for key in features_schema._schema}
+        defaults = _marker_defaults(schema.schema["features"])
 
         assert DEFAULT_WEB_ENABLED is True
         assert defaults[CONF_WEB_ENABLED] is True
@@ -200,16 +219,38 @@ class TestConfigFlowInit:
         assert IdmHeatpumpConfigFlow.VERSION == 1
         assert IdmHeatpumpConfigFlow.MINOR_VERSION == 3
 
-    def test_duplicate_host_detection_ignores_port_and_slave_id(self):
+    def test_duplicate_detection_matches_host_port_and_slave_id(self):
+        """The same endpoint is a duplicate; a different one is a second unit.
+
+        Matching on the host alone made a second Navigator behind one Modbus
+        TCP gateway impossible to add, although it differs by port or unit ID.
+        """
         hass = MagicMock()
         hass.config_entries.async_entries = MagicMock(
             return_value=[_make_entry("entry-1", "192.168.1.100", port=502, slave_id=1)]
         )
 
-        assert _has_duplicate_host(hass, " 192.168.1.100 ", current_entry_id=None)
-        assert _has_duplicate_host(hass, "192.168.1.100", current_entry_id="other-entry")
-        assert not _has_duplicate_host(hass, "192.168.1.100", current_entry_id="entry-1")
+        assert _has_duplicate_endpoint(hass, " 192.168.1.100 ", 502, 1, None)
+        assert _has_duplicate_endpoint(hass, "192.168.1.100", 502, 1, "other-entry")
+        assert not _has_duplicate_endpoint(hass, "192.168.1.100", 502, 1, "entry-1")
         hass.config_entries.async_entries.assert_called_with("idm_heatpump")
+
+    def test_a_second_unit_behind_one_gateway_is_not_a_duplicate(self):
+        hass = MagicMock()
+        hass.config_entries.async_entries = MagicMock(
+            return_value=[_make_entry("entry-1", "192.168.1.100", port=502, slave_id=1)]
+        )
+
+        assert not _has_duplicate_endpoint(hass, "192.168.1.100", 503, 1, None), "a different port is a second unit"
+        assert not _has_duplicate_endpoint(hass, "192.168.1.100", 502, 2, None), "a different unit ID is a second unit"
+
+    def test_duplicate_check_skips_an_entry_with_unusable_connection_data(self):
+        hass = MagicMock()
+        broken = _make_entry("broken", "192.168.1.100")
+        broken.data = {"host": "192.168.1.100", "port": "not-a-port", "slave_id": 1}
+        hass.config_entries.async_entries = MagicMock(return_value=[broken])
+
+        assert _has_duplicate_endpoint(hass, "192.168.1.100", 502, 1, None) is False
 
 
 class TestAsyncStepUser:
@@ -343,7 +384,7 @@ class TestAsyncStepUser:
         assert result["step_id"] == "user"
         assert result["errors"][CONF_WEB_HOST] == "web_host_required"
 
-    async def test_duplicate_host_blocks_second_entry_even_with_different_port_or_slave(self):
+    async def test_the_same_endpoint_is_rejected_as_already_configured(self):
         flow = _make_flow()
         flow.hass.config_entries.async_entries.return_value = [
             _make_entry("entry-1", "192.168.1.100", port=502, slave_id=1)
@@ -354,8 +395,8 @@ class TestAsyncStepUser:
                 {
                     "name": "IDM Duplicate",
                     "host": "192.168.1.100",
-                    "port": 1502,
-                    "slave_id": 2,
+                    "port": 502,
+                    "slave_id": 1,
                 }
             )
 
@@ -363,9 +404,31 @@ class TestAsyncStepUser:
         assert result["errors"]["host"] == "already_configured"
         test_connection.assert_not_awaited()
 
+    async def test_a_second_unit_on_the_same_host_is_accepted(self):
+        """Two Navigator units behind one Modbus gateway must both be addable.
+
+        They share a host and differ only in the TCP port or the unit ID, so a
+        host-only duplicate check refused the second one outright.
+        """
+        flow = _make_flow()
+        flow.hass.config_entries.async_entries.return_value = [
+            _make_entry("entry-1", "192.168.1.100", port=502, slave_id=1)
+        ]
+
+        with patch.object(flow, "_test_connection", return_value=True):
+            result = await flow.async_step_user(
+                {
+                    "name": "IDM Second Unit",
+                    "host": "192.168.1.100",
+                    "port": 1502,
+                    "slave_id": 2,
+                }
+            )
+
+        assert result["step_id"] == "setup_review"
+
     async def test_successful_connection_goes_to_setup_review(self):
         flow = _make_flow()
-        flow._async_abort_entries_match = MagicMock()
         with (
             patch.object(flow, "_test_connection", return_value=True),
         ):
@@ -378,7 +441,6 @@ class TestAsyncStepUser:
                 }
             )
         assert result["step_id"] == "setup_review"
-        flow._async_abort_entries_match.assert_called_once_with({"host": "192.168.1.100", "port": 502, "slave_id": 1})
 
     async def test_successful_connection_stores_detected_web_metadata(self):
         flow = _make_flow()
@@ -588,7 +650,7 @@ class TestAsyncStepOptions:
     def test_options_schema_exposes_modbus_timeout_and_retries(self):
         """Timeout/retries must be user-tunable in the options step."""
         schema = _build_options_schema({})
-        schema_dict = dict(schema._schema["advanced_modbus"]._schema)
+        schema_dict = dict(schema.schema["advanced_modbus"].schema)
         assert CONF_MODBUS_TIMEOUT in schema_dict
         assert CONF_MODBUS_MAX_RETRIES in schema_dict
         assert CONF_MODBUS_MESSAGE_SPACING in schema_dict
@@ -599,17 +661,16 @@ class TestAsyncStepOptions:
 
     def test_options_schema_applies_defaults_for_timeout_and_retries(self):
         schema = _build_options_schema({})
-        # The dict keys are _Required markers; extract their defaults by key name.
-        markers = {marker.key: marker for marker in schema._schema["advanced_modbus"]._schema}
-        assert markers[CONF_MODBUS_TIMEOUT].default == DEFAULT_MODBUS_TIMEOUT
-        assert markers[CONF_MODBUS_MAX_RETRIES].default == DEFAULT_MODBUS_MAX_RETRIES
+        defaults = _marker_defaults(schema.schema["advanced_modbus"])
+        assert defaults[CONF_MODBUS_TIMEOUT] == DEFAULT_MODBUS_TIMEOUT
+        assert defaults[CONF_MODBUS_MAX_RETRIES] == DEFAULT_MODBUS_MAX_RETRIES
         # Pacing stays off unless the user asks for it, so an update never
         # slows down an installation that polls fine today.
-        assert markers[CONF_MODBUS_MESSAGE_SPACING].default == DEFAULT_MODBUS_MESSAGE_SPACING == 0.0
-        assert markers[CONF_MODBUS_CONNECT_DELAY].default == DEFAULT_MODBUS_CONNECT_DELAY == 0.0
-        assert markers[CONF_POLLING_JITTER].default == DEFAULT_POLLING_JITTER
-        assert markers[CONF_COMMUNICATION_DIAGNOSTICS].default == DEFAULT_COMMUNICATION_DIAGNOSTICS
-        assert markers[CONF_WRITE_COOLDOWN].default == DEFAULT_WRITE_COOLDOWN
+        assert defaults[CONF_MODBUS_MESSAGE_SPACING] == DEFAULT_MODBUS_MESSAGE_SPACING == 0.0
+        assert defaults[CONF_MODBUS_CONNECT_DELAY] == DEFAULT_MODBUS_CONNECT_DELAY == 0.0
+        assert defaults[CONF_POLLING_JITTER] == DEFAULT_POLLING_JITTER
+        assert defaults[CONF_COMMUNICATION_DIAGNOSTICS] == DEFAULT_COMMUNICATION_DIAGNOSTICS
+        assert defaults[CONF_WRITE_COOLDOWN] == DEFAULT_WRITE_COOLDOWN
 
     async def test_no_zones_creates_entry(self):
         flow = _make_flow()
@@ -1055,12 +1116,12 @@ class TestAsyncStepReconfigure:
         assert result["type"] == "form"
         assert "host" in result["errors"]
 
-    async def test_duplicate_host_blocks_reconfigure_to_other_entry_host(self):
+    async def test_duplicate_endpoint_blocks_reconfigure_onto_another_entry(self):
         flow = _make_flow()
         entry = _make_entry("entry-1", "192.168.1.100")
         flow.hass.config_entries.async_entries.return_value = [
             entry,
-            _make_entry("entry-2", "192.168.1.101"),
+            _make_entry("entry-2", "192.168.1.101", port=502, slave_id=1),
         ]
 
         with (
@@ -1070,14 +1131,36 @@ class TestAsyncStepReconfigure:
             result = await flow.async_step_reconfigure(
                 {
                     "host": "192.168.1.101",
-                    "port": 1502,
-                    "slave_id": 2,
+                    "port": 502,
+                    "slave_id": 1,
                 }
             )
 
         assert result["type"] == "form"
         assert result["errors"]["host"] == "already_configured"
         test_connection.assert_not_awaited()
+
+    async def test_reconfigure_onto_a_free_endpoint_of_a_known_host_is_allowed(self):
+        flow = _make_flow()
+        entry = _make_entry("entry-1", "192.168.1.100")
+        flow.hass.config_entries.async_entries.return_value = [
+            entry,
+            _make_entry("entry-2", "192.168.1.101", port=502, slave_id=1),
+        ]
+
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "_test_connection", return_value=True) as test_connection,
+        ):
+            await flow.async_step_reconfigure(
+                {
+                    "host": "192.168.1.101",
+                    "port": 1502,
+                    "slave_id": 2,
+                }
+            )
+
+        test_connection.assert_awaited()
 
     async def test_connection_failure_shows_error(self):
         flow = _make_flow()
@@ -2132,13 +2215,21 @@ class TestConfigFlowCoverageGaps:
         broken.data = None
         hass.config_entries.async_entries = MagicMock(return_value=[broken])
 
-        assert _has_duplicate_host(hass, "192.168.1.100", None) is False
+        assert _has_duplicate_endpoint(hass, "192.168.1.100", 502, 1, None) is False
+
+    def test_duplicate_check_ignores_an_entry_without_a_host(self):
+        """A half-written entry carries no endpoint and collides with nothing."""
+        hass = MagicMock()
+        hostless = _make_entry("hostless", "")
+        hass.config_entries.async_entries = MagicMock(return_value=[hostless])
+
+        assert _has_duplicate_endpoint(hass, "192.168.1.100", 502, 1, None) is False
 
     def test_duplicate_check_ignores_an_empty_host(self):
         hass = MagicMock()
         hass.config_entries.async_entries = MagicMock(return_value=[_make_entry("entry-1", "192.168.1.100")])
 
-        assert _has_duplicate_host(hass, "   ", None) is False
+        assert _has_duplicate_endpoint(hass, "   ", 502, 1, None) is False
 
     def test_knx_override_without_an_address_is_rejected(self):
         with pytest.raises(InvalidGroupAddressError):

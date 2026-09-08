@@ -210,39 +210,31 @@ class TestDhwBoostStartButton:
         assert exc_info.value.translation_key == "dhw_boost_already_active"
         assert exc_info.value.translation_domain == "idm_heatpump"
 
-    async def test_async_will_remove_shuts_down_manager_and_services(self):
+    async def test_async_will_remove_only_shuts_down_the_manager(self):
+        """The boost actions are domain services and outlive this entity.
+
+        They used to be registered by this platform and removed when the last
+        entry unloaded, which is the opposite of what the action-setup rule
+        asks for and of what every other service in this integration does.
+        """
         from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-        import custom_components.idm_heatpump.button as button_module
-
-        button, manager, coord = self._make()
-
-        # Stub the async_unload_dhw_boost_services helper so we don't need a
-        # full Home Assistant services registry, and provide a no-op
-        # ``async_will_remove_from_hass`` on the base class so super(). works.
-        unload_called = []
-
-        async def _fake_unload(hass, entry_id):
-            unload_called.append((hass, entry_id))
+        button, manager, _coord = self._make()
 
         async def _no_op_will_remove(self):
             return None
 
-        orig_unload = button_module.async_unload_dhw_boost_services
         orig_super = getattr(CoordinatorEntity, "async_will_remove_from_hass", None)
-        button_module.async_unload_dhw_boost_services = _fake_unload
         CoordinatorEntity.async_will_remove_from_hass = _no_op_will_remove
         try:
             await button.async_will_remove_from_hass()
         finally:
-            button_module.async_unload_dhw_boost_services = orig_unload
             if orig_super is not None:
                 CoordinatorEntity.async_will_remove_from_hass = orig_super
             else:
                 delattr(CoordinatorEntity, "async_will_remove_from_hass")
 
         assert manager.shutdown_called is True
-        assert unload_called == [(coord.hass, "test_entry")]
 
 
 class TestDhwBoostCancelButton:
@@ -355,6 +347,22 @@ class TestIdmWaterHeater:
     def test_current_temperature_none_when_data_none(self):
         wh, _ = self._make(data=None)
         assert wh.current_temperature is None
+
+    def test_current_temperature_none_when_register_is_unused(self):
+        """An unused storage sensor must not be published as a temperature."""
+        wh, coord = self._make(data={"dhw_temp_top": -1})
+        coord.unused_registers = {"dhw_temp_top"}
+        assert wh.current_temperature is None
+
+    def test_current_temperature_none_when_value_is_not_finite(self):
+        """NaN reached the water heater card as a literal 'nan' reading."""
+        wh, _ = self._make(data={"dhw_temp_top": float("nan")})
+        assert wh.current_temperature is None
+
+    def test_target_temperature_none_when_register_is_unused(self):
+        wh, coord = self._make(data={"dhw_setpoint": 65535})
+        coord.unused_registers = {"dhw_setpoint"}
+        assert wh.target_temperature is None
 
     def test_target_temperature(self):
         wh, _ = self._make(data={"dhw_setpoint": 55.0})
@@ -774,6 +782,96 @@ class TestClimateSharedBehaviour:
         assert climate.current_temperature is None
         assert climate.target_temperature is None
         assert climate.hvac_action is None
+
+    def test_hvac_action_follows_this_circuit_not_the_plant(self):
+        """A circuit that is idle must not report heating because another is.
+
+        hvac_action read the plant-wide hp_operating_mode, so every circuit
+        showed "heating" whenever any circuit was heating — and during a hot
+        water charge as well, although no circuit water was moving.
+        """
+        from homeassistant.components.climate import HVACAction
+
+        climate, _coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_active_mode": 0,
+                "hp_operating_mode": int(HeatPumpStatus.HEATING),
+            }
+        )
+
+        assert climate.hvac_action == HVACAction.IDLE
+
+    def test_hvac_action_reports_this_circuit_heating_and_cooling(self):
+        from homeassistant.components.climate import HVACAction
+
+        for active, expected in ((1, HVACAction.HEATING), (2, HVACAction.COOLING)):
+            climate, _coord = self._hc(
+                data={
+                    "hc_a_mode": CircuitMode.NORMAL,
+                    "hc_a_room_setpoint_heat_normal": 21.0,
+                    "hc_a_active_mode": active,
+                    "hp_operating_mode": 0,
+                }
+            )
+            assert climate.hvac_action == expected
+
+    def test_hvac_action_falls_back_to_the_plant_without_a_circuit_state(self):
+        """Older firmware may not answer the per-circuit register."""
+        from homeassistant.components.climate import HVACAction
+
+        climate, _coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hp_operating_mode": int(HeatPumpStatus.HEATING),
+            }
+        )
+
+        assert climate.hvac_action == HVACAction.HEATING
+
+    def test_current_temperature_none_when_the_room_sensor_is_unused(self):
+        """A circuit without a physical room sensor reports no temperature.
+
+        The register still answers, with the unused sentinel the API declares
+        for it. Publishing that showed an invented room temperature on the
+        thermostat card while the circuit itself stayed available.
+        """
+        climate, coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_room_temp": -1,
+            }
+        )
+        coord.unused_registers = {"hc_a_room_temp"}
+
+        assert climate.current_temperature is None
+        assert climate.available is True, "the circuit stays usable without a room sensor"
+
+    def test_current_temperature_none_when_the_reading_is_not_finite(self):
+        climate, _coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_room_temp": float("nan"),
+            }
+        )
+
+        assert climate.current_temperature is None
+
+    def test_zone_room_current_temperature_none_when_unused(self):
+        climate, coord = self._zone(
+            data={
+                "zm1_room2_mode": 1,
+                "zm1_room2_setpoint": 21.0,
+                "zm1_room2_temp": float("inf"),
+            }
+        )
+        coord.unused_registers = set()
+
+        assert climate.current_temperature is None
 
     async def test_a_translated_write_error_is_passed_through(self):
         from homeassistant.exceptions import HomeAssistantError

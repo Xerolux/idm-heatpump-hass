@@ -25,6 +25,7 @@ from custom_components.idm_heatpump.const import (
     MODEL_OVERRIDE_AUTO,
     MODEL_OVERRIDE_NAVIGATOR_10,
     MODEL_OVERRIDE_NAVIGATOR_20,
+    WEB_SETUP_READ_TIMEOUT,
 )
 from custom_components.idm_heatpump.services import async_setup_services
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
@@ -268,6 +269,53 @@ class TestAsyncSetupEntry:
 
         mock_client.disconnect.assert_awaited_once()
 
+    async def test_unwinds_platforms_when_a_later_setup_step_fails(self, mock_hass):
+        """A failure after platform forwarding must not leave entities behind.
+
+        Home Assistant marks the entry failed, but the platforms stay
+        registered against a coordinator whose client setup then disconnects,
+        so the user is left with a wall of unavailable entities and a
+        connection error on every poll.
+        """
+        entry = self._make_entry()
+        entry.options = {**entry.options, "knx_bridge": True, "knx_send": True}
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_client.host = "192.168.1.100"
+        mock_client.port = 502
+
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+        mock_coordinator.async_shutdown = AsyncMock()
+
+        bridge = MagicMock()
+        bridge.async_start = AsyncMock(side_effect=RuntimeError("knx exploded"))
+        bridge.async_stop = AsyncMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.KnxBridge", return_value=bridge),
+            pytest.raises(RuntimeError, match="knx exploded"),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        mock_hass.config_entries.async_unload_platforms.assert_awaited_once()
+        bridge.async_stop.assert_awaited_once()
+        mock_coordinator.async_shutdown.assert_awaited_once()
+        mock_client.disconnect.assert_awaited()
+
     async def test_disconnects_client_when_first_refresh_fails(self, mock_hass):
         entry = self._make_entry()
         mock_client = AsyncMock()
@@ -497,7 +545,8 @@ class TestAsyncUnloadEntry:
         """#171: unloading an entry must not remove the domain services."""
         await async_setup_services(mock_hass)
         registered_before = mock_hass.services.async_register.call_count
-        assert registered_before == 6
+        # Six domain services plus the two DHW boost actions.
+        assert registered_before == 8
 
         entry = MagicMock()
         entry.runtime_data = MagicMock()
@@ -509,7 +558,7 @@ class TestAsyncUnloadEntry:
 
         # Services are untouched: no removals, registration count unchanged.
         mock_hass.services.async_remove.assert_not_called()
-        assert mock_hass.services.async_register.call_count == 6
+        assert mock_hass.services.async_register.call_count == 8
 
     async def test_services_survive_entry_reload(self, mock_hass):
         """#171: after unload + re-setup services remain registered exactly once."""
@@ -526,7 +575,7 @@ class TestAsyncUnloadEntry:
         await async_setup_services(mock_hass)
 
         mock_hass.services.async_remove.assert_not_called()
-        assert mock_hass.services.async_register.call_count == 6
+        assert mock_hass.services.async_register.call_count == 8
 
 
 class TestAsyncReloadEntry:
@@ -813,6 +862,7 @@ class TestAsyncSetupEntryOptions:
             preferred_variant=None,
             allow_variant_fallback=True,
             hass=mock_hass,
+            read_timeout=WEB_SETUP_READ_TIMEOUT,
         )
         assert captured_kwargs.get("web_host") == "192.0.2.103"
 
@@ -1786,6 +1836,8 @@ class TestBackgroundTaskHelpers:
 
         coordinator = MagicMock()
         coordinator.async_refresh_web_supplement = AsyncMock(side_effect=[RuntimeError("boom"), None])
+        coordinator.web_auth_blocked = False
+        coordinator.last_web_error = None
         sleeps: list[float] = []
 
         async def _sleep(delay: float) -> None:
@@ -1799,8 +1851,56 @@ class TestBackgroundTaskHelpers:
         ):
             await _web_poll_loop(coordinator, 30)
 
-        assert sleeps == [0.3, 30, 30]
+        # The first cycle raised, so its retry is backed off once; the second
+        # succeeded and reset the interval.
+        assert sleeps == [0.3, 60, 30]
         assert coordinator.async_refresh_web_supplement.await_count == 2
+
+    async def test_web_poll_loop_backs_off_while_the_navigator_stays_unreachable(self):
+        """A Navigator that is switched off must not be probed at full rate forever."""
+        import asyncio as _asyncio
+
+        from custom_components.idm_heatpump import _web_poll_loop
+
+        coordinator = MagicMock()
+        coordinator.async_refresh_web_supplement = AsyncMock()
+        coordinator.web_auth_blocked = False
+        # The coordinator swallows the failure and records it here.
+        coordinator.last_web_error = "OSError: unreachable"
+        sleeps: list[float] = []
+
+        async def _sleep(delay: float) -> None:
+            sleeps.append(delay)
+            if len(sleeps) >= 6:
+                raise _asyncio.CancelledError
+
+        with (
+            patch("custom_components.idm_heatpump.asyncio.sleep", _sleep),
+            pytest.raises(_asyncio.CancelledError),
+        ):
+            await _web_poll_loop(coordinator, 30)
+
+        assert sleeps == [0.3, 60, 120, 240, 300, 300], "backoff grows and then caps"
+
+    async def test_web_poll_loop_stops_after_the_pin_was_rejected(self):
+        """Retrying a refused PIN is how the integration would cause a lockout."""
+
+        from custom_components.idm_heatpump import _web_poll_loop
+
+        coordinator = MagicMock()
+        coordinator.async_refresh_web_supplement = AsyncMock()
+        coordinator.last_web_error = "IdmWebAuthenticationFailed: rejected"
+        coordinator.web_auth_blocked = True
+        sleeps: list[float] = []
+
+        async def _sleep(delay: float) -> None:
+            sleeps.append(delay)
+
+        with patch("custom_components.idm_heatpump.asyncio.sleep", _sleep):
+            await _web_poll_loop(coordinator, 30)
+
+        assert coordinator.async_refresh_web_supplement.await_count == 1
+        assert sleeps == [0.3], "the loop returns instead of sleeping for another try"
 
 
 class TestUnloadCancelsBackgroundTasks:

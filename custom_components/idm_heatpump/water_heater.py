@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import logging
+import math
 from typing import Any, Final
 
 from homeassistant.components.water_heater import (
@@ -17,17 +18,16 @@ from homeassistant.components.water_heater import (
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
+from idm_heatpump import RegisterDef
+
 from .adapter_metadata import native_step_for_register
-from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
-from .entity import build_device_info
-from .error_messages import classify_write_error, write_error_detail, write_error_placeholders
+from .entity import async_write_translated, build_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -98,22 +98,36 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
                 return False
         return True
 
+    def _usable_temperature(self, reg: RegisterDef) -> float | None:
+        """Return one register value that is safe to publish as a temperature.
+
+        An unused or non-finite reading must not reach the state machine: the
+        water heater card rendered the API's unset sentinel as a real storage
+        temperature. The coordinator's per-poll unused set is the authority, so
+        no sentinel literal is repeated here.
+        """
+        data = self.coordinator.data
+        if not data:
+            return None
+        value = data.get(reg.name)
+        if value is None or reg.name in self.coordinator.unused_registers:
+            return None
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        return numeric if math.isfinite(numeric) else None
+
     @property
     def current_temperature(self) -> float | None:
         """Return the current temperature."""
-        if not self.coordinator.data:
-            return None
         # Use top sensor as representative
-        val = self.coordinator.data.get(self._current_reg.name)
-        return float(val) if val is not None else None
+        return self._usable_temperature(self._current_reg)
 
     @property
     def target_temperature(self) -> float | None:
         """Return the temperature we try to reach."""
-        if not self.coordinator.data:
-            return None
-        val = self.coordinator.data.get(self._target_reg.name)
-        return float(val) if val is not None else None
+        return self._usable_temperature(self._target_reg)
 
     @property
     def min_temp(self) -> float:
@@ -137,26 +151,10 @@ class IdmWaterHeater(CoordinatorEntity[IdmCoordinator], WaterHeaterEntity):
         if temp is None:
             return
 
-        try:
-            await self.coordinator.async_write_register(self._target_reg, temp)
-        except HomeAssistantError:
-            # The coordinator already raised a translated, actionable error —
-            # the write cooldown names the remaining wait. Reclassifying it
-            # replaced that with the generic "could not be written" message and
-            # hid the real reason from the user (#237).
-            raise
-        except Exception as err:
-            translation_key = classify_write_error(err)
-            _LOGGER.error(
-                "Could not set water heater target temperature for %s (%s); Home Assistant will show %s",
-                self._target_reg.name,
-                write_error_detail(err),
-                translation_key,
-            )
-            _LOGGER.debug("Technical IDM water heater write error", exc_info=True)
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key=translation_key,
-                translation_placeholders=write_error_placeholders(self._target_reg.name, err),
-            ) from err
+        await async_write_translated(
+            self.coordinator,
+            self._target_reg,
+            temp,
+            action_label="set the water heater target temperature for",
+        )
         _LOGGER.debug("Set water heater target temperature to %s", temp)

@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import enum
 
 try:
@@ -114,6 +114,16 @@ DEFAULT_SHORT_CYCLE_MINUTES: int = 15
 DEFAULT_ENABLE_CASCADE: bool = False
 DEFAULT_WEB_ENABLED: bool = True
 DEFAULT_WEB_SCAN_INTERVAL: int = int(RECOMMENDED_WEB_SCAN_INTERVAL)
+# A web supplement that keeps failing is retried ever more slowly, up to this
+# multiple of the configured interval. A Navigator that is switched off should
+# not be probed every 30 seconds forever, and each probe pays a connect timeout.
+MAX_WEB_BACKOFF_FACTOR: int = 10
+# Upper bound for one local web read, above the client's own connect timeout and
+# below the default web interval, so a hung read cannot stall the poll loop.
+WEB_READ_TIMEOUT: float = 15.0
+# Setup must not wait on the optional supplement: the polling loop finishes
+# detection later, so a slow Navigator only delays its own web values.
+WEB_SETUP_READ_TIMEOUT: float = 8.0
 DEFAULT_ROOM_TEMP_FORWARDING: bool = False
 DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE: float = 0.2
@@ -167,16 +177,16 @@ MAX_POLLING_JITTER: int = 20
 MIN_WRITE_COOLDOWN: float = 0.0
 MAX_WRITE_COOLDOWN: float = 600.0
 
-# EEPROM-Schreibschutz: minimale Sekunden zwischen zwei Schreibvorgängen auf
-# dasselbe EEPROM-Register. Default 60s schont die begrenzten Schreibzyklen des
-# EEPROMs. Power-User dürfen den Wert senken – ausdrücklich auf eigenes Risiko
-# (beschleunigter EEPROM-Verschleiß).
+# EEPROM write protection: the minimum number of seconds between two writes to
+# the same EEPROM-backed register. The 60 s default protects the EEPROM's
+# limited write cycles. Power users may lower it, explicitly at their own risk
+# of accelerated EEPROM wear.
 CONF_EEPROM_WRITE_INTERVAL: str = "eeprom_write_interval"
 DEFAULT_EEPROM_WRITE_INTERVAL: float = 60.0
 MIN_EEPROM_WRITE_INTERVAL: float = 5.0
 MAX_EEPROM_WRITE_INTERVAL: float = 600.0
 
-# Service-spezifische Register-Adressen (werden in services.py verwendet)
+# Service-specific register addresses, used from services.py.
 REGISTER_ADDRESS_SYSTEM_MODE: int = 1005
 REGISTER_ADDRESS_ERROR_ACKNOWLEDGE: int = 1999
 REGISTER_ADDRESS_CONNECTION_PROBE: int = 1000
@@ -184,8 +194,8 @@ REGISTER_COUNT_CONNECTION_PROBE: int = 2
 
 UNUSED_VALUE: float = -1.0
 
-# Pumpen-Statusregister (INT16, %), bei denen -1 laut iDM-Doku "Aus" bedeutet.
-# Für diese Register ist -1 ein gültiger Wert und NICHT der Unused-Sentinel.
+# Pump status registers (INT16, %) where iDM's documentation gives -1 the
+# meaning "off". For these, -1 is a valid reading and NOT the unused sentinel.
 NEGATIVE_ONE_VALID_REGISTERS: frozenset[str] = frozenset(
     {
         "heat_sink_charging_pump_signal",

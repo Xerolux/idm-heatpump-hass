@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import logging
 from typing import Any
 
@@ -25,8 +25,6 @@ from .device_hierarchy import build_subdevice_info
 from .dhw_boost import DhwBoostError, DhwBoostManager, async_get_dhw_boost_manager
 from .dhw_boost_services import (
     _translate_boost_error,
-    async_setup_dhw_boost_services,
-    async_unload_dhw_boost_services,
 )
 from .entity import build_device_info
 from .error_messages import classify_write_error, write_error_placeholders
@@ -56,7 +54,6 @@ async def async_setup_entry(
         and isinstance(temperature_register, RegisterDef)
     ):
         boost = await async_get_dhw_boost_manager(coordinator)
-        await async_setup_dhw_boost_services(hass)
         entities.extend(
             [
                 IdmDhwBoostStartButton(coordinator, boost),
@@ -164,13 +161,9 @@ class IdmDhwBoostStartButton(_IdmDhwBoostButtonBase):
             raise _translate_boost_error(err) from err
 
     async def async_will_remove_from_hass(self) -> None:
+        # The boost actions are domain services registered in async_setup, so
+        # they outlive this entity; only the manager is torn down here.
         await self._manager.async_shutdown()
-        config_entry = self.coordinator.config_entry
-        if config_entry is not None:
-            await async_unload_dhw_boost_services(
-                self.coordinator.hass,
-                str(config_entry.entry_id),
-            )
         await super().async_will_remove_from_hass()
 
 

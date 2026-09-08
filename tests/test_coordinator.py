@@ -145,11 +145,20 @@ class TestCoordinatorInit:
         assert coord.client is client
 
     def test_client_diagnostics_include_transport_details(self, mock_hass, mock_config_entry):
+        from idm_heatpump import IdmClientDiagnostics
+
         client = MagicMock()
-        client.get_diagnostics.return_value = {
-            "navigator_type": "Navigator 10",
-            "modbus_connected": True,
-        }
+        # The API returns its own dataclass here, not a mapping; a mock that
+        # returned a dict hid that the production path reads dataclass fields.
+        client.get_diagnostics.return_value = IdmClientDiagnostics(
+            navigator_type="Navigator 10",
+            modbus_connected=True,
+            firmware=None,
+            last_error=None,
+            permanently_failed_registers=(),
+            connection_suspect=False,
+            batch_unsafe_registers=(),
+        )
         client.transport_diagnostics.return_value = {
             "endpoint": {"host": "**REDACTED**"},
             "capabilities": {
@@ -508,7 +517,15 @@ class TestAsyncUpdateData:
             await coord._async_update_data()
         mock_ir.async_create_issue.assert_not_called()
 
-    async def test_illegal_address_is_isolated_and_skipped(self, mock_hass, mock_config_entry):
+    async def test_register_the_library_isolated_is_dropped_from_the_next_poll(self, mock_hass, mock_config_entry):
+        """A register the API isolated is not offered to read_batch again.
+
+        idm-heatpump-api answers an Illegal Data Address inside read_batch: it
+        marks the register permanently failed and returns the rest of the
+        group, so the exception never reaches the coordinator. What the
+        coordinator owes is the skip-list, so the dead address is not part of
+        the next request.
+        """
         good_a = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a")
         unsupported = RegisterDef(address=4108, datatype=DataType.FLOAT, name="power_limit_hp")
         good_b = RegisterDef(address=4122, datatype=DataType.FLOAT, name="good_b")
@@ -516,17 +533,17 @@ class TestAsyncUpdateData:
 
         async def read_batch(registers):
             calls.append([reg.name for reg in registers])
-            if any(reg.name == "power_limit_hp" for reg in registers):
-                raise IdmDeviceError(
-                    "Modbus error reading address 4108: "
-                    "ExceptionResponse(dev_id=1, function_code=132, exception_code=2)"
-                )
-            return {reg.name: 1 for reg in registers}
+            return {reg.name: 1 for reg in registers if reg.name != "power_limit_hp"}
 
         client = MagicMock()
         client.read_batch = AsyncMock(side_effect=read_batch)
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
-        coord._registers = [good_a, unsupported, good_b]
+        client.get_unsupported_registers = MagicMock(return_value=("power_limit_hp",))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[good_a, unsupported, good_b],
+        )
 
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             data = await coord._async_update_data()
@@ -539,17 +556,26 @@ class TestAsyncUpdateData:
             await coord._async_update_data()
         assert calls == [["good_a", "good_b"]]
 
-    async def test_illegal_address_creates_register_not_supported_issue(self, mock_hass, mock_config_entry):
+    async def test_unsupported_register_creates_the_repair_issue_once(self, mock_hass, mock_config_entry):
+        """The user learns why an entity disappeared, and learns it only once.
+
+        The API reports an unsupported register at debug level only, so without
+        this issue a default installation had nothing in its log explaining a
+        permanently unavailable entity.
+        """
         unsupported = RegisterDef(address=4108, datatype=DataType.FLOAT, name="power_limit_hp")
 
         client = MagicMock()
-        client.read_batch = AsyncMock(
-            side_effect=IdmDeviceError("Modbus error reading address 4108: ExceptionResponse(exception_code=2)")
+        client.read_batch = AsyncMock(return_value={"good_a": 1})
+        client.get_unsupported_registers = MagicMock(return_value=("power_limit_hp",))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a"), unsupported],
         )
-        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
-        coord._registers = [unsupported]
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(Exception):  # noqa: B017
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             await coord._async_update_data()
 
         mock_ir.async_create_issue.assert_any_call(
@@ -561,6 +587,14 @@ class TestAsyncUpdateData:
             translation_key="register_not_supported",
             translation_placeholders={"register": "power_limit_hp", "address": "4108"},
         )
+
+        # A second poll re-reports the same name from the library; the register
+        # is already known, so the user is not told again.
+        with patch("custom_components.idm_heatpump.coordinator.ir") as second_ir:
+            await coord._async_update_data()
+
+        issue_ids = [call.args[2] for call in second_ir.async_create_issue.call_args_list]
+        assert "register_not_supported_power_limit_hp_test_entry_id" not in issue_ids
 
     async def test_library_unsupported_registers_are_merged_into_skip_list(self, mock_hass, mock_config_entry):
         """Registers flagged unsupported by the library are mirrored after each poll.
@@ -585,23 +619,20 @@ class TestAsyncUpdateData:
 
         assert coord.unsupported_registers == {"power_limit_hp"}
 
-    async def test_merge_unsupported_is_noop_without_library_support(self, mock_hass, mock_config_entry):
-        """Older library versions without get_unsupported_registers are tolerated.
-
-        _merge_unsupported_registers uses getattr and must be a no-op rather
-        than raising when the method is absent.
-        """
+    async def test_no_unsupported_registers_leaves_the_skip_list_empty(self, mock_hass, mock_config_entry):
+        """A healthy plant reports nothing unsupported and raises no issue."""
         good = RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a")
         client = MagicMock()
         client.read_batch = AsyncMock(return_value={"good_a": 1})
-        # Simulate an older library: no get_unsupported_registers attribute.
-        del client.get_unsupported_registers
+        client.get_unsupported_registers = MagicMock(return_value=())
         coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[good])
 
-        with patch("custom_components.idm_heatpump.coordinator.ir"):
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
             await coord._async_update_data()
 
         assert coord.unsupported_registers == set()
+        issue_ids = [call.args[2] for call in mock_ir.async_create_issue.call_args_list]
+        assert not any(issue_id.startswith("register_not_supported") for issue_id in issue_ids)
 
     @pytest.mark.parametrize(
         "error",
@@ -1254,6 +1285,43 @@ class TestAsyncWriteRegister:
 
         assert coord._delayed_refresh_task.done()
         coord.async_request_refresh.assert_not_awaited()
+
+    async def test_shutdown_runs_the_base_coordinator_shutdown(self, mock_hass, mock_config_entry):
+        """The scheduled poll must not outlive the config entry.
+
+        DataUpdateCoordinator.async_shutdown owns the parts this class cannot
+        reach: the shutdown flag, the refresh timer and the request debouncer.
+        Overriding it without calling up left the timer armed, so the poll it
+        scheduled ran after async_unload_entry had disconnected the client.
+        """
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        await coord.async_shutdown()
+
+        assert coord.shutdown_called is True
+        assert coord._shutdown_requested is True
+
+    async def test_refresh_after_shutdown_is_ignored(self, mock_hass, mock_config_entry):
+        """A refresh requested after shutdown must not reach the closed client."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        await coord.async_shutdown()
+        await coord.async_request_refresh()
+
+        assert coord.refresh_requests == 0
+
+    async def test_shutdown_closes_the_web_client_pool(self, mock_hass, mock_config_entry):
+        """The persistent Navigator web connection is released on unload."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        # IdmWebClientPool defines __slots__, so the pool is replaced rather
+        # than patched in place.
+        pool = MagicMock()
+        pool.close = AsyncMock()
+        coord._web_client_pool = pool
+
+        await coord.async_shutdown()
+
+        pool.close.assert_awaited_once()
 
 
 class TestAsyncRefreshWebSupplement:

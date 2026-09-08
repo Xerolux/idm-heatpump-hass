@@ -57,7 +57,8 @@ class TestWriteSafetyHelpers:
 class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
-        assert mock_hass.services.async_register.call_count == 6
+        # Six domain services plus the two DHW boost actions.
+        assert mock_hass.services.async_register.call_count == 8
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -78,6 +79,8 @@ class TestServiceLifecycleInvariants:
             (DOMAIN, "set_external_climate"),
             (DOMAIN, "set_external_power"),
             (DOMAIN, "export_knx_group_addresses"),
+            (DOMAIN, "start_dhw_boost"),
+            (DOMAIN, "cancel_dhw_boost"),
         }
 
     async def test_setup_is_idempotent_when_already_registered(self, mock_hass):
@@ -736,3 +739,87 @@ class TestExportKnxGroupAddresses:
         coordinator.config_entry = None
         response = await _handle_export_knx_group_addresses(mock_hass, self._call())
         assert response["base_address"] == "8/0/0"
+
+
+class TestServiceSchemas:
+    """The schemas must accept every documented call and reject bad shapes.
+
+    These assertions only mean something against the real voluptuous, which
+    ships with Home Assistant and is what CI installs; the fallback stub used
+    in a checkout without it validates by returning its input.
+    """
+
+    def _real_voluptuous(self):
+        import voluptuous as vol
+
+        return not vol.__name__.startswith("builtins") and hasattr(vol, "MultipleInvalid")
+
+    def test_target_fields_are_accepted(self):
+        """Services declared with target: receive entity_id and friends."""
+        from custom_components.idm_heatpump.services import _SET_SYSTEM_MODE_SCHEMA
+
+        result = _SET_SYSTEM_MODE_SCHEMA({"entity_id": ["sensor.idm_outdoor_temp"], "mode": "automatic"})
+        assert result["mode"] == "automatic"
+
+    def test_write_register_accepts_a_documented_call(self):
+        from custom_components.idm_heatpump.services import _WRITE_REGISTER_SCHEMA
+
+        result = _WRITE_REGISTER_SCHEMA(
+            {
+                "address": 1005,
+                "value": "1",
+                "datatype": "uchar",
+                "acknowledge_risk": True,
+            }
+        )
+        assert result["address"] == 1005
+
+    def test_write_register_rejects_an_address_outside_the_modbus_range(self):
+        import voluptuous as vol
+
+        from custom_components.idm_heatpump.services import _WRITE_REGISTER_SCHEMA
+
+        if not self._real_voluptuous():
+            pytest.skip("the fallback voluptuous stub does not validate")
+        with pytest.raises(vol.Invalid):
+            _WRITE_REGISTER_SCHEMA({"address": 999999, "value": "1", "acknowledge_risk": True})
+
+    def test_external_climate_coerces_numbers(self):
+        from custom_components.idm_heatpump.services import _SET_EXTERNAL_CLIMATE_SCHEMA
+
+        result = _SET_EXTERNAL_CLIMATE_SCHEMA({"heating_circuit": "A", "room_temperature": "21.5"})
+        assert result["room_temperature"] == 21.5
+
+    def test_external_climate_rejects_a_non_numeric_temperature(self):
+        import voluptuous as vol
+
+        from custom_components.idm_heatpump.services import _SET_EXTERNAL_CLIMATE_SCHEMA
+
+        if not self._real_voluptuous():
+            pytest.skip("the fallback voluptuous stub does not validate")
+        with pytest.raises(vol.Invalid):
+            _SET_EXTERNAL_CLIMATE_SCHEMA({"heating_circuit": "A", "room_temperature": "warm"})
+
+    def test_every_documented_field_is_in_its_schema(self):
+        """services.yaml and the schemas must describe the same fields."""
+        import pathlib as _pathlib
+
+        import yaml
+
+        import custom_components.idm_heatpump.services as services_module
+
+        documented = yaml.safe_load(
+            (_pathlib.Path(services_module.__file__).parent / "services.yaml").read_text(encoding="utf-8")
+        )
+        schemas = {
+            "set_system_mode": services_module._SET_SYSTEM_MODE_SCHEMA,
+            "write_register": services_module._WRITE_REGISTER_SCHEMA,
+            "set_external_climate": services_module._SET_EXTERNAL_CLIMATE_SCHEMA,
+            "set_external_power": services_module._SET_EXTERNAL_POWER_SCHEMA,
+            "export_knx_group_addresses": services_module._EXPORT_KNX_SCHEMA,
+        }
+        for service, schema in schemas.items():
+            fields = set(documented[service].get("fields", {}))
+            known = {str(getattr(marker, "schema", getattr(marker, "key", marker))) for marker in schema.schema}
+            missing = fields - known
+            assert not missing, f"{service} documents fields its schema would reject: {sorted(missing)}"

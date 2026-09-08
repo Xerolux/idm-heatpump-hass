@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import logging
+import math
 import re
 from typing import Any, Final
 
@@ -33,8 +34,7 @@ from .adapter_metadata import native_step_for_register
 from .const import DOMAIN, CircuitMode, HeatPumpStatus, RoomMode
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
-from .entity import build_device_info
-from .error_messages import classify_write_error, write_error_detail, write_error_placeholders
+from .entity import async_write_translated, build_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -133,45 +133,39 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         return True
 
     async def _async_write_register(self, reg: RegisterDef, value: Any, *, action_label: str) -> None:
+        await async_write_translated(self.coordinator, reg, value, action_label=action_label)
+
+    def _usable_temperature(self, reg: RegisterDef | None) -> float | None:
+        """Return one register value that is safe to publish as a temperature.
+
+        A circuit without a physical room sensor still answers its register,
+        with the unused sentinel the API declares for it (often NaN, an
+        infinity or -1). Publishing that produced a room temperature of ``nan``
+        or ``-1 °C`` on the climate card. The register set is the authority on
+        what counts as unused, so this reuses the coordinator's per-poll result
+        instead of introducing sentinel literals here.
+        """
+        data = self.coordinator.data
+        if reg is None or not data:
+            return None
+        value = data.get(reg.name)
+        if value is None or reg.name in self.coordinator.unused_registers:
+            return None
         try:
-            await self.coordinator.async_write_register(reg, value)
-        except HomeAssistantError:
-            # The coordinator already raised a translated, actionable error —
-            # the write cooldown names the remaining wait. Reclassifying it
-            # replaced that with the generic "could not be written" message and
-            # hid the real reason from the user (#237).
-            raise
-        except Exception as err:
-            translation_key = classify_write_error(err)
-            _LOGGER.error(
-                "Could not %s %s (%s); Home Assistant will show the actionable %s message",
-                action_label,
-                reg.name,
-                write_error_detail(err),
-                translation_key,
-            )
-            _LOGGER.debug("Technical IDM climate register write error", exc_info=True)
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key=translation_key,
-                translation_placeholders=write_error_placeholders(reg.name, err),
-            ) from err
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        return numeric if math.isfinite(numeric) else None
 
     @property
     def current_temperature(self) -> float | None:
         """Return the current temperature."""
-        if not self._current_reg or not self.coordinator.data:
-            return None
-        val = self.coordinator.data.get(self._current_reg.name)
-        return float(val) if val is not None else None
+        return self._usable_temperature(self._current_reg)
 
     @property
     def target_temperature(self) -> float | None:
         """Return the target temperature."""
-        if not self.coordinator.data:
-            return None
-        val = self.coordinator.data.get(self._target_reg.name)
-        return float(val) if val is not None else None
+        return self._usable_temperature(self._target_reg)
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature.
@@ -211,6 +205,11 @@ _HEATING_CIRCUIT_HVAC_MODES: Final[list[HVACMode]] = [
 ]
 _HEATING_CIRCUIT_PRESET_MODES: Final[list[str]] = [PRESET_NONE, PRESET_ECO]
 
+# Values of hc_<x>_active_mode. 0 is off and 255 means "not configured", both
+# of which read as idle for a circuit whose mode is not OFF.
+_CIRCUIT_ACTIVE_HEATING: Final = 1
+_CIRCUIT_ACTIVE_COOLING: Final = 2
+
 
 class IdmHeatingCircuitClimate(IdmClimateBase):
     """Climate entity for a heating circuit."""
@@ -237,6 +236,12 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
         self._circuit = circuit.upper()
         self._attr_translation_key = "heating_circuit"
         self._attr_translation_placeholders = {"circuit": self._circuit}
+        # Per-circuit state: 0 off, 1 heating, 2 cooling, 255 not configured.
+        # hvac_action used the plant-wide hp_operating_mode, which reports what
+        # the heat pump is doing, not this circuit — so every circuit showed
+        # "heating" while one was heating, and during a hot water charge as
+        # well, although no circuit water was moving.
+        self._active_mode_register = f"hc_{circuit.lower()}_active_mode"
 
     @property
     def hvac_mode(self) -> HVACMode | None:
@@ -266,12 +271,29 @@ class IdmHeatingCircuitClimate(IdmClimateBase):
 
     @property
     def hvac_action(self) -> HVACAction | None:
-        if not self.coordinator.data:
+        """Report what this circuit is doing, not what the plant is doing."""
+        data = self.coordinator.data
+        if not data:
             return None
         if self.hvac_mode == HVACMode.OFF:
             return HVACAction.OFF
 
-        status_val = self.coordinator.data.get("hp_operating_mode")
+        active_mode = data.get(self._active_mode_register)
+        if active_mode is not None and self._active_mode_register not in self.coordinator.unused_registers:
+            try:
+                active = int(active_mode)
+            except (TypeError, ValueError):
+                return HVACAction.IDLE
+            if active == _CIRCUIT_ACTIVE_HEATING:
+                return HVACAction.HEATING
+            if active == _CIRCUIT_ACTIVE_COOLING:
+                return HVACAction.COOLING
+            return HVACAction.IDLE
+
+        # The circuit does not report its own state (older firmware, or the
+        # register is not polled). Fall back to the plant status, which at
+        # least distinguishes an idle plant from a running one.
+        status_val = data.get("hp_operating_mode")
         if status_val is not None:
             try:
                 status = HeatPumpStatus(int(status_val))

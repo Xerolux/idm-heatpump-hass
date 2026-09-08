@@ -84,7 +84,7 @@ SYSCOUNT_REGISTER_REFERENCE: Final[Mapping[str, ControllerStatReference]] = {
         knx_object=993,
         semantic_label="Batterieentladung (Leistung)",
         unit="kW",
-        note="GLT-Messwert-Register; in syscount.ini nicht einzeln geführt.",
+        note="Building-management measurement register; not listed individually in syscount.ini.",
     ),
     "battery_soc": ControllerStatReference(
         library_register="battery_soc",
@@ -94,7 +94,7 @@ SYSCOUNT_REGISTER_REFERENCE: Final[Mapping[str, ControllerStatReference]] = {
         knx_object=994,
         semantic_label="Batterieladezustand",
         unit="%",
-        note="Signed INT16; -1 bedeutet 'nicht verfügbar'.",
+        note="Signed INT16; -1 means 'not available'.",
     ),
     "energy_cooling": ControllerStatReference(
         library_register="energy_cooling",

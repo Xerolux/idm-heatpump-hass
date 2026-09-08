@@ -60,6 +60,9 @@ def _entity_dependencies(unique_suffix: str) -> set[str]:
             f"hc_{circuit}_mode",
             f"hc_{circuit}_room_setpoint_heat_normal",
             f"hc_{circuit}_room_temp",
+            # hvac_action reports what this circuit is doing.
+            f"hc_{circuit}_active_mode",
+            # Fallback for a circuit that does not report its own state.
             "hp_operating_mode",
         }
     if match := _ZONE_CLIMATE.fullmatch(unique_suffix):
@@ -78,14 +81,22 @@ def build_required_register_names(
     registry: Any,
     entry_id: str,
     known_register_names: Iterable[str],
+    externally_required: Iterable[str] = (),
 ) -> set[str] | None:
-    """Build the required register set or return None until registry data exists."""
+    """Build the required register set or return None until registry data exists.
+
+    ``externally_required`` carries the demand of consumers that read the
+    coordinator snapshot without owning a Home Assistant entity — the KNX
+    bridge above all. Without it, a register whose entity the user disabled
+    dropped out of the poll and the bridge published nothing for that object,
+    with no error anywhere to explain it.
+    """
     known = set(known_register_names)
     entries = list(er.async_entries_for_config_entry(registry, entry_id))
     if not entries:
         return None
 
-    required = set(_ALWAYS_REQUIRED) & known
+    required = (set(_ALWAYS_REQUIRED) | set(externally_required)) & known
     prefix = f"{entry_id}_"
     for registry_entry in entries:
         if getattr(registry_entry, "disabled_by", None) is not None:
@@ -121,12 +132,20 @@ class EntityAwarePollingManager:
         self._refresh_task: asyncio.Task[None] | None = None
         self._setup_task: asyncio.Task[None] | None = None
         self._unsub_registry: Callable[[], None] | None = None
+        # Entity IDs this entry owned when the plan was last applied, so a
+        # removal event can be attributed without a registry lookup.
+        self._known_entity_ids: frozenset[str] = frozenset()
 
     def schedule_setup(self) -> None:
         """Start after all platforms had time to create registry entries."""
         if self._setup_task is None:
             self._setup_task = self._hass.async_create_task(self._async_delayed_setup())
-            self._entry.async_on_unload(self._schedule_shutdown)
+            # async_on_unload accepts a coroutine function and awaits it, so the
+            # unload waits for the listener to be removed. Scheduling the
+            # shutdown as a fire-and-forget task instead let unload finish while
+            # a debounced re-plan was still queued, and that re-plan then asked
+            # a shut-down coordinator to refresh.
+            self._entry.async_on_unload(self.async_shutdown)
 
     async def _async_delayed_setup(self) -> None:
         try:
@@ -143,10 +162,6 @@ class EntityAwarePollingManager:
             )
         finally:
             self._setup_task = None
-
-    @callback
-    def _schedule_shutdown(self) -> None:
-        self._hass.async_create_task(self.async_shutdown())
 
     async def async_shutdown(self) -> None:
         """Cancel pending work and remove the entity registry listener."""
@@ -165,10 +180,35 @@ class EntityAwarePollingManager:
         self._refresh_task = None
 
     @callback
+    def schedule_replan(self) -> None:
+        """Re-plan after something other than the entity registry changed.
+
+        A consumer declaring or withdrawing register demand (the KNX bridge
+        starting or stopping) changes the plan without any registry event, so
+        it has to ask for one. Debounced through the same path as a registry
+        change, so a bridge declaring many objects re-plans once.
+        """
+        if self._refresh_task is not None:
+            self._refresh_task.cancel()
+        self._refresh_task = self._hass.async_create_task(self._async_debounced_apply())
+
+    @callback
     def _handle_registry_event(self, event: Any) -> None:
-        """Debounce registry changes affecting this config entry."""
+        """Debounce registry changes affecting this config entry.
+
+        A ``remove`` event has no registry entry left to look up, so it used to
+        fall through the ownership filter and schedule a re-plan for another
+        integration's deletion — and each re-plan walks this entry's whole
+        registry. Removals are matched against the entity IDs the last plan saw
+        instead.
+        """
         entity_id = event.data.get("entity_id")
-        if isinstance(entity_id, str):
+        if not isinstance(entity_id, str):
+            return
+        if event.data.get("action") == "remove":
+            if entity_id not in self._known_entity_ids:
+                return
+        else:
             registry = er.async_get(self._hass)
             registry_entry = registry.async_get(entity_id)
             if registry_entry is not None and getattr(
@@ -198,11 +238,17 @@ class EntityAwarePollingManager:
 
     async def _async_apply_plan(self, *, request_refresh: bool) -> None:
         registry = er.async_get(self._hass)
+        self._known_entity_ids = frozenset(
+            entity_id
+            for registry_entry in er.async_entries_for_config_entry(registry, self._entry.entry_id)
+            if isinstance(entity_id := getattr(registry_entry, "entity_id", None), str)
+        )
         known = {register.name for register in self._full_registers}
         required = build_required_register_names(
             registry,
             self._entry.entry_id,
             known,
+            self._coordinator.externally_required_registers,
         )
         if required is None:
             return

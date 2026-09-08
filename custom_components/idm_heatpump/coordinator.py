@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import asyncio
 import logging
 import math
 import random
 import time
-from collections.abc import Mapping
+from collections.abc import Callable, Iterable, Mapping
+from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
@@ -23,7 +24,6 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from idm_heatpump import (
-    IdmConnectionError,
     IdmModbusClient,
     IdmModbusError,
     IdmModelInfo,
@@ -250,9 +250,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._hierarchy_device_ids: dict[tuple[str, str], str] = {}
         self._operation_analysis: OperationAnalysis | None = None
         self._entity_aware_polling_manager: EntityAwarePollingManager | None = None
+        self._external_register_demand: dict[str, frozenset[str]] = {}
         self._polling_plan_total_count: int = 0
         self._polling_plan_active_count: int = 0
         self._polling_jitter_percent = max(0, min(20, polling_jitter_percent))
+        self._refresh_is_on_demand = False
         self._last_poll_duration: float | None = None
         self._last_poll_success: datetime | None = None
         self._consecutive_poll_failures = 0
@@ -266,6 +268,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._write_timestamps: dict[int, float] = {}
         self._last_write_error: dict[str, Any] | None = None
         self._web_variant_conflict_logged = False
+        self._web_auth_blocked = False
         self._write_cooldown_seconds = max(0.0, min(600.0, write_cooldown_seconds))
         # Room-mode individual validation is expensive (one Modbus read per
         # register). Run it on the first poll, then only every Nth poll.
@@ -283,6 +286,40 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             name="IDM Heatpump",
             update_interval=scan_interval,
         )
+
+    def register_required_registers(self, owner: str, names: Iterable[str]) -> Callable[[], None]:
+        """Declare registers a non-entity consumer needs polled, and how to undo it.
+
+        Entity-aware polling narrows the poll to what enabled entities need.
+        Consumers that read ``self.data`` without owning an entity — the KNX
+        bridge above all, which serves 654 objects — are invisible to that plan,
+        so a register whose Home Assistant entity the user disabled silently
+        stopped being polled and the bridge published nothing for it. Declaring
+        the demand here keeps those registers in the plan.
+
+        Returns the callable that withdraws this owner's demand again.
+        """
+        self._external_register_demand[owner] = frozenset(names)
+        self._notify_register_demand_changed()
+
+        def _release() -> None:
+            if self._external_register_demand.pop(owner, None) is not None:
+                self._notify_register_demand_changed()
+
+        return _release
+
+    @property
+    def externally_required_registers(self) -> frozenset[str]:
+        """Return every register a non-entity consumer declared it needs."""
+        if not self._external_register_demand:
+            return frozenset()
+        return frozenset().union(*self._external_register_demand.values())
+
+    def _notify_register_demand_changed(self) -> None:
+        """Re-plan polling so a demand change takes effect on the next poll."""
+        manager = self._entity_aware_polling_manager
+        if manager is not None:
+            manager.schedule_replan()
 
     def setup_registers(
         self,
@@ -444,6 +481,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return self._last_web_error
 
     @property
+    def web_auth_blocked(self) -> bool:
+        """Whether web polling stopped because the controller rejected the PIN.
+
+        Navigator firmware locks the local login after repeated failed attempts,
+        so retrying a PIN the controller has already refused is how this
+        integration would cause the lockout it then reports. Cleared by a
+        reload, which is what applying a new PIN triggers.
+        """
+        return self._web_auth_blocked
+
+    @property
     def web_value_keys(self) -> tuple[str, ...]:
         """Return currently available optional web value keys."""
         if self._web_supplement is None:
@@ -531,11 +579,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return scoped_issue_id(entry_id, issue_id)
 
     async def _async_read_registers_resilient(self, registers: list[RegisterDef]) -> dict[str, Any]:
-        """Read registers while isolating addresses unsupported by this device.
+        """Read every register the device still answers, skipping known-dead ones.
 
-        Some Navigator firmware variants reject optional register blocks with
-        Modbus exception code 2. Bisecting only on that specific response keeps
-        all supported entities available without hiding real connection errors.
+        Isolating an address the device rejects with Modbus exception code 2 is
+        the API's job: ``read_batch`` falls back to individual reads for a group
+        the device refuses and records the offending register, so the exception
+        never reaches this method. The coordinator only keeps its own skip-list
+        in step (see ``_merge_unsupported_registers``) and lets every other
+        error through, because a connection fault must fail the poll rather than
+        be mistaken for an unsupported register.
         """
         if not registers:
             return {}
@@ -544,41 +596,37 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not readable:
             return {}
 
-        try:
-            return await self._client.read_batch(readable)
-        except IdmConnectionError:
-            raise
-        except IdmModbusError as err:
-            if not _is_illegal_address_error(err):
-                raise
-            if len(readable) == 1:
-                reg = readable[0]
-                self._unsupported_registers.add(reg.name)
-                ir.async_create_issue(
-                    self.hass,
-                    DOMAIN,
-                    self._scoped_issue_id(f"register_not_supported_{reg.name}"),
-                    is_fixable=False,
-                    severity=ir.IssueSeverity.WARNING,
-                    translation_key="register_not_supported",
-                    translation_placeholders={"register": reg.name, "address": str(reg.address)},
-                )
-                _LOGGER.warning(
-                    "IDM Modbus register %s at address %d is not supported by this heat pump "
-                    "(Illegal Data Address); skipping it and continuing with supported registers",
-                    reg.name,
-                    reg.address,
-                )
-                return {}
+        return await self._client.read_batch(readable)
 
-            midpoint = len(readable) // 2
-            _LOGGER.debug(
-                "IDM Modbus Illegal Data Address while reading %d registers; isolating unsupported register",
-                len(readable),
-            )
-            data = await self._async_read_registers_resilient(readable[:midpoint])
-            data.update(await self._async_read_registers_resilient(readable[midpoint:]))
-            return data
+    def _report_unsupported_register(self, register_name: str) -> None:
+        """Raise the user-visible repair issue for one unsupported register.
+
+        The register was rejected with ``Illegal Data Address``, which means the
+        heat pump does not implement it and its entity will stay unavailable
+        forever. The API logs that at debug level only, so before this the
+        entity simply vanished from the user's point of view with nothing in the
+        log of a default installation to explain it.
+        """
+        register = self._register_by_name.get(register_name)
+        address = getattr(register, "address", None)
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            self._scoped_issue_id(f"register_not_supported_{register_name}"),
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="register_not_supported",
+            translation_placeholders={
+                "register": register_name,
+                "address": str(address) if address is not None else "unknown",
+            },
+        )
+        _LOGGER.warning(
+            "IDM Modbus register %s at address %s is not supported by this heat pump "
+            "(Illegal Data Address); skipping it and continuing with supported registers",
+            register_name,
+            address if address is not None else "unknown",
+        )
 
     def _merge_unsupported_registers(self) -> None:
         """Mirror the library's unsupported-register set into the coordinator.
@@ -588,18 +636,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         subsequent ``read_batch`` calls. The coordinator keeps its own
         ``_unsupported_registers`` skip-list (used for the zone-room mode path
         and surfaced via the ``unsupported_registers`` property), so the two
-        sets must stay in sync. Merging after every poll ensures registers
-        isolated by the library are reflected here too, without relying on the
-        coordinator's bisection path (which never runs for these addresses
-        because the library swallows the exception inside ``read_batch``).
+        sets must stay in sync.
 
-        Uses ``getattr`` so this is a no-op against older library versions that
-        do not expose ``get_unsupported_registers()``.
+        This is also where a newly discovered unsupported register becomes
+        visible to the user. The API swallows the exception inside
+        ``read_batch`` and logs it at debug level, so nothing else in the poll
+        can report it.
         """
-        get_unsupported = getattr(self._client, "get_unsupported_registers", None)
-        if get_unsupported is None:
-            return
-        library_unsupported = get_unsupported()
+        library_unsupported = self._client.get_unsupported_registers()
         if not library_unsupported:
             return
         new_unsupported = [name for name in library_unsupported if name not in self._unsupported_registers]
@@ -611,6 +655,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             len(new_unsupported),
             new_unsupported,
         )
+        for register_name in new_unsupported:
+            self._report_unsupported_register(register_name)
 
     async def _async_refresh_zone_room_modes(self, data: dict[str, Any]) -> None:
         """Refresh room mode registers individually to avoid faulty batch values.
@@ -655,11 +701,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if _is_illegal_address_error(err):
                     self._unsupported_registers.add(reg.name)
                     data.pop(reg.name, None)
-                    _LOGGER.debug(
-                        "Zone room mode register %s at address %d is unsupported; skipping it",
-                        reg.name,
-                        reg.address,
-                    )
+                    self._report_unsupported_register(reg.name)
                     continue
                 raise
             except (OSError, TimeoutError):
@@ -690,7 +732,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             data[reg.name] = result
 
     async def _async_update_data(self) -> dict[str, Any]:
-        if self._polling_jitter_percent and self.update_interval is not None:
+        # Jitter exists to spread scheduled polls of several entries across the
+        # interval. Applying it to a refresh someone asked for — the 0.5 s
+        # confirmation after a write, or a manual refresh — only delayed the
+        # confirmed value by up to the full jitter window.
+        if self._polling_jitter_percent and self.update_interval is not None and not self._refresh_is_on_demand:
             maximum_delay = self.update_interval.total_seconds() * self._polling_jitter_percent / 100
             await asyncio.sleep(random.uniform(0, maximum_delay))
 
@@ -861,6 +907,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 hass=self.hass,
             )
         except IdmWebAuthenticationFailed as err:
+            self._web_auth_blocked = True
             error = f"{err.__class__.__name__}: {err}"
             if error != self._last_web_error:
                 _LOGGER.warning(
@@ -1056,7 +1103,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _delayed_refresh(self, delay: float = 0.5) -> None:
         try:
             await asyncio.sleep(delay)
-            await self.async_request_refresh()
+            self._refresh_is_on_demand = True
+            try:
+                await self.async_request_refresh()
+            finally:
+                self._refresh_is_on_demand = False
         except asyncio.CancelledError:
             pass
 
@@ -1085,7 +1136,19 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             "translation_key": translation_key,
             "detail": detail,
         }
-        if not reached_device:
+        if translation_key == "write_eeprom_blocked":
+            # Deliberate pacing that protects the controller's limited EEPROM
+            # write cycles, not a fault. A caller that re-applies a value on
+            # every poll (the DHW boost) hits it routinely, and reporting each
+            # one as a warning buried the failures that do need attention.
+            _LOGGER.debug(
+                "The write of %s to %s (address %s) is waiting for the EEPROM write interval: %s",
+                value,
+                reg.name,
+                reg.address,
+                detail,
+            )
+        elif not reached_device:
             _LOGGER.warning(
                 "The write of %s to %s (address %s) was blocked before it was sent: %s",
                 value,
@@ -1125,37 +1188,22 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         dry_run: bool = True,
         allow_custom_register: bool = False,
     ) -> Any:
-        """Validate a write using idm-heatpump-api write-safety hooks when available."""
-        simulator = getattr(self._client, "simulate_write", None)
-        if callable(simulator):
-            if allow_custom_register:
-                return simulator(
-                    reg,
-                    value,
-                    dry_run=dry_run,
-                    allow_custom_register=True,
-                )
-            return simulator(reg, value, dry_run=dry_run)
-        # idm-heatpump-api < 0.6 has no dry-run safety result; keep compatibility
-        # by falling back to encoding, which still validates datatype/range locally.
-        encoder = getattr(self._client, "encode_value", None)
-        if callable(encoder):
-            return {"encoded_registers": encoder(value, reg)}
-        return None
+        """Validate a write through the API's write-safety hooks."""
+        if allow_custom_register:
+            return self._client.simulate_write(
+                reg,
+                value,
+                dry_run=dry_run,
+                allow_custom_register=True,
+            )
+        return self._client.simulate_write(reg, value, dry_run=dry_run)
 
     def client_diagnostics(self) -> Mapping[str, Any]:
-        """Return redaction-safe diagnostics exposed by newer idm-heatpump-api versions."""
-        result: dict[str, Any] = {}
-        getter = getattr(self._client, "get_diagnostics", None)
-        if callable(getter):
-            diagnostics = getter()
-            if hasattr(diagnostics, "to_dict"):
-                diagnostics = diagnostics.to_dict()
-            if isinstance(diagnostics, Mapping):
-                result.update(diagnostics)
-            elif hasattr(diagnostics, "__dict__"):
-                result.update(vars(diagnostics))
+        """Return the redaction-safe diagnostics the API and transport expose."""
+        result: dict[str, Any] = asdict(self._client.get_diagnostics())
 
+        # transport_diagnostics belongs to IdmModbusConnectionClient, not to the
+        # API's base client, and a web-only entry holds a plain client.
         transport_getter = getattr(self._client, "transport_diagnostics", None)
         if callable(transport_getter):
             transport = transport_getter()
@@ -1235,10 +1283,28 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         old_task = self._delayed_refresh_task
         if old_task is not None and not old_task.done():
             old_task.cancel()
-        # Short-lived confirmation refresh; use asyncio.create_task so unit
-        # tests can await the real Task (hass.async_create_task is often a MagicMock).
-        self._delayed_refresh_task = asyncio.create_task(self._delayed_refresh())
+        self._delayed_refresh_task = self._create_confirmation_task()
         return safety_result
+
+    def _create_confirmation_task(self) -> asyncio.Task[None]:
+        """Start the short confirmation refresh as a task the entry owns.
+
+        A bare ``asyncio.create_task`` is invisible to Home Assistant, so the
+        entry could finish unloading while this refresh was still pending.
+        ``async_create_background_task`` is looked up on the entry class so a
+        ``MagicMock`` entry in the tests falls through to a real task instead of
+        swallowing the coroutine.
+        """
+        coro = self._delayed_refresh()
+        entry = self.config_entry
+        if entry is not None:
+            create_bg = getattr(type(entry), "async_create_background_task", None)
+            if callable(create_bg):
+                return cast(
+                    "asyncio.Task[None]",
+                    create_bg(entry, self.hass, coro, f"{DOMAIN}_write_confirmation_{entry.entry_id}"),
+                )
+        return asyncio.create_task(coro)
 
     def _warn_once_on_web_variant_conflict(self) -> None:
         """Log once when the connected web client contradicts the detected model.
@@ -1301,7 +1367,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         Called during config entry unload to prevent delayed refresh tasks
         from running after the coordinator is no longer active.
+
+        ``DataUpdateCoordinator.async_shutdown`` runs first because it owns the
+        parts of the lifecycle this class cannot see: it sets the shutdown flag
+        that makes later refresh requests no-ops, unsubscribes the scheduled
+        refresh timer and shuts the request debouncer down. Without that call
+        the timer armed by the last poll fired after unload and polled a client
+        that ``async_unload_entry`` had already disconnected, which raised a
+        connectivity repair issue for an entry that no longer existed and kept
+        the coordinator alive next to the one a reload had just created.
         """
+        await super().async_shutdown()
         task = self._delayed_refresh_task
         if task is not None and not task.done():
             task.cancel()

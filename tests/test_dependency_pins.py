@@ -20,6 +20,10 @@ HISTORY_PREFIXES = (
     "docs/release-evidence/",
     "docs/IMPLEMENTATION_TODO.md",
     "docs/dev/modbus-transport-preparation.md",
+    # An audit records which revision was reviewed, pinned dependencies
+    # included. Rewriting that baseline on the next dependency bump would
+    # claim the audit covered a version it never saw.
+    "docs/dev/code-audit-",
 )
 
 

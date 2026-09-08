@@ -13,6 +13,190 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **`AGENTS.md` describes the code that exists.** Its architecture diagram still
+  named `idm-heatpump-api` 0.9.1 against a 2.0.0 pin, its tree was missing eleven
+  modules and twenty-six test files, and it named a branch convention the
+  repository no longer uses. A test now fails when a module or test file is
+  absent from it, so the map cannot drift from the code again.
+
+### Changed
+
+- **The translated-write contract lives in one place.** `number`, `select`,
+  `switch`, both climate entities and the water heater each carried their own
+  copy of the same try/except: pass an already-translated error through,
+  classify anything else. They now share one helper, so the contract cannot
+  drift apart per platform.
+- **Comments and docstrings in the integration are English.** Seventeen module
+  headers and a dozen German comment blocks predated the language contract.
+  German remains where it is a product feature: the display-name tables, the
+  `de` translations, and the German fragments the register-name matching looks
+  for.
+
+- **The test suite runs in a third of the time.** The GitHub Pages artifact was
+  rebuilt for each of the eleven tests that only read it, and one library-client
+  test spent three seconds inside the API's real retry backoff. Building once per
+  module and neutralising that backoff in the tests took the suite from roughly
+  33 s to 10 s without dropping a single assertion.
+- **Compatibility branches for API versions the manifest cannot resolve are
+  gone.** `simulate_write`, `get_diagnostics` and `detect_model(read_firmware=…)`
+  were each called behind a `getattr`/`TypeError` fallback for an
+  `idm-heatpump-api` older than the exact pin, so those branches could never
+  run — while turning a genuine `AttributeError` into silent fallback behaviour.
+  Removing them also exposed a diagnostics test whose mock returned a mapping
+  where the API returns a dataclass.
+
+- **A heating circuit reports its own state, not the plant's.** `hvac_action`
+  read the plant-wide `hp_operating_mode`, so with one circuit heating every
+  other circuit's thermostat card also showed "heating" — and during a hot water
+  charge all of them did, although no circuit water was moving. Each circuit now
+  uses its own `hc_<x>_active_mode` register (off / heating / cooling), falling
+  back to the plant status only where a controller does not answer that
+  register. The register is part of the entity-aware poll plan for a circuit's
+  climate entity.
+- **Polling jitter no longer delays a refresh someone asked for.** The jitter
+  sleep sat at the top of every update, so the confirmation refresh issued half
+  a second after a write waited up to the full jitter window before showing the
+  confirmed value — up to 6.5 s at 20 % on a 30 s interval. Jitter now applies
+  only to scheduled polls, which is what it exists for.
+- **The polling plan ignores other integrations' entity removals.** A `remove`
+  event has no registry entry left to look up, so it fell through the ownership
+  filter and scheduled a re-plan — which walks this entry's whole registry — for
+  any entity any integration deleted. Removals are matched against the entity
+  IDs the last plan saw instead.
+
+- **Service calls are validated again, and the boost actions load with the
+  domain.** Every service was registered without a schema, so Home Assistant
+  passed whatever a caller sent straight to the handler and `services.yaml`
+  promised fields nothing enforced. Each service now carries a schema covering
+  the fields it documents — types, ranges and the `target:` fields — while the
+  handlers keep their translated, actionable errors for everything a schema
+  cannot express. A test compares `services.yaml` against the schemas so a new
+  documented field cannot be rejected. `start_dhw_boost` and `cancel_dhw_boost`
+  were registered by the button platform and removed when the last entry
+  unloaded; they are now registered in `async_setup` like every other action,
+  as the quality scale's action-setup rule asks.
+- **The test suite validates against the real voluptuous when it is available.**
+  The local stub validated by returning its input unchanged, so a service schema
+  that rejected valid calls would have looked exactly like a correct one — in CI
+  too, where Home Assistant and therefore voluptuous are installed. The stub is
+  now only a fallback for a checkout without them, and it already surfaced three
+  assertions that relied on the stub's private attributes rather than the real
+  library's public ones.
+
+- **The domestic hot water boost stops fighting the write pacing.** While a
+  boost was running, every coordinator update compared the snapshot with the
+  target and re-wrote the setpoint and system mode when they differed. The
+  controller reports the previous value for a poll or two after a write, and
+  both the coordinator's per-register cooldown and the API's EEPROM write
+  interval refuse a second write in that window — so with the default scan
+  interval the boost flipped to `enforcement_failed`, wrote its store and logged
+  a warning every ten seconds. Write pacing is now recognised as "not yet"
+  rather than a failure: no status change, no store write, one debug line. A
+  real refusal is still reported exactly as before. The EEPROM interval is also
+  logged at debug level in the coordinator, since it is a deliberate protection
+  of the controller's limited write cycles rather than a fault.
+
+- **The web supplement backs off and stops retrying a refused PIN.** The poll
+  loop slept the configured interval whether the read had succeeded or not, so a
+  Navigator that was switched off, or a wrong web host, was probed every 30
+  seconds forever — and each probe paid the connect timeout of both protocol
+  variants. Repeated failures now back off up to ten times the interval and
+  reset on the first success. A rejected PIN stops the loop entirely: Navigator
+  firmware locks the local login after repeated failures, so retrying a PIN the
+  controller has already refused is how the integration would cause the lockout
+  it then reports. The repair issue still asks for a new PIN, and applying one
+  reloads the entry and restarts polling. Every local web read is also bounded
+  by a timeout — 15 s while polling, 8 s during setup — so a controller that
+  accepts the connection and then goes quiet can no longer hold up entity
+  creation.
+
+- **A failed setup no longer leaves live entities behind.** Everything after the
+  platforms are forwarded could still fail — the KNX bridge raising something
+  other than an invalid group address, a malformed option reaching `int()`.
+  Home Assistant then marked the entry failed while its eight platforms stayed
+  registered against a coordinator whose Modbus client setup had just closed, so
+  the user was left with a wall of unavailable entities and a connection error
+  on every poll, and no retry was scheduled. Setup now unwinds what it had
+  already brought up — platforms, background tasks, the KNX bridge, the
+  coordinator — before re-raising. The bridge is also stored before it is
+  started, because `async_start` registers demand and listeners as it goes and a
+  bridge that failed halfway was unreachable for any cleanup.
+- **Background work is tied to the config entry again.** The write-confirmation
+  refresh used a bare `asyncio.create_task`, which Home Assistant does not track
+  or cancel on unload, and the entity-aware polling manager scheduled its own
+  shutdown as a fire-and-forget task, so an unload could finish while a
+  debounced re-plan was still queued — which then asked a shut-down coordinator
+  to refresh. The refresh is now a config-entry background task, and the
+  shutdown is registered as a coroutine `async_on_unload` awaits.
+
+- **The KNX bridge no longer loses objects to entity-aware polling.** Polling is
+  narrowed to the registers enabled entities need, and the bridge owns no
+  entities, so every object whose Home Assistant entity the user had disabled
+  silently stopped being served: it published nothing, answered no read request,
+  and reported no error. Since the wiki recommends disabling unused entities to
+  relieve the controller, that was the normal configuration for a KNX user. A
+  consumer can now declare the registers it needs (`register_required_registers`
+  on the coordinator), the bridge declares its own on start and withdraws them
+  on stop, and the poll plan honours the declaration. The bridge also decides
+  which objects exist from the register map and the addresses the controller
+  rejected instead of from the current snapshot, so a register that simply had
+  no value yet at start-up is served too. `export_knx_group_addresses` uses the
+  same rule, so an export no longer shrinks with the entity selection.
+
+- **Forwarded temperatures are converted to degrees Celsius.** The GLT
+  registers are defined in °C, but the room and storage temperature forwarding
+  wrote whatever number the source sensor reported. A sensor in °F sent 68 °F as
+  68 °C, which the register bounds cannot catch — 68 is a plausible Celsius
+  value there — so the controller saw a room more than 40 K too warm and stopped
+  heating that circuit. Fahrenheit and Kelvin are now converted, Celsius and a
+  missing unit pass through unchanged, and a source entity reporting some other
+  quantity is refused with one warning naming the entity instead of being
+  written every cycle. Humidity forwarding rejects a non-percentage source the
+  same way.
+- **A second heat pump behind one Modbus gateway can be added again.** The
+  duplicate check compared the host alone, so a second Navigator reached through
+  the same Modbus TCP gateway — differing only in the TCP port or the unit ID —
+  was rejected as already configured, and the stricter host/port/unit check that
+  followed it was unreachable. A heat pump is now identified the way the
+  transport identifies it: host, port and unit ID together.
+- **An undocumented enum value no longer invents a state.** A register value the
+  map does not describe became the literal string `Unbekannt (<value>)`. With
+  device class `enum` Home Assistant rejects a state outside the declared
+  options and logs an error on every update. Such a sensor now reports no value,
+  keeps the raw number in a `raw_value` attribute for bug reports, and logs the
+  undocumented value once.
+- **The domestic hot water boost reports its errors in English.** Nine
+  user-facing failure messages were German, contrary to the language contract;
+  the translation keys Home Assistant actually displays are unchanged.
+
+- **A poll no longer outlives the config entry.** `IdmCoordinator.async_shutdown`
+  overrode `DataUpdateCoordinator.async_shutdown` without calling it, so the base
+  class never ran: the shutdown flag stayed unset, the scheduled refresh timer
+  stayed armed and the request debouncer stayed alive. The poll that timer had
+  scheduled then ran after `async_unload_entry` had disconnected the Modbus
+  client, which raised a connectivity repair issue for an entry that no longer
+  existed and kept the old coordinator alive next to the one a reload had just
+  created. The test stub for the coordinator had no `async_shutdown` at all,
+  which is why nothing caught it.
+- **An unsupported register is reported again.** `idm-heatpump-api` 2.0 answers a
+  Modbus `Illegal Data Address` inside `read_batch`: it falls back to individual
+  reads, marks the register permanently failed and logs it at debug level, so the
+  exception never reaches the integration. The coordinator's bisect path — and
+  with it the `register_not_supported` repair issue — had therefore been
+  unreachable since 0.16.0, and an entity that had gone permanently unavailable
+  left nothing in the log of a default installation to explain it. The issue is
+  now raised where such a register is actually discovered, once per register, for
+  both the batch path and the zone-room read. The dead bisect recursion is gone.
+- **Sentinel readings no longer reach a temperature state.** The climate and water
+  heater entities returned the register value for the current and target
+  temperature without checking whether the register reads its unused sentinel.
+  A heating circuit without a physical room sensor therefore published that
+  sentinel as a room temperature, and a NaN reading rendered as `nan` on the
+  thermostat card. Both now report no value while the circuit itself stays
+  available, so a circuit without a room sensor is still usable.
+
 ### Changed
 
 - **Dependency updates reach `main` on their own.** The daily pin check only

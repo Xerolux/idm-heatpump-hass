@@ -115,34 +115,6 @@ class TestServiceRegistration:
 
         hass.services.async_register.assert_not_called()
 
-    async def test_unload_removes_services_when_last_entry_goes(self):
-        unloading = _make_entry(entry_id="entry-1")
-        # No other loaded entries remain.
-        hass = _make_hass([unloading])
-        # ``async_unload_dhw_boost_services`` only removes services that
-        # ``has_service`` reports as registered.
-        hass.services.has_service.return_value = True
-
-        await module.async_unload_dhw_boost_services(hass, "entry-1")
-
-        removed = [(c.args[0], c.args[1]) for c in hass.services.async_remove.call_args_list]
-        assert (module.DOMAIN, module._START_SERVICE) in removed
-        assert (module.DOMAIN, module._CANCEL_SERVICE) in removed
-
-    async def test_unload_keeps_services_when_other_entries_remain(self):
-        unloading = _make_entry(entry_id="entry-1")
-        remaining = _make_entry(entry_id="entry-2")
-        hass = _make_hass([unloading, remaining])
-
-        await module.async_unload_dhw_boost_services(hass, "entry-1")
-
-        hass.services.async_remove.assert_not_called()
-
-
-# ---------------------------------------------------------------------------
-# _get_manager routing
-# ---------------------------------------------------------------------------
-
 
 class TestGetManagerRouting:
     async def test_single_loaded_entry_resolves_coordinator(self, _patch_manager_factory):

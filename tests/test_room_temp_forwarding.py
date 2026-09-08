@@ -33,9 +33,10 @@ def _make_coordinator():
     return coord, reg
 
 
-def _make_hass(state="21.5"):
+def _make_hass(state="21.5", unit=None):
     hass = MagicMock()
-    hass.states.get = MagicMock(return_value=SimpleNamespace(state=state))
+    attributes = {} if unit is None else {"unit_of_measurement": unit}
+    hass.states.get = MagicMock(return_value=SimpleNamespace(state=state, attributes=attributes))
     return hass
 
 
@@ -59,6 +60,79 @@ async def test_forward_entity_writes_selected_sensor_to_matching_register():
     await forwarder.async_forward_entity("sensor.living_room_temperature")
 
     coord.async_write_register.assert_awaited_once_with(reg, 22.3)
+
+
+@pytest.mark.asyncio
+async def test_forward_entity_converts_fahrenheit_to_celsius():
+    """A °F source sensor must not have its bare number written to a °C register.
+
+    68 °F is 20 °C. Writing 68 straight through passes the register bounds
+    (68 is a plausible Celsius value there), so the controller silently saw a
+    room more than 40 K too warm and stopped heating the circuit.
+    """
+    coord, reg = _make_coordinator()
+    hass = _make_hass("68", unit="°F")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(entities={"a": "sensor.living_room_temperature"}, interval=300, tolerance=0.2),
+    )
+
+    await forwarder.async_forward_entity("sensor.living_room_temperature")
+
+    coord.async_write_register.assert_awaited_once_with(reg, 20.0)
+
+
+@pytest.mark.asyncio
+async def test_forward_entity_converts_kelvin_to_celsius():
+    coord, _reg = _make_coordinator()
+    hass = _make_hass("293.15", unit="K")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(entities={"a": "sensor.living_room_temperature"}, interval=300, tolerance=0.2),
+    )
+
+    await forwarder.async_forward_entity("sensor.living_room_temperature")
+
+    written = coord.async_write_register.await_args.args[1]
+    assert written == pytest.approx(20.0)
+
+
+@pytest.mark.asyncio
+async def test_forward_entity_passes_celsius_and_a_missing_unit_through():
+    """A template sensor without a unit keeps the behaviour it always had."""
+    for unit in ("°C", None):
+        coord, reg = _make_coordinator()
+        hass = _make_hass("21.5", unit=unit)
+        forwarder = RoomTempForwarder(
+            hass,
+            coord,
+            RoomTempForwardingConfig(entities={"a": "sensor.living_room_temperature"}, interval=300, tolerance=0.2),
+        )
+
+        await forwarder.async_forward_entity("sensor.living_room_temperature")
+
+        coord.async_write_register.assert_awaited_once_with(reg, 21.5)
+
+
+@pytest.mark.asyncio
+async def test_forward_entity_refuses_a_source_that_is_not_a_temperature(caplog):
+    """Picking a humidity or power entity is a configuration mistake, reported once."""
+    coord, _reg = _make_coordinator()
+    hass = _make_hass("55", unit="%")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(entities={"a": "sensor.living_room_humidity"}, interval=300, tolerance=0.2),
+    )
+
+    await forwarder.async_forward_entity("sensor.living_room_humidity")
+    await forwarder.async_forward_entity("sensor.living_room_humidity")
+
+    coord.async_write_register.assert_not_awaited()
+    warnings = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert len(warnings) == 1, "a permanent misconfiguration must not be repeated every cycle"
 
 
 @pytest.mark.asyncio

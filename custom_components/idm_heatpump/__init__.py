@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import asyncio
 import json
 import logging
@@ -119,12 +119,14 @@ from .const import (
     DEFAULT_WEB_SCAN_INTERVAL,
     DEFAULT_WRITE_COOLDOWN,
     DOMAIN,
+    MAX_WEB_BACKOFF_FACTOR,
     MODEL,
     MODEL_OVERRIDE_AUTO,
     MODEL_OVERRIDE_NAVIGATOR_10,
     MODEL_OVERRIDE_NAVIGATOR_20,
     MODEL_OVERRIDE_NAVIGATOR_PRO,
     NAME,
+    WEB_SETUP_READ_TIMEOUT,
 )
 from .coordinator import IdmCoordinator, navigator_family
 from .device_hierarchy import (
@@ -271,10 +273,7 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, 
     future IdmModelInfo shape that omits the field never raises here.
     """
     try:
-        try:
-            model_info = await client.detect_model(read_firmware=False)
-        except TypeError:
-            model_info = await client.detect_model()
+        model_info = await client.detect_model(read_firmware=False)
     except Exception:
         _LOGGER.warning(
             "IDM Modbus model detection failed; using generic model %s and isolating unsupported registers during polling",
@@ -382,14 +381,37 @@ def _resolved_model_override(entry_data: Mapping[str, Any]) -> str | None:
 
 
 async def _web_poll_loop(coordinator: IdmCoordinator, interval: int) -> None:
-    """Poll optional web supplement data independently from Modbus."""
+    """Poll optional web supplement data independently from Modbus.
+
+    Backs off on repeated failures. A Navigator that is switched off, or a web
+    host that is simply wrong, used to be retried at the full rate forever, and
+    every attempt paid the connect timeout of both protocol variants. The loop
+    also stops entirely once the controller has rejected the PIN: Navigator
+    firmware locks the local login after repeated failures, so continuing to
+    retry is how the integration would cause the lockout it then reports. The
+    repair issue asks the user for a new PIN, and applying one reloads the entry
+    and restarts this loop.
+    """
     await asyncio.sleep(0.3)
+    failures = 0
     while True:
         try:
             await coordinator.async_refresh_web_supplement()
         except Exception:
             _LOGGER.exception("Unhandled error in IDM web poll loop; retrying next cycle")
-        await asyncio.sleep(interval)
+            failures += 1
+        else:
+            failures = 0 if coordinator.last_web_error is None else failures + 1
+
+        if coordinator.web_auth_blocked:
+            _LOGGER.warning(
+                "IDM Navigator web polling stopped: the local web PIN was rejected. "
+                "Enter a valid PIN through the repair issue or reconfigure to resume"
+            )
+            return
+
+        delay = interval * min(2**failures, MAX_WEB_BACKOFF_FACTOR)
+        await asyncio.sleep(delay)
 
 
 async def async_setup(hass: HomeAssistant, config: dict[str, Any]) -> bool:
@@ -452,6 +474,7 @@ async def _async_setup_web_only_entry(
             preferred_variant=stored_web_variant,
             allow_variant_fallback=stored_web_variant is None,
             hass=hass,
+            read_timeout=WEB_SETUP_READ_TIMEOUT,
         )
     except Exception as err:
         issue_id = classify_web_error(err)
@@ -785,6 +808,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     preferred_variant=runtime_web_variant,
                     allow_variant_fallback=runtime_web_variant is None,
                     hass=hass,
+                    # Setup must not wait on the optional supplement; the poll
+                    # loop finishes detection later.
+                    read_timeout=WEB_SETUP_READ_TIMEOUT,
                 )
             except IdmWebAuthenticationFailed:
                 _LOGGER.warning(
@@ -1074,18 +1100,30 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 ),
                 entry_id=entry.entry_id,
             )
+            # Store it before starting: async_start registers register demand
+            # and event listeners as it goes, so a bridge that fails halfway
+            # still has to be reachable for the teardown below to stop it.
+            entry.runtime_data.knx_bridge = bridge
             try:
                 await bridge.async_start()
             except InvalidGroupAddressError as err:
+                entry.runtime_data.knx_bridge = None
+                await bridge.async_stop()
                 _LOGGER.error(
                     "KNX bridge for %s not started: %s",
                     entry.title,
                     err,
                 )
-            else:
-                entry.runtime_data.knx_bridge = bridge
 
     except Exception:
+        # Everything after async_forward_entry_setups can still fail — the KNX
+        # bridge raising something other than InvalidGroupAddressError, a
+        # malformed option reaching int()/float(). Home Assistant then marks the
+        # entry failed, but the platforms stay registered against a coordinator
+        # whose client this handler is about to close, leaving the user a wall
+        # of unavailable entities and a connection error on every poll. Take the
+        # platforms and the background tasks down before re-raising.
+        await _async_teardown_partial_setup(hass, entry)
         try:
             await client.disconnect()
         except Exception:
@@ -1095,6 +1133,60 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     _register_update_listener(entry)
 
     return True
+
+
+async def _async_teardown_partial_setup(hass: HomeAssistant, entry: IdmConfigEntry) -> None:
+    """Undo whatever a failed ``async_setup_entry`` had already brought up.
+
+    Best-effort throughout: this runs while an exception is propagating, so a
+    secondary failure here must not replace the original one.
+    """
+    runtime = getattr(entry, "runtime_data", None)
+    if runtime is None:
+        return
+
+    bridge = getattr(runtime, "knx_bridge", None)
+    if bridge is not None:
+        try:
+            await bridge.async_stop()
+        except Exception:
+            _LOGGER.debug("Error stopping the KNX bridge while unwinding setup", exc_info=True)
+
+    await _async_cancel_entry_tasks(runtime)
+
+    coordinator = getattr(runtime, "coordinator", None)
+    shutdown = getattr(coordinator, "async_shutdown", None)
+    if callable(shutdown):
+        try:
+            await shutdown()
+        except TypeError:
+            pass
+        except Exception:
+            _LOGGER.debug("Error shutting the coordinator down while unwinding setup", exc_info=True)
+
+    platforms = getattr(runtime, "loaded_platforms", None)
+    if platforms:
+        try:
+            await hass.config_entries.async_unload_platforms(entry, list(platforms))
+        except Exception:
+            _LOGGER.warning("Failed to unload platforms while unwinding a failed setup", exc_info=True)
+
+
+async def _async_cancel_entry_tasks(runtime: Any) -> None:
+    """Cancel and await every background task an entry owns."""
+    for attribute in (
+        "web_task",
+        "room_temp_forwarding_task",
+        "humidity_forwarding_task",
+        "storage_temp_forwarding_task",
+    ):
+        task = getattr(runtime, attribute, None)
+        if isinstance(task, asyncio.Task):
+            task.cancel()
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
@@ -1115,34 +1207,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
             except TypeError:
                 # Non-awaitable mock or sync cleanup callback; not fatal on unload.
                 pass
-        web_task = getattr(entry.runtime_data, "web_task", None)
-        if isinstance(web_task, asyncio.Task):
-            web_task.cancel()
-            try:
-                await web_task
-            except asyncio.CancelledError:
-                pass
-        room_temp_forwarding_task = getattr(entry.runtime_data, "room_temp_forwarding_task", None)
-        if isinstance(room_temp_forwarding_task, asyncio.Task):
-            room_temp_forwarding_task.cancel()
-            try:
-                await room_temp_forwarding_task
-            except asyncio.CancelledError:
-                pass
-        humidity_forwarding_task = getattr(entry.runtime_data, "humidity_forwarding_task", None)
-        if isinstance(humidity_forwarding_task, asyncio.Task):
-            humidity_forwarding_task.cancel()
-            try:
-                await humidity_forwarding_task
-            except asyncio.CancelledError:
-                pass
-        storage_temp_forwarding_task = getattr(entry.runtime_data, "storage_temp_forwarding_task", None)
-        if isinstance(storage_temp_forwarding_task, asyncio.Task):
-            storage_temp_forwarding_task.cancel()
-            try:
-                await storage_temp_forwarding_task
-            except asyncio.CancelledError:
-                pass
+        await _async_cancel_entry_tasks(entry.runtime_data)
         knx_bridge = getattr(entry.runtime_data, "knx_bridge", None)
         if knx_bridge is not None:
             try:

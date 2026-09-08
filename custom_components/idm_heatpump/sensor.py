@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import timedelta
@@ -52,6 +53,8 @@ from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
 # the web value catalog, and the sensor platform falls back to its own units and
 # device classes then.
 WEB_VALUE_DESCRIPTIONS: dict[str, Any] = getattr(idm_api, "WEB_VALUE_DESCRIPTIONS", {})
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def _as_sensor_state(value: Any) -> str | float | int | None:
@@ -532,6 +535,7 @@ class IdmSensor(IdmEntity, SensorEntity):
         # avoid re-running regex matches on every state update (mirrors IdmSelect).
         self._enum_slug_map, _ = get_slug_map_and_key(reg.name)
         self._enum_bitflag_labels = get_bitflag_de_labels(reg.name)
+        self._reported_unmapped_values: set[int] = set()
 
     @property
     def native_value(self) -> str | float | int | None:
@@ -551,29 +555,64 @@ class IdmSensor(IdmEntity, SensorEntity):
                 return _decode_bitflag(int_value, self._enum_bitflag_labels or self._register.enum_options)
             if self._enum_slug_map is not None:
                 return self._enum_slug_map.get(int_value)
-            return self._register.enum_options.get(int_value, f"Unbekannt ({value})")
+            label = self._register.enum_options.get(int_value)
+            if label is None:
+                # A value outside the declared options is not a state this
+                # sensor may report: with device_class "enum" Home Assistant
+                # rejects it and logs an error on every single update. The raw
+                # value stays reachable as an attribute for bug reports.
+                self._report_unmapped_enum_value(int_value)
+                return None
+            return label
         return _as_sensor_state(value)
+
+    def _report_unmapped_enum_value(self, value: int) -> None:
+        """Log a value the register map does not describe, once per value.
+
+        A firmware that answers with an undocumented state is worth a bug
+        report against the register map, but it repeats on every poll, so it is
+        reported once per value and at debug level.
+        """
+        if value in self._reported_unmapped_values:
+            return
+        self._reported_unmapped_values.add(value)
+        _LOGGER.debug(
+            "IDM register %s reported the undocumented value %s; the sensor stays unknown until "
+            "the register map describes it",
+            self._register.name,
+            value,
+        )
 
     @property
     def extra_state_attributes(self) -> dict[str, str | int] | None:
-        if self._register.name != "internal_message":
-            return None
-        if not self.coordinator.data:
-            return None
-        value = self.coordinator.data.get(self._register.name)
-        if value is None:
-            return None
-        message_text = internal_message_text(value)
-        if message_text is None:
-            return None
-        try:
-            message_code = int(value)
-        except (TypeError, ValueError):
-            return None
-        return {
-            "message_code": message_code,
-            "message_text": message_text,
-        }
+        if self._register.name == "internal_message":
+            if not self.coordinator.data:
+                return None
+            value = self.coordinator.data.get(self._register.name)
+            if value is None:
+                return None
+            message_text = internal_message_text(value)
+            if message_text is None:
+                return None
+            try:
+                message_code = int(value)
+            except (TypeError, ValueError):
+                return None
+            return {
+                "message_code": message_code,
+                "message_text": message_text,
+            }
+        # An undocumented enum value cannot be the state, but keeping the raw
+        # number reachable is what makes such a report actionable.
+        if self._register.enum_options and self.coordinator.data:
+            raw = self.coordinator.data.get(self._register.name)
+            try:
+                raw_int = int(raw)  # type: ignore[arg-type]
+            except (TypeError, ValueError):
+                return None
+            if raw_int in self._reported_unmapped_values:
+                return {"raw_value": raw_int}
+        return None
 
 
 class IdmWebSensor(IdmCoordinatorEntityBase, SensorEntity):

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
 from unittest.mock import AsyncMock, MagicMock
 
@@ -21,6 +22,7 @@ class _RegistryEntry:
     unique_id: str
     disabled_by: object | None = None
     config_entry_id: str = "entry"
+    entity_id: str = "sensor.idm_test"
 
 
 class _Registry:
@@ -43,6 +45,8 @@ class _Coordinator:
         self._room_mode_registers = [self._registers[3]]
         self._alias_map = {1050: ["hp_flow_temp", "hp_return_temp"]}
         self.async_request_refresh = AsyncMock()
+        # Registers a non-entity consumer (the KNX bridge) declared it needs.
+        self.externally_required_registers: frozenset[str] = frozenset()
 
 
 @pytest.mark.asyncio
@@ -255,7 +259,9 @@ class TestPollingManagerLifecycle:
         manager._debounce_seconds = 30
 
         manager.schedule_setup()
-        manager._handle_registry_event(MagicMock(data={"entity_id": None}))
+        manager._handle_registry_event(
+            MagicMock(data={"action": "update", "entity_id": "sensor.idm_test"}),
+        )
         setup_task = manager._setup_task
         refresh_task = manager._refresh_task
 
@@ -267,18 +273,30 @@ class TestPollingManagerLifecycle:
         assert manager._refresh_task is None
 
     @pytest.mark.asyncio
-    async def test_unload_schedules_the_shutdown(self, monkeypatch) -> None:
-        import asyncio
+    async def test_unload_awaits_the_shutdown(self, monkeypatch) -> None:
+        """Unload must wait for the registry listener to go away.
 
+        async_on_unload accepts a coroutine function and awaits it. Scheduling
+        the shutdown as a fire-and-forget task instead let unload complete while
+        a debounced re-plan was still queued, and that re-plan then asked a
+        shut-down coordinator to refresh.
+        """
         registry = _Registry([])
         hass = MagicMock()
         hass.async_create_task.side_effect = asyncio.ensure_future
-        manager, _coordinator, _entry, _hass = self._manager(monkeypatch, registry, hass=hass)
+        manager, _coordinator, entry, _hass = self._manager(monkeypatch, registry, hass=hass)
+        manager.schedule_setup()
 
-        manager._schedule_shutdown()
+        registered = entry.async_on_unload.call_args.args[0]
+        assert registered == manager.async_shutdown
 
-        assert hass.async_create_task.call_count == 1
-        await asyncio.sleep(0)
+        unsub = MagicMock()
+        manager._unsub_registry = unsub
+        await registered()
+
+        unsub.assert_called_once()
+        assert manager._unsub_registry is None
+        assert manager._setup_task is None
 
     def test_entries_of_other_config_entries_are_skipped(self, monkeypatch) -> None:
         monkeypatch.setattr(
@@ -293,3 +311,44 @@ class TestPollingManagerLifecycle:
         required = polling_plan.build_required_register_names(object(), "entry", {"hp_flow_temp"})
 
         assert required == set()
+
+
+class TestRegistryEventFiltering:
+    """C1: a removal has no registry entry left, so it must be attributed by id."""
+
+    def _manager(self, monkeypatch, registry):
+        monkeypatch.setattr(polling_plan.er, "async_get", lambda hass: registry)
+        monkeypatch.setattr(
+            polling_plan.er,
+            "async_entries_for_config_entry",
+            lambda current, entry_id: current.entries,
+        )
+        hass = MagicMock()
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        entry = MagicMock(entry_id="entry")
+        return EntityAwarePollingManager(hass, entry, _Coordinator())
+
+    @pytest.mark.asyncio
+    async def test_a_foreign_removal_does_not_schedule_a_replan(self, monkeypatch) -> None:
+        registry = _Registry([_RegistryEntry("entry_hp_flow_temp", entity_id="sensor.idm_test")])
+        manager = self._manager(monkeypatch, registry)
+        await manager._async_apply_plan(request_refresh=False)
+
+        manager._handle_registry_event(
+            MagicMock(data={"action": "remove", "entity_id": "light.someone_elses_lamp"}),
+        )
+
+        assert manager._refresh_task is None
+
+    @pytest.mark.asyncio
+    async def test_removing_one_of_our_entities_schedules_a_replan(self, monkeypatch) -> None:
+        registry = _Registry([_RegistryEntry("entry_hp_flow_temp", entity_id="sensor.idm_test")])
+        manager = self._manager(monkeypatch, registry)
+        await manager._async_apply_plan(request_refresh=False)
+
+        manager._handle_registry_event(
+            MagicMock(data={"action": "remove", "entity_id": "sensor.idm_test"}),
+        )
+
+        assert manager._refresh_task is not None
+        manager._refresh_task.cancel()

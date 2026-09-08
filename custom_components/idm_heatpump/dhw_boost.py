@@ -9,10 +9,23 @@ from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
+from .error_messages import classify_write_error
+
+#: Translation keys that mean "this write came too soon", not "this write
+#: failed". The coordinator raises the first for its own per-register cooldown;
+#: the API refuses a second write to an EEPROM-backed register within its write
+#: interval, which classify_write_error maps to write_eeprom_blocked.
+_PACING_TRANSLATION_KEYS: frozenset[str] = frozenset({"write_cooldown_active", "write_eeprom_blocked"})
+
+
+class _EnforcementPaced(Exception):
+    """Raised when re-applying an owned value has to wait for write pacing."""
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -76,7 +89,7 @@ class DhwBoostManager:
         config_entry = coordinator.config_entry
         if config_entry is None:
             raise DhwBoostError(
-                "Der Konfigurationseintrag ist nicht verfügbar",
+                "The config entry is not available",
                 translation_key="dhw_boost_no_entry",
             )
         self.coordinator = coordinator
@@ -162,12 +175,12 @@ class DhwBoostManager:
         async with self._lock:
             if self.active:
                 raise DhwBoostError(
-                    "Der Warmwasser-Boost ist bereits aktiv; zuerst abbrechen",
+                    "The domestic hot water boost is already running; cancel it first",
                     translation_key="dhw_boost_already_active",
                 )
             if not self.supported:
                 raise DhwBoostError(
-                    "Die benötigten Warmwasser- und Systemmodusregister sind nicht verfügbar",
+                    "The required domestic hot water and system mode registers are not available",
                     translation_key="dhw_boost_unsupported",
                 )
 
@@ -177,7 +190,7 @@ class DhwBoostManager:
             current_temperature = _finite_number(data.get("dhw_temp_top"))
             if current_temperature is None:
                 raise DhwBoostError(
-                    "Die aktuelle Warmwassertemperatur ist nicht verfügbar",
+                    "The current domestic hot water temperature is not available",
                     translation_key="dhw_boost_no_current_temp",
                 )
             if current_temperature >= target:
@@ -192,7 +205,7 @@ class DhwBoostManager:
             previous_setpoint = self._safe_int(data.get("dhw_setpoint"))
             if previous_mode is None or previous_setpoint is None:
                 raise DhwBoostError(
-                    "Systemmodus oder bisheriger Warmwasser-Sollwert ist nicht verfügbar",
+                    "The system mode or the previous domestic hot water setpoint is not available",
                     translation_key="dhw_boost_no_previous_state",
                 )
 
@@ -223,12 +236,11 @@ class DhwBoostManager:
                     await self._async_restore_locked("start_failed_rollback")
                 except Exception:  # noqa: BLE001
                     raise DhwBoostError(
-                        "Boost-Start fehlgeschlagen und der vorherige Zustand konnte "
-                        "noch nicht vollständig wiederhergestellt werden",
+                        "The boost could not be started and the previous state could not be fully restored yet",
                         translation_key="dhw_boost_start_failed_rollback_incomplete",
                     ) from err
                 raise DhwBoostError(
-                    "Boost-Start fehlgeschlagen; der vorherige Zustand wurde wiederhergestellt",
+                    "The boost could not be started; the previous state was restored",
                     translation_key="dhw_boost_start_failed_rolled_back",
                 ) from err
 
@@ -321,12 +333,17 @@ class DhwBoostManager:
                 # all unrelated registers are deliberately untouched.
                 try:
                     if data.get("dhw_setpoint") != self.target_temperature:
-                        await self._async_write(
-                            "dhw_setpoint",
-                            self.target_temperature,
-                        )
+                        await self._async_enforce("dhw_setpoint", self.target_temperature)
                     if data.get("system_mode") != _HOT_WATER_ONLY_MODE:
-                        await self._async_write("system_mode", _HOT_WATER_ONLY_MODE)
+                        await self._async_enforce("system_mode", _HOT_WATER_ONLY_MODE)
+                except _EnforcementPaced:
+                    # Write pacing, not a fault: the controller reports the
+                    # previous value for a poll or two after a write, and both
+                    # the coordinator cooldown and the API's EEPROM interval
+                    # refuse a second write in that window. Treating those as
+                    # failures flipped the status and wrote the store on every
+                    # single poll, with a warning each time.
+                    _LOGGER.debug("IDM DHW boost enforcement is waiting for the write pacing window")
                 except Exception:
                     self.status = "enforcement_failed"
                     self.last_reason = "enforcement_failed"
@@ -368,7 +385,7 @@ class DhwBoostManager:
             await self._async_save()
             self._notify()
             raise DhwBoostError(
-                "Gespeicherter Wiederherstellungszustand ist unvollständig",
+                "The stored recovery state is incomplete",
                 translation_key="dhw_boost_invalid_recovery_state",
             )
 
@@ -383,7 +400,7 @@ class DhwBoostManager:
             await self._async_save()
             self._notify()
             raise DhwBoostError(
-                "Der vorherige Warmwasserzustand konnte noch nicht vollständig wiederhergestellt werden",
+                "The previous domestic hot water state could not be fully restored yet",
                 translation_key="dhw_boost_restore_failed",
             ) from err
 
@@ -394,11 +411,29 @@ class DhwBoostManager:
         await self._async_save()
         self._notify()
 
+    async def _async_enforce(self, register_name: str, value: Any) -> None:
+        """Re-apply one owned value, treating write pacing as "not yet".
+
+        Raises :class:`_EnforcementPaced` when the write was refused because it
+        came too soon after the previous one, so the caller can wait instead of
+        reporting a failure the user cannot act on.
+        """
+        try:
+            await self._async_write(register_name, value)
+        except HomeAssistantError as err:
+            if getattr(err, "translation_key", None) in _PACING_TRANSLATION_KEYS:
+                raise _EnforcementPaced from err
+            raise
+        except Exception as err:
+            if classify_write_error(err) == "write_eeprom_blocked":
+                raise _EnforcementPaced from err
+            raise
+
     async def _async_write(self, register_name: str, value: Any) -> None:
         register = self.coordinator.get_register(register_name)
         if register is None or not register.writable:
             raise DhwBoostError(
-                f"Register {register_name} ist nicht schreibbar",
+                f"Register {register_name} is not writable",
                 translation_key="dhw_boost_register_not_writable",
                 translation_placeholders={"register": register_name},
             )
@@ -440,7 +475,7 @@ class DhwBoostManager:
         register = self.coordinator.get_register("dhw_setpoint")
         if target is None or register is None:
             raise DhwBoostError(
-                "Ungültige Warmwasser-Zieltemperatur",
+                "Invalid domestic hot water target temperature",
                 translation_key="dhw_boost_invalid_target",
             )
         minimum = max(
@@ -464,7 +499,7 @@ class DhwBoostManager:
         timeout = DhwBoostManager._safe_int(value)
         if timeout is None or not _MIN_TIMEOUT <= timeout <= _MAX_TIMEOUT:
             raise DhwBoostError(
-                f"Boost-Laufzeit muss zwischen {_MIN_TIMEOUT} und {_MAX_TIMEOUT} Minuten liegen",
+                f"The boost runtime must be between {_MIN_TIMEOUT} and {_MAX_TIMEOUT} minutes",
                 translation_key="dhw_boost_timeout_out_of_range",
                 translation_placeholders={"minimum": str(_MIN_TIMEOUT), "maximum": str(_MAX_TIMEOUT)},
             )
