@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 from homeassistant.components.number import NumberEntity, NumberEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -46,8 +46,9 @@ class IdmNumber(IdmEntity, NumberEntity):
     ) -> None:
         super().__init__(coordinator, reg, entity_desc)
         if is_glt_measurement(self._register.name):
-            # GLT-Messwerte existieren zusätzlich als Sensor mit derselben
-            # unique_id-Basis — die Number (Vorgabe) braucht ein Suffix.
+            # A building-management measurement also exists as a sensor with
+            # the same unique_id base, so the number (the setpoint) needs a
+            # suffix of its own.
             self._attr_unique_id = f"{self._attr_unique_id}_set"
 
     @property

@@ -8,9 +8,9 @@ entity descriptions for Home Assistant platforms.
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import logging
 from typing import Any
 
@@ -215,7 +215,7 @@ def get_all_sensor_descriptions(
     except Exception:
         _LOGGER.warning("Failed to load library sensor descriptions", exc_info=True)
 
-    # Spezialisierte Generatoren für Heizkreise und Zonen aus dem Adapter
+    # Adapter-provided generators for heating circuits and zone modules.
     for circuit in circuits:
         descriptions.extend(get_library_heating_circuit_sensors(circuit))
     for z in range(zone_count):

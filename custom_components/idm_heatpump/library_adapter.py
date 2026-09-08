@@ -156,7 +156,7 @@ def _get_zone_module_registers_compat(zone_idx: int, room_count: int = 6) -> dic
 # ============================================================
 
 # ============================================================
-# Deutsche Namen für wichtige Register (wird sukzessive erweitert)
+# German display names for the important registers; extended over time.
 # ============================================================
 
 
@@ -263,12 +263,12 @@ def get_library_sensors(
 
 
 # ============================================================
-# Spezialisierte Generatoren für Heizkreise und Zonen (stark verbessert)
+# Specialized generators for heating circuits and zone modules.
 # ============================================================
 
 
 def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
-    """Erzeugt Sensor-Beschreibungen für einen Heizkreis direkt aus der Library."""
+    """Build sensor descriptions for one heating circuit from the library."""
     try:
         circuit_regs = get_heating_circuit_registers(circuit)
     except Exception:
@@ -292,7 +292,7 @@ def get_library_heating_circuit_sensors(circuit: str) -> list[dict[str, Any]]:
 
 
 def get_library_zone_sensors(zone_idx: int, room_count: int = 6) -> list[dict[str, Any]]:
-    """Erzeugt Sensor-Beschreibungen für ein Zonenmodul direkt aus der Library."""
+    """Build sensor descriptions for one zone module from the library."""
     try:
         zone_regs = _get_zone_module_registers_compat(zone_idx, room_count)
     except Exception:
@@ -363,7 +363,8 @@ def get_library_zone_binary_sensors(zone_idx: int, room_count: int = 6) -> list[
 
 
 # ============================================================
-# Weitere Generatoren für umfassende Abdeckung (System, Energy, Pumps, Solar, PV, Cascade, GLT)
+# Further generators for full coverage: system, energy, pumps, solar, PV,
+# cascade and building-management registers.
 # ============================================================
 
 
@@ -520,16 +521,18 @@ def _numbers_from_register_map(reg_map: dict[str, RegisterDef]) -> list[dict[str
 
         number_name = meta.get("name", _get_german_name(name))
         if is_glt_measurement(name):
-            # Das Register existiert zusätzlich als Sensor — die Number ist die
-            # externe GLT-Vorgabe und braucht einen unterscheidbaren Namen.
+            # The register also exists as a sensor; this number is the
+            # external building-management setpoint and needs a name that
+            # tells them apart. The suffix is German because it is a display
+            # name, like the rest of this table.
             number_name = f"{number_name} (Vorgabe)"
 
-        # Raumtemperatur/-feuchte ist laut iDM-Doku (812170) nur beschreibbar,
-        # wenn für den jeweiligen Raum ein externer/GLT-Raumsensor konfiguriert
-        # ist; bei Verwendung der iDM-eigenen Raumsensoren ist das Register RO
-        # und ein Schreibversuch wird vom Gerät ignoriert. Welcher Sensortyp je
-        # Raum aktiv ist, lässt sich nicht über Modbus auslesen, daher wird die
-        # Number standardmäßig deaktiviert statt sie unwirksam anzubieten.
+        # Per iDM's documentation (812170), room temperature and humidity are
+        # only writable where that room has an external building-management
+        # sensor configured; with iDM's own room sensors the register is
+        # read-only and a write is ignored by the device. Which sensor type a
+        # room uses cannot be read over Modbus, so the number is disabled by
+        # default rather than offered where it would have no effect.
         enabled_by_default = meta.get("enabled_by_default", not is_zone_room_measurement(name))
 
         desc = NumberEntityDescription(

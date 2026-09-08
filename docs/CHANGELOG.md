@@ -23,6 +23,17 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **The translated-write contract lives in one place.** `number`, `select`,
+  `switch`, both climate entities and the water heater each carried their own
+  copy of the same try/except: pass an already-translated error through,
+  classify anything else. They now share one helper, so the contract cannot
+  drift apart per platform.
+- **Comments and docstrings in the integration are English.** Seventeen module
+  headers and a dozen German comment blocks predated the language contract.
+  German remains where it is a product feature: the display-name tables, the
+  `de` translations, and the German fragments the register-name matching looks
+  for.
+
 - **The test suite runs in a third of the time.** The GitHub Pages artifact was
   rebuilt for each of the eleven tests that only read it, and one library-client
   test spent three seconds inside the API's real retry backoff. Building once per

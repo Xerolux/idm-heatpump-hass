@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 # IDM Heatpump for Home Assistant
-# © 2026 Xerolux — Inoffizielle Community-Integration für IDM Navigator 2.0 / 10 Wärmepumpen
-# Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
-# Lizenz: MIT
+# © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
+# Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
+# SPDX-License-Identifier: MIT
 import logging
 import math
 import re
@@ -34,8 +34,7 @@ from .adapter_metadata import native_step_for_register
 from .const import DOMAIN, CircuitMode, HeatPumpStatus, RoomMode
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
-from .entity import build_device_info
-from .error_messages import classify_write_error, write_error_detail, write_error_placeholders
+from .entity import async_write_translated, build_device_info
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -134,29 +133,7 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
         return True
 
     async def _async_write_register(self, reg: RegisterDef, value: Any, *, action_label: str) -> None:
-        try:
-            await self.coordinator.async_write_register(reg, value)
-        except HomeAssistantError:
-            # The coordinator already raised a translated, actionable error —
-            # the write cooldown names the remaining wait. Reclassifying it
-            # replaced that with the generic "could not be written" message and
-            # hid the real reason from the user (#237).
-            raise
-        except Exception as err:
-            translation_key = classify_write_error(err)
-            _LOGGER.error(
-                "Could not %s %s (%s); Home Assistant will show the actionable %s message",
-                action_label,
-                reg.name,
-                write_error_detail(err),
-                translation_key,
-            )
-            _LOGGER.debug("Technical IDM climate register write error", exc_info=True)
-            raise HomeAssistantError(
-                translation_domain=DOMAIN,
-                translation_key=translation_key,
-                translation_placeholders=write_error_placeholders(reg.name, err),
-            ) from err
+        await async_write_translated(self.coordinator, reg, value, action_label=action_label)
 
     def _usable_temperature(self, reg: RegisterDef | None) -> float | None:
         """Return one register value that is safe to publish as a temperature.
