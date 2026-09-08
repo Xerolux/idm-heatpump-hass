@@ -10,6 +10,7 @@ import logging
 import math
 from collections.abc import Mapping, Sequence
 from functools import partial
+from typing import TYPE_CHECKING
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
@@ -52,6 +53,9 @@ from .knx_catalog import (
     resolve_group_addresses,
 )
 
+if TYPE_CHECKING:
+    from homeassistant.helpers.typing import VolDictType
+
 _LOGGER = logging.getLogger(__name__)
 
 # Services declared with ``target:`` in services.yaml receive entity_id,
@@ -85,12 +89,12 @@ _SET_EXTERNAL_CLIMATE_SCHEMA = vol.Schema(
     }
 )
 
-_SET_EXTERNAL_POWER_SCHEMA = vol.Schema(
-    {
-        **_TARGET,
-        **{vol.Optional(field): vol.Coerce(float) for field in EXTERNAL_POWER_MEASUREMENT_NAMES},
-    }
-)
+# Annotated explicitly: a bare comprehension over vol.Optional markers gives
+# mypy no key type to infer under strict mode.
+_EXTERNAL_POWER_FIELDS: VolDictType = {
+    vol.Optional(field): vol.Coerce(float) for field in EXTERNAL_POWER_MEASUREMENT_NAMES
+}
+_SET_EXTERNAL_POWER_SCHEMA = vol.Schema({**_TARGET, **_EXTERNAL_POWER_FIELDS})
 
 _EXPORT_KNX_SCHEMA = vol.Schema(
     {

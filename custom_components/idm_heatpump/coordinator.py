@@ -1297,12 +1297,13 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         coro = self._delayed_refresh()
         entry = self.config_entry
-        create_bg = getattr(type(entry), "async_create_background_task", None) if entry is not None else None
-        if callable(create_bg):
-            return cast(
-                "asyncio.Task[None]",
-                create_bg(entry, self.hass, coro, f"{DOMAIN}_write_confirmation_{entry.entry_id}"),
-            )
+        if entry is not None:
+            create_bg = getattr(type(entry), "async_create_background_task", None)
+            if callable(create_bg):
+                return cast(
+                    "asyncio.Task[None]",
+                    create_bg(entry, self.hass, coro, f"{DOMAIN}_write_confirmation_{entry.entry_id}"),
+                )
         return asyncio.create_task(coro)
 
     def _warn_once_on_web_variant_conflict(self) -> None:
