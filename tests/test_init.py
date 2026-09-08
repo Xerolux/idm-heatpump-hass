@@ -25,6 +25,7 @@ from custom_components.idm_heatpump.const import (
     MODEL_OVERRIDE_AUTO,
     MODEL_OVERRIDE_NAVIGATOR_10,
     MODEL_OVERRIDE_NAVIGATOR_20,
+    WEB_SETUP_READ_TIMEOUT,
 )
 from custom_components.idm_heatpump.services import async_setup_services
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
@@ -860,6 +861,7 @@ class TestAsyncSetupEntryOptions:
             preferred_variant=None,
             allow_variant_fallback=True,
             hass=mock_hass,
+            read_timeout=WEB_SETUP_READ_TIMEOUT,
         )
         assert captured_kwargs.get("web_host") == "192.0.2.103"
 
@@ -1833,6 +1835,8 @@ class TestBackgroundTaskHelpers:
 
         coordinator = MagicMock()
         coordinator.async_refresh_web_supplement = AsyncMock(side_effect=[RuntimeError("boom"), None])
+        coordinator.web_auth_blocked = False
+        coordinator.last_web_error = None
         sleeps: list[float] = []
 
         async def _sleep(delay: float) -> None:
@@ -1846,8 +1850,56 @@ class TestBackgroundTaskHelpers:
         ):
             await _web_poll_loop(coordinator, 30)
 
-        assert sleeps == [0.3, 30, 30]
+        # The first cycle raised, so its retry is backed off once; the second
+        # succeeded and reset the interval.
+        assert sleeps == [0.3, 60, 30]
         assert coordinator.async_refresh_web_supplement.await_count == 2
+
+    async def test_web_poll_loop_backs_off_while_the_navigator_stays_unreachable(self):
+        """A Navigator that is switched off must not be probed at full rate forever."""
+        import asyncio as _asyncio
+
+        from custom_components.idm_heatpump import _web_poll_loop
+
+        coordinator = MagicMock()
+        coordinator.async_refresh_web_supplement = AsyncMock()
+        coordinator.web_auth_blocked = False
+        # The coordinator swallows the failure and records it here.
+        coordinator.last_web_error = "OSError: unreachable"
+        sleeps: list[float] = []
+
+        async def _sleep(delay: float) -> None:
+            sleeps.append(delay)
+            if len(sleeps) >= 6:
+                raise _asyncio.CancelledError
+
+        with (
+            patch("custom_components.idm_heatpump.asyncio.sleep", _sleep),
+            pytest.raises(_asyncio.CancelledError),
+        ):
+            await _web_poll_loop(coordinator, 30)
+
+        assert sleeps == [0.3, 60, 120, 240, 300, 300], "backoff grows and then caps"
+
+    async def test_web_poll_loop_stops_after_the_pin_was_rejected(self):
+        """Retrying a refused PIN is how the integration would cause a lockout."""
+
+        from custom_components.idm_heatpump import _web_poll_loop
+
+        coordinator = MagicMock()
+        coordinator.async_refresh_web_supplement = AsyncMock()
+        coordinator.last_web_error = "IdmWebAuthenticationFailed: rejected"
+        coordinator.web_auth_blocked = True
+        sleeps: list[float] = []
+
+        async def _sleep(delay: float) -> None:
+            sleeps.append(delay)
+
+        with patch("custom_components.idm_heatpump.asyncio.sleep", _sleep):
+            await _web_poll_loop(coordinator, 30)
+
+        assert coordinator.async_refresh_web_supplement.await_count == 1
+        assert sleeps == [0.3], "the loop returns instead of sleeping for another try"
 
 
 class TestUnloadCancelsBackgroundTasks:

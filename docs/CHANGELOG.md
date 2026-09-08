@@ -15,6 +15,20 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **The web supplement backs off and stops retrying a refused PIN.** The poll
+  loop slept the configured interval whether the read had succeeded or not, so a
+  Navigator that was switched off, or a wrong web host, was probed every 30
+  seconds forever — and each probe paid the connect timeout of both protocol
+  variants. Repeated failures now back off up to ten times the interval and
+  reset on the first success. A rejected PIN stops the loop entirely: Navigator
+  firmware locks the local login after repeated failures, so retrying a PIN the
+  controller has already refused is how the integration would cause the lockout
+  it then reports. The repair issue still asks for a new PIN, and applying one
+  reloads the entry and restarts polling. Every local web read is also bounded
+  by a timeout — 15 s while polling, 8 s during setup — so a controller that
+  accepts the connection and then goes quiet can no longer hold up entity
+  creation.
+
 - **A failed setup no longer leaves live entities behind.** Everything after the
   platforms are forwarded could still fail — the KNX bridge raising something
   other than an invalid group address, a malformed option reaching `int()`.

@@ -266,6 +266,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._write_timestamps: dict[int, float] = {}
         self._last_write_error: dict[str, Any] | None = None
         self._web_variant_conflict_logged = False
+        self._web_auth_blocked = False
         self._write_cooldown_seconds = max(0.0, min(600.0, write_cooldown_seconds))
         # Room-mode individual validation is expensive (one Modbus read per
         # register). Run it on the first poll, then only every Nth poll.
@@ -476,6 +477,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def last_web_error(self) -> str | None:
         return self._last_web_error
+
+    @property
+    def web_auth_blocked(self) -> bool:
+        """Whether web polling stopped because the controller rejected the PIN.
+
+        Navigator firmware locks the local login after repeated failed attempts,
+        so retrying a PIN the controller has already refused is how this
+        integration would cause the lockout it then reports. Cleared by a
+        reload, which is what applying a new PIN triggers.
+        """
+        return self._web_auth_blocked
 
     @property
     def web_value_keys(self) -> tuple[str, ...]:
@@ -889,6 +901,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 hass=self.hass,
             )
         except IdmWebAuthenticationFailed as err:
+            self._web_auth_blocked = True
             error = f"{err.__class__.__name__}: {err}"
             if error != self._last_web_error:
                 _LOGGER.warning(

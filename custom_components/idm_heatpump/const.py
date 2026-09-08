@@ -114,6 +114,16 @@ DEFAULT_SHORT_CYCLE_MINUTES: int = 15
 DEFAULT_ENABLE_CASCADE: bool = False
 DEFAULT_WEB_ENABLED: bool = True
 DEFAULT_WEB_SCAN_INTERVAL: int = int(RECOMMENDED_WEB_SCAN_INTERVAL)
+# A web supplement that keeps failing is retried ever more slowly, up to this
+# multiple of the configured interval. A Navigator that is switched off should
+# not be probed every 30 seconds forever, and each probe pays a connect timeout.
+MAX_WEB_BACKOFF_FACTOR: int = 10
+# Upper bound for one local web read, above the client's own connect timeout and
+# below the default web interval, so a hung read cannot stall the poll loop.
+WEB_READ_TIMEOUT: float = 15.0
+# Setup must not wait on the optional supplement: the polling loop finishes
+# detection later, so a slow Navigator only delays its own web values.
+WEB_SETUP_READ_TIMEOUT: float = 8.0
 DEFAULT_ROOM_TEMP_FORWARDING: bool = False
 DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE: float = 0.2

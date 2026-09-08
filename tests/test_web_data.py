@@ -2,7 +2,7 @@
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 
 import idm_heatpump
 import pytest
@@ -1074,3 +1074,26 @@ class TestWebSupplementHelpers:
         monkeypatch.delattr(idm_heatpump, "create_optional_navigator20_web_client", raising=False)
 
         assert await async_read_web_supplement("192.0.2.10", "1234") is None
+
+
+@pytest.mark.asyncio
+async def test_a_hung_read_is_bounded_by_the_timeout():
+    """A Navigator that accepts the connection and goes quiet must not stall.
+
+    The web client brings its own connect timeout, but nothing bounded the read
+    itself, so a silent controller could hold the poll loop — or, at setup,
+    entity creation — open indefinitely.
+    """
+
+    class _HangingClient:
+        async def read_data(self):
+            await asyncio.sleep(60)
+
+        async def close(self):
+            return None
+
+    with (
+        patch.object(web_data, "_ordered_web_factories", return_value=[("nav10", lambda *a: _HangingClient())]),
+        pytest.raises(TimeoutError),
+    ):
+        await web_data.async_read_web_supplement("192.0.2.10", "1234", read_timeout=0.01)

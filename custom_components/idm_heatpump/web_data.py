@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 
 from homeassistant.helpers.aiohttp_client import async_create_clientsession, async_get_clientsession
 
-from .const import MODEL
+from .const import MODEL, WEB_READ_TIMEOUT
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -501,6 +501,18 @@ def _ordered_web_factories(
     return ordered[:1]
 
 
+async def _read_data_bounded(client: _IdmWebClient, timeout: float) -> Any:
+    """Read one snapshot under a hard time limit.
+
+    The web client brings its own connect timeout, but nothing bounded the read
+    itself, so a Navigator that accepted the connection and then went quiet
+    could stall the poll loop — or, at setup, entity creation — indefinitely.
+    A timeout is reported as a transport failure, which is what it is.
+    """
+    async with asyncio.timeout(timeout):
+        return await client.read_data()
+
+
 async def async_read_web_supplement(
     host: str,
     pin: str | None,
@@ -510,6 +522,7 @@ async def async_read_web_supplement(
     *,
     allow_variant_fallback: bool = True,
     hass: HomeAssistant | None = None,
+    read_timeout: float = WEB_READ_TIMEOUT,
 ) -> IdmWebSupplement | None:
     """Read one optional local web supplement snapshot.
 
@@ -545,7 +558,7 @@ async def async_read_web_supplement(
         if cached is not None:
             cached_client, cached_variant = cached
             try:
-                supplement = _normalize_web_data(await cached_client.read_data(), cached_variant)
+                supplement = _normalize_web_data(await _read_data_bounded(cached_client, read_timeout), cached_variant)
                 return await _read_optional_notifications(cached_client, supplement)
             except Exception as err:
                 _LOGGER.debug(
@@ -572,7 +585,7 @@ async def async_read_web_supplement(
         if client is None:
             continue
         try:
-            supplement = _normalize_web_data(await client.read_data(), variant_name)
+            supplement = _normalize_web_data(await _read_data_bounded(client, read_timeout), variant_name)
             _LOGGER.debug(
                 "IDM web supplement succeeded with %s variant at %s",
                 variant_name,
