@@ -23,7 +23,6 @@ from homeassistant.helpers import issue_registry as ir
 from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, UpdateFailed
 
 from idm_heatpump import (
-    IdmConnectionError,
     IdmModbusClient,
     IdmModbusError,
     IdmModelInfo,
@@ -531,11 +530,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return scoped_issue_id(entry_id, issue_id)
 
     async def _async_read_registers_resilient(self, registers: list[RegisterDef]) -> dict[str, Any]:
-        """Read registers while isolating addresses unsupported by this device.
+        """Read every register the device still answers, skipping known-dead ones.
 
-        Some Navigator firmware variants reject optional register blocks with
-        Modbus exception code 2. Bisecting only on that specific response keeps
-        all supported entities available without hiding real connection errors.
+        Isolating an address the device rejects with Modbus exception code 2 is
+        the API's job: ``read_batch`` falls back to individual reads for a group
+        the device refuses and records the offending register, so the exception
+        never reaches this method. The coordinator only keeps its own skip-list
+        in step (see ``_merge_unsupported_registers``) and lets every other
+        error through, because a connection fault must fail the poll rather than
+        be mistaken for an unsupported register.
         """
         if not registers:
             return {}
@@ -544,41 +547,37 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if not readable:
             return {}
 
-        try:
-            return await self._client.read_batch(readable)
-        except IdmConnectionError:
-            raise
-        except IdmModbusError as err:
-            if not _is_illegal_address_error(err):
-                raise
-            if len(readable) == 1:
-                reg = readable[0]
-                self._unsupported_registers.add(reg.name)
-                ir.async_create_issue(
-                    self.hass,
-                    DOMAIN,
-                    self._scoped_issue_id(f"register_not_supported_{reg.name}"),
-                    is_fixable=False,
-                    severity=ir.IssueSeverity.WARNING,
-                    translation_key="register_not_supported",
-                    translation_placeholders={"register": reg.name, "address": str(reg.address)},
-                )
-                _LOGGER.warning(
-                    "IDM Modbus register %s at address %d is not supported by this heat pump "
-                    "(Illegal Data Address); skipping it and continuing with supported registers",
-                    reg.name,
-                    reg.address,
-                )
-                return {}
+        return await self._client.read_batch(readable)
 
-            midpoint = len(readable) // 2
-            _LOGGER.debug(
-                "IDM Modbus Illegal Data Address while reading %d registers; isolating unsupported register",
-                len(readable),
-            )
-            data = await self._async_read_registers_resilient(readable[:midpoint])
-            data.update(await self._async_read_registers_resilient(readable[midpoint:]))
-            return data
+    def _report_unsupported_register(self, register_name: str) -> None:
+        """Raise the user-visible repair issue for one unsupported register.
+
+        The register was rejected with ``Illegal Data Address``, which means the
+        heat pump does not implement it and its entity will stay unavailable
+        forever. The API logs that at debug level only, so before this the
+        entity simply vanished from the user's point of view with nothing in the
+        log of a default installation to explain it.
+        """
+        register = self._register_by_name.get(register_name)
+        address = getattr(register, "address", None)
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            self._scoped_issue_id(f"register_not_supported_{register_name}"),
+            is_fixable=False,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key="register_not_supported",
+            translation_placeholders={
+                "register": register_name,
+                "address": str(address) if address is not None else "unknown",
+            },
+        )
+        _LOGGER.warning(
+            "IDM Modbus register %s at address %s is not supported by this heat pump "
+            "(Illegal Data Address); skipping it and continuing with supported registers",
+            register_name,
+            address if address is not None else "unknown",
+        )
 
     def _merge_unsupported_registers(self) -> None:
         """Mirror the library's unsupported-register set into the coordinator.
@@ -588,18 +587,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         subsequent ``read_batch`` calls. The coordinator keeps its own
         ``_unsupported_registers`` skip-list (used for the zone-room mode path
         and surfaced via the ``unsupported_registers`` property), so the two
-        sets must stay in sync. Merging after every poll ensures registers
-        isolated by the library are reflected here too, without relying on the
-        coordinator's bisection path (which never runs for these addresses
-        because the library swallows the exception inside ``read_batch``).
+        sets must stay in sync.
 
-        Uses ``getattr`` so this is a no-op against older library versions that
-        do not expose ``get_unsupported_registers()``.
+        This is also where a newly discovered unsupported register becomes
+        visible to the user. The API swallows the exception inside
+        ``read_batch`` and logs it at debug level, so nothing else in the poll
+        can report it.
         """
-        get_unsupported = getattr(self._client, "get_unsupported_registers", None)
-        if get_unsupported is None:
-            return
-        library_unsupported = get_unsupported()
+        library_unsupported = self._client.get_unsupported_registers()
         if not library_unsupported:
             return
         new_unsupported = [name for name in library_unsupported if name not in self._unsupported_registers]
@@ -611,6 +606,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             len(new_unsupported),
             new_unsupported,
         )
+        for register_name in new_unsupported:
+            self._report_unsupported_register(register_name)
 
     async def _async_refresh_zone_room_modes(self, data: dict[str, Any]) -> None:
         """Refresh room mode registers individually to avoid faulty batch values.
@@ -655,11 +652,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if _is_illegal_address_error(err):
                     self._unsupported_registers.add(reg.name)
                     data.pop(reg.name, None)
-                    _LOGGER.debug(
-                        "Zone room mode register %s at address %d is unsupported; skipping it",
-                        reg.name,
-                        reg.address,
-                    )
+                    self._report_unsupported_register(reg.name)
                     continue
                 raise
             except (OSError, TimeoutError):
@@ -1301,7 +1294,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         Called during config entry unload to prevent delayed refresh tasks
         from running after the coordinator is no longer active.
+
+        ``DataUpdateCoordinator.async_shutdown`` runs first because it owns the
+        parts of the lifecycle this class cannot see: it sets the shutdown flag
+        that makes later refresh requests no-ops, unsubscribes the scheduled
+        refresh timer and shuts the request debouncer down. Without that call
+        the timer armed by the last poll fired after unload and polled a client
+        that ``async_unload_entry`` had already disconnected, which raised a
+        connectivity repair issue for an entry that no longer existed and kept
+        the coordinator alive next to the one a reload had just created.
         """
+        await super().async_shutdown()
         task = self._delayed_refresh_task
         if task is not None and not task.done():
             task.cancel()

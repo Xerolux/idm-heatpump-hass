@@ -586,6 +586,13 @@ def _stub_homeassistant() -> None:
             self.data = None
             self.last_update_success = True
             self._listeners = []
+            # Mirrors homeassistant.helpers.update_coordinator: async_shutdown
+            # sets the flag, and a refresh requested afterwards is ignored.
+            # Without this the stub hid the missing super().async_shutdown()
+            # call that let a scheduled poll outlive a config entry unload.
+            self._shutdown_requested = False
+            self.shutdown_called = False
+            self.refresh_requests = 0
 
         def __class_getitem__(cls, item):
             return cls
@@ -597,7 +604,13 @@ def _stub_homeassistant() -> None:
             pass
 
         async def async_request_refresh(self):
-            pass
+            if self._shutdown_requested:
+                return
+            self.refresh_requests += 1
+
+        async def async_shutdown(self):
+            self._shutdown_requested = True
+            self.shutdown_called = True
 
     class _CoordinatorEntity:
         _attr_has_entity_name = False

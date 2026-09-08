@@ -356,6 +356,22 @@ class TestIdmWaterHeater:
         wh, _ = self._make(data=None)
         assert wh.current_temperature is None
 
+    def test_current_temperature_none_when_register_is_unused(self):
+        """An unused storage sensor must not be published as a temperature."""
+        wh, coord = self._make(data={"dhw_temp_top": -1})
+        coord.unused_registers = {"dhw_temp_top"}
+        assert wh.current_temperature is None
+
+    def test_current_temperature_none_when_value_is_not_finite(self):
+        """NaN reached the water heater card as a literal 'nan' reading."""
+        wh, _ = self._make(data={"dhw_temp_top": float("nan")})
+        assert wh.current_temperature is None
+
+    def test_target_temperature_none_when_register_is_unused(self):
+        wh, coord = self._make(data={"dhw_setpoint": 65535})
+        coord.unused_registers = {"dhw_setpoint"}
+        assert wh.target_temperature is None
+
     def test_target_temperature(self):
         wh, _ = self._make(data={"dhw_setpoint": 55.0})
         assert wh.target_temperature == 55.0
@@ -774,6 +790,48 @@ class TestClimateSharedBehaviour:
         assert climate.current_temperature is None
         assert climate.target_temperature is None
         assert climate.hvac_action is None
+
+    def test_current_temperature_none_when_the_room_sensor_is_unused(self):
+        """A circuit without a physical room sensor reports no temperature.
+
+        The register still answers, with the unused sentinel the API declares
+        for it. Publishing that showed an invented room temperature on the
+        thermostat card while the circuit itself stayed available.
+        """
+        climate, coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_room_temp": -1,
+            }
+        )
+        coord.unused_registers = {"hc_a_room_temp"}
+
+        assert climate.current_temperature is None
+        assert climate.available is True, "the circuit stays usable without a room sensor"
+
+    def test_current_temperature_none_when_the_reading_is_not_finite(self):
+        climate, _coord = self._hc(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_room_temp": float("nan"),
+            }
+        )
+
+        assert climate.current_temperature is None
+
+    def test_zone_room_current_temperature_none_when_unused(self):
+        climate, coord = self._zone(
+            data={
+                "zm1_room2_mode": 1,
+                "zm1_room2_setpoint": 21.0,
+                "zm1_room2_temp": float("inf"),
+            }
+        )
+        coord.unused_registers = set()
+
+        assert climate.current_temperature is None
 
     async def test_a_translated_write_error_is_passed_through(self):
         from homeassistant.exceptions import HomeAssistantError

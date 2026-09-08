@@ -13,6 +13,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **A poll no longer outlives the config entry.** `IdmCoordinator.async_shutdown`
+  overrode `DataUpdateCoordinator.async_shutdown` without calling it, so the base
+  class never ran: the shutdown flag stayed unset, the scheduled refresh timer
+  stayed armed and the request debouncer stayed alive. The poll that timer had
+  scheduled then ran after `async_unload_entry` had disconnected the Modbus
+  client, which raised a connectivity repair issue for an entry that no longer
+  existed and kept the old coordinator alive next to the one a reload had just
+  created. The test stub for the coordinator had no `async_shutdown` at all,
+  which is why nothing caught it.
+- **An unsupported register is reported again.** `idm-heatpump-api` 2.0 answers a
+  Modbus `Illegal Data Address` inside `read_batch`: it falls back to individual
+  reads, marks the register permanently failed and logs it at debug level, so the
+  exception never reaches the integration. The coordinator's bisect path — and
+  with it the `register_not_supported` repair issue — had therefore been
+  unreachable since 0.16.0, and an entity that had gone permanently unavailable
+  left nothing in the log of a default installation to explain it. The issue is
+  now raised where such a register is actually discovered, once per register, for
+  both the batch path and the zone-room read. The dead bisect recursion is gone.
+- **Sentinel readings no longer reach a temperature state.** The climate and water
+  heater entities returned the register value for the current and target
+  temperature without checking whether the register reads its unused sentinel.
+  A heating circuit without a physical room sensor therefore published that
+  sentinel as a room temperature, and a NaN reading rendered as `nan` on the
+  thermostat card. Both now report no value while the circuit itself stays
+  available, so a circuit without a room sensor is still usable.
+
 ### Changed
 
 - **Dependency updates reach `main` on their own.** The daily pin check only

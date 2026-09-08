@@ -7,6 +7,7 @@ from __future__ import annotations
 # Erstellt von Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # Lizenz: MIT
 import logging
+import math
 import re
 from typing import Any, Final
 
@@ -157,21 +158,37 @@ class IdmClimateBase(CoordinatorEntity[IdmCoordinator], ClimateEntity):
                 translation_placeholders=write_error_placeholders(reg.name, err),
             ) from err
 
+    def _usable_temperature(self, reg: RegisterDef | None) -> float | None:
+        """Return one register value that is safe to publish as a temperature.
+
+        A circuit without a physical room sensor still answers its register,
+        with the unused sentinel the API declares for it (often NaN, an
+        infinity or -1). Publishing that produced a room temperature of ``nan``
+        or ``-1 °C`` on the climate card. The register set is the authority on
+        what counts as unused, so this reuses the coordinator's per-poll result
+        instead of introducing sentinel literals here.
+        """
+        data = self.coordinator.data
+        if reg is None or not data:
+            return None
+        value = data.get(reg.name)
+        if value is None or reg.name in self.coordinator.unused_registers:
+            return None
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            return None
+        return numeric if math.isfinite(numeric) else None
+
     @property
     def current_temperature(self) -> float | None:
         """Return the current temperature."""
-        if not self._current_reg or not self.coordinator.data:
-            return None
-        val = self.coordinator.data.get(self._current_reg.name)
-        return float(val) if val is not None else None
+        return self._usable_temperature(self._current_reg)
 
     @property
     def target_temperature(self) -> float | None:
         """Return the target temperature."""
-        if not self.coordinator.data:
-            return None
-        val = self.coordinator.data.get(self._target_reg.name)
-        return float(val) if val is not None else None
+        return self._usable_temperature(self._target_reg)
 
     async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set new target temperature.
