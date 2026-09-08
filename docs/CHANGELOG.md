@@ -15,6 +15,32 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Forwarded temperatures are converted to degrees Celsius.** The GLT
+  registers are defined in °C, but the room and storage temperature forwarding
+  wrote whatever number the source sensor reported. A sensor in °F sent 68 °F as
+  68 °C, which the register bounds cannot catch — 68 is a plausible Celsius
+  value there — so the controller saw a room more than 40 K too warm and stopped
+  heating that circuit. Fahrenheit and Kelvin are now converted, Celsius and a
+  missing unit pass through unchanged, and a source entity reporting some other
+  quantity is refused with one warning naming the entity instead of being
+  written every cycle. Humidity forwarding rejects a non-percentage source the
+  same way.
+- **A second heat pump behind one Modbus gateway can be added again.** The
+  duplicate check compared the host alone, so a second Navigator reached through
+  the same Modbus TCP gateway — differing only in the TCP port or the unit ID —
+  was rejected as already configured, and the stricter host/port/unit check that
+  followed it was unreachable. A heat pump is now identified the way the
+  transport identifies it: host, port and unit ID together.
+- **An undocumented enum value no longer invents a state.** A register value the
+  map does not describe became the literal string `Unbekannt (<value>)`. With
+  device class `enum` Home Assistant rejects a state outside the declared
+  options and logs an error on every update. Such a sensor now reports no value,
+  keeps the raw number in a `raw_value` attribute for bug reports, and logs the
+  undocumented value once.
+- **The domestic hot water boost reports its errors in English.** Nine
+  user-facing failure messages were German, contrary to the language contract;
+  the translation keys Home Assistant actually displays are unchanged.
+
 - **A poll no longer outlives the config entry.** `IdmCoordinator.async_shutdown`
   overrode `DataUpdateCoordinator.async_shutdown` without calling it, so the base
   class never ran: the shutdown flag stayed unset, the scheduled refresh timer

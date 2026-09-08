@@ -180,13 +180,32 @@ class TestIdmSensor:
         assert sensor.native_value == "Automatic"
 
     def test_native_value_enum_unknown(self):
+        """An undocumented enum value is unknown, not an invented label.
+
+        The old fallback built a German "Unbekannt (99)" string. With
+        device_class "enum" Home Assistant rejects a state outside the declared
+        options and logs an error on every poll, so the sensor reports no value
+        and keeps the raw number as an attribute for bug reports.
+        """
         from custom_components.idm_heatpump.sensor import IdmSensor
 
         enum_opts = {0: "Standby"}
         coord = _make_coordinator(data={"mode": 99})
         reg = _make_register("mode", enum_options=enum_opts, datatype=DataType.UCHAR)
         sensor = IdmSensor(coord, reg, _make_desc("mode"))
-        assert "Unknown" in sensor.native_value or "Unbekannt" in sensor.native_value
+
+        assert sensor.native_value is None
+        assert sensor.extra_state_attributes == {"raw_value": 99}
+
+    def test_native_value_enum_known_value_is_unaffected(self):
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        coord = _make_coordinator(data={"mode": 0})
+        reg = _make_register("mode", enum_options={0: "Standby"}, datatype=DataType.UCHAR)
+        sensor = IdmSensor(coord, reg, _make_desc("mode"))
+
+        assert sensor.native_value == "Standby"
+        assert sensor.extra_state_attributes is None
 
     def test_native_value_none_with_enum_returns_none(self):
         from custom_components.idm_heatpump.sensor import IdmSensor

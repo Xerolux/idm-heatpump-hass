@@ -872,24 +872,46 @@ def _host_key(host: str) -> str:
     return host.strip().casefold()
 
 
-def _entry_host(entry: Any) -> str:
-    data = getattr(entry, "data", {})
-    if not isinstance(data, dict):
-        return ""
-    return str(data.get(CONF_HOST, "")).strip()
+def _endpoint_key(host: str, port: int, slave_id: int) -> tuple[str, int, int]:
+    """Return the identity of one Modbus endpoint.
+
+    Matches ``ModbusTcpEndpoint.connection_key``: a heat pump is identified by
+    host, TCP port and unit ID together, not by host alone. Two Navigator units
+    reached through one Modbus TCP gateway differ only in the port or the unit
+    ID, and both are legitimate second entries.
+    """
+    return (_host_key(host), port, slave_id)
 
 
-def _has_duplicate_host(hass: Any, host: str, current_entry_id: str | None = None) -> bool:
-    """Return whether another IDM entry already uses this Modbus host."""
-    target = _host_key(host)
-    if not target:
+def _has_duplicate_endpoint(
+    hass: Any,
+    host: str,
+    port: int,
+    slave_id: int,
+    current_entry_id: str | None = None,
+) -> bool:
+    """Return whether another IDM entry already uses this Modbus endpoint."""
+    if not _host_key(host):
         return False
+    target = _endpoint_key(host, port, slave_id)
 
     entries = hass.config_entries.async_entries(DOMAIN)
     for entry in entries:
         if current_entry_id is not None and getattr(entry, "entry_id", None) == current_entry_id:
             continue
-        if _host_key(_entry_host(entry)) == target:
+        data = getattr(entry, "data", {})
+        if not isinstance(data, dict):
+            continue
+        entry_host = str(data.get(CONF_HOST, "")).strip()
+        if not entry_host:
+            # A half-written entry without a host cannot collide with anything.
+            continue
+        try:
+            entry_port = int(data.get(CONF_PORT, DEFAULT_PORT))
+            entry_slave_id = int(data.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
+        except (TypeError, ValueError):
+            continue
+        if _endpoint_key(entry_host, entry_port, entry_slave_id) == target:
             return True
     return False
 
@@ -1248,19 +1270,14 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 and not _web_host_for_input(user_input, host)
             ):
                 errors[CONF_WEB_HOST] = "web_host_required"
-            elif _has_duplicate_host(self.hass, host):
+            elif _has_duplicate_endpoint(
+                self.hass,
+                host,
+                int(user_input.get(CONF_PORT, DEFAULT_PORT)),
+                int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
+            ):
                 errors[CONF_HOST] = "already_configured"
             else:
-                port = int(user_input.get(CONF_PORT, DEFAULT_PORT))
-                slave_id = int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID))
-                self._async_abort_entries_match(
-                    {
-                        CONF_HOST: host,
-                        CONF_PORT: port,
-                        CONF_SLAVE_ID: slave_id,
-                    }
-                )
-
                 connection_error = _connection_error_key(await self._test_connection(user_input))
                 if connection_error is not None:
                     self._modbus_error = connection_error
@@ -1380,7 +1397,13 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 and not _web_host_for_input(user_input, host)
             ):
                 errors[CONF_WEB_HOST] = "web_host_required"
-            elif _has_duplicate_host(self.hass, host, entry.entry_id):
+            elif _has_duplicate_endpoint(
+                self.hass,
+                host,
+                int(user_input.get(CONF_PORT, DEFAULT_PORT)),
+                int(user_input.get(CONF_SLAVE_ID, DEFAULT_SLAVE_ID)),
+                entry.entry_id,
+            ):
                 errors[CONF_HOST] = "already_configured"
             else:
                 connection_error = _connection_error_key(await self._test_connection(user_input))

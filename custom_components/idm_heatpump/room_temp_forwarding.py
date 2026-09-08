@@ -21,12 +21,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
+from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, PERCENTAGE, UnitOfTemperature
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.event import async_track_state_change_event
+from homeassistant.util.unit_conversion import TemperatureConverter
 
 from idm_heatpump import RegisterDef
 
@@ -34,6 +36,18 @@ from .coordinator import IdmCoordinator
 from .error_messages import classify_write_error, friendly_write_error, write_error_detail
 
 _LOGGER = logging.getLogger(__name__)
+
+#: Temperature units a source sensor may report. Everything else means the user
+#: picked an entity that is not a temperature at all.
+_TEMPERATURE_UNITS = frozenset(
+    {
+        UnitOfTemperature.CELSIUS,
+        UnitOfTemperature.FAHRENHEIT,
+        UnitOfTemperature.KELVIN,
+    }
+)
+#: Humidity units a source sensor may report.
+_HUMIDITY_UNITS = frozenset({PERCENTAGE})
 
 
 @dataclass(frozen=True)
@@ -43,6 +57,23 @@ class RoomTempForwardingConfig:
     entities: dict[str, str]
     interval: int
     tolerance: float
+
+
+def _state_unit(state: Any) -> str | None:
+    """Return the unit a Home Assistant state reports, if it declares one."""
+    attributes = getattr(state, "attributes", None)
+    if not isinstance(attributes, Mapping):
+        return None
+    unit = attributes.get(ATTR_UNIT_OF_MEASUREMENT)
+    return unit if isinstance(unit, str) and unit else None
+
+
+class UnexpectedSourceUnit(ValueError):
+    """The configured source entity does not report the expected quantity."""
+
+    def __init__(self, unit: str) -> None:
+        super().__init__(unit)
+        self.unit = unit
 
 
 def _coerce_temperature(value: Any) -> float | None:
@@ -62,6 +93,44 @@ def _coerce_humidity(value: Any) -> float | None:
     if not 0.0 <= humidity <= 100.0:
         return None
     return humidity
+
+
+def _temperature_in_celsius(value: Any, unit: str | None) -> float | None:
+    """Return the source reading as degrees Celsius, or None when unusable.
+
+    The GLT registers are defined in °C by the API. A source sensor reporting
+    °F used to have its bare number written through: 68 °F arrived as 68 °C,
+    which the register bounds cannot catch because 68 is a plausible Celsius
+    value. The controller then saw a room more than 40 K too warm and stopped
+    heating that circuit.
+
+    A missing unit is treated as Celsius. Template sensors frequently omit it,
+    and that was the behaviour before this conversion existed, so assuming
+    anything else would silently change what those installations forward.
+
+    Raises ``UnexpectedSourceUnit`` when the entity reports some other
+    quantity: that is a misconfiguration the user has to see, not a value to
+    convert.
+    """
+    temperature = _coerce_temperature(value)
+    if temperature is None:
+        return None
+    if unit is None or unit == UnitOfTemperature.CELSIUS:
+        return temperature
+    if unit not in _TEMPERATURE_UNITS:
+        raise UnexpectedSourceUnit(unit)
+    return TemperatureConverter.convert(temperature, unit, UnitOfTemperature.CELSIUS)
+
+
+def _humidity_in_percent(value: Any, unit: str | None) -> float | None:
+    """Return the source reading as a relative humidity percentage.
+
+    Humidity has one unit, so there is nothing to convert; an entity reporting
+    anything else is the wrong entity and is reported as such.
+    """
+    if unit is not None and unit not in _HUMIDITY_UNITS:
+        raise UnexpectedSourceUnit(unit)
+    return _coerce_humidity(value)
 
 
 def _register_for_circuit(coordinator: IdmCoordinator, circuit: str) -> RegisterDef | None:
@@ -106,6 +175,7 @@ class RoomTempForwarder:
         register_for_key: Callable[[IdmCoordinator, str], RegisterDef | None] = _register_for_circuit,
         key_label: str = "HK",
         value_label: str = "room temperature",
+        convert: Callable[[Any, str | None], float | None] = _temperature_in_celsius,
     ) -> None:
         self._hass = hass
         self._coordinator = coordinator
@@ -113,6 +183,8 @@ class RoomTempForwarder:
         self._register_for_key = register_for_key
         self._key_label = key_label
         self._value_label = value_label
+        self._convert = convert
+        self._reported_unit_mismatches: set[str] = set()
         self._last_written: dict[str, float] = {}
         self._unsub_state: list[Callable[[], None]] = []
         self._pending_forward_tasks: dict[str, asyncio.Task[None]] = {}
@@ -178,13 +250,35 @@ class RoomTempForwarder:
     async def async_forward_entity(self, entity_id: str) -> None:
         circuits = [circuit for circuit, source in self._config.entities.items() if source == entity_id]
         state = self._hass.states.get(entity_id)
-        temperature = _coerce_temperature(getattr(state, "state", None))
+        try:
+            temperature = self._convert(getattr(state, "state", None), _state_unit(state))
+        except UnexpectedSourceUnit as err:
+            self._warn_once_about_unit(entity_id, err.unit)
+            return
         if temperature is None:
             _LOGGER.debug("Skipping IDM %s forwarding from %s: invalid state", self._value_label, entity_id)
             return
 
         for circuit in circuits:
             await self._async_write_circuit(circuit, temperature, entity_id)
+
+    def _warn_once_about_unit(self, entity_id: str, unit: str) -> None:
+        """Report a source entity that measures the wrong quantity, once.
+
+        This is a configuration mistake that never fixes itself, so repeating it
+        on every cycle would only bury the first message.
+        """
+        if entity_id in self._reported_unit_mismatches:
+            return
+        self._reported_unit_mismatches.add(entity_id)
+        _LOGGER.warning(
+            "Not forwarding IDM %s from %s: it reports %s, which is not a %s. "
+            "Select a different entity in the integration options",
+            self._value_label,
+            entity_id,
+            unit,
+            self._value_label,
+        )
 
     async def _async_write_circuit(self, circuit: str, temperature: float, entity_id: str) -> None:
         reg = self._register_for_key(self._coordinator, circuit)
@@ -264,6 +358,7 @@ class HumidityForwarder:
         self._hass = hass
         self._coordinator = coordinator
         self._config = config
+        self._reported_unit_mismatch = False
         self._last_written: float | None = None
         self._unsub_state: Callable[[], None] | None = None
         self._pending_forward_task: asyncio.Task[None] | None = None
@@ -322,7 +417,18 @@ class HumidityForwarder:
         if not entity_id:
             return
         state = self._hass.states.get(entity_id)
-        humidity = _coerce_humidity(getattr(state, "state", None))
+        try:
+            humidity = _humidity_in_percent(getattr(state, "state", None), _state_unit(state))
+        except UnexpectedSourceUnit as err:
+            if not self._reported_unit_mismatch:
+                self._reported_unit_mismatch = True
+                _LOGGER.warning(
+                    "Not forwarding IDM humidity from %s: it reports %s, which is not a relative humidity. "
+                    "Select a different entity in the integration options",
+                    entity_id,
+                    err.unit,
+                )
+            return
         if humidity is None:
             _LOGGER.debug("Skipping IDM humidity forwarding from %s: invalid state", entity_id)
             return

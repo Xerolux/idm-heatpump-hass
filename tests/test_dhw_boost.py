@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+from contextlib import contextmanager
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
@@ -11,6 +12,18 @@ from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump import dhw_boost as module
 from custom_components.idm_heatpump.dhw_boost import DhwBoostError, DhwBoostManager
+
+
+@contextmanager
+def _raises_boost_error(translation_key: str):
+    """Assert a boost error carrying one translation key.
+
+    The translation key is what Home Assistant shows the user; the message
+    beside it is a developer string whose wording is free to change.
+    """
+    with pytest.raises(DhwBoostError) as excinfo:
+        yield
+    assert excinfo.value.translation_key == translation_key
 
 
 class FakeStore:
@@ -158,7 +171,7 @@ async def test_start_failure_rolls_back_partial_write(monkeypatch) -> None:
     coordinator.fail_write_name = "system_mode"
     coordinator.fail_write_once = True
 
-    with pytest.raises(DhwBoostError, match="vorherige Zustand wurde wiederhergestellt"):
+    with _raises_boost_error("dhw_boost_start_failed_rolled_back"):
         await manager.async_start(target_temperature=60, timeout_minutes=30)
 
     assert manager.active is False
@@ -211,9 +224,9 @@ async def test_active_boost_reasserts_owned_mode_and_setpoint(monkeypatch) -> No
 async def test_target_and_timeout_are_bounded(monkeypatch) -> None:
     manager, _coordinator, _store = await _manager(monkeypatch)
 
-    with pytest.raises(DhwBoostError, match="Zieltemperatur"):
+    with _raises_boost_error("dhw_boost_target_out_of_range"):
         await manager.async_start(target_temperature=80, timeout_minutes=30)
-    with pytest.raises(DhwBoostError, match="Laufzeit"):
+    with _raises_boost_error("dhw_boost_timeout_out_of_range"):
         await manager.async_start(target_temperature=60, timeout_minutes=1)
 
 
@@ -236,7 +249,7 @@ def test_manager_requires_a_config_entry() -> None:
     coordinator = FakeCoordinator()
     coordinator.config_entry = None
 
-    with pytest.raises(DhwBoostError, match="Konfigurationseintrag"):
+    with _raises_boost_error("dhw_boost_no_entry"):
         DhwBoostManager(coordinator)
 
 
@@ -290,7 +303,7 @@ async def test_start_rejects_a_second_boost(monkeypatch) -> None:
     manager, _coordinator, _store = await _manager(monkeypatch)
     await manager.async_start(target_temperature=60, timeout_minutes=30)
 
-    with pytest.raises(DhwBoostError, match="bereits aktiv"):
+    with _raises_boost_error("dhw_boost_already_active"):
         await manager.async_start(target_temperature=60, timeout_minutes=30)
 
     await manager.async_cancel()
@@ -301,7 +314,7 @@ async def test_start_requires_the_control_registers(monkeypatch) -> None:
     manager, coordinator, _store = await _manager(monkeypatch)
     coordinator._registers.pop("system_mode")
 
-    with pytest.raises(DhwBoostError, match="Systemmodusregister"):
+    with _raises_boost_error("dhw_boost_unsupported"):
         await manager.async_start(target_temperature=60, timeout_minutes=30)
 
 
@@ -310,7 +323,7 @@ async def test_start_requires_a_current_temperature(monkeypatch) -> None:
     manager, coordinator, _store = await _manager(monkeypatch)
     coordinator.data["dhw_temp_top"] = None
 
-    with pytest.raises(DhwBoostError, match="Warmwassertemperatur"):
+    with _raises_boost_error("dhw_boost_no_current_temp"):
         await manager.async_start(target_temperature=60, timeout_minutes=30)
 
 
@@ -331,7 +344,7 @@ async def test_start_requires_a_known_previous_state(monkeypatch) -> None:
     manager, coordinator, _store = await _manager(monkeypatch)
     coordinator.data["system_mode"] = None
 
-    with pytest.raises(DhwBoostError, match="Systemmodus"):
+    with _raises_boost_error("dhw_boost_no_previous_state"):
         await manager.async_start(target_temperature=60, timeout_minutes=30)
 
 
@@ -340,7 +353,7 @@ async def test_start_reports_an_incomplete_rollback(monkeypatch) -> None:
     manager, coordinator, _store = await _manager(monkeypatch)
     coordinator.fail_write_name = "system_mode"
 
-    with pytest.raises(DhwBoostError, match="nicht vollständig"):
+    with _raises_boost_error("dhw_boost_start_failed_rollback_incomplete"):
         await manager.async_start(target_temperature=60, timeout_minutes=30)
 
     assert manager.status == "recovery_required"
@@ -490,7 +503,7 @@ async def test_restore_rejects_an_incomplete_snapshot(monkeypatch) -> None:
     manager.previous_mode = None
     manager.previous_setpoint = None
 
-    with pytest.raises(DhwBoostError, match="unvollständig"):
+    with _raises_boost_error("dhw_boost_invalid_recovery_state"):
         await manager._async_restore_locked("manual_cancel")
 
     assert manager.status == "recovery_invalid"
@@ -501,11 +514,11 @@ async def test_restore_rejects_an_incomplete_snapshot(monkeypatch) -> None:
 async def test_writes_require_a_writable_register(monkeypatch) -> None:
     manager, coordinator, _store = await _manager(monkeypatch)
 
-    with pytest.raises(DhwBoostError, match="nicht schreibbar"):
+    with _raises_boost_error("dhw_boost_register_not_writable"):
         await manager._async_write("dhw_temp_top", 60)
 
     coordinator._registers.pop("dhw_setpoint")
-    with pytest.raises(DhwBoostError, match="nicht schreibbar"):
+    with _raises_boost_error("dhw_boost_register_not_writable"):
         await manager._async_write("dhw_setpoint", 60)
 
 
@@ -513,11 +526,11 @@ async def test_writes_require_a_writable_register(monkeypatch) -> None:
 async def test_target_validation_needs_the_setpoint_register(monkeypatch) -> None:
     manager, coordinator, _store = await _manager(monkeypatch)
 
-    with pytest.raises(DhwBoostError, match="Zieltemperatur"):
+    with _raises_boost_error("dhw_boost_invalid_target"):
         manager._validated_target("not a number")
 
     coordinator._registers.pop("dhw_setpoint")
-    with pytest.raises(DhwBoostError, match="Zieltemperatur"):
+    with _raises_boost_error("dhw_boost_invalid_target"):
         manager._validated_target(60)
 
 
