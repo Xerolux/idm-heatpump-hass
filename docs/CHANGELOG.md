@@ -15,6 +15,27 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **`AGENTS.md` describes the code that exists.** Its architecture diagram still
+  named `idm-heatpump-api` 0.9.1 against a 2.0.0 pin, its tree was missing eleven
+  modules and twenty-six test files, and it named a branch convention the
+  repository no longer uses. A test now fails when a module or test file is
+  absent from it, so the map cannot drift from the code again.
+
+### Changed
+
+- **The test suite runs in a third of the time.** The GitHub Pages artifact was
+  rebuilt for each of the eleven tests that only read it, and one library-client
+  test spent three seconds inside the API's real retry backoff. Building once per
+  module and neutralising that backoff in the tests took the suite from roughly
+  33 s to 10 s without dropping a single assertion.
+- **Compatibility branches for API versions the manifest cannot resolve are
+  gone.** `simulate_write`, `get_diagnostics` and `detect_model(read_firmware=…)`
+  were each called behind a `getattr`/`TypeError` fallback for an
+  `idm-heatpump-api` older than the exact pin, so those branches could never
+  run — while turning a genuine `AttributeError` into silent fallback behaviour.
+  Removing them also exposed a diagnostics test whose mock returned a mapping
+  where the API returns a dataclass.
+
 - **A heating circuit reports its own state, not the plant's.** `hvac_action`
   read the plant-wide `hp_operating_mode`, so with one circuit heating every
   other circuit's thermostat card also showed "heating" — and during a hot water

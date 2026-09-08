@@ -60,6 +60,17 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── technician_codes.py           # Time-based Fachmann Ebene code calculation
 │   ├── internal_messages.py          # Human-readable labels for internal message codes
 │   ├── log_filter.py                 # Filters repeated idm-heatpump-api register-failure warnings
+│   ├── error_messages.py             # Classifies communication/write errors into repair issues and translation keys
+│   ├── polling_plan.py               # Entity-aware polling: narrows the poll to what enabled entities and declared consumers need
+│   ├── calculated_sensors.py         # Derived sensors computed from one snapshot (COP, deltas, flow deviation)
+│   ├── operation_analysis.py         # Restart-safe cycle, defrost and operating-share analysis
+│   ├── operation_entities.py         # Sensors publishing that analysis
+│   ├── dhw_boost.py                  # Restart-safe domestic hot water boost state machine
+│   ├── dhw_boost_services.py         # start_dhw_boost / cancel_dhw_boost handlers
+│   ├── web_binary_sensors.py         # Binary sensors from the web supplement
+│   ├── binary_semantics.py           # Maps register semantics onto binary sensor device classes
+│   ├── adapter_metadata.py           # Explicit per-register HA metadata overlay (German names, steps, precision)
+│   ├── controller_stats_reference.py # Reference values for controller statistics
 │   ├── icons.json                    # Entity icon mappings
 │   ├── strings.json                  # UI strings for config flow & services
 │   ├── quality_scale.yaml            # Quality-scale readiness record (every rule of the current scale)
@@ -69,27 +80,56 @@ This file provides guidance for AI assistants working on this codebase.
 │
 ├── tests/                            # Pytest test suite
 │   ├── conftest.py                   # Shared fixtures and HA/API/Modbus runtime stubs
-│   ├── test_init.py
+│   ├── test_adapter_helpers.py
+│   ├── test_binary_semantics.py
+│   ├── test_calculated_sensors.py
 │   ├── test_config_flow.py
 │   ├── test_const.py
+│   ├── test_controller_stats_reference.py
 │   ├── test_coordinator.py
+│   ├── test_cross_repo_contract.py
+│   ├── test_dependency_pins.py
+│   ├── test_device_hierarchy.py
+│   ├── test_device_hierarchy_cleanup.py
+│   ├── test_device_hierarchy_optional_modules.py
+│   ├── test_dhw_boost.py
+│   ├── test_dhw_boost_services.py
 │   ├── test_diagnostics.py
+│   ├── test_diagnostics_privacy.py
+│   ├── test_documentation_language.py
 │   ├── test_entity.py
-│   ├── test_library_client.py
-│   ├── test_log_filter.py
-│   ├── test_platforms.py
-│   ├── test_platforms_climate.py
-│   ├── test_registers.py
-│   ├── test_repairs.py
+│   ├── test_entity_metadata_catalog.py
+│   ├── test_entity_naming.py
+│   ├── test_entity_profiles.py
+│   ├── test_entity_translations.py
+│   ├── test_error_messages.py
+│   ├── test_humidity_forwarding.py
+│   ├── test_init.py
 │   ├── test_knx_bridge.py
 │   ├── test_knx_catalog.py
+│   ├── test_knx_evidence.py
+│   ├── test_knx_group_address_export.py
+│   ├── test_library_client.py
+│   ├── test_log_filter.py
+│   ├── test_modbus_client.py
+│   ├── test_modbus_transport.py
+│   ├── test_operation_analysis.py
+│   ├── test_operation_entities.py
+│   ├── test_pages_seo.py
+│   ├── test_platforms.py
+│   ├── test_platforms_climate.py
+│   ├── test_polling_manager.py
+│   ├── test_polling_plan.py
+│   ├── test_registers.py
+│   ├── test_release_contract.py
+│   ├── test_release_discussion.py
+│   ├── test_repairs.py
 │   ├── test_room_temp_forwarding.py
-│   ├── test_humidity_forwarding.py
+│   ├── test_scale_load.py
 │   ├── test_services.py
-│   ├── test_web_data.py
-│   ├── test_adapter_helpers.py
-│   ├── test_cross_repo_contract.py
-│   └── test_release_contract.py
+│   ├── test_versions.py
+│   ├── test_web_binary_sensors.py
+│   └── test_web_data.py
 │
 ├── docs/                             # Documentation & wiki
 │   ├── wiki/                         # Complete wiki (installation, config, entities...)
@@ -118,7 +158,7 @@ Home Assistant
     ├── IdmCoordinator (DataUpdateCoordinator) [coordinator.py]
     │       │
     │       ├── IdmModbusConnectionClient (modbus_client.py)
-    │       │       ├── idm-heatpump-api 0.9.1 (device logic)
+    │       │       ├── idm-heatpump-api 2.0.0 (device logic)
     │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket)
     │       │
     │       ├── Entity Descriptions from registers.py / library_adapter.py
@@ -380,7 +420,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 
 ## Important Constraints
 
-- **Do not push to `master` or `main`** — all development should happen on feature branches (`Codex/...`).
+- **Do not push to `master` or `main`** — all development happens on feature branches.
 - **Do not add cloud/external API calls** — this integration is intentionally 100% local.
 - **Do not skip type hints** — mypy strict mode will fail CI.
 - **Do not hardcode register addresses** in platform files — reference `const.py` or `registers.py`.

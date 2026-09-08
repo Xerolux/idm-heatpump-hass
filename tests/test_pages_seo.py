@@ -28,10 +28,14 @@ def _structured_data(document: str) -> list[dict[str, object]]:
     ]
 
 
-@pytest.fixture
-def built_public_dir(tmp_path: Path) -> Path:
-    """Build the same static artifact that GitHub Pages deploys."""
-    output = tmp_path / "site"
+@pytest.fixture(scope="module")
+def built_public_dir(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """Build the same static artifact that GitHub Pages deploys.
+
+    Built once for the module: every test here only reads the result, and the
+    build takes two to three seconds, which was most of the suite's runtime.
+    """
+    output = tmp_path_factory.mktemp("site")
     build_site(output)
     return output
 

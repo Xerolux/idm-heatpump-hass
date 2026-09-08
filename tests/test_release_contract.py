@@ -558,3 +558,23 @@ def test_modbus_activation_guidance_is_consistent_in_ui_and_docs() -> None:
     assert "PV inverter" in installation
     assert "port 502" in installation
     assert "slave/unit ID 1" in installation
+
+
+def test_agents_md_lists_every_module_and_test() -> None:
+    """AGENTS.md is the map agents work from, so it must not go stale.
+
+    Eleven modules and twenty-six test files were missing from it before this
+    check existed, which is how an agent ends up re-deriving what is already
+    documented — or missing a module entirely.
+    """
+    root = Path(__file__).resolve().parents[1]
+    agents = (root / "AGENTS.md").read_text(encoding="utf-8")
+
+    modules = sorted(path.name for path in (root / "custom_components" / "idm_heatpump").glob("*.py"))
+    tests = sorted(path.name for path in (root / "tests").glob("test_*.py"))
+
+    missing_modules = [name for name in modules if name not in agents]
+    missing_tests = [name for name in tests if name not in agents]
+
+    assert not missing_modules, f"AGENTS.md does not mention these modules: {missing_modules}"
+    assert not missing_tests, f"AGENTS.md does not mention these test files: {missing_tests}"

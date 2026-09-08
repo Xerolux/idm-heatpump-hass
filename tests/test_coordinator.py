@@ -145,11 +145,20 @@ class TestCoordinatorInit:
         assert coord.client is client
 
     def test_client_diagnostics_include_transport_details(self, mock_hass, mock_config_entry):
+        from idm_heatpump import IdmClientDiagnostics
+
         client = MagicMock()
-        client.get_diagnostics.return_value = {
-            "navigator_type": "Navigator 10",
-            "modbus_connected": True,
-        }
+        # The API returns its own dataclass here, not a mapping; a mock that
+        # returned a dict hid that the production path reads dataclass fields.
+        client.get_diagnostics.return_value = IdmClientDiagnostics(
+            navigator_type="Navigator 10",
+            modbus_connected=True,
+            firmware=None,
+            last_error=None,
+            permanently_failed_registers=(),
+            connection_suspect=False,
+            batch_unsafe_registers=(),
+        )
         client.transport_diagnostics.return_value = {
             "endpoint": {"host": "**REDACTED**"},
             "capabilities": {

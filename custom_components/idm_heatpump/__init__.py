@@ -273,10 +273,7 @@ async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, 
     future IdmModelInfo shape that omits the field never raises here.
     """
     try:
-        try:
-            model_info = await client.detect_model(read_firmware=False)
-        except TypeError:
-            model_info = await client.detect_model()
+        model_info = await client.detect_model(read_firmware=False)
     except Exception:
         _LOGGER.warning(
             "IDM Modbus model detection failed; using generic model %s and isolating unsupported registers during polling",

@@ -12,6 +12,7 @@ import math
 import random
 import time
 from collections.abc import Callable, Iterable, Mapping
+from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
@@ -1187,37 +1188,22 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         dry_run: bool = True,
         allow_custom_register: bool = False,
     ) -> Any:
-        """Validate a write using idm-heatpump-api write-safety hooks when available."""
-        simulator = getattr(self._client, "simulate_write", None)
-        if callable(simulator):
-            if allow_custom_register:
-                return simulator(
-                    reg,
-                    value,
-                    dry_run=dry_run,
-                    allow_custom_register=True,
-                )
-            return simulator(reg, value, dry_run=dry_run)
-        # idm-heatpump-api < 0.6 has no dry-run safety result; keep compatibility
-        # by falling back to encoding, which still validates datatype/range locally.
-        encoder = getattr(self._client, "encode_value", None)
-        if callable(encoder):
-            return {"encoded_registers": encoder(value, reg)}
-        return None
+        """Validate a write through the API's write-safety hooks."""
+        if allow_custom_register:
+            return self._client.simulate_write(
+                reg,
+                value,
+                dry_run=dry_run,
+                allow_custom_register=True,
+            )
+        return self._client.simulate_write(reg, value, dry_run=dry_run)
 
     def client_diagnostics(self) -> Mapping[str, Any]:
-        """Return redaction-safe diagnostics exposed by newer idm-heatpump-api versions."""
-        result: dict[str, Any] = {}
-        getter = getattr(self._client, "get_diagnostics", None)
-        if callable(getter):
-            diagnostics = getter()
-            if hasattr(diagnostics, "to_dict"):
-                diagnostics = diagnostics.to_dict()
-            if isinstance(diagnostics, Mapping):
-                result.update(diagnostics)
-            elif hasattr(diagnostics, "__dict__"):
-                result.update(vars(diagnostics))
+        """Return the redaction-safe diagnostics the API and transport expose."""
+        result: dict[str, Any] = asdict(self._client.get_diagnostics())
 
+        # transport_diagnostics belongs to IdmModbusConnectionClient, not to the
+        # API's base client, and a web-only entry holds a plain client.
         transport_getter = getattr(self._client, "transport_diagnostics", None)
         if callable(transport_getter):
             transport = transport_getter()

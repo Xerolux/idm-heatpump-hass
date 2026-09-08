@@ -35,6 +35,19 @@ def _client(*args, **kwargs):
     return IdmModbusClient(*args, **kwargs)
 
 
+@pytest.fixture(autouse=True)
+def _instant_retry_backoff(monkeypatch):
+    """Run the API's retry loop without its real waits.
+
+    Its backoff is seconds long by design; these tests only care about how many
+    attempts happen and what comes back, and one of them spent three seconds
+    asleep — most of this module's runtime.
+    """
+    import idm_heatpump.client as client_module
+
+    monkeypatch.setattr(client_module, "RETRY_BACKOFF_BASE", 0.0, raising=False)
+
+
 @pytest.fixture
 def client_and_tcp(mock_modbus_client):
     return mock_modbus_client
