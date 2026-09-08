@@ -14,6 +14,9 @@ This file provides guidance for AI assistants working on this codebase.
 - **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
 - **Direct Modbus Runtime**: `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.2`
 - **Device Logic**: `idm-heatpump-api[web]==2.0.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
+- **Open improvement plan**: `docs/dev/code-audit-2026-09.md` — the reviewed list of defects and
+  cleanups with a work package per fix. Read it before starting unrelated refactoring; pick a
+  package from it instead of inventing one.
 
 ---
 

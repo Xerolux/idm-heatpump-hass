@@ -20,6 +20,7 @@ This file is a short pointer for Claude-compatible agents.
 - **Active roadmap**: `docs/dev/heatpump-feature-roadmap.md`
 - **Open work audit**: `docs/dev/open-work-audit.md`
 - **Component model evaluation**: `docs/dev/component-model-evaluation.md`
+- **Code audit and improvement plan**: `docs/dev/code-audit-2026-09.md`
 
 **Language:** write everything in English — changelog, docs, commit messages,
 pull request text, comments. German belongs only in `README_de.md` and the Home
