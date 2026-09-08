@@ -17,6 +17,7 @@ from custom_components.idm_heatpump.const import (
     HeatPumpStatus,
     RoomMode,
 )
+from custom_components.idm_heatpump.coordinator import IdmCoordinator
 
 # ---------------------------------------------------------------------------
 # Shared helpers (mirror the style of test_platforms.py)
@@ -42,11 +43,18 @@ def _make_coordinator(data=None, last_update_success=True):
     coord.async_request_refresh = AsyncMock()
     coord.unused_registers = set()
     # climate.py iterates the coordinator's private register list directly
-    coord._registers = []
+    coord.active_registers = []
     coord.get_register = MagicMock(return_value=None)
     coord.model_name = "Navigator 2.0 / 10"
     coord.firmware_version = None
     coord.myidm_id = None
+    # build_device_info delegates to the coordinator, and
+    # set_hierarchy_device_ids has to land where hierarchy_device_ids reads, so
+    # the mock gets the real implementations of both.
+    coord._device_info_cache = None
+    coord.device_info = lambda: IdmCoordinator.device_info(coord)
+    coord.hierarchy_device_ids = {}
+    coord.set_hierarchy_device_ids = lambda ids, _c=coord: setattr(_c, "hierarchy_device_ids", dict(ids))
     return coord
 
 
@@ -451,10 +459,10 @@ class TestClimateAsyncSetupEntry:
         coord = _make_coordinator()
         mode, target, current = _hc_registers("a")
         mode_b, target_b, current_b = _hc_registers("b")
-        coord._registers = [mode, target, current, mode_b, target_b, current_b]
+        coord.active_registers = [mode, target, current, mode_b, target_b, current_b]
 
         def _get(name):
-            for reg in coord._registers:
+            for reg in coord.active_registers:
                 if reg.name == name:
                     return reg
             return None
@@ -475,9 +483,9 @@ class TestClimateAsyncSetupEntry:
         mode, target, current = _hc_registers("a")
         # circuit b has only a current_temp register — no mode/target pair
         only_current_b = _make_register("hc_b_room_temp", 1422)
-        coord._registers = [mode, target, current, only_current_b]
+        coord.active_registers = [mode, target, current, only_current_b]
         coord.get_register = MagicMock(
-            side_effect=lambda name: next((r for r in coord._registers if r.name == name), None)
+            side_effect=lambda name: next((r for r in coord.active_registers if r.name == name), None)
         )
 
         added = []
@@ -492,9 +500,9 @@ class TestClimateAsyncSetupEntry:
         z1_mode = _make_register("zm1_room1_mode", 3000, datatype=DataType.UCHAR, writable=True)
         z1_target = _make_register("zm1_room1_setpoint", 3001)
         z1_current = _make_register("zm1_room1_temp", 3002)
-        coord._registers = [z1_mode, z1_target, z1_current]
+        coord.active_registers = [z1_mode, z1_target, z1_current]
         coord.get_register = MagicMock(
-            side_effect=lambda name: next((r for r in coord._registers if r.name == name), None)
+            side_effect=lambda name: next((r for r in coord.active_registers if r.name == name), None)
         )
 
         added = []
@@ -508,7 +516,7 @@ class TestClimateAsyncSetupEntry:
         from custom_components.idm_heatpump.climate import async_setup_entry
 
         coord = _make_coordinator()
-        coord._registers = [_make_register("outdoor_temp", 1000)]
+        coord.active_registers = [_make_register("outdoor_temp", 1000)]
         coord.get_register = MagicMock(return_value=None)
 
         added = []

@@ -1726,3 +1726,23 @@ def mock_modbus_client():
 
     client = IdmModbusClient(host="192.168.1.100", port=502, slave_id=1, transport=transport)
     yield client, transport
+
+
+@pytest.fixture(scope="session")
+def bind_coordinator_device_info():
+    """Give a mock coordinator the real ``device_info`` implementation.
+
+    ``build_device_info`` delegates to the coordinator, so a bare MagicMock
+    would answer with another MagicMock and the assertions would pass on
+    nothing. Binding the real method to the mock keeps the logic under test
+    while the metadata it reads stays mock-controlled.
+    """
+    return _bind_coordinator_device_info
+
+
+def _bind_coordinator_device_info(coordinator):
+    from custom_components.idm_heatpump.coordinator import IdmCoordinator
+
+    coordinator._device_info_cache = None
+    coordinator.device_info = lambda: IdmCoordinator.device_info(coordinator)
+    return coordinator

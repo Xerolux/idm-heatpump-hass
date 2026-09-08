@@ -526,11 +526,11 @@ async def async_get_dhw_boost_manager(
     coordinator: IdmCoordinator,
 ) -> DhwBoostManager:
     """Return one configured manager per coordinator."""
-    existing = getattr(coordinator, "_dhw_boost_manager", None)
+    existing = coordinator.dhw_boost_manager
     if isinstance(existing, DhwBoostManager):
         await existing.async_setup()
         return existing
     manager = DhwBoostManager(coordinator)
-    coordinator._dhw_boost_manager = manager
+    coordinator.attach_dhw_boost_manager(manager)
     await manager.async_setup()
     return manager

@@ -14,6 +14,7 @@ import json
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
+from custom_components.idm_heatpump.coordinator import PollStatistics
 from custom_components.idm_heatpump.diagnostics import (
     TO_REDACT,
     async_get_config_entry_diagnostics,
@@ -71,15 +72,17 @@ def _private_coordinator(entry: MagicMock) -> MagicMock:
     coord.update_interval = timedelta(seconds=30)
     coord.registers_count = 120
     coord.last_update_success = False
-    coord._last_poll_success = datetime(2026, 8, 17, 6, 30, tzinfo=UTC)
-    coord._last_poll_duration = 4.5
-    coord._consecutive_poll_failures = 3
-    coord._total_poll_count = 900
-    coord._total_poll_failures = 12
-    coord._polling_plan_active_count = 90
-    coord._polling_plan_total_count = 120
-    coord._polling_jitter_percent = 5
-    coord._write_cooldown_seconds = 5.0
+    coord.poll_statistics = PollStatistics(
+        last_success=datetime(2026, 8, 17, 6, 30, tzinfo=UTC),
+        last_duration=4.5,
+        consecutive_failures=3,
+        total_polls=900,
+        total_failures=12,
+        planned_registers=90,
+        known_registers=120,
+        jitter_percent=5,
+        write_cooldown_seconds=5.0,
+    )
     coord.model_name = "Navigator 10"
     coord.firmware_version = "NAV10_20.24-880-g265e09c4a"
     coord.model_info = None

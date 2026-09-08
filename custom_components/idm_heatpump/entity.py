@@ -16,7 +16,7 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import RegisterDef
 
-from .const import DOMAIN, MANUFACTURER
+from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info, is_configured_heating_circuit_register
 from .entity_names import translation_for_register
@@ -31,35 +31,12 @@ def build_entity_unique_id(entry_id: str, entity_key: str) -> str:
 
 
 def build_device_info(coordinator: IdmCoordinator) -> DeviceInfo:
-    """Build device info from the latest coordinator model metadata.
+    """Return the main device's info.
 
-    Cached by a lightweight metadata fingerprint (model, firmware, serial,
-    config-entry title) so this stays cheap even when HA calls it for every
-    entity on every state update, while still picking up changes the
-    fingerprint covers — e.g. a config-entry rename, which only updates
-    ``entry.title`` and does not trigger a full coordinator/entry reload.
+    The cache and the metadata it is keyed on belong to the coordinator; this
+    stays as the name every platform already imports.
     """
-    cache_key = (
-        coordinator.model_name,
-        coordinator.firmware_version,
-        coordinator.myidm_id,
-        coordinator.config_entry.title if coordinator.config_entry is not None else None,
-    )
-    cache: tuple[tuple[Any, ...], DeviceInfo] | None = getattr(coordinator, "_device_info_cache", None)
-    if cache is not None and cache[0] == cache_key:
-        return cache[1]
-    device_info = DeviceInfo(
-        identifiers={(DOMAIN, coordinator.config_entry.entry_id)},  # type: ignore[union-attr]
-        name=coordinator.config_entry.title,  # type: ignore[union-attr]
-        manufacturer=MANUFACTURER,
-        model=coordinator.model_name,
-    )
-    if coordinator.firmware_version:
-        device_info["sw_version"] = coordinator.firmware_version
-    if coordinator.myidm_id:
-        device_info["serial_number"] = coordinator.myidm_id
-    coordinator._device_info_cache = (cache_key, device_info)
-    return device_info
+    return coordinator.device_info()
 
 
 def should_add_entity(

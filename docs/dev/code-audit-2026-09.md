@@ -9,7 +9,7 @@ the integration, and for each one states what to change, how, why, and how to pr
 
 **Status: most of it is implemented.** Every bug (A1–A8), every robustness item (B1–B6) and
 every performance item (C1–C3) has been fixed on
-`claude/fehlersuche-optimierung-doku-clobcn`, together with the cleanups D1, D4, D6 and D7.
+`claude/fehlersuche-optimierung-doku-clobcn`, together with the cleanups D1, D2, D4, D6 and D7.
 See the "Implementation status" table below for what remains and why. The per-package
 descriptions are kept as written: they are the reasoning the changes rest on, and the
 remaining packages are still work orders.
@@ -25,7 +25,7 @@ remaining packages are still work orders.
 | D4 | done | One shared translated-write helper for all five writable platforms. |
 | D6 | done | Module headers, comments and docstrings are English; the German display-name tables and the German fragments the register-name matching searches for stay. |
 | D7 | done | Plus a test that fails when a module or test file is missing from `AGENTS.md`. |
-| D2 | open | Encapsulating the coordinator's private attributes touches nearly every module for no user-visible gain. Worth doing, but as its own change with its own review. |
+| D2 | done | Done as its own change. The coordinator now exposes `active_registers`, `set_active_registers()`, `poll_statistics`, `alias_map`, `hierarchy_device_ids`, `device_info()` and the two manager accessors; no module reaches into a private attribute any more. |
 | D3 | open | Extracting model resolution is a day of work on the logic that decides which register map a controller gets. It deserves an unhurried change, not a tail-end one. |
 | D5 | **attempted, reverted** | Folding `HumidityForwarder` into the keyed forwarder does not merge as cleanly as this document assumed: the humidity forwarder has its own public surface (`async_forward()`, a single entity rather than a key map) that `__init__.py` and the tests use. Wrapping it to preserve that surface restores most of the code the merge was meant to remove. Left as two classes; the docstring at the top of `room_temp_forwarding.py` already explains the split. |
 | E1 | open | The one item whose absence still hides bugs. A cheaper half of it landed instead: the suite now validates against the real voluptuous when it is installed, which immediately caught three assertions written against the stub. A real-Home-Assistant smoke tree remains the right next step. |

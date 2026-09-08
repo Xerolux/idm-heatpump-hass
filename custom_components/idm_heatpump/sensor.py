@@ -323,7 +323,7 @@ def all_supported_web_value_names() -> frozenset[str]:
 
 
 def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefinition]:
-    modbus_register_names = {reg.name for reg in getattr(coordinator, "_registers", [])}
+    modbus_register_names = {reg.name for reg in coordinator.active_registers}
     has_modbus = len(modbus_register_names) > 0
     definitions = []
     seen: set[str] = set()
@@ -475,9 +475,10 @@ class IdmCommunicationDiagnosticSensor(IdmCoordinatorEntityBase, SensorEntity):
     def extra_state_attributes(self) -> dict[str, int] | None:
         if self.entity_description.key != "modbus_consecutive_failures":
             return None
+        statistics = self.coordinator.poll_statistics
         return {
-            "total_polls": self.coordinator._total_poll_count,
-            "total_failures": self.coordinator._total_poll_failures,
+            "total_polls": statistics.total_polls,
+            "total_failures": statistics.total_failures,
         }
 
 
@@ -488,7 +489,7 @@ def _communication_diagnostic_entities(coordinator: IdmCoordinator) -> list[IdmC
             "modbus_last_success",
             icon="mdi:clock-check-outline",
             device_class=SensorDeviceClass.TIMESTAMP,
-            value_fn=lambda item: item._last_poll_success,
+            value_fn=lambda item: item.poll_statistics.last_success,
         ),
         IdmCommunicationDiagnosticSensor(
             coordinator,
@@ -497,21 +498,23 @@ def _communication_diagnostic_entities(coordinator: IdmCoordinator) -> list[IdmC
             native_unit_of_measurement="s",
             device_class=SensorDeviceClass.DURATION,
             state_class=SensorStateClass.MEASUREMENT,
-            value_fn=lambda item: round(item._last_poll_duration, 3) if item._last_poll_duration is not None else None,
+            value_fn=lambda item: (
+                round(duration, 3) if (duration := item.poll_statistics.last_duration) is not None else None
+            ),
         ),
         IdmCommunicationDiagnosticSensor(
             coordinator,
             "modbus_consecutive_failures",
             icon="mdi:alert-circle-outline",
             state_class=SensorStateClass.MEASUREMENT,
-            value_fn=lambda item: item._consecutive_poll_failures,
+            value_fn=lambda item: item.poll_statistics.consecutive_failures,
         ),
         IdmCommunicationDiagnosticSensor(
             coordinator,
             "modbus_active_registers",
             icon="mdi:format-list-checks",
             state_class=SensorStateClass.MEASUREMENT,
-            value_fn=lambda item: item._polling_plan_active_count,
+            value_fn=lambda item: item.poll_statistics.planned_registers,
         ),
     ]
 

@@ -34,11 +34,16 @@ def _coordinator(*, enabled: bool = True) -> MagicMock:
     coordinator.data = {"hc_b_flow_temp": 30.0}
     coordinator.unused_registers = set()
     coordinator.last_update_success = True
-    coordinator._device_info_cache = None
-    coordinator._hierarchy_device_ids = {
+    coordinator.hierarchy_device_ids = {
         (DOMAIN, "entry"): "main-device-id",
         (DOMAIN, "entry_zone_module_2"): "zone-module-2-device-id",
     }
+    # build_device_info delegates to the coordinator, and
+    # set_hierarchy_device_ids has to land where hierarchy_device_ids reads, so
+    # the mock gets the real implementations of both.
+    coordinator._device_info_cache = None
+    coordinator.device_info = lambda: IdmCoordinator.device_info(coordinator)
+    coordinator.set_hierarchy_device_ids = lambda ids, _c=coordinator: setattr(_c, "hierarchy_device_ids", dict(ids))
     return coordinator
 
 
@@ -135,7 +140,7 @@ def test_child_device_falls_back_to_an_unlinked_device_when_the_parent_is_unknow
     and the device is converted into a child, keeping its id.
     """
     coordinator = _coordinator()
-    coordinator._hierarchy_device_ids = {}
+    coordinator.hierarchy_device_ids = {}
 
     info = build_subdevice_info(coordinator, "hc_b_flow_temp")
 
@@ -200,7 +205,7 @@ def test_missing_hierarchy_device_id_omits_via_device_id_link() -> None:
     stale/guessed ID; the next precreate pass fills it in.
     """
     coordinator = _coordinator()
-    coordinator._hierarchy_device_ids = {}
+    coordinator.hierarchy_device_ids = {}
 
     info = build_subdevice_info(coordinator, "hc_b_flow_temp")
 
@@ -228,12 +233,12 @@ def _precreate(coordinator: MagicMock, registry: Any) -> None:
 
 def _hierarchy_coordinator() -> MagicMock:
     coordinator = _coordinator()
-    coordinator._registers = [
+    coordinator.active_registers = [
         RegisterDef(address=1352, datatype=DataType.FLOAT, name="hc_b_flow_temp", unit="°C"),
         RegisterDef(address=2000, datatype=DataType.FLOAT, name="zm2_room4_setpoint", unit="°C"),
     ]
     coordinator.web_supplement = None
-    coordinator._hierarchy_device_ids = {}
+    coordinator.hierarchy_device_ids = {}
     return coordinator
 
 
@@ -243,7 +248,7 @@ def test_precreate_registers_the_main_device_then_modules_then_children() -> Non
 
     _precreate(coordinator, registry)
 
-    ids = coordinator._hierarchy_device_ids
+    ids = coordinator.hierarchy_device_ids
     main_id = ids[(DOMAIN, "entry")]
     circuit_id = ids[(DOMAIN, "entry_heating_circuit_b")]
     module_id = ids[(DOMAIN, "entry_zone_module_2")]
@@ -274,8 +279,8 @@ def test_precreate_converts_an_existing_subdevice_and_keeps_its_device_id() -> N
 
     _precreate(coordinator, registry)
 
-    assert coordinator._hierarchy_device_ids[(DOMAIN, "entry_heating_circuit_b")] == existing_id
-    assert registry.devices[existing_id].parent_device_id == coordinator._hierarchy_device_ids[(DOMAIN, "entry")]
+    assert coordinator.hierarchy_device_ids[(DOMAIN, "entry_heating_circuit_b")] == existing_id
+    assert registry.devices[existing_id].parent_device_id == coordinator.hierarchy_device_ids[(DOMAIN, "entry")]
 
 
 def test_precreate_without_child_device_support_creates_ordinary_devices() -> None:
@@ -288,7 +293,7 @@ def test_precreate_without_child_device_support_creates_ordinary_devices() -> No
     ):
         _precreate(coordinator, registry)
 
-    ids = coordinator._hierarchy_device_ids
+    ids = coordinator.hierarchy_device_ids
     assert set(ids) == {
         (DOMAIN, "entry"),
         (DOMAIN, "entry_heating_circuit_b"),

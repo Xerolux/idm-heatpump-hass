@@ -79,9 +79,13 @@ class FakeCoordinator:
         self.fail_write_name = None
         self.fail_write_once = False
         self._listener = None
+        self.dhw_boost_manager = None
 
     def get_register(self, name):
         return self._registers.get(name)
+
+    def attach_dhw_boost_manager(self, manager):
+        self.dhw_boost_manager = manager
 
     async def async_write_register(self, register, value):
         self.events.append(("write", register.name, value))

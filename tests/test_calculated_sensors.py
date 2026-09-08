@@ -9,6 +9,7 @@ from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
 from homeassistant.const import UnitOfTemperature
 
 from custom_components.idm_heatpump.calculated_sensors import calculated_sensor_entities
+from custom_components.idm_heatpump.coordinator import IdmCoordinator
 
 
 def _coordinator(data: dict[str, object], unused: set[str] | None = None) -> MagicMock:
@@ -21,6 +22,13 @@ def _coordinator(data: dict[str, object], unused: set[str] | None = None) -> Mag
     coordinator.model_name = "Navigator 10"
     coordinator.firmware_version = None
     coordinator.myidm_id = None
+    # build_device_info delegates to the coordinator, and
+    # set_hierarchy_device_ids has to land where hierarchy_device_ids reads, so
+    # the mock gets the real implementations of both.
+    coordinator._device_info_cache = None
+    coordinator.device_info = lambda: IdmCoordinator.device_info(coordinator)
+    coordinator.hierarchy_device_ids = {}
+    coordinator.set_hierarchy_device_ids = lambda ids, _c=coordinator: setattr(_c, "hierarchy_device_ids", dict(ids))
     return coordinator
 
 

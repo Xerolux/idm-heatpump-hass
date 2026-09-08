@@ -19,11 +19,11 @@ def _coordinator(*, registers: tuple[str, ...] = ()) -> MagicMock:
     coordinator.config_entry = MagicMock()
     coordinator.config_entry.entry_id = "entry"
     coordinator.config_entry.options = {}
-    coordinator._registers = [MagicMock(name=key) for key in registers]
-    for register, key in zip(coordinator._registers, registers, strict=True):
+    coordinator.active_registers = [MagicMock(name=key) for key in registers]
+    for register, key in zip(coordinator.active_registers, registers, strict=True):
         register.name = key
     coordinator.web_supplement = None
-    coordinator._hierarchy_device_ids = {(DOMAIN, "entry"): "main-device-id"}
+    coordinator.hierarchy_device_ids = {(DOMAIN, "entry"): "main-device-id"}
     return coordinator
 
 

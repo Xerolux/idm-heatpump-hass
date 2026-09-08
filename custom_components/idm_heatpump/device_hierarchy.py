@@ -222,7 +222,7 @@ def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> N
         ).id
 
     if not use_child_devices or get_or_create_child is None:
-        coordinator._hierarchy_device_ids = device_ids
+        coordinator.set_hierarchy_device_ids(device_ids)
         return
 
     for identifier, placement in sorted(subdevices.items()):
@@ -248,7 +248,7 @@ def precreate_main_device(hass: HomeAssistant, coordinator: IdmCoordinator) -> N
             parent_device_id=parent_device_id,
         ).id
 
-    coordinator._hierarchy_device_ids = device_ids
+    coordinator.set_hierarchy_device_ids(device_ids)
 
 
 HEATING_CIRCUIT_LETTERS: tuple[str, ...] = ("A", "B", "C", "D", "E", "F", "G")
@@ -291,7 +291,7 @@ def active_heating_circuits(coordinator: IdmCoordinator) -> tuple[str, ...]:
         if letter in HEATING_CIRCUIT_LETTERS:
             letters.add(letter)
 
-    for register in getattr(coordinator, "_registers", ()) or ():
+    for register in coordinator.active_registers:
         match = _HEATING_CIRCUIT_REGISTER.match(str(getattr(register, "name", "")))
         if match is not None:
             letters.add(match.group(1).upper())
@@ -379,7 +379,7 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
     if coordinator.device_hierarchy_enabled is not True:
         return {}
 
-    entity_keys = {register.name for register in coordinator._registers}
+    entity_keys = {register.name for register in coordinator.active_registers}
     supplement = coordinator.web_supplement
     sensor_values = getattr(supplement, "sensor_values", None)
     if isinstance(sensor_values, dict):
@@ -576,7 +576,7 @@ def _via_device_id(coordinator: IdmCoordinator, parent_identifier: tuple[str, st
     means the sub-device is created without a ``via_device_id`` link this
     round; the next reload/precreate pass fills it in.
     """
-    return coordinator._hierarchy_device_ids.get(parent_identifier)
+    return coordinator.hierarchy_device_ids.get(parent_identifier)
 
 
 def _subdevice_labels(coordinator: IdmCoordinator, scope: DeviceScope) -> tuple[str, str] | None:

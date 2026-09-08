@@ -169,6 +169,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
     coordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
     versions = await async_runtime_versions(integration.manifest.get("version"))
+    statistics = coordinator.poll_statistics
 
     return {
         "entry": async_redact_data(entry.as_dict(), TO_REDACT),
@@ -180,17 +181,15 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "registers_count": coordinator.registers_count,
                 "last_update_success": coordinator.last_update_success,
                 "communication": {
-                    "last_poll_success": (
-                        coordinator._last_poll_success.isoformat() if coordinator._last_poll_success else None
-                    ),
-                    "last_poll_duration_seconds": coordinator._last_poll_duration,
-                    "consecutive_failures": coordinator._consecutive_poll_failures,
-                    "total_polls": coordinator._total_poll_count,
-                    "total_failures": coordinator._total_poll_failures,
-                    "active_registers": coordinator._polling_plan_active_count,
-                    "total_registers_in_plan": coordinator._polling_plan_total_count,
-                    "polling_jitter_percent": coordinator._polling_jitter_percent,
-                    "write_cooldown_seconds": coordinator._write_cooldown_seconds,
+                    "last_poll_success": (statistics.last_success.isoformat() if statistics.last_success else None),
+                    "last_poll_duration_seconds": statistics.last_duration,
+                    "consecutive_failures": statistics.consecutive_failures,
+                    "total_polls": statistics.total_polls,
+                    "total_failures": statistics.total_failures,
+                    "active_registers": statistics.planned_registers,
+                    "total_registers_in_plan": statistics.known_registers,
+                    "polling_jitter_percent": statistics.jitter_percent,
+                    "write_cooldown_seconds": statistics.write_cooldown_seconds,
                 },
                 "model_name": coordinator.model_name,
                 "firmware_version": coordinator.firmware_version,

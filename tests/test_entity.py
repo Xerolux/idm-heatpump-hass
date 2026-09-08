@@ -61,6 +61,10 @@ def _make_coordinator(hide_unused=True, data=None, last_update_success=True, fir
             if _is_unused(register_name, value):
                 unused_set.add(register_name)
     coord.unused_registers = unused_set
+    # build_device_info delegates to the coordinator, so the mock needs the
+    # real implementation or the assertions would inspect a MagicMock.
+    coord._device_info_cache = None
+    coord.device_info = lambda: IdmCoordinator.device_info(coord)
     return coord
 
 
@@ -147,7 +151,11 @@ class TestIdmEntityInit:
 
 
 class TestBuildDeviceInfoCache:
-    """Verify build_device_info memoizes DeviceInfo (perf commit 9a6b5ff)."""
+    """Verify the coordinator memoizes DeviceInfo (perf commit 9a6b5ff).
+
+    The cache moved into the coordinator with the encapsulation change;
+    build_device_info is the name every platform still imports.
+    """
 
     def _make_cacheable_coordinator(self, model_name=MODEL, firmware_version=None, myidm_id=None, title="IDM Test"):
         coord = MagicMock(spec=IdmCoordinator)
@@ -157,8 +165,11 @@ class TestBuildDeviceInfoCache:
         coord.config_entry = MagicMock()
         coord.config_entry.entry_id = "test_entry_id"
         coord.config_entry.title = title
-        # Real attribute (not a MagicMock child) so the cache contract is exercised.
+        # Real attribute (not a MagicMock child) so the cache contract is
+        # exercised, and the real implementation so the assertions inspect a
+        # DeviceInfo rather than a MagicMock.
         coord._device_info_cache = None
+        coord.device_info = lambda: IdmCoordinator.device_info(coord)
         return coord
 
     def test_caches_and_returns_same_object_on_second_call(self):

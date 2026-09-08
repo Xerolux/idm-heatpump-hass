@@ -537,8 +537,8 @@ async def _async_setup_web_only_entry(
         web_variant=stored_web_variant,
         device_hierarchy_enabled=device_hierarchy_enabled,
     )
-    coordinator._registers = []
-    coordinator._alias_map = {}
+    # A web-only entry reads no Modbus registers at all.
+    coordinator.setup_registers([], 0, {}, descriptions=[])
     coordinator.data = {}
 
     entry.runtime_data = IdmHeatpumpData(

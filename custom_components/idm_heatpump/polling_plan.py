@@ -127,8 +127,9 @@ class EntityAwarePollingManager:
         self._entry = entry
         self._coordinator = coordinator
         self._debounce_seconds = debounce_seconds
-        self._full_registers = tuple(coordinator._registers)
-        self._full_room_mode_registers = tuple(coordinator._room_mode_registers)
+        # The full set as it stood before any narrowing; the coordinator keeps
+        # the room-mode subset in step with whatever plan is applied.
+        self._full_registers = coordinator.active_registers
         self._refresh_task: asyncio.Task[None] | None = None
         self._setup_task: asyncio.Task[None] | None = None
         self._unsub_registry: Callable[[], None] | None = None
@@ -231,7 +232,7 @@ class EntityAwarePollingManager:
     def _expand_aliases(self, required: set[str]) -> set[str]:
         """Keep all configured names sharing a selected Modbus address."""
         expanded = set(required)
-        for names in self._coordinator._alias_map.values():
+        for names in self._coordinator.alias_map.values():
             if expanded.intersection(names):
                 expanded.update(names)
         return expanded
@@ -256,17 +257,12 @@ class EntityAwarePollingManager:
         selected = [register for register in self._full_registers if register.name in required]
         if not selected:
             return
-        current_names = {register.name for register in self._coordinator._registers}
+        current_names = {register.name for register in self._coordinator.active_registers}
         selected_names = {register.name for register in selected}
         if selected_names == current_names:
             return
 
-        self._coordinator._registers = selected
-        self._coordinator._room_mode_registers = [
-            register for register in self._full_room_mode_registers if register.name in selected_names
-        ]
-        self._coordinator._polling_plan_total_count = len(self._full_registers)
-        self._coordinator._polling_plan_active_count = len(selected)
+        self._coordinator.set_active_registers(selected, total=len(self._full_registers))
         _LOGGER.info(
             "IDM entity-aware polling uses %d of %d registers",
             len(selected),
@@ -286,12 +282,12 @@ def ensure_entity_aware_polling(
     if type(coordinator) is not IdmCoordinator:
         return None
     config_entry = coordinator.config_entry
-    if config_entry is None or not coordinator._registers:
+    if config_entry is None or not coordinator.active_registers:
         return None
-    existing = getattr(coordinator, "_entity_aware_polling_manager", None)
+    existing = coordinator.entity_aware_polling_manager
     if isinstance(existing, EntityAwarePollingManager):
         return existing
     manager = EntityAwarePollingManager(coordinator.hass, config_entry, coordinator)
-    coordinator._entity_aware_polling_manager = manager
+    coordinator.attach_entity_aware_polling_manager(manager)
     manager.schedule_setup()
     return manager

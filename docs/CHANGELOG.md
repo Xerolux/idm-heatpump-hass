@@ -13,6 +13,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **The coordinator has a public surface again.** Seven other modules reached
+  into its private attributes — `polling_plan.py` replaced `_registers` and
+  `_room_mode_registers` and set two counters by hand, `diagnostics.py` read
+  nine `_` fields, `device_hierarchy.py` assigned `_hierarchy_device_ids`,
+  `sensor.py` read the poll counters, and the web-only setup path assigned
+  `_registers = []` directly. Every one of those went through a name that could
+  change without any caller noticing, and the polling plan had to remember three
+  attributes that must move together. The coordinator now offers
+  `active_registers`, `set_active_registers()` (which keeps the room-mode subset
+  and the plan counters consistent itself), `poll_statistics`, `alias_map`,
+  `hierarchy_device_ids`, `device_info()` and accessors for the polling and boost
+  managers. No behaviour changes; the device-info cache simply moved to the
+  object whose metadata it is keyed on.
+
+
 ### Fixed
 
 - **`AGENTS.md` describes the code that exists.** Its architecture diagram still

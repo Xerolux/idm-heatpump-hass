@@ -34,19 +34,36 @@ class _Registry:
 
 
 class _Coordinator:
+    """Stands in for IdmCoordinator with the surface the plan manager uses."""
+
     def __init__(self) -> None:
-        self._registers = [
+        self._all_registers = [
             RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),
             RegisterDef(address=1050, datatype=DataType.FLOAT, name="hp_flow_temp"),
             RegisterDef(address=1052, datatype=DataType.FLOAT, name="hp_return_temp"),
             RegisterDef(address=2000, datatype=DataType.UCHAR, name="zm1_room1_mode"),
             RegisterDef(address=2001, datatype=DataType.FLOAT, name="zm1_room1_temp"),
         ]
-        self._room_mode_registers = [self._registers[3]]
-        self._alias_map = {1050: ["hp_flow_temp", "hp_return_temp"]}
+        self._registers = list(self._all_registers)
+        self._room_mode_registers = [self._all_registers[3]]
+        self.alias_map = {1050: ["hp_flow_temp", "hp_return_temp"]}
         self.async_request_refresh = AsyncMock()
         # Registers a non-entity consumer (the KNX bridge) declared it needs.
         self.externally_required_registers: frozenset[str] = frozenset()
+        self.planned_total = 0
+
+    @property
+    def active_registers(self) -> tuple[RegisterDef, ...]:
+        return tuple(self._registers)
+
+    def set_active_registers(self, registers, *, total: int) -> None:
+        """Mirror the coordinator: the room-mode subset follows the plan."""
+        self._registers = list(registers)
+        names = {register.name for register in self._registers}
+        self._room_mode_registers = [
+            register for register in self._all_registers if register.name in names and "_room" in register.name
+        ]
+        self.planned_total = total
 
 
 @pytest.mark.asyncio

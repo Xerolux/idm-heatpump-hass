@@ -7,6 +7,7 @@ import pytest
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.const import UNUSED_VALUE
+from custom_components.idm_heatpump.coordinator import IdmCoordinator, PollStatistics
 from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
 
 
@@ -59,6 +60,24 @@ def _make_coordinator(data=None, hide_unused=False, last_update_success=True):
             if _is_unused(register_name, value):
                 unused_set.add(register_name)
     coord.unused_registers = unused_set
+    # build_device_info delegates to the coordinator, and
+    # set_hierarchy_device_ids has to land where hierarchy_device_ids reads, so
+    # the mock gets the real implementations of both.
+    coord.poll_statistics = PollStatistics(
+        last_success=None,
+        last_duration=None,
+        consecutive_failures=0,
+        total_polls=0,
+        total_failures=0,
+        planned_registers=0,
+        known_registers=0,
+        jitter_percent=0,
+        write_cooldown_seconds=5.0,
+    )
+    coord._device_info_cache = None
+    coord.device_info = lambda: IdmCoordinator.device_info(coord)
+    coord.hierarchy_device_ids = {}
+    coord.set_hierarchy_device_ids = lambda ids, _c=coord: setattr(_c, "hierarchy_device_ids", dict(ids))
     return coord
 
 
@@ -77,12 +96,17 @@ def test_communication_diagnostic_entities_expose_runtime_metrics():
     from custom_components.idm_heatpump.sensor import _communication_diagnostic_entities
 
     coordinator = _make_coordinator()
-    coordinator._last_poll_success = None
-    coordinator._last_poll_duration = 0.4567
-    coordinator._consecutive_poll_failures = 2
-    coordinator._total_poll_count = 10
-    coordinator._total_poll_failures = 3
-    coordinator._polling_plan_active_count = 42
+    coordinator.poll_statistics = PollStatistics(
+        last_success=None,
+        last_duration=0.4567,
+        consecutive_failures=2,
+        total_polls=10,
+        total_failures=3,
+        planned_registers=42,
+        known_registers=50,
+        jitter_percent=0,
+        write_cooldown_seconds=5.0,
+    )
 
     entities = _communication_diagnostic_entities(coordinator)
     values = {entity.entity_description.key: entity.native_value for entity in entities}
@@ -473,7 +497,7 @@ class TestSensorAsyncSetupEntry:
             },
         ]
         coord.web_enabled = True
-        coord._registers = []
+        coord.active_registers = []
         coord.web_supplement = IdmWebSupplement(
             navigator_version="Navigator 10",
             software_version="NAV10_20.23",
@@ -513,7 +537,7 @@ class TestSensorAsyncSetupEntry:
         coord.web_enabled = True
         coord.model_name = "Navigator 10"
         coord.firmware_version = "NAV10_20.23"
-        coord._registers = [_make_register("outdoor_temp"), _make_register("heat_sink_flow_rate")]
+        coord.active_registers = [_make_register("outdoor_temp"), _make_register("heat_sink_flow_rate")]
         coord.web_supplement = IdmWebSupplement(
             navigator_version="Navigator 10",
             software_version="NAV10_20.23",
@@ -575,7 +599,7 @@ class TestSensorAsyncSetupEntry:
         coord = _make_coordinator()
         coord.sensor_descriptions = []
         coord.web_enabled = True
-        coord._registers = []
+        coord.active_registers = []
         coord.web_supplement = IdmWebSupplement(
             sensor_values={"hotgas_temperature": IdmWebSensorValue("345K", 345.0, "K")}
         )
@@ -605,7 +629,7 @@ class TestSensorAsyncSetupEntry:
         coord = _make_coordinator()
         coord.sensor_descriptions = []
         coord.web_enabled = True
-        coord._registers = []
+        coord.active_registers = []
         coord.web_supplement = IdmWebSupplement(
             sensor_values={"controller_online_hours": IdmWebSensorValue("123 h", 123.0, "h")}
         )
@@ -636,7 +660,7 @@ class TestSensorAsyncSetupEntry:
         coord.web_enabled = True
         coord.model_name = "Navigator 2.0 / 10"
         coord.firmware_version = None
-        coord._registers = []
+        coord.active_registers = []
         coord.web_supplement = None
 
         entry = MagicMock()
@@ -1712,7 +1736,7 @@ class TestConfiguredHeatingCircuitEntities:
             hide_unused=True,
         )
         coord.config_entry.options = {"heating_circuits": ["a", "d"]}
-        coord._registers = []
+        coord.active_registers = []
         assert coord.is_register_unused("hc_d_flow_temp", UNUSED_VALUE) is True
 
         for name in ("hc_d_flow_temp", "hc_d_setpoint_flow_temp"):
@@ -1723,7 +1747,7 @@ class TestConfiguredHeatingCircuitEntities:
 
         coord = _make_coordinator(data={"hc_b_flow_temp": UNUSED_VALUE}, hide_unused=True)
         coord.config_entry.options = {"heating_circuits": ["a", "d"]}
-        coord._registers = []
+        coord.active_registers = []
 
         assert should_add_entity(coord, _make_register("hc_b_flow_temp")) is False
 
@@ -1732,7 +1756,7 @@ class TestConfiguredHeatingCircuitEntities:
 
         coord = _make_coordinator(data={"hc_d_room_temp": UNUSED_VALUE}, hide_unused=True)
         coord.config_entry.options = {"heating_circuits": ["a", "d"]}
-        coord._registers = []
+        coord.active_registers = []
         coord.unsupported_registers = {"hc_d_room_temp"}
 
         assert should_add_entity(coord, _make_register("hc_d_room_temp")) is False
@@ -1742,7 +1766,7 @@ class TestConfiguredHeatingCircuitEntities:
 
         coord = _make_coordinator(data={"pv_surplus": UNUSED_VALUE}, hide_unused=True)
         coord.config_entry.options = {"heating_circuits": ["a", "d"]}
-        coord._registers = []
+        coord.active_registers = []
 
         assert should_add_entity(coord, _make_register("pv_surplus")) is False
 
