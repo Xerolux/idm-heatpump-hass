@@ -1758,10 +1758,6 @@
       "title": "IDM polling barely fits into the scan interval",
       "description": "Reading the registers of **{host}** currently takes about {duration} s of the configured {interval} s scan interval, and has done so for several polls in a row.\n\nThe heat pump controller then gets almost no idle time between requests, which typically shows up as timeouts — especially when another Modbus client shares the controller.\n\nWhat helps:\n- Increase the scan interval in the integration options\n- Disable entities you do not use (polling skips their registers)\n- Check whether another Modbus client is querying the heat pump at the same time"
     },
-    "register_not_supported": {
-      "title": "IDM register not supported by this device",
-      "description": "The heat pump rejected register **{register}** at address **{address}**. The integration will skip this register and continue polling supported values.\n\nThis usually means the feature is not available on this model, firmware, or installed hardware configuration."
-    },
     "write_rejected": {
       "title": "IDM register write rejected",
       "description": "The heat pump did not accept a write to register **{register}** at address **{address}**.\n\nTechnical detail: `{detail}`\n\nPlease check:\n- The register is released for writing on the Navigator under **Building management system** (the GLT register list has a per-register access setting; a register that is not released there is rejected even though the value is valid)\n- The function is enabled for this heating circuit or component\n- The value is within the documented range\n- No second building-management system, energy manager or inverter is writing the same register"

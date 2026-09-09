@@ -1,5 +1,6 @@
 """Tests for IdmCoordinator."""
 
+import logging
 import socket
 from datetime import timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -556,12 +557,15 @@ class TestAsyncUpdateData:
             await coord._async_update_data()
         assert calls == [["good_a", "good_b"]]
 
-    async def test_unsupported_register_creates_the_repair_issue_once(self, mock_hass, mock_config_entry):
+    async def test_unsupported_register_is_explained_in_the_log_once(self, mock_hass, mock_config_entry, caplog):
         """The user learns why an entity disappeared, and learns it only once.
 
         The API reports an unsupported register at debug level only, so without
-        this issue a default installation had nothing in its log explaining a
-        permanently unavailable entity.
+        this line a default installation had nothing in its log explaining a
+        permanently unavailable entity. It is a log line and not a repair
+        issue: the controller not implementing an address is normal for a model
+        or firmware without that function, and a repair card asking for action
+        that does not exist reads like a defect.
         """
         unsupported = RegisterDef(address=4108, datatype=DataType.FLOAT, name="power_limit_hp")
 
@@ -575,26 +579,27 @@ class TestAsyncUpdateData:
             registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="good_a"), unsupported],
         )
 
-        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+        with caplog.at_level(logging.INFO, logger="custom_components.idm_heatpump.coordinator"):
+            with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+                await coord._async_update_data()
+
+            messages = [record.getMessage() for record in caplog.records]
+            explained = [text for text in messages if "power_limit_hp" in text and "4108" in text]
+            assert len(explained) == 1
+            assert "needs no action" in explained[0]
+
+            # No repair issue: nothing about this is actionable.
+            assert mock_ir.async_create_issue.call_count == 0
+
+            # A second poll re-reports the same name from the library; the
+            # register is already known, so the user is not told again.
+            caplog.clear()
             await coord._async_update_data()
-
-        mock_ir.async_create_issue.assert_any_call(
-            mock_hass,
-            "idm_heatpump",
-            "register_not_supported_power_limit_hp_test_entry_id",
-            is_fixable=False,
-            severity=mock_ir.IssueSeverity.WARNING,
-            translation_key="register_not_supported",
-            translation_placeholders={"register": "power_limit_hp", "address": "4108"},
-        )
-
-        # A second poll re-reports the same name from the library; the register
-        # is already known, so the user is not told again.
-        with patch("custom_components.idm_heatpump.coordinator.ir") as second_ir:
-            await coord._async_update_data()
-
-        issue_ids = [call.args[2] for call in second_ir.async_create_issue.call_args_list]
-        assert "register_not_supported_power_limit_hp_test_entry_id" not in issue_ids
+            assert not [
+                record.getMessage()
+                for record in caplog.records
+                if "power_limit_hp" in record.getMessage() and "4108" in record.getMessage()
+            ]
 
     async def test_library_unsupported_registers_are_merged_into_skip_list(self, mock_hass, mock_config_entry):
         """Registers flagged unsupported by the library are mirrored after each poll.

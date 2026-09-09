@@ -13,6 +13,26 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.0-beta.2] - 2026-09-09
+
+### Changed
+
+- **A register the heat pump does not implement is no longer a repair issue.**
+  `0.17.0-beta.1` restored the report for a register answered with `Illegal Data
+  Address`, because the API swallows that inside `read_batch` and logs it at
+  debug level, which left an entity permanently unavailable with nothing in a
+  default installation's log to explain it. The explanation was right; the form
+  was wrong. A warning card in **Settings → Repairs** says something is broken
+  and asks the user to act, and there is nothing to act on: a controller that
+  does not answer `firmware_version` at address 4120 is a model, firmware or
+  hardware configuration without that function, which is normal. The first
+  reaction it produced was "the integration has a bug". The explanation is now
+  one log line per register, naming the register, its address and that no action
+  is needed, and the full list stays in the diagnostics download as
+  `unsupported_registers`. Existing cards disappear at the next restart on their
+  own: the issue was never persistent, so Home Assistant drops it once the
+  integration stops recreating it.
+
 ## [0.17.0-beta.1] - 2026-09-09
 
 First beta of the `0.17.0` line. It carries the full result of the code audit
