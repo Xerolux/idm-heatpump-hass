@@ -6,7 +6,7 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.17.0-beta.1` and `idm-heatpump-api` `2.0.1` form the current
+Integration `0.17.0-beta.2` and `idm-heatpump-api` `2.0.1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
@@ -19,6 +19,15 @@ from pymodbus, and moves its built-in Modbus TCP transport behind an optional
 extra. This integration injects a tmodbus-backed transport, so it now installs
 no Modbus stack it does not speak. The transport pins are
 `modbus-connection==4.11.1` and `tmodbus[async-serial]==0.6.2`.
+
+**`0.17.0-beta.2`** removes one thing `0.17.0-beta.1` introduced: the repair
+issue for a register the heat pump does not implement. A controller that answers
+`Illegal Data Address` for, say, `firmware_version` is behaving normally — that
+model, firmware or hardware option simply lacks the function — but a warning
+card in **Settings → Repairs** reads like a defect, and it asked for an action
+that does not exist. The explanation stays, as a log line and in the diagnostics
+download. Everything else is identical to `0.17.0-beta.1`; the soak clock
+restarts because the code changed.
 
 **`0.17.0-beta.1`** is the first candidate of the `0.17.0` line and carries the
 result of the code audit in `docs/dev/code-audit-2026-09.md`. Eight bugs are

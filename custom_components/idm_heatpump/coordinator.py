@@ -688,35 +688,31 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         return await self._client.read_batch(readable)
 
-    def _report_unsupported_register(self, register_name: str) -> None:
-        """Raise the user-visible repair issue for one unsupported register.
+    def _log_unsupported_registers(self, register_names: list[str]) -> None:
+        """Explain registers the heat pump does not implement.
 
-        The register was rejected with ``Illegal Data Address``, which means the
-        heat pump does not implement it and its entity will stay unavailable
-        forever. The API logs that at debug level only, so before this the
-        entity simply vanished from the user's point of view with nothing in the
-        log of a default installation to explain it.
+        idm-heatpump-api answers ``Illegal Data Address`` inside ``read_batch``,
+        marks the register permanently failed and logs that at debug level, so
+        without this line nothing in a default installation's log explains why
+        an entity went unavailable and stayed there.
+
+        It is deliberately a log line and not a repair issue. A repair asks the
+        user to act, and there is nothing to act on: the controller does not
+        implement the address, which is simply what a model, firmware or
+        hardware option without that function looks like. Presenting it as a
+        warning card made a normal condition read like a defect. The full list
+        is in the diagnostics download as ``unsupported_registers``.
         """
-        register = self._register_by_name.get(register_name)
-        address = getattr(register, "address", None)
-        ir.async_create_issue(
-            self.hass,
-            DOMAIN,
-            self._scoped_issue_id(f"register_not_supported_{register_name}"),
-            is_fixable=False,
-            severity=ir.IssueSeverity.WARNING,
-            translation_key="register_not_supported",
-            translation_placeholders={
-                "register": register_name,
-                "address": str(address) if address is not None else "unknown",
-            },
-        )
-        _LOGGER.warning(
-            "IDM Modbus register %s at address %s is not supported by this heat pump "
-            "(Illegal Data Address); skipping it and continuing with supported registers",
-            register_name,
-            address if address is not None else "unknown",
-        )
+        for register_name in register_names:
+            register = self._register_by_name.get(register_name)
+            address = getattr(register, "address", None)
+            _LOGGER.info(
+                "IDM register %s at address %s is not implemented by this heat pump; "
+                "skipping it and continuing with the supported registers. This is normal "
+                "for a model or firmware without that function and needs no action",
+                register_name,
+                address if address is not None else "unknown",
+            )
 
     def _merge_unsupported_registers(self) -> None:
         """Mirror the library's unsupported-register set into the coordinator.
@@ -731,7 +727,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         This is also where a newly discovered unsupported register becomes
         visible to the user. The API swallows the exception inside
         ``read_batch`` and logs it at debug level, so nothing else in the poll
-        can report it.
+        can report it (see ``_log_unsupported_registers``).
         """
         library_unsupported = self._client.get_unsupported_registers()
         if not library_unsupported:
@@ -745,8 +741,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             len(new_unsupported),
             new_unsupported,
         )
-        for register_name in new_unsupported:
-            self._report_unsupported_register(register_name)
+        self._log_unsupported_registers(new_unsupported)
 
     async def _async_refresh_zone_room_modes(self, data: dict[str, Any]) -> None:
         """Refresh room mode registers individually to avoid faulty batch values.
@@ -791,7 +786,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 if _is_illegal_address_error(err):
                     self._unsupported_registers.add(reg.name)
                     data.pop(reg.name, None)
-                    self._report_unsupported_register(reg.name)
+                    self._log_unsupported_registers([reg.name])
                     continue
                 raise
             except (OSError, TimeoutError):
