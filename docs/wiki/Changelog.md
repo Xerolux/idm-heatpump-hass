@@ -5,6 +5,23 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.17.0-beta.1 — 2026-09-09
+
+First candidate of the `0.17.0` line, carrying the result of the code audit in
+`docs/dev/code-audit-2026-09.md`. Eight bugs are fixed — among them a poll that
+outlived its config entry, a failed setup that left live entities behind, a
+second heat pump behind one Modbus gateway that could no longer be added,
+forwarded room temperatures that were not converted to degrees Celsius, and
+sentinel readings that reached a temperature state — together with six
+robustness items and three performance items. Both runtime pins move forward
+(`modbus-connection` `4.11.1`, `idm-heatpump-api` `2.0.1`). No register map and
+no entity identifier changed.
+
+It is a **beta**: the audit touched model detection, setup and teardown,
+write-enabled entities and services, and a runtime dependency change restarts
+the soak clock. Verification progress is tracked in
+`docs/release-evidence/0.17.0-beta.1.md`.
+
 ## v0.16.1 — 2026-08-28
 
 Patch on `0.16.0`, from a live Home Assistant log. With the optional web

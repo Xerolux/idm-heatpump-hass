@@ -99,7 +99,11 @@ BARE_VERSION_STATEMENTS: dict[str, tuple[tuple[str, str], ...]] = {
         ("tmodbus", r"(?<=\+ tmodbus ){version}(?=\n)"),
         ("modbus-connection", r"(?<=`){version}(?=` ist die Version der Verbindungsbibliothek)"),
     ),
-    "AGENTS.md": (("modbus-connection", r"(?<=`){version}(?=` is the `modbus-connection` library version)"),),
+    "AGENTS.md": (
+        ("modbus-connection", r"(?<=`){version}(?=` is the `modbus-connection` library version)"),
+        # The dependency tree in the architecture diagram names the pin as prose.
+        ("idm-heatpump-api", r"(?<=idm-heatpump-api ){version}(?= \(device logic\))"),
+    ),
     "docs/wiki/Home.md": (("modbus-connection", r"(?<=`){version}(?=` is the connection-library version)"),),
     "docs/wiki/Configuration.md": (("modbus-connection", r"(?<=`){version}(?=` is the version of)"),),
     "docs/wiki/Local-Web-Interface.md": (
@@ -119,7 +123,9 @@ BARE_VERSION_STATEMENTS: dict[str, tuple[tuple[str, str], ...]] = {
 # pattern is anchored on its own sentence: one that also matched the statement
 # of the current pin would hide a genuinely half-finished rewrite.
 HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
-    "AGENTS.md": (r"pymodbus is gone as of `idm-heatpump-api` [0-9][0-9a-z.]*",),
+    # The name is spelled with and without backticks: once in the rule that
+    # describes history statements, once in the history statement itself.
+    "AGENTS.md": (r"pymodbus is gone as of `?idm-heatpump-api`? [0-9][0-9a-z.]*",),
     "docs/dev/open-work-audit.md": (r"`idm-heatpump-api` [0-9][0-9a-z.]* provides the transport-neutral contract",),
     "docs/wiki/Stability-and-Release-Readiness.md": (r"`idm-heatpump-api` `[0-9][0-9a-z.]*` owns its own",),
 }

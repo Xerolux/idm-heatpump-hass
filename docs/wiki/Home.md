@@ -23,12 +23,12 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Integration version** | 0.16.2 |
+| **Integration version** | 0.17.0-beta.1 |
 | **Supported/tested HA baseline** | 2026.8.1 |
 | **Python** | 3.14+ (managed by Home Assistant) |
-| **Connection library** | modbus-connection==4.10.0 |
+| **Connection library** | modbus-connection==4.11.1 |
 | **Socket backend** | tmodbus[async-serial]==0.6.2 |
-| **Device/web library** | idm-heatpump-api[web]==2.0.0 |
+| **Device/web library** | idm-heatpump-api[web]==2.0.1 |
 | **License** | MIT |
 | **Languages** | DE, EN |
 | **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects, switches, climate, water heater, and buttons |
@@ -98,8 +98,8 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **Runtime version visibility**: Integration, `idm-heatpump-api`, `modbus-connection` and `tmodbus` versions are available in a diagnostic sensor, diagnostics exports, and startup logs
 - **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers tracked and protected
-- **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.10.0` / `tmodbus[async-serial]==0.6.2` pair; `4.10.0` is the connection-library version, not the IDM integration version
-- **API boundary**: `idm-heatpump-api[web]==2.0.0` provides batching, decoding and write safety. Since that release the API owns its own exception hierarchy, so pymodbus is no longer installed at all and the direct socket is tmodbus-backed
+- **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.11.1` / `tmodbus[async-serial]==0.6.2` pair; `4.11.1` is the connection-library version, not the IDM integration version
+- **API boundary**: `idm-heatpump-api[web]==2.0.1` provides batching, decoding and write safety. Since that release the API owns its own exception hierarchy, so pymodbus is no longer installed at all and the direct socket is tmodbus-backed
 - **Auto-recovery**: API retry/backoff plus reconnect-on-demand in the tmodbus-backed connection
 - **Connection ownership**: Each config entry owns one socket and reports `supports_shared_connection: false`; Home Assistant central cross-entry sharing is not currently available
 - **Validation status**: The adapter is implemented and automatically tested; read-only validation of the new transport on real Navigator hardware remains pending

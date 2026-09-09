@@ -13,7 +13,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.0-beta.1] - 2026-09-09
+
+First beta of the `0.17.0` line. It carries the full result of the code audit
+in `docs/dev/code-audit-2026-09.md`: eight bugs, six robustness items, three
+performance items and the cleanups that came with them. It also moves both
+runtime pins forward.
+
+It ships as a beta and not as a stable tag because the audit touched model
+detection, setup and teardown behaviour, write-enabled entities and services —
+each of them a pre-release trigger in `docs/RELEASE_PROCESS.md` — and because a
+runtime dependency change restarts the soak clock on its own.
+
 ### Changed
+
+- **Both runtime pins moved forward.** `modbus-connection` 4.10.0 → 4.11.1 and
+  `idm-heatpump-api` 2.0.0 → 2.0.1; `tmodbus` stays at 0.6.2, which is current.
+  The pin updater grew two patterns while doing it: the dependency tree in
+  `AGENTS.md` names `idm-heatpump-api` as prose rather than as a requirement
+  string, and the sentence that documents how history statements are spelled
+  quotes one without backticks. Both spellings used to abort the update with
+  "still stated after the update", which is exactly the half-updated document the
+  residual scan exists to catch — now they are rewritten and masked respectively.
 
 - **Model detection is a pure function now.** `async_setup_entry` carried roughly
   250 lines that reconciled four sources of truth for the heat pump model — the
@@ -50,15 +71,6 @@ All notable changes to this project will be documented in this file.
   object whose metadata it is keyed on.
 
 
-### Fixed
-
-- **`AGENTS.md` describes the code that exists.** Its architecture diagram still
-  named `idm-heatpump-api` 0.9.1 against a 2.0.0 pin, its tree was missing eleven
-  modules and twenty-six test files, and it named a branch convention the
-  repository no longer uses. A test now fails when a module or test file is
-  absent from it, so the map cannot drift from the code again.
-
-### Changed
 
 - **The translated-write contract lives in one place.** `number`, `select`,
   `switch`, both climate entities and the water heater each carried their own
@@ -234,7 +246,6 @@ All notable changes to this project will be documented in this file.
   thermostat card. Both now report no value while the circuit itself stays
   available, so a circuit without a room sensor is still usable.
 
-### Changed
 
 - **Dependency updates reach `main` on their own.** The daily pin check only
   covered `modbus-connection` and `tmodbus`, it only opened a pull request, and
@@ -265,7 +276,22 @@ All notable changes to this project will be documented in this file.
   `manifest.json`, which Dependabot does not read, so the entry never produced
   anything.
 
+
+- **The German README now matches the English one section for section.** The
+  architecture diagram was missing `set_external_power`, both were missing
+  `export_knx_group_addresses` and the KNX bridge, the German data-type list
+  named a `WORD` type this project does not have while omitting `INT8`,
+  `INT16`, `UINT16` and `BITFLAG`, and four technical-detail entries plus a
+  quick-start paragraph existed only in English.
+
 ### Fixed
+
+- **`AGENTS.md` describes the code that exists.** Its architecture diagram still
+  named `idm-heatpump-api` 0.9.1 against a 2.0.0 pin, its tree was missing eleven
+  modules and twenty-six test files, and it named a branch convention the
+  repository no longer uses. A test now fails when a module or test file is
+  absent from it, so the map cannot drift from the code again.
+
 
 - **Broken hero image on the German README and the documentation home page.**
   Both still pointed at `docs/images/idm-home-assistant-hero.jpg`, which was
@@ -291,15 +317,6 @@ All notable changes to this project will be documented in this file.
   `Configuration.md` and `Stability-and-Release-Readiness.md` still named
   `0.16.1` as the current release, and `Local-Web-Interface.md` still named
   `modbus-connection` `4.8.1` in a sentence the pin updater rewrites.
-
-### Changed
-
-- **The German README now matches the English one section for section.** The
-  architecture diagram was missing `set_external_power`, both were missing
-  `export_knx_group_addresses` and the KNX bridge, the German data-type list
-  named a `WORD` type this project does not have while omitting `INT8`,
-  `INT16`, `UINT16` and `BITFLAG`, and four technical-detail entries plus a
-  quick-start paragraph existed only in English.
 
 ## [0.16.2] - 2026-08-28
 
