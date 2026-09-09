@@ -169,7 +169,7 @@ infinite values and applies library limits automatically if a future tested API
 release supplies them.
 
 The table was rechecked against the published
-`idm-heatpump-api[web]==2.0.0` artifact. Those GLT power registers still do not
+`idm-heatpump-api[web]==2.0.1` artifact. Those GLT power registers still do not
 declare universal minimum or maximum values; the integration therefore keeps
 the finite-number validation described above.
 

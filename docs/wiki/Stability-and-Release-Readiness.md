@@ -6,7 +6,7 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.16.2` and `idm-heatpump-api` `2.0.0` form the current
+Integration `0.17.0-beta.1` and `idm-heatpump-api` `2.0.1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
@@ -18,7 +18,22 @@ exception hierarchy (`IdmModbusError` and subclasses) instead of inheriting
 from pymodbus, and moves its built-in Modbus TCP transport behind an optional
 extra. This integration injects a tmodbus-backed transport, so it now installs
 no Modbus stack it does not speak. The transport pins are
-`modbus-connection==4.10.0` and `tmodbus[async-serial]==0.6.2`.
+`modbus-connection==4.11.1` and `tmodbus[async-serial]==0.6.2`.
+
+**`0.17.0-beta.1`** is the first candidate of the `0.17.0` line and carries the
+result of the code audit in `docs/dev/code-audit-2026-09.md`. Eight bugs are
+fixed, among them a poll that outlived its config entry, a failed setup that
+left live entities behind, a second heat pump behind one Modbus gateway that
+could no longer be added, forwarded temperatures that were not converted to
+degrees Celsius, and sentinel readings that reached a temperature state. Six
+robustness items and three performance items came with them, plus the
+extractions that made the affected code testable: `model_resolution.py` for the
+model reconciliation and a public coordinator surface for the seven modules that
+used to reach into its private attributes. Both runtime pins moved forward
+(`modbus-connection` `4.11.1`, `idm-heatpump-api` `2.0.1`); no register map or
+entity identifier changed. It is a beta because the audit touched model
+detection, setup and teardown, write-enabled entities and services, and because
+the dependency change restarts the soak clock.
 
 **`0.16.2`** is a patch on `0.16.1`: `validate_overrides` accepted a KNX
 group-address override that claimed the derived address (`base + object
@@ -62,7 +77,7 @@ guards and configurable 60-second EEPROM default are unchanged. Physical
 group-address telegram interoperability and bus load remain open.
 
 **`0.15.1`** was the last line with pymodbus: it pinned `idm-heatpump-api`
-`1.0.3`, moved the transport pair to `modbus-connection==4.10.0` /
+`1.0.3`, moved the transport pair to `modbus-connection==4.11.1` /
 `tmodbus[async-serial]==0.6.2`, and carried the write-diagnostics work from
 [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
 

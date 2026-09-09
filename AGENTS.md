@@ -7,13 +7,13 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.16.2` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.16.1`)
+- **Current Version**: `0.17.0-beta.1` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.16.2`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
 - **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
-- **Direct Modbus Runtime**: `modbus-connection==4.10.0`, `tmodbus[async-serial]==0.6.2`
-- **Device Logic**: `idm-heatpump-api[web]==2.0.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
+- **Direct Modbus Runtime**: `modbus-connection==4.11.1`, `tmodbus[async-serial]==0.6.2`
+- **Device Logic**: `idm-heatpump-api[web]==2.0.1` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Open improvement plan**: `docs/dev/code-audit-2026-09.md` — the reviewed list of defects and
   cleanups with a work package per fix. Read it before starting unrelated refactoring; pick a
   package from it instead of inventing one.
@@ -160,7 +160,7 @@ Home Assistant
     ├── IdmCoordinator (DataUpdateCoordinator) [coordinator.py]
     │       │
     │       ├── IdmModbusConnectionClient (modbus_client.py)
-    │       │       ├── idm-heatpump-api 2.0.0 (device logic)
+    │       │       ├── idm-heatpump-api 2.0.1 (device logic)
     │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket)
     │       │
     │       ├── Entity Descriptions from registers.py / library_adapter.py
@@ -345,7 +345,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 - Never bump a runtime pin by hand without checking PyPI first: `python scripts/check_dependency_pins.py` reports every pin that is behind, `--update` rewrites every updatable pin (`modbus-connection`, `tmodbus`, `idm-heatpump-api`) and every document that states them, and `--set name==version` pins a version the caller names. The daily `dependency-freshness.yml` workflow does exactly this, validates the result and merges it; the release workflow refuses to publish stale pins unless `allow_stale_pins` is set. Automation never selects a pre-release for a stable pin — that is how the `4.0.0a3` alpha stayed pinned for two weeks — and it never merges a major bump on its own.
 - A sentence that dates a change (`pymodbus is gone as of idm-heatpump-api 2.0.0`) is history and keeps its version. Those sentences are listed in `HISTORY_STATEMENTS` in `scripts/check_dependency_pins.py`; everything else naming a pin is rewritten. Do not write a document that states the current pin in a spelling the updater does not cover — `tests/test_dependency_pins.py` fails when one appears.
 - A document that states the current pins belongs in `PIN_DOCUMENTS` in `scripts/check_dependency_pins.py`; `tests/test_dependency_pins.py` fails when a new one is missing there.
-- Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.10.0` is the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
+- Keep `modbus-connection` and `tmodbus` exactly pinned as a tested transport pair. `4.11.1` is the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
 - pymodbus is gone as of `idm-heatpump-api` 2.0.0 / integration 0.16.0. Do not reintroduce it: the API owns `IdmModbusError` and its subclasses, and this integration's transport maps `modbus-connection` errors straight onto them.
 
 #### Prerelease naming
@@ -360,7 +360,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
   same. Tag the API repository with the PEP 440 version (`v2.0.0b1`).
 - **The manifest pins the exact published API version** in PEP 440 form,
   because that is what pip resolves. The manifest currently pins
-  `idm-heatpump-api[web]==2.0.0`.
+  `idm-heatpump-api[web]==2.0.1`.
 
 #### Release notes
 
