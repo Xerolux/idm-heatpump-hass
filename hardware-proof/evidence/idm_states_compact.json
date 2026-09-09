@@ -1,0 +1,1546 @@
+[
+ {
+  "entity_id": "binary_sensor.alm6_15_durchflusspumpe_web",
+  "state": "on",
+  "unit": "",
+  "friendly_name": "alm6_15 Durchflusspumpe (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_evu_sperrkontakt_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 EVU-Sperrkontakt (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_externe_anforderung_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Externe Anforderung (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_externe_warmwasseranforderung_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Warmwasser Externe Warmwasseranforderung (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_heizanforderung",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Heizanforderung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_hochdruckstorung_web",
+  "state": "unavailable",
+  "unit": "",
+  "friendly_name": "alm6_15 Hochdruckstörung (Web)",
+  "age_s": 42231.6,
+  "available": false
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_kuhlanforderung",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Kühlanforderung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_letzter_verdichtertakt_zu_kurz",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Letzter Verdichtertakt zu kurz",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_pumpe_heizkreis_a_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Heizkreis A Pumpe Heizkreis A (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_siphonheizung_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Siphonheizung (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_storung_e_heizung_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Zusatzwärmeerzeuger Störung E-Heizung (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_summenstorung",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Summenstörung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_taupunkt_feuchtealarm_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Taupunkt-Feuchtealarm (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_verdichter_1",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Verdichter 1",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_verdichter_1_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Verdichter 1 (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_verdichterheizung_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Verdichterheizung (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_warmwasser_zirkulationspumpe_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Warmwasser Warmwasser-Zirkulationspumpe (Web)",
+  "age_s": 1066.1,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_warmwasseranforderung",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Warmwasser Warmwasseranforderung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_warmwasserstation_stromungsschalter_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Warmwasser Warmwasserstation Strömungsschalter (Web)",
+  "age_s": 3337.8,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_zweiter_oder_dritter_warmeerzeuger_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Zusatzwärmeerzeuger Zweiter oder dritter Wärmeerzeuger (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_zweiter_warmeerzeuger_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Zusatzwärmeerzeuger Zweiter Wärmeerzeuger (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "binary_sensor.heizkreis_d_pumpe_heizkreis_d_web",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Heizkreis D Pumpe Heizkreis D (Web)",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "button.alm6_15_storungen_quittieren",
+  "state": "unknown",
+  "unit": "",
+  "friendly_name": "Diagnose Störungen quittieren",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "button.alm6_15_warmwasser_boost_abbrechen",
+  "state": "unavailable",
+  "unit": "",
+  "friendly_name": "Warmwasser Warmwasser-Boost abbrechen",
+  "age_s": 42231.5,
+  "available": false
+ },
+ {
+  "entity_id": "button.alm6_15_warmwasser_boost_starten",
+  "state": "unknown",
+  "unit": "",
+  "friendly_name": "Warmwasser Warmwasser-Boost starten",
+  "age_s": 27.7,
+  "available": true
+ },
+ {
+  "entity_id": "climate.alm6_15",
+  "state": "heat",
+  "unit": "",
+  "friendly_name": "Heizkreis A Heizkreis A",
+  "age_s": 417.7,
+  "available": true
+ },
+ {
+  "entity_id": "climate.heizkreis_d_heizkreis_d",
+  "state": "heat",
+  "unit": "",
+  "friendly_name": "Heizkreis D Heizkreis D",
+  "age_s": 3567.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_batterie_entladung_vorgabe",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Batterie Entladung (Vorgabe)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_batterie_soc_vorgabe",
+  "state": "unavailable",
+  "unit": "%",
+  "friendly_name": "alm6_15 Batterie SOC (Vorgabe)",
+  "age_s": 42221.7,
+  "available": false
+ },
+ {
+  "entity_id": "number.alm6_15_bivalenzpunkt_1_2_we",
+  "state": "-5.0",
+  "unit": "°C",
+  "friendly_name": "Zusatzwärmeerzeuger Bivalenzpunkt 1 (2. WE)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_bivalenzpunkt_1_3_we",
+  "state": "-5.0",
+  "unit": "°C",
+  "friendly_name": "Zusatzwärmeerzeuger Bivalenzpunkt 1 (3. WE)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_bivalenzpunkt_2_2_we",
+  "state": "-18.0",
+  "unit": "°C",
+  "friendly_name": "Zusatzwärmeerzeuger Bivalenzpunkt 2 (2. WE)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_bivalenzpunkt_2_3_we",
+  "state": "-20.0",
+  "unit": "°C",
+  "friendly_name": "Zusatzwärmeerzeuger Bivalenzpunkt 2 (3. WE)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_e_heizstab_leistung_vorgabe",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "Zusatzwärmeerzeuger E-Heizstab Leistung (Vorgabe)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_externe_anforderung_grundwasserpumpe_m15",
+  "state": "unknown",
+  "unit": "%",
+  "friendly_name": "alm6_15 Externe Anforderung Grundwasserpumpe M15",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_externe_anforderung_grundwasserpumpe_m15_sw_max",
+  "state": "unknown",
+  "unit": "%",
+  "friendly_name": "alm6_15 Externe Anforderung Grundwasserpumpe M15 (SW max)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_externe_anforderungstemperatur_heizen",
+  "state": "40.0",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Externe Anforderungstemperatur Heizen",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_externe_anforderungstemperatur_kuhlen",
+  "state": "16.0",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Externe Anforderungstemperatur Kühlen",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_externe_aussentemperatur_glt",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Externe Außentemperatur (GLT)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_externe_feuchte_glt",
+  "state": "unknown",
+  "unit": "%",
+  "friendly_name": "alm6_15 Externe Feuchte (GLT)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_festwertvorlauf_hk_a",
+  "state": "45.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Festwertvorlauf HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_glt_kaltespeichertemperatur",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "alm6_15 GLT Kältespeichertemperatur",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_glt_temperaturanforderung_heizen",
+  "state": "0.0",
+  "unit": "°C",
+  "friendly_name": "alm6_15 GLT Temperaturanforderung Heizen",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_glt_temperaturanforderung_kuhlen",
+  "state": "100.0",
+  "unit": "°C",
+  "friendly_name": "alm6_15 GLT Temperaturanforderung Kühlen",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_glt_warmespeichertemperatur",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "alm6_15 GLT Wärmespeichertemperatur",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_glt_warmwasser_oben",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "alm6_15 GLT Warmwasser oben",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_glt_warmwasser_unten",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "alm6_15 GLT Warmwasser unten",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hausverbrauch_vorgabe",
+  "state": "1.23",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Hausverbrauch (Vorgabe)",
+  "age_s": 47.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_cooling_limit",
+  "state": "25.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Kühlgrenze HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_heating_curve",
+  "state": "0.4",
+  "unit": "",
+  "friendly_name": "Heizkreis D Heizkurve HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_heating_limit",
+  "state": "15.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Heizgrenze HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_parallel_shift",
+  "state": "0.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Parallelverschiebung HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_room_setpoint_cool_eco",
+  "state": "25.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Raumsoll Kühlen Eco HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_room_setpoint_cool_normal",
+  "state": "23.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Raumsoll Kühlen Normal HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_room_setpoint_heat_eco",
+  "state": "18.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Raumsoll Heizen Eco HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_room_setpoint_heat_normal",
+  "state": "22.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Raumsoll Heizen Normal HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_setpoint_flow_constant",
+  "state": "45.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Festwertvorlauf HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_setpoint_flow_cooling",
+  "state": "18.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Kühlvorlauf HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_heizgrenze_hk_a",
+  "state": "15.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Heizgrenze HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_heizkurve_hk_a",
+  "state": "0.3",
+  "unit": "",
+  "friendly_name": "Heizkreis A Heizkurve HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_kuhlgrenze_hk_a",
+  "state": "25.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Kühlgrenze HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_kuhlvorlauf_hk_a",
+  "state": "18.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Kühlvorlauf HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_parallelverschiebung_hk_a",
+  "state": "20.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Parallelverschiebung HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_pv_produktion_vorgabe",
+  "state": "1.23",
+  "unit": "kW",
+  "friendly_name": "alm6_15 PV Produktion (Vorgabe)",
+  "age_s": 47.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_pv_uberschuss_vorgabe",
+  "state": "-0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 PV Überschuss (Vorgabe)",
+  "age_s": 17.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_pv_zielwert",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 PV Zielwert",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_raumsoll_heizen_eco_hk_a",
+  "state": "17.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Raumsoll Heizen Eco HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_raumsoll_heizen_normal_hk_a",
+  "state": "21.5",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Raumsoll Heizen Normal HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_raumsoll_kuhlen_eco_hk_a",
+  "state": "25.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Raumsoll Kühlen Eco HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_raumsoll_kuhlen_normal_hk_a",
+  "state": "23.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Raumsoll Kühlen Normal HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_warmwasser_sollwert",
+  "state": "48.0",
+  "unit": "°C",
+  "friendly_name": "Warmwasser Warmwasser Sollwert",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_ww_ausschalttemperatur",
+  "state": "50.0",
+  "unit": "°C",
+  "friendly_name": "Warmwasser WW Ausschalttemperatur",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.alm6_15_ww_einchargetemperatur",
+  "state": "46.0",
+  "unit": "°C",
+  "friendly_name": "Warmwasser WW Einchargetemperatur",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.heizkreis_a_externe_raumtemperatur_hk_a",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Externe Raumtemperatur HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "number.heizkreis_d_hc_d_ext_room_temp",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Externe Raumtemperatur HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "select.alm6_15_betriebsart_hk_a",
+  "state": "normal",
+  "unit": "",
+  "friendly_name": "Heizkreis A Betriebsart HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "select.alm6_15_hc_d_mode",
+  "state": "normal",
+  "unit": "",
+  "friendly_name": "Heizkreis D Betriebsart HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "select.alm6_15_solar_betriebsart",
+  "state": "automatic",
+  "unit": "",
+  "friendly_name": "Solaranlage Solar Betriebsart",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "select.alm6_15_systembetriebsart",
+  "state": "hot_water_only",
+  "unit": "",
+  "friendly_name": "alm6_15 Systembetriebsart",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_00_fachmann_ebene_1",
+  "state": "0909",
+  "unit": "",
+  "friendly_name": "Diagnose 00 Fachmann Ebene 1",
+  "age_s": 42231.6,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_00_fachmann_ebene_2",
+  "state": "81699",
+  "unit": "",
+  "friendly_name": "Diagnose 00 Fachmann Ebene 2",
+  "age_s": 2031.0,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_4way_valve_circuit1_web",
+  "state": "0.0",
+  "unit": "",
+  "friendly_name": "alm6_15 4-Wege-Ventil Kreis 1 (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_abtauvorgange_heute",
+  "state": "0",
+  "unit": "",
+  "friendly_name": "alm6_15 Abtauvorgänge heute",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_aktive_betriebsart_hk_a",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Heizkreis A Aktive Betriebsart HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_aktuelle_taktlaufzeit",
+  "state": "0.0",
+  "unit": "min",
+  "friendly_name": "alm6_15 Aktuelle Taktlaufzeit",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_aussentemperatur",
+  "state": "15.07",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Außentemperatur",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_batterie_entladung",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Batterie Entladung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_batteriespannung_zentraleinheit_web",
+  "state": "3.0",
+  "unit": "V",
+  "friendly_name": "alm6_15 Batteriespannung Zentraleinheit (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_bivalenz_betriebszustand",
+  "state": "Off",
+  "unit": "",
+  "friendly_name": "Zusatzwärmeerzeuger Bivalenz Betriebszustand",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_booster_a_ladepumpe",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "Zusatzwärmeerzeuger Booster A Ladepumpe",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_booster_a_warmequellenpumpe",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "Zusatzwärmeerzeuger Booster A Wärmequellenpumpe",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_booster_b_ladepumpe",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "Zusatzwärmeerzeuger Booster B Ladepumpe",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_booster_b_warmequellenpumpe",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "Zusatzwärmeerzeuger Booster B Wärmequellenpumpe",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_durchfluss_warmesenke_b2",
+  "state": "0",
+  "unit": "L/min",
+  "friendly_name": "alm6_15 Durchfluss Wärmesenke (B2)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_durchflusspumpe_ausgang_web",
+  "state": "100.0",
+  "unit": "",
+  "friendly_name": "alm6_15 Durchflusspumpe Ausgang (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_durchflusspumpe_signal_web",
+  "state": "-1.0",
+  "unit": "%",
+  "friendly_name": "alm6_15 Durchflusspumpe Signal (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_durchschnittliche_taktlaufzeit",
+  "state": "21.3",
+  "unit": "min",
+  "friendly_name": "alm6_15 Durchschnittliche Taktlaufzeit",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_e_heizstab_leistung",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "Zusatzwärmeerzeuger E-Heizstab Leistung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_elektrische_leistungsaufnahme_smartfox",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Elektrische Leistungsaufnahme Smartfox",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_elektrische_leistungsaufnahme_warmepumpe",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Elektrische Leistungsaufnahme Wärmepumpe",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_evu_sperre",
+  "state": "Not Locked",
+  "unit": "",
+  "friendly_name": "alm6_15 EVU Sperre",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_externe_umschaltung_heizen_kuhlen_web",
+  "state": "0.0",
+  "unit": "",
+  "friendly_name": "alm6_15 Externe Umschaltung Heizen/Kühlen (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_flussigkeitsleitung_temperatur_web",
+  "state": "24.1",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Flüssigkeitsleitung Temperatur (Web)",
+  "age_s": 308.8,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_gemittelte_aussentemperatur",
+  "state": "19.08",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Gemittelte Außentemperatur",
+  "age_s": 77.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_gesamte_warmemenge_vortex",
+  "state": "31708.66",
+  "unit": "kWh",
+  "friendly_name": "alm6_15 Gesamte Wärmemenge (Vortex)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_hausverbrauch",
+  "state": "1.23",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Hausverbrauch",
+  "age_s": 47.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_hc_d_active_mode",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "Heizkreis D Aktive Betriebsart HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_heissgastemperatur_web",
+  "state": "22.9",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Heißgastemperatur (Web)",
+  "age_s": 854.0,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_heizwasser_austrittstemperatur_web",
+  "state": "42.1",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Heizwasser Austrittstemperatur (Web)",
+  "age_s": 36.2,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_idm_heatpump_api_version",
+  "state": "2.0.1",
+  "unit": "",
+  "friendly_name": "alm6_15 IDM-Heatpump-API-Version",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_infosystem_meldungen_anzahl_web",
+  "state": "0.0",
+  "unit": "",
+  "friendly_name": "Diagnose Infosystem Meldungen Anzahl (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_infosystem_meldungen_web",
+  "state": "Keine aktiven Meldungen",
+  "unit": "",
+  "friendly_name": "Diagnose Infosystem Meldungen (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_interne_meldung",
+  "state": "000 - Keine Meldung",
+  "unit": "",
+  "friendly_name": "Diagnose Interne Meldung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_isc_kaltespeicherpumpe_m84",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "IDM ISC ISC Kältespeicherpumpe M84",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_isc_modus",
+  "state": "Not configured / Unavailable",
+  "unit": "",
+  "friendly_name": "IDM ISC ISC Modus",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_isc_ruckkuhlpumpe_m17",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "IDM ISC ISC Rückkühlpumpe M17",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_jahresarbeitszahl_cop_momentan",
+  "state": "unknown",
+  "unit": "",
+  "friendly_name": "alm6_15 Jahresarbeitszahl (COP, momentan)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_kaltwasser_temperatur_web",
+  "state": "41.4",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Kaltwasser Temperatur (Web)",
+  "age_s": 5.9,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_kondensator_druck_web",
+  "state": "6.3",
+  "unit": "bar",
+  "friendly_name": "alm6_15 Kondensator Druck (Web)",
+  "age_s": 490.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_kondensator_temperatur_web",
+  "state": "14.7",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Kondensator Temperatur (Web)",
+  "age_s": 5.9,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_ladefuhler_temperatur",
+  "state": "21.77",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Ladefühler Temperatur",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_ladepumpe_m73",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "alm6_15 Ladepumpe M73",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_ladetemperatur_web",
+  "state": "21.8",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Ladetemperatur (Web)",
+  "age_s": 1459.8,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_2_warmeerzeuger_web",
+  "state": "24.5",
+  "unit": "h",
+  "friendly_name": "Zusatzwärmeerzeuger Laufzeit 2. Wärmeerzeuger (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_abtauen_web",
+  "state": "59.5",
+  "unit": "h",
+  "friendly_name": "alm6_15 Laufzeit Abtauen (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_heizen_web",
+  "state": "3353.3",
+  "unit": "h",
+  "friendly_name": "alm6_15 Laufzeit Heizen (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_kuhlen_web",
+  "state": "unavailable",
+  "unit": "h",
+  "friendly_name": "alm6_15 Laufzeit Kühlen (Web)",
+  "age_s": 42231.5,
+  "available": false
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_stufe_1_web",
+  "state": "3718.6",
+  "unit": "h",
+  "friendly_name": "alm6_15 Laufzeit Stufe 1 (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_warmwasser_web",
+  "state": "305.7",
+  "unit": "h",
+  "friendly_name": "Warmwasser Laufzeit Warmwasser (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_letzter_abtaustart",
+  "state": "unavailable",
+  "unit": "",
+  "friendly_name": "alm6_15 Letzter Abtaustart",
+  "age_s": 42231.5,
+  "available": false
+ },
+ {
+  "entity_id": "sensor.alm6_15_letzter_verdichterstart",
+  "state": "2026-09-08T08:41:38+00:00",
+  "unit": "",
+  "friendly_name": "alm6_15 Letzter Verdichterstart",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_luftansaugtemperatur",
+  "state": "12.97",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Luftansaugtemperatur",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_luftquellen_temperatur_web",
+  "state": "13.0",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Luftquellen Temperatur (Web)",
+  "age_s": 127.0,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_mischer_heizkreis_a_web",
+  "state": "Aus",
+  "unit": "",
+  "friendly_name": "Heizkreis A Mischer Heizkreis A (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_momentane_leistung_heizen_web",
+  "state": "unavailable",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Momentane/prognostizierte Leistung Heizen (Web)",
+  "age_s": 42231.5,
+  "available": false
+ },
+ {
+  "entity_id": "sensor.alm6_15_momentane_leistung_kuhlen_web",
+  "state": "unavailable",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Momentane/prognostizierte Leistung Kühlen (Web)",
+  "age_s": 42231.5,
+  "available": false
+ },
+ {
+  "entity_id": "sensor.alm6_15_momentane_leistung_warmwasser_web",
+  "state": "unavailable",
+  "unit": "kW",
+  "friendly_name": "Warmwasser Momentane/prognostizierte Leistung Warmwasser (Web)",
+  "age_s": 42231.5,
+  "available": false
+ },
+ {
+  "entity_id": "sensor.alm6_15_navigator_version_web",
+  "state": "Navigator 10",
+  "unit": "",
+  "friendly_name": "Diagnose Navigator Version (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_platinentemperatur_web",
+  "state": "27.6",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Platinentemperatur (Web)",
+  "age_s": 2459.4,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_pv_produktion",
+  "state": "1.23",
+  "unit": "kW",
+  "friendly_name": "alm6_15 PV Produktion",
+  "age_s": 47.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_pv_uberschuss",
+  "state": "-0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 PV Überschuss",
+  "age_s": 17.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_raumtemperatur_hk_a",
+  "state": "22.88",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Raumtemperatur HK A",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_regler_online_web",
+  "state": "13901.0",
+  "unit": "",
+  "friendly_name": "Diagnose Regler Online (Web)",
+  "age_s": 36.2,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_schaltzyklen_2_warmeerzeuger_web",
+  "state": "29.0",
+  "unit": "",
+  "friendly_name": "Zusatzwärmeerzeuger Schaltzyklen 2. Wärmeerzeuger (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_schaltzyklen_stufe_1_web",
+  "state": "5034.0",
+  "unit": "",
+  "friendly_name": "alm6_15 Schaltzyklen Stufe 1 (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_smart_grid_status",
+  "state": "Yellow",
+  "unit": "",
+  "friendly_name": "alm6_15 Smart Grid Status",
+  "age_s": 8667.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_software_version_web",
+  "state": "NAV10_20.24-880-g265e09c4a",
+  "unit": "",
+  "friendly_name": "Diagnose Software Version (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_sole_zwischenkreispumpe",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "alm6_15 Sole-/Zwischenkreispumpe",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_sollvorlauftemperatur_hk_a",
+  "state": "0.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Sollvorlauftemperatur HK A",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_thermische_leistung_durchflusssensor",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Thermische Leistung (Durchflusssensor)",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_thermische_momentanleistung",
+  "state": "0.0",
+  "unit": "kW",
+  "friendly_name": "alm6_15 Thermische Momentanleistung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_trinkwassererwarmer_oben",
+  "state": "54.92",
+  "unit": "°C",
+  "friendly_name": "Warmwasser Warmwasser oben",
+  "age_s": 27.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_trinkwassererwarmer_unten",
+  "state": "52.69",
+  "unit": "°C",
+  "friendly_name": "Warmwasser Warmwasser unten",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_umschaltventil_heizen_warmwasser",
+  "state": "0",
+  "unit": "",
+  "friendly_name": "alm6_15 Umschaltventil Heizen/Warmwasser",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_ventil_heizung_warmwasser_web",
+  "state": "Heizen",
+  "unit": "",
+  "friendly_name": "Warmwasser Ventil Heizung/Warmwasser (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_ventilator_richtung_1_web",
+  "state": "0.0",
+  "unit": "",
+  "friendly_name": "alm6_15 Ventilator Richtung 1 (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_ventilator_spannung_web",
+  "state": "0.0",
+  "unit": "V",
+  "friendly_name": "alm6_15 Ventilator Spannung (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_verdampfer_austrittstemperatur_web",
+  "state": "22.5",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Verdampfer Austrittstemperatur (Web)",
+  "age_s": 36.2,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_verdampfer_druck_web",
+  "state": "6.3",
+  "unit": "bar",
+  "friendly_name": "alm6_15 Verdampfer Druck (Web)",
+  "age_s": 2308.0,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_verdampfungstemperatur_web",
+  "state": "14.7",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Verdampfungstemperatur (Web)",
+  "age_s": 5.9,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_vorlauftemperatur_hk_a",
+  "state": "24.12",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Vorlauftemperatur HK A",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_abtauen",
+  "state": "1004.01",
+  "unit": "kWh",
+  "friendly_name": "alm6_15 Wärmemenge Abtauen",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_gesamt",
+  "state": "31708.66",
+  "unit": "kWh",
+  "friendly_name": "alm6_15 Wärmemenge Gesamt",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_heizen",
+  "state": "27230.17",
+  "unit": "kWh",
+  "friendly_name": "alm6_15 Wärmemenge Heizen",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_warmwasser",
+  "state": "3474.47",
+  "unit": "kWh",
+  "friendly_name": "Warmwasser Wärmemenge Warmwasser",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_zapfung_web",
+  "state": "1792.0",
+  "unit": "kWh",
+  "friendly_name": "Warmwasser Wärmemenge Zapfung (Web)",
+  "age_s": 7184.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_zirkulation_web",
+  "state": "4820.1",
+  "unit": "kWh",
+  "friendly_name": "Warmwasser Wärmemenge Zirkulation (Web)",
+  "age_s": 1217.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpen_betriebsart",
+  "state": "Standby",
+  "unit": "",
+  "friendly_name": "alm6_15 Wärmepumpen Betriebsart",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpen_rucklauftemperatur",
+  "state": "22.75",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Wärmepumpe Rücklauf",
+  "age_s": 137.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpen_spreizung",
+  "state": "2.15",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Wärmepumpen-Spreizung",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpen_vorlauftemperatur",
+  "state": "24.9",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Wärmepumpe Vorlauf",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpenmodell_web",
+  "state": "unavailable",
+  "unit": "",
+  "friendly_name": "Diagnose Wärmepumpenmodell (Web)",
+  "age_s": 42231.5,
+  "available": false
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpentakte_erfasst",
+  "state": "55",
+  "unit": "",
+  "friendly_name": "alm6_15 Wärmepumpentakte erfasst",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpentakte_heute",
+  "state": "0",
+  "unit": "",
+  "friendly_name": "alm6_15 Wärmepumpentakte heute",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmequellenpumpe_m15",
+  "state": "-1",
+  "unit": "%",
+  "friendly_name": "alm6_15 Wärmequellenpumpe M15",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmesenke_zwischenkreispumpe_signal_web",
+  "state": "Unterbrechung",
+  "unit": "",
+  "friendly_name": "alm6_15 Wärmesenke Zwischenkreispumpe Signal (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmespeichertemperatur",
+  "state": "37.76",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Speichertemperatur",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmwasser_abweichung_ist_zu_soll",
+  "state": "6.92",
+  "unit": "°C",
+  "friendly_name": "alm6_15 Warmwasser-Abweichung Ist zu Soll",
+  "age_s": 27.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmwasserstation_durchfluss_web",
+  "state": "0.0",
+  "unit": "L/min",
+  "friendly_name": "Warmwasser Warmwasserstation Durchfluss (Web)",
+  "age_s": 1066.1,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmwasserstation_pumpe_web",
+  "state": "-1.0",
+  "unit": "%",
+  "friendly_name": "Warmwasser Warmwasserstation Pumpe (Web)",
+  "age_s": 1066.1,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.alm6_15_zeit_seit_letztem_abtaustart",
+  "state": "unavailable",
+  "unit": "min",
+  "friendly_name": "alm6_15 Zeit seit letztem Abtaustart",
+  "age_s": 42231.5,
+  "available": false
+ },
+ {
+  "entity_id": "sensor.alm6_15_zirkulationspumpe_m64",
+  "state": "0",
+  "unit": "",
+  "friendly_name": "alm6_15 Zirkulationspumpe M64",
+  "age_s": 57.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.heizkreis_a_heizkreis_a_vorlauf_abweichung",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "Heizkreis A Heizkreis A Vorlauf-Abweichung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_hc_d_flow_temp",
+  "state": "23.93",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Vorlauftemperatur HK D",
+  "age_s": 7.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_hc_d_room_temp",
+  "state": "21.5",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Raumtemperatur HK D",
+  "age_s": 47.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_hc_d_setpoint_flow_temp",
+  "state": "0.0",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Sollvorlauftemperatur HK D",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_heizkreis_d_vorlauf_abweichung",
+  "state": "unknown",
+  "unit": "°C",
+  "friendly_name": "Heizkreis D Heizkreis D Vorlauf-Abweichung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_mischer_heizkreis_d_web",
+  "state": "Aus",
+  "unit": "",
+  "friendly_name": "Heizkreis D Mischer Heizkreis D (Web)",
+  "age_s": 42231.5,
+  "available": true
+ },
+ {
+  "entity_id": "switch.alm6_15_einmalige_ww_anforderung",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Einmalige WW-Anforderung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "switch.alm6_15_externe_heizanforderung",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Externe Heizanforderung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "switch.alm6_15_externe_kuhlanforderung",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Externe Kühlanforderung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "switch.alm6_15_externe_ww_ladeanforderung",
+  "state": "off",
+  "unit": "",
+  "friendly_name": "alm6_15 Externe WW-Ladeanforderung",
+  "age_s": 39187.7,
+  "available": true
+ },
+ {
+  "entity_id": "water_heater.alm6_15",
+  "state": "heat_pump",
+  "unit": "",
+  "friendly_name": "Warmwasser Warmwasser",
+  "age_s": 287.7,
+  "available": true
+ }
+]

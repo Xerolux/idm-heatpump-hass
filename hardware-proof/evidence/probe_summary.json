@@ -1,0 +1,28 @@
+{
+ "probe_time_local": "2026-09-09T18:34:12.700641+02:00",
+ "api_running": {
+  "message": "API running."
+ },
+ "ha": {
+  "version": "2026.9.1",
+  "installation_type": null,
+  "os_name": null,
+  "os_version": null,
+  "timezone": null,
+  "latitude": null,
+  "longitude": null
+ },
+ "entity_count": 193,
+ "platform_counts": {
+  "binary_sensor": 22,
+  "button": 3,
+  "climate": 2,
+  "number": 48,
+  "select": 4,
+  "sensor": 109,
+  "switch": 4,
+  "water_heater": 1
+ },
+ "total_states_in_ha": 2586,
+ "idm_states_found": 193
+}

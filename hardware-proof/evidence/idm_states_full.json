@@ -1,0 +1,3681 @@
+[
+ {
+  "entity_id": "binary_sensor.alm6_15_durchflusspumpe_web",
+  "state": "on",
+  "attributes": {
+   "device_class": "running",
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Durchflusspumpe (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.592395+00:00",
+  "last_reported": "2026-09-09T04:52:11.515908+00:00",
+  "last_updated": "2026-09-09T04:50:21.592395+00:00",
+  "context": {
+   "id": "01M2281C8RB6D049SJ5RN1N588",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_evu_sperrkontakt_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "safety",
+   "icon": "mdi:lock",
+   "friendly_name": "alm6_15 EVU-Sperrkontakt (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.591665+00:00",
+  "last_reported": "2026-09-09T04:52:11.515871+00:00",
+  "last_updated": "2026-09-09T04:50:21.591665+00:00",
+  "context": {
+   "id": "01M2281C8QSCH6XR09BZ3FCXDR",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_externe_anforderung_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "running",
+   "icon": "mdi:connection",
+   "friendly_name": "alm6_15 Externe Anforderung (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.592029+00:00",
+  "last_reported": "2026-09-09T04:52:11.515890+00:00",
+  "last_updated": "2026-09-09T04:50:21.592029+00:00",
+  "context": {
+   "id": "01M2281C8R87SDWD5HE2QV0A27",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_externe_warmwasseranforderung_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "heat",
+   "icon": "mdi:water-boiler",
+   "friendly_name": "Warmwasser Externe Warmwasseranforderung (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.591866+00:00",
+  "last_reported": "2026-09-09T04:52:11.515881+00:00",
+  "last_updated": "2026-09-09T04:50:21.591866+00:00",
+  "context": {
+   "id": "01M2281C8QJRJTHPFCWAEPYEMZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_heizanforderung",
+  "state": "off",
+  "attributes": {
+   "device_class": "heat",
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Heizanforderung"
+  },
+  "last_changed": "2026-09-09T05:41:05.431536+00:00",
+  "last_reported": "2026-09-09T05:41:21.618165+00:00",
+  "last_updated": "2026-09-09T05:41:05.431536+00:00",
+  "context": {
+   "id": "01M22AY8RQNXG8VMBMP2J5F0XG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_hochdruckstorung_web",
+  "state": "unavailable",
+  "attributes": {
+   "device_class": "problem",
+   "icon": "mdi:gauge-full",
+   "friendly_name": "alm6_15 Hochdruckstörung (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.592927+00:00",
+  "last_reported": "2026-09-09T04:52:11.515935+00:00",
+  "last_updated": "2026-09-09T04:50:21.592927+00:00",
+  "context": {
+   "id": "01M2281C8R3GN0E4RF5ETMB3HB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_kuhlanforderung",
+  "state": "off",
+  "attributes": {
+   "device_class": "cold",
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Kühlanforderung"
+  },
+  "last_changed": "2026-09-09T05:41:05.431576+00:00",
+  "last_reported": "2026-09-09T05:41:21.618180+00:00",
+  "last_updated": "2026-09-09T05:41:05.431576+00:00",
+  "context": {
+   "id": "01M22AY8RQTWSM92XZJ3QQWXKQ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_letzter_verdichtertakt_zu_kurz",
+  "state": "off",
+  "attributes": {
+   "threshold_minutes": 15,
+   "last_cycle_minutes": 24.5,
+   "last_cycle_ended": "2026-09-08T09:06:08.531643+00:00",
+   "device_class": "problem",
+   "icon": "mdi:timer-alert-outline",
+   "friendly_name": "alm6_15 Letzter Verdichtertakt zu kurz"
+  },
+  "last_changed": "2026-09-09T05:41:05.431645+00:00",
+  "last_reported": "2026-09-09T05:41:21.618216+00:00",
+  "last_updated": "2026-09-09T05:41:05.431645+00:00",
+  "context": {
+   "id": "01M22AY8RQ9CK23KWZH20NQD01",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_pumpe_heizkreis_a_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "running",
+   "icon": "mdi:pump",
+   "friendly_name": "Heizkreis A Pumpe Heizkreis A (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.594288+00:00",
+  "last_reported": "2026-09-09T04:52:11.515975+00:00",
+  "last_updated": "2026-09-09T04:50:21.594288+00:00",
+  "context": {
+   "id": "01M2281C8TXS7Q3F78M7MR7H6G",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_siphonheizung_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "heat",
+   "icon": "mdi:heating-coil",
+   "friendly_name": "alm6_15 Siphonheizung (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.594105+00:00",
+  "last_reported": "2026-09-09T04:52:11.515965+00:00",
+  "last_updated": "2026-09-09T04:50:21.594105+00:00",
+  "context": {
+   "id": "01M2281C8TTVBVWGWMNVJQY986",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_storung_e_heizung_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "problem",
+   "icon": "mdi:alert-circle",
+   "friendly_name": "Zusatzwärmeerzeuger Störung E-Heizung (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.592206+00:00",
+  "last_reported": "2026-09-09T04:52:11.515899+00:00",
+  "last_updated": "2026-09-09T04:50:21.592206+00:00",
+  "context": {
+   "id": "01M2281C8RJBES7CR29D1DXAPT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_summenstorung",
+  "state": "off",
+  "attributes": {
+   "device_class": "problem",
+   "icon": "mdi:alert-circle",
+   "friendly_name": "alm6_15 Summenstörung"
+  },
+  "last_changed": "2026-09-09T05:41:05.431607+00:00",
+  "last_reported": "2026-09-09T05:41:21.618194+00:00",
+  "last_updated": "2026-09-09T05:41:05.431607+00:00",
+  "context": {
+   "id": "01M22AY8RQ5J6CNWE49H4NYZ7H",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_taupunkt_feuchtealarm_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "problem",
+   "icon": "mdi:water-alert",
+   "friendly_name": "alm6_15 Taupunkt-Feuchtealarm (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.591542+00:00",
+  "last_reported": "2026-09-09T04:52:11.515861+00:00",
+  "last_updated": "2026-09-09T04:50:21.591542+00:00",
+  "context": {
+   "id": "01M2281C8Q9SS3X4X49X6ZMXSB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_verdichter_1",
+  "state": "off",
+  "attributes": {
+   "device_class": "running",
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Verdichter 1"
+  },
+  "last_changed": "2026-09-09T05:41:05.431471+00:00",
+  "last_reported": "2026-09-09T05:41:21.618150+00:00",
+  "last_updated": "2026-09-09T05:41:05.431471+00:00",
+  "context": {
+   "id": "01M22AY8RQ69MCED90XW76921W",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_verdichter_1_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "running",
+   "icon": "mdi:engine",
+   "friendly_name": "alm6_15 Verdichter 1 (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.591278+00:00",
+  "last_reported": "2026-09-09T04:52:11.515817+00:00",
+  "last_updated": "2026-09-09T04:50:21.591278+00:00",
+  "context": {
+   "id": "01M2281C8Q9SQYE9SVK8C79GWM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_verdichterheizung_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "heat",
+   "icon": "mdi:heating-coil",
+   "friendly_name": "alm6_15 Verdichterheizung (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.591409+00:00",
+  "last_reported": "2026-09-09T04:52:11.515851+00:00",
+  "last_updated": "2026-09-09T04:50:21.591409+00:00",
+  "context": {
+   "id": "01M2281C8QMHW1263V3DVJPBRX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_warmwasser_zirkulationspumpe_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "running",
+   "icon": "mdi:pump",
+   "friendly_name": "Warmwasser Warmwasser-Zirkulationspumpe (Web)"
+  },
+  "last_changed": "2026-09-09T16:16:27.109291+00:00",
+  "last_reported": "2026-09-09T16:16:27.109291+00:00",
+  "last_updated": "2026-09-09T16:16:27.109291+00:00",
+  "context": {
+   "id": "01M23F9MZ5DZ41JYA0FSM4CPYY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_warmwasseranforderung",
+  "state": "off",
+  "attributes": {
+   "device_class": "heat",
+   "icon": "mdi:cog",
+   "friendly_name": "Warmwasser Warmwasseranforderung"
+  },
+  "last_changed": "2026-09-09T05:41:05.431422+00:00",
+  "last_reported": "2026-09-09T05:41:21.618117+00:00",
+  "last_updated": "2026-09-09T05:41:05.431422+00:00",
+  "context": {
+   "id": "01M22AY8RQSM55D46XTYNYAA79",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_warmwasserstation_stromungsschalter_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "running",
+   "icon": "mdi:water-check",
+   "friendly_name": "Warmwasser Warmwasserstation Strömungsschalter (Web)"
+  },
+  "last_changed": "2026-09-09T15:38:35.329130+00:00",
+  "last_reported": "2026-09-09T15:38:45.518132+00:00",
+  "last_updated": "2026-09-09T15:38:35.329130+00:00",
+  "context": {
+   "id": "01M23D4AE1E3W4PV6SD95C15J1",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_zweiter_oder_dritter_warmeerzeuger_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "heat",
+   "icon": "mdi:radiator-multiple",
+   "friendly_name": "Zusatzwärmeerzeuger Zweiter oder dritter Wärmeerzeuger (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.592682+00:00",
+  "last_reported": "2026-09-09T04:52:11.515927+00:00",
+  "last_updated": "2026-09-09T04:50:21.592682+00:00",
+  "context": {
+   "id": "01M2281C8RB6DXPX98MZ0PW56V",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.alm6_15_zweiter_warmeerzeuger_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "heat",
+   "icon": "mdi:radiator",
+   "friendly_name": "Zusatzwärmeerzeuger Zweiter Wärmeerzeuger (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.592552+00:00",
+  "last_reported": "2026-09-09T04:52:11.515918+00:00",
+  "last_updated": "2026-09-09T04:50:21.592552+00:00",
+  "context": {
+   "id": "01M2281C8R3R2ZABGRDE4ZAXPC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "binary_sensor.heizkreis_d_pumpe_heizkreis_d_web",
+  "state": "off",
+  "attributes": {
+   "device_class": "running",
+   "icon": "mdi:pump",
+   "friendly_name": "Heizkreis D Pumpe Heizkreis D (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.594460+00:00",
+  "last_reported": "2026-09-09T04:52:11.515984+00:00",
+  "last_updated": "2026-09-09T04:50:21.594460+00:00",
+  "context": {
+   "id": "01M2281C8TAZ7ZV9HCRG9FYSPC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "button.alm6_15_storungen_quittieren",
+  "state": "unknown",
+  "attributes": {
+   "icon": "mdi:alert-circle-check",
+   "friendly_name": "Diagnose Störungen quittieren"
+  },
+  "last_changed": "2026-09-09T05:41:05.444008+00:00",
+  "last_reported": "2026-09-09T05:41:21.621129+00:00",
+  "last_updated": "2026-09-09T05:41:05.444008+00:00",
+  "context": {
+   "id": "01M22AY8S4AD2FA28D3AR21AEB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "button.alm6_15_warmwasser_boost_abbrechen",
+  "state": "unavailable",
+  "attributes": {
+   "icon": "mdi:water-boiler-off",
+   "friendly_name": "Warmwasser Warmwasser-Boost abbrechen"
+  },
+  "last_changed": "2026-09-09T04:50:21.642951+00:00",
+  "last_reported": "2026-09-09T04:51:53.176311+00:00",
+  "last_updated": "2026-09-09T04:50:21.642951+00:00",
+  "context": {
+   "id": "01M2281CAADTRXV4G5492F0YW1",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "button.alm6_15_warmwasser_boost_starten",
+  "state": "unknown",
+  "attributes": {
+   "active": false,
+   "status": "idle",
+   "target_temperature": null,
+   "current_temperature": 54.92,
+   "timeout_minutes": null,
+   "started_at": null,
+   "deadline": null,
+   "last_reason": null,
+   "priority": "dhw_setpoint_and_hot_water_only_until_end_or_cancel",
+   "icon": "mdi:water-boiler-alert",
+   "friendly_name": "Warmwasser Warmwasser-Boost starten"
+  },
+  "last_changed": "2026-09-09T05:41:05.444073+00:00",
+  "last_reported": "2026-09-09T16:33:55.517627+00:00",
+  "last_updated": "2026-09-09T16:33:45.516037+00:00",
+  "context": {
+   "id": "01M23G9B1CCHBQHZXDVGDGR366",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "climate.alm6_15",
+  "state": "heat",
+  "attributes": {
+   "hvac_modes": [
+    "off",
+    "auto",
+    "heat",
+    "cool"
+   ],
+   "min_temp": 15,
+   "max_temp": 30,
+   "target_temp_step": 0.5,
+   "preset_modes": [
+    "none",
+    "eco"
+   ],
+   "current_temperature": 22.9,
+   "temperature": 21.5,
+   "hvac_action": "idle",
+   "preset_mode": "none",
+   "friendly_name": "Heizkreis A Heizkreis A",
+   "supported_features": 401
+  },
+  "last_changed": "2026-09-09T05:41:05.436020+00:00",
+  "last_reported": "2026-09-09T16:27:25.515636+00:00",
+  "last_updated": "2026-09-09T16:27:15.516164+00:00",
+  "context": {
+   "id": "01M23FXE5WXAATCRDEK0K4MPYH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "climate.heizkreis_d_heizkreis_d",
+  "state": "heat",
+  "attributes": {
+   "hvac_modes": [
+    "off",
+    "auto",
+    "heat",
+    "cool"
+   ],
+   "min_temp": 15,
+   "max_temp": 30,
+   "target_temp_step": 0.5,
+   "preset_modes": [
+    "none",
+    "eco"
+   ],
+   "current_temperature": 21.5,
+   "temperature": 22.0,
+   "hvac_action": "idle",
+   "preset_mode": "none",
+   "friendly_name": "Heizkreis D Heizkreis D",
+   "supported_features": 401
+  },
+  "last_changed": "2026-09-09T05:41:05.435906+00:00",
+  "last_reported": "2026-09-09T15:34:45.518013+00:00",
+  "last_updated": "2026-09-09T15:34:45.518013+00:00",
+  "context": {
+   "id": "01M23CXA0E5RDSK8GPZFJMF7Y7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_batterie_entladung_vorgabe",
+  "state": "0.0",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "kW",
+   "icon": "mdi:battery",
+   "friendly_name": "alm6_15 Batterie Entladung (Vorgabe)"
+  },
+  "last_changed": "2026-09-09T05:41:05.432718+00:00",
+  "last_reported": "2026-09-09T05:41:21.618889+00:00",
+  "last_updated": "2026-09-09T05:41:05.432718+00:00",
+  "context": {
+   "id": "01M22AY8RRJM362X3BVJ2MM9G7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_batterie_soc_vorgabe",
+  "state": "unavailable",
+  "attributes": {
+   "min": 0,
+   "max": 100,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "%",
+   "icon": "mdi:battery",
+   "friendly_name": "alm6_15 Batterie SOC (Vorgabe)"
+  },
+  "last_changed": "2026-09-09T04:50:31.515743+00:00",
+  "last_reported": "2026-09-09T04:52:11.516510+00:00",
+  "last_updated": "2026-09-09T04:50:31.515743+00:00",
+  "context": {
+   "id": "01M2281NYVJ242DA4BQSDJ5X4G",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_bivalenzpunkt_1_2_we",
+  "state": "-5.0",
+  "attributes": {
+   "min": -40,
+   "max": 40,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Zusatzwärmeerzeuger Bivalenzpunkt 1 (2. WE)"
+  },
+  "last_changed": "2026-09-09T05:41:05.432989+00:00",
+  "last_reported": "2026-09-09T05:41:21.619029+00:00",
+  "last_updated": "2026-09-09T05:41:05.432989+00:00",
+  "context": {
+   "id": "01M22AY8RR012G9GSZD6F72JV9",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_bivalenzpunkt_1_3_we",
+  "state": "-5.0",
+  "attributes": {
+   "min": -40,
+   "max": 40,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Zusatzwärmeerzeuger Bivalenzpunkt 1 (3. WE)"
+  },
+  "last_changed": "2026-09-09T05:41:05.433043+00:00",
+  "last_reported": "2026-09-09T05:41:21.619056+00:00",
+  "last_updated": "2026-09-09T05:41:05.433043+00:00",
+  "context": {
+   "id": "01M22AY8RSCW7MC46CHNCC4D6C",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_bivalenzpunkt_2_2_we",
+  "state": "-18.0",
+  "attributes": {
+   "min": -40,
+   "max": 40,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Zusatzwärmeerzeuger Bivalenzpunkt 2 (2. WE)"
+  },
+  "last_changed": "2026-09-09T05:41:05.433015+00:00",
+  "last_reported": "2026-09-09T05:41:21.619041+00:00",
+  "last_updated": "2026-09-09T05:41:05.433015+00:00",
+  "context": {
+   "id": "01M22AY8RSJMJ42599R3RQSP9C",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_bivalenzpunkt_2_3_we",
+  "state": "-20.0",
+  "attributes": {
+   "min": -40,
+   "max": 40,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Zusatzwärmeerzeuger Bivalenzpunkt 2 (3. WE)"
+  },
+  "last_changed": "2026-09-09T05:41:05.433068+00:00",
+  "last_reported": "2026-09-09T05:41:21.619068+00:00",
+  "last_updated": "2026-09-09T05:41:05.433068+00:00",
+  "context": {
+   "id": "01M22AY8RS09TR17KZTV41ES1H",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_e_heizstab_leistung_vorgabe",
+  "state": "0.0",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "kW",
+   "icon": "mdi:flash",
+   "friendly_name": "Zusatzwärmeerzeuger E-Heizstab Leistung (Vorgabe)"
+  },
+  "last_changed": "2026-09-09T05:41:05.432640+00:00",
+  "last_reported": "2026-09-09T05:41:21.618847+00:00",
+  "last_updated": "2026-09-09T05:41:05.432640+00:00",
+  "context": {
+   "id": "01M22AY8RRBKAPK1PCMNME99BH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_externe_anforderung_grundwasserpumpe_m15",
+  "state": "unknown",
+  "attributes": {
+   "min": 0,
+   "max": 100,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Externe Anforderung Grundwasserpumpe M15"
+  },
+  "last_changed": "2026-09-09T05:41:05.432896+00:00",
+  "last_reported": "2026-09-09T05:41:21.618980+00:00",
+  "last_updated": "2026-09-09T05:41:05.432896+00:00",
+  "context": {
+   "id": "01M22AY8RRB3425VRGYRBBGFCP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_externe_anforderung_grundwasserpumpe_m15_sw_max",
+  "state": "unknown",
+  "attributes": {
+   "min": 0,
+   "max": 100,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Externe Anforderung Grundwasserpumpe M15 (SW max)"
+  },
+  "last_changed": "2026-09-09T05:41:05.432919+00:00",
+  "last_reported": "2026-09-09T05:41:21.618991+00:00",
+  "last_updated": "2026-09-09T05:41:05.432919+00:00",
+  "context": {
+   "id": "01M22AY8RRWZEZPZDKP09EV1WV",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_externe_anforderungstemperatur_heizen",
+  "state": "40.0",
+  "attributes": {
+   "min": 20,
+   "max": 65,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Externe Anforderungstemperatur Heizen"
+  },
+  "last_changed": "2026-09-09T05:41:05.432781+00:00",
+  "last_reported": "2026-09-09T05:41:21.618928+00:00",
+  "last_updated": "2026-09-09T05:41:05.432781+00:00",
+  "context": {
+   "id": "01M22AY8RR39EDXB84ZT93CBFG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_externe_anforderungstemperatur_kuhlen",
+  "state": "16.0",
+  "attributes": {
+   "min": 10,
+   "max": 25,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Externe Anforderungstemperatur Kühlen"
+  },
+  "last_changed": "2026-09-09T05:41:05.432806+00:00",
+  "last_reported": "2026-09-09T05:41:21.618941+00:00",
+  "last_updated": "2026-09-09T05:41:05.432806+00:00",
+  "context": {
+   "id": "01M22AY8RRXVVX1993X882B0E6",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_externe_aussentemperatur_glt",
+  "state": "unknown",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Externe Außentemperatur (GLT)"
+  },
+  "last_changed": "2026-09-09T05:41:05.433090+00:00",
+  "last_reported": "2026-09-09T05:41:21.619081+00:00",
+  "last_updated": "2026-09-09T05:41:05.433090+00:00",
+  "context": {
+   "id": "01M22AY8RSJ00P4PHG3ATB6V6Q",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_externe_feuchte_glt",
+  "state": "unknown",
+  "attributes": {
+   "min": 0,
+   "max": 100,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "%",
+   "icon": "mdi:water-percent",
+   "friendly_name": "alm6_15 Externe Feuchte (GLT)"
+  },
+  "last_changed": "2026-09-09T05:41:05.433113+00:00",
+  "last_reported": "2026-09-09T05:41:21.619093+00:00",
+  "last_updated": "2026-09-09T05:41:05.433113+00:00",
+  "context": {
+   "id": "01M22AY8RS19Y5P9PG4NPCM897",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_festwertvorlauf_hk_a",
+  "state": "45.0",
+  "attributes": {
+   "min": 20,
+   "max": 90,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Festwertvorlauf HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432121+00:00",
+  "last_reported": "2026-09-09T05:41:21.618565+00:00",
+  "last_updated": "2026-09-09T05:41:05.432121+00:00",
+  "context": {
+   "id": "01M22AY8RRY18ZMBN0TQ48A0B7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_glt_kaltespeichertemperatur",
+  "state": "unknown",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:snowflake",
+   "friendly_name": "alm6_15 GLT Kältespeichertemperatur"
+  },
+  "last_changed": "2026-09-09T05:41:05.432964+00:00",
+  "last_reported": "2026-09-09T05:41:21.619015+00:00",
+  "last_updated": "2026-09-09T05:41:05.432964+00:00",
+  "context": {
+   "id": "01M22AY8RRR5MRZN27P859K1H9",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_glt_temperaturanforderung_heizen",
+  "state": "0.0",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 GLT Temperaturanforderung Heizen"
+  },
+  "last_changed": "2026-09-09T05:41:05.432846+00:00",
+  "last_reported": "2026-09-09T05:41:21.618954+00:00",
+  "last_updated": "2026-09-09T05:41:05.432846+00:00",
+  "context": {
+   "id": "01M22AY8RR5N1X0PR253AAHPQF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_glt_temperaturanforderung_kuhlen",
+  "state": "100.0",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 GLT Temperaturanforderung Kühlen"
+  },
+  "last_changed": "2026-09-09T05:41:05.432872+00:00",
+  "last_reported": "2026-09-09T05:41:21.618968+00:00",
+  "last_updated": "2026-09-09T05:41:05.432872+00:00",
+  "context": {
+   "id": "01M22AY8RRXJFAG8C0RWXBF12K",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_glt_warmespeichertemperatur",
+  "state": "unknown",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 GLT Wärmespeichertemperatur"
+  },
+  "last_changed": "2026-09-09T05:41:05.432940+00:00",
+  "last_reported": "2026-09-09T05:41:21.619003+00:00",
+  "last_updated": "2026-09-09T05:41:05.432940+00:00",
+  "context": {
+   "id": "01M22AY8RRTJ6M0Y7N7H1M19D0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_glt_warmwasser_oben",
+  "state": "unknown",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:water-boiler",
+   "friendly_name": "alm6_15 GLT Warmwasser oben"
+  },
+  "last_changed": "2026-09-09T05:41:05.432589+00:00",
+  "last_reported": "2026-09-09T05:41:21.618798+00:00",
+  "last_updated": "2026-09-09T05:41:05.432589+00:00",
+  "context": {
+   "id": "01M22AY8RRSYSJXC7XTSV3D8YR",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_glt_warmwasser_unten",
+  "state": "unknown",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:water-boiler",
+   "friendly_name": "alm6_15 GLT Warmwasser unten"
+  },
+  "last_changed": "2026-09-09T05:41:05.432564+00:00",
+  "last_reported": "2026-09-09T05:41:21.618786+00:00",
+  "last_updated": "2026-09-09T05:41:05.432564+00:00",
+  "context": {
+   "id": "01M22AY8RR7CX3PV8X5MVPZDXC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hausverbrauch_vorgabe",
+  "state": "1.23",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "kW",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Hausverbrauch (Vorgabe)"
+  },
+  "last_changed": "2026-09-09T16:33:25.515532+00:00",
+  "last_reported": "2026-09-09T16:33:25.515532+00:00",
+  "last_updated": "2026-09-09T16:33:25.515532+00:00",
+  "context": {
+   "id": "01M23G8QGBTXCS4QYKBKTZWSEZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_cooling_limit",
+  "state": "25.0",
+  "attributes": {
+   "min": 0,
+   "max": 36,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Kühlgrenze HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432282+00:00",
+  "last_reported": "2026-09-09T05:41:21.618657+00:00",
+  "last_updated": "2026-09-09T05:41:05.432282+00:00",
+  "context": {
+   "id": "01M22AY8RRE3YYTMX585WHEN10",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_heating_curve",
+  "state": "0.4",
+  "attributes": {
+   "min": 0.1,
+   "max": 3.5,
+   "step": 0.1,
+   "mode": "box",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Heizkreis D Heizkurve HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432048+00:00",
+  "last_reported": "2026-09-09T05:41:21.618518+00:00",
+  "last_updated": "2026-09-09T05:41:05.432048+00:00",
+  "context": {
+   "id": "01M22AY8RRAPDR75BQPBVQH5JY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_heating_limit",
+  "state": "15.0",
+  "attributes": {
+   "min": 0,
+   "max": 50,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Heizgrenze HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432097+00:00",
+  "last_reported": "2026-09-09T05:41:21.618551+00:00",
+  "last_updated": "2026-09-09T05:41:05.432097+00:00",
+  "context": {
+   "id": "01M22AY8RR2H32SJGNS42N9TJH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_parallel_shift",
+  "state": "0.0",
+  "attributes": {
+   "min": 0,
+   "max": 30,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Parallelverschiebung HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432392+00:00",
+  "last_reported": "2026-09-09T05:41:21.618708+00:00",
+  "last_updated": "2026-09-09T05:41:05.432392+00:00",
+  "context": {
+   "id": "01M22AY8RR5Z1YXEKZ39RV4K7F",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_room_setpoint_cool_eco",
+  "state": "25.0",
+  "attributes": {
+   "min": 15,
+   "max": 30,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Raumsoll Kühlen Eco HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432237+00:00",
+  "last_reported": "2026-09-09T05:41:21.618630+00:00",
+  "last_updated": "2026-09-09T05:41:05.432237+00:00",
+  "context": {
+   "id": "01M22AY8RRGZB8SZET64CQ331Y",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_room_setpoint_cool_normal",
+  "state": "23.0",
+  "attributes": {
+   "min": 15,
+   "max": 30,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Raumsoll Kühlen Normal HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432191+00:00",
+  "last_reported": "2026-09-09T05:41:21.618605+00:00",
+  "last_updated": "2026-09-09T05:41:05.432191+00:00",
+  "context": {
+   "id": "01M22AY8RRYQQNG3HHE3MN9FQN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_room_setpoint_heat_eco",
+  "state": "18.0",
+  "attributes": {
+   "min": 10,
+   "max": 25,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Raumsoll Heizen Eco HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432001+00:00",
+  "last_reported": "2026-09-09T05:41:21.618467+00:00",
+  "last_updated": "2026-09-09T05:41:05.432001+00:00",
+  "context": {
+   "id": "01M22AY8RR4HECW8T8XWCWCWW7",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_room_setpoint_heat_normal",
+  "state": "22.0",
+  "attributes": {
+   "min": 15,
+   "max": 30,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Raumsoll Heizen Normal HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.431952+00:00",
+  "last_reported": "2026-09-09T05:41:21.618438+00:00",
+  "last_updated": "2026-09-09T05:41:05.431952+00:00",
+  "context": {
+   "id": "01M22AY8RQEWR2GRAYABVRSA8M",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_setpoint_flow_constant",
+  "state": "45.0",
+  "attributes": {
+   "min": 20,
+   "max": 90,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Festwertvorlauf HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432146+00:00",
+  "last_reported": "2026-09-09T05:41:21.618579+00:00",
+  "last_updated": "2026-09-09T05:41:05.432146+00:00",
+  "context": {
+   "id": "01M22AY8RRGF81NY2146TN6FVP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_hc_d_setpoint_flow_cooling",
+  "state": "18.0",
+  "attributes": {
+   "min": 8,
+   "max": 30,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Kühlvorlauf HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432330+00:00",
+  "last_reported": "2026-09-09T05:41:21.618683+00:00",
+  "last_updated": "2026-09-09T05:41:05.432330+00:00",
+  "context": {
+   "id": "01M22AY8RRC1S013G195G0FC1S",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_heizgrenze_hk_a",
+  "state": "15.0",
+  "attributes": {
+   "min": 0,
+   "max": 50,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Heizgrenze HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432073+00:00",
+  "last_reported": "2026-09-09T05:41:21.618537+00:00",
+  "last_updated": "2026-09-09T05:41:05.432073+00:00",
+  "context": {
+   "id": "01M22AY8RRGG7MYAD3G2QQV6PN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_heizkurve_hk_a",
+  "state": "0.3",
+  "attributes": {
+   "min": 0.1,
+   "max": 3.5,
+   "step": 0.1,
+   "mode": "box",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Heizkreis A Heizkurve HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432024+00:00",
+  "last_reported": "2026-09-09T05:41:21.618499+00:00",
+  "last_updated": "2026-09-09T05:41:05.432024+00:00",
+  "context": {
+   "id": "01M22AY8RRQC37P2SZVF50W2RP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_kuhlgrenze_hk_a",
+  "state": "25.0",
+  "attributes": {
+   "min": 0,
+   "max": 36,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Kühlgrenze HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432260+00:00",
+  "last_reported": "2026-09-09T05:41:21.618644+00:00",
+  "last_updated": "2026-09-09T05:41:05.432260+00:00",
+  "context": {
+   "id": "01M22AY8RRDPE3TP893NE25XPE",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_kuhlvorlauf_hk_a",
+  "state": "18.0",
+  "attributes": {
+   "min": 8,
+   "max": 30,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Kühlvorlauf HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432305+00:00",
+  "last_reported": "2026-09-09T05:41:21.618670+00:00",
+  "last_updated": "2026-09-09T05:41:05.432305+00:00",
+  "context": {
+   "id": "01M22AY8RR7QQ5QWZ5DTXCT9ZN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_parallelverschiebung_hk_a",
+  "state": "20.0",
+  "attributes": {
+   "min": 0,
+   "max": 30,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Parallelverschiebung HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432364+00:00",
+  "last_reported": "2026-09-09T05:41:21.618695+00:00",
+  "last_updated": "2026-09-09T05:41:05.432364+00:00",
+  "context": {
+   "id": "01M22AY8RRKV6WX0Q3P352YR73",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_pv_produktion_vorgabe",
+  "state": "1.23",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "kW",
+   "icon": "mdi:solar-panel",
+   "friendly_name": "alm6_15 PV Produktion (Vorgabe)"
+  },
+  "last_changed": "2026-09-09T16:33:25.515501+00:00",
+  "last_reported": "2026-09-09T16:33:25.515501+00:00",
+  "last_updated": "2026-09-09T16:33:25.515501+00:00",
+  "context": {
+   "id": "01M23G8QGBQXGTBP349T70BDAX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_pv_uberschuss_vorgabe",
+  "state": "-0.0",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "kW",
+   "icon": "mdi:solar-panel",
+   "friendly_name": "alm6_15 PV Überschuss (Vorgabe)"
+  },
+  "last_changed": "2026-09-09T16:33:55.515048+00:00",
+  "last_reported": "2026-09-09T16:33:55.515048+00:00",
+  "last_updated": "2026-09-09T16:33:55.515048+00:00",
+  "context": {
+   "id": "01M23G9MSVQD1H3H8J80MS2FKV",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_pv_zielwert",
+  "state": "0.0",
+  "attributes": {
+   "min": -999,
+   "max": 999,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "kW",
+   "icon": "mdi:solar-panel",
+   "friendly_name": "alm6_15 PV Zielwert"
+  },
+  "last_changed": "2026-09-09T05:41:05.432757+00:00",
+  "last_reported": "2026-09-09T05:41:21.618915+00:00",
+  "last_updated": "2026-09-09T05:41:05.432757+00:00",
+  "context": {
+   "id": "01M22AY8RRAV4WJVBEWVEJHTWS",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_raumsoll_heizen_eco_hk_a",
+  "state": "17.0",
+  "attributes": {
+   "min": 10,
+   "max": 25,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Raumsoll Heizen Eco HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.431977+00:00",
+  "last_reported": "2026-09-09T05:41:21.618453+00:00",
+  "last_updated": "2026-09-09T05:41:05.431977+00:00",
+  "context": {
+   "id": "01M22AY8RQRWCXGC1Y9M0VPQ0S",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_raumsoll_heizen_normal_hk_a",
+  "state": "21.5",
+  "attributes": {
+   "min": 15,
+   "max": 30,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Raumsoll Heizen Normal HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.431919+00:00",
+  "last_reported": "2026-09-09T05:41:21.618417+00:00",
+  "last_updated": "2026-09-09T05:41:05.431919+00:00",
+  "context": {
+   "id": "01M22AY8RQA05BRHJZ2BXYRBNV",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_raumsoll_kuhlen_eco_hk_a",
+  "state": "25.0",
+  "attributes": {
+   "min": 15,
+   "max": 30,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Raumsoll Kühlen Eco HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432215+00:00",
+  "last_reported": "2026-09-09T05:41:21.618617+00:00",
+  "last_updated": "2026-09-09T05:41:05.432215+00:00",
+  "context": {
+   "id": "01M22AY8RR2VQDQXAT3QV94Y4V",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_raumsoll_kuhlen_normal_hk_a",
+  "state": "23.0",
+  "attributes": {
+   "min": 15,
+   "max": 30,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Raumsoll Kühlen Normal HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432168+00:00",
+  "last_reported": "2026-09-09T05:41:21.618592+00:00",
+  "last_updated": "2026-09-09T05:41:05.432168+00:00",
+  "context": {
+   "id": "01M22AY8RR1HH4DZGFW9TKTCHT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_warmwasser_sollwert",
+  "state": "48.0",
+  "attributes": {
+   "min": 35,
+   "max": 95,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:water-boiler",
+   "friendly_name": "Warmwasser Warmwasser Sollwert"
+  },
+  "last_changed": "2026-09-09T05:41:05.432464+00:00",
+  "last_reported": "2026-09-09T05:41:21.618746+00:00",
+  "last_updated": "2026-09-09T05:41:05.432464+00:00",
+  "context": {
+   "id": "01M22AY8RRBBTWSZTTBTF2NHY5",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_ww_ausschalttemperatur",
+  "state": "50.0",
+  "attributes": {
+   "min": 46,
+   "max": 53,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:water-boiler",
+   "friendly_name": "Warmwasser WW Ausschalttemperatur"
+  },
+  "last_changed": "2026-09-09T05:41:05.432529+00:00",
+  "last_reported": "2026-09-09T05:41:21.618773+00:00",
+  "last_updated": "2026-09-09T05:41:05.432529+00:00",
+  "context": {
+   "id": "01M22AY8RRVVHKTMBGDGWJ9XVB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.alm6_15_ww_einchargetemperatur",
+  "state": "46.0",
+  "attributes": {
+   "min": 30,
+   "max": 50,
+   "step": 1.0,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:water-boiler",
+   "friendly_name": "Warmwasser WW Einchargetemperatur"
+  },
+  "last_changed": "2026-09-09T05:41:05.432501+00:00",
+  "last_reported": "2026-09-09T05:41:21.618760+00:00",
+  "last_updated": "2026-09-09T05:41:05.432501+00:00",
+  "context": {
+   "id": "01M22AY8RR86YBJ3F91JDKZQRX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.heizkreis_a_externe_raumtemperatur_hk_a",
+  "state": "unknown",
+  "attributes": {
+   "min": 15,
+   "max": 30,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Externe Raumtemperatur HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.432415+00:00",
+  "last_reported": "2026-09-09T05:41:21.618720+00:00",
+  "last_updated": "2026-09-09T05:41:05.432415+00:00",
+  "context": {
+   "id": "01M22AY8RRFNKP0VDHSQSH4G0F",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "number.heizkreis_d_hc_d_ext_room_temp",
+  "state": "unknown",
+  "attributes": {
+   "min": 15,
+   "max": 30,
+   "step": 0.5,
+   "mode": "box",
+   "unit_of_measurement": "°C",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Externe Raumtemperatur HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.432439+00:00",
+  "last_reported": "2026-09-09T05:41:21.618732+00:00",
+  "last_updated": "2026-09-09T05:41:05.432439+00:00",
+  "context": {
+   "id": "01M22AY8RREC1BKTER0B3X8BKF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "select.alm6_15_betriebsart_hk_a",
+  "state": "normal",
+  "attributes": {
+   "options": [
+    "off",
+    "timed_program",
+    "normal",
+    "eco",
+    "manual_heating",
+    "manual_cooling"
+   ],
+   "icon": "mdi:cog",
+   "friendly_name": "Heizkreis A Betriebsart HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.433173+00:00",
+  "last_reported": "2026-09-09T05:41:21.619131+00:00",
+  "last_updated": "2026-09-09T05:41:05.433173+00:00",
+  "context": {
+   "id": "01M22AY8RSSD4BA3XJSEP51250",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "select.alm6_15_hc_d_mode",
+  "state": "normal",
+  "attributes": {
+   "options": [
+    "off",
+    "timed_program",
+    "normal",
+    "eco",
+    "manual_heating",
+    "manual_cooling"
+   ],
+   "icon": "mdi:cog",
+   "friendly_name": "Heizkreis D Betriebsart HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.433196+00:00",
+  "last_reported": "2026-09-09T05:41:21.619143+00:00",
+  "last_updated": "2026-09-09T05:41:05.433196+00:00",
+  "context": {
+   "id": "01M22AY8RS6266085BZ2GHP1JB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "select.alm6_15_solar_betriebsart",
+  "state": "automatic",
+  "attributes": {
+   "options": [
+    "automatic",
+    "hot_water",
+    "heating",
+    "hot_water_and_heating",
+    "heat_source_pool"
+   ],
+   "icon": "mdi:solar-power",
+   "friendly_name": "Solaranlage Solar Betriebsart"
+  },
+  "last_changed": "2026-09-09T05:41:05.433218+00:00",
+  "last_reported": "2026-09-09T05:41:21.619154+00:00",
+  "last_updated": "2026-09-09T05:41:05.433218+00:00",
+  "context": {
+   "id": "01M22AY8RSRDM54G8N9A7M1H9R",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "select.alm6_15_systembetriebsart",
+  "state": "hot_water_only",
+  "attributes": {
+   "options": [
+    "standby",
+    "automatic",
+    "absent",
+    "holiday",
+    "hot_water_only",
+    "heating_cooling_only"
+   ],
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Systembetriebsart"
+  },
+  "last_changed": "2026-09-09T05:41:05.433148+00:00",
+  "last_reported": "2026-09-09T05:41:21.619117+00:00",
+  "last_updated": "2026-09-09T05:41:05.433148+00:00",
+  "context": {
+   "id": "01M22AY8RSMQ9TTDPMMC77P8ZC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_00_fachmann_ebene_1",
+  "state": "0909",
+  "attributes": {
+   "icon": "mdi:key-variant",
+   "friendly_name": "Diagnose 00 Fachmann Ebene 1"
+  },
+  "last_changed": "2026-09-09T04:50:21.613697+00:00",
+  "last_reported": "2026-09-09T04:52:11.516871+00:00",
+  "last_updated": "2026-09-09T04:50:21.613697+00:00",
+  "context": {
+   "id": "01M2281C9D6VZ8NCPNY9TTSWXX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_00_fachmann_ebene_2",
+  "state": "81699",
+  "attributes": {
+   "icon": "mdi:key-variant",
+   "friendly_name": "Diagnose 00 Fachmann Ebene 2"
+  },
+  "last_changed": "2026-09-09T16:00:22.181469+00:00",
+  "last_reported": "2026-09-09T16:00:25.514188+00:00",
+  "last_updated": "2026-09-09T16:00:22.181469+00:00",
+  "context": {
+   "id": "01M23EC6N5T0MK6E0XNZ0PFPRY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_4way_valve_circuit1_web",
+  "state": "0.0",
+  "attributes": {
+   "icon": "mdi:valve",
+   "friendly_name": "alm6_15 4-Wege-Ventil Kreis 1 (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.639526+00:00",
+  "last_reported": "2026-09-09T04:52:11.518647+00:00",
+  "last_updated": "2026-09-09T04:50:21.639526+00:00",
+  "context": {
+   "id": "01M2281CA7XKEY7H9GXQ33JSW8",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_abtauvorgange_heute",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "recording_scope": "observed_since_feature_activation",
+   "compressor_counting_method": "aggregate_any_compressor_off_to_on",
+   "icon": "mdi:snowflake-melt",
+   "friendly_name": "alm6_15 Abtauvorgänge heute"
+  },
+  "last_changed": "2026-09-09T05:41:05.435199+00:00",
+  "last_reported": "2026-09-09T05:41:21.620166+00:00",
+  "last_updated": "2026-09-09T05:41:05.435199+00:00",
+  "context": {
+   "id": "01M22AY8RVZ388DGJM80Q14V8J",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_aktive_betriebsart_hk_a",
+  "state": "off",
+  "attributes": {
+   "options": [
+    "off",
+    "timed_program",
+    "normal",
+    "eco",
+    "manual_heating",
+    "manual_cooling",
+    "not_configured"
+   ],
+   "device_class": "enum",
+   "icon": "mdi:cog",
+   "friendly_name": "Heizkreis A Aktive Betriebsart HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.433627+00:00",
+  "last_reported": "2026-09-09T05:41:21.619385+00:00",
+  "last_updated": "2026-09-09T05:41:05.433627+00:00",
+  "context": {
+   "id": "01M22AY8RS9N74W27PEMECBPEJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_aktuelle_taktlaufzeit",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "recording_scope": "observed_since_feature_activation",
+   "compressor_counting_method": "aggregate_any_compressor_off_to_on",
+   "unit_of_measurement": "min",
+   "device_class": "duration",
+   "icon": "mdi:timer-play-outline",
+   "friendly_name": "alm6_15 Aktuelle Taktlaufzeit"
+  },
+  "last_changed": "2026-09-09T05:41:05.435102+00:00",
+  "last_reported": "2026-09-09T05:41:21.620106+00:00",
+  "last_updated": "2026-09-09T05:41:05.435102+00:00",
+  "context": {
+   "id": "01M22AY8RV763KNZP3MJF47VPX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_aussentemperatur",
+  "state": "15.07",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Außentemperatur"
+  },
+  "last_changed": "2026-09-09T16:34:05.513902+00:00",
+  "last_reported": "2026-09-09T16:34:07.280612+00:00",
+  "last_updated": "2026-09-09T16:34:05.513902+00:00",
+  "context": {
+   "id": "01M23G9YJ9QWGFZPZM0FNMC2YD",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_batterie_entladung",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:battery",
+   "friendly_name": "alm6_15 Batterie Entladung"
+  },
+  "last_changed": "2026-09-09T05:41:05.434046+00:00",
+  "last_reported": "2026-09-09T05:41:21.619612+00:00",
+  "last_updated": "2026-09-09T05:41:05.434046+00:00",
+  "context": {
+   "id": "01M22AY8RTRD4CQ1SCWVSSSXX2",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_batteriespannung_zentraleinheit_web",
+  "state": "3.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "V",
+   "device_class": "voltage",
+   "icon": "mdi:battery",
+   "friendly_name": "alm6_15 Batteriespannung Zentraleinheit (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.635217+00:00",
+  "last_reported": "2026-09-09T04:52:11.518513+00:00",
+  "last_updated": "2026-09-09T04:50:21.635217+00:00",
+  "context": {
+   "id": "01M2281CA38FTDMZ4YAFMG3DDX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_bivalenz_betriebszustand",
+  "state": "Off",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "Zusatzwärmeerzeuger Bivalenz Betriebszustand"
+  },
+  "last_changed": "2026-09-09T05:41:05.434402+00:00",
+  "last_reported": "2026-09-09T05:41:21.619800+00:00",
+  "last_updated": "2026-09-09T05:41:05.434402+00:00",
+  "context": {
+   "id": "01M22AY8RT07XNH6MP7FE9T44C",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_booster_a_ladepumpe",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "Zusatzwärmeerzeuger Booster A Ladepumpe"
+  },
+  "last_changed": "2026-09-09T05:41:05.434532+00:00",
+  "last_reported": "2026-09-09T05:41:21.619876+00:00",
+  "last_updated": "2026-09-09T05:41:05.434532+00:00",
+  "context": {
+   "id": "01M22AY8RT7YYVGPDB9A64ZNA8",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_booster_a_warmequellenpumpe",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "Zusatzwärmeerzeuger Booster A Wärmequellenpumpe"
+  },
+  "last_changed": "2026-09-09T05:41:05.434508+00:00",
+  "last_reported": "2026-09-09T05:41:21.619864+00:00",
+  "last_updated": "2026-09-09T05:41:05.434508+00:00",
+  "context": {
+   "id": "01M22AY8RTZ3BGKXYRWJ3AAZS0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_booster_b_ladepumpe",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "Zusatzwärmeerzeuger Booster B Ladepumpe"
+  },
+  "last_changed": "2026-09-09T05:41:05.434575+00:00",
+  "last_reported": "2026-09-09T05:41:21.619900+00:00",
+  "last_updated": "2026-09-09T05:41:05.434575+00:00",
+  "context": {
+   "id": "01M22AY8RTAR8JGJRE4T76NAQ9",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_booster_b_warmequellenpumpe",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "Zusatzwärmeerzeuger Booster B Wärmequellenpumpe"
+  },
+  "last_changed": "2026-09-09T05:41:05.434554+00:00",
+  "last_reported": "2026-09-09T05:41:21.619888+00:00",
+  "last_updated": "2026-09-09T05:41:05.434554+00:00",
+  "context": {
+   "id": "01M22AY8RTWSJBSSEQ9DSGXVE2",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_durchfluss_warmesenke_b2",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "L/min",
+   "device_class": "volume_flow_rate",
+   "icon": "mdi:water-pump",
+   "friendly_name": "alm6_15 Durchfluss Wärmesenke (B2)"
+  },
+  "last_changed": "2026-09-09T05:41:05.433839+00:00",
+  "last_reported": "2026-09-09T05:41:21.619507+00:00",
+  "last_updated": "2026-09-09T05:41:05.433839+00:00",
+  "context": {
+   "id": "01M22AY8RSAACS0ENRJHSH6E83",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_durchflusspumpe_ausgang_web",
+  "state": "100.0",
+  "attributes": {
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Durchflusspumpe Ausgang (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.634083+00:00",
+  "last_reported": "2026-09-09T04:52:11.518389+00:00",
+  "last_updated": "2026-09-09T04:50:21.634083+00:00",
+  "context": {
+   "id": "01M2281CA2SDPZQ5CH2YP6JRTH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_durchflusspumpe_signal_web",
+  "state": "-1.0",
+  "attributes": {
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Durchflusspumpe Signal (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.634276+00:00",
+  "last_reported": "2026-09-09T04:52:11.518406+00:00",
+  "last_updated": "2026-09-09T04:50:21.634276+00:00",
+  "context": {
+   "id": "01M2281CA2BQ1JQESZCPVXE51N",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_durchschnittliche_taktlaufzeit",
+  "state": "21.3",
+  "attributes": {
+   "state_class": "measurement",
+   "recording_scope": "observed_since_feature_activation",
+   "compressor_counting_method": "aggregate_any_compressor_off_to_on",
+   "unit_of_measurement": "min",
+   "device_class": "duration",
+   "icon": "mdi:timer-sand-complete",
+   "friendly_name": "alm6_15 Durchschnittliche Taktlaufzeit"
+  },
+  "last_changed": "2026-09-09T05:41:05.435135+00:00",
+  "last_reported": "2026-09-09T05:41:21.620126+00:00",
+  "last_updated": "2026-09-09T05:41:05.435135+00:00",
+  "context": {
+   "id": "01M22AY8RV3ST96PKNR5EH4GF6",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_e_heizstab_leistung",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:flash",
+   "friendly_name": "Zusatzwärmeerzeuger E-Heizstab Leistung"
+  },
+  "last_changed": "2026-09-09T05:41:05.433974+00:00",
+  "last_reported": "2026-09-09T05:41:21.619574+00:00",
+  "last_updated": "2026-09-09T05:41:05.433974+00:00",
+  "context": {
+   "id": "01M22AY8RSH12VJYPFM4CFW4WK",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_elektrische_leistungsaufnahme_smartfox",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Elektrische Leistungsaufnahme Smartfox"
+  },
+  "last_changed": "2026-09-09T05:41:05.434623+00:00",
+  "last_reported": "2026-09-09T05:41:21.619926+00:00",
+  "last_updated": "2026-09-09T05:41:05.434623+00:00",
+  "context": {
+   "id": "01M22AY8RTYBJKXE0Z66TQ6HSM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_elektrische_leistungsaufnahme_warmepumpe",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Elektrische Leistungsaufnahme Wärmepumpe"
+  },
+  "last_changed": "2026-09-09T05:41:05.434599+00:00",
+  "last_reported": "2026-09-09T05:41:21.619912+00:00",
+  "last_updated": "2026-09-09T05:41:05.434599+00:00",
+  "context": {
+   "id": "01M22AY8RT6HZ1A3BC5S1S7QYY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_evu_sperre",
+  "state": "Not Locked",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 EVU Sperre"
+  },
+  "last_changed": "2026-09-09T05:41:05.433425+00:00",
+  "last_reported": "2026-09-09T05:41:21.619281+00:00",
+  "last_updated": "2026-09-09T05:41:05.433425+00:00",
+  "context": {
+   "id": "01M22AY8RSN5DM6KKT9SX9J8GW",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_externe_umschaltung_heizen_kuhlen_web",
+  "state": "0.0",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Externe Umschaltung Heizen/Kühlen (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.630587+00:00",
+  "last_reported": "2026-09-09T04:52:11.518003+00:00",
+  "last_updated": "2026-09-09T04:50:21.630587+00:00",
+  "context": {
+   "id": "01M2281C9YAHDKV29CRVTWE6D3",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_flussigkeitsleitung_temperatur_web",
+  "state": "24.1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Flüssigkeitsleitung Temperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:29:04.394426+00:00",
+  "last_reported": "2026-09-09T16:29:25.519902+00:00",
+  "last_updated": "2026-09-09T16:29:04.394426+00:00",
+  "context": {
+   "id": "01M23G0RGACFETPGRTDQAJX1DS",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_gemittelte_aussentemperatur",
+  "state": "19.08",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Gemittelte Außentemperatur"
+  },
+  "last_changed": "2026-09-09T16:32:55.517116+00:00",
+  "last_reported": "2026-09-09T16:32:55.517116+00:00",
+  "last_updated": "2026-09-09T16:32:55.517116+00:00",
+  "context": {
+   "id": "01M23G7T6XRMH0E61FNTRVVVXH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_gesamte_warmemenge_vortex",
+  "state": "31708.66",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Gesamte Wärmemenge (Vortex)"
+  },
+  "last_changed": "2026-09-09T05:41:05.434646+00:00",
+  "last_reported": "2026-09-09T05:41:21.619939+00:00",
+  "last_updated": "2026-09-09T05:41:05.434646+00:00",
+  "context": {
+   "id": "01M22AY8RTQJ31FK74H6D6BKTH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_hausverbrauch",
+  "state": "1.23",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Hausverbrauch"
+  },
+  "last_changed": "2026-09-09T16:33:25.516409+00:00",
+  "last_reported": "2026-09-09T16:33:25.516409+00:00",
+  "last_updated": "2026-09-09T16:33:25.516409+00:00",
+  "context": {
+   "id": "01M23G8QGCS6K2E3P10F1KRW33",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_hc_d_active_mode",
+  "state": "off",
+  "attributes": {
+   "options": [
+    "off",
+    "timed_program",
+    "normal",
+    "eco",
+    "manual_heating",
+    "manual_cooling",
+    "not_configured"
+   ],
+   "device_class": "enum",
+   "icon": "mdi:cog",
+   "friendly_name": "Heizkreis D Aktive Betriebsart HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.433651+00:00",
+  "last_reported": "2026-09-09T05:41:21.619399+00:00",
+  "last_updated": "2026-09-09T05:41:05.433651+00:00",
+  "context": {
+   "id": "01M22AY8RSY49NKPDFYB7TAPDE",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_heissgastemperatur_web",
+  "state": "22.9",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Heißgastemperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:19:59.146018+00:00",
+  "last_reported": "2026-09-09T16:20:25.518367+00:00",
+  "last_updated": "2026-09-09T16:19:59.146018+00:00",
+  "context": {
+   "id": "01M23FG41A6C32VSSXS0RGV05T",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_heizwasser_austrittstemperatur_web",
+  "state": "42.1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Heizwasser Austrittstemperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:33:36.994677+00:00",
+  "last_reported": "2026-09-09T16:33:55.517397+00:00",
+  "last_updated": "2026-09-09T16:33:36.994677+00:00",
+  "context": {
+   "id": "01M23G92Q2GF8MQPAVPGH9JHZA",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_idm_heatpump_api_version",
+  "state": "2.0.1",
+  "attributes": {
+   "integration_version": "0.17.0-beta.2",
+   "modbus_connection_version": "4.11.1",
+   "tmodbus_version": "0.6.2",
+   "icon": "mdi:package-variant-closed",
+   "friendly_name": "alm6_15 IDM-Heatpump-API-Version"
+  },
+  "last_changed": "2026-09-09T04:50:21.640525+00:00",
+  "last_reported": "2026-09-09T04:52:11.518751+00:00",
+  "last_updated": "2026-09-09T04:50:21.640525+00:00",
+  "context": {
+   "id": "01M2281CA8P4P3V9ERGQ9J49WH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_infosystem_meldungen_anzahl_web",
+  "state": "0.0",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "Diagnose Infosystem Meldungen Anzahl (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.627719+00:00",
+  "last_reported": "2026-09-09T04:52:11.517944+00:00",
+  "last_updated": "2026-09-09T04:50:21.627719+00:00",
+  "context": {
+   "id": "01M2281C9VDNQ9TMJHJSDN77NQ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_infosystem_meldungen_web",
+  "state": "Keine aktiven Meldungen",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "Diagnose Infosystem Meldungen (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.627916+00:00",
+  "last_reported": "2026-09-09T04:52:11.517959+00:00",
+  "last_updated": "2026-09-09T04:50:21.627916+00:00",
+  "context": {
+   "id": "01M2281C9VPBDDGYZ8C3FQ8QV4",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_interne_meldung",
+  "state": "000 - Keine Meldung",
+  "attributes": {
+   "message_code": 0,
+   "message_text": "Keine Meldung",
+   "icon": "mdi:message-alert",
+   "friendly_name": "Diagnose Interne Meldung"
+  },
+  "last_changed": "2026-09-09T05:41:05.434241+00:00",
+  "last_reported": "2026-09-09T05:41:21.619712+00:00",
+  "last_updated": "2026-09-09T05:41:05.434241+00:00",
+  "context": {
+   "id": "01M22AY8RTDJMGP2RTE5GANWJ2",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_isc_kaltespeicherpumpe_m84",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "IDM ISC ISC Kältespeicherpumpe M84"
+  },
+  "last_changed": "2026-09-09T05:41:05.434338+00:00",
+  "last_reported": "2026-09-09T05:41:21.619765+00:00",
+  "last_updated": "2026-09-09T05:41:05.434338+00:00",
+  "context": {
+   "id": "01M22AY8RTY1YM1HSVYVRCFKR9",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_isc_modus",
+  "state": "Not configured / Unavailable",
+  "attributes": {
+   "icon": "mdi:cog",
+   "friendly_name": "IDM ISC ISC Modus"
+  },
+  "last_changed": "2026-09-09T05:41:05.434476+00:00",
+  "last_reported": "2026-09-09T05:41:21.619851+00:00",
+  "last_updated": "2026-09-09T05:41:05.434476+00:00",
+  "context": {
+   "id": "01M22AY8RT9856V71BGKH05RSB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_isc_ruckkuhlpumpe_m17",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "IDM ISC ISC Rückkühlpumpe M17"
+  },
+  "last_changed": "2026-09-09T05:41:05.434360+00:00",
+  "last_reported": "2026-09-09T05:41:21.619777+00:00",
+  "last_updated": "2026-09-09T05:41:05.434360+00:00",
+  "context": {
+   "id": "01M22AY8RTFBQY4D1QZVDYYAYW",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_jahresarbeitszahl_cop_momentan",
+  "state": "unknown",
+  "attributes": {
+   "state_class": "measurement",
+   "icon": "mdi:gauge",
+   "friendly_name": "alm6_15 Jahresarbeitszahl (COP, momentan)"
+  },
+  "last_changed": "2026-09-09T05:41:05.434880+00:00",
+  "last_reported": "2026-09-09T05:41:21.620001+00:00",
+  "last_updated": "2026-09-09T05:41:05.434880+00:00",
+  "context": {
+   "id": "01M22AY8RTMJ1JQF6FWYKXRHE1",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_kaltwasser_temperatur_web",
+  "state": "41.4",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:snowflake",
+   "friendly_name": "alm6_15 Kaltwasser Temperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:34:07.281365+00:00",
+  "last_reported": "2026-09-09T16:34:07.281365+00:00",
+  "last_updated": "2026-09-09T16:34:07.281365+00:00",
+  "context": {
+   "id": "01M23GA09HPMWN3YE80RXVB2BJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_kondensator_druck_web",
+  "state": "6.3",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "bar",
+   "device_class": "pressure",
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Kondensator Druck (Web)"
+  },
+  "last_changed": "2026-09-09T16:26:02.623883+00:00",
+  "last_reported": "2026-09-09T16:26:25.514146+00:00",
+  "last_updated": "2026-09-09T16:26:02.623883+00:00",
+  "context": {
+   "id": "01M23FV6ZZSXRRRVYQ5F2E6REG",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_kondensator_temperatur_web",
+  "state": "14.7",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Kondensator Temperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:34:07.281660+00:00",
+  "last_reported": "2026-09-09T16:34:07.281660+00:00",
+  "last_updated": "2026-09-09T16:34:07.281660+00:00",
+  "context": {
+   "id": "01M23GA09H2GQ2B5W6V283N49Z",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_ladefuhler_temperatur",
+  "state": "21.77",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Ladefühler Temperatur"
+  },
+  "last_changed": "2026-09-09T16:34:05.514066+00:00",
+  "last_reported": "2026-09-09T16:34:07.280733+00:00",
+  "last_updated": "2026-09-09T16:34:05.514066+00:00",
+  "context": {
+   "id": "01M23G9YJA5RSS9P4HSHBQR4JA",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_ladepumpe_m73",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Ladepumpe M73"
+  },
+  "last_changed": "2026-09-09T05:41:05.434315+00:00",
+  "last_reported": "2026-09-09T05:41:21.619753+00:00",
+  "last_updated": "2026-09-09T05:41:05.434315+00:00",
+  "context": {
+   "id": "01M22AY8RTXVMG0PVZCQR89CEM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_ladetemperatur_web",
+  "state": "21.8",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Ladetemperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:09:53.324219+00:00",
+  "last_reported": "2026-09-09T16:09:55.517423+00:00",
+  "last_updated": "2026-09-09T16:09:53.324219+00:00",
+  "context": {
+   "id": "01M23EXMDC2C6X5G0C8M1T11XW",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_2_warmeerzeuger_web",
+  "state": "24.5",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "h",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Zusatzwärmeerzeuger Laufzeit 2. Wärmeerzeuger (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.639216+00:00",
+  "last_reported": "2026-09-09T04:52:11.518610+00:00",
+  "last_updated": "2026-09-09T04:50:21.639216+00:00",
+  "context": {
+   "id": "01M2281CA7S2XMVFYEBGNJ99SE",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_abtauen_web",
+  "state": "59.5",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "h",
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Laufzeit Abtauen (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.638580+00:00",
+  "last_reported": "2026-09-09T04:52:11.518573+00:00",
+  "last_updated": "2026-09-09T04:50:21.638580+00:00",
+  "context": {
+   "id": "01M2281CA6W2HDRSRS7TT8AVB6",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_heizen_web",
+  "state": "3353.3",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "h",
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Laufzeit Heizen (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.638959+00:00",
+  "last_reported": "2026-09-09T04:52:11.518593+00:00",
+  "last_updated": "2026-09-09T04:50:21.638959+00:00",
+  "context": {
+   "id": "01M2281CA63AQAR8VP791KX6PF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_kuhlen_web",
+  "state": "unavailable",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "h",
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Laufzeit Kühlen (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.635629+00:00",
+  "last_reported": "2026-09-09T04:52:11.518553+00:00",
+  "last_updated": "2026-09-09T04:50:21.635629+00:00",
+  "context": {
+   "id": "01M2281CA3KJ1QFEMFE31XM5BE",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_stufe_1_web",
+  "state": "3718.6",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "h",
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Laufzeit Stufe 1 (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.639380+00:00",
+  "last_reported": "2026-09-09T04:52:11.518629+00:00",
+  "last_updated": "2026-09-09T04:50:21.639380+00:00",
+  "context": {
+   "id": "01M2281CA7M8FGJ4A3BM294W86",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_laufzeit_warmwasser_web",
+  "state": "305.7",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "h",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Warmwasser Laufzeit Warmwasser (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.632697+00:00",
+  "last_reported": "2026-09-09T04:52:11.518246+00:00",
+  "last_updated": "2026-09-09T04:50:21.632697+00:00",
+  "context": {
+   "id": "01M2281CA035RAXF1YRZVMDZ9X",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_letzter_abtaustart",
+  "state": "unavailable",
+  "attributes": {
+   "device_class": "timestamp",
+   "icon": "mdi:snowflake-clock",
+   "friendly_name": "alm6_15 Letzter Abtaustart"
+  },
+  "last_changed": "2026-09-09T04:50:21.626757+00:00",
+  "last_reported": "2026-09-09T04:52:11.517895+00:00",
+  "last_updated": "2026-09-09T04:50:21.626757+00:00",
+  "context": {
+   "id": "01M2281C9T91MAP71DP8HDPDPZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_letzter_verdichterstart",
+  "state": "2026-09-08T08:41:38+00:00",
+  "attributes": {
+   "recording_scope": "observed_since_feature_activation",
+   "compressor_counting_method": "aggregate_any_compressor_off_to_on",
+   "device_class": "timestamp",
+   "icon": "mdi:clock-start",
+   "friendly_name": "alm6_15 Letzter Verdichterstart"
+  },
+  "last_changed": "2026-09-09T05:41:05.435168+00:00",
+  "last_reported": "2026-09-09T05:41:21.620146+00:00",
+  "last_updated": "2026-09-09T05:41:05.435168+00:00",
+  "context": {
+   "id": "01M22AY8RVHEFXWKK0KCR0QT9A",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_luftansaugtemperatur",
+  "state": "12.97",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Luftansaugtemperatur"
+  },
+  "last_changed": "2026-09-09T16:34:05.514039+00:00",
+  "last_reported": "2026-09-09T16:34:07.280719+00:00",
+  "last_updated": "2026-09-09T16:34:05.514039+00:00",
+  "context": {
+   "id": "01M23G9YJAAHS27J3C3T48PVBF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_luftquellen_temperatur_web",
+  "state": "13.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Luftquellen Temperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:32:06.129439+00:00",
+  "last_reported": "2026-09-09T16:32:25.515297+00:00",
+  "last_updated": "2026-09-09T16:32:06.129439+00:00",
+  "context": {
+   "id": "01M23G69ZHVMCKQGX4VZAYG34X",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_mischer_heizkreis_a_web",
+  "state": "Aus",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "Heizkreis A Mischer Heizkreis A (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.631239+00:00",
+  "last_reported": "2026-09-09T04:52:11.518057+00:00",
+  "last_updated": "2026-09-09T04:50:21.631239+00:00",
+  "context": {
+   "id": "01M2281C9Z6HS6AZC3C0SYP5RS",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_momentane_leistung_heizen_web",
+  "state": "unavailable",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Momentane/prognostizierte Leistung Heizen (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.635505+00:00",
+  "last_reported": "2026-09-09T04:52:11.518540+00:00",
+  "last_updated": "2026-09-09T04:50:21.635505+00:00",
+  "context": {
+   "id": "01M2281CA3MQH465FX44KMNP46",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_momentane_leistung_kuhlen_web",
+  "state": "unavailable",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Momentane/prognostizierte Leistung Kühlen (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.635352+00:00",
+  "last_reported": "2026-09-09T04:52:11.518527+00:00",
+  "last_updated": "2026-09-09T04:50:21.635352+00:00",
+  "context": {
+   "id": "01M2281CA3X148TFVNB0MG12KZ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_momentane_leistung_warmwasser_web",
+  "state": "unavailable",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:flash",
+   "friendly_name": "Warmwasser Momentane/prognostizierte Leistung Warmwasser (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.631701+00:00",
+  "last_reported": "2026-09-09T04:52:11.518111+00:00",
+  "last_updated": "2026-09-09T04:50:21.631701+00:00",
+  "context": {
+   "id": "01M2281C9Z8F3N1WA3YHQANG9B",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_navigator_version_web",
+  "state": "Navigator 10",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "Diagnose Navigator Version (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.628083+00:00",
+  "last_reported": "2026-09-09T04:52:11.517973+00:00",
+  "last_updated": "2026-09-09T04:50:21.628083+00:00",
+  "context": {
+   "id": "01M2281C9WJAYFVRPZ05CXYWCT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_platinentemperatur_web",
+  "state": "27.6",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Platinentemperatur (Web)"
+  },
+  "last_changed": "2026-09-09T15:53:13.745219+00:00",
+  "last_reported": "2026-09-09T15:53:15.515982+00:00",
+  "last_updated": "2026-09-09T15:53:13.745219+00:00",
+  "context": {
+   "id": "01M23DZ48HNRE96W9Z2VY7MNJ0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_pv_produktion",
+  "state": "1.23",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:solar-panel",
+   "friendly_name": "alm6_15 PV Produktion"
+  },
+  "last_changed": "2026-09-09T16:33:25.516383+00:00",
+  "last_reported": "2026-09-09T16:33:25.516383+00:00",
+  "last_updated": "2026-09-09T16:33:25.516383+00:00",
+  "context": {
+   "id": "01M23G8QGCFDW37QBTCYF8Z3MJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_pv_uberschuss",
+  "state": "-0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:solar-panel",
+   "friendly_name": "alm6_15 PV Überschuss"
+  },
+  "last_changed": "2026-09-09T16:33:55.516003+00:00",
+  "last_reported": "2026-09-09T16:33:55.516003+00:00",
+  "last_updated": "2026-09-09T16:33:55.516003+00:00",
+  "context": {
+   "id": "01M23G9MSWWJKQCHDYH9V4W482",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_raumtemperatur_hk_a",
+  "state": "22.88",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Raumtemperatur HK A"
+  },
+  "last_changed": "2026-09-09T16:34:05.513510+00:00",
+  "last_reported": "2026-09-09T16:34:07.280305+00:00",
+  "last_updated": "2026-09-09T16:34:05.513510+00:00",
+  "context": {
+   "id": "01M23G9YJ9GT5QSRCH1AJQ3ZAM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_regler_online_web",
+  "state": "13901.0",
+  "attributes": {
+   "state_class": "total_increasing",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Diagnose Regler Online (Web)"
+  },
+  "last_changed": "2026-09-09T16:33:36.994640+00:00",
+  "last_reported": "2026-09-09T16:33:55.517385+00:00",
+  "last_updated": "2026-09-09T16:33:36.994640+00:00",
+  "context": {
+   "id": "01M23G92Q2N2YNMV3JEDNGTA2V",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_schaltzyklen_2_warmeerzeuger_web",
+  "state": "29.0",
+  "attributes": {
+   "state_class": "total_increasing",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Zusatzwärmeerzeuger Schaltzyklen 2. Wärmeerzeuger (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.630873+00:00",
+  "last_reported": "2026-09-09T04:52:11.518022+00:00",
+  "last_updated": "2026-09-09T04:50:21.630873+00:00",
+  "context": {
+   "id": "01M2281C9YBB75W5HA1JCFV05C",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_schaltzyklen_stufe_1_web",
+  "state": "5034.0",
+  "attributes": {
+   "state_class": "total_increasing",
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Schaltzyklen Stufe 1 (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.631061+00:00",
+  "last_reported": "2026-09-09T04:52:11.518040+00:00",
+  "last_updated": "2026-09-09T04:50:21.631061+00:00",
+  "context": {
+   "id": "01M2281C9ZMXACVF13C29SAQR5",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_smart_grid_status",
+  "state": "Yellow",
+  "attributes": {
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Smart Grid Status"
+  },
+  "last_changed": "2026-09-09T14:09:45.515575+00:00",
+  "last_reported": "2026-09-09T14:10:05.515047+00:00",
+  "last_updated": "2026-09-09T14:09:45.515575+00:00",
+  "context": {
+   "id": "01M2381NHBWSSMKV7HT5J5Q4ZP",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_software_version_web",
+  "state": "NAV10_20.24-880-g265e09c4a",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "Diagnose Software Version (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.628257+00:00",
+  "last_reported": "2026-09-09T04:52:11.517987+00:00",
+  "last_updated": "2026-09-09T04:50:21.628257+00:00",
+  "context": {
+   "id": "01M2281C9WM96WB2FBTTF0BKPV",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_sole_zwischenkreispumpe",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Sole-/Zwischenkreispumpe"
+  },
+  "last_changed": "2026-09-09T05:41:05.433868+00:00",
+  "last_reported": "2026-09-09T05:41:21.619520+00:00",
+  "last_updated": "2026-09-09T05:41:05.433868+00:00",
+  "context": {
+   "id": "01M22AY8RS3SB1ADW6YY4VH0J6",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_sollvorlauftemperatur_hk_a",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Sollvorlauftemperatur HK A"
+  },
+  "last_changed": "2026-09-09T05:41:05.433576+00:00",
+  "last_reported": "2026-09-09T05:41:21.619358+00:00",
+  "last_updated": "2026-09-09T05:41:05.433576+00:00",
+  "context": {
+   "id": "01M22AY8RSV0R7ZRCB27D7SA7P",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_thermische_leistung_durchflusssensor",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:heat-wave",
+   "friendly_name": "alm6_15 Thermische Leistung (Durchflusssensor)"
+  },
+  "last_changed": "2026-09-09T05:41:05.433918+00:00",
+  "last_reported": "2026-09-09T05:41:21.619547+00:00",
+  "last_updated": "2026-09-09T05:41:05.433918+00:00",
+  "context": {
+   "id": "01M22AY8RSPFWR25GW6D3MFVCJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_thermische_momentanleistung",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "kW",
+   "device_class": "power",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Thermische Momentanleistung"
+  },
+  "last_changed": "2026-09-09T05:41:05.434452+00:00",
+  "last_reported": "2026-09-09T05:41:21.619838+00:00",
+  "last_updated": "2026-09-09T05:41:05.434452+00:00",
+  "context": {
+   "id": "01M22AY8RTTSYQY7Z39S68ZSDM",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_trinkwassererwarmer_oben",
+  "state": "54.92",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:water-thermometer",
+   "friendly_name": "Warmwasser Warmwasser oben"
+  },
+  "last_changed": "2026-09-09T16:33:45.514237+00:00",
+  "last_reported": "2026-09-09T16:33:55.515851+00:00",
+  "last_updated": "2026-09-09T16:33:45.514237+00:00",
+  "context": {
+   "id": "01M23G9B1AE568DCQ05N3B0Z5Z",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_trinkwassererwarmer_unten",
+  "state": "52.69",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:water-thermometer",
+   "friendly_name": "Warmwasser Warmwasser unten"
+  },
+  "last_changed": "2026-09-09T16:34:05.513630+00:00",
+  "last_reported": "2026-09-09T16:34:07.280389+00:00",
+  "last_updated": "2026-09-09T16:34:05.513630+00:00",
+  "context": {
+   "id": "01M23G9YJ91MGF3YR019B7YS4N",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_umschaltventil_heizen_warmwasser",
+  "state": "0",
+  "attributes": {
+   "icon": "mdi:valve",
+   "friendly_name": "alm6_15 Umschaltventil Heizen/Warmwasser"
+  },
+  "last_changed": "2026-09-09T05:41:05.433752+00:00",
+  "last_reported": "2026-09-09T05:41:21.619457+00:00",
+  "last_updated": "2026-09-09T05:41:05.433752+00:00",
+  "context": {
+   "id": "01M22AY8RSJ19N5K5KSZWGA0KY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_ventil_heizung_warmwasser_web",
+  "state": "Heizen",
+  "attributes": {
+   "icon": "mdi:valve",
+   "friendly_name": "Warmwasser Ventil Heizung/Warmwasser (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.632818+00:00",
+  "last_reported": "2026-09-09T04:52:11.518265+00:00",
+  "last_updated": "2026-09-09T04:50:21.632818+00:00",
+  "context": {
+   "id": "01M2281CA0656RHZBN60QAFCM0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_ventilator_richtung_1_web",
+  "state": "0.0",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Ventilator Richtung 1 (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.634933+00:00",
+  "last_reported": "2026-09-09T04:52:11.518475+00:00",
+  "last_updated": "2026-09-09T04:50:21.634933+00:00",
+  "context": {
+   "id": "01M2281CA272PJWHW8YSVNEFK1",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_ventilator_spannung_web",
+  "state": "0.0",
+  "attributes": {
+   "unit_of_measurement": "V",
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Ventilator Spannung (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.635061+00:00",
+  "last_reported": "2026-09-09T04:52:11.518492+00:00",
+  "last_updated": "2026-09-09T04:50:21.635061+00:00",
+  "context": {
+   "id": "01M2281CA3GM8K03SEKYHCBZBB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_verdampfer_austrittstemperatur_web",
+  "state": "22.5",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Verdampfer Austrittstemperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:33:36.994364+00:00",
+  "last_reported": "2026-09-09T16:33:55.517173+00:00",
+  "last_updated": "2026-09-09T16:33:36.994364+00:00",
+  "context": {
+   "id": "01M23G92Q2AEVEMM0SY6TNPPJY",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_verdampfer_druck_web",
+  "state": "6.3",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "bar",
+   "device_class": "pressure",
+   "icon": "mdi:information-outline",
+   "friendly_name": "alm6_15 Verdampfer Druck (Web)"
+  },
+  "last_changed": "2026-09-09T15:55:45.188534+00:00",
+  "last_reported": "2026-09-09T15:55:45.516746+00:00",
+  "last_updated": "2026-09-09T15:55:45.188534+00:00",
+  "context": {
+   "id": "01M23E3R54Z3B1AYP8BBQZ7XHW",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_verdampfungstemperatur_web",
+  "state": "14.7",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "alm6_15 Verdampfungstemperatur (Web)"
+  },
+  "last_changed": "2026-09-09T16:34:07.281721+00:00",
+  "last_reported": "2026-09-09T16:34:07.281721+00:00",
+  "last_updated": "2026-09-09T16:34:07.281721+00:00",
+  "context": {
+   "id": "01M23GA09HC9NV73TNTZ08SQJ2",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_vorlauftemperatur_hk_a",
+  "state": "24.12",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis A Vorlauftemperatur HK A"
+  },
+  "last_changed": "2026-09-09T16:34:05.513385+00:00",
+  "last_reported": "2026-09-09T16:34:07.280274+00:00",
+  "last_updated": "2026-09-09T16:34:05.513385+00:00",
+  "context": {
+   "id": "01M23G9YJ91PYFJ4BJPK9HX7AX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_abtauen",
+  "state": "1004.01",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "icon": "mdi:flash",
+   "friendly_name": "alm6_15 Wärmemenge Abtauen"
+  },
+  "last_changed": "2026-09-09T05:41:05.434428+00:00",
+  "last_reported": "2026-09-09T05:41:21.619813+00:00",
+  "last_updated": "2026-09-09T05:41:05.434428+00:00",
+  "context": {
+   "id": "01M22AY8RTXN81GFD1TY82RY7R",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_gesamt",
+  "state": "31708.66",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "icon": "mdi:heat-pump",
+   "friendly_name": "alm6_15 Wärmemenge Gesamt"
+  },
+  "last_changed": "2026-09-09T05:41:05.434144+00:00",
+  "last_reported": "2026-09-09T05:41:21.619665+00:00",
+  "last_updated": "2026-09-09T05:41:05.434144+00:00",
+  "context": {
+   "id": "01M22AY8RTAPQS52JM7GC7C126",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_heizen",
+  "state": "27230.17",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "icon": "mdi:radiator",
+   "friendly_name": "alm6_15 Wärmemenge Heizen"
+  },
+  "last_changed": "2026-09-09T05:41:05.434120+00:00",
+  "last_reported": "2026-09-09T05:41:21.619651+00:00",
+  "last_updated": "2026-09-09T05:41:05.434120+00:00",
+  "context": {
+   "id": "01M22AY8RTM3N8MEN1R6X1X6GT",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_warmwasser",
+  "state": "3474.47",
+  "attributes": {
+   "state_class": "total_increasing",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "icon": "mdi:water-boiler",
+   "friendly_name": "Warmwasser Wärmemenge Warmwasser"
+  },
+  "last_changed": "2026-09-09T05:41:05.433727+00:00",
+  "last_reported": "2026-09-09T05:41:21.619443+00:00",
+  "last_updated": "2026-09-09T05:41:05.433727+00:00",
+  "context": {
+   "id": "01M22AY8RS1VKQHZ68F46FHXPB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_zapfung_web",
+  "state": "1792.0",
+  "attributes": {
+   "state_class": "total",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Warmwasser Wärmemenge Zapfung (Web)"
+  },
+  "last_changed": "2026-09-09T14:34:28.494573+00:00",
+  "last_reported": "2026-09-09T14:34:35.515872+00:00",
+  "last_updated": "2026-09-09T14:34:28.494573+00:00",
+  "context": {
+   "id": "01M239EXREDCZCN49614XBQ985",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmemenge_zirkulation_web",
+  "state": "4820.1",
+  "attributes": {
+   "state_class": "total",
+   "unit_of_measurement": "kWh",
+   "device_class": "energy",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Warmwasser Wärmemenge Zirkulation (Web)"
+  },
+  "last_changed": "2026-09-09T16:13:55.639985+00:00",
+  "last_reported": "2026-09-09T16:13:55.639985+00:00",
+  "last_updated": "2026-09-09T16:13:55.639985+00:00",
+  "context": {
+   "id": "01M23F511QKSPDTBV2A1SD886Q",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpen_betriebsart",
+  "state": "Standby",
+  "attributes": {
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Wärmepumpen Betriebsart"
+  },
+  "last_changed": "2026-09-09T05:41:05.433396+00:00",
+  "last_reported": "2026-09-09T05:41:21.619267+00:00",
+  "last_updated": "2026-09-09T05:41:05.433396+00:00",
+  "context": {
+   "id": "01M22AY8RSMZJBMYV5RQQPDT7Z",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpen_rucklauftemperatur",
+  "state": "22.75",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer-chevron-down",
+   "friendly_name": "alm6_15 Wärmepumpe Rücklauf"
+  },
+  "last_changed": "2026-09-09T16:31:55.514692+00:00",
+  "last_reported": "2026-09-09T16:31:55.514692+00:00",
+  "last_updated": "2026-09-09T16:31:55.514692+00:00",
+  "context": {
+   "id": "01M23G5ZKT08FR5EWGXQDT3AEA",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpen_spreizung",
+  "state": "2.15",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer-lines",
+   "friendly_name": "alm6_15 Wärmepumpen-Spreizung"
+  },
+  "last_changed": "2026-09-09T16:34:05.514313+00:00",
+  "last_reported": "2026-09-09T16:34:07.280972+00:00",
+  "last_updated": "2026-09-09T16:34:05.514313+00:00",
+  "context": {
+   "id": "01M23G9YJAZGZ82N8XEHN3K0BR",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpen_vorlauftemperatur",
+  "state": "24.9",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer-chevron-up",
+   "friendly_name": "alm6_15 Wärmepumpe Vorlauf"
+  },
+  "last_changed": "2026-09-09T16:34:05.513709+00:00",
+  "last_reported": "2026-09-09T16:34:07.280449+00:00",
+  "last_updated": "2026-09-09T16:34:05.513709+00:00",
+  "context": {
+   "id": "01M23G9YJ9GX1H13RCXVBX54C0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpenmodell_web",
+  "state": "unavailable",
+  "attributes": {
+   "icon": "mdi:pump",
+   "friendly_name": "Diagnose Wärmepumpenmodell (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.627514+00:00",
+  "last_reported": "2026-09-09T04:52:11.517924+00:00",
+  "last_updated": "2026-09-09T04:50:21.627514+00:00",
+  "context": {
+   "id": "01M2281C9VXMRH6GR2TSXRHWHB",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpentakte_erfasst",
+  "state": "55",
+  "attributes": {
+   "state_class": "total_increasing",
+   "recording_scope": "observed_since_feature_activation",
+   "compressor_counting_method": "aggregate_any_compressor_off_to_on",
+   "icon": "mdi:counter",
+   "friendly_name": "alm6_15 Wärmepumpentakte erfasst"
+  },
+  "last_changed": "2026-09-09T05:41:05.435014+00:00",
+  "last_reported": "2026-09-09T05:41:21.620046+00:00",
+  "last_updated": "2026-09-09T05:41:05.435014+00:00",
+  "context": {
+   "id": "01M22AY8RV9QNGC1ZSZK2X2DA9",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmepumpentakte_heute",
+  "state": "0",
+  "attributes": {
+   "state_class": "measurement",
+   "recording_scope": "observed_since_feature_activation",
+   "compressor_counting_method": "aggregate_any_compressor_off_to_on",
+   "icon": "mdi:calendar-today",
+   "friendly_name": "alm6_15 Wärmepumpentakte heute"
+  },
+  "last_changed": "2026-09-09T05:41:05.435071+00:00",
+  "last_reported": "2026-09-09T05:41:21.620089+00:00",
+  "last_updated": "2026-09-09T05:41:05.435071+00:00",
+  "context": {
+   "id": "01M22AY8RVXFKS1XSB2TPJ26ZW",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmequellenpumpe_m15",
+  "state": "-1",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Wärmequellenpumpe M15"
+  },
+  "last_changed": "2026-09-09T05:41:05.433892+00:00",
+  "last_reported": "2026-09-09T05:41:21.619532+00:00",
+  "last_updated": "2026-09-09T05:41:05.433892+00:00",
+  "context": {
+   "id": "01M22AY8RSPD1RKDA9E4Z5C7SC",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmesenke_zwischenkreispumpe_signal_web",
+  "state": "Unterbrechung",
+  "attributes": {
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Wärmesenke Zwischenkreispumpe Signal (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.634439+00:00",
+  "last_reported": "2026-09-09T04:52:11.518421+00:00",
+  "last_updated": "2026-09-09T04:50:21.634439+00:00",
+  "context": {
+   "id": "01M2281CA2S343MDKG6PVZKPFN",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmespeichertemperatur",
+  "state": "37.76",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:storage-tank",
+   "friendly_name": "alm6_15 Speichertemperatur"
+  },
+  "last_changed": "2026-09-09T16:34:05.513930+00:00",
+  "last_reported": "2026-09-09T16:34:07.280626+00:00",
+  "last_updated": "2026-09-09T16:34:05.513930+00:00",
+  "context": {
+   "id": "01M23G9YJ9ESSBS6RGHHHFFM28",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmwasser_abweichung_ist_zu_soll",
+  "state": "6.92",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:water-thermometer-outline",
+   "friendly_name": "alm6_15 Warmwasser-Abweichung Ist zu Soll"
+  },
+  "last_changed": "2026-09-09T16:33:45.514995+00:00",
+  "last_reported": "2026-09-09T16:33:55.516622+00:00",
+  "last_updated": "2026-09-09T16:33:45.514995+00:00",
+  "context": {
+   "id": "01M23G9B1A9GS2FXJPWT39X5KX",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmwasserstation_durchfluss_web",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "L/min",
+   "device_class": "volume_flow_rate",
+   "icon": "mdi:information-outline",
+   "friendly_name": "Warmwasser Warmwasserstation Durchfluss (Web)"
+  },
+  "last_changed": "2026-09-09T16:16:27.111603+00:00",
+  "last_reported": "2026-09-09T16:16:27.111603+00:00",
+  "last_updated": "2026-09-09T16:16:27.111603+00:00",
+  "context": {
+   "id": "01M23F9MZ7GMFGQ3M1H4TTMEH0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_warmwasserstation_pumpe_web",
+  "state": "-1.0",
+  "attributes": {
+   "unit_of_measurement": "%",
+   "icon": "mdi:pump",
+   "friendly_name": "Warmwasser Warmwasserstation Pumpe (Web)"
+  },
+  "last_changed": "2026-09-09T16:16:27.111632+00:00",
+  "last_reported": "2026-09-09T16:16:27.111632+00:00",
+  "last_updated": "2026-09-09T16:16:27.111632+00:00",
+  "context": {
+   "id": "01M23F9MZ7ETADD65WYJGGXSE3",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_zeit_seit_letztem_abtaustart",
+  "state": "unavailable",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "min",
+   "device_class": "duration",
+   "icon": "mdi:timer-snowflake",
+   "friendly_name": "alm6_15 Zeit seit letztem Abtaustart"
+  },
+  "last_changed": "2026-09-09T04:50:21.626968+00:00",
+  "last_reported": "2026-09-09T04:52:11.517906+00:00",
+  "last_updated": "2026-09-09T04:50:21.626968+00:00",
+  "context": {
+   "id": "01M2281C9TTESJD2M71T0T15S0",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.alm6_15_zirkulationspumpe_m64",
+  "state": "0",
+  "attributes": {
+   "icon": "mdi:pump",
+   "friendly_name": "alm6_15 Zirkulationspumpe M64"
+  },
+  "last_changed": "2026-09-09T16:33:15.515330+00:00",
+  "last_reported": "2026-09-09T16:33:25.516681+00:00",
+  "last_updated": "2026-09-09T16:33:15.515330+00:00",
+  "context": {
+   "id": "01M23G8DQVDFWZAHS6478BPW70",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.heizkreis_a_heizkreis_a_vorlauf_abweichung",
+  "state": "unknown",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer-chevron-up",
+   "friendly_name": "Heizkreis A Heizkreis A Vorlauf-Abweichung"
+  },
+  "last_changed": "2026-09-09T05:41:05.434909+00:00",
+  "last_reported": "2026-09-09T05:41:21.620015+00:00",
+  "last_updated": "2026-09-09T05:41:05.434909+00:00",
+  "context": {
+   "id": "01M22AY8RTBNB88F9SM97TK7J4",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_hc_d_flow_temp",
+  "state": "23.93",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Vorlauftemperatur HK D"
+  },
+  "last_changed": "2026-09-09T16:34:05.513471+00:00",
+  "last_reported": "2026-09-09T16:34:07.280291+00:00",
+  "last_updated": "2026-09-09T16:34:05.513471+00:00",
+  "context": {
+   "id": "01M23G9YJ95KQ61CV68PM14547",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_hc_d_room_temp",
+  "state": "21.5",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Raumtemperatur HK D"
+  },
+  "last_changed": "2026-09-09T16:33:25.516078+00:00",
+  "last_reported": "2026-09-09T16:33:25.516078+00:00",
+  "last_updated": "2026-09-09T16:33:25.516078+00:00",
+  "context": {
+   "id": "01M23G8QGCRNGJB6CEZKV8E0Q9",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_hc_d_setpoint_flow_temp",
+  "state": "0.0",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer",
+   "friendly_name": "Heizkreis D Sollvorlauftemperatur HK D"
+  },
+  "last_changed": "2026-09-09T05:41:05.433601+00:00",
+  "last_reported": "2026-09-09T05:41:21.619370+00:00",
+  "last_updated": "2026-09-09T05:41:05.433601+00:00",
+  "context": {
+   "id": "01M22AY8RSZHZAK6BHVZFRR8GH",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_heizkreis_d_vorlauf_abweichung",
+  "state": "unknown",
+  "attributes": {
+   "state_class": "measurement",
+   "unit_of_measurement": "°C",
+   "device_class": "temperature",
+   "icon": "mdi:thermometer-chevron-up",
+   "friendly_name": "Heizkreis D Heizkreis D Vorlauf-Abweichung"
+  },
+  "last_changed": "2026-09-09T05:41:05.434961+00:00",
+  "last_reported": "2026-09-09T05:41:21.620028+00:00",
+  "last_updated": "2026-09-09T05:41:05.434961+00:00",
+  "context": {
+   "id": "01M22AY8RTTK993GK46C474VKS",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "sensor.heizkreis_d_mischer_heizkreis_d_web",
+  "state": "Aus",
+  "attributes": {
+   "icon": "mdi:information-outline",
+   "friendly_name": "Heizkreis D Mischer Heizkreis D (Web)"
+  },
+  "last_changed": "2026-09-09T04:50:21.631365+00:00",
+  "last_reported": "2026-09-09T04:52:11.518073+00:00",
+  "last_updated": "2026-09-09T04:50:21.631365+00:00",
+  "context": {
+   "id": "01M2281C9Z0FMSBEJQF2HK6V5N",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "switch.alm6_15_einmalige_ww_anforderung",
+  "state": "off",
+  "attributes": {
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Einmalige WW-Anforderung"
+  },
+  "last_changed": "2026-09-09T05:41:05.433247+00:00",
+  "last_reported": "2026-09-09T05:41:21.619173+00:00",
+  "last_updated": "2026-09-09T05:41:05.433247+00:00",
+  "context": {
+   "id": "01M22AY8RSEP37FAZC2WQMNFDD",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "switch.alm6_15_externe_heizanforderung",
+  "state": "off",
+  "attributes": {
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Externe Heizanforderung"
+  },
+  "last_changed": "2026-09-09T05:41:05.433288+00:00",
+  "last_reported": "2026-09-09T05:41:21.619196+00:00",
+  "last_updated": "2026-09-09T05:41:05.433288+00:00",
+  "context": {
+   "id": "01M22AY8RSVAWX8ANJCZR57QZS",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "switch.alm6_15_externe_kuhlanforderung",
+  "state": "off",
+  "attributes": {
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Externe Kühlanforderung"
+  },
+  "last_changed": "2026-09-09T05:41:05.433317+00:00",
+  "last_reported": "2026-09-09T05:41:21.619205+00:00",
+  "last_updated": "2026-09-09T05:41:05.433317+00:00",
+  "context": {
+   "id": "01M22AY8RSMJ6GGC2AASW4N8QF",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "switch.alm6_15_externe_ww_ladeanforderung",
+  "state": "off",
+  "attributes": {
+   "icon": "mdi:cog",
+   "friendly_name": "alm6_15 Externe WW-Ladeanforderung"
+  },
+  "last_changed": "2026-09-09T05:41:05.433268+00:00",
+  "last_reported": "2026-09-09T05:41:21.619185+00:00",
+  "last_updated": "2026-09-09T05:41:05.433268+00:00",
+  "context": {
+   "id": "01M22AY8RS8TYKTKK14CK0TN13",
+   "parent_id": null,
+   "user_id": null
+  }
+ },
+ {
+  "entity_id": "water_heater.alm6_15",
+  "state": "heat_pump",
+  "attributes": {
+   "min_temp": 35,
+   "max_temp": 95,
+   "target_temp_step": 1.0,
+   "current_temperature": 54.9,
+   "temperature": 48.0,
+   "target_temp_high": null,
+   "target_temp_low": null,
+   "friendly_name": "Warmwasser Warmwasser",
+   "supported_features": 1
+  },
+  "last_changed": "2026-09-09T05:41:05.436115+00:00",
+  "last_reported": "2026-09-09T16:29:25.520241+00:00",
+  "last_updated": "2026-09-09T16:29:25.520241+00:00",
+  "context": {
+   "id": "01M23G1D4GZ52R4YS4H23X44NJ",
+   "parent_id": null,
+   "user_id": null
+  }
+ }
+]
