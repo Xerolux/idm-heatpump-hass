@@ -13,6 +13,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.0-beta.3] - 2026-09-11
+
+This beta corrects model reconciliation. Runtime dependencies and the minimum
+Home Assistant version are unchanged. No configuration migration is required.
+The candidate starts a new soak period; full lifecycle smoke tests remain open.
+For rollback, reinstall `v0.17.0-beta.2` through HACS and restart Home Assistant.
+
 ### Fixed
 
 - Keep the persisted Navigator model consistent with confirmed web detection when
