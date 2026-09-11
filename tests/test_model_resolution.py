@@ -260,6 +260,34 @@ class TestOverrideWins:
 
 
 class TestWebAgainstModbus:
+    @pytest.mark.parametrize("stored_name", [NAV10, "Navigator Pro"])
+    def test_web_correction_survives_stale_stored_detection(self, stored_name):
+        resolution = _resolve(
+            fresh=DetectionResult(model_name=NAV20, model_info=_info(NAV20)),
+            stored=StoredDetection(stored_name, "OLD", "nav20"),
+            web=_web(NAV10, "NAV10_20.24-880", "nav10"),
+        )
+
+        assert resolution.model_name == NAV10
+        assert resolution.model_info.model_name == MODEL_NAVIGATOR_10
+        assert resolution.data_updates == {
+            CONF_DETECTED_NAVIGATOR_VERSION: NAV10,
+            CONF_DETECTED_SOFTWARE_VERSION: "NAV10_20.24-880",
+            CONF_DETECTED_WEB_VARIANT: "nav10",
+        }
+        assert resolution.data_removals == frozenset()
+
+    @pytest.mark.parametrize("source", ["stored", "web"])
+    def test_inconclusive_probe_cannot_supply_a_conflicting_register_map(self, source):
+        resolution = _resolve(
+            fresh=DetectionResult(model_name=MODEL, model_info=None, client_model_info=_info(NAV20)),
+            stored=StoredDetection(navigator_version=NAV10) if source == "stored" else StoredDetection(),
+            web=_web(NAV10, "NAV10_20.24", "nav10") if source == "web" else None,
+        )
+
+        assert resolution.model_name == NAV10
+        assert resolution.model_info.model_name == MODEL_NAVIGATOR_10
+
     def test_an_agreeing_web_supplement_contributes_its_firmware(self):
         resolution = _resolve(
             fresh=DetectionResult(model_name=NAV10, model_info=_info(NAV10)),

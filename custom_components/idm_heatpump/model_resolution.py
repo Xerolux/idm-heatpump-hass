@@ -382,12 +382,10 @@ def resolve_model(
 
     data_updates: dict[str, Any] = dict(web_correction_updates)
     data_removals: set[str] = set()
-    # The stale-data correction is applied after the web correction, as it was
-    # inline, so where both apply the stale block still wins on the navigator
-    # version. See ``docs/dev/code-audit-2026-09.md`` for why that ordering is
-    # recorded as a separate open question rather than changed here.
+    # Persist the resolved model: confirmed web evidence may have corrected
+    # the fresh probe as well as the stale stored detection.
     if stale_navigator_version is not None and fresh.model_info is not None:
-        data_updates[CONF_DETECTED_NAVIGATOR_VERSION] = reconciled.modbus_model_name
+        data_updates[CONF_DETECTED_NAVIGATOR_VERSION] = model_name
         if web is not None and web.web_variant:
             data_updates[CONF_DETECTED_WEB_VARIANT] = web.web_variant
         if firmware_version:
@@ -442,7 +440,7 @@ def _resolve_model_info(
             # Same family: the library's info carries features and capabilities
             # the locally built one does not.
             model_info = client_info
-        elif model_info is None:
+        elif model_info is None and navigator_family(client_info.model_name) == navigator_family(model_name):
             model_info = client_info
     if override_active or model_info is None:
         # An override is authoritative for the register map, so rebuild from

@@ -37,19 +37,31 @@ Three findings surfaced while implementing that this audit had not recorded:
   registered demand and listeners — was unreachable for any cleanup. Fixed with B1.
 - `_entry_host` in `config_flow.py` repeated the `isinstance` guard its only caller
   performs, leaving a branch no test could reach. Removed with A5.
-- **Open question, deliberately not changed by D3.** When a web supplement corrects
-  the Modbus-detected model *and* the stored config-entry data is stale for the same
-  entry, both blocks write `CONF_DETECTED_NAVIGATOR_VERSION`. Inline, the stale-data
-  block ran second and therefore won, storing the Modbus model even though the web
-  evidence had just overruled it in memory — so the entry data disagrees with the
-  model actually used until the next setup. D3 preserves that ordering exactly (the
-  extraction is behaviour-neutral by construction, and there are no tests pinning the
-  intended outcome). Deciding which source should win is a behaviour change and needs
-  its own package: the likely answer is that the web correction wins, because the
-  branch is only reached when a nav10 web client connected *and* the firmware string
-  says NAV10, which is stronger evidence than a Modbus probe that may have been
-  refused register 4108. Whoever changes it should add a test for the both-apply case
-  first and drop the comment at `model_resolution.py:383`.
+- **Resolved on 2026-09-11: model reconciliation consistency.** Confirmed web
+  correction now wins when stale stored detection also needs correcting. The
+  persisted model matches the model used for setup. A second regression covered
+  inconclusive probes: cached client information from another Navigator family
+  must not override the register map selected from stored or web detection.
+  Four new regression cases failed before these fixes and pass afterwards.
+
+### Follow-up validation (2026-09-11)
+
+- Started from `main` at the same revision as `origin/main`; only the existing
+  untracked `gui-test-screenshots/` directory was present. Changes are isolated on
+  `Xe/audit-model-resolution`.
+- Used Python 3.14 with Home Assistant 2026.8.1 and the manifest-pinned runtime in
+  a temporary virtual environment. The global Python installation had older API
+  and transport packages and was left unchanged.
+- Full suite: 1664 passed, 2 skipped; overall coverage 95.19% (95% gate).
+- Separate config-flow coverage run: 1664 passed, 2 skipped; coverage 100%.
+- Strict mypy: 47 modules passed. Ruff lint and formatting passed.
+- PyPI dependency check: all three runtime pins are current.
+- GitHub's existing main CI passed HACS, Hassfest and all four quality matrix
+  legs. This is baseline evidence, not CI for the changes on this branch.
+- E1 remains open: the unit suite stubs Home Assistant. The CI matrix still names
+  the September beta `2026.9.0b0`; moving to the stable release is a separate D7
+  follow-up. No live Home Assistant or physical-device validation was performed.
+
 
 
 ## How to use this document
