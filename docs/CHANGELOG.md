@@ -13,6 +13,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Keep the persisted Navigator model consistent with confirmed web detection when
+  the Modbus probe also conflicts with stored detection. Previously, setup could
+  use Navigator 10 while saving Navigator 2.0 for the next reload.
+- Ignore cached client model information from a different Navigator family after
+  an inconclusive probe, so a model selected from stored or web detection receives
+  the matching register map.
+
 ## [0.17.0-beta.2] - 2026-09-09
 
 ### Changed
