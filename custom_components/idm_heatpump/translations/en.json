@@ -1033,6 +1033,9 @@
       "cascade_avg_flow_heating": {
         "name": "Cascade average flow temperature heating"
       },
+      "cascade_mode": {
+        "name": "Cascade mode"
+      },
       "cascade_req_cooling_temp": {
         "name": "Cascade requested cooling temperature"
       },
@@ -1063,6 +1066,15 @@
       "cold_storage_temp": {
         "name": "Cold storage temperature"
       },
+      "compressor_stages_cooling": {
+        "name": "Compressor stages cooling"
+      },
+      "compressor_stages_dhw": {
+        "name": "Compressor stages domestic hot water"
+      },
+      "compressor_stages_heating": {
+        "name": "Compressor stages heating"
+      },
       "current_electricity_price": {
         "name": "Current electricity price"
       },
@@ -1074,6 +1086,9 @@
       },
       "dhw_tapping_temp": {
         "name": "Hot water tapping temperature"
+      },
+      "dhw_temp": {
+        "name": "Domestic hot water temperature"
       },
       "dhw_temp_bottom": {
         "name": "Hot water tank bottom"
@@ -1099,6 +1114,9 @@
       "energy_heating": {
         "name": "Heating energy"
       },
+      "energy_hgl": {
+        "name": "HGL energy total"
+      },
       "energy_passive_cooling": {
         "name": "Passive cooling energy"
       },
@@ -1107,6 +1125,9 @@
       },
       "energy_total": {
         "name": "Total energy"
+      },
+      "error_number": {
+        "name": "Error number"
       },
       "evu_lock": {
         "name": "Utility lock"
@@ -1132,6 +1153,9 @@
       "groundwater_inlet_temp_2": {
         "name": "Groundwater inlet temperature 2"
       },
+      "groundwater_pump_flow_total": {
+        "name": "Groundwater pump flow counter"
+      },
       "hc_active_mode": {
         "name": "Heating circuit {circuit} active mode",
         "state": {
@@ -1147,11 +1171,17 @@
       "hc_flow_temp": {
         "name": "Heating circuit {circuit} flow temperature"
       },
+      "hc_room_device_temp": {
+        "name": "Heating circuit {circuit} room device temperature"
+      },
       "hc_room_temp": {
         "name": "Heating circuit {circuit} room temperature"
       },
       "hc_setpoint_flow_temp": {
         "name": "Heating circuit {circuit} flow temperature setpoint"
+      },
+      "hc_status": {
+        "name": "Heating circuit {circuit} status"
       },
       "heat_sink_charging_pump_signal": {
         "name": "Heat sink charging pump control signal (M73)"
@@ -1171,11 +1201,17 @@
       "heat_source_outlet_temp": {
         "name": "Heat source outlet"
       },
+      "heat_source_pump_operating_hours": {
+        "name": "Heat source pump operating hours"
+      },
       "heat_source_pump_status": {
         "name": "Heat source pump M15"
       },
       "hgl_flow_temp": {
         "name": "HGL flow temperature (B35)"
+      },
+      "hot_gas_temp": {
+        "name": "Hot gas temperature"
       },
       "house_consumption": {
         "name": "House consumption"
@@ -1195,6 +1231,9 @@
       "idm_api_version": {
         "name": "IDM Heatpump API version"
       },
+      "intermediate_circuit_pump_status": {
+        "name": "Intermediate circuit pump status"
+      },
       "internal_message": {
         "name": "Internal message"
       },
@@ -1203,6 +1242,9 @@
       },
       "isc_cold_storage_pump_status": {
         "name": "ISC cold storage pump M84"
+      },
+      "isc_cooling_charge_temp": {
+        "name": "ISC cooling charge temperature"
       },
       "isc_mode": {
         "name": "ISC mode"
@@ -1249,8 +1291,17 @@
       "solar_charging_temp": {
         "name": "Solar charging temperature"
       },
+      "solar_collector_return_temp": {
+        "name": "Solar collector return temperature"
+      },
       "solar_collector_temp": {
         "name": "Solar collector temperature"
+      },
+      "solar_mode": {
+        "name": "Solar mode"
+      },
+      "solar_pool_temp": {
+        "name": "Solar pool / heat source reference temperature"
       },
       "solar_return_temp": {
         "name": "Solar return temperature"
@@ -1269,6 +1320,18 @@
       },
       "thermal_power_flow_sensor": {
         "name": "Thermal power (flow sensor)"
+      },
+      "thermal_power_hgl_flow": {
+        "name": "Thermal power HGL flow"
+      },
+      "thermal_power_hp_flow": {
+        "name": "Thermal power heat pump flow"
+      },
+      "thermal_power_solar": {
+        "name": "Solar thermal power"
+      },
+      "thermal_power_total": {
+        "name": "Total thermal power"
       },
       "total_heat_energy": {
         "name": "Total heat energy (Vortex)"
@@ -1504,7 +1567,8 @@
         "auto": "Automatic (recommended)",
         "navigator_10": "Navigator 10",
         "navigator_20": "Navigator 2.0",
-        "navigator_pro": "Navigator Pro"
+        "navigator_pro": "Navigator Pro",
+        "navigator_17": "Navigator 1.7 (read-only + PV)"
       }
     },
     "heating_circuit": {

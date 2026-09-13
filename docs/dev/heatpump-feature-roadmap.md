@@ -103,7 +103,7 @@ in planning or in diagnostics.
 - [x] Wire up `IdmModbusConnectionClient` as the production adapter and run raw
   I/O through `modbus-connection==4.11.1` and `tmodbus[async-serial]==0.6.2`. The
   path ships for the first time with `0.11.0-beta.1`.
-- [x] Pin `idm-heatpump-api[web]==2.0.1` for device logic. The API owns its
+- [x] Pin `idm-heatpump-api[web]==2.1.1` for device logic. The API owns its
   exception hierarchy and accepts the injected transport without importing or
   installing pymodbus.
 - [x] Diagnose the private per-entry socket ownership and the missing central

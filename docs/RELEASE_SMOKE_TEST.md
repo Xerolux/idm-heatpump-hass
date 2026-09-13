@@ -67,7 +67,7 @@ installation test.
    assert manifest["requirements"] == [
        "modbus-connection==4.11.1",
        "tmodbus[async-serial]==0.6.2",
-       "idm-heatpump-api[web]==2.0.1",
+       "idm-heatpump-api[web]==2.1.1",
    ]
    assert manifest["version"] == os.environ["RELEASE_VERSION"]
    print("artifact metadata ok")

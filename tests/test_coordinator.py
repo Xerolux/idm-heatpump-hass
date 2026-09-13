@@ -92,6 +92,14 @@ class TestNavigatorFamily:
     def test_detects_navigator_pro(self):
         assert navigator_family("Navigator Pro") == "navigator_pro"
 
+    def test_detects_navigator_17(self):
+        assert navigator_family("Navigator 1.7") == "navigator_17"
+        assert navigator_family("IDM Navigator 1.7") == "navigator_17"
+        assert navigator_family("navigator 1.7") == "navigator_17"
+
+    def test_navigator_10_is_not_the_1_7_family(self):
+        assert navigator_family("Navigator 10") != "navigator_17"
+
     def test_returns_none_when_both_20_and_10_mentioned(self):
         assert navigator_family("Navigator 2.0 vs Navigator 10") is None
 

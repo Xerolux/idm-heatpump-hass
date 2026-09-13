@@ -11,6 +11,7 @@ The detailed model and firmware status is maintained in the [Compatibility Matri
 | IDM Navigator 10 | NAV10_20.23 observed on tested hardware | up to 7 (A–G) | up to 10 (6 default, 8 configurable) | Confirmed on one maintainer test system; firmware value is evidence, not a universal minimum |
 | IDM Navigator 2.0 | 2.x observed/expected | up to 7 (A–G) | not confirmed | Expected; Navigator-10-only registers are filtered |
 | IDM Navigator Pro | unknown | up to 7 (A–G) | up to 10 (up to 8 configurable rooms) | Expected; needs complete diagnostics report |
+| IDM Navigator 1.7 | n1.x firmware | static A–G sensor slots | none | Read-only sensor map from the official 1.x table; PV-supplement writes when the firmware provides them; needs community testing |
 
 ## Requirements
 
@@ -23,7 +24,7 @@ The detailed model and firmware status is maintained in the [Compatibility Matri
 
 | Device | Reason |
 |--------|--------|
-| IDM older controllers (pre Navigator 2.0 / 10) | Different register mapping |
+| IDM Navigator 1.0 | Separate 1.x protocol family; only the 1.7 map is implemented |
 | IDM devices without network connection | No Modbus TCP |
 | Other heat pump manufacturers | Different Modbus protocol / register layout |
 

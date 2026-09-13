@@ -254,6 +254,26 @@ _GERMAN_NAMES: dict[str, str] = {
     "solar_wq_pool_temp": "Solar WQ-Referenztemperatur/Pooltemperatur",
     # === Booster (bereits teilweise vorhanden) ===
     "booster_fault": "Booster Störung",
+    # === Navigator 1.7 (separate 1.x protocol family) ===
+    "hc_a_room_device_temp": "Raumgerätetemperatur HK A",
+    "hc_a_status": "Status HK A",
+    "dhw_temp": "Trinkwassererwärmer",
+    "hot_gas_temp": "Heißgastemperatur",
+    "solar_pool_temp": "Solar Pool / Wärmequellenreferenz",
+    "isc_cooling_charge_temp": "ISC Ladefühler Kühlen",
+    "thermal_power_hp_flow": "Thermische Leistung WP-Vorlauf",
+    "thermal_power_hgl_flow": "Thermische Leistung HGL-Vorlauf",
+    "thermal_power_total": "Thermische Gesamtleistung",
+    "thermal_power_solar": "Thermische Solarleistung",
+    "energy_hgl": "Wärmemenge HGL",
+    "groundwater_pump_flow_total": "Grundwasserpumpe Durchflusszähler",
+    "heat_source_pump_operating_hours": "Betriebsstunden Wärmequellenpumpe",
+    "error_number": "Störungsnummer",
+    "intermediate_circuit_pump_status": "Zwischenkreispumpe Status",
+    "cascade_mode": "Betriebsart Kaskade",
+    "compressor_stages_heating": "Verdichterstufen Heizen",
+    "compressor_stages_cooling": "Verdichterstufen Kühlen",
+    "compressor_stages_dhw": "Verdichterstufen Warmwasser",
 }
 
 # Heizkreise B-G verwenden dieselben Registernamen wie Heizkreis A. Sie werden

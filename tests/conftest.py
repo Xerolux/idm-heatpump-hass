@@ -12,7 +12,13 @@ from typing import Any
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-import voluptuous as vol
+
+# ``vol`` is bound by _stub_voluptuous() below: the real library when it is
+# installed (it ships with Home Assistant), the built-in stub otherwise. The
+# import must not be at module top level, or environments without voluptuous
+# — like the API repository's contract CI — cannot import this conftest at
+# all and the stub below is dead code.
+vol = None
 
 # ---------------------------------------------------------------------------
 # Cross-platform event loop setup (Windows uses SelectorEventLoop; Linux is fine)
@@ -212,16 +218,16 @@ _stub_modbus_connection()
 
 
 def _stub_voluptuous() -> None:
-    if "voluptuous" in sys.modules:
-        return
+    global vol
 
     # Prefer the real library when it is installed. It ships with Home
     # Assistant, so CI always has it, and the stub below only validates by
     # returning its input unchanged — against it a service schema that
     # rejected valid calls would look exactly like a correct one.
     try:
-        import voluptuous  # noqa: F401
+        import voluptuous as _real_voluptuous
 
+        vol = _real_voluptuous
         return
     except ImportError:
         pass

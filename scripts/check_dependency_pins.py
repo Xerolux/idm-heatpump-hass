@@ -76,6 +76,7 @@ PIN_DOCUMENTS = (
     "docs/dev/open-work-audit.md",
     "docs/wiki/Home.md",
     "docs/wiki/_Sidebar.md",
+    "docs/wiki/Stability-and-Release-Readiness.md",
     "docs/wiki/Configuration.md",
     "docs/wiki/Local-Web-Interface.md",
     "docs/wiki/Modbus-Register.md",

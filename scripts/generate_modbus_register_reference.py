@@ -200,8 +200,79 @@ def _build_reference() -> str:
             )
         lines.append("")
 
+    lines.extend(_navigator_17_section(pinned_version, display_name))
+
     lines.append(END_MARKER)
     return "\n".join(lines)
+
+
+def _navigator_17_section(pinned_version: str, display_name: object) -> list[str]:
+    """The separate 1.x protocol-family table.
+
+    The same address can carry a different data point than in the shared
+    catalog above, so this family gets its own table instead of rows in the
+    shared groups.
+    """
+    from idm_heatpump.const import MODEL_NAVIGATOR_17
+
+    nav17 = build_register_map(
+        model_info=IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_17,
+            active_heating_circuits=[],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=True,
+            has_cascade=False,
+        )
+    )
+    ordered17 = sorted(nav17.values(), key=lambda item: (item.address, item.name))
+    writable17 = sum(item.writable for item in ordered17)
+    pv_names = {
+        "pv_surplus",
+        "electric_heater_power",
+        "pv_production",
+        "house_consumption",
+        "power_consumption_hp",
+    }
+
+    section = [
+        "## Navigator 1.7 (separate protocol family)",
+        "",
+        f"> Also generated from `idm-heatpump-api[web]=={pinned_version}`.",
+        "",
+        (
+            "The Navigator 1.0/1.7 controllers use a different register layout: the same address can "
+            "carry a different data point than in the catalog above, so this family has its own table "
+            f"with **{len(ordered17)}** definitions ({writable17} writable, all in the PV supplement). "
+            "The base map is read-only; the PV supplement appears only when the controller answers "
+            "address 74. No heating-circuit or zone-module control exists on this family."
+        ),
+        "",
+        "| Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |",
+        "|-------------|------------------|---------------|------|------|--------|------|",
+    ]
+    for register in ordered17:
+        unit = register.unit or "—"
+        note = "PV supplement" if register.name in pv_names else ""
+        section.append(
+            "| "
+            + " | ".join(
+                (
+                    _address_label(register),
+                    _escape(display_name(register.name)),
+                    f"`{register.name}`",
+                    register.datatype.value,
+                    _escape(unit),
+                    _access_label(register),
+                    note,
+                )
+            )
+            + " |"
+        )
+    section.append("")
+    return section
+
 
 
 def _updated_document() -> tuple[str, str]:

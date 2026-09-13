@@ -151,6 +151,10 @@ def navigator_family(model_name: str | None) -> str | None:
     )
     has_navigator_10 = "navigator_10" in normalized
     has_navigator_pro = "navigator_pro" in normalized
+    # The 1.x protocol family is its own generation; it must not fall through
+    # to the shared-family None, or 1.7/stored conflicts would be invisible.
+    if "navigator_1.7" in normalized or "navigator_1_7" in normalized or normalized.endswith("navigator_17"):
+        return "navigator_17"
     if has_navigator_20 and has_navigator_10:
         return None
     if has_navigator_20:

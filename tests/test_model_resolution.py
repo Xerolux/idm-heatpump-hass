@@ -11,7 +11,13 @@ from __future__ import annotations
 import logging
 
 import pytest
-from idm_heatpump import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_20, MODEL_NAVIGATOR_PRO, IdmModelInfo
+from idm_heatpump import (
+    MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_17,
+    MODEL_NAVIGATOR_20,
+    MODEL_NAVIGATOR_PRO,
+    IdmModelInfo,
+)
 
 from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -21,6 +27,7 @@ from custom_components.idm_heatpump.const import (
     MODEL,
     MODEL_OVERRIDE_AUTO,
     MODEL_OVERRIDE_NAVIGATOR_10,
+    MODEL_OVERRIDE_NAVIGATOR_17,
     MODEL_OVERRIDE_NAVIGATOR_20,
     MODEL_OVERRIDE_NAVIGATOR_PRO,
 )
@@ -38,6 +45,7 @@ from custom_components.idm_heatpump.model_resolution import (
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
 
 NAV10 = "Navigator 10"
+NAV17 = "Navigator 1.7"
 NAV20 = "Navigator 2.0"
 PLANT = PlantShape(circuits=("a",), zone_count=0, enable_cascade=False)
 
@@ -68,6 +76,7 @@ def _resolve(**kwargs):
 class TestOverrideMapping:
     def test_known_override_values_map_to_library_names(self):
         assert model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_10) == MODEL_NAVIGATOR_10
+        assert model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_17) == MODEL_NAVIGATOR_17
         assert model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_20) == MODEL_NAVIGATOR_20
         assert model_name_for_override(MODEL_OVERRIDE_NAVIGATOR_PRO) == MODEL_NAVIGATOR_PRO
 
@@ -97,6 +106,7 @@ class TestModelInfoFromName:
             (NAV20, MODEL_NAVIGATOR_20),
             (NAV10, MODEL_NAVIGATOR_10),
             ("Navigator Pro", MODEL_NAVIGATOR_PRO),
+            (NAV17, MODEL_NAVIGATOR_17),
             # Generic, ambiguous and unknown all fall back to Navigator 2.0:
             # its register map is the one an older controller survives.
             (MODEL, MODEL_NAVIGATOR_20),
@@ -404,3 +414,58 @@ class TestLogging:
 
         for _level, message, args in resolution.log_lines:
             message % args
+
+
+class TestNavigator17:
+    """The 1.x protocol family: its own register map, no shared capabilities."""
+
+    def test_1_7_model_info_carries_no_shared_capabilities(self):
+        rich_plant = PlantShape(circuits=("a", "b"), zone_count=3, enable_cascade=True)
+        info = model_info_from_name(NAV17, rich_plant)
+
+        assert info.model_name == MODEL_NAVIGATOR_17
+        assert info.active_heating_circuits == []
+        assert info.zone_modules == 0
+        assert not info.has_solar
+        assert not info.has_isc
+        assert not info.has_pv
+        assert not info.has_cascade
+        assert info.features == set()
+
+    def test_1_7_override_wins_over_detection(self):
+        result = _resolve(
+            fresh=DetectionResult(model_name=NAV20, model_info=_info(NAV20)),
+            override=MODEL_NAVIGATOR_17,
+        )
+
+        assert result.model_name == MODEL_NAVIGATOR_17
+        assert result.model_info.model_name == MODEL_NAVIGATOR_17
+        assert result.model_info.zone_modules == 0
+
+    def test_1_7_detection_flows_through_unchanged(self):
+        detected = IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_17,
+            active_heating_circuits=[],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=True,
+            has_cascade=False,
+            features={"pv"},
+        )
+        result = _resolve(
+            fresh=DetectionResult(model_name=NAV17, model_info=detected, client_model_info=detected),
+        )
+
+        assert result.model_name == NAV17
+        # The library's richer info survives: has_pv keeps the PV supplement.
+        assert result.model_info.has_pv
+
+    def test_1_7_web_hint_uses_the_modbus_model(self):
+        plan = plan_web_read(
+            DetectionResult(model_name=NAV17, model_info=_info(NAV17)),
+            StoredDetection(),
+            MODEL_NAVIGATOR_17,
+        )
+
+        assert plan.model_hint == MODEL_NAVIGATOR_17

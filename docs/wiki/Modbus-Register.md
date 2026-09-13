@@ -128,7 +128,7 @@ The advanced raw-write action cannot infer the correct datatype from an address.
 <!-- BEGIN GENERATED REGISTER REFERENCE -->
 ## Complete register catalog
 
-> Generated from `idm-heatpump-api[web]==2.0.1`. Do not edit this section manually.
+> Generated from `idm-heatpump-api[web]==2.1.1`. Do not edit this section manually.
 
 This maximal catalog contains **687 logical register definitions**: all heating circuits A–G, ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. The integration selects only the subset supported and enabled on the detected installation.
 
@@ -857,5 +857,89 @@ The German description is intended for identification; the code-form register na
 | 4124–4125 | Elektrische Leistungsaufnahme Smartfox | `power_consumption_hp_smartfox` | FLOAT | kW | R | Navigator 10 |
 | 4126–4127 | Thermische Leistung (Durchflusssensor) | `thermal_power_flow_sensor` | FLOAT | kW | R | — |
 | 4128–4129 | Gesamte Wärmemenge (Vortex) | `total_heat_energy` | FLOAT | kWh | R | — |
+
+## Navigator 1.7 (separate protocol family)
+
+> Also generated from `idm-heatpump-api[web]==2.1.1`.
+
+The Navigator 1.0/1.7 controllers use a different register layout: the same address can carry a different data point than in the catalog above, so this family has its own table with **75** definitions (4 writable, all in the PV supplement). The base map is read-only; the PV supplement appears only when the controller answers address 74. No heating-circuit or zone-module control exists on this family.
+
+| Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |
+|-------------|------------------|---------------|------|------|--------|------|
+| 74–75 | PV Überschuss | `pv_surplus` | FLOAT | kW | RW | PV supplement |
+| 76–77 | E-Heizstab Leistung | `electric_heater_power` | FLOAT | kW | RW | PV supplement |
+| 78–79 | PV Produktion | `pv_production` | FLOAT | kW | RW | PV supplement |
+| 82–83 | Hausverbrauch | `house_consumption` | FLOAT | kW | RW | PV supplement |
+| 1000–1001 | Außentemperatur | `outdoor_temp` | FLOAT | °C | R |  |
+| 1002–1003 | Wärmepumpen Vorlauftemperatur | `hp_flow_temp` | FLOAT | °C | R |  |
+| 1004–1005 | HGL Vorlauftemperatur B35 | `hgl_flow_temp` | FLOAT | °C | R |  |
+| 1006–1007 | Wärmequellenaustritt | `heat_source_outlet_temp` | FLOAT | °C | R |  |
+| 1008–1009 | Wärmespeichertemperatur | `storage_temp` | FLOAT | °C | R |  |
+| 1010–1011 | Kältespeichertemperatur | `cold_storage_temp` | FLOAT | °C | R |  |
+| 1012–1013 | Trinkwassererwärmer | `dhw_temp` | FLOAT | °C | R |  |
+| 1014–1015 | Warmwasser Zapftemperatur | `dhw_tapping_temp` | FLOAT | °C | R |  |
+| 1016–1017 | Vorlauftemperatur HK A | `hc_a_flow_temp` | FLOAT | °C | R |  |
+| 1018–1019 | Vorlauftemperatur HK B | `hc_b_flow_temp` | FLOAT | °C | R |  |
+| 1020–1021 | Vorlauftemperatur HK C | `hc_c_flow_temp` | FLOAT | °C | R |  |
+| 1022–1023 | Vorlauftemperatur HK D | `hc_d_flow_temp` | FLOAT | °C | R |  |
+| 1024–1025 | Vorlauftemperatur HK E | `hc_e_flow_temp` | FLOAT | °C | R |  |
+| 1026–1027 | Vorlauftemperatur HK F | `hc_f_flow_temp` | FLOAT | °C | R |  |
+| 1028–1029 | Vorlauftemperatur HK G | `hc_g_flow_temp` | FLOAT | °C | R |  |
+| 1030–1031 | Raumgerätetemperatur HK A | `hc_a_room_device_temp` | FLOAT | °C | R |  |
+| 1032–1033 | Raumgerätetemperatur HK B | `hc_b_room_device_temp` | FLOAT | °C | R |  |
+| 1034–1035 | Raumgerätetemperatur HK C | `hc_c_room_device_temp` | FLOAT | °C | R |  |
+| 1036–1037 | Raumgerätetemperatur HK D | `hc_d_room_device_temp` | FLOAT | °C | R |  |
+| 1038–1039 | Raumgerätetemperatur HK E | `hc_e_room_device_temp` | FLOAT | °C | R |  |
+| 1040–1041 | Raumgerätetemperatur HK F | `hc_f_room_device_temp` | FLOAT | °C | R |  |
+| 1042–1043 | Raumgerätetemperatur HK G | `hc_g_room_device_temp` | FLOAT | °C | R |  |
+| 1044–1045 | Heißgastemperatur | `hot_gas_temp` | FLOAT | °C | R |  |
+| 1046–1047 | Feuchtesensor | `humidity_sensor` | FLOAT | % | R |  |
+| 1048–1049 | Luftansaugtemperatur | `air_intake_temp` | FLOAT | °C | R |  |
+| 1050–1051 | Luftwärmetauscher Temperatur | `air_heat_exchanger_temp` | FLOAT | °C | R |  |
+| 1052–1053 | Solar Kollektortemperatur | `solar_collector_temp` | FLOAT | °C | R |  |
+| 1054–1055 | Solar Ladetemperatur | `solar_charging_temp` | FLOAT | °C | R |  |
+| 1056–1057 | Solar Kollektorrücklauftemperatur | `solar_collector_return_temp` | FLOAT | °C | R |  |
+| 1058–1059 | Solar Pool / Wärmequellenreferenz | `solar_pool_temp` | FLOAT | °C | R |  |
+| 1060–1061 | Gemittelte Außentemperatur | `outdoor_temp_avg` | FLOAT | °C | R |  |
+| 1062–1063 | Wärmequelleneintritt | `heat_source_inlet_temp` | FLOAT | °C | R |  |
+| 1064–1065 | ISC Ladefühler Kühlen | `isc_cooling_charge_temp` | FLOAT | °C | R |  |
+| 1066–1067 | ISC Rückkühltemperatur | `isc_recooling_temp` | FLOAT | °C | R |  |
+| 1068–1069 | Thermische Leistung WP-Vorlauf | `thermal_power_hp_flow` | FLOAT | kW | R |  |
+| 1070–1071 | Thermische Leistung HGL-Vorlauf | `thermal_power_hgl_flow` | FLOAT | kW | R |  |
+| 1072–1073 | Thermische Gesamtleistung | `thermal_power_total` | FLOAT | kW | R |  |
+| 1074–1075 | Thermische Solarleistung | `thermal_power_solar` | FLOAT | kW | R |  |
+| 1076–1077 | Wärmemenge Gesamt | `energy_total` | FLOAT | kWh | R |  |
+| 1078–1079 | Wärmemenge Heizen | `energy_heating` | FLOAT | kWh | R |  |
+| 1080–1081 | Wärmemenge HGL | `energy_hgl` | FLOAT | kWh | R |  |
+| 1082–1083 | Wärmemenge Kühlen | `energy_cooling` | FLOAT | kWh | R |  |
+| 1084–1085 | Wärmemenge Solar | `energy_solar` | FLOAT | kWh | R |  |
+| 1086–1087 | Grundwasserpumpe Durchflusszähler | `groundwater_pump_flow_total` | FLOAT | — | R |  |
+| 1088–1089 | Betriebsstunden Wärmequellenpumpe | `heat_source_pump_operating_hours` | FLOAT | h | R |  |
+| 1500 | Störungsnummer | `error_number` | UINT16 | — | R |  |
+| 1501 | Wärmepumpen Betriebsart | `hp_operating_mode` | UCHAR | — | R |  |
+| 1502 | Status HK A | `hc_a_status` | UINT16 | — | R |  |
+| 1503 | Status HK B | `hc_b_status` | UINT16 | — | R |  |
+| 1504 | Status HK C | `hc_c_status` | UINT16 | — | R |  |
+| 1505 | Status HK D | `hc_d_status` | UINT16 | — | R |  |
+| 1506 | Status HK E | `hc_e_status` | UINT16 | — | R |  |
+| 1507 | Status HK F | `hc_f_status` | UINT16 | — | R |  |
+| 1508 | Status HK G | `hc_g_status` | UINT16 | — | R |  |
+| 1509 | Verdichter 1 | `compressor_status_1` | UINT16 | — | R |  |
+| 1510 | Verdichter 2 | `compressor_status_2` | UINT16 | — | R |  |
+| 1511 | Verdichter 3 | `compressor_status_3` | UINT16 | — | R |  |
+| 1512 | Verdichter 4 | `compressor_status_4` | UINT16 | — | R |  |
+| 1513 | Ladepumpe M73 | `charging_pump_status` | UINT16 | — | R |  |
+| 1514 | Wärmequellenpumpe M15 | `heat_source_pump_status` | UINT16 | — | R |  |
+| 1515 | Zwischenkreispumpe Status | `intermediate_circuit_pump_status` | UINT16 | — | R |  |
+| 1516 | ISC Kältespeicherpumpe M84 | `isc_cold_storage_pump_status` | UINT16 | — | R |  |
+| 1517 | ISC Rückkühlpumpe M17 | `isc_recooling_pump_status` | UINT16 | — | R |  |
+| 1518 | Verdichterstufen Heizen | `compressor_stages_heating` | UINT16 | — | R |  |
+| 1519 | Verdichterstufen Kühlen | `compressor_stages_cooling` | UINT16 | — | R |  |
+| 1520 | Verdichterstufen Warmwasser | `compressor_stages_dhw` | UINT16 | — | R |  |
+| 1521 | Betriebsart Kaskade | `cascade_mode` | UINT16 | — | R |  |
+| 1522 | Solar Betriebsart | `solar_mode` | UINT16 | — | R |  |
+| 1523 | Smart Grid Status | `smart_grid_status` | UINT16 | — | R |  |
+| 1524 | ISC Modus | `isc_mode` | UINT16 | — | R |  |
+| 4122–4123 | Elektrische Leistungsaufnahme Wärmepumpe | `power_consumption_hp` | FLOAT | kW | R | PV supplement |
 
 <!-- END GENERATED REGISTER REFERENCE -->

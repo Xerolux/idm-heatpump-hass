@@ -38,6 +38,7 @@ from idm_heatpump import (
     FEATURE_SOLAR,
     FEATURE_ZONE_MODULES,
     MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_17,
     MODEL_NAVIGATOR_20,
     MODEL_NAVIGATOR_PRO,
     IdmModelInfo,
@@ -51,6 +52,7 @@ from .const import (
     MODEL,
     MODEL_OVERRIDE_AUTO,
     MODEL_OVERRIDE_NAVIGATOR_10,
+    MODEL_OVERRIDE_NAVIGATOR_17,
     MODEL_OVERRIDE_NAVIGATOR_20,
     MODEL_OVERRIDE_NAVIGATOR_PRO,
 )
@@ -146,6 +148,7 @@ def model_name_for_override(override_value: str) -> str | None:
     """
     mapping = {
         MODEL_OVERRIDE_NAVIGATOR_10: MODEL_NAVIGATOR_10,
+        MODEL_OVERRIDE_NAVIGATOR_17: MODEL_NAVIGATOR_17,
         MODEL_OVERRIDE_NAVIGATOR_20: MODEL_NAVIGATOR_20,
         MODEL_OVERRIDE_NAVIGATOR_PRO: MODEL_NAVIGATOR_PRO,
     }
@@ -173,6 +176,21 @@ def model_info_from_name(model_name: str, plant: PlantShape) -> IdmModelInfo:
     has_navigator_20 = "navigator 2" in normalized
     has_navigator_10 = "navigator 10" in normalized
     has_navigator_pro = "navigator pro" in normalized
+
+    if "navigator 1.7" in normalized:
+        # The 1.x protocol family carries none of the shared-family
+        # capabilities; the API exposes its own separate register table for
+        # it, so the plant shape must not leak shared-family features in.
+        return IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_17,
+            active_heating_circuits=[],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+            features=set(),
+        )
 
     if has_navigator_10 and not has_navigator_20:
         detected_model = MODEL_NAVIGATOR_10

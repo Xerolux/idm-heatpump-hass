@@ -13,6 +13,46 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.0-beta.4] - 2026-09-13
+
+This beta adds the Navigator 1.0/1.7 protocol family and moves to
+`idm-heatpump-api` 2.1.1. No configuration migration is required. Owners of
+Navigator 2.0 / 10 / Pro controllers see no behavior change beyond the new
+optional model override entry. For rollback, reinstall `v0.17.0-beta.3`
+through HACS and restart Home Assistant.
+
+### Added
+
+- **Navigator 1.7 support (read-only base map + PV supplement).** Heat pumps
+  with a Navigator 1.0/1.7 controller are detected automatically through
+  their response signature (core input block responds, shared-family
+  addresses rejected with Modbus Illegal Data Address) and get their own
+  register map from the official 1.x table: 44 sensor values (temperatures,
+  humidity, thermal power, energy meters) and 25 status words. Updated 1.x
+  firmware additionally exposes the PV supplement — `PV surplus`,
+  `Electric heater power`, `PV production` and `House consumption` accept
+  writes exactly like on Navigator 2.0/10, plus a read-only heat-pump power
+  consumption sensor. Older 1.x firmware keeps the pure read-only map.
+- **Navigator 1.7 model override.** The model selector in the integration
+  settings offers `Navigator 1.7` for controllers whose firmware answers
+  shared-family addresses instead of rejecting them, which defeats the
+  automatic signature.
+- Entity names, German names and translations for every 1.7 register; the
+  wiki register reference documents the separate 1.x table.
+
+### Changed
+
+- Pin `idm-heatpump-api[web]` to `2.1.1` (Navigator 1.7 map, detection and
+  write rules; compressor-status naming aligned with the shared family).
+
+### Fixed
+
+- `tests/conftest.py` imported `voluptuous` unconditionally, which broke
+  test collection in environments without Home Assistant installed (the API
+  repository's contract CI). The built-in stub is reachable again and the
+  real library is used whenever it is installed.
+
+
 ## [0.17.0-beta.3] - 2026-09-11
 
 This beta corrects model reconciliation. Runtime dependencies and the minimum
