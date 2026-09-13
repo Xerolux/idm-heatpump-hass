@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.17.0-beta.3` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.16.2`)
+- **Current Version**: `0.17.0` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.16.2`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
@@ -283,6 +283,14 @@ ruff check custom_components tests
 - German belongs only where it is a product feature: `README_de.md`, the Home
   Assistant `de` translations, and the "Description (DE)" column of the
   generated register reference, which carries IDM's own terminology.
+- The changelog is kept version-to-version. When a stable version is cut,
+  fold its prerelease sections into the single stable section with
+  `python scripts/consolidate_changelog.py --version <x.y.z>`, then rework the
+  draft: individual betas need not be named, but nothing that changed may be
+  dropped by the fold. `tests/test_changelog_consolidation.py` fails the build
+  while prerelease headings remain after their stable cut. This applies from
+  `0.17.0` on; older history keeps the shape it was published with, and the
+  per-beta record stays available in git and the GitHub prerelease tags.
 - Released changelog sections stay as published; they are history. The rule
   applies to the unreleased entries and to the section of the version in the
   manifest.

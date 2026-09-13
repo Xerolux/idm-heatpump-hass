@@ -5,6 +5,22 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.17.0 — 2026-09-13
+
+The stable cut of the 0.17.0 line, consolidating its whole beta cycle. The
+headline: **Navigator 1.0/1.7 heat pumps are supported** — automatically
+detected, served their own register map from the official 1.x table, with
+writable PV-supplement registers on updated firmware. The rest is the
+September code audit: eight bugs fixed (a poll outliving its config entry, a
+failed setup leaving live entities behind, Fahrenheit room sensors written as
+Celsius, sentinel readings on thermostat cards, and more), hardening of the
+web supplement and the DHW boost, and the automation that keeps the
+dependency pins current on its own. Runtime: `idm-heatpump-api` 2.1.1,
+`modbus-connection` 4.11.1. The full, authoritative changelog is in
+[`docs/CHANGELOG.md`](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CHANGELOG.md);
+from this release on it is kept version-to-version (beta sections are folded
+into the stable section at the cut).
+
 ## v0.17.0-beta.1 — 2026-09-09
 
 First candidate of the `0.17.0` line, carrying the result of the code audit in
