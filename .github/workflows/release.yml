@@ -216,6 +216,7 @@ jobs:
           - [Ko-Fi](https://ko-fi.com/xerolux)
           - [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)
           - [PayPal](https://paypal.me/xerolux)
+          - [Tesla Referral](https://ts.la/sebastian564489)
           """.rstrip()
 
           if previous_tag:
