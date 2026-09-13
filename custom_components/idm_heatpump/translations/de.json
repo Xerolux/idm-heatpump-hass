@@ -1033,6 +1033,9 @@
       "cascade_avg_flow_heating": {
         "name": "Kaskade Gemittelte VL-Temp Heizen"
       },
+      "cascade_mode": {
+        "name": "Betriebsart Kaskade"
+      },
       "cascade_req_cooling_temp": {
         "name": "Kaskade Angeforderte Kühltemperatur"
       },
@@ -1063,6 +1066,15 @@
       "cold_storage_temp": {
         "name": "Kältespeichertemperatur"
       },
+      "compressor_stages_cooling": {
+        "name": "Verdichterstufen Kühlen"
+      },
+      "compressor_stages_dhw": {
+        "name": "Verdichterstufen Warmwasser"
+      },
+      "compressor_stages_heating": {
+        "name": "Verdichterstufen Heizen"
+      },
       "current_electricity_price": {
         "name": "Aktueller Strompreis"
       },
@@ -1074,6 +1086,9 @@
       },
       "dhw_tapping_temp": {
         "name": "Warmwasser Zapftemperatur"
+      },
+      "dhw_temp": {
+        "name": "Trinkwassererwärmer"
       },
       "dhw_temp_bottom": {
         "name": "Warmwasser unten"
@@ -1099,6 +1114,9 @@
       "energy_heating": {
         "name": "Wärmemenge Heizen"
       },
+      "energy_hgl": {
+        "name": "Wärmemenge HGL"
+      },
       "energy_passive_cooling": {
         "name": "Wärmemenge Passive Kühlung"
       },
@@ -1107,6 +1125,9 @@
       },
       "energy_total": {
         "name": "Wärmemenge Gesamt"
+      },
+      "error_number": {
+        "name": "Störungsnummer"
       },
       "evu_lock": {
         "name": "EVU Sperre"
@@ -1132,6 +1153,9 @@
       "groundwater_inlet_temp_2": {
         "name": "Grundwassereintrittstemperatur 2"
       },
+      "groundwater_pump_flow_total": {
+        "name": "Grundwasserpumpe Durchflusszähler"
+      },
       "hc_active_mode": {
         "name": "Aktive Betriebsart HK {circuit}",
         "state": {
@@ -1147,11 +1171,17 @@
       "hc_flow_temp": {
         "name": "Vorlauftemperatur HK {circuit}"
       },
+      "hc_room_device_temp": {
+        "name": "Raumgerätetemperatur HK {circuit}"
+      },
       "hc_room_temp": {
         "name": "Raumtemperatur HK {circuit}"
       },
       "hc_setpoint_flow_temp": {
         "name": "Sollvorlauftemperatur HK {circuit}"
+      },
+      "hc_status": {
+        "name": "Status HK {circuit}"
       },
       "heat_sink_charging_pump_signal": {
         "name": "Steuersignal Ladepumpe Wärmesenke (M73)"
@@ -1171,11 +1201,17 @@
       "heat_source_outlet_temp": {
         "name": "Wärmequelle Austritt"
       },
+      "heat_source_pump_operating_hours": {
+        "name": "Betriebsstunden Wärmequellenpumpe"
+      },
       "heat_source_pump_status": {
         "name": "Wärmequellenpumpe M15"
       },
       "hgl_flow_temp": {
         "name": "HGL Vorlauftemperatur B35"
+      },
+      "hot_gas_temp": {
+        "name": "Heißgastemperatur"
       },
       "house_consumption": {
         "name": "Hausverbrauch"
@@ -1195,6 +1231,9 @@
       "idm_api_version": {
         "name": "IDM-Heatpump-API-Version"
       },
+      "intermediate_circuit_pump_status": {
+        "name": "Zwischenkreispumpe Status"
+      },
       "internal_message": {
         "name": "Interne Meldung"
       },
@@ -1203,6 +1242,9 @@
       },
       "isc_cold_storage_pump_status": {
         "name": "ISC Kältespeicherpumpe M84"
+      },
+      "isc_cooling_charge_temp": {
+        "name": "ISC Ladefühler Kühlen"
       },
       "isc_mode": {
         "name": "ISC Modus"
@@ -1249,8 +1291,17 @@
       "solar_charging_temp": {
         "name": "Solar Ladetemperatur"
       },
+      "solar_collector_return_temp": {
+        "name": "Solar Kollektorrücklauftemperatur"
+      },
       "solar_collector_temp": {
         "name": "Solar Kollektortemperatur"
+      },
+      "solar_mode": {
+        "name": "Solar Betriebsart"
+      },
+      "solar_pool_temp": {
+        "name": "Solar Pool / Wärmequellenreferenz"
       },
       "solar_return_temp": {
         "name": "Solar Rücklauftemperatur"
@@ -1269,6 +1320,18 @@
       },
       "thermal_power_flow_sensor": {
         "name": "Thermische Leistung (Durchflusssensor)"
+      },
+      "thermal_power_hgl_flow": {
+        "name": "Thermische Leistung HGL-Vorlauf"
+      },
+      "thermal_power_hp_flow": {
+        "name": "Thermische Leistung WP-Vorlauf"
+      },
+      "thermal_power_solar": {
+        "name": "Thermische Solarleistung"
+      },
+      "thermal_power_total": {
+        "name": "Thermische Gesamtleistung"
       },
       "total_heat_energy": {
         "name": "Gesamte Wärmemenge (Vortex)"
@@ -1504,7 +1567,8 @@
         "auto": "Automatisch (empfohlen)",
         "navigator_10": "Navigator 10",
         "navigator_20": "Navigator 2.0",
-        "navigator_pro": "Navigator Pro"
+        "navigator_pro": "Navigator Pro",
+        "navigator_17": "Navigator 1.7 (nur lesen + PV)"
       }
     },
     "heating_circuit": {

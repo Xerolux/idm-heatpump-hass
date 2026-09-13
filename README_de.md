@@ -168,7 +168,7 @@ Maintainer sollten vor einem stabilen Release den
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.14+ (wird von Home Assistant bereitgestellt)
 - `modbus-connection==4.11.1` · `tmodbus[async-serial]==0.6.2` (direkter Modbus-Socket)
-- `idm-heatpump-api[web]==2.0.1` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
+- `idm-heatpump-api[web]==2.1.1` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
 
 ---
 
@@ -227,7 +227,7 @@ Home Assistant
 - **Datentypen**: FLOAT (IEEE 754, zwei Register), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden erfasst und vor zu häufigem Schreiben geschützt
 - **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über exakt `modbus-connection==4.11.1` und `tmodbus[async-serial]==0.6.2`; `4.11.1` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
-- **API-Grenze**: `idm-heatpump-api[web]==2.0.1` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
+- **API-Grenze**: `idm-heatpump-api[web]==2.1.1` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
 - **Auto-Recovery**: Retry-/Backoff-Strategie der API plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
 - **Bibliotheksbasiert**: Alle Registerdefinitionen stammen aus [`idm-heatpump-api`](https://github.com/Xerolux/idm-heatpump-api) und bleiben so über alle Werkzeuge hinweg konsistent
 - **Navigator-10-Unterstützung**: Trennwärmetauscher-Sensoren, Durchflussüberwachung (Sieb-Erkennung), Grundwassertemperaturen, Booster-A/B-Diagnose

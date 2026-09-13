@@ -111,6 +111,18 @@ def _register_space() -> dict[str, Any]:
         registers.update(library.get_heating_circuit_registers(circuit))
     for zone in range(1, MAX_ZONE_MODULES + 1):
         registers.update(library.get_zone_module_registers(zone, MAX_ROOMS_PER_ZONE))
+    # The Navigator 1.7 protocol family has its own register map; include the
+    # variant with the PV supplement so its names are translated too.
+    nav17_model_info = library.IdmModelInfo(
+        model_name=library.const.MODEL_NAVIGATOR_17,
+        active_heating_circuits=[],
+        zone_modules=0,
+        has_solar=False,
+        has_isc=False,
+        has_pv=True,
+        has_cascade=False,
+    )
+    registers.update(library.build_register_map(model_info=nav17_model_info))
     return registers
 
 

@@ -275,6 +275,28 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
     "cascade_bivalence_cooling_alternative": "Cascade bivalence cooling alternative",
     "cascade_bivalence_dhw_parallel": "Cascade bivalence hot water parallel",
     "cascade_bivalence_dhw_alternative": "Cascade bivalence hot water alternative",
+    # === Navigator 1.7 (separate 1.x protocol family) ===
+    "hc_room_device_temp": "Heating circuit {circuit} room device temperature",
+    "hc_status": "Heating circuit {circuit} status",
+    "dhw_temp": "Domestic hot water temperature",
+    "hot_gas_temp": "Hot gas temperature",
+    "solar_collector_return_temp": "Solar collector return temperature",
+    "solar_pool_temp": "Solar pool / heat source reference temperature",
+    "isc_cooling_charge_temp": "ISC cooling charge temperature",
+    "thermal_power_hp_flow": "Thermal power heat pump flow",
+    "thermal_power_hgl_flow": "Thermal power HGL flow",
+    "thermal_power_total": "Total thermal power",
+    "thermal_power_solar": "Solar thermal power",
+    "energy_hgl": "HGL energy total",
+    "groundwater_pump_flow_total": "Groundwater pump flow counter",
+    "heat_source_pump_operating_hours": "Heat source pump operating hours",
+    "error_number": "Error number",
+    "intermediate_circuit_pump_status": "Intermediate circuit pump status",
+    "cascade_mode": "Cascade mode",
+    "compressor_stages_heating": "Compressor stages heating",
+    "compressor_stages_cooling": "Compressor stages cooling",
+    "compressor_stages_dhw": "Compressor stages domestic hot water",
+
 }
 
 
