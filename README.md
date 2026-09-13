@@ -22,6 +22,14 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Xerolux/idm-heatpump-hass.svg?style=for-the-badge" alt="MIT License"></a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/sponsors/xerolux"><img src="https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue" alt="GitHub Sponsors"></a>
+  <a href="https://ko-fi.com/xerolux"><img src="https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge" alt="Ko-fi"></a>
+  <a href="https://www.buymeacoffee.com/xerolux"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge" alt="Buy Me A Coffee"></a>
+  <a href="https://paypal.me/xerolux"><img src="https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge" alt="PayPal"></a>
+  <a href="https://ts.la/sebastian564489"><img src="https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge" alt="Tesla referral"></a>
+</p>
+
 > [!TIP]
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
