@@ -6,7 +6,27 @@ a normal changelog.
 
 ## Current Status
 
-Integration `0.17.0-beta.2` and `idm-heatpump-api` `2.1.1` form the current
+**`0.17.0`** is the stable cut of the line that opened with `0.17.0-beta.1`
+on 2026-09-09. It carries the full code-audit result, the model-reconciliation
+corrections of `beta.3` and the Navigator 1.0/1.7 protocol family of
+`beta.4`, on `idm-heatpump-api` `2.1.1` and `modbus-connection` `4.11.1`.
+
+**Maintainer decision on `0.17.0`:** the stable tag was cut on 2026-09-13,
+the day `0.17.0-beta.4` was published, so gate 6 (seven consecutive 24-hour
+periods of soak on an unchanged candidate) was not satisfied for `beta.4` —
+although `beta.1` through `beta.3` had been in the field since 2026-09-09 with
+no regression report. Gate 3's live hardware follow-up remains open twice
+over: no Navigator 1.0/1.7 device is maintainer-owned (the call for testers is
+[#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319)), and the KNX
+bridge's physical-bus verification is unchanged from `0.16.0`. Automated
+preflight, dependency-pin freshness and the full CI matrix did pass, and a
+read-only model-detection probe against the maintainer's Navigator 10 on
+2026-09-13 confirmed the new detection does not misclassify a shared-family
+controller. This is a conscious maintainer call taken at release time, not an
+oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
+visible.
+
+Integration `0.17.0` and `idm-heatpump-api` `2.1.1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
