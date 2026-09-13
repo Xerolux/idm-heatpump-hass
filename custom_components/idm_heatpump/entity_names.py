@@ -296,7 +296,6 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
     "compressor_stages_heating": "Compressor stages heating",
     "compressor_stages_cooling": "Compressor stages cooling",
     "compressor_stages_dhw": "Compressor stages domestic hot water",
-
 }
 
 

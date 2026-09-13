@@ -274,7 +274,6 @@ _GERMAN_NAMES: dict[str, str] = {
     "compressor_stages_heating": "Verdichterstufen Heizen",
     "compressor_stages_cooling": "Verdichterstufen Kühlen",
     "compressor_stages_dhw": "Verdichterstufen Warmwasser",
-
 }
 
 # Heizkreise B-G verwenden dieselben Registernamen wie Heizkreis A. Sie werden
