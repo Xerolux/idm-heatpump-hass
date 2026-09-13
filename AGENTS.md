@@ -376,8 +376,9 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
   by `.github/workflows/release.yml` to both the generated and the curated
   release notes, so passing `release_notes` never drops it. The changelog keeps
   its own support header at the top of `docs/CHANGELOG.md`. Do not remove either
-  when reworking release tooling, and keep the four links (GitHub Sponsors,
-  Ko-Fi, Buy Me A Coffee, PayPal) in step with `.github/FUNDING.yml`.
+  when reworking release tooling, and keep the five links (GitHub Sponsors,
+  Ko-Fi, Buy Me A Coffee, PayPal, Tesla referral) in step with
+  `.github/FUNDING.yml`.
 
 ---
 
