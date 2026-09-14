@@ -15,14 +15,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-09-14
+
 ### Fixed
 
+- Update the tested runtime dependencies to `idm-heatpump-api[web]==2.1.2`,
+  `modbus-connection==4.12.1` and `tmodbus[async-serial]==0.6.2`.
+- Repair dependency updates blocked by historical version mentions. Release
+  validation now always rejects stale runtime pins; the bypass input is removed.
 - Stop Navigator variant fallback after a successful Navigator 10 WebSocket
   authorization, even when the first setting read fails. Preserve the original
   response/transport error instead of probing Navigator 2.0 and reporting an
   unrelated rejected PIN (#325). Cached clients also retain their known protocol
-  when rebuilt. Skipping inaccessible settings requires the companion API fix;
-  the released dependency pin remains unchanged until that fix is published.
+  when rebuilt.
+- Update the API to include skipping explicitly inaccessible optional settings
+  while retaining the other sections, and stricter NAV2 login-form detection.
+  This restores web reads on Navigator 10 firmware lacking setting ID 13259.
+
+Update through HACS and restart Home Assistant. If local web access was disabled
+as a workaround, enable it again with the existing local-network PIN.
 
 ## [0.17.0] - 2026-09-13
 

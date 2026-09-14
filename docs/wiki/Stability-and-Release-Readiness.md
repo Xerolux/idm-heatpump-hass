@@ -26,7 +26,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Integration `0.17.0` and `idm-heatpump-api` `2.1.1` form the current
+Integration `0.17.1` and `idm-heatpump-api` `2.1.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
@@ -38,7 +38,7 @@ exception hierarchy (`IdmModbusError` and subclasses) instead of inheriting
 from pymodbus, and moves its built-in Modbus TCP transport behind an optional
 extra. This integration injects a tmodbus-backed transport, so it now installs
 no Modbus stack it does not speak. The transport pins are
-`modbus-connection==4.11.1` and `tmodbus[async-serial]==0.6.2`.
+`modbus-connection==4.12.1` and `tmodbus[async-serial]==0.6.2`.
 
 **`0.17.0-beta.2`** removes one thing `0.17.0-beta.1` introduced: the repair
 issue for a register the heat pump does not implement. A controller that answers
@@ -106,7 +106,7 @@ guards and configurable 60-second EEPROM default are unchanged. Physical
 group-address telegram interoperability and bus load remain open.
 
 **`0.15.1`** was the last line with pymodbus: it pinned `idm-heatpump-api`
-`1.0.3`, moved the transport pair to `modbus-connection==4.11.1` /
+`1.0.3`, moved the transport pair to `modbus-connection==4.12.1` /
 `tmodbus[async-serial]==0.6.2`, and carried the write-diagnostics work from
 [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
 

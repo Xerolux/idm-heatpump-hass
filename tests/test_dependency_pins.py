@@ -367,3 +367,23 @@ def test_update_can_be_restricted_to_one_distribution(tmp_path: Path, monkeypatc
     updates = json.loads(report.read_text(encoding="utf-8"))
     assert [update["name"] for update in updates] == ["tmodbus"]
     assert json.loads(manifest.read_text(encoding="utf-8"))["requirements"][0] == "modbus-connection==9.0.0"
+
+
+def test_readiness_history_does_not_block_future_dependency_updates(tmp_path: Path, monkeypatch) -> None:
+    """The release history and the current pair coexist through consecutive bumps."""
+    path = "docs/wiki/Stability-and-Release-Readiness.md"
+    current = (ROOT / path).read_text(encoding="utf-8")
+    _write(tmp_path, path, current)
+    requirements = pins.manifest_requirements()
+    _write(
+        tmp_path,
+        "custom_components/idm_heatpump/manifest.json",
+        json.dumps({"requirements": [r.raw for r in requirements]}),
+    )
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", (path,))
+    for requirement in requirements:
+        if requirement.name in {"idm-heatpump-api", "modbus-connection"}:
+            pins.apply_update(requirement, "99.0.0", root=tmp_path)
+    result = (tmp_path / path).read_text(encoding="utf-8")
+    assert "`idm-heatpump-api` `99.0.0` form the current" in result
+    assert "`beta.4`, on `idm-heatpump-api` `2.1.1` and `modbus-connection` `4.11.1`." in result
