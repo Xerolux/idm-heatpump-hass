@@ -14,9 +14,9 @@ ROOT = Path(__file__).resolve().parents[1]
 MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 
 EXPECTED_RUNTIME_REQUIREMENTS = [
-    "modbus-connection==4.11.1",
+    "modbus-connection==4.12.1",
     "tmodbus[async-serial]==0.6.2",
-    "idm-heatpump-api[web]==2.1.1",
+    "idm-heatpump-api[web]==2.1.2",
 ]
 
 
@@ -523,16 +523,15 @@ def test_dependency_freshness_workflow_runs_the_pipeline_daily() -> None:
     assert "concurrency:\n  group: dependency-update" in workflow
 
 
-def test_release_refuses_stale_runtime_pins_unless_overridden() -> None:
+def test_release_refuses_stale_runtime_pins_without_override() -> None:
     """A release must not silently ship a pin that upstream has moved past."""
     workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
 
-    assert "allow_stale_pins" in workflow
+    assert "allow_stale_pins" not in workflow
     assert "Check runtime dependency pins are current" in workflow
     assert "python scripts/check_dependency_pins.py" in workflow
-    # The check only degrades to a warning when the override is set explicitly.
-    assert 'if [ "$ALLOW_STALE_PINS" = "true" ]; then' in workflow
-    assert "python scripts/check_dependency_pins.py --warn-only" in workflow
+    assert "ALLOW_STALE_PINS" not in workflow
+    assert "python scripts/check_dependency_pins.py --warn-only" not in workflow
     # The guard runs before anything is built or published.
     assert workflow.index("Check runtime dependency pins are current") < workflow.index("Create ZIP artifact")
 

@@ -128,7 +128,7 @@ The advanced raw-write action cannot infer the correct datatype from an address.
 <!-- BEGIN GENERATED REGISTER REFERENCE -->
 ## Complete register catalog
 
-> Generated from `idm-heatpump-api[web]==2.1.1`. Do not edit this section manually.
+> Generated from `idm-heatpump-api[web]==2.1.2`. Do not edit this section manually.
 
 This maximal catalog contains **687 logical register definitions**: all heating circuits A–G, ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. The integration selects only the subset supported and enabled on the detected installation.
 
@@ -860,7 +860,7 @@ The German description is intended for identification; the code-form register na
 
 ## Navigator 1.7 (separate protocol family)
 
-> Also generated from `idm-heatpump-api[web]==2.1.1`.
+> Also generated from `idm-heatpump-api[web]==2.1.2`.
 
 The Navigator 1.0/1.7 controllers use a different register layout: the same address can carry a different data point than in the catalog above, so this family has its own table with **75** definitions (4 writable, all in the PV supplement). The base map is read-only; the PV supplement appears only when the controller answers address 74. No heating-circuit or zone-module control exists on this family.
 

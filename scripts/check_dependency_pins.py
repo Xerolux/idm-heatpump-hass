@@ -81,7 +81,6 @@ PIN_DOCUMENTS = (
     "docs/wiki/Local-Web-Interface.md",
     "docs/wiki/Modbus-Register.md",
     "docs/wiki/Services.md",
-    "docs/wiki/Stability-and-Release-Readiness.md",
     ".github/ISSUE_TEMPLATE/modbus_transport_modernization.md",
 )
 
@@ -128,7 +127,11 @@ HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
     # describes history statements, once in the history statement itself.
     "AGENTS.md": (r"pymodbus is gone as of `?idm-heatpump-api`? [0-9][0-9a-z.]*",),
     "docs/dev/open-work-audit.md": (r"`idm-heatpump-api` [0-9][0-9a-z.]* provides the transport-neutral contract",),
-    "docs/wiki/Stability-and-Release-Readiness.md": (r"`idm-heatpump-api` `[0-9][0-9a-z.]*` owns its own",),
+    "docs/wiki/Stability-and-Release-Readiness.md": (
+        r"`idm-heatpump-api` `[0-9][0-9a-z.]*` owns its own",
+        r"\(`modbus-connection` `[0-9][0-9a-z.]*`, `idm-heatpump-api` `[0-9][0-9a-z.]*`\); no register map or",
+        r"`beta\.4`, on `idm-heatpump-api` `[0-9][0-9a-z.]*` and `modbus-connection` `[0-9][0-9a-z.]*`\.",
+    ),
 }
 
 _REQUIREMENT_RE = re.compile(
