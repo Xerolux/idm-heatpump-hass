@@ -15,6 +15,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Stop Navigator variant fallback after a successful Navigator 10 WebSocket
+  authorization, even when the first setting read fails. Preserve the original
+  response/transport error instead of probing Navigator 2.0 and reporting an
+  unrelated rejected PIN (#325). Cached clients also retain their known protocol
+  when rebuilt. Skipping inaccessible settings requires the companion API fix;
+  the released dependency pin remains unchanged until that fix is published.
+
 ## [0.17.0] - 2026-09-13
 
 The headline: heat pumps with a **Navigator 1.0/1.7** controller are supported

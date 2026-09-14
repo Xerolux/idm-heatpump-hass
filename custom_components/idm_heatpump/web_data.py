@@ -449,6 +449,22 @@ def _is_wrong_variant_error(err: Exception) -> bool:
     }
 
 
+def _nav10_authenticated(client: _IdmWebClient) -> bool:
+    """Use API diagnostics to recognize a completed WebSocket authorization.
+
+    The API records its first success when authorized:true arrives, before
+    reading settings. This remains available after a failed read/reconnect.
+    """
+    diagnostics = getattr(client, "diagnostics", None)
+    if not callable(diagnostics):
+        return False
+    snapshot = diagnostics()
+    return (
+        getattr(snapshot, "navigator_type", None) == "nav10"
+        and getattr(snapshot, "last_success_monotonic", None) is not None
+    )
+
+
 def _preferred_web_variant(model_hint: str | None) -> str | None:
     """Return 'nav10' or 'nav20' when the hint identifies a definite Navigator family.
 
@@ -557,6 +573,9 @@ async def async_read_web_supplement(
         cached = client_pool.get()
         if cached is not None:
             cached_client, cached_variant = cached
+            # A previous successful snapshot already established the protocol.
+            preferred_variant = cached_variant
+            allow_variant_fallback = False
             try:
                 supplement = _normalize_web_data(await _read_data_bounded(cached_client, read_timeout), cached_variant)
                 return await _read_optional_notifications(cached_client, supplement)
@@ -600,6 +619,14 @@ async def async_read_web_supplement(
                 await _safe_close(client)
             return result
         except Exception as err:
+            if variant_name == "nav10" and _nav10_authenticated(client):
+                # Authentication identified the controller, even if an optional
+                # setting or a later transport operation failed. A NAV2 probe
+                # would only obscure the actual error (issue #325).
+                await _safe_close(client)
+                if _is_authentication_error(err):
+                    raise IdmWebAuthenticationFailed("IDM Navigator web PIN was rejected") from err
+                raise
             if _is_authentication_error(err):
                 last_auth_error = err
                 _LOGGER.debug(

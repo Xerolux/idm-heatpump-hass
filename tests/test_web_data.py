@@ -1097,3 +1097,42 @@ async def test_a_hung_read_is_bounded_by_the_timeout():
         pytest.raises(TimeoutError),
     ):
         await web_data.async_read_web_supplement("192.0.2.10", "1234", read_timeout=0.01)
+
+
+@pytest.mark.parametrize(
+    "error",
+    [
+        idm_heatpump.IdmWebResponseError("missing settingDetail"),
+        TimeoutError("read stalled"),
+        IdmWebAuthenticationError("reconnect rejected"),
+    ],
+)
+async def test_authenticated_nav10_never_falls_back(monkeypatch: pytest.MonkeyPatch, error: Exception) -> None:
+    class AuthenticatedClient(_FakeWebClient):
+        def diagnostics(self) -> SimpleNamespace:
+            return SimpleNamespace(navigator_type="nav10", last_success_monotonic=0.0)
+
+    nav10 = AuthenticatedClient(error=error)
+    fallback = MagicMock(side_effect=AssertionError("NAV2 must not be probed"))
+    monkeypatch.setattr(web_data, "_create_nav10_client", lambda *args: nav10)
+    monkeypatch.setattr(web_data, "_create_nav20_client", fallback)
+    expected = IdmWebAuthenticationFailed if isinstance(error, IdmWebAuthenticationError) else type(error)
+    with pytest.raises(expected):
+        await async_read_web_supplement("192.0.2.10", "1234")
+    assert nav10.closed
+    fallback.assert_not_called()
+
+
+async def test_cached_protocol_stays_locked_with_default_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
+    pool = IdmWebClientPool()
+    old = _FakeWebClient(error=TimeoutError())
+    fresh = _FakeWebClient(error=TimeoutError())
+    pool.set(old, "nav10")
+    monkeypatch.setattr(web_data, "_create_nav10_client", lambda *args: fresh)
+    fallback = MagicMock(side_effect=AssertionError("NAV2 must not be probed"))
+    monkeypatch.setattr(web_data, "_create_nav20_client", fallback)
+    with pytest.raises(TimeoutError):
+        await async_read_web_supplement("192.0.2.10", "1234", client_pool=pool)
+    assert old.closed and fresh.closed
+    assert pool.get() is None
+    fallback.assert_not_called()
