@@ -33,6 +33,15 @@
 > [!TIP]
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
+## IDM Navigator Home Assistant search guide
+
+This project connects **IDM Navigator 2.0, Navigator 10 and Navigator Pro heat pumps** to **Home Assistant** through the local **Modbus TCP interface**. It supports local monitoring, heating circuits, domestic hot water, PV surplus, energy data, diagnostics and optional KNX integration without requiring an IDM cloud service.
+
+For the quickest start, open the [IDM heat pump installation guide][wiki-install]. For Python-based Modbus access and register definitions, see the companion [IDM Heatpump API](https://github.com/Xerolux/idm-heatpump-api).
+
+**Common questions:** [How to enable IDM Modbus TCP][wiki-install-modbus] · [Supported Navigator models][wiki-configuration] · [Troubleshooting connection problems][wiki-trouble]
+
+
 ---
 
 ## 🚌 New (experimental): KNX without the IDM gateway module
