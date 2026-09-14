@@ -39,7 +39,7 @@ This project connects **IDM Navigator 2.0, Navigator 10 and Navigator Pro heat p
 
 For the quickest start, open the [IDM heat pump installation guide][wiki-install]. For Python-based Modbus access and register definitions, see the companion [IDM Heatpump API](https://github.com/Xerolux/idm-heatpump-api).
 
-**Common questions:** [How to enable IDM Modbus TCP][wiki-install-modbus] · [Supported Navigator models][wiki-configuration] · [Troubleshooting connection problems][wiki-trouble]
+**Common questions:** [How to enable IDM Modbus TCP][wiki-install-modbus] · [Supported Navigator models][wiki-config] · [Troubleshooting connection problems][wiki-trouble]
 
 
 ---
