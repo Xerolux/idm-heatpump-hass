@@ -378,6 +378,14 @@ class OperationAnalysis:
         elapsed = (current - self.last_defrost_start).total_seconds()
         return round(max(0.0, elapsed) / 60.0, 1)
 
+    def current_defrost_minutes(self, now: datetime | None = None) -> float | None:
+        """Return the duration of the currently observed defrost cycle."""
+        if self._defrost_on is not True or self.last_defrost_start is None:
+            return 0.0 if self._defrost_reconciled else None
+        current = (now or _utcnow()).astimezone(UTC)
+        elapsed = (current - self.last_defrost_start).total_seconds()
+        return round(max(0.0, elapsed) / 60.0, 1)
+
     def operating_share(self, mode_name: str) -> float | None:
         """Return percentage of tracked active runtime for one documented mode."""
         if mode_name not in self.mode_durations:

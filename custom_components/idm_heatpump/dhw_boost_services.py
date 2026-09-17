@@ -11,7 +11,7 @@ from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN
+from .const import CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE, DOMAIN, FEATURE_PROFILE_SMART
 from .coordinator import IdmCoordinator
 from .dhw_boost import (
     DhwBoostError,
@@ -68,6 +68,13 @@ async def _get_manager(
             translation_key="multiple_entries_select_entry",
         )
     runtime_data = loaded_entries[0].runtime_data
+    selected_entry = loaded_entries[0]
+    entry_options = selected_entry.options if isinstance(selected_entry.options, Mapping) else {}
+    if entry_options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) != FEATURE_PROFILE_SMART:
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="smart_features_disabled",
+        )
     coordinator = getattr(runtime_data, "coordinator", None)
     if not isinstance(coordinator, IdmCoordinator):
         raise ServiceValidationError(

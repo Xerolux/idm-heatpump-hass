@@ -19,7 +19,13 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import DataType, RegisterDef
 
-from .const import DOMAIN, REGISTER_ADDRESS_ERROR_ACKNOWLEDGE
+from .const import (
+    CONF_FEATURE_PROFILE,
+    DEFAULT_FEATURE_PROFILE,
+    DOMAIN,
+    FEATURE_PROFILE_SMART,
+    REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
+)
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .dhw_boost import DhwBoostError, DhwBoostManager, async_get_dhw_boost_manager
@@ -47,6 +53,8 @@ async def async_setup_entry(
     setpoint_register = coordinator.get_register("dhw_setpoint")
     temperature_register = coordinator.get_register("dhw_temp_top")
     if (
+        entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
+        and
         isinstance(mode_register, RegisterDef)
         and mode_register.writable
         and isinstance(setpoint_register, RegisterDef)

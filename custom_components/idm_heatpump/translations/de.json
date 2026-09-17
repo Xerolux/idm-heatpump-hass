@@ -81,6 +81,7 @@
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
+          "feature_profile": "Funktionsprofil",
           "external_power_forwarding": "Automatische externe Leistungswerte"
         },
         "data_description": {
@@ -88,6 +89,13 @@
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
+          "feature_profile": "Vanilla stellt nur die grundlegenden IDM-Entitäten bereit. iDM Smart Energy & Comfort ergänzt berechnete Effizienzsensoren, Taktungsanalyse, Kurzzyklus-Erkennung und die sichere Warmwasser-Boost-Steuerung. Das Profil verändert die Wärmepumpeneinstellungen nicht selbst.",
+          "energy_manager": "Startet die sichere Warmwasserladung automatisch, wenn der ausdrücklich ausgewählte PV-Überschuss (oder PV-Erzeugung minus Hausverbrauch) verfügbar ist. Die externe Leistungsweitergabe muss mit den Quellsensoren eingerichtet sein. Standardmäßig deaktiviert.",
+          "energy_manager_min_surplus_kw": "Der Überschuss muss bei der Prüfung über diesem Wert liegen. Bei fehlenden, nicht verfügbaren oder unplausiblen Sensorwerten wird nichts geschrieben.",
+          "energy_manager_min_battery_soc": "Verhindert eine automatische Ladung bei zu niedrigem Batteriestand. Wird in der externen Leistungszuordnung kein Batteriesensor ausgewählt, entfällt diese zusätzliche Bedingung.",
+          "energy_manager_dhw_target": "Zielwert für die vorhandene sichere Warmwasser-Boost-Transaktion. Der vorherige Sollwert und die Betriebsart werden automatisch wiederhergestellt.",
+          "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
+          "energy_manager_cooldown": "Mindestzeit zwischen automatischen Starts. Dadurch werden wiederholte Starts nach dem Ende einer Ladung verhindert.",
           "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister."
         },
         "sections": {
@@ -95,6 +103,27 @@
             "name": "Darstellung und Zusatzfunktionen",
             "description": "Diese Einstellungen ergänzen Sensoren oder ändern ausschließlich deren Darstellung in Home Assistant. Sie verändern nicht selbst die Regelung der Wärmepumpe. Beachte die Hinweise bei jeder Option.",
             "data": {
+              "feature_profile": "Funktionsprofil",
+              "energy_manager": "Automatische PV-Überschuss-Warmwasserladung aktivieren",
+              "energy_manager_exclusive_control": "Bestätigen: Home Assistant ist die einzige Warmwassersteuerung",
+              "health_monitor": "iDM Health Monitor aktivieren",
+              "comfort_schedule": "Heizkomfort-Zeitplan aktivieren",
+              "comfort_schedule_exclusive_control": "Bestätigen: Home Assistant ist die einzige Heizkreissteuerung",
+              "comfort_schedule_circuit": "Geplanter Heizkreis",
+              "comfort_schedule_start": "Komfort-Startzeit (HH:MM)",
+              "comfort_schedule_end": "Komfort-Endzeit (HH:MM)",
+              "comfort_schedule_target": "Geplante Raumtemperatur",
+              "heating_curve_assistant": "Heizkurven-Assistent aktivieren",
+              "weather_preheat_advisory": "Wetter-Vorheizempfehlung aktivieren",
+              "weather_entity": "Wetter-Entität",
+              "weather_preheat_threshold": "Temperaturgrenze für Vorheizempfehlung",
+              "energy_price_per_kwh": "Strompreis",
+              "energy_co2_g_per_kwh": "CO₂-Faktor",
+              "energy_manager_min_surplus_kw": "Mindest-PV-Überschuss",
+              "energy_manager_min_battery_soc": "Mindest-Ladezustand der Batterie",
+              "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
+              "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
+              "energy_manager_cooldown": "Sperrzeit der Automatik",
               "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
               "enable_cascade": "Kaskadenanlage auslesen",
               "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -103,6 +132,27 @@
               "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt"
             },
             "data_description": {
+              "feature_profile": "Wähle Vanilla für ausschließlich grundlegende IDM-Entitäten. iDM Smart Energy & Comfort aktiviert zusätzlich lokale Effizienz- und Taktungsanalysen, Kurzzyklus-Diagnose sowie die sichere Warmwasser-Boost-Steuerung. Die externe Sensorweitergabe bleibt separat konfigurierbar. Beim Wechsel wird die Integration neu geladen; optionale Entitäten können entfernt oder neu erstellt werden.",
+              "energy_manager": "Startet die sichere Warmwasserladung automatisch, wenn der ausdrücklich ausgewählte PV-Überschuss (oder PV-Erzeugung minus Hausverbrauch) verfügbar ist. Die externe Leistungsweitergabe muss mit den Quellsensoren eingerichtet sein. Standardmäßig deaktiviert.",
+              "energy_manager_exclusive_control": "Die automatische Warmwasserladung bleibt deaktiviert, solange dies nicht bestätigt ist. Nicht aktivieren, wenn Smartfox, openWB oder ein anderes System das Warmwasser steuert.",
+              "health_monitor": "Ergänzt diagnostische Problem-Sensoren und einen aktuellen Zustandsbericht. Die Funktion liest nur Daten und schreibt niemals in die Wärmepumpe. Standardmäßig deaktiviert.",
+              "comfort_schedule": "Wendet ein tägliches Komfortfenster auf einen Heizkreis an. Standardmäßig deaktiviert.",
+              "comfort_schedule_exclusive_control": "Der Zeitplan bleibt deaktiviert, solange dies nicht bestätigt ist. Nicht aktivieren, wenn ein anderes System den Heizkreis steuert.",
+              "comfort_schedule_circuit": "Nur der ausgewählte Heizkreis wird geändert.",
+              "comfort_schedule_start": "Lokale Startzeit im 24-Stunden-Format HH:MM.",
+              "comfort_schedule_end": "Lokale Endzeit im 24-Stunden-Format HH:MM. Gleiche Start- und Endzeit deaktiviert das Fenster.",
+              "comfort_schedule_target": "Zielwert während des Komfortfensters.",
+              "heating_curve_assistant": "Fügt eine schreibgeschützte Empfehlung hinzu, wenn die Vorlauftemperatur eines Heizkreises dauerhaft vom berechneten Sollwert abweicht.",
+              "weather_preheat_advisory": "Fügt eine schreibgeschützte Empfehlung auf Basis der Temperatur der ausgewählten Wetter-Entität hinzu.",
+              "weather_entity": "Für die Empfehlung verwendete Wetter-Entität.",
+              "weather_preheat_threshold": "Unterhalb dieser Temperatur wird Vorheizen empfohlen. Es wird kein Sollwert verändert.",
+              "energy_price_per_kwh": "Für optionale Kostensensoren. Dies ist eine feste lokale Schätzung und ruft keine Tarifdaten ab.",
+              "energy_co2_g_per_kwh": "Für optionale CO₂-Sensoren. Trage den Emissionsfaktor deines Strommixes ein.",
+              "energy_manager_min_surplus_kw": "Der Überschuss muss bei der Prüfung über diesem Wert liegen. Bei fehlenden, nicht verfügbaren oder unplausiblen Sensorwerten wird nichts geschrieben.",
+              "energy_manager_min_battery_soc": "Verhindert eine automatische Ladung bei zu niedrigem Batteriestand. Wird in der externen Leistungszuordnung kein Batteriesensor ausgewählt, entfällt diese zusätzliche Bedingung.",
+              "energy_manager_dhw_target": "Zielwert für die vorhandene sichere Warmwasser-Boost-Transaktion. Der vorherige Sollwert und die Betriebsart werden automatisch wiederhergestellt.",
+              "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
+              "energy_manager_cooldown": "Mindestzeit zwischen automatischen Starts. Dadurch werden wiederholte Starts nach dem Ende einer Ladung verhindert.",
               "technician_codes": "Erstellt zwei Sensoren mit den zeitabhängigen Zugangscodes für Fachmann-Ebene 1 und 2 und aktualisiert sie jede Minute. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
               "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -381,6 +431,7 @@
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
+          "feature_profile": "Funktionsprofil",
           "external_power_forwarding": "Automatische externe Leistungswerte"
         },
         "data_description": {
@@ -388,6 +439,13 @@
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
+          "feature_profile": "Vanilla stellt nur die grundlegenden IDM-Entitäten bereit. iDM Smart Energy & Comfort ergänzt berechnete Effizienzsensoren, Taktungsanalyse, Kurzzyklus-Erkennung und die sichere Warmwasser-Boost-Steuerung. Das Profil verändert die Wärmepumpeneinstellungen nicht selbst.",
+          "energy_manager": "Startet die sichere Warmwasserladung automatisch, wenn der ausdrücklich ausgewählte PV-Überschuss (oder PV-Erzeugung minus Hausverbrauch) verfügbar ist. Die externe Leistungsweitergabe muss mit den Quellsensoren eingerichtet sein. Standardmäßig deaktiviert.",
+          "energy_manager_min_surplus_kw": "Der Überschuss muss bei der Prüfung über diesem Wert liegen. Bei fehlenden, nicht verfügbaren oder unplausiblen Sensorwerten wird nichts geschrieben.",
+          "energy_manager_min_battery_soc": "Verhindert eine automatische Ladung bei zu niedrigem Batteriestand. Wird in der externen Leistungszuordnung kein Batteriesensor ausgewählt, entfällt diese zusätzliche Bedingung.",
+          "energy_manager_dhw_target": "Zielwert für die vorhandene sichere Warmwasser-Boost-Transaktion. Der vorherige Sollwert und die Betriebsart werden automatisch wiederhergestellt.",
+          "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
+          "energy_manager_cooldown": "Mindestzeit zwischen automatischen Starts. Dadurch werden wiederholte Starts nach dem Ende einer Ladung verhindert.",
           "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister."
         },
         "sections": {
@@ -395,6 +453,27 @@
             "name": "Darstellung und Zusatzfunktionen",
             "description": "Diese Einstellungen ergänzen Sensoren oder ändern ausschließlich deren Darstellung in Home Assistant. Sie verändern nicht selbst die Regelung der Wärmepumpe. Beachte die Hinweise bei jeder Option.",
             "data": {
+              "feature_profile": "Funktionsprofil",
+              "energy_manager": "Automatische PV-Überschuss-Warmwasserladung aktivieren",
+              "energy_manager_exclusive_control": "Bestätigen: Home Assistant ist die einzige Warmwassersteuerung",
+              "health_monitor": "iDM Health Monitor aktivieren",
+              "energy_manager_min_surplus_kw": "Mindest-PV-Überschuss",
+              "comfort_schedule": "Heizkomfort-Zeitplan aktivieren",
+              "comfort_schedule_exclusive_control": "Bestätigen: Home Assistant ist die einzige Heizkreissteuerung",
+              "comfort_schedule_circuit": "Geplanter Heizkreis",
+              "comfort_schedule_start": "Komfort-Startzeit (HH:MM)",
+              "comfort_schedule_end": "Komfort-Endzeit (HH:MM)",
+              "comfort_schedule_target": "Geplante Raumtemperatur",
+              "heating_curve_assistant": "Heizkurven-Assistent aktivieren",
+              "weather_preheat_advisory": "Wetter-Vorheizempfehlung aktivieren",
+              "weather_entity": "Wetter-Entität",
+              "weather_preheat_threshold": "Temperaturgrenze für Vorheizempfehlung",
+              "energy_price_per_kwh": "Strompreis",
+              "energy_co2_g_per_kwh": "CO₂-Faktor",
+              "energy_manager_min_battery_soc": "Mindest-Ladezustand der Batterie",
+              "energy_manager_dhw_target": "Automatische Warmwasser-Zieltemperatur",
+              "energy_manager_dhw_timeout": "Dauer der automatischen Warmwasserladung",
+              "energy_manager_cooldown": "Sperrzeit der Automatik",
               "technician_codes": "Aktuelle Fachmann-Codes als Sensoren anzeigen",
               "enable_cascade": "Kaskadenanlage auslesen",
               "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
@@ -403,6 +482,27 @@
               "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt"
             },
             "data_description": {
+              "feature_profile": "Wähle Vanilla für ausschließlich grundlegende IDM-Entitäten. iDM Smart Energy & Comfort aktiviert zusätzlich lokale Effizienz- und Taktungsanalysen, Kurzzyklus-Diagnose sowie die sichere Warmwasser-Boost-Steuerung. Die externe Sensorweitergabe bleibt separat konfigurierbar. Beim Wechsel wird die Integration neu geladen; optionale Entitäten können entfernt oder neu erstellt werden.",
+              "energy_manager": "Startet die sichere Warmwasserladung automatisch, wenn der ausdrücklich ausgewählte PV-Überschuss (oder PV-Erzeugung minus Hausverbrauch) verfügbar ist. Die externe Leistungsweitergabe muss mit den Quellsensoren eingerichtet sein. Standardmäßig deaktiviert.",
+              "energy_manager_exclusive_control": "Die automatische Warmwasserladung bleibt deaktiviert, solange dies nicht bestätigt ist. Nicht aktivieren, wenn Smartfox, openWB oder ein anderes System das Warmwasser steuert.",
+              "health_monitor": "Ergänzt diagnostische Problem-Sensoren und einen aktuellen Zustandsbericht. Die Funktion liest nur Daten und schreibt niemals in die Wärmepumpe. Standardmäßig deaktiviert.",
+              "energy_manager_min_surplus_kw": "Der Überschuss muss bei der Prüfung über diesem Wert liegen. Bei fehlenden, nicht verfügbaren oder unplausiblen Sensorwerten wird nichts geschrieben.",
+              "comfort_schedule": "Wendet ein tägliches Komfortfenster auf einen Heizkreis an. Standardmäßig deaktiviert.",
+              "comfort_schedule_exclusive_control": "Der Zeitplan bleibt deaktiviert, solange dies nicht bestätigt ist. Nicht aktivieren, wenn ein anderes System den Heizkreis steuert.",
+              "comfort_schedule_circuit": "Nur der ausgewählte Heizkreis wird geändert.",
+              "comfort_schedule_start": "Lokale Startzeit im 24-Stunden-Format HH:MM.",
+              "comfort_schedule_end": "Lokale Endzeit im 24-Stunden-Format HH:MM. Gleiche Start- und Endzeit deaktiviert das Fenster.",
+              "comfort_schedule_target": "Zielwert während des Komfortfensters.",
+              "heating_curve_assistant": "Fügt eine schreibgeschützte Empfehlung hinzu, wenn die Vorlauftemperatur eines Heizkreises dauerhaft vom berechneten Sollwert abweicht.",
+              "weather_preheat_advisory": "Fügt eine schreibgeschützte Empfehlung auf Basis der Temperatur der ausgewählten Wetter-Entität hinzu.",
+              "weather_entity": "Für die Empfehlung verwendete Wetter-Entität.",
+              "weather_preheat_threshold": "Unterhalb dieser Temperatur wird Vorheizen empfohlen. Es wird kein Sollwert verändert.",
+              "energy_price_per_kwh": "Für optionale Kostensensoren. Dies ist eine feste lokale Schätzung und ruft keine Tarifdaten ab.",
+              "energy_co2_g_per_kwh": "Für optionale CO₂-Sensoren. Trage den Emissionsfaktor deines Strommixes ein.",
+              "energy_manager_min_battery_soc": "Verhindert eine automatische Ladung bei zu niedrigem Batteriestand. Wird in der externen Leistungszuordnung kein Batteriesensor ausgewählt, entfällt diese zusätzliche Bedingung.",
+              "energy_manager_dhw_target": "Zielwert für die vorhandene sichere Warmwasser-Boost-Transaktion. Der vorherige Sollwert und die Betriebsart werden automatisch wiederhergestellt.",
+              "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
+              "energy_manager_cooldown": "Mindestzeit zwischen automatischen Starts. Dadurch werden wiederholte Starts nach dem Ende einer Ladung verhindert.",
               "technician_codes": "Erstellt zwei Sensoren mit den zeitabhängigen Zugangscodes für Fachmann-Ebene 1 und 2 und aktualisiert sie jede Minute. Aktiviere dies nur, wenn die Codes in Home Assistant sichtbar sein dürfen. Die Codes sind für alle Home-Assistant-Benutzer mit Zugriff auf diese Entitäten sichtbar.",
               "enable_cascade": "Liest zusätzliche Register für eine Kaskade aus mehreren Wärmepumpen. Bei einer einzelnen Wärmepumpe deaktiviert lassen, um unnötige oder nicht unterstützte Registerabfragen zu vermeiden.",
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
@@ -640,6 +740,24 @@
       },
       "dhw_demand": {
         "name": "Warmwasseranforderung"
+      },
+      "health_communication": {
+        "name": "Kommunikationsproblem"
+      },
+      "health_dhw_not_reaching_target": {
+        "name": "Warmwasser erreicht Sollwert nicht"
+      },
+      "health_implausible_sensor": {
+        "name": "Unplausibler Sensorwert"
+      },
+      "health_long_defrost": {
+        "name": "Abtauvorgang ungewöhnlich lang"
+      },
+      "health_low_cop": {
+        "name": "COP ungewöhnlich niedrig"
+      },
+      "health_many_compressor_starts": {
+        "name": "Zu viele Verdichterstarts"
       },
       "heating_demand": {
         "name": "Heizanforderung"
@@ -1147,8 +1265,32 @@
       "electric_heater_power": {
         "name": "E-Heizstab Leistung"
       },
+      "energy_co2_month": {
+        "name": "CO₂-Emissionen der Wärmepumpe im Monat"
+      },
+      "energy_co2_total": {
+        "name": "CO₂-Emissionen der Wärmepumpe gesamt"
+      },
       "energy_cooling": {
         "name": "Wärmemenge Kühlen"
+      },
+      "energy_cop_month": {
+        "name": "COP der Wärmepumpe im Monat"
+      },
+      "energy_cop_today": {
+        "name": "COP der Wärmepumpe heute"
+      },
+      "energy_cop_total": {
+        "name": "COP der Wärmepumpe gesamt"
+      },
+      "energy_cost_month": {
+        "name": "Stromkosten der Wärmepumpe im Monat"
+      },
+      "energy_cost_today": {
+        "name": "Stromkosten der Wärmepumpe heute"
+      },
+      "energy_cost_total": {
+        "name": "Stromkosten der Wärmepumpe gesamt"
       },
       "energy_defrost": {
         "name": "Wärmemenge Abtauen"
@@ -1159,6 +1301,15 @@
       "energy_electric_heater": {
         "name": "Wärmemenge E-Heizstab"
       },
+      "energy_electrical_month": {
+        "name": "Elektrische Energie der Wärmepumpe im Monat"
+      },
+      "energy_electrical_today": {
+        "name": "Elektrische Energie der Wärmepumpe heute"
+      },
+      "energy_electrical_total": {
+        "name": "Elektrische Energie der Wärmepumpe gesamt"
+      },
       "energy_heating": {
         "name": "Wärmemenge Heizen"
       },
@@ -1168,8 +1319,26 @@
       "energy_passive_cooling": {
         "name": "Wärmemenge Passive Kühlung"
       },
+      "energy_pv_self_consumed_month": {
+        "name": "PV-Eigenverbrauch der Wärmepumpe im Monat"
+      },
+      "energy_pv_self_consumed_today": {
+        "name": "PV-Eigenverbrauch der Wärmepumpe heute"
+      },
+      "energy_pv_self_consumed_total": {
+        "name": "PV-Eigenverbrauch der Wärmepumpe gesamt"
+      },
       "energy_solar": {
         "name": "Wärmemenge Solar"
+      },
+      "energy_thermal_month": {
+        "name": "Thermische Energie der Wärmepumpe im Monat"
+      },
+      "energy_thermal_today": {
+        "name": "Thermische Energie der Wärmepumpe heute"
+      },
+      "energy_thermal_total": {
+        "name": "Thermische Energie der Wärmepumpe gesamt"
       },
       "energy_total": {
         "name": "Wärmemenge Gesamt"
@@ -1231,6 +1400,9 @@
       "hc_status": {
         "name": "Status HK {circuit}"
       },
+      "health_report": {
+        "name": "iDM-Zustandsbericht"
+      },
       "heat_sink_charging_pump_signal": {
         "name": "Steuersignal Ladepumpe Wärmesenke (M73)"
       },
@@ -1254,6 +1426,9 @@
       },
       "heat_source_pump_status": {
         "name": "Wärmequellenpumpe M15"
+      },
+      "heating_curve_advice": {
+        "name": "Heizkurven-Empfehlung"
       },
       "hgl_flow_temp": {
         "name": "HGL Vorlauftemperatur B35"
@@ -1410,6 +1585,9 @@
       },
       "variable_input": {
         "name": "Variabler Eingang"
+      },
+      "weather_preheat_advice": {
+        "name": "Wetter-Vorheizempfehlung"
       },
       "web_4way_valve_circuit1": {
         "name": "4-Wege-Ventil Kreis 1 (Web)"
@@ -1610,6 +1788,12 @@
     }
   },
   "selector": {
+    "feature_profile": {
+      "options": {
+        "smart": "iDM Smart Energy & Comfort (empfohlen)",
+        "vanilla": "Vanilla – nur grundlegende IDM-Entitäten"
+      }
+    },
     "model_override": {
       "options": {
         "auto": "Automatisch (empfohlen)",
@@ -1674,6 +1858,9 @@
     }
   },
   "exceptions": {
+    "smart_features_disabled": {
+      "message": "Das Funktionsprofil iDM Smart Energy & Comfort ist für diese Wärmepumpe deaktiviert. Aktiviere es in den Integrationsoptionen, bevor du diese Aktion verwendest."
+    },
     "no_device_configured": {
       "message": "Keine IDM-Wärmepumpe ist aktuell konfiguriert oder geladen."
     },

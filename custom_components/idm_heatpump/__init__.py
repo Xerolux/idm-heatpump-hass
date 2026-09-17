@@ -30,17 +30,34 @@ from idm_heatpump import (
     IdmModelInfo,
 )
 
+from .comfort_scheduler import ComfortScheduler
 from .const import (
+    CONF_COMFORT_SCHEDULE,
+    CONF_COMFORT_SCHEDULE_CIRCUIT,
+    CONF_COMFORT_SCHEDULE_END,
+    CONF_COMFORT_SCHEDULE_EXCLUSIVE,
+    CONF_COMFORT_SCHEDULE_START,
+    CONF_COMFORT_SCHEDULE_TARGET,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
     CONF_EEPROM_WRITE_INTERVAL,
+    CONF_ENABLE_CASCADE,
+    CONF_ENERGY_CO2_FACTOR,
+    CONF_ENERGY_MANAGER,
+    CONF_ENERGY_MANAGER_COOLDOWN,
+    CONF_ENERGY_MANAGER_EXCLUSIVE,
+    CONF_ENERGY_MANAGER_MIN_SOC,
+    CONF_ENERGY_MANAGER_MIN_SURPLUS,
+    CONF_ENERGY_MANAGER_TARGET,
+    CONF_ENERGY_MANAGER_TIMEOUT,
+    CONF_ENERGY_PRICE,
     CONF_EXTERNAL_POWER_BATTERY_SIGN,
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
-    CONF_ENABLE_CASCADE,
+    CONF_FEATURE_PROFILE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_HUMIDITY_FORWARDING,
@@ -80,12 +97,28 @@ from .const import (
     CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    DEFAULT_COMFORT_SCHEDULE,
+    DEFAULT_COMFORT_SCHEDULE_CIRCUIT,
+    DEFAULT_COMFORT_SCHEDULE_END,
+    DEFAULT_COMFORT_SCHEDULE_EXCLUSIVE,
+    DEFAULT_COMFORT_SCHEDULE_START,
+    DEFAULT_COMFORT_SCHEDULE_TARGET,
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_EEPROM_WRITE_INTERVAL,
+    DEFAULT_ENABLE_CASCADE,
+    DEFAULT_ENERGY_CO2_FACTOR,
+    DEFAULT_ENERGY_MANAGER,
+    DEFAULT_ENERGY_MANAGER_COOLDOWN,
+    DEFAULT_ENERGY_MANAGER_EXCLUSIVE,
+    DEFAULT_ENERGY_MANAGER_MIN_SOC,
+    DEFAULT_ENERGY_MANAGER_MIN_SURPLUS,
+    DEFAULT_ENERGY_MANAGER_TARGET,
+    DEFAULT_ENERGY_MANAGER_TIMEOUT,
+    DEFAULT_ENERGY_PRICE,
     DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
     DEFAULT_EXTERNAL_POWER_FORWARDING,
     DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
-    DEFAULT_ENABLE_CASCADE,
+    DEFAULT_FEATURE_PROFILE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_HUMIDITY_FORWARDING,
     DEFAULT_HUMIDITY_FORWARDING_INTERVAL,
@@ -116,6 +149,7 @@ from .const import (
     DEFAULT_WEB_SCAN_INTERVAL,
     DEFAULT_WRITE_COOLDOWN,
     DOMAIN,
+    FEATURE_PROFILE_SMART,
     MAX_WEB_BACKOFF_FACTOR,
     MODEL,
     NAME,
@@ -128,6 +162,8 @@ from .device_hierarchy import (
     cleanup_stale_web_sensor_entities,
     precreate_main_device,
 )
+from .energy_manager import EnergyManager, EnergyManagerConfig
+from .energy_statistics import EnergyStatistics
 from .error_messages import (
     classify_communication_error,
     classify_web_error,
@@ -135,6 +171,7 @@ from .error_messages import (
     friendly_web_error,
     scoped_issue_id,
 )
+from .external_power_forwarding import ExternalPowerForwarder, ExternalPowerForwardingConfig
 from .knx_bridge import KnxBridge, KnxBridgeConfig
 from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
 from .library_adapter import get_idm_client
@@ -156,7 +193,6 @@ from .registers import (
     get_all_switch_descriptions,
     normalize_zone_rooms,
 )
-from .external_power_forwarding import ExternalPowerForwarder, ExternalPowerForwardingConfig
 from .room_temp_forwarding import (
     HumidityForwarder,
     HumidityForwardingConfig,
@@ -210,6 +246,9 @@ class IdmHeatpumpData:
     humidity_forwarding_task: asyncio.Task[None] | None = None
     storage_temp_forwarding_task: asyncio.Task[None] | None = None
     external_power_forwarding_task: asyncio.Task[None] | None = None
+    energy_manager: EnergyManager | None = None
+    energy_statistics: EnergyStatistics | None = None
+    comfort_scheduler: ComfortScheduler | None = None
     knx_bridge: KnxBridge | None = None
     operation_analysis: OperationAnalysis | None = None
     reload_fingerprint: str | None = None
@@ -582,6 +621,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     external_power_battery_sign = str(
         entry.options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN)
     )
+    energy_manager_enabled = bool(entry.options.get(CONF_ENERGY_MANAGER, DEFAULT_ENERGY_MANAGER))
+    energy_manager_exclusive = bool(
+        entry.options.get(CONF_ENERGY_MANAGER_EXCLUSIVE, DEFAULT_ENERGY_MANAGER_EXCLUSIVE)
+    )
     knx_bridge_enabled = bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE))
     knx_base_address = str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip()
     knx_send = bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND))
@@ -598,6 +641,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     polling_jitter = int(entry.options.get(CONF_POLLING_JITTER, DEFAULT_POLLING_JITTER))
     write_cooldown = float(entry.options.get(CONF_WRITE_COOLDOWN, DEFAULT_WRITE_COOLDOWN))
     eeprom_write_interval = float(entry.options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL))
+    smart_features_enabled = (
+        entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
+    )
 
     if web_pin_configured(web_pin):
         ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
@@ -779,20 +825,61 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             descriptions=sensor_descs + binary_descs + number_descs + select_descs + switch_descs,
         )
 
-        operation_analysis = OperationAnalysis(
-            hass,
-            entry.entry_id,
-            coordinator.get_register,
-            short_cycle_minutes=short_cycle_minutes,
-            expected_poll_interval=float(scan_interval),
-        )
-        await operation_analysis.async_load()
-        coordinator.attach_operation_analysis(operation_analysis)
+        operation_analysis = None
+        energy_statistics = None
+        if smart_features_enabled:
+            operation_analysis = OperationAnalysis(
+                hass,
+                entry.entry_id,
+                coordinator.get_register,
+                short_cycle_minutes=short_cycle_minutes,
+                expected_poll_interval=float(scan_interval),
+            )
+            await operation_analysis.async_load()
+            coordinator.attach_operation_analysis(operation_analysis)
+            energy_statistics = EnergyStatistics(
+                hass,
+                entry.entry_id,
+                float(scan_interval),
+                price_per_kwh=float(entry.options.get(CONF_ENERGY_PRICE, DEFAULT_ENERGY_PRICE)),
+                co2_g_per_kwh=float(entry.options.get(CONF_ENERGY_CO2_FACTOR, DEFAULT_ENERGY_CO2_FACTOR)),
+                pv_source=(
+                    external_power_forwarding_entities.get("pv_production")
+                    if isinstance(external_power_forwarding_entities, dict)
+                    else None
+                ),
+            )
+            await energy_statistics.async_load()
+            coordinator.attach_energy_statistics(energy_statistics)
+
+        comfort_scheduler = None
+        if (
+            smart_features_enabled
+            and bool(entry.options.get(CONF_COMFORT_SCHEDULE, DEFAULT_COMFORT_SCHEDULE))
+            and bool(
+                entry.options.get(
+                    CONF_COMFORT_SCHEDULE_EXCLUSIVE,
+                    DEFAULT_COMFORT_SCHEDULE_EXCLUSIVE,
+                )
+            )
+        ):
+            comfort_scheduler = ComfortScheduler(
+                hass,
+                coordinator,
+                str(entry.options.get(CONF_COMFORT_SCHEDULE_CIRCUIT, DEFAULT_COMFORT_SCHEDULE_CIRCUIT)),
+                str(entry.options.get(CONF_COMFORT_SCHEDULE_START, DEFAULT_COMFORT_SCHEDULE_START)),
+                str(entry.options.get(CONF_COMFORT_SCHEDULE_END, DEFAULT_COMFORT_SCHEDULE_END)),
+                float(entry.options.get(CONF_COMFORT_SCHEDULE_TARGET, DEFAULT_COMFORT_SCHEDULE_TARGET)),
+            )
+            if coordinator.get_register(comfort_scheduler.register_name) is not None:
+                comfort_scheduler.start()
 
         entry.runtime_data = IdmHeatpumpData(
             coordinator=coordinator,
             client=client,
             operation_analysis=operation_analysis,
+            energy_statistics=energy_statistics,
+            comfort_scheduler=comfort_scheduler,
             loaded_platforms=tuple(PLATFORMS),
         )
 
@@ -903,6 +990,46 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     name=f"{DOMAIN}_external_power_{entry.entry_id}",
                 )
 
+        # The energy manager consumes the same explicitly selected source
+        # entities as the GLT forwarder. It never writes those GLT registers;
+        # its only automatic action is the transactional DHW boost path.
+        if (
+            smart_features_enabled
+            and energy_manager_enabled
+            and energy_manager_exclusive
+            and isinstance(external_power_forwarding_entities, dict)
+        ):
+            energy_sources = {
+                str(name): str(entity_id)
+                for name, entity_id in external_power_forwarding_entities.items()
+                if str(entity_id).strip()
+            }
+            if energy_sources:
+                energy_manager = EnergyManager(
+                    hass,
+                    coordinator,
+                    EnergyManagerConfig(
+                        sources=energy_sources,
+                        minimum_surplus_kw=float(
+                            entry.options.get(CONF_ENERGY_MANAGER_MIN_SURPLUS, DEFAULT_ENERGY_MANAGER_MIN_SURPLUS)
+                        ),
+                        minimum_battery_soc=float(
+                            entry.options.get(CONF_ENERGY_MANAGER_MIN_SOC, DEFAULT_ENERGY_MANAGER_MIN_SOC)
+                        ),
+                        target_temperature=int(
+                            entry.options.get(CONF_ENERGY_MANAGER_TARGET, DEFAULT_ENERGY_MANAGER_TARGET)
+                        ),
+                        timeout_minutes=int(
+                            entry.options.get(CONF_ENERGY_MANAGER_TIMEOUT, DEFAULT_ENERGY_MANAGER_TIMEOUT)
+                        ),
+                        cooldown_minutes=int(
+                            entry.options.get(CONF_ENERGY_MANAGER_COOLDOWN, DEFAULT_ENERGY_MANAGER_COOLDOWN)
+                        ),
+                    ),
+                )
+                entry.runtime_data.energy_manager = energy_manager
+                energy_manager.start()
+
         if knx_bridge_enabled and (knx_send or knx_receive):
             bridge = KnxBridge(
                 hass,
@@ -1009,6 +1136,12 @@ async def _async_cancel_entry_tasks(runtime: Any) -> None:
                 await task
             except asyncio.CancelledError:
                 pass
+    manager = getattr(runtime, "energy_manager", None)
+    if isinstance(manager, EnergyManager):
+        await manager.async_stop()
+    scheduler = getattr(runtime, "comfort_scheduler", None)
+    if isinstance(scheduler, ComfortScheduler):
+        await scheduler.async_stop()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
@@ -1016,11 +1149,17 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
     unload_ok = await hass.config_entries.async_unload_platforms(entry, list(platforms))
     if unload_ok:
         operation_analysis = getattr(entry.runtime_data, "operation_analysis", None)
-        if operation_analysis is not None:
+        if isinstance(operation_analysis, OperationAnalysis):
             try:
                 await operation_analysis.async_save()
             except Exception:
                 _LOGGER.warning("Failed to persist IDM operation analysis during unload", exc_info=True)
+        energy_statistics = getattr(entry.runtime_data, "energy_statistics", None)
+        if isinstance(energy_statistics, EnergyStatistics):
+            try:
+                await energy_statistics.async_save()
+            except Exception:
+                _LOGGER.warning("Failed to persist IDM energy statistics during unload", exc_info=True)
         coordinator = getattr(entry.runtime_data, "coordinator", None)
         shutdown = getattr(coordinator, "async_shutdown", None)
         if callable(shutdown):

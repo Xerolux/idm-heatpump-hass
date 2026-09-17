@@ -12,7 +12,17 @@ from homeassistant.helpers import device_registry as dr
 from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from .const import CONF_HEATING_CIRCUITS, CONF_TECHNICIAN_CODES, DOMAIN, MANUFACTURER
+from .const import (
+    CONF_FEATURE_PROFILE,
+    CONF_HEALTH_MONITOR,
+    CONF_HEATING_CIRCUITS,
+    CONF_HEATING_CURVE_ASSISTANT,
+    CONF_TECHNICIAN_CODES,
+    CONF_WEATHER_PREHEAT,
+    DOMAIN,
+    FEATURE_PROFILE_SMART,
+    MANUFACTURER,
+)
 
 if TYPE_CHECKING:
     from .coordinator import IdmCoordinator
@@ -29,6 +39,9 @@ DeviceScopeKind = Literal[
     "auxiliary_heat",
     "domestic_hot_water",
     "diagnostics",
+    "analytics",
+    "health",
+    "comfort",
 ]
 
 
@@ -110,6 +123,9 @@ _MODULE_DEVICE_METADATA: dict[DeviceScopeKind, tuple[str, str, str]] = {
     ),
     "domestic_hot_water": ("domestic_hot_water", "Warmwasser", "Warmwasserbereitung"),
     "diagnostics": ("diagnostics", "Diagnose", "Diagnose"),
+    "analytics": ("analytics", "iDM Analytics", "Energieanalyse"),
+    "health": ("health", "iDM Health Monitor", "Gesundheitsüberwachung"),
+    "comfort": ("comfort", "iDM Comfort", "Komfortberatung"),
 }
 
 # Every sub-device except the zone module is a *logical part* of the controller
@@ -128,6 +144,9 @@ _CHILD_DEVICE_KINDS: frozenset[DeviceScopeKind] = frozenset(
         "auxiliary_heat",
         "domestic_hot_water",
         "diagnostics",
+        "analytics",
+        "health",
+        "comfort",
     }
 )
 
@@ -161,6 +180,23 @@ def resolve_device_scope(entity_key: str) -> DeviceScope | None:
     for prefix, kind in _OPTIONAL_MODULE_PREFIXES:
         if key.startswith(prefix):
             return DeviceScope(kind, prefix.removesuffix("_"))
+    if key.startswith(
+        (
+            "calculated_",
+            "analysis_",
+            "energy_electrical_",
+            "energy_thermal_",
+            "energy_cop_",
+            "energy_cost_",
+            "energy_co2_",
+            "energy_pv_self_consumed_",
+        )
+    ) or key == "analysis_last_cycle_short":
+        return DeviceScope("analytics", "analytics")
+    if key.startswith("health_"):
+        return DeviceScope("health", "health")
+    if key in {"heating_curve_advice", "weather_preheat_advice"}:
+        return DeviceScope("comfort", "comfort")
     if key in _DHW_KEYS or key.startswith(_DHW_PREFIXES):
         return DeviceScope("domestic_hot_water", "domestic_hot_water")
     if key in _DIAGNOSTIC_KEYS:
@@ -387,6 +423,16 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
     options = getattr(coordinator.config_entry, "options", {}) if coordinator.config_entry is not None else {}
     if isinstance(options, dict) and options.get(CONF_TECHNICIAN_CODES, False):
         entity_keys.add("technician_codes")
+    # These entities are created by optional feature platforms rather than by
+    # the register table, so seed their logical device groups explicitly.
+    # Missing legacy options intentionally default to the historical Smart
+    # profile and therefore do not make existing entities disappear.
+    if isinstance(options, dict) and options.get(CONF_FEATURE_PROFILE, FEATURE_PROFILE_SMART) == FEATURE_PROFILE_SMART:
+        entity_keys.update({"calculated_cop", "analysis_heat_pump_cycles_recorded", "energy_cop_total"})
+        if options.get(CONF_HEALTH_MONITOR, False):
+            entity_keys.add("health_report")
+        if options.get(CONF_HEATING_CURVE_ASSISTANT, False) or options.get(CONF_WEATHER_PREHEAT, False):
+            entity_keys.add("heating_curve_advice")
     entity_keys.add("error_acknowledge")
 
     subdevices: dict[tuple[str, str], SubdevicePlacement] = {}

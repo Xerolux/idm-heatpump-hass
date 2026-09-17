@@ -61,7 +61,11 @@ from .registers import (
 
 if TYPE_CHECKING:
     from .dhw_boost import DhwBoostManager
-    from .operation_analysis import OperationAnalysis
+
+from .energy_statistics import EnergyStatistics
+from .operation_analysis import OperationAnalysis
+
+if TYPE_CHECKING:
     from .polling_plan import EntityAwarePollingManager
 
 from .web_data import (
@@ -275,6 +279,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._device_info_cache: tuple[tuple[Any, ...], Any] | None = None
         self._hierarchy_device_ids: dict[tuple[str, str], str] = {}
         self._operation_analysis: OperationAnalysis | None = None
+        self._energy_statistics: EnergyStatistics | None = None
         self._entity_aware_polling_manager: EntityAwarePollingManager | None = None
         self._external_register_demand: dict[str, frozenset[str]] = {}
         self._polling_plan_total_count: int = 0
@@ -455,6 +460,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def operation_analysis(self) -> OperationAnalysis | None:
         return self._operation_analysis
+
+    def attach_energy_statistics(self, statistics: EnergyStatistics) -> None:
+        """Attach persistent energy statistics before the first refresh."""
+        self._energy_statistics = statistics
+
+    @property
+    def energy_statistics(self) -> EnergyStatistics | None:
+        return self._energy_statistics
 
     @property
     def sensor_descriptions(self) -> list[dict[str, Any]]:
@@ -920,6 +933,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             except Exception:
                 _LOGGER.warning(
                     "Could not update IDM operation analysis; normal polling continues",
+                    exc_info=True,
+                )
+
+        if self._energy_statistics is not None:
+            try:
+                self._energy_statistics.process_snapshot(data)
+            except Exception:
+                _LOGGER.warning(
+                    "Could not update IDM energy statistics; normal polling continues",
                     exc_info=True,
                 )
 

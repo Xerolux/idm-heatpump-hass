@@ -41,6 +41,15 @@ Zur Installation geht es direkt zur [Installationsanleitung][wiki-install]. Für
 
 **Häufige Fragen:** [Modbus TCP aktivieren][wiki-install-modbus] · [Unterstützte Navigator-Modelle][wiki-config] · [Verbindungsprobleme beheben][wiki-trouble]
 
+### Optionales Funktionsprofil
+
+Im Config Flow stehen **iDM Smart Energy & Comfort** und **Vanilla** zur
+Auswahl. Smart ergänzt lokale COP-, Taktungs- und Kurzzyklusanalysen sowie die
+sichere Warmwasser-Boost-Steuerung. Vanilla stellt nur die grundlegenden IDM-
+Entitäten bereit. Die Weitergabe von PV, Batterie und externen Raumsensoren
+bleibt separat konfigurierbar. Details stehen im [Leitfaden zu Smart Energy &
+Comfort][wiki-smart].
+
 
 ---
 
@@ -319,6 +328,7 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [paypal]: https://paypal.me/xerolux
 [wiki]: https://xerolux.github.io/idm-heatpump-hass/docs/
 [wiki-install]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/
+[wiki-smart]: https://xerolux.github.io/idm-heatpump-hass/docs/smart-energy-and-comfort/
 [wiki-install-modbus]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/#enable-modbus-tcp-on-the-idm-heat-pump
 [wiki-config]: https://xerolux.github.io/idm-heatpump-hass/docs/configuration/
 [wiki-entities]: https://xerolux.github.io/idm-heatpump-hass/docs/entities/

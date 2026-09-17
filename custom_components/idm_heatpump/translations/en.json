@@ -81,6 +81,7 @@
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
           "zone_count": "Number of zone modules",
+          "feature_profile": "Feature profile",
           "external_power_forwarding": "Automatic external power forwarding"
         },
         "data_description": {
@@ -88,6 +89,13 @@
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
           "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist.",
+          "feature_profile": "Vanilla exposes the core IDM entities. iDM Smart Energy & Comfort additionally enables calculated efficiency sensors, cycle analysis, short-cycle detection and the safe DHW boost controls. It does not independently change heat-pump settings.",
+          "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
+          "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
+          "energy_manager_min_battery_soc": "Prevents automatic charging from using a battery below this state of charge. Leave the battery source empty in the external power mapping to disable this additional condition.",
+          "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
+          "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
+          "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers."
         },
         "sections": {
@@ -95,6 +103,27 @@
             "name": "Presentation and additional features",
             "description": "These settings add sensors or change only how they are presented in Home Assistant. They do not by themselves change heat-pump control. Read the note for each option.",
             "data": {
+              "feature_profile": "Feature profile",
+              "energy_manager": "Enable automatic PV surplus DHW charging",
+              "energy_manager_exclusive_control": "Confirm Home Assistant is the only DHW controller",
+              "health_monitor": "Enable iDM Health Monitor",
+              "comfort_schedule": "Enable heating comfort schedule",
+              "comfort_schedule_exclusive_control": "Confirm Home Assistant is the only heating controller",
+              "comfort_schedule_circuit": "Scheduled heating circuit",
+              "comfort_schedule_start": "Comfort start time (HH:MM)",
+              "comfort_schedule_end": "Comfort end time (HH:MM)",
+              "comfort_schedule_target": "Scheduled room temperature",
+              "heating_curve_assistant": "Enable heating curve assistant",
+              "weather_preheat_advisory": "Enable weather preheat advisory",
+              "weather_entity": "Weather entity",
+              "weather_preheat_threshold": "Preheat temperature threshold",
+              "energy_price_per_kwh": "Electricity price",
+              "energy_co2_g_per_kwh": "CO₂ factor",
+              "energy_manager_min_surplus_kw": "Minimum PV surplus",
+              "energy_manager_min_battery_soc": "Minimum battery state of charge",
+              "energy_manager_dhw_target": "Automatic DHW target temperature",
+              "energy_manager_dhw_timeout": "Automatic DHW boost duration",
+              "energy_manager_cooldown": "Automation cooldown",
               "technician_codes": "Show current installer codes as sensors",
               "enable_cascade": "Read a cascade installation",
               "web_extra_data": "Read additional Navigator web data",
@@ -103,6 +132,27 @@
               "short_cycle_minutes": "Short compressor-cycle threshold"
             },
             "data_description": {
+              "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
+              "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
+              "energy_manager_exclusive_control": "The automatic DHW boost stays disabled unless this is confirmed. Do not enable it while Smartfox, openWB or another system controls DHW.",
+              "health_monitor": "Adds diagnostic problem sensors and a current health report. It only observes data and never writes to the heat pump. Disabled by default.",
+              "comfort_schedule": "Applies one daily comfort window to one heating circuit. Disabled by default.",
+              "comfort_schedule_exclusive_control": "The schedule stays disabled unless confirmed. Do not enable it while another system controls the heating circuit.",
+              "comfort_schedule_circuit": "Only the selected circuit is changed.",
+              "comfort_schedule_start": "Local start time. Use 24-hour HH:MM notation.",
+              "comfort_schedule_end": "Local end time. Use 24-hour HH:MM notation. Equal start and end disables the window.",
+              "comfort_schedule_target": "Target used during the comfort window.",
+              "heating_curve_assistant": "Adds a read-only recommendation when a heating circuit flow temperature consistently misses or exceeds its calculated setpoint.",
+              "weather_preheat_advisory": "Adds a read-only recommendation based on the selected weather entity temperature.",
+              "weather_entity": "Weather entity used for the advisory.",
+              "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
+              "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
+              "energy_co2_g_per_kwh": "Used for optional CO₂ sensors. Enter the emission factor of your electricity mix.",
+              "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
+              "energy_manager_min_battery_soc": "Prevents automatic charging from using a battery below this state of charge. Leave the battery source empty in the external power mapping to disable this additional condition.",
+              "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
+              "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
+              "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
               "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
               "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -381,6 +431,7 @@
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
           "zone_count": "Number of zone modules",
+          "feature_profile": "Feature profile",
           "external_power_forwarding": "Automatic external power forwarding"
         },
         "data_description": {
@@ -388,6 +439,13 @@
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
           "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist.",
+          "feature_profile": "Vanilla exposes the core IDM entities. iDM Smart Energy & Comfort additionally enables calculated efficiency sensors, cycle analysis, short-cycle detection and the safe DHW boost controls. It does not independently change heat-pump settings.",
+          "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
+          "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
+          "energy_manager_min_battery_soc": "Prevents automatic charging from using a battery below this state of charge. Leave the battery source empty in the external power mapping to disable this additional condition.",
+          "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
+          "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
+          "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers."
         },
         "sections": {
@@ -395,6 +453,27 @@
             "name": "Presentation and additional features",
             "description": "These settings add sensors or change only how they are presented in Home Assistant. They do not by themselves change heat-pump control. Read the note for each option.",
             "data": {
+              "feature_profile": "Feature profile",
+              "energy_manager": "Enable automatic PV surplus DHW charging",
+              "energy_manager_exclusive_control": "Confirm Home Assistant is the only DHW controller",
+              "health_monitor": "Enable iDM Health Monitor",
+              "energy_manager_min_surplus_kw": "Minimum PV surplus",
+              "comfort_schedule": "Enable heating comfort schedule",
+              "comfort_schedule_exclusive_control": "Confirm Home Assistant is the only heating controller",
+              "comfort_schedule_circuit": "Scheduled heating circuit",
+              "comfort_schedule_start": "Comfort start time (HH:MM)",
+              "comfort_schedule_end": "Comfort end time (HH:MM)",
+              "comfort_schedule_target": "Scheduled room temperature",
+              "heating_curve_assistant": "Enable heating curve assistant",
+              "weather_preheat_advisory": "Enable weather preheat advisory",
+              "weather_entity": "Weather entity",
+              "weather_preheat_threshold": "Preheat temperature threshold",
+              "energy_price_per_kwh": "Electricity price",
+              "energy_co2_g_per_kwh": "CO₂ factor",
+              "energy_manager_min_battery_soc": "Minimum battery state of charge",
+              "energy_manager_dhw_target": "Automatic DHW target temperature",
+              "energy_manager_dhw_timeout": "Automatic DHW boost duration",
+              "energy_manager_cooldown": "Automation cooldown",
               "technician_codes": "Show current installer codes as sensors",
               "enable_cascade": "Read a cascade installation",
               "web_extra_data": "Read additional Navigator web data",
@@ -403,6 +482,27 @@
               "short_cycle_minutes": "Short compressor-cycle threshold"
             },
             "data_description": {
+              "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
+              "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
+              "energy_manager_exclusive_control": "The automatic DHW boost stays disabled unless this is confirmed. Do not enable it while Smartfox, openWB or another system controls DHW.",
+              "health_monitor": "Adds diagnostic problem sensors and a current health report. It only observes data and never writes to the heat pump. Disabled by default.",
+              "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
+              "comfort_schedule": "Applies one daily comfort window to one heating circuit. Disabled by default.",
+              "comfort_schedule_exclusive_control": "The schedule stays disabled unless confirmed. Do not enable it while another system controls the heating circuit.",
+              "comfort_schedule_circuit": "Only the selected circuit is changed.",
+              "comfort_schedule_start": "Local start time. Use 24-hour HH:MM notation.",
+              "comfort_schedule_end": "Local end time. Use 24-hour HH:MM notation. Equal start and end disables the window.",
+              "comfort_schedule_target": "Target used during the comfort window.",
+              "heating_curve_assistant": "Adds a read-only recommendation when a heating circuit flow temperature consistently misses or exceeds its calculated setpoint.",
+              "weather_preheat_advisory": "Adds a read-only recommendation based on the selected weather entity temperature.",
+              "weather_entity": "Weather entity used for the advisory.",
+              "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
+              "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
+              "energy_co2_g_per_kwh": "Used for optional CO₂ sensors. Enter the emission factor of your electricity mix.",
+              "energy_manager_min_battery_soc": "Prevents automatic charging from using a battery below this state of charge. Leave the battery source empty in the external power mapping to disable this additional condition.",
+              "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
+              "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
+              "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
               "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
               "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
@@ -640,6 +740,24 @@
       },
       "dhw_demand": {
         "name": "Hot water demand"
+      },
+      "health_communication": {
+        "name": "Communication problem"
+      },
+      "health_dhw_not_reaching_target": {
+        "name": "DHW does not reach target"
+      },
+      "health_implausible_sensor": {
+        "name": "Implausible sensor value"
+      },
+      "health_long_defrost": {
+        "name": "Defrost cycle unusually long"
+      },
+      "health_low_cop": {
+        "name": "COP unusually low"
+      },
+      "health_many_compressor_starts": {
+        "name": "Too many compressor starts"
       },
       "heating_demand": {
         "name": "Heating demand"
@@ -1147,8 +1265,32 @@
       "electric_heater_power": {
         "name": "Electric heater power"
       },
+      "energy_co2_month": {
+        "name": "Heat pump CO₂ emissions this month"
+      },
+      "energy_co2_total": {
+        "name": "Heat pump CO₂ emissions total"
+      },
       "energy_cooling": {
         "name": "Cooling energy"
+      },
+      "energy_cop_month": {
+        "name": "Heat pump COP this month"
+      },
+      "energy_cop_today": {
+        "name": "Heat pump COP today"
+      },
+      "energy_cop_total": {
+        "name": "Heat pump COP total"
+      },
+      "energy_cost_month": {
+        "name": "Heat pump electricity cost this month"
+      },
+      "energy_cost_today": {
+        "name": "Heat pump electricity cost today"
+      },
+      "energy_cost_total": {
+        "name": "Heat pump electricity cost total"
       },
       "energy_defrost": {
         "name": "Defrost energy"
@@ -1159,6 +1301,15 @@
       "energy_electric_heater": {
         "name": "Electric heater energy"
       },
+      "energy_electrical_month": {
+        "name": "Heat pump electrical energy this month"
+      },
+      "energy_electrical_today": {
+        "name": "Heat pump electrical energy today"
+      },
+      "energy_electrical_total": {
+        "name": "Heat pump electrical energy total"
+      },
       "energy_heating": {
         "name": "Heating energy"
       },
@@ -1168,8 +1319,26 @@
       "energy_passive_cooling": {
         "name": "Passive cooling energy"
       },
+      "energy_pv_self_consumed_month": {
+        "name": "Heat pump PV self-consumption this month"
+      },
+      "energy_pv_self_consumed_today": {
+        "name": "Heat pump PV self-consumption today"
+      },
+      "energy_pv_self_consumed_total": {
+        "name": "Heat pump PV self-consumption total"
+      },
       "energy_solar": {
         "name": "Solar energy"
+      },
+      "energy_thermal_month": {
+        "name": "Heat pump thermal energy this month"
+      },
+      "energy_thermal_today": {
+        "name": "Heat pump thermal energy today"
+      },
+      "energy_thermal_total": {
+        "name": "Heat pump thermal energy total"
       },
       "energy_total": {
         "name": "Total energy"
@@ -1231,6 +1400,9 @@
       "hc_status": {
         "name": "Heating circuit {circuit} status"
       },
+      "health_report": {
+        "name": "iDM health report"
+      },
       "heat_sink_charging_pump_signal": {
         "name": "Heat sink charging pump control signal (M73)"
       },
@@ -1254,6 +1426,9 @@
       },
       "heat_source_pump_status": {
         "name": "Heat source pump M15"
+      },
+      "heating_curve_advice": {
+        "name": "Heating curve advice"
       },
       "hgl_flow_temp": {
         "name": "HGL flow temperature (B35)"
@@ -1410,6 +1585,9 @@
       },
       "variable_input": {
         "name": "Variable input"
+      },
+      "weather_preheat_advice": {
+        "name": "Weather preheat advice"
       },
       "web_4way_valve_circuit1": {
         "name": "4-way valve circuit 1 (Web)"
@@ -1610,6 +1788,12 @@
     }
   },
   "selector": {
+    "feature_profile": {
+      "options": {
+        "smart": "iDM Smart Energy & Comfort (recommended)",
+        "vanilla": "Vanilla – core IDM entities only"
+      }
+    },
     "model_override": {
       "options": {
         "auto": "Automatic (recommended)",
@@ -1674,6 +1858,9 @@
     }
   },
   "exceptions": {
+    "smart_features_disabled": {
+      "message": "The iDM Smart Energy & Comfort profile is disabled for this heat pump. Select it in the integration options before using this action."
+    },
     "no_device_configured": {
       "message": "No IDM heat pump is currently configured or loaded."
     },

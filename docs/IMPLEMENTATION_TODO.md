@@ -1,6 +1,6 @@
 # IDM Heatpump – open TODO list
 
-Last updated: 2026-08-18
+Last updated: 2026-09-17
 
 The large strategic optimization blocks are implemented. This document only
 contains items that are genuinely open, depend on real-system data, or are
@@ -37,6 +37,18 @@ Home Assistant's central shared-connection contract is not available yet.
 - [x] Cycling, runtime, compressor start and defrost analysis.
 - [x] Short-cycle warning and operating shares.
 - [x] Restart-proof persistence of the operation analysis.
+- [x] Optional iDM Smart Energy & Comfort profile with backwards-compatible
+      Vanilla mode and unchanged existing entity IDs.
+- [x] Persistent electrical/thermal energy, COP, cost, CO₂ and PV
+      self-consumption statistics.
+- [x] Fail-closed PV-surplus domestic-hot-water automation with explicit
+      single-controller confirmation.
+- [x] Optional read-only iDM Health Monitor with an installer-oriented report
+      summary and long-defrost detection.
+- [x] Optional comfort schedule plus read-only heating-curve and weather
+      preheat advisers.
+- [x] Separate optional device groups for iDM Analytics, iDM Health Monitor and
+      iDM Comfort.
 - [x] Safe domestic hot water boost with start, cancel, timeout, target
       reached, restart recovery and guaranteed restore.
 - [x] Entity-based, deduplicated Modbus polling.

@@ -20,6 +20,7 @@
 - [Button](Entities#button)
 
 ## Automation
+- [iDM Smart Energy & Comfort](Smart-Energy-and-Comfort)
 - [KNX Bridge](KNX-Bridge)
 - [Services Reference](Services)
 - [Example Automations](Examples)

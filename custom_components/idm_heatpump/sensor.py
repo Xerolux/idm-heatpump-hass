@@ -27,9 +27,29 @@ from idm_heatpump import DataType, RegisterDef
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities
-from .const import CONF_COMMUNICATION_DIAGNOSTICS, CONF_TECHNICIAN_CODES, DOMAIN
+from .comfort_advisory import ComfortAdvisorySensor, heating_curve_advisory, weather_preheat_advisory
+from .const import (
+    CONF_COMFORT_SCHEDULE_CIRCUIT,
+    CONF_COMMUNICATION_DIAGNOSTICS,
+    CONF_FEATURE_PROFILE,
+    CONF_HEALTH_MONITOR,
+    CONF_HEATING_CURVE_ASSISTANT,
+    CONF_TECHNICIAN_CODES,
+    CONF_WEATHER_ENTITY,
+    CONF_WEATHER_PREHEAT,
+    CONF_WEATHER_PREHEAT_THRESHOLD,
+    DEFAULT_FEATURE_PROFILE,
+    DEFAULT_HEALTH_MONITOR,
+    DEFAULT_HEATING_CURVE_ASSISTANT,
+    DEFAULT_WEATHER_ENTITY,
+    DEFAULT_WEATHER_PREHEAT,
+    DEFAULT_WEATHER_PREHEAT_THRESHOLD,
+    DOMAIN,
+    FEATURE_PROFILE_SMART,
+)
 from .coordinator import IdmCoordinator
 from .device_hierarchy import HEATING_CIRCUIT_LETTERS, active_heating_circuits, build_subdevice_info
+from .energy_statistics_entities import IdmEnergyStatisticsSensor, energy_statistics_entities
 from .entity import (
     IdmCoordinatorEntityBase,
     IdmEntity,
@@ -38,6 +58,7 @@ from .entity import (
     should_add_entity,
 )
 from .entity_names import web_translation_for_value
+from .health_monitor import IdmHealthReportSensor, health_report_entities
 from .internal_messages import format_internal_message, internal_message_text
 from .operation_entities import (
     IdmOperationSensor,
@@ -371,6 +392,9 @@ async def async_setup_entry(
         | IdmApiVersionSensor
         | IdmCommunicationDiagnosticSensor
         | IdmOperationSensor
+        | IdmHealthReportSensor
+        | IdmEnergyStatisticsSensor
+        | ComfortAdvisorySensor
     ] = []
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
         entities += _technician_code_entities(coordinator)
@@ -384,16 +408,44 @@ async def async_setup_entry(
             and desc_info["register"].writable
         )
     ]
-    entities += calculated_sensor_entities(coordinator)
-    entities += operation_sensor_entities(
-        coordinator,
-        runtime_operation_analysis(entry.runtime_data),
-    )
+    if entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART:
+        entities += calculated_sensor_entities(coordinator)
+        entities += operation_sensor_entities(
+            coordinator,
+            runtime_operation_analysis(entry.runtime_data),
+        )
+        entities += energy_statistics_entities(coordinator)
+        circuit = str(entry.options.get(CONF_COMFORT_SCHEDULE_CIRCUIT, "a")).lower()
+        if entry.options.get(CONF_HEATING_CURVE_ASSISTANT, DEFAULT_HEATING_CURVE_ASSISTANT):
+            entities.append(heating_curve_advisory(coordinator, circuit))
+        weather_entity = str(entry.options.get(CONF_WEATHER_ENTITY, DEFAULT_WEATHER_ENTITY)).strip()
+        if entry.options.get(CONF_WEATHER_PREHEAT, DEFAULT_WEATHER_PREHEAT) and weather_entity:
+            entities.append(
+                weather_preheat_advisory(
+                    hass,
+                    coordinator,
+                    weather_entity,
+                    float(
+                        entry.options.get(
+                            CONF_WEATHER_PREHEAT_THRESHOLD,
+                            DEFAULT_WEATHER_PREHEAT_THRESHOLD,
+                        )
+                    ),
+                )
+            )
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
     entities.append(IdmApiVersionSensor(coordinator, versions))
     if entry.options.get(CONF_COMMUNICATION_DIAGNOSTICS, False):
         entities += _communication_diagnostic_entities(coordinator)
+    if (
+        entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
+        and entry.options.get(CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR)
+    ):
+        entities += health_report_entities(
+            coordinator,
+            runtime_operation_analysis(entry.runtime_data),
+        )
     async_add_entities(entities)
 
 

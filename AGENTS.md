@@ -56,6 +56,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── adapter_glt.py                # GLT measurement detection helpers
 │   ├── web_data.py                   # Optional local Navigator web supplement client
 │   ├── room_temp_forwarding.py       # Forward HA room temperatures (per circuit) and humidity (global) to GLT registers
+│   ├── external_power_forwarding.py  # Optional PV, consumption and battery forwarding to IDM GLT registers
 │   ├── knx_catalog.py                # IDM KNX communication objects (from the ETS example project) + group address arithmetic
 │   ├── knx_bridge.py                 # Optional KNX bridge: knx.send / knx.event_register through the HA KNX integration
 │   ├── technician_codes.py           # Time-based Fachmann Ebene code calculation
@@ -66,6 +67,12 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── calculated_sensors.py         # Derived sensors computed from one snapshot (COP, deltas, flow deviation)
 │   ├── operation_analysis.py         # Restart-safe cycle, defrost and operating-share analysis
 │   ├── operation_entities.py         # Sensors publishing that analysis
+│   ├── energy_manager.py              # Optional, fail-closed PV surplus DHW automation
+│   ├── energy_statistics.py           # Persistent electrical/thermal energy and COP totals
+│   ├── energy_statistics_entities.py  # Home Assistant entities for energy statistics
+│   ├── health_monitor.py              # Optional read-only health checks and report
+│   ├── comfort_advisory.py            # Optional read-only heating/weather recommendations
+│   ├── comfort_scheduler.py           # Optional exclusive heating comfort schedule
 │   ├── dhw_boost.py                  # Restart-safe domestic hot water boost state machine
 │   ├── dhw_boost_services.py         # start_dhw_boost / cancel_dhw_boost handlers
 │   ├── web_binary_sensors.py         # Binary sensors from the web supplement
@@ -95,6 +102,10 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_device_hierarchy_optional_modules.py
 │   ├── test_dhw_boost.py
 │   ├── test_dhw_boost_services.py
+│   ├── test_energy_manager.py
+│   ├── test_energy_statistics.py
+│   ├── test_health_monitor.py
+│   ├── test_comfort_advisory.py
 │   ├── test_diagnostics.py
 │   ├── test_diagnostics_privacy.py
 │   ├── test_documentation_language.py

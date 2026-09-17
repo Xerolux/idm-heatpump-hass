@@ -12,8 +12,16 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .binary_semantics import binary_value_is_on
+from .const import (
+    CONF_FEATURE_PROFILE,
+    CONF_HEALTH_MONITOR,
+    DEFAULT_FEATURE_PROFILE,
+    DEFAULT_HEALTH_MONITOR,
+    FEATURE_PROFILE_SMART,
+)
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
+from .health_monitor import health_binary_entities
 from .operation_entities import (
     IdmShortCycleBinarySensor,
     runtime_operation_analysis,
@@ -36,10 +44,16 @@ async def async_setup_entry(
         for desc_info in sort_entity_descriptions(coordinator.binary_sensor_descriptions)
         if should_add_entity(coordinator, desc_info["register"])
     ]
-    entities += short_cycle_binary_entities(
-        coordinator,
-        runtime_operation_analysis(entry.runtime_data),
-    )
+    if entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART:
+        entities += short_cycle_binary_entities(
+            coordinator,
+            runtime_operation_analysis(entry.runtime_data),
+        )
+        if entry.options.get(CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR):
+            entities += health_binary_entities(
+                coordinator,
+                runtime_operation_analysis(entry.runtime_data),
+            )
     if coordinator.web_enabled:
         entities += web_binary_sensor_entities(coordinator)
     async_add_entities(entities)

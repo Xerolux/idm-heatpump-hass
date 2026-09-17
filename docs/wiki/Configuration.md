@@ -29,6 +29,70 @@ stay easy to scan:
 - External room temperatures: forwarding interval and tolerance
 - Advanced Modbus settings: response timeout and retries (collapsed by default)
 
+### Feature profile
+
+The **Feature profile** controls optional IDM-specific entities:
+
+| Profile | Enabled functionality |
+|---------|-----------------------|
+| `iDM Smart Energy & Comfort` | Calculated COP and deviation sensors, compressor cycle analysis, short-cycle detection and safe DHW boost controls |
+| `Vanilla` | Core IDM register entities, climate controls, water heater, diagnostics and configured web data |
+
+The Smart profile is enabled by default to preserve the complete existing
+integration behavior. Vanilla is useful when only the original controller
+values and controls should be exposed. Switching profiles reloads the entry;
+optional entities may be removed or recreated, while core entity IDs remain
+unchanged.
+
+The profile does not automatically write energy values or modify the heating
+curve. External PV, battery, room-temperature, humidity and storage forwarding
+remain separate opt-in functions and are documented in their own sections.
+
+Smart also exposes persistent energy, COP, cost, CO₂ and optional PV
+self-consumption statistics when the required power registers are available.
+The electricity price and CO₂ factor are configured locally in the options;
+they are not fetched from an external service.
+
+When **Device hierarchy** is enabled, optional entities are kept in their own
+logical groups: **iDM Analytics**, **iDM Health Monitor**, and **iDM Comfort**.
+Existing controller, heating-circuit, warm-water and web entities remain in
+their existing groups and retain their entity IDs.
+
+### Optional PV energy manager
+
+The **automatic PV surplus DHW charging** option is off by default. It only
+starts the existing safe DHW boost when the selected PV surplus is available.
+It requires the external power source mapping and the explicit confirmation
+that Home Assistant is the only DHW controller. This confirmation prevents
+accidental parallel DHW control by Smartfox, openWB or another system.
+
+Missing, unavailable or invalid source values fail closed. The manager does not
+write GLT energy registers and does not alter normal heating, the heating curve
+or the electric heater. Tariff, weather and heating preheat controls are not
+enabled by this option. Tariff optimisation is not enabled because it requires
+an external tariff source.
+
+### Optional comfort schedule and advisers
+
+The comfort schedule is disabled by default and requires the explicit
+single-controller confirmation. It writes only the selected circuit's room
+temperature target inside the configured daily window and restores the prior
+target afterwards. A manual change made while the schedule is active is left
+untouched.
+
+The heating-curve assistant and weather-preheat adviser are read-only. They
+publish recommendations without changing any IDM register. The weather adviser
+requires a selected Home Assistant `weather` entity. All comfort entities are
+shown under **iDM Comfort** when device hierarchy is enabled.
+
+### Optional iDM Health Monitor
+
+The **iDM Health Monitor** is disabled by default and adds read-only diagnostic
+entities. It checks communication failures, compressor start frequency, low
+current COP, DHW temperature deviation and implausible temperature values. The
+`iDM health report` sensor exposes `ok` or `problem` and lists active checks in
+its attributes. It does not change any heat-pump setting.
+
 ### Scan Interval
 
 The scan interval determines how often registers are polled.

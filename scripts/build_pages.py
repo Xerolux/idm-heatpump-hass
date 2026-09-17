@@ -105,6 +105,13 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "description": "Configure the experimental IDM KNX bridge through Home Assistant KNX without a separate Weinzierl BAOS gateway module.",
     },
     {
+        "slug": "smart-energy-and-comfort",
+        "file": "Smart-Energy-and-Comfort.md",
+        "group": "automation",
+        "title": "iDM Smart Energy and Comfort",
+        "description": "Choose the optional iDM Smart Energy and Comfort profile for local efficiency, cycle analysis and safe domestic hot-water boost controls.",
+    },
+    {
         "slug": "data-update",
         "file": "Data-Update.md",
         "group": "operation",

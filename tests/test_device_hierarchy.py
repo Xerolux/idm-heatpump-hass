@@ -71,6 +71,28 @@ def test_unknown_entity_remains_on_main_device() -> None:
     assert build_subdevice_info(_coordinator(), "outdoor_temp") is None
 
 
+@pytest.mark.parametrize(
+    ("entity_key", "expected_kind", "expected_name"),
+    [
+        ("energy_cop_today", "analytics", "iDM Analytics"),
+        ("analysis_heat_pump_cycles_today", "analytics", "iDM Analytics"),
+        ("health_low_cop", "health", "iDM Health Monitor"),
+        ("heating_curve_advice", "comfort", "iDM Comfort"),
+    ],
+)
+def test_optional_feature_entities_have_separate_device_groups(
+    entity_key: str, expected_kind: str, expected_name: str
+) -> None:
+    scope = resolve_device_scope(entity_key)
+    assert scope is not None
+    assert scope.kind == expected_kind
+
+    info = build_subdevice_info(_coordinator(), entity_key)
+    assert info is not None
+    assert info["name"] == expected_name
+    assert info["parent_device_id"] == "main-device-id"
+
+
 def test_disabled_hierarchy_never_returns_subdevice() -> None:
     assert build_subdevice_info(_coordinator(enabled=False), "hc_a_flow_temp") is None
     assert build_subdevice_info(_coordinator(enabled=False), "zm1_room1_temp") is None
