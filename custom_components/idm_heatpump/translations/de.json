@@ -30,10 +30,12 @@
         "description": "Ändere die gespeicherte Verbindung oder teste alle konfigurierten lokalen Endpunkte, ohne etwas zu speichern oder an die Wärmepumpe zu schreiben.",
         "menu_options": {
           "connection": "Verbindungseinstellungen ändern",
+          "features": "Funktionen konfigurieren",
           "diagnostics": "Aktuelle Verbindung testen"
         },
         "menu_option_descriptions": {
           "connection": "Modbus-Host, Port, Slave-ID, lokale Web-PIN und Proxy-Einstellungen bearbeiten.",
+          "features": "Smart Energy & Comfort, Analysen, Überwachung, Weitergabe und automatische Steuerungen bearbeiten.",
           "diagnostics": "Schreibgeschützter Test von DNS/TCP, einem bekannten IDM-Modbus-Register und optionalem Navigator-Webzugriff."
         }
       },
@@ -95,7 +97,7 @@
         "sections": {
           "features": {
             "name": "Darstellung und Zusatzfunktionen",
-            "description": "Diese Einstellungen ergänzen Sensoren oder ändern ausschließlich deren Darstellung in Home Assistant. Sie verändern nicht selbst die Regelung der Wärmepumpe. Beachte die Hinweise bei jeder Option.",
+            "description": "Diese Optionen ergänzen Analysen und Entitäten. Die externe Leistungsweitergabe und automatische Steuerungen können Werte an die Wärmepumpe schreiben; vor der ersten Aktivierung erscheint ein Bestätigungshinweis.",
             "data": {
               "feature_profile": "Funktionsprofil",
               "energy_manager": "Automatische PV-Überschuss-Warmwasserladung aktivieren",
@@ -385,9 +387,16 @@
           "external_power_forwarding_pv_production": "W oder kW; wird in IDM pv_production (Register 78–79) geschrieben.",
           "external_power_forwarding_house_consumption": "W oder kW; wird in IDM house_consumption (Register 82–83) geschrieben.",
           "external_power_forwarding_battery_discharge": "W oder kW. Invertieren wählen, wenn die Quelle die openWB-Konvention nutzt (negativ bedeutet Entladen).",
-          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100; -1 wird für keine Batterie akzeptiert.",
+          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100. Der Lese-Sentinel -1 bedeutet nicht verfügbar und wird nicht an die Wärmepumpe gesendet.",
           "external_power_forwarding_electric_heater_power": "W oder kW; wird in IDM electric_heater_power (Register 76–77) geschrieben.",
           "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um."
+        }
+      },
+      "feature_notice": {
+        "title": "Neue Beta-Funktionen bestätigen",
+        "description": "Du aktivierst neue Beta-Funktionen. Lesende Analysen und Hinweise ergänzen Entitäten in Home Assistant. Die externe Leistungsweitergabe schreibt ausgewählte Sensorwerte in IDM-GLT-Register; die automatische PV-Warmwasserladung und der Komfort-Zeitplan können Einstellungen der Wärmepumpe ändern. Aktiviere diese Steuerungen nur, wenn Home Assistant die jeweilige Funktion allein steuert. Fahre nur fort, wenn du diese Auswirkungen verstanden hast.",
+        "data": {
+          "confirm_new_features": "Ja, ich habe den Hinweis verstanden und möchte diese Funktionen aktivieren"
         }
       }
     },
@@ -408,7 +417,8 @@
       "web_pin_required_or_disable": "Gib den lokalen Navigator-Web-PIN ein oder deaktiviere „Lokalen Navigator-Webzugriff verwenden“ ausdrücklich für einen reinen Modbus-Betrieb.",
       "invalid_knx_base_address": "Keine verwendbare Basis-Gruppenadresse. Dreistufig (8/0/0), zweistufig (8/0) oder frei angeben und oberhalb Platz für 999 Adressen lassen.",
       "invalid_knx_overrides": "Die Ausnahmeliste konnte nicht gelesen werden. Eine `Register = Adresse` pro Zeile mit bekanntem IDM-Registernamen angeben und keine Adresse doppelt vergeben.",
-      "no_knx_groups": "Mindestens eine Objektgruppe auswählen."
+      "no_knx_groups": "Mindestens eine Objektgruppe auswählen.",
+      "feature_notice_required": "Bitte bestätige die neuen Beta-Funktionen vor dem Speichern."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -439,7 +449,7 @@
         "sections": {
           "features": {
             "name": "Darstellung und Zusatzfunktionen",
-            "description": "Diese Einstellungen ergänzen Sensoren oder ändern ausschließlich deren Darstellung in Home Assistant. Sie verändern nicht selbst die Regelung der Wärmepumpe. Beachte die Hinweise bei jeder Option.",
+            "description": "Diese Optionen ergänzen Analysen und Entitäten. Die externe Leistungsweitergabe und automatische Steuerungen können Werte an die Wärmepumpe schreiben; vor der ersten Aktivierung erscheint ein Bestätigungshinweis.",
             "data": {
               "feature_profile": "Funktionsprofil",
               "energy_manager": "Automatische PV-Überschuss-Warmwasserladung aktivieren",
@@ -694,16 +704,24 @@
           "external_power_forwarding_pv_production": "W oder kW; wird in IDM pv_production (Register 78–79) geschrieben.",
           "external_power_forwarding_house_consumption": "W oder kW; wird in IDM house_consumption (Register 82–83) geschrieben.",
           "external_power_forwarding_battery_discharge": "W oder kW. Invertieren wählen, wenn die Quelle die openWB-Konvention nutzt (negativ bedeutet Entladen).",
-          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100; -1 wird für keine Batterie akzeptiert.",
+          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100. Der Lese-Sentinel -1 bedeutet nicht verfügbar und wird nicht an die Wärmepumpe gesendet.",
           "external_power_forwarding_electric_heater_power": "W oder kW; wird in IDM electric_heater_power (Register 76–77) geschrieben.",
           "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um."
+        }
+      },
+      "feature_notice": {
+        "title": "Neue Beta-Funktionen bestätigen",
+        "description": "Du aktivierst neue Beta-Funktionen. Lesende Analysen und Hinweise ergänzen Entitäten in Home Assistant. Die externe Leistungsweitergabe schreibt ausgewählte Sensorwerte in IDM-GLT-Register; die automatische PV-Warmwasserladung und der Komfort-Zeitplan können Einstellungen der Wärmepumpe ändern. Aktiviere diese Steuerungen nur, wenn Home Assistant die jeweilige Funktion allein steuert. Fahre nur fort, wenn du diese Auswirkungen verstanden hast.",
+        "data": {
+          "confirm_new_features": "Ja, ich habe den Hinweis verstanden und möchte diese Funktionen aktivieren"
         }
       }
     },
     "error": {
       "invalid_knx_base_address": "Keine verwendbare Basis-Gruppenadresse. Dreistufig (8/0/0), zweistufig (8/0) oder frei angeben und oberhalb Platz für 999 Adressen lassen.",
       "invalid_knx_overrides": "Die Ausnahmeliste konnte nicht gelesen werden. Eine `Register = Adresse` pro Zeile mit bekanntem IDM-Registernamen angeben und keine Adresse doppelt vergeben.",
-      "no_knx_groups": "Mindestens eine Objektgruppe auswählen."
+      "no_knx_groups": "Mindestens eine Objektgruppe auswählen.",
+      "feature_notice_required": "Bitte bestätige die neuen Beta-Funktionen vor dem Speichern."
     }
   },
   "entity": {

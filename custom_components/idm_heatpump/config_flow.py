@@ -172,6 +172,7 @@ from .const import (
     DEFAULT_WRITE_COOLDOWN,
     DOMAIN,
     FEATURE_PROFILE_OPTIONS,
+    FEATURE_PROFILE_SMART,
     HEATING_CIRCUITS,
     MAX_EEPROM_WRITE_INTERVAL,
     MAX_KNX_RESEND_INTERVAL,
@@ -389,6 +390,7 @@ _SETUP_PROFILE_RECOMMENDED = "recommended"
 _SETUP_PROFILE_RELIABLE = "reliable_network"
 _SETUP_PROFILE_MULTI_CLIENT = "multiple_clients"
 _SETUP_PROFILE_CUSTOM = "custom"
+_CONFIRM_NEW_FEATURES = "confirm_new_features"
 
 
 def _default_options() -> dict[str, Any]:
@@ -1369,6 +1371,8 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
 
     # Shared mutable state provided by the concrete flow.
     _options: dict[str, Any]
+    _previous_options: dict[str, Any]
+    _feature_notice_confirmed: bool
 
     def _flow_name_placeholder(self) -> str:
         raise NotImplementedError
@@ -1398,7 +1402,46 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
             if is_enabled(self._options):
                 handler: Callable[[], Awaitable[ConfigFlowResult]] = getattr(self, f"async_step_{step_id}")
                 return await handler()
+        return await self._async_finish_options()
+
+    async def _async_finish_options(self) -> ConfigFlowResult:
+        """Require acknowledgement when new beta features are enabled."""
+        if not self._feature_notice_confirmed and self._new_features_enabled():
+            return await self.async_step_feature_notice()
         return self._create_flow_entry()
+
+    def _new_features_enabled(self) -> bool:
+        flags = (
+            CONF_ENERGY_MANAGER,
+            CONF_HEALTH_MONITOR,
+            CONF_COMFORT_SCHEDULE,
+            CONF_HEATING_CURVE_ASSISTANT,
+            CONF_WEATHER_PREHEAT,
+            CONF_EXTERNAL_POWER_FORWARDING,
+        )
+        if not self._previous_options:
+            return self._options.get(CONF_FEATURE_PROFILE) == FEATURE_PROFILE_SMART or any(
+                self._options.get(flag, False) for flag in flags
+            )
+        return any(
+            self._options.get(flag, False) and not self._previous_options.get(flag, False) for flag in flags
+        ) or (
+            self._options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
+            and self._previous_options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) != FEATURE_PROFILE_SMART
+        )
+
+    async def async_step_feature_notice(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Confirm newly enabled beta features before saving."""
+        if user_input is not None and user_input.get(_CONFIRM_NEW_FEATURES) is True:
+            self._feature_notice_confirmed = True
+            return self._create_flow_entry()
+        return self.async_show_form(
+            step_id="feature_notice",
+            data_schema=vol.Schema(
+                {vol.Required(_CONFIRM_NEW_FEATURES, default=False): BooleanSelector(BooleanSelectorConfig())}
+            ),
+            errors={"base": "feature_notice_required"} if user_input is not None else {},
+        )
 
     async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
@@ -1531,6 +1574,8 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
     def __init__(self) -> None:
         self._data: dict[str, Any] = {}
         self._options: dict[str, Any] = {}
+        self._previous_options: dict[str, Any] = {}
+        self._feature_notice_confirmed = False
         self._modbus_error = _ModbusConnectionStatus.FAILED.value
         self._reconfigure_entry: config_entries.ConfigEntry | None = None
 
@@ -1636,7 +1681,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 self._options = _default_options()
                 return await self.async_step_options()
             self._options = _options_for_profile(profile)
-            return self._create_flow_entry()
+            return await self._async_finish_options()
 
         web_enabled = web_pin_configured(_clean_pin(self._data.get(CONF_WEB_PIN)))
         return self.async_show_form(
@@ -1659,8 +1704,17 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             return await self.async_step_connection(user_input)
         return self.async_show_menu(
             step_id="reconfigure",
-            menu_options=["connection", "diagnostics"],
+            menu_options=["connection", "features", "diagnostics"],
         )
+
+    async def async_step_features(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Edit feature options from the reconfigure menu."""
+        entry = self._get_reconfigure_entry()
+        self._reconfigure_entry = entry
+        self._data = dict(entry.data)
+        self._previous_options = dict(entry.options)
+        self._options = dict(entry.options)
+        return await self.async_step_options(user_input)
 
     async def async_step_connection(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Validate and update connection settings."""
@@ -1936,7 +1990,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             self._options[CONF_STORAGE_TEMP_FORWARDING_ENTITIES] = {}
         if self._reconfigure_entry is not None:
             _LOGGER.info(
-                "Updating existing IDM entry %s for web-only operation while preserving its Modbus options",
+                "Updating existing IDM entry %s while preserving its connection settings",
                 self._reconfigure_entry.entry_id,
             )
             return self.async_update_and_abort(
@@ -2048,7 +2102,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                     CONF_WEB_SCAN_INTERVAL: int(user_input.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL)),
                 }
             )
-            return self._create_flow_entry()
+            return await self._async_finish_options()
 
         default_interval = DEFAULT_WEB_SCAN_INTERVAL
         if self._reconfigure_entry is not None:
@@ -2267,6 +2321,8 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
 class IdmHeatpumpOptionsFlow(_IdmOptionsStepsMixin, config_entries.OptionsFlow):
     def __init__(self) -> None:
         self._options: dict[str, Any] = {}
+        self._previous_options: dict[str, Any] = {}
+        self._feature_notice_confirmed = False
 
     def _flow_name_placeholder(self) -> str:
         return str(self.config_entry.title)
@@ -2280,4 +2336,5 @@ class IdmHeatpumpOptionsFlow(_IdmOptionsStepsMixin, config_entries.OptionsFlow):
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         self._options = dict(self.config_entry.options)
+        self._previous_options = dict(self.config_entry.options)
         return await self.async_step_options()

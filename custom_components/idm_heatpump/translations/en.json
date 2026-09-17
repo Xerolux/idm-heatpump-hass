@@ -30,10 +30,12 @@
         "description": "Change the saved connection or test all configured local endpoints without saving or writing to the heat pump.",
         "menu_options": {
           "connection": "Change connection settings",
+          "features": "Configure features",
           "diagnostics": "Test current connection"
         },
         "menu_option_descriptions": {
           "connection": "Edit Modbus host, port, slave ID, local web PIN, and proxy settings.",
+          "features": "Edit Smart Energy & Comfort, analytics, monitoring, forwarding, and automatic controls.",
           "diagnostics": "Read-only test of DNS/TCP, a known IDM Modbus register, and optional Navigator web access."
         }
       },
@@ -95,7 +97,7 @@
         "sections": {
           "features": {
             "name": "Presentation and additional features",
-            "description": "These settings add sensors or change only how they are presented in Home Assistant. They do not by themselves change heat-pump control. Read the note for each option.",
+            "description": "These options add analytics and entities. External power forwarding and automatic controls can write to the heat pump; an acknowledgement is shown before they are first enabled.",
             "data": {
               "feature_profile": "Feature profile",
               "energy_manager": "Enable automatic PV surplus DHW charging",
@@ -385,9 +387,16 @@
           "external_power_forwarding_pv_production": "W or kW; written to IDM pv_production (registers 78–79).",
           "external_power_forwarding_house_consumption": "W or kW; written to IDM house_consumption (registers 82–83).",
           "external_power_forwarding_battery_discharge": "W or kW. Select invert when the source uses the openWB convention (negative means discharge).",
-          "external_power_forwarding_battery_soc": "Percent from 0 to 100; -1 is accepted for no battery.",
+          "external_power_forwarding_battery_soc": "Percent from 0 to 100. The read sentinel -1 means unavailable and is not sent to the heat pump.",
           "external_power_forwarding_electric_heater_power": "W or kW; written to IDM electric_heater_power (registers 76–77).",
           "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign."
+        }
+      },
+      "feature_notice": {
+        "title": "Confirm new beta features",
+        "description": "You are enabling new beta functions. Read-only analytics and advice add Home Assistant entities. External power forwarding writes selected sensor values to IDM GLT registers; automatic PV hot-water charging and the comfort schedule can change heat-pump settings. Enable those controls only when Home Assistant is the sole controller for the affected function. Continue only if you understand these effects.",
+        "data": {
+          "confirm_new_features": "Yes, I understand and want to enable these functions"
         }
       }
     },
@@ -408,7 +417,8 @@
       "web_pin_required_or_disable": "Enter the local Navigator web PIN, or explicitly disable “Use local Navigator web access” for Modbus-only operation.",
       "invalid_knx_base_address": "Not a usable base group address. Use three-level (8/0/0), two-level (8/0) or free notation, and leave room for 999 addresses above it.",
       "invalid_knx_overrides": "Could not read the override list. Use one `register = address` per line with a known IDM register name, and do not assign one address twice.",
-      "no_knx_groups": "Select at least one object group."
+      "no_knx_groups": "Select at least one object group.",
+      "feature_notice_required": "Confirm the new beta functions before saving."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -439,7 +449,7 @@
         "sections": {
           "features": {
             "name": "Presentation and additional features",
-            "description": "These settings add sensors or change only how they are presented in Home Assistant. They do not by themselves change heat-pump control. Read the note for each option.",
+            "description": "These options add analytics and entities. External power forwarding and automatic controls can write to the heat pump; an acknowledgement is shown before they are first enabled.",
             "data": {
               "feature_profile": "Feature profile",
               "energy_manager": "Enable automatic PV surplus DHW charging",
@@ -694,16 +704,24 @@
           "external_power_forwarding_pv_production": "W or kW; written to IDM pv_production (registers 78–79).",
           "external_power_forwarding_house_consumption": "W or kW; written to IDM house_consumption (registers 82–83).",
           "external_power_forwarding_battery_discharge": "W or kW. Select invert when the source uses the openWB convention (negative means discharge).",
-          "external_power_forwarding_battery_soc": "Percent from 0 to 100; -1 is accepted for no battery.",
+          "external_power_forwarding_battery_soc": "Percent from 0 to 100. The read sentinel -1 means unavailable and is not sent to the heat pump.",
           "external_power_forwarding_electric_heater_power": "W or kW; written to IDM electric_heater_power (registers 76–77).",
           "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign."
+        }
+      },
+      "feature_notice": {
+        "title": "Confirm new beta features",
+        "description": "You are enabling new beta functions. Read-only analytics and advice add Home Assistant entities. External power forwarding writes selected sensor values to IDM GLT registers; automatic PV hot-water charging and the comfort schedule can change heat-pump settings. Enable those controls only when Home Assistant is the sole controller for the affected function. Continue only if you understand these effects.",
+        "data": {
+          "confirm_new_features": "Yes, I understand and want to enable these functions"
         }
       }
     },
     "error": {
       "invalid_knx_base_address": "Not a usable base group address. Use three-level (8/0/0), two-level (8/0) or free notation, and leave room for 999 addresses above it.",
       "invalid_knx_overrides": "Could not read the override list. Use one `register = address` per line with a known IDM register name, and do not assign one address twice.",
-      "no_knx_groups": "Select at least one object group."
+      "no_knx_groups": "Select at least one object group.",
+      "feature_notice_required": "Confirm the new beta functions before saving."
     }
   },
   "entity": {

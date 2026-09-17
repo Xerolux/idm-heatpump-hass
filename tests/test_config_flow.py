@@ -30,6 +30,8 @@ from custom_components.idm_heatpump.const import (
     CONF_EXTERNAL_POWER_BATTERY_SIGN,
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
+    CONF_FEATURE_PROFILE,
+    CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_HOST,
@@ -1097,7 +1099,33 @@ class TestAsyncStepReconfigure:
             result = await flow.async_step_reconfigure(None)
         assert result["type"] == "menu"
         assert result["step_id"] == "reconfigure"
-        assert result["menu_options"] == ["connection", "diagnostics"]
+        assert result["menu_options"] == ["connection", "features", "diagnostics"]
+
+    async def test_features_menu_updates_options_and_preserves_connection(self):
+        flow = _make_flow()
+        entry = _make_entry("entry-1", "192.168.1.100")
+        entry.options = {CONF_FEATURE_PROFILE: "vanilla", CONF_HEALTH_MONITOR: False}
+        update_and_abort = MagicMock(return_value={"type": "abort", "reason": "reconfigure_successful"})
+        with (
+            patch.object(flow, "_get_reconfigure_entry", return_value=entry),
+            patch.object(flow, "async_update_and_abort", update_and_abort),
+        ):
+            form = await flow.async_step_features()
+            assert form["step_id"] == "options"
+            notice = await flow.async_step_options(
+                {CONF_FEATURE_PROFILE: "smart", CONF_HEALTH_MONITOR: True, CONF_ZONE_COUNT: 0}
+            )
+            assert notice["step_id"] == "feature_notice"
+            rejected = await flow.async_step_feature_notice({"confirm_new_features": False})
+            assert rejected["errors"] == {"base": "feature_notice_required"}
+            result = await flow.async_step_feature_notice({"confirm_new_features": True})
+
+        assert result["type"] == "abort"
+        update_and_abort.assert_called_once_with(
+            entry, data_updates=entry.data, options=flow._options
+        )
+        assert flow._options[CONF_HEALTH_MONITOR] is True
+        assert flow._options[CONF_FEATURE_PROFILE] == "smart"
 
     async def test_connection_menu_option_shows_edit_form(self):
         flow = _make_flow()
@@ -2084,8 +2112,10 @@ class TestConfigFlowFullFlow:
                 CONF_TECHNICIAN_CODES: False,
             }
         )
-        assert step2["type"] == "create_entry"
-        assert step2["title"] == "IDM Heat"
+        assert step2["step_id"] == "feature_notice"
+        created = await flow.async_step_feature_notice({"confirm_new_features": True})
+        assert created["type"] == "create_entry"
+        assert created["title"] == "IDM Heat"
 
     async def test_recommended_profile_finishes_setup_from_review(self):
         """The default guided profile must avoid the expert options form."""
@@ -2093,7 +2123,8 @@ class TestConfigFlowFullFlow:
         flow._data = {"name": "IDM Heat", "host": "192.168.1.100", "port": 502, "slave_id": 1}
 
         result = await flow.async_step_setup_review({"profile": "recommended"})
-
+        assert result["step_id"] == "feature_notice"
+        result = await flow.async_step_feature_notice({"confirm_new_features": True})
         assert result["type"] == "create_entry"
         assert result["options"][CONF_SCAN_INTERVAL] == 10
         assert result["options"][CONF_HEATING_CIRCUITS] == ["a"]
@@ -2105,7 +2136,8 @@ class TestConfigFlowFullFlow:
         flow._data = {"name": "IDM Heat", "host": "192.168.1.100", "port": 502, "slave_id": 1}
 
         result = await flow.async_step_setup_review({"profile": "multiple_clients"})
-
+        assert result["step_id"] == "feature_notice"
+        result = await flow.async_step_feature_notice({"confirm_new_features": True})
         assert result["options"][CONF_SCAN_INTERVAL] == 30
         assert result["options"][CONF_POLLING_JITTER] == 20
         assert result["options"][CONF_MODBUS_MESSAGE_SPACING] == 0.1
@@ -2116,7 +2148,8 @@ class TestConfigFlowFullFlow:
         flow._data = {"name": "IDM Heat", "host": "192.168.1.100", "port": 502, "slave_id": 1}
 
         result = await flow.async_step_setup_review({"profile": "reliable_network"})
-
+        assert result["step_id"] == "feature_notice"
+        result = await flow.async_step_feature_notice({"confirm_new_features": True})
         assert result["options"][CONF_SCAN_INTERVAL] == 30
         assert result["options"][CONF_MODBUS_TIMEOUT] == 20.0
         assert result["options"][CONF_MODBUS_MAX_RETRIES] == 5
@@ -2363,7 +2396,8 @@ class TestWebOnlyFallbackDuringSetup:
         flow.async_create_entry = MagicMock(return_value={"type": "create_entry"})
 
         result = await flow.async_step_web_only_options({CONF_WEB_SCAN_INTERVAL: 45})
-
+        assert result["step_id"] == "feature_notice"
+        result = await flow.async_step_feature_notice({"confirm_new_features": True})
         assert result["type"] == "create_entry"
         _, kwargs = flow.async_create_entry.call_args
         assert kwargs["options"][CONF_WEB_ENABLED] is True
@@ -2640,6 +2674,8 @@ async def test_external_power_forwarding_option_step_keeps_selected_sources() ->
             CONF_EXTERNAL_POWER_BATTERY_SIGN: "invert",
         }
     )
+    assert result["step_id"] == "feature_notice"
+    result = await flow.async_step_feature_notice({"confirm_new_features": True})
     assert result["type"] == "create_entry"
     assert result["options"][CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {
         "pv_production": "sensor.pv_power",

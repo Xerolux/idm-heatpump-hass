@@ -300,8 +300,11 @@ the fallback flag after a successful Modbus check. Existing heating-circuit,
 zone and advanced Modbus options are preserved while web-only mode is active,
 so they are available again after Modbus is restored.
 
-Use **Configure** for scan interval, heating circuits, zones, technician codes,
-optional web supplement settings, and optional room temperature forwarding.
+Use **Configure** or **Reconfigure → Configure features** to edit the complete
+options form, including scan interval, circuits, zones, Smart Energy & Comfort,
+health monitoring, forwarding, and automatic controls. Saving reloads the
+integration so optional entities follow the selected settings. Newly enabled
+beta features require an explicit acknowledgement before saving.
 
 ### Advanced Modbus options
 
