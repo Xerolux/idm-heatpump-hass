@@ -84,7 +84,8 @@
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
           "feature_profile": "Funktionsprofil",
-          "external_power_forwarding": "Automatische externe Leistungswerte"
+          "external_power_forwarding": "Automatische externe Leistungswerte",
+          "dynamic_price_entity": "Sensor für dynamischen Strompreis"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -92,7 +93,8 @@
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
           "feature_profile": "Vanilla stellt nur die grundlegenden IDM-Entitäten bereit. iDM Smart Energy & Comfort ergänzt berechnete Effizienzsensoren, Taktungsanalyse, Kurzzyklus-Erkennung und die sichere Warmwasser-Boost-Steuerung. Das Profil verändert die Wärmepumpeneinstellungen nicht selbst.",
-          "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister."
+          "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister.",
+          "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden."
         },
         "sections": {
           "features": {
@@ -125,7 +127,9 @@
               "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
               "web_scan_interval": "Abfrageintervall der Webdaten",
               "device_hierarchy": "Entitäten nach Anlagenbereichen gruppieren",
-              "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt"
+              "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt",
+              "dynamic_price_entity": "Sensor für dynamischen Strompreis",
+              "comfort_schedule_windows": "Weitere Komfort-Zeitfenster"
             },
             "data_description": {
               "feature_profile": "Wähle Vanilla für ausschließlich grundlegende IDM-Entitäten. iDM Smart Energy & Comfort aktiviert zusätzlich lokale Effizienz- und Taktungsanalysen, Kurzzyklus-Diagnose sowie die sichere Warmwasser-Boost-Steuerung. Die externe Sensorweitergabe bleibt separat konfigurierbar. Beim Wechsel wird die Integration neu geladen; optionale Entitäten können entfernt oder neu erstellt werden.",
@@ -139,7 +143,7 @@
               "comfort_schedule_end": "Lokale Endzeit im 24-Stunden-Format HH:MM. Gleiche Start- und Endzeit deaktiviert das Fenster.",
               "comfort_schedule_target": "Zielwert während des Komfortfensters.",
               "heating_curve_assistant": "Fügt eine schreibgeschützte Empfehlung hinzu, wenn die Vorlauftemperatur eines Heizkreises dauerhaft vom berechneten Sollwert abweicht.",
-              "weather_preheat_advisory": "Fügt eine schreibgeschützte Empfehlung auf Basis der Temperatur der ausgewählten Wetter-Entität hinzu.",
+              "weather_preheat_advisory": "Verwendet die stündliche Vorhersage der gewählten Wetter-Entität für die nächsten sechs Stunden. Ohne gültige Vorhersage bleibt der Hinweis nicht verfügbar; Einstellungen der Wärmepumpe werden nicht geändert.",
               "weather_entity": "Für die Empfehlung verwendete Wetter-Entität.",
               "weather_preheat_threshold": "Unterhalb dieser Temperatur wird Vorheizen empfohlen. Es wird kein Sollwert verändert.",
               "energy_price_per_kwh": "Für optionale Kostensensoren. Dies ist eine feste lokale Schätzung und ruft keine Tarifdaten ab.",
@@ -154,7 +158,9 @@
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
               "web_scan_interval": "Zeit zwischen zwei Abfragen der lokalen Navigator-Weboberfläche. Diese Einstellung wirkt nur bei aktivierten Web-Zusatzdaten. Kürzere Intervalle liefern schneller neue Werte, erzeugen aber mehr Netzwerklast. Standard: 30 Sekunden.",
               "device_hierarchy": "Ordnet Entitäten eigenen Untergeräten für Heizkreise, Zonenmodule, Räume, Warmwasser, Diagnose und weitere erkannte Anlagenbereiche zu. Dadurch wird die Geräteansicht übersichtlicher. Entitäts-IDs, Messwerte und Steuerung bleiben unverändert. Deaktiviert erscheinen alle Entitäten weiterhin direkt unter der Wärmepumpe.",
-              "short_cycle_minutes": "Dauer, unterhalb der ein vollständig beobachteter Verdichtertakt als zu kurz gilt. Die Integration schaltet dadurch nichts ab, sondern aktiviert nur den Diagnose-Binärsensor für kurze Takte. Ein höherer Wert führt entsprechend häufiger zu einem Hinweis."
+              "short_cycle_minutes": "Dauer, unterhalb der ein vollständig beobachteter Verdichtertakt als zu kurz gilt. Die Integration schaltet dadurch nichts ab, sondern aktiviert nur den Diagnose-Binärsensor für kurze Takte. Ein höherer Wert führt entsprechend häufiger zu einem Hinweis.",
+              "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden.",
+              "comfort_schedule_windows": "Optional: ein Fenster pro Zeile als Heizkreis,HH:MM,HH:MM,Zielwert (Beispiel: a,06:00,09:00,21.0). Bis zu 16 Zeitfenster ohne Überschneidung für konfigurierte Heizkreise. Diese ersetzen das bisherige einzelne Fenster. Exklusive Heizkreissteuerung ist erforderlich."
             }
           },
           "room_temperature_forwarding": {
@@ -418,7 +424,8 @@
       "invalid_knx_base_address": "Keine verwendbare Basis-Gruppenadresse. Dreistufig (8/0/0), zweistufig (8/0) oder frei angeben und oberhalb Platz für 999 Adressen lassen.",
       "invalid_knx_overrides": "Die Ausnahmeliste konnte nicht gelesen werden. Eine `Register = Adresse` pro Zeile mit bekanntem IDM-Registernamen angeben und keine Adresse doppelt vergeben.",
       "no_knx_groups": "Mindestens eine Objektgruppe auswählen.",
-      "feature_notice_required": "Bitte bestätige die neuen Beta-Funktionen vor dem Speichern."
+      "feature_notice_required": "Bitte bestätige die neuen Beta-Funktionen vor dem Speichern.",
+      "invalid_comfort_windows": "Bis zu 16 Zeitfenster ohne Überschneidung auf konfigurierten Heizkreisen angeben: Heizkreis,HH:MM,HH:MM,Zielwert (15–30 °C)."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -436,7 +443,8 @@
           "heating_circuits": "Heizkreise",
           "zone_count": "Anzahl Zonenmodule",
           "feature_profile": "Funktionsprofil",
-          "external_power_forwarding": "Automatische externe Leistungswerte"
+          "external_power_forwarding": "Automatische externe Leistungswerte",
+          "dynamic_price_entity": "Sensor für dynamischen Strompreis"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -444,7 +452,8 @@
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
           "feature_profile": "Vanilla stellt nur die grundlegenden IDM-Entitäten bereit. iDM Smart Energy & Comfort ergänzt berechnete Effizienzsensoren, Taktungsanalyse, Kurzzyklus-Erkennung und die sichere Warmwasser-Boost-Steuerung. Das Profil verändert die Wärmepumpeneinstellungen nicht selbst.",
-          "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister."
+          "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister.",
+          "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden."
         },
         "sections": {
           "features": {
@@ -477,7 +486,9 @@
               "web_extra_data": "Zusätzliche Navigator-Webdaten auslesen",
               "web_scan_interval": "Abfrageintervall der Webdaten",
               "device_hierarchy": "Entitäten nach Anlagenbereichen gruppieren",
-              "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt"
+              "short_cycle_minutes": "Grenzwert für einen kurzen Verdichtertakt",
+              "dynamic_price_entity": "Sensor für dynamischen Strompreis",
+              "comfort_schedule_windows": "Weitere Komfort-Zeitfenster"
             },
             "data_description": {
               "feature_profile": "Wähle Vanilla für ausschließlich grundlegende IDM-Entitäten. iDM Smart Energy & Comfort aktiviert zusätzlich lokale Effizienz- und Taktungsanalysen, Kurzzyklus-Diagnose sowie die sichere Warmwasser-Boost-Steuerung. Die externe Sensorweitergabe bleibt separat konfigurierbar. Beim Wechsel wird die Integration neu geladen; optionale Entitäten können entfernt oder neu erstellt werden.",
@@ -492,7 +503,7 @@
               "comfort_schedule_end": "Lokale Endzeit im 24-Stunden-Format HH:MM. Gleiche Start- und Endzeit deaktiviert das Fenster.",
               "comfort_schedule_target": "Zielwert während des Komfortfensters.",
               "heating_curve_assistant": "Fügt eine schreibgeschützte Empfehlung hinzu, wenn die Vorlauftemperatur eines Heizkreises dauerhaft vom berechneten Sollwert abweicht.",
-              "weather_preheat_advisory": "Fügt eine schreibgeschützte Empfehlung auf Basis der Temperatur der ausgewählten Wetter-Entität hinzu.",
+              "weather_preheat_advisory": "Verwendet die stündliche Vorhersage der gewählten Wetter-Entität für die nächsten sechs Stunden. Ohne gültige Vorhersage bleibt der Hinweis nicht verfügbar; Einstellungen der Wärmepumpe werden nicht geändert.",
               "weather_entity": "Für die Empfehlung verwendete Wetter-Entität.",
               "weather_preheat_threshold": "Unterhalb dieser Temperatur wird Vorheizen empfohlen. Es wird kein Sollwert verändert.",
               "energy_price_per_kwh": "Für optionale Kostensensoren. Dies ist eine feste lokale Schätzung und ruft keine Tarifdaten ab.",
@@ -506,7 +517,9 @@
               "web_extra_data": "Ergänzt die Modbus-Daten um Informationen aus der lokalen Navigator-Weboberfläche, zum Beispiel Meldungen. Dafür muss in den Verbindungsdaten eine gültige lokale Web-PIN hinterlegt sein; es wird kein Cloud-Dienst verwendet.",
               "web_scan_interval": "Zeit zwischen zwei Abfragen der lokalen Navigator-Weboberfläche. Diese Einstellung wirkt nur bei aktivierten Web-Zusatzdaten. Kürzere Intervalle liefern schneller neue Werte, erzeugen aber mehr Netzwerklast. Standard: 30 Sekunden.",
               "device_hierarchy": "Ordnet Entitäten eigenen Untergeräten für Heizkreise, Zonenmodule, Räume, Warmwasser, Diagnose und weitere erkannte Anlagenbereiche zu. Dadurch wird die Geräteansicht übersichtlicher. Entitäts-IDs, Messwerte und Steuerung bleiben unverändert. Deaktiviert erscheinen alle Entitäten weiterhin direkt unter der Wärmepumpe.",
-              "short_cycle_minutes": "Dauer, unterhalb der ein vollständig beobachteter Verdichtertakt als zu kurz gilt. Die Integration schaltet dadurch nichts ab, sondern aktiviert nur den Diagnose-Binärsensor für kurze Takte. Ein höherer Wert führt entsprechend häufiger zu einem Hinweis."
+              "short_cycle_minutes": "Dauer, unterhalb der ein vollständig beobachteter Verdichtertakt als zu kurz gilt. Die Integration schaltet dadurch nichts ab, sondern aktiviert nur den Diagnose-Binärsensor für kurze Takte. Ein höherer Wert führt entsprechend häufiger zu einem Hinweis.",
+              "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden.",
+              "comfort_schedule_windows": "Optional: ein Fenster pro Zeile als Heizkreis,HH:MM,HH:MM,Zielwert (Beispiel: a,06:00,09:00,21.0). Bis zu 16 Zeitfenster ohne Überschneidung für konfigurierte Heizkreise. Diese ersetzen das bisherige einzelne Fenster. Exklusive Heizkreissteuerung ist erforderlich."
             }
           },
           "room_temperature_forwarding": {
@@ -721,7 +734,8 @@
       "invalid_knx_base_address": "Keine verwendbare Basis-Gruppenadresse. Dreistufig (8/0/0), zweistufig (8/0) oder frei angeben und oberhalb Platz für 999 Adressen lassen.",
       "invalid_knx_overrides": "Die Ausnahmeliste konnte nicht gelesen werden. Eine `Register = Adresse` pro Zeile mit bekanntem IDM-Registernamen angeben und keine Adresse doppelt vergeben.",
       "no_knx_groups": "Mindestens eine Objektgruppe auswählen.",
-      "feature_notice_required": "Bitte bestätige die neuen Beta-Funktionen vor dem Speichern."
+      "feature_notice_required": "Bitte bestätige die neuen Beta-Funktionen vor dem Speichern.",
+      "invalid_comfort_windows": "Bis zu 16 Zeitfenster ohne Überschneidung auf konfigurierten Heizkreisen angeben: Heizkreis,HH:MM,HH:MM,Zielwert (15–30 °C)."
     }
   },
   "entity": {
@@ -764,6 +778,12 @@
       },
       "health_many_compressor_starts": {
         "name": "Zu viele Verdichterstarts"
+      },
+      "health_recurrent_alarms": {
+        "name": "Wiederkehrende Wärmepumpenalarme"
+      },
+      "health_shortening_cycles": {
+        "name": "Verdichtertakte werden kürzer"
       },
       "heating_demand": {
         "name": "Heizanforderung"

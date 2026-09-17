@@ -90,7 +90,8 @@
           "energy_manager_dhw_target": "Automatic DHW target temperature",
           "energy_manager_dhw_timeout": "Automatic DHW boost duration",
           "energy_manager_cooldown": "Automation cooldown",
-          "external_power_forwarding": "Automatic external power forwarding"
+          "external_power_forwarding": "Automatic external power forwarding",
+          "dynamic_price_entity": "Dynamic electricity price sensor"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -104,7 +105,8 @@
           "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
           "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
           "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
-          "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers."
+          "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
+          "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate."
         },
         "sections": {
           "features": {
@@ -137,7 +139,9 @@
               "web_extra_data": "Read additional Navigator web data",
               "web_scan_interval": "Web data polling interval",
               "device_hierarchy": "Group entities by system area",
-              "short_cycle_minutes": "Short compressor-cycle threshold"
+              "short_cycle_minutes": "Short compressor-cycle threshold",
+              "dynamic_price_entity": "Dynamic electricity price sensor",
+              "comfort_schedule_windows": "Additional comfort windows"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -153,7 +157,7 @@
               "comfort_schedule_end": "Local end time. Use 24-hour HH:MM notation. Equal start and end disables the window.",
               "comfort_schedule_target": "Target used during the comfort window.",
               "heating_curve_assistant": "Adds a read-only recommendation when a heating circuit flow temperature consistently misses or exceeds its calculated setpoint.",
-              "weather_preheat_advisory": "Adds a read-only recommendation based on the selected weather entity temperature.",
+              "weather_preheat_advisory": "Uses the selected weather entity's hourly forecast for the next six hours. The advice is unavailable if the provider has no valid forecast; no heat-pump setting is changed.",
               "weather_entity": "Weather entity used for the advisory.",
               "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
               "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
@@ -166,7 +170,9 @@
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
               "web_scan_interval": "Time between reads of the local Navigator web interface. This setting applies only when additional web data is enabled. Shorter intervals provide updates sooner but increase network traffic. Default: 30 seconds.",
               "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
-              "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often."
+              "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
+              "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
+              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control."
             }
           },
           "room_temperature_forwarding": {
@@ -430,7 +436,8 @@
       "invalid_knx_base_address": "Not a usable base group address. Use three-level (8/0/0), two-level (8/0) or free notation, and leave room for 999 addresses above it.",
       "invalid_knx_overrides": "Could not read the override list. Use one `register = address` per line with a known IDM register name, and do not assign one address twice.",
       "no_knx_groups": "Select at least one object group.",
-      "feature_notice_required": "Confirm the new beta functions before saving."
+      "feature_notice_required": "Confirm the new beta functions before saving.",
+      "invalid_comfort_windows": "Use at most 16 non-overlapping windows on configured circuits, each as circuit,HH:MM,HH:MM,target (15–30 °C)."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -454,7 +461,8 @@
           "energy_manager_dhw_target": "Automatic DHW target temperature",
           "energy_manager_dhw_timeout": "Automatic DHW boost duration",
           "energy_manager_cooldown": "Automation cooldown",
-          "external_power_forwarding": "Automatic external power forwarding"
+          "external_power_forwarding": "Automatic external power forwarding",
+          "dynamic_price_entity": "Dynamic electricity price sensor"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -468,7 +476,8 @@
           "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
           "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
           "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
-          "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers."
+          "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
+          "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate."
         },
         "sections": {
           "features": {
@@ -501,7 +510,9 @@
               "web_extra_data": "Read additional Navigator web data",
               "web_scan_interval": "Web data polling interval",
               "device_hierarchy": "Group entities by system area",
-              "short_cycle_minutes": "Short compressor-cycle threshold"
+              "short_cycle_minutes": "Short compressor-cycle threshold",
+              "dynamic_price_entity": "Dynamic electricity price sensor",
+              "comfort_schedule_windows": "Additional comfort windows"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -516,7 +527,7 @@
               "comfort_schedule_end": "Local end time. Use 24-hour HH:MM notation. Equal start and end disables the window.",
               "comfort_schedule_target": "Target used during the comfort window.",
               "heating_curve_assistant": "Adds a read-only recommendation when a heating circuit flow temperature consistently misses or exceeds its calculated setpoint.",
-              "weather_preheat_advisory": "Adds a read-only recommendation based on the selected weather entity temperature.",
+              "weather_preheat_advisory": "Uses the selected weather entity's hourly forecast for the next six hours. The advice is unavailable if the provider has no valid forecast; no heat-pump setting is changed.",
               "weather_entity": "Weather entity used for the advisory.",
               "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
               "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
@@ -530,7 +541,9 @@
               "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
               "web_scan_interval": "Time between reads of the local Navigator web interface. This setting applies only when additional web data is enabled. Shorter intervals provide updates sooner but increase network traffic. Default: 30 seconds.",
               "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
-              "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often."
+              "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
+              "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
+              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control."
             }
           },
           "room_temperature_forwarding": {
@@ -745,7 +758,8 @@
       "invalid_knx_base_address": "Not a usable base group address. Use three-level (8/0/0), two-level (8/0) or free notation, and leave room for 999 addresses above it.",
       "invalid_knx_overrides": "Could not read the override list. Use one `register = address` per line with a known IDM register name, and do not assign one address twice.",
       "no_knx_groups": "Select at least one object group.",
-      "feature_notice_required": "Confirm the new beta functions before saving."
+      "feature_notice_required": "Confirm the new beta functions before saving.",
+      "invalid_comfort_windows": "Use at most 16 non-overlapping windows on configured circuits, each as circuit,HH:MM,HH:MM,target (15–30 °C)."
     }
   },
   "entity": {
@@ -788,6 +802,12 @@
       },
       "health_many_compressor_starts": {
         "name": "Too many compressor starts"
+      },
+      "health_recurrent_alarms": {
+        "name": "Recurring heat-pump alarms"
+      },
+      "health_shortening_cycles": {
+        "name": "Compressor cycles getting shorter"
       },
       "heating_demand": {
         "name": "Heating demand"

@@ -37,8 +37,12 @@ invalid readings are excluded instead of being estimated.
 
 The same statistics provide optional estimated electricity costs, CO₂
 emissions and PV self-consumption by the heat pump. The electricity price and
-emission factor are local Config Flow values; no tariff service or cloud data
-is required. PV self-consumption is calculated only when a PV-production source
+emission factor are local Config Flow values. An optional Home Assistant sensor
+with a price in EUR/kWh, €/kWh or ct/kWh can supply a changing tariff. Each
+observed interval is priced at the current value; intervals with an invalid or
+unavailable price remain unpriced while their energy is still counted. The
+old fixed-price estimate is preserved when an existing installation switches
+to the sensor. PV self-consumption is calculated only when a PV-production source
 is selected in the external power mapping.
 
 Analytics entities are placed in a separate **iDM Analytics** device group when
@@ -65,22 +69,29 @@ it while Smartfox, openWB or another system controls domestic hot water.
 Invalid or unavailable source values fail closed. Minimum surplus, minimum SOC,
 DHW target, maximum duration and cooldown are configurable.
 
-The manager does not control the heating curve or the electric heater. Tariff
-optimisation is not enabled because it would require an external tariff source.
+The manager does not control the heating curve or the electric heater. The
+optional tariff sensor affects cost accounting only; tariff-controlled heat
+pump writes are not enabled.
 
 ## Comfort schedule and read-only advisers
 
-The optional comfort schedule can write one selected room-temperature target on
-one configured heating circuit during a daily time window. It is disabled by
+The optional comfort schedule can write selected room-temperature targets on
+configured heating circuits during up to 16 non-overlapping daily time windows.
+The multiline option accepts `circuit,HH:MM,HH:MM,target` per line, for example
+`a,06:00,09:00,21.0`; leaving it empty retains the original single window.
+It is disabled by
 default and requires the explicit confirmation that Home Assistant is the only
 controller for that circuit. It restores the previous target after the window
 and does not overwrite a manual change made while the schedule was active.
+The previous target is persisted before the first write, so it can be restored
+after a Home Assistant restart if the scheduled value is still present.
 
 The heating-curve assistant and weather-preheat adviser are read-only. They
 create recommendations only; they never write a setpoint. The heating-curve
 adviser compares the current flow temperature with the circuit setpoint. The
-weather adviser uses a selected Home Assistant weather entity and reports when
-the configured outdoor-temperature threshold suggests preheating.
+weather adviser requests the selected Home Assistant weather entity's hourly
+forecast and reports when a valid forecast within six hours falls below the
+configured threshold. Without a usable forecast it is unavailable.
 
 These entities are grouped separately under **iDM Comfort** when device
 hierarchy is enabled.
@@ -100,9 +111,15 @@ when device hierarchy is enabled. This is a diagnostic grouping only and does
 not imply that the integration can replace an installer inspection.
 
 The report summary can be copied from the entity attributes or supplemented by
-Home Assistant's standard **Download diagnostics** action. It intentionally
+Home Assistant's standard **Download diagnostics** action. That export includes
+a structured `installer_report` with operation counts and durations, selected
+temperatures, fault register readings, energy totals, health checks and loaded
+versions. It intentionally
 contains no host, PIN, serial number or other connection secret. It is a
 structured snapshot for an installer, not a replacement for a service report.
-It does not predict future failures or perform statistical anomaly detection.
+It does not predict future failures. A conservative trend check compares the
+last five completed compressor cycles with fifteen earlier cycles on the same
+installation; it reports unusually short recent cycles only after twenty
+observed cycles. This is a local anomaly hint, not a failure probability.
 The downloaded diagnostics already include the installed integration,
 `idm-heatpump-api`, `modbus-connection`, and `tmodbus` versions.

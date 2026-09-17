@@ -36,6 +36,7 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
+from .comfort_scheduler import parse_schedule_rows
 from .const import (
     CONF_COMFORT_SCHEDULE,
     CONF_COMFORT_SCHEDULE_CIRCUIT,
@@ -43,11 +44,13 @@ from .const import (
     CONF_COMFORT_SCHEDULE_EXCLUSIVE,
     CONF_COMFORT_SCHEDULE_START,
     CONF_COMFORT_SCHEDULE_TARGET,
+    CONF_COMFORT_WINDOWS,
     CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
+    CONF_DYNAMIC_PRICE_ENTITY,
     CONF_EEPROM_WRITE_INTERVAL,
     CONF_ENABLE_CASCADE,
     CONF_ENERGY_CO2_FACTOR,
@@ -430,6 +433,7 @@ def _default_options() -> dict[str, Any]:
         CONF_ENERGY_MANAGER_COOLDOWN: DEFAULT_ENERGY_MANAGER_COOLDOWN,
         CONF_HEALTH_MONITOR: DEFAULT_HEALTH_MONITOR,
         CONF_ENERGY_PRICE: DEFAULT_ENERGY_PRICE,
+        CONF_DYNAMIC_PRICE_ENTITY: "",
         CONF_ENERGY_CO2_FACTOR: DEFAULT_ENERGY_CO2_FACTOR,
         CONF_COMFORT_SCHEDULE: DEFAULT_COMFORT_SCHEDULE,
         CONF_COMFORT_SCHEDULE_EXCLUSIVE: DEFAULT_COMFORT_SCHEDULE_EXCLUSIVE,
@@ -437,6 +441,7 @@ def _default_options() -> dict[str, Any]:
         CONF_COMFORT_SCHEDULE_START: DEFAULT_COMFORT_SCHEDULE_START,
         CONF_COMFORT_SCHEDULE_END: DEFAULT_COMFORT_SCHEDULE_END,
         CONF_COMFORT_SCHEDULE_TARGET: DEFAULT_COMFORT_SCHEDULE_TARGET,
+        CONF_COMFORT_WINDOWS: "",
         CONF_HEATING_CURVE_ASSISTANT: DEFAULT_HEATING_CURVE_ASSISTANT,
         CONF_WEATHER_PREHEAT: DEFAULT_WEATHER_PREHEAT,
         CONF_WEATHER_ENTITY: DEFAULT_WEATHER_ENTITY,
@@ -595,6 +600,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             )
                         ),
                         vol.Required(
+                            CONF_DYNAMIC_PRICE_ENTITY,
+                            default=options.get(CONF_DYNAMIC_PRICE_ENTITY, ""),
+                        ): EntitySelector(EntitySelectorConfig(domain="sensor")),
+                        vol.Required(
                             CONF_ENERGY_CO2_FACTOR,
                             default=float(options.get(CONF_ENERGY_CO2_FACTOR, DEFAULT_ENERGY_CO2_FACTOR)),
                         ): NumberSelector(
@@ -632,6 +641,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 min=15, max=30, step=0.5, mode=NumberSelectorMode.SLIDER, unit_of_measurement="°C"
                             )
                         ),
+                        vol.Required(
+                            CONF_COMFORT_WINDOWS,
+                            default=str(options.get(CONF_COMFORT_WINDOWS, "")),
+                        ): TextSelector(TextSelectorConfig(multiline=True)),
                         vol.Required(
                             CONF_HEATING_CURVE_ASSISTANT,
                             default=options.get(CONF_HEATING_CURVE_ASSISTANT, DEFAULT_HEATING_CURVE_ASSISTANT),
@@ -1446,6 +1459,23 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
     async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             submitted_options = _flatten_options_input(user_input)
+            rows = str(submitted_options.get(CONF_COMFORT_WINDOWS, ""))
+            if rows.strip():
+                circuits = {
+                    str(circuit).lower()
+                    for circuit in submitted_options.get(
+                        CONF_HEATING_CIRCUITS, self._options.get(CONF_HEATING_CIRCUITS, ["a"])
+                    )
+                }
+                try:
+                    parse_schedule_rows(rows, circuits)
+                except ValueError:
+                    return self.async_show_form(
+                        step_id="options",
+                        data_schema=_build_options_schema({**self._options, **submitted_options}),
+                        description_placeholders={"name": self._flow_name_placeholder()},
+                        errors={CONF_COMFORT_WINDOWS: "invalid_comfort_windows"},
+                    )
             self._options.update(submitted_options)
             if int(submitted_options.get(CONF_ZONE_COUNT, 0)) > 0:
                 return await self.async_step_zones()

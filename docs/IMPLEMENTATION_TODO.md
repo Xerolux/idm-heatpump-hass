@@ -2,9 +2,8 @@
 
 Last updated: 2026-09-17
 
-The large strategic optimization blocks are implemented. This document only
-contains items that are genuinely open, depend on real-system data, or are
-blocked by an external Home Assistant decision. The local
+The first Smart Energy & Comfort features are implemented, while predictive
+optimization and broader automation remain open. The local
 `modbus-connection`/tmodbus adapter is implemented by now; only central entry
 sharing and the read-only hardware verification of that new path are still open.
 
@@ -47,6 +46,9 @@ Home Assistant's central shared-connection contract is not available yet.
       summary and long-defrost detection.
 - [x] Optional comfort schedule plus read-only heating-curve and weather
       preheat advisers.
+- [x] Downloadable privacy-bounded installer report and observed alarm history.
+- [x] Dynamic electricity price input for accumulated cost estimates.
+- [x] Multiple comfort windows and hourly-forecast-based read-only advice.
 - [x] Separate optional device groups for iDM Analytics, iDM Health Monitor and
       iDM Comfort.
 - [x] Safe domestic hot water boost with start, cancel, timeout, target
@@ -61,6 +63,20 @@ Home Assistant's central shared-connection contract is not available yet.
       packages.
 
 ## Open – needs real-system data
+
+### Smart Energy & Comfort follow-up
+
+- [ ] Validate optional automatic DHW and comfort writes on the owner's hardware
+      with a separately authorized, bounded test and a verified rollback.
+- [ ] Develop and validate actual failure prediction against labeled fault
+      histories; current checks describe observations and trends only.
+- [ ] Specify tariff-based control and PV/battery optimization with explicit
+      controller ownership, equipment constraints and fail-closed behavior.
+      Dynamic tariff pricing currently affects cost estimates only.
+- [ ] Define occupancy, geofencing and per-room schedules with the user's
+      available sensors and consent; current windows apply per heating circuit.
+- [ ] Collect Navigator 2.0/Pro diagnostics and load-test the maximum plant
+      configuration before making model-wide runtime claims.
 
 ### COP
 

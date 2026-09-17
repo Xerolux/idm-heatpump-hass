@@ -82,6 +82,47 @@ def test_periods_roll_over_and_costs_follow_energy() -> None:
     assert stats.month_cop is None
 
 
+def test_dynamic_price_integrates_observed_tariffs_and_skips_invalid_prices() -> None:
+    price = SimpleNamespace(state="20", attributes={"unit_of_measurement": "ct/kWh"})
+    hass = SimpleNamespace(states=SimpleNamespace(get=lambda _: price))
+    stats = EnergyStatistics(hass, "entry", 30, price_source="sensor.tariff")
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    sample = {"power_consumption_hp": 3, "thermal_power_flow_sensor": 6}
+    stats.process_snapshot(sample, now=start)
+    stats.process_snapshot(sample, now=start + timedelta(minutes=1))
+    price.state = "0.40"
+    price.attributes["unit_of_measurement"] = "EUR/kWh"
+    stats.process_snapshot(sample, now=start + timedelta(minutes=2))
+    assert round(stats.total_cost_eur, 3) == 0.03
+    price.state = "unavailable"
+    stats.process_snapshot(sample, now=start + timedelta(minutes=3))
+    assert stats.unpriced_energy_kwh == 3 / 60
+    assert round(stats.total_electrical_kwh, 3) == 0.15
+    assert round(stats.total_cost_eur, 3) == 0.03
+    price.state = "-1"
+    assert stats._current_price() is None
+    price.state = "6"
+    assert stats._current_price() is None
+    price.state = "0.5"
+    price.attributes["unit_of_measurement"] = "W"
+    assert stats._current_price() is None
+    price.attributes["unit_of_measurement"] = "€/kWh"
+    assert stats._current_price() == 0.5
+
+
+async def test_previous_fixed_price_cost_is_migrated_once() -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30, price_per_kwh=0.4)
+    stats._store.data = {"total_electrical_kwh": 10.0, "today_electrical_kwh": 2.0}
+    await stats.async_load()
+    assert stats.total_cost == 4.0
+    assert stats.today_cost == 0.8
+    await stats.async_save()
+    again = EnergyStatistics(SimpleNamespace(), "entry", 30, price_per_kwh=0.6)
+    again._store.data = stats._store.data
+    await again.async_load()
+    assert again.total_cost == 4.0
+
+
 def test_pv_self_consumption_is_capped_and_bad_sources_ignored() -> None:
     state = SimpleNamespace(state="3000", attributes={"unit_of_measurement": "W"})
     hass = SimpleNamespace(states=SimpleNamespace(get=lambda _: state))

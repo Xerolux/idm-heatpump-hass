@@ -69,6 +69,9 @@ REQUIRED_COMMUNICATION_KEYS = (
 def _private_coordinator(entry: MagicMock) -> MagicMock:
     """Build a coordinator whose every private field carries a leak marker."""
     coord = MagicMock()
+    coord.data = {}
+    coord.operation_analysis = None
+    coord.energy_statistics = None
     coord.update_interval = timedelta(seconds=30)
     coord.registers_count = 120
     coord.last_update_success = False

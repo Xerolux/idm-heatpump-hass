@@ -14,6 +14,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
 from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN, DOMAIN
+from .service_report import build_service_report
 from .versions import async_runtime_versions
 
 TO_REDACT = {CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN}
@@ -199,6 +200,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                     "modbus_connection": versions.modbus_connection,
                     "tmodbus": versions.tmodbus,
                 },
+                "installer_report": build_service_report(coordinator, versions),
                 "model_info": _model_info_diagnostics(coordinator.model_info),
                 "model_conflict": _model_conflict_diagnostics(coordinator),
                 "controller_stats_cross_reference": _controller_stats_cross_reference(coordinator),

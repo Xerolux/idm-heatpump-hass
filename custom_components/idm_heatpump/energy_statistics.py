@@ -39,11 +39,13 @@ class EnergyStatistics:
         expected_poll_interval: float,
         *,
         price_per_kwh: float = 0.30,
+        price_source: str | None = None,
         co2_g_per_kwh: float = 350.0,
         pv_source: str | None = None,
     ) -> None:
         self._hass = hass
         self.price_per_kwh = max(0.0, float(price_per_kwh))
+        self.price_source = price_source
         self.co2_g_per_kwh = max(0.0, float(co2_g_per_kwh))
         self.pv_source = pv_source
         self._store: Store[dict[str, Any]] = Store(hass, _STORAGE_VERSION, f"{DOMAIN}.energy_statistics.{entry_id}")
@@ -57,6 +59,10 @@ class EnergyStatistics:
         self.total_pv_self_consumed_kwh = 0.0
         self.today_pv_self_consumed_kwh = 0.0
         self.month_pv_self_consumed_kwh = 0.0
+        self.total_cost_eur = 0.0
+        self.today_cost_eur = 0.0
+        self.month_cost_eur = 0.0
+        self.unpriced_energy_kwh = 0.0
         self._period_day: str | None = None
         self._period_month: str | None = None
         self._last_sample_at: datetime | None = None
@@ -81,10 +87,23 @@ class EnergyStatistics:
             "total_pv_self_consumed_kwh",
             "today_pv_self_consumed_kwh",
             "month_pv_self_consumed_kwh",
+            "total_cost_eur",
+            "today_cost_eur",
+            "month_cost_eur",
+            "unpriced_energy_kwh",
         ):
             value = _power(stored.get(name))
             if value is not None:
                 setattr(self, name, value)
+        # Older stores derived costs from the fixed price instead of storing
+        # them. Preserve that estimate when switching to an hourly tariff.
+        for cost_key, energy_key in (
+            ("total_cost_eur", "total_electrical_kwh"),
+            ("today_cost_eur", "today_electrical_kwh"),
+            ("month_cost_eur", "month_electrical_kwh"),
+        ):
+            if cost_key not in stored:
+                setattr(self, cost_key, getattr(self, energy_key) * self.price_per_kwh)
         self._period_day = stored.get("period_day") if isinstance(stored.get("period_day"), str) else None
         self._period_month = stored.get("period_month") if isinstance(stored.get("period_month"), str) else None
 
@@ -99,6 +118,10 @@ class EnergyStatistics:
             "total_pv_self_consumed_kwh": self.total_pv_self_consumed_kwh,
             "today_pv_self_consumed_kwh": self.today_pv_self_consumed_kwh,
             "month_pv_self_consumed_kwh": self.month_pv_self_consumed_kwh,
+            "total_cost_eur": self.total_cost_eur,
+            "today_cost_eur": self.today_cost_eur,
+            "month_cost_eur": self.month_cost_eur,
+            "unpriced_energy_kwh": self.unpriced_energy_kwh,
             "period_day": self._period_day,
             "period_month": self._period_month,
         }
@@ -113,10 +136,12 @@ class EnergyStatistics:
         if self._period_day != day:
             self.today_electrical_kwh = 0.0
             self.today_thermal_kwh = 0.0
+            self.today_cost_eur = 0.0
             self._period_day = day
         if self._period_month != month:
             self.month_electrical_kwh = 0.0
             self.month_thermal_kwh = 0.0
+            self.month_cost_eur = 0.0
             self.month_pv_self_consumed_kwh = 0.0
             self._period_month = month
 
@@ -147,10 +172,35 @@ class EnergyStatistics:
                 self.total_pv_self_consumed_kwh += pv_energy
                 self.today_pv_self_consumed_kwh += pv_energy
                 self.month_pv_self_consumed_kwh += pv_energy
+                price = self._current_price()
+                if price is None:
+                    self.unpriced_energy_kwh += electrical
+                else:
+                    self.total_cost_eur += electrical * price
+                    self.today_cost_eur += electrical * price
+                    self.month_cost_eur += electrical * price
                 self._store.async_delay_save(self._serialize, 10)
         self._last_sample_at = observed_at
         self._last_electric = electric
         self._last_thermal = thermal
+
+    def _current_price(self) -> float | None:
+        """Read an explicitly selected local HA tariff; reject stale units."""
+        if not self.price_source:
+            return self.price_per_kwh
+        state = self._hass.states.get(self.price_source)
+        if state is None or getattr(state, "state", None) in {"unknown", "unavailable"}:
+            return None
+        try:
+            value = float(state.state)
+        except (TypeError, ValueError):
+            return None
+        unit = getattr(state, "attributes", {}).get("unit_of_measurement")
+        if unit in {"ct/kWh", "c/kWh"}:
+            value /= 100.0
+        elif unit not in {"€/kWh", "EUR/kWh"}:
+            return None
+        return value if math.isfinite(value) and 0.0 <= value <= 5.0 else None
 
     def _pv_power_kw(self) -> float | None:
         if not self.pv_source:
@@ -191,15 +241,15 @@ class EnergyStatistics:
 
     @property
     def total_cost(self) -> float:
-        return round(self.total_electrical_kwh * self.price_per_kwh, 2)
+        return round(self.total_cost_eur, 2)
 
     @property
     def today_cost(self) -> float:
-        return round(self.today_electrical_kwh * self.price_per_kwh, 2)
+        return round(self.today_cost_eur, 2)
 
     @property
     def month_cost(self) -> float:
-        return round(self.month_electrical_kwh * self.price_per_kwh, 2)
+        return round(self.month_cost_eur, 2)
 
     @property
     def total_co2_kg(self) -> float:

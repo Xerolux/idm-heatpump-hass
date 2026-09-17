@@ -25,6 +25,9 @@ def _make_hass_with_coordinator(mock_hass, mock_config_entry):
     )
     coord.model_name = "Navigator 10"
     coord.firmware_version = "2.34"
+    coord.data = {}
+    coord.operation_analysis = None
+    coord.energy_statistics = None
     coord.web_enabled = True
     coord.web_supplement = MagicMock()
     coord.last_web_error = None
