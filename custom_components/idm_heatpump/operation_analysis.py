@@ -100,8 +100,10 @@ class OperationAnalysis:
 
         self.total_compressor_starts = 0
         self.total_defrost_starts = 0
+        self.total_alarm_starts = 0
         self.compressor_start_events: list[datetime] = []
         self.defrost_start_events: list[datetime] = []
+        self.alarm_start_events: list[datetime] = []
         self.completed_cycle_durations: list[float] = []
         self.mode_durations: dict[str, float] = {name: 0.0 for name in _MODE_NAMES.values()}
 
@@ -113,6 +115,8 @@ class OperationAnalysis:
 
         self._compressor_on: bool | None = None
         self._defrost_on: bool | None = None
+        self._alarm_on: bool | None = None
+        self._alarm_reconciled = False
         self._last_mode: int | None = None
         self._last_sample_at: datetime | None = None
         self._compressor_reconciled = False
@@ -129,6 +133,11 @@ class OperationAnalysis:
         """Return whether the verified operating-mode register exists."""
         return self._register_getter("hp_operating_mode") is not None
 
+    @property
+    def supports_alarm(self) -> bool:
+        """Return whether the verified aggregate alarm register exists."""
+        return self._register_getter("hp_sum_alarm") is not None
+
     async def async_load(self) -> None:
         """Load persisted observations without treating startup as a state edge."""
         try:
@@ -141,8 +150,10 @@ class OperationAnalysis:
 
         self.total_compressor_starts = _non_negative_int(stored.get("total_compressor_starts"))
         self.total_defrost_starts = _non_negative_int(stored.get("total_defrost_starts"))
+        self.total_alarm_starts = _non_negative_int(stored.get("total_alarm_starts"))
         self.compressor_start_events = _parse_datetime_list(stored.get("compressor_start_events"))
         self.defrost_start_events = _parse_datetime_list(stored.get("defrost_start_events"))
+        self.alarm_start_events = _parse_datetime_list(stored.get("alarm_start_events"))
         self.last_compressor_start = _parse_datetime(stored.get("last_compressor_start"))
         self.current_cycle_started = _parse_datetime(stored.get("current_cycle_started"))
         self.last_cycle_ended = _parse_datetime(stored.get("last_cycle_ended"))
@@ -171,6 +182,9 @@ class OperationAnalysis:
         stored_defrost = stored.get("defrost_on")
         if isinstance(stored_defrost, bool):
             self._defrost_on = stored_defrost
+        stored_alarm = stored.get("alarm_on")
+        if isinstance(stored_alarm, bool):
+            self._alarm_on = stored_alarm
 
         self._prune_events(_utcnow())
 
@@ -187,8 +201,10 @@ class OperationAnalysis:
         return {
             "total_compressor_starts": self.total_compressor_starts,
             "total_defrost_starts": self.total_defrost_starts,
+            "total_alarm_starts": self.total_alarm_starts,
             "compressor_start_events": [event.isoformat() for event in self.compressor_start_events],
             "defrost_start_events": [event.isoformat() for event in self.defrost_start_events],
+            "alarm_start_events": [event.isoformat() for event in self.alarm_start_events],
             "completed_cycle_durations": self.completed_cycle_durations[-_MAX_COMPLETED_CYCLES:],
             "mode_durations": dict(self.mode_durations),
             "last_compressor_start": self._iso(self.last_compressor_start),
@@ -198,6 +214,7 @@ class OperationAnalysis:
             "last_defrost_start": self._iso(self.last_defrost_start),
             "compressor_on": self._compressor_on,
             "defrost_on": self._defrost_on,
+            "alarm_on": self._alarm_on,
         }
 
     @staticmethod
@@ -250,6 +267,22 @@ class OperationAnalysis:
         """
         observed_at = (now or _utcnow()).astimezone(UTC)
         changed = False
+
+        alarm_register = self._register_getter("hp_sum_alarm")
+        if alarm_register is not None and "hp_sum_alarm" in data and "hp_sum_alarm" not in unused_registers:
+            alarm_value = data["hp_sum_alarm"]
+            if alarm_value is not None:
+                alarm_on = binary_value_is_on(alarm_register, alarm_value)
+                if not self._alarm_reconciled:
+                    self._alarm_on = alarm_on
+                    self._alarm_reconciled = True
+                    changed = True
+                elif alarm_on != self._alarm_on:
+                    if alarm_on:
+                        self.total_alarm_starts += 1
+                        self.alarm_start_events.append(observed_at)
+                    self._alarm_on = alarm_on
+                    changed = True
 
         compressor_on = self._compressor_state(data, unused_registers)
         if compressor_on is not None:
@@ -328,10 +361,20 @@ class OperationAnalysis:
     def _prune_events(self, now: datetime) -> bool:
         """Keep enough event history for day and rolling-window calculations."""
         cutoff = now - _EVENT_RETENTION
-        before = (len(self.compressor_start_events), len(self.defrost_start_events))
+        before = (len(self.compressor_start_events), len(self.defrost_start_events), len(self.alarm_start_events))
         self.compressor_start_events = [event for event in self.compressor_start_events if event >= cutoff]
         self.defrost_start_events = [event for event in self.defrost_start_events if event >= cutoff]
-        return before != (len(self.compressor_start_events), len(self.defrost_start_events))
+        self.alarm_start_events = [event for event in self.alarm_start_events if event >= cutoff]
+        return before != (
+            len(self.compressor_start_events),
+            len(self.defrost_start_events),
+            len(self.alarm_start_events),
+        )
+
+    def alarm_starts_last_days(self, days: int, now: datetime | None = None) -> int:
+        """Count observed alarm transitions within the retained window."""
+        current = (now or _utcnow()).astimezone(UTC)
+        return self._count_since(self.alarm_start_events, current - timedelta(days=days))
 
     @staticmethod
     def _count_since(events: list[datetime], since: datetime) -> int:

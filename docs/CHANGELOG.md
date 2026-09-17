@@ -15,6 +15,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Add a bounded installer report to the downloaded diagnostics with runtime
+  versions, communication counters, operating history, selected readings and
+  current health checks; exclude connection credentials and device writes.
+- Detect repeated observed alarm transitions and shortening compressor cycles
+  as conservative diagnostic hints. These checks do not predict a component
+  failure or diagnose its cause.
+- Accept a dynamic electricity price entity for accumulated cost estimates,
+  with explicit currency units and skipped invalid pricing periods.
+- Read actual hourly Home Assistant weather forecasts for the six-hour
+  preheat advisory. Unavailable forecasts result in no recommendation.
+- Support up to 16 non-overlapping daily comfort windows across configured
+  heating circuits, with restart recovery and manual-override protection.
 - Add the complete options form to Reconfigure and require an explicit
   acknowledgement when enabling new Smart Energy & Comfort beta features.
 - Clarify in the translated battery-SOC help text that the read sentinel `-1`

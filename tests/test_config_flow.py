@@ -23,6 +23,7 @@ from custom_components.idm_heatpump.config_flow import (
     _WebSupplementConnectionFailed,
 )
 from custom_components.idm_heatpump.const import (
+    CONF_COMFORT_WINDOWS,
     CONF_COMMUNICATION_DIAGNOSTICS,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
@@ -696,6 +697,18 @@ class TestAsyncStepOptions:
         assert result["type"] == "create_entry"
         assert result["title"] == "IDM Test"
         assert result["options"][CONF_ROOM_TEMP_FORWARDING_ENTITIES] == {}
+
+    async def test_invalid_multiple_comfort_windows_are_rejected(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_COMFORT_WINDOWS: "a,06:00,09:00,21\na,08:00,10:00,22",
+            }
+        )
+        assert result["step_id"] == "options"
+        assert result["errors"] == {CONF_COMFORT_WINDOWS: "invalid_comfort_windows"}
 
     async def test_room_temp_forwarding_goes_to_sensor_mapping_step(self):
         flow = _make_flow()

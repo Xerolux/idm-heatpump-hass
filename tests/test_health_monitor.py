@@ -45,6 +45,20 @@ def test_long_defrost_check_is_conservative():
     assert module._long_defrost(_coordinator({}), analysis) is False
 
 
+def test_shortening_cycle_anomaly_requires_history_and_own_baseline() -> None:
+    analysis = SimpleNamespace(supports_compressor=True, completed_cycle_durations=[1800.0] * 15 + [300.0] * 5)
+    assert module._shortening_cycles(_coordinator({}), analysis) is True
+    analysis.completed_cycle_durations = [1800.0] * 15 + [1200.0] * 5
+    assert module._shortening_cycles(_coordinator({}), analysis) is False
+    analysis.completed_cycle_durations = [300.0] * 10
+    assert module._shortening_cycles(_coordinator({}), analysis) is None
+    analysis.completed_cycle_durations = [0.0] * 20
+    assert module._shortening_cycles(_coordinator({}), analysis) is None
+    analysis.supports_compressor = False
+    assert module._shortening_cycles(_coordinator({}), analysis) is None
+    assert module._shortening_cycles(_coordinator({}), None) is None
+
+
 def test_missing_inputs_are_conservative() -> None:
     empty = _coordinator({})
     assert module._many_starts(empty, None) is None

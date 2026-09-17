@@ -47,6 +47,12 @@ def _registers() -> dict[str, RegisterDef]:
         name="hp_operating_mode",
         enum_options={0: "Standby", 1: "Heating", 2: "Cooling", 4: "DHW", 8: "Defrost"},
     )
+    registers["hp_sum_alarm"] = RegisterDef(
+        address=1091,
+        datatype=DataType.UCHAR,
+        name="hp_sum_alarm",
+        binary=True,
+    )
     return registers
 
 
@@ -72,6 +78,27 @@ def _snapshot(*, compressor: int = 0, mode: int = 0) -> dict[str, int]:
         "compressor_status_4": 0,
         "hp_operating_mode": mode,
     }
+
+
+@pytest.mark.asyncio
+async def test_alarm_edges_persist_and_restart_reconciles_without_false_event(monkeypatch) -> None:
+    analysis, store = _analysis(monkeypatch)
+    assert analysis.supports_alarm is True
+    now = datetime(2026, 9, 17, 8, tzinfo=UTC)
+    analysis.process_snapshot({**_snapshot(), "hp_sum_alarm": 0}, set(), now=now)
+    for minute, value in enumerate((1, 1, 0, 1, 0, 1), start=1):
+        analysis.process_snapshot({**_snapshot(), "hp_sum_alarm": value}, set(), now=now + timedelta(minutes=minute))
+    assert analysis.total_alarm_starts == 3
+    assert analysis.alarm_starts_last_days(7, now + timedelta(minutes=6)) == 3
+    assert store.delayed is not None
+
+    restarted, _ = _analysis(monkeypatch, loaded=store.delayed)
+    await restarted.async_load()
+    restarted.process_snapshot({**_snapshot(), "hp_sum_alarm": 1}, set(), now=now + timedelta(minutes=7))
+    assert restarted.total_alarm_starts == 3
+    restarted.process_snapshot({**_snapshot(), "hp_sum_alarm": 0}, set(), now=now + timedelta(minutes=8))
+    restarted.process_snapshot({**_snapshot(), "hp_sum_alarm": 1}, set(), now=now + timedelta(minutes=9))
+    assert restarted.total_alarm_starts == 4
 
 
 @pytest.mark.asyncio

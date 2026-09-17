@@ -5,6 +5,7 @@ from __future__ import annotations
 import math
 from collections.abc import Callable
 from dataclasses import dataclass
+from statistics import median
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
@@ -90,6 +91,27 @@ def _long_defrost(_coordinator: IdmCoordinator, analysis: Any) -> bool | None:
     return bool(duration > 45.0)
 
 
+def _shortening_cycles(_coordinator: IdmCoordinator, analysis: Any) -> bool | None:
+    """Compare recent completed cycles with this unit's earlier observed cycles."""
+    if analysis is None or not analysis.supports_compressor:
+        return None
+    durations = analysis.completed_cycle_durations
+    if len(durations) < 20:
+        return None
+    baseline = median(durations[-20:-5])
+    recent = median(durations[-5:])
+    if baseline <= 0:
+        return None
+    return bool(recent < 8 * 60 and recent < baseline * 0.5)
+
+
+def _recurrent_alarms(_coordinator: IdmCoordinator, analysis: Any) -> bool | None:
+    """Flag only observed alarm transitions, not the same persistent alarm on each poll."""
+    if analysis is None or not getattr(analysis, "supports_alarm", False):
+        return None
+    return bool(analysis.alarm_starts_last_days(7) >= 3)
+
+
 HEALTH_CHECKS: tuple[HealthCheck, ...] = (
     HealthCheck("health_communication", "Communication problem", _communication, "mdi:lan-disconnect"),
     HealthCheck("health_many_compressor_starts", "Too many compressor starts", _many_starts, "mdi:restart-alert"),
@@ -99,6 +121,13 @@ HEALTH_CHECKS: tuple[HealthCheck, ...] = (
     ),
     HealthCheck("health_implausible_sensor", "Implausible sensor value", _implausible_sensor, "mdi:alert-circle"),
     HealthCheck("health_long_defrost", "Defrost cycle unusually long", _long_defrost, "mdi:snowflake-alert"),
+    HealthCheck(
+        "health_shortening_cycles",
+        "Compressor cycles getting shorter",
+        _shortening_cycles,
+        "mdi:chart-timeline-variant",
+    ),
+    HealthCheck("health_recurrent_alarms", "Recurring heat-pump alarms", _recurrent_alarms, "mdi:bell-alert"),
 )
 
 

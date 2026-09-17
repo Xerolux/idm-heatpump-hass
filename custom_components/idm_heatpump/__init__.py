@@ -30,7 +30,7 @@ from idm_heatpump import (
     IdmModelInfo,
 )
 
-from .comfort_scheduler import ComfortScheduler
+from .comfort_scheduler import ComfortScheduler, parse_schedule_rows
 from .const import (
     CONF_COMFORT_SCHEDULE,
     CONF_COMFORT_SCHEDULE_CIRCUIT,
@@ -38,10 +38,12 @@ from .const import (
     CONF_COMFORT_SCHEDULE_EXCLUSIVE,
     CONF_COMFORT_SCHEDULE_START,
     CONF_COMFORT_SCHEDULE_TARGET,
+    CONF_COMFORT_WINDOWS,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
+    CONF_DYNAMIC_PRICE_ENTITY,
     CONF_EEPROM_WRITE_INTERVAL,
     CONF_ENABLE_CASCADE,
     CONF_ENERGY_CO2_FACTOR,
@@ -249,6 +251,7 @@ class IdmHeatpumpData:
     energy_manager: EnergyManager | None = None
     energy_statistics: EnergyStatistics | None = None
     comfort_scheduler: ComfortScheduler | None = None
+    comfort_schedulers: tuple[ComfortScheduler, ...] = ()
     knx_bridge: KnxBridge | None = None
     operation_analysis: OperationAnalysis | None = None
     reload_fingerprint: str | None = None
@@ -838,6 +841,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 entry.entry_id,
                 float(scan_interval),
                 price_per_kwh=float(entry.options.get(CONF_ENERGY_PRICE, DEFAULT_ENERGY_PRICE)),
+                price_source=str(entry.options.get(CONF_DYNAMIC_PRICE_ENTITY, "")).strip() or None,
                 co2_g_per_kwh=float(entry.options.get(CONF_ENERGY_CO2_FACTOR, DEFAULT_ENERGY_CO2_FACTOR)),
                 pv_source=(
                     external_power_forwarding_entities.get("pv_production")
@@ -849,6 +853,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             coordinator.attach_energy_statistics(energy_statistics)
 
         comfort_scheduler = None
+        comfort_schedulers: list[ComfortScheduler] = []
         if (
             smart_features_enabled
             and bool(entry.options.get(CONF_COMFORT_SCHEDULE, DEFAULT_COMFORT_SCHEDULE))
@@ -859,16 +864,34 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                 )
             )
         ):
-            comfort_scheduler = ComfortScheduler(
-                hass,
-                coordinator,
-                str(entry.options.get(CONF_COMFORT_SCHEDULE_CIRCUIT, DEFAULT_COMFORT_SCHEDULE_CIRCUIT)),
-                str(entry.options.get(CONF_COMFORT_SCHEDULE_START, DEFAULT_COMFORT_SCHEDULE_START)),
-                str(entry.options.get(CONF_COMFORT_SCHEDULE_END, DEFAULT_COMFORT_SCHEDULE_END)),
-                float(entry.options.get(CONF_COMFORT_SCHEDULE_TARGET, DEFAULT_COMFORT_SCHEDULE_TARGET)),
+            configured_circuits = {str(c).lower() for c in circuits}
+            try:
+                windows = parse_schedule_rows(str(entry.options.get(CONF_COMFORT_WINDOWS, "")), configured_circuits)
+            except ValueError:
+                _LOGGER.warning("Ignoring invalid IDM comfort windows saved in the config entry")
+                windows = []
+            schedules = (
+                [
+                    (circuit, [window for window in windows if window.circuit == circuit])
+                    for circuit in sorted({w.circuit for w in windows})
+                ]
+                if windows
+                else [(str(entry.options.get(CONF_COMFORT_SCHEDULE_CIRCUIT, DEFAULT_COMFORT_SCHEDULE_CIRCUIT)), [])]
             )
-            if coordinator.get_register(comfort_scheduler.register_name) is not None:
-                comfort_scheduler.start()
+            for circuit, circuit_windows in schedules:
+                scheduler = ComfortScheduler(
+                    hass,
+                    coordinator,
+                    circuit,
+                    str(entry.options.get(CONF_COMFORT_SCHEDULE_START, DEFAULT_COMFORT_SCHEDULE_START)),
+                    str(entry.options.get(CONF_COMFORT_SCHEDULE_END, DEFAULT_COMFORT_SCHEDULE_END)),
+                    float(entry.options.get(CONF_COMFORT_SCHEDULE_TARGET, DEFAULT_COMFORT_SCHEDULE_TARGET)),
+                    windows=circuit_windows or None,
+                )
+                if coordinator.get_register(scheduler.register_name) is not None:
+                    scheduler.start()
+                    comfort_schedulers.append(scheduler)
+            comfort_scheduler = comfort_schedulers[0] if comfort_schedulers else None
 
         entry.runtime_data = IdmHeatpumpData(
             coordinator=coordinator,
@@ -876,6 +899,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             operation_analysis=operation_analysis,
             energy_statistics=energy_statistics,
             comfort_scheduler=comfort_scheduler,
+            comfort_schedulers=tuple(comfort_schedulers),
             loaded_platforms=tuple(PLATFORMS),
         )
 
@@ -1135,9 +1159,14 @@ async def _async_cancel_entry_tasks(runtime: Any) -> None:
     manager = getattr(runtime, "energy_manager", None)
     if isinstance(manager, EnergyManager):
         await manager.async_stop()
-    scheduler = getattr(runtime, "comfort_scheduler", None)
-    if isinstance(scheduler, ComfortScheduler):
-        await scheduler.async_stop()
+    schedulers = getattr(runtime, "comfort_schedulers", ())
+    if schedulers:
+        for scheduler in schedulers:
+            await scheduler.async_stop()
+    else:
+        scheduler = getattr(runtime, "comfort_scheduler", None)
+        if isinstance(scheduler, ComfortScheduler):
+            await scheduler.async_stop()
 
 
 async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:

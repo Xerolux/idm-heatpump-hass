@@ -197,6 +197,8 @@ class TestTranslationFilesStayInSync:
             "health_dhw_not_reaching_target",
             "health_implausible_sensor",
             "health_long_defrost",
+            "health_shortening_cycles",
+            "health_recurrent_alarms",
             "health_report",
             "heating_curve_advice",
             "weather_preheat_advice",
