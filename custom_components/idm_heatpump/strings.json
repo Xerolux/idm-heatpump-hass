@@ -80,13 +80,15 @@
           "scan_interval": "Scan interval",
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
-          "zone_count": "Number of zone modules"
+          "zone_count": "Number of zone modules",
+          "external_power_forwarding": "Automatic external power forwarding"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist."
+          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist.",
+          "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers."
         },
         "sections": {
           "features": {
@@ -378,13 +380,15 @@
           "scan_interval": "Scan interval",
           "hide_unused_registers": "Hide unused sensors",
           "heating_circuits": "Heating circuits",
-          "zone_count": "Number of zone modules"
+          "zone_count": "Number of zone modules",
+          "external_power_forwarding": "Automatic external power forwarding"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
           "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
-          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist."
+          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist.",
+          "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers."
         },
         "sections": {
           "features": {
