@@ -17,6 +17,9 @@ All notable changes to this project will be documented in this file.
 
 ## [0.17.2-b3] - 2026-09-17
 
+- Allow the Health Monitor to be enabled without selecting an unrelated
+  dynamic price sensor, weather entity or additional comfort window. These
+  inputs are optional and can also be cleared when reconfiguring an entry.
 - Fix the Home Assistant `energy` device-class warning for daily and monthly
   electrical, thermal and PV self-consumption totals. Their values increase
   within a period and reset at the period boundary, so they use
