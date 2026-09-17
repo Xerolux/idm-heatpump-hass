@@ -89,8 +89,9 @@ hierarchy is enabled.
 
 The **iDM Health Monitor** is disabled by default and adds read-only diagnostic
 entities. It checks communication failures, unusual compressor start
-frequency, unusually low current COP, a clearly missed DHW target and
-implausible temperature values. The health-report sensor exposes `ok` or
+frequency, unusually low current COP, a clearly missed DHW target,
+implausible temperature values, and a defrost cycle longer than 45 minutes.
+The health-report sensor exposes `ok` or
 `problem` and lists active checks in its attributes. It does not change any
 heat-pump setting and does not replace a technician diagnosis.
 
@@ -102,3 +103,6 @@ The report summary can be copied from the entity attributes or supplemented by
 Home Assistant's standard **Download diagnostics** action. It intentionally
 contains no host, PIN, serial number or other connection secret. It is a
 structured snapshot for an installer, not a replacement for a service report.
+It does not predict future failures or perform statistical anomaly detection.
+The downloaded diagnostics already include the installed integration,
+`idm-heatpump-api`, `modbus-connection`, and `tmodbus` versions.

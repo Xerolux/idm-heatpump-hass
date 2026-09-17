@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Add the complete options form to Reconfigure and require an explicit
+  acknowledgement when enabling new Smart Energy & Comfort beta features.
+- Clarify in the translated battery-SOC help text that the read sentinel `-1`
+  is skipped and never forwarded as a write value.
+- Document the Health Monitor's current diagnostic checks and the runtime
+  dependency versions already included in downloaded diagnostics.
+
 ## [0.17.2-b1] - 2026-09-17
 
 Beta candidate for the optional Smart Energy & Comfort features. It retains
