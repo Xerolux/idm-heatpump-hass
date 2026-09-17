@@ -149,3 +149,31 @@ setting.
 Via HACS: Go to HACS → Integrations → IDM Heatpump → "Update" → Restart HA.
 
 Manually: Repeat the manual installation (overwrites the old files).
+
+
+## Automatic external power forwarding from Home Assistant
+
+After the integration is installed, open the IDM Heatpump entry and choose **Configure**. Enable **External power forwarding**. Each field offers a searchable list of existing Home Assistant sensor entities:
+
+- PV surplus → IDM `pv_surplus` (registers 74–75)
+- PV production → `pv_production` (78–79)
+- House consumption → `house_consumption` (82–83)
+- Battery charge/discharge → `battery_discharge` (84–85)
+- Battery state of charge → `battery_soc` (86)
+- Electric heater power → `electric_heater_power` (76–77)
+
+Power sensors must expose `W` or `kW`; values are converted to kW before writing. Battery SOC is a whole percentage from 0 to 100; `-1` means no battery. If the energy manager uses the openWB sign convention (negative means discharge), choose **Invert source sign**. Unavailable or invalid sensors are skipped; the integration never writes zero as a fallback.
+
+### Important ownership rule
+
+Only one system should actively write a given IDM GLT/PV register. Do not enable this forwarding for a register that is also written by SMARTFOX, openWB or another energy manager. Otherwise the last writer wins and values can oscillate.
+
+### IDM Navigator preparation
+
+1. On the Navigator/controller, open **BMS / Gebäudeleittechnik**.
+2. Enable **Modbus TCP** and use port **502**. The normal Modbus slave/unit ID is **1**.
+3. Enable or release the GLT/energy-management input registers required by the installed system. Some Navigator generations show a separate GLT/PV or energy-manager permission; the exact wording and access level depend on firmware and installer settings.
+4. Save the setting and restart the controller only if the Navigator requests it.
+5. Configure the Home Assistant options and verify the values in the Navigator GLT/energy-manager monitor, if available.
+
+If the menu is missing or locked, ask the heating installer or iDM service to enable the GLT/Modbus-TCP function. SMARTFOX and openWB documentation confirms that these values are intended for an energy-manager/GLT interface, but the exact activation path is installation- and firmware-dependent.
