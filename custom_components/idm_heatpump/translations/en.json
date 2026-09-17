@@ -90,12 +90,6 @@
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
           "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist.",
           "feature_profile": "Vanilla exposes the core IDM entities. iDM Smart Energy & Comfort additionally enables calculated efficiency sensors, cycle analysis, short-cycle detection and the safe DHW boost controls. It does not independently change heat-pump settings.",
-          "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
-          "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
-          "energy_manager_min_battery_soc": "Prevents automatic charging from using a battery below this state of charge. Leave the battery source empty in the external power mapping to disable this additional condition.",
-          "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
-          "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
-          "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers."
         },
         "sections": {
@@ -440,12 +434,6 @@
           "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
           "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist.",
           "feature_profile": "Vanilla exposes the core IDM entities. iDM Smart Energy & Comfort additionally enables calculated efficiency sensors, cycle analysis, short-cycle detection and the safe DHW boost controls. It does not independently change heat-pump settings.",
-          "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
-          "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
-          "energy_manager_min_battery_soc": "Prevents automatic charging from using a battery below this state of charge. Leave the battery source empty in the external power mapping to disable this additional condition.",
-          "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
-          "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
-          "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers."
         },
         "sections": {

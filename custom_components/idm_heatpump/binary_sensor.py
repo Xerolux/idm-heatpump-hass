@@ -21,7 +21,7 @@ from .const import (
 )
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
-from .health_monitor import health_binary_entities
+from .health_monitor import IdmHealthBinarySensor, health_binary_entities
 from .operation_entities import (
     IdmShortCycleBinarySensor,
     runtime_operation_analysis,
@@ -39,7 +39,7 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities: list[IdmBinarySensor | IdmWebBinarySensor | IdmShortCycleBinarySensor] = [
+    entities: list[IdmBinarySensor | IdmWebBinarySensor | IdmShortCycleBinarySensor | IdmHealthBinarySensor] = [
         IdmBinarySensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.binary_sensor_descriptions)
         if should_add_entity(coordinator, desc_info["register"])

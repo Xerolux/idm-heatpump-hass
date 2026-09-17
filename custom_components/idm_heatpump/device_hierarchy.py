@@ -180,18 +180,21 @@ def resolve_device_scope(entity_key: str) -> DeviceScope | None:
     for prefix, kind in _OPTIONAL_MODULE_PREFIXES:
         if key.startswith(prefix):
             return DeviceScope(kind, prefix.removesuffix("_"))
-    if key.startswith(
-        (
-            "calculated_",
-            "analysis_",
-            "energy_electrical_",
-            "energy_thermal_",
-            "energy_cop_",
-            "energy_cost_",
-            "energy_co2_",
-            "energy_pv_self_consumed_",
+    if (
+        key.startswith(
+            (
+                "calculated_",
+                "analysis_",
+                "energy_electrical_",
+                "energy_thermal_",
+                "energy_cop_",
+                "energy_cost_",
+                "energy_co2_",
+                "energy_pv_self_consumed_",
+            )
         )
-    ) or key == "analysis_last_cycle_short":
+        or key == "analysis_last_cycle_short"
+    ):
         return DeviceScope("analytics", "analytics")
     if key.startswith("health_"):
         return DeviceScope("health", "health")

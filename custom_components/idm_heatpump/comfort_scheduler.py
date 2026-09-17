@@ -46,6 +46,8 @@ class ComfortScheduler:
 
     def _current_value(self) -> float | None:
         value = (self._coordinator.data or {}).get(self.register_name)
+        if value is None:
+            return None
         try:
             return float(value)
         except (TypeError, ValueError):

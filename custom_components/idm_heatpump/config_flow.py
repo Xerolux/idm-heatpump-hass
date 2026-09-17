@@ -587,11 +587,19 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Required(
                             CONF_ENERGY_PRICE,
                             default=float(options.get(CONF_ENERGY_PRICE, DEFAULT_ENERGY_PRICE)),
-                        ): NumberSelector(NumberSelectorConfig(min=0, max=5, step=0.01, mode=NumberSelectorMode.SLIDER, unit_of_measurement="€/kWh")),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=0, max=5, step=0.01, mode=NumberSelectorMode.SLIDER, unit_of_measurement="€/kWh"
+                            )
+                        ),
                         vol.Required(
                             CONF_ENERGY_CO2_FACTOR,
                             default=float(options.get(CONF_ENERGY_CO2_FACTOR, DEFAULT_ENERGY_CO2_FACTOR)),
-                        ): NumberSelector(NumberSelectorConfig(min=0, max=2000, step=10, mode=NumberSelectorMode.SLIDER, unit_of_measurement="g/kWh")),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=0, max=2000, step=10, mode=NumberSelectorMode.SLIDER, unit_of_measurement="g/kWh"
+                            )
+                        ),
                         vol.Required(
                             CONF_COMFORT_SCHEDULE,
                             default=options.get(CONF_COMFORT_SCHEDULE, DEFAULT_COMFORT_SCHEDULE),
@@ -603,7 +611,9 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Required(
                             CONF_COMFORT_SCHEDULE_CIRCUIT,
                             default=options.get(CONF_COMFORT_SCHEDULE_CIRCUIT, DEFAULT_COMFORT_SCHEDULE_CIRCUIT),
-                        ): SelectSelector(SelectSelectorConfig(options=list("abcdefg"), mode=SelectSelectorMode.DROPDOWN)),
+                        ): SelectSelector(
+                            SelectSelectorConfig(options=list("abcdefg"), mode=SelectSelectorMode.DROPDOWN)
+                        ),
                         vol.Required(
                             CONF_COMFORT_SCHEDULE_START,
                             default=options.get(CONF_COMFORT_SCHEDULE_START, DEFAULT_COMFORT_SCHEDULE_START),
@@ -615,7 +625,11 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Required(
                             CONF_COMFORT_SCHEDULE_TARGET,
                             default=float(options.get(CONF_COMFORT_SCHEDULE_TARGET, DEFAULT_COMFORT_SCHEDULE_TARGET)),
-                        ): NumberSelector(NumberSelectorConfig(min=15, max=30, step=0.5, mode=NumberSelectorMode.SLIDER, unit_of_measurement="°C")),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=15, max=30, step=0.5, mode=NumberSelectorMode.SLIDER, unit_of_measurement="°C"
+                            )
+                        ),
                         vol.Required(
                             CONF_HEATING_CURVE_ASSISTANT,
                             default=options.get(CONF_HEATING_CURVE_ASSISTANT, DEFAULT_HEATING_CURVE_ASSISTANT),
@@ -630,8 +644,14 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ): EntitySelector(EntitySelectorConfig(domain="weather")),
                         vol.Required(
                             CONF_WEATHER_PREHEAT_THRESHOLD,
-                            default=float(options.get(CONF_WEATHER_PREHEAT_THRESHOLD, DEFAULT_WEATHER_PREHEAT_THRESHOLD)),
-                        ): NumberSelector(NumberSelectorConfig(min=-20, max=15, step=1, mode=NumberSelectorMode.SLIDER, unit_of_measurement="°C")),
+                            default=float(
+                                options.get(CONF_WEATHER_PREHEAT_THRESHOLD, DEFAULT_WEATHER_PREHEAT_THRESHOLD)
+                            ),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=-20, max=15, step=1, mode=NumberSelectorMode.SLIDER, unit_of_measurement="°C"
+                            )
+                        ),
                         vol.Required(
                             CONF_ENERGY_MANAGER_EXCLUSIVE,
                             default=options.get(
@@ -641,24 +661,46 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
                             CONF_ENERGY_MANAGER_MIN_SURPLUS,
-                            default=float(options.get(CONF_ENERGY_MANAGER_MIN_SURPLUS, DEFAULT_ENERGY_MANAGER_MIN_SURPLUS)),
-                        ): NumberSelector(NumberSelectorConfig(min=0.1, max=20.0, step=0.1, mode=NumberSelectorMode.SLIDER, unit_of_measurement="kW")),
+                            default=float(
+                                options.get(CONF_ENERGY_MANAGER_MIN_SURPLUS, DEFAULT_ENERGY_MANAGER_MIN_SURPLUS)
+                            ),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=0.1, max=20.0, step=0.1, mode=NumberSelectorMode.SLIDER, unit_of_measurement="kW"
+                            )
+                        ),
                         vol.Required(
                             CONF_ENERGY_MANAGER_MIN_SOC,
                             default=float(options.get(CONF_ENERGY_MANAGER_MIN_SOC, DEFAULT_ENERGY_MANAGER_MIN_SOC)),
-                        ): NumberSelector(NumberSelectorConfig(min=0.0, max=100.0, step=5.0, mode=NumberSelectorMode.SLIDER, unit_of_measurement="%")),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=0.0, max=100.0, step=5.0, mode=NumberSelectorMode.SLIDER, unit_of_measurement="%"
+                            )
+                        ),
                         vol.Required(
                             CONF_ENERGY_MANAGER_TARGET,
                             default=int(options.get(CONF_ENERGY_MANAGER_TARGET, DEFAULT_ENERGY_MANAGER_TARGET)),
-                        ): NumberSelector(NumberSelectorConfig(min=45, max=65, step=1, mode=NumberSelectorMode.SLIDER, unit_of_measurement="°C")),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=45, max=65, step=1, mode=NumberSelectorMode.SLIDER, unit_of_measurement="°C"
+                            )
+                        ),
                         vol.Required(
                             CONF_ENERGY_MANAGER_TIMEOUT,
                             default=int(options.get(CONF_ENERGY_MANAGER_TIMEOUT, DEFAULT_ENERGY_MANAGER_TIMEOUT)),
-                        ): NumberSelector(NumberSelectorConfig(min=5, max=240, step=5, mode=NumberSelectorMode.SLIDER, unit_of_measurement="min")),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=5, max=240, step=5, mode=NumberSelectorMode.SLIDER, unit_of_measurement="min"
+                            )
+                        ),
                         vol.Required(
                             CONF_ENERGY_MANAGER_COOLDOWN,
                             default=int(options.get(CONF_ENERGY_MANAGER_COOLDOWN, DEFAULT_ENERGY_MANAGER_COOLDOWN)),
-                        ): NumberSelector(NumberSelectorConfig(min=5, max=1440, step=5, mode=NumberSelectorMode.SLIDER, unit_of_measurement="min")),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=5, max=1440, step=5, mode=NumberSelectorMode.SLIDER, unit_of_measurement="min"
+                            )
+                        ),
                         vol.Required(
                             CONF_DEVICE_HIERARCHY,
                             default=options.get(CONF_DEVICE_HIERARCHY, DEFAULT_DEVICE_HIERARCHY),
@@ -1186,8 +1228,6 @@ def _store_storage_temp_forwarding_entities(options: dict[str, Any], user_input:
         for key in _STORAGE_TEMP_KEYS
         if str(user_input.get(f"storage_temp_forwarding_{key}", "")).strip()
     }
-
-
 
 
 _EXTERNAL_POWER_KEYS: tuple[str, ...] = (

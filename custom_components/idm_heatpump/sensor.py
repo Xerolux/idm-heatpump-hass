@@ -438,9 +438,8 @@ async def async_setup_entry(
     entities.append(IdmApiVersionSensor(coordinator, versions))
     if entry.options.get(CONF_COMMUNICATION_DIAGNOSTICS, False):
         entities += _communication_diagnostic_entities(coordinator)
-    if (
-        entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
-        and entry.options.get(CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR)
+    if entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART and entry.options.get(
+        CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR
     ):
         entities += health_report_entities(
             coordinator,

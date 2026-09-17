@@ -152,6 +152,7 @@ def test_release_type_is_derived_only_from_validated_tag(tmp_path: Path) -> None
 
     expected_types = {
         "v1.2.3-beta.4": ("beta", "true"),
+        "v1.2.3-b1": ("beta", "true"),
         "v1.2.3-rc.2": ("rc", "true"),
         "v1.2.3": ("stable", "false"),
     }
@@ -355,12 +356,15 @@ def test_release_artifact_is_built_from_manifest_directory() -> None:
     assert "manifest.json" not in release_workflow.partition("zip -r ../../idm_heatpump.zip .")[2].partition("\n\n")[0]
 
 
-def test_release_announces_non_draft_versions_in_discussions() -> None:
+def test_release_announces_non_draft_stable_versions_in_discussions() -> None:
     release_workflow = _read(ROOT / ".github" / "workflows" / "release.yml")
 
     assert "  discussions: write" in release_workflow
     assert "Announce published release in GitHub Discussions" in release_workflow
-    assert "if: steps.version.outputs.is_draft == 'false'" in release_workflow
+    assert (
+        "if: steps.version.outputs.is_draft == 'false' && steps.version.outputs.is_prerelease == 'false'"
+        in release_workflow
+    )
     assert "RELEASE_NOTES_PATH: temp_release_notes.md" in release_workflow
     assert "DISCUSSION_CATEGORY_SLUG: announcements" in release_workflow
     assert "run: python scripts/publish_release_discussion.py" in release_workflow

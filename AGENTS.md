@@ -106,6 +106,8 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_energy_statistics.py
 │   ├── test_health_monitor.py
 │   ├── test_comfort_advisory.py
+│   ├── test_comfort_scheduler.py
+│   ├── test_external_power_forwarding.py
 │   ├── test_diagnostics.py
 │   ├── test_diagnostics_privacy.py
 │   ├── test_documentation_language.py

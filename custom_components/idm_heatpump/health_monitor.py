@@ -13,7 +13,7 @@ from homeassistant.components.binary_sensor import (
     BinarySensorEntityDescription,
 )
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity, SensorEntityDescription
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.const import EntityCategory
 
 from .calculated_sensors import _cop
 from .coordinator import IdmCoordinator
@@ -38,7 +38,7 @@ def _communication(coordinator: IdmCoordinator, _analysis: Any) -> bool | None:
 def _many_starts(coordinator: IdmCoordinator, analysis: Any) -> bool | None:
     if analysis is None or not analysis.supports_compressor:
         return None
-    return analysis.compressor_starts_last_hours(2) >= 6
+    return bool(analysis.compressor_starts_last_hours(2) >= 6)
 
 
 def _low_cop(coordinator: IdmCoordinator, _analysis: Any) -> bool | None:
@@ -66,11 +66,7 @@ def _implausible_sensor(coordinator: IdmCoordinator, _analysis: Any) -> bool | N
     data = coordinator.data
     if not data:
         return None
-    candidates = [
-        value
-        for key, value in data.items()
-        if "temp" in key or "temperature" in key
-    ]
+    candidates = [value for key, value in data.items() if "temp" in key or "temperature" in key]
     numeric = []
     for value in candidates:
         if isinstance(value, bool):
@@ -91,14 +87,16 @@ def _long_defrost(_coordinator: IdmCoordinator, analysis: Any) -> bool | None:
     duration = analysis.current_defrost_minutes()
     if duration is None:
         return None
-    return duration > 45.0
+    return bool(duration > 45.0)
 
 
 HEALTH_CHECKS: tuple[HealthCheck, ...] = (
     HealthCheck("health_communication", "Communication problem", _communication, "mdi:lan-disconnect"),
     HealthCheck("health_many_compressor_starts", "Too many compressor starts", _many_starts, "mdi:restart-alert"),
     HealthCheck("health_low_cop", "COP unusually low", _low_cop, "mdi:gauge-low"),
-    HealthCheck("health_dhw_not_reaching_target", "DHW does not reach target", _dhw_not_reaching_target, "mdi:water-alert"),
+    HealthCheck(
+        "health_dhw_not_reaching_target", "DHW does not reach target", _dhw_not_reaching_target, "mdi:water-alert"
+    ),
     HealthCheck("health_implausible_sensor", "Implausible sensor value", _implausible_sensor, "mdi:alert-circle"),
     HealthCheck("health_long_defrost", "Defrost cycle unusually long", _long_defrost, "mdi:snowflake-alert"),
 )
@@ -114,6 +112,7 @@ class IdmHealthBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
 
     def __init__(self, coordinator: IdmCoordinator, check: HealthCheck, analysis: Any) -> None:
         super().__init__(coordinator)
+        assert coordinator.config_entry is not None
         self._check = check
         self._analysis = analysis
         self._attr_unique_id = build_entity_unique_id(coordinator.config_entry.entry_id, check.key)
@@ -139,6 +138,7 @@ class IdmHealthReportSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     def __init__(self, coordinator: IdmCoordinator, analysis: Any = None) -> None:
         super().__init__(coordinator)
+        assert coordinator.config_entry is not None
         self._analysis = analysis
         self._attr_unique_id = build_entity_unique_id(coordinator.config_entry.entry_id, "health_report")
         self._attr_options = ["ok", "problem"]
