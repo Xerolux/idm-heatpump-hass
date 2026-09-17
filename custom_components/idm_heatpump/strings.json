@@ -321,6 +321,28 @@
           "knx_groups": "Only objects from the selected groups are published and registered.",
           "knx_overrides": "One `register = address` per line, for example `outdoor_temp = 1/2/3`. Lines starting with # are ignored. Leave empty to derive every address from the base address."
         }
+      },
+      "external_power_forwarding": {
+        "title": "External power forwarding – {name}",
+        "description": "Select existing Home Assistant sensors for PV, house consumption and battery values. Values are converted to kW where needed and written to the matching IDM GLT registers. Leave fields empty to skip them. Do not enable this together with SMARTFOX or openWB writing the same registers.",
+        "data": {
+          "external_power_forwarding_pv_surplus": "PV surplus sensor",
+          "external_power_forwarding_pv_production": "PV production sensor",
+          "external_power_forwarding_house_consumption": "House consumption sensor",
+          "external_power_forwarding_battery_discharge": "Battery discharge/charge sensor",
+          "external_power_forwarding_battery_soc": "Battery state of charge sensor",
+          "external_power_forwarding_electric_heater_power": "Electric heater power sensor",
+          "external_power_battery_sign": "Battery sign convention"
+        },
+        "data_description": {
+          "external_power_forwarding_pv_surplus": "W or kW; written to IDM pv_surplus (registers 74–75).",
+          "external_power_forwarding_pv_production": "W or kW; written to IDM pv_production (registers 78–79).",
+          "external_power_forwarding_house_consumption": "W or kW; written to IDM house_consumption (registers 82–83).",
+          "external_power_forwarding_battery_discharge": "W or kW. Select invert when the source uses the openWB convention (negative means discharge).",
+          "external_power_forwarding_battery_soc": "Percent from 0 to 100; -1 is accepted for no battery.",
+          "external_power_forwarding_electric_heater_power": "W or kW; written to IDM electric_heater_power (registers 76–77).",
+          "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign."
+        }
       }
     },
     "error": {
@@ -561,6 +583,28 @@
           "knx_base_address": "Three-level (8/0/0), two-level (8/0) or free (16384) notation.",
           "knx_groups": "Only objects from the selected groups are published and registered.",
           "knx_overrides": "One `register = address` per line, for example `outdoor_temp = 1/2/3`. Lines starting with # are ignored. Leave empty to derive every address from the base address."
+        }
+      },
+      "external_power_forwarding": {
+        "title": "External power forwarding – {name}",
+        "description": "Select existing Home Assistant sensors for PV, house consumption and battery values. Values are converted to kW where needed and written to the matching IDM GLT registers. Leave fields empty to skip them. Do not enable this together with SMARTFOX or openWB writing the same registers.",
+        "data": {
+          "external_power_forwarding_pv_surplus": "PV surplus sensor",
+          "external_power_forwarding_pv_production": "PV production sensor",
+          "external_power_forwarding_house_consumption": "House consumption sensor",
+          "external_power_forwarding_battery_discharge": "Battery discharge/charge sensor",
+          "external_power_forwarding_battery_soc": "Battery state of charge sensor",
+          "external_power_forwarding_electric_heater_power": "Electric heater power sensor",
+          "external_power_battery_sign": "Battery sign convention"
+        },
+        "data_description": {
+          "external_power_forwarding_pv_surplus": "W or kW; written to IDM pv_surplus (registers 74–75).",
+          "external_power_forwarding_pv_production": "W or kW; written to IDM pv_production (registers 78–79).",
+          "external_power_forwarding_house_consumption": "W or kW; written to IDM house_consumption (registers 82–83).",
+          "external_power_forwarding_battery_discharge": "W or kW. Select invert when the source uses the openWB convention (negative means discharge).",
+          "external_power_forwarding_battery_soc": "Percent from 0 to 100; -1 is accepted for no battery.",
+          "external_power_forwarding_electric_heater_power": "W or kW; written to IDM electric_heater_power (registers 76–77).",
+          "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign."
         }
       }
     },
@@ -1616,6 +1660,12 @@
         "cascade": "Cascade",
         "booster": "Booster",
         "pv": "PV and battery"
+      }
+    },
+    "external_power_battery_sign": {
+      "options": {
+        "as_is": "Use source sign (IDM convention)",
+        "invert": "Invert source sign (openWB-style source)"
       }
     }
   },
