@@ -6,7 +6,7 @@ import math
 from typing import Any
 
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
-from homeassistant.helpers.entity import EntityCategory
+from homeassistant.const import EntityCategory
 
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 
@@ -35,7 +35,8 @@ class ComfortAdvisorySensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def native_value(self) -> str | None:
-        return self._evaluator(self.coordinator)
+        result: str | None = self._evaluator(self.coordinator)
+        return result
 
     @property
     def available(self) -> bool:

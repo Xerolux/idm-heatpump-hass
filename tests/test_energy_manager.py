@@ -2,8 +2,11 @@
 
 from __future__ import annotations
 
+import asyncio
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
+
+import pytest
 
 from custom_components.idm_heatpump import energy_manager as module
 
@@ -59,6 +62,8 @@ async def test_ready_starts_existing_transactional_boost(monkeypatch):
 
     assert await manager.async_evaluate_once() is True
     boost.async_start.assert_awaited_once_with(target_temperature=57, timeout_minutes=45)
+    assert await manager.async_evaluate_once() is False
+    boost.async_start.assert_awaited_once()
 
 
 async def test_battery_below_threshold_does_not_write(monkeypatch):
@@ -76,3 +81,58 @@ async def test_battery_below_threshold_does_not_write(monkeypatch):
 
     assert await manager.async_evaluate_once() is False
     get_manager.assert_not_awaited()
+
+
+@pytest.mark.parametrize(
+    ("value", "unit"),
+    [("unknown", "kW"), ("nan", "kW"), (2, None), (1, "kW")],
+)
+async def test_insufficient_or_invalid_surplus_never_requests_boost(monkeypatch, value, unit):
+    get_manager = AsyncMock()
+    monkeypatch.setattr(module, "async_get_dhw_boost_manager", get_manager)
+    manager = module.EnergyManager(
+        _hass({"sensor.surplus": _state(value, unit)}),
+        object(),
+        module.EnergyManagerConfig(sources={"pv_surplus": "sensor.surplus"}, minimum_surplus_kw=2),
+    )
+    assert await manager.async_evaluate_once() is False
+    get_manager.assert_not_awaited()
+
+
+async def test_existing_boost_and_boost_error_fail_closed(monkeypatch):
+    boost = SimpleNamespace(active=True, async_start=AsyncMock())
+    monkeypatch.setattr(module, "async_get_dhw_boost_manager", AsyncMock(return_value=boost))
+    manager = module.EnergyManager(
+        _hass({"sensor.surplus": _state(3)}),
+        object(),
+        module.EnergyManagerConfig(sources={"pv_surplus": "sensor.surplus"}),
+    )
+    assert await manager.async_evaluate_once() is False
+    boost.async_start.assert_not_awaited()
+    boost.active = False
+    boost.async_start.side_effect = module.DhwBoostError("refused")
+    assert await manager.async_evaluate_once() is False
+
+
+async def test_power_and_soc_units_fail_closed() -> None:
+    assert module._power_kw(_state(1000, "W")) == 1
+    assert module._power_kw(_state(0.001, "MW")) == 1
+    assert module._power_kw(_state(1, "bad")) is None
+    assert module._soc(_state(-1, "%")) is None
+    assert module._soc(_state(101, "%")) is None
+    assert module._soc(_state(80, None)) == 80
+    assert module._number(None) is None
+
+
+async def test_periodic_task_starts_once_and_stops() -> None:
+    hass = _hass({})
+    hass.async_create_task = asyncio.create_task
+    manager = module.EnergyManager(hass, object(), module.EnergyManagerConfig(sources={}))
+    manager.async_evaluate_once = AsyncMock(return_value=False)
+    first = manager.start()
+    assert manager.start() is first
+    await asyncio.sleep(0)
+    manager.async_evaluate_once.assert_awaited_once()
+    await manager.async_stop()
+    assert manager._task is None
+    await manager.async_stop()

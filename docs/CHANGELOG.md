@@ -15,6 +15,40 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2-b1] - 2026-09-17
+
+Beta candidate for the optional Smart Energy & Comfort features. It retains
+the 0.17.1 runtime dependencies and Home Assistant baseline. Existing core
+entities and their IDs do not change.
+
+### Added
+
+- Configurable external power forwarding from Home Assistant PV, household,
+  battery and surplus sensors to the heat pump's existing GLT registers.
+  Forwarding is optional and remains off until configured.
+- An optional Smart profile with persistent electrical and thermal energy
+  totals, daily and monthly statistics, COP, estimated cost, CO₂ and PV
+  self-consumption. Invalid readings and long polling gaps are excluded.
+- A read-only Health Monitor for communication, compressor cycling, current
+  COP, domestic-hot-water target and temperature plausibility.
+- Read-only heating-curve and weather-preheat advice, plus separate Analytics,
+  Comfort and Health device groups when device hierarchy is enabled.
+- Opt-in PV-surplus domestic-hot-water boost and comfort scheduling. Both can
+  write heat-pump settings and require explicit exclusive-controller
+  confirmation. They remain disabled by default.
+
+### Testing and limitations
+
+- Fix the PV boost cooldown so its first eligible evaluation can start after
+  Home Assistant restarts; the cooldown now begins after an actual boost.
+- Reject the battery-SOC read sentinel `-1` before a GLT write because the
+  pinned API permits only 0–100 for writes to that register.
+- This beta is intended for staged Home Assistant and hardware validation.
+  The new automatic controls have not been validated with physical writes.
+  Leave them disabled unless their ownership and behavior are verified for the
+  installation. The new energy totals start accumulating from installation;
+  earlier consumption is not reconstructed.
+
 ## [0.17.1] - 2026-09-14
 
 ### Fixed

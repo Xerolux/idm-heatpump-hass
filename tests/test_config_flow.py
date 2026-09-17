@@ -11,6 +11,7 @@ from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpConfigFlow,
     IdmHeatpumpOptionsFlow,
     InvalidGroupAddressError,
+    _build_external_power_forwarding_schema,
     _build_modbus_failed_schema,
     _build_options_schema,
     _build_zones_schema,
@@ -26,6 +27,9 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
+    CONF_EXTERNAL_POWER_BATTERY_SIGN,
+    CONF_EXTERNAL_POWER_FORWARDING,
+    CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
     CONF_HOST,
@@ -2613,3 +2617,29 @@ class TestWebSupplementDetection:
             pytest.raises(_WebSupplementConnectionFailed),
         ):
             await flow._async_detect_web_supplement("192.168.1.100", "2634", required=True)
+
+
+async def test_external_power_forwarding_option_step_keeps_selected_sources() -> None:
+    flow = _make_flow()
+    flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+    flow._options = {CONF_HEATING_CIRCUITS: ["a"], CONF_EXTERNAL_POWER_FORWARDING: True}
+    schema = _build_external_power_forwarding_schema(flow._options)
+    assert schema is not None
+
+    form = await flow.async_step_external_power_forwarding()
+    assert form["type"] == "form"
+    assert form["step_id"] == "external_power_forwarding"
+
+    result = await flow.async_step_external_power_forwarding(
+        {
+            "external_power_forwarding_pv_production": " sensor.pv_power ",
+            "external_power_forwarding_battery_soc": "sensor.battery_soc",
+            CONF_EXTERNAL_POWER_BATTERY_SIGN: "invert",
+        }
+    )
+    assert result["type"] == "create_entry"
+    assert result["options"][CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {
+        "pv_production": "sensor.pv_power",
+        "battery_soc": "sensor.battery_soc",
+    }
+    assert result["options"][CONF_EXTERNAL_POWER_BATTERY_SIGN] == "invert"

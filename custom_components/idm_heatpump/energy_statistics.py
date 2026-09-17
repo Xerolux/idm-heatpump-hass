@@ -46,7 +46,7 @@ class EnergyStatistics:
         self.price_per_kwh = max(0.0, float(price_per_kwh))
         self.co2_g_per_kwh = max(0.0, float(co2_g_per_kwh))
         self.pv_source = pv_source
-        self._store = Store(hass, _STORAGE_VERSION, f"{DOMAIN}.energy_statistics.{entry_id}")
+        self._store: Store[dict[str, Any]] = Store(hass, _STORAGE_VERSION, f"{DOMAIN}.energy_statistics.{entry_id}")
         self._max_interval = max(_MAX_INTERVAL_SECONDS, expected_poll_interval * 3.0)
         self.total_electrical_kwh = 0.0
         self.total_thermal_kwh = 0.0

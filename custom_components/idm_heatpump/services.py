@@ -507,13 +507,9 @@ async def _handle_set_external_power(hass: HomeAssistant, call: ServiceCall) -> 
     writes: list[tuple[RegisterDef, float]] = []
     for field in supplied_fields:
         value = _coerce_float_field(call, field)
-        # IDM uses signed INT16 -1 as the documented sentinel for no battery.
-        # Valid SOC values are otherwise whole percentages from 0 to 100.
-        is_battery_soc_unavailable = field == "battery_soc" and value == -1.0
-        if field == "battery_soc" and (
-            not value.is_integer()
-            or (not is_battery_soc_unavailable and not 0.0 <= value <= 100.0)
-        ):
+        # The pinned API enforces the 0..100 write range, including for a
+        # register whose read-side unavailable sentinel is -1.
+        if field == "battery_soc" and (not value.is_integer() or not 0.0 <= value <= 100.0):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="external_power_battery_soc_out_of_range",
@@ -523,10 +519,7 @@ async def _handle_set_external_power(hass: HomeAssistant, call: ServiceCall) -> 
             value = int(value)
 
         reg = _writable_library_register(coordinator, field)
-        if (
-            not is_battery_soc_unavailable
-            and ((reg.min_val is not None and value < reg.min_val) or (reg.max_val is not None and value > reg.max_val))
-        ):
+        if (reg.min_val is not None and value < reg.min_val) or (reg.max_val is not None and value > reg.max_val):
             raise ServiceValidationError(
                 translation_domain=DOMAIN,
                 translation_key="write_out_of_range",

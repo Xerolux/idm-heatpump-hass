@@ -81,7 +81,7 @@ class EnergyManager:
         self._hass = hass
         self._coordinator = coordinator
         self._config = config
-        self._last_start_monotonic = 0.0
+        self._last_start_monotonic: float | None = None
         self._task: asyncio.Task[None] | None = None
 
     def start(self) -> asyncio.Task[None]:
@@ -130,7 +130,10 @@ class EnergyManager:
         if not self._ready():
             return False
         now = asyncio.get_running_loop().time()
-        if now - self._last_start_monotonic < self._config.cooldown_minutes * 60:
+        if (
+            self._last_start_monotonic is not None
+            and now - self._last_start_monotonic < self._config.cooldown_minutes * 60
+        ):
             return False
         manager = await async_get_dhw_boost_manager(self._coordinator)
         if manager.active:

@@ -54,8 +54,7 @@ async def async_setup_entry(
     temperature_register = coordinator.get_register("dhw_temp_top")
     if (
         entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
-        and
-        isinstance(mode_register, RegisterDef)
+        and isinstance(mode_register, RegisterDef)
         and mode_register.writable
         and isinstance(setpoint_register, RegisterDef)
         and setpoint_register.writable

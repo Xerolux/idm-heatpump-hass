@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
 
@@ -64,8 +64,6 @@ def _soc(value: Any, unit: str | None) -> float | None:
     number = _number(value)
     if number is None or unit not in (None, PERCENTAGE):
         return None
-    if number == -1:
-        return -1.0
     if not 0.0 <= number <= 100.0 or number != round(number):
         return None
     return float(round(number))
@@ -88,7 +86,7 @@ class ExternalPowerForwarder:
         self._hass = hass
         self._coordinator = coordinator
         self._config = config
-        self._unsub = None
+        self._unsub: Callable[[], None] | None = None
         self._pending_task: asyncio.Task[None] | None = None
 
     async def async_run(self) -> None:
@@ -102,8 +100,6 @@ class ExternalPowerForwarder:
             while True:
                 await asyncio.sleep(max(30, self._config.interval))
                 await self.async_forward()
-        except asyncio.CancelledError:
-            raise
         finally:
             if self._unsub is not None:
                 self._unsub()
@@ -119,8 +115,6 @@ class ExternalPowerForwarder:
             try:
                 await asyncio.sleep(1)
                 await self.async_forward()
-            except asyncio.CancelledError:
-                raise
             finally:
                 self._pending_task = None
 
@@ -134,9 +128,8 @@ class ExternalPowerForwarder:
         value = _power_kw(state.state, _unit(state))
         if value is None:
             return None
-        if name == "battery_discharge":
-            if self._config.battery_sign == "invert":
-                value = -value
+        if name == "battery_discharge" and self._config.battery_sign == "invert":
+            value = -value
         return value
 
     async def async_forward(self) -> None:
@@ -152,9 +145,7 @@ class ExternalPowerForwarder:
             if reg is None or not reg.writable:
                 _LOGGER.warning("Skipping IDM external power forwarding: register %s is unavailable or read-only", name)
                 continue
-            if value == -1 and name == "battery_soc":
-                pass
-            elif reg.min_val is not None and value < float(reg.min_val):
+            if reg.min_val is not None and value < float(reg.min_val):
                 _LOGGER.warning("Skipping %s: %.3f is below IDM minimum %.3f", name, value, float(reg.min_val))
                 continue
             elif reg.max_val is not None and value > float(reg.max_val):
@@ -162,7 +153,7 @@ class ExternalPowerForwarder:
                 continue
             try:
                 await self._coordinator.async_write_register(reg, value)
-            except Exception as err:
+            except Exception as err:  # noqa: BLE001 - transport and API errors share no common base
                 kind = classify_write_error(err)
                 _LOGGER.warning(
                     "Could not forward %s from %s to %s: %s",

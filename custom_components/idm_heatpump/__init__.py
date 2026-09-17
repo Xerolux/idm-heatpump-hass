@@ -622,9 +622,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         entry.options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN)
     )
     energy_manager_enabled = bool(entry.options.get(CONF_ENERGY_MANAGER, DEFAULT_ENERGY_MANAGER))
-    energy_manager_exclusive = bool(
-        entry.options.get(CONF_ENERGY_MANAGER_EXCLUSIVE, DEFAULT_ENERGY_MANAGER_EXCLUSIVE)
-    )
+    energy_manager_exclusive = bool(entry.options.get(CONF_ENERGY_MANAGER_EXCLUSIVE, DEFAULT_ENERGY_MANAGER_EXCLUSIVE))
     knx_bridge_enabled = bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE))
     knx_base_address = str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip()
     knx_send = bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND))
@@ -641,9 +639,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     polling_jitter = int(entry.options.get(CONF_POLLING_JITTER, DEFAULT_POLLING_JITTER))
     write_cooldown = float(entry.options.get(CONF_WRITE_COOLDOWN, DEFAULT_WRITE_COOLDOWN))
     eeprom_write_interval = float(entry.options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL))
-    smart_features_enabled = (
-        entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
-    )
+    smart_features_enabled = entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
 
     if web_pin_configured(web_pin):
         ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))

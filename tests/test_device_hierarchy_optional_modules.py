@@ -132,6 +132,7 @@ def test_expected_modules_are_created_only_when_sources_exist() -> None:
         (DOMAIN, "entry_module_auxiliary_heat"),
         (DOMAIN, "entry_module_domestic_hot_water"),
         (DOMAIN, "entry_module_diagnostics"),
+        (DOMAIN, "entry_module_analytics"),
     }
 
 

@@ -724,6 +724,7 @@ def _stub_homeassistant() -> None:
                 setattr(self, k, v)
 
     entity_mod.EntityCategory = _EntityCategory
+    ha.const.EntityCategory = _EntityCategory
     entity_mod.EntityDescription = _EntityDescription
 
     # homeassistant.helpers.device_registry
