@@ -42,6 +42,10 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
+    CONF_EXTERNAL_POWER_BATTERY_SIGN,
+    CONF_EXTERNAL_POWER_FORWARDING,
+    CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
+    CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_EEPROM_WRITE_INTERVAL,
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
@@ -90,6 +94,9 @@ from .const import (
     DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_EEPROM_WRITE_INTERVAL,
+    DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
+    DEFAULT_EXTERNAL_POWER_FORWARDING,
+    DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_HUMIDITY_FORWARDING,
@@ -293,6 +300,10 @@ _STORAGE_TEMPERATURE_SELECTOR = EntitySelector(
     )
 )
 
+# Power/energy integrations expose different device classes, so keep this
+# searchable selector generic and validate the unit before writing.
+_EXTERNAL_POWER_SENSOR_SELECTOR = EntitySelector(EntitySelectorConfig(domain="sensor"))
+
 
 def _build_modbus_failed_schema(data: dict[str, Any]) -> vol.Schema:
     """Build the recovery form shown after a failed Modbus check."""
@@ -319,6 +330,7 @@ _OPTIONS_FEATURES_SECTION = "features"
 _OPTIONS_ROOM_SECTION = "room_temperature_forwarding"
 _OPTIONS_HUMIDITY_SECTION = "humidity_forwarding_section"
 _OPTIONS_STORAGE_SECTION = "storage_temp_forwarding_section"
+_OPTIONS_EXTERNAL_POWER_SECTION = "external_power_forwarding_section"
 _OPTIONS_KNX_SECTION = "knx_bridge_section"
 _OPTIONS_MODBUS_SECTION = "advanced_modbus"
 _OPTIONS_SECTION_KEYS = (
@@ -326,6 +338,7 @@ _OPTIONS_SECTION_KEYS = (
     _OPTIONS_ROOM_SECTION,
     _OPTIONS_HUMIDITY_SECTION,
     _OPTIONS_STORAGE_SECTION,
+    _OPTIONS_EXTERNAL_POWER_SECTION,
     _OPTIONS_KNX_SECTION,
     _OPTIONS_MODBUS_SECTION,
 )
@@ -363,6 +376,10 @@ def _default_options() -> dict[str, Any]:
         CONF_STORAGE_TEMP_FORWARDING_ENTITIES: {},
         CONF_STORAGE_TEMP_FORWARDING_INTERVAL: DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
         CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
+        CONF_EXTERNAL_POWER_FORWARDING: DEFAULT_EXTERNAL_POWER_FORWARDING,
+        CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {},
+        CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
+        CONF_EXTERNAL_POWER_BATTERY_SIGN: DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
         CONF_KNX_BRIDGE: DEFAULT_KNX_BRIDGE,
         CONF_KNX_BASE_ADDRESS: DEFAULT_KNX_BASE_ADDRESS,
         CONF_KNX_SEND: DEFAULT_KNX_SEND,
@@ -667,6 +684,50 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 step=0.1,
                                 mode=NumberSelectorMode.SLIDER,
                                 unit_of_measurement="°C",
+                            )
+                        ),
+                    }
+                ),
+                {"collapsed": True},
+            ),
+            vol.Required(_OPTIONS_EXTERNAL_POWER_SECTION): section(
+                vol.Schema(
+                    {
+                        vol.Required(
+                            CONF_EXTERNAL_POWER_FORWARDING,
+                            default=options.get(CONF_EXTERNAL_POWER_FORWARDING, DEFAULT_EXTERNAL_POWER_FORWARDING),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
+                            default=int(options.get(CONF_EXTERNAL_POWER_FORWARDING_INTERVAL, DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL)),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=30,
+                                max=3600,
+                                step=30,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="s",
+                            )
+                        ),
+                        vol.Optional(
+                            CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
+                            default=options.get(CONF_EXTERNAL_POWER_FORWARDING_ENTITIES, {}),
+                        ): vol.Schema({
+                            vol.Optional("pv_surplus", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
+                            vol.Optional("pv_production", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
+                            vol.Optional("house_consumption", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
+                            vol.Optional("battery_discharge", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
+                            vol.Optional("battery_soc", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
+                            vol.Optional("electric_heater_power", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
+                        }),
+                        vol.Required(
+                            CONF_EXTERNAL_POWER_BATTERY_SIGN,
+                            default=options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN),
+                        ): SelectSelector(
+                            SelectSelectorConfig(
+                                options=["as_is", "invert"],
+                                mode=SelectSelectorMode.DROPDOWN,
+                                translation_key="external_power_battery_sign",
                             )
                         ),
                     }
