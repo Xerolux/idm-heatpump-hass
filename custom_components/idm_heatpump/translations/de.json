@@ -321,6 +321,28 @@
           "knx_groups": "Nur Objekte der ausgewählten Gruppen werden gesendet und registriert.",
           "knx_overrides": "Eine `Register = Adresse` pro Zeile, zum Beispiel `outdoor_temp = 1/2/3`. Zeilen mit # werden ignoriert. Leer lassen, um alle Adressen aus der Basisadresse abzuleiten."
         }
+      },
+      "external_power_forwarding": {
+        "title": "Externe Leistungswerte – {name}",
+        "description": "Wähle vorhandene Home-Assistant-Sensoren für PV, Hausverbrauch und Batterie. W/kW werden umgerechnet und in die passenden IDM-GLT-Register geschrieben. Leere Felder werden übersprungen. Nicht gleichzeitig mit SMARTFOX oder openWB aktivieren, wenn diese dieselben Register schreiben.",
+        "data": {
+          "external_power_forwarding_pv_surplus": "PV-Überschuss-Sensor",
+          "external_power_forwarding_pv_production": "PV-Erzeugungs-Sensor",
+          "external_power_forwarding_house_consumption": "Hausverbrauch-Sensor",
+          "external_power_forwarding_battery_discharge": "Batterie-Lade-/Entlade-Sensor",
+          "external_power_forwarding_battery_soc": "Batterie-Ladezustand-Sensor",
+          "external_power_forwarding_electric_heater_power": "Elektroheizungs-Leistungssensor",
+          "external_power_battery_sign": "Vorzeichen der Batterieleistung"
+        },
+        "data_description": {
+          "external_power_forwarding_pv_surplus": "W oder kW; wird in IDM pv_surplus (Register 74–75) geschrieben.",
+          "external_power_forwarding_pv_production": "W oder kW; wird in IDM pv_production (Register 78–79) geschrieben.",
+          "external_power_forwarding_house_consumption": "W oder kW; wird in IDM house_consumption (Register 82–83) geschrieben.",
+          "external_power_forwarding_battery_discharge": "W oder kW. Invertieren wählen, wenn die Quelle die openWB-Konvention nutzt (negativ bedeutet Entladen).",
+          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100; -1 wird für keine Batterie akzeptiert.",
+          "external_power_forwarding_electric_heater_power": "W oder kW; wird in IDM electric_heater_power (Register 76–77) geschrieben.",
+          "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um."
+        }
       }
     },
     "error": {
@@ -561,6 +583,28 @@
           "knx_base_address": "Dreistufig (8/0/0), zweistufig (8/0) oder frei (16384).",
           "knx_groups": "Nur Objekte der ausgewählten Gruppen werden gesendet und registriert.",
           "knx_overrides": "Eine `Register = Adresse` pro Zeile, zum Beispiel `outdoor_temp = 1/2/3`. Zeilen mit # werden ignoriert. Leer lassen, um alle Adressen aus der Basisadresse abzuleiten."
+        }
+      },
+      "external_power_forwarding": {
+        "title": "Externe Leistungswerte – {name}",
+        "description": "Wähle vorhandene Home-Assistant-Sensoren für PV, Hausverbrauch und Batterie. W/kW werden umgerechnet und in die passenden IDM-GLT-Register geschrieben. Leere Felder werden übersprungen. Nicht gleichzeitig mit SMARTFOX oder openWB aktivieren, wenn diese dieselben Register schreiben.",
+        "data": {
+          "external_power_forwarding_pv_surplus": "PV-Überschuss-Sensor",
+          "external_power_forwarding_pv_production": "PV-Erzeugungs-Sensor",
+          "external_power_forwarding_house_consumption": "Hausverbrauch-Sensor",
+          "external_power_forwarding_battery_discharge": "Batterie-Lade-/Entlade-Sensor",
+          "external_power_forwarding_battery_soc": "Batterie-Ladezustand-Sensor",
+          "external_power_forwarding_electric_heater_power": "Elektroheizungs-Leistungssensor",
+          "external_power_battery_sign": "Vorzeichen der Batterieleistung"
+        },
+        "data_description": {
+          "external_power_forwarding_pv_surplus": "W oder kW; wird in IDM pv_surplus (Register 74–75) geschrieben.",
+          "external_power_forwarding_pv_production": "W oder kW; wird in IDM pv_production (Register 78–79) geschrieben.",
+          "external_power_forwarding_house_consumption": "W oder kW; wird in IDM house_consumption (Register 82–83) geschrieben.",
+          "external_power_forwarding_battery_discharge": "W oder kW. Invertieren wählen, wenn die Quelle die openWB-Konvention nutzt (negativ bedeutet Entladen).",
+          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100; -1 wird für keine Batterie akzeptiert.",
+          "external_power_forwarding_electric_heater_power": "W oder kW; wird in IDM electric_heater_power (Register 76–77) geschrieben.",
+          "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um."
         }
       }
     },
@@ -1616,6 +1660,12 @@
         "cascade": "Kaskade",
         "booster": "Booster",
         "pv": "PV und Batterie"
+      }
+    },
+    "external_power_battery_sign": {
+      "options": {
+        "as_is": "Quellenvorzeichen (IDM-Konvention)",
+        "invert": "Quellenvorzeichen invertieren (openWB-Quelle)"
       }
     }
   },
