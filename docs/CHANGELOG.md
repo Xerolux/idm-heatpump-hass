@@ -15,6 +15,11 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2-b2] - 2026-09-17
+
+Second beta candidate. The Smart Energy & Comfort automatic controls remain
+disabled by default; this release does not claim hardware write validation.
+
 - Add a bounded installer report to the downloaded diagnostics with runtime
   versions, communication counters, operating history, selected readings and
   current health checks; exclude connection credentials and device writes.
