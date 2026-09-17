@@ -6,6 +6,7 @@ from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
+import voluptuous as vol
 
 from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpConfigFlow,
@@ -28,6 +29,7 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
+    CONF_DYNAMIC_PRICE_ENTITY,
     CONF_EXTERNAL_POWER_BATTERY_SIGN,
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
@@ -62,6 +64,7 @@ from custom_components.idm_heatpump.const import (
     CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
     CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
     CONF_TECHNICIAN_CODES,
+    CONF_WEATHER_ENTITY,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
     CONF_WEB_ONLY,
@@ -163,6 +166,25 @@ def _marker_defaults(schema) -> dict:
 
 
 class TestBuildOptionsSchema:
+    def test_blank_feature_inputs_are_optional_and_selected_values_are_retained(self):
+        for options in (
+            {},
+            {
+                CONF_DYNAMIC_PRICE_ENTITY: "sensor.tariff",
+                CONF_WEATHER_ENTITY: "weather.home",
+                CONF_COMFORT_WINDOWS: "a,06:00,09:00,21",
+            },
+        ):
+            schema = _build_options_schema(options)
+            feature_schema = schema.schema["features"]
+            markers = {marker.schema: marker for marker in feature_schema.schema}
+            for key in (CONF_DYNAMIC_PRICE_ENTITY, CONF_WEATHER_ENTITY, CONF_COMFORT_WINDOWS):
+                assert isinstance(markers[key], vol.Optional)
+                if key in options:
+                    assert markers[key].default() == options[key]
+                else:
+                    assert markers[key].default is vol.UNDEFINED
+
     def test_returns_schema(self):
         schema = _build_options_schema({})
         assert schema is not None
@@ -1893,6 +1915,24 @@ class TestTestConnection:
 
 
 class TestOptionsFlow:
+    async def test_health_only_can_be_enabled_with_blank_optional_fields(self):
+        flow = IdmHeatpumpOptionsFlow()
+        flow.config_entry = MagicMock(title="IDM")
+        flow.config_entry.options = {
+            CONF_HEALTH_MONITOR: False,
+            CONF_DYNAMIC_PRICE_ENTITY: "sensor.old_tariff",
+            CONF_WEATHER_ENTITY: "weather.old",
+            CONF_COMFORT_WINDOWS: "a,06:00,09:00,21",
+        }
+        await flow.async_step_init()
+        result = await flow.async_step_options({CONF_HEALTH_MONITOR: True, CONF_ZONE_COUNT: 0})
+        assert result["step_id"] == "feature_notice"
+        result = await flow.async_step_feature_notice({"confirm_new_features": True})
+        assert result["type"] == "create_entry"
+        assert result["data"][CONF_HEALTH_MONITOR] is True
+        for key in (CONF_DYNAMIC_PRICE_ENTITY, CONF_WEATHER_ENTITY, CONF_COMFORT_WINDOWS):
+            assert result["data"][key] == ""
+
     def test_init(self):
         flow = IdmHeatpumpOptionsFlow()
         assert flow._options == {}

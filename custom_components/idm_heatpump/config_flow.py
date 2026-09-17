@@ -599,9 +599,13 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 min=0, max=5, step=0.01, mode=NumberSelectorMode.SLIDER, unit_of_measurement="€/kWh"
                             )
                         ),
-                        vol.Required(
+                        vol.Optional(
                             CONF_DYNAMIC_PRICE_ENTITY,
-                            default=options.get(CONF_DYNAMIC_PRICE_ENTITY, ""),
+                            **(
+                                {"default": options[CONF_DYNAMIC_PRICE_ENTITY]}
+                                if options.get(CONF_DYNAMIC_PRICE_ENTITY)
+                                else {}
+                            ),
                         ): EntitySelector(EntitySelectorConfig(domain="sensor")),
                         vol.Required(
                             CONF_ENERGY_CO2_FACTOR,
@@ -641,9 +645,13 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                                 min=15, max=30, step=0.5, mode=NumberSelectorMode.SLIDER, unit_of_measurement="°C"
                             )
                         ),
-                        vol.Required(
+                        vol.Optional(
                             CONF_COMFORT_WINDOWS,
-                            default=str(options.get(CONF_COMFORT_WINDOWS, "")),
+                            **(
+                                {"default": str(options[CONF_COMFORT_WINDOWS])}
+                                if options.get(CONF_COMFORT_WINDOWS)
+                                else {}
+                            ),
                         ): TextSelector(TextSelectorConfig(multiline=True)),
                         vol.Required(
                             CONF_HEATING_CURVE_ASSISTANT,
@@ -653,9 +661,9 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             CONF_WEATHER_PREHEAT,
                             default=options.get(CONF_WEATHER_PREHEAT, DEFAULT_WEATHER_PREHEAT),
                         ): BooleanSelector(BooleanSelectorConfig()),
-                        vol.Required(
+                        vol.Optional(
                             CONF_WEATHER_ENTITY,
-                            default=options.get(CONF_WEATHER_ENTITY, DEFAULT_WEATHER_ENTITY),
+                            **({"default": options[CONF_WEATHER_ENTITY]} if options.get(CONF_WEATHER_ENTITY) else {}),
                         ): EntitySelector(EntitySelectorConfig(domain="weather")),
                         vol.Required(
                             CONF_WEATHER_PREHEAT_THRESHOLD,
@@ -1459,6 +1467,8 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
     async def async_step_options(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         if user_input is not None:
             submitted_options = _flatten_options_input(user_input)
+            for optional_key in (CONF_DYNAMIC_PRICE_ENTITY, CONF_COMFORT_WINDOWS, CONF_WEATHER_ENTITY):
+                submitted_options.setdefault(optional_key, "")
             rows = str(submitted_options.get(CONF_COMFORT_WINDOWS, ""))
             if rows.strip():
                 circuits = {
