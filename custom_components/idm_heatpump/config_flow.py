@@ -534,6 +534,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             description={"advanced": True},
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
+                            CONF_EXTERNAL_POWER_FORWARDING,
+                            default=options.get(CONF_EXTERNAL_POWER_FORWARDING, DEFAULT_EXTERNAL_POWER_FORWARDING),
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
                             CONF_WEB_ENABLED,
                             default=options.get(CONF_WEB_ENABLED, DEFAULT_WEB_ENABLED),
                         ): BooleanSelector(BooleanSelectorConfig()),
