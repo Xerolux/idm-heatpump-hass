@@ -63,6 +63,11 @@ CONF_STORAGE_TEMP_FORWARDING: str = "storage_temp_forwarding"
 CONF_STORAGE_TEMP_FORWARDING_INTERVAL: str = "storage_temp_forwarding_interval"
 CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: str = "storage_temp_forwarding_tolerance"
 CONF_STORAGE_TEMP_FORWARDING_ENTITIES: str = "storage_temp_forwarding_entities"
+# Optional automatic forwarding of selected HA energy sensors to IDM GLT/PV registers.
+CONF_EXTERNAL_POWER_FORWARDING: str = "external_power_forwarding"
+CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: str = "external_power_forwarding_interval"
+CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: str = "external_power_forwarding_entities"
+CONF_EXTERNAL_POWER_BATTERY_SIGN: str = "external_power_battery_sign"
 # KNX bridge: mirror controller values onto a KNX bus through Home
 # Assistant's own ``knx`` integration and accept commands back from it.
 # The base address plus the IDM KNX object number gives every object its
@@ -135,6 +140,10 @@ DEFAULT_HUMIDITY_FORWARDING_TOLERANCE: float = 2.0
 DEFAULT_STORAGE_TEMP_FORWARDING: bool = False
 DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE: float = 0.5
+DEFAULT_EXTERNAL_POWER_FORWARDING: bool = False
+DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 60
+DEFAULT_EXTERNAL_POWER_FORWARDING_ENTITIES: dict[str, str] = {}
+DEFAULT_EXTERNAL_POWER_BATTERY_SIGN: str = "as_is"
 DEFAULT_KNX_BRIDGE: bool = False
 # 8/0/0 keeps the whole catalogue inside one free main group on a default
 # ETS three-level project (8/0/1 .. 8/3/231).
