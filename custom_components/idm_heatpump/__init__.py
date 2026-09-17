@@ -36,6 +36,10 @@ from .const import (
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
     CONF_EEPROM_WRITE_INTERVAL,
+    CONF_EXTERNAL_POWER_BATTERY_SIGN,
+    CONF_EXTERNAL_POWER_FORWARDING,
+    CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
+    CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_ENABLE_CASCADE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
@@ -78,6 +82,9 @@ from .const import (
     CONF_ZONE_ROOMS,
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_EEPROM_WRITE_INTERVAL,
+    DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
+    DEFAULT_EXTERNAL_POWER_FORWARDING,
+    DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_HUMIDITY_FORWARDING,
@@ -149,6 +156,7 @@ from .registers import (
     get_all_switch_descriptions,
     normalize_zone_rooms,
 )
+from .external_power_forwarding import ExternalPowerForwarder, ExternalPowerForwardingConfig
 from .room_temp_forwarding import (
     HumidityForwarder,
     HumidityForwardingConfig,
@@ -201,6 +209,7 @@ class IdmHeatpumpData:
     room_temp_forwarding_task: asyncio.Task[None] | None = None
     humidity_forwarding_task: asyncio.Task[None] | None = None
     storage_temp_forwarding_task: asyncio.Task[None] | None = None
+    external_power_forwarding_task: asyncio.Task[None] | None = None
     knx_bridge: KnxBridge | None = None
     operation_analysis: OperationAnalysis | None = None
     reload_fingerprint: str | None = None
@@ -563,6 +572,16 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     storage_temp_forwarding_tolerance = float(
         entry.options.get(CONF_STORAGE_TEMP_FORWARDING_TOLERANCE, DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE)
     )
+    external_power_forwarding_enabled = bool(
+        entry.options.get(CONF_EXTERNAL_POWER_FORWARDING, DEFAULT_EXTERNAL_POWER_FORWARDING)
+    )
+    external_power_forwarding_entities = entry.options.get(CONF_EXTERNAL_POWER_FORWARDING_ENTITIES, {})
+    external_power_forwarding_interval = int(
+        entry.options.get(CONF_EXTERNAL_POWER_FORWARDING_INTERVAL, DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL)
+    )
+    external_power_battery_sign = str(
+        entry.options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN)
+    )
     knx_bridge_enabled = bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE))
     knx_base_address = str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip()
     knx_send = bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND))
@@ -861,6 +880,29 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     storage_forwarder.async_run(),
                     name=f"{DOMAIN}_storage_temp_{entry.entry_id}",
                 )
+        if external_power_forwarding_enabled and isinstance(external_power_forwarding_entities, dict):
+            forwarding_entities = {
+                str(name): str(entity_id)
+                for name, entity_id in external_power_forwarding_entities.items()
+                if str(entity_id).strip()
+            }
+            if forwarding_entities:
+                external_forwarder = ExternalPowerForwarder(
+                    hass,
+                    coordinator,
+                    ExternalPowerForwardingConfig(
+                        entities=forwarding_entities,
+                        interval=external_power_forwarding_interval,
+                        battery_sign=external_power_battery_sign,
+                    ),
+                )
+                entry.runtime_data.external_power_forwarding_task = _create_entry_background_task(
+                    hass,
+                    entry,
+                    external_forwarder.async_run(),
+                    name=f"{DOMAIN}_external_power_{entry.entry_id}",
+                )
+
         if knx_bridge_enabled and (knx_send or knx_receive):
             bridge = KnxBridge(
                 hass,
@@ -958,6 +1000,7 @@ async def _async_cancel_entry_tasks(runtime: Any) -> None:
         "room_temp_forwarding_task",
         "humidity_forwarding_task",
         "storage_temp_forwarding_task",
+        "external_power_forwarding_task",
     ):
         task = getattr(runtime, attribute, None)
         if isinstance(task, asyncio.Task):
