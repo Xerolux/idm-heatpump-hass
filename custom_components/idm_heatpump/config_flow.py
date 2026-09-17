@@ -330,7 +330,6 @@ _OPTIONS_FEATURES_SECTION = "features"
 _OPTIONS_ROOM_SECTION = "room_temperature_forwarding"
 _OPTIONS_HUMIDITY_SECTION = "humidity_forwarding_section"
 _OPTIONS_STORAGE_SECTION = "storage_temp_forwarding_section"
-_OPTIONS_EXTERNAL_POWER_SECTION = "external_power_forwarding_section"
 _OPTIONS_KNX_SECTION = "knx_bridge_section"
 _OPTIONS_MODBUS_SECTION = "advanced_modbus"
 _OPTIONS_SECTION_KEYS = (
@@ -338,7 +337,6 @@ _OPTIONS_SECTION_KEYS = (
     _OPTIONS_ROOM_SECTION,
     _OPTIONS_HUMIDITY_SECTION,
     _OPTIONS_STORAGE_SECTION,
-    _OPTIONS_EXTERNAL_POWER_SECTION,
     _OPTIONS_KNX_SECTION,
     _OPTIONS_MODBUS_SECTION,
 )
@@ -690,50 +688,6 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                 ),
                 {"collapsed": True},
             ),
-            vol.Required(_OPTIONS_EXTERNAL_POWER_SECTION): section(
-                vol.Schema(
-                    {
-                        vol.Required(
-                            CONF_EXTERNAL_POWER_FORWARDING,
-                            default=options.get(CONF_EXTERNAL_POWER_FORWARDING, DEFAULT_EXTERNAL_POWER_FORWARDING),
-                        ): BooleanSelector(BooleanSelectorConfig()),
-                        vol.Required(
-                            CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
-                            default=int(options.get(CONF_EXTERNAL_POWER_FORWARDING_INTERVAL, DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL)),
-                        ): NumberSelector(
-                            NumberSelectorConfig(
-                                min=30,
-                                max=3600,
-                                step=30,
-                                mode=NumberSelectorMode.SLIDER,
-                                unit_of_measurement="s",
-                            )
-                        ),
-                        vol.Optional(
-                            CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
-                            default=options.get(CONF_EXTERNAL_POWER_FORWARDING_ENTITIES, {}),
-                        ): vol.Schema({
-                            vol.Optional("pv_surplus", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
-                            vol.Optional("pv_production", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
-                            vol.Optional("house_consumption", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
-                            vol.Optional("battery_discharge", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
-                            vol.Optional("battery_soc", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
-                            vol.Optional("electric_heater_power", default=""): _EXTERNAL_POWER_SENSOR_SELECTOR,
-                        }),
-                        vol.Required(
-                            CONF_EXTERNAL_POWER_BATTERY_SIGN,
-                            default=options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN),
-                        ): SelectSelector(
-                            SelectSelectorConfig(
-                                options=["as_is", "invert"],
-                                mode=SelectSelectorMode.DROPDOWN,
-                                translation_key="external_power_battery_sign",
-                            )
-                        ),
-                    }
-                ),
-                {"collapsed": True},
-            ),
             vol.Required(_OPTIONS_KNX_SECTION): section(
                 vol.Schema(
                     {
@@ -1073,6 +1027,57 @@ def _store_storage_temp_forwarding_entities(options: dict[str, Any], user_input:
     }
 
 
+
+
+_EXTERNAL_POWER_KEYS: tuple[str, ...] = (
+    "pv_surplus",
+    "pv_production",
+    "house_consumption",
+    "battery_discharge",
+    "battery_soc",
+    "electric_heater_power",
+)
+
+
+def _external_power_forwarding_enabled(options: dict[str, Any]) -> bool:
+    return bool(options.get(CONF_EXTERNAL_POWER_FORWARDING, DEFAULT_EXTERNAL_POWER_FORWARDING))
+
+
+def _build_external_power_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
+    configured_entities = options.get(CONF_EXTERNAL_POWER_FORWARDING_ENTITIES, {})
+    schema_dict: dict[Any, Any] = {}
+    for key in _EXTERNAL_POWER_KEYS:
+        schema_dict[
+            vol.Optional(
+                f"external_power_forwarding_{key}",
+                default=str(configured_entities.get(key, "")),
+            )
+        ] = _EXTERNAL_POWER_SENSOR_SELECTOR
+    return vol.Schema(
+        {
+            **schema_dict,
+            vol.Required(
+                CONF_EXTERNAL_POWER_BATTERY_SIGN,
+                default=options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN),
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=["as_is", "invert"],
+                    mode=SelectSelectorMode.DROPDOWN,
+                    translation_key="external_power_battery_sign",
+                )
+            ),
+        }
+    )
+
+
+def _store_external_power_forwarding_entities(options: dict[str, Any], user_input: dict[str, Any]) -> None:
+    options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] = {
+        key: str(user_input.get(f"external_power_forwarding_{key}", "")).strip()
+        for key in _EXTERNAL_POWER_KEYS
+        if str(user_input.get(f"external_power_forwarding_{key}", "")).strip()
+    }
+
+
 def _knx_bridge_enabled(options: dict[str, Any]) -> bool:
     return bool(options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE))
 
@@ -1146,6 +1151,7 @@ _OPTIONAL_FLOW_STEPS: tuple[tuple[str, Callable[[dict[str, Any]], bool]], ...] =
     ("room_temp_forwarding", _room_temp_forwarding_enabled),
     ("humidity_forwarding", _humidity_forwarding_enabled),
     ("storage_temp_forwarding", _storage_temp_forwarding_enabled),
+    ("external_power_forwarding", _external_power_forwarding_enabled),
     ("knx_bridge", _knx_bridge_enabled),
 )
 
@@ -1255,6 +1261,21 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
         return self.async_show_form(
             step_id="storage_temp_forwarding",
             data_schema=_build_storage_temp_forwarding_schema(self._options),
+            description_placeholders={"name": self._flow_name_placeholder()},
+            errors={},
+        )
+
+    async def async_step_external_power_forwarding(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        if user_input is not None:
+            _store_external_power_forwarding_entities(self._options, user_input)
+            self._options[CONF_EXTERNAL_POWER_BATTERY_SIGN] = str(
+                user_input.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN)
+            )
+            return await self._async_continue_optional_steps("external_power_forwarding")
+
+        return self.async_show_form(
+            step_id="external_power_forwarding",
+            data_schema=_build_external_power_forwarding_schema(self._options),
             description_placeholders={"name": self._flow_name_placeholder()},
             errors={},
         )
