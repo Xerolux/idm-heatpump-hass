@@ -1121,9 +1121,7 @@ class TestAsyncStepReconfigure:
             result = await flow.async_step_feature_notice({"confirm_new_features": True})
 
         assert result["type"] == "abort"
-        update_and_abort.assert_called_once_with(
-            entry, data_updates=entry.data, options=flow._options
-        )
+        update_and_abort.assert_called_once_with(entry, data_updates=entry.data, options=flow._options)
         assert flow._options[CONF_HEALTH_MONITOR] is True
         assert flow._options[CONF_FEATURE_PROFILE] == "smart"
 
