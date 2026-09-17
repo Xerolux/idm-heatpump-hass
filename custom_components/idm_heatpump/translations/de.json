@@ -90,12 +90,6 @@
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
           "feature_profile": "Vanilla stellt nur die grundlegenden IDM-Entitäten bereit. iDM Smart Energy & Comfort ergänzt berechnete Effizienzsensoren, Taktungsanalyse, Kurzzyklus-Erkennung und die sichere Warmwasser-Boost-Steuerung. Das Profil verändert die Wärmepumpeneinstellungen nicht selbst.",
-          "energy_manager": "Startet die sichere Warmwasserladung automatisch, wenn der ausdrücklich ausgewählte PV-Überschuss (oder PV-Erzeugung minus Hausverbrauch) verfügbar ist. Die externe Leistungsweitergabe muss mit den Quellsensoren eingerichtet sein. Standardmäßig deaktiviert.",
-          "energy_manager_min_surplus_kw": "Der Überschuss muss bei der Prüfung über diesem Wert liegen. Bei fehlenden, nicht verfügbaren oder unplausiblen Sensorwerten wird nichts geschrieben.",
-          "energy_manager_min_battery_soc": "Verhindert eine automatische Ladung bei zu niedrigem Batteriestand. Wird in der externen Leistungszuordnung kein Batteriesensor ausgewählt, entfällt diese zusätzliche Bedingung.",
-          "energy_manager_dhw_target": "Zielwert für die vorhandene sichere Warmwasser-Boost-Transaktion. Der vorherige Sollwert und die Betriebsart werden automatisch wiederhergestellt.",
-          "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
-          "energy_manager_cooldown": "Mindestzeit zwischen automatischen Starts. Dadurch werden wiederholte Starts nach dem Ende einer Ladung verhindert.",
           "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister."
         },
         "sections": {
@@ -440,12 +434,6 @@
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
           "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
           "feature_profile": "Vanilla stellt nur die grundlegenden IDM-Entitäten bereit. iDM Smart Energy & Comfort ergänzt berechnete Effizienzsensoren, Taktungsanalyse, Kurzzyklus-Erkennung und die sichere Warmwasser-Boost-Steuerung. Das Profil verändert die Wärmepumpeneinstellungen nicht selbst.",
-          "energy_manager": "Startet die sichere Warmwasserladung automatisch, wenn der ausdrücklich ausgewählte PV-Überschuss (oder PV-Erzeugung minus Hausverbrauch) verfügbar ist. Die externe Leistungsweitergabe muss mit den Quellsensoren eingerichtet sein. Standardmäßig deaktiviert.",
-          "energy_manager_min_surplus_kw": "Der Überschuss muss bei der Prüfung über diesem Wert liegen. Bei fehlenden, nicht verfügbaren oder unplausiblen Sensorwerten wird nichts geschrieben.",
-          "energy_manager_min_battery_soc": "Verhindert eine automatische Ladung bei zu niedrigem Batteriestand. Wird in der externen Leistungszuordnung kein Batteriesensor ausgewählt, entfällt diese zusätzliche Bedingung.",
-          "energy_manager_dhw_target": "Zielwert für die vorhandene sichere Warmwasser-Boost-Transaktion. Der vorherige Sollwert und die Betriebsart werden automatisch wiederhergestellt.",
-          "energy_manager_dhw_timeout": "Maximale Dauer einer automatischen Warmwasserladung, bevor der vorherige Zustand wiederhergestellt wird.",
-          "energy_manager_cooldown": "Mindestzeit zwischen automatischen Starts. Dadurch werden wiederholte Starts nach dem Ende einer Ladung verhindert.",
           "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister."
         },
         "sections": {

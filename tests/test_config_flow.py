@@ -98,6 +98,9 @@ def test_options_translations_match_initial_config_flow() -> None:
         feature_labels = options_flow["sections"]["features"]["data"]
         feature_descriptions = options_flow["sections"]["features"]["data_description"]
         assert feature_labels.keys() == feature_descriptions.keys()
+        for root in ("config", "options"):
+            step = translations[root]["step"]["options"]
+            assert set(step.get("data_description", {})) <= set(step.get("data", {}))
 
 
 def test_advanced_options_explain_operational_effects() -> None:
