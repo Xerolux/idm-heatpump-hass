@@ -96,6 +96,7 @@ from .const import (
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
+    CONF_SETUP_LEVEL,
     CONF_SHORT_CYCLE_MINUTES,
     CONF_SLAVE_ID,
     CONF_STORAGE_TEMP_FORWARDING,
@@ -394,6 +395,85 @@ _SETUP_PROFILE_RELIABLE = "reliable_network"
 _SETUP_PROFILE_MULTI_CLIENT = "multiple_clients"
 _SETUP_PROFILE_CUSTOM = "custom"
 _CONFIRM_NEW_FEATURES = "confirm_new_features"
+_GUIDED_LEVELS = ("standard", "advanced", "expert")
+_GUIDED_CHOICE = "selected_features"
+_GUIDED_CONFIRM = "save_configuration"
+
+# Each feature is selected deliberately. The first field is its on/off switch
+# (or None for a settings category); the following tiers add detail without
+# hiding or resetting values saved by a different tier.
+_GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], tuple[str, ...]]] = {
+    "plant": (None, (CONF_HEATING_CIRCUITS, CONF_ZONE_COUNT), (CONF_SCAN_INTERVAL, CONF_HIDE_UNUSED), ()),
+    "profile": (None, (CONF_FEATURE_PROFILE,), (), ()),
+    "health": (CONF_HEALTH_MONITOR, (), (CONF_SHORT_CYCLE_MINUTES,), ()),
+    "energy": (None, (CONF_DYNAMIC_PRICE_ENTITY,), (CONF_ENERGY_PRICE, CONF_ENERGY_CO2_FACTOR), ()),
+    "energy_manager": (
+        CONF_ENERGY_MANAGER,
+        (CONF_ENERGY_MANAGER_EXCLUSIVE,),
+        (CONF_ENERGY_MANAGER_MIN_SURPLUS, CONF_ENERGY_MANAGER_MIN_SOC, CONF_ENERGY_MANAGER_TARGET),
+        (CONF_ENERGY_MANAGER_TIMEOUT, CONF_ENERGY_MANAGER_COOLDOWN),
+    ),
+    "comfort": (
+        CONF_COMFORT_SCHEDULE,
+        (
+            CONF_COMFORT_SCHEDULE_EXCLUSIVE,
+            CONF_COMFORT_SCHEDULE_CIRCUIT,
+            CONF_COMFORT_SCHEDULE_START,
+            CONF_COMFORT_SCHEDULE_END,
+            CONF_COMFORT_SCHEDULE_TARGET,
+        ),
+        (CONF_COMFORT_WINDOWS,),
+        (),
+    ),
+    "heating_curve": (CONF_HEATING_CURVE_ASSISTANT, (), (), ()),
+    "weather": (CONF_WEATHER_PREHEAT, (CONF_WEATHER_ENTITY,), (CONF_WEATHER_PREHEAT_THRESHOLD,), ()),
+    "web": (CONF_WEB_ENABLED, (), (CONF_WEB_SCAN_INTERVAL,), ()),
+    "room_forwarding": (
+        CONF_ROOM_TEMP_FORWARDING,
+        (),
+        (CONF_ROOM_TEMP_FORWARDING_INTERVAL,),
+        (CONF_ROOM_TEMP_FORWARDING_TOLERANCE,),
+    ),
+    "humidity_forwarding": (
+        CONF_HUMIDITY_FORWARDING,
+        (),
+        (CONF_HUMIDITY_FORWARDING_INTERVAL,),
+        (CONF_HUMIDITY_FORWARDING_TOLERANCE,),
+    ),
+    "storage_forwarding": (
+        CONF_STORAGE_TEMP_FORWARDING,
+        (),
+        (CONF_STORAGE_TEMP_FORWARDING_INTERVAL,),
+        (CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,),
+    ),
+    "external_power": (
+        CONF_EXTERNAL_POWER_FORWARDING,
+        (),
+        (CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,),
+        (),
+    ),
+    "knx": (
+        CONF_KNX_BRIDGE,
+        (CONF_KNX_SEND, CONF_KNX_RECEIVE),
+        (CONF_KNX_RESPOND_TO_READ,),
+        (CONF_KNX_RESEND_INTERVAL, CONF_KNX_TOLERANCE),
+    ),
+    "cascade": (CONF_ENABLE_CASCADE, (), (), ()),
+    "device_hierarchy": (CONF_DEVICE_HIERARCHY, (), (), ()),
+    "technician_codes": (CONF_TECHNICIAN_CODES, (), (), ()),
+    "modbus": (
+        None,
+        (),
+        (CONF_MODBUS_TIMEOUT, CONF_MODBUS_MAX_RETRIES, CONF_COMMUNICATION_DIAGNOSTICS),
+        (
+            CONF_MODBUS_MESSAGE_SPACING,
+            CONF_MODBUS_CONNECT_DELAY,
+            CONF_POLLING_JITTER,
+            CONF_WRITE_COOLDOWN,
+            CONF_EEPROM_WRITE_INTERVAL,
+        ),
+    ),
+}
 
 
 def _default_options() -> dict[str, Any]:
@@ -506,14 +586,9 @@ def _build_setup_review_schema(data: dict[str, Any]) -> vol.Schema:
                 CONF_MODEL_OVERRIDE,
                 default=data.get(CONF_MODEL_OVERRIDE, DEFAULT_MODEL_OVERRIDE),
             ): _MODEL_OVERRIDE_SELECTOR,
-            vol.Required(_SETUP_PROFILE, default=_SETUP_PROFILE_RECOMMENDED): SelectSelector(
+            vol.Required(_SETUP_PROFILE, default="standard"): SelectSelector(
                 SelectSelectorConfig(
-                    options=[
-                        _SETUP_PROFILE_RECOMMENDED,
-                        _SETUP_PROFILE_RELIABLE,
-                        _SETUP_PROFILE_MULTI_CLIENT,
-                        _SETUP_PROFILE_CUSTOM,
-                    ],
+                    options=list(_GUIDED_LEVELS),
                     mode=SelectSelectorMode.DROPDOWN,
                     translation_key="setup_profile",
                 )
@@ -1157,6 +1232,35 @@ def _has_duplicate_endpoint(
     return False
 
 
+def _build_guided_field_schema(options: dict[str, Any], keys: tuple[str, ...]) -> vol.Schema:
+    """Reuse the validated option selectors on a short wizard page."""
+    full_schema = _build_options_schema(options)
+    fields: dict[str, tuple[vol.Marker, Any]] = {}
+    for marker, selector in full_schema.schema.items():
+        name = str(getattr(marker, "key", getattr(marker, "schema", marker)))
+        if name in _OPTIONS_SECTION_KEYS:
+            nested = selector.schema
+            if isinstance(nested, vol.Schema):
+                nested = nested.schema
+            for child_marker, child_selector in nested.items():
+                fields[str(getattr(child_marker, "key", getattr(child_marker, "schema", child_marker)))] = (
+                    child_marker,
+                    child_selector,
+                )
+        else:
+            fields[name] = (marker, selector)
+    return vol.Schema({fields[key][0]: fields[key][1] for key in keys})
+
+
+def _guided_detail_keys(feature: str, level: str) -> tuple[str, ...]:
+    _, standard, advanced, expert = _GUIDED_FEATURES[feature]
+    if level == "standard":
+        return standard
+    if level == "advanced":
+        return standard + advanced
+    return standard + advanced + expert
+
+
 def _build_zones_schema(options: dict[str, Any], zone_count: int) -> vol.Schema:
     existing_rooms = normalize_zone_rooms(options.get(CONF_ZONE_ROOMS, {}))
     schema_dict: dict[Any, Any] = {}
@@ -1394,6 +1498,10 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
     _options: dict[str, Any]
     _previous_options: dict[str, Any]
     _feature_notice_confirmed: bool
+    _guided_selected: list[str]
+    _guided_index: int
+    _guided_level: str
+    _guided_active: bool
 
     def _flow_name_placeholder(self) -> str:
         raise NotImplementedError
@@ -1410,6 +1518,8 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
         submitted, so the steps stay chained in table order without any of
         them naming the next one directly.
         """
+        if self._guided_active and after_step_id is not None:
+            return await self._async_guided_next()
         start = 0
         if after_step_id is not None:
             for index, (step_id, _) in enumerate(_OPTIONAL_FLOW_STEPS):
@@ -1424,6 +1534,149 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
                 handler: Callable[[], Awaitable[ConfigFlowResult]] = getattr(self, f"async_step_{step_id}")
                 return await handler()
         return await self._async_finish_options()
+
+    async def async_step_guided_mode(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Choose how much detail the guided configuration should request."""
+        if user_input is not None:
+            self._guided_level = str(user_input[CONF_SETUP_LEVEL])
+            return await self.async_step_guided_choose()
+        current = str(self._options.get(CONF_SETUP_LEVEL, "standard"))
+        return self.async_show_form(
+            step_id="guided_mode",
+            data_schema=vol.Schema(
+                {
+                    vol.Required(CONF_SETUP_LEVEL, default=current): SelectSelector(
+                        SelectSelectorConfig(
+                            options=list(_GUIDED_LEVELS),
+                            mode=SelectSelectorMode.DROPDOWN,
+                            translation_key="guided_level",
+                        )
+                    )
+                }
+            ),
+            errors={},
+        )
+
+    async def async_step_guided_choose(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Select only the functions to add, remove, or adjust."""
+        if user_input is not None:
+            chosen = user_input.get(_GUIDED_CHOICE, [])
+            self._guided_selected = [feature for feature in _GUIDED_FEATURES if feature in chosen]
+            self._guided_index = 0
+            self._guided_active = True
+            return await self._async_guided_next()
+        return self.async_show_form(
+            step_id="guided_choose",
+            data_schema=vol.Schema(
+                {
+                    vol.Optional(_GUIDED_CHOICE, default=[]): SelectSelector(
+                        SelectSelectorConfig(
+                            options=list(_GUIDED_FEATURES),
+                            multiple=True,
+                            mode=SelectSelectorMode.LIST,
+                            translation_key="guided_features",
+                        )
+                    )
+                }
+            ),
+            errors={},
+        )
+
+    async def _async_guided_next(self) -> ConfigFlowResult:
+        if self._guided_index >= len(self._guided_selected):
+            return await self.async_step_guided_review()
+        feature = self._guided_selected[self._guided_index]
+        if _GUIDED_FEATURES[feature][0] is not None:
+            return await self.async_step_guided_toggle()
+        return await self.async_step_guided_detail()
+
+    async def async_step_guided_toggle(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Ask whether the selected function should be active."""
+        feature = self._guided_selected[self._guided_index]
+        toggle = _GUIDED_FEATURES[feature][0]
+        assert toggle is not None
+        if user_input is not None:
+            self._options[toggle] = bool(user_input[toggle])
+            if not self._options[toggle]:
+                self._guided_index += 1
+                return await self._async_guided_next()
+            return await self.async_step_guided_detail()
+        return self.async_show_form(
+            step_id="guided_toggle",
+            data_schema=_build_guided_field_schema(self._options, (toggle,)),
+            errors={},
+        )
+
+    async def _async_complete_guided_feature(self, feature: str) -> ConfigFlowResult:
+        self._guided_index += 1
+        if feature == "plant":
+            if int(self._options.get(CONF_ZONE_COUNT, 0)) > 0:
+                return await self.async_step_zones()
+            self._options[CONF_ZONE_ROOMS] = {}
+        mapping_steps = {
+            "room_forwarding": "room_temp_forwarding",
+            "humidity_forwarding": "humidity_forwarding",
+            "storage_forwarding": "storage_temp_forwarding",
+            "external_power": "external_power_forwarding",
+            "knx": "knx_bridge",
+        }
+        toggle = _GUIDED_FEATURES[feature][0]
+        if feature in mapping_steps and toggle is not None and bool(self._options[toggle]):
+            handler: Callable[[], Awaitable[ConfigFlowResult]] = getattr(self, f"async_step_{mapping_steps[feature]}")
+            return await handler()
+        return await self._async_guided_next()
+
+    async def async_step_guided_detail(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Show only the selected function's fields at the chosen depth."""
+        feature = self._guided_selected[self._guided_index]
+        keys = _guided_detail_keys(feature, self._guided_level)
+        if user_input is not None:
+            for optional_key in (CONF_DYNAMIC_PRICE_ENTITY, CONF_COMFORT_WINDOWS, CONF_WEATHER_ENTITY):
+                if optional_key in keys:
+                    user_input.setdefault(optional_key, "")
+            if feature == "comfort" and str(user_input.get(CONF_COMFORT_WINDOWS, "")).strip():
+                circuits = {str(circuit).lower() for circuit in self._options.get(CONF_HEATING_CIRCUITS, ["a"])}
+                try:
+                    parse_schedule_rows(str(user_input[CONF_COMFORT_WINDOWS]), circuits)
+                except ValueError:
+                    return self.async_show_form(
+                        step_id="guided_detail",
+                        data_schema=_build_guided_field_schema({**self._options, **user_input}, keys),
+                        errors={CONF_COMFORT_WINDOWS: "invalid_comfort_windows"},
+                    )
+            if feature == "weather" and not user_input.get(CONF_WEATHER_ENTITY):
+                return self.async_show_form(
+                    step_id="guided_detail",
+                    data_schema=_build_guided_field_schema(self._options, keys),
+                    errors={CONF_WEATHER_ENTITY: "weather_entity_required"},
+                )
+            self._options.update(user_input)
+            return await self._async_complete_guided_feature(feature)
+        if not keys:
+            return await self._async_complete_guided_feature(feature)
+        return self.async_show_form(
+            step_id="guided_detail",
+            data_schema=_build_guided_field_schema(self._options, keys),
+            errors={},
+        )
+
+    async def async_step_guided_review(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        """Commit the reviewed changes only after an explicit final click."""
+        if user_input is not None and user_input.get(_GUIDED_CONFIRM) is True:
+            self._options[CONF_SETUP_LEVEL] = self._guided_level
+            if self._new_features_enabled():
+                return await self.async_step_feature_notice()
+            return self._create_flow_entry()
+        return self.async_show_form(
+            step_id="guided_review",
+            data_schema=vol.Schema(
+                {vol.Required(_GUIDED_CONFIRM, default=False): BooleanSelector(BooleanSelectorConfig())}
+            ),
+            description_placeholders={
+                "selected_count": str(len(self._guided_selected)),
+            },
+            errors={"base": "guided_review_required"} if user_input is not None else {},
+        )
 
     async def _async_finish_options(self) -> ConfigFlowResult:
         """Require acknowledgement when new beta features are enabled."""
@@ -1504,6 +1757,8 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
         if user_input is not None:
             zone_rooms: dict[int, int] = {z: int(user_input.get(f"zone_{z}_rooms", 1)) for z in range(zone_count)}
             self._options[CONF_ZONE_ROOMS] = zone_rooms
+            if self._guided_active:
+                return await self._async_guided_next()
             return await self._async_continue_optional_steps()
 
         return self.async_show_form(
@@ -1616,6 +1871,10 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         self._options: dict[str, Any] = {}
         self._previous_options: dict[str, Any] = {}
         self._feature_notice_confirmed = False
+        self._guided_selected: list[str] = []
+        self._guided_index = 0
+        self._guided_level = "standard"
+        self._guided_active = False
         self._modbus_error = _ModbusConnectionStatus.FAILED.value
         self._reconfigure_entry: config_entries.ConfigEntry | None = None
 
@@ -1717,6 +1976,10 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         if user_input is not None:
             profile = str(user_input.get(_SETUP_PROFILE, _SETUP_PROFILE_RECOMMENDED))
             self._data[CONF_MODEL_OVERRIDE] = _normalize_model_override(user_input)
+            if profile in _GUIDED_LEVELS:
+                self._options = _default_options()
+                self._guided_level = profile
+                return await self.async_step_guided_choose()
             if profile == _SETUP_PROFILE_CUSTOM:
                 self._options = _default_options()
                 return await self.async_step_options()
@@ -1754,7 +2017,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         self._data = dict(entry.data)
         self._previous_options = dict(entry.options)
         self._options = dict(entry.options)
-        return await self.async_step_options(user_input)
+        return await self.async_step_guided_mode(user_input)
 
     async def async_step_connection(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         """Validate and update connection settings."""
@@ -2024,9 +2287,9 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         return str(self._data.get(CONF_NAME, ""))
 
     def _create_flow_entry(self) -> ConfigFlowResult:
-        if not _room_temp_forwarding_enabled(self._options):
+        if not self._guided_active and not _room_temp_forwarding_enabled(self._options):
             self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
-        if not _storage_temp_forwarding_enabled(self._options):
+        if not self._guided_active and not _storage_temp_forwarding_enabled(self._options):
             self._options[CONF_STORAGE_TEMP_FORWARDING_ENTITIES] = {}
         if self._reconfigure_entry is not None:
             _LOGGER.info(
@@ -2363,18 +2626,22 @@ class IdmHeatpumpOptionsFlow(_IdmOptionsStepsMixin, config_entries.OptionsFlow):
         self._options: dict[str, Any] = {}
         self._previous_options: dict[str, Any] = {}
         self._feature_notice_confirmed = False
+        self._guided_selected: list[str] = []
+        self._guided_index = 0
+        self._guided_level = "standard"
+        self._guided_active = False
 
     def _flow_name_placeholder(self) -> str:
         return str(self.config_entry.title)
 
     def _create_flow_entry(self) -> ConfigFlowResult:
-        if not _room_temp_forwarding_enabled(self._options):
+        if not self._guided_active and not _room_temp_forwarding_enabled(self._options):
             self._options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {}
-        if not _storage_temp_forwarding_enabled(self._options):
+        if not self._guided_active and not _storage_temp_forwarding_enabled(self._options):
             self._options[CONF_STORAGE_TEMP_FORWARDING_ENTITIES] = {}
         return self.async_create_entry(data=self._options)
 
     async def async_step_init(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         self._options = dict(self.config_entry.options)
         self._previous_options = dict(self.config_entry.options)
-        return await self.async_step_options()
+        return await self.async_step_guided_mode()
