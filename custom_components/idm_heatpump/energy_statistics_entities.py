@@ -31,16 +31,22 @@ _ENERGY_DEFINITIONS = (
         "energy_thermal_total", lambda s: s.total_thermal_kwh, "mdi:heat-wave", SensorStateClass.TOTAL_INCREASING
     ),
     _Definition(
-        "energy_electrical_today", lambda s: s.today_electrical_kwh, "mdi:calendar-today", SensorStateClass.MEASUREMENT
+        "energy_electrical_today",
+        lambda s: s.today_electrical_kwh,
+        "mdi:calendar-today",
+        SensorStateClass.TOTAL_INCREASING,
     ),
     _Definition(
-        "energy_thermal_today", lambda s: s.today_thermal_kwh, "mdi:calendar-today", SensorStateClass.MEASUREMENT
+        "energy_thermal_today", lambda s: s.today_thermal_kwh, "mdi:calendar-today", SensorStateClass.TOTAL_INCREASING
     ),
     _Definition(
-        "energy_electrical_month", lambda s: s.month_electrical_kwh, "mdi:calendar-month", SensorStateClass.MEASUREMENT
+        "energy_electrical_month",
+        lambda s: s.month_electrical_kwh,
+        "mdi:calendar-month",
+        SensorStateClass.TOTAL_INCREASING,
     ),
     _Definition(
-        "energy_thermal_month", lambda s: s.month_thermal_kwh, "mdi:calendar-month", SensorStateClass.MEASUREMENT
+        "energy_thermal_month", lambda s: s.month_thermal_kwh, "mdi:calendar-month", SensorStateClass.TOTAL_INCREASING
     ),
     _Definition("energy_cop_total", lambda s: s.total_cop, "mdi:gauge", SensorStateClass.MEASUREMENT),
     _Definition("energy_cop_today", lambda s: s.today_cop, "mdi:gauge", SensorStateClass.MEASUREMENT),
@@ -60,13 +66,13 @@ _ENERGY_DEFINITIONS = (
         "energy_pv_self_consumed_today",
         lambda s: s.today_pv_self_consumed_kwh,
         "mdi:solar-power",
-        SensorStateClass.MEASUREMENT,
+        SensorStateClass.TOTAL_INCREASING,
     ),
     _Definition(
         "energy_pv_self_consumed_month",
         lambda s: s.month_pv_self_consumed_kwh,
         "mdi:solar-power",
-        SensorStateClass.MEASUREMENT,
+        SensorStateClass.TOTAL_INCREASING,
     ),
 )
 
