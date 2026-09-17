@@ -80,13 +80,15 @@
           "scan_interval": "Abfrageintervall",
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
-          "zone_count": "Anzahl Zonenmodule"
+          "zone_count": "Anzahl Zonenmodule",
+          "external_power_forwarding": "Automatische externe Leistungswerte"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
-          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht."
+          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
+          "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister."
         },
         "sections": {
           "features": {
@@ -378,13 +380,15 @@
           "scan_interval": "Abfrageintervall",
           "hide_unused_registers": "Unbenutzte Sensoren ausblenden",
           "heating_circuits": "Heizkreise",
-          "zone_count": "Anzahl Zonenmodule"
+          "zone_count": "Anzahl Zonenmodule",
+          "external_power_forwarding": "Automatische externe Leistungswerte"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
           "hide_unused_registers": "Erstellt keine Entities für unbenutzte oder nicht unterstützte Register, wenn der aktuelle Poll Sentinel-Werte wie −1,0, 255, 65535 oder −32768 liefert. Normale 0-Werte bleiben sichtbar.",
           "heating_circuits": "Wähle alle Heizkreise aus, die in deiner Anlage verbaut und aktiv sind. Heizkreis A ist immer aktiv.",
-          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht."
+          "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
+          "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister."
         },
         "sections": {
           "features": {
