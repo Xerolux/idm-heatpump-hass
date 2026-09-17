@@ -15,6 +15,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2-b3] - 2026-09-17
+
+- Fix the Home Assistant `energy` device-class warning for daily and monthly
+  electrical, thermal and PV self-consumption totals. Their values increase
+  within a period and reset at the period boundary, so they use
+  `total_increasing` instead of `measurement`.
+- Confirm the preceding beta on the maintainer Navigator 10 with 21 successful
+  read-only polls, zero failures and the new privacy-bounded installer report.
+  Automatic heat-pump writes remain untested on physical hardware.
+
 ## [0.17.2-b2] - 2026-09-17
 
 Second beta candidate. The Smart Energy & Comfort automatic controls remain

@@ -167,3 +167,7 @@ def test_energy_entities_require_sources_and_publish_all_metrics() -> None:
     assert entities[6].available is False
     assert entities[0].entity_description.native_unit_of_measurement == "kWh"
     assert entities[9].entity_description.native_unit_of_measurement == "€"
+    for entity in entities:
+        description = entity.entity_description
+        if description.device_class == "energy":
+            assert description.state_class == "total_increasing"
