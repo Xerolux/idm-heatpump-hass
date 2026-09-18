@@ -13,6 +13,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.2-b8] - 2026-09-18
+
+- Replace numerically inconsistent AI prose with a clearly labelled, deterministic measurement report instead of displaying a warning beside the incorrect prose. Percentage claims are checked against percentage facts, so a matching temperature cannot validate a fabricated coverage value.
+- Replace unreviewed reports saved by previous versions with measurement-only reports on load, preserving their facts, timestamps, learning data and configuration. Rejected model text is neither returned nor persisted.
+- Distinguish the requested reporting window from the first/last observed samples, clarify percentage units in the prompt, and keep unknown health checks separate from normal checks in fallback reports. This numeric guard does not claim full semantic verification of accepted AI prose.
+
 ## [0.17.2-b7] - 2026-09-18
 
 ### Added

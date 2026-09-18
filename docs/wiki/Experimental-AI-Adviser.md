@@ -1,6 +1,6 @@
 # Experimental local AI adviser
 
-**Available in v0.17.2-b7 (experimental beta).** This adviser is off by default
+**Available since v0.17.2-b7; numeric safeguards improved in v0.17.2-b8.** This adviser is off by default
 and must be activated separately, even when Smart is enabled.
 
 It explains selected measurements using a local Ollama model. It has no
@@ -13,7 +13,7 @@ fault diagnosis or an automatic optimization controller.
 
 1. Run Ollama on a local server and install a local completion model, such as
    `gemma3:4b`. The integration does not install or download models.
-2. Open **Settings → Devices & services → IDM Heatpump → Reconfigure → Features**.
+2. Open **Settings → Devices & services → IDM Heatpump → Configure**.
 3. At any setup depth, select **AI adviser (experimental, read-only)**, enable it,
    and enter the local base URL, installed model name and report language
    (`de` or `en`). Use your own address, for example `http://192.168.1.20:11434`.
@@ -155,10 +155,18 @@ a conservative JSON size estimate including overhead, not the exact disk
 allocation. Model files, HA Recorder and backups are outside this budget.
 No embeddings, vector database or new model download is needed.
 
-Quality flags explicitly mark partial coverage, stale input and numerical
-claims not found in the supplied facts. Matching a number does not verify its
-meaning: `model_text_verified` remains false. The dashboard shows these flags
-beside the prose. Deterministic measured values remain the source of truth.
+Quality flags mark partial coverage and stale input. From beta 8, unsupported
+numeric claims cause the entire model response to be discarded and replaced
+by a clearly labelled report generated directly from the period facts.
+Percentages are checked against percentage fields, never unrelated temperatures
+or counters. Reports saved by older versions are also converted to these
+measurement-only reports; their timestamps, facts and learning history remain.
+The `quality.output_source` field distinguishes `ai` from `facts`. The action
+response includes this quality object. Rejected prose is not persisted.
+Matching numbers still do not prove that a sentence uses them correctly:
+`model_text_verified` remains false. Conservative checks can also reject an
+otherwise reasonable model response. This guard is not a fault diagnosis or
+a complete semantic fact checker.
 
 Optional notifications use one local HA persistent notification per plant,
 only for measured health flags after a report completes. Identical flags do
