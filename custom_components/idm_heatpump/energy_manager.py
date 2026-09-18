@@ -102,12 +102,13 @@ class EnergyManager:
         self._task = None
 
     def _surplus_kw(self) -> float | None:
-        surplus = self._power_kw(self._config.sources.get("pv_surplus"))
-        if surplus is not None:
-            return surplus
+        surplus_entity = self._config.sources.get("pv_surplus")
+        if surplus_entity:
+            # A configured net-surplus source is authoritative, including failure.
+            return self._power_kw(surplus_entity)
         production = self._power_kw(self._config.sources.get("pv_production"))
         consumption = self._power_kw(self._config.sources.get("house_consumption"))
-        if production is None or consumption is None:
+        if production is None or consumption is None or production < 0 or consumption < 0:
             return None
         return production - consumption
 
@@ -152,5 +153,8 @@ class EnergyManager:
 
     async def _run(self) -> None:
         while True:
-            await self.async_evaluate_once()
+            try:
+                await self.async_evaluate_once()
+            except Exception:
+                _LOGGER.warning("IDM energy manager evaluation failed", exc_info=True)
             await asyncio.sleep(30)

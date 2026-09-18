@@ -464,6 +464,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     def attach_energy_statistics(self, statistics: EnergyStatistics) -> None:
         """Attach persistent energy statistics before the first refresh."""
         self._energy_statistics = statistics
+        # The accumulator lives for this coordinator's lifetime, independently
+        # of whether its raw power entities remain enabled in the registry.
+        self.register_required_registers("energy_statistics", statistics.required_registers)
 
     @property
     def energy_statistics(self) -> EnergyStatistics | None:

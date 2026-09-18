@@ -71,6 +71,30 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
     return coord, client
 
 
+def test_energy_statistics_keep_power_registers_when_raw_entities_are_disabled(
+    mock_hass, mock_config_entry, monkeypatch
+):
+    from types import SimpleNamespace
+
+    from custom_components.idm_heatpump import polling_plan
+    from custom_components.idm_heatpump.energy_statistics import EnergyStatistics
+
+    coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+    coordinator.attach_energy_statistics(EnergyStatistics(mock_hass, "entry", 30))
+    monkeypatch.setattr(
+        polling_plan.er,
+        "async_entries_for_config_entry",
+        lambda *_: [SimpleNamespace(unique_id="entry_energy_electrical_total", disabled_by=None)],
+    )
+    required = polling_plan.build_required_register_names(
+        object(),
+        "entry",
+        {"power_consumption_hp", "thermal_power_flow_sensor", "unrelated"},
+        coordinator.externally_required_registers,
+    )
+    assert required == {"power_consumption_hp", "thermal_power_flow_sensor"}
+
+
 class TestNavigatorFamily:
     def test_returns_none_for_non_string(self):
         assert navigator_family(None) is None

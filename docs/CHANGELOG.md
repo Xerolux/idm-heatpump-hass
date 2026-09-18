@@ -15,6 +15,25 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2-b6] - 2026-09-18
+
+- Keep the power registers needed by energy statistics and the setpoint needed
+  by each active comfort schedule in the polling plan when their raw entities
+  are disabled. Withdraw the schedule's polling demand on shutdown.
+- Evaluate comfort schedules in Home Assistant's configured timezone, reject
+  timezone offsets in local schedule windows, and ignore non-finite, boolean
+  and unused current setpoints before recording a restore value or writing.
+- Fail closed when an explicitly selected PV surplus sensor is unavailable;
+  reject negative production and house-consumption inputs when deriving surplus.
+  Keep the energy-manager loop alive after a transient evaluation failure.
+- Reset today's estimated PV self-consumption at the local day boundary while
+  preserving the lifetime total and resetting the month only when it changes.
+- Preserve the replacement external-power debounce task when an older cancelled
+  task finishes, so rapid source updates remain coalesced and cancellable.
+- No dependency, Home Assistant baseline or entity-ID changes. This beta has
+  passed offline regression and quality checks; the read-only live observation
+  in the audit report used the preceding beta, not this candidate.
+
 ## [0.17.2-b5] - 2026-09-18
 
 - Place the optional Health Monitor, Comfort advice, energy statistics and

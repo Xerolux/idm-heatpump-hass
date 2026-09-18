@@ -45,6 +45,56 @@ async def test_invalid_or_missing_power_source_fails_closed():
     assert manager._ready() is False
 
 
+async def test_configured_surplus_failure_does_not_fall_back_to_gross_production():
+    manager = module.EnergyManager(
+        _hass({"sensor.net": _state("unavailable"), "sensor.pv": _state(5), "sensor.house": _state(1)}),
+        object(),
+        module.EnergyManagerConfig(
+            sources={"pv_surplus": "sensor.net", "pv_production": "sensor.pv", "house_consumption": "sensor.house"}
+        ),
+    )
+    assert manager._ready() is False
+
+
+@pytest.mark.parametrize("pv,house", [(-1, 0), (5, -1)])
+async def test_negative_production_or_consumption_cannot_trigger_boost(pv, house):
+    manager = module.EnergyManager(
+        _hass({"sensor.pv": _state(pv), "sensor.house": _state(house)}),
+        object(),
+        module.EnergyManagerConfig(sources={"pv_production": "sensor.pv", "house_consumption": "sensor.house"}),
+    )
+    assert manager._surplus_kw() is None
+    assert manager._ready() is False
+
+
+async def test_periodic_task_survives_transient_evaluation_failure(monkeypatch):
+    hass = _hass({})
+    hass.async_create_task = asyncio.create_task
+    manager = module.EnergyManager(hass, object(), module.EnergyManagerConfig(sources={}))
+    recovered = asyncio.Event()
+
+    async def evaluate():
+        if manager.async_evaluate_once.await_count == 1:
+            raise OSError("temporary storage failure")
+        recovered.set()
+        return False
+
+    original_sleep = asyncio.sleep
+
+    async def short_sleep(_delay):
+        await original_sleep(0)
+
+    monkeypatch.setattr(module.asyncio, "sleep", short_sleep)
+    manager.async_evaluate_once = AsyncMock(side_effect=evaluate)
+    task = manager.start()
+    try:
+        await asyncio.wait_for(recovered.wait(), timeout=0.5)
+        assert not task.done()
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
 async def test_ready_starts_existing_transactional_boost(monkeypatch):
     boost = SimpleNamespace(active=False, async_start=AsyncMock())
     monkeypatch.setattr(module, "async_get_dhw_boost_manager", AsyncMock(return_value=boost))
