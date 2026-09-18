@@ -386,3 +386,33 @@ async def test_partial_setup_cancels_optional_adviser():
     obj.async_stop = AsyncMock()
     await _async_cancel_entry_tasks(SimpleNamespace(ai_advisor=obj))
     obj.async_stop.assert_awaited_once()
+
+
+async def test_larger_model_request_keeps_bounded_http_deadlines():
+    async def post(session, url, payload, **kwargs):
+        assert session.timeout.total == 300
+        assert session.timeout.connect == 10
+        return LOCAL_MODEL if url.endswith("/api/show") else VALID_RESPONSE
+
+    with patch.object(ai, "_post", post):
+        assert await ai.async_local_report("http://127.0.0.1", "gemma3:12b", "de", {}) == "Local report"
+
+
+async def test_report_deadline_cancels_stalled_inference():
+    cancelled = asyncio.Event()
+
+    async def stalled(session, url, payload, **kwargs):
+        if url.endswith("/api/show"):
+            return LOCAL_MODEL
+        try:
+            await asyncio.Event().wait()
+        finally:
+            cancelled.set()
+
+    with (
+        patch.object(ai, "_REPORT_TIMEOUT", 0.01),
+        patch.object(ai, "_post", stalled),
+        pytest.raises(ai.AdvisorError, match="ai_unavailable"),
+    ):
+        await ai.async_local_report("http://127.0.0.1", "gemma3:12b", "de", {})
+    assert cancelled.is_set()
