@@ -33,15 +33,13 @@
 > [!TIP]
 > Neu hier? Beginne mit der **[Installationsanleitung][wiki-install]** oder öffne die **[durchsuchbare Dokumentation][wiki]**.
 
-## Experimenteller KI-Anlagenberater (Beta v0.17.2-b10)
+## Experimenteller KI-Anlagenberater (Beta v0.17.2-b11)
 
-Optionaler, standardmäßig ausgeschalteter Anlagenberater mit einem lokalen Ollama-Modell. Erst nach separater Aktivierung: Tages- und Wochenberichte, Erklärungen zu Diagnosehinweisen und zur Effizienz. Nur lesend, ohne Steuerungsrechte oder Sprachfreigabe. Unvollständige Daten werden ausgewiesen; KI-Aussagen können falsch sein. Ab v0.17.2-b7: eigenes KI-Untergerät, automatische Berichte, gespeicherte Ergebnisse, Dashboard-Export und optionales statistisches Lernen. Speichergrenze einstellbar von 5 bis 200 MiB (Standard 20 MiB); Modell, Recorder und Backups zählen separat.
+Optional und separat zu aktivieren. Tages-, Wochen-, Zustands- und Effizienzberichte entstehen standardmäßig direkt aus Messwerten: **ohne Modellaufruf, API-Schlüssel oder Inferenzkosten**. Fehlende Daten, beobachtete Energiemengen, einzelne Zustandsprüfungen und gelernte Vergleichswerte werden ausdrücklich unterschieden. Eigenes KI-Untergerät, Zeitplan, vier gespeicherte Berichte, Dashboard-Export und Speichergrenze von 5–200 MiB (Standard 20 MiB) bleiben verfügbar. Modell, Recorder und Backups zählen separat.
 
-**Empfohlen: eine vorhandene Home-Assistant-KI-Task auswählen.** Schlüssel und Modell bleiben in der Anbieterintegration; IDM liefert ausgewählte Messdaten, begrenzt die Aufträge und prüft die Berichte. Bestehende Ollama-Einstellungen bleiben erhalten.
+Freie KI-Erklärungen benötigen einen zusätzlichen ausdrücklichen Schalter. Sie können Messwerte trotz passender Zahlen falsch deuten; der Zahlencheck prüft keine Bedeutung. Für diesen optionalen Modus kann eine bestehende **Home-Assistant-KI-Task** verwendet werden. Lokales Ollama sowie direkte OpenAI-/Z.ai-Anbindungen bleiben wählbar. Cloud-/Task-Datenübertragung benötigt eine weitere Freigabe und ist pro UTC-Tag begrenzt (Standard 2, einstellbar 1–24). Lernen bleibt lokal. Kein Modus erhält Anlagensteuerung oder Sprachfreigaben.
 
-Ab v0.17.2-b10 sind OpenAI und Z.ai nach ausdrücklicher Cloud-Freigabe mit eigenen API-Schlüsseln wählbar. Standard bleibt lokales Ollama. Cloud-Anfragen sind pro UTC-Tag begrenzt (Standard 2, einstellbar 1–24); Lernen und Verlauf bleiben lokal. Anbietergebühren und deren Datenverarbeitung gelten. Einrichtung, Datenschutz und Grenzen stehen in der [Wiki](docs/wiki/Experimental-AI-Adviser.md#optional-cloud-reports-v0172-b10).
-
-[Einrichtung, Datenschutz und Grenzen](docs/wiki/Experimental-AI-Adviser.md).
+[Einrichtung, Berichtsmodi, Datenschutz, Dashboard und Grenzen](docs/wiki/Experimental-AI-Adviser.md).
 
 ## IDM Navigator mit Home Assistant verbinden
 

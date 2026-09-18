@@ -80,7 +80,7 @@ class IdmAiReportSensor(IdmCoordinatorEntityBase, SensorEntity):
 
 
 class IdmAiReportButton(IdmCoordinatorEntityBase, ButtonEntity):
-    """Ask the local model for a report; never control the heat pump."""
+    """Request a report; never control the heat pump."""
 
     _attr_icon = "mdi:robot-outline"
     _attr_entity_category = EntityCategory.DIAGNOSTIC

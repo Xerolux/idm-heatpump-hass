@@ -45,6 +45,7 @@ from .ai_advisor import (
     CONF_AI_NOTIFICATIONS,
     CONF_AI_SCHEDULE_REPORT,
     CONF_AI_STORAGE,
+    CONF_AI_UNVERIFIED_TEXT,
     CONF_AI_URL,
     DEFAULT_AI_MODEL,
     REPORT_TYPES,
@@ -696,6 +697,9 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Required(CONF_AI_ADVISOR, default=options.get(CONF_AI_ADVISOR, False)): BooleanSelector(
                             BooleanSelectorConfig()
                         ),
+                        vol.Required(
+                            CONF_AI_UNVERIFIED_TEXT, default=options.get(CONF_AI_UNVERIFIED_TEXT, False)
+                        ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(CONF_AI_PROVIDER, default=options.get(CONF_AI_PROVIDER, "ollama")): SelectSelector(
                             SelectSelectorConfig(
                                 options=["ha_task", "ollama", "zai", "openai"],
@@ -1737,7 +1741,9 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
                             user_input.pop(key, None)
                         elif user_input[key] == "-":
                             user_input[key] = ""
-                    if user_input.get(CONF_AI_PROVIDER, "ollama") == "ollama":
+                    if not {**self._options, **user_input}.get(CONF_AI_UNVERIFIED_TEXT, False):
+                        pass
+                    elif user_input.get(CONF_AI_PROVIDER, "ollama") == "ollama":
                         user_input[CONF_AI_URL] = validate_settings(
                             str(user_input.get(CONF_AI_URL, "")),
                             str(user_input.get(CONF_AI_MODEL, "")),

@@ -289,7 +289,8 @@ def test_fact_fallback_uses_period_energy_and_preserves_unknown_health():
     facts["period"].update(electrical_kwh_observed=0.015, thermal_kwh_observed=0.04, cop_observed=2.667)
     facts["current"]["total_electrical_kwh"] = 10000
     facts["current"]["connected"] = False
-    facts["health_checks_current"] = {"one": True, "two": None, "three": False}
+    facts["health_checks_current"] = {check.key: False for check in ai.HEALTH_CHECKS}
+    facts["health_checks_current"].update(health_low_cop=True, health_long_defrost=None)
     report, quality = ai.guard_report("Invented savings: 987654 kWh.", facts, "en")
     assert quality["output_source"] == "facts"
     assert "0.015 kWh" in report and "10000" not in report

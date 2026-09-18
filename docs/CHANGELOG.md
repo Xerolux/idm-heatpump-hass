@@ -13,6 +13,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.2-b11] - 2026-09-18
+
+- Default the experimental adviser to deterministic measurement reports. Free-form model explanations now require a separate explicit opt-in: matching numbers alone cannot verify their meaning. Default reports make no model request, need no provider credentials and consume no cloud reservation.
+- Show individual health-check states, current temperatures, observed period energy and coverage, previous-window summaries and learned COP comparisons with explicit missing-data labels. Never present lifetime counters as period consumption or a false health flag as unknown.
+- Replace stored model prose with measurement reports when free-form explanations are disabled, preserving facts, timestamps, schedules and local learning. Keep Ollama, HA AI Task and direct cloud configurations available for the optional explanation mode.
+- Fail closed on malformed cloud-budget storage and prevent a backward clock adjustment from resetting the daily request count. Update setup, privacy and report-mode documentation in both READMEs and the wiki.
+
 ## [0.17.2-b10] - 2026-09-18
 
 - Prefer an existing Home Assistant AI Task entity for report generation, reusing centrally managed models and credentials. Explicit entity selection, fresh task sessions and no HA control API prevent implicit provider changes and control access. Daily task reservations survive restarts; provider transport/token/billing settings remain provider-managed.

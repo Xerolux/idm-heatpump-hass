@@ -33,15 +33,13 @@
 > [!TIP]
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
-## Experimental AI plant adviser (v0.17.2-b10 beta)
+## Experimental AI plant adviser (v0.17.2-b11 beta)
 
-Optional, off by default and separately enabled: local Ollama reports for daily and weekly energy, current health context and efficiency. Read-only, with no control tools or voice exposure. Reports disclose incomplete history; generated explanations can be incorrect. Available in v0.17.2-b7: dedicated AI device, scheduled reports, persistent results, dashboard export and opt-in statistical learning. Storage is configurable from 5 to 200 MiB (default 20 MiB); model files, Recorder and backups are separate.
+Optional and separately enabled. By default, daily, weekly, health and efficiency reports are generated directly from measured facts: **no model call, API key or inference cost**. Reports distinguish missing data, observed period energy, individual health-check states and local statistical baselines. The dedicated AI device, optional schedule, four saved reports, dashboard export and 5–200 MiB storage limit (default 20 MiB) remain available. Model files, Recorder and backups are separate.
 
-**Recommended: select an existing Home Assistant AI Task entity.** Keys and models stay in the provider integration; IDM supplies selected facts, bounded task starts and report validation. Existing Ollama settings are preserved.
+Free-form AI explanations require an additional explicit switch. They can misinterpret facts even when their numbers match; the numeric guard cannot verify meaning. For this optional mode, an existing **Home Assistant AI Task entity** reuses provider-managed credentials and models. Local Ollama and direct OpenAI/Z.ai adapters are also available. Cloud/task data transfer requires separate consent and uses a persistent daily limit (default 2, range 1–24); local learning stays local. No mode has plant-control tools or enables voice exposure.
 
-From v0.17.2-b10, OpenAI and Z.ai are available through explicit cloud consent and separate API keys. Default: local Ollama. Cloud use has a persistent daily request limit (default 2, range 1–24); local learning stays local. Provider charges and data processing apply. See [cloud setup and privacy](docs/wiki/Experimental-AI-Adviser.md#optional-cloud-reports-v0172-b10).
-
-[Setup, privacy, dashboard example and limitations](docs/wiki/Experimental-AI-Adviser.md).
+[Setup, report modes, privacy, dashboard and limitations](docs/wiki/Experimental-AI-Adviser.md).
 
 ## IDM Navigator Home Assistant search guide
 
