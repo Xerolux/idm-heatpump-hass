@@ -15,6 +15,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+- Include the running Home Assistant Core and Python versions alongside all
+  direct integration dependency versions in the downloaded installer report,
+  diagnostics and API-version sensor.
 - Replace the long options form with a guided Standard, Advanced or Expert
   setup. Every depth offers all functions, then asks only the relevant
   follow-up questions at the chosen depth. Reconfigure can switch depth and

@@ -46,7 +46,7 @@ Assistant integration.
 
 | Entity | State | Attributes | Category |
 |--------|-------|------------|----------|
-| IDM Heatpump API version | Installed `idm-heatpump-api` version | `integration_version`, `modbus_connection_version`, `tmodbus_version` | Diagnostic |
+| IDM Heatpump API version | Installed `idm-heatpump-api` version | `integration_version`, `modbus_connection_version`, `tmodbus_version`, `home_assistant_version`, `python_version` | Diagnostic |
 
 This sensor remains available even if heat-pump polling fails, making it useful
 when collecting information for a bug report. The direct socket runtime is

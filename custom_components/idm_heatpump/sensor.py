@@ -480,6 +480,8 @@ class IdmApiVersionSensor(IdmCoordinatorEntityBase, SensorEntity):
             "integration_version": self._versions.integration,
             "modbus_connection_version": self._versions.modbus_connection,
             "tmodbus_version": self._versions.tmodbus,
+            "home_assistant_version": self._versions.home_assistant,
+            "python_version": self._versions.python,
         }
 
 

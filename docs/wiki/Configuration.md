@@ -361,9 +361,11 @@ The integration creates a diagnostic sensor named **IDM Heatpump API version**
 - `integration_version`: installed custom integration version
 - `modbus_connection_version`: installed connection-library version
 - `tmodbus_version`: installed direct socket-backend version
+- `home_assistant_version`: installed Home Assistant Core version
+- `python_version`: Python runtime version
 
-The same version set is included in downloaded diagnostics and written to the
-Home Assistant log when the config entry starts. This is the authoritative way
+The same version set is included in downloaded diagnostics. The integration and
+its direct dependency versions are also logged when the entry starts. This is the authoritative way
 to check the runtime; the version pinned in
 `custom_components/idm_heatpump/manifest.json` describes what
 should be installed, while the sensor shows what is actually loaded.

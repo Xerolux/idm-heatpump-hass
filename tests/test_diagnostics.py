@@ -97,6 +97,8 @@ class TestDiagnostics:
         assert isinstance(data["versions"]["idm_heatpump_api"], str)
         assert isinstance(data["versions"]["modbus_connection"], str)
         assert isinstance(data["versions"]["tmodbus"], str)
+        assert isinstance(data["versions"]["home_assistant"], str)
+        assert isinstance(data["versions"]["python"], str)
         assert data["web_supplement"] == {
             "enabled": True,
             "available": True,

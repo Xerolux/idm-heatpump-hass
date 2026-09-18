@@ -17,6 +17,7 @@ def test_runtime_versions_exposes_integration_and_dependencies() -> None:
             "idm-heatpump-api": "0.7.5",
             "modbus-connection": "4.0.0a3",
             "tmodbus": "0.5.0",
+            "homeassistant": "2026.9.1",
         }[name],
     ):
         versions = runtime_versions("0.8.1-beta.23")
@@ -25,6 +26,8 @@ def test_runtime_versions_exposes_integration_and_dependencies() -> None:
     assert versions.api == "0.7.5"
     assert versions.modbus_connection == "4.0.0a3"
     assert versions.tmodbus == "0.5.0"
+    assert versions.home_assistant == "2026.9.1"
+    assert versions.python
 
 
 def test_missing_distribution_returns_unknown() -> None:
