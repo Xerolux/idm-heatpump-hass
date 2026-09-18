@@ -38,13 +38,17 @@ Reconfigure > Features. Reconfigure > Connection changes the host, web access
 and Modbus proxy. Existing options remain in place if their function was not
 selected in the wizard.
 
+When newly enabling beta features, an additional acknowledgement page appears
+before saving. It is separate from the ownership confirmation required by the
+automatic DHW manager and comfort schedule.
+
 ### Feature profile
 
 The **Feature profile** controls optional IDM-specific entities:
 
 | Profile | Enabled functionality |
 |---------|-----------------------|
-| `iDM Smart Energy & Comfort` | Calculated COP and deviation sensors, compressor cycle analysis, short-cycle detection and safe DHW boost controls |
+| `iDM Smart Energy & Comfort` | Calculated COP and deviation sensors, compressor cycle analysis, persistent energy/COP/cost statistics, short-cycle detection and DHW boost controls; optional health and comfort features |
 | `Vanilla` | Core IDM register entities, climate controls, water heater, diagnostics and configured web data |
 
 The Smart profile is enabled by default to preserve the complete existing
@@ -67,27 +71,55 @@ logical groups: **iDM Analytics**, **iDM Health Monitor**, and **iDM Comfort**.
 Existing controller, heating-circuit, warm-water and web entities remain in
 their existing groups and retain their entity IDs.
 
+### External power source mapping and forwarding
+
+The **External power forwarding** category maps existing Home Assistant sensors
+to PV surplus, PV production, house consumption, battery charge/discharge,
+battery SOC and electric-heater power. The forwarding switch is off by default.
+When enabled, valid values are written to the corresponding IDM GLT registers
+on source changes and periodically (default: 60 seconds).
+
+Power sensors must report W, kW or MW; forwarding converts to kW. Battery SOC
+must be a whole percentage from 0 to 100. The battery sign can be kept or
+inverted to match the source convention. Invalid or out-of-range values are
+skipped; an unavailable source does not write a fallback zero. Blank fields
+leave their registers untouched. Do not have another energy manager write the
+same register at the same time.
+
+The saved mapping also supplies the optional PV estimate and automatic DHW
+manager. They can read an existing mapping while forwarding is off. The
+current guided wizard shows the mapping page only when forwarding is enabled;
+it does not yet provide a separate source-selection page for read-only use.
+See [external power setup](Installation-and-Setup#automatic-external-power-forwarding-from-home-assistant)
+for controller preparation and field mappings.
+
 ### Optional PV energy manager
 
 The **automatic PV surplus DHW charging** option is off by default. It only
 starts the existing safe DHW boost when the selected PV surplus is available.
 It requires the external power source mapping and the explicit confirmation
-that Home Assistant is the only DHW controller. This confirmation prevents
-accidental parallel DHW control by Smartfox, openWB or another system.
+that Home Assistant is the only DHW controller. This is an ownership
+declaration, not automatic detection of Smartfox, openWB or another controller.
+Disable competing DHW control before confirming it.
 
 Missing, unavailable or invalid source values fail closed. The manager does not
 write GLT energy registers and does not alter normal heating, the heating curve
 or the electric heater. Tariff, weather and heating preheat controls are not
-enabled by this option. Tariff optimisation is not enabled because it requires
-an external tariff source.
+enabled by this option. A selected tariff sensor changes cost accounting only;
+automatic price-based heating control is not implemented. See
+[Smart Energy & Comfort](Smart-Energy-and-Comfort#optional-pv-surplus-dhw-automation)
+for source precedence, defaults and the behavior of an already running boost.
 
 ### Optional comfort schedule and advisers
 
 The comfort schedule is disabled by default and requires the explicit
 single-controller confirmation. It writes only the selected circuit's room
 temperature target inside the configured daily window and restores the prior
-target afterwards. A manual change made while the schedule is active is left
-untouched.
+target afterwards if the current value still matches the scheduled target.
+A manual change made while the schedule is active is left untouched. Advanced
+mode offers up to 16 daily windows across configured circuits, including
+overnight windows, in Home Assistant's configured timezone. See
+[schedule examples](Smart-Energy-and-Comfort#comfort-schedule-and-read-only-advisers).
 
 The heating-curve assistant and weather-preheat adviser are read-only. They
 publish recommendations without changing any IDM register. The weather adviser
@@ -286,7 +318,9 @@ For each room in each zone, you can assign a custom name. These names are used a
 1. Go to **Settings → Devices & Services**
 2. Click **IDM Heatpump**
 3. Click **Reconfigure**
-4. Choose one of the two actions:
+4. Choose the action you need:
+   - **Features** opens Standard, Advanced or Expert setup to change selected
+     feature settings without changing unselected categories.
    - **Change connection settings** updates host, port, slave ID, local web PIN,
      and proxy settings after validating them.
    - **Test current connection** runs a read-only check against the saved

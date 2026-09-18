@@ -23,7 +23,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Integration version** | 0.17.0-beta.2 |
+| **Documentation version** | [0.17.2-b6 beta](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2-b6); [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Supported/tested HA baseline** | 2026.8.1 |
 | **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection==4.12.1 |
@@ -36,6 +36,29 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 ---
 
 ## Core Features
+
+### New in the 0.17.2 beta series
+
+The following features are included in **0.17.2-b6**. They are available in the
+beta channel; a stable installation may not yet offer every option described
+here. See [Installation & Setup](Installation-and-Setup#choosing-stable-or-beta).
+
+| Feature | What you can do | Device writes |
+|---------|-----------------|---------------|
+| Standard / Advanced / Expert setup | Choose the amount of configuration detail; all three modes offer the same functions | Selecting a mode does not write registers |
+| Smart or Vanilla profile | Keep the core controller entities, or add energy and operating analysis with Smart | Analysis is read-only; boost controls write when used |
+| Persistent energy statistics | Track electrical and thermal energy, COP, estimated costs, CO₂ and PV use | None |
+| PV surplus DHW manager | Start a bounded hot-water boost using selected HA power and optional battery sensors | Optional; off by default, exclusive-control confirmation required |
+| Comfort schedules | Apply daily room targets to selected circuits, with up to 16 windows and conditional restore | Optional; off by default, exclusive-control confirmation required |
+| Heating and weather advice | Read flow-temperature hints and a six-hour weather recommendation | None |
+| Health Monitor and installer report | Inspect eight diagnostic checks, operation history and redacted diagnostics | None |
+| Feature device groups | Find Analytics, Health Monitor, Comfort and Diagnostics separately | None; entity IDs remain unchanged |
+
+Start with [iDM Smart Energy & Comfort](Smart-Energy-and-Comfort) for activation,
+examples, defaults and limitations. Beta 6 additionally fixes schedule timezone
+handling, required-register polling, daily PV resets and invalid-source handling.
+
+### Controller integration
 
 - **System Monitoring**: Flow, return, hot water, outdoor temperature, pressure, flow rate
 - **Heating Circuits A–G**: Up to 7 heating circuits with individual setpoint and mode control
@@ -76,7 +99,9 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 3. [Entities](Entities)
 
 ### I want to automate
-1. [Services Reference](Services)
+1. [iDM Smart Energy & Comfort](Smart-Energy-and-Comfort)
+2. [Configuration and source mappings](Configuration)
+3. [Services Reference](Services)
 
 ### I have a problem
 1. [Troubleshooting](Troubleshooting)
@@ -99,10 +124,10 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 - **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers tracked and protected
 - **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.12.1` / `tmodbus[async-serial]==0.6.2` pair; `4.12.1` is the connection-library version, not the IDM integration version
-- **API boundary**: `idm-heatpump-api[web]==2.1.2` provides batching, decoding and write safety. Since that release the API owns its own exception hierarchy, so pymodbus is no longer installed at all and the direct socket is tmodbus-backed
+- **API boundary**: `idm-heatpump-api[web]==2.1.2` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
 - **Auto-recovery**: API retry/backoff plus reconnect-on-demand in the tmodbus-backed connection
 - **Connection ownership**: Each config entry owns one socket and reports `supports_shared_connection: false`; Home Assistant central cross-entry sharing is not currently available
-- **Validation status**: The adapter is implemented and automatically tested; read-only validation of the new transport on real Navigator hardware remains pending
+- **Validation status**: Automated checks and read-only Navigator 10 observations are available; they do not replace candidate-specific clean-install, long-duration and broader model validation. See [Stability & Release Readiness](Stability-and-Release-Readiness).
 - **Navigator 10**: Heat sink sensors, flow rate (Sieb monitoring), groundwater temps, booster A/B
 - **Web supplement**: Setup tests both supported local protocols when needed, stores the successful Navigator family, reuses its session and retries only that same protocol during normal runtime recovery
 - **Room forwarding**: Optional write path with state-change updates, periodic refresh, tolerance and range checks

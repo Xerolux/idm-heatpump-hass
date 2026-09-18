@@ -18,6 +18,15 @@ The integration uses Home Assistant's **DataUpdateCoordinator**:
   after Modbus polling, so both protocols do not hit the controller at exactly
   the same time.
 
+## Entity-aware polling and Smart consumers
+
+The polling plan keeps registers needed by enabled entities and declared
+background consumers. In 0.17.2-b6, Smart energy statistics retain both power
+inputs even when their raw sensors are disabled. An active comfort schedule
+also retains its circuit setpoint and releases that demand when stopped.
+Disabling a raw entity therefore does not disable an active automation or the
+energy accumulator; turn off the corresponding feature instead.
+
 ## Configured Interval
 
 The polling interval is **freely configurable** (5–300 seconds, default: 10 seconds):

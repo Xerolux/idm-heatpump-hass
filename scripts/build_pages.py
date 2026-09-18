@@ -185,6 +185,36 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
 
 
 HOME_TRANSLATIONS = {
+    "Neu in der 0.17.2-Betaserie": "New in the 0.17.2 beta series",
+    "Energie verstehen, Komfort planen und Auffälligkeiten erkennen. Wähle Smart für zusätzliche Auswertungen oder Vanilla für die Kernfunktionen.": "Understand energy use, plan comfort and spot unusual behavior. Choose Smart for additional analysis or Vanilla for core features.",
+    "Energie &amp; Kosten": "Energy &amp; costs",
+    "Strom, Wärme und COP als Gesamt-, Tages- und Monatswerte. Dazu geschätzte Kosten, CO₂ und PV-Nutzung, auch über Neustarts hinweg.": "Electrical energy, heat and COP as lifetime, daily and monthly values. Add estimated costs, CO₂ and PV use, retained across restarts.",
+    "Optionaler Tarifsensor": "Optional tariff sensor",
+    "Eigene Analytics-Gruppe": "Separate Analytics group",
+    "Nur Auswertung": "Analysis only",
+    "Energiestatistik verstehen →": "Understand energy statistics →",
+    "PV-Warmwasser &amp; Zeitpläne": "PV hot water &amp; schedules",
+    "Optional Warmwasser mit PV-Überschuss laden oder Raum-Sollwerte in bis zu 16 täglichen Zeitfenstern setzen. Beides ist standardmäßig aus und erfordert eine Bestätigung zur alleinigen Steuerung.": "Optionally charge hot water using PV surplus or set room targets in up to 16 daily windows. Both are off by default and require confirmation of exclusive control.",
+    "HA-Zeitzone": "HA timezone",
+    "Bedingte Rückstellung": "Conditional restore",
+    "Schreibende Funktionen": "Write-enabled features",
+    "Automationen einrichten →": "Configure automations →",
+    "Health Monitor &amp; Beratung": "Health Monitor &amp; advice",
+    "Acht Diagnoseprüfungen, Hinweise zu Heizkreis und Wetter sowie ein Diagnoseexport für den Fachbetrieb. Empfehlungen verändern keine Sollwerte und ersetzen keine Fehlerdiagnose.": "Eight diagnostic checks, heating and weather hints, and a diagnostic export for your installer. Recommendations do not change setpoints or replace fault diagnosis.",
+    "Eigene Health- und Comfort-Gruppen": "Separate Health and Comfort groups",
+    "Nur lesend": "Read-only",
+    "Diagnosefunktionen ansehen →": "Explore diagnostics →",
+    "Geführte Einrichtung": "Guided setup",
+    "Standard, Advanced und Expert bieten dieselben Funktionen mit unterschiedlicher Detailtiefe. Wähle die gewünschten Kategorien und behalte die übrigen Einstellungen.": "Standard, Advanced and Expert offer the same features at different levels of detail. Choose the categories you need and retain the other settings.",
+    "Smart oder Vanilla": "Smart or Vanilla",
+    "Gezielte Sensorauswahl": "Choose relevant sensors",
+    "Bestehende IDs bleiben erhalten": "Existing IDs are retained",
+    "Konfiguration kennenlernen →": "Explore configuration →",
+    "Diese Funktionen sind im Beta-Kanal verfügbar. Die Dokumentation beschreibt v0.17.2-b6; eine stabile Installation kann weniger Optionen anbieten.": "These features are available in the beta channel. This documentation covers v0.17.2-b6; a stable installation may offer fewer options.",
+    "Smart Energy &amp; Comfort entdecken": "Explore Smart Energy &amp; Comfort",
+    "Beta installieren": "Install the beta",
+    "Beta-Version": "Beta version",
+    "Vorabversion": "Prerelease version",
     "Zum Inhalt springen": "Skip to content",
     "IDM Heatpump Startseite": "IDM Heatpump home page",
     "Hauptnavigation": "Main navigation",
@@ -519,6 +549,20 @@ def _metadata() -> tuple[str, str, str]:
 
 def _inject_metadata(document: str) -> str:
     integration_version, api_version, minimum_ha_version = _metadata()
+    prerelease = "-" in integration_version
+    beta = bool(re.search(r"-(?:beta|b\d)", integration_version))
+    release_label = "Beta-Version" if beta else "Vorabversion" if prerelease else "Aktuelle stabile Version"
+    release_channel = "Beta" if beta else "Prerelease" if prerelease else "Stable"
+    document = _replace_element_text(document, "data-release-label", release_label, required=False)
+    document = _replace_element_text(document, "data-release-channel", release_channel, required=False)
+    if "data-release-download" in document:
+        document = _replace_tag_attribute(
+            document,
+            "data-release-download",
+            None,
+            "href",
+            f"https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v{integration_version}",
+        )
     document = document.replace("__INTEGRATION_VERSION__", integration_version)
     document = document.replace("__MINIMUM_HA_VERSION__", minimum_ha_version)
     document = _replace_element_text(document, "data-integration-version", f"v{integration_version}")

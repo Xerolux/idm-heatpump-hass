@@ -899,6 +899,29 @@ html[data-theme="light"] .moon-icon {
   gap: 16px;
 }
 
+#smart .feature-card {
+  min-height: 0;
+}
+
+#smart .feature-number {
+  position: static;
+  display: block;
+  margin-bottom: 12px;
+  font-size: 24px;
+}
+
+#smart .feature-card > a {
+  display: inline-block;
+  margin-top: 20px;
+}
+
+#smart .release-note {
+  margin: 24px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
 .feature-card {
   position: relative;
   min-height: 430px;

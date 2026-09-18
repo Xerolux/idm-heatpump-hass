@@ -6,6 +6,23 @@ a normal changelog.
 
 ## Current Status
 
+The published stable channel is **0.17.1**; the current feature beta is
+[0.17.2-b6](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2-b6).
+The beta adds guided setup, Smart energy statistics, optional PV DHW automation,
+comfort schedules, advisers, Health Monitor and feature device grouping.
+See [Smart Energy & Comfort](Smart-Energy-and-Comfort).
+
+For beta 6, automated CI, HACS, Hassfest, security checks, release packaging,
+published checksum verification and package-to-tag comparison passed. The
+read-only running-plant observation in the
+[September 18 audit](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/dev/post-release-audit-2026-09-18.md)
+used beta 5. It is not hardware validation or a seven-day soak of beta 6.
+The [candidate record](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.17.2-b6.md)
+records the pre-publication state; clean-install, candidate-specific hardware
+and long-duration verification remain outstanding for stable promotion.
+
+## Earlier release decisions
+
 **`0.17.0`** is the stable cut of the line that opened with `0.17.0-beta.1`
 on 2026-09-09. It carries the full code-audit result, the model-reconciliation
 corrections of `beta.3` and the Navigator 1.0/1.7 protocol family of
