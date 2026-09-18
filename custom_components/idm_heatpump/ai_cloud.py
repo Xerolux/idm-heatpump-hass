@@ -11,7 +11,6 @@ from typing import Any
 import aiohttp
 from homeassistant.components import ai_task
 from homeassistant.core import HomeAssistant
-from homeassistant.exceptions import HomeAssistantError
 
 from .health_monitor import HEALTH_CHECKS
 
@@ -193,9 +192,9 @@ async def async_ha_task_report(
                 llm_api=None,
                 attachments=None,
             )
-    except (HomeAssistantError, TimeoutError, KeyError):
+    except Exception:  # noqa: BLE001 - provider exceptions can contain credentials; cancellation still propagates
         raise AdvisorError("ai_unavailable") from None
-    text = result.data
+    text = getattr(result, "data", None)
     if not isinstance(text, str) or not text.strip() or len(text) > 6000:
         raise AdvisorError("ai_invalid_response")
     return text.strip()

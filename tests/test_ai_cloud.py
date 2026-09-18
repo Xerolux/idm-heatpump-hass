@@ -62,7 +62,9 @@ async def test_native_task_validates_returned_text(data):
         await cloud.async_ha_task_report(MagicMock(), task_options(), "en", {})
 
 
-@pytest.mark.parametrize("error", [HomeAssistantError("SECRET"), TimeoutError(), KeyError("not_loaded")])
+@pytest.mark.parametrize(
+    "error", [HomeAssistantError("SECRET"), TimeoutError(), KeyError("not_loaded"), ValueError("SECRET provider error")]
+)
 async def test_native_task_errors_are_sanitized(error):
     with (
         patch.object(cloud.ai_task, "async_generate_data", AsyncMock(side_effect=error)),
