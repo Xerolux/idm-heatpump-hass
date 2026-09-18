@@ -672,7 +672,11 @@ async def _handle_export_ai_dashboard(hass: HomeAssistant, call: ServiceCall) ->
         content = "{% set r = (state_attr('" + report + "', 'reports') or {}).get('" + kind + "', {}) %}\n"
         content += "{{ r.get('generated_at', 'No report yet') | e }}\n\n{{ r.get('report', '') | e }}\n\n"
         content += "Observed coverage: {{ r.get('facts', {}).get('period', {}).get('energy_counter_coverage_percent', '—') }} %\n\n"
-        content += "Quality: {{ r.get('quality', {}) | to_json | e }}"
+        content += "{% set q = r.get('quality', {}) %}\n"
+        content += "{% if q.get('stale_input') %}⚠ Input measurements were unavailable or stale.\n{% endif %}"
+        content += "{% if q.get('partial_coverage') %}⚠ Incomplete observation period; totals are partial.\n{% endif %}"
+        content += "{% if q.get('unsupported_numbers') %}⚠ Check unsupported numerical claims: {{ q.unsupported_numbers | e }}\n{% endif %}"
+        content += "Model explanations are experimental and have not been verified."
         cards.append({"type": "markdown", "title": kind.capitalize(), "content": content})
     for key in ("ai_coverage", "ai_observed_cop", "ai_storage_used"):
         if metric := entity(key):
