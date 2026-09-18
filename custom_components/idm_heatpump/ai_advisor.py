@@ -23,7 +23,9 @@ from .ai_cloud import (
     CONF_AI_CLOUD_LIMIT,
     CONF_AI_CLOUD_MODEL,
     CONF_AI_PROVIDER,
+    CONF_AI_TASK_ENTITY,
     async_cloud_report,
+    async_ha_task_report,
     validate_cloud,
 )
 from .ai_cloud import (
@@ -642,16 +644,26 @@ class AiAdvisor:
                     await self._store.async_save(self.storage_payload())
                 except Exception:  # noqa: BLE001 - never spend without a durable reservation
                     raise AdvisorError("ai_cloud_budget_unavailable") from None
-                report = await async_cloud_report(self._options, str(self._options.get(CONF_AI_LANGUAGE, "de")), facts)
+                if provider == "ha_task":
+                    report = await async_ha_task_report(
+                        self._hass, self._options, str(self._options.get(CONF_AI_LANGUAGE, "de")), facts
+                    )
+                else:
+                    report = await async_cloud_report(
+                        self._options, str(self._options.get(CONF_AI_LANGUAGE, "de")), facts
+                    )
             report, quality = guard_report(report, facts, str(self._options.get(CONF_AI_LANGUAGE, "de")))
             self.report, self.facts, self.report_type = report, facts, report_type
             self.generated_at = datetime.now(UTC).isoformat()
             self.status = "ready"
             self.reports[report_type] = {
                 "provider": provider,
+                "ai_task_entity": self._options.get(CONF_AI_TASK_ENTITY) if provider == "ha_task" else None,
                 "model": self._options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)
                 if provider == "ollama"
-                else self._options.get(CONF_AI_CLOUD_MODEL),
+                else self._options.get(CONF_AI_CLOUD_MODEL)
+                if provider != "ha_task"
+                else None,
                 "report": report,
                 "generated_at": self.generated_at,
                 "facts": facts,

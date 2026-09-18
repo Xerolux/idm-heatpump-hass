@@ -490,11 +490,12 @@
           "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
           "ai_schedule_report": "Automatisch erzeugte Berichtsart",
           "ai_provider": "Berichtsanbieter (experimentell)",
-          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten Cloud-Anbieter senden erlauben",
+          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten KI-Anbieter senden erlauben (HA AI Task / Cloud)",
           "ai_cloud_model": "Cloud-Modell-ID (für Cloud-Berichte erforderlich)",
           "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
-          "ai_cloud_daily_limit": "Maximale Cloud-Anfragen pro UTC-Tag (je Integrationseintrag)"
+          "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
+          "ai_task_entity": "KI-Task-Entität aus Home Assistant"
         },
         "data_description": {
           "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
@@ -571,11 +572,12 @@
           "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
           "ai_schedule_report": "Automatisch erzeugte Berichtsart",
           "ai_provider": "Berichtsanbieter (experimentell)",
-          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten Cloud-Anbieter senden erlauben",
+          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten KI-Anbieter senden erlauben (HA AI Task / Cloud)",
           "ai_cloud_model": "Cloud-Modell-ID (für Cloud-Berichte erforderlich)",
           "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
-          "ai_cloud_daily_limit": "Maximale Cloud-Anfragen pro UTC-Tag (je Integrationseintrag)"
+          "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
+          "ai_task_entity": "KI-Task-Entität aus Home Assistant"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -677,7 +679,8 @@
       "ai_cloud_auth_failed": "Der Anbieter hat die Anmeldung oder den Zugriff abgelehnt. API-Schlüssel und Modellzugriff prüfen.",
       "ai_cloud_rate_limited": "Kontingent oder Anfragelimit des Anbieters erreicht. Kein automatischer Wiederholungsversuch.",
       "ai_cloud_budget_unavailable": "Das Anfragelimit konnte nicht sicher geladen oder gespeichert werden. Keine Cloud-Anfrage gesendet.",
-      "ai_cloud_daily_limit_reached": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht."
+      "ai_cloud_daily_limit_reached": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht.",
+      "ai_task_entity_required": "Eine vorhandene ai_task-Entität zur Datengenerierung auswählen."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -1066,11 +1069,12 @@
           "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
           "ai_schedule_report": "Automatisch erzeugte Berichtsart",
           "ai_provider": "Berichtsanbieter (experimentell)",
-          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten Cloud-Anbieter senden erlauben",
+          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten KI-Anbieter senden erlauben (HA AI Task / Cloud)",
           "ai_cloud_model": "Cloud-Modell-ID (für Cloud-Berichte erforderlich)",
           "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
-          "ai_cloud_daily_limit": "Maximale Cloud-Anfragen pro UTC-Tag (je Integrationseintrag)"
+          "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
+          "ai_task_entity": "KI-Task-Entität aus Home Assistant"
         },
         "data_description": {
           "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
@@ -1147,11 +1151,12 @@
           "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
           "ai_schedule_report": "Automatisch erzeugte Berichtsart",
           "ai_provider": "Berichtsanbieter (experimentell)",
-          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten Cloud-Anbieter senden erlauben",
+          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten KI-Anbieter senden erlauben (HA AI Task / Cloud)",
           "ai_cloud_model": "Cloud-Modell-ID (für Cloud-Berichte erforderlich)",
           "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
-          "ai_cloud_daily_limit": "Maximale Cloud-Anfragen pro UTC-Tag (je Integrationseintrag)"
+          "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
+          "ai_task_entity": "KI-Task-Entität aus Home Assistant"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1239,7 +1244,8 @@
       "ai_cloud_auth_failed": "Der Anbieter hat die Anmeldung oder den Zugriff abgelehnt. API-Schlüssel und Modellzugriff prüfen.",
       "ai_cloud_rate_limited": "Kontingent oder Anfragelimit des Anbieters erreicht. Kein automatischer Wiederholungsversuch.",
       "ai_cloud_budget_unavailable": "Das Anfragelimit konnte nicht sicher geladen oder gespeichert werden. Keine Cloud-Anfrage gesendet.",
-      "ai_cloud_daily_limit_reached": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht."
+      "ai_cloud_daily_limit_reached": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht.",
+      "ai_task_entity_required": "Eine vorhandene ai_task-Entität zur Datengenerierung auswählen."
     }
   },
   "entity": {
@@ -2441,6 +2447,14 @@
         "modbus": "Modbus-Verbindung",
         "ai_advisor": "KI-Anlagenberater (experimentell, nur lesend)"
       }
+    },
+    "ai_provider": {
+      "options": {
+        "ha_task": "Home Assistant AI Task (empfohlen)",
+        "ollama": "Ollama (lokal)",
+        "zai": "Z.ai (direkt)",
+        "openai": "OpenAI (direkt, alternativ)"
+      }
     }
   },
   "exceptions": {
@@ -2611,6 +2625,9 @@
     },
     "ai_cloud_daily_limit_reached": {
       "message": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht."
+    },
+    "ai_task_entity_required": {
+      "message": "Eine vorhandene ai_task-Entität zur Datengenerierung auswählen."
     }
   },
   "issues": {

@@ -72,7 +72,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── energy_statistics_entities.py  # Home Assistant entities for energy statistics
 │   ├── health_monitor.py              # Optional read-only health checks and report
 │   ├── service_report.py              # Redacted installer report in diagnostics
-│   ├── ai_cloud.py                   # Explicit opt-in cloud report providers and privacy boundary
+│   ├── ai_cloud.py                   # HA AI Task and opt-in cloud reports with a privacy boundary
 │   ├── ai_learning.py                # Bounded local statistical baselines
 │   ├── ai_advisor.py                # Experimental read-only report generation and bounded history
 │   ├── ai_advisor_entities.py       # AI report sensor and explicit report buttons

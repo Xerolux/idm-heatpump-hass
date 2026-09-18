@@ -9,10 +9,14 @@ import re
 from typing import Any
 
 import aiohttp
+from homeassistant.components import ai_task
+from homeassistant.core import HomeAssistant
+from homeassistant.exceptions import HomeAssistantError
 
 from .health_monitor import HEALTH_CHECKS
 
 CONF_AI_PROVIDER = "ai_provider"
+CONF_AI_TASK_ENTITY = "ai_task_entity"
 CONF_AI_CLOUD_CONSENT = "ai_cloud_consent"
 CONF_AI_CLOUD_MODEL = "ai_cloud_model"
 CONF_AI_OPENAI_KEY = "ai_openai_key"
@@ -21,6 +25,7 @@ CONF_AI_CLOUD_LIMIT = "ai_cloud_daily_limit"
 CLOUD_KEYS = (CONF_AI_OPENAI_KEY, CONF_AI_ZAI_KEY)
 CLOUD_DEFAULTS: dict[str, Any] = {
     CONF_AI_PROVIDER: "ollama",
+    CONF_AI_TASK_ENTITY: "",
     CONF_AI_CLOUD_CONSENT: False,
     CONF_AI_CLOUD_MODEL: "",
     CONF_AI_OPENAI_KEY: "",
@@ -41,14 +46,19 @@ class AdvisorError(Exception):
 def validate_cloud(options: dict[str, Any], *, require_key: bool = True) -> None:
     """Validate again at the network boundary, independently of the form."""
     provider = options.get(CONF_AI_PROVIDER, "ollama")
-    if provider not in ENDPOINTS or options.get(CONF_AI_CLOUD_CONSENT) is not True:
+    if provider not in (*ENDPOINTS, "ha_task") or options.get(CONF_AI_CLOUD_CONSENT) is not True:
         raise AdvisorError("ai_cloud_consent_required")
-    model = options.get(CONF_AI_CLOUD_MODEL)
-    if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}", model):
-        raise AdvisorError("invalid_ai_model")
     limit = options.get(CONF_AI_CLOUD_LIMIT, 2)
     if isinstance(limit, bool) or not isinstance(limit, (int, float)) or not 1 <= limit <= 24 or limit != int(limit):
         raise AdvisorError("ai_cloud_invalid_limit")
+    if provider == "ha_task":
+        entity = options.get(CONF_AI_TASK_ENTITY)
+        if not isinstance(entity, str) or not re.fullmatch(r"ai_task\.[a-z0-9_]+", entity):
+            raise AdvisorError("ai_task_entity_required")
+        return
+    model = options.get(CONF_AI_CLOUD_MODEL)
+    if not isinstance(model, str) or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.:-]{0,127}", model):
+        raise AdvisorError("invalid_ai_model")
     key = options.get(CONF_AI_OPENAI_KEY if provider == "openai" else CONF_AI_ZAI_KEY, "")
     if (
         not isinstance(key, str)
@@ -147,13 +157,10 @@ def parse_cloud_response(provider: str, data: dict[str, Any]) -> str:
         raise AdvisorError("ai_invalid_response") from None
 
 
-async def async_cloud_report(options: dict[str, Any], language: str, facts: dict[str, Any]) -> str:
-    """One request, no retries, redirects, tools, conversation or local history."""
-    validate_cloud(options)
+def report_input(language: str, facts: dict[str, Any]) -> tuple[str, str]:
+    """Shared read-only instructions and bounded, selected measurement facts."""
     if language not in ("de", "en"):
         raise AdvisorError("invalid_ai_language")
-    provider = str(options[CONF_AI_PROVIDER])
-    key = options[CONF_AI_OPENAI_KEY if provider == "openai" else CONF_AI_ZAI_KEY]
     prompt = (
         f"Write an experimental read-only heat-pump report in {'German' if language == 'de' else 'English'}, at most 250 words. "
         "Use only supplied facts. Separate observations, possible explanations and missing evidence. "
@@ -167,6 +174,39 @@ async def async_cloud_report(options: dict[str, Any], language: str, facts: dict
     content = json.dumps(cloud_facts(facts), allow_nan=False)
     if len(content.encode()) > 12000:
         raise AdvisorError("ai_invalid_response")
+    return prompt, content
+
+
+async def async_ha_task_report(
+    hass: HomeAssistant, options: dict[str, Any], language: str, facts: dict[str, Any]
+) -> str:
+    """Use HA's native data task with a fresh session and no HA control API."""
+    validate_cloud(options)
+    prompt, content = report_input(language, facts)
+    try:
+        async with asyncio.timeout(120):
+            result = await ai_task.async_generate_data(
+                hass,
+                task_name="IDM experimental read-only report",
+                entity_id=options[CONF_AI_TASK_ENTITY],
+                instructions=prompt + "\n\n" + content,
+                llm_api=None,
+                attachments=None,
+            )
+    except (HomeAssistantError, TimeoutError, KeyError):
+        raise AdvisorError("ai_unavailable") from None
+    text = result.data
+    if not isinstance(text, str) or not text.strip() or len(text) > 6000:
+        raise AdvisorError("ai_invalid_response")
+    return text.strip()
+
+
+async def async_cloud_report(options: dict[str, Any], language: str, facts: dict[str, Any]) -> str:
+    """One request, no retries, redirects, tools, conversation or local history."""
+    validate_cloud(options)
+    prompt, content = report_input(language, facts)
+    provider = str(options[CONF_AI_PROVIDER])
+    key = options[CONF_AI_OPENAI_KEY if provider == "openai" else CONF_AI_ZAI_KEY]
     body: dict[str, Any] = {"model": options[CONF_AI_CLOUD_MODEL], "stream": False}
     if provider == "openai":
         body.update(instructions=prompt, input=content, store=False, max_output_tokens=MAX_OUTPUT_TOKENS)

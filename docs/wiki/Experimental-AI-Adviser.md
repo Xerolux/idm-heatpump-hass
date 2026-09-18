@@ -36,6 +36,38 @@ features on that server using `OLLAMA_NO_CLOUD=1`, as documented in the
 [Ollama FAQ](https://docs.ollama.com/faq). An administrator-controlled proxy
 can forward traffic outside the LAN; HA cannot inspect the server internally.
 
+## Home Assistant AI Task (recommended, v0.17.2-b10)
+
+Reuse an existing data-generation `ai_task` entity instead of entering another
+API key in IDM. Configure the provider, model and output limits in that entity's
+Home Assistant integration. Then select **Home Assistant AI Task (recommended)**
+in the IDM adviser options, choose the entity explicitly, allow sending the
+selected operating data, and save. Cloud model/key fields are unused on this
+path. Existing local Ollama configurations are never migrated automatically.
+
+The global AI preferences page shown under Home Assistant's AI settings does
+not itself analyze the heat pump. IDM calls the selected task explicitly, so
+changing HA's global preferred entity cannot silently switch the IDM provider.
+Use a data-generation task; image-only tasks are not suitable.
+
+Each report starts a fresh HA task session with `llm_api=None`, no attachments
+and no Assist/control tools supplied by IDM. Use trusted provider integrations
+that honor HA's AI Task contract. Disable optional web search and code tools in
+the provider configuration for this measurement-only use case. The same fact
+allowlist, local learning, report guard, schedule and dashboard are retained.
+
+The persisted daily budget counts **task starts**, not the provider's internal
+HTTP calls. Provider retries, model token limits, transport settings, retention,
+additional prompts and provider-side tools are controlled by that integration;
+the direct adapter's 2,048-token / 64-KiB HTTP limits do not apply to HA tasks.
+IDM still bounds its facts to 12 KB, waits up to 120 seconds and accepts at most
+6,000 text characters. Configure provider billing controls separately.
+
+OpenAI's official HA integration requires an OpenAI API key. A Z.ai key cannot
+be used there. Use a compatible trusted AI Task provider or the direct Z.ai
+alternative below. Local Ollama and direct providers remain available when no
+suitable HA task exists. No provider fallback happens automatically.
+
 ## Optional cloud reports (v0.17.2-b10)
 
 Local Ollama remains the default. OpenAI and Z.ai are separate, experimental opt-in
@@ -51,7 +83,7 @@ saved key; a single `-` deletes it. Saved keys are never prefilled. They are sto
 in HA configuration and may be included in HA backups, but are redacted from
 integration diagnostics. Protect configuration and backups as credentials.
 
-Cloud requests contain only allowlisted numerical temperatures, operating mode,
+IDM supplies only allowlisted numerical temperatures, operating mode,
 period energy/COP/coverage summaries, local baseline statistics and explicit
 health-check states. No entity/device names, network addresses, serial numbers,
 web PINs, raw historical samples, lifetime energy counters or HA configuration
@@ -59,7 +91,7 @@ are sent. Local history and learning remain on HA. Operating measurements can
 still reveal household activity. Provider processing and retention policies
 apply; cloud use is not equivalent to local processing.
 
-Endpoints are fixed HTTPS URLs, certificate validation stays enabled, redirects
+For direct adapters, endpoints are fixed HTTPS URLs, certificate validation stays enabled, redirects
 are rejected, and there are no tools, web search, files, automatic retries or
 fallback to a different provider. OpenAI requests use `store: false`, which does
 not promise zero provider retention. See [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data)

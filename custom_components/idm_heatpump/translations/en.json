@@ -490,11 +490,12 @@
           "ai_notifications": "Notify about new measured health flags",
           "ai_schedule_report": "Automatically generated report type",
           "ai_provider": "Report provider (experimental)",
-          "ai_cloud_consent": "Allow selected operating measurements to be sent to the selected cloud provider",
+          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
           "ai_cloud_model": "Cloud model ID (required for cloud reports)",
           "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
-          "ai_cloud_daily_limit": "Maximum cloud requests per UTC day (per integration entry)"
+          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
+          "ai_task_entity": "Home Assistant AI Task entity"
         },
         "data_description": {
           "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
@@ -571,11 +572,12 @@
           "ai_notifications": "Notify about new measured health flags",
           "ai_schedule_report": "Automatically generated report type",
           "ai_provider": "Report provider (experimental)",
-          "ai_cloud_consent": "Allow selected operating measurements to be sent to the selected cloud provider",
+          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
           "ai_cloud_model": "Cloud model ID (required for cloud reports)",
           "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
-          "ai_cloud_daily_limit": "Maximum cloud requests per UTC day (per integration entry)"
+          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
+          "ai_task_entity": "Home Assistant AI Task entity"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -677,7 +679,8 @@
       "ai_cloud_auth_failed": "The provider rejected authentication or access. Check the API key and model access.",
       "ai_cloud_rate_limited": "The provider rejected the request because of quota or rate limits. No automatic retry was made.",
       "ai_cloud_budget_unavailable": "The request budget could not be safely loaded or saved. No cloud request was sent.",
-      "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached."
+      "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached.",
+      "ai_task_entity_required": "Select an existing ai_task entity that supports data generation."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -1066,11 +1069,12 @@
           "ai_notifications": "Notify about new measured health flags",
           "ai_schedule_report": "Automatically generated report type",
           "ai_provider": "Report provider (experimental)",
-          "ai_cloud_consent": "Allow selected operating measurements to be sent to the selected cloud provider",
+          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
           "ai_cloud_model": "Cloud model ID (required for cloud reports)",
           "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
-          "ai_cloud_daily_limit": "Maximum cloud requests per UTC day (per integration entry)"
+          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
+          "ai_task_entity": "Home Assistant AI Task entity"
         },
         "data_description": {
           "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
@@ -1147,11 +1151,12 @@
           "ai_notifications": "Notify about new measured health flags",
           "ai_schedule_report": "Automatically generated report type",
           "ai_provider": "Report provider (experimental)",
-          "ai_cloud_consent": "Allow selected operating measurements to be sent to the selected cloud provider",
+          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
           "ai_cloud_model": "Cloud model ID (required for cloud reports)",
           "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
-          "ai_cloud_daily_limit": "Maximum cloud requests per UTC day (per integration entry)"
+          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
+          "ai_task_entity": "Home Assistant AI Task entity"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1239,7 +1244,8 @@
       "ai_cloud_auth_failed": "The provider rejected authentication or access. Check the API key and model access.",
       "ai_cloud_rate_limited": "The provider rejected the request because of quota or rate limits. No automatic retry was made.",
       "ai_cloud_budget_unavailable": "The request budget could not be safely loaded or saved. No cloud request was sent.",
-      "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached."
+      "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached.",
+      "ai_task_entity_required": "Select an existing ai_task entity that supports data generation."
     }
   },
   "entity": {
@@ -2441,6 +2447,14 @@
         "modbus": "Modbus transport",
         "ai_advisor": "AI adviser (experimental, read-only)"
       }
+    },
+    "ai_provider": {
+      "options": {
+        "ha_task": "Home Assistant AI Task (recommended)",
+        "ollama": "Ollama (local)",
+        "zai": "Z.ai (direct)",
+        "openai": "OpenAI (direct alternative)"
+      }
     }
   },
   "exceptions": {
@@ -2611,6 +2625,9 @@
     },
     "ai_cloud_daily_limit_reached": {
       "message": "The cloud request limit for this UTC day has been reached."
+    },
+    "ai_task_entity_required": {
+      "message": "Select an existing ai_task entity that supports data generation."
     }
   },
   "issues": {

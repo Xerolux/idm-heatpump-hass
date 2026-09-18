@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import aiohttp
 import pytest
+import voluptuous as vol
+from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.idm_heatpump import ai_advisor as ai
 from custom_components.idm_heatpump import ai_cloud as cloud
@@ -24,6 +27,79 @@ def options(provider="zai"):
         cloud.CONF_AI_ZAI_KEY: "test-zai-secret",
         cloud.CONF_AI_OPENAI_KEY: "test-openai-secret",
     }
+
+
+def task_options():
+    return options("ha_task") | {cloud.CONF_AI_TASK_ENTITY: "ai_task.selected_reporter", cloud.CONF_AI_CLOUD_MODEL: ""}
+
+
+@pytest.mark.parametrize("entity", ["", "conversation.assistant", None, "ai_task.bad/name"])
+def test_task_requires_explicit_valid_entity(entity):
+    with pytest.raises(cloud.AdvisorError, match="ai_task_entity_required"):
+        cloud.validate_cloud(task_options() | {cloud.CONF_AI_TASK_ENTITY: entity})
+
+
+async def test_native_task_has_no_ha_tools_attachments_or_implicit_default():
+    with patch.object(
+        cloud.ai_task, "async_generate_data", AsyncMock(return_value=SimpleNamespace(data=" Report "))
+    ) as call:
+        assert await cloud.async_ha_task_report(MagicMock(), task_options(), "de", {"host": "SECRET"}) == "Report"
+    assert call.call_args.kwargs["entity_id"] == "ai_task.selected_reporter"
+    assert call.call_args.kwargs["llm_api"] is None
+    assert call.call_args.kwargs["attachments"] is None
+    assert "SECRET" not in call.call_args.kwargs["instructions"]
+    assert "conversation_id" not in call.call_args.kwargs
+
+
+@pytest.mark.parametrize(
+    "data", [None, {}, "", " ", "x" * 6001], ids=["none", "dict", "empty", "whitespace", "oversize"]
+)
+async def test_native_task_validates_returned_text(data):
+    with (
+        patch.object(cloud.ai_task, "async_generate_data", AsyncMock(return_value=SimpleNamespace(data=data))),
+        pytest.raises(cloud.AdvisorError, match="ai_invalid_response"),
+    ):
+        await cloud.async_ha_task_report(MagicMock(), task_options(), "en", {})
+
+
+@pytest.mark.parametrize("error", [HomeAssistantError("SECRET"), TimeoutError(), KeyError("not_loaded")])
+async def test_native_task_errors_are_sanitized(error):
+    with (
+        patch.object(cloud.ai_task, "async_generate_data", AsyncMock(side_effect=error)),
+        pytest.raises(cloud.AdvisorError, match="ai_unavailable"),
+    ):
+        await cloud.async_ha_task_report(MagicMock(), task_options(), "en", {})
+
+
+async def test_native_task_uses_same_persisted_budget_and_report_guard():
+    obj = manager()
+    obj._options.update(task_options())
+    obj._store.async_load = AsyncMock(return_value=None)
+    await obj.async_load()
+    with (
+        patch.object(ai, "async_ha_task_report", AsyncMock(return_value="Report")) as generate,
+        patch.object(ai, "async_cloud_report", AsyncMock()) as direct,
+    ):
+        await obj.async_generate()
+    generate.assert_awaited_once()
+    direct.assert_not_awaited()
+    assert obj.cloud_requests == 1
+    assert obj.reports["daily"]["provider"] == "ha_task"
+
+
+async def test_guided_ha_task_needs_no_duplicate_key_model_or_local_url():
+    flow = IdmHeatpumpOptionsFlow()
+    flow.config_entry = MagicMock(options={}, title="IDM")
+    await flow.async_step_init()
+    await flow.async_step_guided_mode({"setup_level": "standard"})
+    await flow.async_step_guided_choose({"selected_features": ["ai_advisor"]})
+    await flow.async_step_guided_toggle({ai.CONF_AI_ADVISOR: True})
+    values = {
+        cloud.CONF_AI_PROVIDER: "ha_task",
+        cloud.CONF_AI_CLOUD_CONSENT: True,
+        cloud.CONF_AI_TASK_ENTITY: "ai_task.reporter",
+    }
+    assert (await flow.async_step_guided_detail(values))["step_id"] == "guided_review"
 
 
 def response(provider="zai"):
@@ -240,7 +316,7 @@ async def test_guided_cloud_key_retention_removal_and_no_prefill():
     schema = _build_guided_field_schema(flow._options, cloud.CLOUD_KEYS).schema
     for key in cloud.CLOUD_KEYS:
         marker = next(m for m in schema if m.schema == key)
-        assert marker.default() == ""
+        assert marker.default is vol.UNDEFINED
     values = options() | {cloud.CONF_AI_ZAI_KEY: "", cloud.CONF_AI_OPENAI_KEY: "-"}
     assert (await flow.async_step_guided_detail(values))["step_id"] == "guided_review"
     assert flow._options[cloud.CONF_AI_ZAI_KEY] == "test-zai-secret"

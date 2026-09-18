@@ -57,6 +57,7 @@ from .ai_cloud import (
     CONF_AI_CLOUD_LIMIT,
     CONF_AI_CLOUD_MODEL,
     CONF_AI_PROVIDER,
+    CONF_AI_TASK_ENTITY,
     validate_cloud,
 )
 from .comfort_scheduler import parse_schedule_rows
@@ -696,23 +697,27 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             BooleanSelectorConfig()
                         ),
                         vol.Required(CONF_AI_PROVIDER, default=options.get(CONF_AI_PROVIDER, "ollama")): SelectSelector(
-                            SelectSelectorConfig(options=["ollama", "openai", "zai"], mode=SelectSelectorMode.DROPDOWN)
+                            SelectSelectorConfig(
+                                options=["ha_task", "ollama", "zai", "openai"],
+                                mode=SelectSelectorMode.DROPDOWN,
+                                translation_key="ai_provider",
+                            )
                         ),
+                        vol.Optional(
+                            CONF_AI_TASK_ENTITY,
+                            **({"default": options[CONF_AI_TASK_ENTITY]} if options.get(CONF_AI_TASK_ENTITY) else {}),
+                        ): EntitySelector(EntitySelectorConfig(domain="ai_task")),
                         vol.Required(
                             CONF_AI_CLOUD_CONSENT, default=options.get(CONF_AI_CLOUD_CONSENT, False)
                         ): BooleanSelector(BooleanSelectorConfig()),
-                        vol.Required(CONF_AI_CLOUD_MODEL, default=options.get(CONF_AI_CLOUD_MODEL, "")): TextSelector(
+                        vol.Optional(CONF_AI_CLOUD_MODEL, default=options.get(CONF_AI_CLOUD_MODEL, "")): TextSelector(
                             TextSelectorConfig(type=TextSelectorType.TEXT)
                         ),
                         vol.Required(CONF_AI_CLOUD_LIMIT, default=options.get(CONF_AI_CLOUD_LIMIT, 2)): NumberSelector(
                             NumberSelectorConfig(min=1, max=24, step=1, mode=NumberSelectorMode.BOX)
                         ),
-                        vol.Required(CLOUD_KEYS[0], default=""): TextSelector(
-                            TextSelectorConfig(type=TextSelectorType.PASSWORD)
-                        ),
-                        vol.Required(CLOUD_KEYS[1], default=""): TextSelector(
-                            TextSelectorConfig(type=TextSelectorType.PASSWORD)
-                        ),
+                        vol.Optional(CLOUD_KEYS[0]): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
+                        vol.Optional(CLOUD_KEYS[1]): TextSelector(TextSelectorConfig(type=TextSelectorType.PASSWORD)),
                         vol.Required(CONF_AI_LEARNING, default=options.get(CONF_AI_LEARNING, False)): BooleanSelector(
                             BooleanSelectorConfig()
                         ),
@@ -734,7 +739,7 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ): SelectSelector(
                             SelectSelectorConfig(options=list(REPORT_TYPES), mode=SelectSelectorMode.DROPDOWN)
                         ),
-                        vol.Required(CONF_AI_URL, default=options.get(CONF_AI_URL, "")): TextSelector(
+                        vol.Optional(CONF_AI_URL, default=options.get(CONF_AI_URL, "")): TextSelector(
                             TextSelectorConfig(type=TextSelectorType.TEXT)
                         ),
                         vol.Required(CONF_AI_MODEL, default=options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)): TextSelector(
