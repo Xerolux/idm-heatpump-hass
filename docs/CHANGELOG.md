@@ -15,6 +15,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2-b4] - 2026-09-18
+
+Fourth beta candidate. Automatic heat-pump writes remain untested on physical hardware.
+
 - Include the running Home Assistant Core and Python versions alongside all
   direct integration dependency versions in the downloaded installer report,
   diagnostics and API-version sensor.
