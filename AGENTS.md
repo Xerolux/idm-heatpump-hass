@@ -72,8 +72,9 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── energy_statistics_entities.py  # Home Assistant entities for energy statistics
 │   ├── health_monitor.py              # Optional read-only health checks and report
 │   ├── service_report.py              # Redacted installer report in diagnostics
+│   ├── ai_cloud.py                   # HA AI Task and opt-in cloud reports with a privacy boundary
 │   ├── ai_learning.py                # Bounded local statistical baselines
-│   ├── ai_advisor.py                # Experimental local-only report generation and bounded history
+│   ├── ai_advisor.py                # Experimental read-only report generation and bounded history
 │   ├── ai_advisor_entities.py       # AI report sensor and explicit report buttons
 │   ├── comfort_advisory.py            # Optional read-only heating/weather recommendations
 │   ├── comfort_scheduler.py           # Optional exclusive heating comfort schedule
@@ -111,6 +112,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_health_monitor.py
 │   ├── test_service_report.py
 │   ├── test_ai_advisor_extended.py
+│   ├── test_ai_cloud.py
 │   ├── test_ai_advisor.py
 │   ├── test_comfort_advisory.py
 │   ├── test_comfort_scheduler.py
@@ -453,7 +455,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 ## Important Constraints
 
 - **Do not push to `master` or `main`** — all development happens on feature branches.
-- **Do not add cloud/external API calls** — this integration is intentionally 100% local.
+- **Plant control stays local.** The explicitly authorized experimental AI provider module is the only cloud exception: fixed HTTPS endpoints, explicit consent, redacted credentials, numerical allowlist and persisted request limits. Do not add other cloud calls or model tools.
 - **Do not skip type hints** — mypy strict mode will fail CI.
 - **Do not hardcode register addresses** in platform files — reference `const.py` or `registers.py`.
 - **Do not bypass `ModbusConnectionTransport`** with a second direct socket path. The current runtime is tmodbus-backed and deliberately reports `supports_shared_connection=False`.

@@ -13,6 +13,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.2-b10] - 2026-09-18
+
+- Prefer an existing Home Assistant AI Task entity for report generation, reusing centrally managed models and credentials. Explicit entity selection, fresh task sessions and no HA control API prevent implicit provider changes and control access. Daily task reservations survive restarts; provider transport/token/billing settings remain provider-managed.
+
+- Add explicitly consented OpenAI and Z.ai experimental reports alongside default local Ollama. Separate masked API-key fields, fixed HTTPS endpoints, numerical fact projection, bounded requests and persistent per-entry daily reservations keep cloud access deliberate and limited.
+- Keep local learning, schedules, report entities and numeric safeguards. Cloud models receive no HA control tools. Report provider and budget usage are visible in report attributes; document billing, retention, key storage, setup and semantic limitations.
+
 ## [0.17.2-b9] - 2026-09-18
 
 - Allow up to five minutes for experimental local AI reports, including model validation and loading. Larger models on integrated GPUs could exceed the previous three-minute limit. Connection timeout, cancellation, overlap protection and numeric report safeguards remain in place.

@@ -937,6 +937,8 @@ def _stub_homeassistant() -> None:
 
     # homeassistant.components stubs
     components = _make_module("homeassistant.components")
+    components.ai_task = _make_module("homeassistant.components.ai_task")
+    components.ai_task.async_generate_data = AsyncMock()
 
     for platform in ["sensor", "binary_sensor", "number", "select", "switch", "diagnostics"]:
         mod = _make_module(f"homeassistant.components.{platform}")

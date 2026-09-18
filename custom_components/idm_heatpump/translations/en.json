@@ -488,10 +488,17 @@
           "ai_storage_mib": "Maximum AI data storage (MiB)",
           "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
           "ai_notifications": "Notify about new measured health flags",
-          "ai_schedule_report": "Automatically generated report type"
+          "ai_schedule_report": "Automatically generated report type",
+          "ai_provider": "Report provider (experimental)",
+          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
+          "ai_cloud_model": "Cloud model ID (required for cloud reports)",
+          "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
+          "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
+          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
+          "ai_task_entity": "Home Assistant AI Task entity"
         },
         "data_description": {
-          "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
+          "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
         }
       },
       "guided_detail": {
@@ -563,7 +570,14 @@
           "ai_storage_mib": "Maximum AI data storage (MiB)",
           "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
           "ai_notifications": "Notify about new measured health flags",
-          "ai_schedule_report": "Automatically generated report type"
+          "ai_schedule_report": "Automatically generated report type",
+          "ai_provider": "Report provider (experimental)",
+          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
+          "ai_cloud_model": "Cloud model ID (required for cloud reports)",
+          "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
+          "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
+          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
+          "ai_task_entity": "Home Assistant AI Task entity"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -623,7 +637,7 @@
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
+          "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
         }
       },
       "guided_review": {
@@ -658,7 +672,15 @@
       "weather_entity_required": "Choose a weather entity for weather advice.",
       "invalid_ai_endpoint": "Enter a local IP-based HTTP(S) URL without credentials, path or query, for example http://192.168.1.20:11434.",
       "invalid_ai_model": "Enter an installed local model name. Cloud models are not supported.",
-      "invalid_ai_language": "Choose de or en."
+      "invalid_ai_language": "Choose de or en.",
+      "ai_cloud_consent_required": "Select a supported cloud provider and explicitly allow sending selected operating data.",
+      "ai_cloud_invalid_limit": "Set a whole number from 1 to 24 cloud requests per UTC day.",
+      "ai_cloud_key_required": "Enter a valid API key for the selected provider.",
+      "ai_cloud_auth_failed": "The provider rejected authentication or access. Check the API key and model access.",
+      "ai_cloud_rate_limited": "The provider rejected the request because of quota or rate limits. No automatic retry was made.",
+      "ai_cloud_budget_unavailable": "The request budget could not be safely loaded or saved. No cloud request was sent.",
+      "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached.",
+      "ai_task_entity_required": "Select an existing ai_task entity that supports data generation."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -1045,10 +1067,17 @@
           "ai_storage_mib": "Maximum AI data storage (MiB)",
           "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
           "ai_notifications": "Notify about new measured health flags",
-          "ai_schedule_report": "Automatically generated report type"
+          "ai_schedule_report": "Automatically generated report type",
+          "ai_provider": "Report provider (experimental)",
+          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
+          "ai_cloud_model": "Cloud model ID (required for cloud reports)",
+          "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
+          "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
+          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
+          "ai_task_entity": "Home Assistant AI Task entity"
         },
         "data_description": {
-          "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
+          "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
         }
       },
       "guided_detail": {
@@ -1120,7 +1149,14 @@
           "ai_storage_mib": "Maximum AI data storage (MiB)",
           "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
           "ai_notifications": "Notify about new measured health flags",
-          "ai_schedule_report": "Automatically generated report type"
+          "ai_schedule_report": "Automatically generated report type",
+          "ai_provider": "Report provider (experimental)",
+          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
+          "ai_cloud_model": "Cloud model ID (required for cloud reports)",
+          "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
+          "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
+          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
+          "ai_task_entity": "Home Assistant AI Task entity"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1180,7 +1216,7 @@
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
+          "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
         }
       },
       "guided_review": {
@@ -1201,7 +1237,15 @@
       "weather_entity_required": "Choose a weather entity for weather advice.",
       "invalid_ai_endpoint": "Enter a local IP-based HTTP(S) URL without credentials, path or query, for example http://192.168.1.20:11434.",
       "invalid_ai_model": "Enter an installed local model name. Cloud models are not supported.",
-      "invalid_ai_language": "Choose de or en."
+      "invalid_ai_language": "Choose de or en.",
+      "ai_cloud_consent_required": "Select a supported cloud provider and explicitly allow sending selected operating data.",
+      "ai_cloud_invalid_limit": "Set a whole number from 1 to 24 cloud requests per UTC day.",
+      "ai_cloud_key_required": "Enter a valid API key for the selected provider.",
+      "ai_cloud_auth_failed": "The provider rejected authentication or access. Check the API key and model access.",
+      "ai_cloud_rate_limited": "The provider rejected the request because of quota or rate limits. No automatic retry was made.",
+      "ai_cloud_budget_unavailable": "The request budget could not be safely loaded or saved. No cloud request was sent.",
+      "ai_cloud_daily_limit_reached": "The cloud request limit for this UTC day has been reached.",
+      "ai_task_entity_required": "Select an existing ai_task entity that supports data generation."
     }
   },
   "entity": {
@@ -2403,6 +2447,14 @@
         "modbus": "Modbus transport",
         "ai_advisor": "AI adviser (experimental, read-only)"
       }
+    },
+    "ai_provider": {
+      "options": {
+        "ha_task": "Home Assistant AI Task (recommended)",
+        "ollama": "Ollama (local)",
+        "zai": "Z.ai (direct)",
+        "openai": "OpenAI (direct alternative)"
+      }
     }
   },
   "exceptions": {
@@ -2551,7 +2603,31 @@
       "message": "A locally installed GGUF completion model is required; remote models are rejected."
     },
     "ai_unavailable": {
-      "message": "The local Ollama server is unavailable or exceeded the 180-second timeout."
+      "message": "The selected AI provider is unavailable or exceeded its timeout (local 300 seconds, cloud 120 seconds)."
+    },
+    "ai_cloud_consent_required": {
+      "message": "Select a supported cloud provider and explicitly allow sending selected operating data."
+    },
+    "ai_cloud_invalid_limit": {
+      "message": "Set a whole number from 1 to 24 cloud requests per UTC day."
+    },
+    "ai_cloud_key_required": {
+      "message": "Enter a valid API key for the selected provider."
+    },
+    "ai_cloud_auth_failed": {
+      "message": "The provider rejected authentication or access. Check the API key and model access."
+    },
+    "ai_cloud_rate_limited": {
+      "message": "The provider rejected the request because of quota or rate limits. No automatic retry was made."
+    },
+    "ai_cloud_budget_unavailable": {
+      "message": "The request budget could not be safely loaded or saved. No cloud request was sent."
+    },
+    "ai_cloud_daily_limit_reached": {
+      "message": "The cloud request limit for this UTC day has been reached."
+    },
+    "ai_task_entity_required": {
+      "message": "Select an existing ai_task entity that supports data generation."
     }
   },
   "issues": {
@@ -2754,7 +2830,7 @@
     },
     "generate_ai_report": {
       "name": "Generate experimental AI report",
-      "description": "Read-only, separately enabled. Selected measurements are sent to the local Ollama server. May take up to 180 seconds.",
+      "description": "Read-only, separately enabled. Uses the selected provider; cloud requires explicit consent. Up to 300 seconds locally, 120 seconds for cloud.",
       "fields": {
         "entry_id": {
           "name": "IDM integration",
