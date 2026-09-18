@@ -33,7 +33,7 @@
 > [!TIP]
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
-## Experimental AI plant adviser (v0.17.2-b8 beta)
+## Experimental AI plant adviser (v0.17.2-b9 beta)
 
 Optional, off by default and separately enabled: local Ollama reports for daily and weekly energy, current health context and efficiency. Read-only, with no control tools or voice exposure. Reports disclose incomplete history; generated explanations can be incorrect. Available in v0.17.2-b7: dedicated AI device, scheduled reports, persistent results, dashboard export and opt-in statistical learning. Storage is configurable from 5 to 200 MiB (default 20 MiB); model files, Recorder and backups are separate.
 

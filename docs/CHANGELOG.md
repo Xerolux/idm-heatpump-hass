@@ -13,6 +13,10 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.2-b9] - 2026-09-18
+
+- Allow up to five minutes for experimental local AI reports, including model validation and loading. Larger models on integrated GPUs could exceed the previous three-minute limit. Connection timeout, cancellation, overlap protection and numeric report safeguards remain in place.
+
 ## [0.17.2-b8] - 2026-09-18
 
 - Replace numerically inconsistent AI prose with a clearly labelled, deterministic measurement report instead of displaying a warning beside the incorrect prose. Percentage claims are checked against percentage facts, so a matching temperature cannot validate a fabricated coverage value.

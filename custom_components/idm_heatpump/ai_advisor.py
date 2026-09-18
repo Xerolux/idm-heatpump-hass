@@ -44,6 +44,7 @@ _MAX_RECORDS = 4034  # Fourteen days at five-minute intervals, plus boundaries.
 _TEMPERATURES = ("outdoor_temp", "hp_flow_temp", "hp_return_temp", "dhw_temp_top", "dhw_setpoint")
 _COUNTERS = ("total_electrical_kwh", "total_thermal_kwh")
 _MAX_RESPONSE = 65536
+_REPORT_TIMEOUT = 300  # Bound CPU/shared-memory GPU inference, including model loading.
 
 
 class AdvisorError(Exception):
@@ -168,8 +169,10 @@ async def async_local_report(url: str, model: str, language: str, facts: dict[st
     url = validate_settings(url, model, language)
     try:
         async with (
-            asyncio.timeout(180),
-            aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=180, connect=10), trust_env=False) as session,
+            asyncio.timeout(_REPORT_TIMEOUT),
+            aiohttp.ClientSession(
+                timeout=aiohttp.ClientTimeout(total=_REPORT_TIMEOUT, connect=10), trust_env=False
+            ) as session,
         ):
             # Cloud/remote aliases must be rejected before any plant facts leave HA.
             # Model metadata includes licenses/templates and is larger than a report.

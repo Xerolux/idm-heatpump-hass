@@ -86,7 +86,7 @@ and accepts `report_type`: `daily`, `weekly`, `health` or `efficiency` (default
 contains the report, timestamp and input facts.
 
 At most one request runs per entry, with a minimum sixty-second interval and a
-180-second timeout. Automatic inference is off by default. Set the integrated interval to 1–168
+300-second timeout (since v0.17.2-b9). Automatic inference is off by default. Set the integrated interval to 1–168
 hours to enable it. The first run occurs one interval after activation. The
 next due time survives restarts; missed runs are skipped without a burst of
 catch-up requests. Intervals measure elapsed hours, not local calendar time:
@@ -172,3 +172,7 @@ Optional notifications use one local HA persistent notification per plant,
 only for measured health flags after a report completes. Identical flags do
 not repeat; new alerts have a twelve-hour cooldown. LLM guesses never trigger
 notifications. This does not enable voice exposure or control of the plant.
+
+### Larger local models
+
+A larger model can need substantially more time on CPUs or integrated GPUs. Reports have a five-minute total deadline, including model validation and loading, and a ten-second connection timeout. Inference remains asynchronous; overlapping adviser requests are rejected and unloading the integration cancels generation. Keep the previous model available until a representative report completes on the target hardware. Model files and runtime RAM are separate from the configured 5–200 MiB learning-history budget. A larger model does not guarantee more accurate explanations.
