@@ -14,6 +14,7 @@ from homeassistant.helpers import entity_registry as er
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .const import (
+    CONF_AI_ADVISOR,
     CONF_FEATURE_PROFILE,
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
@@ -593,7 +594,8 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
             continue
         key = entity.unique_id[len(prefix) :]
         disabled = (
-            (key.startswith("health_") and not health)
+            (key.startswith("ai_report") and not options.get(CONF_AI_ADVISOR, False))
+            or (key.startswith("health_") and not health)
             or (key == "heating_curve_advice" and not heating_curve)
             or (key == "weather_preheat_advice" and not weather)
             or (

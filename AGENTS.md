@@ -72,6 +72,8 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── energy_statistics_entities.py  # Home Assistant entities for energy statistics
 │   ├── health_monitor.py              # Optional read-only health checks and report
 │   ├── service_report.py              # Redacted installer report in diagnostics
+│   ├── ai_advisor.py                # Experimental local-only report generation and bounded history
+│   ├── ai_advisor_entities.py       # AI report sensor and explicit report buttons
 │   ├── comfort_advisory.py            # Optional read-only heating/weather recommendations
 │   ├── comfort_scheduler.py           # Optional exclusive heating comfort schedule
 │   ├── dhw_boost.py                  # Restart-safe domestic hot water boost state machine
@@ -107,6 +109,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_energy_statistics.py
 │   ├── test_health_monitor.py
 │   ├── test_service_report.py
+│   ├── test_ai_advisor.py
 │   ├── test_comfort_advisory.py
 │   ├── test_comfort_scheduler.py
 │   ├── test_external_power_forwarding.py

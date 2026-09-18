@@ -30,6 +30,7 @@ from idm_heatpump import (
     IdmModelInfo,
 )
 
+from .ai_advisor import AiAdvisor
 from .comfort_scheduler import ComfortScheduler, parse_schedule_rows
 from .const import (
     CONF_COMFORT_SCHEDULE,
@@ -250,6 +251,7 @@ class IdmHeatpumpData:
     storage_temp_forwarding_task: asyncio.Task[None] | None = None
     external_power_forwarding_task: asyncio.Task[None] | None = None
     energy_manager: EnergyManager | None = None
+    ai_advisor: AiAdvisor | None = None
     energy_statistics: EnergyStatistics | None = None
     comfort_scheduler: ComfortScheduler | None = None
     comfort_schedulers: tuple[ComfortScheduler, ...] = ()
@@ -1159,6 +1161,9 @@ async def _async_cancel_entry_tasks(runtime: Any) -> None:
                 await task
             except asyncio.CancelledError:
                 pass
+    advisor = getattr(runtime, "ai_advisor", None)
+    if isinstance(advisor, AiAdvisor):
+        await advisor.async_stop()
     manager = getattr(runtime, "energy_manager", None)
     if isinstance(manager, EnergyManager):
         await manager.async_stop()

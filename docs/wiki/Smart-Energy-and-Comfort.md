@@ -224,3 +224,7 @@ The downloaded diagnostics include the installed integration,
 `idm-heatpump-api`, `modbus-connection`, `tmodbus`, Home Assistant and Python
 versions. See [Troubleshooting](Troubleshooting#smart-features-and-beta-upgrades)
 if entities or source readings are missing.
+
+## Experimental AI adviser (upcoming)
+
+The next version adds an explicitly enabled, default-off local Ollama adviser: daily/weekly reports and explanations of health and efficiency. It has no plant control tools or voice exposure. Not included in v0.17.2-b6. See [setup, report actions, data coverage and limitations](Experimental-AI-Adviser).

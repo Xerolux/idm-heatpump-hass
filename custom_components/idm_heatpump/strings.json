@@ -491,7 +491,14 @@
           "knx_receive": "Accept commands from KNX",
           "knx_resend_interval": "Full resend interval",
           "knx_tolerance": "Change tolerance",
-          "knx_respond_to_read": "Answer read requests"
+          "knx_respond_to_read": "Answer read requests",
+          "ai_advisor": "Experimental AI adviser (read-only)",
+          "ai_url": "Local Ollama base URL",
+          "ai_model": "Installed local model",
+          "ai_language": "Report language"
+        },
+        "data_description": {
+          "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
         }
       },
       "guided_detail": {
@@ -554,7 +561,11 @@
           "knx_receive": "Accept commands from KNX",
           "knx_resend_interval": "Full resend interval",
           "knx_tolerance": "Change tolerance",
-          "knx_respond_to_read": "Answer read requests"
+          "knx_respond_to_read": "Answer read requests",
+          "ai_advisor": "Experimental AI adviser (read-only)",
+          "ai_url": "Local Ollama base URL",
+          "ai_model": "Installed local model",
+          "ai_language": "Report language"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -613,7 +624,8 @@
           "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
-          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
+          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
+          "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
         }
       },
       "guided_review": {
@@ -645,7 +657,10 @@
       "feature_notice_required": "Confirm the new beta functions before saving.",
       "invalid_comfort_windows": "Use at most 16 non-overlapping windows on configured circuits, each as circuit,HH:MM,HH:MM,target (15–30 °C).",
       "guided_review_required": "Confirm the summary before saving.",
-      "weather_entity_required": "Choose a weather entity for weather advice."
+      "weather_entity_required": "Choose a weather entity for weather advice.",
+      "invalid_ai_endpoint": "Enter a local IP-based HTTP(S) URL without credentials, path or query, for example http://192.168.1.20:11434.",
+      "invalid_ai_model": "Enter an installed local model name. Cloud models are not supported.",
+      "invalid_ai_language": "Choose de or en."
     },
     "abort": {
       "already_configured": "This heat pump is already configured.",
@@ -1035,7 +1050,14 @@
           "knx_receive": "Accept commands from KNX",
           "knx_resend_interval": "Full resend interval",
           "knx_tolerance": "Change tolerance",
-          "knx_respond_to_read": "Answer read requests"
+          "knx_respond_to_read": "Answer read requests",
+          "ai_advisor": "Experimental AI adviser (read-only)",
+          "ai_url": "Local Ollama base URL",
+          "ai_model": "Installed local model",
+          "ai_language": "Report language"
+        },
+        "data_description": {
+          "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
         }
       },
       "guided_detail": {
@@ -1098,7 +1120,11 @@
           "knx_receive": "Accept commands from KNX",
           "knx_resend_interval": "Full resend interval",
           "knx_tolerance": "Change tolerance",
-          "knx_respond_to_read": "Answer read requests"
+          "knx_respond_to_read": "Answer read requests",
+          "ai_advisor": "Experimental AI adviser (read-only)",
+          "ai_url": "Local Ollama base URL",
+          "ai_model": "Installed local model",
+          "ai_language": "Report language"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1157,7 +1183,8 @@
           "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
-          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
+          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
+          "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
         }
       },
       "guided_review": {
@@ -1175,7 +1202,10 @@
       "feature_notice_required": "Confirm the new beta functions before saving.",
       "invalid_comfort_windows": "Use at most 16 non-overlapping windows on configured circuits, each as circuit,HH:MM,HH:MM,target (15–30 °C).",
       "guided_review_required": "Confirm the summary before saving.",
-      "weather_entity_required": "Choose a weather entity for weather advice."
+      "weather_entity_required": "Choose a weather entity for weather advice.",
+      "invalid_ai_endpoint": "Enter a local IP-based HTTP(S) URL without credentials, path or query, for example http://192.168.1.20:11434.",
+      "invalid_ai_model": "Enter an installed local model name. Cloud models are not supported.",
+      "invalid_ai_language": "Choose de or en."
     }
   },
   "entity": {
@@ -1284,11 +1314,23 @@
       "acknowledge_errors": {
         "name": "Acknowledge Errors"
       },
-      "dhw_boost_start": {
-        "name": "Start DHW boost"
+      "ai_report_daily": {
+        "name": "AI daily report (experimental)"
+      },
+      "ai_report_efficiency": {
+        "name": "AI efficiency explanation (experimental)"
+      },
+      "ai_report_health": {
+        "name": "AI health explanation (experimental)"
+      },
+      "ai_report_weekly": {
+        "name": "AI weekly report (experimental)"
       },
       "dhw_boost_cancel": {
         "name": "Cancel DHW boost"
+      },
+      "dhw_boost_start": {
+        "name": "Start DHW boost"
       }
     },
     "climate": {
@@ -1509,6 +1551,9 @@
       }
     },
     "sensor": {
+      "ai_report": {
+        "name": "AI report (experimental)"
+      },
       "air_heat_exchanger_temp": {
         "name": "Air heat exchanger temperature"
       },
@@ -2347,7 +2392,8 @@
         "cascade": "Cascade registers",
         "device_hierarchy": "Device grouping",
         "technician_codes": "Technician code sensors",
-        "modbus": "Modbus transport"
+        "modbus": "Modbus transport",
+        "ai_advisor": "AI adviser (experimental, read-only)"
       }
     }
   },
@@ -2465,6 +2511,39 @@
     },
     "write_cooldown_active": {
       "message": "Register {register} cannot be written yet. The configured write cooldown is {cooldown} seconds; wait another {remaining} seconds. A cooldown of 0 disables this protection."
+    },
+    "invalid_ai_endpoint": {
+      "message": "Enter a local IP-based HTTP(S) URL without credentials, path or query, for example http://192.168.1.20:11434."
+    },
+    "invalid_ai_model": {
+      "message": "Enter an installed local model name. Cloud models are not supported."
+    },
+    "invalid_ai_language": {
+      "message": "Choose de or en."
+    },
+    "ai_disabled": {
+      "message": "Enable the experimental AI adviser for this loaded IDM entry first."
+    },
+    "ai_invalid_report_type": {
+      "message": "Choose daily, weekly, health or efficiency."
+    },
+    "ai_busy": {
+      "message": "A report is already being generated. Please wait."
+    },
+    "ai_cooldown": {
+      "message": "Wait at least 60 seconds between report requests."
+    },
+    "ai_server_error": {
+      "message": "Ollama rejected the request. Check the local server and installed model."
+    },
+    "ai_invalid_response": {
+      "message": "The AI response was empty, truncated, too large or invalid. The previous report is retained."
+    },
+    "ai_local_model_required": {
+      "message": "A locally installed GGUF completion model is required; remote models are rejected."
+    },
+    "ai_unavailable": {
+      "message": "The local Ollama server is unavailable or exceeded the 180-second timeout."
     }
   },
   "issues": {
@@ -2662,6 +2741,20 @@
         "knx_groups": {
           "name": "Object groups",
           "description": "Limit the export to these catalogue groups."
+        }
+      }
+    },
+    "generate_ai_report": {
+      "name": "Generate experimental AI report",
+      "description": "Read-only, separately enabled. Selected measurements are sent to the local Ollama server. May take up to 180 seconds.",
+      "fields": {
+        "entry_id": {
+          "name": "IDM integration",
+          "description": "The explicitly enabled IDM entry."
+        },
+        "report_type": {
+          "name": "Report type",
+          "description": "daily, weekly, health or efficiency."
         }
       }
     }

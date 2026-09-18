@@ -36,8 +36,17 @@ from homeassistant.helpers.selector import (
     TextSelectorType,
 )
 
+from .ai_advisor import (
+    CONF_AI_LANGUAGE,
+    CONF_AI_MODEL,
+    CONF_AI_URL,
+    DEFAULT_AI_MODEL,
+    AdvisorError,
+    validate_settings,
+)
 from .comfort_scheduler import parse_schedule_rows
 from .const import (
+    CONF_AI_ADVISOR,
     CONF_COMFORT_SCHEDULE,
     CONF_COMFORT_SCHEDULE_CIRCUIT,
     CONF_COMFORT_SCHEDULE_END,
@@ -405,6 +414,7 @@ _GUIDED_CONFIRM = "save_configuration"
 _GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], tuple[str, ...]]] = {
     "plant": (None, (CONF_HEATING_CIRCUITS, CONF_ZONE_COUNT), (CONF_SCAN_INTERVAL, CONF_HIDE_UNUSED), ()),
     "profile": (None, (CONF_FEATURE_PROFILE,), (), ()),
+    "ai_advisor": (CONF_AI_ADVISOR, (CONF_AI_URL, CONF_AI_MODEL, CONF_AI_LANGUAGE), (), ()),
     "health": (CONF_HEALTH_MONITOR, (), (CONF_SHORT_CYCLE_MINUTES,), ()),
     "energy": (None, (CONF_DYNAMIC_PRICE_ENTITY,), (CONF_ENERGY_PRICE, CONF_ENERGY_CO2_FACTOR), ()),
     "energy_manager": (
@@ -511,6 +521,10 @@ def _default_options() -> dict[str, Any]:
         CONF_ENERGY_MANAGER_TARGET: DEFAULT_ENERGY_MANAGER_TARGET,
         CONF_ENERGY_MANAGER_TIMEOUT: DEFAULT_ENERGY_MANAGER_TIMEOUT,
         CONF_ENERGY_MANAGER_COOLDOWN: DEFAULT_ENERGY_MANAGER_COOLDOWN,
+        CONF_AI_ADVISOR: False,
+        CONF_AI_URL: "",
+        CONF_AI_MODEL: DEFAULT_AI_MODEL,
+        CONF_AI_LANGUAGE: "de",
         CONF_HEALTH_MONITOR: DEFAULT_HEALTH_MONITOR,
         CONF_ENERGY_PRICE: DEFAULT_ENERGY_PRICE,
         CONF_DYNAMIC_PRICE_ENTITY: "",
@@ -662,6 +676,18 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             CONF_ENERGY_MANAGER,
                             default=options.get(CONF_ENERGY_MANAGER, DEFAULT_ENERGY_MANAGER),
                         ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(CONF_AI_ADVISOR, default=options.get(CONF_AI_ADVISOR, False)): BooleanSelector(
+                            BooleanSelectorConfig()
+                        ),
+                        vol.Required(CONF_AI_URL, default=options.get(CONF_AI_URL, "")): TextSelector(
+                            TextSelectorConfig(type=TextSelectorType.TEXT)
+                        ),
+                        vol.Required(CONF_AI_MODEL, default=options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)): TextSelector(
+                            TextSelectorConfig(type=TextSelectorType.TEXT)
+                        ),
+                        vol.Required(CONF_AI_LANGUAGE, default=options.get(CONF_AI_LANGUAGE, "de")): SelectSelector(
+                            SelectSelectorConfig(options=["de", "en"], mode=SelectSelectorMode.DROPDOWN)
+                        ),
                         vol.Required(
                             CONF_HEALTH_MONITOR,
                             default=options.get(CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR),
@@ -1644,6 +1670,19 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
                         data_schema=_build_guided_field_schema({**self._options, **user_input}, keys),
                         errors={CONF_COMFORT_WINDOWS: "invalid_comfort_windows"},
                     )
+            if feature == "ai_advisor":
+                try:
+                    user_input[CONF_AI_URL] = validate_settings(
+                        str(user_input.get(CONF_AI_URL, "")),
+                        str(user_input.get(CONF_AI_MODEL, "")),
+                        str(user_input.get(CONF_AI_LANGUAGE, "")),
+                    )
+                except AdvisorError as err:
+                    return self.async_show_form(
+                        step_id="guided_detail",
+                        data_schema=_build_guided_field_schema({**self._options, **user_input}, keys),
+                        errors={"base": str(err)},
+                    )
             if feature == "weather" and not user_input.get(CONF_WEATHER_ENTITY):
                 return self.async_show_form(
                     step_id="guided_detail",
@@ -1686,6 +1725,7 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
 
     def _new_features_enabled(self) -> bool:
         flags = (
+            CONF_AI_ADVISOR,
             CONF_ENERGY_MANAGER,
             CONF_HEALTH_MONITOR,
             CONF_COMFORT_SCHEDULE,

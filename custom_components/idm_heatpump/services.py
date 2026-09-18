@@ -28,6 +28,7 @@ from homeassistant.util.json import JsonValueType
 from idm_heatpump import DataType, RegisterDef
 
 from .adapter_glt import EXTERNAL_POWER_MEASUREMENT_NAMES
+from .ai_advisor import REPORT_TYPES, AdvisorError, AiAdvisor
 from .const import (
     CONF_KNX_BASE_ADDRESS,
     CONF_KNX_GROUPS,
@@ -165,6 +166,15 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     # rule wants every action available as soon as the domain loads, and the
     # handlers resolve their config entry per call anyway.
     await async_setup_dhw_boost_services(hass)
+    hass.services.async_register(
+        DOMAIN,
+        "generate_ai_report",
+        partial(_handle_generate_ai_report, hass),
+        schema=vol.Schema(
+            {vol.Required("entry_id"): cv.string, vol.Optional("report_type", default="daily"): vol.In(REPORT_TYPES)}
+        ),
+        supports_response=SupportsResponse.OPTIONAL,
+    )
 
 
 async def _get_coordinator(hass: HomeAssistant, call: ServiceCall) -> IdmCoordinator:
@@ -605,3 +615,17 @@ async def _handle_export_knx_group_addresses(hass: HomeAssistant, call: ServiceC
         "count": len(rows),
         "objects": rows,
     }
+
+
+async def _handle_generate_ai_report(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
+    """Resolve an explicitly selected, loaded entry; no fallback to another plant."""
+    entry = hass.config_entries.async_get_entry(call.data["entry_id"])
+    if entry is None or entry.domain != DOMAIN or entry.state != ConfigEntryState.LOADED:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="ai_disabled")
+    manager = getattr(entry.runtime_data, "ai_advisor", None)
+    if not isinstance(manager, AiAdvisor):
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="ai_disabled")
+    try:
+        return await manager.async_generate(call.data.get("report_type", "daily"))
+    except AdvisorError as err:
+        raise HomeAssistantError(translation_domain=DOMAIN, translation_key=str(err)) from err

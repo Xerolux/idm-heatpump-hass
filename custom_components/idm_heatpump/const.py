@@ -384,3 +384,6 @@ HP_STATUS_OPTIONS: dict[int, str] = {
     4: "Warmwasser",
     8: "Abtauen",
 }
+
+# Experimental local AI is always opt-in and has no control path.
+CONF_AI_ADVISOR = "ai_advisor"

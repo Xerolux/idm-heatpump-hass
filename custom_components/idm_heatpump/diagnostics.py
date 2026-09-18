@@ -13,11 +13,12 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.loader import async_get_integration
 
+from .ai_advisor import CONF_AI_URL
 from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN, DOMAIN
 from .service_report import build_service_report
 from .versions import async_runtime_versions
 
-TO_REDACT = {CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN}
+TO_REDACT = {CONF_AI_URL, CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN}
 # Device identifiers must not leak into diagnostics either.
 TO_REDACT.update({"myidm_id", "serial_number", "serial"})
 

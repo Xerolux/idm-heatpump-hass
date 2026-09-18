@@ -479,7 +479,14 @@
           "knx_receive": "Befehle von KNX annehmen",
           "knx_resend_interval": "Intervall für vollständiges Neusenden",
           "knx_tolerance": "Änderungstoleranz",
-          "knx_respond_to_read": "Auf Leseanfragen antworten"
+          "knx_respond_to_read": "Auf Leseanfragen antworten",
+          "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
+          "ai_url": "Lokale Ollama-Basisadresse",
+          "ai_model": "Installiertes lokales Modell",
+          "ai_language": "Berichtssprache"
+        },
+        "data_description": {
+          "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
         }
       },
       "guided_detail": {
@@ -542,7 +549,11 @@
           "knx_receive": "Befehle von KNX annehmen",
           "knx_resend_interval": "Intervall für vollständiges Neusenden",
           "knx_tolerance": "Änderungstoleranz",
-          "knx_respond_to_read": "Auf Leseanfragen antworten"
+          "knx_respond_to_read": "Auf Leseanfragen antworten",
+          "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
+          "ai_url": "Lokale Ollama-Basisadresse",
+          "ai_model": "Installiertes lokales Modell",
+          "ai_language": "Berichtssprache"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -601,7 +612,8 @@
           "knx_receive": "Werte, die auf einem schreibbaren Objekt eintreffen, in die Wärmepumpe schreiben. Registriert werden nur von IDM als schreibbar geführte Objekte.",
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
-          "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben."
+          "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
+          "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
         }
       },
       "guided_review": {
@@ -633,7 +645,10 @@
       "feature_notice_required": "Bitte bestätige die neuen Beta-Funktionen vor dem Speichern.",
       "invalid_comfort_windows": "Bis zu 16 Zeitfenster ohne Überschneidung auf konfigurierten Heizkreisen angeben: Heizkreis,HH:MM,HH:MM,Zielwert (15–30 °C).",
       "guided_review_required": "Bestätige die Übersicht vor dem Speichern.",
-      "weather_entity_required": "Wähle eine Wetter-Entität für den Wetter-Hinweis."
+      "weather_entity_required": "Wähle eine Wetter-Entität für den Wetter-Hinweis.",
+      "invalid_ai_endpoint": "Lokale HTTP(S)-Adresse mit IP ohne Zugangsdaten, Pfad oder Suchparameter eingeben, zum Beispiel http://192.168.1.20:11434.",
+      "invalid_ai_model": "Ein installiertes lokales Modell angeben. Cloud-Modelle werden nicht unterstützt.",
+      "invalid_ai_language": "de oder en auswählen."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -1011,7 +1026,14 @@
           "knx_receive": "Befehle von KNX annehmen",
           "knx_resend_interval": "Intervall für vollständiges Neusenden",
           "knx_tolerance": "Änderungstoleranz",
-          "knx_respond_to_read": "Auf Leseanfragen antworten"
+          "knx_respond_to_read": "Auf Leseanfragen antworten",
+          "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
+          "ai_url": "Lokale Ollama-Basisadresse",
+          "ai_model": "Installiertes lokales Modell",
+          "ai_language": "Berichtssprache"
+        },
+        "data_description": {
+          "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
         }
       },
       "guided_detail": {
@@ -1074,7 +1096,11 @@
           "knx_receive": "Befehle von KNX annehmen",
           "knx_resend_interval": "Intervall für vollständiges Neusenden",
           "knx_tolerance": "Änderungstoleranz",
-          "knx_respond_to_read": "Auf Leseanfragen antworten"
+          "knx_respond_to_read": "Auf Leseanfragen antworten",
+          "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
+          "ai_url": "Lokale Ollama-Basisadresse",
+          "ai_model": "Installiertes lokales Modell",
+          "ai_language": "Berichtssprache"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1133,7 +1159,8 @@
           "knx_receive": "Werte, die auf einem schreibbaren Objekt eintreffen, in die Wärmepumpe schreiben. Registriert werden nur von IDM als schreibbar geführte Objekte.",
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
-          "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben."
+          "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
+          "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
         }
       },
       "guided_review": {
@@ -1151,7 +1178,10 @@
       "feature_notice_required": "Bitte bestätige die neuen Beta-Funktionen vor dem Speichern.",
       "invalid_comfort_windows": "Bis zu 16 Zeitfenster ohne Überschneidung auf konfigurierten Heizkreisen angeben: Heizkreis,HH:MM,HH:MM,Zielwert (15–30 °C).",
       "guided_review_required": "Bestätige die Übersicht vor dem Speichern.",
-      "weather_entity_required": "Wähle eine Wetter-Entität für den Wetter-Hinweis."
+      "weather_entity_required": "Wähle eine Wetter-Entität für den Wetter-Hinweis.",
+      "invalid_ai_endpoint": "Lokale HTTP(S)-Adresse mit IP ohne Zugangsdaten, Pfad oder Suchparameter eingeben, zum Beispiel http://192.168.1.20:11434.",
+      "invalid_ai_model": "Ein installiertes lokales Modell angeben. Cloud-Modelle werden nicht unterstützt.",
+      "invalid_ai_language": "de oder en auswählen."
     }
   },
   "entity": {
@@ -1260,11 +1290,23 @@
       "acknowledge_errors": {
         "name": "Störungen quittieren"
       },
-      "dhw_boost_start": {
-        "name": "Warmwasser-Boost starten"
+      "ai_report_daily": {
+        "name": "KI-Tagesbericht (experimentell)"
+      },
+      "ai_report_efficiency": {
+        "name": "KI-Effizienz erklären (experimentell)"
+      },
+      "ai_report_health": {
+        "name": "KI-Zustand erklären (experimentell)"
+      },
+      "ai_report_weekly": {
+        "name": "KI-Wochenbericht (experimentell)"
       },
       "dhw_boost_cancel": {
         "name": "Warmwasser-Boost abbrechen"
+      },
+      "dhw_boost_start": {
+        "name": "Warmwasser-Boost starten"
       }
     },
     "climate": {
@@ -1485,6 +1527,9 @@
       }
     },
     "sensor": {
+      "ai_report": {
+        "name": "KI-Bericht (experimentell)"
+      },
       "air_heat_exchanger_temp": {
         "name": "Luftwärmetauscher Temperatur"
       },
@@ -2323,7 +2368,8 @@
         "cascade": "Kaskadenregister",
         "device_hierarchy": "Geräte gruppieren",
         "technician_codes": "Fachmann-Code-Sensoren",
-        "modbus": "Modbus-Verbindung"
+        "modbus": "Modbus-Verbindung",
+        "ai_advisor": "KI-Anlagenberater (experimentell, nur lesend)"
       }
     }
   },
@@ -2441,6 +2487,39 @@
     },
     "write_cooldown_active": {
       "message": "Register {register} kann noch nicht geschrieben werden. Der konfigurierte Schreib-Cooldown beträgt {cooldown} Sekunden; bitte noch {remaining} Sekunden warten. Bei einem Cooldown von 0 ist der Schutz deaktiviert."
+    },
+    "invalid_ai_endpoint": {
+      "message": "Lokale HTTP(S)-Adresse mit IP ohne Zugangsdaten, Pfad oder Suchparameter eingeben, zum Beispiel http://192.168.1.20:11434."
+    },
+    "invalid_ai_model": {
+      "message": "Ein installiertes lokales Modell angeben. Cloud-Modelle werden nicht unterstützt."
+    },
+    "invalid_ai_language": {
+      "message": "de oder en auswählen."
+    },
+    "ai_disabled": {
+      "message": "Zuerst den experimentellen KI-Berater für diesen geladenen IDM-Eintrag aktivieren."
+    },
+    "ai_invalid_report_type": {
+      "message": "daily, weekly, health oder efficiency auswählen."
+    },
+    "ai_busy": {
+      "message": "Ein Bericht wird bereits erstellt. Bitte warten."
+    },
+    "ai_cooldown": {
+      "message": "Zwischen Berichten mindestens 60 Sekunden warten."
+    },
+    "ai_server_error": {
+      "message": "Ollama hat die Anfrage abgelehnt. Lokalen Server und installiertes Modell prüfen."
+    },
+    "ai_invalid_response": {
+      "message": "Die KI-Antwort war leer, abgeschnitten, zu groß oder ungültig. Der vorige Bericht bleibt erhalten."
+    },
+    "ai_local_model_required": {
+      "message": "Ein lokal installiertes GGUF-Sprachmodell wird benötigt. Remote-Modelle sind gesperrt."
+    },
+    "ai_unavailable": {
+      "message": "Der lokale Ollama-Server ist nicht erreichbar oder hat das Zeitlimit von 180 Sekunden überschritten."
     }
   },
   "issues": {
@@ -2638,6 +2717,20 @@
         "knx_groups": {
           "name": "Objektgruppen",
           "description": "Export auf diese Katalogruppen beschränken."
+        }
+      }
+    },
+    "generate_ai_report": {
+      "name": "Experimentellen KI-Bericht erstellen",
+      "description": "Nur lesend, separat aktivieren. Ausgewählte Messwerte werden an den lokalen Ollama-Server gesendet. Bis zu 180 Sekunden Wartezeit.",
+      "fields": {
+        "entry_id": {
+          "name": "IDM-Integration",
+          "description": "Explizit aktivierter IDM-Eintrag."
+        },
+        "report_type": {
+          "name": "Berichtstyp",
+          "description": "daily, weekly, health oder efficiency."
         }
       }
     }

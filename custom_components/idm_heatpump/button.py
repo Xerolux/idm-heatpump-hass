@@ -19,7 +19,10 @@ from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
 from idm_heatpump import DataType, RegisterDef
 
+from .ai_advisor import REPORT_TYPES
+from .ai_advisor_entities import IdmAiReportButton
 from .const import (
+    CONF_AI_ADVISOR,
     CONF_FEATURE_PROFILE,
     DEFAULT_FEATURE_PROFILE,
     DOMAIN,
@@ -67,6 +70,8 @@ async def async_setup_entry(
                 IdmDhwBoostCancelButton(coordinator, boost),
             ]
         )
+    if entry.options.get(CONF_AI_ADVISOR, False) is True:
+        entities.extend(IdmAiReportButton(coordinator, kind) for kind in REPORT_TYPES)
     async_add_entities(entities)
 
 
