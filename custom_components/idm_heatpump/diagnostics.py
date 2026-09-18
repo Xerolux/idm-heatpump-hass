@@ -199,6 +199,8 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                     "idm_heatpump_api": versions.api,
                     "modbus_connection": versions.modbus_connection,
                     "tmodbus": versions.tmodbus,
+                    "home_assistant": versions.home_assistant,
+                    "python": versions.python,
                 },
                 "installer_report": build_service_report(coordinator, versions),
                 "model_info": _model_info_diagnostics(coordinator.model_info),

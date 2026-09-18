@@ -1146,7 +1146,7 @@ class TestAsyncStepReconfigure:
             patch.object(flow, "async_update_and_abort", update_and_abort),
         ):
             form = await flow.async_step_features()
-            assert form["step_id"] == "options"
+            assert form["step_id"] == "guided_mode"
             notice = await flow.async_step_options(
                 {CONF_FEATURE_PROFILE: "smart", CONF_HEALTH_MONITOR: True, CONF_ZONE_COUNT: 0}
             )
@@ -1947,7 +1947,7 @@ class TestOptionsFlow:
         }
         result = await flow.async_step_init(None)
         assert result["type"] == "form"
-        assert result["step_id"] == "options"
+        assert result["step_id"] == "guided_mode"
 
     async def test_step_options_no_zones_creates_entry(self):
         flow = IdmHeatpumpOptionsFlow()
@@ -2278,7 +2278,7 @@ class TestOptionsFlowFull:
         result = await flow.async_step_init(None)
         # Should re-display form with existing options pre-filled
         assert result["type"] == "form"
-        assert result["step_id"] == "options"
+        assert result["step_id"] == "guided_mode"
 
 
 class TestConfigFlowCoverageGaps:

@@ -85,6 +85,8 @@ def build_service_report(coordinator: Any, versions: Any) -> dict[str, Any]:
             "idm_heatpump_api": versions.api,
             "modbus_connection": versions.modbus_connection,
             "tmodbus": versions.tmodbus,
+            "home_assistant": versions.home_assistant,
+            "python": versions.python,
         },
         "communication": {
             "last_poll_success": poll.last_success.isoformat() if poll.last_success else None,

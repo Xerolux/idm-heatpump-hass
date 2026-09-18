@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import platform
 from dataclasses import dataclass
 from functools import cache
 from importlib.metadata import PackageNotFoundError, version
@@ -16,6 +17,8 @@ class RuntimeVersions:
     api: str
     modbus_connection: str
     tmodbus: str
+    home_assistant: str = "unknown"
+    python: str = "unknown"
 
 
 @cache
@@ -34,6 +37,8 @@ def runtime_versions(integration_version: object) -> RuntimeVersions:
         api=distribution_version("idm-heatpump-api"),
         modbus_connection=distribution_version("modbus-connection"),
         tmodbus=distribution_version("tmodbus"),
+        home_assistant=distribution_version("homeassistant"),
+        python=platform.python_version(),
     )
 
 

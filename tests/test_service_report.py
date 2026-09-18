@@ -49,11 +49,13 @@ def test_installer_report_collects_observations_without_secrets_or_writes() -> N
         month_thermal_kwh=10.0,
     )
     coordinator.unsupported_registers = {"firmware_version"}
-    versions = RuntimeVersions("0.17.2-b1", "2.1.2", "4.12.1", "0.6.2")
+    versions = RuntimeVersions("0.17.2-b1", "2.1.2", "4.12.1", "0.6.2", "2026.9.1", "3.14.2")
 
     report = build_service_report(coordinator, versions)
 
     assert report["versions"]["idm_heatpump_api"] == "2.1.2"
+    assert report["versions"]["home_assistant"] == "2026.9.1"
+    assert report["versions"]["python"] == "3.14.2"
     assert report["communication"]["total_failures"] == 4
     assert report["operation"]["compressor_starts_last_24_hours"] == 10
     assert report["operation"]["alarm_starts_last_7_days"] == 3

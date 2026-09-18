@@ -15,6 +15,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2-b4] - 2026-09-18
+
+Fourth beta candidate. Automatic heat-pump writes remain untested on physical hardware.
+
+- Include the running Home Assistant Core and Python versions alongside all
+  direct integration dependency versions in the downloaded installer report,
+  diagnostics and API-version sensor.
+- Replace the long options form with a guided Standard, Advanced or Expert
+  setup. Every depth offers all functions, then asks only the relevant
+  follow-up questions at the chosen depth. Reconfigure can switch depth and
+  adjust one function without revisiting unrelated KNX settings; hidden
+  expert values and disabled sensor mappings are retained.
+
 ## [0.17.2-b3] - 2026-09-17
 
 - Allow the Health Monitor to be enabled without selecting an unrelated

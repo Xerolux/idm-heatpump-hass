@@ -21,13 +21,22 @@ available.
 
 ## Options
 
-The Home Assistant form groups settings into four areas so the common choices
-stay easy to scan:
+After entering the connection details, choose a guided setup depth:
 
-- Core settings: scan interval, unused entities, heating circuits, and zones
-- Optional features: technician codes, cascade, and web supplement data
-- External room temperatures: forwarding interval and tolerance
-- Advanced Modbus settings: response timeout and retries (collapsed by default)
+| Depth | What the wizard asks |
+|-------|---------------------|
+| Standard | Feature selection, required sensors and safe defaults |
+| Advanced | The same features plus common intervals, thresholds and tuning |
+| Expert | The same features plus every available transport and forwarding setting |
+
+Each depth offers the same set of functions. Select only the functions you want
+to change; each selected function opens a short page for its switch and any
+needed sensor, circuit or group mapping. A final confirmation saves the
+configuration and reloads the entry. Settings from a deeper mode remain saved
+when you later choose a simpler mode. You can switch depth at any time through
+Reconfigure > Features. Reconfigure > Connection changes the host, web access
+and Modbus proxy. Existing options remain in place if their function was not
+selected in the wizard.
 
 ### Feature profile
 
@@ -352,9 +361,11 @@ The integration creates a diagnostic sensor named **IDM Heatpump API version**
 - `integration_version`: installed custom integration version
 - `modbus_connection_version`: installed connection-library version
 - `tmodbus_version`: installed direct socket-backend version
+- `home_assistant_version`: installed Home Assistant Core version
+- `python_version`: Python runtime version
 
-The same version set is included in downloaded diagnostics and written to the
-Home Assistant log when the config entry starts. This is the authoritative way
+The same version set is included in downloaded diagnostics. The integration and
+its direct dependency versions are also logged when the entry starts. This is the authoritative way
 to check the runtime; the version pinned in
 `custom_components/idm_heatpump/manifest.json` describes what
 should be installed, while the sensor shows what is actually loaded.
