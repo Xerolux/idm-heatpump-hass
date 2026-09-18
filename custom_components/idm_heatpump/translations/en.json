@@ -495,10 +495,11 @@
           "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
-          "ai_task_entity": "Home Assistant AI Task entity"
+          "ai_task_entity": "Home Assistant AI Task entity",
+          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)"
         },
         "data_description": {
-          "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
         }
       },
       "guided_detail": {
@@ -577,7 +578,8 @@
           "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
-          "ai_task_entity": "Home Assistant AI Task entity"
+          "ai_task_entity": "Home Assistant AI Task entity",
+          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -637,7 +639,7 @@
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
         }
       },
       "guided_review": {
@@ -1074,10 +1076,11 @@
           "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
-          "ai_task_entity": "Home Assistant AI Task entity"
+          "ai_task_entity": "Home Assistant AI Task entity",
+          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)"
         },
         "data_description": {
-          "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
         }
       },
       "guided_detail": {
@@ -1156,7 +1159,8 @@
           "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
-          "ai_task_entity": "Home Assistant AI Task entity"
+          "ai_task_entity": "Home Assistant AI Task entity",
+          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1216,7 +1220,7 @@
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Local Ollama or separately consented cloud reports. AI text can be wrong; no plant control and no voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
         }
       },
       "guided_review": {

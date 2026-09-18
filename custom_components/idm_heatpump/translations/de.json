@@ -495,10 +495,11 @@
           "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
           "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
-          "ai_task_entity": "KI-Task-Entität aus Home Assistant"
+          "ai_task_entity": "KI-Task-Entität aus Home Assistant",
+          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)"
         },
         "data_description": {
-          "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
         }
       },
       "guided_detail": {
@@ -577,7 +578,8 @@
           "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
           "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
-          "ai_task_entity": "KI-Task-Entität aus Home Assistant"
+          "ai_task_entity": "KI-Task-Entität aus Home Assistant",
+          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -637,7 +639,7 @@
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
-          "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
         }
       },
       "guided_review": {
@@ -1074,10 +1076,11 @@
           "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
           "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
-          "ai_task_entity": "KI-Task-Entität aus Home Assistant"
+          "ai_task_entity": "KI-Task-Entität aus Home Assistant",
+          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)"
         },
         "data_description": {
-          "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
         }
       },
       "guided_detail": {
@@ -1156,7 +1159,8 @@
           "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
           "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
-          "ai_task_entity": "KI-Task-Entität aus Home Assistant"
+          "ai_task_entity": "KI-Task-Entität aus Home Assistant",
+          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1216,7 +1220,7 @@
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
-          "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
         }
       },
       "guided_review": {

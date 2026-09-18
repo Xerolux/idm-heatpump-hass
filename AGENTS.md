@@ -113,6 +113,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_service_report.py
 │   ├── test_ai_advisor_extended.py
 │   ├── test_ai_cloud.py
+│   ├── test_ai_report_integrity.py
 │   ├── test_ai_advisor.py
 │   ├── test_comfort_advisory.py
 │   ├── test_comfort_scheduler.py

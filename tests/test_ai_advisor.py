@@ -22,7 +22,8 @@ from custom_components.idm_heatpump.services import _handle_generate_ai_report
 
 def coordinator():
     entry = SimpleNamespace(
-        entry_id="test", options={ai.CONF_AI_ADVISOR: True, ai.CONF_AI_URL: "http://127.0.0.1:11434"}
+        entry_id="test",
+        options={ai.CONF_AI_ADVISOR: True, ai.CONF_AI_UNVERIFIED_TEXT: True, ai.CONF_AI_URL: "http://127.0.0.1:11434"},
     )
     entry.runtime_data = SimpleNamespace(ai_advisor=None)
     return SimpleNamespace(
@@ -351,7 +352,12 @@ async def test_guided_opt_in_validates_local_endpoint():
     await flow.async_step_guided_choose({"selected_features": ["ai_advisor"]})
     result = await flow.async_step_guided_toggle({ai.CONF_AI_ADVISOR: True})
     assert result["step_id"] == "guided_detail"
-    values = {ai.CONF_AI_URL: "http://example.com", ai.CONF_AI_MODEL: "gemma3:4b", ai.CONF_AI_LANGUAGE: "de"}
+    values = {
+        ai.CONF_AI_UNVERIFIED_TEXT: True,
+        ai.CONF_AI_URL: "http://example.com",
+        ai.CONF_AI_MODEL: "gemma3:4b",
+        ai.CONF_AI_LANGUAGE: "de",
+    }
     result = await flow.async_step_guided_detail(values)
     assert result["errors"]["base"] == "invalid_ai_endpoint"
     values[ai.CONF_AI_URL] = "http://127.0.0.1:11434/"

@@ -22,6 +22,7 @@ from tests.test_ai_advisor import manager
 def options(provider="zai"):
     return {
         **cloud.CLOUD_DEFAULTS,
+        ai.CONF_AI_UNVERIFIED_TEXT: True,
         cloud.CONF_AI_PROVIDER: provider,
         cloud.CONF_AI_CLOUD_CONSENT: True,
         cloud.CONF_AI_CLOUD_MODEL: "test-model",

@@ -1,22 +1,37 @@
 # Experimental AI adviser
 
-**Available since v0.17.2-b7; numeric safeguards improved in v0.17.2-b8.** This adviser is off by default
-and must be activated separately, even when Smart is enabled.
+**Available since v0.17.2-b7; measurement reports are the default from v0.17.2-b11.**
+The adviser is off by default and must be activated separately, even when Smart is enabled.
 
-It explains selected measurements using a local Ollama model or an explicitly enabled cloud provider. It has no
-Home Assistant control tools, Modbus connection or plant write path. It does
-not expose the plant to Assist, Google Assistant or Alexa. Generated text
-may be incorrect: verify it against the accompanying facts. This is not a
-fault diagnosis or an automatic optimization controller.
+It has no Home Assistant control tools, Modbus connection or plant write path.
+It does not expose the plant to Assist, Google Assistant or Alexa.
+
+## Report modes
+
+The default is a deterministic **measured-data report**. It shows observed period
+energy and coverage, current temperatures, individual health-check states,
+previous-window energy/COP and learned baseline comparisons. Missing evidence is
+labelled unavailable; lifetime energy counters are never labelled as period
+consumption. No model is called, no API key is needed and no cloud reservation
+is consumed. Scheduling, local statistical learning, storage limits and all four
+report buttons work in this mode.
+
+Enable **free-form, not fully verifiable AI explanations** separately if desired.
+Matching numbers cannot establish that a sentence used the correct measurement,
+unit, period or causal interpretation. The numeric guard rejects some unsupported
+claims but cannot verify meaning. Neither mode provides a fault diagnosis or
+automatic optimization controller. Turning this switch off also replaces saved
+model prose with measured-data reports, preserving the original facts and timestamps.
+Upgrading to beta 11 leaves this new switch off; provider settings are retained.
 
 ## Setup
 
-1. Run Ollama on a local server and install a local completion model, such as
-   `gemma3:4b`. The integration does not install or download models.
-2. Open **Settings → Devices & services → IDM Heatpump → Configure**.
-3. At any setup depth, select **AI adviser (experimental, read-only)**, enable it,
-   and enter the local base URL, installed model name and report language
-   (`de` or `en`). Use your own address, for example `http://192.168.1.20:11434`.
+1. Open **Settings → Devices & services → IDM Heatpump → Configure**.
+2. At any setup depth, select **AI adviser (experimental, read-only)** and enable it.
+3. Select the report language (`de` or `en`). Leave free-form explanations off for
+   reports without a model. Only when enabling explanations, configure local
+   Ollama or one of the providers described below. The integration does not
+   install or download models.
 4. Optionally enable **Learn local operating baselines**, select a storage budget
    (5–200 MiB, default 20), an automatic interval (0 = manual, 24 = daily,
    168 = weekly) and the report type to generate automatically. Notifications
@@ -38,7 +53,7 @@ can forward traffic outside the LAN; HA cannot inspect the server internally.
 
 ## Home Assistant AI Task (recommended, v0.17.2-b10)
 
-Reuse an existing data-generation `ai_task` entity instead of entering another
+With free-form explanations explicitly enabled, reuse an existing data-generation `ai_task` entity instead of entering another
 API key in IDM. Configure the provider, model and output limits in that entity's
 Home Assistant integration. Then select **Home Assistant AI Task (recommended)**
 in the IDM adviser options, choose the entity explicitly, allow sending the
@@ -70,7 +85,8 @@ suitable HA task exists. No provider fallback happens automatically.
 
 ## Optional cloud reports (v0.17.2-b10)
 
-Local Ollama remains the default. OpenAI and Z.ai are separate, experimental opt-in
+Measured-data reports remain the default. For optional free-form explanations,
+Ollama is the initial provider selection. OpenAI and Z.ai are experimental opt-in
 providers. Under **Configure → AI adviser**, select `openai` or `zai`, explicitly
 allow cloud data transfer, enter a model ID supported by your account, and enter
 the corresponding API key. The OpenAI API uses separate API billing; a ChatGPT
@@ -99,15 +115,15 @@ and [Z.ai API documentation](https://docs.z.ai/api-reference/llm/chat-completion
 
 The default budget is **2 requests per UTC day per integration entry**, adjustable
 from 1 to 24. Reservations are saved before sending and survive reloads/restarts;
-failed requests also consume a reservation. A storage failure blocks cloud calls.
+failed requests also consume a reservation. A storage failure or malformed budget blocks cloud calls. Moving the clock backward does not reset reservations.
 Input facts are limited to 12 KB, requested output to 2,048 tokens (including
 reasoning where the provider counts it), response bodies to 64 KiB, and requests
 to 120 seconds. This bounds usage, **not an exact monetary amount**. Configure
 billing controls with the provider as well. Do not increase output budgets merely
 to hide incomplete responses: incompatible or truncated responses are rejected.
 
-Manual report buttons and the existing optional interval use the selected
-provider. The report sensor exposes `cloud_budget_day_utc`,
+When free-form explanations are enabled, manual buttons and the optional interval
+use the selected provider. Otherwise they generate measured-data reports locally. The report sensor exposes `cloud_budget_day_utc`,
 `cloud_requests_reserved`, and the provider inside each saved report. Results
 appear on the same AI device and dashboard as local reports. A provider switch
 never changes plant settings. Select `ollama` again to return to local reports;
@@ -164,7 +180,7 @@ and accepts `report_type`: `daily`, `weekly`, `health` or `efficiency` (default
 contains the report, timestamp and input facts.
 
 At most one request runs per entry, with a minimum sixty-second interval and a
-300-second timeout (since v0.17.2-b9). Automatic inference is off by default. Set the integrated interval to 1–168
+300-second timeout (since v0.17.2-b9). Automatic reporting is off by default. Model inference additionally requires the free-form explanation switch. Set the integrated interval to 1–168
 hours to enable it. The first run occurs one interval after activation. The
 next due time survives restarts; missed runs are skipped without a burst of
 catch-up requests. Intervals measure elapsed hours, not local calendar time:

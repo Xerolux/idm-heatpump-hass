@@ -10,7 +10,7 @@ import math
 import re
 import time
 from collections.abc import Callable
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from itertools import pairwise
 from typing import Any
 from urllib.parse import urlsplit
@@ -44,7 +44,9 @@ CONF_AI_STORAGE = "ai_storage_mib"
 CONF_AI_INTERVAL = "ai_interval_hours"
 CONF_AI_NOTIFICATIONS = "ai_notifications"
 CONF_AI_SCHEDULE_REPORT = "ai_schedule_report"
+CONF_AI_UNVERIFIED_TEXT = "ai_unverified_text"
 AI_EXTRA_DEFAULTS = {
+    CONF_AI_UNVERIFIED_TEXT: False,
     **CLOUD_DEFAULTS,
     CONF_AI_LEARNING: False,
     CONF_AI_STORAGE: 20,
@@ -320,8 +322,8 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
     lines = [
         label("Messwertbericht – ohne KI-Deutung", "Measured-data report – without AI interpretation"),
         label(
-            "Der ungeprüfte oder widersprüchliche KI-Text wurde nicht übernommen.",
-            "Unreviewed or inconsistent model text was not used.",
+            "Dieser Bericht verwendet ausschließlich berechnete Messwerte.",
+            "This report uses calculated measurements only.",
         ),
         label("Angefragtes Auswertungsfenster (UTC): ", "Requested analysis window (UTC): ")
         + str(period.get("start_utc", "?"))
@@ -350,10 +352,86 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
     checks = facts.get("health_checks_current", {})
     if not isinstance(checks, dict):
         checks = {}
+    checks = {check.key: checks.get(check.key) for check in HEALTH_CHECKS}
     active = sum(value is True for value in checks.values())
     unknown = sum(value is None for value in checks.values())
     lines.append(label("Auffällige Messprüfungen: ", "Flagged measurement checks: ") + str(active))
     lines.append(label("Prüfungen ohne ausreichende Daten: ", "Checks without sufficient data: ") + str(unknown))
+    check_names = {
+        "health_communication": ("Kommunikation", "Communication"),
+        "health_many_compressor_starts": ("Häufige Verdichterstarts", "Frequent compressor starts"),
+        "health_low_cop": ("Niedriger COP", "Low COP"),
+        "health_dhw_not_reaching_target": ("Warmwasserziel nicht erreicht", "DHW target not reached"),
+        "health_implausible_sensor": ("Unplausible Sensorwerte", "Implausible sensor values"),
+        "health_long_defrost": ("Lange Abtauung", "Long defrost"),
+        "health_shortening_cycles": ("Kürzere Verdichterzyklen", "Shortening compressor cycles"),
+        "health_recurrent_alarms": ("Wiederkehrende Alarme", "Recurring alarms"),
+    }
+    for key, names in check_names.items():
+        value = checks.get(key)
+        status = (
+            label("auffällig", "flagged")
+            if value is True
+            else label("kein Hinweis", "not flagged")
+            if value is False
+            else label("nicht beurteilbar", "unknown")
+        )
+        lines.append(label(*names) + ": " + status)
+    for key, names in {
+        "outdoor_temp": ("Außentemperatur", "Outdoor temperature"),
+        "hp_flow_temp": ("Wärmepumpenvorlauf", "Heat-pump flow temperature"),
+        "hp_return_temp": ("Wärmepumpenrücklauf", "Heat-pump return temperature"),
+        "dhw_temp_top": ("Warmwasserspeicher oben", "DHW storage top temperature"),
+        "dhw_setpoint": ("Warmwasser-Sollwert", "DHW target temperature"),
+    }.items():
+        reading = _number(current.get(key)) if current.get("connected") else None
+        text = label("nicht verfügbar", "unavailable") if reading is None else f"{reading:.2f} °C"
+        lines.append(label(*names) + ": " + text)
+    previous = facts.get("previous_period", {})
+    learning = facts.get("learning", {})
+    for section, entries in (
+        (
+            previous,
+            (
+                (
+                    "energy_counter_coverage_percent",
+                    "Vorheriges Fenster: Zählerabdeckung",
+                    "Previous window: counter coverage",
+                    " %",
+                ),
+                (
+                    "electrical_kwh_observed",
+                    "Vorheriges Fenster: elektrische Energie",
+                    "Previous window: electrical energy",
+                    " kWh",
+                ),
+                (
+                    "thermal_kwh_observed",
+                    "Vorheriges Fenster: thermische Energie",
+                    "Previous window: thermal energy",
+                    " kWh",
+                ),
+                ("cop_observed", "Vorheriges Fenster: COP", "Previous window: COP", ""),
+            ),
+        ),
+        (
+            learning,
+            (
+                ("baseline_cop", "Gelernter Vergleichs-COP", "Learned baseline COP", ""),
+                (
+                    "current_cop",
+                    "COP im passenden Betriebsbereich heute",
+                    "COP in the matching operating bin today",
+                    "",
+                ),
+                ("deviation_percent", "Abweichung zum Vergleichs-COP", "Deviation from baseline COP", " %"),
+            ),
+        ),
+    ):
+        for key, de, en, unit in entries:
+            value = _number(section.get(key)) if isinstance(section, dict) else None
+            text = label("nicht verfügbar", "unavailable") if value is None else f"{value:.2f}" + unit
+            lines.append(label(de, en) + ": " + text)
     lines.append(
         label(
             "Messlücken werden nicht hochgerechnet. Keine Diagnose und keine Anlagensteuerung.",
@@ -368,7 +446,7 @@ def guard_report(
 ) -> tuple[str, dict[str, Any]]:
     """Replace rejected output with facts; do not retain the rejected prose."""
     quality = report_quality(report, facts)
-    quality.update(guard_version=2, output_source="ai")
+    quality.update(guard_version=3, output_source="ai")
     if legacy or quality["unsupported_numbers"] or quality["unsupported_percentages"]:
         quality.update(
             output_source="facts",
@@ -420,7 +498,9 @@ class AiAdvisor:
         except Exception:  # noqa: BLE001 - optional history must not block HA; never log stored data
             _LOGGER.warning("Could not load experimental AI history")
             return
-        self._cloud_budget_loaded = not isinstance(stored, dict) or stored.get("cloud_budget_valid", True) is True
+        self._cloud_budget_loaded = (
+            stored is None or isinstance(stored, dict) and stored.get("cloud_budget_valid", True) is True
+        )
         if isinstance(stored, dict) and isinstance(stored.get("records"), list):
             now = time.time()
             for row in stored["records"][-_MAX_RECORDS:]:
@@ -434,7 +514,20 @@ class AiAdvisor:
             self.records.sort(key=lambda row: row["at"])
         if isinstance(stored, dict):
             day, count = stored.get("cloud_day", ""), stored.get("cloud_requests", 0)
-            if isinstance(day, str) and isinstance(count, int) and not isinstance(count, bool) and count >= 0:
+            valid_day = day == "" and count == 0
+            if isinstance(day, str) and re.fullmatch(r"\d{4}-\d{2}-\d{2}", day):
+                try:
+                    date.fromisoformat(day)
+                    valid_day = True
+                except ValueError:
+                    valid_day = False
+            if (
+                valid_day
+                and isinstance(day, str)
+                and isinstance(count, int)
+                and not isinstance(count, bool)
+                and count >= 0
+            ):
                 self.cloud_day, self.cloud_requests = day, count
             else:
                 self._cloud_budget_loaded = False
@@ -461,11 +554,25 @@ class AiAdvisor:
                         if _number(facts["period"].get("energy_counter_coverage_percent")) is None:
                             continue
                         quality = row.get("quality", {})
-                        if not isinstance(quality, dict) or quality.get("guard_version") != 2:
+                        if (
+                            not isinstance(quality, dict)
+                            or quality.get("guard_version") != 3
+                            or (
+                                self._options.get(CONF_AI_UNVERIFIED_TEXT) is not True
+                                and quality.get("output_source") != "facts"
+                            )
+                        ):
                             report, quality = guard_report(
                                 row["report"], facts, str(self._options.get(CONF_AI_LANGUAGE, "de")), legacy=True
                             )
-                            row = {**row, "report": report, "quality": quality}
+                            row = {
+                                **row,
+                                "report": report,
+                                "quality": quality,
+                                "provider": "facts",
+                                "model": None,
+                                "ai_task_entity": None,
+                            }
                         self.reports[kind] = row
             if self.reports:
                 self.report_type = max(self.reports, key=lambda k: self.reports[k]["generated_at"])
@@ -623,7 +730,10 @@ class AiAdvisor:
         try:
             facts = self.build_facts(report_type, time.time())
             provider = self._options.get(CONF_AI_PROVIDER, "ollama")
-            if provider == "ollama":
+            if self._options.get(CONF_AI_UNVERIFIED_TEXT) is not True:
+                provider = "facts"
+                report = fact_report(facts, str(self._options.get(CONF_AI_LANGUAGE, "de")))
+            elif provider == "ollama":
                 report = await async_local_report(
                     str(self._options.get(CONF_AI_URL, "")),
                     str(self._options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)),
@@ -635,7 +745,7 @@ class AiAdvisor:
                 if not self._cloud_budget_loaded:
                     raise AdvisorError("ai_cloud_budget_unavailable")
                 day = datetime.now(UTC).date().isoformat()
-                if self.cloud_day != day:
+                if self.cloud_day < day:
                     self.cloud_day, self.cloud_requests = day, 0
                 if self.cloud_requests >= self._options.get(CONF_AI_CLOUD_LIMIT, 2):
                     raise AdvisorError("ai_cloud_daily_limit_reached")
@@ -652,7 +762,19 @@ class AiAdvisor:
                     report = await async_cloud_report(
                         self._options, str(self._options.get(CONF_AI_LANGUAGE, "de")), facts
                     )
-            report, quality = guard_report(report, facts, str(self._options.get(CONF_AI_LANGUAGE, "de")))
+            if provider == "facts":
+                quality = {
+                    "guard_version": 3,
+                    "output_source": "facts",
+                    "model_text_verified": False,
+                    "model_used": False,
+                    "partial_coverage": facts["period"]["energy_counter_coverage_percent"] < 90,
+                    "stale_input": not facts["current"].get("connected"),
+                    "unsupported_numbers": [],
+                    "unsupported_percentages": [],
+                }
+            else:
+                report, quality = guard_report(report, facts, str(self._options.get(CONF_AI_LANGUAGE, "de")))
             self.report, self.facts, self.report_type = report, facts, report_type
             self.generated_at = datetime.now(UTC).isoformat()
             self.status = "ready"
@@ -662,7 +784,7 @@ class AiAdvisor:
                 "model": self._options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)
                 if provider == "ollama"
                 else self._options.get(CONF_AI_CLOUD_MODEL)
-                if provider != "ha_task"
+                if provider not in ("ha_task", "facts")
                 else None,
                 "report": report,
                 "generated_at": self.generated_at,

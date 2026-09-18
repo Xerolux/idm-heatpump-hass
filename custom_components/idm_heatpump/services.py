@@ -664,7 +664,7 @@ async def _handle_export_ai_dashboard(hass: HomeAssistant, call: ServiceCall) ->
     cards: list[JsonValueType] = [
         {
             "type": "markdown",
-            "content": "# iDM AI adviser (experimental)\nRead-only. Model explanations are not verified diagnoses. Learning compares observed operating conditions; it does not train the model.",
+            "content": "# iDM AI adviser (experimental)\nRead-only measurement reports by default, without model calls. Free-form AI explanations require a separate opt-in and are not verified diagnoses. Learning compares observed operating conditions; it does not train the model.",
         },
         {"type": "entities", "entities": [report, *metrics, *buttons]},
     ]
