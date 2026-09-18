@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2-b6] - 2026-09-18
+
 - Keep the power registers needed by energy statistics and the setpoint needed
   by each active comfort schedule in the polling plan when their raw entities
   are disabled. Withdraw the schedule's polling demand on shutdown.
@@ -28,6 +30,9 @@ All notable changes to this project will be documented in this file.
   preserving the lifetime total and resetting the month only when it changes.
 - Preserve the replacement external-power debounce task when an older cancelled
   task finishes, so rapid source updates remain coalesced and cancellable.
+- No dependency, Home Assistant baseline or entity-ID changes. This beta has
+  passed offline regression and quality checks; the read-only live observation
+  in the audit report used the preceding beta, not this candidate.
 
 ## [0.17.2-b5] - 2026-09-18
 
