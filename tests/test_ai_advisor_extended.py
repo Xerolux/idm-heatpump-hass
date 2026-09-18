@@ -259,3 +259,81 @@ async def test_interval_change_resets_deadline_and_ai_sources_remain_polled():
     assert 3590 < obj.next_run - time.time() <= 3600
     await obj.async_stop()
     assert {"hp_flow_temp", "hp_return_temp", "hp_operating_mode"} <= _entity_dependencies("ai_report")
+
+
+@pytest.mark.parametrize("text", ["Coverage 20%", "Abdeckung 20 Prozent", "Coverage 20 percent", "Coverage +20 %"])
+def test_percentage_guard_rejects_value_even_when_temperature_matches(text):
+    facts = manager().build_facts("daily", time.time())
+    facts["period"]["energy_counter_coverage_percent"] = 0.2
+    facts["current"]["outdoor_temp"] = 20.0
+    facts["previous_period"]["energy_counter_coverage_percent"] = 0.0
+    report, quality = ai.guard_report(text, facts, "de")
+    assert quality["output_source"] == "facts"
+    assert quality["discarded_model_percentages"] == [20]
+    assert quality["unsupported_numbers"] == []
+    assert "0,2 %" in report and "20%" not in report and text not in report
+    assert quality["model_text_verified"] is False
+
+
+@pytest.mark.parametrize("language,text", [("de", "Abdeckung: 0,2 %"), ("en", "Coverage: 0.2 percent")])
+def test_guard_preserves_consistent_numeric_prose_without_claiming_semantic_verification(language, text):
+    facts = manager().build_facts("daily", time.time())
+    facts["period"]["energy_counter_coverage_percent"] = 0.2
+    report, quality = ai.guard_report(text, facts, language)
+    assert report == text and quality["output_source"] == "ai"
+    assert quality["model_text_verified"] is False
+
+
+def test_fact_fallback_uses_period_energy_and_preserves_unknown_health():
+    facts = manager().build_facts("daily", time.time())
+    facts["period"].update(electrical_kwh_observed=0.015, thermal_kwh_observed=0.04, cop_observed=2.667)
+    facts["current"]["total_electrical_kwh"] = 10000
+    facts["current"]["connected"] = False
+    facts["health_checks_current"] = {"one": True, "two": None, "three": False}
+    report, quality = ai.guard_report("Invented savings: 987654 kWh.", facts, "en")
+    assert quality["output_source"] == "facts"
+    assert "0.015 kWh" in report and "10000" not in report
+    assert "Checks without sufficient data: 1" in report
+    assert "Flagged measurement checks: 1" in report
+    assert "missing or stale" in report
+    assert "987654" not in report
+
+
+async def test_legacy_reports_are_replaced_before_display_and_preserved_on_next_reload():
+    obj = manager()
+    facts = obj.build_facts("weekly", time.time())
+    stamp = datetime.now(UTC).isoformat()
+    obj._store.data = {
+        "reports": {
+            "weekly": {"report": "UNREVIEWED OLD TEXT", "facts": facts, "generated_at": stamp},
+            "daily": {"report": "BAD", "facts": {}, "generated_at": stamp},
+            "health": {"report": "BAD", "facts": {"period": {}, "current": {}}, "generated_at": stamp},
+        }
+    }
+    await obj.async_load()
+    assert list(obj.reports) == ["weekly"]
+    assert "UNREVIEWED" not in obj.report
+    assert obj.generated_at == stamp
+    assert obj.reports["weekly"]["quality"]["fallback_reason"] == "legacy_unverified"
+    await obj.async_stop()
+    restored = manager()
+    restored._store.data = obj._store.data
+    await restored.async_load()
+    assert restored.reports == obj.reports
+
+
+async def test_rejected_model_text_is_never_returned_or_persisted():
+    obj = manager()
+    with patch.object(ai, "async_local_report", AsyncMock(return_value="SECRET BAD OUTPUT: coverage 20%")):
+        result = await obj.async_generate()
+    assert result["quality"]["output_source"] == "facts"
+    assert "SECRET BAD OUTPUT" not in json.dumps(result)
+    assert "SECRET BAD OUTPUT" not in json.dumps(obj.storage_payload())
+    assert obj.status == "ready"
+
+
+def test_period_distinguishes_requested_window_from_first_observation():
+    result = ai.summarize_period([sample(100)], 0, 200)
+    assert result["start_utc"] != result["first_observation_utc"]
+    assert result["first_observation_utc"] == datetime.fromtimestamp(100, UTC).isoformat()
+    assert ai.summarize_period([], 0, 200)["first_observation_utc"] is None
