@@ -25,6 +25,9 @@ All notable changes to this project will be documented in this file.
   options as a read-only mapping, so a reload can move already registered
   entities into the correct groups. Preserve the placement of older calculated
   sensors without an explicit device scope.
+- Remove the registry entries of disabled Smart, Health and Comfort features
+  during reconfigure reload. Re-enabling them recreates the same entity IDs and
+  their logical devices; unrelated and still-enabled entities are retained.
 
 ## [0.17.2-b4] - 2026-09-18
 

@@ -19,7 +19,13 @@ from .const import (
     CONF_HEATING_CIRCUITS,
     CONF_HEATING_CURVE_ASSISTANT,
     CONF_TECHNICIAN_CODES,
+    CONF_WEATHER_ENTITY,
     CONF_WEATHER_PREHEAT,
+    DEFAULT_FEATURE_PROFILE,
+    DEFAULT_HEALTH_MONITOR,
+    DEFAULT_HEATING_CURVE_ASSISTANT,
+    DEFAULT_WEATHER_ENTITY,
+    DEFAULT_WEATHER_PREHEAT,
     DOMAIN,
     FEATURE_PROFILE_SMART,
     MANUFACTURER,
@@ -557,6 +563,57 @@ def cleanup_stale_hierarchy_devices(hass: HomeAssistant, coordinator: IdmCoordin
         _detach_hierarchy_device(registry, device, entry_id)
         if parent_device_id is not None and parent_device_id in surviving_children:
             surviving_children[parent_device_id] -= 1
+
+
+def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
+    """Remove entities of switched-off optional features after an entry reload.
+
+    The entity platform does not recreate these entities when a feature is off,
+    but Home Assistant keeps their registry entries. Removing only known derived
+    keys lets a later reconfigure recreate them with stable unique/entity IDs.
+    """
+    config_entry = coordinator.config_entry
+    if config_entry is None:
+        return
+
+    options = config_entry.options
+    smart = options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
+    health = smart and options.get(CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR)
+    heating_curve = smart and options.get(CONF_HEATING_CURVE_ASSISTANT, DEFAULT_HEATING_CURVE_ASSISTANT)
+    weather = (
+        smart
+        and options.get(CONF_WEATHER_PREHEAT, DEFAULT_WEATHER_PREHEAT)
+        and str(options.get(CONF_WEATHER_ENTITY, DEFAULT_WEATHER_ENTITY)).strip()
+    )
+    registry = er.async_get(hass)
+    prefix = f"{config_entry.entry_id}_"
+
+    for entity in list(er.async_entries_for_config_entry(registry, config_entry.entry_id)):
+        if not entity.unique_id.startswith(prefix):
+            continue
+        key = entity.unique_id[len(prefix) :]
+        disabled = (
+            (key.startswith("health_") and not health)
+            or (key == "heating_curve_advice" and not heating_curve)
+            or (key == "weather_preheat_advice" and not weather)
+            or (
+                not smart
+                and key.startswith(
+                    (
+                        "calculated_",
+                        "analysis_",
+                        "energy_electrical_",
+                        "energy_thermal_",
+                        "energy_cop_",
+                        "energy_cost_",
+                        "energy_co2_",
+                        "energy_pv_self_consumed_",
+                    )
+                )
+            )
+        )
+        if disabled:
+            registry.async_remove(entity.entity_id)
 
 
 def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
