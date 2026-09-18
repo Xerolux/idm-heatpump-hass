@@ -495,7 +495,12 @@
           "ai_advisor": "Experimental AI adviser (read-only)",
           "ai_url": "Local Ollama base URL",
           "ai_model": "Installed local model",
-          "ai_language": "Report language"
+          "ai_language": "Report language",
+          "ai_learning": "Learn local operating baselines",
+          "ai_storage_mib": "Maximum AI data storage (MiB)",
+          "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
+          "ai_notifications": "Notify about new measured health flags",
+          "ai_schedule_report": "Automatically generated report type"
         },
         "data_description": {
           "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
@@ -565,7 +570,12 @@
           "ai_advisor": "Experimental AI adviser (read-only)",
           "ai_url": "Local Ollama base URL",
           "ai_model": "Installed local model",
-          "ai_language": "Report language"
+          "ai_language": "Report language",
+          "ai_learning": "Learn local operating baselines",
+          "ai_storage_mib": "Maximum AI data storage (MiB)",
+          "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
+          "ai_notifications": "Notify about new measured health flags",
+          "ai_schedule_report": "Automatically generated report type"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1054,7 +1064,12 @@
           "ai_advisor": "Experimental AI adviser (read-only)",
           "ai_url": "Local Ollama base URL",
           "ai_model": "Installed local model",
-          "ai_language": "Report language"
+          "ai_language": "Report language",
+          "ai_learning": "Learn local operating baselines",
+          "ai_storage_mib": "Maximum AI data storage (MiB)",
+          "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
+          "ai_notifications": "Notify about new measured health flags",
+          "ai_schedule_report": "Automatically generated report type"
         },
         "data_description": {
           "ai_advisor": "Off by default. Sends selected measurements to your local Ollama server. AI text can be wrong; no plant control and no voice exposure."
@@ -1124,7 +1139,12 @@
           "ai_advisor": "Experimental AI adviser (read-only)",
           "ai_url": "Local Ollama base URL",
           "ai_model": "Installed local model",
-          "ai_language": "Report language"
+          "ai_language": "Report language",
+          "ai_learning": "Learn local operating baselines",
+          "ai_storage_mib": "Maximum AI data storage (MiB)",
+          "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
+          "ai_notifications": "Notify about new measured health flags",
+          "ai_schedule_report": "Automatically generated report type"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1551,8 +1571,20 @@
       }
     },
     "sensor": {
+      "ai_coverage": {
+        "name": "AI observed coverage"
+      },
+      "ai_learning_status": {
+        "name": "AI learning status"
+      },
+      "ai_observed_cop": {
+        "name": "AI observed COP"
+      },
       "ai_report": {
         "name": "AI report (experimental)"
+      },
+      "ai_storage_used": {
+        "name": "AI storage used"
       },
       "air_heat_exchanger_temp": {
         "name": "Air heat exchanger temperature"
@@ -2755,6 +2787,16 @@
         "report_type": {
           "name": "Report type",
           "description": "daily, weekly, health or efficiency."
+        }
+      }
+    },
+    "export_ai_dashboard": {
+      "name": "Export experimental AI dashboard",
+      "description": "Return a complete dashboard configuration with your current entity IDs.",
+      "fields": {
+        "entry_id": {
+          "name": "IDM integration",
+          "description": "IDM integration entry."
         }
       }
     }

@@ -306,6 +306,10 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
 # ``scripts/generate_entity_translations.py``.
 DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     "sensor": {
+        "ai_learning_status": ("AI learning status", "KI-Lernstatus"),
+        "ai_storage_used": ("AI storage used", "KI-Speicherverbrauch"),
+        "ai_coverage": ("AI observed coverage", "KI-Datenabdeckung"),
+        "ai_observed_cop": ("AI observed COP", "KI-Beobachtungs-COP"),
         "ai_report": ("AI report (experimental)", "KI-Bericht (experimentell)"),
         # === Calculated ===
         "calculated_hp_temperature_delta": (

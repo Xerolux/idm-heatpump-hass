@@ -1,6 +1,6 @@
 # Experimental local AI adviser
 
-**Upcoming feature: not included in v0.17.2-b6.** This adviser is off by default
+**Available in v0.17.2-b7 (experimental beta).** This adviser is off by default
 and must be activated separately, even when Smart is enabled.
 
 It explains selected measurements using a local Ollama model. It has no
@@ -17,7 +17,14 @@ fault diagnosis or an automatic optimization controller.
 3. At any setup depth, select **AI adviser (experimental, read-only)**, enable it,
    and enter the local base URL, installed model name and report language
    (`de` or `en`). Use your own address, for example `http://192.168.1.20:11434`.
-4. Review and save. A report sensor and four report buttons are created.
+4. Optionally enable **Learn local operating baselines**, select a storage budget
+   (5–200 MiB, default 20), an automatic interval (0 = manual, 24 = daily,
+   168 = weekly) and the report type to generate automatically. Notifications
+   have a separate switch and are off by default.
+5. Review and save. The **iDM KI-Anlagenberater** logical device contains the
+   report sensor, learning/storage/coverage/COP sensors and four report buttons.
+   It uses a child device on HA 2026.9+, with a linked-device fallback on 2026.8,
+   independently of the general optional device grouping setting.
 
 Only literal private LAN or loopback IP addresses are accepted. Hostnames,
 public addresses, embedded credentials, URL paths and redirects are rejected.
@@ -79,8 +86,12 @@ and accepts `report_type`: `daily`, `weekly`, `health` or `efficiency` (default
 contains the report, timestamp and input facts.
 
 At most one request runs per entry, with a minimum sixty-second interval and a
-180-second timeout. No automatic inference is enabled. Scheduled reports
-require a separately created Home Assistant automation calling this action.
+180-second timeout. Automatic inference is off by default. Set the integrated interval to 1–168
+hours to enable it. The first run occurs one interval after activation. The
+next due time survives restarts; missed runs are skipped without a burst of
+catch-up requests. Intervals measure elapsed hours, not local calendar time:
+24 hours can move by an hour across a daylight-saving change. A manual report
+does not move the schedule. Failures wait until the next interval.
 
 Add the sensor and buttons to your dashboard using the entity picker. An
 optional Markdown card can display the output as escaped plain text:
@@ -95,9 +106,10 @@ content: >-
 
 Replace the example entity ID with the actual report sensor. Keep its state
 and timestamp visible: after a failed request, the previous successful report
-remains with its original timestamp. Reports are held in memory and cleared
-on reload; numeric history survives restarts. Report text and facts are
-excluded from Recorder to avoid duplicating large outputs.
+remains with its original timestamp. The latest successful result for each of the four report types survives
+restarts, including its facts, timestamp and quality flags. The `reports`
+attribute contains all four results. Report text and facts are excluded from
+Recorder to avoid duplicating large outputs; compact metric states can be graphed.
 
 Disabling the feature stops collection and cancels an in-progress request.
 The saved numeric history remains locally available if re-enabled within its
@@ -111,3 +123,44 @@ model is required; an embedding model cannot write reports. Responses with
 tools, malformed content, excessive size or token-limit truncation are
 rejected. Wait for an active request to finish before trying again. Do not
 treat an old retained report or incomplete history as a fresh, full assessment.
+
+## Dashboard and learning
+
+Run `idm_heatpump.export_ai_dashboard` with your integration entry selected.
+Copy the returned `dashboard` object into a new dashboard's raw configuration
+editor. It resolves the current entity IDs, including renamed entities. It
+contains four report cards, manual buttons, data coverage, observed COP,
+learning status and storage history. No existing dashboard is overwritten.
+The report sensor also exposes `next_run` (UTC Unix timestamp),
+`storage_limit_mib`, and `history_samples`.
+
+Learning is a statistical comparison, not LLM fine-tuning. It stores daily
+energy aggregates separately for heating, cooling and DHW and five-degree
+outdoor temperature bins. Idle, defrost, mode transitions, counter resets,
+stale measurements and gaps are excluded. Observations at both ends of an
+interval cannot prove that no brief mode change happened between them.
+A baseline requires at least three earlier days and six observed hours in the
+matching bin. Today's comparison additionally requires one observed hour.
+Current-day data never trains its own baseline. Different flow temperatures,
+loads and other unobserved conditions can still explain a difference; a
+baseline deviation is not a fault diagnosis or a savings guarantee.
+
+There are at most 4,034 detailed samples (14 days) and 4,096 daily learning
+buckets (up to 365 days). Old data is automatically removed; detailed data
+becomes compact daily learning totals when learning is enabled. The chosen
+storage limit is an upper bound, not a reservation: the adviser does not fill
+20 MiB just because they are available. Lowering it evicts oldest details
+before learning totals, preserving the latest reports. The storage sensor is
+a conservative JSON size estimate including overhead, not the exact disk
+allocation. Model files, HA Recorder and backups are outside this budget.
+No embeddings, vector database or new model download is needed.
+
+Quality flags explicitly mark partial coverage, stale input and numerical
+claims not found in the supplied facts. Matching a number does not verify its
+meaning: `model_text_verified` remains false. The dashboard shows these flags
+beside the prose. Deterministic measured values remain the source of truth.
+
+Optional notifications use one local HA persistent notification per plant,
+only for measured health flags after a report completes. Identical flags do
+not repeat; new alerts have a twelve-hour cooldown. LLM guesses never trigger
+notifications. This does not enable voice exposure or control of the plant.

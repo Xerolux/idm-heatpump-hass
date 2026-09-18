@@ -290,3 +290,14 @@ generate_ai_report:
             - "weekly"
             - "health"
             - "efficiency"
+
+export_ai_dashboard:
+  name: "Export experimental AI dashboard"
+  description: "Return a ready-to-use dashboard configuration using your current entity IDs. Does not change existing dashboards."
+  fields:
+    entry_id:
+      name: "IDM integration"
+      required: true
+      selector:
+        config_entry:
+          integration: idm_heatpump

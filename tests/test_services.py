@@ -58,7 +58,7 @@ class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
         # Core services, two DHW boost actions and the read-only AI action.
-        assert mock_hass.services.async_register.call_count == 9
+        assert mock_hass.services.async_register.call_count == 10
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -82,6 +82,7 @@ class TestServiceLifecycleInvariants:
             (DOMAIN, "start_dhw_boost"),
             (DOMAIN, "cancel_dhw_boost"),
             (DOMAIN, "generate_ai_report"),
+            (DOMAIN, "export_ai_dashboard"),
         }
 
     async def test_setup_is_idempotent_when_already_registered(self, mock_hass):

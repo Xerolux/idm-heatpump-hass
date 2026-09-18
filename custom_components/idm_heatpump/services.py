@@ -168,6 +168,13 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     await async_setup_dhw_boost_services(hass)
     hass.services.async_register(
         DOMAIN,
+        "export_ai_dashboard",
+        partial(_handle_export_ai_dashboard, hass),
+        schema=vol.Schema({vol.Required("entry_id"): cv.string}),
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
         "generate_ai_report",
         partial(_handle_generate_ai_report, hass),
         schema=vol.Schema(
@@ -629,3 +636,45 @@ async def _handle_generate_ai_report(hass: HomeAssistant, call: ServiceCall) -> 
         return await manager.async_generate(call.data.get("report_type", "daily"))
     except AdvisorError as err:
         raise HomeAssistantError(translation_domain=DOMAIN, translation_key=str(err)) from err
+
+
+async def _handle_export_ai_dashboard(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
+    """Export a complete dashboard using registered IDs, including user renames."""
+    from homeassistant.helpers import entity_registry as er
+
+    from .entity import build_entity_unique_id
+
+    entry = hass.config_entries.async_get_entry(call.data["entry_id"])
+    if entry is None or entry.domain != DOMAIN or entry.state != ConfigEntryState.LOADED:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="ai_disabled")
+    if not isinstance(getattr(entry.runtime_data, "ai_advisor", None), AiAdvisor):
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="ai_disabled")
+    registry = er.async_get(hass)
+
+    def entity(key: str, domain: str = "sensor") -> str | None:
+        return registry.async_get_entity_id(domain, DOMAIN, build_entity_unique_id(entry.entry_id, key))
+
+    report = entity("ai_report")
+    if report is None:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="ai_disabled")
+    metrics = [
+        e for k in ("ai_learning_status", "ai_storage_used", "ai_coverage", "ai_observed_cop") if (e := entity(k))
+    ]
+    buttons = [e for k in REPORT_TYPES if (e := entity(f"ai_report_{k}", "button"))]
+    cards: list[JsonValueType] = [
+        {
+            "type": "markdown",
+            "content": "# iDM AI adviser (experimental)\nRead-only. Model explanations are not verified diagnoses. Learning compares observed operating conditions; it does not train the model.",
+        },
+        {"type": "entities", "entities": [report, *metrics, *buttons]},
+    ]
+    for kind in REPORT_TYPES:
+        content = "{% set r = (state_attr('" + report + "', 'reports') or {}).get('" + kind + "', {}) %}\n"
+        content += "{{ r.get('generated_at', 'No report yet') | e }}\n\n{{ r.get('report', '') | e }}\n\n"
+        content += "Observed coverage: {{ r.get('facts', {}).get('period', {}).get('energy_counter_coverage_percent', '—') }} %\n\n"
+        content += "Quality: {{ r.get('quality', {}) | to_json | e }}"
+        cards.append({"type": "markdown", "title": kind.capitalize(), "content": content})
+    for key in ("ai_coverage", "ai_observed_cop", "ai_storage_used"):
+        if metric := entity(key):
+            cards.append({"type": "history-graph", "entities": [metric], "hours_to_show": 168})
+    return {"dashboard": {"title": "iDM AI", "views": [{"title": "AI adviser", "path": "ai", "cards": cards}]}}

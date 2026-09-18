@@ -1,4 +1,4 @@
-"""Experimental local-only reports. No tools, HA actions or device write path."""
+"""Experimental local-only reports with no model tools or device write path."""
 
 from __future__ import annotations
 
@@ -18,6 +18,7 @@ from urllib.parse import urlsplit
 import aiohttp
 from homeassistant.helpers.storage import Store
 
+from .ai_learning import LearningHistory
 from .const import CONF_AI_ADVISOR, DOMAIN
 from .health_monitor import HEALTH_CHECKS
 
@@ -25,6 +26,18 @@ _LOGGER = logging.getLogger(__name__)
 CONF_AI_URL = "ai_url"
 CONF_AI_MODEL = "ai_model"
 CONF_AI_LANGUAGE = "ai_language"
+CONF_AI_LEARNING = "ai_learning"
+CONF_AI_STORAGE = "ai_storage_mib"
+CONF_AI_INTERVAL = "ai_interval_hours"
+CONF_AI_NOTIFICATIONS = "ai_notifications"
+CONF_AI_SCHEDULE_REPORT = "ai_schedule_report"
+AI_EXTRA_DEFAULTS = {
+    CONF_AI_LEARNING: False,
+    CONF_AI_STORAGE: 20,
+    CONF_AI_INTERVAL: 0,
+    CONF_AI_NOTIFICATIONS: False,
+    CONF_AI_SCHEDULE_REPORT: "daily",
+}
 DEFAULT_AI_MODEL = "gemma3:4b"
 REPORT_TYPES = ("daily", "weekly", "health", "efficiency")
 _MAX_RECORDS = 4034  # Fourteen days at five-minute intervals, plus boundaries.
@@ -83,7 +96,8 @@ def capture_sample(coordinator: Any, timestamp: float) -> dict[str, Any]:
     healthy = coordinator.last_update_success is True and fresh
     data = coordinator.data if healthy and isinstance(coordinator.data, dict) else {}
     statistics = getattr(coordinator, "energy_statistics", None)
-    result: dict[str, Any] = {"at": timestamp, "connected": healthy}
+    mode = _number(data.get("hp_operating_mode"))
+    result: dict[str, Any] = {"at": timestamp, "connected": healthy, "mode": mode if mode in (1, 2, 4) else None}
     for key in _TEMPERATURES:
         value = _number(data.get(key))
         result[key] = value if value is not None and -60 <= value <= 110 else None
@@ -214,13 +228,55 @@ async def async_local_report(url: str, model: str, language: str, facts: dict[st
         raise AdvisorError("ai_unavailable") from err
 
 
+def report_quality(report: str, facts: dict[str, Any]) -> dict[str, Any]:
+    """Flag unsupported numbers without claiming semantic verification of prose."""
+    known: list[float] = [0, 1, 2, 7, 14, 24, 60, 100]
+
+    def collect(value: Any) -> None:
+        if isinstance(value, dict):
+            for item in value.values():
+                collect(item)
+        elif isinstance(value, list):
+            for item in value:
+                collect(item)
+        elif (number := _number(value)) is not None:
+            known.append(number)
+        elif isinstance(value, str):
+            known.extend(float(n) for n in re.findall(r"\d+(?:\.\d+)?", value))
+
+    collect(facts)
+    unexpected = sorted(
+        {
+            float(n.replace(",", "."))
+            for n in re.findall(r"(?<![\w])\d+(?:[.,]\d+)?", report)
+            if not any(abs(float(n.replace(",", ".")) - k) <= max(0.02, abs(k) * 0.005) for k in known)
+        }
+    )
+    return {
+        "model_text_verified": False,
+        "unsupported_numbers": unexpected[:30],
+        "partial_coverage": facts["period"]["energy_counter_coverage_percent"] < 90,
+        "stale_input": not facts["current"]["connected"],
+    }
+
+
 class AiAdvisor:
     """Collect bounded history only after opt-in; generate on explicit requests."""
 
     def __init__(self, hass: Any, entry: Any, coordinator: Any) -> None:
+        self._hass = hass
+        self._entry_id = entry.entry_id
+        self.learning = LearningHistory()
+        self.reports: dict[str, dict[str, Any]] = {}
+        self.next_run: float | None = None
+        self._scheduler: asyncio.Task[None] | None = None
+        self._notification_signature = ""
+        self._notification_at = 0.0
         self._coordinator = coordinator
         self._options = dict(entry.options)
         self._store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.ai_advisor.{entry.entry_id}")
+        self._storage_bytes = 65536
+        self.observed_period: dict[str, Any] = {}
         self.records: list[dict[str, Any]] = []
         self.status = "idle"
         self.report: str | None = None
@@ -246,10 +302,117 @@ class AiAdvisor:
                     continue
                 if not now - 14 * 86400 <= row["at"] <= now:
                     continue
-                clean = {key: _number(row.get(key)) for key in (*_TEMPERATURES, *_COUNTERS, "at")}
+                clean = {key: _number(row.get(key)) for key in (*_TEMPERATURES, *_COUNTERS, "at", "mode")}
                 clean["connected"] = row.get("connected") is True
                 self.records.append(clean)
             self.records.sort(key=lambda row: row["at"])
+        if isinstance(stored, dict):
+            self.learning.load(stored.get("learning"), time.time())
+            reports = stored.get("reports", {})
+            if isinstance(reports, dict):
+                for kind in REPORT_TYPES:
+                    row = reports.get(kind)
+                    if (
+                        isinstance(row, dict)
+                        and isinstance(row.get("report"), str)
+                        and len(row["report"]) <= 6000
+                        and isinstance(row.get("generated_at"), str)
+                        and isinstance(row.get("facts"), dict)
+                        and len(json.dumps(row)) < 100000
+                    ):
+                        try:
+                            datetime.fromisoformat(row["generated_at"])
+                        except ValueError:
+                            continue
+                        self.reports[kind] = row
+            if self.reports:
+                self.report_type = max(self.reports, key=lambda k: self.reports[k]["generated_at"])
+                latest = self.reports[self.report_type]
+                self.report, self.facts, self.generated_at = latest["report"], latest["facts"], latest["generated_at"]
+                self.status = "ready"
+            self.next_run = _number(stored.get("next_run"))
+            self._notification_at = _number(stored.get("notification_at")) or 0.0
+            signature = stored.get("notification_signature", "")
+            self._notification_signature = signature[:1000] if isinstance(signature, str) else ""
+
+    @property
+    def storage_limit(self) -> int:
+        value = _number(self._options.get(CONF_AI_STORAGE, 20)) or 20
+        return int(min(200, max(5, value))) * 1024 * 1024
+
+    def storage_payload(self) -> dict[str, Any]:
+        """Budget UTF-8 JSON with conservative overhead for the HA Store wrapper."""
+        result = {
+            "records": self.records,
+            "learning": self.learning.buckets,
+            "reports": self.reports,
+            "next_run": self.next_run,
+            "notification_at": self._notification_at,
+            "notification_signature": self._notification_signature,
+        }
+        while len(json.dumps(result, ensure_ascii=True, indent=4).encode()) + 65536 > self.storage_limit:
+            if self.records:
+                del self.records[: max(1, len(self.records) // 10)]
+            elif self.learning.buckets:
+                del self.learning.buckets[next(iter(self.learning.buckets))]
+            else:
+                break
+        self._storage_bytes = len(json.dumps(result, ensure_ascii=True, indent=4).encode()) + 65536
+        return result
+
+    @property
+    def storage_bytes(self) -> int:
+        return self._storage_bytes
+
+    def start(self) -> None:
+        """Schedule only when an explicit non-zero interval is configured."""
+        hours = _number(self._options.get(CONF_AI_INTERVAL)) or 0
+        if not 1 <= hours <= 168 or self._scheduler is not None or self._stopped:
+            return
+        if self.next_run is None or self.next_run < time.time():
+            self.next_run = time.time() + hours * 3600
+        self._store.async_delay_save(self.storage_payload, 5)
+        self._scheduler = asyncio.create_task(self._schedule_loop(hours * 3600))
+
+    async def _schedule_loop(self, interval: float) -> None:
+        while not self._stopped:
+            await asyncio.sleep(30)
+            if self.next_run is None or time.time() < self.next_run:
+                continue
+            self.next_run = time.time() + interval
+            try:
+                await self._store.async_save(self.storage_payload())
+                await self.async_generate(str(self._options.get(CONF_AI_SCHEDULE_REPORT, "daily")))
+            except (AdvisorError, OSError):
+                _LOGGER.warning("Scheduled experimental AI report failed; next interval retained")
+
+    async def _notify(self, facts: dict[str, Any]) -> None:
+        if self._options.get(CONF_AI_NOTIFICATIONS) is not True:
+            return
+        flags = sorted(k for k, v in facts["health_checks_current"].items() if v is True)
+        signature = ",".join(flags)
+        if not signature:
+            self._notification_signature = ""
+            return
+        if signature == self._notification_signature or time.time() - self._notification_at < 43200:
+            return
+        try:
+            await self._hass.services.async_call(
+                "persistent_notification",
+                "create",
+                {
+                    "title": "iDM: experimental adviser",
+                    "message": "New measured health flags: "
+                    + signature
+                    + ". Review the AI report and measured values; this is not a diagnosis.",
+                    "notification_id": f"idm_ai_{self._entry_id}",
+                },
+                blocking=True,
+            )
+        except Exception:  # noqa: BLE001 - notification failure must not lose a completed report
+            _LOGGER.warning("Could not display experimental AI notification")
+            return
+        self._notification_signature, self._notification_at = signature, time.time()
 
     def observe(self, now: float | None = None) -> None:
         if self._stopped:
@@ -257,9 +420,14 @@ class AiAdvisor:
         now = time.time() if now is None else now
         if self.records and now - self.records[-1]["at"] < 300:
             return
-        self.records.append(capture_sample(self._coordinator, now))
+        sample = capture_sample(self._coordinator, now)
+        if self._options.get(CONF_AI_LEARNING) is True and self.records:
+            self.learning.observe(self.records[-1], sample)
+        self.learning.prune(now)
+        self.records.append(sample)
         self.records = [row for row in self.records[-_MAX_RECORDS:] if row["at"] >= now - 14 * 86400]
-        self._store.async_delay_save(lambda: {"records": self.records}, 30)
+        self.observed_period = summarize_period(self.records, now - 86400, now)
+        self._store.async_delay_save(self.storage_payload, 30)
 
     def build_facts(self, report_type: str, now: float) -> dict[str, Any]:
         duration = 7 * 86400 if report_type == "weekly" else 86400
@@ -276,6 +444,9 @@ class AiAdvisor:
         return {
             "experimental": True,
             "purpose": report_type,
+            "learning": self.learning.comparison(snapshot)
+            if self._options.get(CONF_AI_LEARNING) is True
+            else {"status": "disabled"},
             "current": snapshot,
             "health_checks_current": checks,
             "compressor_starts_last_24_hours": starts,
@@ -313,6 +484,14 @@ class AiAdvisor:
             self.report, self.facts, self.report_type = report, facts, report_type
             self.generated_at = datetime.now(UTC).isoformat()
             self.status = "ready"
+            self.reports[report_type] = {
+                "report": report,
+                "generated_at": self.generated_at,
+                "facts": facts,
+                "quality": report_quality(report, facts),
+            }
+            await self._notify(facts)
+            self._store.async_delay_save(self.storage_payload, 5)
             return {"report": report, "generated_at": self.generated_at, "facts": facts, "experimental": True}
         except AdvisorError as err:
             self.status, self.error = "error", str(err)
@@ -329,6 +508,13 @@ class AiAdvisor:
             return
         self._stopped = True
         self.on_update = lambda: None
+        if self._scheduler is not None:
+            self._scheduler.cancel()
+            try:
+                await self._scheduler
+            except asyncio.CancelledError:
+                pass
+            self._scheduler = None
         if self._task is not None:
             self._task.cancel()
             try:
@@ -336,6 +522,6 @@ class AiAdvisor:
             except asyncio.CancelledError:
                 pass
         try:
-            await self._store.async_save({"records": self.records})
+            await self._store.async_save(self.storage_payload())
         except Exception:  # noqa: BLE001 - optional history must not block HA; never log stored data
             _LOGGER.warning("Could not save experimental AI history")

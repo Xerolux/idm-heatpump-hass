@@ -37,10 +37,17 @@ from homeassistant.helpers.selector import (
 )
 
 from .ai_advisor import (
+    AI_EXTRA_DEFAULTS,
+    CONF_AI_INTERVAL,
     CONF_AI_LANGUAGE,
+    CONF_AI_LEARNING,
     CONF_AI_MODEL,
+    CONF_AI_NOTIFICATIONS,
+    CONF_AI_SCHEDULE_REPORT,
+    CONF_AI_STORAGE,
     CONF_AI_URL,
     DEFAULT_AI_MODEL,
+    REPORT_TYPES,
     AdvisorError,
     validate_settings,
 )
@@ -414,7 +421,7 @@ _GUIDED_CONFIRM = "save_configuration"
 _GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], tuple[str, ...]]] = {
     "plant": (None, (CONF_HEATING_CIRCUITS, CONF_ZONE_COUNT), (CONF_SCAN_INTERVAL, CONF_HIDE_UNUSED), ()),
     "profile": (None, (CONF_FEATURE_PROFILE,), (), ()),
-    "ai_advisor": (CONF_AI_ADVISOR, (CONF_AI_URL, CONF_AI_MODEL, CONF_AI_LANGUAGE), (), ()),
+    "ai_advisor": (CONF_AI_ADVISOR, (CONF_AI_URL, CONF_AI_MODEL, CONF_AI_LANGUAGE, *AI_EXTRA_DEFAULTS), (), ()),
     "health": (CONF_HEALTH_MONITOR, (), (CONF_SHORT_CYCLE_MINUTES,), ()),
     "energy": (None, (CONF_DYNAMIC_PRICE_ENTITY,), (CONF_ENERGY_PRICE, CONF_ENERGY_CO2_FACTOR), ()),
     "energy_manager": (
@@ -521,6 +528,7 @@ def _default_options() -> dict[str, Any]:
         CONF_ENERGY_MANAGER_TARGET: DEFAULT_ENERGY_MANAGER_TARGET,
         CONF_ENERGY_MANAGER_TIMEOUT: DEFAULT_ENERGY_MANAGER_TIMEOUT,
         CONF_ENERGY_MANAGER_COOLDOWN: DEFAULT_ENERGY_MANAGER_COOLDOWN,
+        **AI_EXTRA_DEFAULTS,
         CONF_AI_ADVISOR: False,
         CONF_AI_URL: "",
         CONF_AI_MODEL: DEFAULT_AI_MODEL,
@@ -678,6 +686,27 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(CONF_AI_ADVISOR, default=options.get(CONF_AI_ADVISOR, False)): BooleanSelector(
                             BooleanSelectorConfig()
+                        ),
+                        vol.Required(CONF_AI_LEARNING, default=options.get(CONF_AI_LEARNING, False)): BooleanSelector(
+                            BooleanSelectorConfig()
+                        ),
+                        vol.Required(
+                            CONF_AI_NOTIFICATIONS, default=options.get(CONF_AI_NOTIFICATIONS, False)
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(CONF_AI_STORAGE, default=options.get(CONF_AI_STORAGE, 20)): NumberSelector(
+                            NumberSelectorConfig(
+                                min=5, max=200, step=1, mode=NumberSelectorMode.BOX, unit_of_measurement="MiB"
+                            )
+                        ),
+                        vol.Required(CONF_AI_INTERVAL, default=options.get(CONF_AI_INTERVAL, 0)): NumberSelector(
+                            NumberSelectorConfig(
+                                min=0, max=168, step=1, mode=NumberSelectorMode.BOX, unit_of_measurement="h"
+                            )
+                        ),
+                        vol.Required(
+                            CONF_AI_SCHEDULE_REPORT, default=options.get(CONF_AI_SCHEDULE_REPORT, "daily")
+                        ): SelectSelector(
+                            SelectSelectorConfig(options=list(REPORT_TYPES), mode=SelectSelectorMode.DROPDOWN)
                         ),
                         vol.Required(CONF_AI_URL, default=options.get(CONF_AI_URL, "")): TextSelector(
                             TextSelectorConfig(type=TextSelectorType.TEXT)

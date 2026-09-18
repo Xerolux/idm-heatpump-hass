@@ -50,6 +50,7 @@ DeviceScopeKind = Literal[
     "analytics",
     "health",
     "comfort",
+    "ai",
 ]
 
 
@@ -138,6 +139,7 @@ _MODULE_DEVICE_METADATA: dict[DeviceScopeKind, tuple[str, str, str]] = {
     "diagnostics": ("diagnostics", "Diagnose", "Diagnose"),
     "analytics": ("analytics", "iDM Analytics", "Energieanalyse"),
     "health": ("health", "iDM Health Monitor", "Gesundheitsüberwachung"),
+    "ai": ("ai", "iDM KI-Anlagenberater", "Experimental AI adviser"),
     "comfort": ("comfort", "iDM Comfort", "Komfortberatung"),
 }
 
@@ -160,6 +162,7 @@ _CHILD_DEVICE_KINDS: frozenset[DeviceScopeKind] = frozenset(
         "analytics",
         "health",
         "comfort",
+        "ai",
     }
 )
 
@@ -180,6 +183,8 @@ def child_devices_supported() -> bool:
 def resolve_device_scope(entity_key: str) -> DeviceScope | None:
     """Return the subdevice scope for a register or web-value key."""
     key = entity_key.removeprefix("web_")
+    if key.startswith("ai_"):
+        return DeviceScope("ai", "ai")
 
     if match := _ZONE_ROOM_REGISTER.match(key):
         return DeviceScope("zone_room", match.group(1), int(match.group(2)))
@@ -429,7 +434,12 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
     for the zone modules.
     """
     if coordinator.device_hierarchy_enabled is not True:
-        return {}
+        options = getattr(coordinator.config_entry, "options", {})
+        return (
+            dict(_scope_subdevices(coordinator, DeviceScope("ai", "ai")))
+            if options.get(CONF_AI_ADVISOR) is True
+            else {}
+        )
 
     entity_keys = {register.name for register in coordinator.active_registers}
     supplement = coordinator.web_supplement
@@ -452,6 +462,8 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
             entity_keys.add("health_report")
         if options.get(CONF_HEATING_CURVE_ASSISTANT, False) or options.get(CONF_WEATHER_PREHEAT, False):
             entity_keys.add("heating_curve_advice")
+    if isinstance(options, Mapping) and options.get(CONF_AI_ADVISOR) is True:
+        entity_keys.add("ai_report")
     entity_keys.add("error_acknowledge")
 
     subdevices: dict[tuple[str, str], SubdevicePlacement] = {}
@@ -594,7 +606,7 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
             continue
         key = entity.unique_id[len(prefix) :]
         disabled = (
-            (key.startswith("ai_report") and not options.get(CONF_AI_ADVISOR, False))
+            (key.startswith("ai_") and not options.get(CONF_AI_ADVISOR, False))
             or (key.startswith("health_") and not health)
             or (key == "heating_curve_advice" and not heating_curve)
             or (key == "weather_preheat_advice" and not weather)
@@ -722,7 +734,7 @@ def build_subdevice_info(coordinator: IdmCoordinator, entity_key: str) -> Device
     here because that is what every caller assigns to ``_attr_device_info``,
     which Home Assistant itself types as ``DeviceInfo | ChildDeviceInfo``.
     """
-    if coordinator.device_hierarchy_enabled is not True:
+    if coordinator.device_hierarchy_enabled is not True and not entity_key.startswith("ai_"):
         return None
 
     scope = resolve_device_scope(entity_key)

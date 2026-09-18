@@ -13,11 +13,16 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.17.2-b7] - 2026-09-18
 
 ### Added
 
-- Experimental local Ollama adviser, off by default: explicit activation, read-only daily/weekly reports, health and efficiency explanations, bounded local history with coverage, report sensor/buttons and a response-capable action. No control tools, cloud endpoints or automatic inference. Includes English/German setup, error handling and documentation.
+- Experimental local Ollama adviser, off by default: explicit activation, read-only daily/weekly reports, health and efficiency explanations, bounded local history with coverage, report sensor/buttons and a response-capable action. No control tools or cloud endpoints. Automatic inference requires a non-zero interval. Includes English/German setup, error handling and documentation.
+
+- Dedicated AI child device, persistent results for all four report types, opt-in scheduled reports (1–168 hours) and a dashboard export with coverage, COP and storage graphs.
+- Optional local statistical learning separates operating modes and outdoor temperature bins. Daily aggregates retain up to one year, with strict count limits; no model training or downloads.
+- Configurable AI data storage budget of 5–200 MiB (20 MiB default), oldest-detail eviction, conservative storage display and independent switches for learning and local health notifications.
+- Flag unsupported numeric claims, stale input and incomplete coverage without claiming that model prose is verified. Rate-limit and deduplicate measured-health notifications.
 
 ## [0.17.2-b6] - 2026-09-18
 
