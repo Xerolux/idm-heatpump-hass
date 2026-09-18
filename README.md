@@ -33,6 +33,12 @@
 > [!TIP]
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
+## Experimental AI plant adviser (upcoming release)
+
+Optional, off by default and separately enabled: local Ollama reports for daily and weekly energy, current health context and efficiency. Read-only, with no control tools or voice exposure. Reports disclose incomplete history; generated explanations can be incorrect. Not included in v0.17.2-b6.
+
+[Setup, privacy, dashboard example and limitations](docs/wiki/Experimental-AI-Adviser.md).
+
 ## IDM Navigator Home Assistant search guide
 
 This project connects **IDM Navigator 2.0, Navigator 10 and Navigator Pro heat pumps** to **Home Assistant** through the local **Modbus TCP interface**. It supports local monitoring, heating circuits, domestic hot water, PV surplus, energy data, diagnostics and optional KNX integration without requiring an IDM cloud service.

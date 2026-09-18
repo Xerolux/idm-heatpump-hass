@@ -105,6 +105,13 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "description": "Configure the experimental IDM KNX bridge through Home Assistant KNX without a separate Weinzierl BAOS gateway module.",
     },
     {
+        "slug": "experimental-ai-adviser",
+        "file": "Experimental-AI-Adviser.md",
+        "group": "automation",
+        "title": "Experimental Local AI Adviser",
+        "description": "Set up optional read-only Ollama reports with explicit activation, local data and visible coverage limits.",
+    },
+    {
         "slug": "smart-energy-and-comfort",
         "file": "Smart-Energy-and-Comfort.md",
         "group": "automation",

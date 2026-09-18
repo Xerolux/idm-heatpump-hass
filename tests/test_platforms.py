@@ -300,6 +300,23 @@ class TestIdmSensor:
 
 
 class TestSensorAsyncSetupEntry:
+    async def test_ai_report_requires_explicit_boolean_opt_in(self):
+        from custom_components.idm_heatpump.ai_advisor import AiAdvisor
+        from custom_components.idm_heatpump.ai_advisor_entities import IdmAiReportSensor
+        from custom_components.idm_heatpump.sensor import async_setup_entry
+
+        for enabled in (False, "false", True):
+            coord = _make_coordinator()
+            coord.sensor_descriptions = []
+            entry = coord.config_entry
+            entry.options = {"ai_advisor": enabled, "feature_profile": "vanilla"}
+            entry.runtime_data.coordinator = coord
+            entry.runtime_data.ai_advisor = None
+            added = []
+            await async_setup_entry(MagicMock(), entry, MagicMock(side_effect=added.extend))
+            assert sum(isinstance(entity, IdmAiReportSensor) for entity in added) == (enabled is True)
+            assert isinstance(entry.runtime_data.ai_advisor, AiAdvisor) == (enabled is True)
+
     async def test_creates_sensors_from_coordinator(self):
         from custom_components.idm_heatpump.sensor import async_setup_entry
 

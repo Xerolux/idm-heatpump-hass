@@ -33,6 +33,12 @@
 > [!TIP]
 > Neu hier? Beginne mit der **[Installationsanleitung][wiki-install]** oder öffne die **[durchsuchbare Dokumentation][wiki]**.
 
+## Experimenteller KI-Anlagenberater (kommende Version)
+
+Optionaler, standardmäßig ausgeschalteter Anlagenberater mit einem lokalen Ollama-Modell. Erst nach separater Aktivierung: Tages- und Wochenberichte, Erklärungen zu Diagnosehinweisen und zur Effizienz. Nur lesend, ohne Steuerungsrechte oder Sprachfreigabe. Unvollständige Daten werden ausgewiesen; KI-Aussagen können falsch sein. Noch nicht in v0.17.2-b6 enthalten.
+
+[Einrichtung, Datenschutz und Grenzen](docs/wiki/Experimental-AI-Adviser.md).
+
 ## IDM Navigator mit Home Assistant verbinden
 
 Dieses Projekt verbindet **IDM Navigator 2.0, Navigator 10 und Navigator Pro Wärmepumpen** lokal mit **Home Assistant** über **Modbus TCP**. Du kannst Temperaturen, Heizkreise, Warmwasser, PV-Überschuss, Energie, Diagnosen und optionale KNX-Funktionen überwachen und steuern – ohne IDM-Cloud.

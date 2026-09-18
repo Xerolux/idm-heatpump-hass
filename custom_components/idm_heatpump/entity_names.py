@@ -306,6 +306,7 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
 # ``scripts/generate_entity_translations.py``.
 DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     "sensor": {
+        "ai_report": ("AI report (experimental)", "KI-Bericht (experimentell)"),
         # === Calculated ===
         "calculated_hp_temperature_delta": (
             "Heat pump temperature spread",
@@ -442,6 +443,12 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_verdamper_pressure": ("Evaporator pressure (Web)", "Verdampfer Druck (Web)"),
         "web_water_temp_bottom": ("Tank temperature bottom (Web)", "Speichertemperatur unten (Web)"),
         "web_water_temp_top": ("Tank temperature top (Web)", "Speichertemperatur oben (Web)"),
+    },
+    "button": {
+        "ai_report_daily": ("AI daily report (experimental)", "KI-Tagesbericht (experimentell)"),
+        "ai_report_weekly": ("AI weekly report (experimental)", "KI-Wochenbericht (experimentell)"),
+        "ai_report_health": ("AI health explanation (experimental)", "KI-Zustand erklären (experimentell)"),
+        "ai_report_efficiency": ("AI efficiency explanation (experimental)", "KI-Effizienz erklären (experimentell)"),
     },
     "binary_sensor": {
         "analysis_last_cycle_short": ("Last compressor cycle too short", "Letzter Verdichtertakt zu kurz"),

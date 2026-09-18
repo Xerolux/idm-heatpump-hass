@@ -267,3 +267,26 @@ export_knx_group_addresses:
             - "cascade"
             - "booster"
             - "pv"
+
+generate_ai_report:
+  name: "Generate experimental AI report"
+  description: "Send an allowlisted numeric report to the configured local Ollama model. Read-only; requires explicit feature activation. May take up to 180 seconds."
+  fields:
+    entry_id:
+      name: "IDM integration"
+      description: "The explicitly enabled IDM integration entry."
+      required: true
+      selector:
+        config_entry:
+          integration: idm_heatpump
+    report_type:
+      name: "Report type"
+      description: "Rolling 24-hour or seven-day report, current health context, or efficiency explanation."
+      default: "daily"
+      selector:
+        select:
+          options:
+            - "daily"
+            - "weekly"
+            - "health"
+            - "efficiency"

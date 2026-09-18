@@ -15,6 +15,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- Experimental local Ollama adviser, off by default: explicit activation, read-only daily/weekly reports, health and efficiency explanations, bounded local history with coverage, report sensor/buttons and a response-capable action. No control tools, cloud endpoints or automatic inference. Includes English/German setup, error handling and documentation.
+
 ## [0.17.2-b6] - 2026-09-18
 
 - Keep the power registers needed by energy statistics and the setpoint needed
