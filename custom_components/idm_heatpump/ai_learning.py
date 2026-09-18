@@ -26,7 +26,8 @@ class LearningHistory:
             for key, row in list(value.items())[-MAX_BUCKETS:]:
                 parts = str(key).split(":")
                 if (
-                    len(parts) == 3
+                    len(str(key)) <= 64
+                    and len(parts) == 3
                     and all(p.lstrip("-").isdigit() for p in parts)
                     and int(parts[1]) in (1, 2, 4)
                     and -12 <= int(parts[2]) <= 22
@@ -54,7 +55,12 @@ class LearningHistory:
             for k in ("at", "outdoor_temp", "total_electrical_kwh", "total_thermal_kwh")
         ]
         mode = after.get("mode")
-        if not all(finite(v) for v in values) or mode not in (1, 2, 4) or before.get("mode") != mode:
+        if (
+            not all(finite(v) for v in values)
+            or not finite(mode)
+            or mode not in (1, 2, 4)
+            or before.get("mode") != mode
+        ):
             return
         gap = after["at"] - before["at"]
         electric = after["total_electrical_kwh"] - before["total_electrical_kwh"]

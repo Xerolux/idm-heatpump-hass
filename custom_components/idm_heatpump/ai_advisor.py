@@ -330,7 +330,8 @@ class AiAdvisor:
                 latest = self.reports[self.report_type]
                 self.report, self.facts, self.generated_at = latest["report"], latest["facts"], latest["generated_at"]
                 self.status = "ready"
-            self.next_run = _number(stored.get("next_run"))
+            if stored.get("interval_hours") == self._options.get(CONF_AI_INTERVAL, 0):
+                self.next_run = _number(stored.get("next_run"))
             self._notification_at = _number(stored.get("notification_at")) or 0.0
             signature = stored.get("notification_signature", "")
             self._notification_signature = signature[:1000] if isinstance(signature, str) else ""
@@ -347,6 +348,7 @@ class AiAdvisor:
             "learning": self.learning.buckets,
             "reports": self.reports,
             "next_run": self.next_run,
+            "interval_hours": self._options.get(CONF_AI_INTERVAL, 0),
             "notification_at": self._notification_at,
             "notification_signature": self._notification_signature,
         }

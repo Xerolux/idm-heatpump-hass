@@ -245,3 +245,17 @@ async def test_dashboard_resolves_renamed_entities_and_validates_entry(mock_hass
     mock_hass.config_entries.async_get_entry.return_value = None
     with pytest.raises(ServiceValidationError):
         await _handle_export_ai_dashboard(mock_hass, call)
+
+
+async def test_interval_change_resets_deadline_and_ai_sources_remain_polled():
+    from custom_components.idm_heatpump.polling_plan import _entity_dependencies
+
+    obj = manager()
+    obj._options[ai.CONF_AI_INTERVAL] = 1
+    obj._store.data = {"interval_hours": 168, "next_run": time.time() + 168 * 3600}
+    await obj.async_load()
+    assert obj.next_run is None
+    obj.start()
+    assert 3590 < obj.next_run - time.time() <= 3600
+    await obj.async_stop()
+    assert {"hp_flow_temp", "hp_return_temp", "hp_operating_mode"} <= _entity_dependencies("ai_report")
