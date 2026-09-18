@@ -1,5 +1,24 @@
 # Troubleshooting
 
+## Smart features and beta upgrades
+
+| Symptom | What to check |
+|---------|---------------|
+| The new feature pages are missing | Check the installed version in diagnostics. This guide describes 0.17.2-b6 beta. Downloading documentation or a ZIP does not update HA until the integration files are installed and HA is restarted. |
+| Analytics, Health or Comfort entities are missing | Check Smart/Vanilla profile and each optional switch. With device hierarchy enabled, look in the corresponding feature group. Disabled optional features remove their registrations. |
+| Energy or COP statistics stop | Both electrical and thermal power readings must be valid. Long gaps are excluded; counters do not estimate missing consumption. Beta 6 keeps needed power registers polled when raw entities are disabled. |
+| PV charging does not start | Check Smart profile, the energy-manager switch, ownership confirmation, power units, surplus/SOC thresholds, an existing boost and the cooldown. A selected but unavailable surplus sensor blocks starting. |
+| PV charging continues after surplus falls | Surplus gates starting, not continued operation. An active boost follows its target, timeout and restore rules. |
+| Comfort runs at an unexpected time | Check HA's timezone, configured circuits and non-overlapping daily windows. Beta 6 uses HA's timezone; evaluation is approximately once a minute. |
+| The previous room target was not restored | A manual change prevents restore when the current target differs from the last scheduled value. Check the current value and competing automations. |
+| Health briefly reports low COP at startup | Inspect power, operating mode and subsequent samples. The current check is instantaneous and can flag the startup ramp. A transient flag alone is not a fault diagnosis. |
+| Weather advice is unavailable | The selected weather entity must return usable hourly forecasts within the next six hours. The adviser cannot infer missing forecast data. |
+
+For a support request, use **Download diagnostics** on the IDM integration.
+It includes an installer report, runtime versions, polling failures and active
+health checks with connection secrets redacted. See
+[Smart Energy & Comfort](Smart-Energy-and-Comfort) for configuration examples.
+
 ## Connection Problems
 
 ### Run the built-in connection test

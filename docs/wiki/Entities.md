@@ -1,5 +1,24 @@
 # Entities
 
+## Smart feature entities
+
+The optional [Smart Energy & Comfort](Smart-Energy-and-Comfort) profile adds
+electrical and thermal energy totals for lifetime, day and month, COP for the
+same periods, estimated costs, CO₂ and optional PV use, plus compressor-cycle
+and operating analysis. These are derived values, not additional physical
+meters. The required power registers must be available.
+
+Health Monitor adds eight problem checks and a report sensor. Heating-curve
+and weather advisers add read-only recommendations. The optional comfort
+schedule changes the existing circuit room target; it does not create a
+second climate controller entity. Automatic DHW charging uses the existing
+boost controls and state machine.
+
+With device hierarchy enabled, **iDM Analytics**, **iDM Health Monitor**,
+**iDM Comfort** and **Diagnostics** separate these features from controller
+entities. Disabling optional features removes their entity registrations;
+re-enabling them restores the same IDs. Existing controller IDs are retained.
+
 The integration dynamically generates entities based on your heat pump configuration (heating circuits, zones, optional features).
 
 ## Entity Platforms

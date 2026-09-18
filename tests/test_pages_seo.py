@@ -11,10 +11,47 @@ from xml.etree import ElementTree
 
 import pytest
 
+from scripts import build_pages
 from scripts.build_pages import DOCUMENTATION_PAGES, build_site
 
 PUBLIC_DIR = Path(__file__).resolve().parents[1] / "docs" / "public"
 SITE_URL = "https://xerolux.github.io/idm-heatpump-hass/"
+
+
+@pytest.mark.parametrize(
+    ("version", "label", "channel"),
+    [
+        ("0.17.2-b6", "Beta-Version", "Beta"),
+        ("0.17.2-beta.7", "Beta-Version", "Beta"),
+        ("0.17.2-rc.1", "Vorabversion", "Prerelease"),
+        ("0.17.2", "Aktuelle stabile Version", "Stable"),
+    ],
+)
+def test_download_channel_and_destination_match_displayed_version(
+    monkeypatch: pytest.MonkeyPatch, version: str, label: str, channel: str
+) -> None:
+    monkeypatch.setattr(build_pages, "_metadata", lambda: (version, "2.1.2", "2026.8.1"))
+    page = build_pages._inject_metadata((PUBLIC_DIR / "index.html").read_text(encoding="utf-8"))
+    assert f"data-release-label>{label}</small>" in page
+    assert f"data-release-channel>{channel}</span>" in page
+    assert f'data-release-download href="https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v{version}"' in page
+
+
+def test_new_feature_links_resolve_to_built_documentation(built_public_dir: Path) -> None:
+    for relative in (Path("index.html"), Path("en/index.html")):
+        page = (built_public_dir / relative).read_text(encoding="utf-8")
+        section = re.search(r'<section[^>]+id="smart">(.*?)</section>', page, re.DOTALL)
+        assert section is not None
+        for href in re.findall(r'href="([^"]+)"', section.group(1)):
+            parsed = urlparse(href)
+            target = (built_public_dir / relative.parent / unquote(parsed.path) / "index.html").resolve()
+            assert target.is_relative_to(built_public_dir.resolve())
+            assert target.is_file(), href
+            if parsed.fragment:
+                assert f'id="{parsed.fragment}"' in target.read_text(encoding="utf-8"), href
+        if relative.parts[0] == "en":
+            assert "Write-enabled features" in section.group(1)
+            assert "Schreibende Funktionen" not in section.group(1)
 
 
 def _structured_data(document: str) -> list[dict[str, object]]:

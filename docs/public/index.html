@@ -95,6 +95,7 @@
 
         <nav class="nav-links" id="site-nav" aria-label="Hauptnavigation">
           <a href="#features">Funktionen</a>
+          <a href="#smart">Smart &amp; Comfort</a>
           <a href="#knx">KNX</a>
           <a href="#preview">Einblicke</a>
           <a href="#install">Installation</a>
@@ -327,6 +328,51 @@
         </div>
       </section>
 
+      <section class="section features" id="smart">
+        <div class="container">
+          <div class="section-heading reveal">
+            <p class="eyebrow">Neu in der 0.17.2-Betaserie</p>
+            <h2>iDM Smart Energy &amp; Comfort</h2>
+            <p>Energie verstehen, Komfort planen und Auffälligkeiten erkennen. Wähle Smart für zusätzliche Auswertungen oder Vanilla für die Kernfunktionen.</p>
+          </div>
+          <div class="feature-bento">
+            <article class="feature-card reveal">
+              <span class="feature-number">01</span>
+              <h3>Energie &amp; Kosten</h3>
+              <p>Strom, Wärme und COP als Gesamt-, Tages- und Monatswerte. Dazu geschätzte Kosten, CO₂ und PV-Nutzung, auch über Neustarts hinweg.</p>
+              <ul class="mini-list"><li>Optionaler Tarifsensor</li><li>Eigene Analytics-Gruppe</li><li>Nur Auswertung</li></ul>
+              <a href="docs/smart-energy-and-comfort/#persistent-energy-statistics">Energiestatistik verstehen →</a>
+            </article>
+            <article class="feature-card reveal">
+              <span class="feature-number">02</span>
+              <h3>PV-Warmwasser &amp; Zeitpläne</h3>
+              <p>Optional Warmwasser mit PV-Überschuss laden oder Raum-Sollwerte in bis zu 16 täglichen Zeitfenstern setzen. Beides ist standardmäßig aus und erfordert eine Bestätigung zur alleinigen Steuerung.</p>
+              <ul class="mini-list"><li>HA-Zeitzone</li><li>Bedingte Rückstellung</li><li>Schreibende Funktionen</li></ul>
+              <a href="docs/smart-energy-and-comfort/#optional-pv-surplus-dhw-automation">Automationen einrichten →</a>
+            </article>
+            <article class="feature-card reveal">
+              <span class="feature-number">03</span>
+              <h3>Health Monitor &amp; Beratung</h3>
+              <p>Acht Diagnoseprüfungen, Hinweise zu Heizkreis und Wetter sowie ein Diagnoseexport für den Fachbetrieb. Empfehlungen verändern keine Sollwerte und ersetzen keine Fehlerdiagnose.</p>
+              <ul class="mini-list"><li>Eigene Health- und Comfort-Gruppen</li><li>Nur lesend</li></ul>
+              <a href="docs/smart-energy-and-comfort/#optional-idm-health-monitor">Diagnosefunktionen ansehen →</a>
+            </article>
+            <article class="feature-card reveal">
+              <span class="feature-number">04</span>
+              <h3>Geführte Einrichtung</h3>
+              <p>Standard, Advanced und Expert bieten dieselben Funktionen mit unterschiedlicher Detailtiefe. Wähle die gewünschten Kategorien und behalte die übrigen Einstellungen.</p>
+              <ul class="mini-list"><li>Smart oder Vanilla</li><li>Gezielte Sensorauswahl</li><li>Bestehende IDs bleiben erhalten</li></ul>
+              <a href="docs/configuration/#options">Konfiguration kennenlernen →</a>
+            </article>
+          </div>
+          <p class="release-note">Diese Funktionen sind im Beta-Kanal verfügbar. Die Dokumentation beschreibt v0.17.2-b6; eine stabile Installation kann weniger Optionen anbieten.</p>
+          <div class="hero-actions">
+            <a class="button button-primary" href="docs/smart-energy-and-comfort/">Smart Energy &amp; Comfort entdecken</a>
+            <a class="button button-secondary" href="docs/installation-and-setup/#choosing-stable-or-beta">Beta installieren</a>
+          </div>
+        </div>
+      </section>
+
       <section class="section preview" id="preview">
         <div class="container">
           <div class="section-heading heading-row reveal">
@@ -422,13 +468,14 @@
               <span class="download-mark">
                 <svg viewBox="0 0 40 40" fill="none" aria-hidden="true"><path d="M20 7v18m0 0 7-7m-7 7-7-7M8 31h24" /></svg>
               </span>
-              <div><small>Aktuelle stabile Version</small><h3 data-integration-version>v0.16.2</h3></div>
-              <span class="stable-badge">Stable</span>
+              <div><small data-release-label>Beta-Version</small><h3 data-integration-version>v0.17.2-b6</h3></div>
+              <span class="stable-badge" data-release-channel>Beta</span>
             </div>
-            <a class="button button-primary button-full" href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest" target="_blank" rel="noreferrer">
+            <a class="button button-primary button-full" data-release-download href="https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2-b6" target="_blank" rel="noreferrer">
               Auf GitHub herunterladen
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
             </a>
+            <a class="hacs-link" href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest">Aktuelle stabile Version</a>
             <a class="hacs-link" href="https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=integration" target="_blank" rel="noreferrer">
               <span class="hacs-symbol">H</span>
               <span><strong>In HACS öffnen</strong><small>Empfohlene Installation</small></span>

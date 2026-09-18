@@ -19,11 +19,30 @@
 8. Click **Download**
 9. **Restart Home Assistant**
 
+## Choosing stable or beta
+
+The [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest)
+is the normal installation channel. The new guided setup and Smart Energy &
+Comfort features described in this wiki are available in
+[0.17.2-b6 beta](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2-b6).
+
+To try the beta, open the IDM Heatpump repository in HACS, use its version
+selection/download action, enable prerelease versions if needed and select
+`0.17.2-b6`. Back up Home Assistant before upgrading and restart Home Assistant
+after downloading. A newer documentation page does not update the installed
+integration automatically. Confirm the installed version in the integration's
+diagnostics before looking for the new options.
+
+Beta fixes have automated regression coverage. They are not a claim of
+completed long-term or all-model hardware validation. See
+[Stability & Release Readiness](Stability-and-Release-Readiness).
+
 ## Manual Installation
 
 1. Download the latest [release](https://github.com/Xerolux/idm-heatpump-hass/releases) (`idm_heatpump.zip`)
-2. Extract the ZIP file
-3. Copy the `idm_heatpump` folder to your `custom_components/` directory:
+2. Create the `idm_heatpump` directory under `custom_components/` if needed
+3. Extract the ZIP contents directly into that directory; `manifest.json` must
+   be immediately inside it, without another nested `idm_heatpump` directory:
    ```
    <ha-config>/custom_components/idm_heatpump/
    ```
@@ -80,10 +99,11 @@ Modbus communication in its [technical PV/GLT documentation](https://www.idm-ene
    - **Prerequisite shown in the flow**: Confirm that Navigator **Building management system → Modbus TCP** is enabled
    - **Connection**: Enter a name, the heat pump IP/hostname, port 502, and slave ID 1
    - **Optional web access**: Enter the local Navigator web PIN; when using a Modbus proxy, also enable the proxy option and enter the original heat pump address as web host
-   - **Components**: Select scan interval, heating circuits (A-G), and number of zones
-   - **Optional features**: Configure web data, cascade, room-temperature forwarding, and advanced Modbus timeout/retries in the grouped sections
+   - **Setup depth**: Choose Standard, Advanced or Expert; these control detail, not which features are available
+   - **Features**: Select the categories you want to configure, such as plant, Smart/Vanilla profile, energy, Health Monitor or comfort
+   - **Feature pages**: Supply the requested sensors, circuit mappings and optional settings; review the ownership confirmation before enabling an automatic write feature
    - **Zones**: Configure the number of active rooms for each selected zone module
-5. Click **Finish**
+5. Review and confirm the configuration to finish. See [Configuration](Configuration) for changing the setup depth later.
 
 ### Local Navigator web PIN (not cloud 2FA)
 
@@ -153,7 +173,10 @@ Manually: Repeat the manual installation (overwrites the old files).
 
 ## Automatic external power forwarding from Home Assistant
 
-After the integration is installed, open the IDM Heatpump entry and choose **Configure**. Enable **External power forwarding**. Each field offers a searchable list of existing Home Assistant sensor entities:
+After the integration is installed, open the IDM Heatpump entry and choose
+**Reconfigure → Features → External power forwarding**. Enabling forwarding
+opens the sensor mapping page. Each field offers a searchable list of existing
+Home Assistant sensor entities:
 
 - PV surplus → IDM `pv_surplus` (registers 74–75)
 - PV production → `pv_production` (78–79)
