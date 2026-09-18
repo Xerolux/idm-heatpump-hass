@@ -5,11 +5,13 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime, time
+from datetime import UTC, datetime, time
 from typing import Any
 
 from homeassistant.helpers.storage import Store
+from homeassistant.util import dt as dt_util
 
 from .const import DOMAIN
 from .entity import async_write_translated
@@ -42,7 +44,15 @@ def parse_schedule_rows(value: str, circuits: set[str]) -> list[ComfortWindow]:
             target = float(parts[3])
         except (TypeError, ValueError) as err:
             raise ValueError("invalid time or target") from err
-        if start.second or end.second or start.microsecond or end.microsecond or start == end:
+        if (
+            start.tzinfo is not None
+            or end.tzinfo is not None
+            or start.second
+            or end.second
+            or start.microsecond
+            or end.microsecond
+            or start == end
+        ):
             raise ValueError("times must use HH:MM and differ")
         if not math.isfinite(target) or not 15.0 <= target <= 30.0:
             raise ValueError("target must be between 15 and 30 degrees")
@@ -89,6 +99,7 @@ class ComfortScheduler:
             windows if windows is not None else [ComfortWindow(self._circuit, self._start, self._end, self._target)]
         )
         self._task: asyncio.Task[None] | None = None
+        self._release_register_demand: Callable[[], None] | None = None
         self._active = False
         self._previous: float | None = None
         self._active_target: float | None = None
@@ -144,12 +155,13 @@ class ComfortScheduler:
 
     def _current_value(self) -> float | None:
         value = (self._coordinator.data or {}).get(self.register_name)
-        if value is None:
+        if value is None or isinstance(value, bool):
             return None
         try:
-            return float(value)
+            number = float(value)
         except (TypeError, ValueError):
             return None
+        return number if math.isfinite(number) and number != -1.0 else None
 
     async def async_evaluate_once(self, *, now: datetime | None = None) -> None:
         register = self._coordinator.get_register(self.register_name)
@@ -158,7 +170,7 @@ class ComfortScheduler:
         current = self._current_value()
         if current is None:
             return
-        target = self._selected_target((now or datetime.now().astimezone()).time())
+        target = self._selected_target((now or dt_util.as_local(datetime.now(UTC))).time())
         if target is not None and not self._active:
             self._previous = current
             self._active_target = target
@@ -206,6 +218,9 @@ class ComfortScheduler:
 
     def start(self) -> None:
         if self._task is None or self._task.done():
+            self._release_register_demand = self._coordinator.register_required_registers(
+                f"comfort_schedule_{self._circuit}", {self.register_name}
+            )
             self._task = self._hass.async_create_task(self._run())
 
     async def async_stop(self) -> None:
@@ -216,6 +231,9 @@ class ComfortScheduler:
             except asyncio.CancelledError:
                 pass
             self._task = None
+        if self._release_register_demand is not None:
+            self._release_register_demand()
+            self._release_register_demand = None
 
     async def _run(self) -> None:
         await self.async_load()

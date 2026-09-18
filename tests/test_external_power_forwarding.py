@@ -125,3 +125,20 @@ async def test_state_changes_debounce_to_one_forward() -> None:
     await asyncio.sleep(1.1)
     forwarder.async_forward.assert_awaited_once()
     assert forwarder._pending_task is None
+
+
+async def test_cancelled_debounce_does_not_lose_replacement_task() -> None:
+    forwarder, _ = _forwarder({}, {})
+    forwarder._hass.async_create_task.side_effect = asyncio.create_task
+    forwarder.async_forward = AsyncMock()
+    forwarder._state_changed(None)
+    first = forwarder._pending_task
+    await asyncio.sleep(0)
+    forwarder._state_changed(None)
+    replacement = forwarder._pending_task
+    try:
+        await asyncio.gather(first, return_exceptions=True)
+        assert forwarder._pending_task is replacement
+    finally:
+        replacement.cancel()
+        await asyncio.gather(replacement, return_exceptions=True)

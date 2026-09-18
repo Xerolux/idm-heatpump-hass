@@ -32,6 +32,8 @@ def _power(value: Any) -> float | None:
 class EnergyStatistics:
     """Integrate validated electrical and thermal power readings in kWh."""
 
+    required_registers = frozenset({_ELECTRIC_KEY, _THERMAL_KEY})
+
     def __init__(
         self,
         hass: Any,
@@ -136,6 +138,7 @@ class EnergyStatistics:
         if self._period_day != day:
             self.today_electrical_kwh = 0.0
             self.today_thermal_kwh = 0.0
+            self.today_pv_self_consumed_kwh = 0.0
             self.today_cost_eur = 0.0
             self._period_day = day
         if self._period_month != month:

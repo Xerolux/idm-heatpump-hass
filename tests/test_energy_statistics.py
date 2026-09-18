@@ -6,6 +6,8 @@ from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
+
 from custom_components.idm_heatpump import energy_statistics as module
 from custom_components.idm_heatpump.energy_statistics import EnergyStatistics
 from custom_components.idm_heatpump.energy_statistics_entities import energy_statistics_entities
@@ -27,6 +29,20 @@ def test_snapshot_integration_and_cop():
     assert stats.total_thermal_kwh == 6.0 / 60.0
     assert stats.total_cop == 3.0
     assert stats.today_cop == 3.0
+
+
+@pytest.mark.parametrize("day", [2, 32])
+def test_daily_pv_energy_resets_even_without_a_valid_power_sample(day: int) -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30)
+    start = datetime(2026, 1, 1, 12, tzinfo=UTC)
+    stats.process_snapshot({}, now=start)
+    stats.today_pv_self_consumed_kwh = 2.0
+    stats.month_pv_self_consumed_kwh = 5.0
+    stats.total_pv_self_consumed_kwh = 10.0
+    stats.process_snapshot({}, now=start + timedelta(days=day - 1))
+    assert stats.today_pv_self_consumed_kwh == 0.0
+    assert stats.month_pv_self_consumed_kwh == (5.0 if day == 2 else 0.0)
+    assert stats.total_pv_self_consumed_kwh == 10.0
 
 
 def test_invalid_sample_breaks_interval_instead_of_inventing_energy():

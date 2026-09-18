@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock
 
@@ -48,9 +48,42 @@ def test_multiple_windows_validate_circuits_and_overlap() -> None:
         "a,06:00,09:00,31",
         "a,06:00,09:00,21\na,08:00,10:00,22",
         "a,22:00,05:00,20\na,04:00,06:00,21",
+        "a,06:00+02:00,09:00+02:00,21",
     ):
         with pytest.raises(ValueError):
             module.parse_schedule_rows(invalid, {"a", "d"})
+
+
+@pytest.mark.parametrize("value", [float("nan"), float("inf"), float("-inf"), -1, True])
+async def test_invalid_current_temperature_never_arms_restore(monkeypatch, value) -> None:
+    write = AsyncMock()
+    monkeypatch.setattr(module, "async_write_translated", write)
+    schedule, _ = _scheduler(value)
+    await schedule.async_evaluate_once(now=_at(7))
+    write.assert_not_awaited()
+    assert schedule._active is False
+
+
+async def test_schedule_uses_home_assistant_timezone(monkeypatch) -> None:
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 9, 17, 21, tzinfo=UTC)
+
+        def astimezone(self, tz=None):
+            # Make the simulated host timezone independent of the test runner.
+            return super().astimezone(tz or timezone(timedelta(hours=2)))
+
+    monkeypatch.setattr(module, "datetime", FixedDatetime)
+    import homeassistant.util.dt as dt_util
+
+    monkeypatch.setattr(dt_util, "as_local", lambda value: value.astimezone(timezone(timedelta(hours=-4))))
+    write = AsyncMock()
+    monkeypatch.setattr(module, "async_write_translated", write)
+    schedule, _ = _scheduler()
+    await schedule.async_evaluate_once()
+    write.assert_awaited_once()
+    assert write.await_args.args[2] == 22.0
 
 
 async def test_adjacent_windows_change_target_then_restore(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -144,13 +177,15 @@ async def test_bad_persisted_state_is_ignored(monkeypatch: pytest.MonkeyPatch) -
 
 
 async def test_start_and_stop_cancel_loop(monkeypatch: pytest.MonkeyPatch) -> None:
-    schedule, _ = _scheduler()
+    schedule, coordinator = _scheduler()
     schedule.async_evaluate_once = AsyncMock()
     schedule.start()
     await asyncio.sleep(0)
     assert schedule.async_evaluate_once.await_count == 1
+    coordinator.register_required_registers.assert_called_once_with("comfort_schedule_a", {schedule.register_name})
     await schedule.async_stop()
     assert schedule._task is None
+    coordinator.register_required_registers.return_value.assert_called_once_with()
 
     async def fail_once() -> None:
         raise RuntimeError("offline")

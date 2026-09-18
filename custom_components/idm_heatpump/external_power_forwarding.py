@@ -116,7 +116,8 @@ class ExternalPowerForwarder:
                 await asyncio.sleep(1)
                 await self.async_forward()
             finally:
-                self._pending_task = None
+                if self._pending_task is asyncio.current_task():
+                    self._pending_task = None
 
         self._pending_task = self._hass.async_create_task(_debounced())
 
