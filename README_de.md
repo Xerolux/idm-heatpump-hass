@@ -33,9 +33,9 @@
 > [!TIP]
 > Neu hier? Beginne mit der **[Installationsanleitung][wiki-install]** oder öffne die **[durchsuchbare Dokumentation][wiki]**.
 
-## Experimenteller KI-Anlagenberater (kommende Version)
+## Experimenteller KI-Anlagenberater (Beta v0.17.2-b7)
 
-Optionaler, standardmäßig ausgeschalteter Anlagenberater mit einem lokalen Ollama-Modell. Erst nach separater Aktivierung: Tages- und Wochenberichte, Erklärungen zu Diagnosehinweisen und zur Effizienz. Nur lesend, ohne Steuerungsrechte oder Sprachfreigabe. Unvollständige Daten werden ausgewiesen; KI-Aussagen können falsch sein. Noch nicht in v0.17.2-b6 enthalten.
+Optionaler, standardmäßig ausgeschalteter Anlagenberater mit einem lokalen Ollama-Modell. Erst nach separater Aktivierung: Tages- und Wochenberichte, Erklärungen zu Diagnosehinweisen und zur Effizienz. Nur lesend, ohne Steuerungsrechte oder Sprachfreigabe. Unvollständige Daten werden ausgewiesen; KI-Aussagen können falsch sein. Ab v0.17.2-b7: eigenes KI-Untergerät, automatische Berichte, gespeicherte Ergebnisse, Dashboard-Export und optionales statistisches Lernen. Speichergrenze einstellbar von 5 bis 200 MiB (Standard 20 MiB); Modell, Recorder und Backups zählen separat.
 
 [Einrichtung, Datenschutz und Grenzen](docs/wiki/Experimental-AI-Adviser.md).
 

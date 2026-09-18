@@ -52,6 +52,8 @@ def _entity_dependencies(unique_suffix: str) -> set[str]:
     """Return register dependencies for non-register entity unique IDs."""
     if unique_suffix in _CALCULATED_DEPENDENCIES:
         return set(_CALCULATED_DEPENDENCIES[unique_suffix])
+    if unique_suffix.startswith("ai_"):
+        return {"outdoor_temp", "hp_flow_temp", "hp_return_temp", "hp_operating_mode", "dhw_temp_top", "dhw_setpoint"}
     if unique_suffix == "water_heater":
         return {"dhw_temp_top", "dhw_setpoint"}
     if match := _HEATING_CLIMATE.fullmatch(unique_suffix):

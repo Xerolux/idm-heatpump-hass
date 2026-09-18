@@ -483,7 +483,12 @@
           "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
           "ai_url": "Lokale Ollama-Basisadresse",
           "ai_model": "Installiertes lokales Modell",
-          "ai_language": "Berichtssprache"
+          "ai_language": "Berichtssprache",
+          "ai_learning": "Lokale Betriebsvergleichswerte lernen",
+          "ai_storage_mib": "Maximaler KI-Datenspeicher (MiB)",
+          "ai_interval_hours": "Berichtsintervall (Stunden; 0 = manuell, 24 = täglich, 168 = wöchentlich)",
+          "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
+          "ai_schedule_report": "Automatisch erzeugte Berichtsart"
         },
         "data_description": {
           "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
@@ -553,7 +558,12 @@
           "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
           "ai_url": "Lokale Ollama-Basisadresse",
           "ai_model": "Installiertes lokales Modell",
-          "ai_language": "Berichtssprache"
+          "ai_language": "Berichtssprache",
+          "ai_learning": "Lokale Betriebsvergleichswerte lernen",
+          "ai_storage_mib": "Maximaler KI-Datenspeicher (MiB)",
+          "ai_interval_hours": "Berichtsintervall (Stunden; 0 = manuell, 24 = täglich, 168 = wöchentlich)",
+          "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
+          "ai_schedule_report": "Automatisch erzeugte Berichtsart"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1030,7 +1040,12 @@
           "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
           "ai_url": "Lokale Ollama-Basisadresse",
           "ai_model": "Installiertes lokales Modell",
-          "ai_language": "Berichtssprache"
+          "ai_language": "Berichtssprache",
+          "ai_learning": "Lokale Betriebsvergleichswerte lernen",
+          "ai_storage_mib": "Maximaler KI-Datenspeicher (MiB)",
+          "ai_interval_hours": "Berichtsintervall (Stunden; 0 = manuell, 24 = täglich, 168 = wöchentlich)",
+          "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
+          "ai_schedule_report": "Automatisch erzeugte Berichtsart"
         },
         "data_description": {
           "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
@@ -1100,7 +1115,12 @@
           "ai_advisor": "Experimenteller KI-Anlagenberater (nur lesend)",
           "ai_url": "Lokale Ollama-Basisadresse",
           "ai_model": "Installiertes lokales Modell",
-          "ai_language": "Berichtssprache"
+          "ai_language": "Berichtssprache",
+          "ai_learning": "Lokale Betriebsvergleichswerte lernen",
+          "ai_storage_mib": "Maximaler KI-Datenspeicher (MiB)",
+          "ai_interval_hours": "Berichtsintervall (Stunden; 0 = manuell, 24 = täglich, 168 = wöchentlich)",
+          "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
+          "ai_schedule_report": "Automatisch erzeugte Berichtsart"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1527,8 +1547,20 @@
       }
     },
     "sensor": {
+      "ai_coverage": {
+        "name": "KI-Datenabdeckung"
+      },
+      "ai_learning_status": {
+        "name": "KI-Lernstatus"
+      },
+      "ai_observed_cop": {
+        "name": "KI-Beobachtungs-COP"
+      },
       "ai_report": {
         "name": "KI-Bericht (experimentell)"
+      },
+      "ai_storage_used": {
+        "name": "KI-Speicherverbrauch"
       },
       "air_heat_exchanger_temp": {
         "name": "Luftwärmetauscher Temperatur"
@@ -2731,6 +2763,16 @@
         "report_type": {
           "name": "Berichtstyp",
           "description": "daily, weekly, health oder efficiency."
+        }
+      }
+    },
+    "export_ai_dashboard": {
+      "name": "Experimentelles KI-Dashboard exportieren",
+      "description": "Fertige Dashboard-Konfiguration mit deinen aktuellen Entitäts-IDs ausgeben.",
+      "fields": {
+        "entry_id": {
+          "name": "IDM integration",
+          "description": "IDM integration entry."
         }
       }
     }

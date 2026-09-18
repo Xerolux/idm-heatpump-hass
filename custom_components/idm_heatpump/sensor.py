@@ -27,7 +27,7 @@ from idm_heatpump import DataType, RegisterDef
 from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .ai_advisor import AiAdvisor
-from .ai_advisor_entities import IdmAiReportSensor
+from .ai_advisor_entities import AI_METRICS, IdmAiMetricSensor, IdmAiReportSensor
 from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities
 from .comfort_advisory import ComfortAdvisorySensor, heating_curve_advisory, weather_preheat_advisory
 from .const import (
@@ -399,12 +399,14 @@ async def async_setup_entry(
         | IdmEnergyStatisticsSensor
         | ComfortAdvisorySensor
         | IdmAiReportSensor
+        | IdmAiMetricSensor
     ] = []
     if entry.options.get(CONF_AI_ADVISOR, False) is True:
         advisor = AiAdvisor(hass, entry, coordinator)
         await advisor.async_load()
         entry.runtime_data.ai_advisor = advisor
         entities.append(IdmAiReportSensor(coordinator, advisor))
+        entities.extend(IdmAiMetricSensor(coordinator, advisor, key) for key in AI_METRICS)
     if entry.options.get(CONF_TECHNICIAN_CODES, False):
         entities += _technician_code_entities(coordinator)
     entities += [
