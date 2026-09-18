@@ -59,6 +59,8 @@ class IdmAiReportSensor(IdmCoordinatorEntityBase, SensorEntity):
             "next_run": self.manager.next_run,
             "storage_limit_mib": self.manager.storage_limit // (1024 * 1024),
             "model_text_verified": False,
+            "cloud_budget_day_utc": self.manager.cloud_day,
+            "cloud_requests_reserved": self.manager.cloud_requests,
         }
 
     async def async_added_to_hass(self) -> None:

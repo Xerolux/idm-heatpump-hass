@@ -1,9 +1,9 @@
-# Experimental local AI adviser
+# Experimental AI adviser
 
 **Available since v0.17.2-b7; numeric safeguards improved in v0.17.2-b8.** This adviser is off by default
 and must be activated separately, even when Smart is enabled.
 
-It explains selected measurements using a local Ollama model. It has no
+It explains selected measurements using a local Ollama model or an explicitly enabled cloud provider. It has no
 Home Assistant control tools, Modbus connection or plant write path. It does
 not expose the plant to Assist, Google Assistant or Alexa. Generated text
 may be incorrect: verify it against the accompanying facts. This is not a
@@ -26,7 +26,7 @@ fault diagnosis or an automatic optimization controller.
    It uses a child device on HA 2026.9+, with a linked-device fallback on 2026.8,
    independently of the general optional device grouping setting.
 
-Only literal private LAN or loopback IP addresses are accepted. Hostnames,
+For Ollama, only literal private LAN or loopback IP addresses are accepted. Hostnames,
 public addresses, embedded credentials, URL paths and redirects are rejected.
 Loopback means the Home Assistant host/container, not another server. HTTPS
 uses certificate validation. The Ollama endpoint must be reachable from HA.
@@ -35,6 +35,52 @@ are sent. Keep the server trusted and local; also consider disabling cloud
 features on that server using `OLLAMA_NO_CLOUD=1`, as documented in the
 [Ollama FAQ](https://docs.ollama.com/faq). An administrator-controlled proxy
 can forward traffic outside the LAN; HA cannot inspect the server internally.
+
+## Optional cloud reports (v0.17.2-b10)
+
+Local Ollama remains the default. OpenAI and Z.ai are separate, experimental opt-in
+providers. Under **Configure → AI adviser**, select `openai` or `zai`, explicitly
+allow cloud data transfer, enter a model ID supported by your account, and enter
+the corresponding API key. The OpenAI API uses separate API billing; a ChatGPT
+subscription is not an API key. Z.ai uses its general Model API endpoint, not its
+Coding Plan endpoint. Model access and billing depend on your provider account.
+
+You can save cloud settings before entering a key; reports then fail closed.
+Each provider has its own password field. A blank field preserves that provider's
+saved key; a single `-` deletes it. Saved keys are never prefilled. They are stored
+in HA configuration and may be included in HA backups, but are redacted from
+integration diagnostics. Protect configuration and backups as credentials.
+
+Cloud requests contain only allowlisted numerical temperatures, operating mode,
+period energy/COP/coverage summaries, local baseline statistics and explicit
+health-check states. No entity/device names, network addresses, serial numbers,
+web PINs, raw historical samples, lifetime energy counters or HA configuration
+are sent. Local history and learning remain on HA. Operating measurements can
+still reveal household activity. Provider processing and retention policies
+apply; cloud use is not equivalent to local processing.
+
+Endpoints are fixed HTTPS URLs, certificate validation stays enabled, redirects
+are rejected, and there are no tools, web search, files, automatic retries or
+fallback to a different provider. OpenAI requests use `store: false`, which does
+not promise zero provider retention. See [OpenAI data controls](https://developers.openai.com/api/docs/guides/your-data)
+and [Z.ai API documentation](https://docs.z.ai/api-reference/llm/chat-completion).
+
+The default budget is **2 requests per UTC day per integration entry**, adjustable
+from 1 to 24. Reservations are saved before sending and survive reloads/restarts;
+failed requests also consume a reservation. A storage failure blocks cloud calls.
+Input facts are limited to 12 KB, requested output to 2,048 tokens (including
+reasoning where the provider counts it), response bodies to 64 KiB, and requests
+to 120 seconds. This bounds usage, **not an exact monetary amount**. Configure
+billing controls with the provider as well. Do not increase output budgets merely
+to hide incomplete responses: incompatible or truncated responses are rejected.
+
+Manual report buttons and the existing optional interval use the selected
+provider. The report sensor exposes `cloud_budget_day_utc`,
+`cloud_requests_reserved`, and the provider inside each saved report. Results
+appear on the same AI device and dashboard as local reports. A provider switch
+never changes plant settings. Select `ollama` again to return to local reports;
+its URL and model settings are retained. The numeric guard applies to both paths,
+but free-form explanations can still be wrong. No model executes plant actions.
 
 ## Available reports
 

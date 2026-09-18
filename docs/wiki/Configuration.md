@@ -453,4 +453,4 @@ Registers 1696 and 1698 (BMS temperature requests) must be written cyclically ev
 
 ## Experimental AI adviser (upcoming)
 
-The next version adds an explicitly enabled, default-off local Ollama adviser: daily/weekly reports and explanations of health and efficiency. It has no plant control tools or voice exposure. Not included in v0.17.2-b6. See [setup, report actions, data coverage and limitations](Experimental-AI-Adviser).
+The experimental adviser provides daily/weekly reports and explanations of health and efficiency. It is off by default and has no plant control tools or voice exposure. Ollama is local; v0.17.2-b10 adds separately consented OpenAI and Z.ai reports with bounded requests. See [setup, report actions, data coverage and limitations](Experimental-AI-Adviser).

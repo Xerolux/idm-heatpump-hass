@@ -33,9 +33,11 @@
 > [!TIP]
 > Neu hier? Beginne mit der **[Installationsanleitung][wiki-install]** oder öffne die **[durchsuchbare Dokumentation][wiki]**.
 
-## Experimenteller KI-Anlagenberater (Beta v0.17.2-b9)
+## Experimenteller KI-Anlagenberater (Beta v0.17.2-b10)
 
 Optionaler, standardmäßig ausgeschalteter Anlagenberater mit einem lokalen Ollama-Modell. Erst nach separater Aktivierung: Tages- und Wochenberichte, Erklärungen zu Diagnosehinweisen und zur Effizienz. Nur lesend, ohne Steuerungsrechte oder Sprachfreigabe. Unvollständige Daten werden ausgewiesen; KI-Aussagen können falsch sein. Ab v0.17.2-b7: eigenes KI-Untergerät, automatische Berichte, gespeicherte Ergebnisse, Dashboard-Export und optionales statistisches Lernen. Speichergrenze einstellbar von 5 bis 200 MiB (Standard 20 MiB); Modell, Recorder und Backups zählen separat.
+
+Ab v0.17.2-b10 sind OpenAI und Z.ai nach ausdrücklicher Cloud-Freigabe mit eigenen API-Schlüsseln wählbar. Standard bleibt lokales Ollama. Cloud-Anfragen sind pro UTC-Tag begrenzt (Standard 2, einstellbar 1–24); Lernen und Verlauf bleiben lokal. Anbietergebühren und deren Datenverarbeitung gelten. Einrichtung, Datenschutz und Grenzen stehen in der [Wiki](docs/wiki/Experimental-AI-Adviser.md#optional-cloud-reports-v0172-b10).
 
 [Einrichtung, Datenschutz und Grenzen](docs/wiki/Experimental-AI-Adviser.md).
 

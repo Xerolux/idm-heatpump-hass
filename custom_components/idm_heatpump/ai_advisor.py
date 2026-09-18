@@ -1,4 +1,4 @@
-"""Experimental local-only reports with no model tools or device write path."""
+"""Experimental reports with no model tools or device write path."""
 
 from __future__ import annotations
 
@@ -18,6 +18,17 @@ from urllib.parse import urlsplit
 import aiohttp
 from homeassistant.helpers.storage import Store
 
+from .ai_cloud import (
+    CLOUD_DEFAULTS,
+    CONF_AI_CLOUD_LIMIT,
+    CONF_AI_CLOUD_MODEL,
+    CONF_AI_PROVIDER,
+    async_cloud_report,
+    validate_cloud,
+)
+from .ai_cloud import (
+    AdvisorError as AdvisorError,  # noqa: PLC0414 - preserve the existing public error import
+)
 from .ai_learning import LearningHistory
 from .const import CONF_AI_ADVISOR, DOMAIN
 from .health_monitor import HEALTH_CHECKS
@@ -32,6 +43,7 @@ CONF_AI_INTERVAL = "ai_interval_hours"
 CONF_AI_NOTIFICATIONS = "ai_notifications"
 CONF_AI_SCHEDULE_REPORT = "ai_schedule_report"
 AI_EXTRA_DEFAULTS = {
+    **CLOUD_DEFAULTS,
     CONF_AI_LEARNING: False,
     CONF_AI_STORAGE: 20,
     CONF_AI_INTERVAL: 0,
@@ -45,10 +57,6 @@ _TEMPERATURES = ("outdoor_temp", "hp_flow_temp", "hp_return_temp", "dhw_temp_top
 _COUNTERS = ("total_electrical_kwh", "total_thermal_kwh")
 _MAX_RESPONSE = 65536
 _REPORT_TIMEOUT = 300  # Bound CPU/shared-memory GPU inference, including model loading.
-
-
-class AdvisorError(Exception):
-    """A public error code, never an endpoint, prompt or server error body."""
 
 
 def validate_settings(url: str, model: str, language: str) -> str:
@@ -388,6 +396,9 @@ class AiAdvisor:
         self._options = dict(entry.options)
         self._store: Store[dict[str, Any]] = Store(hass, 1, f"{DOMAIN}.ai_advisor.{entry.entry_id}")
         self._storage_bytes = 65536
+        self.cloud_day = ""
+        self.cloud_requests = 0
+        self._cloud_budget_loaded = False
         self.observed_period: dict[str, Any] = {}
         self.records: list[dict[str, Any]] = []
         self.status = "idle"
@@ -407,6 +418,7 @@ class AiAdvisor:
         except Exception:  # noqa: BLE001 - optional history must not block HA; never log stored data
             _LOGGER.warning("Could not load experimental AI history")
             return
+        self._cloud_budget_loaded = not isinstance(stored, dict) or stored.get("cloud_budget_valid", True) is True
         if isinstance(stored, dict) and isinstance(stored.get("records"), list):
             now = time.time()
             for row in stored["records"][-_MAX_RECORDS:]:
@@ -419,6 +431,11 @@ class AiAdvisor:
                 self.records.append(clean)
             self.records.sort(key=lambda row: row["at"])
         if isinstance(stored, dict):
+            day, count = stored.get("cloud_day", ""), stored.get("cloud_requests", 0)
+            if isinstance(day, str) and isinstance(count, int) and not isinstance(count, bool) and count >= 0:
+                self.cloud_day, self.cloud_requests = day, count
+            else:
+                self._cloud_budget_loaded = False
             self.learning.load(stored.get("learning"), time.time())
             reports = stored.get("reports", {})
             if isinstance(reports, dict):
@@ -467,6 +484,9 @@ class AiAdvisor:
     def storage_payload(self) -> dict[str, Any]:
         """Budget UTF-8 JSON with conservative overhead for the HA Store wrapper."""
         result = {
+            "cloud_budget_valid": self._cloud_budget_loaded,
+            "cloud_day": self.cloud_day,
+            "cloud_requests": self.cloud_requests,
             "records": self.records,
             "learning": self.learning.buckets,
             "reports": self.reports,
@@ -600,17 +620,38 @@ class AiAdvisor:
         self.on_update()
         try:
             facts = self.build_facts(report_type, time.time())
-            report = await async_local_report(
-                str(self._options.get(CONF_AI_URL, "")),
-                str(self._options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)),
-                str(self._options.get(CONF_AI_LANGUAGE, "de")),
-                facts,
-            )
+            provider = self._options.get(CONF_AI_PROVIDER, "ollama")
+            if provider == "ollama":
+                report = await async_local_report(
+                    str(self._options.get(CONF_AI_URL, "")),
+                    str(self._options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)),
+                    str(self._options.get(CONF_AI_LANGUAGE, "de")),
+                    facts,
+                )
+            else:
+                validate_cloud(self._options)
+                if not self._cloud_budget_loaded:
+                    raise AdvisorError("ai_cloud_budget_unavailable")
+                day = datetime.now(UTC).date().isoformat()
+                if self.cloud_day != day:
+                    self.cloud_day, self.cloud_requests = day, 0
+                if self.cloud_requests >= self._options.get(CONF_AI_CLOUD_LIMIT, 2):
+                    raise AdvisorError("ai_cloud_daily_limit_reached")
+                self.cloud_requests += 1
+                try:
+                    await self._store.async_save(self.storage_payload())
+                except Exception:  # noqa: BLE001 - never spend without a durable reservation
+                    raise AdvisorError("ai_cloud_budget_unavailable") from None
+                report = await async_cloud_report(self._options, str(self._options.get(CONF_AI_LANGUAGE, "de")), facts)
             report, quality = guard_report(report, facts, str(self._options.get(CONF_AI_LANGUAGE, "de")))
             self.report, self.facts, self.report_type = report, facts, report_type
             self.generated_at = datetime.now(UTC).isoformat()
             self.status = "ready"
             self.reports[report_type] = {
+                "provider": provider,
+                "model": self._options.get(CONF_AI_MODEL, DEFAULT_AI_MODEL)
+                if provider == "ollama"
+                else self._options.get(CONF_AI_CLOUD_MODEL),
                 "report": report,
                 "generated_at": self.generated_at,
                 "facts": facts,

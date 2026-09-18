@@ -488,10 +488,16 @@
           "ai_storage_mib": "Maximaler KI-Datenspeicher (MiB)",
           "ai_interval_hours": "Berichtsintervall (Stunden; 0 = manuell, 24 = täglich, 168 = wöchentlich)",
           "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
-          "ai_schedule_report": "Automatisch erzeugte Berichtsart"
+          "ai_schedule_report": "Automatisch erzeugte Berichtsart",
+          "ai_provider": "Berichtsanbieter (experimentell)",
+          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten Cloud-Anbieter senden erlauben",
+          "ai_cloud_model": "Cloud-Modell-ID (für Cloud-Berichte erforderlich)",
+          "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
+          "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
+          "ai_cloud_daily_limit": "Maximale Cloud-Anfragen pro UTC-Tag (je Integrationseintrag)"
         },
         "data_description": {
-          "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
         }
       },
       "guided_detail": {
@@ -563,7 +569,13 @@
           "ai_storage_mib": "Maximaler KI-Datenspeicher (MiB)",
           "ai_interval_hours": "Berichtsintervall (Stunden; 0 = manuell, 24 = täglich, 168 = wöchentlich)",
           "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
-          "ai_schedule_report": "Automatisch erzeugte Berichtsart"
+          "ai_schedule_report": "Automatisch erzeugte Berichtsart",
+          "ai_provider": "Berichtsanbieter (experimentell)",
+          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten Cloud-Anbieter senden erlauben",
+          "ai_cloud_model": "Cloud-Modell-ID (für Cloud-Berichte erforderlich)",
+          "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
+          "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
+          "ai_cloud_daily_limit": "Maximale Cloud-Anfragen pro UTC-Tag (je Integrationseintrag)"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -623,7 +635,7 @@
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
-          "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
         }
       },
       "guided_review": {
@@ -658,7 +670,14 @@
       "weather_entity_required": "Wähle eine Wetter-Entität für den Wetter-Hinweis.",
       "invalid_ai_endpoint": "Lokale HTTP(S)-Adresse mit IP ohne Zugangsdaten, Pfad oder Suchparameter eingeben, zum Beispiel http://192.168.1.20:11434.",
       "invalid_ai_model": "Ein installiertes lokales Modell angeben. Cloud-Modelle werden nicht unterstützt.",
-      "invalid_ai_language": "de oder en auswählen."
+      "invalid_ai_language": "de oder en auswählen.",
+      "ai_cloud_consent_required": "Unterstützten Cloud-Anbieter wählen und das Senden ausgewählter Betriebsdaten ausdrücklich erlauben.",
+      "ai_cloud_invalid_limit": "Eine ganze Zahl von 1 bis 24 Cloud-Anfragen pro UTC-Tag einstellen.",
+      "ai_cloud_key_required": "Einen gültigen API-Schlüssel für den gewählten Anbieter eintragen.",
+      "ai_cloud_auth_failed": "Der Anbieter hat die Anmeldung oder den Zugriff abgelehnt. API-Schlüssel und Modellzugriff prüfen.",
+      "ai_cloud_rate_limited": "Kontingent oder Anfragelimit des Anbieters erreicht. Kein automatischer Wiederholungsversuch.",
+      "ai_cloud_budget_unavailable": "Das Anfragelimit konnte nicht sicher geladen oder gespeichert werden. Keine Cloud-Anfrage gesendet.",
+      "ai_cloud_daily_limit_reached": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht."
     },
     "abort": {
       "already_configured": "Diese Wärmepumpe ist bereits konfiguriert.",
@@ -1045,10 +1064,16 @@
           "ai_storage_mib": "Maximaler KI-Datenspeicher (MiB)",
           "ai_interval_hours": "Berichtsintervall (Stunden; 0 = manuell, 24 = täglich, 168 = wöchentlich)",
           "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
-          "ai_schedule_report": "Automatisch erzeugte Berichtsart"
+          "ai_schedule_report": "Automatisch erzeugte Berichtsart",
+          "ai_provider": "Berichtsanbieter (experimentell)",
+          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten Cloud-Anbieter senden erlauben",
+          "ai_cloud_model": "Cloud-Modell-ID (für Cloud-Berichte erforderlich)",
+          "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
+          "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
+          "ai_cloud_daily_limit": "Maximale Cloud-Anfragen pro UTC-Tag (je Integrationseintrag)"
         },
         "data_description": {
-          "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
         }
       },
       "guided_detail": {
@@ -1120,7 +1145,13 @@
           "ai_storage_mib": "Maximaler KI-Datenspeicher (MiB)",
           "ai_interval_hours": "Berichtsintervall (Stunden; 0 = manuell, 24 = täglich, 168 = wöchentlich)",
           "ai_notifications": "Neue gemessene Gesundheitshinweise melden",
-          "ai_schedule_report": "Automatisch erzeugte Berichtsart"
+          "ai_schedule_report": "Automatisch erzeugte Berichtsart",
+          "ai_provider": "Berichtsanbieter (experimentell)",
+          "ai_cloud_consent": "Ausgewählte Betriebsdaten an den gewählten Cloud-Anbieter senden erlauben",
+          "ai_cloud_model": "Cloud-Modell-ID (für Cloud-Berichte erforderlich)",
+          "ai_openai_key": "OpenAI API-Schlüssel (leer: behalten; -: löschen)",
+          "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
+          "ai_cloud_daily_limit": "Maximale Cloud-Anfragen pro UTC-Tag (je Integrationseintrag)"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1180,7 +1211,7 @@
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
-          "ai_advisor": "Standardmäßig aus. Sendet ausgewählte Messwerte an deinen lokalen Ollama-Server. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Lokales Ollama oder Cloud-Berichte mit separater Freigabe. KI-Texte können falsch sein; keine Anlagensteuerung und keine Sprachfreigabe."
         }
       },
       "guided_review": {
@@ -1201,7 +1232,14 @@
       "weather_entity_required": "Wähle eine Wetter-Entität für den Wetter-Hinweis.",
       "invalid_ai_endpoint": "Lokale HTTP(S)-Adresse mit IP ohne Zugangsdaten, Pfad oder Suchparameter eingeben, zum Beispiel http://192.168.1.20:11434.",
       "invalid_ai_model": "Ein installiertes lokales Modell angeben. Cloud-Modelle werden nicht unterstützt.",
-      "invalid_ai_language": "de oder en auswählen."
+      "invalid_ai_language": "de oder en auswählen.",
+      "ai_cloud_consent_required": "Unterstützten Cloud-Anbieter wählen und das Senden ausgewählter Betriebsdaten ausdrücklich erlauben.",
+      "ai_cloud_invalid_limit": "Eine ganze Zahl von 1 bis 24 Cloud-Anfragen pro UTC-Tag einstellen.",
+      "ai_cloud_key_required": "Einen gültigen API-Schlüssel für den gewählten Anbieter eintragen.",
+      "ai_cloud_auth_failed": "Der Anbieter hat die Anmeldung oder den Zugriff abgelehnt. API-Schlüssel und Modellzugriff prüfen.",
+      "ai_cloud_rate_limited": "Kontingent oder Anfragelimit des Anbieters erreicht. Kein automatischer Wiederholungsversuch.",
+      "ai_cloud_budget_unavailable": "Das Anfragelimit konnte nicht sicher geladen oder gespeichert werden. Keine Cloud-Anfrage gesendet.",
+      "ai_cloud_daily_limit_reached": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht."
     }
   },
   "entity": {
@@ -2551,7 +2589,28 @@
       "message": "Ein lokal installiertes GGUF-Sprachmodell wird benötigt. Remote-Modelle sind gesperrt."
     },
     "ai_unavailable": {
-      "message": "Der lokale Ollama-Server ist nicht erreichbar oder hat das Zeitlimit von 180 Sekunden überschritten."
+      "message": "Der gewählte KI-Anbieter ist nicht erreichbar oder hat das Zeitlimit überschritten (lokal 300 Sekunden, Cloud 120 Sekunden)."
+    },
+    "ai_cloud_consent_required": {
+      "message": "Unterstützten Cloud-Anbieter wählen und das Senden ausgewählter Betriebsdaten ausdrücklich erlauben."
+    },
+    "ai_cloud_invalid_limit": {
+      "message": "Eine ganze Zahl von 1 bis 24 Cloud-Anfragen pro UTC-Tag einstellen."
+    },
+    "ai_cloud_key_required": {
+      "message": "Einen gültigen API-Schlüssel für den gewählten Anbieter eintragen."
+    },
+    "ai_cloud_auth_failed": {
+      "message": "Der Anbieter hat die Anmeldung oder den Zugriff abgelehnt. API-Schlüssel und Modellzugriff prüfen."
+    },
+    "ai_cloud_rate_limited": {
+      "message": "Kontingent oder Anfragelimit des Anbieters erreicht. Kein automatischer Wiederholungsversuch."
+    },
+    "ai_cloud_budget_unavailable": {
+      "message": "Das Anfragelimit konnte nicht sicher geladen oder gespeichert werden. Keine Cloud-Anfrage gesendet."
+    },
+    "ai_cloud_daily_limit_reached": {
+      "message": "Das Cloud-Anfragelimit für diesen UTC-Tag wurde erreicht."
     }
   },
   "issues": {
@@ -2754,7 +2813,7 @@
     },
     "generate_ai_report": {
       "name": "Experimentellen KI-Bericht erstellen",
-      "description": "Nur lesend, separat aktivieren. Ausgewählte Messwerte werden an den lokalen Ollama-Server gesendet. Bis zu 180 Sekunden Wartezeit.",
+      "description": "Nur lesend, separat aktivieren. Verwendet den gewählten Anbieter; Cloud erfordert eine ausdrückliche Freigabe. Bis zu 300 Sekunden lokal, 120 Sekunden in der Cloud.",
       "fields": {
         "entry_id": {
           "name": "IDM-Integration",
