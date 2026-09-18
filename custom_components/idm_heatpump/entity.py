@@ -128,6 +128,16 @@ class IdmCoordinatorEntityBase(CoordinatorEntity[IdmCoordinator]):
 
     @property
     def device_info(self) -> DeviceInfo:
+        description = getattr(self, "entity_description", None)
+        key = getattr(description, "key", None)
+        # Existing calculated sensors without an explicit scope retain their
+        # current device. IdmCalculatedSensor routes circuit-scoped values.
+        if (
+            isinstance(key, str)
+            and not key.startswith("calculated_")
+            and (subdevice := build_subdevice_info(self.coordinator, key))
+        ):
+            return subdevice
         return build_device_info(self.coordinator)
 
 

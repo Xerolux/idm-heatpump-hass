@@ -15,6 +15,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2-b5] - 2026-09-18
+
+- Place the optional Health Monitor, Comfort advice, energy statistics and
+  operating-analysis entities on their existing logical feature devices when
+  device grouping is enabled. Put runtime-version and communication sensors on
+  the existing Diagnostics device. Entity IDs remain unchanged.
+- Precreate optional feature devices when Home Assistant exposes config-entry
+  options as a read-only mapping, so a reload can move already registered
+  entities into the correct groups. Preserve the placement of older calculated
+  sensors without an explicit device scope.
+
 ## [0.17.2-b4] - 2026-09-18
 
 Fourth beta candidate. Automatic heat-pump writes remain untested on physical hardware.

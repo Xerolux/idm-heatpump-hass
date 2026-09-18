@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import logging
 import re
+from collections.abc import Mapping
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, cast
 
@@ -91,10 +92,15 @@ _DIAGNOSTIC_KEYS = frozenset(
         "controller_online_hours",
         "error_acknowledge",
         "heatpump_model",
+        "idm_api_version",
         "infosystem_notification_count",
         "infosystem_notifications",
         "internal_message",
         "myidm_id",
+        "modbus_active_registers",
+        "modbus_consecutive_failures",
+        "modbus_last_success",
+        "modbus_poll_duration",
         "navigator_version",
         "software_version",
         "technician_codes",
@@ -424,13 +430,16 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
     if isinstance(sensor_values, dict):
         entity_keys.update(str(key) for key in sensor_values)
     options = getattr(coordinator.config_entry, "options", {}) if coordinator.config_entry is not None else {}
-    if isinstance(options, dict) and options.get(CONF_TECHNICIAN_CODES, False):
+    if isinstance(options, Mapping) and options.get(CONF_TECHNICIAN_CODES, False):
         entity_keys.add("technician_codes")
     # These entities are created by optional feature platforms rather than by
     # the register table, so seed their logical device groups explicitly.
     # Missing legacy options intentionally default to the historical Smart
     # profile and therefore do not make existing entities disappear.
-    if isinstance(options, dict) and options.get(CONF_FEATURE_PROFILE, FEATURE_PROFILE_SMART) == FEATURE_PROFILE_SMART:
+    if (
+        isinstance(options, Mapping)
+        and options.get(CONF_FEATURE_PROFILE, FEATURE_PROFILE_SMART) == FEATURE_PROFILE_SMART
+    ):
         entity_keys.update({"calculated_cop", "analysis_heat_pump_cycles_recorded", "energy_cop_total"})
         if options.get(CONF_HEALTH_MONITOR, False):
             entity_keys.add("health_report")
