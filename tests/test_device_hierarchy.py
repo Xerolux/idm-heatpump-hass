@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import MappingProxyType
 from typing import Any
 from unittest.mock import MagicMock, patch
 
@@ -19,7 +20,7 @@ from custom_components.idm_heatpump.device_hierarchy import (
     precreate_main_device,
     resolve_device_scope,
 )
-from custom_components.idm_heatpump.entity import IdmEntity
+from custom_components.idm_heatpump.entity import IdmCoordinatorEntityBase, IdmEntity
 
 
 def _coordinator(*, enabled: bool = True) -> MagicMock:
@@ -69,6 +70,43 @@ def test_resolves_zone_module_and_room_before_generic_zone_match() -> None:
 def test_unknown_entity_remains_on_main_device() -> None:
     assert resolve_device_scope("outdoor_temp") is None
     assert build_subdevice_info(_coordinator(), "outdoor_temp") is None
+
+
+@pytest.mark.parametrize(
+    ("key", "device_suffix"),
+    [
+        ("health_report", "health"),
+        ("health_communication", "health"),
+        ("weather_preheat_advice", "comfort"),
+        ("heating_curve_advice", "comfort"),
+        ("analysis_heat_pump_cycles_recorded", "analytics"),
+        ("energy_cop_total", "analytics"),
+        ("idm_api_version", "diagnostics"),
+        ("modbus_consecutive_failures", "diagnostics"),
+    ],
+)
+def test_nonregister_feature_entity_uses_its_subdevice(key: str, device_suffix: str) -> None:
+    coordinator = _coordinator()
+    entity = IdmCoordinatorEntityBase(coordinator)
+    entity.entity_description = EntityDescription(key=key)
+
+    assert entity.device_info["identifiers"] == {(DOMAIN, f"entry_module_{device_suffix}")}
+
+
+def test_feature_devices_are_precreated_from_read_only_options() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import expected_subdevice_identifiers
+
+    coordinator = _coordinator()
+    coordinator.active_registers = []
+    coordinator.web_supplement = None
+    coordinator.config_entry.options = MappingProxyType({"health_monitor": True, "weather_preheat_advisory": True})
+
+    assert expected_subdevice_identifiers(coordinator) == {
+        (DOMAIN, "entry_module_analytics"),
+        (DOMAIN, "entry_module_health"),
+        (DOMAIN, "entry_module_comfort"),
+        (DOMAIN, "entry_module_diagnostics"),
+    }
 
 
 @pytest.mark.parametrize(

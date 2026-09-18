@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from types import MappingProxyType
 from unittest.mock import MagicMock, patch
 
 from idm_heatpump import DataType, RegisterDef
@@ -10,6 +11,7 @@ from custom_components.idm_heatpump.const import DOMAIN
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
 from custom_components.idm_heatpump.device_hierarchy import (
     cleanup_deconfigured_heating_circuit_entities,
+    cleanup_disabled_feature_entities,
     cleanup_stale_hierarchy_devices,
     expected_subdevice_identifiers,
 )
@@ -166,6 +168,74 @@ def _run_entity_cleanup(coordinator: MagicMock, entities: list[MagicMock]) -> Ma
     ):
         cleanup_deconfigured_heating_circuit_entities(MagicMock(), coordinator)
     return registry
+
+
+def _run_feature_cleanup(options: dict[str, object], entities: list[MagicMock]) -> MagicMock:
+    coordinator = _circuit_coordinator(["a"])
+    coordinator.config_entry.options = MappingProxyType(options)
+    registry = MagicMock()
+    with (
+        patch("custom_components.idm_heatpump.device_hierarchy.er.async_get", return_value=registry),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_config_entry",
+            return_value=entities,
+        ),
+    ):
+        cleanup_disabled_feature_entities(MagicMock(), coordinator)
+    return registry
+
+
+def test_reconfigure_removes_only_switched_off_feature_entities() -> None:
+    entities = [
+        _entity("entry_health_report", "sensor.health"),
+        _entity("entry_health_low_cop", "binary_sensor.health"),
+        _entity("entry_weather_preheat_advice", "sensor.weather"),
+        _entity("entry_heating_curve_advice", "sensor.curve"),
+        _entity("entry_energy_cop_total", "sensor.energy"),
+        _entity("entry_idm_api_version", "sensor.version"),
+        _entity("other_health_report", "sensor.foreign"),
+    ]
+    registry = _run_feature_cleanup({"health_monitor": False, "weather_preheat_advisory": False}, entities)
+
+    assert {call.args[0] for call in registry.async_remove.call_args_list} == {
+        "sensor.health",
+        "binary_sensor.health",
+        "sensor.weather",
+        "sensor.curve",
+    }
+
+
+def test_reconfigure_keeps_reenabled_health_and_weather_entities() -> None:
+    entities = [
+        _entity("entry_health_report", "sensor.health"),
+        _entity("entry_weather_preheat_advice", "sensor.weather"),
+    ]
+    registry = _run_feature_cleanup(
+        {
+            "health_monitor": True,
+            "weather_preheat_advisory": True,
+            "weather_entity": "weather.home",
+        },
+        entities,
+    )
+
+    registry.async_remove.assert_not_called()
+
+
+def test_vanilla_profile_removes_smart_analysis_entities() -> None:
+    entities = [
+        _entity("entry_analysis_heat_pump_cycles_recorded", "sensor.cycles"),
+        _entity("entry_energy_cost_today", "sensor.cost"),
+        _entity("entry_calculated_cop", "sensor.cop"),
+        _entity("entry_idm_api_version", "sensor.version"),
+    ]
+    registry = _run_feature_cleanup({"feature_profile": "vanilla"}, entities)
+
+    assert {call.args[0] for call in registry.async_remove.call_args_list} == {
+        "sensor.cycles",
+        "sensor.cost",
+        "sensor.cop",
+    }
 
 
 def test_entities_of_deconfigured_circuits_are_removed() -> None:
