@@ -9,7 +9,6 @@ import re
 from typing import Any
 
 import aiohttp
-from homeassistant.components import ai_task
 from homeassistant.core import HomeAssistant
 
 from .health_monitor import HEALTH_CHECKS
@@ -183,6 +182,9 @@ async def async_ha_task_report(
     validate_cloud(options)
     prompt, content = report_input(language, facts)
     try:
+        # Load optional provider dependencies only when this path is explicitly used.
+        from homeassistant.components import ai_task
+
         async with asyncio.timeout(120):
             result = await ai_task.async_generate_data(
                 hass,

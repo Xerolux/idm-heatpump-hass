@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import aiohttp
 import pytest
 import voluptuous as vol
+from homeassistant.components import ai_task
 from homeassistant.exceptions import HomeAssistantError
 
 from custom_components.idm_heatpump import ai_advisor as ai
@@ -40,9 +41,7 @@ def test_task_requires_explicit_valid_entity(entity):
 
 
 async def test_native_task_has_no_ha_tools_attachments_or_implicit_default():
-    with patch.object(
-        cloud.ai_task, "async_generate_data", AsyncMock(return_value=SimpleNamespace(data=" Report "))
-    ) as call:
+    with patch.object(ai_task, "async_generate_data", AsyncMock(return_value=SimpleNamespace(data=" Report "))) as call:
         assert await cloud.async_ha_task_report(MagicMock(), task_options(), "de", {"host": "SECRET"}) == "Report"
     assert call.call_args.kwargs["entity_id"] == "ai_task.selected_reporter"
     assert call.call_args.kwargs["llm_api"] is None
@@ -56,7 +55,7 @@ async def test_native_task_has_no_ha_tools_attachments_or_implicit_default():
 )
 async def test_native_task_validates_returned_text(data):
     with (
-        patch.object(cloud.ai_task, "async_generate_data", AsyncMock(return_value=SimpleNamespace(data=data))),
+        patch.object(ai_task, "async_generate_data", AsyncMock(return_value=SimpleNamespace(data=data))),
         pytest.raises(cloud.AdvisorError, match="ai_invalid_response"),
     ):
         await cloud.async_ha_task_report(MagicMock(), task_options(), "en", {})
@@ -67,7 +66,7 @@ async def test_native_task_validates_returned_text(data):
 )
 async def test_native_task_errors_are_sanitized(error):
     with (
-        patch.object(cloud.ai_task, "async_generate_data", AsyncMock(side_effect=error)),
+        patch.object(ai_task, "async_generate_data", AsyncMock(side_effect=error)),
         pytest.raises(cloud.AdvisorError, match="ai_unavailable"),
     ):
         await cloud.async_ha_task_report(MagicMock(), task_options(), "en", {})
