@@ -13,6 +13,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.2-b12] - 2026-09-19
+
+- Keep the experimental adviser collecting and scheduling on the config entry instead of the report sensor entity. Disabling or removing the sensor no longer stops history collection, local learning or scheduled reports; the state-write callback detaches cleanly and no longer writes to a removed entity.
+- Keep the scheduled-report loop alive after an unexpected failure instead of dying silently, and let entry teardown ignore a scheduler or generation task that already failed. Previously a dead loop's exception re-raised during unload.
+- Serialize the adviser storage payload once per eviction round instead of twice per check. The payload runs on the event loop, so this halves the per-save JSON cost for the configured 5–200 MiB budget.
+- Localize the measured-health notification to the configured report language and name the flagged checks in readable words instead of raw check keys.
+- Expose the learning opt-in through a public adviser property; entity code no longer reads private adviser options.
+
 ## [0.17.2-b11] - 2026-09-18
 
 - Default the experimental adviser to deterministic measurement reports. Free-form model explanations now require a separate explicit opt-in: matching numbers alone cannot verify their meaning. Default reports make no model request, need no provider credentials and consume no cloud reservation.

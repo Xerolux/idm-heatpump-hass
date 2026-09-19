@@ -317,6 +317,38 @@ class TestSensorAsyncSetupEntry:
             assert sum(isinstance(entity, IdmAiReportSensor) for entity in added) == (enabled is True)
             assert isinstance(entry.runtime_data.ai_advisor, AiAdvisor) == (enabled is True)
 
+    async def test_ai_collection_runs_entry_level_without_added_entities(self):
+        """Collection and scheduling must not depend on the report entity."""
+        import time
+
+        from custom_components.idm_heatpump.sensor import async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        listeners: list = []
+        coord.async_add_listener = lambda cb: (listeners.append(cb), lambda: listeners.remove(cb))[1]
+        coord.async_update_listeners = lambda: [callback() for callback in list(listeners)]
+        entry = coord.config_entry
+        entry.options = {"ai_advisor": True, "feature_profile": "vanilla", "ai_interval_hours": 24}
+        entry.runtime_data.coordinator = coord
+        entry.runtime_data.ai_advisor = None
+        unsubscribed = []
+        entry.async_on_unload = unsubscribed.append
+        await async_setup_entry(MagicMock(), entry, MagicMock())
+
+        advisor = entry.runtime_data.ai_advisor
+        assert len(advisor.records) == 1  # the setup-time observe ran
+        assert advisor._scheduler is not None  # scheduling started without entities
+        assert len(listeners) == 1
+        advisor.records[-1]["at"] = time.time() - 400
+        coord.async_update_listeners()
+        assert len(advisor.records) == 2  # coordinator updates drive collection
+        unsubscribed[0]()
+        advisor.records[-1]["at"] = time.time() - 400
+        coord.async_update_listeners()
+        assert len(advisor.records) == 2  # unsubscribed listeners stop collecting
+        await advisor.async_stop()
+
     async def test_creates_sensors_from_coordinator(self):
         from custom_components.idm_heatpump.sensor import async_setup_entry
 

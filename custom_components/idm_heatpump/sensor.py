@@ -405,6 +405,11 @@ async def async_setup_entry(
         advisor = AiAdvisor(hass, entry, coordinator)
         await advisor.async_load()
         entry.runtime_data.ai_advisor = advisor
+        # Collection and scheduling are entry-level features: they must keep
+        # running when the user disables the report sensor entity.
+        entry.async_on_unload(coordinator.async_add_listener(advisor.observe))
+        advisor.observe()
+        advisor.start()
         entities.append(IdmAiReportSensor(coordinator, advisor))
         entities.extend(IdmAiMetricSensor(coordinator, advisor, key) for key in AI_METRICS)
     if entry.options.get(CONF_TECHNICIAN_CODES, False):

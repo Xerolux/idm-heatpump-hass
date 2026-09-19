@@ -178,6 +178,80 @@ async def test_scheduler_advances_before_attempt_without_retry_storm(error):
     assert obj._store.data["next_run"] == obj.next_run
 
 
+async def test_scheduler_survives_unexpected_failures():
+    obj = manager()
+    obj.next_run = 1
+    generate = AsyncMock(side_effect=RuntimeError("unexpected"))
+    obj.async_generate = generate
+    sleeps = 0
+
+    async def tick(_seconds):
+        nonlocal sleeps
+        sleeps += 1
+        if sleeps == 2:
+            raise asyncio.CancelledError
+
+    with patch.object(ai.asyncio, "sleep", tick), pytest.raises(asyncio.CancelledError):
+        await obj._schedule_loop(86400)
+    generate.assert_awaited_once()
+    assert sleeps == 2  # the loop reached its next cycle after the crash
+
+
+async def test_async_stop_ignores_a_task_that_already_died():
+    obj = manager()
+
+    async def crash() -> None:
+        raise ValueError("dead loop")
+
+    dead = asyncio.create_task(crash())
+    await asyncio.sleep(0)
+    obj._scheduler = dead
+    await obj.async_stop()  # a dead task must not break teardown
+    assert obj._scheduler is None
+
+
+def test_storage_payload_serializes_once_when_within_budget(monkeypatch):
+    obj = manager()
+    obj.records = [sample(i) for i in range(50)]
+    real_dumps = ai.json.dumps
+    dump_calls = []
+
+    def counting_dumps(*args, **kwargs):
+        dump_calls.append(1)
+        return real_dumps(*args, **kwargs)
+
+    monkeypatch.setattr(ai.json, "dumps", counting_dumps)
+    payload = obj.storage_payload()
+    assert len(payload["records"]) == 50
+    assert sum(dump_calls) == 1
+    assert obj.storage_bytes > 65536
+
+
+def test_learning_enabled_property_mirrors_the_option():
+    obj = manager()
+    assert obj.learning_enabled is False
+    obj._options[ai.CONF_AI_LEARNING] = True
+    assert obj.learning_enabled is True
+
+
+async def test_notification_follows_report_language_with_readable_names():
+    obj = manager()
+    obj._hass.services = SimpleNamespace(async_call=AsyncMock())
+    obj._options[ai.CONF_AI_NOTIFICATIONS] = True
+    facts = {"health_checks_current": {"health_low_cop": True, "health_communication": True}}
+    await obj._notify(facts)
+    german = obj._hass.services.async_call.call_args_list[0].args[2]
+    assert "experimenteller" in german["title"]
+    assert "Niedriger COP" in german["message"] and "Kommunikation" in german["message"]
+    assert "health_low_cop" not in german["message"]
+    obj._notification_signature, obj._notification_at = "", 0
+    obj._options[ai.CONF_AI_LANGUAGE] = "en"
+    await obj._notify(facts)
+    english = obj._hass.services.async_call.call_args_list[1].args[2]
+    assert english["title"] == "iDM: experimental adviser"
+    assert "Low COP" in english["message"] and "Communication" in english["message"]
+
+
 async def test_notification_opt_in_deduplication_recovery_and_failures():
     obj = manager()
     obj._hass.services = SimpleNamespace(async_call=AsyncMock())

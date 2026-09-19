@@ -12,7 +12,7 @@ from homeassistant.core import callback
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 
-from .ai_advisor import CONF_AI_LEARNING, AdvisorError, AiAdvisor, capture_sample
+from .ai_advisor import AdvisorError, AiAdvisor, capture_sample
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
@@ -65,17 +65,19 @@ class IdmAiReportSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        self.manager.on_update = self.async_write_ha_state
-        self.manager.observe()
-        self.manager.start()
+        self.manager.on_update = self._write_state_if_added
 
     @callback
-    def _handle_coordinator_update(self) -> None:
-        self.manager.observe()
-        super()._handle_coordinator_update()
+    def _write_state_if_added(self) -> None:
+        # The adviser outlives this entity: it keeps observing while the user
+        # has the report sensor disabled or removes it from HA.
+        if self.hass is not None:
+            self.async_write_ha_state()
 
     async def async_will_remove_from_hass(self) -> None:
-        await self.manager.async_stop()
+        # Bound methods compare equal by instance and function, not identity.
+        if self.manager.on_update == self._write_state_if_added:
+            self.manager.on_update = lambda: None
         await super().async_will_remove_from_hass()
 
 
@@ -136,7 +138,7 @@ class IdmAiMetricSensor(IdmCoordinatorEntityBase, SensorEntity):
         if key == "ai_storage_used":
             return round(self.manager.storage_bytes / (1024 * 1024), 3)
         if key == "ai_learning_status":
-            if self.manager._options.get(CONF_AI_LEARNING) is not True:
+            if not self.manager.learning_enabled:
                 return "disabled"
             return str(self.manager.learning.comparison(capture_sample(self.coordinator, time.time()))["status"])
         period = self.manager.observed_period
