@@ -646,7 +646,17 @@ def _stub_homeassistant() -> None:
             return cls
 
         def async_update_listeners(self):
-            pass
+            for listener in self._listeners:
+                listener()
+
+        def async_add_listener(self, update_callback):
+            self._listeners.append(update_callback)
+
+            def _remove_listener() -> None:
+                if update_callback in self._listeners:
+                    self._listeners.remove(update_callback)
+
+            return _remove_listener
 
         async def async_config_entry_first_refresh(self):
             pass

@@ -357,16 +357,7 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
     unknown = sum(value is None for value in checks.values())
     lines.append(label("Auffällige Messprüfungen: ", "Flagged measurement checks: ") + str(active))
     lines.append(label("Prüfungen ohne ausreichende Daten: ", "Checks without sufficient data: ") + str(unknown))
-    check_names = {
-        "health_communication": ("Kommunikation", "Communication"),
-        "health_many_compressor_starts": ("Häufige Verdichterstarts", "Frequent compressor starts"),
-        "health_low_cop": ("Niedriger COP", "Low COP"),
-        "health_dhw_not_reaching_target": ("Warmwasserziel nicht erreicht", "DHW target not reached"),
-        "health_implausible_sensor": ("Unplausible Sensorwerte", "Implausible sensor values"),
-        "health_long_defrost": ("Lange Abtauung", "Long defrost"),
-        "health_shortening_cycles": ("Kürzere Verdichterzyklen", "Shortening compressor cycles"),
-        "health_recurrent_alarms": ("Wiederkehrende Alarme", "Recurring alarms"),
-    }
+    check_names = HEALTH_CHECK_NAMES
     for key, names in check_names.items():
         value = checks.get(key)
         status = (
@@ -458,6 +449,18 @@ def guard_report(
         )
         return fact_report(facts, language), quality
     return report, quality
+
+
+HEALTH_CHECK_NAMES: dict[str, tuple[str, str]] = {
+    "health_communication": ("Kommunikation", "Communication"),
+    "health_many_compressor_starts": ("Häufige Verdichterstarts", "Frequent compressor starts"),
+    "health_low_cop": ("Niedriger COP", "Low COP"),
+    "health_dhw_not_reaching_target": ("Warmwasserziel nicht erreicht", "DHW target not reached"),
+    "health_implausible_sensor": ("Unplausible Sensorwerte", "Implausible sensor values"),
+    "health_long_defrost": ("Lange Abtauung", "Long defrost"),
+    "health_shortening_cycles": ("Kürzere Verdichterzyklen", "Shortening compressor cycles"),
+    "health_recurrent_alarms": ("Wiederkehrende Alarme", "Recurring alarms"),
+}
 
 
 class AiAdvisor:
@@ -604,19 +607,27 @@ class AiAdvisor:
             "notification_at": self._notification_at,
             "notification_signature": self._notification_signature,
         }
-        while len(json.dumps(result, ensure_ascii=True, indent=4).encode()) + 65536 > self.storage_limit:
+        # Serializing the full payload runs on the event loop; dump it once per
+        # eviction round instead of twice per check.
+        encoded = json.dumps(result, ensure_ascii=True, indent=4).encode()
+        while len(encoded) + 65536 > self.storage_limit:
             if self.records:
                 del self.records[: max(1, len(self.records) // 10)]
             elif self.learning.buckets:
                 del self.learning.buckets[next(iter(self.learning.buckets))]
             else:
                 break
-        self._storage_bytes = len(json.dumps(result, ensure_ascii=True, indent=4).encode()) + 65536
+            encoded = json.dumps(result, ensure_ascii=True, indent=4).encode()
+        self._storage_bytes = len(encoded) + 65536
         return result
 
     @property
     def storage_bytes(self) -> int:
         return self._storage_bytes
+
+    @property
+    def learning_enabled(self) -> bool:
+        return self._options.get(CONF_AI_LEARNING) is True
 
     def start(self) -> None:
         """Schedule only when an explicit non-zero interval is configured."""
@@ -639,6 +650,8 @@ class AiAdvisor:
                 await self.async_generate(str(self._options.get(CONF_AI_SCHEDULE_REPORT, "daily")))
             except (AdvisorError, OSError):
                 _LOGGER.warning("Scheduled experimental AI report failed; next interval retained")
+            except Exception:  # the loop must survive unexpected failures
+                _LOGGER.warning("Scheduled experimental AI report crashed; next interval retained", exc_info=True)
 
     async def _notify(self, facts: dict[str, Any]) -> None:
         if self._options.get(CONF_AI_NOTIFICATIONS) is not True:
@@ -650,15 +663,29 @@ class AiAdvisor:
             return
         if signature == self._notification_signature or time.time() - self._notification_at < 43200:
             return
+        german = str(self._options.get(CONF_AI_LANGUAGE, "de")) == "de"
+        names = ", ".join(HEALTH_CHECK_NAMES.get(k, (k, k))[0 if german else 1] for k in flags)
+        if german:
+            title = "iDM: experimenteller Anlagenbericht"
+            message = (
+                "Neue gemessene Gesundheitshinweise: "
+                + names
+                + ". Prüfe den KI-Bericht und die Messwerte; dies ist keine Diagnose."
+            )
+        else:
+            title = "iDM: experimental adviser"
+            message = (
+                "New measured health flags: "
+                + names
+                + ". Review the AI report and measured values; this is not a diagnosis."
+            )
         try:
             await self._hass.services.async_call(
                 "persistent_notification",
                 "create",
                 {
-                    "title": "iDM: experimental adviser",
-                    "message": "New measured health flags: "
-                    + signature
-                    + ". Review the AI report and measured values; this is not a diagnosis.",
+                    "title": title,
+                    "message": message,
                     "notification_id": f"idm_ai_{self._entry_id}",
                 },
                 blocking=True,
@@ -815,19 +842,18 @@ class AiAdvisor:
             return
         self._stopped = True
         self.on_update = lambda: None
-        if self._scheduler is not None:
-            self._scheduler.cancel()
+        for attribute in ("_scheduler", "_task"):
+            task = getattr(self, attribute)
+            if task is None:
+                continue
+            task.cancel()
             try:
-                await self._scheduler
+                await task
             except asyncio.CancelledError:
                 pass
-            self._scheduler = None
-        if self._task is not None:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
+            except Exception:  # noqa: BLE001 - a dead task must not break teardown
+                _LOGGER.warning("Experimental AI %s ended with an error", attribute)
+            setattr(self, attribute, None)
         try:
             await self._store.async_save(self.storage_payload())
         except Exception:  # noqa: BLE001 - optional history must not block HA; never log stored data

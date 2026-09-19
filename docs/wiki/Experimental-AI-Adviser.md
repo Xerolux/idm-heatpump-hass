@@ -146,7 +146,9 @@ existing rule-based checks, not diagnoses invented by an AI model.
 ## History and data quality
 
 The adviser keeps at most one numeric sample every five minutes and at most
-fourteen days of local history while enabled and its report sensor is loaded.
+fourteen days of local history while the feature is enabled. Collection runs on
+the config entry: disabling or removing the report sensor entity does not stop
+history collection, local learning or scheduled reports (since v0.17.2-b12).
 It stores temperatures and cumulative electrical/thermal counters. It does
 not import Recorder history, so a new installation cannot immediately provide
 a complete day or week. Energy counters require Smart statistics; without

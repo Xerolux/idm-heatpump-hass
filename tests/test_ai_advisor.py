@@ -321,6 +321,7 @@ async def test_sensor_report_attributes_and_teardown():
     assert sensor.extra_state_attributes["read_only"]
     obj.async_stop = AsyncMock()
     sensor.async_write_ha_state = MagicMock()
+    sensor.hass = MagicMock()
     with (
         patch(
             "custom_components.idm_heatpump.ai_advisor_entities.IdmCoordinatorEntityBase.async_added_to_hass",
@@ -334,14 +335,22 @@ async def test_sensor_report_attributes_and_teardown():
     ):
         await sensor.async_added_to_hass()
         sensor._handle_coordinator_update()
-    assert len(obj.records) == 1
+    # Collection is driven by the entry-level coordinator listener, not by the
+    # entity: a coordinator update must not observe anything here.
+    assert len(obj.records) == 0
+    obj.on_update()
+    sensor.async_write_ha_state.assert_called_once()
     with patch(
         "custom_components.idm_heatpump.ai_advisor_entities.IdmCoordinatorEntityBase.async_will_remove_from_hass",
         new=AsyncMock(),
         create=True,
     ):
         await sensor.async_will_remove_from_hass()
-    obj.async_stop.assert_awaited_once()
+    # Removing or disabling the entity must not stop the entry-level adviser;
+    # it only detaches the state-write callback.
+    obj.async_stop.assert_not_awaited()
+    obj.on_update()
+    sensor.async_write_ha_state.assert_called_once()
 
 
 async def test_guided_opt_in_validates_local_endpoint():
