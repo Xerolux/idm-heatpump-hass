@@ -13,9 +13,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.17.2] - UNRELEASED DRAFT
+## [0.18.0] - 2026-09-20
 
-This release ships two flagship feature sets on top of 0.17.1: the optional **Smart Energy & Comfort** package and the experimental **AI plant adviser** — plus a guided setup that replaces the long options form, and a long list of robustness fixes. Everything stays 100% local by default: no cloud, no tracking, and every automatic control remains off until you explicitly enable it. Existing entity IDs, runtime dependencies and the Home Assistant baseline are unchanged.
+This release ships two flagship feature sets on top of 0.17.1: the optional **Smart Energy & Comfort** package and the experimental **AI plant adviser** — plus a guided setup that replaces the long options form, and a long list of robustness fixes. Everything stays 100% local by default: no cloud, no tracking, and every automatic control remains off until you explicitly enable it. Entity IDs and the Home Assistant baseline are unchanged; the device-logic dependency moves to `idm-heatpump-api[web]==2.2.0`.
 
 ### Added
 
@@ -54,7 +54,7 @@ This release ships two flagship feature sets on top of 0.17.1: the optional **Sm
 
 - Automatic heat-pump writes (comfort scheduler, PV-surplus boost) remain opt-in; they have not been validated with physical writes on every installation — leave them disabled unless their ownership and behavior are verified for your plant. Read-only live validation on a Navigator 10 (21 polls, zero failures) is documented in the audit report.
 - The AI adviser is experimental: it explains measurements and uncertainty, it does not diagnose faults, guarantee savings or execute actions. Energy totals start accumulating at installation; earlier consumption is not reconstructed.
-- No dependency, Home Assistant baseline or entity-ID changes. Update through HACS and restart Home Assistant.
+- Runtime dependency: `idm-heatpump-api[web]==2.2.0` adds optional register step metadata (heating curves in 0.1, zone room setpoints in 0.5 °C steps); `modbus-connection==4.12.1` and `tmodbus[async-serial]==0.6.2` remain the current releases. The Home Assistant baseline and entity IDs are unchanged. Update through HACS and restart Home Assistant.
 
 ## [0.17.1] - 2026-09-14
 

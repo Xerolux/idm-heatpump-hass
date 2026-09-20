@@ -23,12 +23,12 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Documentation version** | [0.17.2](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2); [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Documentation version** | [0.18.0](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.18.0); [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Supported/tested HA baseline** | 2026.8.1 |
 | **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection==4.12.1 |
 | **Socket backend** | tmodbus[async-serial]==0.6.2 |
-| **Device/web library** | idm-heatpump-api[web]==2.1.2 |
+| **Device/web library** | idm-heatpump-api[web]==2.2.0 |
 | **License** | MIT |
 | **Languages** | DE, EN |
 | **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects, switches, climate, water heater, and buttons |
@@ -37,9 +37,9 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 ## Core Features
 
-### New in 0.17.2
+### New in 0.18.0
 
-0.17.2 ships two flagship feature sets — the optional **Smart Energy & Comfort** package and the experimental **AI plant adviser** — plus a guided setup that replaces the long options form. Everything stays local by default and every automatic control remains off until explicitly enabled.
+0.18.0 ships two flagship feature sets — the optional **Smart Energy & Comfort** package and the experimental **AI plant adviser** — plus a guided setup that replaces the long options form. Everything stays local by default and every automatic control remains off until explicitly enabled.
 
 <p align="center">
   <img src="../images/smart-energy-comfort-overview.svg" alt="Smart Energy and Comfort overview: energy and costs, health monitor and advice, comfort schedules and PV boost, external power forwarding" width="860">
@@ -134,7 +134,7 @@ privacy and the dashboard.
 - **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers tracked and protected
 - **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.12.1` / `tmodbus[async-serial]==0.6.2` pair; `4.12.1` is the connection-library version, not the IDM integration version
-- **API boundary**: `idm-heatpump-api[web]==2.1.2` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
+- **API boundary**: `idm-heatpump-api[web]==2.2.0` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
 - **Auto-recovery**: API retry/backoff plus reconnect-on-demand in the tmodbus-backed connection
 - **Connection ownership**: Each config entry owns one socket and reports `supports_shared_connection: false`; Home Assistant central cross-entry sharing is not currently available
 - **Validation status**: Automated checks and read-only Navigator 10 observations are available; they do not replace candidate-specific clean-install, long-duration and broader model validation. See [Stability & Release Readiness](Stability-and-Release-Readiness).

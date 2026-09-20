@@ -16,7 +16,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "modbus-connection==4.12.1",
     "tmodbus[async-serial]==0.6.2",
-    "idm-heatpump-api[web]==2.1.2",
+    "idm-heatpump-api[web]==2.2.0",
 ]
 
 

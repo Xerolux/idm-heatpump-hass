@@ -413,11 +413,11 @@ This project has two independently versioned packages:
 | Home Assistant custom integration | `0.17.0-beta.2` (previous stable: `0.16.2`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.12.1` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]==0.6.2` | Wire/backend implementation changes |
-| Python register/web library | `idm-heatpump-api[web]==2.1.2` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
+| Python register/web library | `idm-heatpump-api[web]==2.2.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
 `modbus-connection==4.12.1`, `tmodbus[async-serial]==0.6.2`,
-and `idm-heatpump-api[web]==2.1.2`. The first two packages own the direct
+and `idm-heatpump-api[web]==2.2.0`. The first two packages own the direct
 socket. `idm-heatpump-api` remains responsible for IDM-specific device logic
 and owns its exception hierarchy; the integration no longer installs
 pymodbus. `4.12.1` is the version of `modbus-connection`, not an IDM integration
