@@ -7,7 +7,7 @@ The integration can run as a slim **Vanilla** integration or with the optional
   <img src="../images/smart-energy-comfort-overview.svg" alt="Smart Energy and Comfort overview: energy and costs, health monitor and advice, comfort schedules and PV boost, external power forwarding" width="860">
 </p>
 
-This guide covers **0.17.2**.
+This guide covers **0.18.0**.
 
 | Feature | Default | Effect on the heat pump |
 |---------|---------|-------------------------|
