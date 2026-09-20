@@ -423,6 +423,18 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
             value = _number(section.get(key)) if isinstance(section, dict) else None
             text = label("nicht verfügbar", "unavailable") if value is None else f"{value:.2f}" + unit
             lines.append(label(de, en) + ": " + text)
+    if learning.get("status") == "collecting":
+        days = int(_number(learning.get("days")) or 0)
+        hours = _number(learning.get("hours")) or 0.0
+        hours_text = f"{hours:.1f}".replace(".", ",") if german else f"{hours:.1f}"
+        lines.append(
+            label(
+                f"Lernfortschritt: {days} Tage und {hours_text} Stunden im passenden Bereich gesammelt "
+                "- mindestens 3 Tage und 6 Stunden sind für einen Vergleichs-COP nötig",
+                f"Learning progress: {days} days and {hours_text} hours collected in the matching bin "
+                "- at least 3 days and 6 hours are required for a baseline COP",
+            )
+        )
     lines.append(
         label(
             "Messlücken werden nicht hochgerechnet. Keine Diagnose und keine Anlagensteuerung.",
@@ -582,7 +594,7 @@ class AiAdvisor:
                 latest = self.reports[self.report_type]
                 self.report, self.facts, self.generated_at = latest["report"], latest["facts"], latest["generated_at"]
                 self.status = "ready"
-            if stored.get("interval_hours") == self._options.get(CONF_AI_INTERVAL, 0):
+            if _number(stored.get("interval_hours")) == _number(self._options.get(CONF_AI_INTERVAL, 0)):
                 self.next_run = _number(stored.get("next_run"))
             self._notification_at = _number(stored.get("notification_at")) or 0.0
             signature = stored.get("notification_signature", "")
@@ -628,6 +640,11 @@ class AiAdvisor:
     @property
     def learning_enabled(self) -> bool:
         return self._options.get(CONF_AI_LEARNING) is True
+
+    @property
+    def cloud_budget_available_today(self) -> bool:
+        """New cloud reservations are allowed once the UTC day has rolled."""
+        return self._cloud_budget_loaded and self.cloud_day < datetime.now(UTC).date().isoformat()
 
     def start(self) -> None:
         """Schedule only when an explicit non-zero interval is configured."""

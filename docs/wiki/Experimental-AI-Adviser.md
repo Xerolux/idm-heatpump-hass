@@ -124,7 +124,8 @@ to hide incomplete responses: incompatible or truncated responses are rejected.
 
 When free-form explanations are enabled, manual buttons and the optional interval
 use the selected provider. Otherwise they generate measured-data reports locally. The report sensor exposes `cloud_budget_day_utc`,
-`cloud_requests_reserved`, and the provider inside each saved report. Results
+`cloud_requests_reserved`, `cloud_budget_available_today` (since v0.17.2-b13,
+true once the UTC day has moved past the last reservation day), and the provider inside each saved report. Results
 appear on the same AI device and dashboard as local reports. A provider switch
 never changes plant settings. Select `ollama` again to return to local reports;
 its URL and model settings are retained. The numeric guard applies to both paths,
@@ -227,7 +228,8 @@ Copy the returned `dashboard` object into a new dashboard's raw configuration
 editor. It resolves the current entity IDs, including renamed entities. It
 contains four report cards, manual buttons, data coverage, observed COP,
 learning status and storage history. No existing dashboard is overwritten.
-The report sensor also exposes `next_run` (UTC Unix timestamp),
+The report sensor also exposes `next_run` (UTC Unix timestamp) and, since
+v0.17.2-b13, `next_run_utc` (the same instant as an ISO timestamp for dashboards),
 `storage_limit_mib`, and `history_samples`.
 
 Learning is a statistical comparison, not LLM fine-tuning. It stores daily
@@ -237,6 +239,10 @@ stale measurements and gaps are excluded. Observations at both ends of an
 interval cannot prove that no brief mode change happened between them.
 A baseline requires at least three earlier days and six observed hours in the
 matching bin. Today's comparison additionally requires one observed hour.
+The learning-status sensor shows this progress (since v0.17.2-b13): its
+attributes list the collected days and hours next to the required thresholds,
+plus mode and outdoor bin, and measured-data reports add a progress line while
+the baseline is still collecting.
 Current-day data never trains its own baseline. Different flow temperatures,
 loads and other unobserved conditions can still explain a difference; a
 baseline deviation is not a fault diagnosis or a savings guarantee.

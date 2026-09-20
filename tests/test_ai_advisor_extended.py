@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import time
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -232,6 +232,76 @@ def test_learning_enabled_property_mirrors_the_option():
     assert obj.learning_enabled is False
     obj._options[ai.CONF_AI_LEARNING] = True
     assert obj.learning_enabled is True
+
+
+async def test_interval_restore_tolerates_numeric_types():
+    obj = manager()
+    obj._options[ai.CONF_AI_INTERVAL] = 24
+    obj._store.data = {"interval_hours": 24.0, "next_run": 1789845354.238121}
+    await obj.async_load()
+    assert obj.next_run == 1789845354.238121
+    # A different stored interval must not restore the deadline (fresh advisor,
+    # as after a restart with a changed option).
+    mismatched = manager()
+    mismatched._options[ai.CONF_AI_INTERVAL] = 24
+    mismatched._store.data = {"interval_hours": 12, "next_run": 1789845354.238121}
+    await mismatched.async_load()
+    assert mismatched.next_run is None
+
+
+def test_cloud_budget_availability_follows_the_utc_day():
+    obj = manager()
+    yesterday = (datetime.now(UTC).date() - timedelta(days=1)).isoformat()
+    today = datetime.now(UTC).date().isoformat()
+    obj._cloud_budget_loaded = True
+    obj.cloud_day = yesterday
+    assert obj.cloud_budget_available_today is True
+    obj.cloud_day = today
+    assert obj.cloud_budget_available_today is False
+    obj.cloud_day = ""
+    assert obj.cloud_budget_available_today is True
+    obj._cloud_budget_loaded = False
+    obj.cloud_day = yesterday
+    assert obj.cloud_budget_available_today is False
+
+
+@pytest.mark.parametrize(
+    ("language", "needle"),
+    [("de", "Lernfortschritt: 2 Tage und 4,2 Stunden"), ("en", "Learning progress: 2 days and 4.2 hours")],
+)
+def test_fact_report_shows_learning_progress_while_collecting(language, needle):
+    facts = manager().build_facts("daily", time.time())
+    facts["learning"] = {"status": "collecting", "days": 2, "hours": 4.2}
+    text = ai.fact_report(facts, language)
+    assert needle in text
+    facts["learning"] = {"status": "ready", "days": 5, "hours": 20.0, "baseline_cop": 3.9}
+    assert "Lernfortschritt" not in ai.fact_report(facts, "de")
+
+
+def test_learning_metric_exposes_progress_attributes():
+    obj = manager()
+    obj._options[ai.CONF_AI_LEARNING] = True
+    obj._coordinator.data["hp_operating_mode"] = 1
+    day = int(time.time() // 86400)
+    obj.learning.buckets = {f"{day - 1}:1:1": [1.0, 3.0, 7200.0, 24]}
+    sensor = IdmAiMetricSensor(obj._coordinator, obj, "ai_learning_status")
+    attributes = sensor.extra_state_attributes
+    assert attributes["enabled"] is True and attributes["status"] == "collecting"
+    assert attributes["days"] == 1 and attributes["hours"] == 2.0
+    assert attributes["required_days"] == 3 and attributes["required_hours"] == 6.0
+    obj._options[ai.CONF_AI_LEARNING] = False
+    assert sensor.extra_state_attributes == {"enabled": False}
+
+
+def test_report_sensor_next_run_utc_attribute():
+    from custom_components.idm_heatpump.ai_advisor_entities import IdmAiReportSensor
+
+    obj = manager()
+    sensor = IdmAiReportSensor(obj._coordinator, obj)
+    assert sensor.extra_state_attributes["next_run_utc"] is None
+    obj.next_run = 1789845354.238121
+    assert sensor.extra_state_attributes["next_run_utc"] == "2026-09-19T19:15:54.238121+00:00"
+    assert sensor.extra_state_attributes["cloud_budget_available_today"] is False
 
 
 async def test_notification_follows_report_language_with_readable_names():
