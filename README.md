@@ -33,11 +33,19 @@
 > [!TIP]
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
-## Experimental AI plant adviser (v0.17.2-b11 beta)
+## Experimental AI plant adviser (read-only)
 
-Optional and separately enabled. By default, daily, weekly, health and efficiency reports are generated directly from measured facts: **no model call, API key or inference cost**. Reports distinguish missing data, observed period energy, individual health-check states and local statistical baselines. The dedicated AI device, optional schedule, four saved reports, dashboard export and 5–200 MiB storage limit (default 20 MiB) remain available. Model files, Recorder and backups are separate.
+Optional and separately enabled — your local plant analyst. By default, daily, weekly, health and efficiency reports are generated directly from measured facts: **no model call, API key or inference cost**. Reports distinguish missing data, observed period energy, coverage, individual health-check states, previous-window comparison and local statistical baselines, and the learning status shows its own progress. The dedicated `iDM KI-Anlagenberater` device, optional schedule (restart-safe), four saved reports, dashboard export and 5–200 MiB storage limit (default 20 MiB) remain available. Model files, Recorder and backups are separate.
+
+<p align="center">
+  <img src="docs/images/ai-adviser-overview.svg" alt="AI plant adviser overview: local history, learning, measured-data reports by default, optional model explanations behind explicit consent" width="860">
+</p>
 
 Free-form AI explanations require an additional explicit switch. They can misinterpret facts even when their numbers match; the numeric guard cannot verify meaning. For this optional mode, an existing **Home Assistant AI Task entity** reuses provider-managed credentials and models. Local Ollama and direct OpenAI/Z.ai adapters are also available. Cloud/task data transfer requires separate consent and uses a persistent daily limit (default 2, range 1–24); local learning stays local. No mode has plant-control tools or enables voice exposure.
+
+<p align="center">
+  <img src="docs/images/ai-adviser-report-example.svg" alt="Example of the German measured-data report: window, coverage, observed energy, COP, health checks, learning progress" width="560">
+</p>
 
 [Setup, report modes, privacy, dashboard and limitations](docs/wiki/Experimental-AI-Adviser.md).
 
@@ -102,6 +110,8 @@ KNX bridge**. Full details: **[KNX Bridge documentation][wiki-knx]**.
 | **💧 Hot Water** | DHW setpoint and priority control |
 | **☀️ Solar & PV** | Solar hot water heating, PV surplus utilization |
 | **⚡ Energy Monitoring** | Heat quantity, runtime, energy meters |
+| **📊 Smart Energy & Comfort** *(opt-in)* | Persistent electrical/thermal totals, daily &amp; monthly stats, COP, estimated cost, CO₂, PV self-consumption; read-only Health Monitor with 8 diagnostic checks; heating-curve and weather-preheat advice; optional comfort schedules (16 windows) and fail-closed PV-surplus DHW boost — both writing features require explicit confirmation. [Details][wiki-smart] |
+| **🤖 AI Plant Adviser** *(experimental, read-only)* | Daily/weekly/health/efficiency reports from measured facts by default; dedicated AI device, four report buttons, dashboard export, restart-safe schedule; optional model explanations via local Ollama, HA AI Task, OpenAI or Z.ai with a numeric-integrity guard and strict privacy boundaries; local statistical learning with live progress. [Details][wiki-ai] |
 | **❄️ Cascade & Bivalence** | Multi-heat pump control, heating element integration |
 | **📡 BMS Remote Maintenance** | BMS temperature requests (cyclic writing) |
 | **🛡️ Error Management** | Error detection, readable internal messages, error acknowledgment, diagnostics export |
@@ -330,6 +340,7 @@ This project is an **unofficial community project** and is **not affiliated with
 [wiki]: https://xerolux.github.io/idm-heatpump-hass/docs/
 [wiki-install]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/
 [wiki-smart]: https://xerolux.github.io/idm-heatpump-hass/docs/smart-energy-and-comfort/
+[wiki-ai]: https://xerolux.github.io/idm-heatpump-hass/docs/experimental-ai-adviser/
 [wiki-install-modbus]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/#enable-modbus-tcp-on-the-idm-heat-pump
 [wiki-config]: https://xerolux.github.io/idm-heatpump-hass/docs/configuration/
 [wiki-entities]: https://xerolux.github.io/idm-heatpump-hass/docs/entities/

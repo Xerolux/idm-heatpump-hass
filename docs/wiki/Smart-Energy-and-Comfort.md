@@ -3,9 +3,11 @@
 The integration can run as a slim **Vanilla** integration or with the optional
 **iDM Smart Energy & Comfort** feature profile.
 
-This guide covers **0.17.2-b6 beta**. Use the
-[beta installation instructions](Installation-and-Setup#choosing-stable-or-beta)
-if these options are not yet available in your stable installation.
+<p align="center">
+  <img src="../images/smart-energy-comfort-overview.svg" alt="Smart Energy and Comfort overview: energy and costs, health monitor and advice, comfort schedules and PV boost, external power forwarding" width="860">
+</p>
+
+This guide covers **0.17.2**.
 
 | Feature | Default | Effect on the heat pump |
 |---------|---------|-------------------------|

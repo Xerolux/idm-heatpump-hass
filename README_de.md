@@ -33,11 +33,19 @@
 > [!TIP]
 > Neu hier? Beginne mit der **[Installationsanleitung][wiki-install]** oder öffne die **[durchsuchbare Dokumentation][wiki]**.
 
-## Experimenteller KI-Anlagenberater (Beta v0.17.2-b11)
+## Experimenteller KI-Anlagenberater (nur lesend)
 
-Optional und separat zu aktivieren. Tages-, Wochen-, Zustands- und Effizienzberichte entstehen standardmäßig direkt aus Messwerten: **ohne Modellaufruf, API-Schlüssel oder Inferenzkosten**. Fehlende Daten, beobachtete Energiemengen, einzelne Zustandsprüfungen und gelernte Vergleichswerte werden ausdrücklich unterschieden. Eigenes KI-Untergerät, Zeitplan, vier gespeicherte Berichte, Dashboard-Export und Speichergrenze von 5–200 MiB (Standard 20 MiB) bleiben verfügbar. Modell, Recorder und Backups zählen separat.
+Optional und separat zu aktivieren – dein lokaler Anlagen-Analyst. Tages-, Wochen-, Zustands- und Effizienzberichte entstehen standardmäßig direkt aus Messwerten: **ohne Modellaufruf, API-Schlüssel oder Inferenzkosten**. Fehlende Daten, beobachtete Energiemengen und Abdeckung, einzelne Zustandsprüfungen, Vorfenster-Vergleiche und gelernte Vergleichswerte werden ausdrücklich unterschieden, und der Lernstatus zeigt seinen eigenen Fortschritt an. Eigenes KI-Untergerät (`iDM KI-Anlagenberater`), neustartsicherer Zeitplan, vier gespeicherte Berichte, Dashboard-Export und Speichergrenze von 5–200 MiB (Standard 20 MiB) bleiben verfügbar. Modell, Recorder und Backups zählen separat.
+
+<p align="center">
+  <img src="docs/images/ai-adviser-overview.svg" alt="KI-Anlagenberater im Überblick: lokale Historie, Lernen, Messwertberichte als Standard, optionale Modellerklärungen nach ausdrücklicher Freigabe" width="860">
+</p>
 
 Freie KI-Erklärungen benötigen einen zusätzlichen ausdrücklichen Schalter. Sie können Messwerte trotz passender Zahlen falsch deuten; der Zahlencheck prüft keine Bedeutung. Für diesen optionalen Modus kann eine bestehende **Home-Assistant-KI-Task** verwendet werden. Lokales Ollama sowie direkte OpenAI-/Z.ai-Anbindungen bleiben wählbar. Cloud-/Task-Datenübertragung benötigt eine weitere Freigabe und ist pro UTC-Tag begrenzt (Standard 2, einstellbar 1–24). Lernen bleibt lokal. Kein Modus erhält Anlagensteuerung oder Sprachfreigaben.
+
+<p align="center">
+  <img src="docs/images/ai-adviser-report-example.svg" alt="Beispiel eines deutschen Messwertberichts: Fenster, Abdeckung, beobachtete Energie, COP, Zustandsprüfungen, Lernfortschritt" width="560">
+</p>
 
 [Einrichtung, Berichtsmodi, Datenschutz, Dashboard und Grenzen](docs/wiki/Experimental-AI-Adviser.md).
 
@@ -103,6 +111,8 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 | **💧 Warmwasser** | Warmwasser-Sollwert und Prioritätssteuerung |
 | **☀️ Solar & PV** | Solare Warmwasserbereitung, PV-Überschussnutzung |
 | **⚡ Energiemonitoring** | Wärmemenge, Laufzeiten, Energiezähler |
+| **📊 Smart Energy & Comfort** *(Opt-in)* | Persistente Strom-/Wärmemengen, Tages- & Monatsstatistik, COP, geschätzte Kosten, CO₂, PV-Eigenverbrauch; lesender Health Monitor mit 8 Diagnoseprüfungen; Heizkurven- und Wetter-Vorheizempfehlung; optionale Komfort-Zeitpläne (16 Fenster) und fail-closed PV-Überschuss-Warmwasserboost – beide schreibenden Funktionen erfordern ausdrückliche Bestätigung. [Details][wiki-smart] |
+| **🤖 KI-Anlagenberater** *(experimentell, nur lesend)* | Tages-/Wochen-/Zustands-/Effizienzberichte standardmäßig aus Messwerten; eigenes KI-Gerät, vier Berichts-Buttons, Dashboard-Export, neustartsicherer Zeitplan; optionale Modellerklärungen über lokales Ollama, HA AI Task, OpenAI oder Z.ai mit Zahlencheck und strengen Datenschutzgrenzen; lokales statistisches Lernen mit Live-Fortschritt. [Details][wiki-ai] |
 | **❄️ Kaskade & Bivalenz** | Mehrfach-Wärmepumpen-Steuerung, Heizstab-Integration |
 | **📡 GLT Fernwartung** | GLT-Temperaturanforderungen (zyklisches Schreiben) |
 | **🛡️ Fehlermanagement** | Fehlererkennung, lesbare interne Meldungen, Fehlerquittierung, Diagnosedaten-Export |
@@ -337,6 +347,7 @@ Dieses Projekt ist ein **inoffizielles Community-Projekt** und steht in **keiner
 [wiki]: https://xerolux.github.io/idm-heatpump-hass/docs/
 [wiki-install]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/
 [wiki-smart]: https://xerolux.github.io/idm-heatpump-hass/docs/smart-energy-and-comfort/
+[wiki-ai]: https://xerolux.github.io/idm-heatpump-hass/docs/experimental-ai-adviser/
 [wiki-install-modbus]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/#enable-modbus-tcp-on-the-idm-heat-pump
 [wiki-config]: https://xerolux.github.io/idm-heatpump-hass/docs/configuration/
 [wiki-entities]: https://xerolux.github.io/idm-heatpump-hass/docs/entities/

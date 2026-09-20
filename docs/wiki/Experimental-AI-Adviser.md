@@ -3,6 +3,10 @@
 **Available since v0.17.2-b7; measurement reports are the default from v0.17.2-b11.**
 The adviser is off by default and must be activated separately, even when Smart is enabled.
 
+<p align="center">
+  <img src="../images/ai-adviser-overview.svg" alt="AI plant adviser overview: local history, learning, measured-data reports by default, optional model explanations behind explicit consent" width="860">
+</p>
+
 It has no Home Assistant control tools, Modbus connection or plant write path.
 It does not expose the plant to Assist, Google Assistant or Alexa.
 
@@ -15,6 +19,10 @@ labelled unavailable; lifetime energy counters are never labelled as period
 consumption. No model is called, no API key is needed and no cloud reservation
 is consumed. Scheduling, local statistical learning, storage limits and all four
 report buttons work in this mode.
+
+<p align="center">
+  <img src="../images/ai-adviser-report-example.svg" alt="Example of the German measured-data report: window, coverage, observed energy, COP, health checks, learning progress" width="540">
+</p>
 
 Enable **free-form, not fully verifiable AI explanations** separately if desired.
 Matching numbers cannot establish that a sentence used the correct measurement,
