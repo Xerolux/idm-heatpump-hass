@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+from datetime import UTC, datetime
 from typing import Any
 
 MAX_BUCKETS = 4096
@@ -10,6 +11,7 @@ RETENTION_DAYS = 365
 BASELINE_MIN_DAYS = 3
 BASELINE_MIN_HOURS = 6.0
 CURRENT_MIN_HOURS = 3600.0  # seconds of matched-bin observation on the current day
+_MODE_NAMES = {1: "heating", 2: "cooling", 4: "dhw"}
 
 
 def finite(value: Any) -> bool:
@@ -117,3 +119,26 @@ class LearningHistory:
             cop = current[1] / current[0]
             result.update(current_cop=round(cop, 2), deviation_percent=round(100 * (cop / baseline - 1), 1))
         return result
+
+    def summary(self, now: float) -> dict[str, Any]:
+        """Learned coverage across every bin, independent of the current mode.
+
+        ``comparison`` answers for the current operating point only; while the
+        plant idles it has no answer at all. This totals what was learned.
+        """
+        day = int(now // 86400)
+        older: list[tuple[int, int, list[float]]] = []
+        for key, row in self.buckets.items():
+            parts = str(key).split(":")
+            if len(parts) == 3 and int(parts[0]) < day:
+                older.append((int(parts[0]), int(parts[1]), row))
+        oldest = min((bucket_day for bucket_day, _, _ in older), default=None)
+        return {
+            "total_days": len({bucket_day for bucket_day, _, _ in older}),
+            "buckets": len(older),
+            "total_hours": round(sum(row[2] for _, _, row in older) / 3600, 2),
+            "modes": sorted({_MODE_NAMES.get(mode, str(mode)) for _, mode, _ in older}),
+            "oldest_learning_day_utc": (
+                datetime.fromtimestamp(oldest * 86400, UTC).date().isoformat() if oldest is not None else None
+            ),
+        }

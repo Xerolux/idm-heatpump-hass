@@ -89,7 +89,16 @@ def cloud_facts(facts: dict[str, Any]) -> dict[str, Any]:
             "outdoor_c_min",
             "outdoor_c_max",
         ),
-        "learning": ("days", "hours", "baseline_cop", "current_cop", "deviation_percent", "mode", "outdoor_bin_c"),
+        "learning": (
+            "days",
+            "hours",
+            "baseline_cop",
+            "current_cop",
+            "deviation_percent",
+            "mode",
+            "outdoor_bin_c",
+        ),
+        "learning_totals": ("total_days", "buckets", "total_hours"),
     }
     result: dict[str, Any] = {}
     for group, names in fields.items():

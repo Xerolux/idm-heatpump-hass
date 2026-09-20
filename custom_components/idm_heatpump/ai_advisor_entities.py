@@ -157,6 +157,7 @@ class IdmAiMetricSensor(IdmCoordinatorEntityBase, SensorEntity):
         if not self.manager.learning_enabled:
             return {"enabled": False}
         comparison = self.manager.learning.comparison(capture_sample(self.coordinator, time.time()))
+        totals = self.manager.learning.summary(time.time())
         return {
             "enabled": True,
             "status": comparison.get("status"),
@@ -169,4 +170,9 @@ class IdmAiMetricSensor(IdmCoordinatorEntityBase, SensorEntity):
             "baseline_cop": comparison.get("baseline_cop"),
             "current_cop": comparison.get("current_cop"),
             "deviation_percent": comparison.get("deviation_percent"),
+            "total_days": totals.get("total_days"),
+            "total_hours": totals.get("total_hours"),
+            "total_buckets": totals.get("buckets"),
+            "modes": totals.get("modes"),
+            "oldest_learning_day_utc": totals.get("oldest_learning_day_utc"),
         }
