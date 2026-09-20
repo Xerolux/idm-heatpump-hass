@@ -13,177 +13,47 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.17.2-b14] - 2026-09-20
+## [0.17.2] - UNRELEASED DRAFT
 
-- Show what local learning has accumulated across every operating mode and outdoor bin, independent of the current plant state: the learning-status sensor gains `total_days`, `total_hours`, `total_buckets`, `modes` and `oldest_learning_day_utc`, and measured-data reports gain a totals line. While the plant idles, progress is now visible instead of reading as zero.
-- Suppress the matching-bin learning-progress line while the plant has no current operating mode (standby), where it previously read as a misleading "0 days, 0.0 hours". Cloud fact projection carries the learning totals alongside the per-bin comparison.
-
-## [0.17.2-b13] - 2026-09-20
-
-- Show the local-learning progress on the learning-status sensor: days and hours collected in the matching operating mode and outdoor bin, next to the thresholds a baseline requires. Measured-data reports gain a matching progress line while the baseline is still collecting, in both report languages.
-- Add `next_run_utc` to the report sensor: the scheduled next run as an ISO timestamp instead of only the raw Unix number.
-- Add `cloud_budget_available_today` to the report sensor so a stale reservation day from a previous UTC day is visibly available again instead of looking exhausted.
-- Restore the persisted next-run deadline when the stored interval matches numerically (24 and 24.0), not only on exact type equality.
-
-## [0.17.2-b12] - 2026-09-19
-
-- Keep the experimental adviser collecting and scheduling on the config entry instead of the report sensor entity. Disabling or removing the sensor no longer stops history collection, local learning or scheduled reports; the state-write callback detaches cleanly and no longer writes to a removed entity.
-- Keep the scheduled-report loop alive after an unexpected failure instead of dying silently, and let entry teardown ignore a scheduler or generation task that already failed. Previously a dead loop's exception re-raised during unload.
-- Serialize the adviser storage payload once per eviction round instead of twice per check. The payload runs on the event loop, so this halves the per-save JSON cost for the configured 5–200 MiB budget.
-- Localize the measured-health notification to the configured report language and name the flagged checks in readable words instead of raw check keys.
-- Expose the learning opt-in through a public adviser property; entity code no longer reads private adviser options.
-
-## [0.17.2-b11] - 2026-09-18
-
-- Default the experimental adviser to deterministic measurement reports. Free-form model explanations now require a separate explicit opt-in: matching numbers alone cannot verify their meaning. Default reports make no model request, need no provider credentials and consume no cloud reservation.
-- Show individual health-check states, current temperatures, observed period energy and coverage, previous-window summaries and learned COP comparisons with explicit missing-data labels. Never present lifetime counters as period consumption or a false health flag as unknown.
-- Replace stored model prose with measurement reports when free-form explanations are disabled, preserving facts, timestamps, schedules and local learning. Keep Ollama, HA AI Task and direct cloud configurations available for the optional explanation mode.
-- Fail closed on malformed cloud-budget storage and prevent a backward clock adjustment from resetting the daily request count. Update setup, privacy and report-mode documentation in both READMEs and the wiki.
-
-## [0.17.2-b10] - 2026-09-18
-
-- Prefer an existing Home Assistant AI Task entity for report generation, reusing centrally managed models and credentials. Explicit entity selection, fresh task sessions and no HA control API prevent implicit provider changes and control access. Daily task reservations survive restarts; provider transport/token/billing settings remain provider-managed.
-
-- Add explicitly consented OpenAI and Z.ai experimental reports alongside default local Ollama. Separate masked API-key fields, fixed HTTPS endpoints, numerical fact projection, bounded requests and persistent per-entry daily reservations keep cloud access deliberate and limited.
-- Keep local learning, schedules, report entities and numeric safeguards. Cloud models receive no HA control tools. Report provider and budget usage are visible in report attributes; document billing, retention, key storage, setup and semantic limitations.
-
-## [0.17.2-b9] - 2026-09-18
-
-- Allow up to five minutes for experimental local AI reports, including model validation and loading. Larger models on integrated GPUs could exceed the previous three-minute limit. Connection timeout, cancellation, overlap protection and numeric report safeguards remain in place.
-
-## [0.17.2-b8] - 2026-09-18
-
-- Replace numerically inconsistent AI prose with a clearly labelled, deterministic measurement report instead of displaying a warning beside the incorrect prose. Percentage claims are checked against percentage facts, so a matching temperature cannot validate a fabricated coverage value.
-- Replace unreviewed reports saved by previous versions with measurement-only reports on load, preserving their facts, timestamps, learning data and configuration. Rejected model text is neither returned nor persisted.
-- Distinguish the requested reporting window from the first/last observed samples, clarify percentage units in the prompt, and keep unknown health checks separate from normal checks in fallback reports. This numeric guard does not claim full semantic verification of accepted AI prose.
-
-## [0.17.2-b7] - 2026-09-18
+This release ships two flagship feature sets on top of 0.17.1: the optional **Smart Energy & Comfort** package and the experimental **AI plant adviser** — plus a guided setup that replaces the long options form, and a long list of robustness fixes. Everything stays 100% local by default: no cloud, no tracking, and every automatic control remains off until you explicitly enable it. Existing entity IDs, runtime dependencies and the Home Assistant baseline are unchanged.
 
 ### Added
 
-- Experimental local Ollama adviser, off by default: explicit activation, read-only daily/weekly reports, health and efficiency explanations, bounded local history with coverage, report sensor/buttons and a response-capable action. No control tools or cloud endpoints. Automatic inference requires a non-zero interval. Includes English/German setup, error handling and documentation.
+- **Experimental AI plant adviser (read-only, off by default).** Four report types — daily, weekly, health and efficiency — with a dedicated `iDM KI-Anlagenberater` device, report sensor, four request buttons, a response-capable `generate_ai_report` action for setups where the button platform is not loaded, and a one-click dashboard export with coverage, COP and storage cards. The default is a deterministic **measured-data report**: period energy and coverage, current temperatures, individual health-check states, previous-window comparison and learned COP baselines, with explicit labels wherever evidence is missing. No model request, no credentials and no cloud access are needed in this mode.
+- **Optional free-form model explanations** behind a separate explicit opt-in, with strict privacy boundaries: local Ollama on your own LAN (literal private addresses only, up to five minutes of inference for larger models on integrated GPUs), an existing Home Assistant AI Task entity (reusing centrally managed models and credentials, fresh sessions, no HA control API), or explicitly consented OpenAI / Z.ai requests to fixed HTTPS endpoints with masked keys, a numerical fact allowlist, bounded output and persistent daily request reservations that survive restarts. Models receive no plant control tools, provider and budget usage stay visible in the report attributes, and every explanation passes a numeric-integrity guard that discards prose with numbers the facts cannot support.
+- **Local statistical learning** (opt-in): daily energy aggregates separated by operating mode and five-degree outdoor temperature bins, kept for up to a year inside a configurable 5–200 MiB storage budget. No model training, no downloads.
+- **Adviser transparency attributes**: the report sensor exposes the schedule as `next_run` and a readable `next_run_utc`, and `cloud_budget_available_today` shows when a rolled reservation day is available again; the learning-status sensor and the reports show live progress — matching-bin days and hours against the required thresholds, and mode-independent totals so progress stays visible while the plant idles. The persisted next-run deadline restores on numeric interval equality.
+- **Scheduled reports** with a restart-safe next-run deadline (1–168 hours, first run one interval after activation, missed runs skipped without catch-up storms), persistent results for all four report types across restarts, and optional localized health notifications naming the flagged checks in readable words.
+- **Smart Energy & Comfort package (opt-in Smart profile).** Persistent electrical and thermal energy totals with daily/monthly statistics, COP, estimated cost and CO₂, and PV self-consumption — invalid readings and long polling gaps are excluded. A read-only Health Monitor watches communication, compressor cycling, current COP, domestic-hot-water target and temperature plausibility, and adds conservative hints for repeated alarm transitions and shortening compressor cycles.
+- **Read-only comfort advice**: heating-curve and six-hour weather-preheat recommendations from actual hourly Home Assistant weather forecasts, plus accumulated cost estimates from a dynamic electricity price entity.
+- **Comfort scheduling and PV-surplus domestic-hot-water boost** (both writing features): up to 16 non-overlapping daily comfort windows per heating circuit with restart recovery and manual-override protection, and a fail-closed PV-surplus boost with cooldown — each requires explicit exclusive-controller confirmation and stays disabled by default.
+- **External power forwarding** from Home Assistant PV, household, battery and surplus sensors to the heat pump's existing GLT registers, off until configured.
+- **Bounded installer report** in the downloaded diagnostics: runtime versions including Home Assistant Core and Python, communication counters, operating history, selected readings and current health checks — never credentials and never write actions.
 
-- Dedicated AI child device, persistent results for all four report types, opt-in scheduled reports (1–168 hours) and a dashboard export with coverage, COP and storage graphs.
-- Optional local statistical learning separates operating modes and outdoor temperature bins. Daily aggregates retain up to one year, with strict count limits; no model training or downloads.
-- Configurable AI data storage budget of 5–200 MiB (20 MiB default), oldest-detail eviction, conservative storage display and independent switches for learning and local health notifications.
-- Flag unsupported numeric claims, stale input and incomplete coverage without claiming that model prose is verified. Rate-limit and deduplicate measured-health notifications.
+### Changed
 
-## [0.17.2-b6] - 2026-09-18
+- **Guided setup**: the long options form is replaced by a guided Standard, Advanced or Expert flow. Every depth offers all functions and then asks only the relevant follow-up questions; Reconfigure can switch depth or adjust one function without revisiting unrelated settings, and hidden expert values and disabled sensor mappings are retained.
+- Optional Health, Comfort and Analytics entities sit on their own logical feature devices when device grouping is enabled, with runtime-version and communication sensors on the existing Diagnostics device; feature devices are precreated so a reload moves already registered entities into the right groups, and disabled features are cleaned from the registry on reconfigure — re-enabling recreates the same entity IDs.
+- The entity-aware polling plan keeps the registers that energy statistics and active comfort schedules need even when their raw entities are disabled, and withdraws that demand on shutdown.
+- The adviser runs its collection and scheduling on the config entry: disabling or removing the report sensor entity no longer stops history collection, learning or the schedule, and storage serialization cost was halved for large budgets.
 
-- Keep the power registers needed by energy statistics and the setpoint needed
-  by each active comfort schedule in the polling plan when their raw entities
-  are disabled. Withdraw the schedule's polling demand on shutdown.
-- Evaluate comfort schedules in Home Assistant's configured timezone, reject
-  timezone offsets in local schedule windows, and ignore non-finite, boolean
-  and unused current setpoints before recording a restore value or writing.
-- Fail closed when an explicitly selected PV surplus sensor is unavailable;
-  reject negative production and house-consumption inputs when deriving surplus.
-  Keep the energy-manager loop alive after a transient evaluation failure.
-- Reset today's estimated PV self-consumption at the local day boundary while
-  preserving the lifetime total and resetting the month only when it changes.
-- Preserve the replacement external-power debounce task when an older cancelled
-  task finishes, so rapid source updates remain coalesced and cancellable.
-- No dependency, Home Assistant baseline or entity-ID changes. This beta has
-  passed offline regression and quality checks; the read-only live observation
-  in the audit report used the preceding beta, not this candidate.
+### Fixed
 
-## [0.17.2-b5] - 2026-09-18
+- Numerically inconsistent model prose is replaced by a clearly labelled measured-data report instead of being shown beside a warning; percentages are checked against percentage facts only, and unreviewed reports saved by older versions are migrated to measurement-only reports while preserving their facts and timestamps.
+- The cloud budget fails closed on malformed storage, and a backward clock adjustment can no longer reset the daily request count.
+- The scheduled-report loop survives unexpected failures instead of dying silently, and entry teardown no longer re-raises a dead task's exception during unload.
+- PV-surplus boost cooldown now begins after an actual boost, so the first eligible evaluation can start after a Home Assistant restart; the battery-SOC read sentinel `-1` is rejected before any GLT write and never forwarded.
+- Comfort schedules evaluate in Home Assistant's configured timezone, reject timezone offsets in local windows, and ignore non-finite, boolean and unused setpoints before recording a restore value or writing.
+- The energy manager fails closed when an explicitly selected PV surplus sensor is unavailable, rejects negative production and house-consumption inputs, and keeps its loop alive after a transient evaluation failure; today's estimated PV self-consumption resets at the local day boundary while lifetime and monthly totals are preserved correctly.
+- Rapid external-power source updates remain coalesced and cancellable when an older debounce task finishes.
+- Daily and monthly electrical, thermal and PV self-consumption totals use `total_increasing`, fixing the Home Assistant `energy` device-class warning.
+- The Health Monitor can be enabled without selecting an unrelated dynamic price sensor, weather entity or comfort window, and these optional inputs can be cleared on reconfigure.
 
-- Place the optional Health Monitor, Comfort advice, energy statistics and
-  operating-analysis entities on their existing logical feature devices when
-  device grouping is enabled. Put runtime-version and communication sensors on
-  the existing Diagnostics device. Entity IDs remain unchanged.
-- Precreate optional feature devices when Home Assistant exposes config-entry
-  options as a read-only mapping, so a reload can move already registered
-  entities into the correct groups. Preserve the placement of older calculated
-  sensors without an explicit device scope.
-- Remove the registry entries of disabled Smart, Health and Comfort features
-  during reconfigure reload. Re-enabling them recreates the same entity IDs and
-  their logical devices; unrelated and still-enabled entities are retained.
+### Notes
 
-## [0.17.2-b4] - 2026-09-18
-
-Fourth beta candidate. Automatic heat-pump writes remain untested on physical hardware.
-
-- Include the running Home Assistant Core and Python versions alongside all
-  direct integration dependency versions in the downloaded installer report,
-  diagnostics and API-version sensor.
-- Replace the long options form with a guided Standard, Advanced or Expert
-  setup. Every depth offers all functions, then asks only the relevant
-  follow-up questions at the chosen depth. Reconfigure can switch depth and
-  adjust one function without revisiting unrelated KNX settings; hidden
-  expert values and disabled sensor mappings are retained.
-
-## [0.17.2-b3] - 2026-09-17
-
-- Allow the Health Monitor to be enabled without selecting an unrelated
-  dynamic price sensor, weather entity or additional comfort window. These
-  inputs are optional and can also be cleared when reconfiguring an entry.
-- Fix the Home Assistant `energy` device-class warning for daily and monthly
-  electrical, thermal and PV self-consumption totals. Their values increase
-  within a period and reset at the period boundary, so they use
-  `total_increasing` instead of `measurement`.
-- Confirm the preceding beta on the maintainer Navigator 10 with 21 successful
-  read-only polls, zero failures and the new privacy-bounded installer report.
-  Automatic heat-pump writes remain untested on physical hardware.
-
-## [0.17.2-b2] - 2026-09-17
-
-Second beta candidate. The Smart Energy & Comfort automatic controls remain
-disabled by default; this release does not claim hardware write validation.
-
-- Add a bounded installer report to the downloaded diagnostics with runtime
-  versions, communication counters, operating history, selected readings and
-  current health checks; exclude connection credentials and device writes.
-- Detect repeated observed alarm transitions and shortening compressor cycles
-  as conservative diagnostic hints. These checks do not predict a component
-  failure or diagnose its cause.
-- Accept a dynamic electricity price entity for accumulated cost estimates,
-  with explicit currency units and skipped invalid pricing periods.
-- Read actual hourly Home Assistant weather forecasts for the six-hour
-  preheat advisory. Unavailable forecasts result in no recommendation.
-- Support up to 16 non-overlapping daily comfort windows across configured
-  heating circuits, with restart recovery and manual-override protection.
-- Add the complete options form to Reconfigure and require an explicit
-  acknowledgement when enabling new Smart Energy & Comfort beta features.
-- Clarify in the translated battery-SOC help text that the read sentinel `-1`
-  is skipped and never forwarded as a write value.
-- Document the Health Monitor's current diagnostic checks and the runtime
-  dependency versions already included in downloaded diagnostics.
-
-## [0.17.2-b1] - 2026-09-17
-
-Beta candidate for the optional Smart Energy & Comfort features. It retains
-the 0.17.1 runtime dependencies and Home Assistant baseline. Existing core
-entities and their IDs do not change.
-
-### Added
-
-- Configurable external power forwarding from Home Assistant PV, household,
-  battery and surplus sensors to the heat pump's existing GLT registers.
-  Forwarding is optional and remains off until configured.
-- An optional Smart profile with persistent electrical and thermal energy
-  totals, daily and monthly statistics, COP, estimated cost, CO₂ and PV
-  self-consumption. Invalid readings and long polling gaps are excluded.
-- A read-only Health Monitor for communication, compressor cycling, current
-  COP, domestic-hot-water target and temperature plausibility.
-- Read-only heating-curve and weather-preheat advice, plus separate Analytics,
-  Comfort and Health device groups when device hierarchy is enabled.
-- Opt-in PV-surplus domestic-hot-water boost and comfort scheduling. Both can
-  write heat-pump settings and require explicit exclusive-controller
-  confirmation. They remain disabled by default.
-
-### Testing and limitations
-
-- Fix the PV boost cooldown so its first eligible evaluation can start after
-  Home Assistant restarts; the cooldown now begins after an actual boost.
-- Reject the battery-SOC read sentinel `-1` before a GLT write because the
-  pinned API permits only 0–100 for writes to that register.
-- This beta is intended for staged Home Assistant and hardware validation.
-  The new automatic controls have not been validated with physical writes.
-  Leave them disabled unless their ownership and behavior are verified for the
-  installation. The new energy totals start accumulating from installation;
-  earlier consumption is not reconstructed.
+- Automatic heat-pump writes (comfort scheduler, PV-surplus boost) remain opt-in; they have not been validated with physical writes on every installation — leave them disabled unless their ownership and behavior are verified for your plant. Read-only live validation on a Navigator 10 (21 polls, zero failures) is documented in the audit report.
+- The AI adviser is experimental: it explains measurements and uncertainty, it does not diagnose faults, guarantee savings or execute actions. Energy totals start accumulating at installation; earlier consumption is not reconstructed.
+- No dependency, Home Assistant baseline or entity-ID changes. Update through HACS and restart Home Assistant.
 
 ## [0.17.1] - 2026-09-14
 
