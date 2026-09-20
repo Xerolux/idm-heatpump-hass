@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import time
+from datetime import UTC, datetime
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity
@@ -13,6 +14,7 @@ from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .ai_advisor import AdvisorError, AiAdvisor, capture_sample
+from .ai_learning import BASELINE_MIN_DAYS, BASELINE_MIN_HOURS
 from .const import DOMAIN
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
@@ -46,6 +48,7 @@ class IdmAiReportSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
+        next_run = self.manager.next_run
         return {
             "experimental": True,
             "read_only": True,
@@ -56,11 +59,13 @@ class IdmAiReportSensor(IdmCoordinatorEntityBase, SensorEntity):
             "error": self.manager.error,
             "history_samples": len(self.manager.records),
             "reports": self.manager.reports,
-            "next_run": self.manager.next_run,
+            "next_run": next_run,
+            "next_run_utc": datetime.fromtimestamp(next_run, UTC).isoformat() if next_run is not None else None,
             "storage_limit_mib": self.manager.storage_limit // (1024 * 1024),
             "model_text_verified": False,
             "cloud_budget_day_utc": self.manager.cloud_day,
             "cloud_requests_reserved": self.manager.cloud_requests,
+            "cloud_budget_available_today": self.manager.cloud_budget_available_today,
         }
 
     async def async_added_to_hass(self) -> None:
@@ -144,3 +149,24 @@ class IdmAiMetricSensor(IdmCoordinatorEntityBase, SensorEntity):
         period = self.manager.observed_period
         value = period.get("energy_counter_coverage_percent" if key == "ai_coverage" else "cop_observed")
         return float(value) if value is not None else None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        if self.entity_description.key != "ai_learning_status":
+            return {}
+        if not self.manager.learning_enabled:
+            return {"enabled": False}
+        comparison = self.manager.learning.comparison(capture_sample(self.coordinator, time.time()))
+        return {
+            "enabled": True,
+            "status": comparison.get("status"),
+            "days": comparison.get("days"),
+            "hours": comparison.get("hours"),
+            "required_days": BASELINE_MIN_DAYS,
+            "required_hours": BASELINE_MIN_HOURS,
+            "mode": comparison.get("mode"),
+            "outdoor_bin_c": comparison.get("outdoor_bin_c"),
+            "baseline_cop": comparison.get("baseline_cop"),
+            "current_cop": comparison.get("current_cop"),
+            "deviation_percent": comparison.get("deviation_percent"),
+        }

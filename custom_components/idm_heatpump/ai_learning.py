@@ -7,6 +7,9 @@ from typing import Any
 
 MAX_BUCKETS = 4096
 RETENTION_DAYS = 365
+BASELINE_MIN_DAYS = 3
+BASELINE_MIN_HOURS = 6.0
+CURRENT_MIN_HOURS = 3600.0  # seconds of matched-bin observation on the current day
 
 
 def finite(value: Any) -> bool:
@@ -105,12 +108,12 @@ class LearningHistory:
             outdoor_bin_c=math.floor(sample["outdoor_temp"] / 5) * 5,
         )
         electric = sum(r[0] for r in rows)
-        if len(rows) < 3 or hours < 6 or electric <= 0:
+        if len(rows) < BASELINE_MIN_DAYS or hours < BASELINE_MIN_HOURS or electric <= 0:
             return result
         baseline = sum(r[1] for r in rows) / electric
         result.update(status="ready", baseline_cop=round(baseline, 2))
         current = self.buckets.get(f"{day}{suffix}")
-        if current and current[2] >= 3600 and current[0] > 0 and baseline > 0:
+        if current and current[2] >= CURRENT_MIN_HOURS and current[0] > 0 and baseline > 0:
             cop = current[1] / current[0]
             result.update(current_cop=round(cop, 2), deviation_percent=round(100 * (cop / baseline - 1), 1))
         return result

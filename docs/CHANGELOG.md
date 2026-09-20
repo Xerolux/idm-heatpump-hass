@@ -13,6 +13,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.2-b13] - 2026-09-20
+
+- Show the local-learning progress on the learning-status sensor: days and hours collected in the matching operating mode and outdoor bin, next to the thresholds a baseline requires. Measured-data reports gain a matching progress line while the baseline is still collecting, in both report languages.
+- Add `next_run_utc` to the report sensor: the scheduled next run as an ISO timestamp instead of only the raw Unix number.
+- Add `cloud_budget_available_today` to the report sensor so a stale reservation day from a previous UTC day is visibly available again instead of looking exhausted.
+- Restore the persisted next-run deadline when the stored interval matches numerically (24 and 24.0), not only on exact type equality.
+
 ## [0.17.2-b12] - 2026-09-19
 
 - Keep the experimental adviser collecting and scheduling on the config entry instead of the report sensor entity. Disabling or removing the sensor no longer stops history collection, local learning or scheduled reports; the state-write callback detaches cleanly and no longer writes to a removed entity.
