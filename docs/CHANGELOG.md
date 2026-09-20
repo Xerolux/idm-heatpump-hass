@@ -33,6 +33,7 @@ This release ships two flagship feature sets on top of 0.17.1: the optional **Sm
 ### Changed
 
 - **Guided setup**: the long options form is replaced by a guided Standard, Advanced or Expert flow. Every depth offers all functions and then asks only the relevant follow-up questions; Reconfigure can switch depth or adjust one function without revisiting unrelated settings, and hidden expert values and disabled sensor mappings are retained.
+- Both READMEs, the wiki and the GitHub Pages site present the new features with overview graphics, an example measured-data report and a dedicated landing-page card for the AI adviser.
 - Optional Health, Comfort and Analytics entities sit on their own logical feature devices when device grouping is enabled, with runtime-version and communication sensors on the existing Diagnostics device; feature devices are precreated so a reload moves already registered entities into the right groups, and disabled features are cleaned from the registry on reconfigure — re-enabling recreates the same entity IDs.
 - The entity-aware polling plan keeps the registers that energy statistics and active comfort schedules need even when their raw entities are disabled, and withdraws that demand on shutdown.
 - The adviser runs its collection and scheduling on the config entry: disabling or removing the report sensor entity no longer stops history collection, learning or the schedule, and storage serialization cost was halved for large budgets.

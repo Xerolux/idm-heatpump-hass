@@ -23,7 +23,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Documentation version** | [0.17.2-b6 beta](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2-b6); [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Documentation version** | [0.17.2](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2); [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Supported/tested HA baseline** | 2026.8.1 |
 | **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection==4.12.1 |
@@ -37,11 +37,13 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 
 ## Core Features
 
-### New in the 0.17.2 beta series
+### New in 0.17.2
 
-The following features are included in **0.17.2-b6**. They are available in the
-beta channel; a stable installation may not yet offer every option described
-here. See [Installation & Setup](Installation-and-Setup#choosing-stable-or-beta).
+0.17.2 ships two flagship feature sets — the optional **Smart Energy & Comfort** package and the experimental **AI plant adviser** — plus a guided setup that replaces the long options form. Everything stays local by default and every automatic control remains off until explicitly enabled.
+
+<p align="center">
+  <img src="../images/smart-energy-comfort-overview.svg" alt="Smart Energy and Comfort overview: energy and costs, health monitor and advice, comfort schedules and PV boost, external power forwarding" width="860">
+</p>
 
 | Feature | What you can do | Device writes |
 |---------|-----------------|---------------|
@@ -52,11 +54,19 @@ here. See [Installation & Setup](Installation-and-Setup#choosing-stable-or-beta)
 | Comfort schedules | Apply daily room targets to selected circuits, with up to 16 windows and conditional restore | Optional; off by default, exclusive-control confirmation required |
 | Heating and weather advice | Read flow-temperature hints and a six-hour weather recommendation | None |
 | Health Monitor and installer report | Inspect eight diagnostic checks, operation history and redacted diagnostics | None |
+| External power forwarding | Forward PV, household, battery and surplus sensors to the existing GLT registers | Optional; off until configured |
 | Feature device groups | Find Analytics, Health Monitor, Comfort and Diagnostics separately | None; entity IDs remain unchanged |
+| **AI plant adviser** *(experimental)* | Daily, weekly, health and efficiency reports from measured facts — by default without any model call; dedicated AI device, four report buttons, dashboard export, restart-safe schedule, local statistical learning with live progress | None; read-only, off by default |
+| **Optional model explanations** | Free-form reports via local Ollama, an existing HA AI Task entity, or consented OpenAI/Z.ai — numeric-integrity guard, numerical fact allowlist, daily request limit | None; consent required for cloud paths |
+
+<p align="center">
+  <img src="../images/ai-adviser-overview.svg" alt="AI plant adviser overview: local history, learning, measured-data reports by default, optional model explanations behind explicit consent" width="860">
+</p>
 
 Start with [iDM Smart Energy & Comfort](Smart-Energy-and-Comfort) for activation,
-examples, defaults and limitations. Beta 6 additionally fixes schedule timezone
-handling, required-register polling, daily PV resets and invalid-source handling.
+examples, defaults and limitations, and with the
+[Experimental AI adviser](Experimental-AI-Adviser) for setup, report modes,
+privacy and the dashboard.
 
 ### Controller integration
 

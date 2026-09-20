@@ -192,7 +192,15 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
 
 
 HOME_TRANSLATIONS = {
-    "Neu in der 0.17.2-Betaserie": "New in the 0.17.2 beta series",
+    "Neu in 0.17.2": "New in 0.17.2",
+    "KI-Anlagenberater (experimentell)": "AI plant adviser (experimental)",
+    "Tages-, Wochen-, Zustands- und Effizienzberichte direkt aus Messwerten – standardmäßig ohne Modellaufruf. Eigenes KI-Gerät, Berichts-Buttons, Dashboard-Export, neustartsicherer Zeitplan und lokales Lernen mit Live-Fortschritt.": "Daily, weekly, health and efficiency reports generated directly from measured facts — with no model call by default. A dedicated AI device, report buttons, dashboard export, a restart-safe schedule and local learning with live progress.",
+    "Messwertberichte als Standard": "Measured-data reports by default",
+    "Optional Ollama, HA AI Task, OpenAI, Z.ai": "Optional Ollama, HA AI Task, OpenAI, Z.ai",
+    "Nur lesend, ohne Cloud-Zwang": "Read-only, no cloud required",
+    "KI-Berichte entdecken →": "Discover AI reports →",
+    "Alle Funktionen dieser Sektion sind Teil von v0.17.2. Schreibende Funktionen bleiben standardmäßig aus und erfordern eine Bestätigung; der KI-Anlagenberater ist experimentell und nur lesend.": "Every feature in this section is part of v0.17.2. Write-enabled features stay off by default and require confirmation; the AI plant adviser is experimental and read-only.",
+    "Installationsanleitung öffnen": "Open the installation guide",
     "Energie verstehen, Komfort planen und Auffälligkeiten erkennen. Wähle Smart für zusätzliche Auswertungen oder Vanilla für die Kernfunktionen.": "Understand energy use, plan comfort and spot unusual behavior. Choose Smart for additional analysis or Vanilla for core features.",
     "Energie &amp; Kosten": "Energy &amp; costs",
     "Strom, Wärme und COP als Gesamt-, Tages- und Monatswerte. Dazu geschätzte Kosten, CO₂ und PV-Nutzung, auch über Neustarts hinweg.": "Electrical energy, heat and COP as lifetime, daily and monthly values. Add estimated costs, CO₂ and PV use, retained across restarts.",
@@ -217,9 +225,7 @@ HOME_TRANSLATIONS = {
     "Gezielte Sensorauswahl": "Choose relevant sensors",
     "Bestehende IDs bleiben erhalten": "Existing IDs are retained",
     "Konfiguration kennenlernen →": "Explore configuration →",
-    "Diese Funktionen sind im Beta-Kanal verfügbar. Die Dokumentation beschreibt v0.17.2-b6; eine stabile Installation kann weniger Optionen anbieten.": "These features are available in the beta channel. This documentation covers v0.17.2-b6; a stable installation may offer fewer options.",
     "Smart Energy &amp; Comfort entdecken": "Explore Smart Energy &amp; Comfort",
-    "Beta installieren": "Install the beta",
     "Beta-Version": "Beta version",
     "Vorabversion": "Prerelease version",
     "Zum Inhalt springen": "Skip to content",
