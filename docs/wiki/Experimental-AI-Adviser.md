@@ -243,6 +243,10 @@ The learning-status sensor shows this progress (since v0.17.2-b13): its
 attributes list the collected days and hours next to the required thresholds,
 plus mode and outdoor bin, and measured-data reports add a progress line while
 the baseline is still collecting.
+Since v0.17.2-b14 the same sensor and report also show the mode-independent
+totals — days, hours, buckets, learned operating modes and the oldest learning
+day — so progress stays visible while the plant idles and no current operating
+mode exists.
 Current-day data never trains its own baseline. Different flow temperatures,
 loads and other unobserved conditions can still explain a difference; a
 baseline deviation is not a fault diagnosis or a savings guarantee.

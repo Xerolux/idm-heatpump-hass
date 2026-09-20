@@ -13,6 +13,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.17.2-b14] - 2026-09-20
+
+- Show what local learning has accumulated across every operating mode and outdoor bin, independent of the current plant state: the learning-status sensor gains `total_days`, `total_hours`, `total_buckets`, `modes` and `oldest_learning_day_utc`, and measured-data reports gain a totals line. While the plant idles, progress is now visible instead of reading as zero.
+- Suppress the matching-bin learning-progress line while the plant has no current operating mode (standby), where it previously read as a misleading "0 days, 0.0 hours". Cloud fact projection carries the learning totals alongside the per-bin comparison.
+
 ## [0.17.2-b13] - 2026-09-20
 
 - Show the local-learning progress on the learning-status sensor: days and hours collected in the matching operating mode and outdoor bin, next to the thresholds a baseline requires. Measured-data reports gain a matching progress line while the baseline is still collecting, in both report languages.

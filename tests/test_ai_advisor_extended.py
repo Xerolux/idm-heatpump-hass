@@ -267,15 +267,67 @@ def test_cloud_budget_availability_follows_the_utc_day():
 
 @pytest.mark.parametrize(
     ("language", "needle"),
-    [("de", "Lernfortschritt: 2 Tage und 4,2 Stunden"), ("en", "Learning progress: 2 days and 4.2 hours")],
+    [
+        ("de", "Lernfortschritt im passenden Bereich: 2 Tage und 4,2 Stunden"),
+        ("en", "in the matching bin: 2 days and 4.2 hours"),
+    ],
 )
 def test_fact_report_shows_learning_progress_while_collecting(language, needle):
     facts = manager().build_facts("daily", time.time())
-    facts["learning"] = {"status": "collecting", "days": 2, "hours": 4.2}
+    facts["learning"] = {"status": "collecting", "days": 2, "hours": 4.2, "mode": 1}
     text = ai.fact_report(facts, language)
     assert needle in text
-    facts["learning"] = {"status": "ready", "days": 5, "hours": 20.0, "baseline_cop": 3.9}
+    facts["learning"] = {"status": "ready", "days": 5, "hours": 20.0, "mode": 1, "baseline_cop": 3.9}
     assert "Lernfortschritt" not in ai.fact_report(facts, "de")
+    # While the plant idles there is no current operating point: the matching-bin
+    # line must stay away even though the status is still "collecting".
+    facts["learning"] = {"status": "collecting", "days": 0, "hours": 0.0, "mode": None}
+    assert "Lernfortschritt im passenden Bereich" not in ai.fact_report(facts, "de")
+
+
+def test_learning_summary_totals_across_modes_and_days():
+    history = LearningHistory()
+    now = 20000 * 86400 + 3600
+    for day in range(1, 4):
+        history.buckets[f"{20000 - day}:1:1"] = [1.0, 3.0, 3600.0, 12]
+        history.buckets[f"{20000 - day}:4:2"] = [2.0, 6.0, 7200.0, 24]
+    history.buckets[f"{20000}:1:1"] = [9.0, 9.0, 9999.0, 99]  # today never counts
+    summary = history.summary(now)
+    assert summary["total_days"] == 3 and summary["buckets"] == 6
+    assert summary["total_hours"] == 9.0  # 3x1h heating + 3x2h DHW
+    assert summary["modes"] == ["dhw", "heating"]
+    assert summary["oldest_learning_day_utc"] == datetime.fromtimestamp(19997 * 86400, UTC).date().isoformat()
+    assert LearningHistory().summary(now) == {
+        "total_days": 0,
+        "buckets": 0,
+        "total_hours": 0,
+        "modes": [],
+        "oldest_learning_day_utc": None,
+    }
+
+
+def test_fact_report_and_facts_carry_learning_totals():
+    obj = manager()
+    obj._options[ai.CONF_AI_LEARNING] = True
+    obj.learning.buckets = {"20000:4:2": [2.0, 6.0, 7200.0, 24]}
+    facts = obj.build_facts("daily", 20001 * 86400 + 3600)
+    assert facts["learning_totals"]["total_days"] == 1
+    assert facts["learning_totals"]["modes"] == ["dhw"]
+    text = ai.fact_report(facts, "de")
+    assert "Gelernte Grundlagen gesamt: 1 Tag und 2,0 Stunden" in text
+    assert f"ältester Lerntag: {datetime.fromtimestamp(20000 * 86400, UTC).date().isoformat()}" in text
+    obj._options[ai.CONF_AI_LEARNING] = False
+    assert obj.build_facts("daily", 20001 * 86400 + 3600)["learning_totals"] == {"status": "disabled"}
+    assert "Gelernte Grundlagen gesamt" not in ai.fact_report(obj.build_facts("daily", 20001 * 86400 + 3600), "de")
+
+
+def test_cloud_facts_project_learning_totals():
+    from custom_components.idm_heatpump.ai_cloud import cloud_facts
+
+    facts = manager().build_facts("daily", time.time())
+    facts["learning_totals"] = {"total_days": 2, "buckets": 5, "total_hours": 7.5, "modes": ["dhw"]}
+    projected = cloud_facts(facts)
+    assert projected["learning_totals"] == {"total_days": 2, "buckets": 5, "total_hours": 7.5}
 
 
 def test_learning_metric_exposes_progress_attributes():
@@ -289,6 +341,14 @@ def test_learning_metric_exposes_progress_attributes():
     assert attributes["enabled"] is True and attributes["status"] == "collecting"
     assert attributes["days"] == 1 and attributes["hours"] == 2.0
     assert attributes["required_days"] == 3 and attributes["required_hours"] == 6.0
+    # Totals are mode-independent: they are present even without a current mode.
+    attributes.pop("mode", None)
+    obj._coordinator.data["hp_operating_mode"] = 0
+    standby = sensor.extra_state_attributes
+    assert standby["mode"] is None and standby["days"] == 0
+    assert standby["total_days"] == 1 and standby["total_hours"] == 2.0
+    assert standby["modes"] == ["heating"]
+    assert standby["oldest_learning_day_utc"] is not None
     obj._options[ai.CONF_AI_LEARNING] = False
     assert sensor.extra_state_attributes == {"enabled": False}
 

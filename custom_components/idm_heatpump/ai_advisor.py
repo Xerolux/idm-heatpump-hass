@@ -319,6 +319,11 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
         text = f"{value:.3f}".rstrip("0").rstrip(".")
         return (text.replace(".", ",") if german else text) + unit
 
+    def day_word(count: int) -> str:
+        if german:
+            return f"{count} Tag" if count == 1 else f"{count} Tage"
+        return f"{count} day" if count == 1 else f"{count} days"
+
     lines = [
         label("Messwertbericht – ohne KI-Deutung", "Measured-data report – without AI interpretation"),
         label(
@@ -423,15 +428,29 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
             value = _number(section.get(key)) if isinstance(section, dict) else None
             text = label("nicht verfügbar", "unavailable") if value is None else f"{value:.2f}" + unit
             lines.append(label(de, en) + ": " + text)
-    if learning.get("status") == "collecting":
+    totals = facts.get("learning_totals")
+    if isinstance(totals, dict) and _number(totals.get("total_days")) is not None:
+        total_days = int(totals["total_days"])
+        total_hours = _number(totals.get("total_hours")) or 0.0
+        hours_text = f"{total_hours:.1f}".replace(".", ",") if german else f"{total_hours:.1f}"
+        oldest = str(totals.get("oldest_learning_day_utc") or "-")
+        lines.append(
+            label(
+                f"Gelernte Grundlagen gesamt: {day_word(total_days)} und {hours_text} Stunden "
+                f"über alle Betriebsbereiche; ältester Lerntag: {oldest}",
+                f"Learned totals: {day_word(total_days)} and {hours_text} hours "
+                f"across all operating bins; oldest learning day: {oldest}",
+            )
+        )
+    if learning.get("status") == "collecting" and learning.get("mode") is not None:
         days = int(_number(learning.get("days")) or 0)
         hours = _number(learning.get("hours")) or 0.0
         hours_text = f"{hours:.1f}".replace(".", ",") if german else f"{hours:.1f}"
         lines.append(
             label(
-                f"Lernfortschritt: {days} Tage und {hours_text} Stunden im passenden Bereich gesammelt "
+                f"Lernfortschritt im passenden Bereich: {day_word(days)} und {hours_text} Stunden gesammelt "
                 "- mindestens 3 Tage und 6 Stunden sind für einen Vergleichs-COP nötig",
-                f"Learning progress: {days} days and {hours_text} hours collected in the matching bin "
+                f"Learning progress in the matching bin: {day_word(days)} and {hours_text} hours collected "
                 "- at least 3 days and 6 hours are required for a baseline COP",
             )
         )
@@ -743,6 +762,9 @@ class AiAdvisor:
             "experimental": True,
             "purpose": report_type,
             "learning": self.learning.comparison(snapshot)
+            if self._options.get(CONF_AI_LEARNING) is True
+            else {"status": "disabled"},
+            "learning_totals": self.learning.summary(now)
             if self._options.get(CONF_AI_LEARNING) is True
             else {"status": "disabled"},
             "current": snapshot,
