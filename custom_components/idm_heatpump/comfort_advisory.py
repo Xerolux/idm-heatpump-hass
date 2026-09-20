@@ -7,14 +7,19 @@ import logging
 import math
 from collections.abc import Mapping
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.components.sensor import SensorEntity, SensorEntityDescription
 from homeassistant.const import EntityCategory
 
+from .const import DOMAIN
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 
 _LOGGER = logging.getLogger(__name__)
+
+# A hanging weather provider must never stall the advisory poll loop, and the
+# poll loop must never hold up Home Assistant's startup wrap-up.
+_FORECAST_TIMEOUT = 30.0
 
 
 def _number(value: Any) -> float | None:
@@ -87,13 +92,18 @@ class WeatherForecastAdvisorySensor(ComfortAdvisorySensor):
     async def async_refresh_forecast(self, *, now: datetime | None = None) -> None:
         """Fail closed if the provider has no usable forecast for six hours."""
         try:
-            result = await self._hass.services.async_call(
-                "weather",
-                "get_forecasts",
-                {"entity_id": self._weather_entity, "type": "hourly"},
-                blocking=True,
-                return_response=True,
-            )
+            async with asyncio.timeout(_FORECAST_TIMEOUT):
+                result = await self._hass.services.async_call(
+                    "weather",
+                    "get_forecasts",
+                    {"entity_id": self._weather_entity, "type": "hourly"},
+                    blocking=True,
+                    return_response=True,
+                )
+        except TimeoutError:
+            _LOGGER.warning("IDM weather forecast timed out after %s seconds", _FORECAST_TIMEOUT)
+            self._recommendation = None
+            return
         except Exception:
             _LOGGER.warning("IDM weather forecast is unavailable", exc_info=True)
             self._recommendation = None
@@ -125,7 +135,34 @@ class WeatherForecastAdvisorySensor(ComfortAdvisorySensor):
 
     async def async_added_to_hass(self) -> None:
         await super().async_added_to_hass()
-        self._forecast_task = self._hass.async_create_task(self._poll_forecast())
+        self._forecast_task = self._start_forecast_task()
+
+    def _start_forecast_task(self) -> asyncio.Task[None]:
+        """Start the poll loop as a background task.
+
+        A foreground ``hass.async_create_task`` loop never finishes, so Home
+        Assistant's startup wrap-up waits on it and logs a bootstrap timeout.
+        Mirrors ``_create_entry_background_task`` in ``__init__.py``; the
+        ``type()`` lookups keep MagicMock-based unit tests on the real
+        ``asyncio.create_task`` fallback.
+        """
+        coro = self._poll_forecast()
+        entry = self.coordinator.config_entry
+        entry_background = getattr(type(entry), "async_create_background_task", None)
+        if callable(entry_background):
+            return cast(
+                "asyncio.Task[None]",
+                entry_background(
+                    entry, self._hass, coro, name=f"{DOMAIN}_weather_advisory_{getattr(entry, 'entry_id', '')}"
+                ),
+            )
+        hass_background = getattr(type(self._hass), "async_create_background_task", None)
+        if callable(hass_background):
+            return cast("asyncio.Task[None]", hass_background(self._hass, coro, name=f"{DOMAIN}_weather_advisory"))
+        create_task = getattr(self._hass, "async_create_task", None)
+        if callable(create_task):
+            return cast("asyncio.Task[None]", create_task(coro))
+        return asyncio.create_task(coro)
 
     async def async_will_remove_from_hass(self) -> None:
         if self._forecast_task is not None:
@@ -139,7 +176,12 @@ class WeatherForecastAdvisorySensor(ComfortAdvisorySensor):
 
     async def _poll_forecast(self) -> None:
         while True:
-            await self.async_refresh_forecast()
+            try:
+                await self.async_refresh_forecast()
+            except asyncio.CancelledError:
+                raise
+            except Exception:  # the loop must survive unexpected failures
+                _LOGGER.warning("IDM weather advisory poll failed", exc_info=True)
             self.async_write_ha_state()
             await asyncio.sleep(1800)
 

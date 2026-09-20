@@ -40,6 +40,7 @@ This release ships two flagship feature sets on top of 0.17.1: the optional **Sm
 
 ### Fixed
 
+- Run the weather preheat advisory's forecast poll as a background task: the foreground loop never finishes, so Home Assistant's startup wrap-up waited on it and logged a bootstrap timeout plus a "something is blocking startup" warning on every restart. The forecast fetch is bounded to 30 seconds so a hanging weather provider cannot stall the advisory, and the poll loop survives unexpected failures instead of dying silently.
 - Numerically inconsistent model prose is replaced by a clearly labelled measured-data report instead of being shown beside a warning; percentages are checked against percentage facts only, and unreviewed reports saved by older versions are migrated to measurement-only reports while preserving their facts and timestamps.
 - The cloud budget fails closed on malformed storage, and a backward clock adjustment can no longer reset the daily request count.
 - The scheduled-report loop survives unexpected failures instead of dying silently, and entry teardown no longer re-raises a dead task's exception during unload.

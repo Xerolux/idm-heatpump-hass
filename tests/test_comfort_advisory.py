@@ -106,3 +106,73 @@ async def test_forecast_task_lifecycle_and_sparse_provider_data(monkeypatch: pyt
     assert adviser._forecast_task is not None
     await adviser.async_will_remove_from_hass()
     assert adviser._forecast_task is None
+
+
+async def test_forecast_task_starts_as_a_background_task(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The poll loop must not hold up Home Assistant's startup wrap-up."""
+    monkeypatch.setattr(ComfortAdvisorySensor, "async_will_remove_from_hass", AsyncMock(), raising=False)
+    created: list = []
+
+    class _Entry:
+        entry_id = "entry"
+
+        @staticmethod
+        def async_create_background_task(entry_self, hass, coro, name):
+            created.append(name)
+            return asyncio.create_task(coro)
+
+    coordinator = _coordinator({})
+    coordinator.config_entry = _Entry()
+    hass = MagicMock()
+    hass.async_create_task = MagicMock(side_effect=asyncio.create_task)
+    adviser = weather_preheat_advisory(hass, coordinator, "weather.home", 5)
+    adviser.async_write_ha_state = MagicMock()
+    await adviser.async_added_to_hass()
+    await asyncio.sleep(0)
+    assert created and "weather_advisory" in created[0]
+    hass.async_create_task.assert_not_called()
+    await adviser.async_will_remove_from_hass()
+    assert adviser._forecast_task is None
+
+
+async def test_forecast_fetch_is_bounded_against_a_hanging_provider(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from custom_components.idm_heatpump import comfort_advisory
+
+    monkeypatch.setattr(comfort_advisory, "_FORECAST_TIMEOUT", 0.05)
+
+    async def hang(*args, **kwargs):
+        await asyncio.sleep(30)
+
+    hass = MagicMock()
+    hass.services.async_call = AsyncMock(side_effect=hang)
+    adviser = weather_preheat_advisory(hass, _coordinator({}), "weather.home", 5)
+    await asyncio.wait_for(adviser.async_refresh_forecast(), timeout=2)
+    assert adviser.native_value is None
+
+
+async def test_forecast_loop_survives_an_unexpected_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list = []
+
+    async def refresh():
+        calls.append(1)
+        if len(calls) == 1:
+            raise RuntimeError("unexpected")
+        raise asyncio.CancelledError
+
+    adviser = weather_preheat_advisory(MagicMock(), _coordinator({}), "weather.home", 5)
+    adviser.async_write_ha_state = MagicMock()
+    monkeypatch.setattr(adviser, "async_refresh_forecast", refresh)
+
+    async def no_sleep(_seconds):
+        pass
+
+    monkeypatch.setattr("custom_components.idm_heatpump.comfort_advisory.asyncio.sleep", no_sleep)
+    with pytest.raises(asyncio.CancelledError):
+        await adviser._poll_forecast()
+    assert len(calls) == 2  # the loop reached its next cycle after the crash
