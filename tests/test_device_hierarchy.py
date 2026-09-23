@@ -364,3 +364,79 @@ def test_precreate_without_child_device_support_creates_ordinary_devices() -> No
         (DOMAIN, "entry_module_diagnostics"),
     }
     assert all(registry.devices[device_id].parent_device_id is None for device_id in ids.values())
+
+
+# ---------------------------------------------------------------------------
+# PV subdevice group (issue #353)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("entity_key", "expected_suffix"),
+    [
+        ("pv_surplus", "pv"),
+        ("pv_production", "pv"),
+        ("pv_target_value", "pv"),
+        ("smart_grid_status", "pv"),
+        ("calculated_pv_surplus_operation", "pv"),
+        ("web_demand_reason", "pv"),
+        ("web_demand_reason_pv", "pv"),
+        ("outdoor_temp", None),
+        ("house_consumption", None),
+        ("battery_soc", None),
+        ("calculated_cop", "analytics"),
+    ],
+)
+def test_pv_scope_routes_pv_entities_to_one_group(entity_key: str, expected_suffix: str) -> None:
+    scope = resolve_device_scope(entity_key)
+    if expected_suffix is None:
+        assert scope is None
+        return
+    assert scope is not None
+    assert scope.kind == expected_suffix
+
+    info = build_subdevice_info(_coordinator(), entity_key)
+    assert info is not None
+    assert info["identifiers"] == {(DOMAIN, f"entry_module_{expected_suffix}")}
+    if expected_suffix == "pv":
+        assert info["name"] == "Photovoltaik"
+
+
+def _register_named(name: str) -> Any:
+    from types import SimpleNamespace
+
+    return SimpleNamespace(name=name)
+
+
+def test_pv_subdevice_is_a_child_of_the_main_device() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import SubdevicePlacement, expected_subdevices
+
+    coordinator = _coordinator()
+    coordinator.active_registers = [_register_named("pv_surplus")]
+    coordinator.web_supplement = None
+
+    expected = expected_subdevices(coordinator)
+    placement = expected.get((DOMAIN, "entry_module_pv"))
+    assert isinstance(placement, SubdevicePlacement)
+    assert placement.kind == "pv"
+    assert placement.is_child_device is True
+    assert placement.parent == (DOMAIN, "entry")
+
+
+def test_pv_subdevice_seeds_only_when_entities_can_exist() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import expected_subdevice_identifiers
+
+    with_pv = _coordinator()
+    with_pv.active_registers = [_register_named("pv_surplus")]
+    with_pv.web_supplement = None
+    assert (DOMAIN, "entry_module_pv") in expected_subdevice_identifiers(with_pv)
+
+    without_pv = _coordinator()
+    without_pv.active_registers = [_register_named("outdoor_temp")]
+    without_pv.web_supplement = None
+    assert (DOMAIN, "entry_module_pv") not in expected_subdevice_identifiers(without_pv)
+
+    nav10_web = _coordinator()
+    nav10_web.active_registers = [_register_named("outdoor_temp")]
+    nav10_web.web_supplement = MagicMock(web_variant="nav10")
+    assert (DOMAIN, "entry_module_pv") in expected_subdevice_identifiers(nav10_web)

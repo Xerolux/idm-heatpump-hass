@@ -12,8 +12,10 @@ from homeassistant.components.sensor import (
     SensorEntity,
     SensorEntityDescription,
 )
+from homeassistant.helpers.device_registry import DeviceInfo
 
 from .coordinator import IdmCoordinator
+from .device_hierarchy import build_subdevice_info
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 from .web_demand_reason import WebDemandReasonState
 
@@ -54,6 +56,13 @@ class IdmWebDemandReasonSensor(IdmCoordinatorEntityBase, SensorEntity):
             translation_key="web_demand_reason",
             icon="mdi:format-list-checks",
         )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Place the sensor on the PV subdevice when the hierarchy is enabled."""
+        if subdevice := build_subdevice_info(self.coordinator, "web_demand_reason"):
+            return subdevice
+        return super().device_info
 
     def _state(self) -> WebDemandReasonState | None:
         return _nav10_demand_reason(self.coordinator)
@@ -98,6 +107,13 @@ class IdmWebDemandReasonPvBinarySensor(IdmCoordinatorEntityBase, BinarySensorEnt
             translation_key="web_demand_reason_pv",
             icon="mdi:solar-power",
         )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Place the sensor on the PV subdevice when the hierarchy is enabled."""
+        if subdevice := build_subdevice_info(self.coordinator, "web_demand_reason_pv"):
+            return subdevice
+        return super().device_info
 
     def _state(self) -> WebDemandReasonState | None:
         return _nav10_demand_reason(self.coordinator)

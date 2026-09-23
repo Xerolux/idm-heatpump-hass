@@ -46,6 +46,7 @@ DeviceScopeKind = Literal[
     "cascade",
     "auxiliary_heat",
     "domestic_hot_water",
+    "pv",
     "diagnostics",
     "analytics",
     "health",
@@ -136,6 +137,7 @@ _MODULE_DEVICE_METADATA: dict[DeviceScopeKind, tuple[str, str, str]] = {
         "Zusatzwärmeerzeuger",
     ),
     "domestic_hot_water": ("domestic_hot_water", "Warmwasser", "Warmwasserbereitung"),
+    "pv": ("pv", "Photovoltaik", "PV & Energie"),
     "diagnostics": ("diagnostics", "Diagnose", "Diagnose"),
     "analytics": ("analytics", "iDM Analytics", "Energieanalyse"),
     "health": ("health", "iDM Health Monitor", "Gesundheitsüberwachung"),
@@ -158,6 +160,7 @@ _CHILD_DEVICE_KINDS: frozenset[DeviceScopeKind] = frozenset(
         "cascade",
         "auxiliary_heat",
         "domestic_hot_water",
+        "pv",
         "diagnostics",
         "analytics",
         "health",
@@ -198,6 +201,19 @@ def resolve_device_scope(entity_key: str) -> DeviceScope | None:
     for prefix, kind in _OPTIONAL_MODULE_PREFIXES:
         if key.startswith(prefix):
             return DeviceScope(kind, prefix.removesuffix("_"))
+    # PV group (issue #353): the PV GLT registers, the SG-Ready signal that
+    # carries surplus requests, and the derived/web PV operation entities share
+    # one subdevice. calculated_pv_surplus_operation was introduced in the
+    # 0.19.0-b1 prerelease on the analytics device; moving it here so early in
+    # the prerelease line keeps the blast radius at the beta testers.
+    if key.startswith("pv_") or key in {
+        "smart_grid_status",
+        "calculated_pv_surplus_operation",
+        # web_ prefixed in their entity keys, stripped above like all web keys
+        "demand_reason",
+        "demand_reason_pv",
+    }:
+        return DeviceScope("pv", "pv")
     if (
         key.startswith(
             (
@@ -465,6 +481,13 @@ def expected_subdevices(coordinator: IdmCoordinator) -> dict[tuple[str, str], Su
     if isinstance(options, Mapping) and options.get(CONF_AI_ADVISOR) is True:
         entity_keys.add("ai_report")
     entity_keys.add("error_acknowledge")
+    # Seed the PV subdevice exactly when one of its entities can exist: the
+    # derived Modbus diagnostic needs a surplus signal plus a consumption
+    # source, the web demand reason entities need the Navigator 10 supplement.
+    if any(entity_key.startswith("pv_") for entity_key in entity_keys) or "smart_grid_status" in entity_keys:
+        entity_keys.add("calculated_pv_surplus_operation")
+    if getattr(supplement, "web_variant", None) == "nav10":
+        entity_keys.update({"web_demand_reason", "web_demand_reason_pv"})
 
     subdevices: dict[tuple[str, str], SubdevicePlacement] = {}
     for entity_key in sorted(entity_keys):

@@ -13,6 +13,27 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b3] - 2026-09-23
+
+Third beta of the 0.19.0 line: one dedicated **Photovoltaik** subdevice
+(device hierarchy mode) collects everything PV in one place.
+
+### Added
+
+- **PV subdevice group (issue #353):** with the device hierarchy enabled, the
+  new *Photovoltaik* child device groups the PV GLT registers (`pv_surplus`,
+  `pv_production`, `pv_target_value`), the SG-Ready signal `smart_grid_status`,
+  the derived `calculated_pv_surplus_operation` diagnostic and the Navigator 10
+  web entities `web_demand_reason` / `web_demand_reason_pv`. Without the
+  hierarchy everything stays on the main device as before.
+
+### Changed
+
+- `calculated_pv_surplus_operation` moves from the *iDM Analytics* subdevice to
+  the new *Photovoltaik* group. The entity was introduced in the 0.19.0-b1
+  prerelease hours ago, so the move only affects current beta testers and no
+  stable installation. Entity unique IDs are unchanged.
+
 ## [0.19.0-b2] - 2026-09-23
 
 Second beta of the 0.19.0 line: the controller's own demand reason joins the
