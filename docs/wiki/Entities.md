@@ -153,6 +153,31 @@ Battery SOC accepts `0–100`; `-1` means that no battery value is available.
 Treating address 86 like the surrounding two-register FLOAT values produces an
 implausible result.
 
+#### PV surplus operation (derived diagnostic)
+
+The Navigator controllers do not expose an internal "PV surplus charging
+active" state register — the whole PV block (74–88) consists of GLT
+measurement inputs written by an external energy manager. The integration
+therefore provides the derived diagnostic binary sensor **PV-Überschussbetrieb**
+(`calculated_pv_surplus_operation`, issue #353). It is `on` when both halves of
+the state are true:
+
+1. Surplus is currently signalled to the controller: `pv_surplus` (register
+   74) ≥ 0.05 kW **or** the SG-Ready signal `smart_grid_status` (register 90)
+   reports *Supergreen*.
+2. The heat pump is actually drawing electrical power:
+   `power_consumption_hp` (register 4122) ≥ 0.05 kW, falling back to
+   `hp_operating_mode` (register 1090) ≠ *Off* on installations without the
+   Nav 10 power measurement.
+
+The entity is only created when at least one source per half exists on the
+detected installation; thresholds and the currently active sources are exposed
+as attributes. Note for installations where the surplus is measured behind the
+heat pump feeder: `pv_surplus` collapses toward zero while the heat pump absorbs
+the surplus it is charged with — there the SG-Ready signal (or `pv_production`)
+remains the reliable indicator, and the SG-Ready source keeps the diagnostic
+meaningful.
+
 ### Solar Thermal
 
 | Entity | Register | Unit |
@@ -298,6 +323,7 @@ description.
 | `heating_demand` | 1091 | Heating demand active |
 | `cooling_demand` | 1092 | Cooling demand active |
 | `dhw_demand` | 1093 | DHW demand active |
+| `calculated_pv_surplus_operation` | derived | Heat pump running on signalled PV surplus (see PV / Energy Management) |
 
 ---
 

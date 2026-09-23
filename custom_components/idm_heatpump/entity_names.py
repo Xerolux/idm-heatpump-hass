@@ -456,6 +456,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     },
     "binary_sensor": {
         "analysis_last_cycle_short": ("Last compressor cycle too short", "Letzter Verdichtertakt zu kurz"),
+        "calculated_pv_surplus_operation": ("PV surplus operation", "PV-Überschussbetrieb"),
         # === Local Navigator web supplement ===
         "web_compressor_1": ("Compressor 1 (Web)", "Verdichter 1 (Web)"),
         "web_compressor_heating": ("Compressor heater (Web)", "Verdichterheizung (Web)"),

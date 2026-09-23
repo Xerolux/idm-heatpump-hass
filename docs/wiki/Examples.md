@@ -167,6 +167,35 @@ the automation unattended.
 
 ---
 
+## PV surplus operation as a state (forecast helper)
+
+The derived diagnostic **PV-Überschussbetrieb**
+(`binary_sensor.<device>_pv_uberschussbetrieb`; see *Entities → PV / Energy
+Management → PV surplus operation*) is `on` while surplus is signalled to the
+controller *and* the heat pump is drawing electrical power. It replaces
+hand-written template logic that combines PV and grid sensors, e.g. for
+energy-forecast helpers:
+
+```yaml
+template:
+  - sensor:
+      - name: "Heat pump PV surplus consumption"
+        unit_of_measurement: "kW"
+        state: >-
+          {% if is_state('binary_sensor.idm_heatpump_pv_uberschussbetrieb', 'on') %}
+            {{ states('sensor.idm_heatpump_power_consumption_hp') | float(0) }}
+          {% else %}
+            0
+          {% endif %}
+```
+
+On installations where `pv_surplus` is measured behind the heat pump feeder and
+collapses toward zero while charging, feed the SG-Ready *Supergreen* signal
+into the heat pump (or rely on the `smart_grid_status` source the diagnostic
+already evaluates) instead of the shrinking surplus value.
+
+---
+
 ## EEPROM-backed DHW setpoint boost (use sparingly)
 
 This alternative changes a persistent setpoint. It is suitable only for

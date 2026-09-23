@@ -13,6 +13,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b1] - 2026-09-23
+
+First beta of the 0.19.0 line. Ships the PV-visibility feature requested in
+issue #353 as a base-profile diagnostic — no Smart profile or extra
+configuration required.
+
+### Added
+
+- **PV surplus operation diagnostic (issue #353):** new derived binary sensor
+  `calculated_pv_surplus_operation` (**PV-Überschussbetrieb**) that is `on`
+  while the heat pump is running on signalled PV surplus. The Navigator
+  controllers expose no internal PV-mode state register (the documented PV
+  block 74–88 is GLT measurement inputs only), so the entity truthfully
+  combines the two halves of the state: surplus is currently signalled to the
+  controller (`pv_surplus` ≥ 0.05 kW **or** SG-Ready `smart_grid_status` =
+  *Supergreen*) **and** the heat pump is drawing electrical power
+  (`power_consumption_hp` ≥ 0.05 kW, falling back to `hp_operating_mode` ≠
+  *Off* on installations without the Nav 10 power measurement). The entity is
+  only created when at least one source per half exists on the detected
+  installation, exposes thresholds and active sources as attributes, and joins
+  the Analytics subdevice when device hierarchy is enabled. All candidate
+  source registers stay polled while the entity is enabled, even when their
+  own entities are disabled. Installations where the surplus is measured
+  behind the heat pump feeder see `pv_surplus` collapse toward zero while
+  charging; there the SG-Ready source keeps the diagnostic meaningful.
+
 ## [0.18.0] - 2026-09-20
 
 This release ships two flagship feature sets on top of 0.17.1: the optional **Smart Energy & Comfort** package and the experimental **AI plant adviser** — plus a guided setup that replaces the long options form, and a long list of robustness fixes. Everything stays 100% local by default: no cloud, no tracking, and every automatic control remains off until you explicitly enable it. Entity IDs and the Home Assistant baseline are unchanged; the device-logic dependency moves to `idm-heatpump-api[web]==2.2.0`.

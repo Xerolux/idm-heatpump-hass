@@ -971,6 +971,25 @@ class TestBinarySensorAsyncSetupEntry:
         await async_setup_entry(MagicMock(), entry, async_add)
         assert len(added) == 0
 
+    async def test_adds_pv_surplus_operation_entity(self):
+        """Issue #353: the derived PV surplus binary sensor joins the platform."""
+        from custom_components.idm_heatpump.binary_sensor import async_setup_entry
+
+        coord = _make_coordinator(data={"pv_surplus": 1.5, "hp_operating_mode": 1})
+        coord.web_enabled = False
+        coord.binary_sensor_descriptions = []
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        added = []
+        async_add = MagicMock(side_effect=lambda e: added.extend(e))
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        assert len(added) == 1
+        assert added[0].is_on is True
+        assert added[0]._attr_unique_id == "test_entry_calculated_pv_surplus_operation"
+
     async def test_sorts_entities_into_functional_blocks(self):
         from custom_components.idm_heatpump.binary_sensor import async_setup_entry
 
