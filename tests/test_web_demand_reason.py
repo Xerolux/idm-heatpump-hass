@@ -188,9 +188,7 @@ def _coordinator(supplement: IdmWebSupplement | None) -> MagicMock:
 
 
 def test_entities_created_only_for_nav10_with_state() -> None:
-    with_state = _coordinator(
-        IdmWebSupplement(web_variant="nav10", demand_reason=evaluate_demand_reason({"home": {}}))
-    )
+    with_state = _coordinator(IdmWebSupplement(web_variant="nav10", demand_reason=evaluate_demand_reason({"home": {}})))
     assert len(web_demand_reason_sensor_entities(with_state)) == 1
     assert len(web_demand_reason_binary_entities(with_state)) == 1
 
@@ -204,9 +202,7 @@ def test_entity_states_follow_the_supplement() -> None:
     coordinator = _coordinator(
         IdmWebSupplement(
             web_variant="nav10",
-            demand_reason=evaluate_demand_reason(
-                {"homeDetail": {"data": {"10": {"operationMode": 1, "info": 32}}}}
-            ),
+            demand_reason=evaluate_demand_reason({"homeDetail": {"data": {"10": {"operationMode": 1, "info": 32}}}}),
         )
     )
     sensor = web_demand_reason_sensor_entities(coordinator)[0]
