@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b4] - 2026-09-23
+
+Fourth beta of the 0.19.0 line: the home/detail connection moves into the
+device-logic API, where it belongs.
+
+### Changed
+
+- **Web demand reason now uses the public API method.** The WebSocket frame
+  request, the demand-reason decode tables and the frame parsing moved into
+  `idm-heatpump-api` 2.3.0 (`IdmNavigator10WebClient.read_home_detail()`,
+  `IdmWebHomeDetail`, `decode_navigator10_demand_reason()`,
+  `parse_navigator_home_response()`), documented in the API README, its wiki
+  and the compatibility matrix. The integration keeps only the German
+  presentation labels and the entities; the previous private frame seam is
+  gone. Runtime pin: `idm-heatpump-api[web]==2.3.0`.
+
 ## [0.19.0-b3] - 2026-09-23
 
 Third beta of the 0.19.0 line: one dedicated **Photovoltaik** subdevice

@@ -14,15 +14,17 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.helpers.device_registry import DeviceInfo
 
+from idm_heatpump import IdmWebHomeDetail
+
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
-from .web_demand_reason import WebDemandReasonState
+from .web_demand_reason import demand_reason_label
 
 _PV_BIT: Final = 32
 
 
-def _nav10_demand_reason(coordinator: IdmCoordinator) -> WebDemandReasonState | None:
+def _nav10_demand_reason(coordinator: IdmCoordinator) -> IdmWebHomeDetail | None:
     """Return the demand reason state of a Navigator 10 web supplement."""
     supplement = coordinator.web_supplement
     if supplement is None or supplement.web_variant != "nav10":
@@ -64,13 +66,13 @@ class IdmWebDemandReasonSensor(IdmCoordinatorEntityBase, SensorEntity):
             return subdevice
         return super().device_info
 
-    def _state(self) -> WebDemandReasonState | None:
+    def _state(self) -> IdmWebHomeDetail | None:
         return _nav10_demand_reason(self.coordinator)
 
     @property
     def native_value(self) -> str | None:
         state = self._state()
-        return state.label if state else None
+        return demand_reason_label(state) if state else None
 
     @property
     def available(self) -> bool:
@@ -89,7 +91,7 @@ class IdmWebDemandReasonSensor(IdmCoordinatorEntityBase, SensorEntity):
                     "info": node.info,
                     "reason": node.reason,
                 }
-                for node in state.nodes
+                for node in state.demand_reasons
             ],
             "pv_bit": _PV_BIT,
         }
@@ -115,13 +117,13 @@ class IdmWebDemandReasonPvBinarySensor(IdmCoordinatorEntityBase, BinarySensorEnt
             return subdevice
         return super().device_info
 
-    def _state(self) -> WebDemandReasonState | None:
+    def _state(self) -> IdmWebHomeDetail | None:
         return _nav10_demand_reason(self.coordinator)
 
     @property
     def is_on(self) -> bool | None:
         state = self._state()
-        return state.pv_active if state else None
+        return state.pv_demand_active if state else None
 
     @property
     def available(self) -> bool:
@@ -133,6 +135,6 @@ class IdmWebDemandReasonPvBinarySensor(IdmCoordinatorEntityBase, BinarySensorEnt
         if state is None:
             return {}
         return {
-            "reason": state.label,
+            "reason": demand_reason_label(state),
             "pv_bit": _PV_BIT,
         }
