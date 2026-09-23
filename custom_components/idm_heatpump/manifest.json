@@ -16,7 +16,7 @@
   "requirements": [
     "modbus-connection==4.12.1",
     "tmodbus[async-serial]==0.6.2",
-    "idm-heatpump-api[web]==2.2.0"
+    "idm-heatpump-api[web]==2.3.0"
   ],
-  "version": "0.19.0-b3"
+  "version": "0.19.0-b4"
 }

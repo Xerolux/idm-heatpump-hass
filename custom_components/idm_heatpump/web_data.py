@@ -14,7 +14,7 @@ from typing import TYPE_CHECKING, Any, Protocol
 from homeassistant.helpers.aiohttp_client import async_create_clientsession, async_get_clientsession
 
 from .const import MODEL, WEB_READ_TIMEOUT
-from .web_demand_reason import WebDemandReasonState, async_read_home_detail_demand_reason
+from .web_demand_reason import async_read_home_detail
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -63,7 +63,7 @@ class IdmWebSupplement:
     myidm_id: str | None = None
     values: dict[str, str] = field(default_factory=dict)
     sensor_values: dict[str, IdmWebSensorValue] = field(default_factory=dict)
-    demand_reason: WebDemandReasonState | None = None
+    demand_reason: Any | None = None
 
     @property
     def model_name(self) -> str | None:
@@ -222,15 +222,22 @@ async def _read_optional_demand_reason(
 ) -> IdmWebSupplement:
     """Augment a Navigator 10 snapshot with the home-screen demand reason.
 
-    Strictly optional: any failure keeps the supplement unchanged, and the
-    Navigator 2.0 PHP client has no WebSocket frame seam at all.
+    Uses the public API method (``read_home_detail``, idm-heatpump-api 2.3.0+)
+    under the same hard time limit as the rest of the snapshot. Strictly
+    optional: any failure keeps the supplement unchanged, and the Navigator
+    2.0 PHP client has no home controller at all.
     """
     if supplement.web_variant != "nav10":
         return supplement
-    state = await async_read_home_detail_demand_reason(client, WEB_READ_TIMEOUT)
-    if state is None:
+    try:
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            detail = await async_read_home_detail(client)
+    except Exception:
+        _LOGGER.debug("IDM web home/detail read failed", exc_info=True)
         return supplement
-    return replace(supplement, demand_reason=state)
+    if detail is None:
+        return supplement
+    return replace(supplement, demand_reason=detail)
 
 
 def _is_authentication_error(err: Exception) -> bool:

@@ -11,7 +11,7 @@ This file is a short pointer for Claude-compatible agents.
 - **Min HA**: 2026.8.1
 - **Python**: 3.14+ (Home Assistant 2026.8 requires 3.14.2)
 - **Dependencies**: `modbus-connection==4.12.1`, `tmodbus[async-serial]==0.6.2`,
-  `idm-heatpump-api[web]==2.2.0`
+  `idm-heatpump-api[web]==2.3.0`
 - **Platforms**: sensor, binary_sensor, number, select, switch, climate, water_heater, button
 - **Transports**: Modbus TCP through `modbus-connection`/tmodbus (primary) + optional local Navigator web supplement / web-only mode
 - **Optional KNX bridge**: serves the IDM KNX communication objects through the
