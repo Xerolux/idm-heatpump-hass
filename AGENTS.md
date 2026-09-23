@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.18.0` (defined in `custom_components/idm_heatpump/manifest.json`; previous stable: `0.17.1`)
+- **Current Version**: `0.19.0-b1` (defined in `custom_components/idm_heatpump/manifest.json`; latest stable: `0.18.0`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
@@ -31,6 +31,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── config_flow.py                # UI config flow (user, options, zones, reconfigure, web-only fallback)
 │   ├── coordinator.py                # DataUpdateCoordinator (polling, web supplement, writes)
 │   ├── entity.py                     # Base entity class (IdmEntity)
+│   ├── device_hierarchy.py           # Opt-in sub-device scopes, placement and registry wiring for the entity hierarchy
 │   ├── sensor.py                     # Sensor platform (Modbus + web-only sensors + technician codes)
 │   ├── binary_sensor.py              # Binary sensor platform
 │   ├── number.py                     # Number platform (setpoints, GLT values)
@@ -96,6 +97,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_adapter_helpers.py
 │   ├── test_binary_semantics.py
 │   ├── test_calculated_sensors.py
+│   ├── test_changelog_consolidation.py
 │   ├── test_config_flow.py
 │   ├── test_const.py
 │   ├── test_controller_stats_reference.py
@@ -203,8 +205,11 @@ Home Assistant
     │       ├── acknowledge_errors
     │       ├── write_register
     │       ├── set_external_climate
-│       ├── export_knx_group_addresses
-    │       └── start_dhw_boost / cancel_dhw_boost
+    │       ├── set_external_power
+    │       ├── start_dhw_boost / cancel_dhw_boost
+    │       ├── export_knx_group_addresses
+    │       ├── generate_ai_report
+    │       └── export_ai_dashboard
     │
     ├── Repairs [repairs.py]
     │       └── web_pin_missing
@@ -385,6 +390,11 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 - **The integration uses SemVer tags:** `v0.16.0-beta.1`, `v0.16.0-rc.1`. The
   `manifest.json` version matches the tag without the `v`. This is what HACS and
   Home Assistant read, so it does not change.
+- **Since 0.17.2 the short prerelease form is the convention:** iteration betas
+  are tagged `-bN` (`v0.17.2-b6` … `v0.17.2-b14`, `v0.19.0-b1`). Both spellings
+  are valid SemVer prereleases and the release workflow accepts either; prefer
+  `-bN` for a numbered beta line and keep the tag, the manifest version and the
+  `## [version]` changelog heading byte-identical.
 - **`idm-heatpump-api` uses PEP 440:** `2.0.0b1`, `2.0.0a1`, `2.0.0rc1` — no
   hyphen, no dot before the number. PyPI normalises `2.0.0-beta.1` to `2.0.0b1`
   anyway, so writing the normalised form is the only way the tag, the
@@ -441,6 +451,9 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Repair issues | `repairs.py`, `coordinator.py` | User-fixable issues (e.g. missing web PIN) |
 | Device hierarchy | `device_hierarchy.py` | Opt-in sub-devices. Heating circuits, optional modules and rooms are *child devices* (`parent_device_id`) on HA 2026.9+; zone modules stay ordinary `via_device_id` devices, because a child device can't parent another child. `child_devices_supported()` falls back to `via_device_id` on 2026.8 |
 | API register-failure log filter | `log_filter.py` | Suppresses repeated retry-exhaustion warnings for unsupported registers |
+| PV surplus operation | `calculated_sensors.py` | Derived diagnostic binary sensor (issue #353): `on` when surplus is signalled (`pv_surplus` ≥ 0.05 kW or SG-Ready *Supergreen*) **and** the heat pump draws power (`power_consumption_hp` ≥ 0.05 kW, fallback `hp_operating_mode` ≠ Off). Base profile; only created when both source halves exist. OR-shaped source registers must stay listed in `polling_plan.py` |
+| Smart Energy & Comfort | `energy_statistics.py`, `health_monitor.py`, `comfort_advisory.py`, `comfort_scheduler.py`, `energy_manager.py`, `external_power_forwarding.py` | Opt-in Smart-profile package: persistent energy/COP/CO₂ totals, read-only health checks, comfort advice and scheduling, fail-closed PV-surplus DHW boost (needs exclusive-controller confirmation), optional forwarding of HA PV/house/battery sensors to GLT registers |
+| AI plant adviser | `ai_advisor.py`, `ai_advisor_entities.py`, `ai_learning.py`, `ai_cloud.py` | Experimental, read-only, off by default. Deterministic measured-data reports; optional free-form explanations via local Ollama, an HA AI Task entity or explicitly consented cloud requests — the only authorized cloud exception (fixed endpoints, masked keys, numeric allowlist, persisted daily reservations) |
 
 ---
 
@@ -473,6 +486,8 @@ The config flow (defined in `config_flow.py`) has these steps:
 | If you change... | Also update... |
 |-----------------|----------------|
 | `registers.py` / `library_adapter.py` | Platform files, tests, `icons.json` |
+| `entity_names.py` (names) | Run `scripts/generate_entity_translations.py`; `test_entity_translations.py` must stay green |
+| `calculated_sensors.py` / `operation_entities.py` (new derived entity) | `polling_plan.py` dependencies, `test_calculated_sensors.py` / `test_operation_entities.py`, wiki *Entities* |
 | `config_flow.py` | `strings.json`, translations, `test_config_flow.py` |
 | `services.py` | `services.yaml`, `strings.json`, translations, `test_services.py` |
 | `web_data.py` | `test_web_data.py`, `repairs.py` |

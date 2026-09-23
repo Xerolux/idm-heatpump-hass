@@ -6,6 +6,7 @@ htmlcov/
 # Test Home Assistant environment
 test_ha/
 .claude/
+.zcode/
 
 # Tool output logs
 mypy.log
