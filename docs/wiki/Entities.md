@@ -296,6 +296,11 @@ This is the device-reported counterpart of the derived
 diagnostic: the web entity reflects what the controller decided, the Modbus
 entity works without a web PIN. On Navigator 2.0 (different, PHP-based web
 interface) only the derived Modbus entity is available.
+
+With the **device hierarchy** enabled, all PV entities — the PV registers
+(`pv_surplus`, `pv_production`, `pv_target_value`), `smart_grid_status`, the
+derived diagnostic and the two web entities — share the dedicated
+**Photovoltaik** subdevice instead of the main device.
 | Info system notifications (Web) | Summary of active Navigator 10 infosystem notifications |
 | Hot gas temperature (Web) | Web-only diagnostic temperature when available |
 | Evaporator pressure (Web) | Web-only refrigerant pressure when available |
