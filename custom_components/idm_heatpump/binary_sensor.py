@@ -30,6 +30,7 @@ from .operation_entities import (
 )
 from .registers import sort_entity_descriptions
 from .web_binary_sensors import IdmWebBinarySensor, web_binary_sensor_entities
+from .web_demand_reason_entities import IdmWebDemandReasonPvBinarySensor, web_demand_reason_binary_entities
 
 PARALLEL_UPDATES = 0
 
@@ -46,6 +47,7 @@ async def async_setup_entry(
         | IdmShortCycleBinarySensor
         | IdmHealthBinarySensor
         | IdmPvSurplusBinarySensor
+        | IdmWebDemandReasonPvBinarySensor
     ] = [
         IdmBinarySensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.binary_sensor_descriptions)
@@ -67,6 +69,7 @@ async def async_setup_entry(
             )
     if coordinator.web_enabled:
         entities += web_binary_sensor_entities(coordinator)
+        entities += web_demand_reason_binary_entities(coordinator)
     async_add_entities(entities)
 
 

@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.19.0-b1` (defined in `custom_components/idm_heatpump/manifest.json`; latest stable: `0.18.0`)
+- **Current Version**: `0.19.0-b2` (defined in `custom_components/idm_heatpump/manifest.json`; latest stable: `0.18.0`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
@@ -157,7 +157,8 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_services.py
 │   ├── test_versions.py
 │   ├── test_web_binary_sensors.py
-│   └── test_web_data.py
+│   ├── test_web_data.py
+│   └── test_web_demand_reason.py
 │
 ├── docs/                             # Documentation & wiki
 │   ├── wiki/                         # Complete wiki (installation, config, entities...)
@@ -451,7 +452,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Repair issues | `repairs.py`, `coordinator.py` | User-fixable issues (e.g. missing web PIN) |
 | Device hierarchy | `device_hierarchy.py` | Opt-in sub-devices. Heating circuits, optional modules and rooms are *child devices* (`parent_device_id`) on HA 2026.9+; zone modules stay ordinary `via_device_id` devices, because a child device can't parent another child. `child_devices_supported()` falls back to `via_device_id` on 2026.8 |
 | API register-failure log filter | `log_filter.py` | Suppresses repeated retry-exhaustion warnings for unsupported registers |
-| PV surplus operation | `calculated_sensors.py` | Derived diagnostic binary sensor (issue #353): `on` when surplus is signalled (`pv_surplus` ≥ 0.05 kW or SG-Ready *Supergreen*) **and** the heat pump draws power (`power_consumption_hp` ≥ 0.05 kW, fallback `hp_operating_mode` ≠ Off). Base profile; only created when both source halves exist. OR-shaped source registers must stay listed in `polling_plan.py` |
+| PV surplus operation | `calculated_sensors.py`, `web_demand_reason.py`, `web_demand_reason_entities.py` | Derived diagnostic binary sensor (issue #353): `on` when surplus is signalled (`pv_surplus` ≥ 0.05 kW or SG-Ready *Supergreen*) **and** the heat pump draws power (`power_consumption_hp` ≥ 0.05 kW, fallback `hp_operating_mode` ≠ Off). Base profile; only created when both source halves exist. OR-shaped source registers must stay listed in `polling_plan.py`. Navigator 10 web supplement additionally exposes the controller's own demand reason (`web_demand_reason`, `web_demand_reason_pv`) from the WebSocket `home/detail` frame |
 | Smart Energy & Comfort | `energy_statistics.py`, `health_monitor.py`, `comfort_advisory.py`, `comfort_scheduler.py`, `energy_manager.py`, `external_power_forwarding.py` | Opt-in Smart-profile package: persistent energy/COP/CO₂ totals, read-only health checks, comfort advice and scheduling, fail-closed PV-surplus DHW boost (needs exclusive-controller confirmation), optional forwarding of HA PV/house/battery sensors to GLT registers |
 | AI plant adviser | `ai_advisor.py`, `ai_advisor_entities.py`, `ai_learning.py`, `ai_cloud.py` | Experimental, read-only, off by default. Deterministic measured-data reports; optional free-form explanations via local Ollama, an HA AI Task entity or explicitly consented cloud requests — the only authorized cloud exception (fixed endpoints, masked keys, numeric allowlist, persisted daily reservations) |
 

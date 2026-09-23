@@ -72,6 +72,7 @@ from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 from .versions import RuntimeVersions, async_runtime_versions
 from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
+from .web_demand_reason_entities import IdmWebDemandReasonSensor, web_demand_reason_sensor_entities
 
 # Optional per-value metadata: an older idm-heatpump-api release does not carry
 # the web value catalog, and the sensor platform falls back to its own units and
@@ -392,6 +393,7 @@ async def async_setup_entry(
         | IdmCalculatedSensor
         | IdmTechnicianCodeSensor
         | IdmWebSensor
+        | IdmWebDemandReasonSensor
         | IdmApiVersionSensor
         | IdmCommunicationDiagnosticSensor
         | IdmOperationSensor
@@ -451,6 +453,7 @@ async def async_setup_entry(
             )
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
+        entities += web_demand_reason_sensor_entities(coordinator)
     entities.append(IdmApiVersionSensor(coordinator, versions))
     if entry.options.get(CONF_COMMUNICATION_DIAGNOSTICS, False):
         entities += _communication_diagnostic_entities(coordinator)

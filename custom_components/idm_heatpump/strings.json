@@ -1338,6 +1338,9 @@
       "web_compressor_heating": {
         "name": "Compressor heater (Web)"
       },
+      "web_demand_reason_pv": {
+        "name": "PV demand reason (Web)"
+      },
       "web_dewpoint_humidity_alarm": {
         "name": "Dew point humidity alarm (Web)"
       },
@@ -2218,6 +2221,9 @@
       },
       "web_current_expected_power_hotwater": {
         "name": "Current/projected hot water power (Web)"
+      },
+      "web_demand_reason": {
+        "name": "Demand reason (Web)"
       },
       "web_evaporation_temperature": {
         "name": "Evaporation temperature (Web)"
