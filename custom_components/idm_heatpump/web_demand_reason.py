@@ -69,10 +69,11 @@ async def async_read_home_detail(client: object) -> IdmWebHomeDetail | None:
     if not callable(read_home_detail):
         return None
     try:
-        return await read_home_detail()
+        detail = await read_home_detail()
     except Exception:  # optional extra, never break the web supplement poll
         _LOGGER.debug("Navigator 10 home/detail demand reason unavailable", exc_info=True)
         return None
+    return detail if isinstance(detail, IdmWebHomeDetail) else None
 
 
 __all__ = [
