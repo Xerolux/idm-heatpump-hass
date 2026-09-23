@@ -73,6 +73,27 @@ def test_calculated_sensor_adds_all_source_registers(monkeypatch: pytest.MonkeyP
     assert "unrelated_service_value" not in required
 
 
+def test_pv_surplus_operation_keeps_or_sources_polled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Issue #353: every candidate source of the OR-shaped entity stays polled."""
+    known = {
+        "outdoor_temp",
+        "pv_surplus",
+        "smart_grid_status",
+        "power_consumption_hp",
+        "hp_operating_mode",
+        "unrelated_service_value",
+    }
+    required = _build(
+        monkeypatch,
+        [_RegistryEntry("entry_calculated_pv_surplus_operation")],
+        known,
+    )
+
+    assert required is not None
+    assert {"pv_surplus", "smart_grid_status", "power_consumption_hp", "hp_operating_mode"} <= required
+    assert "unrelated_service_value" not in required
+
+
 def test_heating_climate_adds_current_target_mode_and_status(monkeypatch: pytest.MonkeyPatch) -> None:
     known = {
         "outdoor_temp",

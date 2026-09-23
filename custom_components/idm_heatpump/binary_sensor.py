@@ -12,6 +12,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .binary_semantics import binary_value_is_on
+from .calculated_sensors import IdmPvSurplusBinarySensor, pv_surplus_binary_entities
 from .const import (
     CONF_FEATURE_PROFILE,
     CONF_HEALTH_MONITOR,
@@ -39,11 +40,21 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities: list[IdmBinarySensor | IdmWebBinarySensor | IdmShortCycleBinarySensor | IdmHealthBinarySensor] = [
+    entities: list[
+        IdmBinarySensor
+        | IdmWebBinarySensor
+        | IdmShortCycleBinarySensor
+        | IdmHealthBinarySensor
+        | IdmPvSurplusBinarySensor
+    ] = [
         IdmBinarySensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.binary_sensor_descriptions)
         if should_add_entity(coordinator, desc_info["register"])
     ]
+    # Base-profile diagnostic: only depends on source registers existing,
+    # so it self-gates on installations with PV inputs and stays independent
+    # of the Smart feature profile.
+    entities += pv_surplus_binary_entities(coordinator)
     if entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART:
         entities += short_cycle_binary_entities(
             coordinator,

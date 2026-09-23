@@ -6,9 +6,12 @@ import math
 from unittest.mock import MagicMock
 
 from homeassistant.components.sensor import SensorDeviceClass, SensorStateClass
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import EntityCategory, UnitOfTemperature
 
-from custom_components.idm_heatpump.calculated_sensors import calculated_sensor_entities
+from custom_components.idm_heatpump.calculated_sensors import (
+    calculated_sensor_entities,
+    pv_surplus_binary_entities,
+)
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
 
 
@@ -394,3 +397,145 @@ def test_existing_calculated_sensors_keep_the_main_device():
 
     for key in ("calculated_hp_temperature_delta", "calculated_dhw_setpoint_deviation"):
         assert entities[key].device_info["name"] == coordinator.config_entry.title
+
+
+# ---------------------------------------------------------------------------
+# PV surplus operation binary sensor (issue #353)
+# ---------------------------------------------------------------------------
+
+
+def _pv_entities(coordinator: MagicMock):
+    return pv_surplus_binary_entities(coordinator)
+
+
+def test_pv_surplus_not_created_without_any_source():
+    assert _pv_entities(_coordinator({"outdoor_temp": 5.0})) == []
+
+
+def test_pv_surplus_requires_surplus_and_consumption_half():
+    only_surplus = _coordinator({"pv_surplus": 1.5})
+    assert _pv_entities(only_surplus) == []
+
+    only_consumption = _coordinator({"power_consumption_hp": 2.0})
+    assert _pv_entities(only_consumption) == []
+
+    both = _coordinator({"pv_surplus": 1.5, "hp_operating_mode": 1})
+    assert len(_pv_entities(both)) == 1
+
+
+def test_pv_surplus_on_when_surplus_signalled_and_heat_pump_running():
+    sensor = _pv_entities(_coordinator({"pv_surplus": 1.5, "power_consumption_hp": 2.2}))[0]
+
+    assert sensor.is_on is True
+    assert sensor.available is True
+
+
+def test_pv_surplus_off_below_surplus_threshold():
+    sensor = _pv_entities(_coordinator({"pv_surplus": 0.02, "power_consumption_hp": 2.2}))[0]
+
+    assert sensor.is_on is False
+
+
+def test_pv_surplus_off_when_heat_pump_idle():
+    sensor = _pv_entities(_coordinator({"pv_surplus": 1.5, "power_consumption_hp": 0.0}))[0]
+
+    assert sensor.is_on is False
+
+
+def test_pv_surplus_off_for_negative_surplus():
+    """A negative GLT surplus value (grid draw) is finite and signals 'no surplus'."""
+    sensor = _pv_entities(_coordinator({"pv_surplus": -1.2, "hp_operating_mode": 1}))[0]
+
+    assert sensor.is_on is False
+
+
+def test_pv_surplus_smart_grid_supergreen_counts_as_surplus():
+    sensor = _pv_entities(_coordinator({"smart_grid_status": 4, "hp_operating_mode": 1}))[0]
+
+    assert sensor.is_on is True
+
+
+def test_pv_surplus_smart_grid_green_is_not_surplus():
+    sensor = _pv_entities(_coordinator({"smart_grid_status": 2, "hp_operating_mode": 1}))[0]
+
+    assert sensor.is_on is False
+
+
+def test_pv_surplus_power_register_preferred_over_operating_mode():
+    sensor = _pv_entities(_coordinator({"pv_surplus": 1.5, "power_consumption_hp": 0.0, "hp_operating_mode": 1}))[0]
+
+    assert sensor.is_on is False
+    assert sensor.extra_state_attributes["power_source"] == "power_consumption_hp"
+
+
+def test_pv_surplus_unknown_when_operating_mode_undecidable():
+    """BL-003: sources present and finite, but an undocumented mode value keeps
+    the combined state 'unknown' instead of inventing a decision."""
+    sensor = _pv_entities(_coordinator({"pv_surplus": 1.5, "hp_operating_mode": 5}))[0]
+
+    assert sensor.is_on is None
+    assert sensor.available is True
+
+
+def test_pv_surplus_unavailable_when_all_surplus_sources_go_nan():
+    """A NaN source mirrors the calculated-sensor contract: unavailable (BL-003)."""
+    coordinator = _coordinator({"pv_surplus": 1.5, "hp_operating_mode": 1})
+    sensor = _pv_entities(coordinator)[0]
+
+    coordinator.data["pv_surplus"] = math.nan
+
+    assert sensor.available is False
+
+
+def test_pv_surplus_unavailable_when_all_sources_become_unused():
+    coordinator = _coordinator({"pv_surplus": 1.5, "hp_operating_mode": 1})
+    sensor = _pv_entities(coordinator)[0]
+
+    coordinator.unused_registers = {"pv_surplus", "hp_operating_mode"}
+
+    assert sensor.available is False
+
+
+def test_pv_surplus_not_registered_when_sources_unused():
+    coordinator = _coordinator(
+        {"pv_surplus": 1.5, "hp_operating_mode": 1},
+        unused={"hp_operating_mode"},
+    )
+    # No surplus replacement source either.
+    assert _pv_entities(coordinator) == []
+
+
+def test_pv_surplus_entity_metadata_and_attributes():
+    sensor = _pv_entities(_coordinator({"pv_surplus": 1.5, "power_consumption_hp": 2.2}))[0]
+
+    assert sensor._attr_unique_id == "test_entry_calculated_pv_surplus_operation"
+    assert sensor.entity_description.translation_key == "calculated_pv_surplus_operation"
+    assert sensor.entity_description.icon == "mdi:solar-power"
+    assert sensor.entity_description.entity_category == EntityCategory.DIAGNOSTIC
+
+    attributes = sensor.extra_state_attributes
+    assert attributes["surplus_threshold_kw"] == 0.05
+    assert attributes["min_power_kw"] == 0.05
+    assert attributes["surplus_sources_active"] == ["pv_surplus"]
+    assert attributes["pv_surplus_kw"] == 1.5
+    assert attributes["power_consumption_kw"] == 2.2
+    assert attributes["power_source"] == "power_consumption_hp"
+    assert attributes["calculation"] == "surplus_signalled AND heat_pump_consuming_power"
+
+
+def test_pv_surplus_joins_analytics_subdevice_in_hierarchy_mode():
+    coordinator = _coordinator({"pv_surplus": 1.5, "hp_operating_mode": 1})
+    coordinator.device_hierarchy_enabled = True
+    sensor = _pv_entities(coordinator)[0]
+
+    assert sensor.device_info["name"] != coordinator.config_entry.title
+
+
+def test_pv_surplus_state_recalculated_from_latest_snapshot():
+    coordinator = _coordinator({"pv_surplus": 1.5, "hp_operating_mode": 1})
+    sensor = _pv_entities(coordinator)[0]
+
+    assert sensor.is_on is True
+
+    coordinator.data = {"pv_surplus": 0.0, "hp_operating_mode": 1}
+    assert sensor.is_on is False

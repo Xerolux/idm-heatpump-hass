@@ -43,6 +43,12 @@ _CALCULATED_DEPENDENCIES: dict[str, frozenset[str]] = {
     definition.key: frozenset(definition.sources)
     for definition in (*CALCULATED_SENSOR_DEFINITIONS, *FLOW_DEVIATION_DEFINITIONS)
 }
+# OR-shaped sources (issue #353): the derived PV-surplus binary sensor
+# evaluates whichever source half exists, so every candidate source register
+# must stay polled while the entity is enabled.
+_CALCULATED_DEPENDENCIES["calculated_pv_surplus_operation"] = frozenset(
+    {"pv_surplus", "smart_grid_status", "power_consumption_hp", "hp_operating_mode"}
+)
 
 _HEATING_CLIMATE = re.compile(r"^climate_hc_([a-g])$")
 _ZONE_CLIMATE = re.compile(r"^climate_zm(\d+)_room(\d+)$")

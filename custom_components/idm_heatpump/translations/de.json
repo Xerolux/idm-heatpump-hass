@@ -1257,6 +1257,9 @@
       "analysis_last_cycle_short": {
         "name": "Letzter Verdichtertakt zu kurz"
       },
+      "calculated_pv_surplus_operation": {
+        "name": "PV-Überschussbetrieb"
+      },
       "compressor_status_1": {
         "name": "Verdichter 1"
       },

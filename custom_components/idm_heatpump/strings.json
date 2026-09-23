@@ -1281,6 +1281,9 @@
       "analysis_last_cycle_short": {
         "name": "Last compressor cycle too short"
       },
+      "calculated_pv_surplus_operation": {
+        "name": "PV surplus operation"
+      },
       "compressor_status_1": {
         "name": "Compressor 1"
       },

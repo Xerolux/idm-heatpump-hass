@@ -5,15 +5,19 @@ from __future__ import annotations
 import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Final
 
+from homeassistant.components.binary_sensor import (
+    BinarySensorEntity,
+    BinarySensorEntityDescription,
+)
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import UnitOfTemperature
+from homeassistant.const import EntityCategory, UnitOfTemperature
 from homeassistant.helpers.device_registry import DeviceInfo
 
 from .coordinator import IdmCoordinator
@@ -314,3 +318,200 @@ class IdmCalculatedSensor(IdmCoordinatorEntityBase, SensorEntity):
     @property
     def native_value(self) -> float | None:
         return self._calculate()
+
+
+# ---------------------------------------------------------------------------
+# PV surplus operation (issue #353)
+#
+# The Navigator controllers do not expose an internal "PV surplus charging
+# active" state register: the entire documented PV block (addresses 74-88)
+# consists of GLT measurement inputs written by an external energy manager,
+# and the SG-Ready signal (address 90) is an input as well. The derived
+# diagnostic below therefore combines the two truthful halves of the state:
+# surplus is currently being signalled to the controller AND the heat pump
+# is actually drawing electrical power. Where the surplus is measured behind
+# the heat pump feeder (the WP absorbs the surplus it is charged with), the
+# reported pv_surplus value collapses toward zero while charging; the
+# SG-Ready Supergreen signal (and the pv_production sensor) remain usable
+# indicators on such installations.
+# ---------------------------------------------------------------------------
+
+_PV_SURPLUS_REGISTER: Final = "pv_surplus"
+_SMART_GRID_REGISTER: Final = "smart_grid_status"
+_HP_POWER_REGISTER: Final = "power_consumption_hp"
+_HP_OPERATING_MODE_REGISTER: Final = "hp_operating_mode"
+
+_PV_SURPLUS_SOURCE_REGISTERS: Final = (_PV_SURPLUS_REGISTER, _SMART_GRID_REGISTER)
+_PV_CONSUMPTION_SOURCE_REGISTERS: Final = (_HP_POWER_REGISTER, _HP_OPERATING_MODE_REGISTER)
+
+# 50 W mirrors the COP minimum-power guard: below that the controller
+# reports standby noise, not surplus charging.
+_PV_SURPLUS_MIN_KW: Final = 0.05
+_HP_MIN_POWER_KW: Final = 0.05
+# SG-Ready signal levels: 0=Red, 1=Yellow, 2=Green, 4=Supergreen. Only
+# Supergreen requests surplus operation.
+_SMART_GRID_SUPERGREEN: Final = 4
+_SMART_GRID_VALID_VALUES: Final = frozenset({0, 1, 2, 4})
+# Documented hp_operating_mode bitflag values (see operation_analysis).
+_HP_OPERATING_MODE_OFF: Final = 0
+_HP_OPERATING_MODE_VALID_VALUES: Final = frozenset({0, 1, 2, 4, 8})
+
+
+@dataclass(frozen=True)
+class PvSurplusState:
+    """One evaluated PV-surplus snapshot with its decisive sources."""
+
+    surplus_available: bool | None
+    heat_pump_running: bool | None
+    surplus_sources: tuple[str, ...]
+    pv_surplus_kw: float | None
+    power_consumption_kw: float | None
+    power_source: str | None
+
+    @property
+    def is_on(self) -> bool | None:
+        """Return the combined state, or None while any half is undecidable."""
+        if self.surplus_available is None or self.heat_pump_running is None:
+            return None
+        return self.surplus_available and self.heat_pump_running
+
+
+def _finite_number(data: Mapping[str, Any], key: str) -> float | None:
+    """Return one finite numeric register value (negatives allowed)."""
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        return None
+    return numeric
+
+
+def _enum_value(data: Mapping[str, Any], key: str, valid: frozenset[int]) -> int | None:
+    """Return one documented enum/bitflag register value."""
+    value = data.get(key)
+    if isinstance(value, bool) or not isinstance(value, (int, float)):
+        return None
+    numeric = float(value)
+    if not math.isfinite(numeric):
+        return None
+    integral = int(numeric)
+    return integral if integral in valid else None
+
+
+def evaluate_pv_surplus_state(data: Mapping[str, Any]) -> PvSurplusState:
+    """Evaluate the PV surplus operation state from one coordinator snapshot."""
+    surplus: bool | None = None
+    surplus_sources: list[str] = []
+
+    pv_surplus = _finite_number(data, _PV_SURPLUS_REGISTER)
+    if pv_surplus is not None:
+        pv_available = pv_surplus >= _PV_SURPLUS_MIN_KW
+        surplus = pv_available if surplus is None else (surplus or pv_available)
+        if pv_available:
+            surplus_sources.append(_PV_SURPLUS_REGISTER)
+
+    smart_grid = _enum_value(data, _SMART_GRID_REGISTER, _SMART_GRID_VALID_VALUES)
+    if smart_grid is not None:
+        supergreen = smart_grid == _SMART_GRID_SUPERGREEN
+        surplus = supergreen if surplus is None else (surplus or supergreen)
+        if supergreen:
+            surplus_sources.append(_SMART_GRID_REGISTER)
+
+    power_consumption: float | None = None
+    power_source: str | None = None
+    running: bool | None = None
+
+    power = _power(data, _HP_POWER_REGISTER)
+    if power is not None:
+        power_consumption = power
+        power_source = _HP_POWER_REGISTER
+        running = power >= _HP_MIN_POWER_KW
+    else:
+        mode = _enum_value(data, _HP_OPERATING_MODE_REGISTER, _HP_OPERATING_MODE_VALID_VALUES)
+        if mode is not None:
+            power_source = _HP_OPERATING_MODE_REGISTER
+            running = mode != _HP_OPERATING_MODE_OFF
+
+    return PvSurplusState(
+        surplus_available=surplus,
+        heat_pump_running=running,
+        surplus_sources=tuple(surplus_sources),
+        pv_surplus_kw=pv_surplus,
+        power_consumption_kw=power_consumption,
+        power_source=power_source,
+    )
+
+
+def _register_usable(coordinator: IdmCoordinator, name: str) -> bool:
+    """Return whether one source register is present, not unused, and finite."""
+    data = coordinator.data
+    if not data or name not in data or name in coordinator.unused_registers:
+        return False
+    value = data[name]
+    return not (isinstance(value, float) and (math.isnan(value) or math.isinf(value)))
+
+
+def pv_surplus_binary_entities(coordinator: IdmCoordinator) -> list[IdmPvSurplusBinarySensor]:
+    """Create the PV surplus sensor only when both source halves are usable."""
+    if not any(_register_usable(coordinator, name) for name in _PV_SURPLUS_SOURCE_REGISTERS):
+        return []
+    if not any(_register_usable(coordinator, name) for name in _PV_CONSUMPTION_SOURCE_REGISTERS):
+        return []
+    return [IdmPvSurplusBinarySensor(coordinator)]
+
+
+class IdmPvSurplusBinarySensor(IdmCoordinatorEntityBase, BinarySensorEntity):
+    """Diagnostic sensor: the heat pump is running on signalled PV surplus."""
+
+    def __init__(self, coordinator: IdmCoordinator) -> None:
+        super().__init__(coordinator)
+        entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
+        self._attr_unique_id = build_entity_unique_id(entry_id, "calculated_pv_surplus_operation")
+        self.entity_description = BinarySensorEntityDescription(
+            key="calculated_pv_surplus_operation",
+            translation_key="calculated_pv_surplus_operation",
+            icon="mdi:solar-power",
+            entity_category=EntityCategory.DIAGNOSTIC,
+        )
+
+    @property
+    def device_info(self) -> DeviceInfo:
+        """Place the sensor on the analytics subdevice like the other derived values."""
+        if subdevice := build_subdevice_info(self.coordinator, "calculated_pv_surplus_operation"):
+            return subdevice
+        return super().device_info
+
+    def _sources_usable(self) -> bool:
+        """Return True while both source halves exist and are not unused (BL-003)."""
+        coordinator = self.coordinator
+        return any(_register_usable(coordinator, name) for name in _PV_SURPLUS_SOURCE_REGISTERS) and any(
+            _register_usable(coordinator, name) for name in _PV_CONSUMPTION_SOURCE_REGISTERS
+        )
+
+    @property
+    def is_on(self) -> bool | None:
+        data = self.coordinator.data
+        if not data:
+            return None
+        return evaluate_pv_surplus_state(data).is_on
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._sources_usable()
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        data = self.coordinator.data
+        if not data:
+            return {}
+        state = evaluate_pv_surplus_state(data)
+        return {
+            "surplus_threshold_kw": _PV_SURPLUS_MIN_KW,
+            "min_power_kw": _HP_MIN_POWER_KW,
+            "surplus_sources_active": list(state.surplus_sources),
+            "pv_surplus_kw": state.pv_surplus_kw,
+            "power_consumption_kw": state.power_consumption_kw,
+            "power_source": state.power_source,
+            "calculation": "surplus_signalled AND heat_pump_consuming_power",
+        }
