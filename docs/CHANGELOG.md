@@ -13,6 +13,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b2] - 2026-09-23
+
+Second beta of the 0.19.0 line: the controller's own demand reason joins the
+derived Modbus diagnostic from b1 — Navigator 10 only.
+
+### Added
+
+- **Device-reported demand reason from the Navigator 10 web interface
+  (issue #353):** with the web supplement active on a Navigator 10, every web
+  poll now also evaluates the WebSocket `home/detail` frame that feeds the
+  controller's "Anforderungsgrund" display. Two new read-only entities:
+  **Anforderungsgrund (Web)** (`web_demand_reason`) — the human-readable demand
+  reason (*PV*, *Heizkreis A–G*, *Zeitprogramm*, *Frostschutz*, *Externer
+  Eingang/Bus*, *ISC*, *ION*, *Mehrere Anforderungen*, *Keine Information*,
+  *Aus*, …) with the raw `operationMode`/`info` widget values as attributes —
+  and **PV-Anforderungsgrund (Web)** (`web_demand_reason_pv`) — a binary sensor
+  that is `on` while the controller itself reports PV as its demand reason
+  (bit 32 of the info bitmask, present in the heating and the domestic-hot-water
+  reason table). The decode reproduces the web UI's priority order bit for bit.
+  The read is strictly optional: any failure keeps the previous state and never
+  breaks the web supplement. Navigator 2.0 (PHP-based web interface) keeps the
+  derived Modbus entity from b1 as its only PV indicator.
+
 ## [0.19.0-b1] - 2026-09-23
 
 First beta of the 0.19.0 line. Ships the PV-visibility feature requested in

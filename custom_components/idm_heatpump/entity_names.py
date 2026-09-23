@@ -394,6 +394,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         ),
         "web_flow_temperature": ("Flow temperature (Web)", "Vorlauftemperatur (Web)"),
         "web_flowmeter": ("Flow meter (Web)", "Durchflussmesser (Web)"),
+        "web_demand_reason": ("Demand reason (Web)", "Anforderungsgrund (Web)"),
         "web_heat_sink_intermediate_circuit_pump_signal": (
             "Heat sink intermediate circuit pump signal (Web)",
             "Wärmesenke Zwischenkreispumpe Signal (Web)",
@@ -457,6 +458,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     "binary_sensor": {
         "analysis_last_cycle_short": ("Last compressor cycle too short", "Letzter Verdichtertakt zu kurz"),
         "calculated_pv_surplus_operation": ("PV surplus operation", "PV-Überschussbetrieb"),
+        "web_demand_reason_pv": ("PV demand reason (Web)", "PV-Anforderungsgrund (Web)"),
         # === Local Navigator web supplement ===
         "web_compressor_1": ("Compressor 1 (Web)", "Verdichter 1 (Web)"),
         "web_compressor_heating": ("Compressor heater (Web)", "Verdichterheizung (Web)"),

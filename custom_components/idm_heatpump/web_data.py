@@ -8,12 +8,13 @@ import ipaddress
 import logging
 import re
 from collections.abc import Callable, Coroutine
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import TYPE_CHECKING, Any, Protocol
 
 from homeassistant.helpers.aiohttp_client import async_create_clientsession, async_get_clientsession
 
 from .const import MODEL, WEB_READ_TIMEOUT
+from .web_demand_reason import WebDemandReasonState, async_read_home_detail_demand_reason
 
 if TYPE_CHECKING:
     from homeassistant.core import HomeAssistant
@@ -62,6 +63,7 @@ class IdmWebSupplement:
     myidm_id: str | None = None
     values: dict[str, str] = field(default_factory=dict)
     sensor_values: dict[str, IdmWebSensorValue] = field(default_factory=dict)
+    demand_reason: WebDemandReasonState | None = None
 
     @property
     def model_name(self) -> str | None:
@@ -212,6 +214,23 @@ async def _read_optional_notifications(
         _LOGGER.debug("IDM web notifications read failed", exc_info=True)
         return supplement
     return _add_web_notifications(supplement, notifications)
+
+
+async def _read_optional_demand_reason(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the home-screen demand reason.
+
+    Strictly optional: any failure keeps the supplement unchanged, and the
+    Navigator 2.0 PHP client has no WebSocket frame seam at all.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    state = await async_read_home_detail_demand_reason(client, WEB_READ_TIMEOUT)
+    if state is None:
+        return supplement
+    return replace(supplement, demand_reason=state)
 
 
 def _is_authentication_error(err: Exception) -> bool:
@@ -578,7 +597,10 @@ async def async_read_web_supplement(
             allow_variant_fallback = False
             try:
                 supplement = _normalize_web_data(await _read_data_bounded(cached_client, read_timeout), cached_variant)
-                return await _read_optional_notifications(cached_client, supplement)
+                return await _read_optional_demand_reason(
+                    cached_client,
+                    await _read_optional_notifications(cached_client, supplement),
+                )
             except Exception as err:
                 _LOGGER.debug(
                     "IDM web %s cached client failed at %s; rebuilding the same variant",
@@ -610,7 +632,10 @@ async def async_read_web_supplement(
                 variant_name,
                 host,
             )
-            result = await _read_optional_notifications(client, supplement)
+            result = await _read_optional_demand_reason(
+                client,
+                await _read_optional_notifications(client, supplement),
+            )
             # Cache the successful client for reuse on subsequent polls.
             if client_pool is not None:
                 client_pool.set(client, variant_name)

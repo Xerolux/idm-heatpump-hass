@@ -273,6 +273,29 @@ Typical web-only sensors include:
 | Heat pump model (Web) | Heat pump model/type reported by the web interface |
 | myIDM ID (Web) | Compact myIDM ID derived from the local web account value before `@` |
 | Info system notification count (Web) | Number of active Navigator 10 infosystem notifications |
+| Anforderungsgrund (Web) | Navigator 10 only: the controller's own demand reason (issue #353) |
+
+#### Demand reason from the web interface (Navigator 10 only)
+
+The Navigator controllers expose no internal PV-mode state register over
+Modbus, but the Navigator 10 web interface renders the display's
+"Anforderungsgrund" — including **PV** — from a bitmask in the WebSocket
+`home/detail` frame. With the web supplement active on a Navigator 10, the
+integration evaluates that frame every web poll and exposes:
+
+- **Anforderungsgrund (Web)** (`web_demand_reason`): the human-readable demand
+  reason — for example *PV*, *Heizkreis A*, *Zeitprogramm*, *Mehrere
+  Anforderungen*, *Keine Information* or *Aus* — with the raw
+  `operationMode`/`info` values of every contributing widget as attributes.
+- **PV-Anforderungsgrund (Web)** (`web_demand_reason_pv`): binary sensor that
+  is `on` while the controller itself reports PV as its demand reason (bit 32),
+  in the heating as well as the domestic-hot-water reason table.
+
+This is the device-reported counterpart of the derived
+[`calculated_pv_surplus_operation`](#pv-surplus-operation-derived-diagnostic)
+diagnostic: the web entity reflects what the controller decided, the Modbus
+entity works without a web PIN. On Navigator 2.0 (different, PHP-based web
+interface) only the derived Modbus entity is available.
 | Info system notifications (Web) | Summary of active Navigator 10 infosystem notifications |
 | Hot gas temperature (Web) | Web-only diagnostic temperature when available |
 | Evaporator pressure (Web) | Web-only refrigerant pressure when available |

@@ -1314,6 +1314,9 @@
       "web_compressor_heating": {
         "name": "Verdichterheizung (Web)"
       },
+      "web_demand_reason_pv": {
+        "name": "PV-Anforderungsgrund (Web)"
+      },
       "web_dewpoint_humidity_alarm": {
         "name": "Taupunkt-Feuchtealarm (Web)"
       },
@@ -2194,6 +2197,9 @@
       },
       "web_current_expected_power_hotwater": {
         "name": "Momentane/prognostizierte Leistung Warmwasser (Web)"
+      },
+      "web_demand_reason": {
+        "name": "Anforderungsgrund (Web)"
       },
       "web_evaporation_temperature": {
         "name": "Verdampfungstemperatur (Web)"
