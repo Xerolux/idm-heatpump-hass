@@ -13,6 +13,32 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b6] - 2026-09-24
+
+Sixth beta of the 0.19.0 line: the empty *Solaranlage* group can go, and the
+web demand reason speaks the display's language.
+
+### Added
+
+- **Solar thermal opt-out.** Plants without collectors no longer have to keep
+  a dead *Solaranlage* device group: the new option *Read a solar thermal
+  system* / *Solaranlage auslesen* (default on, in the expert options form and
+  the guided flow) is the user's statement about the plant and outranks every
+  detection source. Switched off, the solar registers leave the descriptions,
+  the register map and the poll; the subdevice is no longer expected and is
+  detached, and the stale-entity cleanup removes leftover solar entities on
+  the next reload. Re-enabling restores the entities under their unchanged
+  unique IDs.
+
+### Changed
+
+- **The web demand reason now uses the display's wording.** The idle state of
+  `web_demand_reason` reads *Keine Anforderung* — exactly what the
+  controller's display and local web interface render for the idle widget —
+  instead of the literal translation *Keine Information* of the API's
+  `no_info` slug. All other reason labels were already derived from the web
+  UI's own tables and stay unchanged.
+
 ## [0.19.0-b5] - 2026-09-24
 
 Fifth beta of the 0.19.0 line: a model switch no longer leaves orphaned
