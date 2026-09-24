@@ -189,11 +189,41 @@ class IdmEntity(IdmCoordinatorEntityBase):
             return False
         return self.coordinator.is_register_unused(self._register.name, data.get(self._register.name))
 
+    def _value_out_of_documented_range(self) -> bool:
+        """Whether the current reading violates the register's documented range.
+
+        1.x firmware documented before a status word exists answers its address
+        with uninitialized memory instead of an Illegal Data Address rejection
+        (Rev.0-era firmware on register 1502, issue #364); a reading outside
+        the official MIN/MAX columns is garbage, not a measurement. Like the
+        sentinel filter, it stays out of the way when ``hide_unused`` is off:
+        users who opted into raw values keep seeing them.
+        """
+        if not self.coordinator.hide_unused:
+            return False
+        data = self.coordinator.data
+        if not data:
+            return False
+        value = data.get(self._register.name)
+        if value is None or isinstance(value, bool) or not isinstance(value, (int, float)):
+            return False
+        min_val = self._register.min_val
+        max_val = self._register.max_val
+        if min_val is not None and value < min_val:
+            return True
+        return max_val is not None and value > max_val
+
     @property
     def available(self) -> bool:
         if not super().available:
             return False
         if not self.coordinator.data or self._register.name not in self.coordinator.data:
+            return False
+        if self._value_out_of_documented_range():
+            # A reading beyond the documented range is garbage rather than an
+            # unset control, so unlike the sentinel case below this also takes
+            # writable controls offline: acting on (or writing against) a
+            # register whose readback is random memory is never safe.
             return False
         if self.is_writable_control():
             # A present writable control stays available even when its value is

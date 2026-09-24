@@ -13,6 +13,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b9] - 2026-09-24
+
+Ninth beta of the 0.19.0 line: garbage readings from pre-2016 Navigator
+1.x firmware can no longer pose as values.
+
+### Fixed
+
+- **Readings beyond the documented register range mark their entity
+  unavailable (issue #364).** Rev.0-era Navigator 1.0/1.7 firmware is
+  documented only up to status address 1501 and answers the newer status
+  words — and possibly the youngest holding registers — with uninitialized
+  memory instead of rejecting the address (observed on firmware N1.MLj:
+  register 1502 returned random words every poll). With
+  `idm-heatpump-api==2.4.1`, which declares the official MIN/MAX columns
+  on every 1.x status word, such readings now take the entity offline
+  instead of surfacing as values — including writable controls, whose
+  readback is equally untrustworthy then (unlike the "unset" sentinel
+  case, which keeps controls available, #172). The raw opt-in (*hide
+  unused registers* off) shows the values unchanged, and registers
+  without a documented range (like the fault number) keep reporting
+  whatever the controller sends.
+
 ## [0.19.0-b8] - 2026-09-24
 
 Eighth beta of the 0.19.0 line: the Navigator 1.0/1.7 gets its first
