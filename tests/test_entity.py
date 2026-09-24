@@ -401,3 +401,112 @@ class TestWritableControlAvailability:
         coord = _make_coordinator(data={"target": UNUSED_VALUE}, hide_unused=True)
         entity = _make_entity(coordinator=coord, reg=_make_register("target"))
         assert entity.available is False
+
+
+class TestDocumentedRangeAvailability:
+    """Issue #364: readings beyond the documented MIN/MAX are garbage.
+
+    Rev.0-era Navigator 1.x firmware answers undocumented status words with
+    uninitialized memory instead of rejecting the address (register 1502
+    returned random words on firmware N1.MLj). Such readings must not be
+    surfaced as values — also not on writable controls, whose state is
+    equally untrustworthy then.
+    """
+
+    def test_out_of_range_reading_is_unavailable(self):
+        coord = _make_coordinator(data={"hc_a_status": 47358}, hide_unused=True)
+        reg = RegisterDef(
+            address=1502,
+            datatype=DataType.UINT16,
+            name="hc_a_status",
+            min_val=0,
+            max_val=2,
+        )
+        entity = _make_entity(coordinator=coord, reg=reg)
+        assert entity.available is False
+
+    def test_in_range_reading_is_available(self):
+        coord = _make_coordinator(data={"hc_a_status": 2}, hide_unused=True)
+        reg = RegisterDef(
+            address=1502,
+            datatype=DataType.UINT16,
+            name="hc_a_status",
+            min_val=0,
+            max_val=2,
+        )
+        entity = _make_entity(coordinator=coord, reg=reg)
+        assert entity.available is True
+
+    def test_range_bounds_are_inclusive(self):
+        coord = _make_coordinator(data={"solar_mode": 17}, hide_unused=True)
+        reg = RegisterDef(
+            address=1522,
+            datatype=DataType.UINT16,
+            name="solar_mode",
+            min_val=0,
+            max_val=17,
+        )
+        entity = _make_entity(coordinator=coord, reg=reg)
+        assert entity.available is True
+
+    def test_register_without_range_stays_untouched(self):
+        # A register without documented bounds (e.g. the fault number) keeps
+        # showing whatever the controller reports.
+        coord = _make_coordinator(data={"error_number": 47358}, hide_unused=True)
+        entity = _make_entity(coordinator=coord, reg=_make_register("error_number"))
+        assert entity.available is True
+
+    def test_hide_unused_opt_in_shows_raw_values(self):
+        coord = _make_coordinator(data={"hc_a_status": 47358}, hide_unused=False)
+        reg = RegisterDef(
+            address=1502,
+            datatype=DataType.UINT16,
+            name="hc_a_status",
+            min_val=0,
+            max_val=2,
+        )
+        entity = _make_entity(coordinator=coord, reg=reg)
+        assert entity.available is True
+
+    def test_writable_control_with_garbage_readback_is_unavailable(self):
+        # Unlike the sentinel case (#172), a writable control whose readback
+        # is out of range goes offline: writing against random memory is
+        # never safe.
+        coord = _make_coordinator(data={"dhw_setpoint": 57912}, hide_unused=True)
+        reg = RegisterDef(
+            address=2152,
+            datatype=DataType.UINT16,
+            name="dhw_setpoint",
+            writable=True,
+            min_val=35,
+            max_val=60,
+        )
+        entity = _make_entity(coordinator=coord, reg=reg)
+        entity._writable_control = True
+        assert entity.available is False
+
+    def test_writable_control_in_range_stays_available(self):
+        coord = _make_coordinator(data={"dhw_setpoint": 48}, hide_unused=True)
+        reg = RegisterDef(
+            address=2152,
+            datatype=DataType.UINT16,
+            name="dhw_setpoint",
+            writable=True,
+            min_val=35,
+            max_val=60,
+        )
+        entity = _make_entity(coordinator=coord, reg=reg)
+        entity._writable_control = True
+        assert entity.available is True
+
+    def test_non_numeric_value_is_never_out_of_range(self):
+        coord = _make_coordinator(data={"web_value": "keine Daten"}, hide_unused=True)
+        reg = RegisterDef(
+            address=1502,
+            datatype=DataType.UINT16,
+            name="web_value",
+            min_val=0,
+            max_val=2,
+        )
+        entity = _make_entity(coordinator=coord, reg=reg)
+        assert entity.available is True
