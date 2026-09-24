@@ -19,29 +19,43 @@ from idm_heatpump import IdmWebHomeDetail
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
+from .web_data import IdmWebSupplement
 from .web_demand_reason import demand_reason_label
 
 _PV_BIT: Final = 32
 
 
-def _nav10_demand_reason(coordinator: IdmCoordinator) -> IdmWebHomeDetail | None:
-    """Return the demand reason state of a Navigator 10 web supplement."""
+def _nav10_supplement(coordinator: IdmCoordinator) -> IdmWebSupplement | None:
+    """Return the web supplement when it speaks the Navigator 10 protocol."""
     supplement = coordinator.web_supplement
     if supplement is None or supplement.web_variant != "nav10":
+        return None
+    return supplement
+
+
+def _nav10_demand_reason(coordinator: IdmCoordinator) -> IdmWebHomeDetail | None:
+    """Return the demand reason state of a Navigator 10 web supplement."""
+    supplement = _nav10_supplement(coordinator)
+    if supplement is None:
         return None
     return supplement.demand_reason
 
 
 def web_demand_reason_sensor_entities(coordinator: IdmCoordinator) -> list[IdmWebDemandReasonSensor]:
-    """Create the demand reason sensor for a Navigator 10 web supplement."""
-    if _nav10_demand_reason(coordinator) is None:
+    """Create the demand reason sensor for a Navigator 10 web supplement.
+
+    The variant is enough to create the entities: they report unavailable
+    until the first ``home/detail`` frame lands, instead of being absent from
+    the device until the next reload.
+    """
+    if _nav10_supplement(coordinator) is None:
         return []
     return [IdmWebDemandReasonSensor(coordinator)]
 
 
 def web_demand_reason_binary_entities(coordinator: IdmCoordinator) -> list[IdmWebDemandReasonPvBinarySensor]:
     """Create the PV demand reason binary sensor for a Navigator 10 web supplement."""
-    if _nav10_demand_reason(coordinator) is None:
+    if _nav10_supplement(coordinator) is None:
         return []
     return [IdmWebDemandReasonPvBinarySensor(coordinator)]
 

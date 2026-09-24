@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.helpers import issue_registry as ir
@@ -12,6 +12,7 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
+    CONF_SOLAR_THERMAL,
     CONF_WEB_ENABLED,
     CONF_WEB_PIN,
 )
@@ -192,3 +193,56 @@ async def test_disable_web_step_shows_its_confirmation(mock_hass, repair_entry) 
     result = await flow.async_step_disable_web(None)
 
     assert result["step_id"] == "disable_web"
+
+
+@pytest.mark.asyncio
+async def test_solar_unused_repair_asks_for_a_choice(mock_hass, repair_entry) -> None:
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(
+        mock_hass, f"solar_module_unused_{repair_entry.entry_id}", {"entry_id": repair_entry.entry_id}
+    )
+
+    result = await flow.async_step_init()
+
+    assert result["type"] == "form"
+    assert result["step_id"] == "init"
+
+
+@pytest.mark.asyncio
+async def test_solar_unused_repair_disables_the_module(mock_hass, repair_entry) -> None:
+    ir.async_delete_issue.reset_mock()
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(
+        mock_hass, f"solar_module_unused_{repair_entry.entry_id}", {"entry_id": repair_entry.entry_id}
+    )
+
+    result = await flow.async_step_disable({})
+
+    assert result["type"] == "create_entry"
+    mock_hass.config_entries.async_update_entry.assert_called_once()
+    _, kwargs = mock_hass.config_entries.async_update_entry.call_args
+    assert kwargs["options"][CONF_SOLAR_THERMAL] is False
+    ir.async_delete_issue.assert_called_once_with(
+        mock_hass, "idm_heatpump", f"solar_module_unused_{repair_entry.entry_id}"
+    )
+    mock_hass.config_entries.async_reload.assert_awaited_once_with(repair_entry.entry_id)
+
+
+@pytest.mark.asyncio
+async def test_solar_unused_repair_keep_dismisses_the_suggestion(mock_hass, repair_entry) -> None:
+    ir.async_delete_issue.reset_mock()
+    coordinator = MagicMock()
+    repair_entry.runtime_data = SimpleNamespace(coordinator=coordinator)
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(
+        mock_hass, f"solar_module_unused_{repair_entry.entry_id}", {"entry_id": repair_entry.entry_id}
+    )
+
+    result = await flow.async_step_keep({})
+
+    assert result["type"] == "create_entry"
+    coordinator.dismiss_solar_suggestion.assert_called_once()
+    ir.async_delete_issue.assert_called_once_with(
+        mock_hass, "idm_heatpump", f"solar_module_unused_{repair_entry.entry_id}"
+    )
+    mock_hass.config_entries.async_reload.assert_not_awaited()

@@ -2479,6 +2479,12 @@
         "zai": "Z.ai (direct)",
         "openai": "OpenAI (direct alternative)"
       }
+    },
+    "solar_unused_action": {
+      "options": {
+        "disable": "Stop reading solar registers",
+        "keep": "Keep the solar registers"
+      }
     }
   },
   "exceptions": {
@@ -2655,6 +2661,31 @@
     }
   },
   "issues": {
+    "solar_module_unused": {
+      "title": "Solar thermal system not detected",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Solar thermal system not detected",
+            "description": "Choose whether to stop reading the solar thermal registers, or keep them and dismiss this suggestion. Every solar register has reported 'not configured' for a full day, so the plant most likely has no solar thermal collectors; the *Solaranlage* device group only carries permanently unavailable entities in that case.",
+            "data": {
+              "action": "Action"
+            }
+          },
+          "disable": {
+            "title": "Stop reading solar thermal registers",
+            "description": "The solar registers leave the poll and the empty *Solaranlage* device group disappears after a reload. Re-enabling the option later restores the entities with their previous IDs."
+          },
+          "keep": {
+            "title": "Keep the solar thermal registers",
+            "description": "The registers stay in the poll and this suggestion stays dismissed until a solar value actually reports."
+          }
+        },
+        "abort": {
+          "entry_not_found": "The IDM Heatpump config entry was not found."
+        }
+      }
+    },
     "web_pin_missing": {
       "title": "IDM web PIN not configured",
       "fix_flow": {

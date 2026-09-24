@@ -193,6 +193,10 @@ integration settings: the solar registers leave the poll and the empty
 *Solaranlage* device group disappears after a reload. Re-enabling it restores
 the entities with their previous IDs.
 
+The integration also notices on its own: when every solar register reports
+"not configured" for a full day, a repair suggestion offers to switch the
+module off (or keep it, which dismisses that round of the suggestion).
+
 ### ISC (Intelligent Surface Cooling)
 
 | Entity | Register | Unit |

@@ -111,14 +111,25 @@ def _nav10_supplement(payload: dict[str, Any]) -> IdmWebSupplement:
     return IdmWebSupplement(web_variant="nav10", demand_reason=_detail(payload))
 
 
-def test_entities_created_only_for_nav10_with_state() -> None:
+def test_entities_created_for_nav10_even_before_the_first_frame() -> None:
     with_state = _coordinator(_nav10_supplement({"homeDetail": {"data": {"10": {"operationMode": 0}}}}))
     assert len(web_demand_reason_sensor_entities(with_state)) == 1
     assert len(web_demand_reason_binary_entities(with_state)) == 1
 
+    # A nav10 supplement whose first home/detail frame has not arrived still
+    # creates the entities; they report unavailable until the frame lands
+    # instead of being absent until the next reload.
+    waiting = _coordinator(IdmWebSupplement(web_variant="nav10"))
+    waiting_sensor = web_demand_reason_sensor_entities(waiting)
+    waiting_binary = web_demand_reason_binary_entities(waiting)
+    assert len(waiting_sensor) == 1
+    assert len(waiting_binary) == 1
+    assert waiting_sensor[0].available is False
+    assert waiting_binary[0].available is False
+
     assert web_demand_reason_sensor_entities(_coordinator(None)) == []
     assert web_demand_reason_binary_entities(_coordinator(None)) == []
-    assert web_demand_reason_sensor_entities(_coordinator(IdmWebSupplement(web_variant="nav10"))) == []
+    assert web_demand_reason_sensor_entities(_coordinator(IdmWebSupplement(web_variant="nav20"))) == []
     assert web_demand_reason_binary_entities(_coordinator(IdmWebSupplement(web_variant="nav20"))) == []
 
 
