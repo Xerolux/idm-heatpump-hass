@@ -283,6 +283,21 @@ dependencies, as `python-quality.yml` does. Without them every `homeassistant`
 import resolves to `Any` and mypy reports success without having checked the
 integration against Home Assistant at all.
 
+The real runtime lives in the git-ignored `test_ha/` venv (Python 3.14, Home
+Assistant at the minimum supported version, the manifest requirements and
+mypy). Recreate it and check through it with:
+
+```bash
+py -3.14 -m venv test_ha
+test_ha/Scripts/python -m pip install homeassistant==2026.8.1 \
+    "modbus-connection==4.12.1" "tmodbus[async-serial]==0.6.2" \
+    "idm-heatpump-api[web]==2.3.0" mypy
+test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
+```
+
+Move the versions along with the manifest pins and the minimum HA version when
+they change.
+
 ### Linting
 ```bash
 ruff check custom_components tests
