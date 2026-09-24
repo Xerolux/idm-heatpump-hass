@@ -699,6 +699,137 @@ def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinat
         registry.async_remove(entity.entity_id)
 
 
+_CLIMATE_HC_ENTITY_KEY = re.compile(r"^climate_hc_([a-g])$")
+_CLIMATE_ZM_ROOM_ENTITY_KEY = re.compile(r"^climate_zm(\d+)_room(\d+)$")
+
+#: The water heater is only set up when both DHW registers exist.
+_WATER_HEATER_REGISTERS: tuple[str, ...] = ("dhw_temp_top", "dhw_setpoint")
+#: The DHW boost buttons additionally need the writable system mode.
+_DHW_BOOST_REGISTERS: tuple[str, ...] = ("system_mode", "dhw_setpoint", "dhw_temp_top")
+
+#: Lazily built union of the register names any supported Navigator family
+#: can expose for the largest possible plant.
+_REFERENCE_REGISTER_NAMES: frozenset[str] | None = None
+
+
+def _reference_register_names() -> frozenset[str]:
+    """Return every register name any supported Navigator family can expose.
+
+    Built once per process from the library's own maps, so an entity key
+    counts as register-backed when some model resolution could have created
+    it — regardless of which model the current entry resolved to.
+    """
+    global _REFERENCE_REGISTER_NAMES
+    if _REFERENCE_REGISTER_NAMES is not None:
+        return _REFERENCE_REGISTER_NAMES
+
+    from idm_heatpump import MODEL_NAVIGATOR_10, MODEL_NAVIGATOR_17, IdmModelInfo
+
+    from .adapter_registers import model_info_from_flags
+    from .const import MAX_ROOM_COUNT, MAX_ZONE_COUNT
+    from .registers import collect_all_registers
+
+    shared = collect_all_registers(
+        list("abcdefg"),
+        MAX_ZONE_COUNT,
+        {zone: MAX_ROOM_COUNT for zone in range(MAX_ZONE_COUNT)},
+        True,
+        model_info=model_info_from_flags(list("abcdefg"), MAX_ZONE_COUNT, True, MODEL_NAVIGATOR_10),
+    )
+    navigator_17 = collect_all_registers(
+        [],
+        0,
+        {},
+        False,
+        model_info=IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_17,
+            active_heating_circuits=[],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=True,
+            has_cascade=False,
+            features=set(),
+        ),
+    )
+    _REFERENCE_REGISTER_NAMES = frozenset(register.name for register in (*shared, *navigator_17))
+    return _REFERENCE_REGISTER_NAMES
+
+
+def _entity_key_stale_after_model_change(
+    key: str,
+    current_names: frozenset[str],
+    reference_names: frozenset[str],
+) -> bool:
+    """Return whether one entity key's registers vanished with the model switch."""
+    if key == "acknowledge_errors":
+        # The error-acknowledge button falls back to a constant register and
+        # exists on every family; it is never a model-switch orphan.
+        return False
+    if key == "water_heater":
+        return not all(name in current_names for name in _WATER_HEATER_REGISTERS)
+    if key in ("dhw_boost_start", "dhw_boost_cancel"):
+        return not all(name in current_names for name in _DHW_BOOST_REGISTERS)
+    climate_hc = _CLIMATE_HC_ENTITY_KEY.match(key)
+    if climate_hc is not None:
+        circuit = climate_hc.group(1)
+        return not (
+            f"hc_{circuit}_mode" in current_names and f"hc_{circuit}_room_setpoint_heat_normal" in current_names
+        )
+    climate_zm = _CLIMATE_ZM_ROOM_ENTITY_KEY.match(key)
+    if climate_zm is not None:
+        room_prefix = f"zm{climate_zm.group(1)}_room{climate_zm.group(2)}"
+        return not (
+            f"{room_prefix}_mode" in current_names
+            and f"{room_prefix}_setpoint" in current_names
+            and f"{room_prefix}_temp" in current_names
+        )
+    return key in reference_names and key not in current_names
+
+
+def cleanup_stale_model_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
+    """Remove entities whose registers disappeared with a model change (#319).
+
+    A Navigator 1.7 that an earlier setup mapped to the shared Navigator
+    2.0/10 register map keeps its water heater, DHW tank sensors and boost
+    buttons in the entity registry while no platform recreates them; Home
+    Assistant renders them as permanently unavailable and dashboard
+    suggestions offer them as "entity not found". The same happens in reverse
+    when a manual override moves an entry away from 1.7.
+
+    Deliberately narrow, like the heating-circuit cleanup: only entity keys
+    that some supported model's register map could have created are
+    considered, so derived, web, technician and diagnostic entities are never
+    touched, and a key whose register exists in the current map always stays.
+    A web-only entry has an empty register map and is skipped: it knows
+    nothing about the device's registers, and its entities may legitimately
+    return with the next successful Modbus setup.
+    """
+    config_entry = coordinator.config_entry
+    if config_entry is None:
+        return
+
+    current_names = coordinator.register_map_names
+    if not current_names:
+        return
+
+    reference_names = _reference_register_names()
+    registry = er.async_get(hass)
+    prefix = f"{config_entry.entry_id}_"
+
+    for entity in list(er.async_entries_for_config_entry(registry, config_entry.entry_id)):
+        unique_id = entity.unique_id
+        if not unique_id.startswith(prefix):
+            continue
+        key = unique_id[len(prefix) :]
+        if _entity_key_stale_after_model_change(key, current_names, reference_names):
+            _LOGGER.debug(
+                "Removing entity %s whose register is not part of the resolved model's map",
+                entity.entity_id,
+            )
+            registry.async_remove(entity.entity_id)
+
+
 def cleanup_stale_web_sensor_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
     """Remove orphaned sensor platform entities for keys migrated to binary_sensor."""
     config_entry = coordinator.config_entry
