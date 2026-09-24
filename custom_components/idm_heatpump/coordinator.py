@@ -357,6 +357,16 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Return the registers the next poll will read."""
         return tuple(self._registers)
 
+    @property
+    def register_map_names(self) -> frozenset[str]:
+        """Return every register name of the configured map, polled or not.
+
+        ``active_registers`` narrows with the polling plan; this set keeps the
+        full map a model resolution produced, so setup-time decisions (such as
+        stale-entity cleanup) are not fooled by a narrowed poll.
+        """
+        return frozenset(self._register_by_name)
+
     def set_active_registers(self, registers: Sequence[RegisterDef], *, total: int) -> None:
         """Narrow the poll to ``registers`` out of ``total`` known ones.
 

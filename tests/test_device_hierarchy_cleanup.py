@@ -494,3 +494,171 @@ def test_cleanup_never_touches_the_main_device() -> None:
 
     registry.async_remove_device.assert_not_called()
     registry.async_update_device.assert_not_called()
+
+
+# --- cleanup_stale_model_entities -----------------------------------------
+#
+# A model switch (for example a Navigator 1.7 that earlier setups mapped to
+# the shared Navigator 2.0/10 register map) leaves register-backed entities
+# behind that no platform recreates. Home Assistant keeps their registry
+# entries as unavailable forever, and dashboard suggestions for the device
+# then offer "entity not found" entries (issue #319).
+
+
+def _model_coordinator(register_map_names: tuple[str, ...]) -> MagicMock:
+    coordinator = MagicMock(spec=IdmCoordinator)
+    coordinator.config_entry = MagicMock()
+    coordinator.config_entry.entry_id = "entry"
+    coordinator.register_map_names = frozenset(register_map_names)
+    return coordinator
+
+
+def _run_model_cleanup(coordinator: MagicMock, entities: list[MagicMock]) -> MagicMock:
+    from custom_components.idm_heatpump.device_hierarchy import cleanup_stale_model_entities
+
+    registry = MagicMock()
+    with (
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_get",
+            return_value=registry,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_config_entry",
+            return_value=entities,
+        ),
+    ):
+        cleanup_stale_model_entities(MagicMock(), coordinator)
+    return registry
+
+
+def test_model_switch_to_navigator_17_removes_shared_family_orphans() -> None:
+    """The #319 case: 1.7 detected after an earlier shared-family setup."""
+    coordinator = _model_coordinator(("dhw_temp", "dhw_tapping_temp", "outdoor_temp", "error_number"))
+    entities = [
+        _entity("entry_dhw_temp", "sensor.dhw_temp"),
+        _entity("entry_outdoor_temp", "sensor.outdoor"),
+        _entity("entry_acknowledge_errors", "button.acknowledge"),
+        _entity("entry_dhw_temp_top", "sensor.dhw_top"),
+        _entity("entry_dhw_temp_bottom", "sensor.dhw_bottom"),
+        _entity("entry_water_heater", "water_heater.warmwasser"),
+        _entity("entry_dhw_boost_start", "button.boost_start"),
+        _entity("entry_dhw_boost_cancel", "button.boost_cancel"),
+    ]
+
+    registry = _run_model_cleanup(coordinator, entities)
+
+    removed = {call.args[0] for call in registry.async_remove.call_args_list}
+    assert removed == {
+        "sensor.dhw_top",
+        "sensor.dhw_bottom",
+        "water_heater.warmwasser",
+        "button.boost_start",
+        "button.boost_cancel",
+    }
+
+
+def test_model_switch_back_to_shared_family_removes_navigator_17_orphans() -> None:
+    """The reverse direction: a manual override away from 1.7 orphans its entities."""
+    coordinator = _model_coordinator(
+        (
+            "dhw_temp_top",
+            "dhw_setpoint",
+            "system_mode",
+            "outdoor_temp",
+            "hc_a_mode",
+            "hc_a_room_setpoint_heat_normal",
+        )
+    )
+    entities = [
+        _entity("entry_dhw_temp", "sensor.dhw_temp"),
+        _entity("entry_hc_a_room_device_temp", "sensor.room_device"),
+        _entity("entry_water_heater", "water_heater.warmwasser"),
+        _entity("entry_dhw_boost_start", "button.boost_start"),
+        _entity("entry_acknowledge_errors", "button.acknowledge"),
+    ]
+
+    registry = _run_model_cleanup(coordinator, entities)
+
+    removed = {call.args[0] for call in registry.async_remove.call_args_list}
+    assert removed == {"sensor.dhw_temp", "sensor.room_device"}
+
+
+def test_model_cleanup_keeps_entities_that_are_not_register_backed() -> None:
+    """Derived, web, technician and diagnostic entities are out of scope."""
+    coordinator = _model_coordinator(("dhw_temp_top", "dhw_setpoint"))
+    entities = [
+        _entity("entry_calculated_cop", "sensor.cop"),
+        _entity("entry_energy_electrical_total", "sensor.energy"),
+        _entity("entry_web_compressor_1", "binary_sensor.compressor"),
+        _entity("entry_health_report", "sensor.health"),
+        _entity("entry_technician_level_1", "sensor.tech_code"),
+        _entity("entry_navigator_version", "sensor.navigator"),
+        _entity("entry_water_heater", "water_heater.warmwasser"),
+    ]
+
+    registry = _run_model_cleanup(coordinator, entities)
+
+    registry.async_remove.assert_not_called()
+
+
+def test_model_cleanup_removes_climate_entities_of_vanished_scopes() -> None:
+    """Climates follow their registers: gone circuit/room registers mean gone climates."""
+    coordinator = _model_coordinator(
+        (
+            "hc_a_mode",
+            "hc_a_room_setpoint_heat_normal",
+            "hc_a_room_temp",
+            "zm1_room1_mode",
+            "zm1_room1_setpoint",
+            "zm1_room1_temp",
+        )
+    )
+    entities = [
+        _entity("entry_climate_hc_a", "climate.hc_a"),
+        _entity("entry_climate_hc_b", "climate.hc_b"),
+        _entity("entry_climate_zm1_room1", "climate.zm1_room1"),
+        _entity("entry_climate_zm2_room1", "climate.zm2_room1"),
+        _entity("entry_hc_b_flow_temp", "sensor.hc_b_flow"),
+        _entity("entry_zm2_room1_temp", "sensor.zm2_room1"),
+    ]
+
+    registry = _run_model_cleanup(coordinator, entities)
+
+    removed = {call.args[0] for call in registry.async_remove.call_args_list}
+    assert removed == {
+        "climate.hc_b",
+        "climate.zm2_room1",
+        "sensor.hc_b_flow",
+        "sensor.zm2_room1",
+    }
+
+
+def test_model_cleanup_is_a_no_op_without_a_register_map() -> None:
+    """A web-only entry has an empty register map and must keep its entities."""
+    coordinator = _model_coordinator(())
+    entities = [
+        _entity("entry_dhw_temp_top", "sensor.dhw_top"),
+        _entity("entry_water_heater", "water_heater.warmwasser"),
+    ]
+
+    registry = _run_model_cleanup(coordinator, entities)
+
+    registry.async_remove.assert_not_called()
+
+
+def test_model_cleanup_is_a_no_op_without_a_config_entry() -> None:
+    coordinator = _model_coordinator(("dhw_temp",))
+    coordinator.config_entry = None
+
+    registry = _run_model_cleanup(coordinator, [])
+
+    registry.async_remove.assert_not_called()
+
+
+def test_model_cleanup_ignores_entities_of_other_entries() -> None:
+    coordinator = _model_coordinator(("dhw_temp",))
+    entities = [_entity("other_entry_dhw_temp_top", "sensor.foreign")]
+
+    registry = _run_model_cleanup(coordinator, entities)
+
+    registry.async_remove.assert_not_called()

@@ -13,6 +13,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b5] - 2026-09-24
+
+Fifth beta of the 0.19.0 line: a model switch no longer leaves orphaned
+entities behind (issue #319).
+
+### Fixed
+
+- **Stale entities after a model switch are cleaned up (issue #319).** A
+  Navigator 1.0/1.7 that was set up before its detection existed — or an
+  entry whose model override moves it between register-map families — kept
+  the entities of registers the resolved model does not carry: the water
+  heater, the hot-water tank sensors, the DHW boost buttons and climates of
+  vanished circuits or rooms stayed in the entity registry forever,
+  unavailable on the device page and offered as "entity not found" by
+  dashboard suggestions. After setup and after every reload the integration
+  now removes register-backed entities whose registers no longer exist in
+  the resolved model's map. The scope is deliberately narrow: derived, web,
+  technician and diagnostic entities are never touched, entities whose
+  registers exist in the current map always stay, and web-only entries
+  (empty register map) are skipped because their entities may legitimately
+  return with the next successful Modbus setup. Switching the model back
+  recreates removed entities under their unchanged unique IDs.
+
 ## [0.19.0-b4] - 2026-09-23
 
 Fourth beta of the 0.19.0 line: the home/detail connection moves into the

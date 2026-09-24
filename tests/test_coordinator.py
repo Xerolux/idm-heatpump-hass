@@ -2326,3 +2326,20 @@ class TestScanIntervalSelfDiagnosis:
 
         assert coord._fast_poll_streak == 1
         assert coord._slow_poll_streak == 0
+
+
+def test_register_map_names_stay_complete_when_polling_narrows(mock_hass, mock_config_entry):
+    """The full configured register map stays queryable after a polling-plan narrowing."""
+    registers = [
+        RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),
+        RegisterDef(address=1002, datatype=DataType.FLOAT, name="dhw_temp"),
+        RegisterDef(address=1004, datatype=DataType.FLOAT, name="hp_flow_temp"),
+    ]
+    coord, _ = _make_coordinator(mock_hass, mock_config_entry, registers=registers)
+
+    assert coord.register_map_names == {"outdoor_temp", "dhw_temp", "hp_flow_temp"}
+
+    coord.set_active_registers(registers[:1], total=len(registers))
+
+    assert coord.active_registers == tuple(registers[:1])
+    assert coord.register_map_names == {"outdoor_temp", "dhw_temp", "hp_flow_temp"}
