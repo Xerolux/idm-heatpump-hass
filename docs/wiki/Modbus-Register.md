@@ -128,7 +128,7 @@ The advanced raw-write action cannot infer the correct datatype from an address.
 <!-- BEGIN GENERATED REGISTER REFERENCE -->
 ## Complete register catalog
 
-> Generated from `idm-heatpump-api[web]==2.3.0`. Do not edit this section manually.
+> Generated from `idm-heatpump-api[web]==2.4.0`. Do not edit this section manually.
 
 This maximal catalog contains **687 logical register definitions**: all heating circuits A–G, ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. The integration selects only the subset supported and enabled on the detected installation.
 
@@ -860,9 +860,9 @@ The German description is intended for identification; the code-form register na
 
 ## Navigator 1.7 (separate protocol family)
 
-> Also generated from `idm-heatpump-api[web]==2.3.0`.
+> Also generated from `idm-heatpump-api[web]==2.4.0`.
 
-The Navigator 1.0/1.7 controllers use a different register layout: the same address can carry a different data point than in the catalog above, so this family has its own table with **75** definitions (4 writable, all in the PV supplement). The base map is read-only; the PV supplement appears only when the controller answers address 74. No heating-circuit or zone-module control exists on this family.
+The Navigator 1.0/1.7 controllers use a different register layout: the same address can carry a different data point than in the catalog above, so this family has its own table with **152** definitions (81 writable). The official RW holding block of ma_de_812049 Rev.1 contributes 77 writable, EEPROM-sensitive parameters (operating modes, room/flow setpoints, heating curves, limits, bivalence points, solar mode, DHW setpoint); the PV supplement appears only when the controller answers address 74. No zone-module control exists on this family.
 
 | Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |
 |-------------|------------------|---------------|------|------|--------|------|
@@ -940,6 +940,83 @@ The Navigator 1.0/1.7 controllers use a different register layout: the same addr
 | 1522 | Solar Betriebsart | `solar_mode` | UINT16 | — | R |  |
 | 1523 | Smart Grid Status | `smart_grid_status` | UINT16 | — | R |  |
 | 1524 | ISC Modus | `isc_mode` | UINT16 | — | R |  |
+| 2000 | Betriebsart System | `system_mode_17` | UINT16 | — | RW · EEPROM |  |
+| 2002 | Betriebsart HK A | `hc_a_operating_mode` | UINT16 | — | RW · EEPROM |  |
+| 2004 | Betriebsart HK B | `hc_b_operating_mode` | UINT16 | — | RW · EEPROM |  |
+| 2006 | Betriebsart HK C | `hc_c_operating_mode` | UINT16 | — | RW · EEPROM |  |
+| 2008 | Betriebsart HK D | `hc_d_operating_mode` | UINT16 | — | RW · EEPROM |  |
+| 2010 | Betriebsart HK E | `hc_e_operating_mode` | UINT16 | — | RW · EEPROM |  |
+| 2012 | Betriebsart HK F | `hc_f_operating_mode` | UINT16 | — | RW · EEPROM |  |
+| 2014 | Betriebsart HK G | `hc_g_operating_mode` | UINT16 | — | RW · EEPROM |  |
+| 2016–2017 | Raumsoll Heizen Normal HK A | `hc_a_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2018–2019 | Raumsoll Heizen Normal HK B | `hc_b_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2020–2021 | Raumsoll Heizen Normal HK C | `hc_c_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2022–2023 | Raumsoll Heizen Normal HK D | `hc_d_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2024–2025 | Raumsoll Heizen Normal HK E | `hc_e_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2026–2027 | Raumsoll Heizen Normal HK F | `hc_f_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2028–2029 | Raumsoll Heizen Normal HK G | `hc_g_room_setpoint_heat_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2030–2031 | Raumsoll Heizen Eco HK A | `hc_a_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2032–2033 | Raumsoll Heizen Eco HK B | `hc_b_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2034–2035 | Raumsoll Heizen Eco HK C | `hc_c_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2036–2037 | Raumsoll Heizen Eco HK D | `hc_d_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2038–2039 | Raumsoll Heizen Eco HK E | `hc_e_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2040–2041 | Raumsoll Heizen Eco HK F | `hc_f_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2042–2043 | Raumsoll Heizen Eco HK G | `hc_g_room_setpoint_heat_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2044–2045 | Heizkurve HK A | `hc_a_heating_curve` | FLOAT | — | RW · EEPROM |  |
+| 2046–2047 | Heizkurve HK B | `hc_b_heating_curve` | FLOAT | — | RW · EEPROM |  |
+| 2048–2049 | Heizkurve HK C | `hc_c_heating_curve` | FLOAT | — | RW · EEPROM |  |
+| 2050–2051 | Heizkurve HK D | `hc_d_heating_curve` | FLOAT | — | RW · EEPROM |  |
+| 2052–2053 | Heizkurve HK E | `hc_e_heating_curve` | FLOAT | — | RW · EEPROM |  |
+| 2054–2055 | Heizkurve HK F | `hc_f_heating_curve` | FLOAT | — | RW · EEPROM |  |
+| 2056–2057 | Heizkurve HK G | `hc_g_heating_curve` | FLOAT | — | RW · EEPROM |  |
+| 2058 | Heizgrenze HK A | `hc_a_heating_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2060 | Heizgrenze HK B | `hc_b_heating_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2062 | Heizgrenze HK C | `hc_c_heating_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2064 | Heizgrenze HK D | `hc_d_heating_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2066 | Heizgrenze HK E | `hc_e_heating_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2068 | Heizgrenze HK F | `hc_f_heating_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2070 | Heizgrenze HK G | `hc_g_heating_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2072 | Festwertvorlauf HK A | `hc_a_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
+| 2074 | Festwertvorlauf HK B | `hc_b_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
+| 2076 | Festwertvorlauf HK C | `hc_c_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
+| 2078 | Festwertvorlauf HK D | `hc_d_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
+| 2080 | Festwertvorlauf HK E | `hc_e_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
+| 2082 | Festwertvorlauf HK F | `hc_f_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
+| 2084 | Festwertvorlauf HK G | `hc_g_setpoint_flow_constant` | UINT16 | °C | RW · EEPROM |  |
+| 2086–2087 | Raumsoll Kühlen Normal HK A | `hc_a_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2088–2089 | Raumsoll Kühlen Normal HK B | `hc_b_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2090–2091 | Raumsoll Kühlen Normal HK C | `hc_c_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2092–2093 | Raumsoll Kühlen Normal HK D | `hc_d_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2094–2095 | Raumsoll Kühlen Normal HK E | `hc_e_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2096–2097 | Raumsoll Kühlen Normal HK F | `hc_f_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2098–2099 | Raumsoll Kühlen Normal HK G | `hc_g_room_setpoint_cool_normal` | FLOAT | °C | RW · EEPROM |  |
+| 2100–2101 | Raumsoll Kühlen Eco HK A | `hc_a_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2102–2103 | Raumsoll Kühlen Eco HK B | `hc_b_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2104–2105 | Raumsoll Kühlen Eco HK C | `hc_c_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2106–2107 | Raumsoll Kühlen Eco HK D | `hc_d_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2108–2109 | Raumsoll Kühlen Eco HK E | `hc_e_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2110–2111 | Raumsoll Kühlen Eco HK F | `hc_f_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2112–2113 | Raumsoll Kühlen Eco HK G | `hc_g_room_setpoint_cool_eco` | FLOAT | °C | RW · EEPROM |  |
+| 2114 | Kühlgrenze HK A | `hc_a_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2116 | Kühlgrenze HK B | `hc_b_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2118 | Kühlgrenze HK C | `hc_c_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2120 | Kühlgrenze HK D | `hc_d_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2122 | Kühlgrenze HK E | `hc_e_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2124 | Kühlgrenze HK F | `hc_f_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2126 | Kühlgrenze HK G | `hc_g_cooling_limit` | UINT16 | °C | RW · EEPROM |  |
+| 2128 | Kühlvorlauf HK A | `hc_a_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
+| 2130 | Kühlvorlauf HK B | `hc_b_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
+| 2132 | Kühlvorlauf HK C | `hc_c_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
+| 2134 | Kühlvorlauf HK D | `hc_d_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
+| 2136 | Kühlvorlauf HK E | `hc_e_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
+| 2138 | Kühlvorlauf HK F | `hc_f_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
+| 2140 | Kühlvorlauf HK G | `hc_g_setpoint_flow_cooling` | UINT16 | °C | RW · EEPROM |  |
+| 2142 | Externe Anforderungstemperatur Heizen | `external_demand_temp_heating` | UINT16 | °C | RW · EEPROM |  |
+| 2144 | Externe Anforderungstemperatur Kühlen | `external_demand_temp_cooling` | UINT16 | °C | RW · EEPROM |  |
+| 2146 | Bivalenzpunkt 1 | `bivalence_point_1_17` | INT16 | °C | RW · EEPROM |  |
+| 2148 | Bivalenzpunkt 2 | `bivalence_point_2_17` | INT16 | °C | RW · EEPROM |  |
+| 2150 | Betriebsart Solar | `solar_operating_mode_17` | UINT16 | — | RW · EEPROM |  |
+| 2152 | Warmwasser Sollwert | `dhw_setpoint` | UINT16 | °C | RW · EEPROM |  |
 | 4122–4123 | Elektrische Leistungsaufnahme Wärmepumpe | `power_consumption_hp` | FLOAT | kW | R | PV supplement |
 
 <!-- END GENERATED REGISTER REFERENCE -->

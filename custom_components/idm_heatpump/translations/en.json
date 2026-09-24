@@ -1408,11 +1408,17 @@
       "battery_soc": {
         "name": "Battery state of charge (external setpoint)"
       },
+      "bivalence_point_1_17": {
+        "name": "Bivalence point 1"
+      },
       "bivalence_point_1_2nd_gen": {
         "name": "Bivalence point 1 (2nd heat generator)"
       },
       "bivalence_point_1_3rd_gen": {
         "name": "Bivalence point 1 (3rd heat generator)"
+      },
+      "bivalence_point_2_17": {
+        "name": "Bivalence point 2"
       },
       "bivalence_point_2_2nd_gen": {
         "name": "Bivalence point 2 (2nd heat generator)"
@@ -1485,6 +1491,12 @@
       },
       "ext_outdoor_temp": {
         "name": "External outdoor temperature (BMS)"
+      },
+      "external_demand_temp_cooling": {
+        "name": "External demand temperature cooling"
+      },
+      "external_demand_temp_heating": {
+        "name": "External demand temperature heating"
       },
       "glt_cold_storage_temp": {
         "name": "BMS cold storage temperature"
@@ -1578,6 +1590,16 @@
           "not_configured": "Not Configured"
         }
       },
+      "hc_operating_mode": {
+        "state": {
+          "off": "Off",
+          "time_program": "Time Program",
+          "normal": "Normal",
+          "eco": "ECO",
+          "heating_only": "Heating Only"
+        },
+        "name": "Heating circuit {circuit} operating mode"
+      },
       "solar_mode": {
         "state": {
           "automatic": "Automatic",
@@ -1588,6 +1610,16 @@
         },
         "name": "Solar mode"
       },
+      "solar_operating_mode_17": {
+        "state": {
+          "automatic": "Automatic",
+          "domestic_water": "Domestic Water",
+          "heat_storage": "Heat Storage",
+          "domestic_water_and_heat_storage": "Domestic Water + Heat Storage",
+          "heat_source_pool": "Heat Source / Pool"
+        },
+        "name": "Solar operating mode"
+      },
       "system_mode": {
         "state": {
           "standby": "Standby",
@@ -1596,6 +1628,15 @@
           "holiday": "Holiday",
           "hot_water_only": "Hot Water Only",
           "heating_cooling_only": "Heating/Cooling Only"
+        },
+        "name": "System mode"
+      },
+      "system_mode_17": {
+        "state": {
+          "standby": "Standby",
+          "automatic": "Automatic",
+          "hot_water": "Hot Water",
+          "hot_water_once": "Hot Water Once"
         },
         "name": "System mode"
       },

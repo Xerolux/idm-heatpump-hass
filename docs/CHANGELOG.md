@@ -13,6 +13,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b8] - 2026-09-24
+
+Eighth beta of the 0.19.0 line: the Navigator 1.0/1.7 gets its first
+writable controls — the complete official holding table.
+
+### Added
+
+- **Navigator 1.0/1.7: the complete official RW holding block.** The
+  integration now requires `idm-heatpump-api==2.4.0`, which maps the full
+  FC03/FC06 parameter table 2000-2152 of the official iDM Modbus TCP
+  document for Navigator 1.0/1.7 (ma_de_812049 Rev.1, 2016-06-13 — found
+  during the research for issue #319 and confirmed value for value by a
+  working FHEM configuration against a real 1.7). Navigator 1.0/1.7 plants
+  gain:
+  - the **system mode** select (Standby / Automatic / Hot Water / Hot
+    Water Once),
+  - **heating-circuit operating mode** selects for circuits A-G (Off /
+    Time Program / Normal / ECO / Heating Only),
+  - the **solar operating mode** select (Automatic / Domestic Water /
+    Heat Storage / Domestic Water + Heat Storage / Heat Source / Pool),
+  - **number entities** with the officially documented ranges for room
+    setpoints (heating normal 15-30 / ECO 10-25, cooling 15-30), heating
+    curves (0.1-3.5), heating limits (0-50), constant-flow and cooling
+    flow setpoints, cooling limits (0-36), both bivalence points
+    (-20..20), the external demand temperatures and the freshwater DHW
+    setpoint (35-60).
+  Every holding write is EEPROM-limited (300 000 cycles per register); the
+  entities behave like the shared family's equivalents. The officially
+  documented coils (3000-3003: acknowledge fault, heating/cooling/DHW
+  demand) still need FC01/FC05 transport support and arrive later. Full
+  register list in the wiki's *Modbus Register* reference.
+
 ## [0.19.0-b7] - 2026-09-24
 
 Seventh beta of the 0.19.0 line: the integration polices its own device

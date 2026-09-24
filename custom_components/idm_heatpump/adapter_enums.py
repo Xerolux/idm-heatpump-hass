@@ -41,6 +41,32 @@ _SOLAR_MODE_SLUGS: dict[int, str] = {
     4: "heat_source_pool",
 }
 
+# Navigator 1.0/1.7 official RW holding block (ma_de_812049 Rev.1). The value
+# sets deliberately differ from the shared family's enums, so they carry their
+# own slug tables under their own translation keys.
+_SYSTEM_MODE_17_SLUGS: dict[int, str] = {
+    0: "standby",
+    1: "automatic",
+    2: "hot_water",
+    3: "hot_water_once",
+}
+
+_HC_OPERATING_MODE_17_SLUGS: dict[int, str] = {
+    0: "off",
+    1: "time_program",
+    2: "normal",
+    3: "eco",
+    4: "heating_only",
+}
+
+_SOLAR_OPERATING_MODE_17_SLUGS: dict[int, str] = {
+    0: "automatic",
+    1: "domestic_water",
+    2: "heat_storage",
+    3: "domestic_water_and_heat_storage",
+    4: "heat_source_pool",
+}
+
 _HP_OPERATING_MODE_DE: dict[int, str] = {
     0: "Aus",
     1: "Heizbetrieb",
@@ -55,6 +81,7 @@ _BITFLAG_DE_LABELS: dict[str, dict[int, str]] = {
 
 _CIRCUIT_MODE_RE = re.compile(r"^hc_[a-g]_mode$")
 _CIRCUIT_ACTIVE_MODE_RE = re.compile(r"^hc_[a-g]_active_mode$")
+_CIRCUIT_OPERATING_MODE_17_RE = re.compile(r"^hc_[a-g]_operating_mode$")
 _ROOM_MODE_RE = re.compile(r"^zm\d+_room\d+_mode$")
 
 
@@ -62,12 +89,18 @@ def _slug_map(name: str) -> dict[int, str] | None:
     """Return the int-to-slug map of a known enum register."""
     if name == "system_mode":
         return _SYSTEM_MODE_SLUGS
+    if name == "system_mode_17":
+        return _SYSTEM_MODE_17_SLUGS
     if _CIRCUIT_MODE_RE.match(name) or _CIRCUIT_ACTIVE_MODE_RE.match(name):
         return _CIRCUIT_MODE_SLUGS
+    if _CIRCUIT_OPERATING_MODE_17_RE.match(name):
+        return _HC_OPERATING_MODE_17_SLUGS
     if _ROOM_MODE_RE.match(name):
         return _ROOM_MODE_SLUGS
     if name == "solar_mode":
         return _SOLAR_MODE_SLUGS
+    if name == "solar_operating_mode_17":
+        return _SOLAR_OPERATING_MODE_17_SLUGS
     return None
 
 
