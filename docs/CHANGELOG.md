@@ -13,6 +13,33 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b7] - 2026-09-24
+
+Seventh beta of the 0.19.0 line: the integration polices its own device
+groups, and its lifecycle now has a real-Home-Assistant safety net.
+
+### Added
+
+- **Unused solar module suggestion.** When every solar register reports "not
+  configured" for a full day, a fixable repair suggestion offers two ways
+  forward: switch the solar thermal module off (those register polls stop and
+  the empty *Solaranlage* group disappears after a reload) or keep it, which
+  dismisses that round of the suggestion until a solar value actually
+  reports. A live solar value resets the window and withdraws the suggestion.
+
+### Changed
+
+- **The Navigator 10 web demand-reason entities appear immediately.**
+  `web_demand_reason` and `web_demand_reason_pv` are created as soon as the
+  nav10 web variant is known and report unavailable until the first
+  `home/detail` frame lands, instead of being absent from the device until
+  the next reload.
+- **Development: real-Home-Assistant smoke tests close the last audit item
+  (E1).** `tests_ha/` boots a genuine Home Assistant and walks one config
+  entry through setup, reload and unload — including a no-leaked-tasks
+  assertion — and CI runs it as the `smoke` job on every push and pull
+  request. The 2026-09 code audit is now fully worked off.
+
 ## [0.19.0-b6] - 2026-09-24
 
 Sixth beta of the 0.19.0 line: the empty *Solaranlage* group can go, and the
