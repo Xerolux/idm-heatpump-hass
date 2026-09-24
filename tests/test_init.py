@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.helpers import issue_registry as ir
-from idm_heatpump import MODEL_UNKNOWN, IdmModelInfo
+from idm_heatpump import FEATURE_SOLAR, MODEL_UNKNOWN, IdmModelInfo
 
 from custom_components.idm_heatpump import (
     IdmHeatpumpData,
@@ -950,6 +950,67 @@ class TestAsyncSetupEntryOptions:
             await async_setup_entry(mock_hass, entry)
 
         assert captured_kwargs.get("hide_unused") is False
+
+    async def test_solar_thermal_option_strips_solar_from_the_model_info(self, mock_hass):
+        """Turning 'solar thermal present' off removes the solar module from the register map."""
+        entry = self._make_entry(options_override={"solar_thermal": False})
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]) as mock_sensors,
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        model_info = mock_sensors.call_args.args[4]
+        assert isinstance(model_info, IdmModelInfo)
+        assert model_info.has_solar is False
+        assert FEATURE_SOLAR not in model_info.features
+        # Every consumer sees the stripped info, not just the descriptions.
+        assert mock_coordinator.setup_registers.call_args.kwargs["model_info"] is model_info
+
+    async def test_solar_thermal_defaults_to_present(self, mock_hass):
+        """Without the option the solar module stays in the map (backward compatible)."""
+        entry = self._make_entry()
+
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]) as mock_sensors,
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        model_info = mock_sensors.call_args.args[4]
+        assert isinstance(model_info, IdmModelInfo)
+        assert model_info.has_solar is True
 
     async def test_selected_circuits_zones_and_cascade_drive_description_builders(self, mock_hass):
         entry = self._make_entry(

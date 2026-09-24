@@ -27,7 +27,7 @@ from __future__ import annotations
 # SPDX-License-Identifier: MIT
 import logging
 from collections.abc import Mapping, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Any
 
 from idm_heatpump import (
@@ -235,6 +235,28 @@ class _StoredReconciliation:
     stored_conflict: bool
     stale_navigator_version: str | None
     log_lines: tuple[LogLine, ...]
+
+
+def without_solar(model_info: IdmModelInfo) -> IdmModelInfo:
+    """Strip the solar-thermal module from a resolved model info.
+
+    ``solar_thermal`` is an option, not a detection: plants without collectors
+    get a *Solaranlage* subdevice whose entities never report anything useful,
+    so the user can switch the module off. The option has to beat every
+    detection source — probe, stored data and web supplement all default the
+    shared family to ``has_solar=True`` — so it is applied to the final
+    resolution instead of to any single source. With the module stripped, the
+    register map loses its ``solar_*`` registers, the subdevice is no longer
+    expected, and the stale-entity cleanup of a later reload removes leftover
+    solar entities; re-enabling recreates them under unchanged unique IDs.
+    """
+    if not model_info.has_solar and FEATURE_SOLAR not in model_info.features:
+        return model_info
+    return replace(
+        model_info,
+        has_solar=False,
+        features={feature for feature in model_info.features if feature != FEATURE_SOLAR},
+    )
 
 
 def _reconcile_stored(
@@ -490,4 +512,5 @@ __all__ = [
     "plant_shape",
     "resolve_model",
     "resolved_model_override",
+    "without_solar",
 ]

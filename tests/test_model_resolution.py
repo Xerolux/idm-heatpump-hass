@@ -12,6 +12,7 @@ import logging
 
 import pytest
 from idm_heatpump import (
+    FEATURE_SOLAR,
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_17,
     MODEL_NAVIGATOR_20,
@@ -19,6 +20,7 @@ from idm_heatpump import (
     IdmModelInfo,
 )
 
+from custom_components.idm_heatpump.adapter_registers import build_filtered_register_map
 from custom_components.idm_heatpump.const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
@@ -41,6 +43,7 @@ from custom_components.idm_heatpump.model_resolution import (
     plant_shape,
     resolve_model,
     resolved_model_override,
+    without_solar,
 )
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
 
@@ -469,3 +472,38 @@ class TestNavigator17:
         )
 
         assert plan.model_hint == MODEL_NAVIGATOR_17
+
+
+class TestWithoutSolar:
+    """The solar-thermal opt-out strips the module from the register map."""
+
+    def test_strips_has_solar_and_the_feature_flag(self):
+        info = model_info_from_name("Navigator 10", PlantShape(circuits=("a",)))
+
+        assert info.has_solar is True
+
+        stripped = without_solar(info)
+
+        assert stripped is not info
+        assert stripped.has_solar is False
+        assert FEATURE_SOLAR not in stripped.features
+        # Everything unrelated survives untouched.
+        assert stripped.model_name == info.model_name
+        assert stripped.active_heating_circuits == info.active_heating_circuits
+        assert stripped.zone_modules == info.zone_modules
+
+    def test_returns_solarless_info_unchanged(self):
+        info = model_info_from_name("Navigator 1.7", PlantShape())
+
+        assert info.has_solar is False
+
+        assert without_solar(info) is info
+
+    def test_solar_registers_leave_the_map_when_the_module_is_off(self):
+        info = model_info_from_name("Navigator 10", PlantShape(circuits=("a",)))
+
+        with_solar = build_filtered_register_map(model_info=info, circuits=["a"], zone_modules=0)
+        stripped_map = build_filtered_register_map(model_info=without_solar(info), circuits=["a"], zone_modules=0)
+
+        assert any(name.startswith("solar_") for name in with_solar)
+        assert not any(name.startswith("solar_") for name in stripped_map)
