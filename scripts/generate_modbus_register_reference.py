@@ -236,6 +236,9 @@ def _navigator_17_section(pinned_version: str, display_name: object) -> list[str
         "power_consumption_hp",
     }
 
+    holding_count = sum(
+        1 for register in ordered17 if getattr(register, "writable", False) and register.name not in pv_names
+    )
     section = [
         "## Navigator 1.7 (separate protocol family)",
         "",
@@ -244,9 +247,11 @@ def _navigator_17_section(pinned_version: str, display_name: object) -> list[str
         (
             "The Navigator 1.0/1.7 controllers use a different register layout: the same address can "
             "carry a different data point than in the catalog above, so this family has its own table "
-            f"with **{len(ordered17)}** definitions ({writable17} writable, all in the PV supplement). "
-            "The base map is read-only; the PV supplement appears only when the controller answers "
-            "address 74. No heating-circuit or zone-module control exists on this family."
+            f"with **{len(ordered17)}** definitions ({writable17} writable). "
+            f"The official RW holding block of ma_de_812049 Rev.1 contributes {holding_count} writable, "
+            "EEPROM-sensitive parameters (operating modes, room/flow setpoints, heating curves, limits, "
+            "bivalence points, solar mode, DHW setpoint); the PV supplement appears only when the "
+            "controller answers address 74. No zone-module control exists on this family."
         ),
         "",
         "| Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |",

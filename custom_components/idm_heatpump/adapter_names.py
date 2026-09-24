@@ -274,6 +274,14 @@ _GERMAN_NAMES: dict[str, str] = {
     "compressor_stages_heating": "Verdichterstufen Heizen",
     "compressor_stages_cooling": "Verdichterstufen Kühlen",
     "compressor_stages_dhw": "Verdichterstufen Warmwasser",
+    # === Navigator 1.7 official RW holding block (ma_de_812049 Rev.1) ===
+    "system_mode_17": "Betriebsart System",
+    "hc_a_operating_mode": "Betriebsart HK A",
+    "bivalence_point_1_17": "Bivalenzpunkt 1",
+    "bivalence_point_2_17": "Bivalenzpunkt 2",
+    "external_demand_temp_heating": "Externe Anforderungstemperatur Heizen",
+    "external_demand_temp_cooling": "Externe Anforderungstemperatur Kühlen",
+    "solar_operating_mode_17": "Betriebsart Solar",
 }
 
 # Heizkreise B-G verwenden dieselben Registernamen wie Heizkreis A. Sie werden

@@ -296,6 +296,14 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
     "compressor_stages_heating": "Compressor stages heating",
     "compressor_stages_cooling": "Compressor stages cooling",
     "compressor_stages_dhw": "Compressor stages domestic hot water",
+    # === Navigator 1.7 official RW holding block (ma_de_812049 Rev.1) ===
+    "system_mode_17": "System mode",
+    "hc_operating_mode": "Heating circuit {circuit} operating mode",
+    "bivalence_point_1_17": "Bivalence point 1",
+    "bivalence_point_2_17": "Bivalence point 2",
+    "external_demand_temp_heating": "External demand temperature heating",
+    "external_demand_temp_cooling": "External demand temperature cooling",
+    "solar_operating_mode_17": "Solar operating mode",
 }
 
 
