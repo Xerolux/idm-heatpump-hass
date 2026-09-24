@@ -160,6 +160,10 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_web_data.py
 │   └── test_web_demand_reason.py
 │
+├── tests_ha/                         # Real-Home-Assistant smoke tests (audit E1)
+│   ├── conftest.py                   # Boots a genuine HA in a temp config dir, fake Modbus client
+│   └── test_smoke_entry_lifecycle.py # Setup, reload, unload and task-leak checks
+│
 ├── docs/                             # Documentation & wiki
 │   ├── wiki/                         # Complete wiki (installation, config, entities...)
 │   ├── CONTRIBUTING.md
@@ -297,6 +301,21 @@ test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
 
 Move the versions along with the manifest pins and the minimum HA version when
 they change.
+
+### Real-Home-Assistant Smoke Tests
+```bash
+test_ha/Scripts/python -m pytest tests_ha/
+```
+The smoke leg (audit package E1) runs against a genuine Home Assistant —
+the unit suite in `tests/` stubs the whole `homeassistant` package, so
+lifecycle bugs (unload leaks, registry or store misuse) are invisible to it.
+`tests_ha/conftest.py` boots a real HA instance in a temporary config
+directory whose `custom_components` is this repository, replaces the Modbus
+client factory with a fake answering like a Navigator 10, and walks the
+config entry through setup, reload and unload — including a no-leaked-tasks
+assertion. CI runs it as the `smoke` job on every push and pull request.
+It needs the same runtime as the mypy check above (Home Assistant plus the
+manifest requirements installed in `test_ha/`).
 
 ### Linting
 ```bash

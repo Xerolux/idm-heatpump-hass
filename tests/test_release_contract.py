@@ -95,8 +95,8 @@ def test_ci_and_release_share_complete_python_quality_workflow() -> None:
     assert reusable_workflow in ci
     assert reusable_workflow in release
     assert "workflow_call:" in quality
-    assert "ruff check custom_components/idm_heatpump tests" in quality
-    assert "ruff format custom_components/idm_heatpump tests --check" in quality
+    assert "ruff check custom_components/idm_heatpump tests tests_ha" in quality
+    assert "ruff format custom_components/idm_heatpump tests tests_ha --check" in quality
     assert "mypy custom_components/idm_heatpump" in quality
     assert "Smoke test production Modbus backend" in quality
     assert "from modbus_connection.tmodbus import ModbusConnection" in quality
