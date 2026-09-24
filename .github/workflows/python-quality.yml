@@ -136,10 +136,10 @@ jobs:
           PY
 
       - name: Lint with Ruff
-        run: ruff check custom_components/idm_heatpump tests --line-length=120 --output-format=github
+        run: ruff check custom_components/idm_heatpump tests tests_ha --line-length=120 --output-format=github
 
       - name: Format check with Ruff
-        run: ruff format custom_components/idm_heatpump tests --check
+        run: ruff format custom_components/idm_heatpump tests tests_ha --check
 
       - name: Type check with mypy
         run: mypy custom_components/idm_heatpump
