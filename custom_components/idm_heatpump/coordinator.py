@@ -35,7 +35,9 @@ from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
+    DEFAULT_UNUSED_MODULE_SUGGESTION_SECONDS,
     DOMAIN,
+    ISSUE_SOLAR_MODULE_UNUSED,
     MANUFACTURER,
     MODEL,
 )
@@ -244,6 +246,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         web_variant: str | None = None,
         device_hierarchy_enabled: bool = False,
         polling_jitter_percent: int = 0,
+        unused_module_suggestion_seconds: float = DEFAULT_UNUSED_MODULE_SUGGESTION_SECONDS,
         write_cooldown_seconds: float = 5.0,
     ) -> None:
         self._client = client
@@ -270,6 +273,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._web_variant = _web_variant_from_supplement(web_supplement) or self._web_variant
         self._last_web_error: str | None = None
         self._unused_registers: set[str] = set()
+        self._unused_module_suggestion_seconds = unused_module_suggestion_seconds
+        self._solar_unused_since: float | None = None
+        self._solar_suggestion_dismissed: bool = False
         self._unsupported_registers: set[str] = set()
         self._alias_map: dict[int, list[str]] = {}
         self._register_by_name: dict[str, RegisterDef] = {}
@@ -698,6 +704,56 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         entry_id = self.config_entry.entry_id if self.config_entry is not None else None
         return scoped_issue_id(entry_id, issue_id)
 
+    def dismiss_solar_suggestion(self) -> None:
+        """Keep the solar module despite the unused-registers suggestion.
+
+        Set by the repair flow's *keep* action; polls then stop re-raising
+        the issue until a live solar value resets the whole mechanism.
+        """
+        self._solar_suggestion_dismissed = True
+
+    def _evaluate_unused_solar_suggestion(self) -> None:
+        """Suggest switching the solar module off when it never reports.
+
+        A plant whose solar-thermal registers report the unused sentinel on
+        every poll for a full day most likely has no collectors: the
+        *Solaranlage* device then only carries permanently unavailable
+        entities. The suggestion is a repair issue with a fix flow that
+        turns the module off (or keeps it, which dismisses this round).
+        The window is in-memory and starts over after a restart — the issue
+        simply reappears a day later if nothing changed.
+        """
+        solar_names = [name for name in self._register_by_name if name.startswith("solar_")]
+        if not solar_names:
+            return
+        issue_id = self._scoped_issue_id(ISSUE_SOLAR_MODULE_UNUSED)
+        if not set(solar_names) <= self._unused_registers:
+            self._solar_unused_since = None
+            self._solar_suggestion_dismissed = False
+            if ir.async_get(self.hass).async_get_issue(DOMAIN, issue_id) is not None:
+                ir.async_delete_issue(self.hass, DOMAIN, issue_id)
+            return
+        if self._solar_suggestion_dismissed:
+            return
+        now = time.monotonic()
+        if self._solar_unused_since is None:
+            self._solar_unused_since = now
+            return
+        if now - self._solar_unused_since < self._unused_module_suggestion_seconds:
+            return
+        if ir.async_get(self.hass).async_get_issue(DOMAIN, issue_id) is not None:
+            return
+        entry_id = self.config_entry.entry_id if self.config_entry is not None else None
+        ir.async_create_issue(
+            self.hass,
+            DOMAIN,
+            issue_id,
+            is_fixable=True,
+            severity=ir.IssueSeverity.WARNING,
+            translation_key=ISSUE_SOLAR_MODULE_UNUSED,
+            data={"entry_id": entry_id},
+        )
+
     async def _async_read_registers_resilient(self, registers: list[RegisterDef]) -> dict[str, Any]:
         """Read every register the device still answers, skipping known-dead ones.
 
@@ -939,6 +995,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if self.is_register_unused(reg_name, value):
                 new_unused_registers.add(reg_name)
         self._unused_registers = new_unused_registers
+        self._evaluate_unused_solar_suggestion()
 
         if self._operation_analysis is not None:
             try:

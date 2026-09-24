@@ -57,6 +57,7 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
         web_supplement=kwargs.get("web_supplement"),
         web_variant=kwargs.get("web_variant"),
         polling_jitter_percent=kwargs.get("polling_jitter_percent", 0),
+        unused_module_suggestion_seconds=kwargs.get("unused_module_suggestion_seconds", 86400.0),
         write_cooldown_seconds=kwargs.get("write_cooldown_seconds", 5.0),
     )
     registers = kwargs.get("registers")
@@ -2343,3 +2344,91 @@ def test_register_map_names_stay_complete_when_polling_narrows(mock_hass, mock_c
 
     assert coord.active_registers == tuple(registers[:1])
     assert coord.register_map_names == {"outdoor_temp", "dhw_temp", "hp_flow_temp"}
+
+
+async def test_unused_solar_module_raises_a_suggestion_issue(mock_hass, mock_config_entry):
+    """A solar block that only ever reports unused earns the module-off suggestion."""
+    registers = [
+        RegisterDef(address=1850, datatype=DataType.FLOAT, name="solar_collector_temp"),
+        RegisterDef(address=1002, datatype=DataType.FLOAT, name="solar_charging_temp"),
+        RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),
+    ]
+    client = MagicMock()
+    client.read_batch = AsyncMock(
+        return_value={"solar_collector_temp": -1.0, "solar_charging_temp": -1.0, "outdoor_temp": 20.0}
+    )
+    coord, _ = _make_coordinator(
+        mock_hass,
+        mock_config_entry,
+        client=client,
+        registers=registers,
+        unused_module_suggestion_seconds=0.0,
+    )
+
+    with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+        mock_ir.async_get.return_value.async_get_issue.return_value = None
+        # The first poll starts the clock, the second crosses the threshold.
+        await coord._async_update_data()
+        mock_ir.async_create_issue.assert_not_called()
+        await coord._async_update_data()
+
+    mock_ir.async_create_issue.assert_called_once()
+    issue_id = mock_ir.async_create_issue.call_args.args[2]
+    assert issue_id == f"solar_module_unused_{mock_config_entry.entry_id}"
+    assert mock_ir.async_create_issue.call_args.kwargs["is_fixable"] is True
+    assert mock_ir.async_create_issue.call_args.kwargs["data"] == {"entry_id": mock_config_entry.entry_id}
+
+
+async def test_live_solar_values_withdraw_the_suggestion(mock_hass, mock_config_entry):
+    """A single live solar register clears the timer and deletes the issue."""
+    registers = [
+        RegisterDef(address=1850, datatype=DataType.FLOAT, name="solar_collector_temp"),
+        RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),
+    ]
+    client = MagicMock()
+    client.read_batch = AsyncMock(return_value={"solar_collector_temp": -1.0, "outdoor_temp": 20.0})
+    coord, _ = _make_coordinator(
+        mock_hass,
+        mock_config_entry,
+        client=client,
+        registers=registers,
+        unused_module_suggestion_seconds=0.0,
+    )
+
+    with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+        mock_ir.async_get_issue.return_value = MagicMock()
+        await coord._async_update_data()
+        client.read_batch = AsyncMock(return_value={"solar_collector_temp": 55.0, "outdoor_temp": 20.0})
+        await coord._async_update_data()
+
+        # The coordinator also clears stale communication issues on a good
+        # poll, so the solar deletion is asserted as one call among them.
+        mock_ir.async_delete_issue.assert_any_call(
+            mock_hass, "idm_heatpump", f"solar_module_unused_{mock_config_entry.entry_id}"
+        )
+        assert coord._solar_unused_since is None
+
+
+async def test_dismissed_solar_suggestion_stays_away(mock_hass, mock_config_entry):
+    """After choosing to keep the module, polls no longer re-raise the issue."""
+    registers = [
+        RegisterDef(address=1850, datatype=DataType.FLOAT, name="solar_collector_temp"),
+        RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),
+    ]
+    client = MagicMock()
+    client.read_batch = AsyncMock(return_value={"solar_collector_temp": -1.0, "outdoor_temp": 20.0})
+    coord, _ = _make_coordinator(
+        mock_hass,
+        mock_config_entry,
+        client=client,
+        registers=registers,
+        unused_module_suggestion_seconds=0.0,
+    )
+    coord.dismiss_solar_suggestion()
+
+    with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+        mock_ir.async_get.return_value.async_get_issue.return_value = None
+        await coord._async_update_data()
+        await coord._async_update_data()
+
+    mock_ir.async_create_issue.assert_not_called()

@@ -2479,6 +2479,12 @@
         "zai": "Z.ai (direkt)",
         "openai": "OpenAI (direkt, alternativ)"
       }
+    },
+    "solar_unused_action": {
+      "options": {
+        "disable": "Solarregister nicht mehr auslesen",
+        "keep": "Solarregister behalten"
+      }
     }
   },
   "exceptions": {
@@ -2655,6 +2661,31 @@
     }
   },
   "issues": {
+    "solar_module_unused": {
+      "title": "Keine Solaranlage erkannt",
+      "fix_flow": {
+        "step": {
+          "init": {
+            "title": "Keine Solaranlage erkannt",
+            "description": "Wähle, ob die Solarthermie-Register nicht mehr ausgelesen werden, oder ob sie bleiben und dieser Hinweis verworfen wird. Alle Solarregister melden seit einem Tag durchgängig „nicht konfiguriert“ – die Anlage hat sehr wahrscheinlich keine Solarthermie-Kollektoren; die Gerätegruppe *Solaranlage* trägt in dem Fall nur dauerhaft nicht verfügbare Entitäten.",
+            "data": {
+              "action": "Aktion"
+            }
+          },
+          "disable": {
+            "title": "Solarthermie-Register nicht mehr auslesen",
+            "description": "Die Solarregister verlassen die Abfrage, und die leere Gerätegruppe *Solaranlage* verschwindet nach dem Neuladen. Späteres Aktivieren stellt die Entitäten mit ihren bisherigen IDs wieder her."
+          },
+          "keep": {
+            "title": "Solarthermie-Register behalten",
+            "description": "Die Register bleiben in der Abfrage, und dieser Hinweis bleibt verworfen, bis ein Solarwert tatsächlich etwas meldet."
+          }
+        },
+        "abort": {
+          "entry_not_found": "Der Konfigurationseintrag der IDM-Wärmepumpe wurde nicht gefunden."
+        }
+      }
+    },
     "web_pin_missing": {
       "title": "IDM Web-PIN nicht konfiguriert",
       "fix_flow": {

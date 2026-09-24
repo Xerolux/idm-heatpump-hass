@@ -151,6 +151,8 @@ DEFAULT_DEVICE_HIERARCHY: bool = True
 DEFAULT_SHORT_CYCLE_MINUTES: int = 15
 DEFAULT_ENABLE_CASCADE: bool = False
 DEFAULT_SOLAR_THERMAL: bool = True
+ISSUE_SOLAR_MODULE_UNUSED: str = "solar_module_unused"
+DEFAULT_UNUSED_MODULE_SUGGESTION_SECONDS: float = 86400.0
 DEFAULT_WEB_ENABLED: bool = True
 DEFAULT_WEB_SCAN_INTERVAL: int = int(RECOMMENDED_WEB_SCAN_INTERVAL)
 # A web supplement that keeps failing is retried ever more slowly, up to this
