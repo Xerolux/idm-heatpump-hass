@@ -290,9 +290,10 @@ Modbus, but the Navigator 10 web interface renders the display's
 integration evaluates that frame every web poll and exposes:
 
 - **Anforderungsgrund (Web)** (`web_demand_reason`): the human-readable demand
-  reason — for example *PV*, *Heizkreis A*, *Zeitprogramm*, *Mehrere
-  Anforderungen*, *Keine Information* or *Aus* — with the raw
-  `operationMode`/`info` values of every contributing widget as attributes.
+  reason, worded like the controller's own display — for example *PV*,
+  *Heizkreis A*, *Zeitprogramm*, *Mehrere Anforderungen*, *Keine Anforderung*
+  or *Aus* — with the raw `operationMode`/`info` values of every contributing
+  widget as attributes.
 - **PV-Anforderungsgrund (Web)** (`web_demand_reason_pv`): binary sensor that
   is `on` while the controller itself reports PV as its demand reason (bit 32),
   in the heating as well as the domestic-hot-water reason table.
