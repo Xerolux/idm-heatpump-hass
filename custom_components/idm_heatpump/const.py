@@ -34,6 +34,7 @@ CONF_DEVICE_HIERARCHY: str = "device_hierarchy"
 CONF_SHORT_CYCLE_MINUTES: str = "short_cycle_minutes"
 CONF_TECHNICIAN_CODES: str = "technician_codes"
 CONF_ENABLE_CASCADE: str = "enable_cascade"
+CONF_SOLAR_THERMAL: str = "solar_thermal"
 CONF_MODBUS_PROXY: str = "modbus_proxy"
 CONF_WEB_PIN: str = "web_pin"
 CONF_WEB_HOST: str = "web_host"
@@ -149,6 +150,7 @@ DEFAULT_HIDE_UNUSED: bool = True
 DEFAULT_DEVICE_HIERARCHY: bool = True
 DEFAULT_SHORT_CYCLE_MINUTES: int = 15
 DEFAULT_ENABLE_CASCADE: bool = False
+DEFAULT_SOLAR_THERMAL: bool = True
 DEFAULT_WEB_ENABLED: bool = True
 DEFAULT_WEB_SCAN_INTERVAL: int = int(RECOMMENDED_WEB_SCAN_INTERVAL)
 # A web supplement that keeps failing is retried ever more slowly, up to this

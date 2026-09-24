@@ -125,6 +125,7 @@ from .const import (
     CONF_SETUP_LEVEL,
     CONF_SHORT_CYCLE_MINUTES,
     CONF_SLAVE_ID,
+    CONF_SOLAR_THERMAL,
     CONF_STORAGE_TEMP_FORWARDING,
     CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
     CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
@@ -191,6 +192,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_SLAVE_ID,
+    DEFAULT_SOLAR_THERMAL,
     DEFAULT_STORAGE_TEMP_FORWARDING,
     DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
     DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
@@ -486,6 +488,7 @@ _GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], 
         (CONF_KNX_RESEND_INTERVAL, CONF_KNX_TOLERANCE),
     ),
     "cascade": (CONF_ENABLE_CASCADE, (), (), ()),
+    "solar_thermal": (CONF_SOLAR_THERMAL, (), (), ()),
     "device_hierarchy": (CONF_DEVICE_HIERARCHY, (), (), ()),
     "technician_codes": (CONF_TECHNICIAN_CODES, (), (), ()),
     "modbus": (
@@ -515,6 +518,7 @@ def _default_options() -> dict[str, Any]:
         CONF_SHORT_CYCLE_MINUTES: DEFAULT_SHORT_CYCLE_MINUTES,
         CONF_TECHNICIAN_CODES: False,
         CONF_ENABLE_CASCADE: DEFAULT_ENABLE_CASCADE,
+        CONF_SOLAR_THERMAL: DEFAULT_SOLAR_THERMAL,
         CONF_WEB_ENABLED: DEFAULT_WEB_ENABLED,
         CONF_WEB_SCAN_INTERVAL: DEFAULT_WEB_SCAN_INTERVAL,
         CONF_ROOM_TEMP_FORWARDING: DEFAULT_ROOM_TEMP_FORWARDING,
@@ -918,6 +922,11 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Required(
                             CONF_ENABLE_CASCADE,
                             default=options.get(CONF_ENABLE_CASCADE, DEFAULT_ENABLE_CASCADE),
+                            description={"advanced": True},
+                        ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_SOLAR_THERMAL,
+                            default=options.get(CONF_SOLAR_THERMAL, DEFAULT_SOLAR_THERMAL),
                             description={"advanced": True},
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(

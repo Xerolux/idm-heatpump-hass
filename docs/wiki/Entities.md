@@ -187,6 +187,12 @@ meaningful.
 | Solar charging temperature | 1854 | °C |
 | Solar WQ reference / pool temp | 1857 | °C |
 
+These entities only exist while the **solar thermal system** option is enabled
+(default). Plants without collectors can switch the option off in the
+integration settings: the solar registers leave the poll and the empty
+*Solaranlage* device group disappears after a reload. Re-enabling it restores
+the entities with their previous IDs.
+
 ### ISC (Intelligent Surface Cooling)
 
 | Entity | Register | Unit |

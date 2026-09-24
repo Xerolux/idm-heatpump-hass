@@ -59,6 +59,7 @@ from custom_components.idm_heatpump.const import (
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
     CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
     CONF_SCAN_INTERVAL,
+    CONF_SOLAR_THERMAL,
     CONF_STORAGE_TEMP_FORWARDING,
     CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
     CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
@@ -2243,6 +2244,26 @@ class TestConfigFlowFullFlow:
 
 
 class TestOptionsFlowFull:
+    async def test_options_store_solar_thermal(self):
+        flow = IdmHeatpumpOptionsFlow()
+        flow.config_entry = MagicMock()
+        flow.config_entry.options = {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 0,
+        }
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 30,
+                CONF_HIDE_UNUSED: False,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_SOLAR_THERMAL: False,
+            }
+        )
+        assert result["type"] == "create_entry"
+        assert result["data"][CONF_SOLAR_THERMAL] is False
+
     async def test_options_change_scan_interval(self):
         flow = IdmHeatpumpOptionsFlow()
         flow.config_entry = MagicMock()

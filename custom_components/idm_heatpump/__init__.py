@@ -88,6 +88,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     CONF_SHORT_CYCLE_MINUTES,
     CONF_SLAVE_ID,
+    CONF_SOLAR_THERMAL,
     CONF_STORAGE_TEMP_FORWARDING,
     CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
     CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
@@ -144,6 +145,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     DEFAULT_SHORT_CYCLE_MINUTES,
     DEFAULT_SLAVE_ID,
+    DEFAULT_SOLAR_THERMAL,
     DEFAULT_STORAGE_TEMP_FORWARDING,
     DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
     DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
@@ -187,6 +189,7 @@ from .model_resolution import (
     plant_shape,
     resolve_model,
     resolved_model_override,
+    without_solar,
 )
 from .operation_analysis import OperationAnalysis
 from .polling_plan import ensure_entity_aware_polling
@@ -775,6 +778,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         model_name = resolution.model_name
         firmware_version = resolution.firmware_version
         detected_model_info = resolution.model_info
+        # The solar-thermal option is the user's statement about the plant and
+        # outranks every detection source, so it is applied to the final
+        # resolution before anything consumes it.
+        if not entry.options.get(CONF_SOLAR_THERMAL, DEFAULT_SOLAR_THERMAL):
+            detected_model_info = without_solar(detected_model_info)
         runtime_web_variant = web_plan.preferred_variant
 
         if resolution.data_updates or resolution.data_removals:
