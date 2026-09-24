@@ -19,7 +19,10 @@ from idm_heatpump import IdmWebHomeDetail
 _LOGGER = logging.getLogger(__name__)
 
 REASON_LABELS: Final[dict[str, str]] = {
-    "no_info": "Keine Information",
+    # The idle widget (operationMode 0) is what the controller's display and
+    # web interface render as "keine Anforderung" — the sensor mirrors that
+    # wording instead of translating the API's "no_info" slug literally.
+    "no_info": "Keine Anforderung",
     "off": "Aus",
     "more_demands": "Mehrere Anforderungen",
     "external_input": "Externer Eingang",

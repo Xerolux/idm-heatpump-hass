@@ -26,7 +26,7 @@ def _detail(payload: dict[str, Any]) -> IdmWebHomeDetail:
 
 def test_label_aggregates_idle_and_off_states() -> None:
     idle = _detail({"homeDetail": {"data": {"10": {"operationMode": 0}}}})
-    assert demand_reason_label(idle) == "Keine Information"
+    assert demand_reason_label(idle) == "Keine Anforderung"
 
     off = _detail({"homeDetail": {"data": {"10": {"operationMode": 8}}}})
     assert demand_reason_label(off) == "Aus"
