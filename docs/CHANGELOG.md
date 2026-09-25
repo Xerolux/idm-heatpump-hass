@@ -13,6 +13,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b12] - 2026-09-25
+
+Twelfth beta of the 0.19.0 line — the documentation site stops mixing
+languages halfway.
+
+Switch the docs to German and the interface used to stay half English:
+the footer links, the skip link, screen-reader labels and the browser-tab
+title kept their English text, and the language button showed the
+language you were *on* instead of the one it switches to. And nothing
+ever explained that the wiki itself is written in English by design —
+only a cryptic chip knew.
+
+### 🐛 Bugfixes
+
+- **German docs mode is now complete** *(website)* — every interface
+  element switches cleanly: footer links, skip link, search placeholder
+  and all screen-reader labels translate, and the browser-tab title
+  reads "… | IDM Heatpump Dokumentation".
+- **The language button shows where it goes** *(website)* — it now
+  displays the language a click switches *to* (DE on the English page,
+  EN in German mode), matching the toggle on the landing page.
+- **Switching to German explains itself** *(website)* — a short toast and
+  a clearer content chip ("Inhalt: Englisch") state upfront that the
+  interface is German while the technical wiki content stays English.
+
 ## [0.19.0-b11] - 2026-09-25
 
 Eleventh beta of the 0.19.0 line — the AI advisor stops pretending: it now

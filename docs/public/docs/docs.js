@@ -21,8 +21,10 @@ const article = document.querySelector('[data-article]');
 const navigation = document.querySelector('[data-navigation]');
 const breadcrumbs = document.querySelector('[data-breadcrumbs]');
 const toc = document.querySelector('[data-toc]');
+const tocAside = document.querySelector('.docs-toc');
 const pageNavigation = document.querySelector('[data-page-navigation]');
 const editLink = document.querySelector('[data-edit-link]');
+const brandLink = document.querySelector('.docs-brand');
 const sidebar = document.querySelector('[data-sidebar]');
 const overlay = document.querySelector('[data-overlay]');
 const menuButton = document.querySelector('[data-menu]');
@@ -104,8 +106,13 @@ const I18N = {
     footer: 'Mit Sorgfalt für die Home-Assistant- und Wärmepumpen-Community dokumentiert.',
     search: 'Dokumentation durchsuchen …', searchResults: 'Suchergebnisse', noResults: 'Keine passenden Inhalte gefunden.',
     previous: 'Vorherige Seite', next: 'Nächste Seite', copied: 'Code kopiert', loading: 'Dokumentation wird geladen …',
-    error: 'Diese Seite konnte nicht geladen werden.', contentEnglish: 'Technischer Inhalt: EN',
+    error: 'Diese Seite konnte nicht geladen werden.', contentEnglish: 'Inhalt: Englisch',
     enableLight: 'Helles Design aktivieren', enableDark: 'Dunkles Design aktivieren', changeLanguage: 'Sprache wechseln',
+    skip: 'Zum Inhalt springen', homeLink: 'Start', supportLink: 'Hilfe',
+    searchAria: 'Dokumentation durchsuchen', openNav: 'Menü öffnen', closeNav: 'Navigation schließen',
+    breadcrumb: 'Seitenpfad', pageNav: 'Seitennavigation', homeAria: 'IDM Heatpump Startseite',
+    tocAria: 'Auf dieser Seite', titleSuffix: 'IDM Heatpump Dokumentation',
+    germanNote: 'Oberfläche: Deutsch · Inhalte: Englisch',
   },
   en: {
     docs: 'Documentation', edit: 'Edit on GitHub', onThisPage: 'On this page',
@@ -115,6 +122,11 @@ const I18N = {
     previous: 'Previous page', next: 'Next page', copied: 'Code copied', loading: 'Loading documentation …',
     error: 'This page could not be loaded.', contentEnglish: '',
     enableLight: 'Enable light theme', enableDark: 'Enable dark theme', changeLanguage: 'Change language',
+    skip: 'Skip to content', homeLink: 'Home', supportLink: 'Support',
+    searchAria: 'Search documentation', openNav: 'Open navigation', closeNav: 'Close navigation',
+    breadcrumb: 'Breadcrumb', pageNav: 'Page navigation', homeAria: 'IDM Heatpump home page',
+    tocAria: 'On this page', titleSuffix: 'IDM Heatpump Documentation',
+    germanNote: '',
   },
 };
 
@@ -299,7 +311,7 @@ const loadRoute = async () => {
     article.append(fragment);
     article.dataset.renderedSlug = page.slug;
     renderToc(headings);
-    document.title = `${titleFor(page)} | IDM Heatpump Documentation`;
+    document.title = `${titleFor(page)} | ${I18N[language].titleSuffix}`;
     if (anchor) {
       requestAnimationFrame(() => document.getElementById(anchor)?.scrollIntoView());
     } else {
@@ -311,9 +323,13 @@ const loadRoute = async () => {
   }
 };
 
+const updateMenuLabel = () => {
+  menuButton.setAttribute('aria-label', sidebar.classList.contains('is-open') ? I18N[language].closeNav : I18N[language].openNav);
+};
+
 const updateLanguage = () => {
   root.lang = language;
-  languageButton.textContent = language.toUpperCase();
+  languageButton.textContent = language === 'de' ? 'EN' : 'DE';
   languageButton.setAttribute('aria-label', I18N[language].changeLanguage);
   document.querySelectorAll('[data-i18n]').forEach((element) => {
     const value = I18N[language][element.dataset.i18n];
@@ -321,6 +337,15 @@ const updateLanguage = () => {
   });
   searchInput.placeholder = I18N[language].search;
   mobileSearchInput.placeholder = I18N[language].search;
+  searchInput.setAttribute('aria-label', I18N[language].searchAria);
+  mobileSearchInput.setAttribute('aria-label', I18N[language].searchAria);
+  brandLink.setAttribute('aria-label', I18N[language].homeAria);
+  navigation.setAttribute('aria-label', I18N[language].docs);
+  overlay.setAttribute('aria-label', I18N[language].closeNav);
+  breadcrumbs.setAttribute('aria-label', I18N[language].breadcrumb);
+  pageNavigation.setAttribute('aria-label', I18N[language].pageNav);
+  tocAside.setAttribute('aria-label', I18N[language].tocAria);
+  updateMenuLabel();
   updateThemeLabel();
 };
 
@@ -329,12 +354,13 @@ const closeMenu = () => {
   overlay.classList.remove('is-visible');
   menuButton.setAttribute('aria-expanded', 'false');
   document.body.classList.remove('menu-open');
+  updateMenuLabel();
 };
 
-const showToast = (message) => {
+const showToast = (message, duration = 1800) => {
   toast.textContent = message;
   toast.classList.add('is-visible');
-  setTimeout(() => toast.classList.remove('is-visible'), 1800);
+  setTimeout(() => toast.classList.remove('is-visible'), duration);
 };
 
 const indexAllPages = async () => {
@@ -399,6 +425,8 @@ languageButton.addEventListener('click', () => {
   writeStore('localStorage', 'idm-docs-language', language);
   updateLanguage();
   loadRoute();
+  /* Only German hides the article language, so only German gets the note. */
+  if (I18N[language].germanNote) showToast(I18N[language].germanNote, 4000);
 });
 
 menuButton.addEventListener('click', () => {
@@ -407,6 +435,7 @@ menuButton.addEventListener('click', () => {
   overlay.classList.toggle('is-visible', opening);
   menuButton.setAttribute('aria-expanded', String(opening));
   document.body.classList.toggle('menu-open', opening);
+  updateMenuLabel();
 });
 overlay.addEventListener('click', closeMenu);
 
