@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import html
 import json
 import re
 import struct
@@ -12,7 +13,11 @@ from xml.etree import ElementTree
 import pytest
 
 from scripts import build_pages
-from scripts.build_pages import DOCUMENTATION_PAGES, build_site
+from scripts.build_pages import (
+    DOCUMENTATION_PAGES,
+    GERMAN_DOCUMENTATION_PAGES,
+    build_site,
+)
 
 PUBLIC_DIR = Path(__file__).resolve().parents[1] / "docs" / "public"
 SITE_URL = "https://xerolux.github.io/idm-heatpump-hass/"
@@ -171,6 +176,8 @@ def test_documentation_pages_are_static_unique_and_indexable(built_public_dir: P
         assert f"<title>{page_title}</title>" in documentation
         assert f'<meta name="description" content="{page["description"]}" />' in documentation
         assert f'<link rel="canonical" href="{docs_url}" />' in documentation
+        german_url = f"{SITE_URL}docs/de/" if page["slug"] == "home" else f"{SITE_URL}docs/de/{page['slug']}/"
+        assert f'<link rel="alternate" hreflang="de" href="{german_url}" />' in documentation
         assert f'<meta property="og:url" content="{docs_url}" />' in documentation
         assert f'<link rel="icon" href="{SITE_URL}assets/favicon.svg" type="image/svg+xml" />' in documentation
         assert f'data-rendered-slug="{page["slug"]}"' in documentation
@@ -199,6 +206,50 @@ def test_documentation_pages_are_static_unique_and_indexable(built_public_dir: P
     assert len(descriptions) == len(DOCUMENTATION_PAGES)
 
 
+def test_german_documentation_pages_exist_and_are_indexable(built_public_dir: Path) -> None:
+    """Every wiki page has a German mirror that is crawlable on its own URL."""
+    titles: set[str] = set()
+
+    for page in DOCUMENTATION_PAGES:
+        german_markdown = PUBLIC_DIR.parents[1] / "docs" / "wiki" / "de" / page["file"]
+        assert german_markdown.is_file(), f"Missing German wiki page: {page['file']}"
+        german = GERMAN_DOCUMENTATION_PAGES[page["slug"]]
+        relative_path = (
+            Path("docs/de/index.html") if page["slug"] == "home" else Path("docs/de") / page["slug"] / "index.html"
+        )
+        documentation = (built_public_dir / relative_path).read_text(encoding="utf-8")
+        docs_url = f"{SITE_URL}docs/de/" if page["slug"] == "home" else f"{SITE_URL}docs/de/{page['slug']}/"
+        english_url = f"{SITE_URL}docs/" if page["slug"] == "home" else f"{SITE_URL}docs/{page['slug']}/"
+        page_title = f"{german['title']} | IDM Heatpump Dokumentation"
+
+        assert '<html lang="de"' in documentation
+        assert f"<title>{html.escape(page_title)}</title>" in documentation
+        assert f'<meta name="description" content="{html.escape(german["description"], quote=True)}" />' in documentation
+        assert f'<link rel="canonical" href="{docs_url}" />' in documentation
+        assert f'<link rel="alternate" hreflang="en" href="{english_url}" />' in documentation
+        assert f'<meta property="og:url" content="{docs_url}" />' in documentation
+        if page["slug"] == "home":
+            assert 'data-rendered-slug="home"' in documentation
+        graph = _structured_data(documentation)[0]["@graph"]
+        web_page = next(item for item in graph if item["@type"] == "WebPage")
+        assert web_page["inLanguage"] == "de"
+        assert web_page["url"] == docs_url
+        titles.add(page_title)
+
+    assert len(titles) == len(DOCUMENTATION_PAGES)
+
+
+def test_german_content_is_served_to_the_browser(built_public_dir: Path) -> None:
+    """The client fetches the German markdown from content/de/."""
+    script = (PUBLIC_DIR / "docs" / "docs.js").read_text(encoding="utf-8")
+    assert "content/de/" in script
+    for page in DOCUMENTATION_PAGES:
+        german_markdown = PUBLIC_DIR.parents[1] / "docs" / "wiki" / "de" / page["file"]
+        if not german_markdown.is_file():
+            continue
+        assert (built_public_dir / "docs" / "content" / "de" / page["file"]).is_file()
+
+
 def test_crawler_files_reference_all_public_pages(built_public_dir: Path) -> None:
     """Robots and sitemap files should expose the canonical public pages."""
     robots = (built_public_dir / "robots.txt").read_text(encoding="utf-8")
@@ -208,16 +259,23 @@ def test_crawler_files_reference_all_public_pages(built_public_dir: Path) -> Non
     sitemap = ElementTree.parse(built_public_dir / "sitemap.xml")
     namespace = {"sitemap": "http://www.sitemaps.org/schemas/sitemap/0.9"}
     locations = {element.text for element in sitemap.findall("sitemap:url/sitemap:loc", namespace)}
-    expected = {SITE_URL, f"{SITE_URL}en/", f"{SITE_URL}docs/"}
+    expected = {SITE_URL, f"{SITE_URL}en/", f"{SITE_URL}docs/", f"{SITE_URL}docs/de/"}
     expected.update(f"{SITE_URL}docs/{page['slug']}/" for page in DOCUMENTATION_PAGES if page["slug"] != "home")
+    expected.update(
+        f"{SITE_URL}docs/de/{page['slug']}/" for page in DOCUMENTATION_PAGES if page["slug"] != "home"
+    )
     assert locations == expected
 
 
-def test_docs_interface_uses_browser_language_without_a_saved_choice() -> None:
-    """Documentation navigation should default to the visitor's browser language."""
+def test_docs_interface_takes_the_language_from_the_url() -> None:
+    """The docs language must live in the URL, not in a stored preference."""
     script = (PUBLIC_DIR / "docs" / "docs.js").read_text(encoding="utf-8")
-    assert "navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en'" in script
-    assert "readStore('localStorage', 'idm-docs-language') || browserLanguage" in script
+    assert "segments[0] === 'de' ? 'de' : 'en'" in script
+    # No stored language may fight the URL a visitor opened or shared.
+    assert "idm-docs-language" not in script
+    # The toggle navigates to the other language's URL instead of
+    # re-rendering only the interface around English content.
+    assert "location.href = routeHref(currentSlug, anchor, target)" in script
 
 
 def test_docs_interface_uses_real_paths_and_keeps_legacy_hash_compatibility() -> None:
@@ -227,7 +285,7 @@ def test_docs_interface_uses_real_paths_and_keeps_legacy_hash_compatibility() ->
 
     assert script_slugs == [page["slug"] for page in DOCUMENTATION_PAGES]
     assert "const docsBasePath = docsRootUrl.pathname" in script
-    assert "history.replaceState(null, '', routeHref(page.slug, anchor))" in script
+    assert "history.replaceState(null, '', routeHref(page.slug, parsed.anchor))" in script
     assert "window.addEventListener('popstate', loadRoute)" in script
     assert "window.addEventListener('hashchange', loadRoute)" not in script
     stylesheet = (PUBLIC_DIR / "docs" / "docs.css").read_text(encoding="utf-8")

@@ -51,6 +51,9 @@ EXEMPT_PREFIXES = (
     # covered through CHANGELOG_OPEN_SECTIONS below.
     "docs/CHANGELOG.md",
     "docs/wiki/Changelog.md",
+    # The German wiki mirror is localized user documentation: every page under
+    # docs/wiki/de/ is the deliberate German counterpart of docs/wiki/<page>.
+    "docs/wiki/de/",
 )
 
 SKIP_DIRECTORIES = {

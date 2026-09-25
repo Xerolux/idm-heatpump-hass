@@ -81,6 +81,13 @@ PIN_DOCUMENTS = (
     "docs/wiki/Local-Web-Interface.md",
     "docs/wiki/Modbus-Register.md",
     "docs/wiki/Services.md",
+    # German wiki mirror: states the same pins, so the updater rewrites it too.
+    "docs/wiki/de/Home.md",
+    "docs/wiki/de/Stability-and-Release-Readiness.md",
+    "docs/wiki/de/Configuration.md",
+    "docs/wiki/de/Local-Web-Interface.md",
+    "docs/wiki/de/Modbus-Register.md",
+    "docs/wiki/de/Services.md",
     ".github/ISSUE_TEMPLATE/modbus_transport_modernization.md",
 )
 
