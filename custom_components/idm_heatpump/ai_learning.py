@@ -87,6 +87,34 @@ class LearningHistory:
             row[i] += value
         self.prune(after["at"])
 
+    def best_bucket(self, now: float) -> dict[str, Any]:
+        """Report the best-covered bucket, independent of the current mode.
+
+        While the plant idles, ``comparison`` has no current operating point
+        and reads as if nothing had been learned at all. This answers "is
+        learning actually progressing anywhere" with the (mode, outdoor bin)
+        combination that is closest to the baseline threshold. Buckets are
+        keyed per day, so counting keys per combination counts days.
+        """
+        day = int(now // 86400)
+        grouped: dict[tuple[int, int], dict[str, float]] = {}
+        for key, row in self.buckets.items():
+            parts = str(key).split(":")
+            if len(parts) != 3 or int(parts[0]) >= day:
+                continue
+            entry = grouped.setdefault((int(parts[1]), int(parts[2])), {"days": 0.0, "hours": 0.0})
+            entry["days"] += 1
+            entry["hours"] += row[2]
+        if not grouped:
+            return {"mode": None, "outdoor_bin_c": None, "days": 0, "hours": 0.0}
+        (mode, bin_index), entry = max(grouped.items(), key=lambda item: (item[1]["days"], item[1]["hours"]))
+        return {
+            "mode": _MODE_NAMES.get(mode, mode),
+            "outdoor_bin_c": bin_index * 5,
+            "days": int(entry["days"]),
+            "hours": round(entry["hours"] / 3600, 2),
+        }
+
     def comparison(self, sample: dict[str, Any]) -> dict[str, Any]:
         """Compare today's matched bin with prior days, never with itself."""
         result: dict[str, Any] = {
@@ -96,8 +124,11 @@ class LearningHistory:
             "baseline_cop": None,
             "current_cop": None,
             "deviation_percent": None,
+            "status_reason": None,
+            "best_bucket": self.best_bucket(float(sample.get("at") or 0.0)),
         }
         if not finite(sample.get("outdoor_temp")) or sample.get("mode") not in (1, 2, 4):
+            result["status_reason"] = "idle"
             return result
         day = int(sample["at"] // 86400)
         suffix = f":{int(sample['mode'])}:{math.floor(sample['outdoor_temp'] / 5)}"
@@ -111,6 +142,7 @@ class LearningHistory:
         )
         electric = sum(r[0] for r in rows)
         if len(rows) < BASELINE_MIN_DAYS or hours < BASELINE_MIN_HOURS or electric <= 0:
+            result["status_reason"] = "sparse_data"
             return result
         baseline = sum(r[1] for r in rows) / electric
         result.update(status="ready", baseline_cop=round(baseline, 2))

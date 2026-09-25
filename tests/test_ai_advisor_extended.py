@@ -542,3 +542,80 @@ def test_period_distinguishes_requested_window_from_first_observation():
     assert result["start_utc"] != result["first_observation_utc"]
     assert result["first_observation_utc"] == datetime.fromtimestamp(100, UTC).isoformat()
     assert ai.summarize_period([], 0, 200)["first_observation_utc"] is None
+
+
+def test_learning_best_bucket_reports_progress_independent_of_mode():
+    history = LearningHistory()
+    now = 20000 * 86400 + 3600
+    for day in range(1, 3):  # two prior days of DHW in the 10-15 °C bin
+        history.buckets[f"{20000 - day}:4:2"] = [2.0, 6.0, 7200.0, 24]
+    history.buckets[f"{19999}:1:1"] = [1.0, 3.0, 3600.0, 12]  # one day heating
+    history.buckets[f"{20000}:4:2"] = [9.0, 9.0, 9999.0, 99]  # today never counts
+    assert history.best_bucket(now) == {"mode": "dhw", "outdoor_bin_c": 10, "days": 2, "hours": 4.0}
+    assert LearningHistory().best_bucket(now) == {
+        "mode": None,
+        "outdoor_bin_c": None,
+        "days": 0,
+        "hours": 0.0,
+    }
+
+
+def test_comparison_distinguishes_idle_from_sparse_data():
+    history = LearningHistory()
+    now = 20000 * 86400 + 3600
+    history.buckets[f"{19999}:1:1"] = [1.0, 3.0, 3600.0, 12]
+    # Active mode with a thin matching bin: collecting because data is sparse.
+    active = history.comparison(sample(now))
+    assert active["status"] == "collecting" and active["status_reason"] == "sparse_data"
+    assert active["days"] == 1
+    assert active["best_bucket"]["days"] == 1
+    # Idle plant: no current operating point, but progress stays visible.
+    idle = history.comparison(sample(now, mode=None))
+    assert idle["status"] == "collecting" and idle["status_reason"] == "idle"
+    assert idle.get("mode") is None and idle["best_bucket"]["days"] == 1
+
+
+@pytest.mark.parametrize(
+    ("language", "needle"),
+    [
+        ("de", "Fortgeschrittenster Betriebsbereich: 2 Tage und 4,0 Stunden"),
+        ("en", "Most advanced operating bin: 2 days and 4.0 hours"),
+    ],
+)
+def test_fact_report_shows_best_bucket_progress(language, needle):
+    facts = manager().build_facts("daily", time.time())
+    facts["learning"] = {
+        "status": "collecting",
+        "days": 0,
+        "hours": 0.0,
+        "mode": None,
+        "status_reason": "idle",
+        "best_bucket": {"mode": "dhw", "outdoor_bin_c": 10, "days": 2, "hours": 4.0},
+    }
+    text = ai.fact_report(facts, language)
+    assert needle in text
+    idle_needle = "keinem bewerteten Betriebsmodus" if language == "de" else "not running in an evaluated mode"
+    assert idle_needle in text
+
+
+def test_fact_report_idle_line_only_for_idle_reason():
+    facts = manager().build_facts("daily", time.time())
+    facts["learning"] = {
+        "status": "collecting",
+        "days": 1,
+        "hours": 1.0,
+        "mode": 1,
+        "status_reason": "sparse_data",
+        "best_bucket": {"mode": "heating", "outdoor_bin_c": 5, "days": 1, "hours": 1.0},
+    }
+    assert "keinem bewerteten Betriebsmodus" not in ai.fact_report(facts, "de")
+
+
+async def test_disabled_ai_text_is_explained_in_the_facts_report():
+    obj = manager()
+    obj._options[ai.CONF_AI_UNVERIFIED_TEXT] = False
+    result = await obj.async_generate()
+    assert result["quality"]["output_source"] == "facts"
+    assert result["quality"]["fallback_reason"] == "ai_text_disabled"
+    assert "KI-Deutung ist deaktiviert" in result["report"]
+    assert obj.reports["daily"]["provider"] == "facts"

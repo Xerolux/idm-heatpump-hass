@@ -13,6 +13,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b11] - 2026-09-25
+
+Eleventh beta of the 0.19.0 line — the AI advisor stops pretending: it now
+says why there is no model text and shows how far learning has really come.
+
+### 🐛 Bugfixes
+
+- **The facts-only report explains itself** *(AI advisor)* — when the
+  free-AI-text option is off, reports silently degraded to the plain
+  measured-data fallback with no hint why. They now end with
+  a line naming the exact option to enable, and the report metadata
+  carries `fallback_reason: ai_text_disabled` instead of nothing.
+- **Learning status no longer looks stuck** *(AI advisor)* — whenever the
+  heat pump idled, the learning sensor showed `days: 0` / `mode: null`
+  although data had been collected for days. It now distinguishes `idle`
+  from `sparse_data` (`status_reason`), reports the **most advanced
+  operating bin** (`best_bucket_*` attributes, e.g. "2 of 3 days in DHW
+  from 10 °C") in the sensor, the facts and the report text — so sparse
+  September weather across bins reads as progress, not as a defect.
+
 ## [0.19.0-b10] - 2026-09-25
 
 Tenth beta of the 0.19.0 line — and the diagnostics export learns to snitch.

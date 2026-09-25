@@ -454,6 +454,32 @@ def fact_report(facts: dict[str, Any], language: str) -> str:
                 "- at least 3 days and 6 hours are required for a baseline COP",
             )
         )
+    best = learning.get("best_bucket")
+    if isinstance(best, dict) and int(_number(best.get("days")) or 0) > 0:
+        best_days = int(best["days"])
+        best_hours = _number(best.get("hours")) or 0.0
+        best_hours_text = f"{best_hours:.1f}".replace(".", ",") if german else f"{best_hours:.1f}"
+        best_bin = _number(best.get("outdoor_bin_c"))
+        best_bin_text = "-" if best_bin is None else f"{best_bin:.0f}"
+        lines.append(
+            label(
+                f"Fortgeschrittenster Betriebsbereich: {day_word(best_days)} und {best_hours_text} Stunden "
+                f"bei Modus {best.get('mode') or '-'} ab {best_bin_text} °C Außentemperatur "
+                "- mindestens 3 Tage und 6 Stunden sind für einen Vergleichs-COP nötig",
+                f"Most advanced operating bin: {day_word(best_days)} and {best_hours_text} hours "
+                f"in mode {best.get('mode') or '-'} from {best_bin_text} °C outdoor "
+                "- at least 3 days and 6 hours are required for a baseline COP",
+            )
+        )
+    if learning.get("status_reason") == "idle":
+        lines.append(
+            label(
+                "Die Anlage läuft gerade in keinem bewerteten Betriebsmodus – "
+                "Lernwerte entstehen nur im laufenden Betrieb.",
+                "The plant is not running in an evaluated mode right now – "
+                "learning data is only collected while it runs.",
+            )
+        )
     lines.append(
         label(
             "Messlücken werden nicht hochgerechnet. Keine Diagnose und keine Anlagensteuerung.",
@@ -798,7 +824,18 @@ class AiAdvisor:
             provider = self._options.get(CONF_AI_PROVIDER, "ollama")
             if self._options.get(CONF_AI_UNVERIFIED_TEXT) is not True:
                 provider = "facts"
-                report = fact_report(facts, str(self._options.get(CONF_AI_LANGUAGE, "de")))
+                language = str(self._options.get(CONF_AI_LANGUAGE, "de"))
+                report = fact_report(facts, language)
+                # Say why there is no model text and where to change it;
+                # without this the fallback reads like a defect.
+                report += "\n\n" + (
+                    "KI-Deutung ist deaktiviert – in den Integrationsoptionen "
+                    '"Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren" '
+                    "einschalten, um Modelltext zu erhalten."
+                    if language == "de"
+                    else "AI interpretation is disabled – enable the free AI explanations "
+                    "in the integration options to get model text."
+                )
             elif provider == "ollama":
                 report = await async_local_report(
                     str(self._options.get(CONF_AI_URL, "")),
@@ -832,6 +869,9 @@ class AiAdvisor:
                 quality = {
                     "guard_version": 3,
                     "output_source": "facts",
+                    "fallback_reason": (
+                        "ai_text_disabled" if self._options.get(CONF_AI_UNVERIFIED_TEXT) is not True else None
+                    ),
                     "model_text_verified": False,
                     "model_used": False,
                     "partial_coverage": facts["period"]["energy_counter_coverage_percent"] < 90,
