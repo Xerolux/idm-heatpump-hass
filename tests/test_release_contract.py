@@ -448,6 +448,10 @@ def test_release_workflow_uses_curated_changelog_section_by_default() -> None:
     assert 'release_notes = "\\n".join(changelog_lines[start:end]).strip()' in release_workflow
     assert "### ☕ Support the project" in release_workflow
     assert ".../Xerolux" in release_workflow
+    # The star callout is injected below the intro on every release, curated
+    # notes included — before the first section heading.
+    assert "Leave a star on GitHub — costs nothing" in release_workflow
+    assert 'if line.startswith("###")' in release_workflow
     assert "### What changed" not in release_workflow
 
 
