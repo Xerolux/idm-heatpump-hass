@@ -713,7 +713,7 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ),
                         vol.Optional(
                             CONF_AI_TASK_ENTITY,
-                            **({"default": options[CONF_AI_TASK_ENTITY]} if options.get(CONF_AI_TASK_ENTITY) else {}),
+                            **_entity_field_default(str(options.get(CONF_AI_TASK_ENTITY, ""))),
                         ): EntitySelector(EntitySelectorConfig(domain="ai_task")),
                         vol.Required(
                             CONF_AI_CLOUD_CONSENT, default=options.get(CONF_AI_CLOUD_CONSENT, False)
@@ -770,11 +770,7 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ),
                         vol.Optional(
                             CONF_DYNAMIC_PRICE_ENTITY,
-                            **(
-                                {"default": options[CONF_DYNAMIC_PRICE_ENTITY]}
-                                if options.get(CONF_DYNAMIC_PRICE_ENTITY)
-                                else {}
-                            ),
+                            **_entity_field_default(str(options.get(CONF_DYNAMIC_PRICE_ENTITY, ""))),
                         ): EntitySelector(EntitySelectorConfig(domain="sensor")),
                         vol.Required(
                             CONF_ENERGY_CO2_FACTOR,
@@ -832,7 +828,7 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Optional(
                             CONF_WEATHER_ENTITY,
-                            **({"default": options[CONF_WEATHER_ENTITY]} if options.get(CONF_WEATHER_ENTITY) else {}),
+                            **_entity_field_default(str(options.get(CONF_WEATHER_ENTITY, ""))),
                         ): EntitySelector(EntitySelectorConfig(domain="weather")),
                         vol.Required(
                             CONF_WEATHER_PREHEAT_THRESHOLD,
@@ -1384,6 +1380,21 @@ def _room_temp_forwarding_enabled(options: dict[str, Any]) -> bool:
     return bool(options.get(CONF_ROOM_TEMP_FORWARDING, DEFAULT_ROOM_TEMP_FORWARDING))
 
 
+def _entity_field_default(current: str) -> dict[str, str]:
+    """Default kwargs for an optional entity field, omitting empty defaults.
+
+    voluptuous validates a field's default even when the client omits the
+    field, and Home Assistant's EntitySelector rejects ``""`` as an entity
+    ID. A ``default=""`` therefore makes every form with a left-blank entity
+    field unsubmittable on a real Home Assistant instance (the stubbed test
+    suite never sees the validation). Returning no default keeps the blank
+    field out of the validated input; the step handlers already treat a
+    missing key as empty.
+    """
+    current = current.strip()
+    return {"default": current} if current else {}
+
+
 def _build_room_temp_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
     configured_entities = options.get(CONF_ROOM_TEMP_FORWARDING_ENTITIES, {})
     circuits = options.get(CONF_HEATING_CIRCUITS, ["a"])
@@ -1392,7 +1403,7 @@ def _build_room_temp_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
         schema_dict[
             vol.Optional(
                 f"room_temp_forwarding_{circuit}",
-                default=str(configured_entities.get(circuit, "")),
+                **_entity_field_default(str(configured_entities.get(circuit, ""))),
             )
         ] = _ROOM_TEMPERATURE_SELECTOR
     return vol.Schema(schema_dict)
@@ -1416,7 +1427,7 @@ def _build_humidity_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
         {
             vol.Optional(
                 CONF_HUMIDITY_FORWARDING_ENTITY,
-                default=str(options.get(CONF_HUMIDITY_FORWARDING_ENTITY, "")),
+                **_entity_field_default(str(options.get(CONF_HUMIDITY_FORWARDING_ENTITY, ""))),
             ): _HUMIDITY_SELECTOR,
         }
     )
@@ -1442,7 +1453,7 @@ def _build_storage_temp_forwarding_schema(options: dict[str, Any]) -> vol.Schema
         schema_dict[
             vol.Optional(
                 f"storage_temp_forwarding_{key}",
-                default=str(configured_entities.get(key, "")),
+                **_entity_field_default(str(configured_entities.get(key, ""))),
             )
         ] = _STORAGE_TEMPERATURE_SELECTOR
     return vol.Schema(schema_dict)
@@ -1477,7 +1488,7 @@ def _build_external_power_forwarding_schema(options: dict[str, Any]) -> vol.Sche
         schema_dict[
             vol.Optional(
                 f"external_power_forwarding_{key}",
-                default=str(configured_entities.get(key, "")),
+                **_entity_field_default(str(configured_entities.get(key, ""))),
             )
         ] = _EXTERNAL_POWER_SENSOR_SELECTOR
     return vol.Schema(

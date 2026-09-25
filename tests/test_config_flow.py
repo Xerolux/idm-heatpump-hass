@@ -13,9 +13,13 @@ from custom_components.idm_heatpump.config_flow import (
     IdmHeatpumpOptionsFlow,
     InvalidGroupAddressError,
     _build_external_power_forwarding_schema,
+    _build_humidity_forwarding_schema,
     _build_modbus_failed_schema,
     _build_options_schema,
+    _build_room_temp_forwarding_schema,
+    _build_storage_temp_forwarding_schema,
     _build_zones_schema,
+    _entity_field_default,
     _flatten_options_input,
     _has_duplicate_endpoint,
     _IdmOptionsStepsMixin,
@@ -225,6 +229,65 @@ class TestBuildOptionsSchema:
             CONF_WEB_ENABLED: True,
             CONF_MODBUS_TIMEOUT: 8.0,
         }
+
+
+class TestForwardingEntityFieldDefaults:
+    """Unset entity fields must not carry a default.
+
+    voluptuous validates a field's default even when the client omits the
+    field, and Home Assistant's EntitySelector rejects "" as an entity ID.
+    A ``default=""`` therefore makes any forwarding form with a left-blank
+    field unsubmittable on a real Home Assistant instance — the stubbed test
+    suite never runs that validation, so the schema shape is asserted here.
+    """
+
+    def test_entity_field_default_helper(self):
+        assert _entity_field_default("") == {}
+        assert _entity_field_default("  ") == {}
+        assert _entity_field_default("sensor.x") == {"default": "sensor.x"}
+        assert _entity_field_default(" sensor.x ") == {"default": "sensor.x"}
+
+    def test_room_temp_schema_has_no_default_for_unset_circuits(self):
+        schema = _build_room_temp_forwarding_schema({CONF_HEATING_CIRCUITS: ["a", "d"]})
+        markers = {marker.schema: marker for marker in schema.schema}
+        assert markers["room_temp_forwarding_a"].default is vol.UNDEFINED
+        assert markers["room_temp_forwarding_d"].default is vol.UNDEFINED
+
+    def test_room_temp_schema_keeps_default_for_configured_circuit(self):
+        schema = _build_room_temp_forwarding_schema(
+            {
+                CONF_HEATING_CIRCUITS: ["a", "d"],
+                CONF_ROOM_TEMP_FORWARDING_ENTITIES: {"d": "sensor.hall"},
+            }
+        )
+        markers = {marker.schema: marker for marker in schema.schema}
+        assert markers["room_temp_forwarding_a"].default is vol.UNDEFINED
+        assert markers["room_temp_forwarding_d"].default() == "sensor.hall"
+
+    def test_humidity_schema_has_no_default_when_unset(self):
+        markers = {m.schema: m for m in _build_humidity_forwarding_schema({}).schema}
+        assert markers[CONF_HUMIDITY_FORWARDING_ENTITY].default is vol.UNDEFINED
+
+        configured = _build_humidity_forwarding_schema({CONF_HUMIDITY_FORWARDING_ENTITY: "sensor.hum"})
+        markers = {m.schema: m for m in configured.schema}
+        assert markers[CONF_HUMIDITY_FORWARDING_ENTITY].default() == "sensor.hum"
+
+    def test_storage_schema_has_no_default_for_unset_keys(self):
+        markers = {m.schema: m for m in _build_storage_temp_forwarding_schema({}).schema}
+        for key in ("heat_storage", "cold_storage", "dhw_bottom", "dhw_top"):
+            assert markers[f"storage_temp_forwarding_{key}"].default is vol.UNDEFINED
+
+    def test_external_power_schema_has_no_default_for_unset_keys(self):
+        markers = {m.schema: m for m in _build_external_power_forwarding_schema({}).schema}
+        for key in (
+            "pv_surplus",
+            "pv_production",
+            "house_consumption",
+            "battery_discharge",
+            "battery_soc",
+            "electric_heater_power",
+        ):
+            assert markers[f"external_power_forwarding_{key}"].default is vol.UNDEFINED
 
 
 class TestBuildZonesSchema:
@@ -762,6 +825,16 @@ class TestAsyncStepOptions:
         assert result["type"] == "create_entry"
         assert result["options"][CONF_ROOM_TEMP_FORWARDING_ENTITIES] == {
             "a": "sensor.living_room_temperature",
+        }
+
+    async def test_room_temp_forwarding_accepts_subset_of_circuits(self):
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        flow._options = {CONF_HEATING_CIRCUITS: ["a", "d"], CONF_ROOM_TEMP_FORWARDING: True}
+        result = await flow.async_step_room_temp_forwarding({"room_temp_forwarding_d": "sensor.gang_gang_temperatur"})
+        assert result["type"] == "create_entry"
+        assert result["options"][CONF_ROOM_TEMP_FORWARDING_ENTITIES] == {
+            "d": "sensor.gang_gang_temperatur",
         }
 
     async def test_humidity_forwarding_goes_to_sensor_selection_step(self):
