@@ -158,9 +158,12 @@ class IdmAiMetricSensor(IdmCoordinatorEntityBase, SensorEntity):
             return {"enabled": False}
         comparison = self.manager.learning.comparison(capture_sample(self.coordinator, time.time()))
         totals = self.manager.learning.summary(time.time())
+        best = comparison.get("best_bucket")
+        best = best if isinstance(best, dict) else {}
         return {
             "enabled": True,
             "status": comparison.get("status"),
+            "status_reason": comparison.get("status_reason"),
             "days": comparison.get("days"),
             "hours": comparison.get("hours"),
             "required_days": BASELINE_MIN_DAYS,
@@ -170,6 +173,10 @@ class IdmAiMetricSensor(IdmCoordinatorEntityBase, SensorEntity):
             "baseline_cop": comparison.get("baseline_cop"),
             "current_cop": comparison.get("current_cop"),
             "deviation_percent": comparison.get("deviation_percent"),
+            "best_bucket_days": best.get("days"),
+            "best_bucket_mode": best.get("mode"),
+            "best_bucket_outdoor_bin_c": best.get("outdoor_bin_c"),
+            "best_bucket_hours": best.get("hours"),
             "total_days": totals.get("total_days"),
             "total_hours": totals.get("total_hours"),
             "total_buckets": totals.get("buckets"),
