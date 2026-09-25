@@ -224,7 +224,9 @@ def test_german_documentation_pages_exist_and_are_indexable(built_public_dir: Pa
 
         assert '<html lang="de"' in documentation
         assert f"<title>{html.escape(page_title)}</title>" in documentation
-        assert f'<meta name="description" content="{html.escape(german["description"], quote=True)}" />' in documentation
+        assert (
+            f'<meta name="description" content="{html.escape(german["description"], quote=True)}" />' in documentation
+        )
         assert f'<link rel="canonical" href="{docs_url}" />' in documentation
         assert f'<link rel="alternate" hreflang="en" href="{english_url}" />' in documentation
         assert f'<meta property="og:url" content="{docs_url}" />' in documentation
@@ -261,9 +263,7 @@ def test_crawler_files_reference_all_public_pages(built_public_dir: Path) -> Non
     locations = {element.text for element in sitemap.findall("sitemap:url/sitemap:loc", namespace)}
     expected = {SITE_URL, f"{SITE_URL}en/", f"{SITE_URL}docs/", f"{SITE_URL}docs/de/"}
     expected.update(f"{SITE_URL}docs/{page['slug']}/" for page in DOCUMENTATION_PAGES if page["slug"] != "home")
-    expected.update(
-        f"{SITE_URL}docs/de/{page['slug']}/" for page in DOCUMENTATION_PAGES if page["slug"] != "home"
-    )
+    expected.update(f"{SITE_URL}docs/de/{page['slug']}/" for page in DOCUMENTATION_PAGES if page["slug"] != "home")
     assert locations == expected
 
 
