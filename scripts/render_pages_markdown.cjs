@@ -4,10 +4,10 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { marked } = require('../docs/public/docs/vendor/marked.umd.js');
 
-const [, , markdownPath, currentSlug] = process.argv;
+const [, , markdownPath, currentSlug, pageLanguage = 'en'] = process.argv;
 
 if (!markdownPath || !currentSlug) {
-  throw new Error('Usage: node scripts/render_pages_markdown.cjs <markdown-path> <slug>');
+  throw new Error('Usage: node scripts/render_pages_markdown.cjs <markdown-path> <slug> [language]');
 }
 
 const slugify = (value) => value
@@ -76,7 +76,7 @@ marked.use({
     image({ href, title, text }) {
       let source = href;
       if (source.startsWith('../images/')) {
-        source = `${currentSlug === 'home' ? 'images/' : '../images/'}${path.basename(source)}`;
+        source = `${imageRoot}${path.basename(source)}`;
       }
       const titleAttribute = title ? ` title="${escapeAttribute(title)}"` : '';
       return `<img src="${escapeAttribute(source)}" alt="${escapeAttribute(text)}" loading="lazy"${titleAttribute}>`;
@@ -86,8 +86,9 @@ marked.use({
 
 const markdown = fs.readFileSync(markdownPath, 'utf8');
 let html = marked.parse(markdown);
-html = html.replaceAll(
-  'src="../images/',
-  `src="${currentSlug === 'home' ? 'images/' : '../images/'}`,
-);
+/* German pages live one directory deeper: docs/de/<slug>/ instead of docs/<slug>/. */
+const imageRoot = pageLanguage === 'de'
+  ? (currentSlug === 'home' ? '../images/' : '../../images/')
+  : (currentSlug === 'home' ? 'images/' : '../images/');
+html = html.replaceAll('src="../images/', `src="${imageRoot}`);
 process.stdout.write(JSON.stringify({ html, headings }));

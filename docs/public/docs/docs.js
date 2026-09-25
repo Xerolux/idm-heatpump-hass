@@ -112,7 +112,6 @@ const I18N = {
     searchAria: 'Dokumentation durchsuchen', openNav: 'Menü öffnen', closeNav: 'Navigation schließen',
     breadcrumb: 'Seitenpfad', pageNav: 'Seitennavigation', homeAria: 'IDM Heatpump Startseite',
     tocAria: 'Auf dieser Seite', titleSuffix: 'IDM Heatpump Dokumentation',
-    germanNote: 'Oberfläche: Deutsch · Inhalte: Englisch',
   },
   en: {
     docs: 'Documentation', edit: 'Edit on GitHub', onThisPage: 'On this page',
@@ -126,13 +125,17 @@ const I18N = {
     searchAria: 'Search documentation', openNav: 'Open navigation', closeNav: 'Close navigation',
     breadcrumb: 'Breadcrumb', pageNav: 'Page navigation', homeAria: 'IDM Heatpump home page',
     tocAria: 'On this page', titleSuffix: 'IDM Heatpump Documentation',
-    germanNote: '',
   },
 };
 
 const pageCache = new Map();
-const browserLanguage = navigator.language.toLowerCase().startsWith('de') ? 'de' : 'en';
-let language = readStore('localStorage', 'idm-docs-language') || browserLanguage;
+const currentPathLanguage = () => {
+  const route = location.pathname.startsWith(docsBasePath)
+    ? location.pathname.slice(docsBasePath.length)
+    : '';
+  return route.replace(/^\/+|\/+$/g, '').split('/')[0] === 'de' ? 'de' : 'en';
+};
+let language = currentPathLanguage();
 let currentSlug = '';
 let headingObserver;
 
@@ -156,11 +159,13 @@ const parseRoute = () => {
   const route = location.pathname.startsWith(docsBasePath)
     ? location.pathname.slice(docsBasePath.length).replace(/^\/+|\/+$/g, '')
     : '';
-  const [slug = 'home'] = route.split('/');
-  return { slug: pageFor(slug || 'home').slug, anchor: decodeURIComponent(location.hash.slice(1)), legacy: false };
+  const segments = route.split('/');
+  const routeLanguage = segments[0] === 'de' ? 'de' : 'en';
+  const [slug = 'home'] = routeLanguage === 'de' ? segments.slice(1) : segments;
+  return { language: routeLanguage, slug: pageFor(slug || 'home').slug, anchor: decodeURIComponent(location.hash.slice(1)), legacy: false };
 };
 
-const routeHref = (slug, anchor = '') => `${docsBasePath}${slug === 'home' ? '' : `${slug}/`}${anchor ? `#${anchor}` : ''}`;
+const routeHref = (slug, anchor = '', linkLanguage = language) => `${docsBasePath}${linkLanguage === 'de' ? 'de/' : ''}${slug === 'home' ? '' : `${slug}/`}${anchor ? `#${anchor}` : ''}`;
 
 const rewriteInternalHref = (href) => {
   if (!href || /^(https?:|mailto:|tel:)/i.test(href)) return href;
@@ -173,13 +178,26 @@ const rewriteInternalHref = (href) => {
   return href;
 };
 
-const fetchPage = async (page) => {
-  if (pageCache.has(page.slug)) return pageCache.get(page.slug);
-  const response = await fetch(new URL(`content/${page.file}`, docsRootUrl));
+const loadPageRecord = async (page, pageLanguage) => {
+  const contentBase = pageLanguage === 'de' ? 'content/de/' : 'content/';
+  let response = await fetch(new URL(`${contentBase}${page.file}`, docsRootUrl));
+  let fallback = false;
+  if (!response.ok && pageLanguage === 'de') {
+    /* A missing German page falls back to the English content. */
+    response = await fetch(new URL(`content/${page.file}`, docsRootUrl));
+    fallback = true;
+  }
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   const markdown = await response.text();
-  const record = { markdown, text: markdown.replace(/```[\s\S]*?```/g, ' ').replace(/<[^>]+>/g, ' ').replace(/[#>*_`|\[\]()-]/g, ' ').replace(/\s+/g, ' ').trim() };
-  pageCache.set(page.slug, record);
+  const text = markdown.replace(/```[\s\S]*?```/g, ' ').replace(/<[^>]+>/g, ' ').replace(/[#>*_`|\[\]()-]/g, ' ').replace(/\s+/g, ' ').trim();
+  return { markdown, fallback, text };
+};
+
+const fetchPage = async (page, pageLanguage = language) => {
+  const cacheKey = `${pageLanguage}:${page.slug}`;
+  if (pageCache.has(cacheKey)) return pageCache.get(cacheKey);
+  const record = await loadPageRecord(page, pageLanguage);
+  pageCache.set(cacheKey, record);
   return record;
 };
 
@@ -288,16 +306,19 @@ const renderPageNavigation = (page) => {
 };
 
 const loadRoute = async () => {
-  const { slug, anchor, legacy } = parseRoute();
-  const page = pageFor(slug);
-  if (legacy) history.replaceState(null, '', routeHref(page.slug, anchor));
+  const parsed = parseRoute();
+  const page = pageFor(parsed.slug);
+  if (parsed.language && parsed.language !== language) {
+    language = parsed.language;
+    updateLanguage();
+  }
+  if (parsed.legacy) history.replaceState(null, '', routeHref(page.slug, parsed.anchor));
   currentSlug = page.slug;
   renderNavigation();
   renderBreadcrumbs(page);
   renderPageNavigation(page);
-  editLink.href = `https://github.com/Xerolux/idm-heatpump-hass/edit/main/docs/wiki/${page.file}`;
-  contentLanguage.hidden = language === 'en';
-  contentLanguage.textContent = I18N[language].contentEnglish;
+  editLink.href = `https://github.com/Xerolux/idm-heatpump-hass/edit/main/docs/wiki/${language === 'de' ? 'de/' : ''}${page.file}`;
+  contentLanguage.hidden = true;
   if (article.dataset.renderedSlug !== page.slug) {
     article.innerHTML = `<div class="article-loading"><i></i><span>${I18N[language].loading}</span></div>`;
   }
@@ -312,8 +333,10 @@ const loadRoute = async () => {
     article.dataset.renderedSlug = page.slug;
     renderToc(headings);
     document.title = `${titleFor(page)} | ${I18N[language].titleSuffix}`;
-    if (anchor) {
-      requestAnimationFrame(() => document.getElementById(anchor)?.scrollIntoView());
+    contentLanguage.hidden = !record.fallback;
+    contentLanguage.textContent = I18N[language].contentEnglish;
+    if (parsed.anchor) {
+      requestAnimationFrame(() => document.getElementById(parsed.anchor)?.scrollIntoView());
     } else {
       window.scrollTo({ top: 0, behavior: 'auto' });
     }
@@ -421,12 +444,10 @@ themeButton.addEventListener('click', () => {
 });
 
 languageButton.addEventListener('click', () => {
-  language = language === 'de' ? 'en' : 'de';
-  writeStore('localStorage', 'idm-docs-language', language);
-  updateLanguage();
-  loadRoute();
-  /* Only German hides the article language, so only German gets the note. */
-  if (I18N[language].germanNote) showToast(I18N[language].germanNote, 4000);
+  /* Languages live in the URL (/docs/ vs /docs/de/); the button navigates. */
+  const target = language === 'de' ? 'en' : 'de';
+  const anchor = decodeURIComponent(location.hash.slice(1));
+  location.href = routeHref(currentSlug, anchor, target);
 });
 
 menuButton.addEventListener('click', () => {

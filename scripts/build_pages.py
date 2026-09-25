@@ -20,6 +20,7 @@ HACS_PATH = ROOT / "hacs.json"
 
 SITE_URL = "https://xerolux.github.io/idm-heatpump-hass/"
 MARKDOWN_RENDERER = ROOT / "scripts" / "render_pages_markdown.cjs"
+GERMAN_WIKI_DIR = WIKI_DIR / "de"
 
 
 class DocumentationPage(TypedDict):
@@ -38,6 +39,103 @@ DOCUMENTATION_GROUPS = {
     "automation": "Automation",
     "operation": "Operation & maintenance",
     "development": "Development & community",
+}
+
+GERMAN_DOCUMENTATION_GROUPS = {
+    "start": "Erste Schritte",
+    "entities": "Entitäten & Geräte",
+    "automation": "Automation",
+    "operation": "Betrieb & Wartung",
+    "development": "Entwicklung",
+}
+
+# German mirror of the documentation: one entry per DOCUMENTATION_PAGES slug.
+# The German markdown must exist at docs/wiki/de/<file> for the page to build.
+GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
+    "home": {
+        "title": "Übersicht",
+        "description": "Offizielle Dokumentation von IDM Heatpump, der lokalen Modbus-TCP-Integration für IDM-Navigator-Wärmepumpen in Home Assistant.",
+    },
+    "installation-and-setup": {
+        "title": "Installation & Einrichtung",
+        "description": "IDM Heatpump über HACS installieren, Modbus TCP am IDM Navigator aktivieren und mit Home Assistant verbinden.",
+    },
+    "configuration": {
+        "title": "Konfiguration",
+        "description": "Host, Abfrageintervall, Heizkreise, Zonen, Web-Supplement und Verbindungsoptionen der Integration in Home Assistant konfigurieren.",
+    },
+    "entities": {
+        "title": "Alle Entitäten",
+        "description": "Sensoren, Binärsensoren, Zahlen, Auswahlen, Schalter, Klima- und Warmwasser-Entitäten der Integration entdecken.",
+    },
+    "supported-devices": {
+        "title": "Unterstützte Geräte",
+        "description": "Unterstützung für IDM Navigator 2.0, Navigator 10 und Navigator Pro vor der Installation der Integration prüfen.",
+    },
+    "compatibility-matrix": {
+        "title": "Kompatibilitätsmatrix",
+        "description": "Bestätigte und erwartete Kompatibilität über IDM-Modelle, Navigator-Familien und Firmware-Varianten nachschlagen.",
+    },
+    "services": {
+        "title": "Aktionen & Dienste",
+        "description": "Aktionen und Dienste für Systembetriebsarten, Warmwasser-Boost, externe Klimadaten und Diagnose nutzen.",
+    },
+    "examples": {
+        "title": "Beispiel-Automationen",
+        "description": "Praktische Home-Assistant-Automationsbeispiele für Sollwerte, Betriebsarten, Warmwasser und lokales Energiemanagement.",
+    },
+    "knx-bridge": {
+        "title": "KNX-Bridge",
+        "description": "Die experimentelle IDM-KNX-Bridge über die Home-Assistant-KNX-Integration einrichten – ohne separates Weinzierl-BAOS-Gateway.",
+    },
+    "experimental-ai-adviser": {
+        "title": "KI-Anlagenberater (experimentell)",
+        "description": "Optionale schreibgeschützte Ollama-Berichte mit expliziter Aktivierung, lokalen Daten und sichtbaren Abdeckungsgrenzen einrichten.",
+    },
+    "smart-energy-and-comfort": {
+        "title": "Smart Energy & Comfort",
+        "description": "Das optionale iDM-Profil Smart Energy & Comfort für lokale Effizienz, Zyklusanalyse und sichere Warmwasser-Boost-Steuerung wählen.",
+    },
+    "data-update": {
+        "title": "Datenaktualisierung",
+        "description": "Lokale Modbus-TCP-Abfrage, Update-Intervalle, robuste Lesevorgänge und Koordinator-Verhalten verstehen.",
+    },
+    "local-web-interface": {
+        "title": "Lokale Web-Schnittstelle",
+        "description": "Das optionale lokale, schreibgeschützte Navigator-Web-Supplement für zusätzliche Metadaten und Diagnose ohne Cloud nutzen.",
+    },
+    "known-limitations": {
+        "title": "Bekannte Einschränkungen",
+        "description": "Aktuelle Geräte-, Firmware-, Modbus-, KNX- und Home-Assistant-Einschränkungen der Integration nachlesen.",
+    },
+    "troubleshooting": {
+        "title": "Fehlerbehebung",
+        "description": "Verbindungsfehler, nicht verfügbare Entitäten, Modbus-Fehler, Web-PIN-Probleme und Update-Probleme diagnostizieren.",
+    },
+    "modbus-register": {
+        "title": "Modbus-Register",
+        "description": "Die modellbewusste Modbus-Registerkarte des IDM Navigator verstehen: Batches, Funktioncodes, Filterung und Schreibschutz.",
+    },
+    "stability-and-release-readiness": {
+        "title": "Stabilität & Releases",
+        "description": "Die geprüften Test-, Kompatibilitäts- und Release-Nachweise hinter stabilen IDM-Heatpump-Versionen ansehen.",
+    },
+    "navigator-protocol-analysis": {
+        "title": "Navigator-Protokollanalyse",
+        "description": "Bestätigte Erkenntnisse aus statischer Analyse und schreibgeschützter Validierung der lokalen Navigator-Protokolle lesen.",
+    },
+    "community": {
+        "title": "Community & Hilfe",
+        "description": "Den richtigen Support-Kanal für Fragen, reproduzierbare Fehler, Ideen und Kompatibilitätsmeldungen finden.",
+    },
+    "contributing": {
+        "title": "Mitwirken",
+        "description": "Code, Tests, Dokumentation, Übersetzungen und Kompatibilitätsnachweise zu IDM Heatpump beitragen.",
+    },
+    "changelog": {
+        "title": "Änderungsverlauf",
+        "description": "Aktuelle Meilensteine nachverfolgen und die vollständige Versionsgeschichte sowie GitHub-Releases verfolgen.",
+    },
 }
 
 DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
@@ -425,9 +523,11 @@ def _replace_title(document: str, title: str) -> str:
     return updated
 
 
-def _render_markdown(markdown_path: Path, slug: str) -> tuple[str, list[dict[str, object]]]:
+def _render_markdown(
+    markdown_path: Path, slug: str, language: str = "en"
+) -> tuple[str, list[dict[str, object]]]:
     result = subprocess.run(
-        ["node", str(MARKDOWN_RENDERER), str(markdown_path), slug],
+        ["node", str(MARKDOWN_RENDERER), str(markdown_path), slug, language],
         check=True,
         capture_output=True,
         encoding="utf-8",
@@ -436,7 +536,20 @@ def _render_markdown(markdown_path: Path, slug: str) -> tuple[str, list[dict[str
     return str(rendered["html"]), list(rendered["headings"])
 
 
+def _page_title(current_page: DocumentationPage, language: str) -> str:
+    if language == "de":
+        return GERMAN_DOCUMENTATION_PAGES[current_page["slug"]]["title"]
+    return current_page["title"]
+
+
+def _page_description(current_page: DocumentationPage, language: str) -> str:
+    if language == "de":
+        return GERMAN_DOCUMENTATION_PAGES[current_page["slug"]]["description"]
+    return current_page["description"]
+
+
 def _documentation_href(current_slug: str, target_slug: str, anchor: str = "") -> str:
+    """Relative href inside one language tree; both trees share the same shape."""
     if target_slug == "home":
         href = "./" if current_slug == "home" else "../"
     else:
@@ -444,14 +557,15 @@ def _documentation_href(current_slug: str, target_slug: str, anchor: str = "") -
     return f"{href}#{anchor}" if anchor else href
 
 
-def _documentation_navigation(current_page: DocumentationPage) -> str:
+def _documentation_navigation(current_page: DocumentationPage, language: str) -> str:
+    groups = GERMAN_DOCUMENTATION_GROUPS if language == "de" else DOCUMENTATION_GROUPS
     sections: list[str] = []
-    for group, label in DOCUMENTATION_GROUPS.items():
+    for group, label in groups.items():
         links = "".join(
             (
                 f'<a class="nav-item{" is-active" if page["slug"] == current_page["slug"] else ""}" '
                 f'href="{_documentation_href(current_page["slug"], page["slug"])}" '
-                f'data-page="{page["slug"]}"><span>{html.escape(page["title"])}</span></a>'
+                f'data-page="{page["slug"]}"><span>{html.escape(_page_title(page, language))}</span></a>'
             )
             for page in DOCUMENTATION_PAGES
             if page["group"] == group
@@ -462,14 +576,18 @@ def _documentation_navigation(current_page: DocumentationPage) -> str:
     return "".join(sections)
 
 
-def _documentation_breadcrumbs(current_page: DocumentationPage) -> str:
-    site_href = "../" if current_page["slug"] == "home" else "../../"
+def _documentation_breadcrumbs(current_page: DocumentationPage, language: str) -> str:
+    if language == "de":
+        site_href = "../../" if current_page["slug"] == "home" else "../../../"
+    else:
+        site_href = "../" if current_page["slug"] == "home" else "../../"
+    groups = GERMAN_DOCUMENTATION_GROUPS if language == "de" else DOCUMENTATION_GROUPS
     first_in_group = next(page for page in DOCUMENTATION_PAGES if page["group"] == current_page["group"])
     return (
         f'<a href="{site_href}">IDM Heatpump</a><i>›</i>'
         f'<a href="{_documentation_href(current_page["slug"], first_in_group["slug"])}">'
-        f"{html.escape(DOCUMENTATION_GROUPS[current_page['group']])}</a><i>›</i>"
-        f"<span>{html.escape(current_page['title'])}</span>"
+        f"{html.escape(groups[current_page['group']])}</a><i>›</i>"
+        f"<span>{html.escape(_page_title(current_page, language))}</span>"
     )
 
 
@@ -484,26 +602,32 @@ def _documentation_toc(headings: list[dict[str, object]]) -> str:
     )
 
 
-def _documentation_page_navigation(current_page: DocumentationPage) -> str:
+def _documentation_page_navigation(current_page: DocumentationPage, language: str) -> str:
     index = DOCUMENTATION_PAGES.index(current_page)
     previous = DOCUMENTATION_PAGES[index - 1] if index else None
     next_page = DOCUMENTATION_PAGES[index + 1] if index + 1 < len(DOCUMENTATION_PAGES) else None
+    if language == "de":
+        previous_label, next_label = "Vorherige Seite", "Nächste Seite"
+    else:
+        previous_label, next_label = "Previous page", "Next page"
     previous_link = "<span></span>"
     next_link = "<span></span>"
     if previous is not None:
         previous_link = (
             f'<a class="page-nav-link previous" href="{_documentation_href(current_page["slug"], previous["slug"])}">'
-            f"<span>←</span><p><small>Previous page</small><strong>{html.escape(previous['title'])}</strong></p></a>"
+            f"<span>←</span><p><small>{previous_label}</small><strong>{html.escape(_page_title(previous, language))}</strong></p></a>"
         )
     if next_page is not None:
         next_link = (
             f'<a class="page-nav-link next" href="{_documentation_href(current_page["slug"], next_page["slug"])}">'
-            f"<p><small>Next page</small><strong>{html.escape(next_page['title'])}</strong></p><span>→</span></a>"
+            f"<p><small>{next_label}</small><strong>{html.escape(_page_title(next_page, language))}</strong></p><span>→</span></a>"
         )
     return f"{previous_link}{next_link}"
 
 
-def _documentation_structured_data(current_page: DocumentationPage, canonical_url: str) -> str:
+def _documentation_structured_data(
+    current_page: DocumentationPage, canonical_url: str, language: str
+) -> str:
     breadcrumb_items = [
         {
             "@type": "ListItem",
@@ -514,8 +638,8 @@ def _documentation_structured_data(current_page: DocumentationPage, canonical_ur
         {
             "@type": "ListItem",
             "position": 2,
-            "name": "Documentation",
-            "item": f"{SITE_URL}docs/",
+            "name": "Dokumentation" if language == "de" else "Documentation",
+            "item": f"{SITE_URL}docs/" if language == "en" else f"{SITE_URL}docs/de/",
         },
     ]
     if current_page["slug"] != "home":
@@ -523,7 +647,7 @@ def _documentation_structured_data(current_page: DocumentationPage, canonical_ur
             {
                 "@type": "ListItem",
                 "position": 3,
-                "name": current_page["title"],
+                "name": _page_title(current_page, language),
                 "item": canonical_url,
             }
         )
@@ -534,9 +658,9 @@ def _documentation_structured_data(current_page: DocumentationPage, canonical_ur
                 "@type": "WebPage",
                 "@id": f"{canonical_url}#webpage",
                 "url": canonical_url,
-                "name": current_page["title"],
-                "description": current_page["description"],
-                "inLanguage": "en",
+                "name": _page_title(current_page, language),
+                "description": _page_description(current_page, language),
+                "inLanguage": language,
                 "isPartOf": {"@id": f"{SITE_URL}#website"},
                 "breadcrumb": {"@id": f"{canonical_url}#breadcrumb"},
             },
@@ -608,7 +732,14 @@ def _english_homepage(german_homepage: str) -> str:
         'href="assets/': 'href="../assets/',
         'href="styles.css"': 'href="../styles.css"',
         'src="script.js"': 'src="../script.js"',
+        'href="docs/de/': 'href="../docs/',
         'href="docs/': 'href="../docs/',
+        # German anchors on the mapped-back English targets revert to the
+        # English heading slugs (the English pages keep English headings).
+        '../docs/smart-energy-and-comfort/#persistente-energie-statistiken': '../docs/smart-energy-and-comfort/#persistent-energy-statistics',
+        '../docs/smart-energy-and-comfort/#optionale-pv-uberschuss-warmwasser-automation': '../docs/smart-energy-and-comfort/#optional-pv-surplus-dhw-automation',
+        '../docs/smart-energy-and-comfort/#optionaler-idm-health-monitor': '../docs/smart-energy-and-comfort/#optional-idm-health-monitor',
+        '../docs/configuration/#optionen': '../docs/configuration/#options',
         'href="docs/#': 'href="../docs/#',
         'href="en/" hreflang="en" aria-label="English version" data-language-link>EN</a>': 'href="../" hreflang="de" aria-label="German version" data-language-link>DE</a>',
         '"inLanguage": "de"': '"inLanguage": "en"',
@@ -625,19 +756,67 @@ def _english_homepage(german_homepage: str) -> str:
     return page
 
 
-def _build_documentation_page(template: str, current_page: DocumentationPage) -> str:
-    markdown_html, headings = _render_markdown(WIKI_DIR / current_page["file"], current_page["slug"])
-    canonical_url = f"{SITE_URL}docs/" if current_page["slug"] == "home" else f"{SITE_URL}docs/{current_page['slug']}/"
-    page_title = f"{current_page['title']} | IDM Heatpump for Home Assistant"
+def _german_page_available(current_page: DocumentationPage) -> bool:
+    return (GERMAN_WIKI_DIR / current_page["file"]).is_file()
+
+
+def _documentation_canonical_url(slug: str, language: str) -> str:
+    if language == "de":
+        return f"{SITE_URL}docs/de/" if slug == "home" else f"{SITE_URL}docs/de/{slug}/"
+    return f"{SITE_URL}docs/" if slug == "home" else f"{SITE_URL}docs/{slug}/"
+
+
+def _language_alternates(current_page: DocumentationPage, language: str) -> str:
+    """hreflang links between the English and German versions of one page."""
+    if not _german_page_available(current_page):
+        return ""
+    english_url = _documentation_canonical_url(current_page["slug"], "en")
+    german_url = _documentation_canonical_url(current_page["slug"], "de")
+    if language == "de":
+        return (
+            f'    <link rel="alternate" hreflang="en" href="{english_url}" />\n'
+            f'    <link rel="alternate" hreflang="x-default" href="{english_url}" />\n'
+        )
+    return (
+        f'    <link rel="alternate" hreflang="de" href="{german_url}" />\n'
+        f'    <link rel="alternate" hreflang="x-default" href="{english_url}" />\n'
+    )
+
+
+def _build_documentation_page(
+    template: str, current_page: DocumentationPage, language: str = "en"
+) -> str:
+    if language == "de" and not _german_page_available(current_page):
+        raise FileNotFoundError(f"Missing German wiki page: {GERMAN_WIKI_DIR / current_page['file']}")
+    markdown_source = WIKI_DIR / current_page["file"] if language == "en" else GERMAN_WIKI_DIR / current_page["file"]
+    markdown_html, headings = _render_markdown(markdown_source, current_page["slug"], language)
+    canonical_url = _documentation_canonical_url(current_page["slug"], language)
+    site_title_suffix = "IDM Heatpump for Home Assistant" if language == "en" else "IDM Heatpump Dokumentation"
+    page_title = f"{_page_title(current_page, language)} | {site_title_suffix}"
+    description = _page_description(current_page, language)
     page = template
 
-    if current_page["slug"] != "home":
-        page = page.replace('href="docs.css?', 'href="../docs.css?')
-        page = page.replace('src="vendor/', 'src="../vendor/')
-        page = page.replace('src="docs.js?', 'src="../docs.js?')
-        page = page.replace('class="docs-brand" href="../"', 'class="docs-brand" href="../../"')
-        page = page.replace('<div><a href="../">', '<div><a href="../../">')
-        page = page.replace('<a href="./">Dokumentation</a>', '<a href="../">Dokumentation</a>')
+    is_home = current_page["slug"] == "home"
+    if language == "de":
+        # The German tree lives one level deeper: docs/de/ and docs/de/<slug>/.
+        asset_prefix = "../" if is_home else "../../"
+        site_href = "../../" if is_home else "../../../"
+    else:
+        asset_prefix = "" if is_home else "../"
+        site_href = "../" if is_home else "../../"
+    if asset_prefix:
+        page = page.replace('href="docs.css?', f'href="{asset_prefix}docs.css?')
+        page = page.replace('src="vendor/', f'src="{asset_prefix}vendor/')
+        page = page.replace('src="docs.js?', f'src="{asset_prefix}docs.js?')
+    page = page.replace('class="docs-brand" href="../"', f'class="docs-brand" href="{site_href}"')
+    page = page.replace('<div><a href="../">', f'<div><a href="{site_href}">')
+    docs_root_href = "./" if is_home else "../"
+    page = page.replace(
+        '<a href="./" data-i18n="docs">Documentation</a>',
+        f'<a href="{docs_root_href}" data-i18n="docs">Documentation</a>',
+    )
+    if language == "de":
+        page = page.replace('<html lang="en"', '<html lang="de"')
 
     page = _replace_title(page, page_title)
     page = _replace_tag_attribute(
@@ -645,13 +824,13 @@ def _build_documentation_page(template: str, current_page: DocumentationPage) ->
         "name",
         "description",
         "content",
-        html.escape(current_page["description"], quote=True),
+        html.escape(description, quote=True),
     )
     for property_name, value in (
         ("og:title", page_title),
-        ("og:description", current_page["description"]),
+        ("og:description", description),
         ("og:url", canonical_url),
-        ("og:image:alt", f"{current_page['title']} – IDM Heatpump documentation"),
+        ("og:image:alt", f"{_page_title(current_page, language)} – IDM Heatpump documentation"),
     ):
         page = _replace_tag_attribute(
             page,
@@ -662,7 +841,7 @@ def _build_documentation_page(template: str, current_page: DocumentationPage) ->
         )
     for name, value in (
         ("twitter:title", page_title),
-        ("twitter:description", current_page["description"]),
+        ("twitter:description", description),
     ):
         page = _replace_tag_attribute(
             page,
@@ -672,10 +851,12 @@ def _build_documentation_page(template: str, current_page: DocumentationPage) ->
             html.escape(value, quote=True),
         )
     page = _replace_tag_attribute(page, "rel", "canonical", "href", canonical_url)
-    page = _replace_element_text(page, "data-navigation", _documentation_navigation(current_page))
-    page = _replace_element_text(page, "data-breadcrumbs", _documentation_breadcrumbs(current_page))
+    page = _replace_element_text(page, "data-navigation", _documentation_navigation(current_page, language))
+    page = _replace_element_text(page, "data-breadcrumbs", _documentation_breadcrumbs(current_page, language))
     page = _replace_element_text(page, "data-toc", _documentation_toc(headings))
-    page = _replace_element_text(page, "data-page-navigation", _documentation_page_navigation(current_page))
+    page = _replace_element_text(
+        page, "data-page-navigation", _documentation_page_navigation(current_page, language)
+    )
     page = _replace_element_text(page, "data-article", markdown_html)
     page = page.replace("data-article>", f'data-article data-rendered-slug="{current_page["slug"]}">', 1)
     page = _replace_tag_attribute(
@@ -683,15 +864,26 @@ def _build_documentation_page(template: str, current_page: DocumentationPage) ->
         "data-edit-link",
         None,
         "href",
-        f"https://github.com/Xerolux/idm-heatpump-hass/edit/main/docs/wiki/{current_page['file']}",
+        f"https://github.com/Xerolux/idm-heatpump-hass/edit/main/docs/wiki/"
+        f"{'de/' if language == 'de' else ''}{current_page['file']}",
     )
-    structured_data = _documentation_structured_data(current_page, canonical_url)
-    return page.replace("</head>", f"    {structured_data}\n  </head>", 1)
+    structured_data = _documentation_structured_data(current_page, canonical_url, language)
+    page = page.replace("</head>", f"    {_language_alternates(current_page, language)}    {structured_data}\n  </head>", 1)
+    return page
 
 
 def _write_sitemap(output: Path) -> None:
     urls = [SITE_URL, f"{SITE_URL}en/", f"{SITE_URL}docs/"]
-    urls.extend(f"{SITE_URL}docs/{page['slug']}/" for page in DOCUMENTATION_PAGES if page["slug"] != "home")
+    for page in DOCUMENTATION_PAGES:
+        if page["slug"] == "home":
+            continue
+        urls.append(f"{SITE_URL}docs/{page['slug']}/")
+    urls.append(f"{SITE_URL}docs/de/")
+    urls.extend(
+        f"{SITE_URL}docs/de/{page['slug']}/"
+        for page in DOCUMENTATION_PAGES
+        if page["slug"] != "home" and _german_page_available(page)
+    )
     entries = "\n".join(f"  <url>\n    <loc>{html.escape(url)}</loc>\n  </url>" for url in urls)
     sitemap = f'<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{entries}\n</urlset>\n'
     (output / "sitemap.xml").write_text(sitemap, encoding="utf-8")
@@ -711,6 +903,11 @@ def build_site(output: Path) -> None:
     content_output.mkdir(parents=True, exist_ok=True)
     for markdown in WIKI_DIR.glob("*.md"):
         shutil.copy2(markdown, content_output / markdown.name)
+    if GERMAN_WIKI_DIR.is_dir():
+        german_content_output = content_output / "de"
+        german_content_output.mkdir(parents=True, exist_ok=True)
+        for markdown in GERMAN_WIKI_DIR.glob("*.md"):
+            shutil.copy2(markdown, german_content_output / markdown.name)
     shutil.copytree(IMAGES_DIR, output / "docs" / "images", dirs_exist_ok=True)
 
     homepage_path = output / "index.html"
@@ -719,13 +916,20 @@ def build_site(output: Path) -> None:
 
     docs_template = (PUBLIC_DIR / "docs" / "index.html").read_text(encoding="utf-8")
     for documentation_page in DOCUMENTATION_PAGES:
-        if documentation_page["slug"] == "home":
-            docs_path = output / "docs" / "index.html"
-        else:
-            docs_path = output / "docs" / documentation_page["slug"] / "index.html"
+        for language in ("en", "de"):
+            if language == "de" and not _german_page_available(documentation_page):
+                continue
+            if documentation_page["slug"] == "home":
+                docs_path = output / "docs" / "index.html" if language == "en" else output / "docs" / "de" / "index.html"
+            elif language == "en":
+                docs_path = output / "docs" / documentation_page["slug"] / "index.html"
+            else:
+                docs_path = output / "docs" / "de" / documentation_page["slug"] / "index.html"
             docs_path.parent.mkdir(parents=True, exist_ok=True)
-        docs_page = _inject_metadata(_build_documentation_page(docs_template, documentation_page))
-        docs_path.write_text(docs_page, encoding="utf-8")
+            docs_page = _inject_metadata(
+                _build_documentation_page(docs_template, documentation_page, language)
+            )
+            docs_path.write_text(docs_page, encoding="utf-8")
 
     english_path = output / "en" / "index.html"
     english_path.parent.mkdir(parents=True, exist_ok=True)

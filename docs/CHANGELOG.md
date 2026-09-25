@@ -13,6 +13,36 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b13] - 2026-09-25
+
+Thirteenth beta of the 0.19.0 line — the documentation becomes bilingual:
+the wiki itself now exists in German, not just the interface around it.
+
+Every one of the 21 documentation pages has a German mirror under
+`docs/wiki/de/`, published at `/docs/de/<slug>/` with its own canonical URL,
+German titles, descriptions, navigation and breadcrumbs. The EN/DE toggle no
+longer re-skins English content — it navigates between the two language
+versions, so a German page is a real, shareable, crawlable URL. English pages
+carry `hreflang` alternates to their German counterparts and back.
+
+### ✨ New
+
+- **German wiki mirror (all 21 pages)** *(website)* — `docs/wiki/de/` holds one
+  German file per English wiki page: same filename, same anchors rules,
+  register tables keep IDM's German register names. The pages build publishes
+  `/docs/de/…`, the client fetches the German markdown, and the German landing
+  page links straight into the German docs.
+- **Language lives in the URL** *(website)* — the EN/DE button navigates
+  between `/docs/<slug>/` and `/docs/de/<slug>/` instead of toggling the
+  interface language in place. A missing German page falls back to English
+  content and shows the "Inhalt: Englisch" chip.
+
+### 💼 Maintenance
+
+- `AGENTS.md` now codifies the mirror contract: English pages stay the source
+  of truth, German mirrors travel in the same pull request. The language
+  checker exempts `docs/wiki/de/`; the GitHub wiki stays English.
+
 ## [0.19.0-b12] - 2026-09-25
 
 Twelfth beta of the 0.19.0 line — the documentation site stops mixing

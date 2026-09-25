@@ -167,6 +167,7 @@ This file provides guidance for AI assistants working on this codebase.
 │
 ├── docs/                             # Documentation & wiki
 │   ├── wiki/                         # Complete wiki (installation, config, entities...)
+│   │   └── de/                       # German wiki mirror (one file per English page)
 │   ├── CONTRIBUTING.md
 │   ├── CHANGELOG.md
 │   ├── SECURITY.md
@@ -346,8 +347,13 @@ ruff check custom_components tests
   request descriptions, code comments and docstrings are English — including
   when the conversation that produced them was in German.
 - German belongs only where it is a product feature: `README_de.md`, the Home
-  Assistant `de` translations, and the "Description (DE)" column of the
-  generated register reference, which carries IDM's own terminology.
+  Assistant `de` translations, the "Description (DE)" column of the generated
+  register reference, and the German wiki mirror `docs/wiki/de/` — one German
+  file per English wiki page, same filename, published at `/docs/de/<slug>/` on
+  the website. English stays the source of truth: change the English page
+  first, then carry the change into the German mirror in the same pull request.
+  `scripts/check_documentation_language.py` exempts `docs/wiki/de/`; the
+  GitHub wiki (synced from `docs/wiki/*.md`) stays English-only.
 - The changelog is kept version-to-version. When a stable version is cut,
   fold its prerelease sections into the single stable section with
   `python scripts/consolidate_changelog.py --version <x.y.z>`, then rework the
@@ -531,4 +537,5 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Any entity | `icons.json`, translations, `test_platforms.py` |
 | `manifest.json` (version) | `CHANGELOG.md`, release notes |
 | `AGENTS.md` (this file) | Keep it in sync with the actual codebase |
-| Any Markdown document | Keep it English (`scripts/check_documentation_language.py`) |
+| Any wiki page (`docs/wiki/<Page>.md`) | Update the German mirror `docs/wiki/de/<Page>.md` in the same pull request; `tests/test_pages_seo.py` fails when a German page is missing |
+| Any Markdown document | Keep it English (`scripts/check_documentation_language.py`; `docs/wiki/de/` is exempt German) |
