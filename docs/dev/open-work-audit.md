@@ -19,7 +19,7 @@ not been validated on hardware, as finished.
 - Wired-up `IdmModbusConnectionClient` with a backend-neutral Modbus transport
   contract, endpoint validation, conflict detection and privacy-safe diagnostics
   helpers.
-- Direct socket through `modbus-connection==4.12.1` and the separately pinned
+- Direct socket through `modbus-connection==4.12.2` and the separately pinned
   backend level `tmodbus[async-serial]==0.6.2`; the first integration version to
   ship it is `0.11.0-beta.1`.
 - API device logic stays with `idm-heatpump-api[web]==2.4.2`. The API owns its

@@ -18,6 +18,12 @@ All notable changes to this project will be documented in this file.
 Tenth beta of the 0.19.0 line: the diagnostics export tells you exactly
 what the controller answered, register by register.
 
+### Changed
+
+- **Transport pin: `modbus-connection==4.12.2`** (was 4.12.1; upstream
+  patch release published 2026-09-25, release gate requires current
+  pins).
+
 ### Added
 
 - **Per-register read report in the diagnostics export (issue #364).**
