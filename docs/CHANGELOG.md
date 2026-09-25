@@ -13,6 +13,35 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b15] - 2026-09-25
+
+Fifteenth beta of the 0.19.0 line — one fix for the options flow, found
+while configuring GLT forwarding on a live plant: a form with a left-blank
+entity field could not be submitted at all on a real Home Assistant
+instance.
+
+voluptuous validates a field's default even when the client omits the
+field, and Home Assistant's `EntitySelector` rejects `""` as an entity ID.
+Every GLT forwarding form therefore failed with "Entity  is neither a
+valid entity ID nor a valid UUID" as soon as one field was left blank —
+room temperature for a circuit without a sensor, humidity before a sensor
+was chosen, storage or external-power keys without a source. The stubbed
+test suite never runs the selector validation, so only a live instance
+showed it. The three fields that already omitted the default when unset
+(AI task entity, dynamic price entity, weather entity) now share the same
+helper instead of their inline copies.
+
+### 🐛 Bugfixes
+
+- **Forwarding forms accept left-blank entity fields.** Optional entity
+  fields no longer carry `default=""`: an unset field is simply absent
+  from the validated input, and the step handlers keep treating a missing
+  key as empty, so "left blank" keeps its documented meaning of "this
+  circuit or key forwards nothing". A configured value still prefills its
+  field as before. This unblocks configuring room-temperature forwarding
+  for a subset of the heating circuits (for example only HK D) through
+  the UI and the REST options flow.
+
 ## [0.19.0-b14] - 2026-09-25
 
 Fourteenth beta of the 0.19.0 line — the last two findings of issue #364:
