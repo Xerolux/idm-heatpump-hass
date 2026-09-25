@@ -194,6 +194,26 @@ jobs:
               )
               release_notes = "\n".join(changelog_lines[start:end]).strip()
 
+          # The star callout rides right below the intro narrative, before
+          # the first section heading — on every release, curated notes
+          # included. The support footer repeats it at the bottom; the
+          # duplication is deliberate.
+          star_callout = (
+              "> ⭐ **[Leave a star on GitHub — costs nothing]"
+              "(https://github.com/Xerolux/idm-heatpump-hass/stargazers)**"
+          )
+          note_lines = release_notes.splitlines()
+          first_section = next(
+              (
+                  index
+                  for index, line in enumerate(note_lines)
+                  if line.startswith("###")
+              ),
+              len(note_lines),
+          )
+          note_lines[first_section:first_section] = ["", star_callout, ""]
+          release_notes = "\n".join(note_lines).strip()
+
           # Every release carries the support links, curated notes included.
           release_notes += """
 

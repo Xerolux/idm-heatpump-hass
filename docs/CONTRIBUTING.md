@@ -28,7 +28,9 @@ users see in the HACS update dialog. Write them for that reader — not as
 an internal audit log:
 
 - Open with one or two sentences of narrative that say *why the release
-  matters*, not just what it contains.
+  matters*, not just what it contains. The release workflow injects the
+  ⭐ star callout directly below that intro, before the first section
+  heading — never write it into the changelog file yourself.
 - Group entries under emoji headers: `### ✨ New`, `### 🐛 Bugfixes`,
   `### 💼 Maintenance`, `### ❤️ Thanks`.
 - Lead every bullet with a short bold phrase, then explain in one or two
@@ -43,7 +45,9 @@ an internal audit log:
 - The support badges, the ⭐ star line, the slogan (*Keeping heat pumps
   local — one register at a time.*) and the `.../Xerolux` signature
   graphic (`docs/images/signature-xerolux.svg`) are appended by the
-  release workflow — do not duplicate them in the changelog file.
+  release workflow — do not duplicate them in the changelog file. The
+  star callout at the top and the star line at the bottom both appear in
+  every release body on purpose.
 
 ## Coding Style
 
