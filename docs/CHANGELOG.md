@@ -15,34 +15,43 @@ All notable changes to this project will be documented in this file.
 
 ## [0.19.0-b10] - 2026-09-25
 
-Tenth beta of the 0.19.0 line: the diagnostics export tells you exactly
-what the controller answered, register by register.
+Tenth beta of the 0.19.0 line — and the diagnostics export learns to snitch.
 
-### Changed
+Ever wondered what your heat pump *actually* answered when an entity went
+unavailable? *Download diagnostics* now tells you — register by register,
+word for word.
 
-- **Transport pin: `modbus-connection==4.12.2`** (was 4.12.1; upstream
-  patch release published 2026-09-25, release gate requires current
-  pins).
+### ✨ New
 
-### Added
+- **The per-register read report** *(#364)* — the diagnostics export now
+  carries a `register_read_report`: one row per register of your plant with
+  address, type, documented range and a clear verdict — `ok`,
+  `range_rejected`, `unsupported`, `device_error`, `not_polled`, and more.
+  And with `idm-heatpump-api==2.4.2` underneath, every row keeps the
+  evidence: **the last value even when it was rejected**, the raw 16-bit
+  wire words, and *why* it was rejected (`below_min`, `above_max`,
+  `not_in_enum`, …) plus a `batch_unsafe` flag.
 
-- **Per-register read report in the diagnostics export (issue #364).**
-  The config-entry diagnostics now carry a `register_read_report` section:
-  one row per register of the resolved map with address, register type,
-  data type, documented range and a read status (`ok`, `range_rejected`,
-  `unsupported`, `device_error`, `decode_error`, `unused_sentinel`,
-  `write_only`, `no_data`, `not_polled`), plus per-status counters. With
-  the pinned `idm-heatpump-api==2.4.2`, rows also include the last
-  decoded value — kept even when it was rejected as outside the
-  documented range — the raw 16-bit wire words, the rejection reason
-  (`below_min` / `above_max` / `not_in_enum` / `illegal_address` / …) and
-  a `batch_unsafe` flag. A future field report like issue #364 (register
-  documented as UINT16 that actually carries the low word of a 32-bit
-  float, reading a constant 0) is then self-sufficient: value, raw word,
-  reason and documented range are all in the export. With an older API
-  the section degrades to names, addresses, ranges and the status mirror.
-  All fields are structured values; the export's redaction rules are
-  unchanged.
+  In other words: a register your firmware answers with garbage no longer
+  just disappears — the export shows exactly *how* it is broken. A case
+  like #364, where register 2152 reads a constant `0` while its neighbour
+  2153 quietly holds what looks like the other half of a 46.0 °C float,
+  now explains itself. Privacy unchanged: the rows carry numbers and
+  fixed status words, nothing else.
+
+### 💼 Maintenance
+
+- **`idm-heatpump-api==2.4.2`** — the data source for the report above:
+  the library now keeps the last decoded value and raw wire words of
+  every read, even the rejected ones.
+- **`modbus-connection==4.12.2`** — upstream patch release from release
+  day; the release gate insists on current transport pins.
+
+### ❤️ Thanks
+
+- [@device111](https://github.com/device111) — your register map and raw
+  captures taught us more about Rev.0-era Navigator 1.7 firmware than any
+  datasheet did (#364).
 
 ## [0.19.0-b9] - 2026-09-24
 
