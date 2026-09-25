@@ -12,7 +12,7 @@ assignees: ''
       `idm-heatpump-api[web]==2.4.2` and routes raw I/O through
       `ModbusConnectionTransport`.
 - [x] The direct socket uses the exact
-      `modbus-connection==4.12.1` / `tmodbus[async-serial]==0.6.2` pair.
+      `modbus-connection==4.12.2` / `tmodbus[async-serial]==0.6.2` pair.
 - [x] API `2.0.0` owns its exception hierarchy; the integration's injected
       transport path no longer installs pymodbus.
 - [x] Each config entry owns its socket. Capabilities report
@@ -23,7 +23,7 @@ assignees: ''
 - [x] No Optionsflow transport selector, second socket path, or additional
       write path exists.
 
-`4.12.1` is the version of the connection library, not the IDM integration
+`4.12.2` is the version of the connection library, not the IDM integration
 version. The first IDM integration beta shipping this path is
 `0.11.0-beta.1`.
 

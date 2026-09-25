@@ -26,7 +26,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | **Documentation version** | [0.18.0](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.18.0); [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Supported/tested HA baseline** | 2026.8.1 |
 | **Python** | 3.14+ (managed by Home Assistant) |
-| **Connection library** | modbus-connection==4.12.1 |
+| **Connection library** | modbus-connection==4.12.2 |
 | **Socket backend** | tmodbus[async-serial]==0.6.2 |
 | **Device/web library** | idm-heatpump-api[web]==2.4.2 |
 | **License** | MIT |
@@ -133,7 +133,7 @@ privacy and the dashboard.
 - **Runtime version visibility**: Integration, `idm-heatpump-api`, `modbus-connection` and `tmodbus` versions are available in a diagnostic sensor, diagnostics exports, and startup logs
 - **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers tracked and protected
-- **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.12.1` / `tmodbus[async-serial]==0.6.2` pair; `4.12.1` is the connection-library version, not the IDM integration version
+- **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.12.2` / `tmodbus[async-serial]==0.6.2` pair; `4.12.2` is the connection-library version, not the IDM integration version
 - **API boundary**: `idm-heatpump-api[web]==2.4.2` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
 - **Auto-recovery**: API retry/backoff plus reconnect-on-demand in the tmodbus-backed connection
 - **Connection ownership**: Each config entry owns one socket and reports `supports_shared_connection: false`; Home Assistant central cross-entry sharing is not currently available
