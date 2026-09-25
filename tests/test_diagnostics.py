@@ -353,18 +353,10 @@ class TestRegisterReadReport:
         coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
         registers = {
             "outdoor_temp": RegisterDef(1000, DataType.FLOAT, "outdoor_temp", unit="°C"),
-            "hc_a_status": RegisterDef(
-                1502, DataType.UINT16, "hc_a_status", min_val=0, max_val=2
-            ),
-            "room_9_temperature": RegisterDef(
-                1030, DataType.FLOAT, "room_9_temperature", unit="°C"
-            ),
-            "dhw_setpoint": RegisterDef(
-                2152, DataType.UINT16, "dhw_setpoint", min_val=35, max_val=60, unit="°C"
-            ),
-            "error_acknowledge": RegisterDef(
-                1999, DataType.UCHAR, "error_acknowledge", writable=True, write_only=True
-            ),
+            "hc_a_status": RegisterDef(1502, DataType.UINT16, "hc_a_status", min_val=0, max_val=2),
+            "room_9_temperature": RegisterDef(1030, DataType.FLOAT, "room_9_temperature", unit="°C"),
+            "dhw_setpoint": RegisterDef(2152, DataType.UINT16, "dhw_setpoint", min_val=35, max_val=60, unit="°C"),
+            "error_acknowledge": RegisterDef(1999, DataType.UCHAR, "error_acknowledge", writable=True, write_only=True),
             "power_limit_hp": RegisterDef(806, DataType.UINT16, "power_limit_hp"),
             "flaky_energy": RegisterDef(1076, DataType.FLOAT, "flaky_energy", unit="kWh"),
             "hidden_config": RegisterDef(9000, DataType.UINT16, "hidden_config"),
@@ -372,9 +364,7 @@ class TestRegisterReadReport:
         coord.register_map_names = frozenset(registers)
         coord.get_register = registers.get
         # Polled plan: everything except hidden_config.
-        coord.active_registers = tuple(
-            reg for name, reg in registers.items() if name != "hidden_config"
-        )
+        coord.active_registers = tuple(reg for name, reg in registers.items() if name != "hidden_config")
         coord.data = {"outdoor_temp": 10.7, "room_9_temperature": -1.0, "dhw_setpoint": 46}
         coord.unused_registers = {"room_9_temperature"}
         coord.unsupported_registers = {"power_limit_hp"}
@@ -426,10 +416,7 @@ class TestRegisterReadReport:
     async def test_ok_row_has_value_raw_words_and_unit(self, mock_hass, mock_config_entry):
         self._register_fixture(mock_hass, mock_config_entry)
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
-        rows = {
-            row["name"]: row
-            for row in result["data"]["register_read_report"]["registers"]
-        }
+        rows = {row["name"]: row for row in result["data"]["register_read_report"]["registers"]}
         row = rows["outdoor_temp"]
         assert row["address"] == 1000
         assert row["status"] == "ok"
@@ -441,17 +428,12 @@ class TestRegisterReadReport:
         assert "documented_range" not in row
         assert "reason" not in row
 
-    async def test_rejected_value_survives_with_reason_and_range(
-        self, mock_hass, mock_config_entry
-    ):
+    async def test_rejected_value_survives_with_reason_and_range(self, mock_hass, mock_config_entry):
         """The #364 shape: an out-of-range read shows value, raw word, reason
         and the documented range instead of disappearing."""
         self._register_fixture(mock_hass, mock_config_entry)
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
-        rows = {
-            row["name"]: row
-            for row in result["data"]["register_read_report"]["registers"]
-        }
+        rows = {row["name"]: row for row in result["data"]["register_read_report"]["registers"]}
         row = rows["hc_a_status"]
         assert row["address"] == 1502
         assert row["status"] == "range_rejected"
@@ -461,15 +443,10 @@ class TestRegisterReadReport:
         assert row["documented_range"] == [0, 2]
         assert row["reason"] == "above_max"
 
-    async def test_write_only_unsupported_unused_and_batch_unsafe_flags(
-        self, mock_hass, mock_config_entry
-    ):
+    async def test_write_only_unsupported_unused_and_batch_unsafe_flags(self, mock_hass, mock_config_entry):
         self._register_fixture(mock_hass, mock_config_entry)
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
-        rows = {
-            row["name"]: row
-            for row in result["data"]["register_read_report"]["registers"]
-        }
+        rows = {row["name"]: row for row in result["data"]["register_read_report"]["registers"]}
         assert rows["error_acknowledge"]["status"] == "write_only"
         assert "value" not in rows["error_acknowledge"]
         assert rows["power_limit_hp"]["status"] == "unsupported"
@@ -482,10 +459,7 @@ class TestRegisterReadReport:
     async def test_rows_sorted_by_address(self, mock_hass, mock_config_entry):
         self._register_fixture(mock_hass, mock_config_entry)
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
-        addresses = [
-            row["address"]
-            for row in result["data"]["register_read_report"]["registers"]
-        ]
+        addresses = [row["address"] for row in result["data"]["register_read_report"]["registers"]]
         assert addresses == sorted(addresses)
 
     async def test_degrades_without_library_outcomes(self, mock_hass, mock_config_entry):

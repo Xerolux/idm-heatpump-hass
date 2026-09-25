@@ -193,9 +193,7 @@ def _register_read_report(coordinator: Any) -> dict[str, Any]:
     data = getattr(coordinator, "data", None) or {}
     unused = set(getattr(coordinator, "unused_registers", None) or ())
     unsupported = set(getattr(coordinator, "unsupported_registers", None) or ())
-    active_names = {
-        reg.name for reg in (getattr(coordinator, "active_registers", None) or ())
-    }
+    active_names = {reg.name for reg in (getattr(coordinator, "active_registers", None) or ())}
 
     client = getattr(coordinator, "client", None)
     outcomes: dict[str, dict[str, Any]] = {}
