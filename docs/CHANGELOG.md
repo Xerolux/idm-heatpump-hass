@@ -13,6 +13,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b10] - 2026-09-25
+
+Tenth beta of the 0.19.0 line: the diagnostics export tells you exactly
+what the controller answered, register by register.
+
+### Added
+
+- **Per-register read report in the diagnostics export (issue #364).**
+  The config-entry diagnostics now carry a `register_read_report` section:
+  one row per register of the resolved map with address, register type,
+  data type, documented range and a read status (`ok`, `range_rejected`,
+  `unsupported`, `device_error`, `decode_error`, `unused_sentinel`,
+  `write_only`, `no_data`, `not_polled`), plus per-status counters. With
+  the pinned `idm-heatpump-api==2.4.2`, rows also include the last
+  decoded value — kept even when it was rejected as outside the
+  documented range — the raw 16-bit wire words, the rejection reason
+  (`below_min` / `above_max` / `not_in_enum` / `illegal_address` / …) and
+  a `batch_unsafe` flag. A future field report like issue #364 (register
+  documented as UINT16 that actually carries the low word of a 32-bit
+  float, reading a constant 0) is then self-sufficient: value, raw word,
+  reason and documented range are all in the export. With an older API
+  the section degrades to names, addresses, ranges and the status mirror.
+  All fields are structured values; the export's redaction rules are
+  unchanged.
+
 ## [0.19.0-b9] - 2026-09-24
 
 Ninth beta of the 0.19.0 line: garbage readings from pre-2016 Navigator

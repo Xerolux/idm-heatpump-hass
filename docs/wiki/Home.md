@@ -28,7 +28,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 | **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection==4.12.1 |
 | **Socket backend** | tmodbus[async-serial]==0.6.2 |
-| **Device/web library** | idm-heatpump-api[web]==2.4.1 |
+| **Device/web library** | idm-heatpump-api[web]==2.4.2 |
 | **License** | MIT |
 | **Languages** | DE, EN |
 | **Entities** | Model- and configuration-dependent sensors, binary sensors, numbers, selects, switches, climate, water heater, and buttons |
@@ -134,7 +134,7 @@ privacy and the dashboard.
 - **Data types**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: Sensitive registers tracked and protected
 - **Transport boundary**: Raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection==4.12.1` / `tmodbus[async-serial]==0.6.2` pair; `4.12.1` is the connection-library version, not the IDM integration version
-- **API boundary**: `idm-heatpump-api[web]==2.4.1` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
+- **API boundary**: `idm-heatpump-api[web]==2.4.2` provides batching, decoding and write safety. The API owns its own exception hierarchy; the integration uses the tmodbus-backed socket without a pymodbus dependency
 - **Auto-recovery**: API retry/backoff plus reconnect-on-demand in the tmodbus-backed connection
 - **Connection ownership**: Each config entry owns one socket and reports `supports_shared_connection: false`; Home Assistant central cross-entry sharing is not currently available
 - **Validation status**: Automated checks and read-only Navigator 10 observations are available; they do not replace candidate-specific clean-install, long-duration and broader model validation. See [Stability & Release Readiness](Stability-and-Release-Readiness).

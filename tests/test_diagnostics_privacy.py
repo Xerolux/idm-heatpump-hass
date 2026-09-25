@@ -52,6 +52,7 @@ REQUIRED_DATA_KEYS = (
     "web_supplement",
     "unused_registers",
     "unsupported_registers",
+    "register_read_report",
 )
 REQUIRED_COMMUNICATION_KEYS = (
     "last_poll_success",
