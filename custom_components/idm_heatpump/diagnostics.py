@@ -169,6 +169,126 @@ def _controller_stats_cross_reference(coordinator: Any) -> dict[str, Any]:
     return rows
 
 
+def _register_read_report(coordinator: Any) -> dict[str, Any]:
+    """Per-register read report: what the controller answered, register by register.
+
+    Every register of the resolved map gets one row with its address, type,
+    documented range and a read status. Values come from the library's
+    per-register read outcomes when available (idm-heatpump-api >= 2.4.2) —
+    those keep the last decoded value and raw wire words even for reads that
+    were rejected as outside the documented range, which is the evidence a
+    maintainer needs to spot firmware quirks like a register documented as
+    UINT16 that actually carries half of a 32-bit float (issue #364). With an
+    older API the report degrades to names, addresses, ranges and the
+    coordinator-side status mirror.
+
+    All fields are structured values (numbers, fixed enum strings) — there is
+    no free-text surface for private data.
+    """
+    map_names = getattr(coordinator, "register_map_names", None) or frozenset()
+    if not map_names:
+        # Web-only entries have an empty register map; nothing to report.
+        return {"total": 0, "outcomes_available": False, "by_status": {}, "registers": []}
+
+    data = getattr(coordinator, "data", None) or {}
+    unused = set(getattr(coordinator, "unused_registers", None) or ())
+    unsupported = set(getattr(coordinator, "unsupported_registers", None) or ())
+    active_names = {
+        reg.name for reg in (getattr(coordinator, "active_registers", None) or ())
+    }
+
+    client = getattr(coordinator, "client", None)
+    outcomes: dict[str, dict[str, Any]] = {}
+    outcomes_getter = getattr(client, "get_register_outcomes", None)
+    if callable(outcomes_getter):
+        raw_outcomes = outcomes_getter()
+        if isinstance(raw_outcomes, dict):
+            outcomes = raw_outcomes
+    batch_unsafe: set[str] = set()
+    batch_getter = getattr(client, "get_batch_unsafe_registers", None)
+    if callable(batch_getter):
+        try:
+            batch_unsafe = set(batch_getter())
+        except Exception:  # pragma: no cover - defensive, mirrors client guards
+            batch_unsafe = set()
+
+    get_register = getattr(coordinator, "get_register", None)
+
+    def _row(name: str) -> dict[str, Any]:
+        reg = get_register(name) if callable(get_register) else None
+        raw_outcome = outcomes.get(name)
+        outcome: dict[str, Any] = raw_outcome if isinstance(raw_outcome, dict) else {}
+        outcome_status = outcome.get("status")
+        value = outcome.get("value", data.get(name))
+        reason = outcome.get("reason")
+
+        if getattr(reg, "write_only", False):
+            status = "write_only"
+        elif name in unsupported or outcome_status == "unsupported":
+            status = "unsupported"
+        elif outcome_status == "suspect":
+            status = "range_rejected"
+        elif outcome_status == "device_error":
+            status = "device_error"
+        elif outcome_status == "decode_error":
+            status = "decode_error"
+        elif name in data:
+            status = "unused_sentinel" if name in unused else "ok"
+        elif name in active_names:
+            # Polled, but the poll returned nothing usable for it.
+            status = "no_data"
+        else:
+            status = "not_polled"
+
+        address = getattr(reg, "address", None)
+        if address is None:
+            address = outcome.get("address")
+        row: dict[str, Any] = {"name": name, "address": address, "status": status}
+
+        register_type = getattr(getattr(reg, "register_type", None), "value", None)
+        if register_type is not None:
+            row["type"] = register_type
+        datatype = getattr(getattr(reg, "datatype", None), "value", None)
+        if datatype is not None:
+            row["datatype"] = datatype
+        if value is not None:
+            row["value"] = value
+        raw_words = outcome.get("raw_words")
+        if raw_words:
+            row["raw_words"] = list(raw_words)
+        min_val = getattr(reg, "min_val", None)
+        max_val = getattr(reg, "max_val", None)
+        if min_val is not None or max_val is not None:
+            row["documented_range"] = [min_val, max_val]
+        unit = getattr(reg, "unit", None)
+        if unit:
+            row["unit"] = unit
+        if reason:
+            row["reason"] = reason
+        if name in batch_unsafe:
+            row["batch_unsafe"] = True
+        return row
+
+    def _sort_key(name: str) -> tuple[int, int, str]:
+        reg = get_register(name) if callable(get_register) else None
+        address = getattr(reg, "address", None)
+        if address is None:
+            outcome = outcomes.get(name) or {}
+            address = outcome.get("address")
+        return (address if isinstance(address, int) else 0, 0, name)
+
+    rows = [_row(name) for name in sorted(map_names, key=_sort_key)]
+    by_status: dict[str, int] = {}
+    for row in rows:
+        by_status[row["status"]] = by_status.get(row["status"], 0) + 1
+    return {
+        "total": len(rows),
+        "outcomes_available": bool(outcomes),
+        "by_status": by_status,
+        "registers": rows,
+    }
+
+
 async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigEntry) -> dict[str, Any]:
     coordinator = entry.runtime_data.coordinator
     integration = await async_get_integration(hass, DOMAIN)
@@ -217,6 +337,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "web_supplement": _web_supplement_diagnostics(coordinator),
                 "unused_registers": sorted(coordinator.unused_registers),
                 "unsupported_registers": sorted(coordinator.unsupported_registers),
+                "register_read_report": _register_read_report(coordinator),
                 "sensor_count": len(coordinator.sensor_descriptions),
                 "binary_sensor_count": len(coordinator.binary_sensor_descriptions),
                 "number_count": len(coordinator.number_descriptions),

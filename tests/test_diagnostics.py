@@ -338,3 +338,180 @@ class TestControllerStatsCrossReference:
             assert set(row.keys()) == {"syscount_key", "internal_stats_id", "knx_object", "label"}
             assert 27198.71 not in row.values()
             assert 7.56 not in row.values()
+
+
+class TestRegisterReadReport:
+    """The diagnostics export emits one row per register of the resolved map:
+    address, type, documented range, read status and — via the library's
+    read outcomes — the last value even when it was rejected, plus the raw
+    wire words. This is what makes a field report self-sufficient (issue #364:
+    a UINT16 register that actually carries half of a 32-bit float)."""
+
+    def _register_fixture(self, mock_hass, mock_config_entry):
+        from idm_heatpump import DataType, RegisterDef
+
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        registers = {
+            "outdoor_temp": RegisterDef(1000, DataType.FLOAT, "outdoor_temp", unit="°C"),
+            "hc_a_status": RegisterDef(
+                1502, DataType.UINT16, "hc_a_status", min_val=0, max_val=2
+            ),
+            "room_9_temperature": RegisterDef(
+                1030, DataType.FLOAT, "room_9_temperature", unit="°C"
+            ),
+            "dhw_setpoint": RegisterDef(
+                2152, DataType.UINT16, "dhw_setpoint", min_val=35, max_val=60, unit="°C"
+            ),
+            "error_acknowledge": RegisterDef(
+                1999, DataType.UCHAR, "error_acknowledge", writable=True, write_only=True
+            ),
+            "power_limit_hp": RegisterDef(806, DataType.UINT16, "power_limit_hp"),
+            "flaky_energy": RegisterDef(1076, DataType.FLOAT, "flaky_energy", unit="kWh"),
+            "hidden_config": RegisterDef(9000, DataType.UINT16, "hidden_config"),
+        }
+        coord.register_map_names = frozenset(registers)
+        coord.get_register = registers.get
+        # Polled plan: everything except hidden_config.
+        coord.active_registers = tuple(
+            reg for name, reg in registers.items() if name != "hidden_config"
+        )
+        coord.data = {"outdoor_temp": 10.7, "room_9_temperature": -1.0, "dhw_setpoint": 46}
+        coord.unused_registers = {"room_9_temperature"}
+        coord.unsupported_registers = {"power_limit_hp"}
+
+        client = MagicMock()
+        client.get_register_outcomes.return_value = {
+            "outdoor_temp": {
+                "address": 1000,
+                "status": "ok",
+                "value": 10.7,
+                "raw_words": (0, 16968),
+                "reason": None,
+            },
+            "hc_a_status": {
+                "address": 1502,
+                "status": "suspect",
+                "value": 47358,
+                "raw_words": (47358,),
+                "reason": "above_max",
+            },
+            "dhw_setpoint": {
+                "address": 2152,
+                "status": "ok",
+                "value": 46,
+                "raw_words": (46,),
+                "reason": None,
+            },
+        }
+        client.get_batch_unsafe_registers.return_value = ("dhw_setpoint",)
+        coord.client = client
+        return coord
+
+    async def test_section_present_with_status_counts(self, mock_hass, mock_config_entry):
+        self._register_fixture(mock_hass, mock_config_entry)
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        report = result["data"]["register_read_report"]
+        assert report["total"] == 8
+        assert report["outcomes_available"] is True
+        assert report["by_status"] == {
+            "ok": 2,
+            "unused_sentinel": 1,
+            "range_rejected": 1,
+            "unsupported": 1,
+            "write_only": 1,
+            "no_data": 1,
+            "not_polled": 1,
+        }
+
+    async def test_ok_row_has_value_raw_words_and_unit(self, mock_hass, mock_config_entry):
+        self._register_fixture(mock_hass, mock_config_entry)
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        rows = {
+            row["name"]: row
+            for row in result["data"]["register_read_report"]["registers"]
+        }
+        row = rows["outdoor_temp"]
+        assert row["address"] == 1000
+        assert row["status"] == "ok"
+        assert row["datatype"] == "FLOAT"
+        assert row["value"] == 10.7
+        assert row["raw_words"] == [0, 16968]
+        assert row["unit"] == "°C"
+        # No range declared -> no range field; nothing rejected -> no reason.
+        assert "documented_range" not in row
+        assert "reason" not in row
+
+    async def test_rejected_value_survives_with_reason_and_range(
+        self, mock_hass, mock_config_entry
+    ):
+        """The #364 shape: an out-of-range read shows value, raw word, reason
+        and the documented range instead of disappearing."""
+        self._register_fixture(mock_hass, mock_config_entry)
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        rows = {
+            row["name"]: row
+            for row in result["data"]["register_read_report"]["registers"]
+        }
+        row = rows["hc_a_status"]
+        assert row["address"] == 1502
+        assert row["status"] == "range_rejected"
+        assert row["datatype"] == "UINT16"
+        assert row["value"] == 47358
+        assert row["raw_words"] == [47358]
+        assert row["documented_range"] == [0, 2]
+        assert row["reason"] == "above_max"
+
+    async def test_write_only_unsupported_unused_and_batch_unsafe_flags(
+        self, mock_hass, mock_config_entry
+    ):
+        self._register_fixture(mock_hass, mock_config_entry)
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        rows = {
+            row["name"]: row
+            for row in result["data"]["register_read_report"]["registers"]
+        }
+        assert rows["error_acknowledge"]["status"] == "write_only"
+        assert "value" not in rows["error_acknowledge"]
+        assert rows["power_limit_hp"]["status"] == "unsupported"
+        assert rows["room_9_temperature"]["status"] == "unused_sentinel"
+        assert rows["room_9_temperature"]["value"] == -1.0
+        assert rows["dhw_setpoint"]["status"] == "ok"
+        assert rows["dhw_setpoint"]["batch_unsafe"] is True
+        assert "batch_unsafe" not in rows["outdoor_temp"]
+
+    async def test_rows_sorted_by_address(self, mock_hass, mock_config_entry):
+        self._register_fixture(mock_hass, mock_config_entry)
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        addresses = [
+            row["address"]
+            for row in result["data"]["register_read_report"]["registers"]
+        ]
+        assert addresses == sorted(addresses)
+
+    async def test_degrades_without_library_outcomes(self, mock_hass, mock_config_entry):
+        """With an older idm-heatpump-api the report still works, without
+        values for rejected reads or raw words."""
+        coord = self._register_fixture(mock_hass, mock_config_entry)
+        coord.client = object()  # no get_register_outcomes / get_batch_unsafe_registers
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        report = result["data"]["register_read_report"]
+        assert report["outcomes_available"] is False
+        rows = {row["name"]: row for row in report["registers"]}
+        # The rejected register degrades to no_data; healthy data survives.
+        assert rows["hc_a_status"]["status"] == "no_data"
+        assert rows["outdoor_temp"]["value"] == 10.7
+        assert "raw_words" not in rows["outdoor_temp"]
+        assert rows["dhw_setpoint"]["status"] == "ok"
+
+    async def test_empty_map_yields_empty_report(self, mock_hass, mock_config_entry):
+        """Web-only entries have no register map — the section stays present
+        and empty instead of crashing."""
+        coord = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coord.register_map_names = frozenset()
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+        assert result["data"]["register_read_report"] == {
+            "total": 0,
+            "outcomes_available": False,
+            "by_status": {},
+            "registers": [],
+        }
