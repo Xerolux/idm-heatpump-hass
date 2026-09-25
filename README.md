@@ -23,14 +23,17 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/sponsors/xerolux"><img src="https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue" alt="GitHub Sponsors"></a>
-  <a href="https://ko-fi.com/xerolux"><img src="https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge" alt="Ko-fi"></a>
-  <a href="https://www.buymeacoffee.com/xerolux"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge" alt="Buy Me A Coffee"></a>
-  <a href="https://paypal.me/xerolux"><img src="https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge" alt="PayPal"></a>
-  <a href="https://ts.la/sebastian564489"><img src="https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge" alt="Tesla referral"></a>
+  <a href="https://github.com/Xerolux/idm-heatpump-hass/stargazers"><img src="https://img.shields.io/github/stars/Xerolux/idm-heatpump-hass?style=for-the-badge&logo=github&logoColor=white&label=Leave%20a%20star&color=f7b52c" alt="Leave a star"></a>
+  <a href="https://github.com/sponsors/xerolux"><img src="https://img.shields.io/badge/Sponsor%20on%20GitHub-ea4aaa?logo=githubsponsors&logoColor=white&style=for-the-badge" alt="Sponsor on GitHub"></a>
+  <a href="https://ko-fi.com/xerolux"><img src="https://img.shields.io/badge/Tip%20on-Ko--fi-ff5e5b?logo=ko-fi&logoColor=white&style=for-the-badge" alt="Tip on Ko-fi"></a>
+  <a href="https://www.buymeacoffee.com/xerolux"><img src="https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-ffdd00?logo=buy-me-a-coffee&logoColor=black&style=for-the-badge" alt="Buy Me A Coffee"></a>
+  <a href="https://paypal.me/xerolux"><img src="https://img.shields.io/badge/PayPal-xerolux-0070ba?logo=paypal&logoColor=white&style=for-the-badge" alt="PayPal"></a>
+  <a href="https://ts.la/sebastian564489"><img src="https://img.shields.io/badge/Tesla-Referral-cc0000?logo=tesla&logoColor=white&style=for-the-badge" alt="Tesla referral"></a>
 </p>
 
 > [!TIP]
+> ⭐️ If this integration helps you, **[leave a star on GitHub](https://github.com/Xerolux/idm-heatpump-hass/stargazers)** — costs nothing, means a lot.
+>
 > New here? Start with the **[Installation & Setup guide][wiki-install]** or explore the **[searchable documentation][wiki]**.
 
 ## Experimental AI plant adviser (read-only)
@@ -290,13 +293,17 @@ Home Assistant
 
 ## 💝 Support
 
-This integration is developed in my spare time:
+This integration keeps your heat pump **100 % local** — no cloud, no telemetry, just Modbus and spare time. If it keeps your home warm, consider keeping its developer caffeinated:
 
-[![GitHub Sponsor](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
-[![PayPal](https://img.shields.io/badge/PayPal-xerolux-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
-[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-red?logo=tesla&style=for-the-badge)](https://ts.la/sebastian564489)
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor%20on%20GitHub-ea4aaa?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/xerolux)
+[![Tip on Ko-fi](https://img.shields.io/badge/Tip%20on-Ko--fi-ff5e5b?logo=ko-fi&logoColor=white&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-ffdd00?logo=buy-me-a-coffee&logoColor=black&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-0070ba?logo=paypal&logoColor=white&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-cc0000?logo=tesla&logoColor=white&style=for-the-badge)](https://ts.la/sebastian564489)
+
+*Keeping heat pumps local — one register at a time.*
+
+<a href="https://github.com/Xerolux"><img src="https://raw.githubusercontent.com/Xerolux/idm-heatpump-hass/main/docs/images/signature-xerolux.svg" alt=".../Xerolux" height="40"></a>
 
 - ⭐ Star this repository on GitHub
 - 🐛 [Report bugs][issues]

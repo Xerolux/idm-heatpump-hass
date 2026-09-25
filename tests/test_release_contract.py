@@ -446,7 +446,8 @@ def test_release_workflow_uses_curated_changelog_section_by_default() -> None:
     assert 'heading = f"## [{version}]"' in release_workflow
     assert 'changelog_lines[index].startswith("## [")' in release_workflow
     assert 'release_notes = "\\n".join(changelog_lines[start:end]).strip()' in release_workflow
-    assert "### Support" in release_workflow
+    assert "### ☕ Support the project" in release_workflow
+    assert ".../Xerolux" in release_workflow
     assert "### What changed" not in release_workflow
 
 

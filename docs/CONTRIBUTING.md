@@ -40,7 +40,9 @@ an internal audit log:
 - Section headings inside a version stay `###` so the `## [version]`
   heading keeps its hierarchy; never rename the `## [version] - date`
   headings, the release workflow matches them exactly.
-- The support footer and the `.../Basti` signature are appended by the
+- The support badges, the ⭐ star line, the slogan (*Keeping heat pumps
+  local — one register at a time.*) and the `.../Xerolux` signature
+  graphic (`docs/images/signature-xerolux.svg`) are appended by the
   release workflow — do not duplicate them in the changelog file.
 
 ## Coding Style

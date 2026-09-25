@@ -3,11 +3,11 @@
 > **Dieses Projekt macht dir das Leben mit deiner IDM Wärmepumpe leichter – und das komplett kostenlos!**
 > Falls es dir gefällt und du die Entwicklung unterstützen möchtest, freue ich mich riesig über eine kleine Aufmerksamkeit. Kein Muss – aber mega motivierend! 😊☕
 
-[![GitHub Sponsors](https://img.shields.io/github/sponsors/xerolux?logo=github&style=for-the-badge&color=blue)](https://github.com/sponsors/xerolux)
-[![Ko-Fi](https://img.shields.io/badge/Ko--fi-xerolux-blue?logo=ko-fi&style=for-the-badge)](https://ko-fi.com/xerolux)
-[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Spendier%20mir%20einen%20Kaffee!-yellow?logo=buy-me-a-coffee&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
-[![PayPal](https://img.shields.io/badge/PayPal-Danke%20f%C3%BCr%20deine%20Unterst%C3%BCtzung!-blue?logo=paypal&style=for-the-badge)](https://paypal.me/xerolux)
-[Tesla Referral](https://ts.la/sebastian564489)
+[![Sponsor on GitHub](https://img.shields.io/badge/Sponsor%20on%20GitHub-ea4aaa?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/xerolux)
+[![Tip on Ko-fi](https://img.shields.io/badge/Tip%20on-Ko--fi-ff5e5b?logo=ko-fi&logoColor=white&style=for-the-badge)](https://ko-fi.com/xerolux)
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-ffdd00?logo=buy-me-a-coffee&logoColor=black&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+[![PayPal](https://img.shields.io/badge/PayPal-xerolux-0070ba?logo=paypal&logoColor=white&style=for-the-badge)](https://paypal.me/xerolux)
+[![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-cc0000?logo=tesla&logoColor=white&style=for-the-badge)](https://ts.la/sebastian564489)
 
 ---
 

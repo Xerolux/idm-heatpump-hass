@@ -197,17 +197,21 @@ jobs:
           # Every release carries the support links, curated notes included.
           release_notes += """
 
-          ### Support
+          ### ☕ Support the project
 
-          This integration is built in my spare time. If it helps you, I would be glad about support:
+          This integration keeps your heat pump **100 % local** — no cloud, no telemetry, just Modbus and spare time. If it keeps your home warm, consider keeping its developer caffeinated:
 
-          - [GitHub Sponsors](https://github.com/sponsors/xerolux)
-          - [Ko-Fi](https://ko-fi.com/xerolux)
-          - [Buy Me A Coffee](https://www.buymeacoffee.com/xerolux)
-          - [PayPal](https://paypal.me/xerolux)
-          - [Tesla Referral](https://ts.la/sebastian564489)
+          [![Sponsor on GitHub](https://img.shields.io/badge/Sponsor%20on%20GitHub-ea4aaa?logo=githubsponsors&logoColor=white&style=for-the-badge)](https://github.com/sponsors/xerolux)
+          [![Tip on Ko-fi](https://img.shields.io/badge/Tip%20on-Ko--fi-ff5e5b?logo=ko-fi&logoColor=white&style=for-the-badge)](https://ko-fi.com/xerolux)
+          [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-xerolux-ffdd00?logo=buy-me-a-coffee&logoColor=black&style=for-the-badge)](https://www.buymeacoffee.com/xerolux)
+          [![PayPal](https://img.shields.io/badge/PayPal-xerolux-0070ba?logo=paypal&logoColor=white&style=for-the-badge)](https://paypal.me/xerolux)
+          [![Tesla Referral](https://img.shields.io/badge/Tesla-Referral-cc0000?logo=tesla&logoColor=white&style=for-the-badge)](https://ts.la/sebastian564489)
 
-          .../Basti
+          ⭐ Zero budget? [Leave a star on GitHub](https://github.com/Xerolux/idm-heatpump-hass/stargazers) — costs nothing.
+
+          *Keeping heat pumps local — one register at a time.*
+
+          [![.../Xerolux](https://raw.githubusercontent.com/Xerolux/idm-heatpump-hass/main/docs/images/signature-xerolux.svg)](https://github.com/Xerolux)
           """.rstrip()
 
           if previous_tag:
