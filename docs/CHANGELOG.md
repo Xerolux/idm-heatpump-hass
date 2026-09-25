@@ -13,6 +13,47 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b14] - 2026-09-25
+
+Fourteenth beta of the 0.19.0 line — the last two findings of issue #364:
+the Navigator 1.7 freshwater setpoint becomes a real control, and the
+heating curve steps like the controller does.
+
+The reporter's raw capture proved that firmware N1.MLj stores the
+Frischwasser-Solltemperatur (FW030) as an IEEE-754 float spanning
+addresses 2152–2153, low word first: the pair (0, 0x4238) decodes to
+exactly 46.0 °C — the value on the controller display — and follows the
+setpoint in both directions, whether changed on the controller or written
+over Modbus. The official Rev.1 table types FW030 as a single-byte value,
+so the register was mapped as a word, read the constant low word 0 and was
+correctly rejected by the documented 35–60 range.
+
+### 🐛 Bugfixes
+
+- **Freshwater DHW setpoint (FW030) works on Navigator 1.x (issue #364).**
+  `idm-heatpump-api` 2.4.3 maps the register as `FLOAT` spanning 2152–2153
+  with the documented range unchanged, on the strength of the verified
+  capture. The „Warmwasser Sollwert" number stops being range-rejected at 0
+  and shows and sets the real setpoint again (46.0 °C on the reporting
+  plant). The address after the pair (2154) times out on this firmware and
+  stays unused.
+- **Heating curve steps by 0.05, not 0.1 (issue #364).** The up/down arrows
+  of „Heizkurve HK A" moved 0.1 per click, but the controller grid is 0.05
+  — the reporting plant runs a curve of 0.35, off the old grid entirely.
+  The step now travels the way device knowledge should: the library's
+  `RegisterDef.step` hint (0.05 for all heating curves of both protocol
+  families since API 2.4.3) feeds the number entity directly, and the
+  integration's duplicate step table is gone. A step is a presentation
+  hint — it never rounded writes — so every previously reachable value
+  stays reachable.
+
+### 💼 Maintenance
+
+- `idm-heatpump-api[web]` pinned to **2.4.3** (float FW030 map fix, heating-
+  curve step hint, per-register diagnostics carried over from 2.4.2). The
+  pin updater now also rewrites the German mirror of the release-readiness
+  page, whose sentence structure differs from the English original.
+
 ## [0.19.0-b13] - 2026-09-25
 
 Thirteenth beta of the 0.19.0 line — the documentation becomes bilingual:

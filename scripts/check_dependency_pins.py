@@ -122,6 +122,10 @@ BARE_VERSION_STATEMENTS: dict[str, tuple[tuple[str, str], ...]] = {
     "docs/wiki/Stability-and-Release-Readiness.md": (
         ("idm-heatpump-api", r"(?<=and `idm-heatpump-api` `){version}(?=` form the current)"),
     ),
+    # German mirror of the same sentence; the surrounding words anchor it.
+    "docs/wiki/de/Stability-and-Release-Readiness.md": (
+        ("idm-heatpump-api", r"(?<=und `idm-heatpump-api` `){version}(?=` bilden das aktuelle)"),
+    ),
 }
 
 # Sentences that name a version as *history* -- the release something changed

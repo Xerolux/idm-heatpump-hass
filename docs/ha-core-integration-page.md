@@ -27,7 +27,7 @@ ha_quality_scale: gold
 ha_requirements:
   - modbus-connection==4.12.2
   - tmodbus[async-serial]==0.6.2
-  - idm-heatpump-api[web]==2.4.2
+  - idm-heatpump-api[web]==2.4.3
 ---
 
 > Draft for a possible future Home Assistant Core documentation page. The
