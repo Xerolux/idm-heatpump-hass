@@ -178,13 +178,9 @@ NUMBER_METADATA: dict[str, dict[str, Any]] = {
 
 _HEATING_CIRCUIT_LETTERS: tuple[str, ...] = ("a", "b", "c", "d", "e", "f", "g")
 
-# Die Wertebereiche der Heizkreis-Register liefert `idm-heatpump-api` selbst
-# (`min_val`/`max_val`) und sie werden unverändert übernommen — Gerätewissen
-# gehört in die API. Nur die Schrittweite braucht eine Korrektur: die Heizkurve
-# ist ein FLOAT-Register und bekommt damit die Standardschrittweite 0,5, obwohl
-# ihr Bereich 0,1–3,5 beträgt. Übliche Einstellungen wie 0,3 oder 0,4 liegen
-# dann zwischen zwei Schritten und lassen sich im Eingabefeld nicht setzen.
-NUMBER_METADATA.update({f"hc_{letter}_heating_curve": {"step": 0.1} for letter in _HEATING_CIRCUIT_LETTERS})
+# Heating-curve steps come from the library's `RegisterDef.step` hint
+# (0.05 since idm-heatpump-api 2.4.3); this overlay no longer duplicates
+# them. `native_step_for_register` picks the hint up.
 
 # Diese Register formen die Heizkurve der Anlage. Ein Tippfehler wirkt auf das
 # gesamte Heizverhalten, deshalb entstehen sie — wie `power_limit_hp` — für neue
@@ -215,12 +211,16 @@ def native_step_for_register(
 ) -> float:
     """Return the HA input step for a writable Modbus register.
 
-    Explicit presentation metadata wins. Otherwise integer-backed registers
-    must only expose whole-number inputs, while FLOAT registers retain the
-    integration's established half-step default.
+    Explicit presentation metadata wins. Otherwise the library's
+    `RegisterDef.step` hint applies (device knowledge — for example the
+    heating curves' 0.05 controller grid), and registers without a hint
+    fall back to whole-number inputs for integer datatypes and the
+    integration's established half-step default for FLOAT.
     """
     if metadata is not None and "step" in metadata:
         return float(metadata["step"])
+    if register.step is not None:
+        return float(register.step)
     if register.datatype in _INTEGER_REGISTER_DATA_TYPES:
         return 1.0
     return 0.5

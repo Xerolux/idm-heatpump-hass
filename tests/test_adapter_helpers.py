@@ -249,7 +249,12 @@ def test_float_register_number_defaults_and_overrides_remain_unchanged() -> None
 
 
 def test_heating_curve_step_matches_its_narrow_value_range() -> None:
-    """The heating curve spans 0.1-3.5, so the FLOAT default step of 0.5 is unusable."""
+    """The heating curve spans 0.1-3.5, so the FLOAT default step of 0.5 is unusable.
+
+    The step is device knowledge and comes from the library's
+    `RegisterDef.step` hint (0.05 since idm-heatpump-api 2.4.3, issue #364:
+    the controller UI steps by 0.05 and a real plant runs 0.35).
+    """
     registers = {
         f"hc_{circuit}_heating_curve": RegisterDef(
             address=1429 + index * 2,
@@ -258,6 +263,7 @@ def test_heating_curve_step_matches_its_narrow_value_range() -> None:
             writable=True,
             min_val=0.1,
             max_val=3.5,
+            step=0.05,
         )
         for index, circuit in enumerate("abcdefg")
     }
@@ -266,12 +272,37 @@ def test_heating_curve_step_matches_its_narrow_value_range() -> None:
 
     for circuit in "abcdefg":
         description = descriptions[f"hc_{circuit}_heating_curve"]
-        assert description.native_step == 0.1
-        # Common settings such as 0.3 must be reachable from the minimum.
-        assert round((0.3 - description.native_min_value) / description.native_step, 6).is_integer()
+        assert description.native_step == 0.05
+        # Common settings such as 0.3 and 0.35 must be reachable from the minimum.
+        for value in (0.3, 0.35):
+            assert round((value - description.native_min_value) / description.native_step, 6).is_integer()
         # The range itself stays the library's — device knowledge lives in the API.
         assert description.native_min_value == 0.1
         assert description.native_max_value == 3.5
+
+
+def test_library_step_hint_reaches_the_number_entity() -> None:
+    """A register with a library step hint must expose it without any overlay."""
+    registers = {
+        "hinted": RegisterDef(
+            address=2000,
+            datatype=DataType.FLOAT,
+            name="hinted",
+            writable=True,
+            step=0.25,
+        ),
+        "unhinted": RegisterDef(
+            address=2002,
+            datatype=DataType.FLOAT,
+            name="unhinted",
+            writable=True,
+        ),
+    }
+
+    descriptions = {item["register"].name: item["description"] for item in _numbers_from_register_map(registers)}
+
+    assert descriptions["hinted"].native_step == 0.25
+    assert descriptions["unhinted"].native_step == 0.5
 
 
 def test_heating_curve_parameters_are_expert_entities_for_new_installations() -> None:

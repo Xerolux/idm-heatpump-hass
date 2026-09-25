@@ -124,12 +124,12 @@ Siehe [Fehlerbehebung](Troubleshooting) für kategorisierte Fehler und
 
 Die dauerhaft gespeicherte Protokollauswahl wurde in der Integrationsversion
 `0.8.1-beta.29` eingeführt. Die aktuelle stabile Version ist `0.15.0` und liefert
-die getesteten Web-Clients `idm-heatpump-api[web]==2.4.2`, die zusätzlich
+die getesteten Web-Clients `idm-heatpump-api[web]==2.4.3`, die zusätzlich
 Navigator-10-Heizkreisdaten für die Kreise B–G bereitstellen.
 
 Für den unabhängigen Modbus-Pfad lautet die getestete Manifest-Reihenfolge
 `modbus-connection==4.12.2`, `tmodbus[async-serial]==0.6.2`
-und `idm-heatpump-api[web]==2.4.2`. Die ersten beiden besitzen den direkten
+und `idm-heatpump-api[web]==2.4.3`. Die ersten beiden besitzen den direkten
 Modbus-Socket; seit API 2.0.0 ist pymodbus gar nicht mehr installiert. Das ändert
 weder das Web-Protokoll noch macht es die Version `4.12.2` zu einem
 IDM-Integrations-Release.

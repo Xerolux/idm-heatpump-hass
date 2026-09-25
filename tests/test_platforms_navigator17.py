@@ -113,6 +113,34 @@ def test_1_7_holding_numbers_carry_official_ranges() -> None:
         assert desc.native_max_value == max_val, name
 
 
+def test_1_7_dhw_setpoint_is_the_captured_float_pair() -> None:
+    """FW030 (issue #364): a float spanning 2152-2153, not a single word.
+
+    Firmware N1.MLj answers 2152/2153 with (0, 0x4238) = 46.0 degC; the
+    number entity must carry the library's FLOAT register so reads and
+    writes use the pair, and the half-step FLOAT default while the library
+    provides no explicit step.
+    """
+    reg_map = build_register_map(model_info=_navigator_17_model_info())
+    dhw = reg_map["dhw_setpoint"]
+    assert dhw.address == 2152
+    assert dhw.size == 2
+
+    numbers = _numbers()
+    desc = numbers["dhw_setpoint"]["description"]
+    assert desc.native_step == 0.5
+    assert (desc.native_min_value, desc.native_max_value) == (35.0, 60.0)
+
+
+def test_1_7_heating_curve_step_is_the_controller_grid() -> None:
+    """The curve steps by 0.05 (issue #364: a plant runs 0.35, UI steps 0.05)."""
+    numbers = _numbers()
+    for letter in "abcdefg":
+        desc = numbers[f"hc_{letter}_heating_curve"]["description"]
+        assert desc.native_step == 0.05
+        assert round((0.35 - desc.native_min_value) / desc.native_step, 6).is_integer()
+
+
 def test_1_7_holding_registers_are_not_sensors() -> None:
     """Writable holding parameters expose controls, not sensor duplicates."""
     from custom_components.idm_heatpump.library_adapter import get_library_sensors

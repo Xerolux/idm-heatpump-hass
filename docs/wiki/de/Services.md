@@ -170,7 +170,7 @@ Bibliotheksgrenzen automatisch an, falls eine künftige getestete API-Version
 sie liefert.
 
 Die Tabelle wurde erneut mit dem veröffentlichten Artefakt
-`idm-heatpump-api[web]==2.4.2` abgeglichen. Diese GLT-Leistungsregister
+`idm-heatpump-api[web]==2.4.3` abgeglichen. Diese GLT-Leistungsregister
 deklarieren weiterhin keine universellen Mindest- oder Höchstwerte; die
 Integration behält daher die oben beschriebene Validierung auf endliche
 Zahlen bei.

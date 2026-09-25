@@ -28,7 +28,7 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 | **Python** | 3.14+ (von Home Assistant verwaltet) |
 | **Verbindungsbibliothek** | modbus-connection==4.12.2 |
 | **Socket-Backend** | tmodbus[async-serial]==0.6.2 |
-| **Geräte-/Web-Bibliothek** | idm-heatpump-api[web]==2.4.2 |
+| **Geräte-/Web-Bibliothek** | idm-heatpump-api[web]==2.4.3 |
 | **Lizenz** | MIT |
 | **Sprachen** | DE, EN |
 | **Entitäten** | Modell- und konfigurationsabhängige Sensoren, Binärsensoren, Zahl-Entitäten, Auswahl-Entitäten, Schalter-Entitäten, Klima-Entitäten, Warmwasserbereiter und Buttons |
@@ -134,7 +134,7 @@ Datenschutz und das Dashboard.
 - **Datentypen**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: Sensible Register werden verfolgt und geschützt
 - **Transportgrenze**: Rohe FC03/FC04-Lese- und FC16-Schreibvorgänge nutzen das exakte Paar `modbus-connection==4.12.2` / `tmodbus[async-serial]==0.6.2`; `4.12.2` ist die Version der Verbindungsbibliothek, nicht die Version der IDM-Integration
-- **API-Grenze**: `idm-heatpump-api[web]==2.4.2` stellt Batching, Dekodierung und Schreibsicherheit bereit. Die API besitzt ihre eigene Exception-Hierarchie; die Integration nutzt den tmodbus-gestützten Socket ohne pymodbus-Abhängigkeit
+- **API-Grenze**: `idm-heatpump-api[web]==2.4.3` stellt Batching, Dekodierung und Schreibsicherheit bereit. Die API besitzt ihre eigene Exception-Hierarchie; die Integration nutzt den tmodbus-gestützten Socket ohne pymodbus-Abhängigkeit
 - **Automatische Wiederherstellung**: API-Retry/Backoff plus Wiederverbindung nach Bedarf in der tmodbus-gestützten Verbindung
 - **Verbindungsbesitz**: Jeder Konfigurationseintrag besitzt einen Socket und meldet `supports_shared_connection: false`; das zentrale Teilen über Konfigurationseinträge in Home Assistant gibt es derzeit nicht
 - **Validierungsstatus**: Automatisierte Checks und Nur-Lese-Beobachtungen am Navigator 10 liegen vor; sie ersetzen keine kandidatenspezifische Clean-Install-, Langzeit- und breitere Modellvalidierung. Siehe [Stabilität & Release-Bereitschaft](Stability-and-Release-Readiness).
