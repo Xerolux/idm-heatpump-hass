@@ -268,9 +268,7 @@ class TestForwardingEntityFieldDefaults:
         markers = {m.schema: m for m in _build_humidity_forwarding_schema({}).schema}
         assert markers[CONF_HUMIDITY_FORWARDING_ENTITY].default is vol.UNDEFINED
 
-        configured = _build_humidity_forwarding_schema(
-            {CONF_HUMIDITY_FORWARDING_ENTITY: "sensor.hum"}
-        )
+        configured = _build_humidity_forwarding_schema({CONF_HUMIDITY_FORWARDING_ENTITY: "sensor.hum"})
         markers = {m.schema: m for m in configured.schema}
         assert markers[CONF_HUMIDITY_FORWARDING_ENTITY].default() == "sensor.hum"
 
@@ -833,9 +831,7 @@ class TestAsyncStepOptions:
         flow = _make_flow()
         flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
         flow._options = {CONF_HEATING_CIRCUITS: ["a", "d"], CONF_ROOM_TEMP_FORWARDING: True}
-        result = await flow.async_step_room_temp_forwarding(
-            {"room_temp_forwarding_d": "sensor.gang_gang_temperatur"}
-        )
+        result = await flow.async_step_room_temp_forwarding({"room_temp_forwarding_d": "sensor.gang_gang_temperatur"})
         assert result["type"] == "create_entry"
         assert result["options"][CONF_ROOM_TEMP_FORWARDING_ENTITIES] == {
             "d": "sensor.gang_gang_temperatur",
