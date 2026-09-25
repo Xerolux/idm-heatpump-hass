@@ -207,10 +207,7 @@ def _register_read_report(coordinator: Any) -> dict[str, Any]:
     batch_unsafe: set[str] = set()
     batch_getter = getattr(client, "get_batch_unsafe_registers", None)
     if callable(batch_getter):
-        try:
-            batch_unsafe = set(batch_getter())
-        except Exception:  # pragma: no cover - defensive, mirrors client guards
-            batch_unsafe = set()
+        batch_unsafe = set(batch_getter())
 
     get_register = getattr(coordinator, "get_register", None)
 
