@@ -13,241 +13,76 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.19.0-b16] - 2026-09-26
+## [0.19.0] - 2026-09-26
 
-Sixteenth beta of the 0.19.0 line — the Navigator 1.x family gets the
-warm-water card it was missing: FW030 became a working float setpoint in
-b14, but the water heater entity still required the shared family's
-storage-top sensor, which the 1.x register map does not have.
-
-### ✨ New
-
-- **Water heater entity on Navigator 1.0/1.7.** The setup falls back from
-  `dhw_temp_top` to the 1.x map's tank temperature `dhw_temp`
-  (Trinkwassererwärmertemperatur, address 1012), pairing it with the FW030
-  float setpoint (2152–2153). Owners of the 1.x family now see the same
-  warm-water card as the Navigator 2.0/10/Pro family — current temperature,
-  target and the documented 35–60 °C range — instead of only the bare
-  number entity. The entity-aware poll plan requests `dhw_temp` alongside
-  the setpoint while the card is enabled; the DHW boost machinery stays
-  gated on the shared family's sensors and remains fail-closed on 1.x.
-
-## [0.19.0-b15] - 2026-09-25
-
-Fifteenth beta of the 0.19.0 line — one fix for the options flow, found
-while configuring GLT forwarding on a live plant: a form with a left-blank
-entity field could not be submitted at all on a real Home Assistant
-instance.
-
-voluptuous validates a field's default even when the client omits the
-field, and Home Assistant's `EntitySelector` rejects `""` as an entity ID.
-Every GLT forwarding form therefore failed with "Entity  is neither a
-valid entity ID nor a valid UUID" as soon as one field was left blank —
-room temperature for a circuit without a sensor, humidity before a sensor
-was chosen, storage or external-power keys without a source. The stubbed
-test suite never runs the selector validation, so only a live instance
-showed it. The three fields that already omitted the default when unset
-(AI task entity, dynamic price entity, weather entity) now share the same
-helper instead of their inline copies.
-
-### 🐛 Bugfixes
-
-- **Forwarding forms accept left-blank entity fields.** Optional entity
-  fields no longer carry `default=""`: an unset field is simply absent
-  from the validated input, and the step handlers keep treating a missing
-  key as empty, so "left blank" keeps its documented meaning of "this
-  circuit or key forwards nothing". A configured value still prefills its
-  field as before. This unblocks configuring room-temperature forwarding
-  for a subset of the heating circuits (for example only HK D) through
-  the UI and the REST options flow.
-
-## [0.19.0-b14] - 2026-09-25
-
-Fourteenth beta of the 0.19.0 line — the last two findings of issue #364:
-the Navigator 1.7 freshwater setpoint becomes a real control, and the
-heating curve steps like the controller does.
-
-The reporter's raw capture proved that firmware N1.MLj stores the
-Frischwasser-Solltemperatur (FW030) as an IEEE-754 float spanning
-addresses 2152–2153, low word first: the pair (0, 0x4238) decodes to
-exactly 46.0 °C — the value on the controller display — and follows the
-setpoint in both directions, whether changed on the controller or written
-over Modbus. The official Rev.1 table types FW030 as a single-byte value,
-so the register was mapped as a word, read the constant low word 0 and was
-correctly rejected by the documented 35–60 range.
-
-### 🐛 Bugfixes
-
-- **Freshwater DHW setpoint (FW030) works on Navigator 1.x (issue #364).**
-  `idm-heatpump-api` 2.4.3 maps the register as `FLOAT` spanning 2152–2153
-  with the documented range unchanged, on the strength of the verified
-  capture. The „Warmwasser Sollwert" number stops being range-rejected at 0
-  and shows and sets the real setpoint again (46.0 °C on the reporting
-  plant). The address after the pair (2154) times out on this firmware and
-  stays unused.
-- **Heating curve steps by 0.05, not 0.1 (issue #364).** The up/down arrows
-  of „Heizkurve HK A" moved 0.1 per click, but the controller grid is 0.05
-  — the reporting plant runs a curve of 0.35, off the old grid entirely.
-  The step now travels the way device knowledge should: the library's
-  `RegisterDef.step` hint (0.05 for all heating curves of both protocol
-  families since API 2.4.3) feeds the number entity directly, and the
-  integration's duplicate step table is gone. A step is a presentation
-  hint — it never rounded writes — so every previously reachable value
-  stays reachable.
-
-### 💼 Maintenance
-
-- `idm-heatpump-api[web]` pinned to **2.4.3** (float FW030 map fix, heating-
-  curve step hint, per-register diagnostics carried over from 2.4.2). The
-  pin updater now also rewrites the German mirror of the release-readiness
-  page, whose sentence structure differs from the English original.
-
-## [0.19.0-b13] - 2026-09-25
-
-Thirteenth beta of the 0.19.0 line — the documentation becomes bilingual:
-the wiki itself now exists in German, not just the interface around it.
-
-Every one of the 21 documentation pages has a German mirror under
-`docs/wiki/de/`, published at `/docs/de/<slug>/` with its own canonical URL,
-German titles, descriptions, navigation and breadcrumbs. The EN/DE toggle no
-longer re-skins English content — it navigates between the two language
-versions, so a German page is a real, shareable, crawlable URL. English pages
-carry `hreflang` alternates to their German counterparts and back.
-
-### ✨ New
-
-- **German wiki mirror (all 21 pages)** *(website)* — `docs/wiki/de/` holds one
-  German file per English wiki page: same filename, same anchors rules,
-  register tables keep IDM's German register names. The pages build publishes
-  `/docs/de/…`, the client fetches the German markdown, and the German landing
-  page links straight into the German docs.
-- **Language lives in the URL** *(website)* — the EN/DE button navigates
-  between `/docs/<slug>/` and `/docs/de/<slug>/` instead of toggling the
-  interface language in place. A missing German page falls back to English
-  content and shows the "Inhalt: Englisch" chip.
-
-### 💼 Maintenance
-
-- `AGENTS.md` now codifies the mirror contract: English pages stay the source
-  of truth, German mirrors travel in the same pull request. The language
-  checker exempts `docs/wiki/de/`; the GitHub wiki stays English.
-
-## [0.19.0-b12] - 2026-09-25
-
-Twelfth beta of the 0.19.0 line — the documentation site stops mixing
-languages halfway.
-
-Switch the docs to German and the interface used to stay half English:
-the footer links, the skip link, screen-reader labels and the browser-tab
-title kept their English text, and the language button showed the
-language you were *on* instead of the one it switches to. And nothing
-ever explained that the wiki itself is written in English by design —
-only a cryptic chip knew.
-
-### 🐛 Bugfixes
-
-- **German docs mode is now complete** *(website)* — every interface
-  element switches cleanly: footer links, skip link, search placeholder
-  and all screen-reader labels translate, and the browser-tab title
-  reads "… | IDM Heatpump Dokumentation".
-- **The language button shows where it goes** *(website)* — it now
-  displays the language a click switches *to* (DE on the English page,
-  EN in German mode), matching the toggle on the landing page.
-- **Switching to German explains itself** *(website)* — a short toast and
-  a clearer content chip ("Inhalt: Englisch") state upfront that the
-  interface is German while the technical wiki content stays English.
-
-## [0.19.0-b11] - 2026-09-25
-
-Eleventh beta of the 0.19.0 line — the AI advisor stops pretending: it now
-says why there is no model text and shows how far learning has really come.
-
-### 🐛 Bugfixes
-
-- **The facts-only report explains itself** *(AI advisor)* — when the
-  free-AI-text option is off, reports silently degraded to the plain
-  measured-data fallback with no hint why. They now end with
-  a line naming the exact option to enable, and the report metadata
-  carries `fallback_reason: ai_text_disabled` instead of nothing.
-- **Learning status no longer looks stuck** *(AI advisor)* — whenever the
-  heat pump idled, the learning sensor showed `days: 0` / `mode: null`
-  although data had been collected for days. It now distinguishes `idle`
-  from `sparse_data` (`status_reason`), reports the **most advanced
-  operating bin** (`best_bucket_*` attributes, e.g. "2 of 3 days in DHW
-  from 10 °C") in the sensor, the facts and the report text — so sparse
-  September weather across bins reads as progress, not as a defect.
-
-## [0.19.0-b10] - 2026-09-25
-
-Tenth beta of the 0.19.0 line — and the diagnostics export learns to snitch.
-
-Ever wondered what your heat pump *actually* answered when an entity went
-unavailable? *Download diagnostics* now tells you — register by register,
-word for word.
-
-### ✨ New
-
-- **The per-register read report** *(#364)* — the diagnostics export now
-  carries a `register_read_report`: one row per register of your plant with
-  address, type, documented range and a clear verdict — `ok`,
-  `range_rejected`, `unsupported`, `device_error`, `not_polled`, and more.
-  And with `idm-heatpump-api==2.4.2` underneath, every row keeps the
-  evidence: **the last value even when it was rejected**, the raw 16-bit
-  wire words, and *why* it was rejected (`below_min`, `above_max`,
-  `not_in_enum`, …) plus a `batch_unsafe` flag.
-
-  In other words: a register your firmware answers with garbage no longer
-  just disappears — the export shows exactly *how* it is broken. A case
-  like #364, where register 2152 reads a constant `0` while its neighbour
-  2153 quietly holds what looks like the other half of a 46.0 °C float,
-  now explains itself. Privacy unchanged: the rows carry numbers and
-  fixed status words, nothing else.
-
-### 💼 Maintenance
-
-- **`idm-heatpump-api==2.4.2`** — the data source for the report above:
-  the library now keeps the last decoded value and raw wire words of
-  every read, even the rejected ones.
-- **`modbus-connection==4.12.2`** — upstream patch release from release
-  day; the release gate insists on current transport pins.
-
-### ❤️ Thanks
-
-- [@device111](https://github.com/device111) — your register map and raw
-  captures taught us more about Rev.0-era Navigator 1.7 firmware than any
-  datasheet did (#364).
-
-## [0.19.0-b9] - 2026-09-24
-
-Ninth beta of the 0.19.0 line: garbage readings from pre-2016 Navigator
-1.x firmware can no longer pose as values.
-
-### Fixed
-
-- **Readings beyond the documented register range mark their entity
-  unavailable (issue #364).** Rev.0-era Navigator 1.0/1.7 firmware is
-  documented only up to status address 1501 and answers the newer status
-  words — and possibly the youngest holding registers — with uninitialized
-  memory instead of rejecting the address (observed on firmware N1.MLj:
-  register 1502 returned random words every poll). With
-  `idm-heatpump-api==2.4.1`, which declares the official MIN/MAX columns
-  on every 1.x status word, such readings now take the entity offline
-  instead of surfacing as values — including writable controls, whose
-  readback is equally untrustworthy then (unlike the "unset" sentinel
-  case, which keeps controls available, #172). The raw opt-in (*hide
-  unused registers* off) shows the values unchanged, and registers
-  without a documented range (like the fault number) keep reporting
-  whatever the controller sends.
-
-## [0.19.0-b8] - 2026-09-24
-
-Eighth beta of the 0.19.0 line: the Navigator 1.0/1.7 gets its first
-writable controls — the complete official holding table.
+This release makes the **Navigator 1.0/1.7 a first-class citizen** and gives
+**photovoltaics a face** — plus an honest AI adviser and a fully bilingual
+documentation site. The 1.x family gains the complete official writable
+holding table, a firmware-honest range guard, the per-register diagnostics
+report, a working freshwater setpoint (a capture-verified float pair the
+official table types wrong) and its own warm-water card. PV visibility
+(issue #353) arrives as a derived surplus diagnostic, the Navigator 10's own
+demand reason from its web interface and a dedicated *Photovoltaik* device
+group. Everything stays 100 % local; no entity IDs change. The device-logic
+dependency moves to `idm-heatpump-api[web]==2.4.3`.
 
 ### Added
 
+- **PV surplus operation diagnostic (issue #353):** new derived binary sensor
+  `calculated_pv_surplus_operation` (**PV-Überschussbetrieb**) that is `on`
+  while the heat pump is running on signalled PV surplus. The Navigator
+  controllers expose no internal PV-mode state register (the documented PV
+  block 74–88 is GLT measurement inputs only), so the entity truthfully
+  combines the two halves of the state: surplus is currently signalled to the
+  controller (`pv_surplus` ≥ 0.05 kW **or** SG-Ready `smart_grid_status` =
+  *Supergreen*) **and** the heat pump is drawing electrical power
+  (`power_consumption_hp` ≥ 0.05 kW, falling back to `hp_operating_mode` ≠
+  *Off* on installations without the Nav 10 power measurement). The entity is
+  only created when at least one source per half exists on the detected
+  installation, exposes thresholds and active sources as attributes, and joins
+  the Analytics subdevice when device hierarchy is enabled. All candidate
+  source registers stay polled while the entity is enabled, even when their
+  own entities are disabled. Installations where the surplus is measured
+  behind the heat pump feeder see `pv_surplus` collapse toward zero while
+  charging; there the SG-Ready source keeps the diagnostic meaningful.
+- **Device-reported demand reason from the Navigator 10 web interface
+  (issue #353):** with the web supplement active on a Navigator 10, every web
+  poll now also evaluates the WebSocket `home/detail` frame that feeds the
+  controller's "Anforderungsgrund" display. Two new read-only entities:
+  **Anforderungsgrund (Web)** (`web_demand_reason`) — the human-readable demand
+  reason (*PV*, *Heizkreis A–G*, *Zeitprogramm*, *Frostschutz*, *Externer
+  Eingang/Bus*, *ISC*, *ION*, *Mehrere Anforderungen*, *Keine Information*,
+  *Aus*, …) with the raw `operationMode`/`info` widget values as attributes —
+  and **PV-Anforderungsgrund (Web)** (`web_demand_reason_pv`) — a binary sensor
+  that is `on` while the controller itself reports PV as its demand reason
+  (bit 32 of the info bitmask, present in the heating and the domestic-hot-water
+  reason table). The decode reproduces the web UI's priority order bit for bit.
+  The read is strictly optional: any failure keeps the previous state and never
+  breaks the web supplement. Navigator 2.0 (PHP-based web interface) keeps the
+  derived Modbus entity as its only PV indicator.
+- **PV subdevice group (issue #353):** with the device hierarchy enabled, the
+  new *Photovoltaik* child device groups the PV GLT registers (`pv_surplus`,
+  `pv_production`, `pv_target_value`), the SG-Ready signal `smart_grid_status`,
+  the derived `calculated_pv_surplus_operation` diagnostic and the Navigator 10
+  web entities `web_demand_reason` / `web_demand_reason_pv`. Without the
+  hierarchy everything stays on the main device as before.
+- **Solar thermal opt-out.** Plants without collectors no longer have to keep
+  a dead *Solaranlage* device group: the new option *Read a solar thermal
+  system* / *Solaranlage auslesen* (default on, in the expert options form and
+  the guided flow) is the user's statement about the plant and outranks every
+  detection source. Switched off, the solar registers leave the descriptions,
+  the register map and the poll; the subdevice is no longer expected and is
+  detached, and the stale-entity cleanup removes leftover solar entities on
+  the next reload. Re-enabling restores the entities under their unchanged
+  unique IDs.
+- **Unused solar module suggestion.** When every solar register reports "not
+  configured" for a full day, a fixable repair suggestion offers two ways
+  forward: switch the solar thermal module off (those register polls stop and
+  the empty *Solaranlage* group disappears after a reload) or keep it, which
+  dismisses that round of the suggestion until a solar value actually
+  reports. A live solar value resets the window and withdraws the suggestion.
 - **Navigator 1.0/1.7: the complete official RW holding block.** The
-  integration now requires `idm-heatpump-api==2.4.0`, which maps the full
+  integration requires `idm-heatpump-api==2.4.0`, which maps the full
   FC03/FC06 parameter table 2000-2152 of the official iDM Modbus TCP
   document for Navigator 1.0/1.7 (ma_de_812049 Rev.1, 2016-06-13 — found
   during the research for issue #319 and confirmed value for value by a
@@ -270,23 +105,59 @@ writable controls — the complete official holding table.
   documented coils (3000-3003: acknowledge fault, heating/cooling/DHW
   demand) still need FC01/FC05 transport support and arrive later. Full
   register list in the wiki's *Modbus Register* reference.
-
-## [0.19.0-b7] - 2026-09-24
-
-Seventh beta of the 0.19.0 line: the integration polices its own device
-groups, and its lifecycle now has a real-Home-Assistant safety net.
-
-### Added
-
-- **Unused solar module suggestion.** When every solar register reports "not
-  configured" for a full day, a fixable repair suggestion offers two ways
-  forward: switch the solar thermal module off (those register polls stop and
-  the empty *Solaranlage* group disappears after a reload) or keep it, which
-  dismisses that round of the suggestion until a solar value actually
-  reports. A live solar value resets the window and withdraws the suggestion.
+- **Water heater entity on Navigator 1.0/1.7.** The setup falls back from
+  `dhw_temp_top` to the 1.x map's tank temperature `dhw_temp`
+  (Trinkwassererwärmertemperatur, address 1012), pairing it with the FW030
+  float setpoint (2152–2153). Owners of the 1.x family now see the same
+  warm-water card as the Navigator 2.0/10/Pro family — current temperature,
+  target and the documented 35–60 °C range — instead of only the bare
+  number entity. The entity-aware poll plan requests `dhw_temp` alongside
+  the setpoint while the card is enabled; the DHW boost machinery stays
+  gated on the shared family's sensors and remains fail-closed on 1.x.
+- **The per-register read report** *(#364)* — the diagnostics export now
+  carries a `register_read_report`: one row per register of your plant with
+  address, type, documented range and a clear verdict — `ok`,
+  `range_rejected`, `unsupported`, `device_error`, `not_polled`, and more.
+  And with `idm-heatpump-api==2.4.2` underneath, every row keeps the
+  evidence: **the last value even when it was rejected**, the raw 16-bit
+  wire words, and *why* it was rejected (`below_min`, `above_max`,
+  `not_in_enum`, …) plus a `batch_unsafe` flag. A register your firmware
+  answers with garbage no longer just disappears — the export shows exactly
+  *how* it is broken. A case like #364, where register 2152 reads a constant
+  `0` while its neighbour 2153 quietly holds what looks like the other half
+  of a 46.0 °C float, now explains itself. Privacy unchanged: the rows carry
+  numbers and fixed status words, nothing else.
+- **German wiki mirror (all 21 pages)** *(website)* — `docs/wiki/de/` holds one
+  German file per English wiki page: same filename, same anchors rules,
+  register tables keep IDM's German register names. The pages build publishes
+  `/docs/de/…`, the client fetches the German markdown, and the German landing
+  page links straight into the German docs. English pages carry `hreflang`
+  alternates to their German counterparts and back.
+- **Language lives in the URL** *(website)* — the EN/DE button navigates
+  between `/docs/<slug>/` and `/docs/de/<slug>/` instead of toggling the
+  interface language in place. A missing German page falls back to English
+  content and shows the "Inhalt: Englisch" chip.
 
 ### Changed
 
+- `calculated_pv_surplus_operation` sits on the new *Photovoltaik* group
+  instead of the *iDM Analytics* subdevice. The entity was introduced and
+  moved within this release's prereleases, so no stable installation ever saw
+  the old placement. Entity unique IDs are unchanged.
+- **Web demand reason now uses the public API method.** The WebSocket frame
+  request, the demand-reason decode tables and the frame parsing moved into
+  `idm-heatpump-api` 2.3.0 (`IdmNavigator10WebClient.read_home_detail()`,
+  `IdmWebHomeDetail`, `decode_navigator10_demand_reason()`,
+  `parse_navigator_home_response()`), documented in the API README, its wiki
+  and the compatibility matrix. The integration keeps only the German
+  presentation labels and the entities; the previous private frame seam is
+  gone.
+- **The web demand reason uses the display's wording.** The idle state of
+  `web_demand_reason` reads *Keine Anforderung* — exactly what the
+  controller's display and local web interface render for the idle widget —
+  instead of the literal translation *Keine Information* of the API's
+  `no_info` slug. All other reason labels were already derived from the web
+  UI's own tables and stay unchanged.
 - **The Navigator 10 web demand-reason entities appear immediately.**
   `web_demand_reason` and `web_demand_reason_pv` are created as soon as the
   nav10 web variant is known and report unavailable until the first
@@ -296,38 +167,9 @@ groups, and its lifecycle now has a real-Home-Assistant safety net.
   (E1).** `tests_ha/` boots a genuine Home Assistant and walks one config
   entry through setup, reload and unload — including a no-leaked-tasks
   assertion — and CI runs it as the `smoke` job on every push and pull
-  request. The 2026-09 code audit is now fully worked off.
-
-## [0.19.0-b6] - 2026-09-24
-
-Sixth beta of the 0.19.0 line: the empty *Solaranlage* group can go, and the
-web demand reason speaks the display's language.
-
-### Added
-
-- **Solar thermal opt-out.** Plants without collectors no longer have to keep
-  a dead *Solaranlage* device group: the new option *Read a solar thermal
-  system* / *Solaranlage auslesen* (default on, in the expert options form and
-  the guided flow) is the user's statement about the plant and outranks every
-  detection source. Switched off, the solar registers leave the descriptions,
-  the register map and the poll; the subdevice is no longer expected and is
-  detached, and the stale-entity cleanup removes leftover solar entities on
-  the next reload. Re-enabling restores the entities under their unchanged
-  unique IDs.
-
-### Changed
-
-- **The web demand reason now uses the display's wording.** The idle state of
-  `web_demand_reason` reads *Keine Anforderung* — exactly what the
-  controller's display and local web interface render for the idle widget —
-  instead of the literal translation *Keine Information* of the API's
-  `no_info` slug. All other reason labels were already derived from the web
-  UI's own tables and stay unchanged.
-
-## [0.19.0-b5] - 2026-09-24
-
-Fifth beta of the 0.19.0 line: a model switch no longer leaves orphaned
-entities behind (issue #319).
+  request. The 2026-09 code audit is now fully worked off. The integration
+  also polices its own device groups: expected subdevices are reconciled on
+  every reload.
 
 ### Fixed
 
@@ -346,92 +188,92 @@ entities behind (issue #319).
   (empty register map) are skipped because their entities may legitimately
   return with the next successful Modbus setup. Switching the model back
   recreates removed entities under their unchanged unique IDs.
+- **Readings beyond the documented register range mark their entity
+  unavailable (issue #364).** Rev.0-era Navigator 1.0/1.7 firmware is
+  documented only up to status address 1501 and answers the newer status
+  words — and possibly the youngest holding registers — with uninitialized
+  memory instead of rejecting the address (observed on firmware N1.MLj:
+  register 1502 returned random words every poll). With
+  `idm-heatpump-api==2.4.1`, which declares the official MIN/MAX columns
+  on every 1.x status word, such readings now take the entity offline
+  instead of surfacing as values — including writable controls, whose
+  readback is equally untrustworthy then (unlike the "unset" sentinel
+  case, which keeps controls available, #172). The raw opt-in (*hide
+  unused registers* off) shows the values unchanged, and registers
+  without a documented range (like the fault number) keep reporting
+  whatever the controller sends.
+- **Freshwater DHW setpoint (FW030) works on Navigator 1.x (issue #364).**
+  A raw capture on firmware N1.MLj proved that the Frischwasser-
+  Solltemperatur is stored as an IEEE-754 float spanning 2152–2153, low
+  word first — the pair (0, 0x4238) decodes to exactly 46.0 °C and follows
+  the setpoint in both directions, changed on the controller or written
+  over Modbus — while the official Rev.1 table types it as a single-byte
+  value. `idm-heatpump-api` 2.4.3 maps the register as `FLOAT` with the
+  documented 35–60 range unchanged. The „Warmwasser Sollwert" number stops
+  being range-rejected at 0 and shows and sets the real setpoint again
+  (verified by the reporter's diagnostics on the released version). The
+  address after the pair (2154) times out on this firmware and stays
+  unused.
+- **Heating curve steps by 0.05, not 0.1 (issue #364).** The up/down arrows
+  of „Heizkurve HK A" moved 0.1 per click, but the controller grid is 0.05
+  — the reporting plant runs a curve of 0.35, off the old grid entirely.
+  The step now travels the way device knowledge should: the library's
+  `RegisterDef.step` hint (0.05 for all heating curves of both protocol
+  families since API 2.4.3) feeds the number entity directly, and the
+  integration's duplicate step table is gone. A step is a presentation
+  hint — it never rounded writes — so every previously reachable value
+  stays reachable.
+- **Forwarding forms accept left-blank entity fields.** Optional entity
+  fields no longer carry `default=""`: voluptuous validates a field's
+  default even when the client omits the field, and Home Assistant's
+  `EntitySelector` rejects `""` as an entity ID — so a GLT forwarding form
+  with one blank field (room temperature for a circuit without a sensor,
+  humidity before a sensor was chosen, storage or external-power keys
+  without a source) could not be submitted at all on a real instance. An
+  unset field is now simply absent from the validated input, and the step
+  handlers keep treating a missing key as empty, so "left blank" keeps its
+  documented meaning of "this circuit or key forwards nothing". A
+  configured value still prefills its field as before. This unblocks
+  configuring room-temperature forwarding for a subset of the heating
+  circuits (for example only HK D) through the UI and the REST options
+  flow.
+- **The facts-only report explains itself** *(AI adviser)* — when the
+  free-AI-text option is off, reports silently degraded to the plain
+  measured-data fallback with no hint why. They now end with
+  a line naming the exact option to enable, and the report metadata
+  carries `fallback_reason: ai_text_disabled` instead of nothing.
+- **Learning status no longer looks stuck** *(AI adviser)* — whenever the
+  heat pump idled, the learning sensor showed `days: 0` / `mode: null`
+  although data had been collected for days. It now distinguishes `idle`
+  from `sparse_data` (`status_reason`), reports the **most advanced
+  operating bin** (`best_bucket_*` attributes, e.g. "2 of 3 days in DHW
+  from 10 °C") in the sensor, the facts and the report text — so sparse
+  September weather across bins reads as progress, not as a defect.
+- **German docs mode is now complete** *(website)* — every interface
+  element switches cleanly: footer links, skip link, search placeholder
+  and all screen-reader labels translate, and the browser-tab title
+  reads "… | IDM Heatpump Dokumentation". The language button shows the
+  language a click switches *to* (DE on the English page, EN in German
+  mode), and switching to German explains itself with a short toast and a
+  clearer content chip ("Inhalt: Englisch") stating that the interface is
+  German while the technical wiki content stays English.
 
-## [0.19.0-b4] - 2026-09-23
+### Notes
 
-Fourth beta of the 0.19.0 line: the home/detail connection moves into the
-device-logic API, where it belongs.
-
-### Changed
-
-- **Web demand reason now uses the public API method.** The WebSocket frame
-  request, the demand-reason decode tables and the frame parsing moved into
-  `idm-heatpump-api` 2.3.0 (`IdmNavigator10WebClient.read_home_detail()`,
-  `IdmWebHomeDetail`, `decode_navigator10_demand_reason()`,
-  `parse_navigator_home_response()`), documented in the API README, its wiki
-  and the compatibility matrix. The integration keeps only the German
-  presentation labels and the entities; the previous private frame seam is
-  gone. Runtime pin: `idm-heatpump-api[web]==2.3.0`.
-
-## [0.19.0-b3] - 2026-09-23
-
-Third beta of the 0.19.0 line: one dedicated **Photovoltaik** subdevice
-(device hierarchy mode) collects everything PV in one place.
-
-### Added
-
-- **PV subdevice group (issue #353):** with the device hierarchy enabled, the
-  new *Photovoltaik* child device groups the PV GLT registers (`pv_surplus`,
-  `pv_production`, `pv_target_value`), the SG-Ready signal `smart_grid_status`,
-  the derived `calculated_pv_surplus_operation` diagnostic and the Navigator 10
-  web entities `web_demand_reason` / `web_demand_reason_pv`. Without the
-  hierarchy everything stays on the main device as before.
-
-### Changed
-
-- `calculated_pv_surplus_operation` moves from the *iDM Analytics* subdevice to
-  the new *Photovoltaik* group. The entity was introduced in the 0.19.0-b1
-  prerelease hours ago, so the move only affects current beta testers and no
-  stable installation. Entity unique IDs are unchanged.
-
-## [0.19.0-b2] - 2026-09-23
-
-Second beta of the 0.19.0 line: the controller's own demand reason joins the
-derived Modbus diagnostic from b1 — Navigator 10 only.
-
-### Added
-
-- **Device-reported demand reason from the Navigator 10 web interface
-  (issue #353):** with the web supplement active on a Navigator 10, every web
-  poll now also evaluates the WebSocket `home/detail` frame that feeds the
-  controller's "Anforderungsgrund" display. Two new read-only entities:
-  **Anforderungsgrund (Web)** (`web_demand_reason`) — the human-readable demand
-  reason (*PV*, *Heizkreis A–G*, *Zeitprogramm*, *Frostschutz*, *Externer
-  Eingang/Bus*, *ISC*, *ION*, *Mehrere Anforderungen*, *Keine Information*,
-  *Aus*, …) with the raw `operationMode`/`info` widget values as attributes —
-  and **PV-Anforderungsgrund (Web)** (`web_demand_reason_pv`) — a binary sensor
-  that is `on` while the controller itself reports PV as its demand reason
-  (bit 32 of the info bitmask, present in the heating and the domestic-hot-water
-  reason table). The decode reproduces the web UI's priority order bit for bit.
-  The read is strictly optional: any failure keeps the previous state and never
-  breaks the web supplement. Navigator 2.0 (PHP-based web interface) keeps the
-  derived Modbus entity from b1 as its only PV indicator.
-
-## [0.19.0-b1] - 2026-09-23
-
-First beta of the 0.19.0 line. Ships the PV-visibility feature requested in
-issue #353 as a base-profile diagnostic — no Smart profile or extra
-configuration required.
-
-### Added
-
-- **PV surplus operation diagnostic (issue #353):** new derived binary sensor
-  `calculated_pv_surplus_operation` (**PV-Überschussbetrieb**) that is `on`
-  while the heat pump is running on signalled PV surplus. The Navigator
-  controllers expose no internal PV-mode state register (the documented PV
-  block 74–88 is GLT measurement inputs only), so the entity truthfully
-  combines the two halves of the state: surplus is currently signalled to the
-  controller (`pv_surplus` ≥ 0.05 kW **or** SG-Ready `smart_grid_status` =
-  *Supergreen*) **and** the heat pump is drawing electrical power
-  (`power_consumption_hp` ≥ 0.05 kW, falling back to `hp_operating_mode` ≠
-  *Off* on installations without the Nav 10 power measurement). The entity is
-  only created when at least one source per half exists on the detected
-  installation, exposes thresholds and active sources as attributes, and joins
-  the Analytics subdevice when device hierarchy is enabled. All candidate
-  source registers stay polled while the entity is enabled, even when their
-  own entities are disabled. Installations where the surplus is measured
-  behind the heat pump feeder see `pv_surplus` collapse toward zero while
-  charging; there the SG-Ready source keeps the diagnostic meaningful.
+- Device-logic dependency: `idm-heatpump-api[web]==2.4.3`. The 2.4.x line
+  grew with this release: 2.4.0 maps the Navigator 1.0/1.7 holding block,
+  2.4.1 declares the documented status-word ranges, 2.4.2 keeps per-register
+  read outcomes (value, raw words, rejection reason) for diagnostics, and
+  2.4.3 types FW030 as the captured float pair and hints the heating-curve
+  step. The web `home/detail` decode arrived in 2.3.0.
+- `modbus-connection==4.12.2` — upstream patch release; the release gate
+  insists on current transport pins.
+- `AGENTS.md` now codifies the mirror contract: English pages stay the source
+  of truth, German mirrors travel in the same pull request. The language
+  checker exempts `docs/wiki/de/`; the GitHub wiki stays English.
+- Thanks, [@device111](https://github.com/device111): your register map and
+  raw captures taught us more about Rev.0-era Navigator 1.7 firmware than
+  any datasheet did (#364).
 
 ## [0.18.0] - 2026-09-20
 
