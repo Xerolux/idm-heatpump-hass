@@ -13,6 +13,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.19.0-b16] - 2026-09-26
+
+Sixteenth beta of the 0.19.0 line — the Navigator 1.x family gets the
+warm-water card it was missing: FW030 became a working float setpoint in
+b14, but the water heater entity still required the shared family's
+storage-top sensor, which the 1.x register map does not have.
+
+### ✨ New
+
+- **Water heater entity on Navigator 1.0/1.7.** The setup falls back from
+  `dhw_temp_top` to the 1.x map's tank temperature `dhw_temp`
+  (Trinkwassererwärmertemperatur, address 1012), pairing it with the FW030
+  float setpoint (2152–2153). Owners of the 1.x family now see the same
+  warm-water card as the Navigator 2.0/10/Pro family — current temperature,
+  target and the documented 35–60 °C range — instead of only the bare
+  number entity. The entity-aware poll plan requests `dhw_temp` alongside
+  the setpoint while the card is enabled; the DHW boost machinery stays
+  gated on the shared family's sensors and remains fail-closed on 1.x.
+
 ## [0.19.0-b15] - 2026-09-25
 
 Fifteenth beta of the 0.19.0 line — one fix for the options flow, found

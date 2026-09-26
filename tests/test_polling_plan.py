@@ -170,3 +170,29 @@ def test_water_heater_and_internal_safety_registers_are_preserved(
     assert "hp_sum_alarm" in required
     assert "compressor_status_1" in required
     assert "unused_register" not in required
+
+
+def test_water_heater_dependencies_cover_the_navigator_17_sensor(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The 1.x map has dhw_temp instead of dhw_temp_top (0.19.0-b16)."""
+    known = {
+        "outdoor_temp",
+        "internal_message",
+        "hp_operating_mode",
+        "hp_sum_alarm",
+        "dhw_temp",
+        "dhw_setpoint",
+    }
+    required = _build(
+        monkeypatch,
+        [_RegistryEntry("entry_water_heater")],
+        known,
+    )
+
+    assert required is not None
+    assert "dhw_temp" in required
+    assert "dhw_setpoint" in required
+    # Absent from the 1.x map, so neither the always-required set nor the
+    # entity dependency may resurrect it.
+    assert "dhw_temp_top" not in required
