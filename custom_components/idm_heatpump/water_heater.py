@@ -42,8 +42,12 @@ async def async_setup_entry(
     """Set up the IDM water heater platform."""
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
 
-    # Check if we have DHW registers at all
-    dhw_current_reg = coordinator.get_register("dhw_temp_top")
+    # The shared family reports the storage top sensor; Navigator 1.0/1.7 has
+    # no dhw_temp_top and offers the tank temperature (dhw_temp,
+    # Trinkwassererwärmertemperatur) as the closest equivalent. FW030 became a
+    # working float pair in 0.19.0-b14, so the 1.x family gets the water
+    # heater card too.
+    dhw_current_reg = coordinator.get_register("dhw_temp_top") or coordinator.get_register("dhw_temp")
     dhw_target_reg = coordinator.get_register("dhw_setpoint")
 
     if dhw_current_reg and dhw_target_reg:

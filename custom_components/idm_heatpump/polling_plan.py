@@ -61,7 +61,10 @@ def _entity_dependencies(unique_suffix: str) -> set[str]:
     if unique_suffix.startswith("ai_"):
         return {"outdoor_temp", "hp_flow_temp", "hp_return_temp", "hp_operating_mode", "dhw_temp_top", "dhw_setpoint"}
     if unique_suffix == "water_heater":
-        return {"dhw_temp_top", "dhw_setpoint"}
+        # dhw_temp is the Navigator 1.0/1.7 equivalent of the shared family's
+        # dhw_temp_top; the intersection with the known register names keeps
+        # whichever sensor the detected map actually offers.
+        return {"dhw_temp_top", "dhw_temp", "dhw_setpoint"}
     if match := _HEATING_CLIMATE.fullmatch(unique_suffix):
         circuit = match.group(1)
         return {

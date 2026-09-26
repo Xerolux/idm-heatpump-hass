@@ -150,6 +150,38 @@ def test_1_7_holding_registers_are_not_sensors() -> None:
         assert name not in sensors, name
 
 
+async def test_1_7_water_heater_uses_dhw_temp_and_the_float_setpoint() -> None:
+    """The 1.x family gets the water heater card since FW030 works (b16).
+
+    The shared family reports dhw_temp_top; the 1.x map offers the tank
+    temperature (dhw_temp) instead, and its dhw_setpoint became the captured
+    float pair in b14. The entity must pick up both and carry the register's
+    documented bounds.
+    """
+    from unittest.mock import MagicMock
+
+    from custom_components.idm_heatpump.water_heater import IdmWaterHeater, async_setup_entry
+
+    reg_map = build_register_map(model_info=_navigator_17_model_info())
+    coordinator = MagicMock()
+    coordinator.get_register = MagicMock(side_effect=lambda name: reg_map.get(name))
+    entry = MagicMock()
+    entry.runtime_data.coordinator = coordinator
+
+    added: list = []
+    await async_setup_entry(MagicMock(), entry, MagicMock(side_effect=added.extend))
+
+    assert len(added) == 1
+    entity = added[0]
+    assert isinstance(entity, IdmWaterHeater)
+    assert entity._current_reg.name == "dhw_temp"
+    assert entity._target_reg.name == "dhw_setpoint"
+    assert (entity.min_temp, entity.max_temp) == (35.0, 60.0)
+    # The float setpoint carries no library step hint, so the half-step
+    # default applies.
+    assert entity._attr_target_temperature_step == 0.5
+
+
 def test_1_7_new_registers_have_german_names() -> None:
     assert _get_german_name("system_mode_17") == "Betriebsart System"
     assert _get_german_name("hc_a_operating_mode") == "Betriebsart HK A"

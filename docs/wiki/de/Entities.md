@@ -376,12 +376,12 @@ Schreibvorgänge laufen über den zentralen Schreibpfad des Koordinators mit opt
 
 ## Warmwasserbereiter
 
-Eine einzige Warmwasserbereiter-Entität (`water_heater.idm_heatpump`) stellt die Steuerung der Warmwasser-Zieltemperatur mit Rückmeldung der Ist-Temperatur bereit. Sie wird erzeugt, wenn beide Register `dhw_temp_top` und `dhw_setpoint` existieren.
+Eine einzige Warmwasserbereiter-Entität (`water_heater.idm_heatpump`) stellt die Steuerung der Warmwasser-Zieltemperatur mit Rückmeldung der Ist-Temperatur bereit. Sie wird erzeugt, wenn das Zielregister (`dhw_setpoint`) und ein Warmwasser-Temperaturregister existieren — die gemeinsame Familie meldet `dhw_temp_top`, die Navigator-1.0/1.7-Karte bietet stattdessen `dhw_temp` (Trinkwassererwärmertemperatur, Adresse 1012).
 
 | Eigenschaft | Register | Hinweise |
 |----------|----------|-------|
-| Aktuelle Temperatur | `dhw_temp_top` | Warmwassertemperatur oben im Speicher |
-| Zieltemperatur | `dhw_setpoint` | Schreibbarer Sollwert (typisch 35–95 °C) |
+| Aktuelle Temperatur | `dhw_temp_top` / `dhw_temp` | Gemeinsame Familie: Warmwassertemperatur oben im Speicher; Navigator 1.x: `dhw_temp` (Trinkwassererwärmertemperatur) |
+| Zieltemperatur | `dhw_setpoint` | Schreibbarer Sollwert (gemeinsame Familie typisch 35–95 °C; Navigator 1.x 35–60 °C, Float-Paar 2152–2153) |
 | Betriebsmodus | k. A. | Immer „Wärmepumpe“ |
 
 Nutzt denselben Schreibpfad des Koordinators wie die Klima-Entitäten.

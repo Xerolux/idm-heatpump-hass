@@ -488,13 +488,15 @@ updates and translated error messages.
 ## Water Heater
 
 A single water heater entity (`water_heater.idm_heatpump`) provides DHW target
-temperature control with current temperature readback. Created when both
-`dhw_temp_top` and `dhw_setpoint` registers exist.
+temperature control with current temperature readback. Created when the target
+register (`dhw_setpoint`) and a DHW tank temperature register exist — the
+shared family reports `dhw_temp_top`, the Navigator 1.0/1.7 map offers
+`dhw_temp` (tank temperature, address 1012) instead.
 
 | Property | Register | Notes |
 |----------|----------|-------|
-| Current temperature | `dhw_temp_top` | Top DHW tank temperature |
-| Target temperature | `dhw_setpoint` | Writable setpoint (35–95 °C typical) |
+| Current temperature | `dhw_temp_top` / `dhw_temp` | Shared family: top DHW tank temperature; Navigator 1.x: `dhw_temp` tank temperature |
+| Target temperature | `dhw_setpoint` | Writable setpoint (shared family 35–95 °C typical; Navigator 1.x 35–60 °C, float pair 2152–2153) |
 | Operation mode | N/A | Always "Heat Pump" |
 
 Uses the same coordinator write path as climate entities.
