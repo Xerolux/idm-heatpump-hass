@@ -23,7 +23,7 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 |---------|---------|
 | **Protokoll** | Modbus TCP (Port 502, Slave-ID 1) |
 | **Optionales Supplement** | Lokale Navigator-Web-API, nur lesend, PIN optional |
-| **Dokumentationsversion** | [0.18.0](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.18.0); [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Dokumentationsversion** | [0.19.0](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.19.0); [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Unterstützte/getestete HA-Baseline** | 2026.8.1 |
 | **Python** | 3.14+ (von Home Assistant verwaltet) |
 | **Verbindungsbibliothek** | modbus-connection==4.12.2 |
@@ -36,6 +36,20 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 ---
 
 ## Zentrale Funktionen
+
+### Neu in 0.19.0
+
+0.19.0 macht den **Navigator 1.0/1.7 zum vollwertigen Familienmitglied** und gibt der **Photovoltaik ein Gesicht**. Alles bleibt lokal; keine Entity-ID ändert sich.
+
+| Funktion | Was du bekommst |
+|---------|-----------------|
+| Schreibbarer Block für Navigator 1.0/1.7 | System- und Heizkreis-Betriebsarten, Raum-/Vorlaufsollwerte, Heizkurven, Grenzen und Bivalenzpunkte aus der offiziellen Parametertabelle |
+| Warmwasser-Karte für Navigator 1.0/1.7 | Warmwasserbereiter-Entität mit dem capture-verifizierten Frischwasser-Sollwert (FW030-Float-Paar) und der Speichertemperatur |
+| Firmware-ehrliche Messwerte | Messwerte außerhalb des dokumentierten Registerbereichs werden nicht mehr angezeigt, sondern melden die Entität nicht verfügbar |
+| Diagnose je Register | Der Diagnoseexport listet jedes Register mit Leseurteil, Rohwörtern und Ablehnungsgrund |
+| PV-Sichtbarkeit | Abgeleitete PV-Überschuss-Diagnose, der Anforderungsgrund des Navigator 10 aus seinem Web-Interface und eine eigene *Photovoltaik*-Gerätegruppe |
+| Solar-Abschaltung | Anlagen ohne Kollektoren können das Solarmodul abschalten — Abfragen und leere Gerätegruppe verschwinden |
+| Zweisprachige Dokumentation | Deutsche Spiegel aller 21 Wiki-Seiten unter `/docs/de/…`, der EN/DE-Wechsel liegt in der URL |
 
 ### Neu in 0.18.0
 

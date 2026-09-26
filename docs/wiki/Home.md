@@ -23,7 +23,7 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 |---------|---------|
 | **Protocol** | Modbus TCP (Port 502, Slave ID 1) |
 | **Optional supplement** | Local Navigator web API, read-only, PIN optional |
-| **Documentation version** | [0.18.0](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.18.0); [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Documentation version** | [0.19.0](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.19.0); [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Supported/tested HA baseline** | 2026.8.1 |
 | **Python** | 3.14+ (managed by Home Assistant) |
 | **Connection library** | modbus-connection==4.12.2 |
@@ -36,6 +36,20 @@ The **IDM Heatpump Home Assistant Integration** connects [Home Assistant](https:
 ---
 
 ## Core Features
+
+### New in 0.19.0
+
+0.19.0 makes the **Navigator 1.0/1.7 a first-class citizen** and gives **photovoltaics a face**. Everything stays local; no entity IDs change.
+
+| Feature | What you get |
+|---------|--------------|
+| Navigator 1.0/1.7 writable block | System and heating-circuit operating modes, room/flow setpoints, heating curves, limits and bivalence points from the official parameter table |
+| Navigator 1.0/1.7 warm-water card | Water heater entity with the capture-verified freshwater setpoint (FW030 float pair) and the tank temperature |
+| Firmware-honest readings | Readings outside a register's documented range go unavailable instead of showing garbage from pre-2016 firmware |
+| Per-register diagnostics | The diagnostics export lists every register with its read verdict, raw wire words and rejection reason |
+| PV visibility | Derived PV-surplus diagnostic, the Navigator 10's own demand reason from its web interface, and a dedicated *Photovoltaik* device group |
+| Solar thermal opt-out | Plants without collectors can switch the solar module off — polls and the empty device group disappear |
+| Bilingual documentation | German mirrors of all 21 wiki pages at `/docs/de/…`, with the EN/DE switch in the URL |
 
 ### New in 0.18.0
 

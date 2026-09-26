@@ -6,23 +6,37 @@ normales Changelog.
 
 ## Aktueller Status
 
-Der veröffentlichte stabile Kanal ist **0.17.1**; die aktuelle Funktions-Beta ist
-[0.17.2-b6](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.17.2-b6).
-Die Beta ergänzt geführte Einrichtung, Smart-Energie-Statistiken, optionale
-PV-Warmwasser-Automation, Komfortzeitpläne, Berater, Health Monitor und
-Gerätegruppierung nach Funktionen. Siehe [Smart Energy & Comfort](Smart-Energy-and-Comfort).
+Der veröffentlichte stabile Kanal ist **0.19.0**, der stabile Schnitt der Linie
+aus sechzehn Betas. Sie macht den Navigator 1.0/1.7 zum vollwertigen
+Familienmitglied — der vollständige offizielle Schreibblock, ein
+firmware-ehrlicher Bereichsfilter, der capture-verifizierte FW030-Float-Sollwert
+und eine Warmwasser-Karte — und ergänzt PV-Sichtbarkeit (Issue #353), die
+Solar-Abschaltung, den Diagnoseexport je Register, einen ehrlicheren
+KI-Berater und das deutsche Wiki-Spiegel. Die Entscheidungen zu
+`0.17.x`/`0.16.x` unten bleiben wie veröffentlicht.
 
-Für Beta 6 waren automatisierte CI, HACS, Hassfest, Sicherheitsprüfungen,
+Für den stabilen Schnitt waren automatisierte CI (inklusive der Smoke-Tests
+mit echtem Home Assistant), HACS, Hassfest, Sicherheitsprüfungen,
 Release-Paketierung, Verifikation der veröffentlichten Prüfsummen und der
-Paket-zu-Tag-Vergleich erfolgreich. Die rein lesende Beobachtung der laufenden
-Anlage im [Audit vom 18. September](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/dev/post-release-audit-2026-09-18.md)
-nutzte Beta 5. Sie ist keine Hardware-Validierung und kein siebentägiger Dauertest
-von Beta 6. Der [Kandidaten-Eintrag](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.17.2-b6.md)
-hält den Zustand vor der Veröffentlichung fest; Clean-Install-, kandidatenspezifische
-Hardware- und Langzeit-Verifizierung stehen für die Beförderung zur stabilen Version
-noch aus.
+Paket-zu-Tag-Vergleich erfolgreich. `0.19.0-b15` lief mit sauberem Log auf der
+Produktionsanlage des Maintainers, und die Register-Korrekturen für den
+Navigator 1.0/1.7 wurden durch die Nach-Update-Diagnose eines Testers auf der
+veröffentlichten Version bestätigt (Issue #364). Die Warmwasser-Entität aus
+b16 deckt die automatisierte Suite ab; die 1.x-Registerkarte selbst steht auf
+der offiziellen Dokumentation, bestätigt durch zwei unabhängige
+Hardware-Aufzeichnungen.
 
 ## Frühere Release-Entscheidungen
+
+**`0.17.2-b6`/`0.18.0`:** Für den Kandidaten waren automatisierte CI, HACS,
+Hassfest, Sicherheitsprüfungen, Release-Paketierung, Verifikation der
+veröffentlichten Prüfsummen und der Paket-zu-Tag-Vergleich erfolgreich. Die
+rein lesende Beobachtung der laufenden Anlage im
+[Audit vom 18. September](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/dev/post-release-audit-2026-09-18.md)
+nutzte Beta 5; sie war keine Hardware-Validierung und kein siebentägiger
+Dauertest von Beta 6. Der
+[Kandidaten-Eintrag](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/release-evidence/0.17.2-b6.md)
+hielt den Zustand vor der Veröffentlichung fest.
 
 **`0.17.0`** ist der stabile Schnitt der Linie, die am 2026-09-09 mit
 `0.17.0-beta.1` eröffnet wurde. Sie trägt das vollständige Code-Audit-Ergebnis, die
@@ -44,7 +58,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration `0.17.1` und `idm-heatpump-api` `2.4.3` bilden das aktuelle exakt
+Integration `0.19.0` und `idm-heatpump-api` `2.4.3` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
