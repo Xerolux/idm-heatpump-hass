@@ -62,7 +62,13 @@ from .entity import (
 )
 from .entity_names import web_translation_for_value
 from .health_monitor import IdmHealthReportSensor, health_report_entities
-from .internal_messages import format_internal_message, internal_message_text
+from .internal_messages import (
+    error_code_attributes,
+    error_number_text,
+    format_error_number,
+    format_internal_message,
+    internal_message_text,
+)
 from .operation_entities import (
     IdmOperationSensor,
     operation_sensor_entities,
@@ -621,6 +627,10 @@ class IdmSensor(IdmEntity, SensorEntity):
             return None
         if self._register.name == "internal_message":
             return format_internal_message(value)
+        if self._register.name == "error_number":
+            # The vendor database label when the code is known, the plain
+            # number otherwise (the database has no entry for "no error").
+            return format_error_number(value) or _as_sensor_state(value)
         if self._register.enum_options:
             try:
                 int_value = int(value)
@@ -659,24 +669,31 @@ class IdmSensor(IdmEntity, SensorEntity):
         )
 
     @property
-    def extra_state_attributes(self) -> dict[str, str | int] | None:
-        if self._register.name == "internal_message":
+    def extra_state_attributes(self) -> dict[str, str | int | bool] | None:
+        if self._register.name in ("internal_message", "error_number"):
             if not self.coordinator.data:
                 return None
             value = self.coordinator.data.get(self._register.name)
             if value is None:
                 return None
-            message_text = internal_message_text(value)
-            if message_text is None:
-                return None
             try:
                 message_code = int(value)
             except (TypeError, ValueError):
                 return None
-            return {
-                "message_code": message_code,
-                "message_text": message_text,
-            }
+            attributes: dict[str, str | int | bool] = {}
+            if self._register.name == "internal_message":
+                message_text = internal_message_text(value)
+                if message_text is not None:
+                    attributes["message_code"] = message_code
+                    attributes["message_text"] = message_text
+            else:
+                error_text = error_number_text(value)
+                if error_text is not None:
+                    attributes["error_code"] = message_code
+                    attributes["error_text"] = error_text
+            # The vendor's warning flag and remediation texts, where shipped.
+            attributes.update(error_code_attributes(value) or {})
+            return attributes or None
         # An undocumented enum value cannot be the state, but keeping the raw
         # number reachable is what makes such a report actionable.
         if self._register.enum_options and self.coordinator.data:

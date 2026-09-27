@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from idm_heatpump import get_error_code_info
+
 _INTERNAL_MESSAGE_TEXTS: dict[int, str] = {
     0: "Keine Meldung",
     20: "Waermepumpenvorlauf Maximaltemperatur",
@@ -118,10 +120,51 @@ def internal_message_text(code: float | str | None) -> str | None:
         return None
     if message_code in _INTERNAL_MESSAGE_TEXTS:
         return _INTERNAL_MESSAGE_TEXTS[message_code]
+    # The packaged vendor database is exhaustive where the hand-collected
+    # table is not: an exact code always beats the generic range labels.
+    info = get_error_code_info(message_code)
+    if info is not None and info.display_text:
+        return info.display_text
     for code_range, text in _INTERNAL_MESSAGE_RANGES:
         if message_code in code_range:
             return text
     return "Unbekannte Meldung - siehe Navigator-Handbuch"
+
+
+def error_number_text(code: float | str | None) -> str | None:
+    """Return the vendor database label for the Navigator 1.x error number."""
+    message_code = _message_code(code)
+    if message_code is None:
+        return None
+    info = get_error_code_info(message_code)
+    if info is None or not info.display_text:
+        return None
+    return info.display_text
+
+
+def format_error_number(code: float | str | None) -> str | None:
+    """Return a stable state string for the Navigator 1.x error-number entity."""
+    message_code = _message_code(code)
+    text = error_number_text(code)
+    if message_code is None or text is None:
+        return None
+    return f"{message_code:03d} - {text}"
+
+
+def error_code_attributes(code: float | str | None) -> dict[str, str | bool] | None:
+    """Warning flag and vendor remediation texts for a message or error code."""
+    message_code = _message_code(code)
+    if message_code is None:
+        return None
+    info = get_error_code_info(message_code)
+    if info is None:
+        return None
+    attributes: dict[str, str | bool] = {"warning": info.is_warning}
+    if info.user_description:
+        attributes["user_description"] = info.user_description
+    if info.service_description:
+        attributes["service_description"] = info.service_description
+    return attributes
 
 
 def format_internal_message(code: float | str | None) -> str | None:
