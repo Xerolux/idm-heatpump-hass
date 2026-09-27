@@ -364,6 +364,23 @@ description.
 | `dhw_demand` | 1093 | DHW demand active |
 | `calculated_pv_surplus_operation` | derived | Heat pump running on signalled PV surplus (see PV / Energy Management) |
 
+### Navigator 1.0/1.7 — demand coils (c3001–c3003)
+
+The 1.x family reports its live demand status through the official coil block
+(ma_de_812049 Rev.1), read with Modbus function code 01. These entities exist
+only on a detected Navigator 1.0/1.7:
+
+| Entity | Coil | Description |
+|--------|------|-------------|
+| `demand_heating_17` | c3001 | *Anforderung Heizen* — heating demand active |
+| `demand_cooling_17` | c3002 | *Anforderung Kühlen* — cooling demand active |
+| `demand_dhw_17` | c3003 | *Anforderung Vorrangladung* — DHW priority charge demand active |
+
+The acknowledge coil c3000 has no sensor: it backs the **Acknowledge errors**
+button (see [Services](Services.md)), which sends a single-coil write
+(function code 05) on the 1.x family and a holding-register write on the
+shared Navigator 2.0/10 family.
+
 ---
 
 ## Numbers (Writable)

@@ -36,7 +36,6 @@ from .const import (
     DEFAULT_KNX_BASE_ADDRESS,
     DOMAIN,
     HEATING_CIRCUITS,
-    REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
     REGISTER_ADDRESS_SYSTEM_MODE,
 )
 from .coordinator import IdmCoordinator
@@ -320,17 +319,17 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
 
 async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = await _get_coordinator(hass, call)
+    # The acknowledge is model-specific: holding register 1999 on the shared
+    # 2.0/10 family, coil c3000 on Navigator 1.0/1.7. Only the detected map's
+    # own register is used — the former synthetic fallback wrote 1999 even on
+    # models where that address is undocumented (issue #319).
     reg = coordinator.get_register("error_acknowledge")
-    allow_custom = False
     if not isinstance(reg, RegisterDef) or not getattr(reg, "writable", False):
-        reg = RegisterDef(
-            address=REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
-            datatype=DataType.UCHAR,
-            name="error_acknowledge",
-            writable=True,
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="error_acknowledge_unavailable",
         )
-        allow_custom = True
-    await _async_write_register(coordinator, reg, 1, allow_custom_register=allow_custom)
+    await _async_write_register(coordinator, reg, 1)
 
 
 async def _handle_write_register(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:

@@ -1285,6 +1285,15 @@
       "cooling_demand": {
         "name": "Cooling demand"
       },
+      "demand_cooling_17": {
+        "name": "Cooling demand"
+      },
+      "demand_dhw_17": {
+        "name": "DHW priority charge demand"
+      },
+      "demand_heating_17": {
+        "name": "Heating demand"
+      },
       "dhw_demand": {
         "name": "Hot water demand"
       },
@@ -2699,6 +2708,9 @@
     },
     "ai_task_entity_required": {
       "message": "Select an existing ai_task entity that supports data generation."
+    },
+    "error_acknowledge_unavailable": {
+      "message": "Error acknowledgement is not available on this heat pump model's register map."
     }
   },
   "issues": {

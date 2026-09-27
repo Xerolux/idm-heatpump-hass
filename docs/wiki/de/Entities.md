@@ -266,6 +266,23 @@ Der Diagnosesensor `internal_message` gibt die aktive IDM-interne Meldung als le
 | `dhw_demand` | 1093 | Warmwasseranforderung aktiv |
 | `calculated_pv_surplus_operation` | abgeleitet | Wärmepumpe läuft am signalisierten PV-Überschuss (siehe PV / Energiemanagement) |
 
+### Navigator 1.0/1.7 — Anforderungs-Coils (c3001–c3003)
+
+Die 1.x-Familie meldet ihren live-Anforderungsstatus über den offiziellen
+Coil-Block (ma_de_812049 Rev.1), gelesen mit dem Modbus-Function-Code 01.
+Diese Entitäten existieren nur bei erkanntem Navigator 1.0/1.7:
+
+| Entität | Coil | Beschreibung |
+|--------|------|-------------|
+| `demand_heating_17` | c3001 | *Anforderung Heizen* — Heizanforderung aktiv |
+| `demand_cooling_17` | c3002 | *Anforderung Kühlen* — Kühlanforderung aktiv |
+| `demand_dhw_17` | c3003 | *Anforderung Vorrangladung* — WW-Vorrangladung aktiv |
+
+Der Quittierungs-Coil c3000 hat keinen Sensor: Er trägt den **Störung
+quittieren**-Button (siehe [Dienste](Services)), der auf der 1.x-Familie einen
+Single-Coil-Write (Function Code 05) sendet und auf der gemeinsamen
+Navigator-2.0/10-Familie einen Holding-Register-Write.
+
 ---
 
 ## Zahl-Entitäten (schreibbar)

@@ -73,6 +73,10 @@ _GERMAN_NAMES: dict[str, str] = {
     "internal_message": "Interne Meldung",
     "hp_operating_mode": "Wärmepumpen Betriebsart",
     "heating_demand": "Heizanforderung",
+    # Navigator 1.0/1.7 coil block (c3001-c3003, ma_de_812049 Rev.1 terms)
+    "demand_heating_17": "Anforderung Heizen",
+    "demand_cooling_17": "Anforderung Kühlen",
+    "demand_dhw_17": "Anforderung Vorrangladung",
     "cooling_demand": "Kühlanforderung",
     "dhw_demand": "Warmwasseranforderung",
     "compressor_status_1": "Verdichter 1",

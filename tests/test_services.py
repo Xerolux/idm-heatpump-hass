@@ -26,6 +26,7 @@ def _make_coordinator_in_hass(mock_hass, entry_id: str = "entry-1"):
 
     coord = MagicMock(spec=IdmCoordinator)
     coord.async_write_register = AsyncMock()
+    coord.get_register = MagicMock(return_value=None)
     coord.client = MagicMock()
     coord.client.write_register = AsyncMock()
 
@@ -260,18 +261,37 @@ class TestSetSystemMode:
         assert exc_info.value.translation_key == "write_connection_failed"
 
 
+def _shared_acknowledge_register():
+    """The Navigator 2.0/10 acknowledge: holding register 1999."""
+    from idm_heatpump import DataType, RegisterDef
+
+    return RegisterDef(
+        address=1999,
+        datatype=DataType.UCHAR,
+        name="error_acknowledge",
+        writable=True,
+        write_only=True,
+    )
+
+
 class TestAcknowledgeErrors:
     async def test_writes_error_register(self, mock_hass):
         coord = _make_coordinator_in_hass(mock_hass)
+        coord.get_register = MagicMock(return_value=_shared_acknowledge_register())
         call = MagicMock()
         await _handle_acknowledge_errors(mock_hass, call)
         coord.async_write_register.assert_called_once()
         reg, val = coord.async_write_register.call_args[0]
         assert reg.address == 1999
+        assert reg.register_type.value == "input"
         assert val == 1
+        # The model map's own register is written without the custom-register
+        # bypass — model availability stays validated.
+        assert coord.async_write_register.call_args.kwargs.get("allow_custom_register") is False
 
     async def test_write_error_is_translated(self, mock_hass):
         coord = _make_coordinator_in_hass(mock_hass)
+        coord.get_register = MagicMock(return_value=_shared_acknowledge_register())
         coord.async_write_register = AsyncMock(side_effect=Exception("connection lost"))
         call = MagicMock()
 
@@ -279,6 +299,31 @@ class TestAcknowledgeErrors:
             await _handle_acknowledge_errors(mock_hass, call)
 
         assert exc_info.value.translation_key == "write_connection_failed"
+
+    async def test_missing_register_raises_validation_error(self, mock_hass):
+        """No acknowledge in the detected map: a translated refusal instead of
+        the former synthetic fallback that wrote the undocumented 1999."""
+        _make_coordinator_in_hass(mock_hass)
+        call = MagicMock()
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_acknowledge_errors(mock_hass, call)
+
+        assert exc_info.value.translation_key == "error_acknowledge_unavailable"
+
+    async def test_read_only_register_raises_validation_error(self, mock_hass):
+        from idm_heatpump import DataType, RegisterDef
+
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.get_register = MagicMock(
+            return_value=RegisterDef(address=1999, datatype=DataType.UCHAR, name="error_acknowledge")
+        )
+        call = MagicMock()
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_acknowledge_errors(mock_hass, call)
+
+        assert exc_info.value.translation_key == "error_acknowledge_unavailable"
 
 
 class TestWriteRegister:

@@ -17,7 +17,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
-from idm_heatpump import DataType, RegisterDef
+from idm_heatpump import RegisterDef
 
 from .ai_advisor import REPORT_TYPES
 from .ai_advisor_entities import IdmAiReportButton
@@ -27,7 +27,6 @@ from .const import (
     DEFAULT_FEATURE_PROFILE,
     DOMAIN,
     FEATURE_PROFILE_SMART,
-    REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
 )
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
@@ -51,7 +50,15 @@ async def async_setup_entry(
     """Set up the IDM button platform."""
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
 
-    entities: list[ButtonEntity] = [IdmAcknowledgeErrorsButton(coordinator)]
+    entities: list[ButtonEntity] = []
+    # The acknowledge is model-specific — holding register 1999 on the shared
+    # 2.0/10 family, coil c3000 on Navigator 1.0/1.7 — and only the detected
+    # map's own register is used. The former synthetic fallback wrote 1999
+    # even on models where that address is undocumented, so a map without an
+    # acknowledge gets no button at all instead of a wrong one (issue #319).
+    acknowledge_register = coordinator.get_register("error_acknowledge")
+    if isinstance(acknowledge_register, RegisterDef) and acknowledge_register.writable:
+        entities.append(IdmAcknowledgeErrorsButton(coordinator, acknowledge_register))
     mode_register = coordinator.get_register("system_mode")
     setpoint_register = coordinator.get_register("dhw_setpoint")
     temperature_register = coordinator.get_register("dhw_temp_top")
@@ -76,29 +83,24 @@ async def async_setup_entry(
 
 
 class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity):
-    """Button to acknowledge errors on the heat pump."""
+    """Button to acknowledge errors on the heat pump.
+
+    ``_register`` is the detected model's own acknowledge register: holding
+    register 1999 on the shared Navigator 2.0/10 family (FC16 write of 1),
+    coil c3000 on Navigator 1.0/1.7 (FC05 single-coil write of ON). The
+    coordinator's write path dispatches on the register type.
+    """
 
     _attr_has_entity_name = True
     _attr_translation_key = "acknowledge_errors"
     _attr_icon = "mdi:alert-circle-check"
 
-    def __init__(self, coordinator: IdmCoordinator) -> None:
-        """Initialize the button."""
+    def __init__(self, coordinator: IdmCoordinator, acknowledge_register: RegisterDef) -> None:
+        """Initialize the button with the model's acknowledge register."""
         super().__init__(coordinator)
         assert coordinator.config_entry is not None
         self._attr_unique_id = f"{coordinator.config_entry.entry_id}_acknowledge_errors"
-        mapped = coordinator.get_register("error_acknowledge")
-        if isinstance(mapped, RegisterDef) and mapped.writable:
-            self._register = mapped
-            self._allow_custom_register = False
-        else:
-            self._register = RegisterDef(
-                address=REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
-                datatype=DataType.UCHAR,
-                name="error_acknowledge",
-                writable=True,
-            )
-            self._allow_custom_register = True
+        self._register = acknowledge_register
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -107,12 +109,8 @@ class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity
     async def async_press(self) -> None:
         """Handle the button press."""
         try:
-            await self.coordinator.async_write_register(
-                self._register,
-                1,
-                allow_custom_register=self._allow_custom_register,
-            )
-            _LOGGER.debug("Acknowledged errors via button")
+            await self.coordinator.async_write_register(self._register, 1)
+            _LOGGER.debug("Acknowledged errors via %s", self._register.name)
         except HomeAssistantError:
             # The coordinator already raised a translated, actionable error —
             # the write cooldown names the remaining wait. Reclassifying it

@@ -232,6 +232,15 @@
       }
     },
     "binary_sensor": {
+      "demand_heating_17": {
+        "default": "mdi:radiator"
+      },
+      "demand_cooling_17": {
+        "default": "mdi:snowflake"
+      },
+      "demand_dhw_17": {
+        "default": "mdi:water-boiler"
+      },
       "fault": {
         "default": "mdi:alert-circle"
       },
