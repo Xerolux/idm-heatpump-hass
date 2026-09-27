@@ -65,6 +65,11 @@ lokal; deaktiviere auf diesem Server zusätzlich erwägensweise die Cloud-Funkti
 dokumentiert. Ein von der Administration kontrollierter Proxy kann Datenverkehr
 außerhalb des LANs weiterleiten; HA kann den Server intern nicht prüfen.
 
+Eine vollständige Schritt-für-Schritt-Anleitung zur Ollama-Installation — als
+Home-Assistant-Add-on, Docker oder bestehender Server — inklusive Modellwahl
+und gemessenen Hardware-Erwartungen steht auf der Seite
+[Lokale Ollama-Einrichtung](Local-Ollama).
+
 ## Home Assistant AI Task (empfohlen, v0.17.2-b10)
 
 Wenn freiformulierte Erklärungen ausdrücklich aktiviert sind, verwende eine bestehende

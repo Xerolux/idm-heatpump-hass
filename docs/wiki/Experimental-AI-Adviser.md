@@ -59,6 +59,10 @@ features on that server using `OLLAMA_NO_CLOUD=1`, as documented in the
 [Ollama FAQ](https://docs.ollama.com/faq). An administrator-controlled proxy
 can forward traffic outside the LAN; HA cannot inspect the server internally.
 
+A complete step-by-step recipe for installing Ollama — the Home Assistant
+add-on, Docker or an existing server — including model choice and measured
+hardware expectations is on the [Local Ollama setup](Local-Ollama) page.
+
 ## Home Assistant AI Task (recommended, v0.17.2-b10)
 
 With free-form explanations explicitly enabled, reuse an existing data-generation `ai_task` entity instead of entering another
