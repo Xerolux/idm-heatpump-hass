@@ -13,6 +13,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b3] - 2026-09-27
+
+### Fixed
+
+- **The recurring web model-conflict warning is logged once instead of on
+  every web poll cycle** (#381). Plants whose Modbus probe reports a
+  different Navigator family than the web supplement — for example a
+  Navigator 2.0 Pro whose probe resolves to Navigator 10 — saw
+  `Ignoring conflicting IDM web Navigator model …` in the Home Assistant log
+  every scan interval. The warning is now emitted once per conflicting
+  (web, Modbus) model pair; a changed pair is a new situation and warns
+  again. The conflict itself remains visible in the diagnostics export
+  (`model_conflict_summary`) and in the one-time web-variant-conflict
+  warning.
+
 ## [0.20.0-b2] - 2026-09-27
 
 The device-logic dependency moves to `idm-heatpump-api[web]==2.6.0`, which

@@ -7,6 +7,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from idm_heatpump import (
+    MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
     DataType,
     IdmConnectionError,
@@ -1652,6 +1653,73 @@ class TestAsyncRefreshWebSupplement:
             await coord.async_refresh_web_supplement()
 
         mock_hass.config_entries.async_update_entry.assert_not_called()
+
+    async def test_web_refresh_conflict_warning_logged_once(self, mock_hass, mock_config_entry, caplog):
+        """The recurring web model-conflict warning is logged once, not per poll (#381)."""
+        model_info = IdmModelInfo(
+            model_name=MODEL_NAVIGATOR_10,
+            active_heating_circuits=["A"],
+            zone_modules=0,
+            has_solar=False,
+            has_isc=False,
+            has_pv=False,
+            has_cascade=False,
+        )
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 10",
+            model_info=model_info,
+            web_pin="1234",
+        )
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        # Navigator 2.0 Pro scenario: firmware without NAV10 prefix, so the
+        # conflict is never auto-corrected and used to warn on every web poll.
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 2.0",
+            software_version="20.24-311-gfbf39bd77",
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            caplog.at_level(logging.WARNING, logger="custom_components.idm_heatpump.coordinator"),
+        ):
+            await coord.async_refresh_web_supplement()
+            await coord.async_refresh_web_supplement()
+
+        messages = [
+            record.getMessage()
+            for record in caplog.records
+            if "Ignoring conflicting IDM web Navigator model" in record.getMessage()
+        ]
+        assert len(messages) == 1
+        assert "Navigator 2.0" in messages[0]
+        assert "Navigator 10" in messages[0]
+
+        # A changed conflicting pair is a new situation and warns again.
+        coord._web_model_conflict_logged = ("Navigator 2.0", "Some other model")
+        caplog.clear()
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                return_value=supplement,
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            caplog.at_level(logging.WARNING, logger="custom_components.idm_heatpump.coordinator"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        messages = [
+            record.getMessage()
+            for record in caplog.records
+            if "Ignoring conflicting IDM web Navigator model" in record.getMessage()
+        ]
+        assert len(messages) == 1
 
     async def test_web_refresh_does_not_persist_unchanged_values(self, mock_hass, mock_config_entry):
         """No persistence when stored values already match the web detection."""
