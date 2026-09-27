@@ -12,7 +12,6 @@ import pytest
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump.const import (
-    REGISTER_ADDRESS_ERROR_ACKNOWLEDGE,
     CircuitMode,
     HeatPumpStatus,
     RoomMode,
@@ -69,11 +68,19 @@ def _entry(coord):
 # ---------------------------------------------------------------------------
 
 
+def _shared_acknowledge_register():
+    """The Navigator 2.0/10 acknowledge register (holding 1999)."""
+    return _make_register("error_acknowledge", 1999, writable=True, datatype=DataType.UCHAR, write_only=True)
+
+
 class TestButtonAsyncSetupEntry:
     async def test_creates_acknowledge_errors_button(self):
         from custom_components.idm_heatpump.button import IdmAcknowledgeErrorsButton, async_setup_entry
 
         coord = _make_coordinator()
+        coord.get_register = MagicMock(
+            side_effect=lambda name: _shared_acknowledge_register() if name == "error_acknowledge" else None
+        )
         added = []
         await async_setup_entry(MagicMock(), _entry(coord), lambda e: added.extend(e))
 
@@ -81,24 +88,36 @@ class TestButtonAsyncSetupEntry:
         assert isinstance(added[0], IdmAcknowledgeErrorsButton)
         assert added[0]._attr_unique_id == "test_entry_acknowledge_errors"
 
+    async def test_no_button_without_model_acknowledge_register(self):
+        """A map without a writable acknowledge gets no button at all instead
+        of a button writing the undocumented fallback address (issue #319)."""
+        from custom_components.idm_heatpump.button import async_setup_entry
+
+        coord = _make_coordinator()
+        coord.get_register = MagicMock(return_value=None)
+        added = []
+        await async_setup_entry(MagicMock(), _entry(coord), lambda e: added.extend(e))
+
+        assert added == []
+
 
 class TestIdmAcknowledgeErrorsButton:
     def test_init_attributes(self):
         from custom_components.idm_heatpump.button import IdmAcknowledgeErrorsButton
 
         coord = _make_coordinator()
-        button = IdmAcknowledgeErrorsButton(coord)
+        reg = _shared_acknowledge_register()
+        button = IdmAcknowledgeErrorsButton(coord, reg)
         assert button._attr_translation_key == "acknowledge_errors"
         assert button._attr_icon == "mdi:alert-circle-check"
-        # Button targets the centralized acknowledge register
-        assert button._register.address == REGISTER_ADDRESS_ERROR_ACKNOWLEDGE
-        assert button._register.writable is True
+        # Button targets exactly the register the detected model provides.
+        assert button._register is reg
 
     async def test_async_press_writes_one(self):
         from custom_components.idm_heatpump.button import IdmAcknowledgeErrorsButton
 
         coord = _make_coordinator()
-        button = IdmAcknowledgeErrorsButton(coord)
+        button = IdmAcknowledgeErrorsButton(coord, _shared_acknowledge_register())
         await button.async_press()
         coord.async_write_register.assert_awaited_once()
         written_reg, written_value = coord.async_write_register.await_args.args
@@ -118,7 +137,7 @@ class TestIdmAcknowledgeErrorsButton:
 
         coord = _make_coordinator()
         coord.async_write_register = AsyncMock(side_effect=cooldown_error)
-        button = IdmAcknowledgeErrorsButton(coord)
+        button = IdmAcknowledgeErrorsButton(coord, _shared_acknowledge_register())
 
         with pytest.raises(HomeAssistantError) as exc_info:
             await button.async_press()
@@ -132,7 +151,7 @@ class TestIdmAcknowledgeErrorsButton:
 
         coord = _make_coordinator()
         coord.async_write_register = AsyncMock(side_effect=Exception("write failed"))
-        button = IdmAcknowledgeErrorsButton(coord)
+        button = IdmAcknowledgeErrorsButton(coord, _shared_acknowledge_register())
 
         with pytest.raises(HomeAssistantError) as exc_info:
             await button.async_press()

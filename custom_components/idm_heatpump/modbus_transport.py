@@ -6,8 +6,10 @@ handle batching, decoding, model detection and write safety.
 
 The transport implements the API 1.0 ``IdmModbusTransport`` protocol
 (``connect``/``close``/``connected`` plus keyword-only ``read_*``/``write_*``
-methods returning ``list[int]``).  Backend-neutral ``ModbusError`` failures are
-translated to the API's established exception contract
+methods returning ``list[int]``) and, since idm-heatpump-api 2.5.0, its
+optional ``IdmCoilTransportExtension`` (``read_coils``/``write_coil`` for
+the Navigator 1.x FC01/FC05 coil block).  Backend-neutral ``ModbusError``
+failures are translated to the API's established exception contract
 (:class:`~idm_heatpump.IllegalAddressError` for code 2,
 :class:`~idm_heatpump.IdmDeviceError` carrying the device's ``exception_code``
 for any other refusal, :class:`~idm_heatpump.IdmConnectionError` /
@@ -205,11 +207,13 @@ class ModbusConnectionTransport:
     """Raw IDM transport backed by ``modbus-connection`` and tmodbus.
 
     Implements the API 1.0 ``IdmModbusTransport`` protocol (``connect``/``close``/
-    ``connected`` plus keyword-only ``read_*``/``write_*`` returning ``list[int]``).
-    One instance owns one connection for one Home Assistant config entry.  The
-    upstream connection serializes requests, connects on demand and reconnects
-    on the next request after a dropped link.  Cross-entry sharing is not claimed
-    here because Home Assistant's central sharing layer is not public.
+    ``connected`` plus keyword-only ``read_*``/``write_*`` returning ``list[int]``)
+    and the optional ``IdmCoilTransportExtension`` (``read_coils``/``write_coil``,
+    FC01/FC05) since idm-heatpump-api 2.5.0.  One instance owns one connection
+    for one Home Assistant config entry.  The upstream connection serializes
+    requests, connects on demand and reconnects on the next request after a
+    dropped link.  Cross-entry sharing is not claimed here because Home
+    Assistant's central sharing layer is not public.
 
     Backend-neutral ``ModbusError`` failures are translated to the API's own
     exception contract (``IllegalAddressError``/``IdmDeviceError``/
@@ -297,6 +301,30 @@ class ModbusConnectionTransport:
             "write",
             address,
             self._unit.write_registers(address, [int(value) for value in values]),
+        )
+
+    async def read_coils(self, *, address: int, count: int) -> list[bool]:
+        """Read discrete coils with function code 01 (Navigator 1.x coil block)."""
+        bits = await _invoke_backend(
+            "read coils",
+            address,
+            self._unit.read_coils(address, count),
+        )
+        if len(bits) < count:
+            # Same classification rule as a short register read: a device
+            # answer with the wrong length, not a link failure, so the API's
+            # batch fallback can isolate the address instead of reconnecting.
+            raise IdmDeviceError(
+                f"Incomplete coil response at address {address}: got {len(bits)} coils, expected {count}"
+            )
+        return [bool(bit) for bit in bits[:count]]
+
+    async def write_coil(self, *, address: int, value: bool) -> None:
+        """Write a single coil with function code 05 (error acknowledge)."""
+        await _invoke_backend(
+            "write coil",
+            address,
+            self._unit.write_coil(address, bool(value)),
         )
 
     def as_redacted_diagnostics(self) -> dict[str, object]:

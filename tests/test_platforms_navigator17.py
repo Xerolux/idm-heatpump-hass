@@ -158,13 +158,14 @@ async def test_1_7_water_heater_uses_dhw_temp_and_the_float_setpoint() -> None:
     float pair in b14. The entity must pick up both and carry the register's
     documented bounds.
     """
-    from unittest.mock import MagicMock
+    from unittest.mock import AsyncMock, MagicMock
 
     from custom_components.idm_heatpump.water_heater import IdmWaterHeater, async_setup_entry
 
     reg_map = build_register_map(model_info=_navigator_17_model_info())
     coordinator = MagicMock()
     coordinator.get_register = MagicMock(side_effect=lambda name: reg_map.get(name))
+    coordinator.async_write_register = AsyncMock()
     entry = MagicMock()
     entry.runtime_data.coordinator = coordinator
 
@@ -225,3 +226,101 @@ def test_1_7_translation_keys_resolve(register_name: str, expected_key: str) -> 
     from custom_components.idm_heatpump.entity_names import translation_key_for_register
 
     assert translation_key_for_register(register_name) == expected_key
+
+
+# ---------------------------------------------------------------------------
+# FC01/FC05 coil block (3000-3003) of ma_de_812049 Rev.1
+# ---------------------------------------------------------------------------
+
+
+def test_1_7_demand_coils_become_binary_sensors() -> None:
+    """c3001-c3003 are read-only binary registers: diagnostic binary sensors,
+    never numeric sensors."""
+    from custom_components.idm_heatpump.library_adapter import (
+        get_library_binary_sensors,
+        get_library_sensors,
+    )
+
+    model_info = _navigator_17_model_info()
+    binary = {item["description"].key: item for item in get_library_binary_sensors(model_info=model_info)}
+    for name, address in (("demand_heating_17", 3001), ("demand_cooling_17", 3002), ("demand_dhw_17", 3003)):
+        assert name in binary, name
+        assert binary[name]["register"].address == address
+        assert binary[name]["description"].entity_category is not None
+
+    sensors = {item["description"].key for item in get_library_sensors(model_info=model_info)}
+    assert not {"demand_heating_17", "demand_cooling_17", "demand_dhw_17"} & sensors
+
+
+def test_1_7_acknowledge_register_is_the_coil() -> None:
+    """The 1.x acknowledge is coil c3000 (FC05), and it reuses the shared
+    error_acknowledge name so the button and service resolve it by name."""
+    from idm_heatpump import RegisterType
+
+    reg_map = build_register_map(model_info=_navigator_17_model_info())
+    reg = reg_map["error_acknowledge"]
+    assert reg.address == 3000
+    assert reg.register_type is RegisterType.COIL
+    assert reg.writable is True
+    assert reg.write_only is True
+
+
+async def test_1_7_acknowledge_button_writes_coil_3000() -> None:
+    """The acknowledge button on a Navigator 1.7 targets c3000 through the
+    model map — not the synthetic holding-register fallback of the shared
+    family (issue #319)."""
+    from unittest.mock import AsyncMock, MagicMock
+
+    from custom_components.idm_heatpump.button import IdmAcknowledgeErrorsButton, async_setup_entry
+
+    reg_map = build_register_map(model_info=_navigator_17_model_info())
+    coordinator = MagicMock()
+    coordinator.get_register = MagicMock(side_effect=lambda name: reg_map.get(name))
+    coordinator.async_write_register = AsyncMock()
+    entry = MagicMock()
+    entry.runtime_data.coordinator = coordinator
+
+    added: list = []
+    await async_setup_entry(MagicMock(), entry, MagicMock(side_effect=added.extend))
+
+    buttons = [e for e in added if isinstance(e, IdmAcknowledgeErrorsButton)]
+    assert len(buttons) == 1
+    button = buttons[0]
+    assert button._register.name == "error_acknowledge"
+    assert button._register.address == 3000
+
+    await button.async_press()
+    coordinator.async_write_register.assert_awaited_once()
+    reg, value = coordinator.async_write_register.await_args.args
+    assert reg is button._register
+    assert value == 1
+    # No custom-register bypass: model availability stays validated.
+    assert not coordinator.async_write_register.await_args.kwargs.get("allow_custom_register")
+
+
+def test_1_7_coil_registers_have_german_names() -> None:
+    assert _get_german_name("demand_heating_17") == "Anforderung Heizen"
+    assert _get_german_name("demand_cooling_17") == "Anforderung Kühlen"
+    assert _get_german_name("demand_dhw_17") == "Anforderung Vorrangladung"
+    assert _get_german_name("error_acknowledge") == "Fehlerquittierung"
+
+
+def test_1_7_demand_coils_are_polled_with_their_entities() -> None:
+    """The entity-aware polling plan includes the coils like any register
+    whose entity is enabled."""
+    from custom_components.idm_heatpump.polling_plan import build_required_register_names
+
+    class _Entry:
+        unique_id = "entry-1_demand_heating_17"
+        entity_id = "binary_sensor.idm_anforderung_heizen"
+        disabled_by = None
+        config_entry_id = "entry-1"
+
+    class _Registry:
+        def __init__(self) -> None:
+            self.entities = {"binary_sensor.idm_anforderung_heizen": _Entry()}
+
+    known = {"demand_heating_17", "demand_cooling_17", "demand_dhw_17", "outdoor_temp"}
+    required = build_required_register_names(_Registry(), "entry-1", known)
+    assert required is not None
+    assert "demand_heating_17" in required

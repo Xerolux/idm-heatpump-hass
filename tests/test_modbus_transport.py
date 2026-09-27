@@ -55,6 +55,8 @@ class RecordingUnit:
         self.holding_reads: list[tuple[int, int]] = []
         self.input_reads: list[tuple[int, int]] = []
         self.writes: list[tuple[int, list[int]]] = []
+        self.coil_reads: list[tuple[int, int]] = []
+        self.coil_writes: list[tuple[int, bool]] = []
 
     async def read_holding_registers(self, address: int, count: int) -> list[int]:
         self.holding_reads.append((address, count))
@@ -66,6 +68,14 @@ class RecordingUnit:
 
     async def write_registers(self, address: int, values: list[int]) -> None:
         self.writes.append((address, values))
+
+    async def read_coils(self, address: int, count: int) -> list[bool]:
+        self.coil_reads.append((address, count))
+        # Alternating pattern so truncation to the requested count is visible.
+        return [(address + offset) % 2 == 0 for offset in range(count + 1)]
+
+    async def write_coil(self, address: int, value: bool) -> None:
+        self.coil_writes.append((address, value))
 
 
 class RecordingConnection:
@@ -277,6 +287,109 @@ async def test_tmodbus_transport_uses_fc16_for_multi_register_write() -> None:
     await transport.write_registers(address=1200, values=[0, 65535, 42])
 
     assert unit.writes == [(1200, [0, 65535, 42])]
+
+
+@pytest.mark.asyncio
+async def test_tmodbus_transport_routes_fc01_coil_reads() -> None:
+    """Coil reads go out as FC01 and return exactly the requested count.
+
+    The backend pads the bit payload to byte boundaries; the transport hands
+    the API exactly ``count`` booleans (Navigator 1.x coil block 3000+).
+    """
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 4, 10.0, 3)
+    factory = RecordingConnectionFactory()
+    transport = ModbusConnectionTransport(endpoint, connection_factory=factory)
+    unit = factory.connections[0].unit
+    assert unit is not None
+
+    coils = await transport.read_coils(address=3001, count=3)
+
+    # 3001 is odd: alternating pattern starting at False
+    assert coils == [False, True, False]
+    assert unit.coil_reads == [(3001, 3)]
+
+
+@pytest.mark.asyncio
+async def test_tmodbus_transport_routes_fc05_single_coil_write() -> None:
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 4, 10.0, 3)
+    factory = RecordingConnectionFactory()
+    transport = ModbusConnectionTransport(endpoint, connection_factory=factory)
+    unit = factory.connections[0].unit
+    assert unit is not None
+
+    await transport.write_coil(address=3000, value=True)
+
+    assert unit.coil_writes == [(3000, True)]
+    assert unit.writes == []
+
+
+@pytest.mark.asyncio
+async def test_transport_rejects_short_coil_answer_as_device_error() -> None:
+    """A coil answer shorter than requested is a device answer, not a link
+    fault: IdmDeviceError keeps the API's per-register fallback path."""
+    from idm_heatpump import IdmDeviceError
+
+    class ShortCoilUnit(RecordingUnit):
+        async def read_coils(self, address: int, count: int) -> list[bool]:
+            return [True]
+
+    class ShortCoilConnection(RecordingConnection):
+        def for_unit(self, unit_id: int) -> ShortCoilUnit:
+            self.unit = ShortCoilUnit(unit_id)  # type: ignore[assignment]
+            return self.unit  # type: ignore[return-value]
+
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 4, 10.0, 3)
+    transport = ModbusConnectionTransport(
+        endpoint,
+        connection_factory=lambda _: ShortCoilConnection(),  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(IdmDeviceError):
+        await transport.read_coils(address=3001, count=3)
+
+
+@pytest.mark.asyncio
+async def test_transport_translates_coil_exception_code_2_to_illegal_address() -> None:
+    from idm_heatpump import IllegalAddressError
+
+    from tests.conftest import _stub_modbus_connection
+
+    _stub_modbus_connection()
+    import sys
+
+    mc = sys.modules["modbus_connection"]
+
+    class FailingCoilUnit:
+        async def read_coils(self, address: int, count: int) -> list[bool]:
+            raise mc.IllegalDataAddressError(message="coil not implemented")
+
+    class FailingCoilConnection:
+        def for_unit(self, unit_id: int) -> FailingCoilUnit:
+            return FailingCoilUnit()
+
+        async def connect(self) -> None: ...
+
+        async def close(self) -> None: ...
+
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 4, 10.0, 3)
+    transport = ModbusConnectionTransport(
+        endpoint,
+        connection_factory=lambda _: FailingCoilConnection(),  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(IllegalAddressError):
+        await transport.read_coils(address=3001, count=3)
+
+
+@pytest.mark.asyncio
+async def test_transport_satisfies_api_coil_extension() -> None:
+    from idm_heatpump.transport import IdmCoilTransportExtension
+
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 4, 10.0, 3)
+    factory = RecordingConnectionFactory()
+    transport = ModbusConnectionTransport(endpoint, connection_factory=factory)
+
+    assert isinstance(transport, IdmCoilTransportExtension)
 
 
 @pytest.mark.asyncio

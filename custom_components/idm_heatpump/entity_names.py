@@ -148,6 +148,10 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
     "demand_cooling": "External cooling demand",
     "demand_dhw_charging": "External hot water charging demand",
     "demand_onetime_dhw": "One-time hot water demand",
+    # Navigator 1.0/1.7 coil block (c3001-c3003): controller demand status
+    "demand_heating_17": "Heating demand",
+    "demand_cooling_17": "Cooling demand",
+    "demand_dhw_17": "DHW priority charge demand",
     "hp_sum_alarm": "Collective fault",
     "booster_fault": "Booster fault",
     "booster_interlock": "Booster interlock",

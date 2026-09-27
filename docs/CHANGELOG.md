@@ -13,6 +13,54 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b1] - 2026-09-27
+
+The promised second step of the Navigator 1.0/1.7 rollout (issue #319): the
+official **FC01/FC05 coil block (c3000–c3003)** from ma_de_812049 Rev.1 is
+integrated. The device-logic dependency moves to
+`idm-heatpump-api[web]==2.5.0`.
+
+### Added
+
+- **Navigator 1.0/1.7: the "Acknowledge errors" button now uses the official
+  mechanism — coil c3000 (Störung quittieren) — instead of writing the
+  undocumented holding register 1999.** The button resolves the acknowledge
+  by name from the detected model's register map, so on a Navigator 2.0/10 it
+  keeps writing h1999 (FC16) exactly as before, while a 1.0/1.7 sends an FC05
+  single-coil write to c3000. Nothing changes for existing 2.0/10 setups.
+- **Three new diagnostic binary sensors on Navigator 1.0/1.7** reporting the
+  controller's live demand status from the coil block: *Anforderung Heizen*
+  (c3001), *Anforderung Kühlen* (c3002) and *Anforderung Vorrangladung*
+  (c3003) — the last one is the "hot water priority charge" signal, the
+  demand half of the manual DHW boost. They are polled like every other
+  register and drop out of the poll when their entities are disabled.
+- The transport (`modbus-connection`/tmodbus) speaks the two additional
+  Modbus function codes FC01 (read coils) and FC05 (write single coil)
+  through the new optional `IdmCoilTransportExtension` of
+  idm-heatpump-api 2.5.0. Coil reads run through the same batching, retry
+  and unsupported-register quarantine machinery as word reads.
+
+### Fixed
+
+- **Navigator 1.0/1.7 acknowledge no longer targets an undocumented
+  register.** Previously the generic acknowledge button fell back to holding
+  register 1999 when the (then read-only) 1.x map had no acknowledge —
+  1999 is the Navigator 2.0/10 mechanism and is not documented for the 1.x
+  family. With the coil block mapped, the fallback path is no longer reached
+  on a detected 1.0/1.7.
+- idm-heatpump-api 2.5.0 also fixes `get_register()` resolving
+  `error_acknowledge` through the legacy CORE short-circuit even for a
+  detected Navigator 1.7.
+
+### Notes for testers (issue #319)
+
+- c3003 is documented read/write (Vorrangladung anfordern) but ships
+  **read-only** in this beta: a switch would also write `0`, and what that
+  does to a running demand is not captured yet. Please report read values of
+  the three new sensors during a heating, cooling and hot-water period; the
+  writable variant comes as the next step once confirmed.
+- The register reference (wiki *Modbus Register*) now lists the coil block.
+
 ## [0.19.0] - 2026-09-26
 
 This release makes the **Navigator 1.0/1.7 a first-class citizen** and gives

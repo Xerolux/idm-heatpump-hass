@@ -1285,6 +1285,15 @@
       "cooling_demand": {
         "name": "Kühlanforderung"
       },
+      "demand_cooling_17": {
+        "name": "Anforderung Kühlen"
+      },
+      "demand_dhw_17": {
+        "name": "Anforderung Vorrangladung"
+      },
+      "demand_heating_17": {
+        "name": "Anforderung Heizen"
+      },
       "dhw_demand": {
         "name": "Warmwasseranforderung"
       },
@@ -2699,6 +2708,9 @@
     },
     "ai_task_entity_required": {
       "message": "Eine vorhandene ai_task-Entität zur Datengenerierung auswählen."
+    },
+    "error_acknowledge_unavailable": {
+      "message": "Die Fehlerquittierung ist für dieses Wärmepumpenmodell nicht verfügbar."
     }
   },
   "issues": {

@@ -132,6 +132,12 @@ def _stub_modbus_connection() -> None:
         async def write_registers(self, address: int, values: list[int]) -> None:
             raise _ModbusConnectionError("test Modbus unit has no configured write target")
 
+        async def read_coils(self, address: int, count: int) -> list[bool]:
+            raise _ModbusConnectionError("test Modbus unit has no configured coil data")
+
+        async def write_coil(self, address: int, value: bool) -> None:
+            raise _ModbusConnectionError("test Modbus unit has no configured coil write target")
+
     class _ModbusConnection:
         def __init__(
             self,
