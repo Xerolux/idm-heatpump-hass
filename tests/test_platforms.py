@@ -269,34 +269,76 @@ class TestIdmSensor:
         reg = _make_register("internal_message", datatype=DataType.UINT16)
         sensor = IdmSensor(coord, reg, _make_desc("internal_message"))
         assert sensor.native_value == "020 - Waermepumpenvorlauf Maximaltemperatur"
-        assert sensor.extra_state_attributes == {
-            "message_code": 20,
-            "message_text": "Waermepumpenvorlauf Maximaltemperatur",
-        }
+        # The curated wording stays primary; the vendor database adds the
+        # warning flag and the remediation texts as attributes.
+        attributes = sensor.extra_state_attributes
+        assert attributes is not None
+        assert attributes["message_code"] == 20
+        assert attributes["message_text"] == "Waermepumpenvorlauf Maximaltemperatur"
+        assert attributes["warning"] is True
+        assert attributes["user_description"]
+        assert attributes["service_description"]
 
-    def test_internal_message_native_value_formats_range_code(self):
+    def test_internal_message_native_value_formats_database_code(self):
         from custom_components.idm_heatpump.sensor import IdmSensor
 
+        # 150 is not in the hand-collected table; the packaged vendor database
+        # resolves it exactly instead of the generic range label.
         coord = _make_coordinator(data={"internal_message": 150})
         reg = _make_register("internal_message", datatype=DataType.UINT16)
         sensor = IdmSensor(coord, reg, _make_desc("internal_message"))
-        assert sensor.native_value == "150 - Fuehlerstoerung"
-        assert sensor.extra_state_attributes == {
-            "message_code": 150,
-            "message_text": "Fuehlerstoerung",
-        }
+        assert sensor.native_value == "150 - Verdampferaustritt 1 Kurzschluss"
+        attributes = sensor.extra_state_attributes
+        assert attributes is not None
+        assert attributes["message_text"] == "Verdampferaustritt 1 Kurzschluss"
+        assert attributes["warning"] is False
+
+    def test_internal_message_text_precedence(self, monkeypatch: pytest.MonkeyPatch):
+        from custom_components.idm_heatpump import internal_messages
+
+        # The curated table wins over the vendor database (stable wording).
+        assert internal_messages.internal_message_text(20) == "Waermepumpenvorlauf Maximaltemperatur"
+        # A database exact text beats the generic range label.
+        assert internal_messages.internal_message_text(150) == "Verdampferaustritt 1 Kurzschluss"
+        # Without a database entry the range labels still apply.
+        monkeypatch.setattr(internal_messages, "get_error_code_info", lambda code: None)
+        assert internal_messages.internal_message_text(150) == "Fuehlerstoerung"
 
     def test_internal_message_native_value_formats_unknown_code(self):
         from custom_components.idm_heatpump.sensor import IdmSensor
 
-        coord = _make_coordinator(data={"internal_message": 999})
+        # 68 exists neither in the curated table, the ranges nor the database.
+        coord = _make_coordinator(data={"internal_message": 68})
         reg = _make_register("internal_message", datatype=DataType.UINT16)
         sensor = IdmSensor(coord, reg, _make_desc("internal_message"))
-        assert sensor.native_value == "999 - Unbekannte Meldung - siehe Navigator-Handbuch"
-        assert sensor.extra_state_attributes == {
-            "message_code": 999,
-            "message_text": "Unbekannte Meldung - siehe Navigator-Handbuch",
-        }
+        assert sensor.native_value == "068 - Unbekannte Meldung - siehe Navigator-Handbuch"
+        attributes = sensor.extra_state_attributes
+        assert attributes is not None
+        assert attributes["message_code"] == 68
+
+    def test_error_number_native_value_formats_known_code(self):
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        coord = _make_coordinator(data={"error_number": 22})
+        reg = _make_register("error_number", datatype=DataType.UINT16)
+        sensor = IdmSensor(coord, reg, _make_desc("error_number"))
+        assert sensor.native_value == "022 - Niederdruck K1 Druckstörung"
+        attributes = sensor.extra_state_attributes
+        assert attributes is not None
+        assert attributes["error_code"] == 22
+        assert attributes["error_text"] == "Niederdruck K1 Druckstörung"
+        assert attributes["warning"] is False
+        assert attributes["service_description"]
+
+    def test_error_number_keeps_plain_value_for_unknown_code(self):
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        # Codes outside the vendor database (including 0 = no error) keep the
+        # plain numeric value.
+        coord = _make_coordinator(data={"error_number": 0})
+        reg = _make_register("error_number", datatype=DataType.UINT16)
+        sensor = IdmSensor(coord, reg, _make_desc("error_number"))
+        assert sensor.native_value == 0
 
 
 class TestSensorAsyncSetupEntry:

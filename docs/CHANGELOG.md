@@ -13,6 +13,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b2] - 2026-09-27
+
+The device-logic dependency moves to `idm-heatpump-api[web]==2.6.0`, which
+packages the vendor error-code database decoded from the Windows service tool
+("IDM Smart Navigator" 2.3.118, NAV10 protocol session of 2026-09-27 — see the
+wiki page *Navigator Protocol Analysis* for provenance and validation).
+
+### Added
+
+- **Error codes become readable German text.** The `internal_message` sensor
+  now decodes codes that are not in the hand-collected table through the
+  packaged vendor database: 343 of the 366 codes in the register's 020–999
+  range carry texts, up from 89. The established wording of the hand-collected
+  codes is unchanged; a database exact text replaces the generic range labels
+  (code 150 now reads "Verdampferaustritt 1 Kurzschluss" instead of the
+  generic "Fuehlerstoerung").
+- **Both error sensors expose the vendor's remediation texts as attributes** —
+  `warning`, and where shipped `user_description` and `service_description`:
+  the same texts the installer sees in the service tool.
+- **Navigator 1.0/1.7: the `error_number` (*Störungsnummer*) register is
+  decoded the same way** — state "NNN - text" (for example "022 - Niederdruck
+  K1"), attributes `error_code`/`error_text` plus the remediation texts;
+  codes outside the database (including 0 = no error) keep the plain numeric
+  value. The numbering is assumed to match the shared controller database:
+  the 2.0/10/Pro message range was validated one-to-one against it, the 1.x
+  family was not — please report a mismatching text as an issue.
+
+### Notes
+
+- The database texts are German only; the vendor translation table ships no
+  English for these enums.
+
 ## [0.20.0-b1] - 2026-09-27
 
 The promised second step of the Navigator 1.0/1.7 rollout (issue #319): the
