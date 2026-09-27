@@ -22,6 +22,7 @@
 ## Automation
 - [iDM Smart Energy & Comfort](Smart-Energy-and-Comfort)
 - [Experimental AI Adviser](Experimental-AI-Adviser)
+- [Local Ollama Setup](Local-Ollama)
 - [KNX Bridge](KNX-Bridge)
 - [Services Reference](Services)
 - [Example Automations](Examples)

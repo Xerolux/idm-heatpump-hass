@@ -92,6 +92,10 @@ GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
         "title": "KI-Anlagenberater (experimentell)",
         "description": "Optionale schreibgeschützte Ollama-Berichte mit expliziter Aktivierung, lokalen Daten und sichtbaren Abdeckungsgrenzen einrichten.",
     },
+    "local-ollama": {
+        "title": "Lokale Ollama-Einrichtung",
+        "description": "Ollama als Add-on, Docker-Container oder bestehenden Server für die lokalen KI-Berichte aufsetzen – Schritt für Schritt.",
+    },
     "smart-energy-and-comfort": {
         "title": "Smart Energy & Comfort",
         "description": "Das optionale iDM-Profil Smart Energy & Comfort für lokale Effizienz, Zyklusanalyse und sichere Warmwasser-Boost-Steuerung wählen.",
@@ -208,6 +212,13 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "group": "automation",
         "title": "Experimental Local AI Adviser",
         "description": "Set up optional read-only Ollama reports with explicit activation, local data and visible coverage limits.",
+    },
+    {
+        "slug": "local-ollama",
+        "file": "Local-Ollama.md",
+        "group": "automation",
+        "title": "Local Ollama Setup",
+        "description": "Install Ollama as an add-on, Docker container or existing server for local AI reports, step by step.",
     },
     {
         "slug": "smart-energy-and-comfort",
