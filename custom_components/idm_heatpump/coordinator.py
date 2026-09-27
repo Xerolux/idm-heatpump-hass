@@ -305,6 +305,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._write_timestamps: dict[int, float] = {}
         self._last_write_error: dict[str, Any] | None = None
         self._web_variant_conflict_logged = False
+        # The (web, Modbus) model pair whose conflict warning was already
+        # logged; the web poll loop would repeat the identical warning every
+        # cycle otherwise (#381).
+        self._web_model_conflict_logged: tuple[str, str] | None = None
         self._web_auth_blocked = False
         self._write_cooldown_seconds = max(0.0, min(600.0, write_cooldown_seconds))
         # Room-mode individual validation is expensive (one Modbus read per
@@ -1200,11 +1204,19 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self._firmware_version = web_supplement.software_version
                 model_conflicts = False
             else:
-                _LOGGER.warning(
-                    "Ignoring conflicting IDM web Navigator model %s because Modbus detected %s",
-                    web_model_name,
-                    getattr(self._model_info, "model_name", None) or self._model_name,
-                )
+                # The conflict is permanent on plants whose probe misreports
+                # the family (e.g. a Navigator 2.0 Pro reporting as Navigator
+                # 10): warn once per conflicting pair instead of on every web
+                # poll (#381). A changed pair is a new situation and warns
+                # again.
+                modbus_model_name = getattr(self._model_info, "model_name", None) or self._model_name
+                if self._web_model_conflict_logged != (web_model_name, modbus_model_name):
+                    self._web_model_conflict_logged = (web_model_name, modbus_model_name)
+                    _LOGGER.warning(
+                        "Ignoring conflicting IDM web Navigator model %s because Modbus detected %s",
+                        web_model_name,
+                        modbus_model_name,
+                    )
         if model_info_changed and self._model_info is not None:
             self._client.set_model_info(self._model_info)
         if web_supplement.software_version and not model_conflicts:
