@@ -63,8 +63,59 @@ Varianten, weitere TCP/TLS-Kommunikationswege, Live-Events wie `NC_CHANNELDATA`,
 typisierte Kanalwerte sowie dynamische Kanäle, Parameter, Räume, Fehler,
 Übersetzungen und virtuelle Kanäle.
 
-Die konkreten Kanalnummern, Einheiten, Skalierungen, Byte-Reihenfolgen und
-Spezialtypen wie `UDP_FUNCFLOAT` sind daher noch nicht zuverlässig bestimmt.
+Eine Capture-Session am 2026-09-27 hat zusätzlich die Konfigurationsdatenbank
+des Windows-Service-Tools („IDM Smart Navigator" 2.3.118) dekodiert. Die Dateien
+unter `%APPDATA%\NAVudpClient` sind mit einem 3-Byte-XOR-Key obfuskiert; die
+dekodierten Tabellen enthalten:
+
+| Tabelle | Einträge | Inhalt |
+|---|---:|---|
+| Kanäle | 306 | Messkanäle: Alias, deutsche Beschreibung, Einheit, Bitmasken-/Zustandslisten, Firmware-Signalnamen |
+| Parameter | 2329 | Regler-Parameter (`hparam`/`iparam`/`vparam`) mit Defaults, maschinenabhängigen Defaults und Auswahlwerten |
+| Fehler | 2005 | Fehlercodes mit Komponenten- und Fehlerart-Enums sowie Benutzer-/Service-Beschreibungen (nächster Abschnitt) |
+| Themen | 46 | Ansichtsgruppierung der Kanäle |
+| Übersetzungen | 16392 | Enum-Texte; Deutsch ist vollständig, Englisch wird für die Geräte-Enums nicht ausgeliefert |
+
+Das UDP-Live-Protokoll der älteren Module (im Binary genannte Ports 20001, 20999
+und 54551) wird von einem Navigator-10-Webmodul nicht beantwortet; diese Ports
+gehören zum historischen UDP-Live-Streaming älterer NAV-Generationen. Die
+Gerätesuche der aktuellen Apps läuft über die myiDM-Cloud, nicht über lokale
+UDP-Broadcasts.
+
+Das konkrete UDP-Wire-Format (Skalierungen, Byte-Reihenfolgen, Spezialtypen wie
+`UDP_FUNCFLOAT`) bleibt unbestimmt; kein Integrationscode hängt davon ab.
+
+## Fehlercode-Datenbank (Service-Tool-Capture, 2026-09)
+
+Die dekodierte Service-Tool-Konfiguration enthält die vollständige
+Hersteller-Fehlercode-Datenbank. Die Nummerierung:
+
+- `0` — Platzhalter „kein Fehler";
+- `20..999` — Regler-Meldungen und -Fehler. Das ist der Bereich, den das
+  Modbus-Register `internal_message` meldet (020–999); dort existieren 366
+  Codes, 343 davon mit deutschem Komponententext;
+- `10000+` — geräteseitige Fehlerblöcke: 20000 Display, 30000+ Außengerät,
+  Inverter, Lüfter, EVD, Carel-Peripherie und Kaskadengeräte (1637 Codes).
+
+Jeder Eintrag trägt die betroffene Komponente (`text`, zum Beispiel
+`Wärmepumpenvorlauf`) und, wo vorhanden, die Fehlerart (`info`, zum Beispiel
+`Maximaltemperatur`). `"{text} {info}"` reproduziert die Anzeige-Formulierung
+des Reglers. 1160 Einträge tragen deutsche Benutzerbeschreibungen und 1346
+deutsche Service-/Behebungstexte; Englisch existiert für diese Enums nicht.
+
+**Validierung gegen die Integration:** jeder der 90 exakten Codes der
+handgesammelten Tabelle `internal_messages.py` existiert in der Datenbank mit
+inhaltlich identischem Text, und die zusammengesetzte Formulierung passt
+(Code 20 `Wärmepumpenvorlauf Maximaltemperatur`, Code 100 `Außentemperatur` +
+`Kurzschluss`). Die Nummerierung ist damit bestätigt derselbe Namensraum, den
+das Modbus-Register meldet.
+
+Seit `idm-heatpump-api` 2.6.0 ist die Datenbank als nur-lesende Metadaten
+gepackt (`get_error_code_info()`), regenerierbar über
+`scripts/generate_error_codes.py` im API-Repository. Das Capture selbst — das
+auch PINs, Seriennummern und Netzwerkdaten enthält — wird nie committet. Sechs
+Einträge mit Sub-Fehler-Bit-Aufschlüsselungen (`extras`) existieren in der
+Quelle und fallen in der gepackten Form weg.
 
 ## Bewusst nicht implementiert
 
@@ -269,16 +320,17 @@ unvollständige Bild aus der statischen EXE-Analyse.
 | `system.freshwater` | `overview` | Warmwasser-Detail (Zirkulation, StatusInfo, SystemMode, temperatures) |
 | `setting` | `detail`, `save`, `execute` | Einstellungen lesen (`detail`), schreiben (`save`), Aktionen auslösen (`execute`) |
 | `statistic` | `overview`, `detail` | Statistikblöcke |
+| `cascade` | `overview` | Kaskaden-Information (leere Antwort auf einer Einzelgeräte-Anlage) |
 | `notification` | `overview`, `save` | Nachrichtenübersicht, Nachrichtenänderung |
-| `authentication` | `overview` | Systeminformationen (buffer.systemMode, temperatures, energyflow) |
+| `authentication` | `overview`, `save` | Systeminformationen (buffer.systemMode, temperatures, energyflow); Ebenen-Login über `save` mit `userlevel` und Code |
 | `showcase` | `overview` | Demo- und Info-Sequenzen |
 | `frostprotection` | `overview` | Frostschutz-Assistent (nur in einer Frostsituation aktiv) |
 | `relaytest` | `overview` | Relaistest-Assistent (nur in einer Servicesituation aktiv) |
 
 **Sub-Controller-Muster**: Die `system.*`-Sub-Controller (zum Beispiel
 `system.freshwater`) verwenden im `data`-Block `parameterId` statt `settingId`.
-Die Bibliothek nutzt derzeit nur `setting/detail`, `statistic/detail` und
-`notification/overview`.
+Die Bibliothek nutzt derzeit nur `setting/detail`, `home/detail`,
+`statistic/detail` und `notification/overview`.
 
 **Einstellungs-Aktionstypen** (über `setting/execute`): Der SPA-Code ordnet
 Einstellungen anhand ihres `type`-Felds bestimmten UI-Komponenten zu. Bekannte
@@ -331,7 +383,49 @@ Wenn Nutzer nach Firmware-Updates fragen, ist die Antwort eindeutig:
 
 Die Integration um eigene Update-Funktionen zu erweitern ist nicht geplant und
 würde bedeuten, Cloud-Funktionen bewusst einzubeziehen (siehe den Abschnitt
-„Bewusst nicht implementiert“).
+„Bewusst nicht implementiert”).
+
+## Benutzerebenen, Codes und Zugangsparameter
+
+Verifiziert am 2026-09-27 an einer zweiten, unabhängigen Navigator-10-Anlage
+(Webmodul-Firmware von Juni 2026, `jsonVersion` 11), strikt lesend abgesehen von
+abgewiesenen Login-Versuchen:
+
+- Der WebSocket kennt genau zwei Ebenen: **userlevel 0** (Endbenutzer, über die
+  lokale Netzwerk-PIN freigeschaltet) und **userlevel 4** (Fachmann/Expert). Das
+  Gerät weist die Ebenen 1–3 ausdrücklich zurück („specified userlevel [n] is
+  not supported!”).
+- Der Ebenen-Login ist `authentication/save` mit `{“userlevel”: 4, “code”: …}`;
+  ein falscher Code antwortet mit `{“authorized”: false}`, ohne die Verbindung
+  zu trennen. Wiederholte Fehlversuche sperren die Code-Eingabe am Regler für
+  eine Weile (Parameter `N2_USERLEVELINPUTBLOCKED`).
+- Die zeitabhängigen Installateur-Codes L1/L2, die diese Integration berechnet,
+  gelten **nur im Service-Menü des Regler-Displays**. Am WebSocket getestet:
+  Weder die Endbenutzer-PIN noch korrekt berechnete L1/L2-Codes werden für
+  userlevel 4 akzeptiert. Der Fachmann-Code für den WebSocket ist ein eigener,
+  anlagenspezifischer Code (Display-Menü `CODE_ENTRY_EXPERT`), den IDM nur über
+  seine Servicepartner verteilt.
+
+Zugangsrelevante Regler-Parameter (aus der dekodierten Parameter-Tabelle):
+
+| Parameter | Bedeutung |
+|---|---|
+| `SYSLPIN` | Code lokales Netzwerk (WebSocket-/HTTP-PIN); `0` sperrt den lokalen Zugriff |
+| `CODE_ENTRY_EXPERT` | Fachmann-Codeeingabe (Display-Menü, anlagenspezifisch) |
+| `SYSSSC` | Einfacher Service Code (Display/ältere Module) |
+| `SYSDPTO` | Display-PIN-Timeout |
+| `T13_CODE_VOREINST_1` / `T21_CODE_VOREINST_2` | Werksvoreinstellungen des Fachmann-Codes |
+
+**Regler-Uhr:** Auf der Capture-Anlage ging die Regler-Uhr etwa zwei Stunden
+vor (vermutlich doppelt angewendete Sommerzeit). Die L1/L2-Codes sind aus der
+Zeit **auf dem Regler-Display** abzuleiten, nicht aus der Uhr des abfragenden
+Rechners — immer zuerst die Display-Zeit prüfen.
+
+In derselben Session außerdem bestätigt: `setting/detail` ohne `settingId`
+antwortet mit `”data is empty!”`, die Assistenten `frostprotection` und
+`relaytest` antworten außerhalb ihrer Situation mit `”wizard is not
+available!”`, und `status/overview` meldet `userlevel`, `myidmInfo`, die
+Meldeanzahl, `jsonVersion` und die Regler-Uhr (`timestamp`).
 
 ## myIDM-Cloud-API (Referenz)
 
