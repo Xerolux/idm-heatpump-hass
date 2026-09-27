@@ -74,6 +74,7 @@ PIN_DOCUMENTS = (
     "docs/ha-core-integration-page.md",
     "docs/dev/heatpump-feature-roadmap.md",
     "docs/dev/open-work-audit.md",
+    "docs/dev/ws-first-roadmap.md",
     "docs/wiki/Home.md",
     "docs/wiki/_Sidebar.md",
     "docs/wiki/Stability-and-Release-Readiness.md",
