@@ -495,7 +495,9 @@ def _replace_element_text(
         rf'(<(?P<tag>[a-z0-9]+)\b[^>]*\b{re.escape(attribute)}(?:="[^"]*")?[^>]*>).*?(</(?P=tag)>)',
         flags=re.DOTALL | re.IGNORECASE,
     )
-    updated, count = pattern.subn(rf"\g<1>{value}\g<3>", document)
+    # Function replacement: value is page-derived text and must not be parsed
+    # as a template (a backslash such as %APPDATA%\NAVudpClient would raise).
+    updated, count = pattern.subn(lambda match: f"{match.group(1)}{value}{match.group(3)}", document)
     if required and count == 0:
         raise ValueError(f"Missing element with {attribute}")
     return updated
@@ -515,7 +517,9 @@ def _replace_tag_attribute(
         rf'(<[a-z0-9]+\b(?=[^>]*\b{selector})(?=[^>]*\b{re.escape(target_attribute)}=")[^>]*\b{re.escape(target_attribute)}=")[^"]*(")',
         flags=re.DOTALL | re.IGNORECASE,
     )
-    updated, count = pattern.subn(rf"\g<1>{value}\g<2>", document)
+    # Function replacement so that page-derived value text is not parsed as a
+    # template (see the twin call site above).
+    updated, count = pattern.subn(lambda match: f"{match.group(1)}{value}{match.group(2)}", document)
     if count == 0:
         raise ValueError(f"Missing element with {selector_attribute}")
     return updated
