@@ -1583,6 +1583,9 @@
       "pv_target_value": {
         "name": "PV Zielwert"
       },
+      "web_dhw_setpoint": {
+        "name": "Warmwasser-Solltemperatur (Web)"
+      },
       "zone_room_humidity": {
         "name": "Zone {zone} Raum {room} Raumfeuchte (Vorgabe)"
       },

@@ -2641,6 +2641,16 @@ class TestWebWriteMethods:
         client.set_system_mode.assert_awaited_once_with(4)
         coordinator.async_refresh_web_supplement.assert_awaited_once()
 
+    async def test_set_dhw_setpoint_uses_the_pooled_client_and_reads_back(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.save_dhw_setpoint = AsyncMock()
+        coordinator = self._coordinator_with_pool(mock_hass, mock_config_entry, client)
+
+        await coordinator.async_web_set_dhw_setpoint(49.0)
+
+        client.save_dhw_setpoint.assert_awaited_once_with(49.0)
+        coordinator.async_refresh_web_supplement.assert_awaited_once()
+
     async def test_acknowledge_uses_the_pooled_client_and_reads_back(self, mock_hass, mock_config_entry):
         client = MagicMock()
         client.acknowledge_all_notifications = AsyncMock()

@@ -473,6 +473,9 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_water_temp_bottom": ("Tank temperature bottom (Web)", "Speichertemperatur unten (Web)"),
         "web_water_temp_top": ("Tank temperature top (Web)", "Speichertemperatur oben (Web)"),
     },
+    "number": {
+        "web_dhw_setpoint": ("Hot water setpoint (Web)", "Warmwasser-Solltemperatur (Web)"),
+    },
     "button": {
         "ai_report_daily": ("AI daily report (experimental)", "KI-Tagesbericht (experimentell)"),
         "ai_report_weekly": ("AI weekly report (experimental)", "KI-Wochenbericht (experimentell)"),

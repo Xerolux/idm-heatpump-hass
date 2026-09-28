@@ -282,6 +282,12 @@ genauso wie bisher über Modbus:
   meldet einen Fehler, statt still zu scheitern.
 - **Fehler quittieren (Web)** (`web_acknowledge_errors`): der
   Quittieren-Knopf, schreibt `notification/save`.
+- **Warmwasser-Solltemperatur (Web)** (`web_dhw_setpoint`): die
+  Warmwasser-Solltemperatur als Zahl-Entität. Grenzen, Schrittweite und der
+  aktuelle Wert stammen aus der vom Gerät selbst deklarierten
+  Parameterdefinition, und jeder Schreibvorgang wird vor dem Senden gegen
+  genau diese Grenzen validiert — dieselbe Schreibsicherheit wie im
+  Register-Pfad.
 
 Die Dienste `set_system_mode` und `acknowledge_errors` nutzen für
 Nur-Web-Einträge automatisch denselben Web-Pfad. Schreibvorgänge verwenden

@@ -73,6 +73,9 @@ class IdmWebSupplement:
     # Navigator 10 home/overview snapshot (operating-mode state with the
     # controller's own selectable values); None on other variants or failure.
     home_overview: Any | None = None
+    # Navigator 10 hot-water setpoint parameter (the device's own declared
+    # range with the current value); None on other variants or failure.
+    dhw_setpoint: Any | None = None
 
     @property
     def model_name(self) -> str | None:
@@ -412,6 +415,35 @@ async def _read_optional_status(
     return replace(supplement, status=status)
 
 
+async def _read_optional_dhw_setpoint(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the hot-water setpoint.
+
+    Reads the settings-tree parameter (13256 / FW030 on the confirmed
+    firmware) with the device's own declared range and the current value —
+    the state and bounds of the web-only setpoint control. Strictly
+    optional: any failure keeps the supplement unchanged.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    read_setting_parameter = getattr(client, "read_setting_parameter", None)
+    if not callable(read_setting_parameter):
+        return supplement
+    try:
+        from idm_heatpump import NAVIGATOR10_DHW_SETPOINT_SETTING_ID
+
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            parameter = await read_setting_parameter(NAVIGATOR10_DHW_SETPOINT_SETTING_ID)
+    except Exception:
+        _LOGGER.debug("IDM web hot-water setpoint read failed", exc_info=True)
+        return supplement
+    if getattr(parameter, "param", None) != "FW030":
+        return supplement
+    return replace(supplement, dhw_setpoint=parameter)
+
+
 async def _augment_web_supplement(
     client: _IdmWebClient,
     supplement: IdmWebSupplement,
@@ -427,6 +459,7 @@ async def _augment_web_supplement(
     supplement = await _read_optional_freshwater(client, supplement)
     supplement = await _read_optional_status(client, supplement)
     supplement = await _read_optional_home_overview(client, supplement)
+    supplement = await _read_optional_dhw_setpoint(client, supplement)
     return supplement
 
 
