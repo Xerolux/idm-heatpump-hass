@@ -451,6 +451,51 @@ below — the level-0 read catalog suggests the writable end-user set is small,
 since every accessible page on this firmware is of type `info` or a single
 `action`.
 
+## Write semantics from the SPA bundle (static analysis, September 2026)
+
+The controller serves its web UI (`lighttpd`, Angular SPA) over plain HTTP.
+Reading the shipped JavaScript — a strictly read-only download, no browser
+session and no write frame sent — reconstructs the complete write surface the
+official UI could send. Every method below is quoted from the SPA's
+WebSocket facade; payload shapes are therefore *statically confirmed*, while
+the **response** frames to a save (success/error shape) remain unconfirmed
+until a capture session records them.
+
+| Facade method | Frame | Notes |
+|---|---|---|
+| `saveSetting` | `setting/save {settingId, value}` | sub-controller variant `setting.<x>/save`; the settings page adds `source:"Display"` |
+| `executeSetting` | `setting/execute {settingId, value}` | action-type settings (e.g. the `N2_SYSTEM_REBOOT` page 4740) |
+| `saveSystemMode` | `home/save {systemMode: {value: N}}` | **operating mode switch**; holiday adds `vacationDays`, `freshwaterActive` |
+| `saveSystemFreshwater` | `system.freshwater/save {parameterId, value}` | e.g. tap-temperature dialog writes a °C number; `FW027`/`FW028` are re-sent by the SPA after 500 ms (firmware quirk) |
+| `saveSystemHeatingcircuit` | `system.heatingcircuit/save {parameterId, value}` | per-circuit temperatures/timetables; a copy function sends the full object |
+| `saveSystemVentilation` | `system.ventilation/save {parameterId, value}` / full object | |
+| `saveChargePoint` | `system.chargePoint/save t` | controller not in the live catalog |
+| `saveRoom` | `room/save {roomId, value}` | zone-module room settings |
+| `saveIon` | `ion/save {parameterId, value}` | |
+| `saveStatus` | `status/save {parameterId, value}` | the status page itself is writable |
+| `saveAfw` | `frostprotection/save {itemId, value}` | frost wizard only |
+| `saveRelayTestItem` | `relaytest/save {settingId or type, relayId, value}` | service situation only |
+| `sendQuitAll` | `notification/save {quitAll: true}` | acknowledge all messages |
+| `sendQuit` | `notification/save {code, remindMeLater}` | acknowledge one message |
+| `saveAuthentication` | `authentication/save {userlevel: 4, code}` | **technician login, userlevel hardcoded to 4 — never automate** |
+| `sendLocalPin` | `authorization/auth {pin}` | the local PIN handshake |
+| graph saves | `graph/save {id?, name?, channels?, periodType?, remove?}` | user-side statistics charts |
+
+**Operating mode values — live-confirmed.** The `home/overview` frame
+carries the mode state and the controller's own option list: `options:
+[-1, 0, 1, 2, 3, 5, 4]` — exactly the Modbus `system_mode` (register 1005)
+numbering (0 standby, 1 automatic, 2 away, 3 holiday, 4 hot-water-only,
+5 heating/cooling-only; −1 unknown). Switching the mode through the web
+therefore sends `home/save {"systemMode":{"value":4}}` and so on. The SPA
+uses **read-after-write** (it re-requests the overview after every save)
+rather than optimistic state.
+
+Phase 4 consequences: `web_only` mode can be built against these shapes —
+mode switch and DHW acknowledgement first — with each write feature
+individually validated and authorized. The save-response frame shape is the
+one remaining unknown a capture session should confirm before the first
+write ships.
+
 ## Capturing frames yourself (ws_capture)
 
 `idm-heatpump-api` ships a small logging WebSocket proxy for capture

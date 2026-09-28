@@ -452,6 +452,52 @@ weiterhin die Capture-Sitzung unten — der Level-0-Lesekatalog legt nahe, dass
 die beschreibbare Endnutzer-Menge klein ist, denn jede zugängliche Seite
 dieser Firmware ist vom Typ `info` oder eine einzelne `action`.
 
+## Schreibsemantik aus dem SPA-Bundle (statische Analyse, September 2026)
+
+Der Regler liefert seine Weboberfläche (`lighttpd`, Angular-SPA) über einfaches
+HTTP aus. Das Auslesen des mitgelieferten JavaScript — ein strikt read-only
+Download, ohne Browser-Sitzung und ohne gesendeten Schreibrahmen —
+rekonstruiert die komplette Schreibfläche, die die offizielle Oberfläche
+senden könnte. Jede Methode unten ist wörtlich aus der WebSocket-Fassade der
+SPA zitiert; die Payload-Formen sind damit *statisch bestätigt*, während die
+**Antwort**rahmen auf ein Save (Erfolg/Fehler-Form) bis zu einer
+Capture-Sitzung unbestätigt bleiben.
+
+| Fassadenmethode | Rahmen | Hinweise |
+|---|---|---|
+| `saveSetting` | `setting/save {settingId, value}` | Sub-Controller-Variante `setting.<x>/save`; die Einstellungsseite ergänzt `source:"Display"` |
+| `executeSetting` | `setting/execute {settingId, value}` | Aktions-Einstellungen (z. B. die Seite `N2_SYSTEM_REBOOT` 4740) |
+| `saveSystemMode` | `home/save {systemMode: {value: N}}` | **Betriebsart-Schalter**; Urlaub ergänzt `vacationDays`, `freshwaterActive` |
+| `saveSystemFreshwater` | `system.freshwater/save {parameterId, value}` | z. B. schreibt der Zapftemperatur-Dialog eine °C-Zahl; `FW027`/`FW028` sendet die SPA nach 500 ms erneut (Firmware-Quirk) |
+| `saveSystemHeatingcircuit` | `system.heatingcircuit/save {parameterId, value}` | Temperaturen/Zeitpläne je Heizkreis; eine Kopierfunktion sendet das ganze Objekt |
+| `saveSystemVentilation` | `system.ventilation/save {parameterId, value}` / ganzes Objekt | |
+| `saveChargePoint` | `system.chargePoint/save t` | Controller nicht im Live-Katalog |
+| `saveRoom` | `room/save {roomId, value}` | Raummodule-Einstellungen |
+| `saveIon` | `ion/save {parameterId, value}` | |
+| `saveStatus` | `status/save {parameterId, value}` | die Statusseite selbst ist beschreibbar |
+| `saveAfw` | `frostprotection/save {itemId, value}` | nur Frostschutz-Assistent |
+| `saveRelayTestItem` | `relaytest/save {settingId oder type, relayId, value}` | nur Servicesituation |
+| `sendQuitAll` | `notification/save {quitAll: true}` | alle Meldungen quittieren |
+| `sendQuit` | `notification/save {code, remindMeLater}` | eine Meldung quittieren |
+| `saveAuthentication` | `authentication/save {userlevel: 4, code}` | **Techniker-Login, Userlevel hart auf 4 — niemals automatisieren** |
+| `sendLocalPin` | `authorization/auth {pin}` | der lokale PIN-Handshake |
+| Graph-Speicherungen | `graph/save {id?, name?, channels?, periodType?, remove?}` | nutzerseitige Statistik-Charts |
+
+**Betriebsart-Werte — live bestätigt.** Der Rahmen `home/overview` führt den
+Moduszustand und die eigene Optionsliste des Reglers mit: `options:
+[-1, 0, 1, 2, 3, 5, 4]` — exakt die Numerierung der Modbus-`system_mode`
+(Register 1005; 0 Standby, 1 Automatik, 2 Abwesend, 3 Urlaub, 4 Nur
+Warmwasser, 5 Nur Heizen/Kühlen; −1 unbekannt). Die Betriebsart über das Web
+zu schalten sendet also `home/save {"systemMode":{"value":4}}` und so weiter.
+Die SPA arbeitet mit **Read-after-Write** (sie fragt nach jedem Speichern das
+Overview erneut an) statt optimistischem Zustand.
+
+Konsequenzen für Phase 4: Der `web_only`-Modus kann gegen diese Formen gebaut
+werden — Betriebsart-Schalter und Warmwasser-Quittierung zuerst — mit je
+einzeln validiertem und freigegebenem Schreib-Feature. Die
+Save-Antwortrahmenform ist die letzte Unbekannte, die eine Capture-Sitzung
+vor dem ersten Schreib-Release bestätigen sollte.
+
 ## Frames selbst mitschneiden (ws_capture)
 
 Das `idm-heatpump-api`-Repository enthält einen kleinen protokollierenden

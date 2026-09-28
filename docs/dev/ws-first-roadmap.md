@@ -14,9 +14,14 @@ Status: 2026-09-27 · Maintainer: Xerolux · Audience: an AI assistant or develo
 > probed read-only: eight answering IDs, three error classes — see the
 > protocol wiki page), and concurrent WS sessions were verified by
 > observation (live HA poll plus parallel sessions on one controller). Still
-> open: the Phase 3 **capture session** for the *write* semantics only
-> (maintainer clicks through the web UI through the proxy — the tool is
-> ready and documented), then Phase 4 write PRs per feature and Phase 5.
+> open: the Phase 3 **capture session** is now a *confirmation* step only:
+> the complete write surface (home/save systemMode with the live-confirmed
+> Modbus-compatible mode values, setting/save + source:"Display",
+> notification/save quitAll/code, system.freshwater/heatingcircuit/
+> ventilation parameterId writes, room, ion, status) is reconstructed
+> statically from the SPA bundle the controller serves over HTTP — see the
+> protocol wiki page. The one remaining unknown is the save *response*
+> frame shape. Then Phase 4 write PRs per feature and Phase 5.
 picking this work up **cold** — this document is self-contained, but it expects
 you to have read both repositories' `AGENTS.md` first.
 
