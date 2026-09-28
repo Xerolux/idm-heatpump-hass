@@ -1,5 +1,6 @@
 """Tests for __init__.py (async_setup, async_setup_entry, async_unload_entry)."""
 
+import contextlib
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -524,6 +525,159 @@ class TestAsyncSetupWebOnlyEntry:
         assert result is True
         assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
         assert entry.runtime_data.coordinator.model_name == MODEL
+
+
+class TestConnectionMode:
+    """The explicit connection mode selects the data paths (Phase 1)."""
+
+    def _make_entry(self, *, options=None, data_extra=None):
+        entry = MagicMock()
+        entry.entry_id = "mode_entry"
+        entry.title = "IDM Mode"
+        entry.data = {
+            "host": "192.168.1.100",
+            "port": 502,
+            "slave_id": 1,
+            "web_pin": "1234",
+        }
+        entry.data.update(data_extra or {})
+        entry.options = {
+            "scan_interval": 10,
+            "heating_circuits": ["a"],
+            "zone_count": 0,
+            "zone_rooms": {},
+            "hide_unused_registers": True,
+            "web_enabled": True,
+            "web_scan_interval": 30,
+        }
+        entry.options.update(options or {})
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    def _normal_setup_patches(self, mock_client, mock_coordinator):
+        return (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+        )
+
+    async def test_web_only_mode_skips_modbus_entirely(self, mock_hass):
+        """A first-class web_only selection must not attempt a Modbus connection."""
+        entry = self._make_entry(options={"connection_mode": "web_only"})
+        supplement = MagicMock(spec=IdmWebSupplement)
+        supplement.model_name = "Navigator 10"
+        supplement.software_version = "1.2.3"
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client") as client_factory,
+            patch(
+                "custom_components.idm_heatpump.async_read_web_supplement",
+                AsyncMock(return_value=supplement),
+            ),
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+        ):
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        mock_client = client_factory.return_value
+        mock_client.connect.assert_not_called()
+        # Web-only forwards exactly the sensor platform.
+        forwarded = mock_hass.config_entries.async_forward_entry_setups.call_args.args[1]
+        assert len(forwarded) == 1
+
+    async def test_modbus_only_mode_never_touches_the_web(self, mock_hass):
+        """modbus_only skips the web read, the poll loop and the web pin."""
+        entry = self._make_entry(options={"connection_mode": "modbus_only"})
+
+        mock_client = AsyncMock()
+        mock_client.host = "192.168.1.100"
+        mock_client.port = 502
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with contextlib.ExitStack() as stack:
+            for ctx in self._normal_setup_patches(mock_client, mock_coordinator)[:8]:
+                stack.enter_context(ctx)
+            read_web = stack.enter_context(
+                patch("custom_components.idm_heatpump.async_read_web_supplement", AsyncMock())
+            )
+            web_loop = stack.enter_context(patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()))
+            stack.enter_context(patch("custom_components.idm_heatpump.ir"))
+            from custom_components.idm_heatpump import IdmCoordinator as coordinator_class
+
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        read_web.assert_not_called()
+        web_loop.assert_not_called()
+        assert entry.runtime_data.web_task is None
+        # The coordinator must not carry the web pin, or web sensors appear.
+        assert coordinator_class.call_args.kwargs["web_pin"] is None
+
+    async def test_modbus_only_does_not_raise_web_pin_missing(self, mock_hass):
+        """Without the web path there is nothing a PIN could fix."""
+        entry = self._make_entry(options={"connection_mode": "modbus_only"})
+        entry.data = {k: v for k, v in entry.data.items() if k != "web_pin"}
+
+        mock_client = AsyncMock()
+        mock_client.host = "192.168.1.100"
+        mock_client.port = 502
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with contextlib.ExitStack() as stack:
+            for ctx in self._normal_setup_patches(mock_client, mock_coordinator)[:8]:
+                stack.enter_context(ctx)
+            stack.enter_context(patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()))
+            issue_registry = stack.enter_context(patch("custom_components.idm_heatpump.ir"))
+            await async_setup_entry(mock_hass, entry)
+
+        issue_registry.async_create_issue.assert_not_called()
+
+    async def test_modbus_web_mode_restores_modbus_despite_legacy_flag(self, mock_hass):
+        """An explicit modbus_web selection overrides the old web_only flag."""
+        entry = self._make_entry(
+            options={"connection_mode": "modbus_web"},
+            data_extra={"web_only_mode": True},
+        )
+
+        mock_client = AsyncMock()
+        mock_client.host = "192.168.1.100"
+        mock_client.port = 502
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with contextlib.ExitStack() as stack:
+            for ctx in self._normal_setup_patches(mock_client, mock_coordinator)[:8]:
+                stack.enter_context(ctx)
+            read_web = stack.enter_context(
+                patch(
+                    "custom_components.idm_heatpump.async_read_web_supplement",
+                    AsyncMock(return_value=None),
+                )
+            )
+            stack.enter_context(patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()))
+            stack.enter_context(patch("custom_components.idm_heatpump.ir"))
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        mock_client.connect.assert_awaited_once()
+        read_web.assert_awaited_once()
 
 
 class TestAsyncUnloadEntry:

@@ -1,6 +1,14 @@
 """Tests for constants and enums in const.py."""
 
 from custom_components.idm_heatpump.const import (
+    CONF_CONNECTION_MODE,
+    CONF_WEB_ONLY,
+    CONNECTION_MODE_AUTO,
+    CONNECTION_MODE_MODBUS_ONLY,
+    CONNECTION_MODE_MODBUS_WEB,
+    CONNECTION_MODE_OPTIONS,
+    CONNECTION_MODE_WEB_ONLY,
+    DEFAULT_CONNECTION_MODE,
     DOMAIN,
     HEATING_CIRCUITS,
     MAX_ROOM_COUNT,
@@ -12,6 +20,7 @@ from custom_components.idm_heatpump.const import (
     SmartGridStatus,
     SolarMode,
     SystemMode,
+    resolve_connection_mode,
 )
 
 
@@ -31,6 +40,38 @@ class TestDomain:
 
     def test_max_room_count(self):
         assert MAX_ROOM_COUNT == 8
+
+
+class TestConnectionMode:
+    """The connection mode decides which data paths an entry may use."""
+
+    def test_selector_values(self):
+        assert CONNECTION_MODE_OPTIONS == (
+            CONNECTION_MODE_AUTO,
+            CONNECTION_MODE_MODBUS_WEB,
+            CONNECTION_MODE_WEB_ONLY,
+            CONNECTION_MODE_MODBUS_ONLY,
+        )
+        assert DEFAULT_CONNECTION_MODE == CONNECTION_MODE_AUTO
+
+    def test_default_is_auto_without_stored_choice(self):
+        assert resolve_connection_mode({}, {}) == CONNECTION_MODE_AUTO
+
+    def test_explicit_option_wins(self):
+        for mode in CONNECTION_MODE_OPTIONS:
+            assert resolve_connection_mode({CONF_CONNECTION_MODE: mode}, {}) == mode
+
+    def test_auto_honours_legacy_web_only_flag(self):
+        assert resolve_connection_mode({}, {CONF_WEB_ONLY: True}) == CONNECTION_MODE_WEB_ONLY
+
+    def test_explicit_modes_ignore_legacy_web_only_flag(self):
+        assert (
+            resolve_connection_mode({CONF_CONNECTION_MODE: CONNECTION_MODE_MODBUS_WEB}, {CONF_WEB_ONLY: True})
+            == CONNECTION_MODE_MODBUS_WEB
+        )
+
+    def test_unknown_stored_value_falls_back_to_auto(self):
+        assert resolve_connection_mode({CONF_CONNECTION_MODE: "carrier_pigeon"}, {}) == CONNECTION_MODE_AUTO
 
 
 class TestSystemMode:

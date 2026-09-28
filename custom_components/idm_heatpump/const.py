@@ -7,6 +7,8 @@ from __future__ import annotations
 # Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
 # SPDX-License-Identifier: MIT
 import enum
+from collections.abc import Mapping
+from typing import Any
 
 try:
     import idm_heatpump as idm_api
@@ -84,6 +86,11 @@ CONF_KNX_RESEND_INTERVAL: str = "knx_resend_interval"
 CONF_KNX_TOLERANCE: str = "knx_tolerance"
 CONF_KNX_OVERRIDES: str = "knx_overrides"
 CONF_WEB_ONLY: str = "web_only_mode"
+# Which data paths a configured entry may use. ``auto`` keeps the historical
+# behaviour (Modbus as the base, web supplement when configured, web-only
+# fallback when the setup fallback chose it); the other values pin the paths
+# explicitly.
+CONF_CONNECTION_MODE: str = "connection_mode"
 CONF_MODBUS_TIMEOUT: str = "modbus_timeout"
 CONF_MODBUS_MAX_RETRIES: str = "modbus_retries"
 # Connection-wide pacing handed to ``modbus-connection``: the minimum pause
@@ -127,6 +134,20 @@ FEATURE_PROFILE_OPTIONS: tuple[str, ...] = (FEATURE_PROFILE_SMART, FEATURE_PROFI
 
 DEFAULT_HOST: str = ""
 DEFAULT_WEB_ONLY: bool = False
+# Connection mode selector values. ``auto`` is the historical behaviour and the
+# recommended default; the explicit modes pin the data paths so behaviour no
+# longer depends on what the setup fallback decided once.
+CONNECTION_MODE_AUTO: str = "auto"
+CONNECTION_MODE_MODBUS_WEB: str = "modbus_web"
+CONNECTION_MODE_WEB_ONLY: str = "web_only"
+CONNECTION_MODE_MODBUS_ONLY: str = "modbus_only"
+DEFAULT_CONNECTION_MODE: str = CONNECTION_MODE_AUTO
+CONNECTION_MODE_OPTIONS: tuple[str, ...] = (
+    CONNECTION_MODE_AUTO,
+    CONNECTION_MODE_MODBUS_WEB,
+    CONNECTION_MODE_WEB_ONLY,
+    CONNECTION_MODE_MODBUS_ONLY,
+)
 DEFAULT_PORT: int = 502
 # Selector values for the optional model override. ``auto`` keeps the
 # automatic detection; the other values force a Navigator family.
@@ -282,6 +303,23 @@ MAX_ROOM_COUNT: int = 8
 HEATING_CIRCUITS: list[str] = ["a", "b", "c", "d", "e", "f", "g"]
 HEATING_CIRCUITS_OPTIONAL: list[str] = ["b", "c", "d", "e", "f", "g"]
 ZONE_OPTIONS: list[str] = [str(i) for i in range(1, 11)]
+
+
+def resolve_connection_mode(options: Mapping[str, Any], data: Mapping[str, Any]) -> str:
+    """Return the effective connection mode for one config entry.
+
+    An explicit ``connection_mode`` option wins. ``auto`` (the default and the
+    historical behaviour) additionally honours the legacy web-only flag that
+    the setup fallback writes into ``entry.data``; the explicit modes ignore
+    that flag so selecting ``modbus_web`` really restores the Modbus path.
+    Unknown stored values fall back to ``auto``.
+    """
+    mode = str(options.get(CONF_CONNECTION_MODE, DEFAULT_CONNECTION_MODE))
+    if mode not in CONNECTION_MODE_OPTIONS:
+        mode = DEFAULT_CONNECTION_MODE
+    if mode == CONNECTION_MODE_AUTO and bool(data.get(CONF_WEB_ONLY, DEFAULT_WEB_ONLY)):
+        return CONNECTION_MODE_WEB_ONLY
+    return mode
 
 
 class SystemMode(enum.IntEnum):

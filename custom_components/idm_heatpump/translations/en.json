@@ -211,6 +211,7 @@
             "name": "Advanced Modbus settings",
             "description": "For experienced users only. The defaults are recommended. Polling jitter spreads requests, diagnostics creates extra entities, and the write cooldown blocks rapid repeat writes. The general write cooldown and EEPROM protection operate independently.",
             "data": {
+              "connection_mode": "Connection mode",
               "modbus_timeout": "Response timeout",
               "modbus_retries": "Retries",
               "modbus_message_spacing": "Pause between requests (seconds)",
@@ -221,6 +222,7 @@
               "write_cooldown": "Per-register write cooldown (seconds)"
             },
             "data_description": {
+              "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection and is read-only: setpoints, modes and error acknowledgement require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
               "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
               "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
@@ -832,6 +834,7 @@
             "name": "Advanced Modbus settings",
             "description": "For experienced users only. The defaults are recommended. Polling jitter spreads requests, diagnostics creates extra entities, and the write cooldown blocks rapid repeat writes. The general write cooldown and EEPROM protection operate independently.",
             "data": {
+              "connection_mode": "Connection mode",
               "modbus_timeout": "Response timeout",
               "modbus_retries": "Retries",
               "modbus_message_spacing": "Pause between requests (seconds)",
@@ -842,6 +845,7 @@
               "write_cooldown": "Per-register write cooldown (seconds)"
             },
             "data_description": {
+              "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection and is read-only: setpoints, modes and error acknowledgement require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
               "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
               "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
@@ -2534,6 +2538,14 @@
       "options": {
         "disable": "Stop reading solar registers",
         "keep": "Keep the solar registers"
+      }
+    },
+    "connection_mode": {
+      "options": {
+        "auto": "Automatic (recommended)",
+        "modbus_web": "Modbus + web supplement",
+        "web_only": "Web only (read-only)",
+        "modbus_only": "Modbus only"
       }
     }
   },

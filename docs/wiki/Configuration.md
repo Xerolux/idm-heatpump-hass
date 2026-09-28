@@ -385,6 +385,33 @@ The general write cooldown is independent of the API's EEPROM protection.
 EEPROM-sensitive registers can therefore still be subject to the separately
 configured EEPROM interval and its safety rules.
 
+### Connection mode
+
+The first field of the advanced section selects which data paths the entry may
+use:
+
+- **Automatic (recommended)** keeps the historical behaviour: Modbus for
+  registers and all writes, the local web supplement for additional values when
+  a web PIN is configured, and the web-only setup fallback when Modbus is
+  unreachable while a valid PIN exists.
+- **Modbus + web supplement** pins both paths on and disables the web-only
+  setup fallback: a failing Modbus connection retries instead of degrading to
+  web-only.
+- **Web only (read-only)** runs the entry entirely through the local web
+  interface — setup does not attempt a Modbus connection. This is an honest
+  read-only mode: setpoints, operating modes and error acknowledgement require
+  Modbus. It needs a configured web PIN and is available on Navigator 10/Pro
+  (WebSocket) and Navigator 2.0 (HTTP) web interfaces.
+- **Modbus only** never contacts the web interface, even with a PIN configured;
+  the web entities are not created for this entry.
+
+The selection survives reload. An explicit mode overrides the legacy web-only
+flag that the setup fallback once wrote, so choosing **Modbus + web
+supplement** restores full Modbus operation on such an entry. The diagnostics
+export reports the active mode in its `connection` block together with the
+detected controller family, the firmware version and whether a web PIN is
+configured (presence only).
+
 ## Runtime and API versions
 
 IDM Heatpump is a Home Assistant custom integration rather than an add-on.

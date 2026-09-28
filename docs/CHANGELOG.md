@@ -13,6 +13,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **An explicit connection mode** (WebSocket-first roadmap, Phase 1). The new
+  expert option *Connection mode* in the advanced Modbus section selects which
+  data paths the entry may use: `auto` (default, recommended — the historical
+  behaviour: Modbus as the base, web supplement when a PIN is configured,
+  web-only fallback when setup chose it), `modbus_web` (both paths pinned on,
+  no web-only fallback), `web_only` (first-class read-only web operation —
+  setup no longer attempts a Modbus connection; setpoints, modes and error
+  acknowledgement still require Modbus) and `modbus_only` (the local web
+  interface is never contacted, even with a PIN configured). The choice
+  survives reload; an explicit mode overrides the legacy web-only flag. The
+  diagnostics export gains a `connection` block reporting the active mode,
+  which paths are in use, whether a web PIN is configured (presence only), the
+  controller family and the firmware version.
+
 ## [0.20.0-b5] - 2026-09-28
 
 ### Fixed
