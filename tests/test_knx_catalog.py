@@ -99,7 +99,10 @@ class TestGroupAddressParsing:
     def test_parses_every_notation(self, text, raw):
         assert parse_group_address(text) == raw
 
-    @pytest.mark.parametrize("text", ["", "  ", "a/b/c", "8/0/256", "32/0/0", "8/8/0", "-1", "0/0/0", "1/2/3/4"])
+    @pytest.mark.parametrize(
+        "text",
+        ["", "  ", "a/b/c", "8/0/256", "32/0/0", "8/8/0", "8/2048", "-1", "0/0/0", "65536", "1/2/3/4"],
+    )
     def test_rejects_unusable_addresses(self, text):
         with pytest.raises(InvalidGroupAddressError):
             parse_group_address(text)
@@ -107,6 +110,11 @@ class TestGroupAddressParsing:
     def test_formats_back_to_three_levels(self):
         assert format_group_address(16385) == "8/0/1"
         assert format_group_address(65535) == "31/7/255"
+
+    @pytest.mark.parametrize("raw", [0, 65536])
+    def test_rejects_unformattable_raw_addresses(self, raw):
+        with pytest.raises(InvalidGroupAddressError):
+            format_group_address(raw)
 
     def test_round_trips(self):
         for raw in (1, 2048, 16385, 65535):

@@ -139,6 +139,19 @@ class TestWriteRetryDelay:
     def test_does_not_retry_a_device_or_connection_error(self):
         assert _retry_delay_from_write_error(RuntimeError("bus off"), eeprom_fallback=60.0) is None
 
+    def test_a_cooldown_error_without_a_usable_placeholder_is_not_retried(self):
+        missing = HomeAssistantError(translation_key="write_cooldown_active")
+        assert _retry_delay_from_write_error(missing) is None
+        unparsable = HomeAssistantError(
+            translation_key="write_cooldown_active",
+            translation_placeholders={"remaining": "soon"},
+        )
+        assert _retry_delay_from_write_error(unparsable) is None
+
+    def test_an_eeprom_block_without_pattern_or_fallback_is_not_retried(self):
+        err = ValueError("EEPROM write cycle protection is active")
+        assert _retry_delay_from_write_error(err) is None
+
 
 class TestStart:
     async def test_stays_idle_and_raises_a_repair_issue_without_knx(self):
@@ -276,6 +289,63 @@ class TestSending:
         await bridge.async_start()
         await _drain(bridge)
         assert not [c for c in hass.services.async_call.call_args_list if c.args[2]["address"] == "8/0/1"]
+        await bridge.async_stop()
+
+    async def test_a_value_that_cannot_be_encoded_is_not_published(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator({"outdoor_temp": "Heizen", "system_mode": 1, "hc_a_mode": 2})
+        bridge = KnxBridge(hass, coordinator, _config(receive_enabled=False), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+        assert not [c for c in hass.services.async_call.call_args_list if c.args[2]["address"] == "8/0/1"]
+        await bridge.async_stop()
+
+    async def test_untyped_one_bit_objects_go_out_as_raw_payloads(self):
+        """GLT demand objects carry no datapoint type: raw 0/1, no ``type``."""
+        hass = _make_hass()
+        coordinator = _make_coordinator({"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": 2, "demand_heating": 1})
+        bridge = KnxBridge(hass, coordinator, _config(receive_enabled=False), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+        sends = {c.args[2]["address"]: c.args[2] for c in hass.services.async_call.call_args_list}
+        assert sends["8/1/124"] == {"address": "8/1/124", "payload": 1}
+        await bridge.async_stop()
+
+    async def test_the_send_gap_paces_consecutive_telegrams(self):
+        hass = _make_hass()
+        bridge = KnxBridge(hass, _make_coordinator(), _config(receive_enabled=False, send_gap=0.01), entry_id="e")
+        loop = asyncio.get_running_loop()
+        started = loop.time()
+        await bridge.async_start()
+        for _ in range(200):
+            sent = [c for c in hass.services.async_call.call_args_list if c.args[1] == "send"]
+            if len(sent) >= 3:
+                break
+            await asyncio.sleep(0.002)
+        # Three readable values went out, separated by the configured gap:
+        # the third telegram cannot leave before two full gaps have passed.
+        assert loop.time() - started >= 0.02
+        await bridge.async_stop()
+
+    async def test_a_queued_register_that_lost_its_object_is_skipped(self):
+        hass = _make_hass()
+        bridge = KnxBridge(hass, _make_coordinator(), _config(receive_enabled=False), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+        bridge._queue.put_nowait("not_a_register")
+        await _drain(bridge)
+        await bridge.async_stop()
+
+    async def test_a_queued_register_that_lost_its_payload_is_skipped(self):
+        hass = _make_hass()
+        bridge = KnxBridge(hass, _make_coordinator(), _config(receive_enabled=False), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+        hass.services.async_call.reset_mock()
+        bridge._last_sent.pop("outdoor_temp")
+        bridge._queue.put_nowait("outdoor_temp")
+        await _drain(bridge)
+        assert not [c for c in hass.services.async_call.call_args_list if c.args[2].get("address") == "8/0/1"]
         await bridge.async_stop()
 
 
@@ -487,6 +557,55 @@ class TestReceiving:
         await asyncio.sleep(0)
         await bridge.async_stop()
 
+    async def test_accepts_the_raw_payload_when_no_decoded_value_arrives(self):
+        """An address registered without a type delivers its payload as ``data``."""
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        bridge = await self._started(hass, coordinator)
+
+        event = MagicMock()
+        event.data = {
+            "destination": "8/0/222",
+            "data": 5,
+            "direction": "Incoming",
+            "telegramtype": "GroupValueWrite",
+        }
+        bridge._handle_knx_event(event)
+        await asyncio.sleep(0)
+        coordinator.async_write_register.assert_awaited_once_with(HC_A_MODE, 5)
+        await bridge.async_stop()
+
+    async def test_commands_a_write_only_register(self):
+        """Error acknowledge holds no value to compare against; it just writes."""
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        bridge = await self._started(hass, coordinator)
+
+        bridge._handle_knx_event(self._event("8/1/243", 1))
+        await asyncio.sleep(0)
+        coordinator.async_write_register.assert_awaited_once_with(ACK, 1)
+        await bridge.async_stop()
+
+    async def test_commands_a_register_the_snapshot_has_no_value_for_yet(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator()
+        bridge = await self._started(hass, coordinator)
+
+        bridge._handle_knx_event(self._event("8/1/124", 1))
+        await asyncio.sleep(0)
+        coordinator.async_write_register.assert_awaited_once_with(DEMAND_HEATING, True)
+        await bridge.async_stop()
+
+    async def test_a_non_numeric_current_value_falls_back_to_equality(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator({"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": "Auto"})
+        bridge = await self._started(hass, coordinator)
+
+        bridge._handle_knx_event(self._event("8/0/222", 3))
+        await asyncio.sleep(0)
+        coordinator.async_write_register.assert_awaited_once_with(HC_A_MODE, 3)
+        await bridge.async_stop()
+
 
 class TestReadRequests:
     """A KNX device asking for a value must get an answer.
@@ -620,6 +739,32 @@ class TestReadRequests:
         hass = _make_hass()
         coordinator = _make_coordinator()
         coordinator.is_register_unused = MagicMock(side_effect=lambda name, value: name == "outdoor_temp")
+        bridge = KnxBridge(hass, coordinator, _config(), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+        hass.services.async_call.reset_mock()
+
+        bridge._handle_read_request("8/0/1")
+        await asyncio.sleep(0)
+        assert self._responses(hass) == []
+        await bridge.async_stop()
+
+    async def test_answers_untyped_one_bit_objects_without_a_type(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator({"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": 2, "demand_heating": 1})
+        bridge = KnxBridge(hass, coordinator, _config(), entry_id="e")
+        await bridge.async_start()
+        await _drain(bridge)
+        hass.services.async_call.reset_mock()
+
+        bridge._handle_read_request("8/1/124")
+        await asyncio.sleep(0)
+        assert self._responses(hass) == [{"address": "8/1/124", "response": True, "payload": 1}]
+        await bridge.async_stop()
+
+    async def test_a_value_that_cannot_be_encoded_is_not_answered(self):
+        hass = _make_hass()
+        coordinator = _make_coordinator({"outdoor_temp": "Heizen", "system_mode": 1, "hc_a_mode": 2})
         bridge = KnxBridge(hass, coordinator, _config(), entry_id="e")
         await bridge.async_start()
         await _drain(bridge)
