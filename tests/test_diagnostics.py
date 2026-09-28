@@ -317,6 +317,14 @@ class TestConnectionDiagnostics:
         assert connection["controller_family"] == "Navigator 10"
         assert connection["firmware_version"] == "2.34"
 
+    async def test_communication_block_reports_suppressed_transient_zeros(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        mock_config_entry.runtime_data.coordinator.transient_zero_suppressed = 3
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        assert result["data"]["communication"]["transient_zero_suppressed"] == 3
+
     async def test_connection_block_reports_web_status_facts(self, mock_hass, mock_config_entry):
         from idm_heatpump import IdmWebStatus
 

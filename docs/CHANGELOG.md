@@ -15,6 +15,24 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Single-poll zero readings on lifetime energy counters are suppressed.**
+  A same-generation Navigator controller was observed answering one poll
+  with `0.0` on a monotonic kWh counter and the correct lifetime value again
+  on the next poll (kodebach/hacs-idm-heatpump#322). Home Assistant reads a
+  `total_increasing` drop to zero as a meter reset, so `utility_meter` and
+  long-term statistics book the entire lifetime counter as fresh
+  consumption. The coordinator now holds the affected register unavailable
+  for exactly one poll when a lifetime counter (`energy_heating`,
+  `energy_dhw`, `energy_defrost`, `energy_cooling`, `energy_electric_heater`,
+  `total_heat_energy`, and the web heat-quantity totals) drops from a
+  positive value to zero between two consecutive polls. A genuine
+  device-side reset therefore appears one poll cycle later; today's
+  counters, which legitimately return to zero at day boundaries, are never
+  suppressed. The diagnostics export counts the suppressed readings under
+  `communication.transient_zero_suppressed`.
+
 ### Added
 
 - **Navigator 10 WebSocket read expansion** (WebSocket-first roadmap, Phase 2;

@@ -241,7 +241,25 @@ def syscount_label_for(library_register: str) -> str | None:
     return f"{row.syscount_key} ({row.semantic_label})"
 
 
+#: Lifetime monotonic kWh counters of the controller (the ``ZQ*`` syscount
+#: family and the overall heat-energy total). These never legitimately drop
+#: to zero mid-operation, so the coordinator suppresses a single-poll zero
+#: reading on them (transient device glitch) instead of letting Home
+#: Assistant book a meter reset — see the coordinator's
+#: ``_suppress_transient_counter_zeros``.
+LIFETIME_ENERGY_COUNTER_REGISTERS: frozenset[str] = frozenset(
+    {
+        "energy_cooling",
+        "energy_defrost",
+        "energy_dhw",
+        "energy_electric_heater",
+        "energy_heating",
+        "total_heat_energy",
+    }
+)
+
 __all__ = [
+    "LIFETIME_ENERGY_COUNTER_REGISTERS",
     "SYSCOUNT_REGISTER_REFERENCE",
     "ControllerStatReference",
     "reference_for",

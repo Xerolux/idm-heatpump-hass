@@ -12,7 +12,7 @@ import math
 import random
 import time
 from collections.abc import Callable, Iterable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime, timedelta
 from typing import TYPE_CHECKING, Any, cast
 
@@ -64,6 +64,7 @@ from .registers import (
 if TYPE_CHECKING:
     from .dhw_boost import DhwBoostManager
 
+from .controller_stats_reference import LIFETIME_ENERGY_COUNTER_REGISTERS
 from .energy_statistics import EnergyStatistics
 from .operation_analysis import OperationAnalysis
 
@@ -79,6 +80,17 @@ from .web_data import (
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+# Lifetime web counters covered by the transient-zero guard. Today's values
+# reset to zero by design and must never be suppressed.
+_WEB_LIFETIME_COUNTER_KEYS: frozenset[str] = frozenset(
+    {
+        "heat_quantity_heating_total",
+        "heat_quantity_hotwater_total",
+        "hotwater_tapping_heat_quantity",
+        "hotwater_circulation_heat_quantity",
+    }
+)
 _ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
 _CONNECTIVITY_REPAIR_ISSUES = (
     "cannot_connect",
@@ -295,6 +307,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_poll_duration: float | None = None
         self._last_poll_success: datetime | None = None
         self._consecutive_poll_failures = 0
+        self._transient_zero_suppressed = 0
         self._total_poll_count = 0
         self._total_poll_failures = 0
         self._slow_poll_streak = 0
@@ -628,6 +641,87 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return ()
         return tuple(sorted(self._web_supplement.sensor_values))
 
+    @property
+    def transient_zero_suppressed(self) -> int:
+        """Return how many single-poll zero readings were suppressed."""
+        return self._transient_zero_suppressed
+
+    def _suppress_transient_counter_zeros(self, data: dict[str, Any]) -> None:
+        """Drop single-poll zero readings on lifetime energy counters.
+
+        A same-generation Navigator controller was observed answering one
+        poll with 0.0 on a monotonic kWh counter and the correct lifetime
+        value again on the next poll (kodebach/hacs-idm-heatpump#322). Home
+        Assistant reads a ``total_increasing`` drop to zero as a meter reset,
+        so ``utility_meter`` and long-term statistics book the whole lifetime
+        counter as fresh consumption. Holding the value unavailable for one
+        poll makes a genuine device-side reset appear one cycle later; the
+        previous snapshot no longer carries the key then, so the zero passes.
+        """
+        previous = self.data if isinstance(self.data, dict) else {}
+        for name in LIFETIME_ENERGY_COUNTER_REGISTERS:
+            if name not in data:
+                continue
+            value = data[name]
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or value != 0:
+                continue
+            last = previous.get(name)
+            if isinstance(last, bool) or not isinstance(last, (int, float)) or last <= 0:
+                continue
+            del data[name]
+            self._transient_zero_suppressed += 1
+            _LOGGER.debug(
+                "Suppressing transient zero on lifetime counter %s (was %s last poll)",
+                name,
+                last,
+            )
+
+    @staticmethod
+    def _web_counter_dropped_keys(supplement: Any, previous: Any) -> set[str]:
+        """Return lifetime web counters whose new reading is a transient zero."""
+        if previous is None:
+            return set()
+        new_values = getattr(supplement, "sensor_values", None) or {}
+        old_values = getattr(previous, "sensor_values", None) or {}
+        dropped: set[str] = set()
+        for key in _WEB_LIFETIME_COUNTER_KEYS:
+            entry = new_values.get(key)
+            if entry is None:
+                continue
+            value = entry.native_value
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or value != 0:
+                continue
+            old_entry = old_values.get(key)
+            last = getattr(old_entry, "native_value", None) if old_entry is not None else None
+            if isinstance(last, bool) or not isinstance(last, (int, float)) or last <= 0:
+                continue
+            dropped.add(key)
+        return dropped
+
+    def _suppress_transient_web_counter_zeros(self, supplement: Any) -> Any:
+        """Apply the transient-zero guard to lifetime web energy counters.
+
+        Same rationale as ``_suppress_transient_counter_zeros``: the
+        device-side heat-quantity totals arrive as ``total_increasing`` kWh
+        values, and a single-poll zero would corrupt downstream meter
+        statistics. Today's counters are deliberately excluded — they
+        legitimately return to zero at day boundaries.
+        """
+        dropped = self._web_counter_dropped_keys(supplement, self._web_supplement)
+        if not dropped:
+            return supplement
+        self._transient_zero_suppressed += len(dropped)
+        _LOGGER.debug("Suppressing transient zero on web lifetime counters %s", sorted(dropped))
+        sensor_values = {
+            name: value
+            for name, value in (getattr(supplement, "sensor_values", None) or {}).items()
+            if name not in dropped
+        }
+        values = {
+            name: value for name, value in (getattr(supplement, "values", None) or {}).items() if name not in dropped
+        }
+        return replace(supplement, values=values, sensor_values=sensor_values)
+
     def _web_metadata_data(self) -> dict[str, str]:
         """Return web metadata stored alongside the Modbus data snapshot."""
         supplement = self._web_supplement
@@ -919,6 +1013,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._total_poll_count += 1
         try:
             data = await self._async_read_registers_resilient(self._registers)
+            self._suppress_transient_counter_zeros(data)
 
             # Keep the API and coordinator skip-lists synchronized before the
             # room-mode validation, then perform that validation in the same
@@ -1149,6 +1244,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         previous_model_name = self._model_name
         previous_firmware_version = self._firmware_version
         previous_myidm_id = self.myidm_id
+        web_supplement = self._suppress_transient_web_counter_zeros(web_supplement)
         self._web_supplement = web_supplement
         # Cache which web variant succeeded so the next poll skips the other
         # (WebSocket vs. HTTP have completely different login mechanisms).

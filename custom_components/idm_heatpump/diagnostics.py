@@ -357,6 +357,9 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                     "total_registers_in_plan": statistics.known_registers,
                     "polling_jitter_percent": statistics.jitter_percent,
                     "write_cooldown_seconds": statistics.write_cooldown_seconds,
+                    # Single-poll zero readings suppressed on lifetime energy
+                    # counters (transient device glitch guard).
+                    "transient_zero_suppressed": getattr(coordinator, "transient_zero_suppressed", 0),
                 },
                 "model_name": coordinator.model_name,
                 "firmware_version": coordinator.firmware_version,
