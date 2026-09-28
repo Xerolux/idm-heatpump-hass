@@ -496,6 +496,39 @@ async def test_async_read_web_supplement_adds_dhw_setpoint_parameter(
     assert parameter.max_value == 60
 
 
+async def test_async_read_web_supplement_adds_heating_circuits(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from idm_heatpump import IdmWebHeatingCircuit, IdmWebHeatingCircuitRef, IdmWebHeatingCircuitValue
+
+    circuit_a = IdmWebHeatingCircuit(
+        hc_id="A",
+        mode_value=2,
+        mode_parameter_id="HKA01",
+        setpoint_normal=IdmWebHeatingCircuitValue("HKA04", 21.5, 15, 30, "0.1"),
+        available_circuits=(IdmWebHeatingCircuitRef("A"), IdmWebHeatingCircuitRef("D")),
+    )
+    circuit_d = IdmWebHeatingCircuit(hc_id="D", mode_value=0, mode_parameter_id="HKD01")
+
+    class _Client(_FakeWebClient):
+        def __init__(self, data):
+            super().__init__(data)
+            self.calls: list[str] = []
+
+        async def read_heatingcircuit(self, hc_id: str):
+            self.calls.append(hc_id)
+            return circuit_a if hc_id == "A" else circuit_d
+
+    nav10 = _Client(_nav10_base_data())
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert nav10.calls == ["A", "D"]
+    assert [c.hc_id for c in result.heating_circuits] == ["A", "D"]
+
+
 async def test_async_read_web_supplement_ignores_mismatched_setpoint_param(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

@@ -373,6 +373,14 @@ as before:
   the device's own declared parameter definition, and every write is
   validated against that range before sending — the same write safety as the
   register path.
+- **Heizkreis X Raumsolltemperatur (Web)** / **Heizkreis X Betriebsart
+  (Web)** (per configured circuit): the normal room setpoint (parameter
+  `HK<x>04`) as a number and the circuit mode (parameter `HK<x>01`) as a
+  select, with the device's own declared bounds/options. One
+  `system.heatingcircuit/detail` frame per circuit also carries the room
+  temperature and pump state. The DHW one-shot boost deliberately stays off
+  the web path: this firmware exposes it only as a weekly timetable, and
+  writing whole timetable strings is out of scope.
 
 The `set_system_mode` and `acknowledge_errors` services use the same web
 path automatically for web-only entries. Writes reuse the authorized web

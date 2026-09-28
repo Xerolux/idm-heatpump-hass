@@ -76,6 +76,9 @@ class IdmWebSupplement:
     # Navigator 10 hot-water setpoint parameter (the device's own declared
     # range with the current value); None on other variants or failure.
     dhw_setpoint: Any | None = None
+    # Heating circuits of a Navigator 10 (system.heatingcircuit/detail per
+    # configured circuit); empty on other variants or failure.
+    heating_circuits: tuple[Any, ...] = ()
 
     @property
     def model_name(self) -> str | None:
@@ -444,6 +447,38 @@ async def _read_optional_dhw_setpoint(
     return replace(supplement, dhw_setpoint=parameter)
 
 
+async def _read_optional_heatingcircuits(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the heating-circuit states.
+
+    One ``system.heatingcircuit/detail`` frame per circuit carries the
+    operating mode (with the device's own chooselist), the normal and eco
+    room setpoints with their declared ranges, the room temperature and the
+    pump state — the state and bounds of the web-only heating controls. The
+    first answer also lists every configured circuit, so the reader walks
+    the plant's own circuit list. Strictly optional.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    read_heatingcircuit = getattr(client, "read_heatingcircuit", None)
+    if not callable(read_heatingcircuit):
+        return supplement
+    circuits: list[Any] = []
+    try:
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            first = await read_heatingcircuit("A")
+            circuits.append(first)
+            wanted = [ref.hc_id for ref in first.available_circuits if ref.hc_id != first.hc_id]
+            for hc_id in wanted:
+                circuits.append(await read_heatingcircuit(hc_id))
+    except Exception:
+        _LOGGER.debug("IDM web heating-circuit read failed", exc_info=True)
+        return supplement
+    return replace(supplement, heating_circuits=tuple(circuits))
+
+
 async def _augment_web_supplement(
     client: _IdmWebClient,
     supplement: IdmWebSupplement,
@@ -460,6 +495,7 @@ async def _augment_web_supplement(
     supplement = await _read_optional_status(client, supplement)
     supplement = await _read_optional_home_overview(client, supplement)
     supplement = await _read_optional_dhw_setpoint(client, supplement)
+    supplement = await _read_optional_heatingcircuits(client, supplement)
     return supplement
 
 
