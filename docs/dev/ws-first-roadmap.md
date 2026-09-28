@@ -3,14 +3,20 @@
 Status: 2026-09-27 · Maintainer: Xerolux · Audience: an AI assistant or developer
 
 > **Implementation status 2026-09-28 (branch `feat/ws-first`, integration +
-> API branch `feat/ws-read-expansion`):** Phase 1 (connection mode), Phase 2
+> API branch `feat/ws-read-expansion`):** Phase 1 (connection mode incl. the
+> full detection summary — the diagnostics `connection` block also reports
+> `jsonVersion`, userlevel and the controller clock), Phase 2
 > (statistic/freshwater/status reads, API 2.7.0) and the Phase 3 capture tool
 > (`scripts/ws_capture.py`, live-verified) are implemented with full gates.
 > The Phase 2.1 blocker is resolved: the `statisticType`/`periodType` values
-> were confirmed frame by frame read-only on the maintainer's Navigator 10
-> (see the protocol wiki page). Still open: the Phase 3 **capture session**
-> itself (maintainer clicks through the web UI through the proxy — the tool
-> is ready and documented), then Phase 4 write PRs per feature and Phase 5.
+> were confirmed frame by frame read-only on the maintainer's Navigator 10.
+> The **read half of the level-0 settingId catalog is enumerated** (2016 IDs
+> probed read-only: eight answering IDs, three error classes — see the
+> protocol wiki page), and concurrent WS sessions were verified by
+> observation (live HA poll plus parallel sessions on one controller). Still
+> open: the Phase 3 **capture session** for the *write* semantics only
+> (maintainer clicks through the web UI through the proxy — the tool is
+> ready and documented), then Phase 4 write PRs per feature and Phase 5.
 picking this work up **cold** — this document is self-contained, but it expects
 you to have read both repositories' `AGENTS.md` first.
 

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
 # Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
@@ -41,11 +43,22 @@ def _connection_diagnostics(entry: ConfigEntry, coordinator: Any) -> dict[str, A
 
     Presence-only booleans — the PIN value itself stays redacted. This is the
     Phase 1 detection summary of the WebSocket-first roadmap: one block that
-    answers "what is this entry talking to, and how" without hunting through
-    the whole export.
+    answers "what is this integration talking to, and how" without hunting
+    through the whole export. ``web_json_version`` / ``web_userlevel`` /
+    ``controller_clock`` come from the Navigator 10 status/overview frame
+    (Phase 2.3) and stay ``None`` when no frame has arrived yet.
     """
     mode = resolve_connection_mode(entry.options, entry.data)
     web_pin = str(entry.data.get(CONF_WEB_PIN, "") or "").strip()
+    supplement = getattr(coordinator, "web_supplement", None)
+    status = getattr(supplement, "status", None) if supplement is not None else None
+    controller_clock: str | None = None
+    timestamp_ms = getattr(status, "timestamp_ms", None)
+    if isinstance(timestamp_ms, int):
+        try:
+            controller_clock = datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC).isoformat()
+        except (OverflowError, OSError, ValueError):
+            controller_clock = None
     return {
         "mode": mode,
         "modbus_used": mode != CONNECTION_MODE_WEB_ONLY,
@@ -54,6 +67,9 @@ def _connection_diagnostics(entry: ConfigEntry, coordinator: Any) -> dict[str, A
         "web_pin_configured": bool(web_pin),
         "controller_family": coordinator.model_name,
         "firmware_version": coordinator.firmware_version,
+        "web_json_version": getattr(status, "json_version", None),
+        "web_userlevel": getattr(status, "userlevel", None),
+        "controller_clock": controller_clock,
     }
 
 

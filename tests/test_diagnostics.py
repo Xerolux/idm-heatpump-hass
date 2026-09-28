@@ -317,6 +317,37 @@ class TestConnectionDiagnostics:
         assert connection["controller_family"] == "Navigator 10"
         assert connection["firmware_version"] == "2.34"
 
+    async def test_connection_block_reports_web_status_facts(self, mock_hass, mock_config_entry):
+        from idm_heatpump import IdmWebStatus
+
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        mock_config_entry.data = {**mock_config_entry.data, "web_pin": "2634"}
+        coordinator = mock_config_entry.runtime_data.coordinator
+        supplement = coordinator.web_supplement
+        supplement.status = IdmWebStatus(
+            json_version=11,
+            userlevel=0,
+            timestamp_ms=1790576788000,
+        )
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        connection = result["data"]["connection"]
+        assert connection["web_json_version"] == 11
+        assert connection["web_userlevel"] == 0
+        assert connection["controller_clock"] == "2026-09-28T06:26:28+00:00"
+
+    async def test_connection_block_without_a_status_frame_stays_none(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        mock_config_entry.runtime_data.coordinator.web_supplement.status = None
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        connection = result["data"]["connection"]
+        assert connection["web_json_version"] is None
+        assert connection["web_userlevel"] is None
+        assert connection["controller_clock"] is None
+
     async def test_connection_block_never_contains_the_pin_value(self, mock_hass, mock_config_entry):
         _make_hass_with_coordinator(mock_hass, mock_config_entry)
         mock_config_entry.data = {**mock_config_entry.data, "web_pin": "2634"}

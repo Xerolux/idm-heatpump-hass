@@ -15,6 +15,11 @@ not a complete protocol specification.
 - For the implemented web access, Navigator Pro uses the Navigator 10 WebSocket
   variant.
 - Web data is delivered as typed values with units or as a translated status.
+- Concurrent WebSocket sessions work: on 2026-09-28 a live Home Assistant
+  integration poll (one session) and several additional parallel sessions
+  (probe, verification, capture proxy) authenticated and answered on the same
+  Navigator 10 without interference. This is a one-time observation under
+  normal load, not a stress test.
 
 The integration therefore keeps Modbus as the base path and uses the local web
 interface only as an optional supplement or fallback. No cloud logins are
@@ -412,6 +417,39 @@ When users ask about firmware updates, the answer is clear:
 Extending the integration with its own update functions is not planned and would
 require deliberately including cloud functions (see the section "Deliberately
 not implemented").
+
+### Level-0 settingId catalog (read side, live-enumerated September 2026)
+
+A strictly read-only enumeration — only `setting/detail` frames, the same
+read the integration performs — probed 2016 candidate IDs across the ranges
+700–15100 on a live Navigator 10 (jsonVersion 11, userlevel 0). Exactly eight
+settingIds answer for an end user:
+
+| settingId | Name | `type` | Redirect | Content |
+|---|---|---|---|---|
+| `4740` | `N2_SYSTEM_REBOOT` | **action** | 4488 | restart action (write side, Phase 4 material) |
+| `4754` | `N2_SYSTEM_INFO` | info | 4747 | runtimes, switch cycles, software version, myIDM ID, controller online |
+| `4768` | `N2_SENSORS` | info | 4761 | 26 sensor values (B-codes) |
+| `4775` | `N2_DIGITAL_INPUTS` | info | 4761 | 8 digital inputs |
+| `4782` | `N2_ANALOGUE_OUTPUTS` | info | 4761 | 4 analogue outputs |
+| `4789` | `N2_DIGITAL_OUTPUTS` | info | 4761 | 14 digital outputs |
+| `4824` | `N2_NETWORK_INFORMATIONS` | info | 4747 | network status + myIDM account (private data — never republished) |
+| `13259` | `N2_HWS_INFO` | info | 4747 | hot-water-station heat quantities |
+
+The controller distinguishes three error answers, which makes the catalog
+trustworthy: `no setting item found for setting id [X]!` (the ID does not
+exist), `setting item [X] is not a setting detail item!` (a container/menu
+item — 4488, 4747 and 4761 are of this kind), and `setting item [X] is not
+accessible!` (exists but is level-gated). The six read IDs the integration
+uses today are exactly the six info pages with parseable tables; `4824`
+carries only private network data and is deliberately not turned into
+entities.
+
+What this enumeration cannot deliver: the **write** half (`setting/save`
+payload shapes for editable pages). That still needs the capture session
+below — the level-0 read catalog suggests the writable end-user set is small,
+since every accessible page on this firmware is of type `info` or a single
+`action`.
 
 ## Capturing frames yourself (ws_capture)
 

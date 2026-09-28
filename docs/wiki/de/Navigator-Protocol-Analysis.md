@@ -15,6 +15,7 @@ Sie ist keine vollständige Protokollspezifikation.
 - Für den implementierten Webzugriff nutzt der Navigator Pro die WebSocket-Variante
   des Navigator 10.
 - Webdaten werden als typisierte Werte mit Einheiten oder als übersetzter Status
+- Parallele WebSocket-Sitzungen funktionieren: Am 2026-09-28 lief ein Live-Home-Assistant-Integrationpoll (eine Sitzung) und mehrere zusätzliche parallele Sitzungen (Sonde, Verifikation, Capture-Proxy) auf demselben Navigator 10 ohne Störung authentifiziert und antworteten. Das ist eine Einzelbeobachtung unter normaler Last, kein Stresstest.
   geliefert.
 
 Die Integration behält daher Modbus als Basispfad bei und nutzt die lokale
@@ -417,6 +418,39 @@ Wenn Nutzer nach Firmware-Updates fragen, ist die Antwort eindeutig:
 Die Integration um eigene Update-Funktionen zu erweitern ist nicht geplant und
 würde bedeuten, Cloud-Funktionen bewusst einzubeziehen (siehe den Abschnitt
 „Bewusst nicht implementiert”).
+
+### Level-0-settingId-Katalog (Leseseite, live enumeriert September 2026)
+
+Eine strikt read-only-Enumeration — nur `setting/detail`-Rahmen, dieselbe
+Leseanfrage, die die Integration sendet — hat 2016 Kandidaten-IDs über die
+Bereiche 700–15100 auf einer realen Navigator 10 (jsonVersion 11, Userlevel
+0) abgefragt. Genau acht settingIds antworten für Endnutzer:
+
+| settingId | Name | `type` | Redirect | Inhalt |
+|---|---|---|---|---|
+| `4740` | `N2_SYSTEM_REBOOT` | **action** | 4488 | Neustart-Aktion (Schreibseite, Material für Phase 4) |
+| `4754` | `N2_SYSTEM_INFO` | info | 4747 | Laufzeiten, Schaltzyklen, Softwareversion, myIDM-ID, Regler online |
+| `4768` | `N2_SENSORS` | info | 4761 | 26 Sensorwerte (B-Codes) |
+| `4775` | `N2_DIGITAL_INPUTS` | info | 4761 | 8 digitale Eingänge |
+| `4782` | `N2_ANALOGUE_OUTPUTS` | info | 4761 | 4 analoge Ausgänge |
+| `4789` | `N2_DIGITAL_OUTPUTS` | info | 4761 | 14 digitale Ausgänge |
+| `4824` | `N2_NETWORK_INFORMATIONS` | info | 4747 | Netzwerkstatus + myIDM-Konto (private Daten — werden nie weitergegeben) |
+| `13259` | `N2_HWS_INFO` | info | 4747 | Wärmemengen der Warmwasserstation |
+
+Der Regler unterscheidet drei Fehlerantworten, was den Katalog
+vertrauenswürdig macht: `no setting item found for setting id [X]!` (die ID
+existiert nicht), `setting item [X] is not a setting detail item!` (ein
+Container-/Menüeintrag — 4488, 4747 und 4761 sind von dieser Art) und
+`setting item [X] is not accessible!` (existiert, ist aber level-beschränkt).
+Die sechs Lese-IDs, die die Integration heute nutzt, sind exakt die sechs
+Info-Seiten mit parsbaren Tabellen; `4824` trägt nur private Netzwerkdaten
+und wird bewusst nicht zu Entitäten gemacht.
+
+Was diese Enumeration nicht liefern kann: die **Schreib**hälfte
+(`setting/save`-Payload-Formen editierbarer Seiten). Dafür braucht es
+weiterhin die Capture-Sitzung unten — der Level-0-Lesekatalog legt nahe, dass
+die beschreibbare Endnutzer-Menge klein ist, denn jede zugängliche Seite
+dieser Firmware ist vom Typ `info` oder eine einzelne `action`.
 
 ## Frames selbst mitschneiden (ws_capture)
 
