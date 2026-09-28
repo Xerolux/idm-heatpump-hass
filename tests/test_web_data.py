@@ -31,11 +31,24 @@ class _FakeWebClient:
         error: Exception | None = None,
         notifications=None,
         notification_error: Exception | None = None,
+        statistics=None,
+        statistics_error: Exception | None = None,
+        freshwater=None,
+        freshwater_error: Exception | None = None,
+        status=None,
+        status_error: Exception | None = None,
     ) -> None:
         self.data = data
         self.error = error
         self.notifications = notifications
         self.notification_error = notification_error
+        self.statistics = statistics
+        self.statistics_error = statistics_error
+        self.freshwater = freshwater
+        self.freshwater_error = freshwater_error
+        self.status = status
+        self.status_error = status_error
+        self.statistic_calls: list[tuple[int, int, str]] = []
         self.closed = False
 
     async def read_data(self):
@@ -47,6 +60,22 @@ class _FakeWebClient:
         if self.notification_error is not None:
             raise self.notification_error
         return self.notifications
+
+    async def read_statistics(self, statistic_type: int, period_type: int, prefix: str):
+        if self.statistics_error is not None:
+            raise self.statistics_error
+        self.statistic_calls.append((statistic_type, period_type, prefix))
+        return self.statistics
+
+    async def read_freshwater_overview(self):
+        if self.freshwater_error is not None:
+            raise self.freshwater_error
+        return self.freshwater
+
+    async def read_status_overview(self):
+        if self.status_error is not None:
+            raise self.status_error
+        return self.status
 
     async def close(self) -> None:
         self.closed = True
@@ -304,6 +333,148 @@ async def test_async_read_web_supplement_adds_navigator10_notifications(
     assert result.values["infosystem_notifications"] == "E123: Fehler | W456: Filter pruefen"
     assert result.sensor_values["infosystem_notification_count"].native_value == 2.0
     assert result.sensor_values["infosystem_notifications"].native_value == "E123: Fehler | W456: Filter pruefen"
+
+
+def _install_fake_clients(monkeypatch: pytest.MonkeyPatch, nav10: _FakeWebClient) -> None:
+    import idm_heatpump
+
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator10_web_client",
+        lambda host, pin: nav10,
+        raising=False,
+    )
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: None,
+        raising=False,
+    )
+
+
+def _nav10_base_data() -> SimpleNamespace:
+    return SimpleNamespace(
+        navigator_version="Navigator 10",
+        software_version="NAV10_20.23-903.iup",
+        heatpump_model="iPump",
+        simple_values={},
+    )
+
+
+async def test_async_read_web_supplement_adds_heat_quantity_statistics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    statistics = SimpleNamespace(
+        values={
+            "hq_total_heating": SimpleNamespace(value="27316.22"),
+            "hq_total_priority": SimpleNamespace(value="3587.84"),
+            "hq_today_heating": SimpleNamespace(value="7.15"),
+            "hq_today_priority": SimpleNamespace(value="0"),
+        }
+    )
+    nav10 = _FakeWebClient(_nav10_base_data(), statistics=statistics)
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.sensor_values["heat_quantity_heating_total"].native_value == 27316.22
+    assert result.sensor_values["heat_quantity_heating_total"].unit == "kWh"
+    assert result.sensor_values["heat_quantity_hotwater_total"].native_value == 3587.84
+    assert result.sensor_values["heat_quantity_heating_today"].native_value == 7.15
+    assert result.sensor_values["heat_quantity_hotwater_today"].native_value == 0.0
+    # The heat-quantity block is requested with the live-verified selectors:
+    # statisticType 6 with the lifetime-total and the today aggregation.
+    assert nav10.statistic_calls == [(6, 7, "hq"), (6, 1, "hq")]
+
+
+async def test_async_read_web_supplement_statistics_failure_is_not_fatal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    nav10 = _FakeWebClient(
+        _nav10_base_data(),
+        statistics_error=RuntimeError("statistic controller unavailable"),
+    )
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert "heat_quantity_heating_total" not in result.sensor_values
+
+
+async def test_async_read_web_supplement_adds_freshwater_detail(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from idm_heatpump import IdmWebFreshwater
+
+    freshwater = IdmWebFreshwater(
+        circulation_active=True,
+        status=16,
+        system_mode=1,
+    )
+    nav10 = _FakeWebClient(_nav10_base_data(), freshwater=freshwater)
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.freshwater is freshwater
+    assert result.sensor_values["dhw_circulation_active"].native_value == 1.0
+    assert result.sensor_values["dhw_circulation_active"].value == "on"
+    assert result.sensor_values["dhw_status_info"].native_value == 16.0
+
+
+async def test_async_read_web_supplement_freshwater_failure_is_not_fatal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    nav10 = _FakeWebClient(_nav10_base_data(), freshwater_error=RuntimeError("no freshwater controller"))
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.freshwater is None
+    assert "dhw_status_info" not in result.sensor_values
+
+
+async def test_async_read_web_supplement_adds_status_overview(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from idm_heatpump import IdmWebStatus
+
+    status = IdmWebStatus(
+        json_version=11,
+        userlevel=0,
+        language="de",
+        notification_count=0,
+        timestamp_ms=1790576788000,
+        frost_protection_active=False,
+        network=True,
+        authentication_enabled=True,
+    )
+    nav10 = _FakeWebClient(_nav10_base_data(), status=status)
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.status is status
+    # The status frame carries metadata only; it must not invent sensor values.
+    assert "json_version" not in result.sensor_values
+
+
+async def test_async_read_web_supplement_status_failure_is_not_fatal(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    nav10 = _FakeWebClient(_nav10_base_data(), status_error=RuntimeError("status frame failed"))
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.status is None
 
 
 async def test_async_read_web_supplement_extracts_myidm_id_local_part(monkeypatch: pytest.MonkeyPatch) -> None:

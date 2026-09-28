@@ -242,6 +242,35 @@ Der Navigator bezeichnet diese drei Werte als `mom./prog. Leistung Heizen`, `mom
 
 Für die tatsächliche elektrische Leistungsaufnahme verwende stattdessen **Elektrische Leistungsaufnahme Wärmepumpe** / `current_electrical_power`.
 
+#### Geräteseitige Wärmemengen, Warmwasser-Detail und Regler-Uhrzeit (nur Navigator 10)
+
+Drei weitere read-only-WebSocket-Controller werden bei jedem Web-Poll
+ausgewertet (live verifiziert auf Firmware jsonVersion 11, September 2026):
+
+- **Wärmemenge Heizen/Warmwasser gesamt und heute (Web)**
+  (`web_heat_quantity_heating_total`, `web_heat_quantity_hotwater_total`,
+  `web_heat_quantity_heating_today`, `web_heat_quantity_hotwater_today`): der
+  `statistic/detail`-Wärmemengenblock des Reglers — die Gesamtwerte und die
+  Werte des heutigen Tages in kWh. Sie sind ein unabhängiger Gegencheck für
+  die [eigenen Energiestatistiken](Smart-Energy-and-Comfort) der Integration
+  und funktionieren ohne jeden Modbus-Zugriff.
+- **Warmwasser-Zirkulation (Web)** (`web_dhw_circulation_active`):
+  Binärsensor der Warmwasser-Zirkulationspumpe aus dem Frame
+  `system.freshwater/overview` — ein Zustand, den die Modbus-Map nicht
+  bereitstellt.
+- **Warmwasser Statusinfo (Web)** (`web_dhw_status_info`): die numerische
+  Statusinformation des Freshwater-Blocks, Diagnose-Kategorie.
+- **Regler-Uhrzeit (Web)** (`web_controller_clock`): die eigene Uhr des
+  Reglers als Zeitstempel-Sensor, mit `jsonVersion`, aktiver Benutzerebene,
+  Sprache, Meldungsanzahl, Frostschutz-Flag und Netzwerk-Flag als Attribute.
+  Die Regler-Uhr kann driften, und die zeitabhängigen Fachmann-Codes werden
+  nach der auf dem Display angezeigten Zeit berechnet — dieser Sensor macht
+  den Drift sichtbar.
+
+Antwortet eine Firmware auf einen dieser Controller nicht, bleiben die
+betroffenen Entitäten einfach nicht verfügbar; der Rest der Web-Snapshots ist
+unbeeinflusst.
+
 Dupliziert ein Webwert eine bestehende Modbus-Entität, wird die Web-Entität übersprungen. Das verhindert doppelte Dashboard-Werte und hält Modbus als maßgebliche Quelle für registergestützte Daten.
 
 Verfügbar sind nur Werte, die der aktuelle lokale Web-Schnappschuss zurückliefert. Optionale Navigator-10-Infosystem-Meldungen werden unabhängig gelesen; schlägt diese optionale Anfrage fehl, bleiben die anderen gültigen Webwerte verfügbar. Siehe [Lokale Navigator-Weboberfläche](Local-Web-Interface) für Details zum Protokoll und zum reinen Web-Betrieb.

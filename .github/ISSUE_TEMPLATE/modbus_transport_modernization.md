@@ -9,7 +9,7 @@ assignees: ''
 ## Implemented runtime boundary
 
 - [x] `IdmModbusConnectionClient` keeps IDM device logic in
-      `idm-heatpump-api[web]==2.6.0` and routes raw I/O through
+      `idm-heatpump-api[web]==2.7.0` and routes raw I/O through
       `ModbusConnectionTransport`.
 - [x] The direct socket uses the exact
       `modbus-connection==4.12.2` / `tmodbus[async-serial]==0.6.2` pair.

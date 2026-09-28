@@ -1343,6 +1343,9 @@
       "web_dewpoint_humidity_alarm": {
         "name": "Taupunkt-Feuchtealarm (Web)"
       },
+      "web_dhw_circulation_active": {
+        "name": "Warmwasser-Zirkulation (Web)"
+      },
       "web_ew_evu_lock_contact": {
         "name": "EVU-Sperrkontakt (Web)"
       },
@@ -2247,6 +2250,9 @@
       "web_condenser_temperature": {
         "name": "Kondensator Temperatur (Web)"
       },
+      "web_controller_clock": {
+        "name": "Regler-Uhrzeit (Web)"
+      },
       "web_controller_online_hours": {
         "name": "Regler Online (Web)"
       },
@@ -2264,6 +2270,12 @@
       },
       "web_demand_reason": {
         "name": "Anforderungsgrund (Web)"
+      },
+      "web_dhw_circulation_active": {
+        "name": "Warmwasser-Zirkulation (Web)"
+      },
+      "web_dhw_status_info": {
+        "name": "Warmwasser Statusinfo (Web)"
       },
       "web_evaporation_temperature": {
         "name": "Verdampfungstemperatur (Web)"
@@ -2288,6 +2300,18 @@
       },
       "web_flowmeter": {
         "name": "Durchflussmesser (Web)"
+      },
+      "web_heat_quantity_heating_today": {
+        "name": "Wärmemenge Heizen heute (Web)"
+      },
+      "web_heat_quantity_heating_total": {
+        "name": "Wärmemenge Heizen gesamt (Web)"
+      },
+      "web_heat_quantity_hotwater_today": {
+        "name": "Wärmemenge Warmwasser heute (Web)"
+      },
+      "web_heat_quantity_hotwater_total": {
+        "name": "Wärmemenge Warmwasser gesamt (Web)"
       },
       "web_heat_sink_intermediate_circuit_pump_signal": {
         "name": "Wärmesenke Zwischenkreispumpe Signal (Web)"

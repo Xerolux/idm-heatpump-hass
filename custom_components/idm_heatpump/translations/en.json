@@ -1343,6 +1343,9 @@
       "web_dewpoint_humidity_alarm": {
         "name": "Dew point humidity alarm (Web)"
       },
+      "web_dhw_circulation_active": {
+        "name": "Hot water circulation (Web)"
+      },
       "web_ew_evu_lock_contact": {
         "name": "Utility lock contact (Web)"
       },
@@ -2247,6 +2250,9 @@
       "web_condenser_temperature": {
         "name": "Condenser temperature (Web)"
       },
+      "web_controller_clock": {
+        "name": "Controller clock (Web)"
+      },
       "web_controller_online_hours": {
         "name": "Controller online time (Web)"
       },
@@ -2264,6 +2270,12 @@
       },
       "web_demand_reason": {
         "name": "Demand reason (Web)"
+      },
+      "web_dhw_circulation_active": {
+        "name": "Hot water circulation (Web)"
+      },
+      "web_dhw_status_info": {
+        "name": "Hot water status info (Web)"
       },
       "web_evaporation_temperature": {
         "name": "Evaporation temperature (Web)"
@@ -2288,6 +2300,18 @@
       },
       "web_flowmeter": {
         "name": "Flow meter (Web)"
+      },
+      "web_heat_quantity_heating_today": {
+        "name": "Heat quantity heating today (Web)"
+      },
+      "web_heat_quantity_heating_total": {
+        "name": "Heat quantity heating total (Web)"
+      },
+      "web_heat_quantity_hotwater_today": {
+        "name": "Heat quantity hot water today (Web)"
+      },
+      "web_heat_quantity_hotwater_total": {
+        "name": "Heat quantity hot water total (Web)"
       },
       "web_heat_sink_intermediate_circuit_pump_signal": {
         "name": "Heat sink intermediate circuit pump signal (Web)"

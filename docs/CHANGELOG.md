@@ -17,6 +17,27 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Navigator 10 WebSocket read expansion** (WebSocket-first roadmap, Phase 2;
+  requires and pins `idm-heatpump-api[web]==2.7.0`). Three further read-only
+  controllers are evaluated on every web poll, live-verified frame by frame on
+  a Navigator 10 (jsonVersion 11, September 2026):
+  - `statistic/detail` heat quantities: **heat quantity heating/hot water
+    total and today (Web)** sensors in kWh — the controller's own counters as
+    an independent cross-check for the integration's energy statistics,
+    working without any Modbus access.
+  - `system.freshwater/overview`: **hot water circulation (Web)** binary
+    sensor (a state the Modbus map does not expose) and the diagnostic
+    **hot water status info (Web)** sensor.
+  - `status/overview`: the **controller clock (Web)** timestamp sensor with
+    `jsonVersion`, active userlevel, language, notification count,
+    frost-protection and network flags as attributes — the controller clock
+    can drift, and the time-dependent technician codes are computed from the
+    display time, so the drift becomes visible.
+  Each controller is individually optional: firmware that does not answer one
+  leaves its entities unavailable without affecting the rest of the web
+  snapshot. Device knowledge (parsing, selector constants
+  `NAVIGATOR10_STATISTIC_*`) lives in the API library.
+
 - **An explicit connection mode** (WebSocket-first roadmap, Phase 1). The new
   expert option *Connection mode* in the advanced Modbus section selects which
   data paths the entry may use: `auto` (default, recommended — the historical

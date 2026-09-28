@@ -140,8 +140,8 @@ def test_web_binary_available_when_modbus_update_failed():
 
 
 def test_binary_keys_cover_every_heating_circuit_pump():
-    # 14 shared values plus one pump key per heating circuit A-G.
-    assert len(WEB_BINARY_VALUE_KEYS) == 21
+    # 15 shared values plus one pump key per heating circuit A-G.
+    assert len(WEB_BINARY_VALUE_KEYS) == 22
     assert {f"pump_heating_circuit{letter}" for letter in "ABCDEFG"} <= WEB_BINARY_VALUE_KEYS
 
 
@@ -271,3 +271,22 @@ class TestExpectedPowerNaming:
     def test_actual_electrical_power_stays_distinct(self):
         assert "prognostiziert" not in _translated_sensor_names("de")["web_current_electrical_power"]
         assert "projected" not in _translated_sensor_names("en")["web_current_electrical_power"]
+
+
+def test_dhw_circulation_resolves_from_freshwater_values():
+    """The circulation state arrives as on/off from the freshwater frame."""
+    coordinator = _coordinator(
+        {
+            "dhw_circulation_active": IdmWebSensorValue(value="on", native_value=1.0),
+        }
+    )
+    entities = _entities_by_key(coordinator)
+    circulation = entities["web_dhw_circulation_active"]
+
+    assert circulation.is_on is True
+    assert circulation.available is True
+
+    coordinator.web_supplement = IdmWebSupplement(
+        sensor_values={"dhw_circulation_active": IdmWebSensorValue(value="off", native_value=0.0)}
+    )
+    assert circulation.is_on is False
