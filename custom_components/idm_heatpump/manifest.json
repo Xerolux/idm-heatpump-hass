@@ -18,5 +18,5 @@
     "tmodbus[async-serial]==0.6.2",
     "idm-heatpump-api[web]==2.10.0"
   ],
-  "version": "0.20.0-b8"
+  "version": "0.20.0-b9"
 }
