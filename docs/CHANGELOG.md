@@ -13,6 +13,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b4] - 2026-09-28
+
+### Added
+
+- **KNX bridge setup now points at the ETS import.** The KNX step of the
+  initial setup and of *Configure* closes with the instruction that ETS
+  only knows the group addresses after an import: generate the import file
+  for the configured base address with the KNX group address generator on
+  the documentation website and import it in ETS under
+  *Group Addresses → Import Group Addresses*. The base-address field links
+  the generator as well, in German and English, and the bridge's start log
+  mentions its URL.
+
+### Notes
+
+- The documentation website carries an **interactive KNX group address
+  generator** (`/docs/knx-generator/`, German mirror at `/docs/de/`): base
+  address with live validation, compact/full/custom object-group
+  selection, a preview, and the ETS-importable `.xml` plus `.csv`
+  download — generated in the browser from the catalogue emitted at
+  site-build time. A Node parity harness in the test suite keeps the
+  website generator byte-identical with the command-line generator.
+- The KNX bridge and its catalogue are covered by tests at 100 %
+  (defensive branches included); runtime code is unchanged by that work.
+
 ## [0.20.0-b3] - 2026-09-27
 
 ### Fixed
