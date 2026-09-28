@@ -13,6 +13,19 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b5] - 2026-09-28
+
+### Fixed
+
+- **The vendor error-code database no longer loads on the event loop.**
+  The first state write of an error-code entity read `error_codes.json`
+  inside `extra_state_attributes`, which Home Assistant reports as a
+  blocking I/O call in the loop (two warnings per restart: `read_text`
+  and `open`). The database is now warmed once in an executor during
+  setup, on both the Modbus and the web-only path, before any entity
+  writes its first state; every later lookup hits the API's in-memory
+  cache.
+
 ## [0.20.0-b4] - 2026-09-28
 
 ### Added

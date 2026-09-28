@@ -4,6 +4,19 @@ from __future__ import annotations
 
 from idm_heatpump import get_error_code_info
 
+
+def warm_error_code_database() -> None:
+    """Load the vendor error-code database so no later call does file I/O.
+
+    The API reads ``error_codes.json`` lazily on the first lookup and caches
+    the result. That first lookup otherwise happens inside an entity's
+    ``extra_state_attributes`` — on the event loop, which Home Assistant
+    reports as a blocking call. Running this once in an executor during
+    setup keeps the only file read off the loop.
+    """
+    get_error_code_info(0)
+
+
 _INTERNAL_MESSAGE_TEXTS: dict[int, str] = {
     0: "Keine Meldung",
     20: "Waermepumpenvorlauf Maximaltemperatur",
