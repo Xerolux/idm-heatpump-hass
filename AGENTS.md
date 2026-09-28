@@ -339,7 +339,6 @@ ruff check custom_components tests
 - **security.yml**: CodeQL (actions, python) + pip-audit
 - **stale.yml**: Marks inactive issues/PRs as stale
 - **pages.yml**: Deploys `docs/wiki/` + images to GitHub Pages
-- **wiki-sync.yml**: Syncs `docs/wiki/` to the GitHub Wiki
 
 ---
 
@@ -356,8 +355,9 @@ ruff check custom_components tests
   file per English wiki page, same filename, published at `/docs/de/<slug>/` on
   the website. English stays the source of truth: change the English page
   first, then carry the change into the German mirror in the same pull request.
-  `scripts/check_documentation_language.py` exempts `docs/wiki/de/`; the
-  GitHub wiki (synced from `docs/wiki/*.md`) stays English-only.
+  `scripts/check_documentation_language.py` exempts `docs/wiki/de/`. The
+  GitHub wiki is deprecated — every page there is only a redirect note
+  pointing to the website — and those redirect pages stay English-only.
 - The changelog is kept version-to-version. When a stable version is cut,
   fold its prerelease sections into the single stable section with
   `python scripts/consolidate_changelog.py --version <x.y.z>`, then rework the

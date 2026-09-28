@@ -70,6 +70,14 @@ All notable changes to this project will be documented in this file.
   which paths are in use, whether a web PIN is configured (presence only), the
   controller family and the firmware version.
 
+### Deprecated
+
+- **The GitHub wiki is deprecated.** The documentation lives on the project
+  website at <https://xerolux.github.io/idm-heatpump-hass/docs/>. Every wiki
+  page has been replaced by a redirect note pointing to its new address, and
+  the `wiki-sync` workflow that mirrored `docs/wiki/` into the wiki has been
+  removed — the website is the single documentation surface.
+
 ## [0.20.0-b5] - 2026-09-28
 
 ### Fixed
@@ -107,7 +115,6 @@ All notable changes to this project will be documented in this file.
   website generator byte-identical with the command-line generator.
 - The KNX bridge and its catalogue are covered by tests at 100 %
   (defensive branches included); runtime code is unchanged by that work.
-
 ## [0.20.0-b3] - 2026-09-27
 
 ### Fixed
