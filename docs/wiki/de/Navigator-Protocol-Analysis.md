@@ -327,6 +327,39 @@ unvollständige Bild aus der statischen EXE-Analyse.
 | `frostprotection` | `overview` | Frostschutz-Assistent (nur in einer Frostsituation aktiv) |
 | `relaytest` | `overview` | Relaistest-Assistent (nur in einer Servicesituation aktiv) |
 
+### `statistic/detail`-Selektoren (live verifiziert, September 2026)
+
+Ein strikt read-only Rahmen-für-Rahmen-Sweep auf einer realen Navigator 10
+(jsonVersion 11, Firmware `NAV10_20.24`) hat die Anfragewerte bestätigt:
+
+| `statisticType` | Block | Wertschlüssel |
+|---|---|---|
+| `0` | Wärmepumpen-Laufzeiten (`N2_RUNTIMEHEATPUMP`) | `heating`, `priority` (WW), `defrost` |
+| `2` | Bivalenz-/zweite-Stufe-Laufzeit (`N2_RUNTIMEBIVALENCE`) | `bivalence1` |
+| `3` | Energiemanagement Wärmepumpe (`N2_EMHP`) | — |
+| `4` | Energiemanagement Heizelement (`N2_EMEH`) | — |
+| `5` | Energiefluss (`RD_ENERGY_FLOW`) | PV-Ursprungs-/Nutzungsgruppen |
+| `6` | Wärmemengen (`N2_HEATQUANTITIES`) | `heating`, `priority` (WW) |
+| `1` | — | antwortet `"specified statistic type [1] is not avaiable!"` |
+
+`periodType` wählt die Aggregation: `0` Tagesverlaufszeilen (`data.daily` mit
+`date`/`idx` je Zeile), `1` heute (`data.today` plus `data.typeDict`), `7`
+Gesamtwerte (`data.total`). `statisticSubType` bleibt `null`. Die Antwort von
+`statistic/overview` zählt den gesamten Katalog mit den heutigen Werten und
+Wochendurchschnitten je Block auf — einschließlich einer Kategorie
+`N2_WEATHER` mit vier Prognosetagen.
+
+### `status/overview` und `system.freshwater/overview` (live verifiziert)
+
+`status/overview` antwortet mit `jsonVersion`, `userlevel`, `language`,
+`notificationCount`, der Regler-Uhr `timestamp` (Epoch-Millisekunden),
+`frostProtectionInfo {active, display}`, `network`, `authenticationEnabled`,
+`demoModeActive` und `myidmInfo` (Kontodaten — werden nie weitergegeben).
+`system.freshwater/overview` antwortet mit `circulation {active}`,
+`statusInfo {status}` (numerisch), `systemMode` und `temperatures {top,
+bottom}` als Dezimalzeichenketten. Beide Formen parst `idm-heatpump-api`
+2.7.0 defensiv (`IdmWebStatus` / `IdmWebFreshwater`).
+
 **Sub-Controller-Muster**: Die `system.*`-Sub-Controller (zum Beispiel
 `system.freshwater`) verwenden im `data`-Block `parameterId` statt `settingId`.
 Die Bibliothek nutzt derzeit nur `setting/detail`, `home/detail`,
@@ -384,6 +417,39 @@ Wenn Nutzer nach Firmware-Updates fragen, ist die Antwort eindeutig:
 Die Integration um eigene Update-Funktionen zu erweitern ist nicht geplant und
 würde bedeuten, Cloud-Funktionen bewusst einzubeziehen (siehe den Abschnitt
 „Bewusst nicht implementiert”).
+
+## Frames selbst mitschneiden (ws_capture)
+
+Das `idm-heatpump-api`-Repository enthält einen kleinen protokollierenden
+WebSocket-Proxy für Capture-Sitzungen: `scripts/ws_capture.py` (reine
+Standardbibliothek, keine Abhängigkeiten).
+
+```
+python scripts/ws_capture.py --host <navigator-ip> --pin <SYSLPIN> [--listen-port 61221] [--out ws-capture.jsonl]
+```
+
+Der Proxy lauscht lokal und leitet jeden Rahmen zwischen Browser und Regler
+in eine JSONL-Datei weiter (`dir` = `c2s`/`s2c`, geparste JSON-Payloads). Die
+PIN erscheint nie im Log — sie steht nur in der Handshake-URL, die
+redigiert wird. Der Proxy erzeugt selbst niemals Rahmen: Gespeichert wird
+genau das, was die offizielle Weboberfläche sendet.
+
+**Ablauf einer Capture-Sitzung (vom Betreiber durchgeführt):**
+
+1. Proxy auf dem Rechner starten, der Browserzugriff auf den Navigator hat.
+2. Weboberfläche des Navigators öffnen und ihr WebSocket auf den Proxy
+   statt auf den Regler richten (Browser-DevTools → Local Overrides oder ein
+   Port-Forward von 61220 auf den Proxy-Port). Alternativ mit dem
+   Netzwerk-Tab der DevTools mitschneiden (Filter `WS`) — beide Wege liefern
+   gleichwertiges Material.
+3. Jede Endnutzer-Einstellungsseite durchklicken, einen harmlosen Sollwert
+   einmal ändern, eine Meldung quittieren. Das ist der legitime Weg, die
+   Schreibsemantik von `setting/save` / `notification/save` zu erfassen —
+   die Integration selbst schreibt niemals.
+4. Proxy stoppen, dann **vor jedem Weitergeben desinfizieren**: Seriennummern,
+   myIDM-Daten, Adressen und verbleibende Kennzeichen entfernen. Rohe
+   Mitschnitte bleiben auf dem Rechner des Betreibers; nur bereinigtes
+   Wissen wandert in dieses Wiki oder die Repositories.
 
 ## Benutzerebenen, Codes und Zugangsparameter
 

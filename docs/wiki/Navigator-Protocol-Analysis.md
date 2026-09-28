@@ -324,6 +324,39 @@ picture from the static EXE analysis.
 | `frostprotection` | `overview` | frost protection wizard (only active in a frost situation) |
 | `relaytest` | `overview` | relay test wizard (only active in a service situation) |
 
+### `statistic/detail` selectors (live-verified, September 2026)
+
+A strictly read-only frame-by-frame sweep on a live Navigator 10
+(jsonVersion 11, firmware `NAV10_20.24`) confirmed the request values:
+
+| `statisticType` | Block | Value keys |
+|---|---|---|
+| `0` | heat-pump runtimes (`N2_RUNTIMEHEATPUMP`) | `heating`, `priority` (DHW), `defrost` |
+| `2` | bivalence/second-stage runtime (`N2_RUNTIMEBIVALENCE`) | `bivalence1` |
+| `3` | energy management heat pump (`N2_EMHP`) | — |
+| `4` | energy management heating element (`N2_EMEH`) | — |
+| `5` | energy flow (`RD_ENERGY_FLOW`) | PV origin/usage groups |
+| `6` | heat quantities (`N2_HEATQUANTITIES`) | `heating`, `priority` (DHW) |
+| `1` | — | answered `"specified statistic type [1] is not avaiable!"` |
+
+`periodType` selects the aggregation: `0` daily history rows (`data.daily`
+with `date`/`idx` per row), `1` today (`data.today` plus `data.typeDict`),
+`7` lifetime totals (`data.total`). `statisticSubType` stays `null`. The
+`statistic/overview` response enumerates the whole catalog with today's
+values and weekly averages per block — including a `N2_WEATHER` category
+with four forecast days.
+
+### `status/overview` and `system.freshwater/overview` (live-verified)
+
+`status/overview` answers with `jsonVersion`, `userlevel`, `language`,
+`notificationCount`, the controller clock `timestamp` (epoch milliseconds),
+`frostProtectionInfo {active, display}`, `network`, `authenticationEnabled`,
+`demoModeActive` and `myidmInfo` (account data — never republished).
+`system.freshwater/overview` answers with `circulation {active}`,
+`statusInfo {status}` (numeric), `systemMode` and `temperatures {top,
+bottom}` as decimal strings. Both shapes are parsed defensively by
+`idm-heatpump-api` 2.7.0 (`IdmWebStatus` / `IdmWebFreshwater`).
+
 **Sub-controller pattern**: the `system.*` sub-controllers (for example
 `system.freshwater`) use `parameterId` instead of `settingId` in the `data`
 block. The library currently uses only `setting/detail`, `home/detail`,
@@ -379,6 +412,37 @@ When users ask about firmware updates, the answer is clear:
 Extending the integration with its own update functions is not planned and would
 require deliberately including cloud functions (see the section "Deliberately
 not implemented").
+
+## Capturing frames yourself (ws_capture)
+
+`idm-heatpump-api` ships a small logging WebSocket proxy for capture
+sessions: `scripts/ws_capture.py` (pure standard library, no dependencies).
+
+```
+python scripts/ws_capture.py --host <navigator-ip> --pin <SYSLPIN> [--listen-port 61221] [--out ws-capture.jsonl]
+```
+
+The proxy listens locally and relays every frame between the browser and the
+controller into a JSONL file (`dir` = `c2s`/`s2c`, parsed JSON payloads). The
+PIN never appears in the log — it lives only in the handshake URL, which is
+redacted. The proxy never fabricates frames: what is captured is exactly what
+the official web UI sends.
+
+**Procedure for a capture session (maintainer-operated):**
+
+1. Start the proxy on the machine with browser access to the Navigator.
+2. Open the Navigator web UI and point its WebSocket at the proxy instead of
+   the controller (browser DevTools → local overrides, or a port-forward of
+   61220 to the proxy port). Alternatively record with DevTools' Network tab
+   (filter `WS`) — both routes produce equivalent material.
+3. Click through every end-user settings page, change a harmless setpoint
+   once, acknowledge a message. This is the legitimate way to capture
+   `setting/save` / `notification/save` write semantics — the integration
+   itself never writes.
+4. Stop the proxy, then **sanitize before anything leaves the machine**:
+   strip serial numbers, myIDM data, addresses and any remaining identifiers.
+   Raw captures stay on the maintainer's machine; only sanitized knowledge
+   enters this wiki or the repositories.
 
 ## User levels, codes and access parameters
 
