@@ -317,7 +317,7 @@ def resolve_connection_mode(options: Mapping[str, Any], data: Mapping[str, Any])
     mode = str(options.get(CONF_CONNECTION_MODE, DEFAULT_CONNECTION_MODE))
     if mode not in CONNECTION_MODE_OPTIONS:
         mode = DEFAULT_CONNECTION_MODE
-    if mode == CONNECTION_MODE_AUTO and bool(data.get(CONF_WEB_ONLY, DEFAULT_WEB_ONLY)):
+    if mode == CONNECTION_MODE_AUTO and data.get(CONF_WEB_ONLY, DEFAULT_WEB_ONLY) is True:
         return CONNECTION_MODE_WEB_ONLY
     return mode
 

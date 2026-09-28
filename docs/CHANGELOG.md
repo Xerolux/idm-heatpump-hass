@@ -13,6 +13,28 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **WebSocket writes, slice 1** (WebSocket-first roadmap, Phase 4; requires
+  and pins `idm-heatpump-api[web]==2.8.0`). A `web_only` entry becomes
+  controllable through the local Navigator 10 web interface — every other
+  connection mode keeps writing through Modbus exactly as before:
+  - **Operating mode (Web)** select in `web_only` mode: reads the current
+    mode and the controller's own selectable values from the `home/overview`
+    tile and writes through `home/save` — same numbering as the Modbus
+    `system_mode` register, validated before sending, rejected writes raise.
+  - **Acknowledge errors** button in `web_only` mode and the
+    `acknowledge_errors` service route through `notification/save`.
+  - The `set_system_mode` service transparently uses the web path for
+    `web_only` entries.
+  Writes reuse the authorized web session of the poll loop and read the
+    state back after every write, like the official web UI. Payloads and
+    response frames were capture-confirmed (2026-09-28) and the mode write
+    was live-validated on the maintainer's plant with a reversible
+    automatic → hot-water-only → automatic round trip.
+
 ## [0.20.0-b6] - 2026-09-28
 
 ### Fixed

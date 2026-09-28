@@ -17,6 +17,7 @@ from .adapter_enums import get_slug_map_and_key
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
+from .web_control_entities import web_control_select_entities
 
 PARALLEL_UPDATES = 0
 
@@ -27,12 +28,13 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
-    entities = [
+    entities: list[SelectEntity] = [
         IdmSelect(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.select_descriptions)
         if should_add_entity(coordinator, desc_info["register"], as_writable_control=True)
         and desc_info["register"].enum_options
     ]
+    entities.extend(web_control_select_entities(coordinator))
     async_add_entities(entities)
 
 

@@ -2618,3 +2618,50 @@ class TestTransientZeroGuard:
         assert guarded.navigator_version == "Navigator 10"
         assert "heat_quantity_heating_total" not in guarded.values
         assert "heat_quantity_heating_total" not in guarded.sensor_values
+
+
+class TestWebWriteMethods:
+    """The web-only write path routes through the pooled web client."""
+
+    def _coordinator_with_pool(self, mock_hass, mock_config_entry, client):
+        coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+        pool = MagicMock()
+        pool.get.return_value = (client, "nav10")
+        coordinator._web_client_pool = pool
+        coordinator.async_refresh_web_supplement = AsyncMock()
+        return coordinator
+
+    async def test_set_system_mode_uses_the_pooled_client_and_reads_back(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.set_system_mode = AsyncMock()
+        coordinator = self._coordinator_with_pool(mock_hass, mock_config_entry, client)
+
+        await coordinator.async_web_set_system_mode(4)
+
+        client.set_system_mode.assert_awaited_once_with(4)
+        coordinator.async_refresh_web_supplement.assert_awaited_once()
+
+    async def test_acknowledge_uses_the_pooled_client_and_reads_back(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.acknowledge_all_notifications = AsyncMock()
+        coordinator = self._coordinator_with_pool(mock_hass, mock_config_entry, client)
+
+        await coordinator.async_web_acknowledge_notifications()
+
+        client.acknowledge_all_notifications.assert_awaited_once()
+        coordinator.async_refresh_web_supplement.assert_awaited_once()
+
+    async def test_missing_web_session_raises_a_home_assistant_error(self, mock_hass, mock_config_entry):
+        from homeassistant.exceptions import HomeAssistantError
+
+        coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+        pool = MagicMock()
+        pool.get.return_value = None
+        coordinator._web_client_pool = pool
+
+        try:
+            await coordinator.async_web_set_system_mode(1)
+        except HomeAssistantError:
+            pass
+        else:
+            raise AssertionError("a missing web session must raise HomeAssistantError")

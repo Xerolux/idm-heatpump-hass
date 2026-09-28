@@ -1500,6 +1500,42 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 result["transport"] = dict(transport)
         return result
 
+    def _web_write_client(self) -> Any:
+        """Return the pooled Navigator 10 web client for a web-only write.
+
+        The pool holds the client of the last successful web read; using it
+        keeps the write on the already authorized WebSocket session instead
+        of opening (and PIN-logging-in) a second connection.
+        """
+        pooled = self._web_client_pool.get() if self._web_client_pool is not None else None
+        if pooled is None:
+            from homeassistant.exceptions import HomeAssistantError
+
+            raise HomeAssistantError(
+                "The Navigator web interface has no active session yet; wait for the first successful web poll"
+            )
+        client, _variant = pooled
+        return client
+
+    async def async_web_set_system_mode(self, mode: int) -> None:
+        """Set the operating mode through the local web interface.
+
+        Web-only path of the WebSocket-first roadmap (Phase 4): the values
+        follow the Modbus ``system_mode`` numbering and the API client
+        validates them before sending; a controller rejection raises. Like
+        the official web UI, the mode is read back after writing rather than
+        assumed.
+        """
+        client = self._web_write_client()
+        await client.set_system_mode(mode)
+        await self.async_refresh_web_supplement()
+
+    async def async_web_acknowledge_notifications(self) -> None:
+        """Acknowledge every Navigator message through the web interface."""
+        client = self._web_write_client()
+        await client.acknowledge_all_notifications()
+        await self.async_refresh_web_supplement()
+
     async def async_write_register(
         self,
         reg: RegisterDef,
