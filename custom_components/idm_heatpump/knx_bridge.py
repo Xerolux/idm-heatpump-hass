@@ -69,6 +69,10 @@ _EEPROM_RETRY_PATTERN = re.compile(r"try again in\s*([0-9]+(?:\.[0-9]+)?)s", re.
 # Ignore an inbound telegram that only repeats what we sent this recently.
 ECHO_SUPPRESSION_SECONDS: float = 5.0
 
+# ETS only knows the group addresses after the user imported them; this is
+# where the import file for any base address is generated.
+_KNX_GENERATOR_URL = "https://xerolux.github.io/idm-heatpump-hass/docs/knx-generator/"
+
 # Datapoint types whose payload is a float; everything else is sent as an
 # integer. The catalogue only uses the main types listed here.
 _FLOAT_DPT_PREFIXES: tuple[str, ...] = ("9.", "14.")
@@ -246,10 +250,13 @@ class KnxBridge:
         _LOGGER.info(
             "KNX bridge (experimental) for %s serving %d objects from base address %s. "
             "Configuration and reload have been exercised with a live Home Assistant KNX "
-            "interface; physical group-address telegram interoperability remains unverified",
+            "interface; physical group-address telegram interoperability remains unverified. "
+            "ETS needs the group addresses imported — the file for any base address is "
+            "generated at %s",
             self._entry_id,
             len(self._objects),
             self._config.base_address,
+            _KNX_GENERATOR_URL,
         )
         self._started = True
 
