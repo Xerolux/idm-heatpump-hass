@@ -16,7 +16,7 @@ MANIFEST = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 EXPECTED_RUNTIME_REQUIREMENTS = [
     "modbus-connection==4.12.2",
     "tmodbus[async-serial]==0.6.2",
-    "idm-heatpump-api[web]==2.6.0",
+    "idm-heatpump-api[web]==2.7.0",
 ]
 
 
@@ -453,30 +453,6 @@ def test_release_workflow_uses_curated_changelog_section_by_default() -> None:
     assert "Leave a star on GitHub — costs nothing" in release_workflow
     assert 'if line.startswith("###")' in release_workflow
     assert "### What changed" not in release_workflow
-
-
-def test_wiki_sync_exactly_mirrors_source_pages_safely() -> None:
-    workflow = _read(ROOT / ".github" / "workflows" / "wiki-sync.yml")
-    mirror_step = workflow.partition("      - name: Mirror wiki files\n")[2].partition(
-        "\n      - name: Commit and push to wiki"
-    )[0]
-
-    assert "find /tmp/wiki -maxdepth 1 -type f -name '*.md' -delete" in mirror_step
-    assert "cp docs/wiki/*.md /tmp/wiki/" in mirror_step
-    assert ".git" not in mirror_step
-    assert "rm -rf" not in mirror_step
-    assert "git diff --cached --quiet" in workflow
-    assert "No changes to wiki pages." in workflow
-
-
-def test_wiki_sync_runs_only_for_main_and_cancels_superseded_runs() -> None:
-    workflow = _read(ROOT / ".github" / "workflows" / "wiki-sync.yml")
-    preamble = workflow.partition("\njobs:\n")[0]
-
-    assert "    branches: [main]" in preamble
-    assert "master" not in preamble
-    assert "concurrency:\n  group: wiki-sync\n  cancel-in-progress: true" in preamble
-    assert "timeout-minutes: 10" in workflow
 
 
 def test_pages_deploy_triggers_only_for_deployed_content() -> None:

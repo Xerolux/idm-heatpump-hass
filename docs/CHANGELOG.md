@@ -13,6 +13,71 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- **Single-poll zero readings on lifetime energy counters are suppressed.**
+  A same-generation Navigator controller was observed answering one poll
+  with `0.0` on a monotonic kWh counter and the correct lifetime value again
+  on the next poll (kodebach/hacs-idm-heatpump#322). Home Assistant reads a
+  `total_increasing` drop to zero as a meter reset, so `utility_meter` and
+  long-term statistics book the entire lifetime counter as fresh
+  consumption. The coordinator now holds the affected register unavailable
+  for exactly one poll when a lifetime counter (`energy_heating`,
+  `energy_dhw`, `energy_defrost`, `energy_cooling`, `energy_electric_heater`,
+  `total_heat_energy`, and the web heat-quantity totals) drops from a
+  positive value to zero between two consecutive polls. A genuine
+  device-side reset therefore appears one poll cycle later; today's
+  counters, which legitimately return to zero at day boundaries, are never
+  suppressed. The diagnostics export counts the suppressed readings under
+  `communication.transient_zero_suppressed`.
+
+### Added
+
+- **Navigator 10 WebSocket read expansion** (WebSocket-first roadmap, Phase 2;
+  requires and pins `idm-heatpump-api[web]==2.7.0`). Three further read-only
+  controllers are evaluated on every web poll, live-verified frame by frame on
+  a Navigator 10 (jsonVersion 11, September 2026):
+  - `statistic/detail` heat quantities: **heat quantity heating/hot water
+    total and today (Web)** sensors in kWh — the controller's own counters as
+    an independent cross-check for the integration's energy statistics,
+    working without any Modbus access.
+  - `system.freshwater/overview`: **hot water circulation (Web)** binary
+    sensor (a state the Modbus map does not expose) and the diagnostic
+    **hot water status info (Web)** sensor.
+  - `status/overview`: the **controller clock (Web)** timestamp sensor with
+    `jsonVersion`, active userlevel, language, notification count,
+    frost-protection and network flags as attributes — the controller clock
+    can drift, and the time-dependent technician codes are computed from the
+    display time, so the drift becomes visible.
+  Each controller is individually optional: firmware that does not answer one
+  leaves its entities unavailable without affecting the rest of the web
+  snapshot. Device knowledge (parsing, selector constants
+  `NAVIGATOR10_STATISTIC_*`) lives in the API library.
+
+- **An explicit connection mode** (WebSocket-first roadmap, Phase 1). The new
+  expert option *Connection mode* in the advanced Modbus section selects which
+  data paths the entry may use: `auto` (default, recommended — the historical
+  behaviour: Modbus as the base, web supplement when a PIN is configured,
+  web-only fallback when setup chose it), `modbus_web` (both paths pinned on,
+  no web-only fallback), `web_only` (first-class read-only web operation —
+  setup no longer attempts a Modbus connection; setpoints, modes and error
+  acknowledgement still require Modbus) and `modbus_only` (the local web
+  interface is never contacted, even with a PIN configured). The choice
+  survives reload; an explicit mode overrides the legacy web-only flag. The
+  diagnostics export gains a `connection` block reporting the active mode,
+  which paths are in use, whether a web PIN is configured (presence only), the
+  controller family and the firmware version.
+
+### Deprecated
+
+- **The GitHub wiki is deprecated.** The documentation lives on the project
+  website at <https://xerolux.github.io/idm-heatpump-hass/docs/>. Every wiki
+  page has been replaced by a redirect note pointing to its new address, and
+  the `wiki-sync` workflow that mirrored `docs/wiki/` into the wiki has been
+  removed — the website is the single documentation surface.
+
 ## [0.20.0-b5] - 2026-09-28
 
 ### Fixed
@@ -50,7 +115,6 @@ All notable changes to this project will be documented in this file.
   website generator byte-identical with the command-line generator.
 - The KNX bridge and its catalogue are covered by tests at 100 %
   (defensive branches included); runtime code is unchanged by that work.
-
 ## [0.20.0-b3] - 2026-09-27
 
 ### Fixed

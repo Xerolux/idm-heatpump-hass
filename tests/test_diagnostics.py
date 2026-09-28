@@ -284,6 +284,89 @@ class TestDiagnostics:
         assert "serial_number" not in entry_data
 
 
+class TestConnectionDiagnostics:
+    """The Phase 1 detection-summary block names the active data paths."""
+
+    async def test_connection_block_reports_auto_defaults(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        connection = result["data"]["connection"]
+        assert connection["mode"] == "auto"
+        assert connection["modbus_used"] is True
+        # No PIN in the fixture data, so the supplement is not in use.
+        assert connection["web_pin_configured"] is False
+
+    async def test_connection_block_reports_explicit_mode(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        mock_config_entry.options = {**mock_config_entry.options, "connection_mode": "modbus_only"}
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        connection = result["data"]["connection"]
+        assert connection["mode"] == "modbus_only"
+        assert connection["web_supplement_used"] is False
+
+    async def test_connection_block_carries_detection_facts(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        connection = result["data"]["connection"]
+        assert connection["controller_family"] == "Navigator 10"
+        assert connection["firmware_version"] == "2.34"
+
+    async def test_communication_block_reports_suppressed_transient_zeros(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        mock_config_entry.runtime_data.coordinator.transient_zero_suppressed = 3
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        assert result["data"]["communication"]["transient_zero_suppressed"] == 3
+
+    async def test_connection_block_reports_web_status_facts(self, mock_hass, mock_config_entry):
+        from idm_heatpump import IdmWebStatus
+
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        mock_config_entry.data = {**mock_config_entry.data, "web_pin": "2634"}
+        coordinator = mock_config_entry.runtime_data.coordinator
+        supplement = coordinator.web_supplement
+        supplement.status = IdmWebStatus(
+            json_version=11,
+            userlevel=0,
+            timestamp_ms=1790576788000,
+        )
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        connection = result["data"]["connection"]
+        assert connection["web_json_version"] == 11
+        assert connection["web_userlevel"] == 0
+        assert connection["controller_clock"] == "2026-09-28T06:26:28+00:00"
+
+    async def test_connection_block_without_a_status_frame_stays_none(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        mock_config_entry.runtime_data.coordinator.web_supplement.status = None
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        connection = result["data"]["connection"]
+        assert connection["web_json_version"] is None
+        assert connection["web_userlevel"] is None
+        assert connection["controller_clock"] is None
+
+    async def test_connection_block_never_contains_the_pin_value(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        mock_config_entry.data = {**mock_config_entry.data, "web_pin": "2634"}
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        serialized = str(result["data"]["connection"])
+        assert "2634" not in serialized
+        assert result["data"]["connection"]["web_pin_configured"] is True
+
+
 class TestControllerStatsCrossReference:
     """The diagnostics export emits a cross-reference between library
     register names and the controller's internal syscount keys / KNX

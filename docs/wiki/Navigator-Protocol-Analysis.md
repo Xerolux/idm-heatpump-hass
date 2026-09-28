@@ -15,6 +15,11 @@ not a complete protocol specification.
 - For the implemented web access, Navigator Pro uses the Navigator 10 WebSocket
   variant.
 - Web data is delivered as typed values with units or as a translated status.
+- Concurrent WebSocket sessions work: on 2026-09-28 a live Home Assistant
+  integration poll (one session) and several additional parallel sessions
+  (probe, verification, capture proxy) authenticated and answered on the same
+  Navigator 10 without interference. This is a one-time observation under
+  normal load, not a stress test.
 
 The integration therefore keeps Modbus as the base path and uses the local web
 interface only as an optional supplement or fallback. No cloud logins are
@@ -324,6 +329,39 @@ picture from the static EXE analysis.
 | `frostprotection` | `overview` | frost protection wizard (only active in a frost situation) |
 | `relaytest` | `overview` | relay test wizard (only active in a service situation) |
 
+### `statistic/detail` selectors (live-verified, September 2026)
+
+A strictly read-only frame-by-frame sweep on a live Navigator 10
+(jsonVersion 11, firmware `NAV10_20.24`) confirmed the request values:
+
+| `statisticType` | Block | Value keys |
+|---|---|---|
+| `0` | heat-pump runtimes (`N2_RUNTIMEHEATPUMP`) | `heating`, `priority` (DHW), `defrost` |
+| `2` | bivalence/second-stage runtime (`N2_RUNTIMEBIVALENCE`) | `bivalence1` |
+| `3` | energy management heat pump (`N2_EMHP`) | — |
+| `4` | energy management heating element (`N2_EMEH`) | — |
+| `5` | energy flow (`RD_ENERGY_FLOW`) | PV origin/usage groups |
+| `6` | heat quantities (`N2_HEATQUANTITIES`) | `heating`, `priority` (DHW) |
+| `1` | — | answered `"specified statistic type [1] is not avaiable!"` |
+
+`periodType` selects the aggregation: `0` daily history rows (`data.daily`
+with `date`/`idx` per row), `1` today (`data.today` plus `data.typeDict`),
+`7` lifetime totals (`data.total`). `statisticSubType` stays `null`. The
+`statistic/overview` response enumerates the whole catalog with today's
+values and weekly averages per block — including a `N2_WEATHER` category
+with four forecast days.
+
+### `status/overview` and `system.freshwater/overview` (live-verified)
+
+`status/overview` answers with `jsonVersion`, `userlevel`, `language`,
+`notificationCount`, the controller clock `timestamp` (epoch milliseconds),
+`frostProtectionInfo {active, display}`, `network`, `authenticationEnabled`,
+`demoModeActive` and `myidmInfo` (account data — never republished).
+`system.freshwater/overview` answers with `circulation {active}`,
+`statusInfo {status}` (numeric), `systemMode` and `temperatures {top,
+bottom}` as decimal strings. Both shapes are parsed defensively by
+`idm-heatpump-api` 2.7.0 (`IdmWebStatus` / `IdmWebFreshwater`).
+
 **Sub-controller pattern**: the `system.*` sub-controllers (for example
 `system.freshwater`) use `parameterId` instead of `settingId` in the `data`
 block. The library currently uses only `setting/detail`, `home/detail`,
@@ -379,6 +417,138 @@ When users ask about firmware updates, the answer is clear:
 Extending the integration with its own update functions is not planned and would
 require deliberately including cloud functions (see the section "Deliberately
 not implemented").
+
+### Level-0 settingId catalog (read side, live-enumerated September 2026)
+
+A strictly read-only enumeration — only `setting/detail` frames, the same
+read the integration performs — probed 2016 candidate IDs across the ranges
+700–15100 on a live Navigator 10 (jsonVersion 11, userlevel 0). Exactly eight
+settingIds answer for an end user:
+
+| settingId | Name | `type` | Redirect | Content |
+|---|---|---|---|---|
+| `4740` | `N2_SYSTEM_REBOOT` | **action** | 4488 | restart action (write side, Phase 4 material) |
+| `4754` | `N2_SYSTEM_INFO` | info | 4747 | runtimes, switch cycles, software version, myIDM ID, controller online |
+| `4768` | `N2_SENSORS` | info | 4761 | 26 sensor values (B-codes) |
+| `4775` | `N2_DIGITAL_INPUTS` | info | 4761 | 8 digital inputs |
+| `4782` | `N2_ANALOGUE_OUTPUTS` | info | 4761 | 4 analogue outputs |
+| `4789` | `N2_DIGITAL_OUTPUTS` | info | 4761 | 14 digital outputs |
+| `4824` | `N2_NETWORK_INFORMATIONS` | info | 4747 | network status + myIDM account (private data — never republished) |
+| `13259` | `N2_HWS_INFO` | info | 4747 | hot-water-station heat quantities |
+
+The controller distinguishes three error answers, which makes the catalog
+trustworthy: `no setting item found for setting id [X]!` (the ID does not
+exist), `setting item [X] is not a setting detail item!` (a container/menu
+item — 4488, 4747 and 4761 are of this kind), and `setting item [X] is not
+accessible!` (exists but is level-gated). The six read IDs the integration
+uses today are exactly the six info pages with parseable tables; `4824`
+carries only private network data and is deliberately not turned into
+entities.
+
+What this enumeration cannot deliver: the **write** half (`setting/save`
+payload shapes for editable pages). That still needs the capture session
+below — the level-0 read catalog suggests the writable end-user set is small,
+since every accessible page on this firmware is of type `info` or a single
+`action`.
+
+## Write semantics (static analysis, capture-confirmed September 2026)
+
+The controller serves its web UI (`lighttpd`, Angular SPA) over plain HTTP.
+Reading the shipped JavaScript reconstructs the complete write surface the
+official UI could send, and a maintainer capture session (2026-09-28, through
+the `ws_capture` proxy, harmless reversible actions only) has since
+**confirmed the payloads and the response frames live** for the system mode,
+a freshwater setpoint, the date/time setting and both notification
+acknowledgements.
+
+| Facade method | Frame | Notes |
+|---|---|---|
+| `saveSetting` | `setting/save {settingId, value}` | sub-controller variant `setting.<x>/save`; the settings page adds `source:"Display"` |
+| `executeSetting` | `setting/execute {settingId, value}` | action-type settings (e.g. the `N2_SYSTEM_REBOOT` page 4740) |
+| `saveSystemMode` | `home/save {systemMode: {value: N}}` | **operating mode switch**; holiday adds `vacationDays`, `freshwaterActive` |
+| `saveSystemFreshwater` | `system.freshwater/save {parameterId, value}` | e.g. tap-temperature dialog writes a °C number; `FW027`/`FW028` are re-sent by the SPA after 500 ms (firmware quirk) |
+| `saveSystemHeatingcircuit` | `system.heatingcircuit/save {parameterId, value}` | per-circuit temperatures/timetables; a copy function sends the full object |
+| `saveSystemVentilation` | `system.ventilation/save {parameterId, value}` / full object | |
+| `saveChargePoint` | `system.chargePoint/save t` | controller not in the live catalog |
+| `saveRoom` | `room/save {roomId, value}` | zone-module room settings |
+| `saveIon` | `ion/save {parameterId, value}` | |
+| `saveStatus` | `status/save {parameterId, value}` | the status page itself is writable |
+| `saveAfw` | `frostprotection/save {itemId, value}` | frost wizard only |
+| `saveRelayTestItem` | `relaytest/save {settingId or type, relayId, value}` | service situation only |
+| `sendQuitAll` | `notification/save {quitAll: true}` | acknowledge all messages |
+| `sendQuit` | `notification/save {code, remindMeLater}` | acknowledge one message |
+| `saveAuthentication` | `authentication/save {userlevel: 4, code}` | **technician login, userlevel hardcoded to 4 — never automate** |
+| `sendLocalPin` | `authorization/auth {pin}` | the local PIN handshake |
+| graph saves | `graph/save {id?, name?, channels?, periodType?, remove?}` | user-side statistics charts |
+
+**Operating mode values — live-confirmed.** The `home/overview` frame
+carries the mode state and the controller's own option list: `options:
+[-1, 0, 1, 2, 3, 5, 4]` — exactly the Modbus `system_mode` (register 1005)
+numbering (0 standby, 1 automatic, 2 away, 3 holiday, 4 hot-water-only,
+5 heating/cooling-only; −1 unknown). Switching the mode through the web
+therefore sends `home/save {"systemMode":{"value":4}}` and so on. The SPA
+uses **read-after-write** (it re-requests the overview after every save)
+rather than optimistic state.
+
+**Save responses — capture-confirmed (2026-09-28).** Every save answers
+with one frame keyed `<controller>Save` carrying a `note` object;
+`setting/save` additionally carries a `redirect` block the SPA follows:
+
+| Request | Response frame (observed live) |
+|---|---|
+| `home/save {"systemMode":{"value":4}}` | `{"homeSave":{"note":{"text":"value has been saved successfully!","type":"success"}}}` |
+| `system.freshwater/save {"parameterId":"FW030","value":49}` | `{"freshwaterSave":{"note":{"text":"value has been saved successfully!","type":"success"}}}` |
+| `setting/save` (date/time, ISO-8601 `Z` value) | `{"settingSave":{"note":{"text":"value has been saved successfully!","type":"success"},"redirect":{"command":"overview","controller":"setting","data":{"settingId":"4488"},"reloadDelay":300}}}` |
+| `setting/save` on an action-type setting | same envelope, note text `"action has been executed successfully!"` |
+| `notification/save {"quitAll":true}` | `{"notificationSave":{"note":{"text":"cancellation has been executed successfully!","type":"success"}}}` |
+| `notification/save {"code":"20005","remindMeLater":true}` | same `notificationSave` envelope |
+
+Value formats observed: `systemMode` as a plain number, freshwater
+setpoints as plain numbers (`FW030` is the tap temperature in °C), date/time
+as ISO-8601 with `Z`, notification `code` as a string. The `note.type` mirrors
+the read-side convention (`success`/`danger`), so a rejected write cannot be
+mistaken for a confirmed one. Two session observations worth keeping: the
+status frame reports `userlevel: 1` once an end-user session has logged in
+(an `auth_code`-only connection reports `0`), and a single wrong entry on
+the expert-code action (`12503`, `N2_CODE_ENTRY_EXPERT`) did **not** block
+the input — it produced an informational `20005 N2_USERLEVELACTIVE`
+notification — while repeated attempts block it (documented firmware
+behaviour; do not automate).
+
+Phase 4 consequences: `web_only` mode can be built against these confirmed
+shapes — mode switch and DHW acknowledgement first — with each write feature
+individually validated and authorized.
+
+## Capturing frames yourself (ws_capture)
+
+`idm-heatpump-api` ships a small logging WebSocket proxy for capture
+sessions: `scripts/ws_capture.py` (pure standard library, no dependencies).
+
+```
+python scripts/ws_capture.py --host <navigator-ip> --pin <SYSLPIN> [--listen-port 61221] [--out ws-capture.jsonl]
+```
+
+The proxy listens locally and relays every frame between the browser and the
+controller into a JSONL file (`dir` = `c2s`/`s2c`, parsed JSON payloads). The
+PIN never appears in the log — it lives only in the handshake URL, which is
+redacted. The proxy never fabricates frames: what is captured is exactly what
+the official web UI sends.
+
+**Procedure for a capture session (maintainer-operated):**
+
+1. Start the proxy on the machine with browser access to the Navigator.
+2. Open the Navigator web UI and point its WebSocket at the proxy instead of
+   the controller (browser DevTools → local overrides, or a port-forward of
+   61220 to the proxy port). Alternatively record with DevTools' Network tab
+   (filter `WS`) — both routes produce equivalent material.
+3. Click through every end-user settings page, change a harmless setpoint
+   once, acknowledge a message. This is the legitimate way to capture
+   `setting/save` / `notification/save` write semantics — the integration
+   itself never writes.
+4. Stop the proxy, then **sanitize before anything leaves the machine**:
+   strip serial numbers, myIDM data, addresses and any remaining identifiers.
+   Raw captures stay on the maintainer's machine; only sanitized knowledge
+   enters this wiki or the repositories.
 
 ## User levels, codes and access parameters
 

@@ -1,6 +1,28 @@
 # WebSocket-first roadmap — the Navigator 10/Pro local web API as a first-class data path
 
 Status: 2026-09-27 · Maintainer: Xerolux · Audience: an AI assistant or developer
+
+> **Implementation status 2026-09-28 (branch `feat/ws-first`, integration +
+> API branch `feat/ws-read-expansion`):** Phase 1 (connection mode incl. the
+> full detection summary — the diagnostics `connection` block also reports
+> `jsonVersion`, userlevel and the controller clock), Phase 2
+> (statistic/freshwater/status reads, API 2.7.0) and the Phase 3 capture tool
+> (`scripts/ws_capture.py`, live-verified) are implemented with full gates.
+> The Phase 2.1 blocker is resolved: the `statisticType`/`periodType` values
+> were confirmed frame by frame read-only on the maintainer's Navigator 10.
+> The **read half of the level-0 settingId catalog is enumerated** (2016 IDs
+> probed read-only: eight answering IDs, three error classes — see the
+> protocol wiki page), and concurrent WS sessions were verified by
+> observation (live HA poll plus parallel sessions on one controller). Still
+> **Phase 3 is complete (2026-09-28):** the capture session ran through the
+> `ws_capture` proxy with harmless reversible actions and confirmed the
+> write payloads **and the response frames live** — `homeSave` /
+> `settingSave` / `freshwaterSave` / `notificationSave`, each a single
+> `note`-carrying answer (plus `redirect` on setting saves), value formats
+> for systemMode numbers, freshwater setpoints, ISO-8601 date/time and
+> notification codes; see the protocol wiki page. Every Phase 4 entry
+> condition is met. Remaining: Phase 4 write PRs per feature (each one
+> individually authorized) and Phase 5.
 picking this work up **cold** — this document is self-contained, but it expects
 you to have read both repositories' `AGENTS.md` first.
 
@@ -26,7 +48,7 @@ Related documents you must know about:
 | Releases (integration) | SemVer tags `v0.20.0-b2` style; HACS reads `manifest.json` |
 | Releases (API) | PEP 440 tags `v2.6.0`; **two workflow dispatches** (Release, then Publish), then verify PyPI |
 | Current versions | Integration **0.20.0-b2** (prerelease; latest stable 0.19.0) · API **2.6.0** |
-| Runtime pins | `modbus-connection==4.12.2`, `tmodbus[async-serial]==0.6.2`, `idm-heatpump-api[web]==2.6.0`, HA ≥ 2026.8.1, Python 3.14 |
+| Runtime pins | `modbus-connection==4.12.2`, `tmodbus[async-serial]==0.6.2`, `idm-heatpump-api[web]==2.7.0`, HA ≥ 2026.8.1, Python 3.14 |
 
 ## 2. Where the integration stands today
 

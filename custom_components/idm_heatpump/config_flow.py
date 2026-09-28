@@ -72,6 +72,7 @@ from .const import (
     CONF_COMFORT_SCHEDULE_TARGET,
     CONF_COMFORT_WINDOWS,
     CONF_COMMUNICATION_DIAGNOSTICS,
+    CONF_CONNECTION_MODE,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
@@ -143,6 +144,7 @@ from .const import (
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
     CONFIG_FLOW_TCP_TIMEOUT,
+    CONNECTION_MODE_OPTIONS,
     DEFAULT_COMFORT_SCHEDULE,
     DEFAULT_COMFORT_SCHEDULE_CIRCUIT,
     DEFAULT_COMFORT_SCHEDULE_END,
@@ -150,6 +152,7 @@ from .const import (
     DEFAULT_COMFORT_SCHEDULE_START,
     DEFAULT_COMFORT_SCHEDULE_TARGET,
     DEFAULT_COMMUNICATION_DIAGNOSTICS,
+    DEFAULT_CONNECTION_MODE,
     DEFAULT_DEVICE_HIERARCHY,
     DEFAULT_EEPROM_WRITE_INTERVAL,
     DEFAULT_ENABLE_CASCADE,
@@ -495,7 +498,7 @@ _GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], 
     "technician_codes": (CONF_TECHNICIAN_CODES, (), (), ()),
     "modbus": (
         None,
-        (),
+        (CONF_CONNECTION_MODE,),
         (CONF_MODBUS_TIMEOUT, CONF_MODBUS_MAX_RETRIES, CONF_COMMUNICATION_DIAGNOSTICS),
         (
             CONF_MODBUS_MESSAGE_SPACING,
@@ -577,6 +580,7 @@ def _default_options() -> dict[str, Any]:
         CONF_KNX_TOLERANCE: DEFAULT_KNX_TOLERANCE,
         CONF_KNX_OVERRIDES: {},
         CONF_MODBUS_TIMEOUT: DEFAULT_MODBUS_TIMEOUT,
+        CONF_CONNECTION_MODE: DEFAULT_CONNECTION_MODE,
         CONF_MODBUS_MAX_RETRIES: DEFAULT_MODBUS_MAX_RETRIES,
         CONF_MODBUS_MESSAGE_SPACING: DEFAULT_MODBUS_MESSAGE_SPACING,
         CONF_MODBUS_CONNECT_DELAY: DEFAULT_MODBUS_CONNECT_DELAY,
@@ -1135,6 +1139,16 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
             vol.Required(_OPTIONS_MODBUS_SECTION): section(
                 vol.Schema(
                     {
+                        vol.Required(
+                            CONF_CONNECTION_MODE,
+                            default=str(options.get(CONF_CONNECTION_MODE, DEFAULT_CONNECTION_MODE)),
+                        ): SelectSelector(
+                            SelectSelectorConfig(
+                                options=list(CONNECTION_MODE_OPTIONS),
+                                mode=SelectSelectorMode.DROPDOWN,
+                                translation_key="connection_mode",
+                            )
+                        ),
                         vol.Required(
                             CONF_MODBUS_TIMEOUT,
                             default=float(options.get(CONF_MODBUS_TIMEOUT, DEFAULT_MODBUS_TIMEOUT)),

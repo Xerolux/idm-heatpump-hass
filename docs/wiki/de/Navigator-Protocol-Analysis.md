@@ -15,6 +15,7 @@ Sie ist keine vollständige Protokollspezifikation.
 - Für den implementierten Webzugriff nutzt der Navigator Pro die WebSocket-Variante
   des Navigator 10.
 - Webdaten werden als typisierte Werte mit Einheiten oder als übersetzter Status
+- Parallele WebSocket-Sitzungen funktionieren: Am 2026-09-28 lief ein Live-Home-Assistant-Integrationpoll (eine Sitzung) und mehrere zusätzliche parallele Sitzungen (Sonde, Verifikation, Capture-Proxy) auf demselben Navigator 10 ohne Störung authentifiziert und antworteten. Das ist eine Einzelbeobachtung unter normaler Last, kein Stresstest.
   geliefert.
 
 Die Integration behält daher Modbus als Basispfad bei und nutzt die lokale
@@ -327,6 +328,39 @@ unvollständige Bild aus der statischen EXE-Analyse.
 | `frostprotection` | `overview` | Frostschutz-Assistent (nur in einer Frostsituation aktiv) |
 | `relaytest` | `overview` | Relaistest-Assistent (nur in einer Servicesituation aktiv) |
 
+### `statistic/detail`-Selektoren (live verifiziert, September 2026)
+
+Ein strikt read-only Rahmen-für-Rahmen-Sweep auf einer realen Navigator 10
+(jsonVersion 11, Firmware `NAV10_20.24`) hat die Anfragewerte bestätigt:
+
+| `statisticType` | Block | Wertschlüssel |
+|---|---|---|
+| `0` | Wärmepumpen-Laufzeiten (`N2_RUNTIMEHEATPUMP`) | `heating`, `priority` (WW), `defrost` |
+| `2` | Bivalenz-/zweite-Stufe-Laufzeit (`N2_RUNTIMEBIVALENCE`) | `bivalence1` |
+| `3` | Energiemanagement Wärmepumpe (`N2_EMHP`) | — |
+| `4` | Energiemanagement Heizelement (`N2_EMEH`) | — |
+| `5` | Energiefluss (`RD_ENERGY_FLOW`) | PV-Ursprungs-/Nutzungsgruppen |
+| `6` | Wärmemengen (`N2_HEATQUANTITIES`) | `heating`, `priority` (WW) |
+| `1` | — | antwortet `"specified statistic type [1] is not avaiable!"` |
+
+`periodType` wählt die Aggregation: `0` Tagesverlaufszeilen (`data.daily` mit
+`date`/`idx` je Zeile), `1` heute (`data.today` plus `data.typeDict`), `7`
+Gesamtwerte (`data.total`). `statisticSubType` bleibt `null`. Die Antwort von
+`statistic/overview` zählt den gesamten Katalog mit den heutigen Werten und
+Wochendurchschnitten je Block auf — einschließlich einer Kategorie
+`N2_WEATHER` mit vier Prognosetagen.
+
+### `status/overview` und `system.freshwater/overview` (live verifiziert)
+
+`status/overview` antwortet mit `jsonVersion`, `userlevel`, `language`,
+`notificationCount`, der Regler-Uhr `timestamp` (Epoch-Millisekunden),
+`frostProtectionInfo {active, display}`, `network`, `authenticationEnabled`,
+`demoModeActive` und `myidmInfo` (Kontodaten — werden nie weitergegeben).
+`system.freshwater/overview` antwortet mit `circulation {active}`,
+`statusInfo {status}` (numerisch), `systemMode` und `temperatures {top,
+bottom}` als Dezimalzeichenketten. Beide Formen parst `idm-heatpump-api`
+2.7.0 defensiv (`IdmWebStatus` / `IdmWebFreshwater`).
+
 **Sub-Controller-Muster**: Die `system.*`-Sub-Controller (zum Beispiel
 `system.freshwater`) verwenden im `data`-Block `parameterId` statt `settingId`.
 Die Bibliothek nutzt derzeit nur `setting/detail`, `home/detail`,
@@ -384,6 +418,143 @@ Wenn Nutzer nach Firmware-Updates fragen, ist die Antwort eindeutig:
 Die Integration um eigene Update-Funktionen zu erweitern ist nicht geplant und
 würde bedeuten, Cloud-Funktionen bewusst einzubeziehen (siehe den Abschnitt
 „Bewusst nicht implementiert”).
+
+### Level-0-settingId-Katalog (Leseseite, live enumeriert September 2026)
+
+Eine strikt read-only-Enumeration — nur `setting/detail`-Rahmen, dieselbe
+Leseanfrage, die die Integration sendet — hat 2016 Kandidaten-IDs über die
+Bereiche 700–15100 auf einer realen Navigator 10 (jsonVersion 11, Userlevel
+0) abgefragt. Genau acht settingIds antworten für Endnutzer:
+
+| settingId | Name | `type` | Redirect | Inhalt |
+|---|---|---|---|---|
+| `4740` | `N2_SYSTEM_REBOOT` | **action** | 4488 | Neustart-Aktion (Schreibseite, Material für Phase 4) |
+| `4754` | `N2_SYSTEM_INFO` | info | 4747 | Laufzeiten, Schaltzyklen, Softwareversion, myIDM-ID, Regler online |
+| `4768` | `N2_SENSORS` | info | 4761 | 26 Sensorwerte (B-Codes) |
+| `4775` | `N2_DIGITAL_INPUTS` | info | 4761 | 8 digitale Eingänge |
+| `4782` | `N2_ANALOGUE_OUTPUTS` | info | 4761 | 4 analoge Ausgänge |
+| `4789` | `N2_DIGITAL_OUTPUTS` | info | 4761 | 14 digitale Ausgänge |
+| `4824` | `N2_NETWORK_INFORMATIONS` | info | 4747 | Netzwerkstatus + myIDM-Konto (private Daten — werden nie weitergegeben) |
+| `13259` | `N2_HWS_INFO` | info | 4747 | Wärmemengen der Warmwasserstation |
+
+Der Regler unterscheidet drei Fehlerantworten, was den Katalog
+vertrauenswürdig macht: `no setting item found for setting id [X]!` (die ID
+existiert nicht), `setting item [X] is not a setting detail item!` (ein
+Container-/Menüeintrag — 4488, 4747 und 4761 sind von dieser Art) und
+`setting item [X] is not accessible!` (existiert, ist aber level-beschränkt).
+Die sechs Lese-IDs, die die Integration heute nutzt, sind exakt die sechs
+Info-Seiten mit parsbaren Tabellen; `4824` trägt nur private Netzwerkdaten
+und wird bewusst nicht zu Entitäten gemacht.
+
+Was diese Enumeration nicht liefern kann: die **Schreib**hälfte
+(`setting/save`-Payload-Formen editierbarer Seiten). Dafür braucht es
+weiterhin die Capture-Sitzung unten — der Level-0-Lesekatalog legt nahe, dass
+die beschreibbare Endnutzer-Menge klein ist, denn jede zugängliche Seite
+dieser Firmware ist vom Typ `info` oder eine einzelne `action`.
+
+## Schreibsemantik (statische Analyse, capture-bestätigt September 2026)
+
+Der Regler liefert seine Weboberfläche (`lighttpd`, Angular-SPA) über einfaches
+HTTP aus. Das Auslesen des mitgelieferten JavaScript rekonstruiert die komplette
+Schreibfläche, die die offizielle Oberfläche senden könnte, und eine
+Betreiber-Capture-Sitzung (2026-09-28, durch den `ws_capture`-Proxy, nur
+harmlose reversible Aktionen) hat seitdem **die Payloads und die
+Antwortrahmen live bestätigt** — für die Betriebsart, einen
+Warmwasser-Sollwert, die Datum-/Uhrzeit-Einstellung und beide Varianten der
+Meldungsquittierung.
+
+| Fassadenmethode | Rahmen | Hinweise |
+|---|---|---|
+| `saveSetting` | `setting/save {settingId, value}` | Sub-Controller-Variante `setting.<x>/save`; die Einstellungsseite ergänzt `source:"Display"` |
+| `executeSetting` | `setting/execute {settingId, value}` | Aktions-Einstellungen (z. B. die Seite `N2_SYSTEM_REBOOT` 4740) |
+| `saveSystemMode` | `home/save {systemMode: {value: N}}` | **Betriebsart-Schalter**; Urlaub ergänzt `vacationDays`, `freshwaterActive` |
+| `saveSystemFreshwater` | `system.freshwater/save {parameterId, value}` | z. B. schreibt der Zapftemperatur-Dialog eine °C-Zahl; `FW027`/`FW028` sendet die SPA nach 500 ms erneut (Firmware-Quirk) |
+| `saveSystemHeatingcircuit` | `system.heatingcircuit/save {parameterId, value}` | Temperaturen/Zeitpläne je Heizkreis; eine Kopierfunktion sendet das ganze Objekt |
+| `saveSystemVentilation` | `system.ventilation/save {parameterId, value}` / ganzes Objekt | |
+| `saveChargePoint` | `system.chargePoint/save t` | Controller nicht im Live-Katalog |
+| `saveRoom` | `room/save {roomId, value}` | Raummodule-Einstellungen |
+| `saveIon` | `ion/save {parameterId, value}` | |
+| `saveStatus` | `status/save {parameterId, value}` | die Statusseite selbst ist beschreibbar |
+| `saveAfw` | `frostprotection/save {itemId, value}` | nur Frostschutz-Assistent |
+| `saveRelayTestItem` | `relaytest/save {settingId oder type, relayId, value}` | nur Servicesituation |
+| `sendQuitAll` | `notification/save {quitAll: true}` | alle Meldungen quittieren |
+| `sendQuit` | `notification/save {code, remindMeLater}` | eine Meldung quittieren |
+| `saveAuthentication` | `authentication/save {userlevel: 4, code}` | **Techniker-Login, Userlevel hart auf 4 — niemals automatisieren** |
+| `sendLocalPin` | `authorization/auth {pin}` | der lokale PIN-Handshake |
+| Graph-Speicherungen | `graph/save {id?, name?, channels?, periodType?, remove?}` | nutzerseitige Statistik-Charts |
+
+**Betriebsart-Werte — live bestätigt.** Der Rahmen `home/overview` führt den
+Moduszustand und die eigene Optionsliste des Reglers mit: `options:
+[-1, 0, 1, 2, 3, 5, 4]` — exakt die Numerierung der Modbus-`system_mode`
+(Register 1005; 0 Standby, 1 Automatik, 2 Abwesend, 3 Urlaub, 4 Nur
+Warmwasser, 5 Nur Heizen/Kühlen; −1 unbekannt). Die Betriebsart über das Web
+zu schalten sendet also `home/save {"systemMode":{"value":4}}` und so weiter.
+Die SPA arbeitet mit **Read-after-Write** (sie fragt nach jedem Speichern das
+Overview erneut an) statt optimistischem Zustand.
+
+**Save-Antworten — capture-bestätigt (2026-09-28).** Jedes Save beantwortet
+der Regler mit genau einem Rahmen unter dem Schlüssel `<Controller>Save` mit
+einem `note`-Objekt; `setting/save` trägt zusätzlich einen `redirect`-Block,
+dem die SPA folgt:
+
+| Anfrage | Antwortrahmen (live beobachtet) |
+|---|---|
+| `home/save {"systemMode":{"value":4}}` | `{"homeSave":{"note":{"text":"value has been saved successfully!","type":"success"}}}` |
+| `system.freshwater/save {"parameterId":"FW030","value":49}` | `{"freshwaterSave":{"note":{"text":"value has been saved successfully!","type":"success"}}}` |
+| `setting/save` (Datum/Uhrzeit, ISO-8601-mit-`Z`-Wert) | `{"settingSave":{"note":{"text":"value has been saved successfully!","type":"success"},"redirect":{"command":"overview","controller":"setting","data":{"settingId":"4488"},"reloadDelay":300}}}` |
+| `setting/save` auf einer Aktions-Einstellung | gleiches Envelope, Notiztext `"action has been executed successfully!"` |
+| `notification/save {"quitAll":true}` | `{"notificationSave":{"note":{"text":"cancellation has been executed successfully!","type":"success"}}}` |
+| `notification/save {"code":"20005","remindMeLater":true}` | gleiches `notificationSave`-Envelope |
+
+Beobachtete Wertformate: `systemMode` als schlichte Zahl,
+Warmwasser-Sollwerte als schlichte Zahlen (`FW030` ist die Zapftemperatur in
+°C), Datum/Uhrzeit als ISO-8601 mit `Z`, Meldungs-`code` als Zeichenkette.
+Das `note.type` folgt der Lesekonvention (`success`/`danger`) — ein
+abgelehnter Schreibvorgang kann also nicht mit einem bestätigten verwechselt
+werden. Zwei Sitzungsbeobachtungen zum Mitnehmen: Der Statusrahmen meldet
+`userlevel: 1`, sobald eine Endnutzer-Sitzung angemeldet ist (eine reine
+`auth_code`-Verbindung meldet `0`), und ein einzelner Fehlversuch an der
+Fachmann-Code-Aktion (`12503`, `N2_CODE_ENTRY_EXPERT`) hat die Eingabe
+**nicht** gesperrt — er erzeugte eine informierende Meldung `20005
+N2_USERLEVELACTIVE` — während wiederholte Versuche sperren (dokumentiertes
+Firmware-Verhalten; nicht automatisieren).
+
+Konsequenzen für Phase 4: Der `web_only`-Modus kann gegen diese bestätigten
+Formen gebaut werden — Betriebsart-Schalter und Warmwasser-Quittierung zuerst
+— mit je einzeln validiertem und freigegebenem Schreib-Feature.
+
+## Frames selbst mitschneiden (ws_capture)
+
+Das `idm-heatpump-api`-Repository enthält einen kleinen protokollierenden
+WebSocket-Proxy für Capture-Sitzungen: `scripts/ws_capture.py` (reine
+Standardbibliothek, keine Abhängigkeiten).
+
+```
+python scripts/ws_capture.py --host <navigator-ip> --pin <SYSLPIN> [--listen-port 61221] [--out ws-capture.jsonl]
+```
+
+Der Proxy lauscht lokal und leitet jeden Rahmen zwischen Browser und Regler
+in eine JSONL-Datei weiter (`dir` = `c2s`/`s2c`, geparste JSON-Payloads). Die
+PIN erscheint nie im Log — sie steht nur in der Handshake-URL, die
+redigiert wird. Der Proxy erzeugt selbst niemals Rahmen: Gespeichert wird
+genau das, was die offizielle Weboberfläche sendet.
+
+**Ablauf einer Capture-Sitzung (vom Betreiber durchgeführt):**
+
+1. Proxy auf dem Rechner starten, der Browserzugriff auf den Navigator hat.
+2. Weboberfläche des Navigators öffnen und ihr WebSocket auf den Proxy
+   statt auf den Regler richten (Browser-DevTools → Local Overrides oder ein
+   Port-Forward von 61220 auf den Proxy-Port). Alternativ mit dem
+   Netzwerk-Tab der DevTools mitschneiden (Filter `WS`) — beide Wege liefern
+   gleichwertiges Material.
+3. Jede Endnutzer-Einstellungsseite durchklicken, einen harmlosen Sollwert
+   einmal ändern, eine Meldung quittieren. Das ist der legitime Weg, die
+   Schreibsemantik von `setting/save` / `notification/save` zu erfassen —
+   die Integration selbst schreibt niemals.
+4. Proxy stoppen, dann **vor jedem Weitergeben desinfizieren**: Seriennummern,
+   myIDM-Daten, Adressen und verbleibende Kennzeichen entfernen. Rohe
+   Mitschnitte bleiben auf dem Rechner des Betreibers; nur bereinigtes
+   Wissen wandert in dieses Wiki oder die Repositories.
 
 ## Benutzerebenen, Codes und Zugangsparameter
 

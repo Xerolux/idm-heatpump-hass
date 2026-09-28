@@ -95,12 +95,14 @@ from .const import (
     CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
-    CONF_WEB_ONLY,
     CONF_WEB_PIN,
     CONF_WEB_SCAN_INTERVAL,
     CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    CONNECTION_MODE_AUTO,
+    CONNECTION_MODE_MODBUS_WEB,
+    CONNECTION_MODE_WEB_ONLY,
     DEFAULT_COMFORT_SCHEDULE,
     DEFAULT_COMFORT_SCHEDULE_CIRCUIT,
     DEFAULT_COMFORT_SCHEDULE_END,
@@ -150,7 +152,6 @@ from .const import (
     DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
     DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
     DEFAULT_WEB_ENABLED,
-    DEFAULT_WEB_ONLY,
     DEFAULT_WEB_SCAN_INTERVAL,
     DEFAULT_WRITE_COOLDOWN,
     DOMAIN,
@@ -159,6 +160,7 @@ from .const import (
     MODEL,
     NAME,
     WEB_SETUP_READ_TIMEOUT,
+    resolve_connection_mode,
 )
 from .coordinator import IdmCoordinator
 from .device_hierarchy import (
@@ -660,6 +662,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     eeprom_write_interval = float(entry.options.get(CONF_EEPROM_WRITE_INTERVAL, DEFAULT_EEPROM_WRITE_INTERVAL))
     smart_features_enabled = entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
 
+    # The connection mode decides which data paths this entry may use. An
+    # explicit selection wins; ``auto`` keeps the historical behaviour,
+    # including the web-only fallback the setup flow may have persisted.
+    connection_mode = resolve_connection_mode(entry.options, entry.data)
+    web_paths_allowed = connection_mode in (CONNECTION_MODE_AUTO, CONNECTION_MODE_MODBUS_WEB)
+    # ``web_enabled`` is the effective web-supplement decision: the toggle
+    # alone is not enough when the connection mode excludes the web path.
+    web_enabled = web_enabled and web_paths_allowed
+
     if web_pin_configured(web_pin):
         ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
     elif web_enabled:
@@ -676,9 +687,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     else:
         ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
 
-    web_only = bool(entry.data.get(CONF_WEB_ONLY, DEFAULT_WEB_ONLY))
-
-    if web_only:
+    if connection_mode == CONNECTION_MODE_WEB_ONLY:
         return await _async_setup_web_only_entry(
             hass,
             entry,

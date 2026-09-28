@@ -330,6 +330,33 @@ idle is the controller re-planning, not the heat pump running.
 For actual electrical draw, use **Wärmepumpe Aufnahmeleistung** /
 `current_electrical_power` instead.
 
+#### Device-side heat quantities, DHW detail and controller clock (Navigator 10 only)
+
+Three further read-only WebSocket controllers are evaluated on every web poll
+(live-verified on firmware jsonVersion 11, September 2026):
+
+- **Heat quantity heating/hot water, total and today (Web)**
+  (`web_heat_quantity_heating_total`, `web_heat_quantity_hotwater_total`,
+  `web_heat_quantity_heating_today`, `web_heat_quantity_hotwater_today`): the
+  controller's own `statistic/detail` heat-quantity block — the lifetime
+  totals and today's values in kWh. They are an independent cross-check for
+  the integration's own [energy statistics](Smart-Energy-and-Comfort) and work
+  without any Modbus access.
+- **Hot water circulation (Web)** (`web_dhw_circulation_active`): binary
+  sensor for the domestic-hot-water circulation pump from the
+  `system.freshwater/overview` frame — a state the Modbus map does not expose.
+- **Hot water status info (Web)** (`web_dhw_status_info`): the numeric status
+  of the freshwater block, diagnostic category.
+- **Controller clock (Web)** (`web_controller_clock`): the controller's own
+  clock as a timestamp sensor, with `jsonVersion`, active user level,
+  language, notification count, frost-protection flag and network flag as
+  attributes. The controller clock can drift, and the time-dependent
+  technician codes are computed from the time shown on the display — this
+  sensor makes the drift visible.
+
+If a firmware does not answer one of these controllers, the affected entities
+simply stay unavailable; the rest of the web snapshot is unaffected.
+
 If a web value duplicates an existing Modbus entity, the web entity is skipped.
 This prevents duplicate dashboard values and keeps Modbus as the authoritative
 source for register-backed data.

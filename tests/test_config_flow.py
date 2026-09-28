@@ -30,6 +30,7 @@ from custom_components.idm_heatpump.config_flow import (
 from custom_components.idm_heatpump.const import (
     CONF_COMFORT_WINDOWS,
     CONF_COMMUNICATION_DIAGNOSTICS,
+    CONF_CONNECTION_MODE,
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
@@ -78,7 +79,11 @@ from custom_components.idm_heatpump.const import (
     CONF_WRITE_COOLDOWN,
     CONF_ZONE_COUNT,
     CONF_ZONE_ROOMS,
+    CONNECTION_MODE_AUTO,
+    CONNECTION_MODE_MODBUS_ONLY,
+    CONNECTION_MODE_WEB_ONLY,
     DEFAULT_COMMUNICATION_DIAGNOSTICS,
+    DEFAULT_CONNECTION_MODE,
     DEFAULT_MODBUS_CONNECT_DELAY,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_MESSAGE_SPACING,
@@ -767,6 +772,39 @@ class TestAsyncStepOptions:
         assert defaults[CONF_POLLING_JITTER] == DEFAULT_POLLING_JITTER
         assert defaults[CONF_COMMUNICATION_DIAGNOSTICS] == DEFAULT_COMMUNICATION_DIAGNOSTICS
         assert defaults[CONF_WRITE_COOLDOWN] == DEFAULT_WRITE_COOLDOWN
+
+    def test_options_schema_exposes_connection_mode(self):
+        """The connection mode selector lives in the advanced Modbus section."""
+        schema = _build_options_schema({})
+        schema_dict = dict(schema.schema["advanced_modbus"].schema)
+        assert CONF_CONNECTION_MODE in schema_dict
+
+    def test_options_schema_connection_mode_defaults_to_auto(self):
+        schema = _build_options_schema({})
+        defaults = _marker_defaults(schema.schema["advanced_modbus"])
+        assert defaults[CONF_CONNECTION_MODE] == DEFAULT_CONNECTION_MODE == CONNECTION_MODE_AUTO
+
+    def test_options_schema_connection_mode_keeps_stored_choice(self):
+        schema = _build_options_schema({CONF_CONNECTION_MODE: CONNECTION_MODE_MODBUS_ONLY})
+        defaults = _marker_defaults(schema.schema["advanced_modbus"])
+        assert defaults[CONF_CONNECTION_MODE] == CONNECTION_MODE_MODBUS_ONLY
+
+    async def test_options_flow_submission_round_trips_connection_mode(self):
+        """A submitted sectioned form stores the chosen mode as a flat option."""
+        flow = _make_flow()
+        flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+        result = await flow.async_step_options(
+            {
+                CONF_SCAN_INTERVAL: 10,
+                CONF_HIDE_UNUSED: True,
+                CONF_HEATING_CIRCUITS: ["a"],
+                CONF_ZONE_COUNT: 0,
+                CONF_TECHNICIAN_CODES: False,
+                "advanced_modbus": {CONF_CONNECTION_MODE: CONNECTION_MODE_WEB_ONLY},
+            }
+        )
+        assert result["type"] == "create_entry"
+        assert flow._options[CONF_CONNECTION_MODE] == CONNECTION_MODE_WEB_ONLY
 
     async def test_no_zones_creates_entry(self):
         flow = _make_flow()

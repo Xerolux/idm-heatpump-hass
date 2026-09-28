@@ -659,6 +659,50 @@ class TestSensorAsyncSetupEntry:
         assert hotgas.native_value == 72.5
         assert hotgas.available is True
 
+    async def test_statistic_and_freshwater_web_sensors_carry_energy_metadata(self):
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = True
+        coord.model_name = "Navigator 10"
+        coord.firmware_version = "NAV10_20.23"
+        coord.active_registers = []
+        coord.web_supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.23",
+            sensor_values={
+                "heat_quantity_heating_total": IdmWebSensorValue("27316.22", 27316.22, "kWh"),
+                "heat_quantity_hotwater_total": IdmWebSensorValue("3587.84", 3587.84, "kWh"),
+                "heat_quantity_heating_today": IdmWebSensorValue("7.15", 7.15, "kWh"),
+                "dhw_status_info": IdmWebSensorValue("16", 16.0),
+            },
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        web_entities = {
+            entity.entity_description.key: entity for entity in added_entities if isinstance(entity, IdmWebSensor)
+        }
+        total = web_entities["web_heat_quantity_heating_total"]
+        assert total.native_value == 27316.22
+        assert str(total.entity_description.device_class) == "energy"
+        assert str(total.entity_description.state_class) == "total_increasing"
+        today = web_entities["web_heat_quantity_heating_today"]
+        assert today.native_value == 7.15
+        status_info = web_entities["web_dhw_status_info"]
+        assert status_info.native_value == 16.0
+        from homeassistant.helpers.entity import EntityCategory
+
+        assert status_info.entity_description.entity_category == EntityCategory.DIAGNOSTIC
+
     async def test_web_sensor_uses_api_metadata_when_available(self, monkeypatch):
         import custom_components.idm_heatpump.sensor as sensor_module
         from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry

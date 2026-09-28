@@ -2500,3 +2500,121 @@ async def test_dismissed_solar_suggestion_stays_away(mock_hass, mock_config_entr
         await coord._async_update_data()
 
     mock_ir.async_create_issue.assert_not_called()
+
+
+class TestTransientZeroGuard:
+    """Single-poll zeros on lifetime kWh counters must not reach HA.
+
+    A same-generation controller was observed answering one poll with 0.0 on
+    a monotonic energy counter (kodebach/hacs-idm-heatpump#322); Home
+    Assistant then books the whole lifetime counter as fresh consumption in
+    utility_meter and long-term statistics. The guard holds the value
+    unavailable for exactly one poll.
+    """
+
+    def _coordinator(self, mock_hass, mock_config_entry):
+        return _make_coordinator(mock_hass, mock_config_entry)[0]
+
+    def test_transient_zero_on_lifetime_counter_is_suppressed(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator.data = {"energy_heating": 40482.83, "outdoor_temp": 7.0}
+
+        data = {"energy_heating": 0.0, "outdoor_temp": 7.1}
+        coordinator._suppress_transient_counter_zeros(data)
+
+        assert "energy_heating" not in data
+        assert data["outdoor_temp"] == 7.1
+        assert coordinator.transient_zero_suppressed == 1
+
+    def test_second_consecutive_zero_passes_as_real_reset(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        # First poll already suppressed the key, so the previous snapshot no
+        # longer carries it - the second zero is a genuine device-side reset.
+        coordinator.data = {"outdoor_temp": 7.0}
+
+        data = {"energy_heating": 0.0}
+        coordinator._suppress_transient_counter_zeros(data)
+
+        assert data["energy_heating"] == 0.0
+        assert coordinator.transient_zero_suppressed == 0
+
+    def test_zero_without_a_previous_value_passes(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator.data = {}
+
+        data = {"energy_dhw": 0.0}
+        coordinator._suppress_transient_counter_zeros(data)
+
+        assert data["energy_dhw"] == 0.0
+
+    def test_non_counter_register_zero_is_never_touched(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator.data = {"power_consumption_hp": 1.5}
+
+        data = {"power_consumption_hp": 0.0}
+        coordinator._suppress_transient_counter_zeros(data)
+
+        assert data["power_consumption_hp"] == 0.0
+        assert coordinator.transient_zero_suppressed == 0
+
+    def test_normal_counter_progress_is_untouched(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator.data = {"energy_heating": 40482.83}
+
+        data = {"energy_heating": 40484.52}
+        coordinator._suppress_transient_counter_zeros(data)
+
+        assert data["energy_heating"] == 40484.52
+        assert coordinator.transient_zero_suppressed == 0
+
+    def test_web_lifetime_counter_zero_is_suppressed(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator._web_supplement = IdmWebSupplement(
+            sensor_values={"heat_quantity_heating_total": IdmWebSensorValue("40482.83", 40482.83, "kWh")}
+        )
+        incoming = IdmWebSupplement(
+            sensor_values={
+                "heat_quantity_heating_total": IdmWebSensorValue("0", 0.0, "kWh"),
+                "heat_quantity_heating_today": IdmWebSensorValue("0", 0.0, "kWh"),
+            }
+        )
+
+        guarded = coordinator._suppress_transient_web_counter_zeros(incoming)
+
+        # The lifetime total is held unavailable for one poll ...
+        assert "heat_quantity_heating_total" not in guarded.sensor_values
+        # ... while today's counter legitimately returns to zero and passes.
+        assert "heat_quantity_heating_today" in guarded.sensor_values
+        assert coordinator.transient_zero_suppressed == 1
+
+    def test_web_second_consecutive_zero_passes(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator._web_supplement = IdmWebSupplement(
+            sensor_values={
+                "heat_quantity_heating_total": IdmWebSensorValue("0", 0.0, "kWh"),
+            }
+        )
+        incoming = IdmWebSupplement(sensor_values={"heat_quantity_heating_total": IdmWebSensorValue("0", 0.0, "kWh")})
+
+        guarded = coordinator._suppress_transient_web_counter_zeros(incoming)
+
+        assert "heat_quantity_heating_total" in guarded.sensor_values
+        assert coordinator.transient_zero_suppressed == 0
+
+    def test_web_guard_keeps_other_fields_of_the_supplement(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator._web_supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            sensor_values={"heat_quantity_heating_total": IdmWebSensorValue("500.0", 500.0, "kWh")},
+        )
+        incoming = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            values={"heat_quantity_heating_total": "0"},
+            sensor_values={"heat_quantity_heating_total": IdmWebSensorValue("0", 0.0, "kWh")},
+        )
+
+        guarded = coordinator._suppress_transient_web_counter_zeros(incoming)
+
+        assert guarded.navigator_version == "Navigator 10"
+        assert "heat_quantity_heating_total" not in guarded.values
+        assert "heat_quantity_heating_total" not in guarded.sensor_values

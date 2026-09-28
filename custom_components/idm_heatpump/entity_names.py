@@ -376,6 +376,18 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_condenser_pressure": ("Condenser pressure (Web)", "Kondensator Druck (Web)"),
         "web_condenser_temperature": ("Condenser temperature (Web)", "Kondensator Temperatur (Web)"),
         "web_controller_online_hours": ("Controller online time (Web)", "Regler Online (Web)"),
+        "web_controller_clock": ("Controller clock (Web)", "Regler-Uhrzeit (Web)"),
+        "web_dhw_status_info": ("Hot water status info (Web)", "Warmwasser Statusinfo (Web)"),
+        "web_heat_quantity_heating_today": ("Heat quantity heating today (Web)", "Wärmemenge Heizen heute (Web)"),
+        "web_heat_quantity_heating_total": ("Heat quantity heating total (Web)", "Wärmemenge Heizen gesamt (Web)"),
+        "web_heat_quantity_hotwater_today": (
+            "Heat quantity hot water today (Web)",
+            "Wärmemenge Warmwasser heute (Web)",
+        ),
+        "web_heat_quantity_hotwater_total": (
+            "Heat quantity hot water total (Web)",
+            "Wärmemenge Warmwasser gesamt (Web)",
+        ),
         "web_current_electrical_power": ("Current electrical power (Web)", "Aktuelle elektrische Leistung (Web)"),
         "web_current_expected_power_cooling": (
             "Current/projected cooling power (Web)",
@@ -472,6 +484,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "calculated_pv_surplus_operation": ("PV surplus operation", "PV-Überschussbetrieb"),
         "web_demand_reason_pv": ("PV demand reason (Web)", "PV-Anforderungsgrund (Web)"),
         # === Local Navigator web supplement ===
+        "web_dhw_circulation_active": ("Hot water circulation (Web)", "Warmwasser-Zirkulation (Web)"),
         "web_compressor_1": ("Compressor 1 (Web)", "Verdichter 1 (Web)"),
         "web_compressor_heating": ("Compressor heater (Web)", "Verdichterheizung (Web)"),
         "web_dewpoint_humidity_alarm": ("Dew point humidity alarm (Web)", "Taupunkt-Feuchtealarm (Web)"),

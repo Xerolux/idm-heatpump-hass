@@ -79,6 +79,7 @@ from .technician_codes import calculate_codes
 from .versions import RuntimeVersions, async_runtime_versions
 from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
 from .web_demand_reason_entities import IdmWebDemandReasonSensor, web_demand_reason_sensor_entities
+from .web_status_entities import IdmWebControllerClockSensor, web_status_sensor_entities
 
 # Optional per-value metadata: an older idm-heatpump-api release does not carry
 # the web value catalog, and the sensor platform falls back to its own units and
@@ -140,6 +141,7 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "current_expected_power_heating",
     "current_expected_power_hotwater",
     "dewpoint_humidity_alarm",
+    "dhw_status_info",
     "evaporation_temperature",
     "evaporator_outlet_temperature",
     "ew_evu_lock_contact",
@@ -154,6 +156,10 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "flowmeter",
     "heat_generator_2nd",
     "heat_generator_2nd_3rd",
+    "heat_quantity_heating_today",
+    "heat_quantity_heating_total",
+    "heat_quantity_hotwater_today",
+    "heat_quantity_hotwater_total",
     "heat_sink_intermediate_circuit_pump_signal",
     "heating_water_outlet_temperature",
     "heatpump_model",
@@ -230,6 +236,10 @@ _WEB_VALUE_UNITS: dict[str, str] = {
     **{f"room_temperature_HK_{letter}": "°C" for letter in HEATING_CIRCUIT_LETTERS},
     "flowmeter": "L/min",
     "heating_water_outlet_temperature": "°C",
+    "heat_quantity_heating_today": "kWh",
+    "heat_quantity_heating_total": "kWh",
+    "heat_quantity_hotwater_today": "kWh",
+    "heat_quantity_hotwater_total": "kWh",
     "hotgas_temperature": "°C",
     "hotwater_circulation_heat_quantity": "kWh",
     "hotwater_station_flowmeter": "L/min",
@@ -301,6 +311,7 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
         EntityCategory.DIAGNOSTIC
         if key
         in {
+            "dhw_status_info",
             "heatpump_model",
             "infosystem_notification_count",
             "infosystem_notifications",
@@ -400,6 +411,7 @@ async def async_setup_entry(
         | IdmTechnicianCodeSensor
         | IdmWebSensor
         | IdmWebDemandReasonSensor
+        | IdmWebControllerClockSensor
         | IdmApiVersionSensor
         | IdmCommunicationDiagnosticSensor
         | IdmOperationSensor
@@ -460,6 +472,7 @@ async def async_setup_entry(
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
         entities += web_demand_reason_sensor_entities(coordinator)
+        entities += web_status_sensor_entities(coordinator)
     entities.append(IdmApiVersionSensor(coordinator, versions))
     if entry.options.get(CONF_COMMUNICATION_DIAGNOSTICS, False):
         entities += _communication_diagnostic_entities(coordinator)

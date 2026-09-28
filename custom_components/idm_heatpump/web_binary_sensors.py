@@ -54,6 +54,13 @@ WEB_BINARY_SENSOR_DEFINITIONS: tuple[WebBinarySensorDefinition, ...] = (
         inverted=True,
     ),
     WebBinarySensorDefinition(
+        # Domestic-hot-water circulation pump, from the Navigator 10
+        # system.freshwater/overview frame — a value the Modbus map lacks.
+        key="dhw_circulation_active",
+        icon="mdi:autorenew",
+        device_class=BinarySensorDeviceClass.RUNNING,
+    ),
+    WebBinarySensorDefinition(
         # DeviceClass.LOCK means on=unlocked in HA. EVU "lock contact active"
         # is closer to a safety/grid-block state, so SAFETY is used (on=unsafe).
         key="ew_evu_lock_contact",

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 # IDM Heatpump for Home Assistant
 # © 2026 Xerolux — unofficial community integration for IDM Navigator 2.0 / 10 heat pumps
 # Created by Xerolux | https://github.com/Xerolux/idm-heatpump-hass
@@ -15,7 +17,18 @@ from homeassistant.loader import async_get_integration
 
 from .ai_advisor import CONF_AI_URL
 from .ai_cloud import CLOUD_KEYS
-from .const import CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CONF_WEB_PIN, DOMAIN
+from .const import (
+    CONF_HOST,
+    CONF_PORT,
+    CONF_SLAVE_ID,
+    CONF_WEB_HOST,
+    CONF_WEB_PIN,
+    CONNECTION_MODE_AUTO,
+    CONNECTION_MODE_MODBUS_WEB,
+    CONNECTION_MODE_WEB_ONLY,
+    DOMAIN,
+    resolve_connection_mode,
+)
 from .service_report import build_service_report
 from .versions import async_runtime_versions
 
@@ -23,6 +36,41 @@ TO_REDACT = {CONF_AI_URL, CONF_HOST, CONF_PORT, CONF_SLAVE_ID, CONF_WEB_HOST, CO
 # Device identifiers must not leak into diagnostics either.
 TO_REDACT.update({"myidm_id", "serial_number", "serial"})
 TO_REDACT.update(CLOUD_KEYS)
+
+
+def _connection_diagnostics(entry: ConfigEntry, coordinator: Any) -> dict[str, Any]:
+    """Summarize which data paths this entry uses and what was detected.
+
+    Presence-only booleans — the PIN value itself stays redacted. This is the
+    Phase 1 detection summary of the WebSocket-first roadmap: one block that
+    answers "what is this integration talking to, and how" without hunting
+    through the whole export. ``web_json_version`` / ``web_userlevel`` /
+    ``controller_clock`` come from the Navigator 10 status/overview frame
+    (Phase 2.3) and stay ``None`` when no frame has arrived yet.
+    """
+    mode = resolve_connection_mode(entry.options, entry.data)
+    web_pin = str(entry.data.get(CONF_WEB_PIN, "") or "").strip()
+    supplement = getattr(coordinator, "web_supplement", None)
+    status = getattr(supplement, "status", None) if supplement is not None else None
+    controller_clock: str | None = None
+    timestamp_ms = getattr(status, "timestamp_ms", None)
+    if isinstance(timestamp_ms, int):
+        try:
+            controller_clock = datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC).isoformat()
+        except (OverflowError, OSError, ValueError):
+            controller_clock = None
+    return {
+        "mode": mode,
+        "modbus_used": mode != CONNECTION_MODE_WEB_ONLY,
+        "web_supplement_used": mode in (CONNECTION_MODE_AUTO, CONNECTION_MODE_MODBUS_WEB, CONNECTION_MODE_WEB_ONLY)
+        and bool(getattr(coordinator, "web_enabled", False)),
+        "web_pin_configured": bool(web_pin),
+        "controller_family": coordinator.model_name,
+        "firmware_version": coordinator.firmware_version,
+        "web_json_version": getattr(status, "json_version", None),
+        "web_userlevel": getattr(status, "userlevel", None),
+        "controller_clock": controller_clock,
+    }
 
 
 def _model_info_diagnostics(model_info: Any) -> dict[str, Any]:
@@ -309,9 +357,13 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                     "total_registers_in_plan": statistics.known_registers,
                     "polling_jitter_percent": statistics.jitter_percent,
                     "write_cooldown_seconds": statistics.write_cooldown_seconds,
+                    # Single-poll zero readings suppressed on lifetime energy
+                    # counters (transient device glitch guard).
+                    "transient_zero_suppressed": getattr(coordinator, "transient_zero_suppressed", 0),
                 },
                 "model_name": coordinator.model_name,
                 "firmware_version": coordinator.firmware_version,
+                "connection": _connection_diagnostics(entry, coordinator),
                 "versions": {
                     "integration": versions.integration,
                     "idm_heatpump_api": versions.api,

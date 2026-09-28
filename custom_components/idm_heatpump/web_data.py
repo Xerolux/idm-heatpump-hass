@@ -64,6 +64,12 @@ class IdmWebSupplement:
     values: dict[str, str] = field(default_factory=dict)
     sensor_values: dict[str, IdmWebSensorValue] = field(default_factory=dict)
     demand_reason: Any | None = None
+    # Navigator 10 status/overview snapshot (jsonVersion, userlevel,
+    # controller clock); None on other variants or when the frame failed.
+    status: Any | None = None
+    # Navigator 10 system.freshwater/overview snapshot (circulation state,
+    # status info, DHW system mode); None on other variants or on failure.
+    freshwater: Any | None = None
 
     @property
     def model_name(self) -> str | None:
@@ -238,6 +244,161 @@ async def _read_optional_demand_reason(
     if detail is None:
         return supplement
     return replace(supplement, demand_reason=detail)
+
+
+def _with_sensor_values(
+    supplement: IdmWebSupplement,
+    extra: dict[str, IdmWebSensorValue],
+    **field_updates: Any,
+) -> IdmWebSupplement:
+    """Return a supplement with merged sensor values and updated fields."""
+    if not extra and not field_updates:
+        return supplement
+    sensor_values = dict(supplement.sensor_values)
+    sensor_values.update(extra)
+    values = dict(supplement.values)
+    values.update({name: item.value for name, item in extra.items()})
+    return replace(supplement, values=values, sensor_values=sensor_values, **field_updates)
+
+
+def _statistic_sensor_value(value: Any) -> IdmWebSensorValue:
+    """Convert one API statistic value into a kWh sensor value."""
+    text = str(getattr(value, "value", value))
+    try:
+        numeric = float(text)
+    except ValueError:
+        numeric = None
+    return IdmWebSensorValue(value=text, native_value=numeric if numeric is not None else text, unit="kWh")
+
+
+async def _read_optional_statistics(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the device-side heat quantities.
+
+    Reads ``statistic/detail`` for the heat-quantity block (statisticType 6,
+    verified against a live controller; the selector constants live in
+    idm-heatpump-api) with both the lifetime total and the today aggregation.
+    The controller's own heat totals are an independent cross-check for the
+    self-integrated energy statistics. Strictly optional: any failure keeps
+    the supplement unchanged.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    from idm_heatpump import (
+        NAVIGATOR10_STATISTIC_HEAT_QUANTITIES,
+        NAVIGATOR10_STATISTIC_PERIOD_TODAY,
+        NAVIGATOR10_STATISTIC_PERIOD_TOTAL,
+    )
+
+    read_statistics = getattr(client, "read_statistics", None)
+    if not callable(read_statistics):
+        return supplement
+    extra: dict[str, IdmWebSensorValue] = {}
+    name_map = {
+        "heating": "heat_quantity_heating",
+        "priority": "heat_quantity_hotwater",
+    }
+    try:
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            totals = await read_statistics(
+                NAVIGATOR10_STATISTIC_HEAT_QUANTITIES,
+                NAVIGATOR10_STATISTIC_PERIOD_TOTAL,
+                "hq",
+            )
+            todays = await read_statistics(
+                NAVIGATOR10_STATISTIC_HEAT_QUANTITIES,
+                NAVIGATOR10_STATISTIC_PERIOD_TODAY,
+                "hq",
+            )
+    except Exception:
+        _LOGGER.debug("IDM web statistic/detail read failed", exc_info=True)
+        return supplement
+    for parsed in (totals, todays):
+        for name, value in (getattr(parsed, "values", None) or {}).items():
+            for raw_key, target in name_map.items():
+                if name.endswith(f"_{raw_key}"):
+                    suffix = "today" if "_today_" in name else "total"
+                    extra[f"{target}_{suffix}"] = _statistic_sensor_value(value)
+    return _with_sensor_values(supplement, extra)
+
+
+async def _read_optional_freshwater(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the domestic-hot-water detail.
+
+    ``system.freshwater/overview`` carries the circulation-pump state and the
+    numeric status info — two values the Modbus map does not expose. The tank
+    temperatures are deliberately not republished: the Modbus registers and
+    the web setting pages already provide them. Strictly optional.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    read_freshwater = getattr(client, "read_freshwater_overview", None)
+    if not callable(read_freshwater):
+        return supplement
+    try:
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            freshwater = await read_freshwater()
+    except Exception:
+        _LOGGER.debug("IDM web system.freshwater/overview read failed", exc_info=True)
+        return supplement
+    extra: dict[str, IdmWebSensorValue] = {}
+    circulation = getattr(freshwater, "circulation_active", None)
+    if circulation is not None:
+        extra["dhw_circulation_active"] = IdmWebSensorValue(
+            value="on" if circulation else "off",
+            native_value=1.0 if circulation else 0.0,
+        )
+    status = getattr(freshwater, "status", None)
+    if status is not None:
+        extra["dhw_status_info"] = IdmWebSensorValue(value=str(status), native_value=float(status))
+    return _with_sensor_values(supplement, extra, freshwater=freshwater)
+
+
+async def _read_optional_status(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the status/overview frame.
+
+    The frame carries connection-level facts (jsonVersion, active userlevel,
+    controller clock, frost-protection flag). The dedicated controller-clock
+    entity publishes them; nothing enters ``sensor_values`` here. Strictly
+    optional.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    read_status = getattr(client, "read_status_overview", None)
+    if not callable(read_status):
+        return supplement
+    try:
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            status = await read_status()
+    except Exception:
+        _LOGGER.debug("IDM web status/overview read failed", exc_info=True)
+        return supplement
+    return replace(supplement, status=status)
+
+
+async def _augment_web_supplement(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Run every optional Navigator 10 enrichment in one place.
+
+    Each reader is individually optional and failure-tolerant, so a firmware
+    without one controller keeps the rest of the snapshot intact.
+    """
+    supplement = await _read_optional_notifications(client, supplement)
+    supplement = await _read_optional_demand_reason(client, supplement)
+    supplement = await _read_optional_statistics(client, supplement)
+    supplement = await _read_optional_freshwater(client, supplement)
+    supplement = await _read_optional_status(client, supplement)
+    return supplement
 
 
 def _is_authentication_error(err: Exception) -> bool:
@@ -604,10 +765,7 @@ async def async_read_web_supplement(
             allow_variant_fallback = False
             try:
                 supplement = _normalize_web_data(await _read_data_bounded(cached_client, read_timeout), cached_variant)
-                return await _read_optional_demand_reason(
-                    cached_client,
-                    await _read_optional_notifications(cached_client, supplement),
-                )
+                return await _augment_web_supplement(cached_client, supplement)
             except Exception as err:
                 _LOGGER.debug(
                     "IDM web %s cached client failed at %s; rebuilding the same variant",
@@ -639,10 +797,7 @@ async def async_read_web_supplement(
                 variant_name,
                 host,
             )
-            result = await _read_optional_demand_reason(
-                client,
-                await _read_optional_notifications(client, supplement),
-            )
+            result = await _augment_web_supplement(client, supplement)
             # Cache the successful client for reuse on subsequent polls.
             if client_pool is not None:
                 client_pool.set(client, variant_name)

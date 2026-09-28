@@ -13,7 +13,7 @@ This file provides guidance for AI assistants working on this codebase.
 - **Min HA Version**: 2026.8.1
 - **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
 - **Direct Modbus Runtime**: `modbus-connection==4.12.2`, `tmodbus[async-serial]==0.6.2`
-- **Device Logic**: `idm-heatpump-api[web]==2.6.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
+- **Device Logic**: `idm-heatpump-api[web]==2.7.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Open improvement plan**: `docs/dev/code-audit-2026-09.md` — the reviewed list of defects and
   cleanups with a work package per fix. Read it before starting unrelated refactoring; pick a
   package from it instead of inventing one.
@@ -82,6 +82,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── dhw_boost.py                  # Restart-safe domestic hot water boost state machine
 │   ├── dhw_boost_services.py         # start_dhw_boost / cancel_dhw_boost handlers
 │   ├── web_binary_sensors.py         # Binary sensors from the web supplement
+│   ├── web_status_entities.py        # Controller-clock sensor from the web status/overview frame
 │   ├── binary_semantics.py           # Maps register semantics onto binary sensor device classes
 │   ├── adapter_metadata.py           # Explicit per-register HA metadata overlay (German names, steps, precision)
 │   ├── controller_stats_reference.py # Reference values for controller statistics
@@ -161,7 +162,8 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_versions.py
 │   ├── test_web_binary_sensors.py
 │   ├── test_web_data.py
-│   └── test_web_demand_reason.py
+│   ├── test_web_demand_reason.py
+│   └── test_web_status_entities.py
 │
 ├── tests_ha/                         # Real-Home-Assistant smoke tests (audit E1)
 │   ├── conftest.py                   # Boots a genuine HA in a temp config dir, fake Modbus client
@@ -195,7 +197,7 @@ Home Assistant
     ├── IdmCoordinator (DataUpdateCoordinator) [coordinator.py]
     │       │
     │       ├── IdmModbusConnectionClient (modbus_client.py)
-    │       │       ├── idm-heatpump-api 2.6.0 (device logic)
+    │       │       ├── idm-heatpump-api 2.7.0 (device logic)
     │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket)
     │       │
     │       ├── Entity Descriptions from registers.py / library_adapter.py
@@ -299,7 +301,7 @@ mypy). Recreate it and check through it with:
 py -3.14 -m venv test_ha
 test_ha/Scripts/python -m pip install homeassistant==2026.8.1 \
     "modbus-connection==4.12.2" "tmodbus[async-serial]==0.6.2" \
-    "idm-heatpump-api[web]==2.6.0" mypy
+    "idm-heatpump-api[web]==2.7.0" mypy
 test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
 ```
 
@@ -337,7 +339,6 @@ ruff check custom_components tests
 - **security.yml**: CodeQL (actions, python) + pip-audit
 - **stale.yml**: Marks inactive issues/PRs as stale
 - **pages.yml**: Deploys `docs/wiki/` + images to GitHub Pages
-- **wiki-sync.yml**: Syncs `docs/wiki/` to the GitHub Wiki
 
 ---
 
@@ -354,8 +355,9 @@ ruff check custom_components tests
   file per English wiki page, same filename, published at `/docs/de/<slug>/` on
   the website. English stays the source of truth: change the English page
   first, then carry the change into the German mirror in the same pull request.
-  `scripts/check_documentation_language.py` exempts `docs/wiki/de/`; the
-  GitHub wiki (synced from `docs/wiki/*.md`) stays English-only.
+  `scripts/check_documentation_language.py` exempts `docs/wiki/de/`. The
+  GitHub wiki is deprecated — every page there is only a redirect note
+  pointing to the website — and those redirect pages stay English-only.
 - The changelog is kept version-to-version. When a stable version is cut,
   fold its prerelease sections into the single stable section with
   `python scripts/consolidate_changelog.py --version <x.y.z>`, then rework the
@@ -446,7 +448,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
   same. Tag the API repository with the PEP 440 version (`v2.0.0b1`).
 - **The manifest pins the exact published API version** in PEP 440 form,
   because that is what pip resolves. The manifest currently pins
-  `idm-heatpump-api[web]==2.6.0`.
+  `idm-heatpump-api[web]==2.7.0`.
 
 #### Release notes
 
