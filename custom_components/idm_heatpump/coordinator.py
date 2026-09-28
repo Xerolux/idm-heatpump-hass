@@ -1530,6 +1530,16 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await client.set_system_mode(mode)
         await self.async_refresh_web_supplement()
 
+    async def async_web_set_dhw_setpoint(self, value: float) -> None:
+        """Set the hot-water setpoint through the local web interface.
+
+        The API validates the value against the device's own declared range
+        before sending; a rejection raises instead of silently failing.
+        """
+        client = self._web_write_client()
+        await client.save_dhw_setpoint(value)
+        await self.async_refresh_web_supplement()
+
     async def async_web_acknowledge_notifications(self) -> None:
         """Acknowledge every Navigator message through the web interface."""
         client = self._web_write_client()

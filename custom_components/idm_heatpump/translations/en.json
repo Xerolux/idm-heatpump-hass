@@ -1583,6 +1583,9 @@
       "pv_target_value": {
         "name": "PV target value"
       },
+      "web_dhw_setpoint": {
+        "name": "Hot water setpoint (Web)"
+      },
       "zone_room_humidity": {
         "name": "Zone {zone} room {room} humidity (external setpoint)"
       },

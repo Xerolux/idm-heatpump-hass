@@ -368,11 +368,16 @@ as before:
   A rejected write raises instead of silently failing.
 - **Fehler quittieren (Web)** (`web_acknowledge_errors`): the acknowledge
   button, writing `notification/save`.
+- **Warmwasser-Solltemperatur (Web)** (`web_dhw_setpoint`): the hot-water
+  setpoint as a number entity. Bounds, step and the current value come from
+  the device's own declared parameter definition, and every write is
+  validated against that range before sending — the same write safety as the
+  register path.
 
 The `set_system_mode` and `acknowledge_errors` services use the same web
 path automatically for web-only entries. Writes reuse the authorized web
 session of the poll loop and read the state back after every write, like the
-official web UI. Setpoints and further controls still require Modbus.
+official web UI. Further controls still require Modbus.
 
 If a firmware does not answer one of these controllers, the affected entities
 simply stay unavailable; the rest of the web snapshot is unaffected.

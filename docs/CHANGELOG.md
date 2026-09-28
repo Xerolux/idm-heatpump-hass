@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **WebSocket writes, slice 2 - the hot-water setpoint** (WebSocket-first
+  roadmap, Phase 4; requires and pins `idm-heatpump-api[web]==2.9.0`). A
+  `web_only` entry gains the **Warmwasser-Solltemperatur (Web)** number
+  entity: bounds, step and the current value come from the device's own
+  declared parameter definition (setting 13256 / FW030 — 30–60 °C in 0.5
+  steps on the confirmed firmware), and every write is validated against
+  exactly that range before anything is sent, mirroring the register write
+  safety. Rejected writes raise instead of silently failing. As always,
+  every other connection mode keeps writing through Modbus unchanged.
+  Live-validated on the maintainer's plant with a reversible
+  48 → 49 → 48 °C round trip through the new code path.
+
 ## [0.20.0-b7] - 2026-09-28
 
 ### Added

@@ -465,6 +465,55 @@ async def test_async_read_web_supplement_adds_status_overview(
     assert "json_version" not in result.sensor_values
 
 
+async def test_async_read_web_supplement_adds_dhw_setpoint_parameter(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from idm_heatpump import IdmWebSettingParameter
+
+    class _Client(_FakeWebClient):
+        async def read_setting_parameter(self, setting_id: str):
+            assert setting_id == "13256"
+            return IdmWebSettingParameter(
+                setting_id="13256",
+                name="N2_HOT_WATER_DESIRED_TEMP",
+                param="FW030",
+                value=48,
+                min_value=30,
+                max_value=60,
+                increment="0.5",
+            )
+
+    nav10 = _Client(_nav10_base_data())
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    parameter = result.dhw_setpoint
+    assert parameter is not None
+    assert parameter.value == 48
+    assert parameter.min_value == 30
+    assert parameter.max_value == 60
+
+
+async def test_async_read_web_supplement_ignores_mismatched_setpoint_param(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from idm_heatpump import IdmWebSettingParameter
+
+    class _Client(_FakeWebClient):
+        async def read_setting_parameter(self, setting_id: str):
+            return IdmWebSettingParameter(setting_id="13256", param="FW999", value=1)
+
+    nav10 = _Client(_nav10_base_data())
+    _install_fake_clients(monkeypatch, nav10)
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.dhw_setpoint is None
+
+
 async def test_async_read_web_supplement_status_failure_is_not_fatal(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

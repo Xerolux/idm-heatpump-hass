@@ -516,14 +516,16 @@ async def _async_setup_web_only_entry(
     entry.runtime_data = IdmHeatpumpData(
         coordinator=coordinator,
         client=client,
-        loaded_platforms=(Platform.SENSOR, Platform.SELECT, Platform.BUTTON),
+        loaded_platforms=(Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.BUTTON),
     )
 
     # Same lazy database as the Modbus path: warm it off the loop before any
     # sensor entity writes its first state.
     await hass.async_add_executor_job(warm_error_code_database)
     precreate_main_device(hass, coordinator)
-    await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR, Platform.SELECT, Platform.BUTTON])
+    await hass.config_entries.async_forward_entry_setups(
+        entry, [Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.BUTTON]
+    )
     cleanup_disabled_feature_entities(hass, coordinator)
     cleanup_stale_model_entities(hass, coordinator)
     cleanup_stale_hierarchy_devices(hass, coordinator)

@@ -13,6 +13,7 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.button import ButtonEntity
+from homeassistant.components.number import NumberEntity, NumberMode
 from homeassistant.components.select import SelectEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.helpers.device_registry import DeviceInfo
@@ -50,6 +51,13 @@ def web_control_select_entities(coordinator: IdmCoordinator) -> list[IdmWebSyste
     if not _web_control_active(coordinator):
         return []
     return [IdmWebSystemModeSelect(coordinator)]
+
+
+def web_control_number_entities(coordinator: IdmCoordinator) -> list[IdmWebDhwSetpointNumber]:
+    """Create the web-only hot-water setpoint number for a Navigator 10 entry."""
+    if not _web_control_active(coordinator):
+        return []
+    return [IdmWebDhwSetpointNumber(coordinator)]
 
 
 def web_control_button_entities(coordinator: IdmCoordinator) -> list[IdmWebAcknowledgeErrorsButton]:
@@ -128,3 +136,63 @@ class IdmWebAcknowledgeErrorsButton(_IdmWebControlEntityBase, ButtonEntity):
     async def async_press(self) -> None:
         """Handle the button press."""
         await self.coordinator.async_web_acknowledge_notifications()
+
+
+class IdmWebDhwSetpointNumber(_IdmWebControlEntityBase, NumberEntity):
+    """Hot-water setpoint of a web-only entry, written through the web.
+
+    Bounds, step and the current value come from the device's own declared
+    parameter definition (setting 13256 / FW030); the write is validated
+    against exactly that range before anything is sent.
+    """
+
+    _attr_icon = "mdi:thermometer-water"
+    _attr_mode = NumberMode.BOX
+
+    def __init__(self, coordinator: IdmCoordinator) -> None:
+        super().__init__(coordinator)
+        entry = coordinator.config_entry
+        assert entry is not None
+        self._attr_unique_id = build_entity_unique_id(entry.entry_id, "web_dhw_setpoint")
+        self._attr_translation_key = "web_dhw_setpoint"
+
+    def _parameter(self) -> Any:
+        supplement = self.coordinator.web_supplement
+        if supplement is None:
+            return None
+        return supplement.dhw_setpoint
+
+    @property
+    def available(self) -> bool:
+        return super().available and self._parameter() is not None
+
+    @property
+    def native_value(self) -> float | None:
+        value = getattr(self._parameter(), "value", None)
+        if isinstance(value, bool) or not isinstance(value, (int, float)):
+            return None
+        return float(value)
+
+    @property
+    def native_min_value(self) -> float:
+        minimum = getattr(self._parameter(), "min_value", None)
+        return float(minimum) if isinstance(minimum, (int, float)) else 30.0
+
+    @property
+    def native_max_value(self) -> float:
+        maximum = getattr(self._parameter(), "max_value", None)
+        return float(maximum) if isinstance(maximum, (int, float)) else 60.0
+
+    @property
+    def native_step(self) -> float:
+        raw_increment = getattr(self._parameter(), "increment", None)
+        if isinstance(raw_increment, str):
+            raw_increment = raw_increment.strip()
+        try:
+            step = float(raw_increment)  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            step = 0.5
+        return step if step > 0 else 0.5
+
+    async def async_set_native_value(self, value: float) -> None:
+        await self.coordinator.async_web_set_dhw_setpoint(value)
