@@ -303,9 +303,7 @@ class TestSending:
     async def test_untyped_one_bit_objects_go_out_as_raw_payloads(self):
         """GLT demand objects carry no datapoint type: raw 0/1, no ``type``."""
         hass = _make_hass()
-        coordinator = _make_coordinator(
-            {"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": 2, "demand_heating": 1}
-        )
+        coordinator = _make_coordinator({"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": 2, "demand_heating": 1})
         bridge = KnxBridge(hass, coordinator, _config(receive_enabled=False), entry_id="e")
         await bridge.async_start()
         await _drain(bridge)
@@ -753,9 +751,7 @@ class TestReadRequests:
 
     async def test_answers_untyped_one_bit_objects_without_a_type(self):
         hass = _make_hass()
-        coordinator = _make_coordinator(
-            {"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": 2, "demand_heating": 1}
-        )
+        coordinator = _make_coordinator({"outdoor_temp": 7.5, "system_mode": 1, "hc_a_mode": 2, "demand_heating": 1})
         bridge = KnxBridge(hass, coordinator, _config(), entry_id="e")
         await bridge.async_start()
         await _drain(bridge)
