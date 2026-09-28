@@ -179,6 +179,7 @@ from .error_messages import (
     scoped_issue_id,
 )
 from .external_power_forwarding import ExternalPowerForwarder, ExternalPowerForwardingConfig
+from .internal_messages import warm_error_code_database
 from .knx_bridge import KnxBridge, KnxBridgeConfig
 from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
 from .library_adapter import get_idm_client
@@ -516,6 +517,9 @@ async def _async_setup_web_only_entry(
         loaded_platforms=(Platform.SENSOR,),
     )
 
+    # Same lazy database as the Modbus path: warm it off the loop before any
+    # sensor entity writes its first state.
+    await hass.async_add_executor_job(warm_error_code_database)
     precreate_main_device(hass, coordinator)
     await hass.config_entries.async_forward_entry_setups(entry, [Platform.SENSOR])
     cleanup_disabled_feature_entities(hass, coordinator)
@@ -578,6 +582,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         versions.modbus_connection,
         versions.tmodbus,
     )
+    # The vendor error-code database loads lazily inside the API; warm it in
+    # an executor so the first error-code state write never blocks the loop.
+    await hass.async_add_executor_job(warm_error_code_database)
 
     host = str(entry.data[CONF_HOST])
     port = int(entry.data.get(CONF_PORT, 502))

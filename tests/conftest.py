@@ -1692,6 +1692,7 @@ def mock_hass():
     hass.services.has_service = MagicMock(return_value=False)
     hass.services.async_register = MagicMock()
     hass.services.async_remove = MagicMock()
+    hass.async_add_executor_job = AsyncMock()
     hass.config_entries = MagicMock()
     hass.config_entries.async_forward_entry_setups = AsyncMock()
     hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)

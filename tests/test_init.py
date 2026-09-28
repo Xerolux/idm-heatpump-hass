@@ -250,6 +250,33 @@ class TestAsyncSetupEntry:
         assert entry.runtime_data.coordinator is mock_coordinator
         assert entry.runtime_data.client is mock_client
 
+    async def test_warms_the_error_code_database_off_the_event_loop(self, mock_hass):
+        """The vendor error-code database must load in an executor, not the loop."""
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        from custom_components.idm_heatpump.internal_messages import warm_error_code_database
+
+        entry = self._make_entry()
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock(side_effect=Exception("connection refused"))
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.get_idm_client",
+                return_value=mock_client,
+            ),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            pytest.raises(ConfigEntryNotReady),
+        ):
+            await async_setup_entry(mock_hass, entry)
+
+        # Scheduled before the connection is even attempted: whichever entity
+        # writes the first error-code state finds the database already loaded.
+        mock_hass.async_add_executor_job.assert_any_call(warm_error_code_database)
+
     async def test_raises_config_entry_not_ready_on_connect_failure(self, mock_hass):
         from homeassistant.exceptions import ConfigEntryNotReady
 
@@ -440,6 +467,25 @@ class TestAsyncSetupWebOnlyEntry:
         assert len(forwarded_platforms) == 1
         # model_hint comes from the detected navigator version stored in entry data.
         assert read_web.call_args.kwargs.get("model_hint") is None
+
+    async def test_web_only_warms_the_error_code_database_off_the_event_loop(self, mock_hass):
+        from custom_components.idm_heatpump.internal_messages import warm_error_code_database
+
+        entry = self._make_web_only_entry()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=MagicMock()),
+            patch(
+                "custom_components.idm_heatpump.async_read_web_supplement",
+                AsyncMock(return_value=None),
+            ),
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+        ):
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        mock_hass.async_add_executor_job.assert_any_call(warm_error_code_database)
 
     async def test_web_only_uses_detected_navigator_version_as_model_hint(self, mock_hass):
         entry = self._make_web_only_entry(detected_nav="Navigator 10")
