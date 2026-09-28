@@ -366,14 +366,14 @@
       },
       "knx_bridge": {
         "title": "KNX-Gruppenadressen (experimentell) – {name}",
-        "description": "Die {object_count} IDM-KNX-Objekte liegen oberhalb einer Basisadresse: Die Objektnummer wird dazugezählt, 8/0/0 legt also Objekt 1 auf 8/0/1 und Objekt 222 auf 8/0/222. Die Ausnahmeliste ist für Objekte, die im vorhandenen ETS-Projekt andere Adressen haben — eine `Register = Adresse` pro Zeile.",
+        "description": "Die {object_count} IDM-KNX-Objekte liegen oberhalb einer Basisadresse: Die Objektnummer wird dazugezählt, 8/0/0 legt also Objekt 1 auf 8/0/1 und Objekt 222 auf 8/0/222. Die Ausnahmeliste ist für Objekte, die im vorhandenen ETS-Projekt andere Adressen haben — eine `Register = Adresse` pro Zeile.\n\nETS kennt diese Adressen erst nach einem Import: Erzeuge die Importdatei für deine Basisadresse mit dem [KNX-Gruppenadressen-Generator]({generator_url}) auf der Dokumentations-Website und importiere sie in ETS unter *Gruppenadressen → Gruppenadressen importieren*.",
         "data": {
           "knx_base_address": "Basis-Gruppenadresse",
           "knx_groups": "Objektgruppen",
           "knx_overrides": "Abweichende Gruppenadressen"
         },
         "data_description": {
-          "knx_base_address": "Dreistufig (8/0/0), zweistufig (8/0) oder frei (16384).",
+          "knx_base_address": "Dreistufig (8/0/0), zweistufig (8/0) oder frei (16384). Die passende ETS-Importdatei erzeugt der [Gruppenadressen-Generator]({generator_url}).",
           "knx_groups": "Nur Objekte der ausgewählten Gruppen werden gesendet und registriert.",
           "knx_overrides": "Eine `Register = Adresse` pro Zeile, zum Beispiel `outdoor_temp = 1/2/3`. Zeilen mit # werden ignoriert. Leer lassen, um alle Adressen aus der Basisadresse abzuleiten."
         }
@@ -952,14 +952,14 @@
       },
       "knx_bridge": {
         "title": "KNX-Gruppenadressen (experimentell) – {name}",
-        "description": "Die {object_count} IDM-KNX-Objekte liegen oberhalb einer Basisadresse: Die Objektnummer wird dazugezählt, 8/0/0 legt also Objekt 1 auf 8/0/1 und Objekt 222 auf 8/0/222. Die Ausnahmeliste ist für Objekte, die im vorhandenen ETS-Projekt andere Adressen haben — eine `Register = Adresse` pro Zeile.",
+        "description": "Die {object_count} IDM-KNX-Objekte liegen oberhalb einer Basisadresse: Die Objektnummer wird dazugezählt, 8/0/0 legt also Objekt 1 auf 8/0/1 und Objekt 222 auf 8/0/222. Die Ausnahmeliste ist für Objekte, die im vorhandenen ETS-Projekt andere Adressen haben — eine `Register = Adresse` pro Zeile.\n\nETS kennt diese Adressen erst nach einem Import: Erzeuge die Importdatei für deine Basisadresse mit dem [KNX-Gruppenadressen-Generator]({generator_url}) auf der Dokumentations-Website und importiere sie in ETS unter *Gruppenadressen → Gruppenadressen importieren*.",
         "data": {
           "knx_base_address": "Basis-Gruppenadresse",
           "knx_groups": "Objektgruppen",
           "knx_overrides": "Abweichende Gruppenadressen"
         },
         "data_description": {
-          "knx_base_address": "Dreistufig (8/0/0), zweistufig (8/0) oder frei (16384).",
+          "knx_base_address": "Dreistufig (8/0/0), zweistufig (8/0) oder frei (16384). Die passende ETS-Importdatei erzeugt der [Gruppenadressen-Generator]({generator_url}).",
           "knx_groups": "Nur Objekte der ausgewählten Gruppen werden gesendet und registriert.",
           "knx_overrides": "Eine `Register = Adresse` pro Zeile, zum Beispiel `outdoor_temp = 1/2/3`. Zeilen mit # werden ignoriert. Leer lassen, um alle Adressen aus der Basisadresse abzuleiten."
         }

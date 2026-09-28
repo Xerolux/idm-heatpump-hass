@@ -366,14 +366,14 @@
       },
       "knx_bridge": {
         "title": "KNX group addresses (experimental) – {name}",
-        "description": "The {object_count} IDM KNX objects are laid out above a base address: each object number is added to it, so 8/0/0 puts object 1 on 8/0/1 and object 222 on 8/0/222. Use the override list for objects your ETS project already addresses differently — one `register = address` per line.",
+        "description": "The {object_count} IDM KNX objects are laid out above a base address: each object number is added to it, so 8/0/0 puts object 1 on 8/0/1 and object 222 on 8/0/222. Use the override list for objects your ETS project already addresses differently — one `register = address` per line.\n\nETS only knows these addresses after an import: build the import file for your base address with the [KNX group address generator]({generator_url}) on the documentation website, then import it in ETS under *Group Addresses → Import Group Addresses*.",
         "data": {
           "knx_base_address": "Base group address",
           "knx_groups": "Object groups",
           "knx_overrides": "Group address overrides"
         },
         "data_description": {
-          "knx_base_address": "Three-level (8/0/0), two-level (8/0) or free (16384) notation.",
+          "knx_base_address": "Three-level (8/0/0), two-level (8/0) or free (16384) notation. The matching ETS import file comes from the [group address generator]({generator_url}).",
           "knx_groups": "Only objects from the selected groups are published and registered.",
           "knx_overrides": "One `register = address` per line, for example `outdoor_temp = 1/2/3`. Lines starting with # are ignored. Leave empty to derive every address from the base address."
         }
@@ -952,14 +952,14 @@
       },
       "knx_bridge": {
         "title": "KNX group addresses (experimental) – {name}",
-        "description": "The {object_count} IDM KNX objects are laid out above a base address: each object number is added to it, so 8/0/0 puts object 1 on 8/0/1 and object 222 on 8/0/222. Use the override list for objects your ETS project already addresses differently — one `register = address` per line.",
+        "description": "The {object_count} IDM KNX objects are laid out above a base address: each object number is added to it, so 8/0/0 puts object 1 on 8/0/1 and object 222 on 8/0/222. Use the override list for objects your ETS project already addresses differently — one `register = address` per line.\n\nETS only knows these addresses after an import: build the import file for your base address with the [KNX group address generator]({generator_url}) on the documentation website, then import it in ETS under *Group Addresses → Import Group Addresses*.",
         "data": {
           "knx_base_address": "Base group address",
           "knx_groups": "Object groups",
           "knx_overrides": "Group address overrides"
         },
         "data_description": {
-          "knx_base_address": "Three-level (8/0/0), two-level (8/0) or free (16384) notation.",
+          "knx_base_address": "Three-level (8/0/0), two-level (8/0) or free (16384) notation. The matching ETS import file comes from the [group address generator]({generator_url}).",
           "knx_groups": "Only objects from the selected groups are published and registered.",
           "knx_overrides": "One `register = address` per line, for example `outdoor_temp = 1/2/3`. Lines starting with # are ignored. Leave empty to derive every address from the base address."
         }

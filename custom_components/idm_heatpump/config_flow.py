@@ -262,6 +262,8 @@ _MODBUS_SETUP_URL = (
     "https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/#enable-modbus-tcp-on-the-idm-heat-pump"
 )
 
+_KNX_GENERATOR_URL = "https://xerolux.github.io/idm-heatpump-hass/docs/knx-generator/"
+
 
 class _WebSupplementConnectionFailed(Exception):
     """Raised when web-only setup cannot read the local Navigator web UI."""
@@ -1991,6 +1993,7 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
             description_placeholders={
                 "name": self._flow_name_placeholder(),
                 "object_count": str(len(KNX_OBJECTS)),
+                "generator_url": _KNX_GENERATOR_URL,
             },
             errors=errors,
         )
