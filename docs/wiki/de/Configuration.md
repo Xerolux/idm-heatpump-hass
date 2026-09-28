@@ -490,12 +490,12 @@ Dieses Projekt hat zwei unabhängig versionierte Pakete:
 | Paket | Aktuell getestete Version | Wann eine neue Version nötig wird |
 |---------|------------------------|-----------------------------|
 | Benutzerdefinierte Home-Assistant-Integration | `0.17.0-beta.2` (vorherige stabile Version: `0.16.2`) | Änderungen an Integrationscode, Konfigurationsfluss, Diagnose, Entitäten oder der mitgelieferten Nutzerdokumentation |
-| Verbindungsbibliothek | `modbus-connection==4.12.2` | Änderungen am Transportvertrag, am Verbindungslebenszyklus oder an der Fehlersemantik |
+| Verbindungsbibliothek | `modbus-connection==4.12.3` | Änderungen am Transportvertrag, am Verbindungslebenszyklus oder an der Fehlersemantik |
 | Direktes Socket-Backend | `tmodbus[async-serial]==0.6.2` | Änderungen an der Leitungs-/Backend-Implementierung |
 | Python-Register-/Web-Bibliothek | `idm-heatpump-api[web]==2.7.0` | Änderungen an Registerschema, Kodierung/Dekodierung, Batching, Modellerkennung, Schreibsicherheit oder der wiederverwendbaren Web-Client-Implementierung |
 
 Das Manifest listet die getestete Laufzeit in dieser Reihenfolge:
-`modbus-connection==4.12.2`, `tmodbus[async-serial]==0.6.2`
+`modbus-connection==4.12.3`, `tmodbus[async-serial]==0.6.2`
 und `idm-heatpump-api[web]==2.7.0`. Die ersten beiden Pakete besitzen den
 direkten Socket. `idm-heatpump-api` bleibt für die IDM-spezifische
 Gerätelogik verantwortlich und besitzt ihre eigene Ausnahmehierarchie; die

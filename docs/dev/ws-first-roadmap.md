@@ -48,7 +48,7 @@ Related documents you must know about:
 | Releases (integration) | SemVer tags `v0.20.0-b2` style; HACS reads `manifest.json` |
 | Releases (API) | PEP 440 tags `v2.6.0`; **two workflow dispatches** (Release, then Publish), then verify PyPI |
 | Current versions | Integration **0.20.0-b2** (prerelease; latest stable 0.19.0) · API **2.6.0** |
-| Runtime pins | `modbus-connection==4.12.2`, `tmodbus[async-serial]==0.6.2`, `idm-heatpump-api[web]==2.7.0`, HA ≥ 2026.8.1, Python 3.14 |
+| Runtime pins | `modbus-connection==4.12.3`, `tmodbus[async-serial]==0.6.2`, `idm-heatpump-api[web]==2.7.0`, HA ≥ 2026.8.1, Python 3.14 |
 
 ## 2. Where the integration stands today
 
