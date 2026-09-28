@@ -267,6 +267,20 @@ def test_crawler_files_reference_all_public_pages(built_public_dir: Path) -> Non
     assert locations == expected
 
 
+def test_knx_generator_page_ships_catalogue_and_placeholder(built_public_dir: Path) -> None:
+    """The interactive generator needs its data and its mount point."""
+    catalogue = built_public_dir / "docs" / "knx-catalog.json"
+    assert catalogue.is_file()
+    payload = json.loads(catalogue.read_text(encoding="utf-8"))
+    assert payload["objects"], "the catalogue must not be empty"
+
+    for relative in (Path("docs/knx-generator/index.html"), Path("docs/de/knx-generator/index.html")):
+        page = (built_public_dir / relative).read_text(encoding="utf-8")
+        assert "data-knx-generator" in page, relative
+        # The module reaches the page through the rewritten asset prefix.
+        assert 'src="../knx-generator.mjs?' in page or 'src="../../knx-generator.mjs?' in page, relative
+
+
 def test_docs_interface_takes_the_language_from_the_url() -> None:
     """The docs language must live in the URL, not in a stored preference."""
     script = (PUBLIC_DIR / "docs" / "docs.js").read_text(encoding="utf-8")
