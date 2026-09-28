@@ -288,6 +288,15 @@ genauso wie bisher über Modbus:
   Parameterdefinition, und jeder Schreibvorgang wird vor dem Senden gegen
   genau diese Grenzen validiert — dieselbe Schreibsicherheit wie im
   Register-Pfad.
+- **Heizkreis X Raumsolltemperatur (Web)** / **Heizkreis X Betriebsart
+  (Web)** (je konfiguriertem Heizkreis): die normale Raumsolltemperatur
+  (Parameter `HK<x>04`) als Zahl und die Heizkreis-Betriebsart (Parameter
+  `HK<x>01`) als Auswahl, mit den vom Gerät selbst deklarierten Grenzen
+  bzw. Optionen. Ein `system.heatingcircuit/detail`-Rahmen je Heizkreis
+  liefert zusätzlich Raumtemperatur und Pumpenstatus. Der einmalige
+  Warmwasser-Boost bleibt bewusst vom Web-Pfad fern: Diese Firmware bietet
+  ihn nur als Wochen-Zeitplan an, und das Schreiben ganzer
+  Zeitplan-Zeichenketten ist ausgeschlossen.
 
 Die Dienste `set_system_mode` und `acknowledge_errors` nutzen für
 Nur-Web-Einträge automatisch denselben Web-Pfad. Schreibvorgänge verwenden

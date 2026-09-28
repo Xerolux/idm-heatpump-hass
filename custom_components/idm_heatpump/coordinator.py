@@ -1540,6 +1540,24 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await client.save_dhw_setpoint(value)
         await self.async_refresh_web_supplement()
 
+    async def async_web_set_heatingcircuit_parameter(
+        self,
+        parameter_id: str,
+        value: float,
+        *,
+        min_value: float | None = None,
+        max_value: float | None = None,
+    ) -> None:
+        """Write one heating-circuit value through the local web interface.
+
+        The bounds are the device-declared range of the parameter as read
+        from the circuit detail; the API validates against them before
+        sending and a rejection raises.
+        """
+        client = self._web_write_client()
+        await client.save_heatingcircuit_parameter(parameter_id, value, min_value=min_value, max_value=max_value)
+        await self.async_refresh_web_supplement()
+
     async def async_web_acknowledge_notifications(self) -> None:
         """Acknowledge every Navigator message through the web interface."""
         client = self._web_write_client()

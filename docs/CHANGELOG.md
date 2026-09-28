@@ -13,6 +13,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **WebSocket writes, slice 3 - heating circuits** (WebSocket-first
+  roadmap, Phase 4; requires and pins `idm-heatpump-api[web]==2.10.0`).
+  `web_only` entries gain per-circuit controls for every heating circuit the
+  plant itself lists:
+  - **Heizkreis X Raumsolltemperatur (Web)** number: the normal room
+    setpoint (parameter `HK<x>04`), bounds and step from the device's own
+    declaration, every write validated against it before sending.
+  - **Heizkreis X Betriebsart (Web)** select: the circuit mode (parameter
+    `HK<x>01`) with the device's own chooselist, mapped through the same
+    mode slugs as the Modbus entity.
+  One `system.heatingcircuit/detail` frame per circuit also feeds the
+  state (mode, setpoint, room temperature, pump). Live-validated on the
+  maintainer's plant with a reversible circuit-A room-setpoint round trip
+  (21.5 → 21.6 → 21.5 °C); the `heatingcircuitSave` response envelope was
+  confirmed frame by frame.
+
+### Notes
+
+- The DHW one-shot **boost stays off the web path for now**: the level-0
+  web interface of the confirmed firmware exposes the boost only as a
+  weekly timetable type (`ttboost`), not as a one-shot action — writing a
+  whole timetable string is deliberately out of scope for a write-safety
+  first slice. The Modbus DHW boost continues to work on every Modbus mode.
+
 ## [0.20.0-b8] - 2026-09-28
 
 ### Added

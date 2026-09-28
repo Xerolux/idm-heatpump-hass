@@ -475,6 +475,13 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     },
     "number": {
         "web_dhw_setpoint": ("Hot water setpoint (Web)", "Warmwasser-Solltemperatur (Web)"),
+        "web_hc_room_setpoint": (
+            "Heating circuit {circuit} room setpoint (Web)",
+            "Heizkreis {circuit} Raumsolltemperatur (Web)",
+        ),
+    },
+    "select": {
+        "web_hc_mode": ("Heating circuit {circuit} mode (Web)", "Heizkreis {circuit} Betriebsart (Web)"),
     },
     "button": {
         "ai_report_daily": ("AI daily report (experimental)", "KI-Tagesbericht (experimentell)"),

@@ -17,7 +17,7 @@ from .adapter_glt import is_glt_measurement
 from .coordinator import IdmCoordinator
 from .entity import IdmEntity, should_add_entity
 from .registers import sort_entity_descriptions
-from .web_control_entities import web_control_number_entities
+from .web_control_entities import web_control_heatingcircuit_entities, web_control_number_entities
 
 PARALLEL_UPDATES = 0
 
@@ -34,6 +34,7 @@ async def async_setup_entry(
         if should_add_entity(coordinator, desc_info["register"], as_writable_control=True)
     ]
     entities.extend(web_control_number_entities(coordinator))
+    entities.extend(web_control_heatingcircuit_entities(coordinator))
     async_add_entities(entities)
 
 
