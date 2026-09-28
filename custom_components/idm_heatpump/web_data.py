@@ -70,6 +70,9 @@ class IdmWebSupplement:
     # Navigator 10 system.freshwater/overview snapshot (circulation state,
     # status info, DHW system mode); None on other variants or on failure.
     freshwater: Any | None = None
+    # Navigator 10 home/overview snapshot (operating-mode state with the
+    # controller's own selectable values); None on other variants or failure.
+    home_overview: Any | None = None
 
     @property
     def model_name(self) -> str | None:
@@ -359,6 +362,31 @@ async def _read_optional_freshwater(
     return _with_sensor_values(supplement, extra, freshwater=freshwater)
 
 
+async def _read_optional_home_overview(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the home/overview mode tile.
+
+    The frame carries the operating-mode widget — the current value and the
+    controller's own selectable values, numbered like the Modbus
+    ``system_mode`` register. It is the state source for the web-only
+    operating-mode control. Strictly optional.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    read_home_overview = getattr(client, "read_home_overview", None)
+    if not callable(read_home_overview):
+        return supplement
+    try:
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            overview = await read_home_overview()
+    except Exception:
+        _LOGGER.debug("IDM web home/overview read failed", exc_info=True)
+        return supplement
+    return replace(supplement, home_overview=overview)
+
+
 async def _read_optional_status(
     client: _IdmWebClient,
     supplement: IdmWebSupplement,
@@ -398,6 +426,7 @@ async def _augment_web_supplement(
     supplement = await _read_optional_statistics(client, supplement)
     supplement = await _read_optional_freshwater(client, supplement)
     supplement = await _read_optional_status(client, supplement)
+    supplement = await _read_optional_home_overview(client, supplement)
     return supplement
 
 

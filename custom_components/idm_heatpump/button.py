@@ -36,6 +36,7 @@ from .dhw_boost_services import (
 )
 from .entity import build_device_info
 from .error_messages import classify_write_error, write_error_placeholders
+from .web_control_entities import web_control_button_entities
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -79,6 +80,7 @@ async def async_setup_entry(
         )
     if entry.options.get(CONF_AI_ADVISOR, False) is True:
         entities.extend(IdmAiReportButton(coordinator, kind) for kind in REPORT_TYPES)
+    entities.extend(web_control_button_entities(coordinator))
     async_add_entities(entities)
 
 

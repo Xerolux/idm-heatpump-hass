@@ -275,6 +275,16 @@ async def _async_write_register(
         ) from err
 
 
+def _entry_is_web_only(coordinator: IdmCoordinator) -> bool:
+    """Return whether this entry controls the plant through the web interface."""
+    from .const import CONNECTION_MODE_WEB_ONLY, resolve_connection_mode
+
+    entry = coordinator.config_entry
+    if entry is None:
+        return False
+    return resolve_connection_mode(entry.options, entry.data) == CONNECTION_MODE_WEB_ONLY
+
+
 async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = await _get_coordinator(hass, call)
 
@@ -304,6 +314,12 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
             translation_placeholders={"mode": mode_str},
         )
 
+    if _entry_is_web_only(coordinator):
+        # Web-only entries have no Modbus register map: the mode write goes
+        # through the local Navigator 10 web interface instead (Phase 4).
+        await coordinator.async_web_set_system_mode(mode_val)
+        return
+
     reg = coordinator.get_register("system_mode")
     allow_custom = False
     if not isinstance(reg, RegisterDef) or not getattr(reg, "writable", False):
@@ -319,6 +335,12 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
 
 async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> None:
     coordinator = await _get_coordinator(hass, call)
+    if _entry_is_web_only(coordinator):
+        # Web-only entries acknowledge through the web interface (Phase 4):
+        # the Navigator 1.x coil and the 2.0/10 holding register do not exist
+        # without a Modbus register map.
+        await coordinator.async_web_acknowledge_notifications()
+        return
     # The acknowledge is model-specific: holding register 1999 on the shared
     # 2.0/10 family, coil c3000 on Navigator 1.0/1.7. Only the detected map's
     # own register is used — the former synthetic fallback wrote 1999 even on

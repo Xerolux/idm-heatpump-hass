@@ -267,6 +267,28 @@ ausgewertet (live verifiziert auf Firmware jsonVersion 11, September 2026):
   nach der auf dem Display angezeigten Zeit berechnet — dieser Sensor macht
   den Drift sichtbar.
 
+#### Web-only-Steuerung (Navigator 10, Phase 4)
+
+Ein **Nur-Web**-Eintrag ist nicht mehr rein lesend: Mit verbundener
+WebSocket-Variante erhält er zwei Steuerelemente, die über die lokale
+Web-Oberfläche schreiben — jeder andere Verbindungsmodus schreibt weiterhin
+genauso wie bisher über Modbus:
+
+- **Betriebsart (Web)** (`web_system_mode`): Auswahleinheit für die
+  Betriebsart. Sie liest den aktuellen Modus und die vom Regler selbst
+  vorgegebenen wählbaren Werte aus der `home/overview`-Kachel und schreibt
+  über `home/save` — dieselbe Numerierung wie das Modbus-Register
+  `system_mode`, vor dem Senden validiert. Ein abgelehnter Schreibvorgang
+  meldet einen Fehler, statt still zu scheitern.
+- **Fehler quittieren (Web)** (`web_acknowledge_errors`): der
+  Quittieren-Knopf, schreibt `notification/save`.
+
+Die Dienste `set_system_mode` und `acknowledge_errors` nutzen für
+Nur-Web-Einträge automatisch denselben Web-Pfad. Schreibvorgänge verwenden
+die autorisierte Web-Sitzung des Abfragezyklus und lesen den Zustand nach
+jedem Schreiben zurück, wie die offizielle Web-Oberfläche. Sollwerte und
+weitere Steuermöglichkeiten erfordern weiterhin Modbus.
+
 Antwortet eine Firmware auf einen dieser Controller nicht, bleiben die
 betroffenen Entitäten einfach nicht verfügbar; der Rest der Web-Snapshots ist
 unbeeinflusst.

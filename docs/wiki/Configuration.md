@@ -397,11 +397,13 @@ use:
 - **Modbus + web supplement** pins both paths on and disables the web-only
   setup fallback: a failing Modbus connection retries instead of degrading to
   web-only.
-- **Web only (read-only)** runs the entry entirely through the local web
-  interface — setup does not attempt a Modbus connection. This is an honest
-  read-only mode: setpoints, operating modes and error acknowledgement require
-  Modbus. It needs a configured web PIN and is available on Navigator 10/Pro
-  (WebSocket) and Navigator 2.0 (HTTP) web interfaces.
+- **Web only** runs the entry entirely through the local web interface —
+  setup does not attempt a Modbus connection. On a Navigator 10 the
+  **operating mode** and **error acknowledgement** are controlled through the
+  web interface (same numbering as Modbus, validated before sending);
+  setpoints and further controls still require Modbus. It needs a configured
+  web PIN and is available on Navigator 10/Pro (WebSocket) and Navigator 2.0
+  (HTTP) web interfaces — the web controls need the WebSocket variant.
 - **Modbus only** never contacts the web interface, even with a PIN configured;
   the web entities are not created for this entry.
 
@@ -440,11 +442,11 @@ This project has two independently versioned packages:
 | Home Assistant custom integration | `0.17.0-beta.2` (previous stable: `0.16.2`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection==4.12.3` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]==0.6.2` | Wire/backend implementation changes |
-| Python register/web library | `idm-heatpump-api[web]==2.7.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
+| Python register/web library | `idm-heatpump-api[web]==2.8.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
 `modbus-connection==4.12.3`, `tmodbus[async-serial]==0.6.2`,
-and `idm-heatpump-api[web]==2.7.0`. The first two packages own the direct
+and `idm-heatpump-api[web]==2.8.0`. The first two packages own the direct
 socket. `idm-heatpump-api` remains responsible for IDM-specific device logic
 and owns its exception hierarchy; the integration no longer installs
 pymodbus. `4.12.3` is the version of `modbus-connection`, not an IDM integration

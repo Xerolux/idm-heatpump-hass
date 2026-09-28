@@ -233,6 +233,32 @@ class TestSetSystemMode:
         assert val == expected_val
         assert reg.address == 1005
 
+    async def test_web_only_entry_routes_through_the_web_interface(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.async_web_set_system_mode = AsyncMock()
+        coord.config_entry.options = {"connection_mode": "web_only"}
+        coord.config_entry.data = {}
+        call = MagicMock()
+        call.data = {"mode": "hot water only"}
+
+        await _handle_set_system_mode(mock_hass, call)
+
+        coord.async_web_set_system_mode.assert_awaited_once_with(4)
+        coord.async_write_register.assert_not_called()
+
+    async def test_modbus_entry_keeps_the_register_path(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.async_web_set_system_mode = AsyncMock()
+        coord.config_entry.options = {"connection_mode": "modbus_web"}
+        coord.config_entry.data = {}
+        call = MagicMock()
+        call.data = {"mode": "standby"}
+
+        await _handle_set_system_mode(mock_hass, call)
+
+        coord.async_write_register.assert_called_once()
+        coord.async_web_set_system_mode.assert_not_called()
+
     async def test_invalid_mode_raises(self, mock_hass):
         _make_coordinator_in_hass(mock_hass)
         call = MagicMock()
@@ -272,6 +298,21 @@ def _shared_acknowledge_register():
         writable=True,
         write_only=True,
     )
+
+
+class TestAcknowledgeErrorsWebRouting:
+    async def test_web_only_entry_acknowledges_through_the_web_interface(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.async_web_acknowledge_notifications = AsyncMock()
+        coord.config_entry.options = {"connection_mode": "web_only"}
+        coord.config_entry.data = {}
+        call = MagicMock()
+        call.data = {}
+
+        await _handle_acknowledge_errors(mock_hass, call)
+
+        coord.async_web_acknowledge_notifications.assert_awaited_once()
+        coord.async_write_register.assert_not_called()
 
 
 class TestAcknowledgeErrors:

@@ -222,7 +222,7 @@
               "write_cooldown": "Per-register write cooldown (seconds)"
             },
             "data_description": {
-              "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection and is read-only: setpoints, modes and error acknowledgement require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
+              "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
               "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
               "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
@@ -845,7 +845,7 @@
               "write_cooldown": "Per-register write cooldown (seconds)"
             },
             "data_description": {
-              "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection and is read-only: setpoints, modes and error acknowledgement require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
+              "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
               "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
               "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
               "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",

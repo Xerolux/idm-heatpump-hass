@@ -443,12 +443,15 @@ nutzen darf:
 - **Modbus + Web-Ergänzung** legt beide Pfade fest und deaktiviert den
   Web-only-Fallback beim Einrichten: Eine scheiternde Modbus-Verbindung wird
   erneut versucht, statt auf Web-only zurückzufallen.
-- **Nur Web (read-only)** betreibt den Eintrag vollständig über die lokale
+- **Nur Web** betreibt den Eintrag vollständig über die lokale
   Web-Oberfläche — beim Einrichten wird keine Modbus-Verbindung aufgebaut.
-  Das ist ein ehrlicher Nur-Lese-Modus: Sollwerte, Betriebsarten und die
-  Störungsquittierung erfordern Modbus. Er benötigt eine konfigurierte
-  Web-PIN und ist mit den Web-Oberflächen von Navigator 10/Pro (WebSocket)
-  und Navigator 2.0 (HTTP) verfügbar.
+  Auf einem Navigator 10 werden **Betriebsart** und
+  **Störungsquittierung** über die Web-Oberfläche gesteuert (gleiche
+  Numerierung wie Modbus, vor dem Senden validiert); Sollwerte und weitere
+  Steuermöglichkeiten erfordern weiterhin Modbus. Er benötigt eine
+  konfigurierte Web-PIN und ist mit den Web-Oberflächen von Navigator 10/Pro
+  (WebSocket) und Navigator 2.0 (HTTP) verfügbar — die Web-Steuerung braucht
+  die WebSocket-Variante.
 - **Nur Modbus** kontaktiert niemals die Web-Oberfläche, auch nicht mit
   konfigurierter PIN; die Web-Entitäten werden für diesen Eintrag nicht
   erstellt.
@@ -492,11 +495,11 @@ Dieses Projekt hat zwei unabhängig versionierte Pakete:
 | Benutzerdefinierte Home-Assistant-Integration | `0.17.0-beta.2` (vorherige stabile Version: `0.16.2`) | Änderungen an Integrationscode, Konfigurationsfluss, Diagnose, Entitäten oder der mitgelieferten Nutzerdokumentation |
 | Verbindungsbibliothek | `modbus-connection==4.12.3` | Änderungen am Transportvertrag, am Verbindungslebenszyklus oder an der Fehlersemantik |
 | Direktes Socket-Backend | `tmodbus[async-serial]==0.6.2` | Änderungen an der Leitungs-/Backend-Implementierung |
-| Python-Register-/Web-Bibliothek | `idm-heatpump-api[web]==2.7.0` | Änderungen an Registerschema, Kodierung/Dekodierung, Batching, Modellerkennung, Schreibsicherheit oder der wiederverwendbaren Web-Client-Implementierung |
+| Python-Register-/Web-Bibliothek | `idm-heatpump-api[web]==2.8.0` | Änderungen an Registerschema, Kodierung/Dekodierung, Batching, Modellerkennung, Schreibsicherheit oder der wiederverwendbaren Web-Client-Implementierung |
 
 Das Manifest listet die getestete Laufzeit in dieser Reihenfolge:
 `modbus-connection==4.12.3`, `tmodbus[async-serial]==0.6.2`
-und `idm-heatpump-api[web]==2.7.0`. Die ersten beiden Pakete besitzen den
+und `idm-heatpump-api[web]==2.8.0`. Die ersten beiden Pakete besitzen den
 direkten Socket. `idm-heatpump-api` bleibt für die IDM-spezifische
 Gerätelogik verantwortlich und besitzt ihre eigene Ausnahmehierarchie; die
 Integration installiert kein pymodbus mehr. `4.12.2` ist die Version von

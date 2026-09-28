@@ -354,6 +354,26 @@ Three further read-only WebSocket controllers are evaluated on every web poll
   technician codes are computed from the time shown on the display — this
   sensor makes the drift visible.
 
+#### Web-only controls (Navigator 10, Phase 4)
+
+A **web-only** entry is no longer purely read-only: with the WebSocket
+variant connected it gains two controls that write through the local web
+interface — every other connection mode keeps writing through Modbus exactly
+as before:
+
+- **Betriebsart (Web)** (`web_system_mode`): select for the operating mode.
+  It reads the current mode and the controller's own selectable values from
+  the `home/overview` tile and writes through `home/save` — the same
+  numbering as the Modbus `system_mode` register, validated before sending.
+  A rejected write raises instead of silently failing.
+- **Fehler quittieren (Web)** (`web_acknowledge_errors`): the acknowledge
+  button, writing `notification/save`.
+
+The `set_system_mode` and `acknowledge_errors` services use the same web
+path automatically for web-only entries. Writes reuse the authorized web
+session of the poll loop and read the state back after every write, like the
+official web UI. Setpoints and further controls still require Modbus.
+
 If a firmware does not answer one of these controllers, the affected entities
 simply stay unavailable; the rest of the web snapshot is unaffected.
 
