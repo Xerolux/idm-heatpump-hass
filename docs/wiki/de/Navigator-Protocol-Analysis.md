@@ -452,16 +452,16 @@ weiterhin die Capture-Sitzung unten — der Level-0-Lesekatalog legt nahe, dass
 die beschreibbare Endnutzer-Menge klein ist, denn jede zugängliche Seite
 dieser Firmware ist vom Typ `info` oder eine einzelne `action`.
 
-## Schreibsemantik aus dem SPA-Bundle (statische Analyse, September 2026)
+## Schreibsemantik (statische Analyse, capture-bestätigt September 2026)
 
 Der Regler liefert seine Weboberfläche (`lighttpd`, Angular-SPA) über einfaches
-HTTP aus. Das Auslesen des mitgelieferten JavaScript — ein strikt read-only
-Download, ohne Browser-Sitzung und ohne gesendeten Schreibrahmen —
-rekonstruiert die komplette Schreibfläche, die die offizielle Oberfläche
-senden könnte. Jede Methode unten ist wörtlich aus der WebSocket-Fassade der
-SPA zitiert; die Payload-Formen sind damit *statisch bestätigt*, während die
-**Antwort**rahmen auf ein Save (Erfolg/Fehler-Form) bis zu einer
-Capture-Sitzung unbestätigt bleiben.
+HTTP aus. Das Auslesen des mitgelieferten JavaScript rekonstruiert die komplette
+Schreibfläche, die die offizielle Oberfläche senden könnte, und eine
+Betreiber-Capture-Sitzung (2026-09-28, durch den `ws_capture`-Proxy, nur
+harmlose reversible Aktionen) hat seitdem **die Payloads und die
+Antwortrahmen live bestätigt** — für die Betriebsart, einen
+Warmwasser-Sollwert, die Datum-/Uhrzeit-Einstellung und beide Varianten der
+Meldungsquittierung.
 
 | Fassadenmethode | Rahmen | Hinweise |
 |---|---|---|
@@ -492,11 +492,36 @@ zu schalten sendet also `home/save {"systemMode":{"value":4}}` und so weiter.
 Die SPA arbeitet mit **Read-after-Write** (sie fragt nach jedem Speichern das
 Overview erneut an) statt optimistischem Zustand.
 
-Konsequenzen für Phase 4: Der `web_only`-Modus kann gegen diese Formen gebaut
-werden — Betriebsart-Schalter und Warmwasser-Quittierung zuerst — mit je
-einzeln validiertem und freigegebenem Schreib-Feature. Die
-Save-Antwortrahmenform ist die letzte Unbekannte, die eine Capture-Sitzung
-vor dem ersten Schreib-Release bestätigen sollte.
+**Save-Antworten — capture-bestätigt (2026-09-28).** Jedes Save beantwortet
+der Regler mit genau einem Rahmen unter dem Schlüssel `<Controller>Save` mit
+einem `note`-Objekt; `setting/save` trägt zusätzlich einen `redirect`-Block,
+dem die SPA folgt:
+
+| Anfrage | Antwortrahmen (live beobachtet) |
+|---|---|
+| `home/save {"systemMode":{"value":4}}` | `{"homeSave":{"note":{"text":"value has been saved successfully!","type":"success"}}}` |
+| `system.freshwater/save {"parameterId":"FW030","value":49}` | `{"freshwaterSave":{"note":{"text":"value has been saved successfully!","type":"success"}}}` |
+| `setting/save` (Datum/Uhrzeit, ISO-8601-mit-`Z`-Wert) | `{"settingSave":{"note":{"text":"value has been saved successfully!","type":"success"},"redirect":{"command":"overview","controller":"setting","data":{"settingId":"4488"},"reloadDelay":300}}}` |
+| `setting/save` auf einer Aktions-Einstellung | gleiches Envelope, Notiztext `"action has been executed successfully!"` |
+| `notification/save {"quitAll":true}` | `{"notificationSave":{"note":{"text":"cancellation has been executed successfully!","type":"success"}}}` |
+| `notification/save {"code":"20005","remindMeLater":true}` | gleiches `notificationSave`-Envelope |
+
+Beobachtete Wertformate: `systemMode` als schlichte Zahl,
+Warmwasser-Sollwerte als schlichte Zahlen (`FW030` ist die Zapftemperatur in
+°C), Datum/Uhrzeit als ISO-8601 mit `Z`, Meldungs-`code` als Zeichenkette.
+Das `note.type` folgt der Lesekonvention (`success`/`danger`) — ein
+abgelehnter Schreibvorgang kann also nicht mit einem bestätigten verwechselt
+werden. Zwei Sitzungsbeobachtungen zum Mitnehmen: Der Statusrahmen meldet
+`userlevel: 1`, sobald eine Endnutzer-Sitzung angemeldet ist (eine reine
+`auth_code`-Verbindung meldet `0`), und ein einzelner Fehlversuch an der
+Fachmann-Code-Aktion (`12503`, `N2_CODE_ENTRY_EXPERT`) hat die Eingabe
+**nicht** gesperrt — er erzeugte eine informierende Meldung `20005
+N2_USERLEVELACTIVE` — während wiederholte Versuche sperren (dokumentiertes
+Firmware-Verhalten; nicht automatisieren).
+
+Konsequenzen für Phase 4: Der `web_only`-Modus kann gegen diese bestätigten
+Formen gebaut werden — Betriebsart-Schalter und Warmwasser-Quittierung zuerst
+— mit je einzeln validiertem und freigegebenem Schreib-Feature.
 
 ## Frames selbst mitschneiden (ws_capture)
 

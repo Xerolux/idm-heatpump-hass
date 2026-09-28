@@ -451,15 +451,15 @@ below — the level-0 read catalog suggests the writable end-user set is small,
 since every accessible page on this firmware is of type `info` or a single
 `action`.
 
-## Write semantics from the SPA bundle (static analysis, September 2026)
+## Write semantics (static analysis, capture-confirmed September 2026)
 
 The controller serves its web UI (`lighttpd`, Angular SPA) over plain HTTP.
-Reading the shipped JavaScript — a strictly read-only download, no browser
-session and no write frame sent — reconstructs the complete write surface the
-official UI could send. Every method below is quoted from the SPA's
-WebSocket facade; payload shapes are therefore *statically confirmed*, while
-the **response** frames to a save (success/error shape) remain unconfirmed
-until a capture session records them.
+Reading the shipped JavaScript reconstructs the complete write surface the
+official UI could send, and a maintainer capture session (2026-09-28, through
+the `ws_capture` proxy, harmless reversible actions only) has since
+**confirmed the payloads and the response frames live** for the system mode,
+a freshwater setpoint, the date/time setting and both notification
+acknowledgements.
 
 | Facade method | Frame | Notes |
 |---|---|---|
@@ -490,11 +490,34 @@ therefore sends `home/save {"systemMode":{"value":4}}` and so on. The SPA
 uses **read-after-write** (it re-requests the overview after every save)
 rather than optimistic state.
 
-Phase 4 consequences: `web_only` mode can be built against these shapes —
-mode switch and DHW acknowledgement first — with each write feature
-individually validated and authorized. The save-response frame shape is the
-one remaining unknown a capture session should confirm before the first
-write ships.
+**Save responses — capture-confirmed (2026-09-28).** Every save answers
+with one frame keyed `<controller>Save` carrying a `note` object;
+`setting/save` additionally carries a `redirect` block the SPA follows:
+
+| Request | Response frame (observed live) |
+|---|---|
+| `home/save {"systemMode":{"value":4}}` | `{"homeSave":{"note":{"text":"value has been saved successfully!","type":"success"}}}` |
+| `system.freshwater/save {"parameterId":"FW030","value":49}` | `{"freshwaterSave":{"note":{"text":"value has been saved successfully!","type":"success"}}}` |
+| `setting/save` (date/time, ISO-8601 `Z` value) | `{"settingSave":{"note":{"text":"value has been saved successfully!","type":"success"},"redirect":{"command":"overview","controller":"setting","data":{"settingId":"4488"},"reloadDelay":300}}}` |
+| `setting/save` on an action-type setting | same envelope, note text `"action has been executed successfully!"` |
+| `notification/save {"quitAll":true}` | `{"notificationSave":{"note":{"text":"cancellation has been executed successfully!","type":"success"}}}` |
+| `notification/save {"code":"20005","remindMeLater":true}` | same `notificationSave` envelope |
+
+Value formats observed: `systemMode` as a plain number, freshwater
+setpoints as plain numbers (`FW030` is the tap temperature in °C), date/time
+as ISO-8601 with `Z`, notification `code` as a string. The `note.type` mirrors
+the read-side convention (`success`/`danger`), so a rejected write cannot be
+mistaken for a confirmed one. Two session observations worth keeping: the
+status frame reports `userlevel: 1` once an end-user session has logged in
+(an `auth_code`-only connection reports `0`), and a single wrong entry on
+the expert-code action (`12503`, `N2_CODE_ENTRY_EXPERT`) did **not** block
+the input — it produced an informational `20005 N2_USERLEVELACTIVE`
+notification — while repeated attempts block it (documented firmware
+behaviour; do not automate).
+
+Phase 4 consequences: `web_only` mode can be built against these confirmed
+shapes — mode switch and DHW acknowledgement first — with each write feature
+individually validated and authorized.
 
 ## Capturing frames yourself (ws_capture)
 
