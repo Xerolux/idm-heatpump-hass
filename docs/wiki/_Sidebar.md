@@ -24,6 +24,7 @@
 - [Experimental AI Adviser](Experimental-AI-Adviser)
 - [Local Ollama Setup](Local-Ollama)
 - [KNX Bridge](KNX-Bridge)
+- [KNX Group Address Generator](KNX-Generator)
 - [Services Reference](Services)
 - [Example Automations](Examples)
 

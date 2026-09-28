@@ -225,8 +225,11 @@ that already exist.
 
 ### Generating your own
 
-If `8/0/0` is taken in your project, or you want a different selection,
-generate a file for your own base address:
+If `8/0/0` is taken in your project, or you want a different selection, the
+easiest way is the [group address generator](KNX-Generator) on the
+documentation website: enter your base address, pick a preset or object
+groups, download the `.xml`. The command-line generator does the same from a
+checkout of this repository:
 
 ```bash
 # A curated subset on main group 11

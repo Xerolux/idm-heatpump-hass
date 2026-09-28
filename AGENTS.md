@@ -96,6 +96,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── conftest.py                   # Shared fixtures and HA/API/Modbus runtime stubs
 │   ├── test_adapter_helpers.py
 │   ├── test_binary_semantics.py
+│   ├── test_build_pages.py
 │   ├── test_calculated_sensors.py
 │   ├── test_changelog_consolidation.py
 │   ├── test_config_flow.py
@@ -135,6 +136,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_knx_bridge.py
 │   ├── test_knx_catalog.py
 │   ├── test_knx_evidence.py
+│   ├── test_knx_generator_parity.py
 │   ├── test_knx_group_address_export.py
 │   ├── test_library_client.py
 │   ├── test_log_filter.py

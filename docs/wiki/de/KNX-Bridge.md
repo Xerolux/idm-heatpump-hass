@@ -238,7 +238,10 @@ und gleiche den Importbericht mit bereits vorhandenen Adressen ab.
 ### Eigene Dateien erzeugen
 
 Ist `8/0/0` in deinem Projekt belegt oder du möchtest eine andere Auswahl,
-generiere eine Datei mit deiner eigenen Basisadresse:
+ist der [Gruppenadressen-Generator](KNX-Generator) auf der
+Dokumentations-Website der einfachste Weg: Basisadresse eingeben, Vorlage
+oder Objektgruppen wählen, die `.xml` herunterladen. Dasselbe leistet der
+Kommandozeilen-Generator aus einem Checkout dieses Repositorys:
 
 ```bash
 # A curated subset on main group 11

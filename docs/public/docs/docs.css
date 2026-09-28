@@ -511,3 +511,24 @@ html[data-theme="light"] .article-content pre { background: #14231c; color: #e8f
   html { scroll-behavior: auto; }
   *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* KNX group address generator (docs page knx-generator) */
+.knx-gen { display: grid; gap: 16px; margin: 26px 0 32px; padding: 18px 20px; border: 1px solid var(--line); border-radius: var(--radius); background: color-mix(in srgb, var(--surface) 72%, transparent); }
+.knx-gen-field { display: grid; gap: 6px; justify-items: start; }
+.knx-gen-field > label { font-weight: 650; color: var(--text-strong); }
+.knx-gen-field input { width: 170px; padding: 9px 12px; font: inherit; color: var(--text); background: var(--surface-raised); border: 1px solid var(--line-strong); border-radius: 9px; }
+.knx-gen-field input[aria-invalid="true"] { border-color: var(--red); }
+.knx-gen-help { margin: 0; font-size: 12px; color: var(--muted); }
+.knx-gen-error { margin: 0; font-size: 13px; color: var(--red); }
+.knx-gen-presets, .knx-gen-groups { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 0; padding: 12px 16px 14px; border: 1px solid var(--line); border-radius: 11px; }
+.knx-gen-presets legend, .knx-gen-groups legend { padding: 0 6px; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted-strong); }
+.knx-gen-groups[disabled] { opacity: .55; }
+.knx-gen input[type="radio"], .knx-gen input[type="checkbox"] { accent-color: var(--lime); }
+.knx-gen-summary { margin: 0; font-weight: 650; color: var(--text-strong); }
+.knx-gen-preview summary { cursor: pointer; color: var(--blue); }
+.knx-gen-preview .table-wrap { margin: 12px 0 0; }
+.knx-gen-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.knx-gen-download { padding: 10px 18px; font: inherit; font-weight: 650; color: #0d1a08; background: var(--lime); border: 0; border-radius: 10px; cursor: pointer; }
+.knx-gen-download:hover { filter: brightness(1.06); }
+.knx-gen-download:disabled { opacity: .45; cursor: not-allowed; }
+.knx-gen-download-secondary { background: transparent; color: var(--text); border: 1px solid var(--line-strong); }

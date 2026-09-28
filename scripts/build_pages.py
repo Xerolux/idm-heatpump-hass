@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import argparse
 import html
+import importlib.util
 import json
 import re
 import shutil
 import subprocess
+import sys
 from pathlib import Path
-from typing import TypedDict
+from typing import Any, TypedDict
 
 ROOT = Path(__file__).resolve().parents[1]
 PUBLIC_DIR = ROOT / "docs" / "public"
@@ -21,6 +23,28 @@ HACS_PATH = ROOT / "hacs.json"
 SITE_URL = "https://xerolux.github.io/idm-heatpump-hass/"
 MARKDOWN_RENDERER = ROOT / "scripts" / "render_pages_markdown.cjs"
 GERMAN_WIKI_DIR = WIKI_DIR / "de"
+
+
+def _load_script_module(module_name: str, filename: str) -> Any:
+    """Import a repository script without a package context.
+
+    ``build_pages`` runs both as ``python scripts/build_pages.py`` (pages
+    deployment) and as ``scripts.build_pages`` inside the test suite, so a
+    plain ``import`` of a sibling script works in only one of the two.
+    """
+    spec = importlib.util.spec_from_file_location(module_name, ROOT / "scripts" / filename)
+    if spec is None or spec.loader is None:  # pragma: no cover - defensive
+        raise RuntimeError(f"cannot load scripts/{filename}")
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = module
+    spec.loader.exec_module(module)
+    return module
+
+
+# The website's KNX group address generator shares its catalogue, register
+# names and curated compact list with generate_knx_group_addresses.py;
+# loading that module keeps both generators in lockstep.
+_knx_generator = _load_script_module("_idm_knx_generator", "generate_knx_group_addresses.py")
 
 
 class DocumentationPage(TypedDict):
@@ -87,6 +111,10 @@ GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
     "knx-bridge": {
         "title": "KNX-Bridge",
         "description": "Die experimentelle IDM-KNX-Bridge über die Home-Assistant-KNX-Integration einrichten – ohne separates Weinzierl-BAOS-Gateway.",
+    },
+    "knx-generator": {
+        "title": "KNX-Gruppenadressen-Generator",
+        "description": "Die ETS-Importdatei für die KNX-Bridge für beliebige Basisgruppenadressen erzeugen – kompakt, vollständig oder eigene Auswahl.",
     },
     "experimental-ai-adviser": {
         "title": "KI-Anlagenberater (experimentell)",
@@ -205,6 +233,13 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "group": "automation",
         "title": "Experimental KNX Bridge",
         "description": "Configure the experimental IDM KNX bridge through Home Assistant KNX without a separate Weinzierl BAOS gateway module.",
+    },
+    {
+        "slug": "knx-generator",
+        "file": "KNX-Generator.md",
+        "group": "automation",
+        "title": "KNX Group Address Generator",
+        "description": "Generate the ETS group address import file for the KNX bridge for any base group address, as a compact, full or custom object selection.",
     },
     {
         "slug": "experimental-ai-adviser",
@@ -823,6 +858,7 @@ def _build_documentation_page(
         page = page.replace('href="docs.css?', f'href="{asset_prefix}docs.css?')
         page = page.replace('src="vendor/', f'src="{asset_prefix}vendor/')
         page = page.replace('src="docs.js?', f'src="{asset_prefix}docs.js?')
+        page = page.replace('src="knx-generator.mjs?', f'src="{asset_prefix}knx-generator.mjs?')
     page = page.replace('class="docs-brand" href="../"', f'class="docs-brand" href="{site_href}"')
     page = page.replace('<div><a href="../">', f'<div><a href="{site_href}">')
     docs_root_href = "./" if is_home else "../"
@@ -887,6 +923,50 @@ def _build_documentation_page(
     return page
 
 
+def write_knx_catalog(output: Path) -> Path:
+    """Write the KNX catalogue the website generator runs on.
+
+    Emitted from the same modules the command-line generator uses, so the
+    interactive page can never serve a stale or edited object list. The
+    file lands next to the docs assets, which every docs page reaches with
+    the same relative prefix as ``docs.js``.
+    """
+    objects = [
+        {
+            "number": obj.number,
+            "register": obj.register,
+            "dpt": obj.dpt,
+            "group": obj.group,
+            "writable": obj.writable,
+            "name": str(_knx_generator.object_name(obj.register)),
+        }
+        for obj in _knx_generator.KNX_OBJECTS
+    ]
+    counts: dict[str, int] = {}
+    for obj in objects:
+        counts[obj["group"]] = counts.get(obj["group"], 0) + 1
+    payload = {
+        "version": _metadata()[0],
+        "default_base": "8/0/0",
+        "project_name": "Wärmepumpe",
+        "prefix": "WP",
+        "compact_registers": list(_knx_generator.COMPACT_REGISTERS),
+        "groups": [
+            {
+                "id": group,
+                "label": str(_knx_generator.GROUP_LABELS[group]),
+                "count": counts.get(group, 0),
+            }
+            for group in _knx_generator.OBJECT_GROUPS
+        ],
+        "objects": objects,
+    }
+    path = output / "docs" / "knx-catalog.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return path
+
+
 def _write_sitemap(output: Path) -> None:
     urls = [SITE_URL, f"{SITE_URL}en/", f"{SITE_URL}docs/"]
     for page in DOCUMENTATION_PAGES:
@@ -914,6 +994,7 @@ def build_site(output: Path) -> None:
         shutil.rmtree(output)
 
     shutil.copytree(PUBLIC_DIR, output)
+    write_knx_catalog(output)
     content_output = output / "docs" / "content"
     content_output.mkdir(parents=True, exist_ok=True)
     for markdown in WIKI_DIR.glob("*.md"):

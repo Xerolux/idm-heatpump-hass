@@ -85,6 +85,7 @@ const PAGES = [
   { slug: 'services', file: 'Services.md', group: 'automation', de: 'Aktionen & Dienste', en: 'Actions & services' },
   { slug: 'examples', file: 'Examples.md', group: 'automation', de: 'Beispiel-Automationen', en: 'Example automations' },
   { slug: 'knx-bridge', file: 'KNX-Bridge.md', group: 'automation', de: 'KNX-Bridge', en: 'KNX bridge' },
+  { slug: 'knx-generator', file: 'KNX-Generator.md', group: 'automation', de: 'KNX-Gruppenadressen-Generator', en: 'KNX group address generator' },
   { slug: 'experimental-ai-adviser', file: 'Experimental-AI-Adviser.md', group: 'automation', de: 'KI-Anlagenberater (experimentell)', en: 'AI Adviser (experimental)' },
   { slug: 'local-ollama', file: 'Local-Ollama.md', group: 'automation', de: 'Lokale Ollama-Einrichtung', en: 'Local Ollama setup' },
   { slug: 'smart-energy-and-comfort', file: 'Smart-Energy-and-Comfort.md', group: 'automation', de: 'Smart Energy & Comfort', en: 'Smart Energy & Comfort' },
