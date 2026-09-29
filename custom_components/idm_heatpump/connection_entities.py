@@ -9,7 +9,7 @@ and when the web path last answered.
 
 from __future__ import annotations
 
-from typing import Any, ClassVar
+from typing import Any
 
 from homeassistant.components.sensor import (
     SensorDeviceClass,
@@ -56,12 +56,12 @@ class IdmConnectionModeSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     _attr_entity_category = EntityCategory.DIAGNOSTIC
     _attr_icon = "mdi:connection"
-    _attr_options: ClassVar[list[str]] = [STATE_MODBUS_AND_WEB, STATE_MODBUS_ONLY, STATE_WEB_ONLY]
 
     def __init__(self, coordinator: IdmCoordinator) -> None:
         super().__init__(coordinator)
         entry_id = coordinator.config_entry.entry_id  # type: ignore[union-attr]
         self._attr_unique_id = build_entity_unique_id(entry_id, "connection_mode")
+        self._attr_options = [STATE_MODBUS_AND_WEB, STATE_MODBUS_ONLY, STATE_WEB_ONLY]
         self.entity_description = SensorEntityDescription(
             key="connection_mode",
             translation_key="connection_mode",
