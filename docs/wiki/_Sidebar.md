@@ -33,6 +33,7 @@
 - [Local Navigator Web Interface](Local-Web-Interface)
 - [Supported Devices](Supported-Devices)
 - [Compatibility Matrix](Compatibility-Matrix)
+- [Protocol Capabilities](Protocol-Capabilities)
 - [Known Limitations](Known-Limitations)
 - [Stability & Release Readiness](Stability-and-Release-Readiness)
 - [Troubleshooting](Troubleshooting)
