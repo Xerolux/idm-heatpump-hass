@@ -275,9 +275,15 @@ fällt so sofort ins Auge:
 
 - **Verbindungsmodus** (`connection_mode`): welche Transporte gerade
   tatsächlich leben — *Modbus + Web*, *Modbus only* oder *Web only*. Die
-  Attribute führen den konfigurierten Modus (die Option `connection_mode`
-  unter *Konfigurieren* → Modbus-Sektion, Standard *auto*) und die erkannte
-  Web-Variante (`nav10` oder `nav20`).
+  Web-Hälfte folgt dem letzten Web-Abruf (ein Supplement, das nicht mehr
+  antwortet, kippt den Zustand auf *Modbus only* und bei Erholung
+  zurück). Die Attribute führen den konfigurierten Modus (die Option
+  `connection_mode` unter *Konfigurieren* → Modbus-Sektion, Standard
+  *auto*) und die erkannte Web-Variante (`nav10` oder `nav20`). Jeder
+  Transportwechsel wird zusätzlich als INFO-Zeile ins Log geschrieben
+  (`IDM connection state changed: …`), damit Support-Fälle die Frage
+  „seit wann antwortet der Web-Pfad nicht" beantworten können — ohne
+  Log-Spam.
 - **Letzte Web-Aktualisierung (Web)** (`web_last_success`): wann die lokale
   Weboberfläche zuletzt erfolgreich geantwortet hat — das Web-Gegenstück
   zur Modbus-*Letzter Erfolg*-Diagnose, immer vorhanden, wenn ein Web-PIN

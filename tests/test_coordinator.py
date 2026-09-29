@@ -2875,6 +2875,56 @@ class TestRegisterNamedWebWrites:
         client.acknowledge_all_notifications.assert_not_called()
 
 
+class TestConnectionStateLogging:
+    """One INFO line per transport transition - the support log must answer
+    'since when does the web path not answer' without spamming."""
+
+    def _web_coordinator(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="1234",
+            web_host="192.0.2.10",
+        )
+        coord.update_interval = None  # web-only entry shape
+        return coord
+
+    def test_initial_state_is_logged_once(self, mock_hass, mock_config_entry, caplog):
+        import logging as _logging
+
+        coordinator = self._web_coordinator(mock_hass, mock_config_entry)
+        with caplog.at_level(_logging.INFO, logger="custom_components.idm_heatpump.coordinator"):
+            coordinator._log_connection_state_change()
+            coordinator._log_connection_state_change()
+
+        lines = [r.message for r in caplog.records if "connection state" in r.message]
+        assert lines == ["IDM connection state: Web only"]
+
+    def test_web_down_and_recovery_is_logged_as_transition(self, mock_hass, mock_config_entry, caplog):
+        import logging as _logging
+
+        coordinator, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="1234",
+            web_host="192.0.2.10",
+        )
+        # modbus entry (update_interval set) with the web path up
+        coordinator._web_alive = True
+        coordinator._log_connection_state_change()  # initial: Modbus + Web
+        with caplog.at_level(_logging.INFO, logger="custom_components.idm_heatpump.coordinator"):
+            coordinator._web_alive = False
+            coordinator._log_connection_state_change()
+            coordinator._web_alive = True
+            coordinator._log_connection_state_change()
+
+        lines = [r.message for r in caplog.records if "connection state" in r.message]
+        assert lines == [
+            "IDM connection state changed: Modbus + Web -> Modbus only",
+            "IDM connection state changed: Modbus only -> Modbus + Web",
+        ]
+
+
 class TestGetRegisterFallback:
     """The name index only carries entity-backed registers; action registers
     (write-only, no entity) must still resolve through the model's own map."""

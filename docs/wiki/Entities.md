@@ -361,10 +361,15 @@ dashboard — they exist in every connection mode, so a fallback is visible
 at a glance:
 
 - **Connection mode** (`connection_mode`): which transports are actually
-  live right now — *Modbus + Web*, *Modbus only* or *Web only*. The
-  attributes carry the configured mode (the `connection_mode` option from
+  live right now — *Modbus + Web*, *Modbus only* or *Web only*. The web
+  half reflects the last web refresh (a supplement that stopped answering
+  flips the state to *Modbus only* and back on recovery). The attributes
+  carry the configured mode (the `connection_mode` option from
   *Configure* → Modbus section, default *auto*) and the detected web
-  variant (`nav10` or `nav20`).
+  variant (`nav10` or `nav20`). Every transport transition is written to
+  the log at INFO level (`IDM connection state changed: …`), so support
+  cases can answer "since when does the web path not answer" without
+  log spam.
 - **Letzte Web-Aktualisierung (Web)** (`web_last_success`): when the local
   web interface last answered successfully — the web counterpart of the
   Modbus *last success* diagnostic, always available when a web PIN is

@@ -7,11 +7,11 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.idm_heatpump.connection_entities import (
-    STATE_MODBUS_AND_WEB,
-    STATE_MODBUS_ONLY,
-    STATE_WEB_ONLY,
-    connection_sensor_entities,
+from custom_components.idm_heatpump.connection_entities import connection_sensor_entities
+from custom_components.idm_heatpump.const import (
+    CONNECTION_STATE_MODBUS_AND_WEB,
+    CONNECTION_STATE_MODBUS_ONLY,
+    CONNECTION_STATE_WEB_ONLY,
 )
 
 
@@ -19,7 +19,7 @@ def _coordinator(
     *,
     modbus_interval: float | None = 30.0,
     web_enabled: bool = True,
-    web_supplement: object | None = object(),
+    web_alive: bool | None = True,
     web_variant: str | None = "nav10",
 ) -> MagicMock:
     from datetime import timedelta
@@ -31,7 +31,7 @@ def _coordinator(
     coordinator.last_update_success = True
     coordinator.update_interval = timedelta(seconds=modbus_interval) if modbus_interval is not None else None
     coordinator.web_enabled = web_enabled
-    coordinator.web_supplement = web_supplement
+    coordinator.web_alive = web_alive
     coordinator.web_variant = web_variant
     coordinator.web_last_success = None
     return coordinator
@@ -46,19 +46,19 @@ class TestConnectionModeSensor:
 
         mode = entities[0]
         assert mode.entity_description.key == "connection_mode"
-        assert mode.native_value == STATE_MODBUS_AND_WEB
+        assert mode.native_value == CONNECTION_STATE_MODBUS_AND_WEB
 
-    def test_modbus_only_without_a_web_supplement(self) -> None:
-        coordinator = _coordinator(web_supplement=None, web_enabled=True)
+    def test_modbus_only_when_the_web_path_is_down(self) -> None:
+        coordinator = _coordinator(web_alive=False, web_enabled=True)
 
         mode = connection_sensor_entities(coordinator)[0]
-        assert mode.native_value == STATE_MODBUS_ONLY
+        assert mode.native_value == CONNECTION_STATE_MODBUS_ONLY
 
     def test_web_only_entry_without_modbus_polling(self) -> None:
         coordinator = _coordinator(modbus_interval=None)
 
         mode = connection_sensor_entities(coordinator)[0]
-        assert mode.native_value == STATE_WEB_ONLY
+        assert mode.native_value == CONNECTION_STATE_WEB_ONLY
 
     def test_attributes_carry_the_configured_mode_and_web_variant(self) -> None:
         mode = connection_sensor_entities(_coordinator())[0]

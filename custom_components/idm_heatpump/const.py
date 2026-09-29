@@ -148,6 +148,20 @@ CONNECTION_MODE_OPTIONS: tuple[str, ...] = (
     CONNECTION_MODE_WEB_ONLY,
     CONNECTION_MODE_MODBUS_ONLY,
 )
+CONNECTION_STATE_MODBUS_AND_WEB: str = "Modbus + Web"
+CONNECTION_STATE_MODBUS_ONLY: str = "Modbus only"
+CONNECTION_STATE_WEB_ONLY: str = "Web only"
+
+
+def connection_state_label(modbus_active: bool, web_active: bool) -> str:
+    """Return the transport combination for entities and log lines."""
+    if modbus_active and web_active:
+        return CONNECTION_STATE_MODBUS_AND_WEB
+    if modbus_active:
+        return CONNECTION_STATE_MODBUS_ONLY
+    return CONNECTION_STATE_WEB_ONLY
+
+
 DEFAULT_PORT: int = 502
 # Selector values for the optional model override. ``auto`` keeps the
 # automatic detection; the other values force a Navigator family.
