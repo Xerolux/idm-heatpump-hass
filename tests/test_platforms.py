@@ -410,7 +410,7 @@ class TestSensorAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
 
         await async_setup_entry(MagicMock(), entry, async_add)
-        assert len(added_entities) == 3
+        assert len(added_entities) == 5  # + connection mode + web last success
 
     async def test_adds_runtime_api_version_diagnostic_sensor(self):
         from custom_components.idm_heatpump.sensor import IdmApiVersionSensor, async_setup_entry
@@ -457,7 +457,7 @@ class TestSensorAsyncSetupEntry:
 
         await async_setup_entry(MagicMock(), entry, async_add)
 
-        assert len(added_entities) == 1
+        assert len(added_entities) == 3  # + connection mode + web last success
         assert added_entities[0]._attr_unique_id == "test_entry_idm_api_version"
 
     async def test_unused_sensor_is_registered_when_hide_unused_disabled(self):
@@ -479,7 +479,7 @@ class TestSensorAsyncSetupEntry:
 
         await async_setup_entry(MagicMock(), entry, async_add)
 
-        assert len(added_entities) == 2
+        assert len(added_entities) == 4  # unused sensor + API version + connection mode + web last success
         assert added_entities[0]._attr_unique_id == "test_entry_room_temp"
 
     async def test_excludes_writable_enum_uchar_sensors(self):
@@ -505,7 +505,7 @@ class TestSensorAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
 
         await async_setup_entry(MagicMock(), entry, async_add)
-        assert len(added_entities) == 2  # regular sensor plus diagnostic API version
+        assert len(added_entities) == 4  # regular sensor + API version + connection mode + web last success
 
     async def test_readonly_enum_uchar_sensor_included(self):
         """Read-only UCHAR enum registers ARE included in sensor platform."""
@@ -528,7 +528,7 @@ class TestSensorAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
 
         await async_setup_entry(MagicMock(), entry, async_add)
-        assert len(added_entities) == 2  # read-only enum plus diagnostic API version
+        assert len(added_entities) == 4  # read-only enum + API version + connection mode + web last success
 
     async def test_adds_technician_sensors_when_enabled(self):
         from custom_components.idm_heatpump.sensor import async_setup_entry
@@ -545,7 +545,7 @@ class TestSensorAsyncSetupEntry:
         async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
 
         await async_setup_entry(MagicMock(), entry, async_add)
-        assert len(added_entities) == 3  # level_1, level_2, and diagnostic API version
+        assert len(added_entities) == 5  # level_1, level_2, API version, connection mode, web last success
 
     async def test_adds_technician_sensors_before_regular_sensors(self):
         from custom_components.idm_heatpump.sensor import async_setup_entry
@@ -572,6 +572,8 @@ class TestSensorAsyncSetupEntry:
             "test_entry_technician_level_2",
             "test_entry_outside_air_temperature",
             "test_entry_idm_api_version",
+            "test_entry_connection_mode",
+            "test_entry_web_last_success",
         ]
 
     async def test_sorts_regular_and_web_sensors_into_functional_blocks(self):

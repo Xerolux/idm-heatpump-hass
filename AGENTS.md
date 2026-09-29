@@ -29,6 +29,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── manifest.json                 # Integration metadata & HA version requirements
 │   ├── const.py                      # Constants, enums, option keys, defaults
 │   ├── config_flow.py                # UI config flow (user, options, zones, reconfigure, web-only fallback)
+│   ├── connection_entities.py         # Diagnostic entities: effective connection mode + web liveness
 │   ├── coordinator.py                # DataUpdateCoordinator (polling, web supplement, writes)
 │   ├── entity.py                     # Base entity class (IdmEntity)
 │   ├── device_hierarchy.py           # Opt-in sub-device scopes, placement and registry wiring for the entity hierarchy
@@ -103,6 +104,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_calculated_sensors.py
 │   ├── test_changelog_consolidation.py
 │   ├── test_config_flow.py
+│   ├── test_connection_entities.py
 │   ├── test_const.py
 │   ├── test_controller_stats_reference.py
 │   ├── test_coordinator.py

@@ -1923,6 +1923,9 @@
       "compressor_stages_heating": {
         "name": "Compressor stages heating"
       },
+      "connection_mode": {
+        "name": "Connection mode"
+      },
       "current_electricity_price": {
         "name": "Current electricity price"
       },
@@ -2402,6 +2405,9 @@
       },
       "web_infosystem_notifications": {
         "name": "Info system notifications (Web)"
+      },
+      "web_last_success": {
+        "name": "Last web update (Web)"
       },
       "web_liquid_line_temperature": {
         "name": "Liquid line temperature (Web)"
