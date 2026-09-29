@@ -130,9 +130,9 @@ class TestIdmEntityInit:
 
     def test_device_info_has_serial_number_when_myidm_id_known(self):
         coord = _make_coordinator()
-        coord.myidm_id = "m129236"
+        coord.myidm_id = "m123456"
         entity = _make_entity(coordinator=coord)
-        assert entity.device_info["serial_number"] == "m129236"
+        assert entity.device_info["serial_number"] == "m123456"
 
     def test_entity_description_set(self):
         desc = MagicMock()

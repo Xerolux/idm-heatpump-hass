@@ -54,14 +54,14 @@ the Ollama API on host port 11434.
    machine on your LAN (replace the IP with your Home Assistant host):
 
    ```bash
-   curl -X POST http://192.168.178.57:11434/api/pull \
+   curl -X POST http://192.0.2.20:11434/api/pull \
      -d '{"name": "gemma3:4b", "stream": false}'
    ```
 
    On Windows PowerShell use
-   `Invoke-RestMethod -Method Post -Uri http://192.168.178.57:11434/api/pull -Body '{"name":"gemma3:4b"}'`.
+   `Invoke-RestMethod -Method Post -Uri http://192.0.2.20:11434/api/pull -Body '{"name":"gemma3:4b"}'`.
    The download is ~3.3 GB. Verify it with
-   `curl http://192.168.178.57:11434/api/tags`.
+   `curl http://192.0.2.20:11434/api/tags`.
 
 7. Continue with [connecting the integration](#connect-the-integration) and
    use `http://<home-assistant-host-ip>:11434` as the base URL. A literal LAN

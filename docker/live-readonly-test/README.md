@@ -78,8 +78,8 @@ type .\logs\web-proxy\ws_blocked_writes.jsonl
 
 | Container | Image | Purpose | Connects to |
 |---|---|---|---|
-| `idm-modbus-ro` | built (python:3.13-slim) | RO Modbus proxy | `192.168.178.103:502` |
-| `idm-web-ro` | built (python:3.13-slim) | RO HTTP + Nav10 WS proxy | `192.168.178.103:80` + `:61220` |
+| `idm-modbus-ro` | built (python:3.13-slim) | RO Modbus proxy | `192.0.2.10:502` |
+| `idm-web-ro` | built (python:3.13-slim) | RO HTTP + Nav10 WS proxy | `192.0.2.10:80` + `:61220` |
 | `idm-ha-test` | built (home-assistant:stable + local API + pymodbus) | HA + local integration | `modbus-proxy:5020`, `web-proxy:80/61220` |
 | `idm-api-tester` | built (python:3.13-slim + local API) | on-demand probes | proxies + HA |
 

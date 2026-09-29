@@ -476,7 +476,7 @@ class TestAsyncStepUser:
                     "host": "modbus-proxy.local",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "",
                 }
@@ -606,19 +606,19 @@ class TestAsyncStepUser:
             result = await flow.async_step_user(
                 {
                     "name": "IDM Test",
-                    "host": "192.168.178.196",
+                    "host": "192.0.2.11",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
-                    CONF_WEB_HOST: "192.168.178.103",
+                    CONF_WEB_HOST: "192.0.2.10",
                 }
             )
 
         assert result["step_id"] == "setup_review"
-        detect_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint=None, required=True)
+        detect_web.assert_awaited_once_with("192.0.2.10", "1234", model_hint=None, required=True)
         assert flow._data[CONF_MODBUS_PROXY] is True
-        assert flow._data[CONF_WEB_HOST] == "192.168.178.103"
+        assert flow._data[CONF_WEB_HOST] == "192.0.2.10"
 
     async def test_successful_connection_ignores_web_host_without_proxy_checkbox(self):
         flow = _make_flow()
@@ -636,16 +636,16 @@ class TestAsyncStepUser:
             await flow.async_step_user(
                 {
                     "name": "IDM Test",
-                    "host": "192.168.178.196",
+                    "host": "192.0.2.11",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: False,
-                    CONF_WEB_HOST: "192.168.178.103",
+                    CONF_WEB_HOST: "192.0.2.10",
                 }
             )
 
-        detect_web.assert_awaited_once_with("192.168.178.196", "2634", model_hint=None, required=True)
+        detect_web.assert_awaited_once_with("192.0.2.11", "1234", model_hint=None, required=True)
         assert flow._data[CONF_MODBUS_PROXY] is False
         assert flow._data[CONF_WEB_HOST] == ""
 
@@ -657,10 +657,10 @@ class TestAsyncStepUser:
             result = await flow.async_step_user(
                 {
                     "name": "IDM Test",
-                    "host": "192.168.178.196",
+                    "host": "192.0.2.11",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "",
                 }
@@ -708,7 +708,7 @@ class TestAsyncStepUser:
                     "host": "192.168.1.100",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                 }
             )
 
@@ -1455,7 +1455,7 @@ class TestAsyncStepReconfigure:
     async def test_reconfigure_updates_separate_web_host(self):
         flow = _make_flow()
         entry = MagicMock()
-        entry.data = {"host": "192.168.178.196", "port": 502, "slave_id": 1, "web_pin": "2634"}
+        entry.data = {"host": "192.0.2.11", "port": 502, "slave_id": 1, "web_pin": "1234"}
         entry.title = "IDM"
         update_and_abort = MagicMock(return_value={"type": "abort", "reason": "reconfigure_successful"})
 
@@ -1467,25 +1467,25 @@ class TestAsyncStepReconfigure:
         ):
             await flow.async_step_reconfigure(
                 {
-                    "host": "192.168.178.196",
+                    "host": "192.0.2.11",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
-                    CONF_WEB_HOST: "192.168.178.103",
+                    CONF_WEB_HOST: "192.0.2.10",
                 }
             )
 
-        detect_web.assert_awaited_once_with("192.168.178.103", "2634", model_hint=None, required=True)
+        detect_web.assert_awaited_once_with("192.0.2.10", "1234", model_hint=None, required=True)
         update_and_abort.assert_called_once_with(
             entry,
             data_updates={
-                "host": "192.168.178.196",
+                "host": "192.0.2.11",
                 "port": 502,
                 "slave_id": 1,
-                "web_pin": "2634",
+                "web_pin": "1234",
                 "modbus_proxy": True,
-                "web_host": "192.168.178.103",
+                "web_host": "192.0.2.10",
                 CONF_MODEL_OVERRIDE: MODEL_OVERRIDE_AUTO,
                 CONF_WEB_ONLY: False,
             },
@@ -1552,7 +1552,7 @@ class TestAsyncStepReconfigure:
                     "host": "192.168.1.100",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                 }
             )
 
@@ -1569,7 +1569,7 @@ class TestAsyncStepReconfigure:
             "host": "192.168.1.100",
             "port": 502,
             "slave_id": 1,
-            "web_pin": "2634",
+            "web_pin": "1234",
             CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 2.0",
         }
         entry.title = "IDM"
@@ -1586,13 +1586,13 @@ class TestAsyncStepReconfigure:
                     "host": "192.168.1.100",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                 }
             )
 
         detect_web.assert_awaited_once_with(
             "192.168.1.100",
-            "2634",
+            "1234",
             model_hint="Navigator 2.0",
             required=True,
         )
@@ -1617,7 +1617,7 @@ class TestAsyncStepReconfigure:
                     "host": "192.168.1.100",
                     "port": 502,
                     "slave_id": 1,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                 }
             )
 
@@ -1666,7 +1666,7 @@ class TestConnectionDiagnostics:
     async def test_modbus_and_web_success(self):
         flow = _make_flow()
         entry = _make_entry("entry-1", "192.168.1.100")
-        entry.data[CONF_WEB_PIN] = "2634"
+        entry.data[CONF_WEB_PIN] = "1234"
 
         with (
             patch.object(flow, "_get_reconfigure_entry", return_value=entry),
@@ -1678,7 +1678,7 @@ class TestConnectionDiagnostics:
         assert result["step_id"] == "diagnostics_success"
         detect_web.assert_awaited_once_with(
             "192.168.1.100",
-            "2634",
+            "1234",
             model_hint=None,
             required=True,
         )
@@ -1726,14 +1726,14 @@ class TestModbusFailureRecovery:
             "host": "192.168.1.100",
             "port": 502,
             "slave_id": 1,
-            CONF_WEB_PIN: "2634",
+            CONF_WEB_PIN: "1234",
         }
 
         with patch.object(flow, "_get_reconfigure_entry", return_value=entry):
             result = await flow.async_step_modbus_failed(
                 {
                     "action": "retry",
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                 }
             )
 
@@ -1767,7 +1767,7 @@ class TestModbusFailureRecovery:
         flow._data = {
             "name": "IDM",
             "host": "192.168.1.100",
-            CONF_WEB_PIN: "2634",
+            CONF_WEB_PIN: "1234",
         }
 
         with patch.object(
@@ -1778,7 +1778,7 @@ class TestModbusFailureRecovery:
             result = await flow.async_step_modbus_failed(
                 {
                     "action": "web_only",
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                 }
             )
 
@@ -1786,7 +1786,7 @@ class TestModbusFailureRecovery:
         assert result["errors"] == {"base": "web_cannot_connect"}
         detect_web.assert_awaited_once_with(
             "192.168.1.100",
-            "2634",
+            "1234",
             model_hint=None,
             required=True,
         )
@@ -1805,14 +1805,14 @@ class TestModbusFailureRecovery:
             "host": "192.168.1.100",
             "port": 502,
             "slave_id": 1,
-            CONF_WEB_PIN: "2634",
+            CONF_WEB_PIN: "1234",
         }
 
         with patch.object(flow, "_async_detect_web_supplement", return_value={}):
             recovery_result = await flow.async_step_modbus_failed(
                 {
                     "action": "web_only",
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                 }
             )
         assert recovery_result["step_id"] == "web_only_options"
@@ -2480,12 +2480,12 @@ class TestWebOnlyFallbackDuringSetup:
                     "host": "192.168.1.100",
                     "port": 502,
                     "setup_web_access": True,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                 }
             )
 
         assert result["step_id"] == "modbus_failed"
-        assert flow._data[CONF_WEB_PIN] == "2634"
+        assert flow._data[CONF_WEB_PIN] == "1234"
         assert flow._data[CONF_WEB_HOST] == ""
 
     async def test_failed_modbus_behind_a_proxy_requires_the_web_host(self):
@@ -2498,7 +2498,7 @@ class TestWebOnlyFallbackDuringSetup:
                     "host": "192.168.1.100",
                     "port": 502,
                     "setup_web_access": True,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "",
                 }
@@ -2517,7 +2517,7 @@ class TestWebOnlyFallbackDuringSetup:
                     "host": "192.168.1.100",
                     "port": 502,
                     "setup_web_access": True,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "  ",
                 }
@@ -2528,9 +2528,9 @@ class TestWebOnlyFallbackDuringSetup:
 
     async def test_retry_returns_to_the_setup_form(self):
         flow = _make_flow()
-        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100", CONF_WEB_PIN: "2634"}
+        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100", CONF_WEB_PIN: "1234"}
 
-        result = await flow.async_step_modbus_failed({"action": "retry", CONF_WEB_PIN: "2634"})
+        result = await flow.async_step_modbus_failed({"action": "retry", CONF_WEB_PIN: "1234"})
 
         assert result["type"] == "form"
         assert result["step_id"] == "user"
@@ -2541,7 +2541,7 @@ class TestWebOnlyFallbackDuringSetup:
         flow._reconfigure_entry = _make_entry("entry-1", "192.168.1.100")
 
         with patch.object(flow, "async_step_connection", AsyncMock(return_value={"step_id": "connection"})) as step:
-            result = await flow.async_step_modbus_failed({"action": "retry", CONF_WEB_PIN: "2634"})
+            result = await flow.async_step_modbus_failed({"action": "retry", CONF_WEB_PIN: "1234"})
 
         assert result["step_id"] == "connection"
         step.assert_awaited_once()
@@ -2565,7 +2565,7 @@ class TestWebOnlyFallbackDuringSetup:
             return_value={CONF_DETECTED_NAVIGATOR_VERSION: "Navigator 10"},
         ):
             result = await flow.async_step_modbus_failed(
-                {"action": "web_only", CONF_WEB_PIN: "2634", CONF_WEB_HOST: " navigator.local "}
+                {"action": "web_only", CONF_WEB_PIN: "1234", CONF_WEB_HOST: " navigator.local "}
             )
 
         assert result["step_id"] == "web_only_options"
@@ -2575,7 +2575,7 @@ class TestWebOnlyFallbackDuringSetup:
 
     async def test_web_only_setup_creates_the_entry_with_default_options(self):
         flow = _make_flow()
-        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100", CONF_WEB_PIN: "2634", CONF_WEB_ONLY: True}
+        flow._data = {CONF_NAME: "IDM", CONF_HOST: "192.168.1.100", CONF_WEB_PIN: "1234", CONF_WEB_ONLY: True}
         flow.async_create_entry = MagicMock(return_value={"type": "create_entry"})
 
         result = await flow.async_step_web_only_options({CONF_WEB_SCAN_INTERVAL: 45})
@@ -2617,7 +2617,7 @@ class TestReconfigureValidation:
                     "port": 502,
                     "slave_id": 1,
                     "setup_web_access": True,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "",
                 }
@@ -2639,7 +2639,7 @@ class TestReconfigureValidation:
                     "port": 502,
                     "slave_id": 1,
                     "setup_web_access": True,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "   ",
                 }
@@ -2661,7 +2661,7 @@ class TestReconfigureValidation:
                     "port": 502,
                     "slave_id": 1,
                     "setup_web_access": True,
-                    CONF_WEB_PIN: "2634",
+                    CONF_WEB_PIN: "1234",
                     CONF_MODBUS_PROXY: True,
                     CONF_WEB_HOST: "",
                 }
@@ -2675,7 +2675,7 @@ class TestDiagnosticsRepeatSteps:
     async def test_web_unavailable_is_reported_as_a_failed_diagnostics_run(self):
         flow = _make_flow()
         entry = _make_entry("entry-1", "192.168.1.100")
-        entry.data[CONF_WEB_PIN] = "2634"
+        entry.data[CONF_WEB_PIN] = "1234"
 
         with (
             patch.object(flow, "_get_reconfigure_entry", return_value=entry),
@@ -2794,7 +2794,7 @@ class TestWebSupplementDetection:
             ),
             pytest.raises(IdmWebAuthenticationFailed),
         ):
-            await flow._async_detect_web_supplement("192.168.1.100", "2634")
+            await flow._async_detect_web_supplement("192.168.1.100", "1234")
 
     async def test_an_optional_detection_failure_is_swallowed(self):
         flow = _make_flow()
@@ -2803,7 +2803,7 @@ class TestWebSupplementDetection:
             "custom_components.idm_heatpump.config_flow.async_read_web_supplement",
             AsyncMock(side_effect=OSError("unreachable")),
         ):
-            assert await flow._async_detect_web_supplement("192.168.1.100", "2634") == {}
+            assert await flow._async_detect_web_supplement("192.168.1.100", "1234") == {}
 
     async def test_a_required_detection_failure_is_reported(self):
         flow = _make_flow()
@@ -2815,7 +2815,7 @@ class TestWebSupplementDetection:
             ),
             pytest.raises(_WebSupplementConnectionFailed),
         ):
-            await flow._async_detect_web_supplement("192.168.1.100", "2634", required=True)
+            await flow._async_detect_web_supplement("192.168.1.100", "1234", required=True)
 
     async def test_a_missing_snapshot_is_optional_by_default(self):
         flow = _make_flow()
@@ -2824,7 +2824,7 @@ class TestWebSupplementDetection:
             "custom_components.idm_heatpump.config_flow.async_read_web_supplement",
             AsyncMock(return_value=None),
         ):
-            assert await flow._async_detect_web_supplement("192.168.1.100", "2634") == {}
+            assert await flow._async_detect_web_supplement("192.168.1.100", "1234") == {}
 
     async def test_a_missing_snapshot_fails_a_required_detection(self):
         flow = _make_flow()
@@ -2836,7 +2836,7 @@ class TestWebSupplementDetection:
             ),
             pytest.raises(_WebSupplementConnectionFailed),
         ):
-            await flow._async_detect_web_supplement("192.168.1.100", "2634", required=True)
+            await flow._async_detect_web_supplement("192.168.1.100", "1234", required=True)
 
 
 async def test_external_power_forwarding_option_step_keeps_selected_sources() -> None:

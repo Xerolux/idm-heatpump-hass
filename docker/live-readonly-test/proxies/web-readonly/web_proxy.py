@@ -52,7 +52,7 @@ HOP_BY_HOP = {
 
 
 def read_config() -> dict[str, Any]:
-    backend = os.environ.get("BACKEND_URL", "http://192.168.178.103:80").rstrip("/")
+    backend = os.environ.get("BACKEND_URL", "http://192.0.2.10:80").rstrip("/")
     listen_host = os.environ.get("LISTEN_HOST", "0.0.0.0")
     listen_port = int(os.environ.get("LISTEN_PORT", "8080"))
     log_dir = Path(os.environ.get("LOG_DIR", "/var/log/web-proxy"))

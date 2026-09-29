@@ -44,7 +44,7 @@ ALLOWED_CLIENT_COMMANDS = {
 
 
 def cfg() -> dict[str, Any]:
-    backend_host = os.environ.get("NAV10_BACKEND_HOST", os.environ.get("IDM_HOST", "192.168.178.103"))
+    backend_host = os.environ.get("NAV10_BACKEND_HOST", os.environ.get("IDM_HOST", "192.0.2.10"))
     backend_port = int(os.environ.get("NAV10_BACKEND_PORT", "61220"))
     listen_host = os.environ.get("LISTEN_HOST", "0.0.0.0")
     listen_port = int(os.environ.get("NAV10_LISTEN_PORT", "61220"))

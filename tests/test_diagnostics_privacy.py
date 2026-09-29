@@ -22,7 +22,7 @@ from custom_components.idm_heatpump.diagnostics import (
 
 # Every value that must never appear anywhere in the export, each unique so a
 # leak points straight at its source field.
-PRIVATE_HOST = "192.168.178.42"
+PRIVATE_HOST = "192.168.0.42"
 PRIVATE_WEB_HOST = "navigator.private.example"
 PRIVATE_PIN = "135791"
 PRIVATE_MYIDM_ID = "IDM-ABC-99887766"

@@ -647,7 +647,7 @@ async def test_async_read_web_supplement_extracts_myidm_id_local_part(monkeypatc
         navigator_version="Navigator 10",
         software_version="NAV10_20.23-903.iup",
         heatpump_model="iPump",
-        simple_values={"myidm_id": "m129236@example.invalid"},
+        simple_values={"myidm_id": "m123456@example.invalid"},
     )
     nav10 = _FakeWebClient(web_data)
 
@@ -668,9 +668,9 @@ async def test_async_read_web_supplement_extracts_myidm_id_local_part(monkeypatc
     result = await async_read_web_supplement("192.0.2.10", "1234")
 
     assert result is not None
-    assert result.myidm_id == "m129236"
-    assert result.values["myidm_id"] == "m129236"
-    assert result.sensor_values["myidm_id"].native_value == "m129236"
+    assert result.myidm_id == "m123456"
+    assert result.values["myidm_id"] == "m123456"
+    assert result.sensor_values["myidm_id"].native_value == "m123456"
 
 
 async def test_async_read_web_supplement_ignores_notification_errors(
