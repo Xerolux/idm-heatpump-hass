@@ -284,6 +284,14 @@ fällt so sofort ins Auge:
   (`IDM connection state changed: …`), damit Support-Fälle die Frage
   „seit wann antwortet der Web-Pfad nicht" beantworten können — ohne
   Log-Spam.
+- **Verbindung neu laden** (`connection_reload`, diagnostischer Button):
+  Ein Tipp lädt den Konfigurationseintrag der Integration neu. Für die
+  Momente, in denen Home Assistant sonst auf seinen Setup-Wiederholungs-
+  Backoff wartet — nach einem Aus der Wärmepumpe startet der Tipp
+  Erkennung, Abfrage und Web-Supplement sofort neu und räumt damit auch
+  die „Nicht erreichbar"-Reparaturkarte weg. Dasselbe erreicht man über
+  *Reparaturen → Erneut versuchen* oder ein manuelles Neuladen; der Button
+  legt es einfach aufs Dashboard.
 - **Letzte Web-Aktualisierung (Web)** (`web_last_success`): wann die lokale
   Weboberfläche zuletzt erfolgreich geantwortet hat — das Web-Gegenstück
   zur Modbus-*Letzter Erfolg*-Diagnose, immer vorhanden, wenn ein Web-PIN

@@ -1408,6 +1408,9 @@
       "ai_report_weekly": {
         "name": "KI-Wochenbericht (experimentell)"
       },
+      "connection_reload": {
+        "name": "Verbindung neu laden"
+      },
       "dhw_boost_cancel": {
         "name": "Warmwasser-Boost abbrechen"
       },

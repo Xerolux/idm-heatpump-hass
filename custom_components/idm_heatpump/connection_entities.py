@@ -11,6 +11,7 @@ from __future__ import annotations
 
 from typing import Any
 
+from homeassistant.components.button import ButtonEntity
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
@@ -104,6 +105,40 @@ class IdmWebLastSuccessSensor(IdmCoordinatorEntityBase, SensorEntity):
     @property
     def available(self) -> bool:
         return super().available and self.coordinator.web_last_success is not None
+
+
+def connection_button_entities(coordinator: IdmCoordinator) -> list[ButtonEntity]:
+    """Create the reload button; it exists in every connection mode."""
+    return [IdmConnectionReloadButton(coordinator)]
+
+
+class IdmConnectionReloadButton(IdmCoordinatorEntityBase, ButtonEntity):
+    """Reload the config entry from the dashboard.
+
+    For the moments Home Assistant would otherwise wait for its setup-retry
+    backoff: after the heat pump was switched off and is back, one tap
+    re-runs setup (detection, polling, web supplement) immediately and with
+    it clears the "not reachable" repair card. Strictly a convenience - the
+    same thing happens through Repairs -> Try again or a manual reload.
+    """
+
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+    _attr_icon = "mdi:restart"
+
+    def __init__(self, coordinator: IdmCoordinator) -> None:
+        super().__init__(coordinator)
+        entry = coordinator.config_entry
+        entry_id = entry.entry_id if entry is not None else "no_entry"
+        self._attr_unique_id = build_entity_unique_id(entry_id, "connection_reload")
+        self._attr_translation_key = "connection_reload"
+
+    async def async_press(self) -> None:
+        """Schedule the reload; the press returns before the platform unloads."""
+        entry = self.coordinator.config_entry
+        if entry is None:
+            return
+        hass = self.coordinator.hass
+        hass.async_create_task(hass.config_entries.async_reload(entry.entry_id))
 
 
 ConnectionSensorEntity = IdmConnectionModeSensor | IdmWebLastSuccessSensor
