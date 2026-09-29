@@ -25,7 +25,7 @@ Cookie-Sitzung älterer Firmware zurück; danach werden die PHP-Datenseiten
 (`/data/settings.php`, `/data/heatpump.php`, `/data/info.php`, …) geprüft.
 Die Endpunktmenge und die Statistikseiten wurden gegen die
 Community-Integration
-[AndyNew2/hacs-idm-hpweb](https://github.com/AndyNew2/hacs-idm-hpweb)
+the community integrations
 abgegleichen.
 
 Der Verbindungsmodus entscheidet, welche Pfade ein Eintrag nutzt:
@@ -45,8 +45,8 @@ Pfad nicht vorhanden. Firmware-abhängige Zellen sagen das.
 | Kern-Telemetrie (Temperaturen, Status, Pumpen, Ventile) | R (1.x-Map) | R | R | R | R (64 Werte, Setting-Seiten) |
 | Elektrische / thermische Leistung (COP-Eingänge) | — | teils *(nicht bestätigt)* | — | **R** | **—** *(die Firmware liefert beides nicht)* |
 | Energiezähler (Lebens-kWh) | — | R *(wo vorhanden)* | — | R | R (Wärmemengen, gesamt + heute) |
-| Statistik-Seiten (Laufzeit, Wärme, elektrisch) | — | — | R *(statistics.php; von dieser Integration nicht gelesen)* | — | R (Statistik-Blöcke) |
-| Regler-Uhr stellen | — | — | W *(community-bestätigte Zeitfunktion)* | — | W *(Setting 4537, capture-bestätigt)* |
+| Statistik-Seiten (Laufzeit, Wärme, elektrisch) | — | — | R *(statistics.php; Gesamtwerte als Sensoren)* | — | R (Statistik-Blöcke) |
+| Regler-Uhr stellen (`set_controller_clock`-Dienst) | — | — | W | — | W |
 | Anforderungsgrund inkl. PV (Display-Wortlaut) | — | — | — | — | **R** (`home/detail`) |
 | Meldungstexte (Infosystem) | nur Fehlercodes | nur Fehlercodes | — | nur Fehlercodes | **R** (`notification`, mit Texten) |
 | Heißgas, Durchfluss, Platine, Drücke | — | teils | teils | teils | **R** |

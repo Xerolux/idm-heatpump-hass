@@ -2406,6 +2406,42 @@
       "web_software_version": {
         "name": "Software version (Web)"
       },
+      "web_stat_elcons_total_cooling": {
+        "name": "Electrical energy cooling, total (Web 2.0)"
+      },
+      "web_stat_elcons_total_defrost": {
+        "name": "Electrical energy defrost, total (Web 2.0)"
+      },
+      "web_stat_elcons_total_heating": {
+        "name": "Electrical energy heating, total (Web 2.0)"
+      },
+      "web_stat_elcons_total_hotwater": {
+        "name": "Electrical energy hot water, total (Web 2.0)"
+      },
+      "web_stat_genheat_total_cooling": {
+        "name": "Heat quantity cooling, total (Web 2.0)"
+      },
+      "web_stat_genheat_total_defrost": {
+        "name": "Heat quantity defrost, total (Web 2.0)"
+      },
+      "web_stat_genheat_total_heating": {
+        "name": "Heat quantity heating, total (Web 2.0)"
+      },
+      "web_stat_genheat_total_hotwater": {
+        "name": "Heat quantity hot water, total (Web 2.0)"
+      },
+      "web_stat_runtime_total_cooling": {
+        "name": "Runtime cooling, total (Web 2.0)"
+      },
+      "web_stat_runtime_total_defrost": {
+        "name": "Runtime defrost, total (Web 2.0)"
+      },
+      "web_stat_runtime_total_heating": {
+        "name": "Runtime heating, total (Web 2.0)"
+      },
+      "web_stat_runtime_total_hotwater": {
+        "name": "Runtime hot water, total (Web 2.0)"
+      },
       "web_switch_cycles_second_heat_generator": {
         "name": "Second heat generator switch cycles (Web)"
       },
@@ -2762,6 +2798,12 @@
     },
     "error_acknowledge_unavailable": {
       "message": "Error acknowledgement is not available on this heat pump model's register map."
+    },
+    "web_clock_requires_web_supplement": {
+      "message": "Setting the clock requires an active web supplement (Navigator 10 WebSocket or Navigator 2.0 web interface)."
+    },
+    "invalid_datetime": {
+      "message": "Invalid date/time value: {value}"
     }
   },
   "issues": {
@@ -3008,6 +3050,16 @@
         "entry_id": {
           "name": "IDM integration",
           "description": "IDM integration entry."
+        }
+      }
+    },
+    "set_controller_clock": {
+      "name": "Set controller clock",
+      "description": "Sets the Navigator clock to the given time (default: now) through the local web interface.",
+      "fields": {
+        "datetime": {
+          "name": "Date and time",
+          "description": "The time to set. Omit to use the current Home Assistant time."
         }
       }
     }

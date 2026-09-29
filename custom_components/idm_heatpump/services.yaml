@@ -24,6 +24,37 @@ set_system_mode:
             - "nur heizung/kuehlung"
             - "heating/cooling only"
 
+set_controller_clock:
+  name: Set controller clock
+  description: >-
+    Sets the Navigator controller clock to the given time (default: now)
+    through the local web interface. There is no Modbus register for the
+    clock. Requires an active web supplement (Navigator 10 WebSocket or
+    Navigator 2.0 web interface).
+  fields:
+    datetime:
+      name: Date and time
+      description: The time to set. Omit to use the current Home Assistant time.
+      required: false
+      example: "2026-09-29 12:30:00"
+      selector:
+        datetime: {}
+    entity_id:
+      name: Entity
+      description: An entity of the entry that should set the clock.
+      required: false
+      example: sensor.alm6_15_aussentemperatur
+      selector:
+        entity:
+          integration: idm_heatpump
+    entry_id:
+      name: Config entry
+      description: The config entry ID, when no entity is given.
+      required: false
+      example: 01J...
+      selector:
+        text: {}
+
 acknowledge_errors:
   name: "Acknowledge Errors"
   description: "Acknowledge/clear active error messages on the heat pump"

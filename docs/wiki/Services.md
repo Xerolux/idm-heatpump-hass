@@ -57,6 +57,31 @@ data:
   mode: "Holiday"
 ```
 
+## set_controller_clock
+
+Sets the Navigator controller clock to a given time (default: the current
+Home Assistant time) through the local web interface. There is no Modbus
+register for the clock, so this works on both web variants — the Navigator 10
+WebSocket and the Navigator 2.0 web interface. A use case is keeping the
+controller clock in sync so time programs and the time-dependent technician
+codes stay correct.
+
+**Service:** `idm_heatpump.set_controller_clock`
+
+| Field | Required | Description |
+|---|---|---|
+| `datetime` | no | The time to set (ISO format). Omit for the current Home Assistant time. |
+| `entity_id` / `entry_id` | no | Targeting, like every other service. |
+
+```yaml
+service: idm_heatpump.set_controller_clock
+data:
+  datetime: "2026-09-29 12:30:00"
+```
+
+The service requires an active web supplement; without one it declines with
+a validation error instead of touching anything.
+
 ## acknowledge_errors
 
 Acknowledges/clears active error messages on the heat pump.
@@ -169,7 +194,7 @@ infinite values and applies library limits automatically if a future tested API
 release supplies them.
 
 The table was rechecked against the published
-`idm-heatpump-api[web]==2.10.1` artifact. Those GLT power registers still do not
+`idm-heatpump-api[web]==2.11.0` artifact. Those GLT power registers still do not
 declare universal minimum or maximum values; the integration therefore keeps
 the finite-number validation described above.
 

@@ -2406,6 +2406,42 @@
       "web_software_version": {
         "name": "Software Version (Web)"
       },
+      "web_stat_elcons_total_cooling": {
+        "name": "Elektrische Energie Kühlen, gesamt (Web 2.0)"
+      },
+      "web_stat_elcons_total_defrost": {
+        "name": "Elektrische Energie Abtauen, gesamt (Web 2.0)"
+      },
+      "web_stat_elcons_total_heating": {
+        "name": "Elektrische Energie Heizen, gesamt (Web 2.0)"
+      },
+      "web_stat_elcons_total_hotwater": {
+        "name": "Elektrische Energie Warmwasser, gesamt (Web 2.0)"
+      },
+      "web_stat_genheat_total_cooling": {
+        "name": "Wärmemenge Kühlen, gesamt (Web 2.0)"
+      },
+      "web_stat_genheat_total_defrost": {
+        "name": "Wärmemenge Abtauen, gesamt (Web 2.0)"
+      },
+      "web_stat_genheat_total_heating": {
+        "name": "Wärmemenge Heizen, gesamt (Web 2.0)"
+      },
+      "web_stat_genheat_total_hotwater": {
+        "name": "Wärmemenge Warmwasser, gesamt (Web 2.0)"
+      },
+      "web_stat_runtime_total_cooling": {
+        "name": "Laufzeit Kühlen, gesamt (Web 2.0)"
+      },
+      "web_stat_runtime_total_defrost": {
+        "name": "Laufzeit Abtauen, gesamt (Web 2.0)"
+      },
+      "web_stat_runtime_total_heating": {
+        "name": "Laufzeit Heizen, gesamt (Web 2.0)"
+      },
+      "web_stat_runtime_total_hotwater": {
+        "name": "Laufzeit Warmwasser, gesamt (Web 2.0)"
+      },
       "web_switch_cycles_second_heat_generator": {
         "name": "Schaltzyklen 2. Wärmeerzeuger (Web)"
       },
@@ -2762,6 +2798,12 @@
     },
     "error_acknowledge_unavailable": {
       "message": "Die Fehlerquittierung ist für dieses Wärmepumpenmodell nicht verfügbar."
+    },
+    "web_clock_requires_web_supplement": {
+      "message": "Das Stellen der Uhr erfordert eine aktive Web-Ergänzung (Navigator 10 WebSocket oder Navigator 2.0 Web-Oberfläche)."
+    },
+    "invalid_datetime": {
+      "message": "Ungültiger Datums-/Zeitwert: {value}"
     }
   },
   "issues": {
@@ -3008,6 +3050,16 @@
         "entry_id": {
           "name": "IDM integration",
           "description": "IDM integration entry."
+        }
+      }
+    },
+    "set_controller_clock": {
+      "name": "Regler-Uhrzeit stellen",
+      "description": "Stellt die Regler-Uhrzeit auf die angegebene Zeit (Standard: jetzt) über die lokale Web-Oberfläche.",
+      "fields": {
+        "datetime": {
+          "name": "Datum und Uhrzeit",
+          "description": "Die zu setzende Zeit. Ohne Angabe wird die aktuelle Home-Assistant-Zeit verwendet."
         }
       }
     }

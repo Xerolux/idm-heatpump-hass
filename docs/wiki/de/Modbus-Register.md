@@ -133,7 +133,7 @@ korrekten Datentyp nicht aus einer Adresse ableiten.
 <!-- BEGIN GENERATED REGISTER REFERENCE -->
 ## Vollständiger Registerkatalog
 
-> Generiert aus `idm-heatpump-api[web]==2.10.1`. Bearbeite diesen Abschnitt nicht manuell.
+> Generiert aus `idm-heatpump-api[web]==2.11.0`. Bearbeite diesen Abschnitt nicht manuell.
 
 Dieser maximale Katalog enthält **687 logische Registerdefinitionen**: alle Heizkreise A–G, zehn Zonenmodule mit jeweils acht Räumen sowie Solar-, ISC-, PV-, Kaskaden- und Navigator-10-Erweiterungen. Die Integration wählt daraus nur die Teilmenge aus, die auf der erkannten Installation unterstützt und aktiviert ist.
 
@@ -865,7 +865,7 @@ Die deutsche Beschreibung dient der Identifikation; der Registername in Codeform
 
 ## Navigator 1.7 (eigene Protokollfamilie)
 
-> Ebenfalls aus `idm-heatpump-api[web]==2.10.1` generiert.
+> Ebenfalls aus `idm-heatpump-api[web]==2.11.0` generiert.
 
 Die Regler Navigator 1.0/1.7 verwenden ein anderes Registerlayout: Dieselbe Adresse kann einen anderen Datenpunkt tragen als im Katalog oben. Diese Familie hat daher eine eigene Tabelle mit **152** Definitionen (davon 81 beschreibbar). Der offizielle RW-Holding-Block von ma_de_812049 Rev.1 steuert 77 beschreibbare, EEPROM-empfindliche Parameter bei (Betriebsarten, Raum-/Vorlaufsollwerte, Heizkurven, Grenzen, Bivalenzpunkte, Solar-Betriebsart, Warmwasser-Sollwert); das PV-Supplement erscheint nur, wenn der Regler die Adresse 74 beantwortet. Eine Zonenmodul-Steuerung existiert in dieser Familie nicht.
 

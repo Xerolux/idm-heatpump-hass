@@ -440,6 +440,45 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
             "Infosystem Meldungen Anzahl (Web)",
         ),
         "web_infosystem_notifications": ("Info system notifications (Web)", "Infosystem Meldungen (Web)"),
+        "web_stat_runtime_total_heating": ("Runtime heating, total (Web 2.0)", "Laufzeit Heizen, gesamt (Web 2.0)"),
+        "web_stat_runtime_total_cooling": ("Runtime cooling, total (Web 2.0)", "Laufzeit Kühlen, gesamt (Web 2.0)"),
+        "web_stat_runtime_total_hotwater": (
+            "Runtime hot water, total (Web 2.0)",
+            "Laufzeit Warmwasser, gesamt (Web 2.0)",
+        ),
+        "web_stat_runtime_total_defrost": ("Runtime defrost, total (Web 2.0)", "Laufzeit Abtauen, gesamt (Web 2.0)"),
+        "web_stat_genheat_total_heating": (
+            "Heat quantity heating, total (Web 2.0)",
+            "Wärmemenge Heizen, gesamt (Web 2.0)",
+        ),
+        "web_stat_genheat_total_cooling": (
+            "Heat quantity cooling, total (Web 2.0)",
+            "Wärmemenge Kühlen, gesamt (Web 2.0)",
+        ),
+        "web_stat_genheat_total_hotwater": (
+            "Heat quantity hot water, total (Web 2.0)",
+            "Wärmemenge Warmwasser, gesamt (Web 2.0)",
+        ),
+        "web_stat_genheat_total_defrost": (
+            "Heat quantity defrost, total (Web 2.0)",
+            "Wärmemenge Abtauen, gesamt (Web 2.0)",
+        ),
+        "web_stat_elcons_total_heating": (
+            "Electrical energy heating, total (Web 2.0)",
+            "Elektrische Energie Heizen, gesamt (Web 2.0)",
+        ),
+        "web_stat_elcons_total_cooling": (
+            "Electrical energy cooling, total (Web 2.0)",
+            "Elektrische Energie Kühlen, gesamt (Web 2.0)",
+        ),
+        "web_stat_elcons_total_hotwater": (
+            "Electrical energy hot water, total (Web 2.0)",
+            "Elektrische Energie Warmwasser, gesamt (Web 2.0)",
+        ),
+        "web_stat_elcons_total_defrost": (
+            "Electrical energy defrost, total (Web 2.0)",
+            "Elektrische Energie Abtauen, gesamt (Web 2.0)",
+        ),
         "web_liquid_line_temperature": ("Liquid line temperature (Web)", "Flüssigkeitsleitung Temperatur (Web)"),
         "web_loading_temperature": ("Charging temperature (Web)", "Ladetemperatur (Web)"),
         "web_mixer_heating_circuit": ("Heating circuit {circuit} mixer (Web)", "Mischer Heizkreis {circuit} (Web)"),

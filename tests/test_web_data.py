@@ -496,6 +496,89 @@ async def test_async_read_web_supplement_adds_dhw_setpoint_parameter(
     assert parameter.max_value == 60
 
 
+async def test_async_read_web_supplement_adds_nav20_statistics(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from idm_heatpump.web import IdmWebValue
+
+    class _Nav20Client(_FakeWebClient):
+        async def read_statistics(self):
+            return SimpleNamespace(
+                values={
+                    "stat_runtime_total_heating": IdmWebValue(
+                        name="stat_runtime_total_heating",
+                        value="3379.48",
+                        raw_key="Heizen",
+                        unit="h",
+                        numeric_value=3379.48,
+                    ),
+                    "stat_elcons_total_heating": IdmWebValue(
+                        name="stat_elcons_total_heating",
+                        value="5.0",
+                        raw_key="Heating",
+                        unit="kWh",
+                        numeric_value=5.0,
+                    ),
+                }
+            )
+
+    nav20 = _Nav20Client(
+        SimpleNamespace(
+            navigator_version="Navigator 2.0",
+            software_version=None,
+            heatpump_model=None,
+            simple_values={},
+        )
+    )
+    import idm_heatpump
+
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(idm_heatpump, "create_optional_navigator10_web_client", lambda host, pin: None, raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: nav20,
+        raising=False,
+    )
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert result.web_variant == "nav20"
+    assert result.sensor_values["stat_runtime_total_heating"].native_value == 3379.48
+    assert result.sensor_values["stat_elcons_total_heating"].native_value == 5.0
+
+
+async def test_nav20_statistics_failure_is_not_fatal(monkeypatch: pytest.MonkeyPatch) -> None:
+    class _Nav20Client(_FakeWebClient):
+        async def read_statistics(self):
+            raise RuntimeError("statistics page down")
+
+    nav20 = _Nav20Client(
+        SimpleNamespace(
+            navigator_version="Navigator 2.0",
+            software_version=None,
+            heatpump_model=None,
+            simple_values={},
+        )
+    )
+    import idm_heatpump
+
+    monkeypatch.setattr(idm_heatpump, "web_pin_configured", lambda pin: bool(pin.strip()), raising=False)
+    monkeypatch.setattr(idm_heatpump, "create_optional_navigator10_web_client", lambda host, pin: None, raising=False)
+    monkeypatch.setattr(
+        idm_heatpump,
+        "create_optional_navigator20_web_client",
+        lambda host, pin: nav20,
+        raising=False,
+    )
+
+    result = await async_read_web_supplement("192.0.2.10", "1234")
+
+    assert result is not None
+    assert "stat_runtime_total_heating" not in result.sensor_values
+
+
 async def test_async_read_web_supplement_adds_heating_circuits(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
