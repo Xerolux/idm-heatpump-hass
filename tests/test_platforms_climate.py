@@ -84,7 +84,7 @@ class TestButtonAsyncSetupEntry:
         added = []
         await async_setup_entry(MagicMock(), _entry(coord), lambda e: added.extend(e))
 
-        assert len(added) == 1
+        assert len(added) == 2  # acknowledge button + connection reload button
         assert isinstance(added[0], IdmAcknowledgeErrorsButton)
         assert added[0]._attr_unique_id == "test_entry_acknowledge_errors"
 
@@ -98,7 +98,7 @@ class TestButtonAsyncSetupEntry:
         added = []
         await async_setup_entry(MagicMock(), _entry(coord), lambda e: added.extend(e))
 
-        assert added == []
+        assert [type(e).__name__ for e in added] == ["IdmConnectionReloadButton"]
 
 
 class TestIdmAcknowledgeErrorsButton:
