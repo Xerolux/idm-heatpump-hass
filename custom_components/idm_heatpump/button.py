@@ -61,6 +61,14 @@ async def async_setup_entry(
     acknowledge_register = coordinator.get_register("error_acknowledge")
     if isinstance(acknowledge_register, RegisterDef) and acknowledge_register.writable:
         entities.append(IdmAcknowledgeErrorsButton(coordinator, acknowledge_register))
+    # Navigator 1.0/1.7 only: c3003 (Vorrangladung anfordern) is a momentary
+    # command coil, so it is a button writing ON exactly once — a switch would
+    # also write 0, which the coil must never receive (issue #319). Gated on
+    # writability, the entity appears together with the idm-heatpump-api map
+    # that makes the coil writable and write-only.
+    priority_register = coordinator.get_register("demand_dhw_17")
+    if isinstance(priority_register, RegisterDef) and priority_register.writable:
+        entities.append(IdmDhwPriorityChargeButton(coordinator, priority_register))
     mode_register = coordinator.get_register("system_mode")
     setpoint_register = coordinator.get_register("dhw_setpoint")
     temperature_register = coordinator.get_register("dhw_temp_top")
@@ -87,25 +95,21 @@ async def async_setup_entry(
     async_add_entities(entities)
 
 
-class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity):
-    """Button to acknowledge errors on the heat pump.
+class _IdmRegisterPulseButton(CoordinatorEntity[IdmCoordinator], ButtonEntity):
+    """One-shot write of a fixed value to a register resolved by name.
 
-    ``_register`` is the detected model's own acknowledge register: holding
-    register 1999 on the shared Navigator 2.0/10 family (FC16 write of 1),
-    coil c3000 on Navigator 1.0/1.7 (FC05 single-coil write of ON). The
-    coordinator's write path dispatches on the register type.
+    The coordinator's write path dispatches on the register type: holding
+    registers go out as FC16 word writes, coils as FC05 single-coil writes.
     """
 
     _attr_has_entity_name = True
-    _attr_translation_key = "acknowledge_errors"
-    _attr_icon = "mdi:alert-circle-check"
 
-    def __init__(self, coordinator: IdmCoordinator, acknowledge_register: RegisterDef) -> None:
-        """Initialize the button with the model's acknowledge register."""
+    def __init__(self, coordinator: IdmCoordinator, register: RegisterDef, unique_suffix: str) -> None:
+        """Initialize the button with the model's own register."""
         super().__init__(coordinator)
         assert coordinator.config_entry is not None
-        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_acknowledge_errors"
-        self._register = acknowledge_register
+        self._attr_unique_id = f"{coordinator.config_entry.entry_id}_{unique_suffix}"
+        self._register = register
 
     @property
     def device_info(self) -> DeviceInfo:
@@ -115,7 +119,7 @@ class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity
         """Handle the button press."""
         try:
             await self.coordinator.async_write_register(self._register, 1)
-            _LOGGER.debug("Acknowledged errors via %s", self._register.name)
+            _LOGGER.debug("Pulsed %s via %s", type(self).__name__, self._register.name)
         except HomeAssistantError:
             # The coordinator already raised a translated, actionable error —
             # the write cooldown names the remaining wait. Reclassifying it
@@ -129,6 +133,40 @@ class IdmAcknowledgeErrorsButton(CoordinatorEntity[IdmCoordinator], ButtonEntity
                 translation_key=translation_key,
                 translation_placeholders=write_error_placeholders(self._register.name, err),
             ) from err
+
+
+class IdmAcknowledgeErrorsButton(_IdmRegisterPulseButton):
+    """Button to acknowledge errors on the heat pump.
+
+    ``_register`` is the detected model's own acknowledge register: holding
+    register 1999 on the shared Navigator 2.0/10 family (FC16 write of 1),
+    coil c3000 on Navigator 1.0/1.7 (FC05 single-coil write of ON).
+    """
+
+    _attr_translation_key = "acknowledge_errors"
+    _attr_icon = "mdi:alert-circle-check"
+
+    def __init__(self, coordinator: IdmCoordinator, acknowledge_register: RegisterDef) -> None:
+        """Initialize the button with the model's acknowledge register."""
+        super().__init__(coordinator, acknowledge_register, "acknowledge_errors")
+
+
+class IdmDhwPriorityChargeButton(_IdmRegisterPulseButton):
+    """Button requesting a DHW priority charge on Navigator 1.0/1.7.
+
+    ``_register`` is coil c3003 of the 1.x map (ma_de_812049 Rev.1,
+    "Anforderung Vorrangladung"): a momentary command bit the controller
+    executes immediately, so the button writes ON exactly once and never
+    resets it. Manual use only — the official table puts the coil block
+    under the EEPROM note, so no schedule or timed automation (issue #319).
+    """
+
+    _attr_translation_key = "dhw_priority_charge"
+    _attr_icon = "mdi:water-plus"
+
+    def __init__(self, coordinator: IdmCoordinator, priority_register: RegisterDef) -> None:
+        """Initialize the button with the model's priority-charge register."""
+        super().__init__(coordinator, priority_register, "dhw_priority_charge")
 
 
 class _IdmDhwBoostButtonBase(

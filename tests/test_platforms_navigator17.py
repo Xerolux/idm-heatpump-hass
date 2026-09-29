@@ -233,23 +233,85 @@ def test_1_7_translation_keys_resolve(register_name: str, expected_key: str) -> 
 # ---------------------------------------------------------------------------
 
 
-def test_1_7_demand_coils_become_binary_sensors() -> None:
-    """c3001-c3003 are read-only binary registers: diagnostic binary sensors,
-    never numeric sensors."""
+def test_1_7_momentary_coils_never_become_entities() -> None:
+    """c3001-c3003 are momentary command bits, not status (issue #319 report).
+
+    The controller executes the request as soon as the bit is set and the bit
+    immediately falls back to 0 — a binary sensor built from it can never turn
+    on and only adds a pointless coil poll. None of the three may become a
+    binary sensor or a numeric sensor on any idm-heatpump-api version: the
+    exclusion is the integration's own until the API map drops them.
+    """
     from custom_components.idm_heatpump.library_adapter import (
         get_library_binary_sensors,
         get_library_sensors,
     )
 
     model_info = _navigator_17_model_info()
-    binary = {item["description"].key: item for item in get_library_binary_sensors(model_info=model_info)}
-    for name, address in (("demand_heating_17", 3001), ("demand_cooling_17", 3002), ("demand_dhw_17", 3003)):
-        assert name in binary, name
-        assert binary[name]["register"].address == address
-        assert binary[name]["description"].entity_category is not None
-
+    binary = {item["description"].key for item in get_library_binary_sensors(model_info=model_info)}
     sensors = {item["description"].key for item in get_library_sensors(model_info=model_info)}
-    assert not {"demand_heating_17", "demand_cooling_17", "demand_dhw_17"} & sensors
+    for name in ("demand_heating_17", "demand_cooling_17", "demand_dhw_17"):
+        assert name not in binary, name
+        assert name not in sensors, name
+
+
+async def test_1_7_dhw_priority_button_writes_coil_3003() -> None:
+    """c3003 (Vorrangladung anfordern) is a button writing ON exactly once.
+
+    A switch would also write 0, and a momentary command bit must never be
+    reset by the integration. The button resolves the register by name from
+    the detected model map, exactly like the acknowledge button for c3000.
+    """
+    from dataclasses import replace
+    from unittest.mock import AsyncMock, MagicMock
+
+    from custom_components.idm_heatpump.button import async_setup_entry
+
+    reg_map = dict(build_register_map(model_info=_navigator_17_model_info()))
+    reg_map["demand_dhw_17"] = replace(reg_map["demand_dhw_17"], writable=True, write_only=True)
+    coordinator = MagicMock()
+    coordinator.get_register = MagicMock(side_effect=lambda name: reg_map.get(name))
+    coordinator.async_write_register = AsyncMock()
+    entry = MagicMock()
+    entry.runtime_data.coordinator = coordinator
+
+    added: list = []
+    await async_setup_entry(MagicMock(), entry, MagicMock(side_effect=added.extend))
+
+    buttons = [e for e in added if getattr(e, "_attr_translation_key", None) == "dhw_priority_charge"]
+    assert len(buttons) == 1
+    button = buttons[0]
+    assert button._register.name == "demand_dhw_17"
+    assert button._register.address == 3003
+
+    await button.async_press()
+    coordinator.async_write_register.assert_awaited_once()
+    reg, value = coordinator.async_write_register.await_args.args
+    assert reg is button._register
+    assert value == 1
+
+
+async def test_1_7_dhw_priority_button_requires_writable_coil() -> None:
+    """The button gate is the register's writability, not the api version:
+    a map modelling c3003 read-only (idm-heatpump-api before the write-only
+    command) yields no button — the entity appears exactly with the map that
+    marks the coil writable."""
+    from dataclasses import replace
+    from unittest.mock import AsyncMock, MagicMock
+
+    from custom_components.idm_heatpump.button import async_setup_entry
+
+    reg_map = dict(build_register_map(model_info=_navigator_17_model_info()))
+    reg_map["demand_dhw_17"] = replace(reg_map["demand_dhw_17"], writable=False, write_only=False)
+    coordinator = MagicMock()
+    coordinator.get_register = MagicMock(side_effect=lambda name: reg_map.get(name))
+    coordinator.async_write_register = AsyncMock()
+    entry = MagicMock()
+    entry.runtime_data.coordinator = coordinator
+
+    added: list = []
+    await async_setup_entry(MagicMock(), entry, MagicMock(side_effect=added.extend))
+    assert not [e for e in added if getattr(e, "_attr_translation_key", None) == "dhw_priority_charge"]
 
 
 def test_1_7_acknowledge_register_is_the_coil() -> None:
@@ -299,28 +361,4 @@ async def test_1_7_acknowledge_button_writes_coil_3000() -> None:
 
 
 def test_1_7_coil_registers_have_german_names() -> None:
-    assert _get_german_name("demand_heating_17") == "Anforderung Heizen"
-    assert _get_german_name("demand_cooling_17") == "Anforderung Kühlen"
-    assert _get_german_name("demand_dhw_17") == "Anforderung Vorrangladung"
     assert _get_german_name("error_acknowledge") == "Fehlerquittierung"
-
-
-def test_1_7_demand_coils_are_polled_with_their_entities() -> None:
-    """The entity-aware polling plan includes the coils like any register
-    whose entity is enabled."""
-    from custom_components.idm_heatpump.polling_plan import build_required_register_names
-
-    class _Entry:
-        unique_id = "entry-1_demand_heating_17"
-        entity_id = "binary_sensor.idm_anforderung_heizen"
-        disabled_by = None
-        config_entry_id = "entry-1"
-
-    class _Registry:
-        def __init__(self) -> None:
-            self.entities = {"binary_sensor.idm_anforderung_heizen": _Entry()}
-
-    known = {"demand_heating_17", "demand_cooling_17", "demand_dhw_17", "outdoor_temp"}
-    required = build_required_register_names(_Registry(), "entry-1", known)
-    assert required is not None
-    assert "demand_heating_17" in required

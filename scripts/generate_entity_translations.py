@@ -70,6 +70,7 @@ def _load_module(name: str, path: Path) -> ModuleType:
 entity_names = _load_module("idm_entity_names", INTEGRATION / "entity_names.py")
 adapter_names = _load_module("idm_adapter_names", INTEGRATION / "adapter_names.py")
 adapter_glt = _load_module("idm_adapter_glt", INTEGRATION / "adapter_glt.py")
+adapter_registers = _load_module("idm_adapter_registers", INTEGRATION / "adapter_registers.py")
 
 
 def _metadata_names() -> dict[str, str]:
@@ -138,6 +139,12 @@ def _platforms_for(name: str, register: Any) -> tuple[str, ...]:
     write_only = bool(register.write_only)
     binary = bool(register.binary) or name.endswith("_relay")
     glt = adapter_glt.is_glt_measurement(name)
+
+    if name in adapter_registers.MOMENTARY_COIL_REGISTERS:
+        # Momentary command coils (issue #319) are never state entities; the
+        # priority-charge coil c3003 is a button with its own DERIVED_NAMES
+        # key. Mirrors the exclusion in library_adapter.get_library_binary_sensors.
+        return ()
 
     platforms: list[str] = []
     if binary and not writable:

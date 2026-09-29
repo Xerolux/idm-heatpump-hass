@@ -1022,6 +1022,8 @@ Die Regler Navigator 1.0/1.7 verwenden ein anderes Registerlayout: Dieselbe Adre
 | 2148 | Bivalenzpunkt 2 | `bivalence_point_2_17` | INT16 | °C | RW · EEPROM |  |
 | 2150 | Betriebsart Solar | `solar_operating_mode_17` | UINT16 | — | RW · EEPROM |  |
 | 2152–2153 | Warmwasser Sollwert | `dhw_setpoint` | FLOAT | °C | RW · EEPROM |  |
+| 3000 | Fehlerquittierung | `error_acknowledge` | BOOL | — | W · write-only |  |
+| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | W · write-only |  |
 | 4122–4123 | Elektrische Leistungsaufnahme Wärmepumpe | `power_consumption_hp` | FLOAT | kW | R | PV-Supplement |
 
 <!-- END GENERATED REGISTER REFERENCE -->

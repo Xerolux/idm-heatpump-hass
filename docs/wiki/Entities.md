@@ -488,22 +488,23 @@ description.
 | `dhw_demand` | 1093 | DHW demand active |
 | `calculated_pv_surplus_operation` | derived | Heat pump running on signalled PV surplus (see PV / Energy Management) |
 
-### Navigator 1.0/1.7 — demand coils (c3001–c3003)
+### Navigator 1.0/1.7 — momentary coils (c3000/c3003)
 
-The 1.x family reports its live demand status through the official coil block
-(ma_de_812049 Rev.1), read with Modbus function code 01. These entities exist
-only on a detected Navigator 1.0/1.7:
+The 1.x coil block (ma_de_812049 Rev.1) consists of momentary command bits,
+not status signals: the controller executes a request the moment the bit is
+set and the bit immediately falls back to 0 (verified on real 1.7 hardware,
+issue #319). The coils therefore carry no state entities:
 
-| Entity | Coil | Description |
-|--------|------|-------------|
-| `demand_heating_17` | c3001 | *Anforderung Heizen* — heating demand active |
-| `demand_cooling_17` | c3002 | *Anforderung Kühlen* — cooling demand active |
-| `demand_dhw_17` | c3003 | *Anforderung Vorrangladung* — DHW priority charge demand active |
-
-The acknowledge coil c3000 has no sensor: it backs the **Acknowledge errors**
-button (see [Services](Services.md)), which sends a single-coil write
-(function code 05) on the 1.x family and a holding-register write on the
-shared Navigator 2.0/10 family.
+- **c3003 — Anforderung Vorrangladung** backs the **Request DHW priority
+  charge** button (see [Button](#button)): a single-coil write of ON
+  (function code 05), the 1.x hot-water boost. No switch exists by design —
+  a switch would also write OFF, which a momentary command bit must never
+  receive.
+- **c3000 — Störung quittieren** backs the **Acknowledge errors** button
+  (see [Services](Services.md)), single-coil write (FC05) on the 1.x family
+  and holding-register write on the shared Navigator 2.0/10 family.
+- **c3001/c3002 — Anforderung Heizen/Kühlen** are not exposed: requesting
+  heating or cooling is what the operating-mode selects are for.
 
 ---
 
@@ -649,6 +650,12 @@ Uses the same coordinator write path as climate entities.
 A single button (`button.idm_heatpump_acknowledge_errors`) acknowledges active
 errors on the heat pump by writing `1` to the `error_acknowledge` write-only
 register. Always available so automations can trigger on alarm state changes.
+
+On a detected Navigator 1.0/1.7 a second button
+(`button.idm_heatpump_request_dhw_priority_charge`, *Vorrangladung anfordern*)
+requests a DHW priority charge: a single FC05 write of ON to coil c3003.
+Manual use only — the official table puts the coil block under the EEPROM
+note, so it must not be driven by a schedule or a timed automation.
 
 ---
 

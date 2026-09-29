@@ -1018,9 +1018,7 @@ The Navigator 1.0/1.7 controllers use a different register layout: the same addr
 | 2150 | Betriebsart Solar | `solar_operating_mode_17` | UINT16 | — | RW · EEPROM |  |
 | 2152–2153 | Warmwasser Sollwert | `dhw_setpoint` | FLOAT | °C | RW · EEPROM |  |
 | 3000 | Fehlerquittierung | `error_acknowledge` | BOOL | — | W · write-only |  |
-| 3001 | Anforderung Heizen | `demand_heating_17` | BOOL | — | R |  |
-| 3002 | Anforderung Kühlen | `demand_cooling_17` | BOOL | — | R |  |
-| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | R |  |
+| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | W · write-only |  |
 | 4122–4123 | Elektrische Leistungsaufnahme Wärmepumpe | `power_consumption_hp` | FLOAT | kW | R | PV supplement |
 
 <!-- END GENERATED REGISTER REFERENCE -->
