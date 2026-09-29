@@ -67,10 +67,15 @@ class TestConnectionModeSensor:
         assert attributes["configured_mode"] == "auto"
         assert attributes["web_variant"] == "nav10"
 
-    def test_state_options_are_the_three_combinations(self) -> None:
+    def test_no_enum_options_without_enum_device_class(self) -> None:
+        """HA 2026.8+ rejects options on sensors without the ENUM device class.
+
+        The mode sensor deliberately keeps plain string states (they are
+        identical in every language), so it must not declare options.
+        """
         mode = connection_sensor_entities(_coordinator())[0]
 
-        assert set(mode._attr_options) == {STATE_MODBUS_AND_WEB, STATE_MODBUS_ONLY, STATE_WEB_ONLY}
+        assert getattr(mode, "_attr_options", None) is None
 
 
 class TestWebLastSuccessSensor:
