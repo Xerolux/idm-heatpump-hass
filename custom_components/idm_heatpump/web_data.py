@@ -514,6 +514,33 @@ def _is_authentication_error(err: Exception) -> bool:
     return err.__class__.__name__ == "IdmWebAuthenticationError"
 
 
+#: Web value name -> Modbus register name, for values the register map and
+#: the web interface both deliver under different names (verified against the
+#: Navigator 10 register map). The web-only mode bridges these into the
+#: coordinator snapshot so register-keyed consumers (calculated sensors, the
+#: KNX bridge) keep working without a Modbus connection.
+WEB_TO_REGISTER_ALIASES: dict[str, str] = {
+    "flow_temperature": "hp_flow_temp",
+    "return_temperature": "hp_return_temp",
+    "outside_air_temperature": "outdoor_temp",
+    "water_temp_top": "dhw_temp_top",
+    "water_temp_bottom": "dhw_temp_bottom",
+    "compressor_1": "compressor_status_1",
+}
+
+
+def web_to_register_value(name: str) -> str | None:
+    """Return the register name a web value can bridge to, if any."""
+    direct = WEB_TO_REGISTER_ALIASES.get(name)
+    if direct is not None:
+        return direct
+    if name.startswith("flow_temp_HK_") and len(name) == len("flow_temp_HK_X"):
+        return f"hc_{name[-1].lower()}_flow_temp"
+    if name.startswith("room_temperature_HK_") and len(name) == len("room_temperature_HK_X"):
+        return f"hc_{name[-1].lower()}_room_temp"
+    return None
+
+
 def web_pin_configured(pin: str | None) -> bool:
     """Return whether optional local web access can be attempted."""
     if not pin:

@@ -457,8 +457,10 @@ class TestAsyncSetupWebOnlyEntry:
         assert result is True
         assert isinstance(entry.runtime_data, IdmHeatpumpData)
         assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
-        # Web-only mode exposes only sensors and runs with an empty register set.
-        assert entry.runtime_data.coordinator._registers == []
+        # Web-only mode exposes only web sensors: the register map is loaded
+        # metadata-only (name resolution for the web register bridge), but no
+        # register entity exists and nothing polls Modbus.
+        assert entry.runtime_data.coordinator.sensor_descriptions == []
         assert entry.runtime_data.coordinator.update_interval is None
         mock_hass.config_entries.async_forward_entry_setups.assert_called_once()
         forwarded_platforms = mock_hass.config_entries.async_forward_entry_setups.call_args.args[1]
@@ -525,6 +527,87 @@ class TestAsyncSetupWebOnlyEntry:
         assert result is True
         assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
         assert entry.runtime_data.coordinator.model_name == MODEL
+
+
+class TestWebOnlyRegisterBridge:
+    """Web-only entries load the register map and can serve KNX from it."""
+
+    def _make_web_only_entry(self, *, knx=False):
+        entry = MagicMock()
+        entry.entry_id = "bridge_entry"
+        entry.title = "IDM Web"
+        entry.data = {
+            "host": "192.168.1.100",
+            "port": 502,
+            "slave_id": 1,
+            "web_pin": "1234",
+            "web_host": "192.168.1.100",
+        }
+        entry.options = {
+            "connection_mode": "web_only",
+            "scan_interval": 10,
+            "heating_circuits": ["a"],
+            "zone_count": 0,
+            "zone_rooms": {},
+            "web_enabled": True,
+            "web_scan_interval": 10,
+        }
+        if knx:
+            entry.options["knx_bridge"] = True
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    async def test_web_only_loads_the_register_map_metadata_only(self, mock_hass):
+        supplement = MagicMock(spec=IdmWebSupplement)
+        supplement.model_name = "Navigator 10"
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=MagicMock()),
+            patch(
+                "custom_components.idm_heatpump.async_read_web_supplement",
+                AsyncMock(return_value=supplement),
+            ),
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+        ):
+            entry = self._make_web_only_entry()
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        coordinator = entry.runtime_data.coordinator
+        # The register map resolved real register names (metadata-only)...
+        assert coordinator.get_register("outdoor_temp") is not None
+        # ...but no register entity exists and nothing polls Modbus.
+        assert coordinator.sensor_descriptions == []
+
+    async def test_web_only_starts_the_knx_bridge_when_enabled(self, mock_hass):
+        supplement = MagicMock(spec=IdmWebSupplement)
+        supplement.model_name = "Navigator 10"
+        bridge = MagicMock()
+        bridge.async_start = AsyncMock()
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=MagicMock()),
+            patch(
+                "custom_components.idm_heatpump.async_read_web_supplement",
+                AsyncMock(return_value=supplement),
+            ),
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+            patch("custom_components.idm_heatpump.KnxBridge", return_value=bridge) as knx_cls,
+        ):
+            entry = self._make_web_only_entry(knx=True)
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        bridge.async_start.assert_awaited_once()
+        assert entry.runtime_data.knx_bridge is bridge
+        # Web-only KNX never accepts bus commands (their write path is
+        # Modbus-only); the bridge is constructed with receive disabled.
+        constructed_config = knx_cls.call_args[0][2]
+        assert constructed_config.receive_enabled is False
 
 
 class TestConnectionMode:
