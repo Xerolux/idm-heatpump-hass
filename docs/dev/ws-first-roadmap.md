@@ -31,9 +31,12 @@ Status: 2026-09-27 · Maintainer: Xerolux · Audience: an AI assistant or develo
 >   it only as a weekly timetable type (`ttboost`), and writing whole
 >   timetable strings is out of scope (documented in changelog and wiki).
 >
-> Remaining: **Phase 5** (technician profile, userlevel 4) — optional, and
-> per this roadmap it requires its own privacy and safety review before
-> anything is built.
+> **Phase 5 will not be built (maintainer decision, 2026-09-29).** Users
+> who hold the per-installation technician code operate level 4 themselves
+> — on the controller display or through the official web UI — exactly as
+> they do today with the L1/L2 codes this integration computes as sensors
+> for manual entry. The WebSocket-first roadmap is thereby **closed**: read
+> and write at the end-user level are complete.
 picking this work up **cold** — this document is self-contained, but it expects
 you to have read both repositories' `AGENTS.md` first.
 
