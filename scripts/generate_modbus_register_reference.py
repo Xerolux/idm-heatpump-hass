@@ -279,7 +279,6 @@ def _navigator_17_section(pinned_version: str, display_name: object) -> list[str
     return section
 
 
-
 def _updated_document() -> tuple[str, str]:
     current = DOC_PATH.read_text(encoding="utf-8")
     generated = _build_reference()

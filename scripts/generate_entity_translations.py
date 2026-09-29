@@ -175,7 +175,7 @@ def _sample_register_name(key: str, placeholders: dict[str, str], names: list[st
 
 def _german_template(register_name: str, placeholders: dict[str, str], overrides: dict[str, str]) -> str:
     """Return the German name of a register with its indexes turned into placeholders."""
-    name = overrides.get(register_name) or adapter_names._get_german_name(register_name)  # noqa: SLF001
+    name = overrides.get(register_name) or adapter_names._get_german_name(register_name)
     for placeholder, token in (
         ("circuit", f"HK {SAMPLE_CIRCUIT.upper()}"),
         ("zone", f"Zone {SAMPLE_ZONE}"),

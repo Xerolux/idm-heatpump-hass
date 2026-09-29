@@ -573,9 +573,7 @@ def _replace_title(document: str, title: str) -> str:
     return updated
 
 
-def _render_markdown(
-    markdown_path: Path, slug: str, language: str = "en"
-) -> tuple[str, list[dict[str, object]]]:
+def _render_markdown(markdown_path: Path, slug: str, language: str = "en") -> tuple[str, list[dict[str, object]]]:
     result = subprocess.run(
         ["node", str(MARKDOWN_RENDERER), str(markdown_path), slug, language],
         check=True,
@@ -675,9 +673,7 @@ def _documentation_page_navigation(current_page: DocumentationPage, language: st
     return f"{previous_link}{next_link}"
 
 
-def _documentation_structured_data(
-    current_page: DocumentationPage, canonical_url: str, language: str
-) -> str:
+def _documentation_structured_data(current_page: DocumentationPage, canonical_url: str, language: str) -> str:
     breadcrumb_items = [
         {
             "@type": "ListItem",
@@ -786,10 +782,10 @@ def _english_homepage(german_homepage: str) -> str:
         'href="docs/': 'href="../docs/',
         # German anchors on the mapped-back English targets revert to the
         # English heading slugs (the English pages keep English headings).
-        '../docs/smart-energy-and-comfort/#persistente-energie-statistiken': '../docs/smart-energy-and-comfort/#persistent-energy-statistics',
-        '../docs/smart-energy-and-comfort/#optionale-pv-uberschuss-warmwasser-automation': '../docs/smart-energy-and-comfort/#optional-pv-surplus-dhw-automation',
-        '../docs/smart-energy-and-comfort/#optionaler-idm-health-monitor': '../docs/smart-energy-and-comfort/#optional-idm-health-monitor',
-        '../docs/configuration/#optionen': '../docs/configuration/#options',
+        "../docs/smart-energy-and-comfort/#persistente-energie-statistiken": "../docs/smart-energy-and-comfort/#persistent-energy-statistics",
+        "../docs/smart-energy-and-comfort/#optionale-pv-uberschuss-warmwasser-automation": "../docs/smart-energy-and-comfort/#optional-pv-surplus-dhw-automation",
+        "../docs/smart-energy-and-comfort/#optionaler-idm-health-monitor": "../docs/smart-energy-and-comfort/#optional-idm-health-monitor",
+        "../docs/configuration/#optionen": "../docs/configuration/#options",
         'href="docs/#': 'href="../docs/#',
         'href="en/" hreflang="en" aria-label="English version" data-language-link>EN</a>': 'href="../" hreflang="de" aria-label="German version" data-language-link>DE</a>',
         '"inLanguage": "de"': '"inLanguage": "en"',
@@ -833,9 +829,7 @@ def _language_alternates(current_page: DocumentationPage, language: str) -> str:
     )
 
 
-def _build_documentation_page(
-    template: str, current_page: DocumentationPage, language: str = "en"
-) -> str:
+def _build_documentation_page(template: str, current_page: DocumentationPage, language: str = "en") -> str:
     if language == "de" and not _german_page_available(current_page):
         raise FileNotFoundError(f"Missing German wiki page: {GERMAN_WIKI_DIR / current_page['file']}")
     markdown_source = WIKI_DIR / current_page["file"] if language == "en" else GERMAN_WIKI_DIR / current_page["file"]
@@ -905,9 +899,7 @@ def _build_documentation_page(
     page = _replace_element_text(page, "data-navigation", _documentation_navigation(current_page, language))
     page = _replace_element_text(page, "data-breadcrumbs", _documentation_breadcrumbs(current_page, language))
     page = _replace_element_text(page, "data-toc", _documentation_toc(headings))
-    page = _replace_element_text(
-        page, "data-page-navigation", _documentation_page_navigation(current_page, language)
-    )
+    page = _replace_element_text(page, "data-page-navigation", _documentation_page_navigation(current_page, language))
     page = _replace_element_text(page, "data-article", markdown_html)
     page = page.replace("data-article>", f'data-article data-rendered-slug="{current_page["slug"]}">', 1)
     page = _replace_tag_attribute(
@@ -919,7 +911,9 @@ def _build_documentation_page(
         f"{'de/' if language == 'de' else ''}{current_page['file']}",
     )
     structured_data = _documentation_structured_data(current_page, canonical_url, language)
-    page = page.replace("</head>", f"    {_language_alternates(current_page, language)}    {structured_data}\n  </head>", 1)
+    page = page.replace(
+        "</head>", f"    {_language_alternates(current_page, language)}    {structured_data}\n  </head>", 1
+    )
     return page
 
 
@@ -1016,15 +1010,15 @@ def build_site(output: Path) -> None:
             if language == "de" and not _german_page_available(documentation_page):
                 continue
             if documentation_page["slug"] == "home":
-                docs_path = output / "docs" / "index.html" if language == "en" else output / "docs" / "de" / "index.html"
+                docs_path = (
+                    output / "docs" / "index.html" if language == "en" else output / "docs" / "de" / "index.html"
+                )
             elif language == "en":
                 docs_path = output / "docs" / documentation_page["slug"] / "index.html"
             else:
                 docs_path = output / "docs" / "de" / documentation_page["slug"] / "index.html"
             docs_path.parent.mkdir(parents=True, exist_ok=True)
-            docs_page = _inject_metadata(
-                _build_documentation_page(docs_template, documentation_page, language)
-            )
+            docs_page = _inject_metadata(_build_documentation_page(docs_template, documentation_page, language))
             docs_path.write_text(docs_page, encoding="utf-8")
 
     english_path = output / "en" / "index.html"

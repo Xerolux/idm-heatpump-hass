@@ -1,0 +1,22 @@
+name: Sensitive data guard
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sensitive-data-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  scan:
+    name: Scan for credentials and personal data
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # guardrails-disable-line
+      - name: Scan for IPs, PINs, myIDM ids, tokens and personal data
+        run: python3 scripts/check_sensitive_data.py

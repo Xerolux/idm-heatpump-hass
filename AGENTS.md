@@ -160,6 +160,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_repairs.py
 │   ├── test_room_temp_forwarding.py
 │   ├── test_scale_load.py
+│   ├── test_sensitive_data.py
 │   ├── test_services.py
 │   ├── test_versions.py
 │   ├── test_web_binary_sensors.py
