@@ -111,7 +111,7 @@ class TestDetection:
         assert [f.category for f in findings] == ["vendor-test-host"]
 
     def test_binary_files_are_skipped(self, tmp_path: Path) -> None:
-        address = ".".join(["192", "168", "178", "99"])
+        address = ".".join(["192", "168", "178", "99"])  # noqa: FLY002
         path = tmp_path / "blob.bin"
         path.write_bytes(address.encode() + b"\x00rest")
 
