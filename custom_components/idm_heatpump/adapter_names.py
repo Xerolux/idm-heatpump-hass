@@ -73,6 +73,10 @@ _GERMAN_NAMES: dict[str, str] = {
     "internal_message": "Interne Meldung",
     "hp_operating_mode": "Wärmepumpen Betriebsart",
     "heating_demand": "Heizanforderung",
+    # Register description for the generated Modbus register reference; the
+    # coil itself is a write-only command and carries no entity (its button
+    # name lives in DERIVED_NAMES).
+    "demand_dhw_17": "Anforderung Vorrangladung",
     "cooling_demand": "Kühlanforderung",
     "dhw_demand": "Warmwasseranforderung",
     "compressor_status_1": "Verdichter 1",

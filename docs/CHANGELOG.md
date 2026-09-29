@@ -13,6 +13,34 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b17] - 2026-09-29
+
+The second step of the Navigator 1.0/1.7 coil rework (issue #319): the
+device-logic dependency moves to `idm-heatpump-api[web]==2.13.0`.
+
+### Changed
+
+- **The three demand-coil binary sensors are gone; c3003 becomes the
+  Vorrangladung button.** Real 1.7 hardware (issue #319) showed that the
+  Anforderung coils are momentary command bits, not status signals: the
+  controller executes a request the moment the bit is set and the bit
+  immediately falls back to 0, so the sensors added noise and one pointless
+  coil poll per update without ever being able to turn on. The exclusion is
+  name-based inside the integration, so it also covers older
+  idm-heatpump-api releases that still model the coils read-only.
+
+### Added
+
+- **Navigator 1.0/1.7: the Vorrangladung anfordern button** (`dhw_priority_charge`,
+  coil c3003 via FC05, exactly like the acknowledge button on c3000): the 1.x
+  hot-water priority-charge request. It writes ON exactly once - no switch is
+  offered by design, because a switch would also write 0, which a momentary
+  command bit must never receive. Manual use only: the official table puts
+  the coil block under the EEPROM note (max. 300 000 write cycles per
+  register), so it must not be driven by a schedule or a timed automation.
+  The operating state of the three functions remains visible through the
+  Wärmepumpen Betriebsart sensor (input register 1501).
+
 ## [0.20.0-b16] - 2026-09-29
 
 ### Added
