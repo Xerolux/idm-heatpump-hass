@@ -354,6 +354,37 @@ Three further read-only WebSocket controllers are evaluated on every web poll
   technician codes are computed from the time shown on the display — this
   sensor makes the drift visible.
 
+#### System controllers (Navigator 10)
+
+Four read-only WebSocket controllers that the shipped frontend uses for its
+performance page, weather tile, iON status and energy-flow widget are part of
+the web supplement (`idm-heatpump-api` 2.12.0 or newer). They are additive —
+the frames are read with the regular web poll, and every entity reports
+unavailable until its frame has landed:
+
+- **Heat pump power consumption (Web)** (`web_hp_power_consumption`): the
+  live electrical consumption power in kW, with the performance mode, the
+  system mode, the measurement source, the battery flag and the production
+  flow temperature as attributes.
+- **Heat pump environment power (Web)** (`web_hp_power_environment`): the
+  source-side power in kW, with the environment source and the source inlet
+  temperature as attributes.
+- **Heating rod (Web)** (`web_hp_heating_rod`): binary sensor for the
+  heating-rod state of the performance page.
+- **Grid power (Web)** (`web_energyflow_grid`) and **PV power (Web)**
+  (`web_energyflow_pv`): the energy-flow widget's grid and PV power in kW —
+  placed on the PV subdevice when the device hierarchy is enabled. Firmware
+  `T_NAV10_20.24-1580` removed the `house` channel from the frame; when an
+  older firmware still delivers it, it is exposed as an attribute.
+- **Weather forecast (Web)** (`web_weather_forecast`): the controller's own
+  forecast, which it pulls through the myiDM service — today's temperature as
+  the state, and today plus up to six forecast days (min/max/actual
+  temperature, cloud cover, rain probability, sunshine seconds, weather
+  symbol, wind speed) as attributes.
+- **iON optimization active (Web)** (`web_ion_active`): diagnostic binary
+  sensor for IDM's cloud energy optimization, with the enable setting and the
+  subscription status as attributes.
+
 #### Web-only controls (Navigator 10, Phase 4)
 
 A **web-only** entry is no longer purely read-only: with the WebSocket

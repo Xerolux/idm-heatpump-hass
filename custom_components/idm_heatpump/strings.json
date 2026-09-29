@@ -1400,6 +1400,12 @@
       "web_hotwater_station_flow_switch": {
         "name": "Hot water station flow switch (Web)"
       },
+      "web_hp_heating_rod": {
+        "name": "Heating rod (Web)"
+      },
+      "web_ion_active": {
+        "name": "iON optimization active (Web)"
+      },
       "web_pump_heating_circuit": {
         "name": "Heating circuit {circuit} pump (Web)"
       },
@@ -2313,6 +2319,12 @@
       "web_dhw_status_info": {
         "name": "Hot water status info (Web)"
       },
+      "web_energyflow_grid": {
+        "name": "Grid power (Web)"
+      },
+      "web_energyflow_pv": {
+        "name": "PV power (Web)"
+      },
       "web_evaporation_temperature": {
         "name": "Evaporation temperature (Web)"
       },
@@ -2378,6 +2390,12 @@
       },
       "web_hotwater_temperature": {
         "name": "Hot water temperature (Web)"
+      },
+      "web_hp_power_consumption": {
+        "name": "Heat pump power consumption (Web)"
+      },
+      "web_hp_power_environment": {
+        "name": "Heat pump environment power (Web)"
       },
       "web_infosystem_notification_count": {
         "name": "Info system notification count (Web)"
@@ -2489,6 +2507,9 @@
       },
       "web_water_temp_top": {
         "name": "Tank temperature top (Web)"
+      },
+      "web_weather_forecast": {
+        "name": "Weather forecast (Web)"
       },
       "zone_dehumidification": {
         "name": "Zone {zone} dehumidification"

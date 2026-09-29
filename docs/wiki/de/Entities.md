@@ -267,6 +267,37 @@ ausgewertet (live verifiziert auf Firmware jsonVersion 11, September 2026):
   nach der auf dem Display angezeigten Zeit berechnet — dieser Sensor macht
   den Drift sichtbar.
 
+#### System-Controller (nur Navigator 10)
+
+Vier nur lesende WebSocket-Controller, die das mitgelieferte Frontend für
+seine Leistungsseite, Wetterkachel, den iON-Status und das Energiefluss-Widget
+nutzt, sind Teil des Web-Supplements (`idm-heatpump-api` 2.12.0 oder neuer).
+Sie sind additiv — die Frames werden mit dem regulären Web-Poll gelesen, und
+jede Entität meldet *unavailable*, bis ihr Frame angekommen ist:
+
+- **Wärmepumpen-Verbrauchsleistung (Web)** (`web_hp_power_consumption`): die
+  momentane elektrische Verbrauchsleistung in kW, mit Leistungsmodus,
+  Betriebsart, Messquelle, Batterie-Flag und der Produktions-Vorlauftemperatur
+  als Attribute.
+- **Wärmepumpen-Umgebungsleistung (Web)** (`web_hp_power_environment`): die
+  leistungsseitige Quellenleistung in kW, mit der Quellen-Messquelle und der
+  Quellen-Eintrittstemperatur als Attribute.
+- **Heizstab (Web)** (`web_hp_heating_rod`): Binärsensor für den Heizstab-
+  Zustand der Leistungsseite.
+- **Netzleistung (Web)** (`web_energyflow_grid`) und **PV-Leistung (Web)**
+  (`web_energyflow_pv`): Netz- und PV-Leistung des Energiefluss-Widgets in
+  kW — beim aktivierten Geräte-Hierarchie-Modus auf dem PV-Subgerät. Die
+  Firmware `T_NAV10_20.24-1580` hat den `house`-Kanal aus dem Frame entfernt;
+  liefern ältere Firmware-Versionen ihn noch, steht er als Attribut bereit.
+- **Wettervorhersage (Web)** (`web_weather_forecast`): die eigene Vorhersage
+  des Reglers, die er über den myiDM-Dienst bezieht — die heutige Temperatur
+  als Zustand, heute plus bis zu sechs Prognosetage (Temperatur min/max/ist,
+  Bewölkung, Regenwahrscheinlichkeit, Sonnenminuten, Wettersymbol, Wind) als
+  Attribute.
+- **iON-Optimierung aktiv (Web)** (`web_ion_active`): diagnostischer
+  Binärsensor für IDMs Cloud-Energioptimierung, mit aktivierter Einstellung
+  und Abo-Status als Attribute.
+
 #### Web-only-Steuerung (Navigator 10, Phase 4)
 
 Ein **Nur-Web**-Eintrag ist nicht mehr rein lesend: Mit verbundener

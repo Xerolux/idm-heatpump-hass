@@ -378,6 +378,8 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_controller_online_hours": ("Controller online time (Web)", "Regler Online (Web)"),
         "web_controller_clock": ("Controller clock (Web)", "Regler-Uhrzeit (Web)"),
         "web_dhw_status_info": ("Hot water status info (Web)", "Warmwasser Statusinfo (Web)"),
+        "web_energyflow_grid": ("Grid power (Web)", "Netzleistung (Web)"),
+        "web_energyflow_pv": ("PV power (Web)", "PV-Leistung (Web)"),
         "web_heat_quantity_heating_today": ("Heat quantity heating today (Web)", "Wärmemenge Heizen heute (Web)"),
         "web_heat_quantity_heating_total": ("Heat quantity heating total (Web)", "Wärmemenge Heizen gesamt (Web)"),
         "web_heat_quantity_hotwater_today": (
@@ -434,6 +436,14 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_hotwater_station_flowmeter": ("Hot water station flow (Web)", "Warmwasserstation Durchfluss (Web)"),
         "web_hotwater_station_pump_percentage": ("Hot water station pump (Web)", "Warmwasserstation Pumpe (Web)"),
         "web_hotwater_tapping_heat_quantity": ("Tapping heat quantity (Web)", "Wärmemenge Zapfung (Web)"),
+        "web_hp_power_consumption": (
+            "Heat pump power consumption (Web)",
+            "Wärmepumpen-Verbrauchsleistung (Web)",
+        ),
+        "web_hp_power_environment": (
+            "Heat pump environment power (Web)",
+            "Wärmepumpen-Umgebungsleistung (Web)",
+        ),
         "web_hotwater_temperature": ("Hot water temperature (Web)", "Warmwassertemperatur (Web)"),
         "web_infosystem_notification_count": (
             "Info system notification count (Web)",
@@ -511,6 +521,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_verdamper_pressure": ("Evaporator pressure (Web)", "Verdampfer Druck (Web)"),
         "web_water_temp_bottom": ("Tank temperature bottom (Web)", "Speichertemperatur unten (Web)"),
         "web_water_temp_top": ("Tank temperature top (Web)", "Speichertemperatur oben (Web)"),
+        "web_weather_forecast": ("Weather forecast (Web)", "Wettervorhersage (Web)"),
     },
     "number": {
         "web_dhw_setpoint": ("Hot water setpoint (Web)", "Warmwasser-Solltemperatur (Web)"),
@@ -554,6 +565,8 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
             "Zweiter oder dritter Wärmeerzeuger (Web)",
         ),
         "web_high_pressure_error": ("High-pressure fault (Web)", "Hochdruckstörung (Web)"),
+        "web_hp_heating_rod": ("Heating rod (Web)", "Heizstab (Web)"),
+        "web_ion_active": ("iON optimization active (Web)", "iON-Optimierung aktiv (Web)"),
         "web_hotwater_circulation_pump": ("Hot water circulation pump (Web)", "Warmwasser-Zirkulationspumpe (Web)"),
         "web_hotwater_station_flow_switch": (
             "Hot water station flow switch (Web)",
