@@ -14,8 +14,19 @@ und sie ergänzen einander. Tiefenwissen steht auf
 | Pfad | Port | Anmeldung | Familien | Rolle |
 |---|---|---|---|---|
 | **Modbus TCP** | 502 (Unit 1) | keine | 1.0/1.7 · 2.0 · 10/Pro | Das Rückgrat: volle Register-Telemetrie, *alle* validierten Schreibvorgänge |
-| **Web (CSRF)** | 80 | Netzwerk-Code + CSRF-Token | 2.0 | Nur-Lese-Ergänzung auf der älteren Oberfläche |
+| **Web, alte Generation** (PHP, ohne CSRF) | 80 | Netzwerk-Code, einfache Login-Sitzung | 2.0 (ältere Firmware) | Nur-Lese-Ergänzung |
+| **Web, neuere Generation** (PHP + CSRF) | 80 | Netzwerk-Code + CSRF-Token | 2.0 (neuere Firmware) | Nur-Lese-Ergänzung |
 | **WebSocket** | 61220 | lokale PIN (`SYSLPIN`) | 10 / Pro | Vollwertiger zweiter Pfad: Werte, die Modbus fehlen + validierte Schreibvorgänge |
+
+Der Navigator-2.0-Web-Client der Integration deckt beide Web-Generationen
+transparent ab: Er meldet sich mit dem CSRF-Token an, wenn das
+Anmeldeformular eines liefert, und fällt sonst auf die einfache
+Cookie-Sitzung älterer Firmware zurück; danach werden die PHP-Datenseiten
+(`/data/settings.php`, `/data/heatpump.php`, `/data/info.php`, …) geprüft.
+Die Endpunktmenge und die Statistikseiten wurden gegen die
+Community-Integration
+[AndyNew2/hacs-idm-hpweb](https://github.com/AndyNew2/hacs-idm-hpweb)
+abgegleichen.
 
 Der Verbindungsmodus entscheidet, welche Pfade ein Eintrag nutzt:
 `Automatisch` (empfohlen — Modbus + Web-Ergänzung), `Modbus + Web-Ergänzung`
@@ -28,12 +39,14 @@ Modbus` (die Weboberfläche wird nie kontaktiert). Siehe
 Legende: **R** lesbar · **W** schreibbar · **R/W** beides · **—** auf diesem
 Pfad nicht vorhanden. Firmware-abhängige Zellen sagen das.
 
-| Fähigkeit | 1.0/1.7 Modbus | 2.0 Modbus | 2.0 Web (CSRF) | 10/Pro Modbus | 10/Pro WebSocket |
+| Fähigkeit | 1.0/1.7 Modbus | 2.0 Modbus | 2.0 Web (alt / CSRF) | 10/Pro Modbus | 10/Pro WebSocket |
 |---|---|---|---|---|---|
 | Modell- und Firmware-Erkennung | R | R | R (Ergänzungs-Hinweis) | R | R |
 | Kern-Telemetrie (Temperaturen, Status, Pumpen, Ventile) | R (1.x-Map) | R | R | R | R (64 Werte, Setting-Seiten) |
 | Elektrische / thermische Leistung (COP-Eingänge) | — | teils *(nicht bestätigt)* | — | **R** | **—** *(die Firmware liefert beides nicht)* |
 | Energiezähler (Lebens-kWh) | — | R *(wo vorhanden)* | — | R | R (Wärmemengen, gesamt + heute) |
+| Statistik-Seiten (Laufzeit, Wärme, elektrisch) | — | — | R *(statistics.php; von dieser Integration nicht gelesen)* | — | R (Statistik-Blöcke) |
+| Regler-Uhr stellen | — | — | W *(community-bestätigte Zeitfunktion)* | — | W *(Setting 4537, capture-bestätigt)* |
 | Anforderungsgrund inkl. PV (Display-Wortlaut) | — | — | — | — | **R** (`home/detail`) |
 | Meldungstexte (Infosystem) | nur Fehlercodes | nur Fehlercodes | — | nur Fehlercodes | **R** (`notification`, mit Texten) |
 | Heißgas, Durchfluss, Platine, Drücke | — | teils | teils | teils | **R** |
