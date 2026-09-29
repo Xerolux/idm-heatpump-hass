@@ -21,7 +21,8 @@ def _write_sample(directory: Path, content: str) -> Path:
 
 class TestDetection:
     def test_private_ip_is_flagged(self, tmp_path: Path) -> None:
-        address = ".".join(["192", "168", "178", "99"])
+        # constructed so this test file itself stays clean for the guard
+        address = ".".join(["192", "168", "178", "99"])  # noqa: FLY002
         path = _write_sample(tmp_path, f"host = {address}\n")
 
         findings = guard.scan_file(path, frozenset(), tmp_path)
