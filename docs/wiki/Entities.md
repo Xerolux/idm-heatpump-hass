@@ -394,6 +394,11 @@ official web UI. KNX bus commands route through the same web writes for the ever
 controls (system mode, hot-water setpoint, circuit mode/setpoint,
 acknowledge); other registers still require Modbus.
 
+On Navigator 2.0, the statistics pages deliver the same shape from the older
+web interface: **runtime / heat quantity / electrical energy, total per
+category (Web 2.0)** sensors — hours for runtime, kWh for the energy types,
+normalized with the page's own unit scale.
+
 If a firmware does not answer one of these controllers, the affected entities
 simply stay unavailable; the rest of the web snapshot is unaffected.
 

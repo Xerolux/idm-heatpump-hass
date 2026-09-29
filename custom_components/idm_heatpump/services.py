@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 import math
 from collections.abc import Mapping, Sequence
+from datetime import datetime
 from functools import partial
 from typing import TYPE_CHECKING
 
@@ -128,6 +129,18 @@ async def async_setup_services(hass: HomeAssistant) -> None:
         "set_system_mode",
         partial(_handle_set_system_mode, hass),
         schema=_SET_SYSTEM_MODE_SCHEMA,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "set_controller_clock",
+        partial(_handle_set_controller_clock, hass),
+        schema=vol.Schema(
+            {
+                vol.Optional("datetime"): vol.Any(vol.Coerce(str)),
+                vol.Optional("entity_id"): cv.entity_ids,
+                vol.Optional("entry_id"): cv.string,
+            }
+        ),
     )
     hass.services.async_register(
         DOMAIN,
@@ -331,6 +344,42 @@ async def _handle_set_system_mode(hass: HomeAssistant, call: ServiceCall) -> Non
         )
         allow_custom = True
     await _async_write_register(coordinator, reg, mode_val, allow_custom_register=allow_custom)
+
+
+async def _handle_set_controller_clock(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Set the Navigator clock to a given time (default: now).
+
+    The write goes through the local web interface on both variants
+    (Navigator 10: WebSocket setting 4537; Navigator 2.0: the SSETDATETIME
+    settings item) - there is no Modbus register for the clock.
+    """
+    coordinator = await _get_coordinator(hass, call)
+    supplement = coordinator.web_supplement
+    if supplement is None or supplement.web_variant not in ("nav10", "nav20"):
+        raise ServiceValidationError(
+            translation_domain=DOMAIN,
+            translation_key="web_clock_requires_web_supplement",
+        )
+    moment = call.data.get("datetime")
+    if isinstance(moment, str) and moment.strip():
+        try:
+            moment = datetime.fromisoformat(moment.strip().replace("Z", "+00:00"))
+        except ValueError as err:
+            raise ServiceValidationError(
+                translation_domain=DOMAIN,
+                translation_key="invalid_datetime",
+                translation_placeholders={"value": str(moment)},
+            ) from err
+    if not isinstance(moment, datetime):
+        # The controller clock stores local wall time (verified live: the
+        # status timestamp runs exactly the local offset ahead of UTC), so
+        # the default must be Home Assistant's local time, not UTC.
+        from homeassistant.util import dt as dt_util
+
+        moment = dt_util.now()
+    client = coordinator._web_write_client()
+    await client.set_datetime(moment)
+    await coordinator.async_refresh_web_supplement()
 
 
 async def _handle_acknowledge_errors(hass: HomeAssistant, call: ServiceCall) -> None:

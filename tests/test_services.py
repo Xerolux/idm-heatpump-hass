@@ -11,6 +11,7 @@ from custom_components.idm_heatpump.services import (
     _get_coordinator,
     _handle_acknowledge_errors,
     _handle_export_knx_group_addresses,
+    _handle_set_controller_clock,
     _handle_set_external_climate,
     _handle_set_external_power,
     _handle_set_system_mode,
@@ -59,7 +60,7 @@ class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
         # Core services, two DHW boost actions and the read-only AI action.
-        assert mock_hass.services.async_register.call_count == 10
+        assert mock_hass.services.async_register.call_count == 11
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -84,6 +85,7 @@ class TestServiceLifecycleInvariants:
             (DOMAIN, "cancel_dhw_boost"),
             (DOMAIN, "generate_ai_report"),
             (DOMAIN, "export_ai_dashboard"),
+            (DOMAIN, "set_controller_clock"),
         }
 
     async def test_setup_is_idempotent_when_already_registered(self, mock_hass):
@@ -298,6 +300,63 @@ def _shared_acknowledge_register():
         writable=True,
         write_only=True,
     )
+
+
+class TestSetControllerClock:
+    async def test_sets_clock_through_the_pooled_web_client(self, mock_hass):
+        from datetime import datetime as dt
+
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.web_supplement = MagicMock()
+        coord.web_supplement.web_variant = "nav10"
+        client = MagicMock()
+        client.set_datetime = AsyncMock()
+        coord._web_write_client = MagicMock(return_value=client)
+        coord.async_refresh_web_supplement = AsyncMock()
+        call = MagicMock()
+        call.data = {}
+
+        await _handle_set_controller_clock(mock_hass, call)
+
+        client.set_datetime.assert_awaited_once()
+        moment = client.set_datetime.await_args.args[0]
+        assert isinstance(moment, dt)
+        coord.async_refresh_web_supplement.assert_awaited_once()
+
+    async def test_without_web_supplement_is_rejected(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.web_supplement = None
+        call = MagicMock()
+        call.data = {}
+
+        with pytest.raises(ServiceValidationError):
+            await _handle_set_controller_clock(mock_hass, call)
+
+    async def test_explicit_datetime_string_is_parsed(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.web_supplement = MagicMock()
+        coord.web_supplement.web_variant = "nav20"
+        client = MagicMock()
+        client.set_datetime = AsyncMock()
+        coord._web_write_client = MagicMock(return_value=client)
+        coord.async_refresh_web_supplement = AsyncMock()
+        call = MagicMock()
+        call.data = {"datetime": "2026-09-29T12:30:00"}
+
+        await _handle_set_controller_clock(mock_hass, call)
+
+        moment = client.set_datetime.await_args.args[0]
+        assert moment.year == 2026 and moment.hour == 12
+
+    async def test_invalid_datetime_string_is_rejected(self, mock_hass):
+        coord = _make_coordinator_in_hass(mock_hass)
+        coord.web_supplement = MagicMock()
+        coord.web_supplement.web_variant = "nav10"
+        call = MagicMock()
+        call.data = {"datetime": "not-a-date"}
+
+        with pytest.raises(ServiceValidationError):
+            await _handle_set_controller_clock(mock_hass, call)
 
 
 class TestAcknowledgeErrorsWebRouting:

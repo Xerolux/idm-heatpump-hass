@@ -309,6 +309,11 @@ die autorisierte Web-Sitzung des Abfragezyklus und lesen den Zustand nach
 jedem Schreiben zurück, wie die offizielle Web-Oberfläche. Sollwerte und
 weitere Steuermöglichkeiten erfordern weiterhin Modbus.
 
+Auf dem Navigator 2.0 liefern die Statistik-Seiten dieselbe Form aus der
+älteren Weboberfläche: Sensoren **Laufzeit / Wärmemenge / elektrische
+Energie, gesamt je Kategorie (Web 2.0)** — Stunden für Laufzeiten, kWh für
+die Energiemengen, normalisiert mit der Einheitenskala der Seite selbst.
+
 Antwortet eine Firmware auf einen dieser Controller nicht, bleiben die
 betroffenen Entitäten einfach nicht verfügbar; der Rest der Web-Snapshots ist
 unbeeinflusst.

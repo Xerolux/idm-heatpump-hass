@@ -447,6 +447,35 @@ async def _read_optional_dhw_setpoint(
     return replace(supplement, dhw_setpoint=parameter)
 
 
+async def _read_optional_nav20_statistics(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 2.0 snapshot with the statistics pages.
+
+    The three statistics.php types (runtime, generated heat, electrical
+    energy) arrive as JSON with the page's own unit scale; the API
+    normalizes them to hours/kWh. Strictly optional: any failure keeps the
+    supplement unchanged. Navigator 2.0 only - the Navigator 10 statistics
+    arrive through the WebSocket in :func:`_read_optional_statistics`.
+    """
+    if supplement.web_variant != "nav20":
+        return supplement
+    read_statistics = getattr(client, "read_statistics", None)
+    if not callable(read_statistics):
+        return supplement
+    try:
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            statistics = await read_statistics()
+    except Exception:
+        _LOGGER.debug("IDM web statistics pages read failed", exc_info=True)
+        return supplement
+    extra = {
+        name: _normalize_sensor_value(value) for name, value in (getattr(statistics, "values", None) or {}).items()
+    }
+    return _with_sensor_values(supplement, extra)
+
+
 async def _read_optional_heatingcircuits(
     client: _IdmWebClient,
     supplement: IdmWebSupplement,
@@ -491,6 +520,7 @@ async def _augment_web_supplement(
     supplement = await _read_optional_notifications(client, supplement)
     supplement = await _read_optional_demand_reason(client, supplement)
     supplement = await _read_optional_statistics(client, supplement)
+    supplement = await _read_optional_nav20_statistics(client, supplement)
     supplement = await _read_optional_freshwater(client, supplement)
     supplement = await _read_optional_status(client, supplement)
     supplement = await _read_optional_home_overview(client, supplement)
