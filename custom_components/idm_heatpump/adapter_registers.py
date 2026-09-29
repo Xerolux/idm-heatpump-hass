@@ -48,6 +48,20 @@ _NAVIGATOR_10_ONLY_REGISTERS: frozenset[str] = frozenset(
 )
 
 
+#: Navigator 1.0/1.7 momentary command coils (c3001-c3003). The controller
+#: executes the request the moment the bit is set and the bit immediately
+#: falls back to 0, so reading it can never report a meaningful state
+#: (issue #319, reported against real 1.7 hardware). They must not become
+#: state entities; c3003 is the one-shot DHW priority-charge button instead.
+MOMENTARY_COIL_REGISTERS: frozenset[str] = frozenset(
+    {
+        "demand_heating_17",
+        "demand_cooling_17",
+        "demand_dhw_17",
+    }
+)
+
+
 def model_info_from_flags(
     circuits: list[str],
     zone_modules: int,

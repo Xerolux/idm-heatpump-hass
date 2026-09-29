@@ -61,7 +61,7 @@ from .adapter_metadata import (
     native_step_for_register,
 )
 from .adapter_names import _get_german_name
-from .adapter_registers import build_filtered_register_map
+from .adapter_registers import MOMENTARY_COIL_REGISTERS, build_filtered_register_map
 from .modbus_client import IdmModbusConnectionClient
 
 _LOGGER = logging.getLogger(__name__)
@@ -379,6 +379,13 @@ def get_library_binary_sensors(
     reg_map = build_filtered_register_map(model_info, circuits, zone_modules)
     sensors = []
     for name, reg in reg_map.items():
+        if name in MOMENTARY_COIL_REGISTERS:
+            # Momentary command bits: the coil falls back to 0 as soon as the
+            # controller executes the request, so a binary sensor can never
+            # turn on (issue #319). The exclusion is name-based so it also
+            # covers idm-heatpump-api releases that still model the coils
+            # read-only; the button takes c3003 once the map marks it writable.
+            continue
         if not reg.binary or reg.writable:
             continue
         desc = BinarySensorEntityDescription(

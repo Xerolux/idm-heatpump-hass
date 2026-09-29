@@ -1289,15 +1289,6 @@
       "cooling_demand": {
         "name": "Kühlanforderung"
       },
-      "demand_cooling_17": {
-        "name": "Anforderung Kühlen"
-      },
-      "demand_dhw_17": {
-        "name": "Anforderung Vorrangladung"
-      },
-      "demand_heating_17": {
-        "name": "Anforderung Heizen"
-      },
       "dhw_demand": {
         "name": "Warmwasseranforderung"
       },
@@ -1416,6 +1407,9 @@
       },
       "dhw_boost_start": {
         "name": "Warmwasser-Boost starten"
+      },
+      "dhw_priority_charge": {
+        "name": "Vorrangladung anfordern"
       }
     },
     "climate": {

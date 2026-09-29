@@ -128,7 +128,7 @@ The advanced raw-write action cannot infer the correct datatype from an address.
 <!-- BEGIN GENERATED REGISTER REFERENCE -->
 ## Complete register catalog
 
-> Generated from `idm-heatpump-api[web]==2.12.1`. Do not edit this section manually.
+> Generated from `idm-heatpump-api[web]==2.13.0`. Do not edit this section manually.
 
 This maximal catalog contains **687 logical register definitions**: all heating circuits A–G, ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. The integration selects only the subset supported and enabled on the detected installation.
 
@@ -860,9 +860,9 @@ The German description is intended for identification; the code-form register na
 
 ## Navigator 1.7 (separate protocol family)
 
-> Also generated from `idm-heatpump-api[web]==2.12.1`.
+> Also generated from `idm-heatpump-api[web]==2.13.0`.
 
-The Navigator 1.0/1.7 controllers use a different register layout: the same address can carry a different data point than in the catalog above, so this family has its own table with **156** definitions (82 writable). The official RW holding block of ma_de_812049 Rev.1 contributes 78 writable, EEPROM-sensitive parameters (operating modes, room/flow setpoints, heating curves, limits, bivalence points, solar mode, DHW setpoint); the PV supplement appears only when the controller answers address 74. No zone-module control exists on this family.
+The Navigator 1.0/1.7 controllers use a different register layout: the same address can carry a different data point than in the catalog above, so this family has its own table with **154** definitions (83 writable). The official RW holding block of ma_de_812049 Rev.1 contributes 79 writable, EEPROM-sensitive parameters (operating modes, room/flow setpoints, heating curves, limits, bivalence points, solar mode, DHW setpoint); the PV supplement appears only when the controller answers address 74. No zone-module control exists on this family.
 
 | Address(es) | Description (DE) | Register name | Type | Unit | Access | Note |
 |-------------|------------------|---------------|------|------|--------|------|
@@ -1018,9 +1018,7 @@ The Navigator 1.0/1.7 controllers use a different register layout: the same addr
 | 2150 | Betriebsart Solar | `solar_operating_mode_17` | UINT16 | — | RW · EEPROM |  |
 | 2152–2153 | Warmwasser Sollwert | `dhw_setpoint` | FLOAT | °C | RW · EEPROM |  |
 | 3000 | Fehlerquittierung | `error_acknowledge` | BOOL | — | W · write-only |  |
-| 3001 | Anforderung Heizen | `demand_heating_17` | BOOL | — | R |  |
-| 3002 | Anforderung Kühlen | `demand_cooling_17` | BOOL | — | R |  |
-| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | R |  |
+| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | W · write-only |  |
 | 4122–4123 | Elektrische Leistungsaufnahme Wärmepumpe | `power_consumption_hp` | FLOAT | kW | R | PV supplement |
 
 <!-- END GENERATED REGISTER REFERENCE -->
