@@ -30,6 +30,9 @@ from idm_heatpump import (
     IdmModelInfo,
     RegisterDef,
 )
+from idm_heatpump import (
+    get_register as _api_get_register,
+)
 
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
@@ -813,8 +816,29 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         return len(self._registers)
 
     def get_register(self, register_name: str) -> RegisterDef | None:
-        """Return a register by name via the cached name index (O(1))."""
-        return self._register_by_name.get(register_name)
+        """Return a register by name via the cached name index (O(1)).
+
+        Write-only action registers such as ``error_acknowledge`` carry no
+        entity description, so they never enter the index that is built from
+        entity descriptions. The model's full register map is the authority
+        for those: when the family is known (``model_info``), the lookup
+        falls back to the API's model-gated map - the Navigator 1.x map
+        shadows the name with its coil c3000, so the write always targets
+        the family's own address - and caches the result. Without a known
+        model the lookup stays strict (issue #319: never write an address
+        that is undocumented on the attached controller).
+        """
+        register = self._register_by_name.get(register_name)
+        if register is not None:
+            return register
+        if self._model_info is None:
+            return None
+        try:
+            resolved = _api_get_register(register_name, model_info=self._model_info)
+        except ValueError:
+            return None
+        self._register_by_name[register_name] = resolved
+        return resolved
 
     def is_register_unused(self, register_name: str, value: Any) -> bool:
         """Check if a register value indicates an unused/invalid register.

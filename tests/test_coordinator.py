@@ -9,6 +9,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from idm_heatpump import (
     MODEL_NAVIGATOR_10,
+    MODEL_NAVIGATOR_17,
     MODEL_NAVIGATOR_20,
     DataType,
     IdmConnectionError,
@@ -2922,3 +2923,71 @@ class TestConnectionStateLogging:
             "IDM connection state changed: Modbus + Web -> Modbus only",
             "IDM connection state changed: Modbus only -> Modbus + Web",
         ]
+
+class TestGetRegisterFallback:
+    """The name index only carries entity-backed registers; action registers
+    (write-only, no entity) must still resolve through the model's own map."""
+
+    def _nav10_coordinator(self, mock_hass, mock_config_entry):
+        coord, _registers = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_info=IdmModelInfo(
+                model_name=MODEL_NAVIGATOR_10,
+                active_heating_circuits=["A", "D"],
+                zone_modules=0,
+                has_solar=False,
+                has_isc=False,
+                has_pv=False,
+                has_cascade=False,
+            ),
+        )
+        # entity descriptions never contained the write-only acknowledge register
+        coord._register_by_name.pop("error_acknowledge", None)
+        return coord
+
+    def test_write_only_register_resolves_via_the_model_map(self, mock_hass, mock_config_entry):
+        coordinator = self._nav10_coordinator(mock_hass, mock_config_entry)
+
+        register = coordinator.get_register("error_acknowledge")
+
+        assert register is not None
+        assert register.address == 1999
+        assert register.writable is True
+
+    def test_resolved_register_is_cached_in_the_index(self, mock_hass, mock_config_entry):
+        coordinator = self._nav10_coordinator(mock_hass, mock_config_entry)
+
+        first = coordinator.get_register("error_acknowledge")
+        coordinator._register_by_name["error_acknowledge"] = first
+        second = coordinator.get_register("error_acknowledge")
+
+        assert second is first
+
+    def test_unknown_model_stays_strict(self, mock_hass, mock_config_entry):
+        coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coordinator._model_info = None
+        coordinator._register_by_name.pop("error_acknowledge", None)
+
+        assert coordinator.get_register("error_acknowledge") is None
+
+    def test_navigator_17_shadows_the_acknowledge_coil(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_info=IdmModelInfo(
+                model_name=MODEL_NAVIGATOR_17,
+                active_heating_circuits=["A"],
+                zone_modules=0,
+                has_solar=False,
+                has_isc=False,
+                has_pv=False,
+                has_cascade=False,
+            ),
+        )
+        coord._register_by_name.pop("error_acknowledge", None)
+
+        register = coord.get_register("error_acknowledge")
+
+        assert register is not None
+        assert register.address == 3000
