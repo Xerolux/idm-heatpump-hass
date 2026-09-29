@@ -1,0 +1,55 @@
+# Values that the sensitive-data guard may find in this repository.
+# Every entry is either an intentional fake (test fixture, documentation
+# placeholder) or an intentionally public contact address. Real plant
+# addresses, real PINs, real myIDM ids, tokens and personal data must
+# NEVER be added here - rotate them instead.
+# Entries may start or end with "*" for wildcard matching.
+
+# Generic home-network placeholders used by the test suite (RFC 1918
+# default-router style addresses, no relation to any real network).
+192.168.0.0
+192.168.0.42
+192.168.0.196
+192.168.1.1
+192.168.1.10
+192.168.1.20
+192.168.1.50
+192.168.1.100
+192.168.1.101
+192.168.1.200
+192.168.168.1
+10.0.0.1
+10.0.0.5
+10.0.0.9
+# CIDR network constants in ai_advisor.py's URL validation (network specs,
+# not host addresses) and the cloud-metadata endpoint its security test
+# explicitly rejects.
+10.0.0.0
+172.16.0.0
+169.254.169.254
+
+# Fake PIN / credential fixtures used in tests and examples.
+0000
+1111
+1234
+4321
+9999
+135791
+
+# Fake myIDM account ids used in tests and documentation.
+m222
+m12345
+m123456
+
+# Intentionally public contact addresses.
+git@xerolux.de
+*@users.noreply.github.com
+m12345@idm-energie.at
+
+# Example/documentation e-mail domains (RFC 2606 style).
+*@example.invalid
+*@example.org
+*@example.com
+*@example.net
+*@attacker.example
+pass@127.0.0.1
