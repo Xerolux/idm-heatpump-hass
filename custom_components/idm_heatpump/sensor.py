@@ -30,6 +30,7 @@ from .ai_advisor import AiAdvisor
 from .ai_advisor_entities import AI_METRICS, IdmAiMetricSensor, IdmAiReportSensor
 from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities
 from .comfort_advisory import ComfortAdvisorySensor, heating_curve_advisory, weather_preheat_advisory
+from .connection_entities import ConnectionSensorEntity, connection_sensor_entities
 from .const import (
     CONF_AI_ADVISOR,
     CONF_COMFORT_SCHEDULE_CIRCUIT,
@@ -438,6 +439,7 @@ async def async_setup_entry(
         | IdmWebDemandReasonSensor
         | IdmWebControllerClockSensor
         | WebSystemSensorEntity
+        | ConnectionSensorEntity
         | IdmApiVersionSensor
         | IdmCommunicationDiagnosticSensor
         | IdmOperationSensor
@@ -501,6 +503,7 @@ async def async_setup_entry(
         entities += web_status_sensor_entities(coordinator)
         entities += web_system_sensor_entities(coordinator)
     entities.append(IdmApiVersionSensor(coordinator, versions))
+    entities += connection_sensor_entities(coordinator)
     if entry.options.get(CONF_COMMUNICATION_DIAGNOSTICS, False):
         entities += _communication_diagnostic_entities(coordinator)
     if entry.options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART and entry.options.get(

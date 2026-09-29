@@ -284,6 +284,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         if web_supplement is not None:
             self._web_variant = _web_variant_from_supplement(web_supplement) or self._web_variant
         self._last_web_error: str | None = None
+        self._last_web_success: datetime | None = None
         self._unused_registers: set[str] = set()
         self._unused_module_suggestion_seconds = unused_module_suggestion_seconds
         self._solar_unused_since: float | None = None
@@ -550,6 +551,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def model_info(self) -> IdmModelInfo | None:
         return self._model_info
+
+    @property
+    def web_last_success(self) -> datetime | None:
+        """Timestamp of the last successful web-supplement refresh."""
+        return self._last_web_success
 
     @property
     def web_supplement(self) -> IdmWebSupplement | None:
@@ -1281,6 +1287,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return
 
         self._last_web_error = None
+        self._last_web_success = datetime.now(UTC)
         for issue_id in _WEB_REPAIR_ISSUES:
             ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
         previous_model_name = self._model_name

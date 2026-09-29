@@ -354,6 +354,22 @@ Three further read-only WebSocket controllers are evaluated on every web poll
   technician codes are computed from the time shown on the display — this
   sensor makes the drift visible.
 
+#### Connection state
+
+Two diagnostic entities make the effective connection visible on the
+dashboard — they exist in every connection mode, so a fallback is visible
+at a glance:
+
+- **Connection mode** (`connection_mode`): which transports are actually
+  live right now — *Modbus + Web*, *Modbus only* or *Web only*. The
+  attributes carry the configured mode (the `connection_mode` option from
+  *Configure* → Modbus section, default *auto*) and the detected web
+  variant (`nav10` or `nav20`).
+- **Letzte Web-Aktualisierung (Web)** (`web_last_success`): when the local
+  web interface last answered successfully — the web counterpart of the
+  Modbus *last success* diagnostic, always available when a web PIN is
+  configured.
+
 #### System controllers (Navigator 10)
 
 Four read-only WebSocket controllers that the shipped frontend uses for its

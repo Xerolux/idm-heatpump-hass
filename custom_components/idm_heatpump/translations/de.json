@@ -1899,6 +1899,9 @@
       "compressor_stages_heating": {
         "name": "Verdichterstufen Heizen"
       },
+      "connection_mode": {
+        "name": "Verbindungsmodus"
+      },
       "current_electricity_price": {
         "name": "Aktueller Strompreis"
       },
@@ -2378,6 +2381,9 @@
       },
       "web_infosystem_notifications": {
         "name": "Infosystem Meldungen (Web)"
+      },
+      "web_last_success": {
+        "name": "Letzte Web-Aktualisierung (Web)"
       },
       "web_liquid_line_temperature": {
         "name": "Flüssigkeitsleitung Temperatur (Web)"

@@ -267,6 +267,22 @@ ausgewertet (live verifiziert auf Firmware jsonVersion 11, September 2026):
   nach der auf dem Display angezeigten Zeit berechnet — dieser Sensor macht
   den Drift sichtbar.
 
+#### Verbindungsstatus
+
+Zwei diagnostische Entitäten machen die tatsächliche Verbindung auf dem
+Dashboard sichtbar — sie existieren in jedem Verbindungsmodus, ein Fallback
+fällt so sofort ins Auge:
+
+- **Verbindungsmodus** (`connection_mode`): welche Transporte gerade
+  tatsächlich leben — *Modbus + Web*, *Modbus only* oder *Web only*. Die
+  Attribute führen den konfigurierten Modus (die Option `connection_mode`
+  unter *Konfigurieren* → Modbus-Sektion, Standard *auto*) und die erkannte
+  Web-Variante (`nav10` oder `nav20`).
+- **Letzte Web-Aktualisierung (Web)** (`web_last_success`): wann die lokale
+  Weboberfläche zuletzt erfolgreich geantwortet hat — das Web-Gegenstück
+  zur Modbus-*Letzter Erfolg*-Diagnose, immer vorhanden, wenn ein Web-PIN
+  konfiguriert ist.
+
 #### System-Controller (nur Navigator 10)
 
 Vier nur lesende WebSocket-Controller, die das mitgelieferte Frontend für
