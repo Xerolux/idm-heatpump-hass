@@ -28,6 +28,7 @@ from .adapter_metadata import native_step_for_register
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import async_write_translated, build_device_info
+from .web_climate_entities import web_water_heater_entities
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,6 +42,10 @@ async def async_setup_entry(
 ) -> None:
     """Set up the IDM water heater platform."""
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
+
+    web_entities = web_water_heater_entities(coordinator)
+    if web_entities:
+        async_add_entities(web_entities)
 
     # The shared family reports the storage top sensor; Navigator 1.0/1.7 has
     # no dhw_temp_top and offers the tank temperature (dhw_temp,

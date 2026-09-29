@@ -1413,6 +1413,9 @@
       "heating_circuit": {
         "name": "Heizkreis {circuit}"
       },
+      "web_hc_climate": {
+        "name": "Heizkreis {circuit} (Web)"
+      },
       "zone_room": {
         "name": "Zone {zone} Raum {room}"
       }
@@ -2457,6 +2460,9 @@
     "water_heater": {
       "water_heater": {
         "name": "Warmwasser"
+      },
+      "web_water_heater": {
+        "name": "Warmwasser (Web)"
       }
     }
   },

@@ -13,6 +13,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Climate and water-heater cards for `web_only`** and **KNX bus commands
+  through the web path** (points 3+5 of the web-first follow-up; requires
+  `idm-heatpump-api[web]==2.10.1`):
+  - **Heizkreis X (Web)** climate entity per circuit: current room
+    temperature, target temperature and mode from the circuit detail frame;
+    writes are the same range-validated web writes as the number/select
+    entities (`HVACAction` from the pump state).
+  - **Warmwasser (Web)** water-heater entity: tank top temperature and the
+    hot-water setpoint (FW030), validated against the device's own range.
+  - **KNX commands in `web_only`**: the coordinator routes register-named
+    writes to the web path when no Modbus connection exists — system mode,
+    hot-water setpoint, acknowledge, per-circuit mode and normal room
+    setpoint (the everyday controls the bus actually sends). Registers
+    without a web mapping are rejected as before. `async_write_register`
+    gains this routing, so services benefit identically.
+
 ## [0.20.0-b10] - 2026-09-29
 
 ### Added

@@ -84,6 +84,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── web_binary_sensors.py         # Binary sensors from the web supplement
 │   ├── web_status_entities.py        # Controller-clock sensor from the web status/overview frame
 │   ├── web_control_entities.py       # Web-only controls: mode select, DHW setpoint, acknowledge (Phase 4)
+│   ├── web_climate_entities.py       # Web-only climate and water-heater cards + register-named write routing
 │   ├── binary_semantics.py           # Maps register semantics onto binary sensor device classes
 │   ├── adapter_metadata.py           # Explicit per-register HA metadata overlay (German names, steps, precision)
 │   ├── controller_stats_reference.py # Reference values for controller statistics
@@ -165,7 +166,8 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_web_data.py
 │   ├── test_web_demand_reason.py
 │   ├── test_web_status_entities.py
-│   └── test_web_control_entities.py
+│   ├── test_web_control_entities.py
+│   └── test_web_climate_entities.py
 │
 ├── tests_ha/                         # Real-Home-Assistant smoke tests (audit E1)
 │   ├── conftest.py                   # Boots a genuine HA in a temp config dir, fake Modbus client
