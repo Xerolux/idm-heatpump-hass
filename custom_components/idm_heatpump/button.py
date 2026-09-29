@@ -21,6 +21,7 @@ from idm_heatpump import RegisterDef
 
 from .ai_advisor import REPORT_TYPES
 from .ai_advisor_entities import IdmAiReportButton
+from .connection_entities import connection_button_entities
 from .const import (
     CONF_AI_ADVISOR,
     CONF_FEATURE_PROFILE,
@@ -81,6 +82,8 @@ async def async_setup_entry(
     if entry.options.get(CONF_AI_ADVISOR, False) is True:
         entities.extend(IdmAiReportButton(coordinator, kind) for kind in REPORT_TYPES)
     entities.extend(web_control_button_entities(coordinator))
+    entities += connection_button_entities(coordinator)
+
     async_add_entities(entities)
 
 

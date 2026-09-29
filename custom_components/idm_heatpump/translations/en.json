@@ -1408,6 +1408,9 @@
       "ai_report_weekly": {
         "name": "AI weekly report (experimental)"
       },
+      "connection_reload": {
+        "name": "Reload connection"
+      },
       "dhw_boost_cancel": {
         "name": "Cancel DHW boost"
       },

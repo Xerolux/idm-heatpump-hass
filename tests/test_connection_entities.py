@@ -7,7 +7,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from custom_components.idm_heatpump.connection_entities import connection_sensor_entities
+from custom_components.idm_heatpump.connection_entities import (
+    connection_button_entities,
+    connection_sensor_entities,
+)
 from custom_components.idm_heatpump.const import (
     CONNECTION_STATE_MODBUS_AND_WEB,
     CONNECTION_STATE_MODBUS_ONLY,
@@ -34,6 +37,7 @@ def _coordinator(
     coordinator.web_alive = web_alive
     coordinator.web_variant = web_variant
     coordinator.web_last_success = None
+    coordinator.hass.async_create_task = lambda coro: None
     return coordinator
 
 
@@ -117,3 +121,42 @@ class TestCoordinatorWebSuccess:
         # the success path is exercised through the module's own tests; here we
         # only pin the contract that the stamp is a UTC datetime once set.
         assert hasattr(coordinator_module.IdmCoordinator, "web_last_success")
+
+
+class TestReloadButton:
+    def test_button_is_created_with_the_translation_key(self) -> None:
+        entities = connection_button_entities(_coordinator())
+
+        assert len(entities) == 1
+        button = entities[0]
+        assert button._attr_translation_key == "connection_reload"
+        assert button._attr_entity_category is not None
+
+    async def test_press_reloads_the_config_entry(self) -> None:
+        import asyncio
+        from unittest.mock import MagicMock
+
+        coordinator = _coordinator()
+        created = []
+
+        def _create_task(coro):
+            created.append(coro)
+            coro.close()
+
+        coordinator.hass.async_create_task = _create_task
+        reload_mock = MagicMock(side_effect=lambda *a, **k: asyncio.sleep(0))
+        coordinator.hass.config_entries.async_reload = reload_mock
+        button = connection_button_entities(coordinator)[0]
+
+        await button.async_press()
+
+        # the reload was handed to the event loop for our entry
+        reload_mock.assert_called_once_with("test_entry")
+        assert len(created) == 1
+
+    async def test_press_without_an_entry_does_nothing(self) -> None:
+        coordinator = _coordinator()
+        coordinator.config_entry = None
+        button = connection_button_entities(coordinator)[0]
+
+        await button.async_press()

@@ -542,6 +542,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "web_hc_mode": ("Heating circuit {circuit} mode (Web)", "Heizkreis {circuit} Betriebsart (Web)"),
     },
     "button": {
+        "connection_reload": ("Reload connection", "Verbindung neu laden"),
         "ai_report_daily": ("AI daily report (experimental)", "KI-Tagesbericht (experimentell)"),
         "ai_report_weekly": ("AI weekly report (experimental)", "KI-Wochenbericht (experimentell)"),
         "ai_report_health": ("AI health explanation (experimental)", "KI-Zustand erklären (experimentell)"),
