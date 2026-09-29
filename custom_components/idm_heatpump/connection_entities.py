@@ -18,13 +18,12 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.helpers.entity import EntityCategory  # type: ignore[attr-defined]
 
-from .const import resolve_connection_mode
+from .const import (
+    connection_state_label,
+    resolve_connection_mode,
+)
 from .coordinator import IdmCoordinator
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
-
-STATE_MODBUS_AND_WEB = "Modbus + Web"
-STATE_MODBUS_ONLY = "Modbus only"
-STATE_WEB_ONLY = "Web only"
 
 
 def connection_sensor_entities(coordinator: IdmCoordinator) -> list[ConnectionSensorEntity]:
@@ -41,8 +40,8 @@ def _modbus_transport_active(coordinator: IdmCoordinator) -> bool:
 
 
 def _web_transport_active(coordinator: IdmCoordinator) -> bool:
-    """The web path is live when a supplement snapshot has arrived."""
-    return coordinator.web_enabled and coordinator.web_supplement is not None
+    """The web path is live when the last web refresh answered."""
+    return coordinator.web_enabled and coordinator.web_alive is True
 
 
 class IdmConnectionModeSensor(IdmCoordinatorEntityBase, SensorEntity):
@@ -69,13 +68,7 @@ class IdmConnectionModeSensor(IdmCoordinatorEntityBase, SensorEntity):
     @property
     def native_value(self) -> str:
         coordinator = self.coordinator
-        modbus_active = _modbus_transport_active(coordinator)
-        web_active = _web_transport_active(coordinator)
-        if modbus_active and web_active:
-            return STATE_MODBUS_AND_WEB
-        if modbus_active:
-            return STATE_MODBUS_ONLY
-        return STATE_WEB_ONLY
+        return connection_state_label(_modbus_transport_active(coordinator), _web_transport_active(coordinator))
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

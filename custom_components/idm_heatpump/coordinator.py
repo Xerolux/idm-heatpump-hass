@@ -40,6 +40,7 @@ from .const import (
     ISSUE_SOLAR_MODULE_UNUSED,
     MANUFACTURER,
     MODEL,
+    connection_state_label,
 )
 from .error_messages import (
     classify_communication_error as _repair_issue_for_error,
@@ -285,6 +286,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._web_variant = _web_variant_from_supplement(web_supplement) or self._web_variant
         self._last_web_error: str | None = None
         self._last_web_success: datetime | None = None
+        self._web_alive: bool | None = None
+        self._last_connection_state: str | None = None
         self._unused_registers: set[str] = set()
         self._unused_module_suggestion_seconds = unused_module_suggestion_seconds
         self._solar_unused_since: float | None = None
@@ -551,6 +554,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def model_info(self) -> IdmModelInfo | None:
         return self._model_info
+
+    @property
+    def web_alive(self) -> bool | None:
+        """Whether the last web-supplement refresh answered (None: never ran)."""
+        return self._web_alive
 
     @property
     def web_last_success(self) -> datetime | None:
@@ -1164,6 +1172,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         self._last_poll_duration = time.monotonic() - poll_started
         self._last_poll_success = datetime.now(UTC)
+        self._log_connection_state_change()
         self._consecutive_poll_failures = 0
         self._evaluate_poll_duration(self._last_poll_duration)
         return data
@@ -1219,11 +1228,38 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._scan_interval_issue_active = False
             ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(_SCAN_INTERVAL_TOO_LOW_ISSUE))
 
+    def _log_connection_state_change(self) -> None:
+        """Log the effective transport combination whenever it changes.
+
+        One INFO line per transition (plus one initial line) instead of one
+        per failure: support cases ask "since when does the web path not
+        answer", and the log should answer that without spamming it.
+        """
+        state = connection_state_label(self.update_interval is not None, self._web_alive is True)
+        if state == self._last_connection_state:
+            return
+        if self._last_connection_state is None:
+            _LOGGER.info("IDM connection state: %s", state)
+        else:
+            _LOGGER.info(
+                "IDM connection state changed: %s -> %s",
+                self._last_connection_state,
+                state,
+            )
+        self._last_connection_state = state
+
     async def async_refresh_web_supplement(self) -> None:
         """Refresh optional local web data without affecting Modbus updates."""
         if not self._web_pin:
             return
 
+        try:
+            await self._refresh_web_supplement_inner()
+        finally:
+            self._log_connection_state_change()
+
+    async def _refresh_web_supplement_inner(self) -> None:
+        """Read the web supplement and track its liveness."""
         try:
             web_supplement = await async_read_web_supplement(
                 self._web_host,
@@ -1243,6 +1279,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                     self._web_host,
                 )
             self._last_web_error = error
+            self._web_alive = False
             for issue_id in _WEB_REPAIR_ISSUES:
                 if issue_id != _WEB_AUTH_FAILED_ISSUE:
                     ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
@@ -1268,6 +1305,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 )
                 _LOGGER.debug("Technical Navigator web error", exc_info=True)
             self._last_web_error = error
+            self._web_alive = False
             for stale_issue_id in _WEB_REPAIR_ISSUES:
                 if stale_issue_id != issue_id:
                     ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(stale_issue_id))
@@ -1284,9 +1322,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
 
         if web_supplement is None:
             self._last_web_error = "No web supplement data returned"
+            self._web_alive = False
             return
 
         self._last_web_error = None
+        self._web_alive = True
         self._last_web_success = datetime.now(UTC)
         for issue_id in _WEB_REPAIR_ISSUES:
             ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(issue_id))
