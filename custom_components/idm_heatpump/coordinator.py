@@ -307,6 +307,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_poll_duration: float | None = None
         self._last_poll_success: datetime | None = None
         self._consecutive_poll_failures = 0
+        self._pending_web_writes: list[tuple[str, Any]] = []
         self._transient_zero_suppressed = 0
         self._total_poll_count = 0
         self._total_poll_failures = 0
@@ -1612,6 +1613,77 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         await client.acknowledge_all_notifications()
         await self.async_refresh_web_supplement()
 
+    def _web_write_register_by_name(self, name: str, value: Any) -> bool:
+        """Map a register-named write onto the local web write path.
+
+        Returns True when the name has a web mapping (web-only operation);
+        the caller must not fall through to Modbus then. The mapping covers
+        the everyday controls the web interface validated on the confirmed
+        firmware: system mode, hot-water setpoint, acknowledge, per-circuit
+        mode and normal room setpoint. Everything else stays Modbus-only and
+        reports unhandled here.
+        """
+        supplement = self._web_supplement
+        if supplement is None:
+            return False
+        circuits = {str(getattr(c, "hc_id", "")).upper(): c for c in supplement.heating_circuits or ()}
+        if name == "system_mode" and isinstance(value, int) and not isinstance(value, bool):
+            self._pending_web_writes.append(("system_mode", int(value)))
+            return True
+        if name == "dhw_setpoint" and isinstance(value, (int, float)) and not isinstance(value, bool):
+            self._pending_web_writes.append(("dhw_setpoint", float(value)))
+            return True
+        if name == "error_acknowledge":
+            self._pending_web_writes.append(("error_acknowledge", None))
+            return True
+        if name.startswith("hc_") and name.endswith("_mode") and len(name) == len("hc_a_mode"):
+            circuit = circuits.get(name[3].upper())
+            parameter = getattr(circuit, "mode_parameter_id", None) if circuit is not None else None
+            if parameter and isinstance(value, int) and not isinstance(value, bool):
+                self._pending_web_writes.append(("hc_mode", (parameter, int(value))))
+                return True
+            return False
+        if name.startswith("hc_") and name.endswith("_room_setpoint_heat_normal"):
+            circuit = circuits.get(name[3].upper())
+            setpoint = getattr(circuit, "setpoint_normal", None) if circuit is not None else None
+            parameter = getattr(setpoint, "parameter_id", None) if setpoint is not None else None
+            if parameter and isinstance(value, (int, float)) and not isinstance(value, bool):
+                self._pending_web_writes.append(
+                    (
+                        "hc_setpoint",
+                        (
+                            parameter,
+                            float(value),
+                            getattr(setpoint, "min_value", None),
+                            getattr(setpoint, "max_value", None),
+                        ),
+                    )
+                )
+                return True
+            return False
+        return False
+
+    async def _async_flush_web_writes(self) -> None:
+        """Execute the register-named writes queued by the web mapping."""
+        pending, self._pending_web_writes = self._pending_web_writes, []
+        if not pending:
+            return
+        client = self._web_write_client()
+        for kind, payload in pending:
+            if kind == "system_mode":
+                await client.set_system_mode(payload)
+            elif kind == "dhw_setpoint":
+                await client.save_dhw_setpoint(payload)
+            elif kind == "error_acknowledge":
+                await client.acknowledge_all_notifications()
+            elif kind == "hc_mode":
+                parameter, mode = payload
+                await client.save_heatingcircuit_parameter(parameter, float(mode))
+            elif kind == "hc_setpoint":
+                parameter, value, minimum, maximum = payload
+                await client.save_heatingcircuit_parameter(parameter, value, min_value=minimum, max_value=maximum)
+        await self.async_refresh_web_supplement()
+
     async def async_write_register(
         self,
         reg: RegisterDef,
@@ -1619,6 +1691,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         *,
         allow_custom_register: bool = False,
     ) -> Any:
+        if self.update_interval is None and self._web_write_register_by_name(reg.name, value):
+            # Web-only operation: the write goes through the local web
+            # interface exactly like the official UI (validated, confirmed
+            # by a success note, state read back afterwards).
+            await self._async_flush_web_writes()
+            return value
         now = time.monotonic()
         last = self._write_timestamps.get(reg.address)
         if (

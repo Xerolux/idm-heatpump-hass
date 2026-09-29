@@ -480,6 +480,12 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
             "Heizkreis {circuit} Raumsolltemperatur (Web)",
         ),
     },
+    "climate": {
+        "web_hc_climate": ("Heating circuit {circuit} (Web)", "Heizkreis {circuit} (Web)"),
+    },
+    "water_heater": {
+        "web_water_heater": ("Hot water (Web)", "Warmwasser (Web)"),
+    },
     "select": {
         "web_hc_mode": ("Heating circuit {circuit} mode (Web)", "Heizkreis {circuit} Betriebsart (Web)"),
     },

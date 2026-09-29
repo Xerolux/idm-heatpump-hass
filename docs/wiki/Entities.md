@@ -373,6 +373,11 @@ as before:
   the device's own declared parameter definition, and every write is
   validated against that range before sending — the same write safety as the
   register path.
+- **Heizkreis X (Web)** climate card per circuit (room temperature, target
+  temperature, mode; `HVACAction` from the pump state) and the
+  **Warmwasser (Web)** water-heater card (tank top temperature + setpoint)
+  — the same validated web writes, presented as the standard Home
+  Assistant cards.
 - **Heizkreis X Raumsolltemperatur (Web)** / **Heizkreis X Betriebsart
   (Web)** (per configured circuit): the normal room setpoint (parameter
   `HK<x>04`) as a number and the circuit mode (parameter `HK<x>01`) as a
@@ -385,7 +390,9 @@ as before:
 The `set_system_mode` and `acknowledge_errors` services use the same web
 path automatically for web-only entries. Writes reuse the authorized web
 session of the poll loop and read the state back after every write, like the
-official web UI. Further controls still require Modbus.
+official web UI. KNX bus commands route through the same web writes for the everyday
+controls (system mode, hot-water setpoint, circuit mode/setpoint,
+acknowledge); other registers still require Modbus.
 
 If a firmware does not answer one of these controllers, the affected entities
 simply stay unavailable; the rest of the web snapshot is unaffected.

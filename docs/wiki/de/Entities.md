@@ -288,6 +288,11 @@ genauso wie bisher über Modbus:
   Parameterdefinition, und jeder Schreibvorgang wird vor dem Senden gegen
   genau diese Grenzen validiert — dieselbe Schreibsicherheit wie im
   Register-Pfad.
+- **Heizkreis X (Web)** Climate-Karte je Heizkreis (Raumtemperatur,
+  Solltemperatur, Betriebsart; `HVACAction` aus dem Pumpenstatus) und die
+  **Warmwasser (Web)** Water-Heater-Karte (Speichertemperatur oben +
+  Sollwert) — dieselben validierten Web-Schreibvorgänge, als Standard-
+  Home-Assistant-Karten.
 - **Heizkreis X Raumsolltemperatur (Web)** / **Heizkreis X Betriebsart
   (Web)** (je konfiguriertem Heizkreis): die normale Raumsolltemperatur
   (Parameter `HK<x>04`) als Zahl und die Heizkreis-Betriebsart (Parameter

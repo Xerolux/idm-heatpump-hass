@@ -536,7 +536,14 @@ async def _async_setup_web_only_entry(
     entry.runtime_data = IdmHeatpumpData(
         coordinator=coordinator,
         client=client,
-        loaded_platforms=(Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.BUTTON),
+        loaded_platforms=(
+            Platform.SENSOR,
+            Platform.SELECT,
+            Platform.NUMBER,
+            Platform.BUTTON,
+            Platform.CLIMATE,
+            Platform.WATER_HEATER,
+        ),
     )
 
     # Same lazy database as the Modbus path: warm it off the loop before any
@@ -544,7 +551,15 @@ async def _async_setup_web_only_entry(
     await hass.async_add_executor_job(warm_error_code_database)
     precreate_main_device(hass, coordinator)
     await hass.config_entries.async_forward_entry_setups(
-        entry, [Platform.SENSOR, Platform.SELECT, Platform.NUMBER, Platform.BUTTON]
+        entry,
+        [
+            Platform.SENSOR,
+            Platform.SELECT,
+            Platform.NUMBER,
+            Platform.BUTTON,
+            Platform.CLIMATE,
+            Platform.WATER_HEATER,
+        ],
     )
     cleanup_disabled_feature_entities(hass, coordinator)
     cleanup_stale_model_entities(hass, coordinator)
@@ -553,9 +568,12 @@ async def _async_setup_web_only_entry(
     cleanup_stale_web_sensor_entities(hass, coordinator)
 
     if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
-        # The bridge serves register-named values; in web-only operation those
-        # come from the web register bridge. Bus commands stay disabled: their
-        # write path is Modbus-only.
+        # The bridge serves register-named values from the web register
+        # bridge; bus commands route through the same register-named web
+        # writes (system mode, hot-water setpoint, circuit mode/setpoint,
+        # acknowledge). Commands for registers without a web mapping are
+        # rejected by the coordinator's write path.
+        knx_receive = bool(entry.options.get(CONF_KNX_RECEIVE, DEFAULT_KNX_RECEIVE))
         groups = tuple(str(group) for group in (entry.options.get(CONF_KNX_GROUPS) or OBJECT_GROUPS))
         overrides = entry.options.get(CONF_KNX_OVERRIDES) or {}
         try:
@@ -565,7 +583,7 @@ async def _async_setup_web_only_entry(
                 KnxBridgeConfig(
                     base_address=str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip(),
                     send_enabled=bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND)),
-                    receive_enabled=False,
+                    receive_enabled=knx_receive,
                     respond_to_read=bool(entry.options.get(CONF_KNX_RESPOND_TO_READ, DEFAULT_KNX_RESPOND_TO_READ)),
                     groups=groups,
                     overrides=dict(overrides) if isinstance(overrides, Mapping) else {},

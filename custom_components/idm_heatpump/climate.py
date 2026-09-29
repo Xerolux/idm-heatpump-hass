@@ -35,6 +35,7 @@ from .const import DOMAIN, CircuitMode, HeatPumpStatus, RoomMode
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import async_write_translated, build_device_info
+from .web_climate_entities import web_climate_entities
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -53,6 +54,8 @@ async def async_setup_entry(
     coordinator: IdmCoordinator = entry.runtime_data.coordinator
 
     entities: list[ClimateEntity] = []
+
+    entities.extend(web_climate_entities(coordinator))
 
     # Find heating circuits
     circuits = set()

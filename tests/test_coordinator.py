@@ -2768,3 +2768,108 @@ class TestWebRegisterBridge:
         # the web metadata block.
         assert coordinator.data["hp_flow_temp"] == 35.0
         assert "stale_register" not in coordinator.data
+
+
+class TestRegisterNamedWebWrites:
+    """async_write_register routes register-named writes to the web path."""
+
+    def _web_only(self, mock_hass, mock_config_entry, supplement):
+        coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coordinator.update_interval = None
+        coordinator._web_supplement = supplement
+        coordinator._web_write_client = MagicMock()
+        coordinator.async_refresh_web_supplement = AsyncMock()
+        return coordinator
+
+    def _supplement(self):
+        from custom_components.idm_heatpump.web_data import IdmWebSupplement
+
+        return IdmWebSupplement(
+            web_variant="nav10",
+            heating_circuits=(
+                SimpleNamespace(
+                    hc_id="A",
+                    mode_parameter_id="HKA01",
+                    setpoint_normal=SimpleNamespace(parameter_id="HKA04", value=21.5, min_value=15, max_value=30),
+                ),
+            ),
+            dhw_setpoint=SimpleNamespace(value=48),
+        )
+
+    async def test_system_mode_write_routes_to_the_web_client(self, mock_hass, mock_config_entry):
+        supplement = self._supplement()
+        coordinator = self._web_only(mock_hass, mock_config_entry, supplement)
+        client = coordinator._web_write_client.return_value
+        client.set_system_mode = AsyncMock()
+
+        from idm_heatpump import DataType, RegisterDef
+
+        reg = RegisterDef(address=1005, datatype=DataType.UCHAR, name="system_mode", writable=True)
+        result = await coordinator.async_write_register(reg, 4)
+
+        assert result == 4
+        client.set_system_mode.assert_awaited_once_with(4)
+
+    async def test_dhw_setpoint_write_routes_to_the_web_client(self, mock_hass, mock_config_entry):
+        supplement = self._supplement()
+        coordinator = self._web_only(mock_hass, mock_config_entry, supplement)
+        client = coordinator._web_write_client.return_value
+        client.save_dhw_setpoint = AsyncMock()
+
+        from idm_heatpump import DataType, RegisterDef
+
+        reg = RegisterDef(address=1018, datatype=DataType.FLOAT, name="dhw_setpoint", writable=True)
+        await coordinator.async_write_register(reg, 49.0)
+
+        client.save_dhw_setpoint.assert_awaited_once_with(49.0)
+
+    async def test_circuit_mode_and_setpoint_route_with_validation(self, mock_hass, mock_config_entry):
+        supplement = self._supplement()
+        coordinator = self._web_only(mock_hass, mock_config_entry, supplement)
+        client = coordinator._web_write_client.return_value
+        client.save_heatingcircuit_parameter = AsyncMock()
+
+        from idm_heatpump import DataType, RegisterDef
+
+        mode = RegisterDef(address=1393, datatype=DataType.UCHAR, name="hc_a_mode", writable=True)
+        await coordinator.async_write_register(mode, 3)
+        setpoint = RegisterDef(
+            address=1379, datatype=DataType.FLOAT, name="hc_a_room_setpoint_heat_normal", writable=True
+        )
+        await coordinator.async_write_register(setpoint, 22.0)
+
+        assert client.save_heatingcircuit_parameter.await_args_list[0].args == ("HKA01", 3.0)
+        second = client.save_heatingcircuit_parameter.await_args_list[1]
+        assert second.args == ("HKA04", 22.0)
+        assert second.kwargs == {"min_value": 15, "max_value": 30}
+
+    async def test_acknowledge_routes_to_the_web_client(self, mock_hass, mock_config_entry):
+        supplement = self._supplement()
+        coordinator = self._web_only(mock_hass, mock_config_entry, supplement)
+        client = coordinator._web_write_client.return_value
+        client.acknowledge_all_notifications = AsyncMock()
+
+        from idm_heatpump import DataType, RegisterDef
+
+        reg = RegisterDef(address=1999, datatype=DataType.UCHAR, name="error_acknowledge", writable=True)
+        await coordinator.async_write_register(reg, 1)
+
+        client.acknowledge_all_notifications.assert_awaited_once()
+
+    async def test_unmapped_register_falls_through_to_modbus(self, mock_hass, mock_config_entry):
+        supplement = self._supplement()
+        coordinator = self._web_only(mock_hass, mock_config_entry, supplement)
+        coordinator._web_write_client = MagicMock()
+
+        from idm_heatpump import DataType, RegisterDef
+
+        reg = RegisterDef(address=4108, datatype=DataType.FLOAT, name="power_limit_hp", writable=True)
+        # The Modbus path runs (its write fails in the stub client) - the
+        # important part is that no web write happened.
+        # The stub client accepts the Modbus write; what matters is that no
+        # web write was attempted for an unmapped register.
+        await coordinator.async_write_register(reg, 5.0)
+        client = coordinator._web_write_client.return_value
+        client.set_system_mode.assert_not_called()
+        client.save_dhw_setpoint.assert_not_called()
+        client.acknowledge_all_notifications.assert_not_called()
