@@ -13,6 +13,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b15] - 2026-09-29
+
+### Fixed
+
+- **Störungen quittieren failed on healthy installations** with
+  `error_acknowledge_unavailable`: the coordinator's register name index is
+  built from entity descriptions, and the write-only acknowledge register
+  carries no entity - so the strict map check (issue #319, 0.19.0-b8)
+  rejected it although the model's own map contains it. `get_register` now
+  falls back to the API's model-gated register map when the family is
+  known (the Navigator 1.0/1.7 map still shadows the name with its coil
+  c3000); without a known model the lookup stays strict. Live-verified on
+  a Navigator 10 where every acknowledge call failed after each reload.
+
+### Changed
+
+- **The connection entities now track live web liveness** and every
+  transport transition is logged at INFO level: the connection-mode sensor
+  follows the last web refresh (a web path that stops answering flips the
+  state to *Modbus only* and back on recovery), and one log line per
+  change (`IDM connection state changed: …`) answers "since when does the
+  web path not answer" without log spam.
+
 ## [0.20.0-b14] - 2026-09-29
 
 ### Fixed
