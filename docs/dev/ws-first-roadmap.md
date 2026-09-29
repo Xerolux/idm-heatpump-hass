@@ -2,27 +2,38 @@
 
 Status: 2026-09-27 · Maintainer: Xerolux · Audience: an AI assistant or developer
 
-> **Implementation status 2026-09-28 (branch `feat/ws-first`, integration +
-> API branch `feat/ws-read-expansion`):** Phase 1 (connection mode incl. the
-> full detection summary — the diagnostics `connection` block also reports
-> `jsonVersion`, userlevel and the controller clock), Phase 2
-> (statistic/freshwater/status reads, API 2.7.0) and the Phase 3 capture tool
-> (`scripts/ws_capture.py`, live-verified) are implemented with full gates.
-> The Phase 2.1 blocker is resolved: the `statisticType`/`periodType` values
-> were confirmed frame by frame read-only on the maintainer's Navigator 10.
-> The **read half of the level-0 settingId catalog is enumerated** (2016 IDs
-> probed read-only: eight answering IDs, three error classes — see the
-> protocol wiki page), and concurrent WS sessions were verified by
-> observation (live HA poll plus parallel sessions on one controller). Still
-> **Phase 3 is complete (2026-09-28):** the capture session ran through the
-> `ws_capture` proxy with harmless reversible actions and confirmed the
-> write payloads **and the response frames live** — `homeSave` /
-> `settingSave` / `freshwaterSave` / `notificationSave`, each a single
-> `note`-carrying answer (plus `redirect` on setting saves), value formats
-> for systemMode numbers, freshwater setpoints, ISO-8601 date/time and
-> notification codes; see the protocol wiki page. Every Phase 4 entry
-> condition is met. Remaining: Phase 4 write PRs per feature (each one
-> individually authorized) and Phase 5.
+> **Implementation status 2026-09-29: Phase 4 is complete — the roadmap is
+> delivered except the optional Phase 5.**
+>
+> - **Phase 1** (connection mode, full detection summary): shipped in
+>   `0.20.0-b6` — `auto` / `modbus_web` / `web_only` / `modbus_only`, with
+>   `jsonVersion`, userlevel and the controller clock in the diagnostics
+>   `connection` block. Includes the transient-zero hardening for lifetime
+>   energy counters.
+> - **Phase 2** (WS read expansion): shipped in `0.20.0-b6` on
+>   `idm-heatpump-api 2.7.0` — statistic heat quantities, freshwater
+>   circulation/status, status/controller-clock.
+> - **Phase 3** (capture tooling and knowledge): complete —
+>   `scripts/ws_capture.py` live-verified; the level-0 settingId catalog
+>   enumerated read-only (2016 IDs, 8 answering, 3 error classes); the
+>   complete write surface reconstructed from the SPA bundle and
+>   **capture-confirmed 2026-09-28** (`homeSave` / `settingSave` /
+>   `freshwaterSave` / `notificationSave` / `heatingcircuitSave` response
+>   envelopes, value formats) — see the protocol wiki page.
+> - **Phase 4** (WS writes in `web_only`): shipped across
+>   `0.20.0-b7`–`0.20.0-b9` on API 2.8.0–2.10.0 — operating mode and error
+>   acknowledgement (b7), hot-water setpoint (b8), heating-circuit room
+>   setpoint and mode per circuit (b9). Every write is range-validated
+>   against the device's own declarations, every response envelope was
+>   confirmed frame by frame, and each slice was live-validated on the
+>   maintainer's plant with a reversible round trip. The DHW one-shot boost
+>   deliberately stays off the web path: the level-0 web interface exposes
+>   it only as a weekly timetable type (`ttboost`), and writing whole
+>   timetable strings is out of scope (documented in changelog and wiki).
+>
+> Remaining: **Phase 5** (technician profile, userlevel 4) — optional, and
+> per this roadmap it requires its own privacy and safety review before
+> anything is built.
 picking this work up **cold** — this document is self-contained, but it expects
 you to have read both repositories' `AGENTS.md` first.
 
