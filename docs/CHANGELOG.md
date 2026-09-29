@@ -13,6 +13,17 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b14] - 2026-09-29
+
+### Fixed
+
+- **Verbindungsmodus entity failed to add on Home Assistant 2026.8+**: the
+  sensor declared enum options without the ENUM device class, which Home
+  Assistant rejects (`Sensor ... is providing enum options, but is missing
+  the enum device class`) - the entity failed to register and every
+  coordinator update raised the same error. The options metadata is dropped;
+  the states stay the plain, language-independent strings.
+
 ## [0.20.0-b13] - 2026-09-29
 
 ### Added
