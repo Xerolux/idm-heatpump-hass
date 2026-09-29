@@ -3,6 +3,7 @@
 import logging
 import socket
 from datetime import timedelta
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -2675,3 +2676,95 @@ class TestWebWriteMethods:
             pass
         else:
             raise AssertionError("a missing web session must raise HomeAssistantError")
+
+
+class TestWebRegisterBridge:
+    """Web-only snapshots feed register-keyed consumers (web register bridge)."""
+
+    def _web_only_coordinator(self, mock_hass, mock_config_entry, supplement):
+        coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+        # web-only operation: no scheduler-driven Modbus polling
+        coordinator.update_interval = None
+        coordinator._web_supplement = supplement
+        coordinator._web_metadata_data = MagicMock(return_value={})
+        return coordinator
+
+    def test_bridges_web_values_under_register_names(self, mock_hass, mock_config_entry):
+        supplement = SimpleNamespace(
+            sensor_values={
+                "flow_temperature": SimpleNamespace(native_value=35.1),
+                "return_temperature": SimpleNamespace(native_value=30.2),
+                "outside_air_temperature": SimpleNamespace(native_value=12.0),
+                "water_temp_top": SimpleNamespace(native_value=52.0),
+                "compressor_1": SimpleNamespace(native_value=1),
+                "flow_temp_HK_A": SimpleNamespace(native_value=33.0),
+                "room_temperature_HK_D": SimpleNamespace(native_value=21.4),
+                "hotgas_temperature": SimpleNamespace(native_value="31.0C"),
+            },
+            heating_circuits=(),
+            dhw_setpoint=None,
+        )
+        coordinator = self._web_only_coordinator(mock_hass, mock_config_entry, supplement)
+
+        bridged = coordinator._web_register_bridge_data()
+
+        assert bridged["hp_flow_temp"] == 35.1
+        assert bridged["hp_return_temp"] == 30.2
+        assert bridged["outdoor_temp"] == 12.0
+        assert bridged["dhw_temp_top"] == 52.0
+        assert bridged["compressor_status_1"] == 1
+        assert bridged["hc_a_flow_temp"] == 33.0
+        assert bridged["hc_d_room_temp"] == 21.4
+        # Values without a register alias stay out; non-numeric values too.
+        assert "hotgas_temperature" not in bridged
+
+    def test_bridges_flow_setpoints_and_dhw_setpoint(self, mock_hass, mock_config_entry):
+        supplement = SimpleNamespace(
+            sensor_values={},
+            heating_circuits=(
+                SimpleNamespace(hc_id="A", flow_setpoint=28.5),
+                SimpleNamespace(hc_id="D", flow_setpoint=None),
+            ),
+            dhw_setpoint=SimpleNamespace(value=48),
+        )
+        coordinator = self._web_only_coordinator(mock_hass, mock_config_entry, supplement)
+
+        bridged = coordinator._web_register_bridge_data()
+
+        assert bridged["hc_a_setpoint_flow_temp"] == 28.5
+        assert bridged["dhw_setpoint"] == 48
+        assert "hc_d_setpoint_flow_temp" not in bridged
+
+    async def test_web_refresh_replaces_snapshot_in_web_only(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.web_data import IdmWebSensorValue, IdmWebSupplement
+
+        supplement = IdmWebSupplement(
+            web_variant="nav10",
+            navigator_version="Navigator 10",
+            sensor_values={"flow_temperature": IdmWebSensorValue("35.0", 35.0)},
+        )
+        coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coordinator.update_interval = None
+        coordinator._web_pin = "1234"
+        coordinator._web_host = "192.0.2.10"
+        coordinator._web_client_pool = MagicMock()
+        coordinator._web_client_pool.get.return_value = None
+        coordinator._web_variant = "nav10"
+
+        async def fake_read(*args, **kwargs):
+            return supplement
+
+        import custom_components.idm_heatpump.coordinator as coord_module
+
+        original = coord_module.async_read_web_supplement
+        coord_module.async_read_web_supplement = fake_read
+        try:
+            coordinator.data = {"stale_register": 1.0}
+            await coordinator.async_refresh_web_supplement()
+        finally:
+            coord_module.async_read_web_supplement = original
+
+        # Stale values are gone; the bridge supplies register-named data plus
+        # the web metadata block.
+        assert coordinator.data["hp_flow_temp"] == 35.0
+        assert "stale_register" not in coordinator.data

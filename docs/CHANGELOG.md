@@ -13,6 +13,30 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Web-first operation for Navigator 10** (`idm-heatpump-api[web]==2.10.1`).
+  The `web_only` mode grows from an emergency view into a real operating
+  mode — as much of the plant as the web interface can deliver runs without
+  any Modbus connection (no proxy sharing, no register writes):
+  - **Web poll interval down to 10 seconds** (was 30): adjustable in the
+    initial setup, the web-only step and *Configure* — the controller's own
+    web UI polls at a comparable rate.
+  - **Web register bridge**: the web snapshot is bridged into the
+    register-named coordinator data (verified alias table: flow/return/
+    outdoor/DHW temperatures, compressor status, per-circuit flow and room
+    temperatures, per-circuit flow setpoints from the heating-circuit
+    detail, the hot-water setpoint). Register-keyed consumers keep working:
+    **calculated sensors** (heat-pump spread, hot-water deviation,
+    per-circuit flow deviation) evaluate from web values alone.
+  - **KNX bridge in web-only mode**: serves register-named values from the
+    bridged snapshot onto the bus (publishing and read-responses); bus
+    commands stay disabled there because their write path is Modbus-only.
+  The register map is loaded metadata-only for name resolution — no
+  register entities exist and nothing polls Modbus.
+
 ## [0.20.0-b9] - 2026-09-28
 
 ### Added

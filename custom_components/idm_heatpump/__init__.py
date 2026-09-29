@@ -412,6 +412,10 @@ async def _async_setup_web_only_entry(
     web_host: str,
     web_scan_interval: int,
     device_hierarchy_enabled: bool,
+    circuits: list[str] | None = None,
+    zone_count: int = 0,
+    zone_rooms: dict[int, int] | None = None,
+    enable_cascade: bool = False,
 ) -> bool:
     """Set up a web-only integration entry (no Modbus)."""
     _LOGGER.info(
@@ -420,16 +424,6 @@ async def _async_setup_web_only_entry(
         web_host,
     )
     ir.async_delete_issue(hass, DOMAIN, scoped_issue_id(entry.entry_id, "web_pin_missing"))
-
-    if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
-        # The bridge serves Modbus register values; a web-only entry has none,
-        # so it would come up with nothing to publish. Say so instead of
-        # leaving an enabled option looking active.
-        _LOGGER.warning(
-            "KNX bridge for %s is enabled but stays off in web-only mode: it serves Modbus "
-            "register values, which a web-only entry does not read",
-            entry.title,
-        )
 
     web_supplement = None
     model_name: str = MODEL
@@ -483,6 +477,24 @@ async def _async_setup_web_only_entry(
         )
         model_name = override_model_name
 
+    detected_model_info = None
+    web_circuits = circuits if circuits is not None else ["a"]
+    web_zone_rooms = zone_rooms if zone_rooms is not None else {}
+    if web_supplement is not None:
+        from .coordinator import navigator_family
+
+        family = navigator_family(model_name)
+        if family is not None:
+            detected_model_info = IdmModelInfo(
+                model_name=model_name,
+                active_heating_circuits=[c.upper() for c in web_circuits],
+                zone_modules=zone_count,
+                has_solar=True,
+                has_isc=False,
+                has_pv=True,
+                has_cascade=bool(enable_cascade),
+            )
+
     client = get_idm_client(host=host, port=port, slave_id=slave_id)
 
     empty_descriptions: list[dict[str, Any]] = []
@@ -490,7 +502,12 @@ async def _async_setup_web_only_entry(
         hass=hass,
         config_entry=entry,
         client=client,
-        # Web-only entries are refreshed by _web_poll_loop. Disabling the
+        # A web-only entry reads no Modbus registers at all, but the register
+        # map is loaded metadata-only so register-keyed consumers (the unused
+        # filter, calculated sensors, the KNX bridge) resolve names against the
+        # real map; the web snapshot feeds their values through the web register
+        # web register bridge. No register entities are created and nothing polls
+        # Modbus. Disabling the
         # DataUpdateCoordinator scheduler prevents empty Modbus polls from
         # marking all web entities unavailable.
         scan_interval=None,
@@ -509,8 +526,11 @@ async def _async_setup_web_only_entry(
         web_variant=stored_web_variant,
         device_hierarchy_enabled=device_hierarchy_enabled,
     )
-    # A web-only entry reads no Modbus registers at all.
-    coordinator.setup_registers([], 0, {}, descriptions=[])
+    # Metadata-only register map: register-keyed consumers (the unused filter,
+    # calculated sensors, the KNX bridge) resolve names against the real map
+    # while the web snapshot feeds their values through the web register
+    # bridge. No register entities exist and nothing polls Modbus.
+    coordinator.setup_registers(web_circuits, zone_count, web_zone_rooms, model_info=detected_model_info)
     coordinator.data = {}
 
     entry.runtime_data = IdmHeatpumpData(
@@ -531,6 +551,36 @@ async def _async_setup_web_only_entry(
     cleanup_stale_hierarchy_devices(hass, coordinator)
     cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
     cleanup_stale_web_sensor_entities(hass, coordinator)
+
+    if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
+        # The bridge serves register-named values; in web-only operation those
+        # come from the web register bridge. Bus commands stay disabled: their
+        # write path is Modbus-only.
+        groups = tuple(str(group) for group in (entry.options.get(CONF_KNX_GROUPS) or OBJECT_GROUPS))
+        overrides = entry.options.get(CONF_KNX_OVERRIDES) or {}
+        try:
+            bridge = KnxBridge(
+                hass,
+                coordinator,
+                KnxBridgeConfig(
+                    base_address=str(entry.options.get(CONF_KNX_BASE_ADDRESS, DEFAULT_KNX_BASE_ADDRESS)).strip(),
+                    send_enabled=bool(entry.options.get(CONF_KNX_SEND, DEFAULT_KNX_SEND)),
+                    receive_enabled=False,
+                    respond_to_read=bool(entry.options.get(CONF_KNX_RESPOND_TO_READ, DEFAULT_KNX_RESPOND_TO_READ)),
+                    groups=groups,
+                    overrides=dict(overrides) if isinstance(overrides, Mapping) else {},
+                    resend_interval=int(entry.options.get(CONF_KNX_RESEND_INTERVAL, DEFAULT_KNX_RESEND_INTERVAL)),
+                    tolerance=float(entry.options.get(CONF_KNX_TOLERANCE, DEFAULT_KNX_TOLERANCE)),
+                ),
+                entry_id=entry.entry_id,
+            )
+            await bridge.async_start()
+            entry.runtime_data.knx_bridge = bridge
+        except InvalidGroupAddressError:
+            _LOGGER.warning(
+                "KNX bridge for %s could not start in web-only mode: invalid base address",
+                entry.title,
+            )
 
     entry.runtime_data.web_task = _create_entry_background_task(
         hass,
@@ -701,6 +751,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             web_host,
             web_scan_interval,
             device_hierarchy_enabled,
+            circuits=circuits,
+            zone_count=zone_count,
+            zone_rooms=zone_rooms,
+            enable_cascade=enable_cascade,
         )
 
     # Use the library via the adapter (migration Option B)

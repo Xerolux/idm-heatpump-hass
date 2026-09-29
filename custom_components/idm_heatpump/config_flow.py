@@ -944,7 +944,7 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             default=int(options.get(CONF_WEB_SCAN_INTERVAL, DEFAULT_WEB_SCAN_INTERVAL)),
                         ): NumberSelector(
                             NumberSelectorConfig(
-                                min=30,
+                                min=10,
                                 max=1800,
                                 step=10,
                                 mode=NumberSelectorMode.SLIDER,
@@ -2572,7 +2572,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                         default=default_interval,
                     ): NumberSelector(
                         NumberSelectorConfig(
-                            min=30,
+                            min=10,
                             max=1800,
                             step=10,
                             mode=NumberSelectorMode.SLIDER,

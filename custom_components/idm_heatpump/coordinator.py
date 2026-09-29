@@ -722,6 +722,47 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
         return replace(supplement, values=values, sensor_values=sensor_values)
 
+    def _web_register_bridge_data(self) -> dict[str, Any]:
+        """Bridge web values into register-named coordinator data.
+
+        Only meaningful without a Modbus connection (web-only mode): the
+        web supplement's values are copied under their Modbus register
+        names (``web_data.WEB_TO_REGISTER_ALIASES`` plus the per-circuit
+        keys), together with the heating-circuit flow setpoints and the
+        hot-water setpoint from the web detail frames. Register-keyed
+        consumers - calculated sensors, the KNX bridge, the operating
+        analysis - keep working from the web snapshot alone. Values the
+        web interface does not deliver simply stay absent, exactly like a
+        register the controller never answers.
+        """
+        supplement = self._web_supplement
+        if supplement is None:
+            return {}
+        from .web_data import web_to_register_value
+
+        bridged: dict[str, Any] = {}
+        for name, item in (supplement.sensor_values or {}).items():
+            register_name = web_to_register_value(name)
+            if register_name is None:
+                continue
+            value = getattr(item, "native_value", None)
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                continue
+            bridged[register_name] = int(value) if isinstance(value, bool) else value
+        # Heating-circuit flow setpoints (temperatures.set of the detail frame)
+        # and the hot-water setpoint (FW030) have no plain web value entry.
+        for circuit in supplement.heating_circuits or ():
+            hc_id = str(getattr(circuit, "hc_id", "")).lower()
+            setpoint = getattr(circuit, "flow_setpoint", None)
+            if hc_id and isinstance(setpoint, (int, float)) and not isinstance(setpoint, bool):
+                bridged[f"hc_{hc_id}_setpoint_flow_temp"] = float(setpoint)
+        dhw = supplement.dhw_setpoint
+        if dhw is not None:
+            value = getattr(dhw, "value", None)
+            if isinstance(value, (int, float)) and not isinstance(value, bool):
+                bridged["dhw_setpoint"] = value
+        return bridged
+
     def _web_metadata_data(self) -> dict[str, str]:
         """Return web metadata stored alongside the Modbus data snapshot."""
         supplement = self._web_supplement
@@ -1343,6 +1384,13 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         live_data = cast(dict[str, Any] | None, getattr(self, "data", None))
         if live_data is not None:
             self.data = {**live_data, **self._web_metadata_data()}
+        if self.update_interval is None:
+            # Web-only operation: the web snapshot is the sole data source, so
+            # the register bridge replaces (not merges into) the snapshot -
+            # values that disappeared from the web must disappear here too.
+            bridged = self._web_register_bridge_data()
+            if bridged or self.data is None:
+                self.data = {**self._web_metadata_data(), **bridged}
         self.async_update_listeners()
 
     def _persist_web_detection(self, supplement: IdmWebSupplement, model_conflicts: bool) -> None:
