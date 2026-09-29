@@ -13,6 +13,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b16] - 2026-09-29
+
+### Added
+
+- **Verbindung neu laden** (`connection_reload`, diagnostic button): one
+  tap reloads the integration's config entry from the dashboard. After the
+  heat pump was switched off and is back, the tap immediately re-runs
+  detection, polling and the web supplement - instead of waiting for Home
+  Assistant's setup-retry backoff (up to ~30 minutes) that keeps the
+  "not reachable" repair card on screen. Same effect as *Repairs → Try
+  again*, just without leaving the dashboard.
+
 ## [0.20.0-b15] - 2026-09-29
 
 ### Fixed
