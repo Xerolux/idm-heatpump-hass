@@ -13,6 +13,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b13] - 2026-09-29
+
+### Added
+
+- **Connection-state entities**: two diagnostic sensors make the effective
+  connection visible on the dashboard in every connection mode, so a
+  fallback is recognizable at a glance:
+  - **Verbindungsmodus** (`connection_mode`): which transports are actually
+    live right now — *Modbus + Web*, *Modbus only* or *Web only* — with the
+    configured mode (the `connection_mode` option, default *auto*) and the
+    detected web variant (`nav10`/`nav20`) as attributes.
+  - **Letzte Web-Aktualisierung (Web)** (`web_last_success`): when the local
+    web interface last answered successfully — the web counterpart of the
+    Modbus last-success diagnostic; created when a web PIN is configured.
+  The coordinator now stamps every successful web-supplement refresh.
+
 ## [0.20.0-b12] - 2026-09-29
 
 ### Added
