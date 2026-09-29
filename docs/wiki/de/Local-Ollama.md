@@ -60,14 +60,14 @@ und veröffentlicht die Ollama-API auf Host-Port 11434.
    Home-Assistant-Hosts ersetzen):
 
    ```bash
-   curl -X POST http://192.168.178.57:11434/api/pull \
+   curl -X POST http://192.0.2.20:11434/api/pull \
      -d '{"name": "gemma3:4b", "stream": false}'
    ```
 
    Unter Windows PowerShell:
-   `Invoke-RestMethod -Method Post -Uri http://192.168.178.57:11434/api/pull -Body '{"name":"gemma3:4b"}'`.
+   `Invoke-RestMethod -Method Post -Uri http://192.0.2.20:11434/api/pull -Body '{"name":"gemma3:4b"}'`.
    Der Download ist ~3,3 GB. Prüfe das Ergebnis mit
-   `curl http://192.168.178.57:11434/api/tags`.
+   `curl http://192.0.2.20:11434/api/tags`.
 
 7. Fahre fort bei [Integration verbinden](#integration-verbinden) und nutze
    `http://<home-assistant-host-ip>:11434` als Basis-URL. Eine literale

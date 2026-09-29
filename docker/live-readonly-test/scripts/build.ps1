@@ -68,7 +68,7 @@ Write-Step "Seeding homeassistant/.storage/core.config_entries"
 $storageDir = Join-Path $Root "homeassistant\config\.storage"
 New-Item -ItemType Directory -Path $storageDir -Force | Out-Null
 
-$idmHost    = EnvOr "IDM_HOST" "192.168.178.103"
+$idmHost    = EnvOr "IDM_HOST" "192.0.2.10"
 $webHost    = "web-proxy"   # service name; web-proxy listens on port 80 internally
 $modbusHost = "modbus-proxy"
 $webPin     = EnvOr "IDM_WEB_PIN" ""

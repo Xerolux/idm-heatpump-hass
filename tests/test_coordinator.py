@@ -237,8 +237,7 @@ class TestRepairIssueClassification:
             (IdmConnectionError("connection lost"), "cannot_connect"),
             (
                 IdmConnectionError(
-                    "Modbus Error: [Connection] Failed to connect [Errno 111] "
-                    "Connect call failed ('192.168.178.196', 5020)"
+                    "Modbus Error: [Connection] Failed to connect [Errno 111] Connect call failed ('192.0.2.11', 5020)"
                 ),
                 "modbus_connection_refused",
             ),
@@ -257,12 +256,12 @@ class TestRepairIssueClassification:
     def test_connection_refused_message_is_actionable(self):
         message = _friendly_communication_error(
             "modbus_connection_refused",
-            "192.168.178.196",
+            "192.0.2.11",
             5020,
             IdmConnectionError("connect call failed"),
         )
 
-        assert "192.168.178.196:5020" in message
+        assert "192.0.2.11:5020" in message
         assert "refused the Modbus TCP connection" in message
         assert "Modbus TCP is enabled" in message
 
@@ -275,7 +274,7 @@ class TestRepairIssueClassification:
         ],
     )
     def test_generic_communication_errors_are_actionable(self, error, expected):
-        message = _friendly_communication_error("cannot_connect", "192.168.178.196", 502, error)
+        message = _friendly_communication_error("cannot_connect", "192.0.2.11", 502, error)
 
         assert expected in message
 

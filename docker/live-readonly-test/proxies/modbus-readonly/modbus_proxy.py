@@ -64,7 +64,7 @@ FC_NAMES = {
 
 
 def read_config() -> dict[str, Any]:
-    backend_host = os.environ.get("BACKEND_HOST", "192.168.178.103")
+    backend_host = os.environ.get("BACKEND_HOST", "192.0.2.10")
     backend_port = int(os.environ.get("BACKEND_PORT", "502"))
     listen_host = os.environ.get("LISTEN_HOST", "0.0.0.0")
     listen_port = int(os.environ.get("LISTEN_PORT", "5020"))

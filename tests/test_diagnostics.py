@@ -329,7 +329,7 @@ class TestConnectionDiagnostics:
         from idm_heatpump import IdmWebStatus
 
         _make_hass_with_coordinator(mock_hass, mock_config_entry)
-        mock_config_entry.data = {**mock_config_entry.data, "web_pin": "2634"}
+        mock_config_entry.data = {**mock_config_entry.data, "web_pin": "1234"}
         coordinator = mock_config_entry.runtime_data.coordinator
         supplement = coordinator.web_supplement
         supplement.status = IdmWebStatus(
@@ -358,12 +358,12 @@ class TestConnectionDiagnostics:
 
     async def test_connection_block_never_contains_the_pin_value(self, mock_hass, mock_config_entry):
         _make_hass_with_coordinator(mock_hass, mock_config_entry)
-        mock_config_entry.data = {**mock_config_entry.data, "web_pin": "2634"}
+        mock_config_entry.data = {**mock_config_entry.data, "web_pin": "1234"}
 
         result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
 
         serialized = str(result["data"]["connection"])
-        assert "2634" not in serialized
+        assert "1234" not in serialized
         assert result["data"]["connection"]["web_pin_configured"] is True
 
 
