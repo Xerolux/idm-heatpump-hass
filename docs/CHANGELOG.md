@@ -13,15 +13,14 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.20.0-b11] - 2026-09-29
+## [0.20.0-b12] - 2026-09-29
 
 ### Added
 
 - **Navigator 10 system-controller entities** (requires
-  `idm-heatpump-api[web]==2.12.0`; part of the current pin). Four read-only
-  WebSocket controllers the shipped frontend uses for its performance page,
-  weather tile, iON status and energy-flow widget are now part of the web
-  supplement:
+  `idm-heatpump-api[web]==2.12.1`). Four read-only WebSocket controllers the
+  shipped frontend uses for its performance page, weather tile, iON status
+  and energy-flow widget are now part of the web supplement:
   - **Wärmepumpen-Verbrauchsleistung (Web)** — live electrical consumption
     power with performance/system mode, battery flag and the production flow
     temperature as attributes.
@@ -42,6 +41,23 @@ All notable changes to this project will be documented in this file.
   All entities report unavailable until their frame has landed instead of
   being absent until the next reload. Strictly read-only; the `ion/save`
   write side is deliberately not wrapped.
+
+### Security
+
+- **Sensitive-data guard**: every push (all branches) and every pull
+  request is scanned for data that must never be committed — real IP
+  addresses, PINs, myIDM ids, tokens, session ids, unknown e-mail addresses
+  and non-public vendor hosts. `scripts/check_sensitive_data.py` uses
+  generic rules with a reviewed allowlist for intentional fakes
+  (`.github/sensitive-data-allowlist.txt`), runs as a required status check
+  on `main` and is backed by unit tests. Real plant values that had slipped
+  into fixtures over time were replaced with documentation values in the
+  same sweep — the plant web PIN should be rotated once on the device.
+
+## [0.20.0-b11] - 2026-09-29
+
+### Added
+
 - **Climate and water-heater cards for `web_only`** and **KNX bus commands
   through the web path** (points 3+5 of the web-first follow-up; requires
   `idm-heatpump-api[web]==2.10.1`):
