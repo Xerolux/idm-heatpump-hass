@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.20.0-b10] - 2026-09-29
 
 ### Added
 
