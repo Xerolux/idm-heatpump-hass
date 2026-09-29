@@ -2924,6 +2924,7 @@ class TestConnectionStateLogging:
             "IDM connection state changed: Modbus only -> Modbus + Web",
         ]
 
+
 class TestGetRegisterFallback:
     """The name index only carries entity-backed registers; action registers
     (write-only, no entity) must still resolve through the model's own map."""
