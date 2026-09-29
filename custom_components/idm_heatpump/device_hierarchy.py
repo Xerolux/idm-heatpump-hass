@@ -212,6 +212,8 @@ def resolve_device_scope(entity_key: str) -> DeviceScope | None:
         # web_ prefixed in their entity keys, stripped above like all web keys
         "demand_reason",
         "demand_reason_pv",
+        "energyflow_grid",
+        "energyflow_pv",
     }:
         return DeviceScope("pv", "pv")
     if (

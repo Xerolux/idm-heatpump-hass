@@ -17,6 +17,31 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Navigator 10 system-controller entities** (requires
+  `idm-heatpump-api[web]==2.12.0`; part of the current pin). Four read-only
+  WebSocket controllers the shipped frontend uses for its performance page,
+  weather tile, iON status and energy-flow widget are now part of the web
+  supplement:
+  - **Wärmepumpen-Verbrauchsleistung (Web)** — live electrical consumption
+    power with performance/system mode, battery flag and the production flow
+    temperature as attributes.
+  - **Wärmepumpen-Umgebungsleistung (Web)** — source-side power with the
+    environment source and inlet temperature as attributes.
+  - **Heizstab (Web)** — binary sensor for the heating-rod state.
+  - **Netzleistung (Web)** / **PV-Leistung (Web)** — the energy-flow widget's
+    grid and PV power (on the PV subdevice when the device hierarchy is
+    enabled; the `house` channel that firmware `T_NAV10_20.24-1580` removed
+    is exposed as an attribute when an older firmware still delivers it).
+  - **Wettervorhersage (Web)** — the controller's own forecast (myiDM
+    service): today's temperature as the state, today plus six forecast days
+    with min/max temperature, cloud cover, rain probability, sunshine
+    seconds, weather symbol and wind as attributes.
+  - **iON-Optimierung aktiv (Web)** — diagnostic binary sensor for IDM's
+    cloud energy optimization, with the enable setting and subscription
+    status as attributes.
+  All entities report unavailable until their frame has landed instead of
+  being absent until the next reload. Strictly read-only; the `ion/save`
+  write side is deliberately not wrapped.
 - **Climate and water-heater cards for `web_only`** and **KNX bus commands
   through the web path** (points 3+5 of the web-first follow-up; requires
   `idm-heatpump-api[web]==2.10.1`):

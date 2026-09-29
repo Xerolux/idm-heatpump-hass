@@ -1298,6 +1298,58 @@ class TestWebValueNormalisation:
         assert value.unit is None
 
 
+class TestSystemFrames:
+    async def test_system_frames_are_attached_for_nav10(self) -> None:
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        async def _ok(name: str):
+            async def _read(*args, **kwargs):
+                return name
+
+            return _read
+
+        client = SimpleNamespace(
+            read_performance=await _ok("performance-frame"),
+            read_weather=await _ok("weather-frame"),
+            read_ion=await _ok("ion-frame"),
+            read_energyflow=await _ok("energyflow-frame"),
+        )
+
+        result = await web_data._read_optional_system_frames(client, supplement)
+
+        assert result.performance == "performance-frame"
+        assert result.weather == "weather-frame"
+        assert result.ion == "ion-frame"
+        assert result.energyflow == "energyflow-frame"
+
+    async def test_other_variants_and_failures_keep_the_snapshot(self) -> None:
+        nav20 = IdmWebSupplement(web_variant="nav20")
+        assert await web_data._read_optional_system_frames(SimpleNamespace(), nav20) is nav20
+
+        async def _boom():
+            raise RuntimeError("controller missing")
+
+        supplement = IdmWebSupplement(web_variant="nav10")
+        client = SimpleNamespace(
+            read_performance=_boom,
+            read_weather=_boom,
+            read_ion=_boom,
+            read_energyflow=_boom,
+        )
+        result = await web_data._read_optional_system_frames(client, supplement)
+        assert result.performance is None
+        assert result.weather is None
+        assert result.ion is None
+        assert result.energyflow is None
+
+    async def test_clients_without_the_readers_are_accepted(self) -> None:
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        result = await web_data._read_optional_system_frames(SimpleNamespace(), supplement)
+
+        assert result is supplement
+
+
 class TestWebSupplementHelpers:
     async def test_clients_without_notifications_are_accepted(self) -> None:
         supplement = IdmWebSupplement(values={})

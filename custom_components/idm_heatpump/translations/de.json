@@ -1376,6 +1376,12 @@
       "web_hotwater_station_flow_switch": {
         "name": "Warmwasserstation Strömungsschalter (Web)"
       },
+      "web_hp_heating_rod": {
+        "name": "Heizstab (Web)"
+      },
+      "web_ion_active": {
+        "name": "iON-Optimierung aktiv (Web)"
+      },
       "web_pump_heating_circuit": {
         "name": "Pumpe Heizkreis {circuit} (Web)"
       },
@@ -2289,6 +2295,12 @@
       "web_dhw_status_info": {
         "name": "Warmwasser Statusinfo (Web)"
       },
+      "web_energyflow_grid": {
+        "name": "Netzleistung (Web)"
+      },
+      "web_energyflow_pv": {
+        "name": "PV-Leistung (Web)"
+      },
       "web_evaporation_temperature": {
         "name": "Verdampfungstemperatur (Web)"
       },
@@ -2354,6 +2366,12 @@
       },
       "web_hotwater_temperature": {
         "name": "Warmwassertemperatur (Web)"
+      },
+      "web_hp_power_consumption": {
+        "name": "Wärmepumpen-Verbrauchsleistung (Web)"
+      },
+      "web_hp_power_environment": {
+        "name": "Wärmepumpen-Umgebungsleistung (Web)"
       },
       "web_infosystem_notification_count": {
         "name": "Infosystem Meldungen Anzahl (Web)"
@@ -2465,6 +2483,9 @@
       },
       "web_water_temp_top": {
         "name": "Speichertemperatur oben (Web)"
+      },
+      "web_weather_forecast": {
+        "name": "Wettervorhersage (Web)"
       },
       "zone_dehumidification": {
         "name": "Zone {zone} Entfeuchtung"

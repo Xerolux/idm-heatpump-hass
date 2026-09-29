@@ -79,6 +79,20 @@ class IdmWebSupplement:
     # Heating circuits of a Navigator 10 (system.heatingcircuit/detail per
     # configured circuit); empty on other variants or failure.
     heating_circuits: tuple[Any, ...] = ()
+    # Navigator 10 system.heatpump.performance snapshot (live power figures:
+    # consumption, environment/source side, heating rod, modes); None on
+    # other variants or when the frame failed.
+    performance: Any | None = None
+    # Navigator 10 weather/detail snapshot (the controller's own forecast via
+    # the myiDM service: today plus up to six forecast days); None on other
+    # variants or when the frame failed.
+    weather: Any | None = None
+    # Navigator 10 ion/overview snapshot (iON cloud energy-optimization
+    # status); None on other variants or when the frame failed.
+    ion: Any | None = None
+    # Navigator 10 energyflow/overview snapshot (grid/PV power of the
+    # energy-flow widget); None on other variants or when the frame failed.
+    energyflow: Any | None = None
 
     @property
     def model_name(self) -> str | None:
@@ -508,6 +522,40 @@ async def _read_optional_heatingcircuits(
     return replace(supplement, heating_circuits=tuple(circuits))
 
 
+async def _read_optional_system_frames(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the system-level read frames.
+
+    Four controllers the shipped frontend uses for its performance page,
+    weather tile, iON status and energy-flow widget: performance (live power
+    figures), weather (the controller's own forecast), ion (cloud
+    optimization status) and energyflow (grid/PV power). Each read is
+    individually optional and failure-tolerant — a firmware without one
+    controller keeps the rest of the snapshot intact.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    for attr, reader_name in (
+        ("performance", "read_performance"),
+        ("weather", "read_weather"),
+        ("ion", "read_ion"),
+        ("energyflow", "read_energyflow"),
+    ):
+        reader = getattr(client, reader_name, None)
+        if not callable(reader) or getattr(supplement, attr, None) is not None:
+            continue
+        try:
+            async with asyncio.timeout(WEB_READ_TIMEOUT):
+                frame = await reader()
+        except Exception:
+            _LOGGER.debug("IDM web %s read failed", reader_name, exc_info=True)
+            continue
+        supplement = replace(supplement, **{attr: frame})
+    return supplement
+
+
 async def _augment_web_supplement(
     client: _IdmWebClient,
     supplement: IdmWebSupplement,
@@ -526,6 +574,7 @@ async def _augment_web_supplement(
     supplement = await _read_optional_home_overview(client, supplement)
     supplement = await _read_optional_dhw_setpoint(client, supplement)
     supplement = await _read_optional_heatingcircuits(client, supplement)
+    supplement = await _read_optional_system_frames(client, supplement)
     return supplement
 
 
