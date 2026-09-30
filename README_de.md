@@ -106,6 +106,7 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 |-----------|-------------------|
 | **🌡️ System-Überwachung** | Vorlauf, Rücklauf, Warmwasser, Außentemperatur, Druck, Durchfluss |
 | **🔧 Heizkreise A–G** | Bis zu 7 Heizkreise mit individueller Sollwert- und Modussteuerung |
+| **🌡️ Differenzregelung** *(Beta 0.20.1-b1)* | Manuelle Auswahl je Kreis: Speicher- und Referenztemperatur, vorzeichenbehaftete Temperaturdifferenz und Betriebsstatus; normale Heizungsregler werden ausgeblendet. [Einrichtung und Grenzen](docs/wiki/de/Configuration.md#differenztemperaturgeregelte-heizkreise) |
 | **🏠 Zonen-Module** | Bis zu 10 Zonen mit bis zu 8 konfigurierbaren Räumen je Zone (Raumthermostat-Funktion); beim aktuellen Navigator 10 sind 6 Räume der Standard. |
 | **🌡️ Raumtemperatur-Weitergabe** | Optionale Weitergabe von Home-Assistant-Temperatursensoren an die externen IDM-Raumtemperaturregister pro Heizkreis |
 | **💧 Warmwasser** | Warmwasser-Sollwert und Prioritätssteuerung |

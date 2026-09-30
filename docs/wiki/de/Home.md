@@ -53,6 +53,20 @@ CI, Release-Prüfung und Pages-Veröffentlichung gleichen aktuelle Angaben mit
 dem ausgecheckten Manifest ab. Die Bibliotheksautomatik synchronisiert sie;
 veröffentlichte Changelogs und Release-Nachweise bleiben historische Dokumente.
 
+### Zum Testen verfügbar: Differenzregelung (0.20.1-b1)
+
+Im Navigator differenztemperaturgeregelte Kreise können jetzt
+**Speichertemperatur, Referenztemperatur, ihre vorzeichenbehaftete Differenz und
+den Betriebsstatus** in Home Assistant anzeigen. Normale Heizungsregler werden
+für diese Kreise ausgeblendet. Aktiviere die manuelle Auswahl je Kreis bei der
+Einrichtung oder Neukonfiguration; die Reglerkonfiguration bleibt unverändert.
+
+Teste [Beta 0.20.1-b1](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.20.1-b1)
+mit der [Konfigurationsanleitung](Configuration#differenztemperaturgeregelte-heizkreise).
+Beachte die [Entitätszuordnung und Grenzen](Entities#differenztemperaturgeregelte-heizkreise)
+vor Dashboard-Anpassungen. Die Bestätigung auf Hardware mit Differenzregelung
+steht noch aus; Hysterese- und Schwellenregler sind nicht enthalten.
+
 ### Neu in 0.19.0
 
 0.19.0 macht den **Navigator 1.0/1.7 zum vollwertigen Familienmitglied** und gibt der **Photovoltaik ein Gesicht**. Alles bleibt lokal; keine Entity-ID ändert sich.

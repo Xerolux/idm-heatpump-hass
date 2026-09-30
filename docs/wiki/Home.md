@@ -52,6 +52,20 @@ CI, release validation and Pages deployment check current version claims
 against the checked-out manifest. Dependency automation synchronizes those
 claims; published changelogs and release evidence remain unchanged history.
 
+### Available for testing: differential circuits (0.20.1-b1)
+
+Circuits configured for differential temperature control in the Navigator can
+now show **storage temperature, reference temperature, their signed difference
+and operating status** in Home Assistant. Ordinary heating controls are hidden
+for those circuits. Enable the manual per-circuit option during setup or
+reconfiguration; the controller's configuration is unchanged.
+
+Try [beta 0.20.1-b1](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.20.1-b1)
+and follow the [configuration guide](Configuration#differential-temperature-controlled-circuits).
+See [entity mapping and limits](Entities#differential-temperature-controlled-heating-circuits)
+before updating dashboards. Confirmation on differential-control hardware is
+still pending; hysteresis and threshold controls are not included.
+
 ### New in 0.19.0
 
 0.19.0 makes the **Navigator 1.0/1.7 a first-class citizen** and gives **photovoltaics a face**. Everything stays local; no entity IDs change.

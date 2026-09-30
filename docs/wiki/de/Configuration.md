@@ -47,6 +47,39 @@ zusätzliche Bestätigungsseite. Sie ist getrennt von der Bestätigung der
 alleinigen Steuerung, die der automatische Warmwasser-Manager und der
 Komfortzeitplan verlangen.
 
+### Differenztemperaturgeregelte Heizkreise
+
+Zum Testen ab Beta 0.20.1-b1 verfügbar.
+
+Wenn das Heizsystem eines Kreises im Navigator bereits auf
+**Differenztemperaturgeregelt** steht, kann Home Assistant Speicher- und
+Referenztemperatur, ihre vorzeichenbehaftete Differenz und den Kreisstatus
+anzeigen. Das ist beispielsweise für einen Holzofenkreis mit Speicher sinnvoll.
+
+1. Wähle bei der Ersteinrichtung **Anlage** in der geführten Funktionsauswahl.
+   Für einen bestehenden Eintrag nutze **Konfigurieren → Anlage** oder
+   **Neu konfigurieren → Funktionen → Anlage**.
+2. Lass den Kreis unter **Heizkreise** ausgewählt und wähle ihn zusätzlich unter
+   **Differenztemperaturgeregelte Heizkreise**. Im erweiterten Optionsformular
+   steht dieselbe Auswahl neben den installierten Heizkreisen.
+3. Speichere und warte auf das Neuladen. Vergleiche Speicher- und
+   Referenztemperatur mit deinem Regler. Die Differenz ist **Referenz minus
+   Speicher**, angegeben in K.
+
+Die Auswahl ist standardmäßig leer und funktioniert in beiden Funktionsprofilen.
+Sie ändert die Darstellung in Home Assistant, nicht das Heizsystem am Regler.
+Es gibt keine automatische Erkennung; die Auswahl ist vom internen
+Differenzregelungsmodul des Navigators getrennt.
+
+Normale Heizungsregler und Climate-Entitäten entfallen für ausgewählte Kreise.
+Prüfe vor dem Speichern darauf zugreifende Dashboards und Automationen. Die
+beiden Temperatursensoren behalten ihre Entity-IDs. Zurückschalten stellt normale
+Regler wieder her; Anpassungen entfernter Regler bleiben dabei nicht erhalten.
+Hysterese, Schwellen und Maximaltemperatur werden wegen unbestätigter Register
+nicht angeboten. Die Zuordnung basiert auf dem Navigator-10-Bericht in Issue
+#429 und muss noch auf Hardware mit Differenzregelung bestätigt werden.
+Siehe [Entitäten, Statuswerte und Migration](Entities#differenztemperaturgeregelte-heizkreise).
+
 ### Funktionsprofil
 
 Das **Funktionsprofil** steuert optionale IDM-spezifische Entitäten:
