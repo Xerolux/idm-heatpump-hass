@@ -166,9 +166,10 @@ Das Abfrageintervall legt fest, wie oft Register abgefragt werden.
 
 Die Integration kann optional zusätzliche lokale Navigator-Webdaten über
 `idm-heatpump-api` lesen. Dies ist schreibgeschützt und additiv. Verwendet
-wird es für Werte wie die Navigator-Generation, die Softwareversion, das
-Wärmepumpenmodell, ausgewählte Web-UI-Diagnosen und Infosystem-Meldungen des
-Navigator 10.
+wird es für Werte wie die Navigator-Generation, die Softwareversion,
+ausgewählte Web-UI-Diagnosen und Infosystem-Meldungen des
+Navigator 10. (Das Wärmepumpenmodell ist, wo die Firmware es meldet, ein
+Attribut am Sensor *Navigator-Version (Web)* — siehe [Entitäten](Entities).)
 
 | Option | Beschreibung | Standard |
 |--------|-------------|---------|

@@ -2367,9 +2367,6 @@
       "web_heating_water_outlet_temperature": {
         "name": "Heating water outlet temperature (Web)"
       },
-      "web_heatpump_model": {
-        "name": "Heat pump model (Web)"
-      },
       "web_heatstore_temperature": {
         "name": "Heat storage temperature (Web)"
       },

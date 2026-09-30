@@ -13,6 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.0-b18] - 2026-09-30
+
+### Changed
+
+- **Wärmepumpenmodell (Web) is no longer an entity of its own.** Navigator 10
+  firmware 20.24-1580 (installed from 2026-09-29) removed the model row from
+  the controller's sensor page, and no other accessible web frame reports the
+  model - live-verified against the controller: the entity could never gain a
+  value on current firmware and only sat as unavailable noise in the
+  diagnostics card. Where a firmware still delivers the row (Navigator 2.0
+  web, older Navigator 10 firmware), the value now appears as the
+  `heatpump_model` attribute of the *Navigator version (Web)* sensor. The
+  register-analysis wiki documents the firmware change on the sensor page.
+
 ## [0.20.0-b17] - 2026-09-29
 
 The second step of the Navigator 1.0/1.7 coil rework (issue #319): the

@@ -92,7 +92,7 @@ Datenschutz und das Dashboard.
 - **Kaskade & Bivalenz**: Steuerung mehrerer Wärmepumpen, Einbindung von Heizstäben
 - **GLT-Fernwartung**: GLT-Temperaturanforderungen (zyklisches Schreiben)
 - **Fehlermanagement**: Fehlererkennung, Fehlerquittierung, Diagnose-Export
-- **Optionales Web-Supplement**: Navigator-Generation, Softwareversion, Wärmepumpenmodell, kompakte myIDM-ID, Diagnose des reinen Web-Betriebs und Navigator-10-Infosystem-Meldungen, ohne Modbus-Werte zu ersetzen; Standardintervall 30 Sekunden
+- **Optionales Web-Supplement**: Navigator-Generation, Softwareversion, kompakte myIDM-ID, Diagnose des reinen Web-Betriebs und Navigator-10-Infosystem-Meldungen, ohne Modbus-Werte zu ersetzen; Standardintervall 30 Sekunden
 - **KNX-Bridge** *(optional)*: Bedient die IDM-KNX-Kommunikationsobjekte — mit denselben Objektnummern, Datenpunkttypen und Richtungen wie IDMs ETS-Beispielprojekt — über die Home-Assistant-KNX-Integration, sodass das Weinzierl-KNX-IP-BAOS-Gateway-Modul nicht mehr benötigt wird. Siehe [KNX-Bridge](KNX-Bridge).
 - **Raumtemperatur-Weiterleitung**: Optionales Weiterleiten von Home-Assistant-Temperatursensoren in die externen IDM-Raumtemperatur-Register je Heizkreis
 - **Lesbare Diagnose**: Interne IDM-Meldungen erscheinen mit Text plus strukturierten Code-/Text-Attributen

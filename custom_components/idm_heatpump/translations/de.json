@@ -2343,9 +2343,6 @@
       "web_heating_water_outlet_temperature": {
         "name": "Heizwasser Austrittstemperatur (Web)"
       },
-      "web_heatpump_model": {
-        "name": "Wärmepumpenmodell (Web)"
-      },
       "web_heatstore_temperature": {
         "name": "Wärmespeichertemperatur (Web)"
       },

@@ -430,7 +430,7 @@ Bereiche 700–15100 auf einer realen Navigator 10 (jsonVersion 11, Userlevel
 |---|---|---|---|---|
 | `4740` | `N2_SYSTEM_REBOOT` | **action** | 4488 | Neustart-Aktion (Schreibseite, Material für Phase 4) |
 | `4754` | `N2_SYSTEM_INFO` | info | 4747 | Laufzeiten, Schaltzyklen, Softwareversion, myIDM-ID, Regler online |
-| `4768` | `N2_SENSORS` | info | 4761 | 26 Sensorwerte (B-Codes) |
+| `4768` | `N2_SENSORS` | info | 4761 | 26 Sensorwerte (B-Codes); bis Firmware 20.24-880 endete die Tabelle zusätzlich mit einer `Modell`-Zeile (Wärmepumpenmodell) — 20.24-1580 hat sie entfernt (live verifiziert 2026-09-30) |
 | `4775` | `N2_DIGITAL_INPUTS` | info | 4761 | 8 digitale Eingänge |
 | `4782` | `N2_ANALOGUE_OUTPUTS` | info | 4761 | 4 analoge Ausgänge |
 | `4789` | `N2_DIGITAL_OUTPUTS` | info | 4761 | 14 digitale Ausgänge |
