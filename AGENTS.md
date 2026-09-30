@@ -7,7 +7,7 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.20.0` (defined in `custom_components/idm_heatpump/manifest.json`; latest stable: `0.20.0`)
+- **Current Version**: `0.20.1-b1` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
@@ -135,6 +135,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_diagnostics.py
 │   ├── test_diagnostics_privacy.py
 │   ├── test_documentation_language.py
+│   ├── test_documentation_versions.py
 │   ├── test_entity.py
 │   ├── test_entity_metadata_catalog.py
 │   ├── test_entity_naming.py
@@ -447,6 +448,13 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 - Catch `Exception`, not `BaseException`, unless there is a very specific reason
 
 ### Versioning
+
+- Run `python scripts/check_documentation_versions.py --update` after changing
+  the integration version or dependency pins. CI, releases and Pages reject
+  current documentation that disagrees with the manifest. The dependency
+  workflow synchronizes those claims automatically; historical release notes
+  and evidence keep their original versions. An installed release uses its
+  tagged manifest, not the current development documentation.
 - Version is defined **only** in `custom_components/idm_heatpump/manifest.json`
 - Bump version there before creating a release and update `CHANGELOG.md`
 - Pin the `idm-heatpump-api` requirement for every released integration version to the exact PyPI version that is current at release time or has been explicitly tested for that release. Do not publish a release with an open-ended API lower bound such as `idm-heatpump-api>=x.y.z`; the integration release and API version must remain a reproducible pair.

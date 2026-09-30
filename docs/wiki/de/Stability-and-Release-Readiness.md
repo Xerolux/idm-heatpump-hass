@@ -6,7 +6,13 @@ normales Changelog.
 
 ## Aktueller Status
 
-Der veröffentlichte stabile Kanal ist **0.19.0**, der stabile Schnitt der Linie
+Den stabilen Kanal zeigt das [aktuelle stabile Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest).
+Die Quellstand-Versionen unten werden automatisch geprüft. Alte Releases
+behalten die Abhängigkeiten ihres getaggten Manifests.
+
+## Release-Entscheidung zu 0.19.0
+
+**0.19.0** ist der stabile Schnitt der Linie
 aus sechzehn Betas. Sie macht den Navigator 1.0/1.7 zum vollwertigen
 Familienmitglied — der vollständige offizielle Schreibblock, ein
 firmware-ehrlicher Bereichsfilter, der capture-verifizierte FW030-Float-Sollwert
@@ -58,7 +64,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration `0.19.0` und `idm-heatpump-api` `2.13.0` bilden das aktuelle exakt
+Integration im Quellstand `0.20.1-b1` und `idm-heatpump-api` `2.13.0` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

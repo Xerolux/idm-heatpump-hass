@@ -6,7 +6,14 @@ a normal changelog.
 
 ## Current Status
 
-The published stable channel is **0.19.0**, the stable cut of the line that
+See the [published stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest)
+for the installed stable channel. Current source-tree versions are documented
+below and checked automatically; an older release keeps the pins in its own
+tagged manifest. The release decisions below describe their original candidates.
+
+## 0.19.0 release decision
+
+**0.19.0** is the stable cut of the line that
 ran through sixteen betas. It makes the Navigator 1.0/1.7 family a full
 citizen — the complete official holding block, a firmware-honest range
 guard, the capture-verified FW030 float setpoint and a water heater card —
@@ -55,7 +62,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Integration `0.19.0` and `idm-heatpump-api` `2.13.0` form the current
+Source-tree integration `0.20.1-b1` and `idm-heatpump-api` `2.13.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

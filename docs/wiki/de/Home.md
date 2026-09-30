@@ -23,7 +23,7 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 |---------|---------|
 | **Protokoll** | Modbus TCP (Port 502, Slave-ID 1) |
 | **Optionales Supplement** | Lokale Navigator-Web-API, nur lesend, PIN optional |
-| **Dokumentationsversion** | [0.19.0](https://github.com/Xerolux/idm-heatpump-hass/releases/tag/v0.19.0); [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Dokumentationsversion** | Quellstand `0.20.1-b1`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Unterstützte/getestete HA-Baseline** | 2026.8.1 |
 | **Python** | 3.14+ (von Home Assistant verwaltet) |
 | **Verbindungsbibliothek** | modbus-connection==4.12.3 |
@@ -36,6 +36,22 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 ---
 
 ## Zentrale Funktionen
+
+### Welche Bibliotheksversion gehört zu einem installierten Release?
+
+Diese Dokumentation folgt dem aktuellen Quellstand und kann noch nicht
+veröffentlichte Bibliotheksupdates enthalten. Ihre Versionsangaben gelten
+nicht für jedes ältere installierte Release. Maßgeblich sind die Anforderungen
+im **Manifest des jeweiligen Release-Tags**, nicht in `main`.
+Beispielsweise pinnt [das Manifest von 0.19.0](https://github.com/Xerolux/idm-heatpump-hass/blob/v0.19.0/custom_components/idm_heatpump/manifest.json)
+die API-Version **2.4.3**. Diese Laufzeitversion ist unter 0.19.0 korrekt.
+Vergleiche den Integrations-/API-Versionssensor und die Diagnose mit deinem
+Release-Tag, bevor du eine neuere Angabe auf der aktuellen Website als
+Installationsfehler wertest.
+
+CI, Release-Prüfung und Pages-Veröffentlichung gleichen aktuelle Angaben mit
+dem ausgecheckten Manifest ab. Die Bibliotheksautomatik synchronisiert sie;
+veröffentlichte Changelogs und Release-Nachweise bleiben historische Dokumente.
 
 ### Neu in 0.19.0
 

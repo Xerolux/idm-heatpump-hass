@@ -47,13 +47,20 @@ must be limited to documented safe registers.
 
 - `python scripts/check_dependency_pins.py` — every exactly pinned runtime
   dependency is the newest release on PyPI. The release workflow runs this and
-  fails the release when a pin is behind; `allow_stale_pins` overrides it for a
-  deliberate exception. The daily `dependency-freshness.yml` workflow updates
+  fails the release when a pin is behind, without an override.
+  The daily `dependency-freshness.yml` workflow updates
   every pin, validates the result (ruff, mypy, the suite with the coverage gates
   at the minimum supported Home Assistant, hassfest) and merges it into `main` on
   its own; a major version bump is validated but left open for review.
   A runtime dependency change restarts the soak clock, so it ships through the
   pre-release channel.
+- `python scripts/check_documentation_versions.py` — current integration and
+  runtime versions in registered documentation must match the manifest. This
+  offline check runs in CI, release preparation and Pages deployment. After a
+  version bump, run it with `--update` and review the changes. Dependency
+  automation also synchronizes these claims before validation. Historical
+  release decisions, changelogs and release evidence keep their published
+  versions; older installations must use their own tagged manifest.
 - `pytest tests/ -v --tb=short --cov=custom_components/idm_heatpump --cov-report=term-missing`
 - `ruff check custom_components/idm_heatpump tests`
 - `ruff format custom_components/idm_heatpump tests --check`
