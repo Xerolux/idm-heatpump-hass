@@ -4,10 +4,10 @@ This file provides guidance for AI assistants working on this codebase.
 
 ## Project Overview
 
-**IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement. It is an unofficial community project providing 100% local control (no cloud dependency).
+**IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.19.0` (defined in `custom_components/idm_heatpump/manifest.json`; latest stable: `0.19.0`)
+- **Current Version**: `0.20.0-b18` (defined in `custom_components/idm_heatpump/manifest.json`; prerelease line, latest stable: `0.19.0`)
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
@@ -16,7 +16,8 @@ This file provides guidance for AI assistants working on this codebase.
 - **Device Logic**: `idm-heatpump-api[web]==2.13.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Open improvement plan**: `docs/dev/code-audit-2026-09.md` — the reviewed list of defects and
   cleanups with a work package per fix. Read it before starting unrelated refactoring; pick a
-  package from it instead of inventing one.
+  package from it instead of inventing one. The 0.20.0 web-first line is documented in
+  `docs/dev/ws-first-roadmap.md`.
 
 ---
 
@@ -54,9 +55,12 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── adapter_descriptions.py       # HA description helpers (icons, device classes)
 │   ├── adapter_enums.py              # Enum slug maps and translation keys
 │   ├── entity_names.py               # Entity translation keys, placeholders and canonical English names
+│   ├── adapter_names.py              # German entity names (source of truth for the de translations)
 │   ├── adapter_registers.py          # Register-map filtering by model
 │   ├── adapter_glt.py                # GLT measurement detection helpers
 │   ├── web_data.py                   # Optional local Navigator web supplement client
+│   ├── web_demand_reason.py          # Demand-reason extraction from the Nav 10 WebSocket home/detail frame
+│   ├── web_demand_reason_entities.py # Entities publishing the controller demand reason / PV flag
 │   ├── room_temp_forwarding.py       # Forward HA room temperatures (per circuit) and humidity (global) to GLT registers
 │   ├── external_power_forwarding.py  # Optional PV, consumption and battery forwarding to IDM GLT registers
 │   ├── knx_catalog.py                # IDM KNX communication objects (from the ETS example project) + group address arithmetic
@@ -175,7 +179,17 @@ This file provides guidance for AI assistants working on this codebase.
 │
 ├── tests_ha/                         # Real-Home-Assistant smoke tests (audit E1)
 │   ├── conftest.py                   # Boots a genuine HA in a temp config dir, fake Modbus client
-│   └── test_smoke_entry_lifecycle.py # Setup, reload, unload and task-leak checks
+│   └── test_smoke_entry_lifecycle.py # Setup, reload, unload, task-leak and entity-registration checks
+│
+├── scripts/                          # Maintenance & generation scripts (python scripts/<name>.py)
+│   ├── check_dependency_pins.py      # Reports/rewrites runtime pins across every PIN_DOCUMENTS file
+│   ├── check_documentation_language.py # Reports German prose outside the exempt German locations
+│   ├── check_sensitive_data.py       # Credential/personal-data scan (run by sensitive-data-guard.yml)
+│   ├── consolidate_changelog.py      # Folds prerelease changelog sections into the stable section
+│   ├── generate_entity_translations.py # Writes the entity blocks in strings.json + translations
+│   └── (further generators)          # Register reference, KNX group addresses/export parity, guided-flow
+│                                      # translations, metadata catalog, social card, pages build, release
+│                                      # discussion publishing — see the scripts/ directory
 │
 ├── docs/                             # Documentation & wiki
 │   ├── wiki/                         # Complete wiki (installation, config, entities...)
@@ -221,6 +235,7 @@ Home Assistant
     │
     ├── Services [services.py]
     │       ├── set_system_mode
+    │       ├── set_controller_clock
     │       ├── acknowledge_errors
     │       ├── write_register
     │       ├── set_external_climate
@@ -254,7 +269,7 @@ Home Assistant
 
 8. **Optimistic Updates**: Write operations update the coordinator data immediately before the device confirms the change.
 
-9. **Web-only Mode**: When Modbus is unavailable but a local web PIN is configured, the integration can run in a web-only fallback that exposes sensors from the Navigator's local web interface.
+9. **Connection Modes**: The `connection_mode` option picks `auto` (default), `modbus_web`, `web_only` or `modbus_only`. `web_only` is the fallback when Modbus is unavailable but a web PIN is configured — since 0.20.0 it is controllable, not just readable (mode select, DHW setpoint, acknowledge, heating-circuit setpoints, climate/water-heater cards). The Navigator 10 supplement speaks a WebSocket on port 61220 while Navigator 2.0 uses plain HTTP, and web values are bridged into the register snapshot so calculated sensors and KNX serving also work from web data.
 
 ---
 
@@ -345,6 +360,7 @@ ruff check custom_components tests
 - **dependabot-auto-merge.yml**: Merges Dependabot's GitHub Actions pull requests once their checks are green
 - **release.yml**: Validates tag/manifest/CHANGELOG, creates ZIP release artifacts, announces in Discussions
 - **security.yml**: CodeQL (actions, python) + pip-audit
+- **sensitive-data-guard.yml**: Runs `scripts/check_sensitive_data.py` on every push to keep credentials and personal data out of the repository
 - **stale.yml**: Marks inactive issues/PRs as stale
 - **pages.yml**: Deploys `docs/wiki/` + images to GitHub Pages
 
@@ -475,7 +491,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 The config flow (defined in `config_flow.py`) has these steps:
 
 1. **user**: Integration name, host, port, slave ID, optional web PIN, Modbus proxy / web host
-2. **options**: Scan interval, hide unused registers, heating circuits, zone count, cascade, web settings, room temperature forwarding, Modbus timeout/retries
+2. **options**: Connection mode (auto / modbus+web / web-only / modbus-only), scan interval, hide unused registers, heating circuits, zone count, cascade, web settings, room temperature forwarding, Modbus timeout/retries
 3. **zones**: Room count per zone (up to `MAX_ZONE_COUNT` zones × `MAX_ROOM_COUNT` rooms)
 4. **modbus_failed**: Fallback step offering web-only mode when Modbus connection fails but a web PIN is configured
 5. **reconfigure**: Update connection settings without removing the integration
@@ -492,13 +508,14 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Zone management | `config_flow.py`, `library_adapter.py` | Up to 10 zones × 8 rooms |
 | Web supplement | `web_data.py`, `coordinator.py` | Optional local Navigator web data (Nav 2.0 / Nav 10 / Pro) |
 | Web-only fallback | `__init__.py`, `config_flow.py` | Runs without Modbus when only web access is available |
+| Connection entities | `connection_entities.py` | Diagnostic sensor for the effective connection mode plus web liveness; the *Verbindung neu laden* diagnostic button (`connection_reload`) reloads the config entry immediately instead of waiting out HA's setup-retry backoff |
 | tmodbus transport | `modbus_client.py`, `modbus_transport.py` | Default direct socket path; per-entry ownership, no central cross-entry sharing |
 | KNX bridge | `knx_bridge.py`, `knx_catalog.py` | Optional. Serves the 654 IDM KNX communication objects through the **Home Assistant `knx` integration** (`knx.send`, `knx.event_register`, `knx_event`) so the Weinzierl BAOS gateway module is not needed. Never implement a KNX stack here — tunnelling, routing and KNX Secure belong to the `knx` integration. Group addresses are `base + object number`, with per-register overrides |
 | Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps (per heating circuit) to GLT registers |
 | Humidity forwarding | `room_temp_forwarding.py` | Forwards one HA humidity sensor (global `ext_humidity`) to the GLT humidity register |
 | Climate entities | `climate.py` | Heating-circuit + zone-module room climates; routes writes through `coordinator.async_write_register` |
 | Water heater entity | `water_heater.py` | DHW target setpoint; only set up when both `dhw_temp_top` and `dhw_setpoint` exist |
-| Acknowledge-errors button | `button.py` | One-shot button writing the centralized acknowledge register |
+| Action buttons | `button.py` | One-shot buttons writing momentary command coils exactly once: acknowledge errors (c3000) and the Navigator 1.x Vorrangladung request (`dhw_priority_charge`, c3003 via FC05). No switch is offered by design — writing 0 to a momentary command bit is forbidden |
 | Bitflag decoding | `adapter_enums.py`, `sensor.py` | Renders human-readable strings like "Heating\|Water\|Defrosting" |
 | Diagnostics export | `diagnostics.py` | Redacts host/port/slave for privacy |
 | Unused register filtering | `entity.py`, `coordinator.py` | Entities become unavailable when their register indicates "unused" |
@@ -527,7 +544,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 - **Do not skip type hints** — mypy strict mode will fail CI.
 - **Do not hardcode register addresses** in platform files — reference `const.py` or `registers.py`.
 - **Do not bypass `ModbusConnectionTransport`** with a second direct socket path. The current runtime is tmodbus-backed and deliberately reports `supports_shared_connection=False`.
-- **Do not write to EEPROM-sensitive registers** without proper guards.
+- **Do not write to EEPROM-sensitive registers** without proper guards. The Navigator 1.x coil block sits under the controller's EEPROM note (max. ~300 000 write cycles per register): the Vorrangladung button is manual-use only and must never be driven by a schedule or timed automation.
 - **Keep real-hardware transport validation read-only** unless the owner explicitly authorizes a specific write.
 - **Keep entity names consistent** with `strings.json` and `translations/`.
 - **Test new functionality** — untested code will not pass CI on the main branch.
