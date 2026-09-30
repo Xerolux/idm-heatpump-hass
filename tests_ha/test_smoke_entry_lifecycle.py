@@ -44,3 +44,33 @@ async def test_setup_reload_and_unload_leave_no_tasks_behind(smoke_hass, patched
     # the entry. Only the test's own task may remain on the loop.
     pending = [task for task in asyncio.all_tasks() if task is not asyncio.current_task()]
     assert not pending, f"leaked tasks after unload: {[task.get_coro() for task in pending]}"
+
+
+async def test_connection_entities_register_as_diagnostics(smoke_hass, patched_client, smoke_entry) -> None:
+    """The connection entities must land in the device page's Diagnose section.
+
+    Found in the wild: an installation carried none of the connection
+    entities in its diagnostics card. The entity registry is what the device
+    page groups by, so the smoke leg pins presence, diagnostic category and
+    enabled state against a genuine Home Assistant. (web_last_success needs a
+    configured web PIN and is not part of the web-less smoke entry.)
+    """
+    await smoke_hass.config_entries.async_add(smoke_entry)
+    await smoke_hass.async_block_till_done()
+    assert smoke_entry.state is ConfigEntryState.LOADED
+
+    registry = er.async_get(smoke_hass)
+    by_unique_id = {
+        entity.unique_id: entity
+        for entity in er.async_entries_for_config_entry(registry, smoke_entry.entry_id)
+    }
+
+    for suffix in ("connection_mode", "connection_reload"):
+        unique_id = f"{smoke_entry.entry_id}_{suffix}"
+        entry = by_unique_id.get(unique_id)
+        assert entry is not None, f"{unique_id} was not registered"
+        assert entry.entity_category is er.EntityCategory.DIAGNOSTIC, unique_id
+        assert entry.disabled_by is None, unique_id
+
+    assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
