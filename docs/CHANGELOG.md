@@ -13,101 +13,46 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.20.0-b18] - 2026-09-30
+## [0.20.0] - 2026-09-30
 
-### Changed
-
-- **Wärmepumpenmodell (Web) is no longer an entity of its own.** Navigator 10
-  firmware 20.24-1580 (installed from 2026-09-29) removed the model row from
-  the controller's sensor page, and no other accessible web frame reports the
-  model - live-verified against the controller: the entity could never gain a
-  value on current firmware and only sat as unavailable noise in the
-  diagnostics card. Where a firmware still delivers the row (Navigator 2.0
-  web, older Navigator 10 firmware), the value now appears as the
-  `heatpump_model` attribute of the *Navigator version (Web)* sensor. The
-  register-analysis wiki documents the firmware change on the sensor page.
-
-## [0.20.0-b17] - 2026-09-29
-
-The second step of the Navigator 1.0/1.7 coil rework (issue #319): the
-device-logic dependency moves to `idm-heatpump-api[web]==2.13.0`.
-
-### Changed
-
-- **The three demand-coil binary sensors are gone; c3003 becomes the
-  Vorrangladung button.** Real 1.7 hardware (issue #319) showed that the
-  Anforderung coils are momentary command bits, not status signals: the
-  controller executes a request the moment the bit is set and the bit
-  immediately falls back to 0, so the sensors added noise and one pointless
-  coil poll per update without ever being able to turn on. The exclusion is
-  name-based inside the integration, so it also covers older
-  idm-heatpump-api releases that still model the coils read-only.
+This release makes the **local Navigator web interface a first-class data
+path** and completes the **Navigator 1.0/1.7 integration** (issue #319).
+`web_only` grows from an emergency read-only fallback into a real operating
+mode: the Navigator 10 WebSocket delivers statistics, freshwater status, the
+controller clock, performance, weather and iON data — and carries
+capture-confirmed, range-validated writes for the operating mode, error
+acknowledgement, the hot-water setpoint and per-circuit setpoints and modes,
+with climate and water-heater cards on top. An explicit connection-mode
+option, two connection-state entities and a one-tap reload button make the
+data paths transparent. The Navigator 1.0/1.7 family gains the official
+FC01/FC05 coil block (c3000–c3003, ma_de_812049 Rev.1): the acknowledge
+button speaks coil c3000, and the Vorrangladung request becomes its own
+button on c3003. Controller error codes become readable German text through
+the packaged vendor database, and a sensitive-data guard joins CI. Everything
+stays 100 % local; writes outside `web_only` keep going through Modbus
+exactly as before. No configuration migration is needed; the only entity
+removed relative to 0.19.0 is the web model sensor, which current firmware
+can no longer populate (its value becomes an attribute). The device-logic
+dependency moves to `idm-heatpump-api[web]==2.13.0`.
 
 ### Added
 
-- **Navigator 1.0/1.7: the Vorrangladung anfordern button** (`dhw_priority_charge`,
-  coil c3003 via FC05, exactly like the acknowledge button on c3000): the 1.x
-  hot-water priority-charge request. It writes ON exactly once - no switch is
-  offered by design, because a switch would also write 0, which a momentary
-  command bit must never receive. Manual use only: the official table puts
-  the coil block under the EEPROM note (max. 300 000 write cycles per
-  register), so it must not be driven by a schedule or a timed automation.
-  The operating state of the three functions remains visible through the
-  Wärmepumpen Betriebsart sensor (input register 1501).
-
-## [0.20.0-b16] - 2026-09-29
-
-### Added
-
-- **Verbindung neu laden** (`connection_reload`, diagnostic button): one
-  tap reloads the integration's config entry from the dashboard. After the
-  heat pump was switched off and is back, the tap immediately re-runs
-  detection, polling and the web supplement - instead of waiting for Home
-  Assistant's setup-retry backoff (up to ~30 minutes) that keeps the
-  "not reachable" repair card on screen. Same effect as *Repairs → Try
-  again*, just without leaving the dashboard.
-
-## [0.20.0-b15] - 2026-09-29
-
-### Fixed
-
-- **Störungen quittieren failed on healthy installations** with
-  `error_acknowledge_unavailable`: the coordinator's register name index is
-  built from entity descriptions, and the write-only acknowledge register
-  carries no entity - so the strict map check (issue #319, 0.19.0-b8)
-  rejected it although the model's own map contains it. `get_register` now
-  falls back to the API's model-gated register map when the family is
-  known (the Navigator 1.0/1.7 map still shadows the name with its coil
-  c3000); without a known model the lookup stays strict. Live-verified on
-  a Navigator 10 where every acknowledge call failed after each reload.
-
-### Changed
-
-- **The connection entities now track live web liveness** and every
-  transport transition is logged at INFO level: the connection-mode sensor
-  follows the last web refresh (a web path that stops answering flips the
-  state to *Modbus only* and back on recovery), and one log line per
-  change (`IDM connection state changed: …`) answers "since when does the
-  web path not answer" without log spam.
-
-## [0.20.0-b14] - 2026-09-29
-
-### Fixed
-
-- **Verbindungsmodus entity failed to add on Home Assistant 2026.8+**: the
-  sensor declared enum options without the ENUM device class, which Home
-  Assistant rejects (`Sensor ... is providing enum options, but is missing
-  the enum device class`) - the entity failed to register and every
-  coordinator update raised the same error. The options metadata is dropped;
-  the states stay the plain, language-independent strings.
-
-## [0.20.0-b13] - 2026-09-29
-
-### Added
-
+- **An explicit connection mode** (WebSocket-first roadmap, Phase 1). The new
+  expert option *Connection mode* in the advanced Modbus section selects which
+  data paths the entry may use: `auto` (default, recommended — the historical
+  behaviour: Modbus as the base, web supplement when a PIN is configured,
+  web-only fallback when setup chose it), `modbus_web` (both paths pinned on,
+  no web-only fallback), `web_only` (first-class web operation — setup does
+  not attempt a Modbus connection; see the web-write features below for what
+  is controllable there) and `modbus_only` (the local web interface is never
+  contacted, even with a PIN configured). The choice survives reload; an
+  explicit mode overrides the legacy web-only flag. The diagnostics export
+  gains a `connection` block reporting the active mode, which paths are in
+  use, whether a web PIN is configured (presence only), the controller family
+  and the firmware version.
 - **Connection-state entities**: two diagnostic sensors make the effective
-  connection visible on the dashboard in every connection mode, so a
-  fallback is recognizable at a glance:
+  connection visible on the dashboard in every connection mode, so a fallback
+  is recognizable at a glance:
   - **Verbindungsmodus** (`connection_mode`): which transports are actually
     live right now — *Modbus + Web*, *Modbus only* or *Web only* — with the
     configured mode (the `connection_mode` option, default *auto*) and the
@@ -115,16 +60,42 @@ device-logic dependency moves to `idm-heatpump-api[web]==2.13.0`.
   - **Letzte Web-Aktualisierung (Web)** (`web_last_success`): when the local
     web interface last answered successfully — the web counterpart of the
     Modbus last-success diagnostic; created when a web PIN is configured.
-  The coordinator now stamps every successful web-supplement refresh.
 
-## [0.20.0-b12] - 2026-09-29
+  The coordinator stamps every successful web-supplement refresh, so the
+  entities track live web liveness: a web path that stops answering flips
+  the mode state to *Modbus only* and back on recovery.
+- **Verbindung neu laden** (`connection_reload`, diagnostic button): one
+  tap reloads the integration's config entry from the dashboard. After the
+  heat pump was switched off and is back, the tap immediately re-runs
+  detection, polling and the web supplement - instead of waiting for Home
+  Assistant's setup-retry backoff (up to ~30 minutes) that keeps the
+  "not reachable" repair card on screen. Same effect as *Repairs → Try
+  again*, just without leaving the dashboard.
+- **Navigator 10 WebSocket read expansion** (WebSocket-first roadmap,
+  Phase 2). Three further read-only controllers are evaluated on every web
+  poll, live-verified frame by frame on a Navigator 10 (jsonVersion 11,
+  September 2026):
+  - `statistic/detail` heat quantities: **heat quantity heating/hot water
+    total and today (Web)** sensors in kWh — the controller's own counters as
+    an independent cross-check for the integration's energy statistics,
+    working without any Modbus access.
+  - `system.freshwater/overview`: **hot water circulation (Web)** binary
+    sensor (a state the Modbus map does not expose) and the diagnostic
+    **hot water status info (Web)** sensor.
+  - `status/overview`: the **controller clock (Web)** timestamp sensor with
+    `jsonVersion`, active userlevel, language, notification count,
+    frost-protection and network flags as attributes — the controller clock
+    can drift, and the time-dependent technician codes are computed from the
+    display time, so the drift becomes visible.
 
-### Added
-
-- **Navigator 10 system-controller entities** (requires
-  `idm-heatpump-api[web]==2.12.1`). Four read-only WebSocket controllers the
-  shipped frontend uses for its performance page, weather tile, iON status
-  and energy-flow widget are now part of the web supplement:
+  Each controller is individually optional: firmware that does not answer one
+  leaves its entities unavailable without affecting the rest of the web
+  snapshot. Device knowledge (parsing, selector constants
+  `NAVIGATOR10_STATISTIC_*`) lives in the API library.
+- **Navigator 10 system-controller entities**. Four further read-only
+  WebSocket controllers the shipped frontend uses for its performance page,
+  weather tile, iON status and energy-flow widget are now part of the web
+  supplement:
   - **Wärmepumpen-Verbrauchsleistung (Web)** — live electrical consumption
     power with performance/system mode, battery flag and the production flow
     temperature as attributes.
@@ -142,29 +113,64 @@ device-logic dependency moves to `idm-heatpump-api[web]==2.13.0`.
   - **iON-Optimierung aktiv (Web)** — diagnostic binary sensor for IDM's
     cloud energy optimization, with the enable setting and subscription
     status as attributes.
+
   All entities report unavailable until their frame has landed instead of
   being absent until the next reload. Strictly read-only; the `ion/save`
   write side is deliberately not wrapped.
+- **`web_only` becomes controllable through the local web interface**
+  (WebSocket-first roadmap, Phase 4). Every write is validated against the
+  device's own declarations before anything is sent, mirroring the register
+  write safety; rejected writes raise instead of silently failing. Writes
+  reuse the authorized web session of the poll loop and read the state back
+  after every write, like the official web UI. Payload and response frames
+  were capture-confirmed (2026-09-28), and each slice was live-validated on
+  the maintainer's plant with a reversible round trip:
+  - **Betriebsart (Web)** select: reads the current mode and the
+    controller's own selectable values from the `home/overview` tile and
+    writes through `home/save` — same numbering as the Modbus `system_mode`
+    register (validated round trip: automatic → hot-water-only →
+    automatic).
+  - **Störungen quittieren**: the acknowledge button and the
+    `acknowledge_errors` service route through `notification/save`; the
+    `set_system_mode` service transparently uses the web path for
+    `web_only` entries.
+  - **Warmwasser-Solltemperatur (Web)** number: bounds, step and the current
+    value come from the device's own declared parameter definition (setting
+    13256 / FW030 — 30–60 °C in 0.5 steps on the confirmed firmware; round
+    trip 48 → 49 → 48 °C).
+  - **Heizkreis X Raumsolltemperatur (Web)** number and **Heizkreis X
+    Betriebsart (Web)** select for every heating circuit the plant itself
+    lists: the normal room setpoint (parameter `HK<x>04`) and the circuit
+    mode (parameter `HK<x>01`, the device's own chooselist mapped through
+    the same mode slugs as the Modbus entity); one
+    `system.heatingcircuit/detail` frame per circuit feeds the state (mode,
+    setpoint, room temperature, pump). Round trip on circuit A:
+    21.5 → 21.6 → 21.5 °C; the `heatingcircuitSave` response envelope was
+    confirmed frame by frame.
 
-### Security
+  Every other connection mode keeps writing through Modbus exactly as before.
+- **Web-first operation for Navigator 10** (WebSocket-first roadmap). The
+  `web_only` mode grows from an emergency view into a real operating mode —
+  as much of the plant as the web interface can deliver runs without any
+  Modbus connection (no proxy sharing; writes use the validated web path
+  above):
+  - **Web poll interval down to 10 seconds** (was 30): adjustable in the
+    initial setup, the web-only step and *Configure* — the controller's own
+    web UI polls at a comparable rate.
+  - **Web register bridge**: the web snapshot is bridged into the
+    register-named coordinator data (verified alias table: flow/return/
+    outdoor/DHW temperatures, compressor status, per-circuit flow and room
+    temperatures, per-circuit flow setpoints from the heating-circuit
+    detail, the hot-water setpoint). Register-keyed consumers keep working:
+    **calculated sensors** (heat-pump spread, hot-water deviation,
+    per-circuit flow deviation) evaluate from web values alone.
+  - **KNX bridge in web-only mode**: serves register-named values from the
+    bridged snapshot onto the bus (publishing and read-responses).
 
-- **Sensitive-data guard**: every push (all branches) and every pull
-  request is scanned for data that must never be committed — real IP
-  addresses, PINs, myIDM ids, tokens, session ids, unknown e-mail addresses
-  and non-public vendor hosts. `scripts/check_sensitive_data.py` uses
-  generic rules with a reviewed allowlist for intentional fakes
-  (`.github/sensitive-data-allowlist.txt`), runs as a required status check
-  on `main` and is backed by unit tests. Real plant values that had slipped
-  into fixtures over time were replaced with documentation values in the
-  same sweep — the plant web PIN should be rotated once on the device.
-
-## [0.20.0-b11] - 2026-09-29
-
-### Added
-
+  The register map is loaded metadata-only for name resolution — no register
+  entities exist and nothing polls Modbus.
 - **Climate and water-heater cards for `web_only`** and **KNX bus commands
-  through the web path** (points 3+5 of the web-first follow-up; requires
-  `idm-heatpump-api[web]==2.10.1`):
+  through the web path**:
   - **Heizkreis X (Web)** climate entity per circuit: current room
     temperature, target temperature and mode from the circuit detail frame;
     writes are the same range-validated web writes as the number/select
@@ -177,223 +183,27 @@ device-logic dependency moves to `idm-heatpump-api[web]==2.13.0`.
     setpoint (the everyday controls the bus actually sends). Registers
     without a web mapping are rejected as before. `async_write_register`
     gains this routing, so services benefit identically.
-
-## [0.20.0-b10] - 2026-09-29
-
-### Added
-
-- **Web-first operation for Navigator 10** (`idm-heatpump-api[web]==2.10.1`).
-  The `web_only` mode grows from an emergency view into a real operating
-  mode — as much of the plant as the web interface can deliver runs without
-  any Modbus connection (no proxy sharing, no register writes):
-  - **Web poll interval down to 10 seconds** (was 30): adjustable in the
-    initial setup, the web-only step and *Configure* — the controller's own
-    web UI polls at a comparable rate.
-  - **Web register bridge**: the web snapshot is bridged into the
-    register-named coordinator data (verified alias table: flow/return/
-    outdoor/DHW temperatures, compressor status, per-circuit flow and room
-    temperatures, per-circuit flow setpoints from the heating-circuit
-    detail, the hot-water setpoint). Register-keyed consumers keep working:
-    **calculated sensors** (heat-pump spread, hot-water deviation,
-    per-circuit flow deviation) evaluate from web values alone.
-  - **KNX bridge in web-only mode**: serves register-named values from the
-    bridged snapshot onto the bus (publishing and read-responses); bus
-    commands stay disabled there because their write path is Modbus-only.
-  The register map is loaded metadata-only for name resolution — no
-  register entities exist and nothing polls Modbus.
-
-## [0.20.0-b9] - 2026-09-28
-
-### Added
-
-- **WebSocket writes, slice 3 - heating circuits** (WebSocket-first
-  roadmap, Phase 4; requires and pins `idm-heatpump-api[web]==2.10.0`).
-  `web_only` entries gain per-circuit controls for every heating circuit the
-  plant itself lists:
-  - **Heizkreis X Raumsolltemperatur (Web)** number: the normal room
-    setpoint (parameter `HK<x>04`), bounds and step from the device's own
-    declaration, every write validated against it before sending.
-  - **Heizkreis X Betriebsart (Web)** select: the circuit mode (parameter
-    `HK<x>01`) with the device's own chooselist, mapped through the same
-    mode slugs as the Modbus entity.
-  One `system.heatingcircuit/detail` frame per circuit also feeds the
-  state (mode, setpoint, room temperature, pump). Live-validated on the
-  maintainer's plant with a reversible circuit-A room-setpoint round trip
-  (21.5 → 21.6 → 21.5 °C); the `heatingcircuitSave` response envelope was
-  confirmed frame by frame.
-
-### Notes
-
-- The DHW one-shot **boost stays off the web path for now**: the level-0
-  web interface of the confirmed firmware exposes the boost only as a
-  weekly timetable type (`ttboost`), not as a one-shot action — writing a
-  whole timetable string is deliberately out of scope for a write-safety
-  first slice. The Modbus DHW boost continues to work on every Modbus mode.
-
-## [0.20.0-b8] - 2026-09-28
-
-### Added
-
-- **WebSocket writes, slice 2 - the hot-water setpoint** (WebSocket-first
-  roadmap, Phase 4; requires and pins `idm-heatpump-api[web]==2.9.0`). A
-  `web_only` entry gains the **Warmwasser-Solltemperatur (Web)** number
-  entity: bounds, step and the current value come from the device's own
-  declared parameter definition (setting 13256 / FW030 — 30–60 °C in 0.5
-  steps on the confirmed firmware), and every write is validated against
-  exactly that range before anything is sent, mirroring the register write
-  safety. Rejected writes raise instead of silently failing. As always,
-  every other connection mode keeps writing through Modbus unchanged.
-  Live-validated on the maintainer's plant with a reversible
-  48 → 49 → 48 °C round trip through the new code path.
-
-## [0.20.0-b7] - 2026-09-28
-
-### Added
-
-- **WebSocket writes, slice 1** (WebSocket-first roadmap, Phase 4; requires
-  and pins `idm-heatpump-api[web]==2.8.0`). A `web_only` entry becomes
-  controllable through the local Navigator 10 web interface — every other
-  connection mode keeps writing through Modbus exactly as before:
-  - **Operating mode (Web)** select in `web_only` mode: reads the current
-    mode and the controller's own selectable values from the `home/overview`
-    tile and writes through `home/save` — same numbering as the Modbus
-    `system_mode` register, validated before sending, rejected writes raise.
-  - **Acknowledge errors** button in `web_only` mode and the
-    `acknowledge_errors` service route through `notification/save`.
-  - The `set_system_mode` service transparently uses the web path for
-    `web_only` entries.
-  Writes reuse the authorized web session of the poll loop and read the
-    state back after every write, like the official web UI. Payloads and
-    response frames were capture-confirmed (2026-09-28) and the mode write
-    was live-validated on the maintainer's plant with a reversible
-    automatic → hot-water-only → automatic round trip.
-
-## [0.20.0-b6] - 2026-09-28
-
-### Fixed
-
-- **Single-poll zero readings on lifetime energy counters are suppressed.**
-  A same-generation Navigator controller was observed answering one poll
-  with `0.0` on a monotonic kWh counter and the correct lifetime value again
-  on the next poll (kodebach/hacs-idm-heatpump#322). Home Assistant reads a
-  `total_increasing` drop to zero as a meter reset, so `utility_meter` and
-  long-term statistics book the entire lifetime counter as fresh
-  consumption. The coordinator now holds the affected register unavailable
-  for exactly one poll when a lifetime counter (`energy_heating`,
-  `energy_dhw`, `energy_defrost`, `energy_cooling`, `energy_electric_heater`,
-  `total_heat_energy`, and the web heat-quantity totals) drops from a
-  positive value to zero between two consecutive polls. A genuine
-  device-side reset therefore appears one poll cycle later; today's
-  counters, which legitimately return to zero at day boundaries, are never
-  suppressed. The diagnostics export counts the suppressed readings under
-  `communication.transient_zero_suppressed`.
-
-### Added
-
-- **Navigator 10 WebSocket read expansion** (WebSocket-first roadmap, Phase 2;
-  requires and pins `idm-heatpump-api[web]==2.7.0`). Three further read-only
-  controllers are evaluated on every web poll, live-verified frame by frame on
-  a Navigator 10 (jsonVersion 11, September 2026):
-  - `statistic/detail` heat quantities: **heat quantity heating/hot water
-    total and today (Web)** sensors in kWh — the controller's own counters as
-    an independent cross-check for the integration's energy statistics,
-    working without any Modbus access.
-  - `system.freshwater/overview`: **hot water circulation (Web)** binary
-    sensor (a state the Modbus map does not expose) and the diagnostic
-    **hot water status info (Web)** sensor.
-  - `status/overview`: the **controller clock (Web)** timestamp sensor with
-    `jsonVersion`, active userlevel, language, notification count,
-    frost-protection and network flags as attributes — the controller clock
-    can drift, and the time-dependent technician codes are computed from the
-    display time, so the drift becomes visible.
-  Each controller is individually optional: firmware that does not answer one
-  leaves its entities unavailable without affecting the rest of the web
-  snapshot. Device knowledge (parsing, selector constants
-  `NAVIGATOR10_STATISTIC_*`) lives in the API library.
-
-- **An explicit connection mode** (WebSocket-first roadmap, Phase 1). The new
-  expert option *Connection mode* in the advanced Modbus section selects which
-  data paths the entry may use: `auto` (default, recommended — the historical
-  behaviour: Modbus as the base, web supplement when a PIN is configured,
-  web-only fallback when setup chose it), `modbus_web` (both paths pinned on,
-  no web-only fallback), `web_only` (first-class read-only web operation —
-  setup no longer attempts a Modbus connection; setpoints, modes and error
-  acknowledgement still require Modbus) and `modbus_only` (the local web
-  interface is never contacted, even with a PIN configured). The choice
-  survives reload; an explicit mode overrides the legacy web-only flag. The
-  diagnostics export gains a `connection` block reporting the active mode,
-  which paths are in use, whether a web PIN is configured (presence only), the
-  controller family and the firmware version.
-
-### Deprecated
-
-- **The GitHub wiki is deprecated.** The documentation lives on the project
-  website at <https://xerolux.github.io/idm-heatpump-hass/docs/>. Every wiki
-  page has been replaced by a redirect note pointing to its new address, and
-  the `wiki-sync` workflow that mirrored `docs/wiki/` into the wiki has been
-  removed — the website is the single documentation surface.
-
-## [0.20.0-b5] - 2026-09-28
-
-### Fixed
-
-- **The vendor error-code database no longer loads on the event loop.**
-  The first state write of an error-code entity read `error_codes.json`
-  inside `extra_state_attributes`, which Home Assistant reports as a
-  blocking I/O call in the loop (two warnings per restart: `read_text`
-  and `open`). The database is now warmed once in an executor during
-  setup, on both the Modbus and the web-only path, before any entity
-  writes its first state; every later lookup hits the API's in-memory
-  cache.
-
-## [0.20.0-b4] - 2026-09-28
-
-### Added
-
-- **KNX bridge setup now points at the ETS import.** The KNX step of the
-  initial setup and of *Configure* closes with the instruction that ETS
-  only knows the group addresses after an import: generate the import file
-  for the configured base address with the KNX group address generator on
-  the documentation website and import it in ETS under
-  *Group Addresses → Import Group Addresses*. The base-address field links
-  the generator as well, in German and English, and the bridge's start log
-  mentions its URL.
-
-### Notes
-
-- The documentation website carries an **interactive KNX group address
-  generator** (`/docs/knx-generator/`, German mirror at `/docs/de/`): base
-  address with live validation, compact/full/custom object-group
-  selection, a preview, and the ETS-importable `.xml` plus `.csv`
-  download — generated in the browser from the catalogue emitted at
-  site-build time. A Node parity harness in the test suite keeps the
-  website generator byte-identical with the command-line generator.
-- The KNX bridge and its catalogue are covered by tests at 100 %
-  (defensive branches included); runtime code is unchanged by that work.
-## [0.20.0-b3] - 2026-09-27
-
-### Fixed
-
-- **The recurring web model-conflict warning is logged once instead of on
-  every web poll cycle** (#381). Plants whose Modbus probe reports a
-  different Navigator family than the web supplement — for example a
-  Navigator 2.0 Pro whose probe resolves to Navigator 10 — saw
-  `Ignoring conflicting IDM web Navigator model …` in the Home Assistant log
-  every scan interval. The warning is now emitted once per conflicting
-  (web, Modbus) model pair; a changed pair is a new situation and warns
-  again. The conflict itself remains visible in the diagnostics export
-  (`model_conflict_summary`) and in the one-time web-variant-conflict
-  warning.
-
-## [0.20.0-b2] - 2026-09-27
-
-The device-logic dependency moves to `idm-heatpump-api[web]==2.6.0`, which
-packages the vendor error-code database decoded from the Windows service tool
-("IDM Smart Navigator" 2.3.118, NAV10 protocol session of 2026-09-27 — see the
-wiki page *Navigator Protocol Analysis* for provenance and validation).
-
-### Added
-
+- **Navigator 1.0/1.7: the "Acknowledge errors" button now uses the official
+  mechanism — coil c3000 (Störung quittieren) — instead of writing the
+  undocumented holding register 1999.** The button resolves the acknowledge
+  by name from the detected model's register map, so on a Navigator 2.0/10 it
+  keeps writing h1999 (FC16) exactly as before, while a 1.0/1.7 sends an FC05
+  single-coil write to c3000. Nothing changes for existing 2.0/10 setups.
+- The transport (`modbus-connection`/tmodbus) speaks the two additional
+  Modbus function codes FC01 (read coils) and FC05 (write single coil)
+  through the optional `IdmCoilTransportExtension` of idm-heatpump-api. Coil
+  reads run through the same batching, retry and unsupported-register
+  quarantine machinery as word reads, and the register reference (wiki
+  *Modbus Register*) lists the coil block.
+- **Navigator 1.0/1.7: the Vorrangladung anfordern button**
+  (`dhw_priority_charge`, coil c3003 via FC05, exactly like the acknowledge
+  button on c3000): the 1.x hot-water priority-charge request. It writes ON
+  exactly once - no switch is offered by design, because a switch would also
+  write 0, which a momentary command bit must never receive. Manual use only:
+  the official table puts the coil block under the EEPROM note (max. 300 000
+  write cycles per register), so it must not be driven by a schedule or a
+  timed automation. The operating state of the three functions remains
+  visible through the Wärmepumpen Betriebsart sensor (input register 1501).
 - **Error codes become readable German text.** The `internal_message` sensor
   now decodes codes that are not in the hand-collected table through the
   packaged vendor database: 343 of the 366 codes in the register's 020–999
@@ -411,59 +221,151 @@ wiki page *Navigator Protocol Analysis* for provenance and validation).
   value. The numbering is assumed to match the shared controller database:
   the 2.0/10/Pro message range was validated one-to-one against it, the 1.x
   family was not — please report a mismatching text as an issue.
+- **KNX bridge setup now points at the ETS import.** The KNX step of the
+  initial setup and of *Configure* closes with the instruction that ETS
+  only knows the group addresses after an import: generate the import file
+  for the configured base address with the KNX group address generator on
+  the documentation website and import it in ETS under
+  *Group Addresses → Import Group Addresses*. The base-address field links
+  the generator as well, in German and English, and the bridge's start log
+  mentions its URL.
 
-### Notes
+### Changed
 
-- The database texts are German only; the vendor translation table ships no
-  English for these enums.
+- **The connection entities track live web liveness** and every transport
+  transition is logged at INFO level: the connection-mode sensor follows the
+  last web refresh, and one log line per change
+  (`IDM connection state changed: …`) answers "since when does the web path
+  not answer" without log spam.
 
-## [0.20.0-b1] - 2026-09-27
+### Deprecated
 
-The promised second step of the Navigator 1.0/1.7 rollout (issue #319): the
-official **FC01/FC05 coil block (c3000–c3003)** from ma_de_812049 Rev.1 is
-integrated. The device-logic dependency moves to
-`idm-heatpump-api[web]==2.5.0`.
+- **The GitHub wiki is deprecated.** The documentation lives on the project
+  website at <https://xerolux.github.io/idm-heatpump-hass/docs/>. Every wiki
+  page has been replaced by a redirect note pointing to its new address, and
+  the `wiki-sync` workflow that mirrored `docs/wiki/` into the wiki has been
+  removed — the website is the single documentation surface.
 
-### Added
+### Removed
 
-- **Navigator 1.0/1.7: the "Acknowledge errors" button now uses the official
-  mechanism — coil c3000 (Störung quittieren) — instead of writing the
-  undocumented holding register 1999.** The button resolves the acknowledge
-  by name from the detected model's register map, so on a Navigator 2.0/10 it
-  keeps writing h1999 (FC16) exactly as before, while a 1.0/1.7 sends an FC05
-  single-coil write to c3000. Nothing changes for existing 2.0/10 setups.
-- **Three new diagnostic binary sensors on Navigator 1.0/1.7** reporting the
-  controller's live demand status from the coil block: *Anforderung Heizen*
-  (c3001), *Anforderung Kühlen* (c3002) and *Anforderung Vorrangladung*
-  (c3003) — the last one is the "hot water priority charge" signal, the
-  demand half of the manual DHW boost. They are polled like every other
-  register and drop out of the poll when their entities are disabled.
-- The transport (`modbus-connection`/tmodbus) speaks the two additional
-  Modbus function codes FC01 (read coils) and FC05 (write single coil)
-  through the new optional `IdmCoilTransportExtension` of
-  idm-heatpump-api 2.5.0. Coil reads run through the same batching, retry
-  and unsupported-register quarantine machinery as word reads.
+- **The three Navigator 1.0/1.7 demand-coil binary sensors are gone; c3003
+  becomes the Vorrangladung button.** Real 1.7 hardware (issue #319) showed
+  that the Anforderung coils are momentary command bits, not status signals:
+  the controller executes a request the moment the bit is set and the bit
+  immediately falls back to 0, so the sensors added noise and one pointless
+  coil poll per update without ever being able to turn on. The exclusion is
+  name-based inside the integration, so it also covers older
+  idm-heatpump-api releases that still model the coils read-only.
+- **Wärmepumpenmodell (Web) is no longer an entity of its own.** Navigator 10
+  firmware 20.24-1580 (installed from 2026-09-29) removed the model row from
+  the controller's sensor page, and no other accessible web frame reports the
+  model - live-verified against the controller: the entity could never gain a
+  value on current firmware and only sat as unavailable noise in the
+  diagnostics card. Where a firmware still delivers the row (Navigator 2.0
+  web, older Navigator 10 firmware), the value now appears as the
+  `heatpump_model` attribute of the *Navigator version (Web)* sensor. The
+  register-analysis wiki documents the firmware change on the sensor page.
 
 ### Fixed
 
+- **Störungen quittieren failed on healthy installations** with
+  `error_acknowledge_unavailable`: the coordinator's register name index is
+  built from entity descriptions, and the write-only acknowledge register
+  carries no entity - so the strict map check (issue #319, 0.19.0-b8)
+  rejected it although the model's own map contains it. `get_register` now
+  falls back to the API's model-gated register map when the family is
+  known (the Navigator 1.0/1.7 map still shadows the name with its coil
+  c3000); without a known model the lookup stays strict. Live-verified on
+  a Navigator 10 where every acknowledge call failed after each reload.
 - **Navigator 1.0/1.7 acknowledge no longer targets an undocumented
   register.** Previously the generic acknowledge button fell back to holding
   register 1999 when the (then read-only) 1.x map had no acknowledge —
   1999 is the Navigator 2.0/10 mechanism and is not documented for the 1.x
   family. With the coil block mapped, the fallback path is no longer reached
-  on a detected 1.0/1.7.
-- idm-heatpump-api 2.5.0 also fixes `get_register()` resolving
-  `error_acknowledge` through the legacy CORE short-circuit even for a
-  detected Navigator 1.7.
+  on a detected 1.0/1.7. idm-heatpump-api 2.5.0 also fixed `get_register()`
+  resolving `error_acknowledge` through the legacy CORE short-circuit even
+  for a detected Navigator 1.7.
+- **Single-poll zero readings on lifetime energy counters are suppressed.**
+  A same-generation Navigator controller was observed answering one poll
+  with `0.0` on a monotonic kWh counter and the correct lifetime value again
+  on the next poll (kodebach/hacs-idm-heatpump#322). Home Assistant reads a
+  `total_increasing` drop to zero as a meter reset, so `utility_meter` and
+  long-term statistics book the entire lifetime counter as fresh
+  consumption. The coordinator now holds the affected register unavailable
+  for exactly one poll when a lifetime counter (`energy_heating`,
+  `energy_dhw`, `energy_defrost`, `energy_cooling`, `energy_electric_heater`,
+  `total_heat_energy`, and the web heat-quantity totals) drops from a
+  positive value to zero between two consecutive polls. A genuine
+  device-side reset therefore appears one poll cycle later; today's
+  counters, which legitimately return to zero at day boundaries, are never
+  suppressed. The diagnostics export counts the suppressed readings under
+  `communication.transient_zero_suppressed`.
+- **The vendor error-code database no longer loads on the event loop.**
+  The first state write of an error-code entity read `error_codes.json`
+  inside `extra_state_attributes`, which Home Assistant reports as a
+  blocking I/O call in the loop (two warnings per restart: `read_text`
+  and `open`). The database is now warmed once in an executor during
+  setup, on both the Modbus and the web-only path, before any entity
+  writes its first state; every later lookup hits the API's in-memory
+  cache.
+- **The recurring web model-conflict warning is logged once instead of on
+  every web poll cycle** (#381). Plants whose Modbus probe reports a
+  different Navigator family than the web supplement — for example a
+  Navigator 2.0 Pro whose probe resolves to Navigator 10 — saw
+  `Ignoring conflicting IDM web Navigator model …` in the Home Assistant log
+  every scan interval. The warning is now emitted once per conflicting
+  (web, Modbus) model pair; a changed pair is a new situation and warns
+  again. The conflict itself remains visible in the diagnostics export
+  (`model_conflict_summary`) and in the one-time web-variant-conflict
+  warning.
+- **Verbindungsmodus entity failed to add on Home Assistant 2026.8+**: the
+  sensor declared enum options without the ENUM device class, which Home
+  Assistant rejects (`Sensor ... is providing enum options, but is missing
+  the enum device class`) - the entity failed to register and every
+  coordinator update raised the same error. The options metadata is dropped;
+  the states stay the plain, language-independent strings.
 
-### Notes for testers (issue #319)
+### Security
 
-- c3003 is documented read/write (Vorrangladung anfordern) but ships
-  **read-only** in this beta: a switch would also write `0`, and what that
-  does to a running demand is not captured yet. Please report read values of
-  the three new sensors during a heating, cooling and hot-water period; the
-  writable variant comes as the next step once confirmed.
-- The register reference (wiki *Modbus Register*) now lists the coil block.
+- **Sensitive-data guard**: every push (all branches) and every pull
+  request is scanned for data that must never be committed — real IP
+  addresses, PINs, myIDM ids, tokens, session ids, unknown e-mail addresses
+  and non-public vendor hosts. `scripts/check_sensitive_data.py` uses
+  generic rules with a reviewed allowlist for intentional fakes
+  (`.github/sensitive-data-allowlist.txt`), runs as a required status check
+  on `main` and is backed by unit tests. Real plant values that had slipped
+  into fixtures over time were replaced with documentation values in the
+  same sweep — the plant web PIN should be rotated once on the device.
+
+### Notes
+
+- Device-logic dependency: `idm-heatpump-api[web]==2.13.0`. The 2.13 line
+  grew with this release: 2.5.0 maps the Navigator 1.0/1.7 coil block and
+  the FC01/FC05 transport extension, 2.6.0 packages the vendor error-code
+  database decoded from the Windows service tool ("IDM Smart Navigator"
+  2.3.118, NAV10 protocol session of 2026-09-27 — see the wiki page
+  *Navigator Protocol Analysis* for provenance and validation), 2.7.0
+  parses the statistic/freshwater/status WebSocket controllers, 2.8.0
+  through 2.10.0 carry the capture-confirmed WebSocket write envelopes,
+  2.10.1 the web register bridge, 2.12.1 the system-controller frames, and
+  2.13.0 models the coil block writable. Transport pins unchanged:
+  `modbus-connection==4.12.3`, `tmodbus[async-serial]==0.6.2`.
+- The DHW one-shot **boost stays off the web path**: the level-0 web
+  interface of the confirmed firmware exposes the boost only as a weekly
+  timetable type (`ttboost`), not as a one-shot action — writing a whole
+  timetable string is deliberately out of scope for a write-safety first
+  slice. The Modbus DHW boost continues to work on every Modbus mode.
+- The error-database texts are German only; the vendor translation table
+  ships no English for these enums.
+- The documentation website carries an **interactive KNX group address
+  generator** (`/docs/knx-generator/`, German mirror at `/docs/de/`): base
+  address with live validation, compact/full/custom object-group selection,
+  a preview, and the ETS-importable `.xml` plus `.csv` download — generated
+  in the browser from the catalogue emitted at site-build time. A Node
+  parity harness in the test suite keeps the website generator
+  byte-identical with the command-line generator, and the KNX bridge and
+  its catalogue are covered by tests at 100 % (defensive branches
+  included).
 
 ## [0.19.0] - 2026-09-26
 
