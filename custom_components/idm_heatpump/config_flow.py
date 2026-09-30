@@ -77,6 +77,7 @@ from .const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DEVICE_HIERARCHY,
+    CONF_DIFFERENTIAL_CIRCUITS,
     CONF_DYNAMIC_PRICE_ENTITY,
     CONF_EEPROM_WRITE_INTERVAL,
     CONF_ENABLE_CASCADE,
@@ -436,7 +437,12 @@ _GUIDED_CONFIRM = "save_configuration"
 # (or None for a settings category); the following tiers add detail without
 # hiding or resetting values saved by a different tier.
 _GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], tuple[str, ...]]] = {
-    "plant": (None, (CONF_HEATING_CIRCUITS, CONF_ZONE_COUNT), (CONF_SCAN_INTERVAL, CONF_HIDE_UNUSED), ()),
+    "plant": (
+        None,
+        (CONF_HEATING_CIRCUITS, CONF_DIFFERENTIAL_CIRCUITS, CONF_ZONE_COUNT),
+        (CONF_SCAN_INTERVAL, CONF_HIDE_UNUSED),
+        (),
+    ),
     "profile": (None, (CONF_FEATURE_PROFILE,), (), ()),
     "ai_advisor": (CONF_AI_ADVISOR, (CONF_AI_URL, CONF_AI_MODEL, CONF_AI_LANGUAGE, *AI_EXTRA_DEFAULTS), (), ()),
     "health": (CONF_HEALTH_MONITOR, (), (CONF_SHORT_CYCLE_MINUTES,), ()),
@@ -675,6 +681,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
             vol.Required(
                 CONF_HEATING_CIRCUITS,
                 default=circuits_default,
+            ): _CIRCUIT_SELECTOR,
+            vol.Optional(
+                CONF_DIFFERENTIAL_CIRCUITS,
+                default=options.get(CONF_DIFFERENTIAL_CIRCUITS, []),
             ): _CIRCUIT_SELECTOR,
             vol.Required(
                 CONF_ZONE_COUNT,

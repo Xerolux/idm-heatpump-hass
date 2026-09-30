@@ -73,9 +73,11 @@ def web_control_heatingcircuit_entities(coordinator: IdmCoordinator) -> list[Any
     supplement = coordinator.web_supplement
     circuits = getattr(supplement, "heating_circuits", ()) if supplement is not None else ()
     entities: list[Any] = []
+    from .differential_circuits import configured_differential_circuits
+
     for circuit in circuits:
         hc_id = str(getattr(circuit, "hc_id", "")).lower()
-        if not hc_id:
+        if not hc_id or hc_id in configured_differential_circuits(coordinator):
             continue
         setpoint = getattr(circuit, "setpoint_normal", None)
         if setpoint is not None:

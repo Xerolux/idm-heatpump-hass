@@ -7,6 +7,7 @@
 ## Getting Started
 - [Installation & Setup](Installation-and-Setup)
 - [Configuration](Configuration)
+- [Differential circuits (beta)](Configuration#differential-temperature-controlled-circuits)
 
 ## Entities & Devices
 - [All Entities](Entities)

@@ -179,6 +179,7 @@ jobs:
           python scripts/generate_modbus_register_reference.py
           python scripts/generate_entity_metadata_catalog.py
           python scripts/generate_entity_translations.py
+          python scripts/check_documentation_versions.py --update
 
       - name: Smoke test the production Modbus backend
         if: steps.summary.outputs.updated == 'true'
@@ -220,6 +221,9 @@ jobs:
       - name: Type check with mypy
         if: steps.summary.outputs.updated == 'true'
         run: mypy custom_components/idm_heatpump
+
+      - name: Check documentation versions against the manifest
+        run: python scripts/check_documentation_versions.py
 
       - name: Check documentation language
         if: steps.summary.outputs.updated == 'true'

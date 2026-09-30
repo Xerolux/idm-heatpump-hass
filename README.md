@@ -108,6 +108,7 @@ KNX bridge**. Full details: **[KNX Bridge documentation][wiki-knx]**.
 |----------|----------------|
 | **🌡️ System Monitoring** | Flow, return, hot water, outdoor temperature, pressure, flow rate |
 | **🔧 Heating Circuits A–G** | Up to 7 heating circuits with individual setpoint and mode control |
+| **🌡️ Differential circuits** *(beta 0.20.1-b1)* | Manual per-circuit storage/reference mapping, signed temperature difference and operating status; ordinary heating controls are hidden. [Setup and limits](docs/wiki/Configuration.md#differential-temperature-controlled-circuits) |
 | **🏠 Zone Modules** | Up to 10 zones with up to 8 configurable rooms each (room thermostat function); 6 rooms is the current Navigator 10 default. |
 | **🌡️ Room Temperature Forwarding** | Optional forwarding of Home Assistant temperature sensors to IDM external room temperature registers per heating circuit |
 | **💧 Hot Water** | DHW setpoint and priority control |

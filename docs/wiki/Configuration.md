@@ -42,6 +42,37 @@ When newly enabling beta features, an additional acknowledgement page appears
 before saving. It is separate from the ownership confirmation required by the
 automatic DHW manager and comfort schedule.
 
+### Differential-temperature controlled circuits
+
+Available for testing in beta 0.20.1-b1.
+
+For a circuit whose heating system is already set to **Differential temperature
+control** in the Navigator, Home Assistant can display storage and reference
+temperatures, their signed difference and the circuit status. This is useful
+for installations such as a wood-stove circuit connected to a storage tank.
+
+1. In initial setup, select **Plant** in the guided feature selection. For an
+   existing entry, use **Configure → Plant** or **Reconfigure → Features → Plant**.
+2. Keep the circuit selected under **Heating circuits**, then also select it
+   under **Differential-temperature controlled circuits**. The advanced options
+   form offers the same selection beside the installed heating circuits.
+3. Save and let the integration reload. Check the storage/reference measurements
+   against your controller. The difference is **reference minus storage**, in K.
+
+The selection is empty by default and works in both feature profiles. It changes
+the Home Assistant representation, not the controller's heating system, and
+does not detect the circuit type automatically. It is separate from the
+Navigator's internal differential-control module.
+
+Normal heating controls and climate entities are removed for selected circuits;
+review dashboards and automations using those controls before saving. The two
+temperature sensors keep their existing entity IDs. Switching back restores
+normal controls, but customizations of removed controls are not preserved.
+Hysteresis, thresholds and maximum-temperature settings are not exposed because
+their registers are unverified. The mapping follows the Navigator 10 report in
+issue #429 and still needs confirmation on differential-control hardware.
+See [entities, status meanings and migration details](Entities#differential-temperature-controlled-heating-circuits).
+
 ### Feature profile
 
 The **Feature profile** controls optional IDM-specific entities:

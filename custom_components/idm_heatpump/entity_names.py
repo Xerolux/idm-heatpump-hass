@@ -314,6 +314,13 @@ ENGLISH_NAMES: Final[dict[str, str]] = {
 # ``scripts/generate_entity_translations.py``.
 DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     "sensor": {
+        "hc_storage_temp": ("Storage temperature HC {circuit}", "Speichertemperatur HK {circuit}"),
+        "hc_reference_temp": ("Reference temperature HC {circuit}", "Referenztemperatur HK {circuit}"),
+        "hc_temperature_difference": ("Temperature difference HC {circuit}", "Temperaturdifferenz HK {circuit}"),
+        "hc_differential_status": (
+            "Differential control status HC {circuit}",
+            "Status Differenztemperaturregelung HK {circuit}",
+        ),
         "ai_learning_status": ("AI learning status", "KI-Lernstatus"),
         "ai_storage_used": ("AI storage used", "KI-Speicherverbrauch"),
         "ai_coverage": ("AI observed coverage", "KI-Datenabdeckung"),

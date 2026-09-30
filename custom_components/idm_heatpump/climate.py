@@ -34,6 +34,7 @@ from .adapter_metadata import native_step_for_register
 from .const import DOMAIN, CircuitMode, HeatPumpStatus, RoomMode
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
+from .differential_circuits import configured_differential_circuits
 from .entity import async_write_translated, build_device_info
 from .web_climate_entities import web_climate_entities
 
@@ -65,6 +66,8 @@ async def async_setup_entry(
             circuits.add(match.group(1))
 
     for circuit in circuits:
+        if circuit in configured_differential_circuits(coordinator):
+            continue
         mode_reg = coordinator.get_register(f"hc_{circuit}_mode")
         target_reg = coordinator.get_register(f"hc_{circuit}_room_setpoint_heat_normal")
         current_reg = coordinator.get_register(f"hc_{circuit}_room_temp")

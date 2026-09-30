@@ -676,6 +676,9 @@ def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinat
 
     entry_id = config_entry.entry_id
     configured = set(active_heating_circuits(coordinator))
+    from .differential_circuits import configured_differential_circuits, register_allowed, web_value_allowed
+
+    differential = configured_differential_circuits(coordinator)
     registry = er.async_get(hass)
     prefix = f"{entry_id}_"
 
@@ -684,6 +687,23 @@ def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinat
         if not unique_id.startswith(prefix):
             continue
         entity_key = unique_id[len(prefix) :]
+        # Selecting a differential circuit retires normal heating controls;
+        # the two raw temperature IDs remain unchanged. Switching back retires
+        # only the difference entity introduced for this circuit type.
+        circuit_key = entity_key.removeprefix("calculated_")
+        differential_obsolete = not register_allowed(circuit_key, differential)
+        differential_obsolete |= not web_value_allowed(entity_key.removeprefix("web_"), differential)
+        differential_obsolete |= any(
+            entity_key in {f"climate_hc_{c}", f"web_climate_hc_{c}", f"web_hc_{c}_room_setpoint", f"web_hc_{c}_mode"}
+            for c in differential
+        )
+        # The new difference is retained while the differential option is on.
+        difference_match = re.fullmatch(r"hc_([a-g])_temperature_difference", entity_key)
+        if difference_match:
+            differential_obsolete = difference_match[1] not in differential
+        if differential_obsolete:
+            registry.async_remove(entity.entity_id)
+            continue
         # Calculated sensors carry their circuit in the same shape behind a
         # prefix (``calculated_hc_b_flow_deviation``) and are just as absent
         # once the circuit is gone.
@@ -868,6 +888,10 @@ def _subdevice_labels(coordinator: IdmCoordinator, scope: DeviceScope) -> tuple[
     """Return the display name and model for one subdevice scope."""
     if scope.kind == "heating_circuit":
         circuit = scope.primary.upper()
+        from .differential_circuits import configured_differential_circuits
+
+        if circuit.lower() in configured_differential_circuits(coordinator):
+            return f"Heizkreis {circuit} (Differenztemperaturgeregelt)", "Differential temperature control"
         return f"Heizkreis {circuit}", "Heizkreis"
     if scope.kind in _MODULE_DEVICE_METADATA:
         _module, name, model = _MODULE_DEVICE_METADATA[scope.kind]

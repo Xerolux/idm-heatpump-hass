@@ -572,3 +572,47 @@ Für jedes aktivierte Zonenmodul (bis zu 10) werden Entitäten auf Raumebene ers
 | `zm{z}_room{r}_relay` | Relaisstatus (Binärsensor: an/aus) |
 
 Zusätzlich pro Zone: `zm{z}_mode_heat_cool`, `zm{z}_dehumidification`
+## Differenztemperaturgeregelte Heizkreise
+
+Ist ein Navigator-10-Heizkreis als **Differenztemperaturgeregelt** eingerichtet,
+wähle ihn unter **Konfigurieren → Anlage → Differenztemperaturgeregelte
+Heizkreise** und zusätzlich in der Liste installierter Heizkreise aus. Im
+erweiterten Formular steht die Auswahl neben **Heizkreise**. Standardmäßig ist
+sie leer; normale Heizkreise behalten ihr Verhalten. Die Auswahl erfolgt
+manuell, ohne automatische Erkennung. Dieser Heizkreistyp ist unabhängig vom
+separaten Modul für die interne Differenztemperaturregelung.
+
+Die in [Issue #429](https://github.com/Xerolux/idm-heatpump-hass/issues/429)
+gemeldeten Messwerte für HK D werden folgendermaßen zugeordnet. Andere
+ausgewählte Kreise verwenden die entsprechenden Register der Bibliothek:
+
+| Entität | Quelle bei HK D | Bedeutung |
+| --- | --- | --- |
+| Speichertemperatur | `hc_d_flow_temp` (1356) | Gemessene Speichertemperatur |
+| Referenztemperatur | `hc_d_room_temp` (1370) | Gemessene Referenztemperatur |
+| Temperaturdifferenz | Referenz minus Speicher | Differenz in K; 22,63 − 41,83 = −19,20 K |
+| Status Differenztemperaturregelung | `hc_d_active_mode` (1501) | 255 bedeutet in diesem Kontext Standby; 0/1/2 behalten die dokumentierte Bedeutung Aus/Heizen/Kühlen |
+| Heizkreispumpe | `pump_heating_circuitD` | Tatsächlicher Pumpenzustand, sofern die lokale Web-Ergänzung ihn liefert |
+
+Die Temperaturdifferenz steht in jedem Funktionsprofil zur Verfügung.
+Fehlende, nicht unterstützte oder ungültige Messwerte ergeben keine nutzbare
+Differenz. Der Status ersetzt keine Pumpenmessung; aus der Differenz wird
+kein Ladezustand abgeleitet.
+
+**Umstellung:** Speicher- und Referenzsensor behalten ihre bisherigen Unique-IDs
+und Entity-IDs (`hc_d_flow_temp` / `hc_d_room_temp`). Nur ihre Standardnamen
+ändern sich; selbst vergebene Namen bleiben bestehen. Automationen mit diesen
+IDs funktionieren weiter. Normale Heizkreis-Sollwerte, Heizkurve,
+Heiz-/Kühlgrenzen, externe Raumtemperaturvorgaben, Climate-Entitäten,
+Vorlaufabweichung und Web-Mischer-/Vorlaufsensoren werden für ausgewählte
+Differenzkreise aus der Registry entfernt. Passe betroffene Dashboards und
+Automationen an. Beim Abwählen entstehen normale Heizkreis-Entitäten erneut;
+der Differenzsensor entfällt. Anpassungen entfernter Regler bleiben nicht erhalten.
+
+**Unbestätigte Parameter:** Die API enthält keine bestätigten Register zur
+Heizkreistyp-Erkennung oder für Hysterese, Schwellwert und Maximaltemperatur
+dieses Typs. Der gemeldete Wert 60 °C bei `hc_d_setpoint_flow_constant` (1452)
+belegt nicht dessen Bedeutung als Schwellwert. Diese Parameter werden daher
+nicht unter vermuteten Namen angezeigt. Es kommen keine neuen Schreibzugriffe
+hinzu. Die Zuordnung basiert auf dem Navigator-10-Bericht in #429 und muss
+noch an der Anlage des Melders bestätigt werden.

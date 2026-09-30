@@ -91,7 +91,8 @@
           "energy_manager_dhw_timeout": "Automatic DHW boost duration",
           "energy_manager_cooldown": "Automation cooldown",
           "external_power_forwarding": "Automatic external power forwarding",
-          "dynamic_price_entity": "Dynamic electricity price sensor"
+          "dynamic_price_entity": "Dynamic electricity price sensor",
+          "differential_circuits": "Differential-temperature controlled circuits"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -106,7 +107,8 @@
           "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
           "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
-          "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate."
+          "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
         },
         "sections": {
           "features": {
@@ -513,10 +515,12 @@
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
           "ai_task_entity": "Home Assistant AI Task entity",
-          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)"
+          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
+          "differential_circuits": "Differential-temperature controlled circuits"
         },
         "data_description": {
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
         }
       },
       "guided_detail": {
@@ -597,7 +601,8 @@
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
           "ai_task_entity": "Home Assistant AI Task entity",
-          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)"
+          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
+          "differential_circuits": "Differential-temperature controlled circuits"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -658,7 +663,8 @@
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
         }
       },
       "guided_review": {
@@ -726,7 +732,8 @@
           "energy_manager_dhw_timeout": "Automatic DHW boost duration",
           "energy_manager_cooldown": "Automation cooldown",
           "external_power_forwarding": "Automatic external power forwarding",
-          "dynamic_price_entity": "Dynamic electricity price sensor"
+          "dynamic_price_entity": "Dynamic electricity price sensor",
+          "differential_circuits": "Differential-temperature controlled circuits"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -741,7 +748,8 @@
           "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
           "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
-          "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate."
+          "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
         },
         "sections": {
           "features": {
@@ -1113,10 +1121,12 @@
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
           "ai_task_entity": "Home Assistant AI Task entity",
-          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)"
+          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
+          "differential_circuits": "Differential-temperature controlled circuits"
         },
         "data_description": {
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
         }
       },
       "guided_detail": {
@@ -1197,7 +1207,8 @@
           "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
           "ai_task_entity": "Home Assistant AI Task entity",
-          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)"
+          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
+          "differential_circuits": "Differential-temperature controlled circuits"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1258,7 +1269,8 @@
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
         }
       },
       "guided_review": {
@@ -2067,8 +2079,20 @@
           "not_configured": "Not Configured"
         }
       },
+      "hc_differential_status": {
+        "name": "Differential control status HC {circuit}",
+        "state": {
+          "off": "Off",
+          "heating": "Heating",
+          "cooling": "Cooling",
+          "standby": "Standby"
+        }
+      },
       "hc_flow_temp": {
         "name": "Heating circuit {circuit} flow temperature"
+      },
+      "hc_reference_temp": {
+        "name": "Reference temperature HC {circuit}"
       },
       "hc_room_device_temp": {
         "name": "Heating circuit {circuit} room device temperature"
@@ -2081,6 +2105,12 @@
       },
       "hc_status": {
         "name": "Heating circuit {circuit} status"
+      },
+      "hc_storage_temp": {
+        "name": "Storage temperature HC {circuit}"
+      },
+      "hc_temperature_difference": {
+        "name": "Temperature difference HC {circuit}"
       },
       "health_report": {
         "name": "iDM health report"

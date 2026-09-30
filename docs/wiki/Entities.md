@@ -679,3 +679,48 @@ For each enabled zone module (up to 10), room-level entities are created:
 | `zm{z}_room{r}_relay` | Relay status (binary_sensor: on/off) |
 
 Plus per-zone: `zm{z}_mode_heat_cool`, `zm{z}_dehumidification`
+## Differential-temperature controlled heating circuits
+
+For a Navigator 10 circuit configured as **Differential temperature control**
+(German controller label: **Differenztemperaturgeregelt**), select the circuit
+in **Configure → Plant → Differential-temperature controlled circuits**, as
+well as in the installed heating-circuit list. In the advanced form the same
+selection appears next to **Heating circuits**. The default is an empty list;
+normal heating circuits keep their existing behavior. This is a manual option,
+not automatic detection, and is separate from the controller's internal
+differential-control module.
+
+For HC D, the measurements reported in [issue #429](https://github.com/Xerolux/idm-heatpump-hass/issues/429)
+are mapped as follows; other selected circuits use their corresponding library
+registers rather than fixed HC D addresses:
+
+| Entity | HC D source | Meaning |
+| --- | --- | --- |
+| Storage temperature | `hc_d_flow_temp` (1356) | Storage measurement |
+| Reference temperature | `hc_d_room_temp` (1370) | Reference measurement |
+| Temperature difference | Reference minus storage | Signed difference in K; 22.63 − 41.83 = −19.20 K |
+| Differential control status | `hc_d_active_mode` (1501) | 255 is standby in this circuit context; 0/1/2 retain the documented off/heating/cooling meanings |
+| Heating-circuit pump | `pump_heating_circuitD` | Actual pump state, when the local web supplement provides it |
+
+The difference is available in every feature profile. Missing, unsupported or
+invalid measurements produce no usable difference. Status does not substitute
+for a pump measurement or infer charging from the temperature difference.
+
+**Migration:** the storage and reference sensors keep their original unique
+IDs and existing entity IDs (`hc_d_flow_temp` / `hc_d_room_temp`); their default
+names change, while user-customized names remain under user control. Existing
+automations referencing these IDs continue to work. Normal circuit setpoints,
+heating curves, heating/cooling limits, external room-temperature inputs,
+climate entities, flow deviation and web mixer/flow sensors are removed from
+the registry for selected differential circuits. Update dashboards and
+automations that referenced those controls. Turning the option off recreates
+normal circuit entities and removes the difference sensor; customizations of
+removed controls are not preserved.
+
+**Unverified parameters:** the API does not provide a circuit-type detection
+register or confirmed differential hysteresis/threshold/maximum-temperature
+registers. In particular, the reported 60 °C at `hc_d_setpoint_flow_constant`
+(1452) is not enough to identify it as the differential threshold. These
+parameters are deliberately not exposed under guessed names and no new
+writes are added. This mapping is based on the Navigator 10 report in #429;
+it still needs confirmation on the reporter's hardware.
