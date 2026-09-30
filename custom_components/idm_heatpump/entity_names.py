@@ -427,7 +427,6 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
             "Heating water outlet temperature (Web)",
             "Heizwasser Austrittstemperatur (Web)",
         ),
-        "web_heatpump_model": ("Heat pump model (Web)", "Wärmepumpenmodell (Web)"),
         "web_heatstore_temperature": ("Heat storage temperature (Web)", "Wärmespeichertemperatur (Web)"),
         "web_hotgas_temperature": ("Hot gas temperature (Web)", "Heißgastemperatur (Web)"),
         "web_hotwater_circulation_heat_quantity": ("Circulation heat quantity (Web)", "Wärmemenge Zirkulation (Web)"),

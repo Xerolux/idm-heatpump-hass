@@ -156,5 +156,6 @@ def test_every_navigator_web_value_reaches_an_entity() -> None:
     assert not unexposed, (
         "idm-heatpump-api delivers web values the integration never turns into entities: "
         f"{unexposed}. Add them to _WEB_VALUE_NAMES (sensor.py) or to the binary sensor "
-        "definitions (web_binary_sensors.py), together with a German name and translations."
+        "definitions (web_binary_sensors.py), together with a German name and translations - "
+        "or, for a value consumed without an entity, to _WEB_ATTRIBUTE_VALUE_NAMES."
     )

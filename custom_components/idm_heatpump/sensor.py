@@ -164,7 +164,6 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "heat_quantity_hotwater_total",
     "heat_sink_intermediate_circuit_pump_signal",
     "heating_water_outlet_temperature",
-    "heatpump_model",
     "heatstore_temperature",
     "high_pressure_error",
     "hotgas_temperature",
@@ -214,6 +213,13 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
 )
 
 _WEB_ONLY_EXTRA_VALUE_NAMES: tuple[str, ...] = ("navigator_version",)
+
+#: Web values consumed without becoming an entity: the heat pump model rides
+#: on the navigator-version sensor as an attribute, because Navigator 10
+#: firmware 20.24-1580 removed the model row from the sensor page and an
+#: entity would sit unavailable forever on current firmware (live-verified;
+#: see IdmWebSensor.extra_state_attributes).
+_WEB_ATTRIBUTE_VALUE_NAMES: frozenset[str] = frozenset({"heatpump_model"})
 
 _WEB_MODBUS_DUPLICATE_VALUES: frozenset[str] = frozenset(
     {
@@ -338,7 +344,6 @@ def _web_sensor_definition(key: str) -> WebSensorDefinition:
         if key
         in {
             "dhw_status_info",
-            "heatpump_model",
             "infosystem_notification_count",
             "infosystem_notifications",
             "myidm_id",
@@ -384,7 +389,12 @@ def all_supported_web_value_names() -> frozenset[str]:
     of becoming an entity. The cross-repo contract test compares this set
     against the value names `idm-heatpump-api` can produce.
     """
-    names = {*_WEB_VALUE_NAMES, *_WEB_ONLY_EXTRA_VALUE_NAMES, *WEB_BINARY_VALUE_KEYS}
+    names = {
+        *_WEB_VALUE_NAMES,
+        *_WEB_ONLY_EXTRA_VALUE_NAMES,
+        *WEB_BINARY_VALUE_KEYS,
+        *_WEB_ATTRIBUTE_VALUE_NAMES,
+    }
     for letter in HEATING_CIRCUIT_LETTERS:
         names.update(_heating_circuit_value_names(letter))
     return frozenset(names)
@@ -800,6 +810,24 @@ class IdmWebSensor(IdmCoordinatorEntityBase, SensorEntity):
         if value is None:
             return None
         return value.native_value
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """The heat pump model rides on the controller identity.
+
+        Firmware T_NAV10_20.24-1580 (installed 2026-09-29) removed the model
+        row from the Navigator 10 sensor page - live-verified, no other
+        accessible frame carries it - so a model entity could never gain a
+        value there and only showed as unavailable noise. Where firmware
+        still delivers the row (Navigator 2.0 web, older Navigator 10
+        firmware) the value stays visible as this attribute.
+        """
+        if self._definition.key != "navigator_version":
+            return {}
+        web_supplement = self.coordinator.web_supplement
+        if web_supplement is None or web_supplement.heatpump_model is None:
+            return {}
+        return {"heatpump_model": web_supplement.heatpump_model}
 
 
 class IdmTechnicianCodeBaseSensor(IdmCoordinatorEntityBase, SensorEntity):

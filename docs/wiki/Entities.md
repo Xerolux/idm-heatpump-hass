@@ -278,12 +278,19 @@ Typical web-only sensors include:
 
 | Entity | Description |
 |--------|-------------|
-| Navigator version (Web) | Detected Navigator generation, for example Navigator 2.0 or Navigator 10 |
+| Navigator version (Web) | Detected Navigator generation, for example Navigator 2.0 or Navigator 10; carries the heat pump model as an attribute where the firmware reports it |
 | Software version (Web) | Controller software version reported by the local web interface |
-| Heat pump model (Web) | Heat pump model/type reported by the web interface |
 | myIDM ID (Web) | Compact myIDM ID derived from the local web account value before `@` |
 | Info system notification count (Web) | Number of active Navigator 10 infosystem notifications |
 | Anforderungsgrund (Web) | Navigator 10 only: the controller's own demand reason (issue #353) |
+
+The heat pump model is deliberately no entity of its own: Navigator 10
+firmware 20.24-1580 (installed from 2026-09-29) removed the model row from
+the sensor page, and no other accessible web frame reports it — live-verified
+against the controller, an entity would sit unavailable forever on current
+firmware. Where a firmware still delivers the row (Navigator 2.0 web, older
+Navigator 10 firmware) the value appears as the `heatpump_model` attribute of
+the *Navigator version (Web)* sensor.
 
 #### Demand reason from the web interface (Navigator 10 only)
 

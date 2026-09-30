@@ -429,7 +429,7 @@ settingIds answer for an end user:
 |---|---|---|---|---|
 | `4740` | `N2_SYSTEM_REBOOT` | **action** | 4488 | restart action (write side, Phase 4 material) |
 | `4754` | `N2_SYSTEM_INFO` | info | 4747 | runtimes, switch cycles, software version, myIDM ID, controller online |
-| `4768` | `N2_SENSORS` | info | 4761 | 26 sensor values (B-codes) |
+| `4768` | `N2_SENSORS` | info | 4761 | 26 sensor values (B-codes); until firmware 20.24-880 the table also ended with a `Modell` row (heat pump model) — 20.24-1580 removed it (live-verified 2026-09-30) |
 | `4775` | `N2_DIGITAL_INPUTS` | info | 4761 | 8 digital inputs |
 | `4782` | `N2_ANALOGUE_OUTPUTS` | info | 4761 | 4 analogue outputs |
 | `4789` | `N2_DIGITAL_OUTPUTS` | info | 4761 | 14 digital outputs |

@@ -213,12 +213,19 @@ Typische reine Web-Sensoren sind unter anderem:
 
 | Entität | Beschreibung |
 |--------|-------------|
-| Navigator-Version (Web) | Erkannte Navigator-Generation, zum Beispiel Navigator 2.0 oder Navigator 10 |
+| Navigator-Version (Web) | Erkannte Navigator-Generation, zum Beispiel Navigator 2.0 oder Navigator 10; trägt das Wärmepumpenmodell als Attribut, wo die Firmware es meldet |
 | Software-Version (Web) | Software-Version des Reglers, gemeldet von der lokalen Weboberfläche |
-| Wärmepumpen-Modell (Web) | Modell/Typ der Wärmepumpe, gemeldet von der Weboberfläche |
 | myIDM-ID (Web) | Kompakte myIDM-ID, abgeleitet aus dem lokalen Web-Kontowert vor dem `@` |
 | Anzahl Infosystem-Meldungen (Web) | Anzahl aktiver Navigator-10-Infosystem-Meldungen |
 | Anforderungsgrund (Web) | Nur Navigator 10: der vom Regler selbst gemeldete Anforderungsgrund (Issue #353) |
+
+Das Wärmepumpenmodell ist bewusst keine eigene Entität: Die Navigator-10-
+Firmware 20.24-1580 (ab 29.09.2026 installiert) hat die Modell-Zeile aus der
+Sensor-Seite entfernt, und kein anderes zugängliches Web-Frame meldet das
+Modell — live am Regler verifiziert; eine Entität würde auf aktueller
+Firmware dauerhaft nicht verfügbar sein. Wo eine Firmware die Zeile noch
+liefert (Navigator-2.0-Web, ältere Navigator-10-Firmware), erscheint der Wert
+als `heatpump_model`-Attribut am Sensor *Navigator-Version (Web)*.
 
 #### Anforderungsgrund aus der Weboberfläche (nur Navigator 10)
 

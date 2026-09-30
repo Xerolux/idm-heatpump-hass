@@ -148,8 +148,10 @@ The scan interval determines how often registers are polled.
 
 The integration can optionally read additional local Navigator web data through
 `idm-heatpump-api`. This is read-only and additive. It is used for values such
-as Navigator generation, software version, heat pump model, selected Web UI
-diagnostics, and Navigator 10 infosystem notifications.
+as Navigator generation, software version, selected Web UI
+diagnostics, and Navigator 10 infosystem notifications. (The heat pump model
+is an attribute of the *Navigator version (Web)* sensor where the firmware
+reports it — see [Entities](Entities).)
 
 | Option | Description | Default |
 |--------|-------------|---------|

@@ -619,10 +619,58 @@ class TestSensorAsyncSetupEntry:
             "test_entry_hotwater_temperature",
             "test_entry_pv_surplus",
         ]
-        assert web_ids.index("test_entry_web_heatpump_model") < web_ids.index("test_entry_web_hotgas_temperature")
+        # The heat pump model is deliberately not a web sensor (see
+        # test_heatpump_model_is_an_attribute_not_an_entity).
+        assert "test_entry_web_heatpump_model" not in web_ids
         assert web_ids.index("test_entry_web_hotgas_temperature") < web_ids.index(
             "test_entry_web_runtime_heating_hours"
         )
+
+    async def test_heatpump_model_is_an_attribute_not_an_entity(self):
+        """The heat pump model rides on the navigator-version sensor.
+
+        Firmware T_NAV10_20.24-1580 (installed 2026-09-29) removed the model
+        row from the Navigator 10 sensor page - live-verified: none of the six
+        accessible setting pages nor any WebSocket frame carries it anymore -
+        so a model entity could never gain a value there and only showed as
+        unavailable noise. Where firmware still delivers the row (Navigator
+        2.0 web, older Navigator 10 firmware) the value stays visible as an
+        attribute of the controller identity.
+        """
+        from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = True
+        coord.active_registers = []
+        coord.web_supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="NAV10_20.23-880",
+            heatpump_model="iDM ALM 6-15",
+            sensor_values={
+                "heatpump_model": IdmWebSensorValue("iDM ALM 6-15", "iDM ALM 6-15"),
+            },
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        web_ids = [e._attr_unique_id for e in added_entities if isinstance(e, IdmWebSensor)]
+        assert "test_entry_web_heatpump_model" not in web_ids
+        navigator = next(e for e in added_entities if e._attr_unique_id == "test_entry_web_navigator_version")
+        assert navigator.extra_state_attributes == {"heatpump_model": "iDM ALM 6-15"}
+
+        # Firmware without the row: the attribute is omitted, never empty.
+        coord.web_supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            software_version="T_NAV10_20.24-1580",
+        )
+        assert navigator.extra_state_attributes == {}
 
     async def test_adds_web_only_sensors_when_web_enabled(self):
         from custom_components.idm_heatpump.sensor import IdmWebSensor, async_setup_entry
