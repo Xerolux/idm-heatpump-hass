@@ -266,11 +266,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         write_cooldown_seconds: float = 5.0,
     ) -> None:
         self._client = client
-        self._sensor_descs = sensor_descriptions
-        self._binary_descs = binary_sensor_descriptions
-        self._number_descs = number_descriptions
-        self._select_descs = select_descriptions
-        self._switch_descs = switch_descriptions
+        from .differential_circuits import differential_circuits, filter_descriptions
+
+        differential = differential_circuits(config_entry.options)
+        self._sensor_descs = filter_descriptions(sensor_descriptions, differential, sensors=True)
+        self._binary_descs = filter_descriptions(binary_sensor_descriptions, differential)
+        self._number_descs = filter_descriptions(number_descriptions, differential)
+        self._select_descs = filter_descriptions(select_descriptions, differential)
+        self._switch_descs = filter_descriptions(switch_descriptions, differential)
         self._registers: list[RegisterDef] = []
         self._hide_unused = hide_unused
         self._model_name = model_name
@@ -480,6 +483,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 circuits, zone_count, zone_rooms, enable_cascade, model_info=model_info
             )
             self._alias_map = collect_alias_map(circuits, zone_count, zone_rooms, enable_cascade, model_info=model_info)
+        from .differential_circuits import configured_differential_circuits, register_allowed
+
+        differential = configured_differential_circuits(self)
+        self._registers = [reg for reg in self._registers if register_allowed(reg.name, differential)]
+        self._alias_map = {
+            address: [name for name in names if register_allowed(name, differential)]
+            for address, names in self._alias_map.items()
+        }
         self._register_by_name = {reg.name: reg for reg in self._registers}
         self._alias_primary_map = None
         # Room-mode registers only depend on the register set (fixed at setup

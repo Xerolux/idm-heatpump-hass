@@ -28,7 +28,7 @@ from .adapter_descriptions import get_icon_for_register, infer_sensor_classes
 from .adapter_enums import get_bitflag_de_labels, get_slug_map_and_key
 from .ai_advisor import AiAdvisor
 from .ai_advisor_entities import AI_METRICS, IdmAiMetricSensor, IdmAiReportSensor
-from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities
+from .calculated_sensors import IdmCalculatedSensor, calculated_sensor_entities, differential_temperature_entities
 from .comfort_advisory import ComfortAdvisorySensor, heating_curve_advisory, weather_preheat_advisory
 from .connection_entities import ConnectionSensorEntity, connection_sensor_entities
 from .const import (
@@ -53,6 +53,7 @@ from .const import (
 )
 from .coordinator import IdmCoordinator
 from .device_hierarchy import HEATING_CIRCUIT_LETTERS, active_heating_circuits, build_subdevice_info
+from .differential_circuits import configured_differential_circuits, web_value_allowed
 from .energy_statistics_entities import IdmEnergyStatisticsSensor, energy_statistics_entities
 from .entity import (
     IdmCoordinatorEntityBase,
@@ -412,6 +413,8 @@ def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefini
     ):
         if key in seen:
             continue
+        if not web_value_allowed(key, configured_differential_circuits(coordinator)):
+            continue
         seen.add(key)
         if key in WEB_BINARY_VALUE_KEYS:
             continue
@@ -507,6 +510,7 @@ async def async_setup_entry(
                     ),
                 )
             )
+    entities += differential_temperature_entities(coordinator)
     if getattr(coordinator, "web_enabled", False) is True:
         entities += [IdmWebSensor(coordinator, definition) for definition in _web_sensor_definitions(coordinator)]
         entities += web_demand_reason_sensor_entities(coordinator)
@@ -668,6 +672,8 @@ class IdmSensor(IdmEntity, SensorEntity):
         # Cache enum lookups: the register name never changes after setup, so
         # avoid re-running regex matches on every state update (mirrors IdmSelect).
         self._enum_slug_map, _ = get_slug_map_and_key(reg.name)
+        if entity_desc.translation_key == "hc_differential_status" and self._enum_slug_map is not None:
+            self._enum_slug_map = {0: "off", 1: "heating", 2: "cooling", 255: "standby"}
         self._enum_bitflag_labels = get_bitflag_de_labels(reg.name)
         self._reported_unmapped_values: set[int] = set()
 

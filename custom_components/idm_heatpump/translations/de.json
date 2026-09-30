@@ -85,7 +85,8 @@
           "zone_count": "Anzahl Zonenmodule",
           "feature_profile": "Funktionsprofil",
           "external_power_forwarding": "Automatische externe Leistungswerte",
-          "dynamic_price_entity": "Sensor für dynamischen Strompreis"
+          "dynamic_price_entity": "Sensor für dynamischen Strompreis",
+          "differential_circuits": "Differenztemperaturgeregelte Heizkreise"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -94,7 +95,8 @@
           "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
           "feature_profile": "Vanilla stellt nur die grundlegenden IDM-Entitäten bereit. iDM Smart Energy & Comfort ergänzt berechnete Effizienzsensoren, Taktungsanalyse, Kurzzyklus-Erkennung und die sichere Warmwasser-Boost-Steuerung. Das Profil verändert die Wärmepumpeneinstellungen nicht selbst.",
           "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister.",
-          "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden."
+          "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden.",
+          "differential_circuits": "Nur installierte Heizkreise auswählen, deren Heizsystem im Navigator auf Differenztemperaturgeregelt steht (z. B. Holzofen). Zeigt Speicher, Referenz, Temperaturdifferenz und Status; normale Heizungsregler entfallen. Keine automatische Erkennung."
         },
         "sections": {
           "features": {
@@ -501,10 +503,12 @@
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
           "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
           "ai_task_entity": "KI-Task-Entität aus Home Assistant",
-          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)"
+          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)",
+          "differential_circuits": "Differenztemperaturgeregelte Heizkreise"
         },
         "data_description": {
-          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
+          "differential_circuits": "Nur installierte Heizkreise auswählen, deren Heizsystem im Navigator auf Differenztemperaturgeregelt steht (z. B. Holzofen). Zeigt Speicher, Referenz, Temperaturdifferenz und Status; normale Heizungsregler entfallen. Keine automatische Erkennung."
         }
       },
       "guided_detail": {
@@ -585,7 +589,8 @@
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
           "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
           "ai_task_entity": "KI-Task-Entität aus Home Assistant",
-          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)"
+          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)",
+          "differential_circuits": "Differenztemperaturgeregelte Heizkreise"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -646,7 +651,8 @@
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
-          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
+          "differential_circuits": "Nur installierte Heizkreise auswählen, deren Heizsystem im Navigator auf Differenztemperaturgeregelt steht (z. B. Holzofen). Zeigt Speicher, Referenz, Temperaturdifferenz und Status; normale Heizungsregler entfallen. Keine automatische Erkennung."
         }
       },
       "guided_review": {
@@ -708,7 +714,8 @@
           "zone_count": "Anzahl Zonenmodule",
           "feature_profile": "Funktionsprofil",
           "external_power_forwarding": "Automatische externe Leistungswerte",
-          "dynamic_price_entity": "Sensor für dynamischen Strompreis"
+          "dynamic_price_entity": "Sensor für dynamischen Strompreis",
+          "differential_circuits": "Differenztemperaturgeregelte Heizkreise"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -717,7 +724,8 @@
           "zone_count": "Anzahl der installierten IDM-Zonenmodule. Wähle 0, wenn deine Anlage keine Zonenmodule besitzt; bei einem höheren Wert folgt eine Seite zur Anzahl der Räume je Modul. Beim Reduzieren werden Zuordnungen entfernter Zonen gelöscht.",
           "feature_profile": "Vanilla stellt nur die grundlegenden IDM-Entitäten bereit. iDM Smart Energy & Comfort ergänzt berechnete Effizienzsensoren, Taktungsanalyse, Kurzzyklus-Erkennung und die sichere Warmwasser-Boost-Steuerung. Das Profil verändert die Wärmepumpeneinstellungen nicht selbst.",
           "external_power_forwarding": "Aktiviert die Auswahl vorhandener Home-Assistant-Sensoren und das zyklische Schreiben in die IDM-GLT-Leistungsregister.",
-          "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden."
+          "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden.",
+          "differential_circuits": "Nur installierte Heizkreise auswählen, deren Heizsystem im Navigator auf Differenztemperaturgeregelt steht (z. B. Holzofen). Zeigt Speicher, Referenz, Temperaturdifferenz und Status; normale Heizungsregler entfallen. Keine automatische Erkennung."
         },
         "sections": {
           "features": {
@@ -1089,10 +1097,12 @@
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
           "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
           "ai_task_entity": "KI-Task-Entität aus Home Assistant",
-          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)"
+          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)",
+          "differential_circuits": "Differenztemperaturgeregelte Heizkreise"
         },
         "data_description": {
-          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
+          "differential_circuits": "Nur installierte Heizkreise auswählen, deren Heizsystem im Navigator auf Differenztemperaturgeregelt steht (z. B. Holzofen). Zeigt Speicher, Referenz, Temperaturdifferenz und Status; normale Heizungsregler entfallen. Keine automatische Erkennung."
         }
       },
       "guided_detail": {
@@ -1173,7 +1183,8 @@
           "ai_zai_key": "Z.ai API-Schlüssel (leer: behalten; -: löschen)",
           "ai_cloud_daily_limit": "Maximale HA-KI-Aufträge / direkte Cloud-Anfragen pro UTC-Tag",
           "ai_task_entity": "KI-Task-Entität aus Home Assistant",
-          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)"
+          "ai_unverified_text": "Freie, nicht vollständig überprüfbare KI-Erklärungen aktivieren (sonst Messwertbericht ohne Modellaufruf)",
+          "differential_circuits": "Differenztemperaturgeregelte Heizkreise"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1234,7 +1245,8 @@
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
-          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
+          "differential_circuits": "Nur installierte Heizkreise auswählen, deren Heizsystem im Navigator auf Differenztemperaturgeregelt steht (z. B. Holzofen). Zeigt Speicher, Referenz, Temperaturdifferenz und Status; normale Heizungsregler entfallen. Keine automatische Erkennung."
         }
       },
       "guided_review": {
@@ -2043,8 +2055,20 @@
           "not_configured": "Nicht konfiguriert"
         }
       },
+      "hc_differential_status": {
+        "name": "Status Differenztemperaturregelung HK {circuit}",
+        "state": {
+          "off": "Aus",
+          "heating": "Heizen",
+          "cooling": "Kühlen",
+          "standby": "Standby"
+        }
+      },
       "hc_flow_temp": {
         "name": "Vorlauftemperatur HK {circuit}"
+      },
+      "hc_reference_temp": {
+        "name": "Referenztemperatur HK {circuit}"
       },
       "hc_room_device_temp": {
         "name": "Raumgerätetemperatur HK {circuit}"
@@ -2057,6 +2081,12 @@
       },
       "hc_status": {
         "name": "Status HK {circuit}"
+      },
+      "hc_storage_temp": {
+        "name": "Speichertemperatur HK {circuit}"
+      },
+      "hc_temperature_difference": {
+        "name": "Temperaturdifferenz HK {circuit}"
       },
       "health_report": {
         "name": "iDM-Zustandsbericht"

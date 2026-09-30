@@ -39,10 +39,14 @@ def web_climate_entities(coordinator: IdmCoordinator) -> list[IdmWebHeatingCircu
         return []
     supplement = coordinator.web_supplement
     circuits = supplement.heating_circuits if supplement is not None else ()
+    from .differential_circuits import configured_differential_circuits
+
     return [
         IdmWebHeatingCircuitClimate(coordinator, str(getattr(c, "hc_id", "")).lower())
         for c in circuits or ()
-        if getattr(c, "setpoint_normal", None) is not None and getattr(c, "mode_parameter_id", None)
+        if getattr(c, "setpoint_normal", None) is not None
+        and getattr(c, "mode_parameter_id", None)
+        and str(getattr(c, "hc_id", "")).lower() not in configured_differential_circuits(coordinator)
     ]
 
 

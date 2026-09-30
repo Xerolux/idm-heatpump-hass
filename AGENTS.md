@@ -71,6 +71,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── error_messages.py             # Classifies communication/write errors into repair issues and translation keys
 │   ├── polling_plan.py               # Entity-aware polling: narrows the poll to what enabled entities and declared consumers need
 │   ├── calculated_sensors.py         # Derived sensors computed from one snapshot (COP, deltas, flow deviation)
+│   ├── differential_circuits.py      # Opt-in differential circuit semantics and description filtering
 │   ├── operation_analysis.py         # Restart-safe cycle, defrost and operating-share analysis
 │   ├── operation_entities.py         # Sensors publishing that analysis
 │   ├── energy_manager.py              # Optional, fail-closed PV surplus DHW automation
@@ -106,6 +107,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_binary_semantics.py
 │   ├── test_build_pages.py
 │   ├── test_calculated_sensors.py
+│   ├── test_differential_circuits.py
 │   ├── test_changelog_consolidation.py
 │   ├── test_config_flow.py
 │   ├── test_connection_entities.py

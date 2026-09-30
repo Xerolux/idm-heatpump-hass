@@ -12,7 +12,11 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 
-from .calculated_sensors import CALCULATED_SENSOR_DEFINITIONS, FLOW_DEVIATION_DEFINITIONS
+from .calculated_sensors import (
+    CALCULATED_SENSOR_DEFINITIONS,
+    DIFFERENTIAL_TEMPERATURE_DEFINITIONS,
+    FLOW_DEVIATION_DEFINITIONS,
+)
 from .coordinator import IdmCoordinator
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,7 +45,11 @@ _ALWAYS_REQUIRED = frozenset(
 # leave the calculated sensor permanently unavailable.
 _CALCULATED_DEPENDENCIES: dict[str, frozenset[str]] = {
     definition.key: frozenset(definition.sources)
-    for definition in (*CALCULATED_SENSOR_DEFINITIONS, *FLOW_DEVIATION_DEFINITIONS)
+    for definition in (
+        *CALCULATED_SENSOR_DEFINITIONS,
+        *FLOW_DEVIATION_DEFINITIONS,
+        *DIFFERENTIAL_TEMPERATURE_DEFINITIONS,
+    )
 }
 # OR-shaped sources (issue #353): the derived PV-surplus binary sensor
 # evaluates whichever source half exists, so every candidate source register

@@ -13,6 +13,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.1-b1] - 2026-09-30
+
+### Added
+
+- Opt-in differential-temperature controlled heating circuits (#429), for
+  example a wood stove connected through HC D on Navigator 10. The plant
+  options expose storage and reference temperatures with their existing entity
+  IDs, a reference-minus-storage difference in K, and contextual status
+  (`255` = standby). Normal heating controls, climate entities, flow deviation
+  and web mixer/flow entities are removed for selected circuits; the web pump
+  remains available. Switching the option off restores normal circuit entities.
+- Hysteresis, threshold and maximum temperature remain unavailable until their
+  register meanings are verified. No additional device writes are introduced.
+- Runtime compatibility is tested with the unchanged pins:
+  `modbus-connection==4.12.3`, `tmodbus[async-serial]==0.6.2` and
+  `idm-heatpump-api[web]==2.13.0`.
+
 ## [0.20.0] - 2026-09-30
 
 This release makes the **local Navigator web interface a first-class data

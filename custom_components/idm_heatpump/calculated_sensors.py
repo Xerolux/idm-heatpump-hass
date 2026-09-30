@@ -22,6 +22,7 @@ from homeassistant.helpers.device_registry import DeviceInfo
 
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
+from .differential_circuits import configured_differential_circuits
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 
 
@@ -239,6 +240,38 @@ FLOW_DEVIATION_DEFINITIONS: tuple[CalculatedSensorDefinition, ...] = tuple(
 )
 
 
+def differential_temperature_definition(circuit: str) -> CalculatedSensorDefinition:
+    """Reference minus storage, using the reported circuit measurements (#429)."""
+    storage = f"hc_{circuit}_flow_temp"
+    reference = f"hc_{circuit}_room_temp"
+    return CalculatedSensorDefinition(
+        key=f"hc_{circuit}_temperature_difference",
+        sources=(reference, storage),
+        calculate=_difference(reference, storage),
+        icon="mdi:thermometer-lines",
+        native_unit_of_measurement="K",
+        device_class=None,
+        translation_key="hc_temperature_difference",
+        translation_placeholders={"circuit": circuit.upper()},
+        device_scope_source=storage,
+        require_sources_used=False,
+    )
+
+
+DIFFERENTIAL_TEMPERATURE_DEFINITIONS: tuple[CalculatedSensorDefinition, ...] = tuple(
+    differential_temperature_definition(circuit) for circuit in FLOW_DEVIATION_CIRCUITS
+)
+
+
+def differential_temperature_entities(coordinator: IdmCoordinator) -> list[IdmCalculatedSensor]:
+    """Expose the circuit difference in every feature profile."""
+    return [
+        IdmCalculatedSensor(coordinator, definition)
+        for circuit, definition in zip(FLOW_DEVIATION_CIRCUITS, DIFFERENTIAL_TEMPERATURE_DEFINITIONS, strict=True)
+        if circuit in configured_differential_circuits(coordinator) and _definition_supported(coordinator, definition)
+    ]
+
+
 def _definition_supported(coordinator: IdmCoordinator, definition: CalculatedSensorDefinition) -> bool:
     """Return whether all required source registers exist on this installation."""
     data = coordinator.data
@@ -254,7 +287,14 @@ def calculated_sensor_entities(coordinator: IdmCoordinator) -> list[IdmCalculate
     """Create only calculated sensors supported by the detected installation."""
     return [
         IdmCalculatedSensor(coordinator, definition)
-        for definition in (*CALCULATED_SENSOR_DEFINITIONS, *FLOW_DEVIATION_DEFINITIONS)
+        for definition in (
+            *CALCULATED_SENSOR_DEFINITIONS,
+            *(
+                flow_deviation_definition(c)
+                for c in FLOW_DEVIATION_CIRCUITS
+                if c not in configured_differential_circuits(coordinator)
+            ),
+        )
         if _definition_supported(coordinator, definition)
     ]
 
