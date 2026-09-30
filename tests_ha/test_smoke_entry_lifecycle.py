@@ -61,8 +61,7 @@ async def test_connection_entities_register_as_diagnostics(smoke_hass, patched_c
 
     registry = er.async_get(smoke_hass)
     by_unique_id = {
-        entity.unique_id: entity
-        for entity in er.async_entries_for_config_entry(registry, smoke_entry.entry_id)
+        entity.unique_id: entity for entity in er.async_entries_for_config_entry(registry, smoke_entry.entry_id)
     }
 
     for suffix in ("connection_mode", "connection_reload"):
