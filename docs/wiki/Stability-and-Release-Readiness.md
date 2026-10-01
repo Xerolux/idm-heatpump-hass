@@ -62,7 +62,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.20.1-b3` and `idm-heatpump-api` `2.14.0` form the current
+Source-tree integration `0.20.1-b4` and `idm-heatpump-api` `2.14.0` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
