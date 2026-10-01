@@ -30,6 +30,7 @@ def _make_hass_with_coordinator(mock_hass, mock_config_entry):
     coord.energy_statistics = None
     coord.web_enabled = True
     coord.web_supplement = MagicMock()
+    coord.web_supplement.system_overview = None
     coord.last_web_error = None
     coord.web_value_keys = ("navigator_version", "software_version")
     coord.missing_web_core_values = ("heatpump_model",)
@@ -111,6 +112,29 @@ class TestDiagnostics:
         assert data["number_count"] == 2
         assert data["select_count"] == 4
         assert data["switch_count"] == 0
+
+    async def test_heating_circuit_types_from_the_web_supplement(self, mock_hass, mock_config_entry):
+        from types import SimpleNamespace
+
+        coordinator = _make_hass_with_coordinator(mock_hass, mock_config_entry)
+        coordinator.web_supplement.system_overview = SimpleNamespace(
+            heating_circuits=(
+                SimpleNamespace(circuit_id="a", type=2),
+                SimpleNamespace(circuit_id="D", type=4),
+                SimpleNamespace(circuit_id=None, type=2),
+            )
+        )
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        assert result["data"]["heating_circuit_types"] == {"A": 2, "D": 4}
+
+    async def test_heating_circuit_types_absent_without_web_frame(self, mock_hass, mock_config_entry):
+        _make_hass_with_coordinator(mock_hass, mock_config_entry)
+
+        result = await async_get_config_entry_diagnostics(mock_hass, mock_config_entry)
+
+        assert result["data"]["heating_circuit_types"] is None
 
     async def test_sensitive_fields_redacted(self, mock_hass, mock_config_entry):
         """Network fields should not appear in entry diagnostics."""
