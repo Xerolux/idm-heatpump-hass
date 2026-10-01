@@ -187,6 +187,27 @@ def _model_conflict_diagnostics(coordinator: Any) -> dict[str, Any]:
     }
 
 
+def _heating_circuit_type_diagnostics(coordinator: Any) -> dict[str, int] | None:
+    """Emit the web-reported regulation type per heating circuit.
+
+    Only circuit letters and the controller's raw type numbers are emitted —
+    no names, hosts or identifiers. This is the field-confirmation basis for
+    the differential-circuit detection mapping (#429): users can read the
+    number their plant reports straight from the diagnostics download.
+    """
+    overview = getattr(getattr(coordinator, "web_supplement", None), "system_overview", None)
+    circuits = getattr(overview, "heating_circuits", None)
+    if not isinstance(circuits, (list, tuple)):
+        return None
+    types: dict[str, int] = {}
+    for circuit in circuits:
+        circuit_id = getattr(circuit, "circuit_id", None)
+        circuit_type = getattr(circuit, "type", None)
+        if isinstance(circuit_id, str) and circuit_id and isinstance(circuit_type, int):
+            types[circuit_id.upper()] = circuit_type
+    return types or None
+
+
 def _controller_stats_cross_reference(coordinator: Any) -> dict[str, Any]:
     """Emit the syscount cross-reference for every known register that is
     currently present in the coordinator's data.
@@ -364,6 +385,7 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "model_name": coordinator.model_name,
                 "firmware_version": coordinator.firmware_version,
                 "connection": _connection_diagnostics(entry, coordinator),
+                "heating_circuit_types": _heating_circuit_type_diagnostics(coordinator),
                 "versions": {
                     "integration": versions.integration,
                     "idm_heatpump_api": versions.api,
