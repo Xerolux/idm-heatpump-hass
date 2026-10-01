@@ -1,6 +1,7 @@
 name: Dependency Freshness
 
-# Keeps the exactly pinned runtime dependencies from silently falling behind.
+# Keeps the pinned runtime dependencies (exact API pin, HA-owned transport minimums)
+# from silently falling behind.
 # The pins are what makes a release reproducible, but nothing in the repository
 # notices when a pinned library publishes a new version — that is how the
 # transport pin stayed on the modbus-connection 4.0.0a3 alpha while 4.8.1 was

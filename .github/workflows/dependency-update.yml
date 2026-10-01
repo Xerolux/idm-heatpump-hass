@@ -1,6 +1,6 @@
 name: Dependency Update
 
-# The one pipeline that moves a runtime pin. It re-pins every exactly pinned
+# The one pipeline that moves a runtime pin. It re-pins the exact idm-heatpump-api
 # requirement in manifest.json to the newest stable release on PyPI
 # (modbus-connection, tmodbus, idm-heatpump-api), regenerates the artifacts that
 # are derived from those libraries, runs the quality gate against the result and

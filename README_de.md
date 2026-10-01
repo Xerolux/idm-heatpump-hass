@@ -212,7 +212,7 @@ Maintainer sollten vor einem stabilen Release den
 - IDM Navigator 2.0 / 10 / Pro Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
 - Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
 - Python 3.14+ (wird von Home Assistant bereitgestellt)
-- `modbus-connection==4.12.3` · `tmodbus[async-serial]==0.6.2` (direkter Modbus-Socket)
+- `modbus-connection>=4.12.3` · `tmodbus[async-serial]>=0.6.2` (direkter Modbus-Socket)
 - `idm-heatpump-api[web]==2.13.0` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
 
 ---
@@ -271,7 +271,7 @@ Home Assistant
 - **Werte-Sicherheit**: deklarierte Nicht-verfügbar-Sentinels gelten als unbenutzt; unplausible Batch-Werte werden einzeln geprüft und für die laufende Client-Sitzung aus Batches ausgeschlossen
 - **Datentypen**: FLOAT (IEEE 754, zwei Register), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden erfasst und vor zu häufigem Schreiben geschützt
-- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über exakt `modbus-connection==4.12.3` und `tmodbus[async-serial]==0.6.2`; `4.12.3` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
+- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über exakt `modbus-connection>=4.12.3` und `tmodbus[async-serial]>=0.6.2`; `4.12.3` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
 - **API-Grenze**: `idm-heatpump-api[web]==2.13.0` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
 - **Auto-Recovery**: Retry-/Backoff-Strategie der API plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
 - **Bibliotheksbasiert**: Alle Registerdefinitionen stammen aus [`idm-heatpump-api`](https://github.com/Xerolux/idm-heatpump-api) und bleiben so über alle Werkzeuge hinweg konsistent
