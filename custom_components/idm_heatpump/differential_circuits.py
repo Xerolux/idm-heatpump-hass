@@ -47,7 +47,7 @@ def web_detected_differential_circuits(system_overview: Any) -> frozenset[str]:
     circuits = getattr(system_overview, "heating_circuits", None)
     if not isinstance(circuits, (list, tuple)):
         return frozenset()
-    detected = set()
+    detected: set[str] = set()
     for circuit in circuits:
         circuit_id = getattr(circuit, "circuit_id", None)
         circuit_type = getattr(circuit, "type", None)
@@ -64,8 +64,10 @@ def configured_differential_circuits(coordinator: Any) -> frozenset[str]:
     """Options plus web detection, without transport or hierarchy coupling."""
     options = getattr(getattr(coordinator, "config_entry", None), "options", {})
     selected = differential_circuits(options) if isinstance(options, Mapping) else frozenset()
-    detected = getattr(coordinator, "web_differential_circuits", frozenset())
-    return selected | detected if isinstance(detected, frozenset) else selected
+    detected: frozenset[str] = getattr(coordinator, "web_differential_circuits", frozenset())
+    if not isinstance(detected, frozenset):
+        return selected
+    return selected | detected
 
 
 def differential_register_translation(name: str, circuits: frozenset[str]) -> str | None:
