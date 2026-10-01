@@ -98,6 +98,7 @@ _WEB_LIFETIME_COUNTER_KEYS: frozenset[str] = frozenset(
 _ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
 _CONNECTIVITY_REPAIR_ISSUES = (
     "cannot_connect",
+    "modbus_degraded_web_active",
     "host_not_found",
     "modbus_connection_refused",
     "modbus_timeout",
@@ -1144,6 +1145,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 getattr(self._client, "port", None),
                 err,
             )
+            # While the web supplement keeps delivering, the outage is a
+            # degradation, not an emergency: a calmer repair issue says the
+            # data keeps flowing and auto-clears on the first successful
+            # poll. The log stays quiet after the first failure per outage —
+            # one error line informs, one per scan interval panics.
+            web_data_active = bool(self._web_pin and self._web_alive and self._last_web_success is not None)
+            if web_data_active:
+                issue_id = "modbus_degraded_web_active"
             for stale_issue_id in _CONNECTIVITY_REPAIR_ISSUES:
                 if stale_issue_id != issue_id:
                     ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(stale_issue_id))
@@ -1156,11 +1165,18 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_key=issue_id,
                 translation_placeholders={"host": self._client.host},
             )
-            _LOGGER.error(
-                "%s; created repair issue %s",
-                friendly_error,
-                issue_id,
-            )
+            if self._consecutive_poll_failures == 1:
+                _LOGGER.error(
+                    "%s; created repair issue %s",
+                    friendly_error,
+                    issue_id,
+                )
+            else:
+                _LOGGER.debug(
+                    "%s; repair issue %s stays until the connection recovers",
+                    friendly_error,
+                    issue_id,
+                )
             raise UpdateFailed(friendly_error) from err
 
         if not data:

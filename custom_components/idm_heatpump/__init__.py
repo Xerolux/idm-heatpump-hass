@@ -813,6 +813,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             _LOGGER.warning("Failed to clean up client for %s:%d", host, port, exc_info=True)
         _LOGGER.error("%s", friendly_error)
         _LOGGER.debug("Technical IDM Modbus setup error", exc_info=True)
+        # Home Assistant retries a NotReady entry with exponential backoff
+        # (up to ~30 minutes). The recovery watchdog probes the endpoint in
+        # the background and reloads the entry as soon as it answers again,
+        # so a transient outage heals itself instead of leaving a stale
+        # repair card.
+        from .recovery_watchdog import ensure_recovery_watchdog
+
+        ensure_recovery_watchdog(hass)
         raise ConfigEntryNotReady(friendly_error) from err
 
     try:

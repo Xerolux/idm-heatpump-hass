@@ -53,6 +53,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
 │   ├── versions.py                   # Runtime dependency versions for logs, sensors, and diagnostics
 │   ├── ha_compat.py                  # Version-tolerant imports across the supported HA range (vol/probatio, moved enums)
+│   ├── recovery_watchdog.py          # Self-healing reload for entries in setup retry once the endpoint answers again
 │   ├── adapter_descriptions.py       # HA description helpers (icons, device classes)
 │   ├── adapter_enums.py              # Enum slug maps and translation keys
 │   ├── entity_names.py               # Entity translation keys, placeholders and canonical English names
@@ -165,6 +166,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_polling_manager.py
 │   ├── test_polling_plan.py
 │   ├── test_registers.py
+│   ├── test_recovery_watchdog.py
 │   ├── test_release_contract.py
 │   ├── test_release_discussion.py
 │   ├── test_repairs.py
@@ -520,6 +522,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Web supplement | `web_data.py`, `coordinator.py` | Optional local Navigator web data (Nav 2.0 / Nav 10 / Pro) |
 | Web-only fallback | `__init__.py`, `config_flow.py` | Runs without Modbus when only web access is available |
 | Connection entities | `connection_entities.py` | Diagnostic sensor for the effective connection mode plus web liveness; the *Verbindung neu laden* diagnostic button (`connection_reload`) reloads the config entry immediately instead of waiting out HA's setup-retry backoff |
+| Self-healing Modbus outages | `recovery_watchdog.py`, `coordinator.py` | Calm auto-clearing repair notice while web data flows; background watchdog reloads entries stuck in HA's setup-retry backoff once the endpoint answers again (only runs while an entry waits) |
 | tmodbus transport | `modbus_client.py`, `modbus_transport.py` | Default direct socket path; per-entry ownership, no central cross-entry sharing |
 | KNX bridge | `knx_bridge.py`, `knx_catalog.py` | Optional. Serves the 654 IDM KNX communication objects through the **Home Assistant `knx` integration** (`knx.send`, `knx.event_register`, `knx_event`) so the Weinzierl BAOS gateway module is not needed. Never implement a KNX stack here — tunnelling, routing and KNX Secure belong to the `knx` integration. Group addresses are `base + object number`, with per-register overrides |
 | Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps (per heating circuit) to GLT registers |

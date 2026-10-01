@@ -505,7 +505,7 @@ class TestAsyncUpdateData:
 
         assert data["temp"] == 22.5
         assert data["mode"] == 1
-        assert mock_ir.async_delete_issue.call_count == 7
+        assert mock_ir.async_delete_issue.call_count == 8
 
     async def test_empty_data_raises_update_failed(self, mock_hass, mock_config_entry):
         from homeassistant.helpers.update_coordinator import UpdateFailed
@@ -537,6 +537,95 @@ class TestAsyncUpdateData:
         with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(UpdateFailed):
             await coord._async_update_data()
         mock_ir.async_create_issue.assert_called_once()
+
+    def _degrade_web_alive(self, coord) -> None:
+        """Put the coordinator into the web-supplement-alive state."""
+        from datetime import UTC, datetime
+
+        coord._web_pin = "1234"
+        coord._web_alive = True
+        coord._last_web_success = datetime.now(UTC)
+
+    async def test_modbus_failure_with_web_alive_creates_the_calm_degraded_issue(self, mock_hass, mock_config_entry):
+        from homeassistant.helpers.update_coordinator import UpdateFailed
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
+        )
+        self._degrade_web_alive(coord)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(UpdateFailed):
+            await coord._async_update_data()
+
+        assert mock_ir.async_create_issue.call_args.args[2] == "modbus_degraded_web_active_test_entry_id"
+
+    async def test_modbus_failure_without_web_keeps_the_regular_issue(self, mock_hass, mock_config_entry):
+        from homeassistant.helpers.update_coordinator import UpdateFailed
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
+        )
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, pytest.raises(UpdateFailed):
+            await coord._async_update_data()
+
+        assert mock_ir.async_create_issue.call_args.args[2] != "modbus_degraded_web_active_test_entry_id"
+
+    async def test_degraded_failure_logs_error_once_then_debug(self, mock_hass, mock_config_entry, caplog):
+        import logging
+
+        from homeassistant.helpers.update_coordinator import UpdateFailed
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
+        )
+        self._degrade_web_alive(coord)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"), pytest.raises(UpdateFailed):
+            await coord._async_update_data()
+        with patch("custom_components.idm_heatpump.coordinator.ir"), pytest.raises(UpdateFailed):
+            await coord._async_update_data()
+
+        errors = [r for r in caplog.records if r.levelno == logging.ERROR]
+        assert len(errors) == 1
+
+    async def test_successful_poll_after_degradation_clears_the_calm_issue(self, mock_hass, mock_config_entry):
+        from homeassistant.helpers.update_coordinator import UpdateFailed
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.UCHAR, name="temp")],
+        )
+        self._degrade_web_alive(coord)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"), pytest.raises(UpdateFailed):
+            await coord._async_update_data()
+
+        client.read_batch = AsyncMock(return_value={"temp": 22.5})
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir2:
+            await coord._async_update_data()
+
+        deleted = [call.args[2] for call in mock_ir2.async_delete_issue.call_args_list]
+        assert "modbus_degraded_web_active_test_entry_id" in deleted
 
     async def test_unexpected_exception_propagates_uncaught(self, mock_hass, mock_config_entry):
         """A programming bug (not a communication error) must not be misclassified as cannot_connect."""
