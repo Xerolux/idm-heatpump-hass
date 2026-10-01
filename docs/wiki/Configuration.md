@@ -346,6 +346,13 @@ calculation method is intentionally not part of the public documentation.
 
 For each room in each zone, you can assign a custom name. These names are used as entity names in Home Assistant.
 
+With a configured web PIN on a Navigator 10, differential circuits are
+**detected automatically**: every web poll evaluates the controller's
+`system/overview` frame, which lists each heating circuit with its
+regulation type on the plain end-user level. The manual selection above
+stays authoritative — it covers installations without the web supplement
+and overrides the detection.
+
 ## Reconfiguration
 
 1. Go to **Settings → Devices & Services**

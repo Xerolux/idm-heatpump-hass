@@ -30,10 +30,42 @@ def differential_circuits(options: Mapping[str, Any]) -> frozenset[str]:
     )
 
 
+#: Regulation type of a differential-temperature controlled circuit in the
+#: Navigator 10 ``system/overview`` frame. The numbering follows the
+#: Heizsystem chooselist order (Keines / Ungeregelt / Geregelt / Konstant /
+#: Differenztemperaturgeregelt); ``2`` (Geregelt) is live-confirmed, the
+#: differential value rests on that order and awaits field confirmation.
+NAVIGATOR10_CIRCUIT_TYPE_DIFFERENTIAL = 4
+
+
+def web_detected_differential_circuits(system_overview: Any) -> frozenset[str]:
+    """Detect differential circuits from the web system/overview frame.
+
+    Works on the raw ``IdmWebSystemOverview`` (or anything shaped like it) and
+    never raises: a missing or differently-shaped frame detects nothing.
+    """
+    circuits = getattr(system_overview, "heating_circuits", None)
+    if not isinstance(circuits, (list, tuple)):
+        return frozenset()
+    detected = set()
+    for circuit in circuits:
+        circuit_id = getattr(circuit, "circuit_id", None)
+        circuit_type = getattr(circuit, "type", None)
+        if (
+            isinstance(circuit_id, str)
+            and circuit_id.lower() in HEATING_CIRCUITS
+            and circuit_type == NAVIGATOR10_CIRCUIT_TYPE_DIFFERENTIAL
+        ):
+            detected.add(circuit_id.lower())
+    return frozenset(detected)
+
+
 def configured_differential_circuits(coordinator: Any) -> frozenset[str]:
-    """Read options without depending on transport or device hierarchy."""
+    """Options plus web detection, without transport or hierarchy coupling."""
     options = getattr(getattr(coordinator, "config_entry", None), "options", {})
-    return differential_circuits(options) if isinstance(options, Mapping) else frozenset()
+    selected = differential_circuits(options) if isinstance(options, Mapping) else frozenset()
+    detected = getattr(coordinator, "web_differential_circuits", frozenset())
+    return selected | detected if isinstance(detected, frozenset) else selected
 
 
 def differential_register_translation(name: str, circuits: frozenset[str]) -> str | None:

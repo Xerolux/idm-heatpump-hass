@@ -18,6 +18,7 @@ from custom_components.idm_heatpump.web_data import (
     _is_ip_literal,
     _is_wrong_variant_error,
     _preferred_web_variant,
+    _read_optional_system_overview,
     async_read_web_supplement,
     merge_model_info,
     web_pin_configured,
@@ -1524,3 +1525,57 @@ async def test_cached_protocol_stays_locked_with_default_fallback(monkeypatch: p
     assert old.closed and fresh.closed
     assert pool.get() is None
     fallback.assert_not_called()
+
+
+class _SystemOverviewStubClient:
+    """Minimal client surface for the system/overview reader."""
+
+    def __init__(self, overview=None, error: Exception | None = None) -> None:
+        self._overview = overview
+        self._error = error
+
+    async def read_system_overview(self):
+        if self._error is not None:
+            raise self._error
+        return self._overview
+
+
+class _NoSystemOverviewClient:
+    """A client from an older API release: no read_system_overview at all."""
+
+
+async def test_system_overview_reader_stores_the_frame() -> None:
+    from types import SimpleNamespace
+
+    supplement = IdmWebSupplement(web_variant="nav10")
+    overview = SimpleNamespace(heating_circuits=())
+
+    result = await _read_optional_system_overview(_SystemOverviewStubClient(overview), supplement)
+
+    assert result.system_overview is overview
+
+
+async def test_system_overview_reader_tolerates_failures() -> None:
+    supplement = IdmWebSupplement(web_variant="nav10")
+
+    result = await _read_optional_system_overview(
+        _SystemOverviewStubClient(error=RuntimeError("controller silent")), supplement
+    )
+
+    assert result.system_overview is None
+
+
+async def test_system_overview_reader_skips_non_nav10() -> None:
+    supplement = IdmWebSupplement(web_variant="nav20")
+
+    result = await _read_optional_system_overview(_SystemOverviewStubClient(object()), supplement)
+
+    assert result.system_overview is None
+
+
+async def test_system_overview_reader_tolerates_older_api_clients() -> None:
+    supplement = IdmWebSupplement(web_variant="nav10")
+
+    result = await _read_optional_system_overview(_NoSystemOverviewClient(), supplement)
+
+    assert result.system_overview is None

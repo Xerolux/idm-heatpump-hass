@@ -26,9 +26,23 @@ All notable changes to this project will be documented in this file.
   remains available. Switching the option off restores normal circuit entities.
 - Hysteresis, threshold and maximum temperature remain unavailable until their
   register meanings are verified. No additional device writes are introduced.
-- Runtime compatibility is tested with the unchanged pins:
-  `modbus-connection==4.12.3`, `tmodbus[async-serial]==0.6.2` and
-  `idm-heatpump-api[web]==2.13.0`.
+- **Differential circuits are detected automatically through the local web
+  interface.** The Navigator 10 `system/overview` frame lists every configured
+  heating circuit with its regulation type and answers on a plain PIN session
+  (live-verified on firmware T_NAV10_20.24-1580: the level-2 Heizsystem
+  setting page is display-gated, this frame is not), so a differential
+  circuit no longer has to be selected by hand when a web PIN is configured.
+  The manual selection stays as the authoritative override and for
+  installations without the web supplement. The type numbering follows the
+  Heizsystem chooselist order with `2` = *Geregelt* live-confirmed; the
+  differential value rests on that order — please report an unexpectedly
+  shaped circuit as an issue.
+- The transport packages became Home-Assistant-owned (HA's built-in modbus
+  integration adopted them), so hassfest now requires minimum versions
+  instead of exact pins: `modbus-connection>=4.12.3`,
+  `tmodbus[async-serial]>=0.6.2` (the floor is the validated pair; a newer
+  major is never picked up automatically). `idm-heatpump-api[web]==2.14.0`
+  adds the read-only `system/overview` frame this detection consumes.
 
 ## [0.20.0] - 2026-09-30
 
