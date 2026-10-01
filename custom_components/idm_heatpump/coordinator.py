@@ -260,15 +260,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         web_host: str | None = None,
         web_supplement: IdmWebSupplement | None = None,
         web_variant: str | None = None,
+        web_differential_circuits: frozenset[str] = frozenset(),
         device_hierarchy_enabled: bool = False,
         polling_jitter_percent: int = 0,
         unused_module_suggestion_seconds: float = DEFAULT_UNUSED_MODULE_SUGGESTION_SECONDS,
         write_cooldown_seconds: float = 5.0,
     ) -> None:
         self._client = client
+        self._web_differential_circuits = web_differential_circuits
         from .differential_circuits import differential_circuits, filter_descriptions
 
-        differential = differential_circuits(config_entry.options)
+        differential = differential_circuits(config_entry.options) | web_differential_circuits
         self._sensor_descs = filter_descriptions(sensor_descriptions, differential, sensors=True)
         self._binary_descs = filter_descriptions(binary_sensor_descriptions, differential)
         self._number_descs = filter_descriptions(number_descriptions, differential)
@@ -582,6 +584,26 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     @property
     def web_supplement(self) -> IdmWebSupplement | None:
         return self._web_supplement
+
+    @property
+    def web_differential_circuits(self) -> frozenset[str]:
+        """Circuits detected as differential through the web supplement."""
+        return self._web_differential_circuits
+
+    def set_web_differential_circuits(self, detected: frozenset[str]) -> None:
+        """Update the web-detected differential circuits.
+
+        A change cannot reshape the already built entities, so it is logged
+        with a reload hint; the manual option and the next setup apply it.
+        """
+        if detected == self._web_differential_circuits:
+            return
+        self._web_differential_circuits = detected
+        _LOGGER.info(
+            "IDM web supplement reports differential heating circuits: %s"
+            " (reload the entry to apply the entity shaping)",
+            ", ".join(sorted(c.upper() for c in detected)) or "none",
+        )
 
     @property
     def myidm_id(self) -> str | None:
@@ -1370,6 +1392,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         previous_myidm_id = self.myidm_id
         web_supplement = self._suppress_transient_web_counter_zeros(web_supplement)
         self._web_supplement = web_supplement
+        from .differential_circuits import web_detected_differential_circuits
+
+        self.set_web_differential_circuits(
+            web_detected_differential_circuits(getattr(web_supplement, "system_overview", None))
+        )
         # Cache which web variant succeeded so the next poll skips the other
         # (WebSocket vs. HTTP have completely different login mechanisms).
         if web_variant := _web_variant_from_supplement(web_supplement):

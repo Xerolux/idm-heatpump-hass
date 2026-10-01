@@ -83,6 +83,12 @@ class IdmWebSupplement:
     # consumption, environment/source side, heating rod, modes); None on
     # other variants or when the frame failed.
     performance: Any | None = None
+    # Navigator 10 system/overview snapshot (complete plant). Carries every
+    # configured heating circuit with its regulation type - the level-0
+    # source for differential-circuit detection (the Heizsystem setting page
+    # answers only while the controller is unlocked at the display). None on
+    # other variants or when the frame failed.
+    system_overview: Any | None = None
     # Navigator 10 weather/detail snapshot (the controller's own forecast via
     # the myiDM service: today plus up to six forecast days); None on other
     # variants or when the frame failed.
@@ -575,7 +581,33 @@ async def _augment_web_supplement(
     supplement = await _read_optional_dhw_setpoint(client, supplement)
     supplement = await _read_optional_heatingcircuits(client, supplement)
     supplement = await _read_optional_system_frames(client, supplement)
+    supplement = await _read_optional_system_overview(client, supplement)
     return supplement
+
+
+async def _read_optional_system_overview(
+    client: _IdmWebClient,
+    supplement: IdmWebSupplement,
+) -> IdmWebSupplement:
+    """Augment a Navigator 10 snapshot with the complete-plant frame.
+
+    ``system/overview`` lists every configured heating circuit with its
+    regulation type, so differential-temperature circuits are detected on a
+    plain PIN session. Strictly optional: a firmware that does not answer
+    leaves the supplement untouched.
+    """
+    if supplement.web_variant != "nav10":
+        return supplement
+    read_overview = getattr(client, "read_system_overview", None)
+    if not callable(read_overview):
+        return supplement
+    try:
+        async with asyncio.timeout(WEB_READ_TIMEOUT):
+            overview = await read_overview()
+    except Exception:
+        _LOGGER.debug("IDM web system/overview read failed", exc_info=True)
+        return supplement
+    return replace(supplement, system_overview=overview)
 
 
 def _is_authentication_error(err: Exception) -> bool:

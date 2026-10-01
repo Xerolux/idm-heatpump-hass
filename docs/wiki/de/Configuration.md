@@ -380,6 +380,12 @@ Teil der öffentlichen Dokumentation.
 
 Für jeden Raum in jeder Zone kannst du einen eigenen Namen vergeben. Diese Namen werden als Entitätsnamen in Home Assistant verwendet.
 
+Mit konfiguriertem Web-PIN an einem Navigator 10 werden Differenzkreise
+**automatisch erkannt**: jeder Web-Poll wertet den `system/overview`-Frame
+des Reglers aus, der auf der reinen Endanwender-Ebene jeden Heizkreis mit
+seiner Regelart auflistet. Die manuelle Auswahl oben bleibt maßgeblich —
+sie deckt Anlagen ohne Web-Supplement ab und überschreibt die Erkennung.
+
 ## Neukonfiguration
 
 1. Öffne **Einstellungen → Geräte & Dienste**

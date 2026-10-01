@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from datetime import timedelta
 from types import SimpleNamespace
+from typing import Any
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -25,6 +26,7 @@ from custom_components.idm_heatpump.differential_circuits import (
     differential_circuits,
     differential_register_translation,
     register_allowed,
+    web_detected_differential_circuits,
     web_value_allowed,
 )
 from custom_components.idm_heatpump.polling_plan import _entity_dependencies
@@ -218,3 +220,48 @@ def test_registry_migration_is_entry_scoped(differential_coordinator):
         coordinator.config_entry.options[CONF_DIFFERENTIAL_CIRCUITS] = []
         cleanup_deconfigured_heating_circuit_entities(coordinator.hass, coordinator)
         registry.async_remove.assert_called_once_with("hc_d_temperature_difference")
+
+
+class TestWebDetection:
+    """Differential circuits detected from the web system/overview frame."""
+
+    def _overview(self, *types: int | None) -> Any:
+        from types import SimpleNamespace
+
+        return SimpleNamespace(
+            heating_circuits=tuple(
+                SimpleNamespace(circuit_id=letter, type=circuit_type) for letter, circuit_type in zip("abcdefg", types)
+            )
+        )
+
+    def test_detects_only_differential_circuits(self) -> None:
+        overview = self._overview(2, 4, None, 0, 3, 4, 2)
+
+        assert web_detected_differential_circuits(overview) == frozenset({"b", "f"})
+
+    def test_no_overview_detects_nothing(self) -> None:
+        assert web_detected_differential_circuits(None) == frozenset()
+        assert web_detected_differential_circuits(object()) == frozenset()
+
+    def test_malformed_circuit_entries_are_ignored(self) -> None:
+        from types import SimpleNamespace
+
+        overview = SimpleNamespace(heating_circuits=(object(), "nonsense", None))
+
+        assert web_detected_differential_circuits(overview) == frozenset()
+
+    def test_configured_set_unions_options_and_web_detection(self) -> None:
+        from types import SimpleNamespace
+
+        entry = SimpleNamespace(options={CONF_DIFFERENTIAL_CIRCUITS: ["a"], CONF_HEATING_CIRCUITS: ["a", "b"]})
+        coordinator = SimpleNamespace(config_entry=entry, web_differential_circuits=frozenset({"b"}))
+
+        assert configured_differential_circuits(coordinator) == frozenset({"a", "b"})
+
+    def test_web_detection_applies_without_any_option(self) -> None:
+        from types import SimpleNamespace
+
+        entry = SimpleNamespace(options={CONF_HEATING_CIRCUITS: ["a", "d"]})
+        coordinator = SimpleNamespace(config_entry=entry, web_differential_circuits=frozenset({"d"}))
+
+        assert configured_differential_circuits(coordinator) == frozenset({"d"})

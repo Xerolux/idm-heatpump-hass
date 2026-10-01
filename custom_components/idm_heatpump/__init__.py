@@ -311,6 +311,15 @@ def _register_update_listener(entry: IdmConfigEntry) -> None:
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
 
+def _web_detected_differential_circuits(web_supplement: Any) -> frozenset[str]:
+    """Differential circuits from a setup-time web read (never raises)."""
+    if web_supplement is None:
+        return frozenset()
+    from .differential_circuits import web_detected_differential_circuits
+
+    return web_detected_differential_circuits(getattr(web_supplement, "system_overview", None))
+
+
 async def _detect_model_info(client: IdmModbusClient) -> tuple[str, str | None, IdmModelInfo | None]:
     """Probe the heat pump for its model and firmware version.
 
@@ -524,6 +533,7 @@ async def _async_setup_web_only_entry(
         web_host=web_host,
         web_supplement=web_supplement,
         web_variant=stored_web_variant,
+        web_differential_circuits=_web_detected_differential_circuits(web_supplement),
         device_hierarchy_enabled=device_hierarchy_enabled,
     )
     # Metadata-only register map: register-keyed consumers (the unused filter,
@@ -915,6 +925,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             web_host=web_host,
             web_supplement=web_supplement,
             web_variant=runtime_web_variant,
+            web_differential_circuits=_web_detected_differential_circuits(web_supplement),
             device_hierarchy_enabled=device_hierarchy_enabled,
             polling_jitter_percent=polling_jitter,
             write_cooldown_seconds=write_cooldown,
