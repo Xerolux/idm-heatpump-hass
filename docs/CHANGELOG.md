@@ -13,11 +13,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.20.1-b3] - 2026-10-01
 
 ### Changed
 
-- **Home Assistant 2026.10 compatibility.** HA replaced voluptuous with
+- **Home Assistant 2026.10 compatibility** (validated against the
+  2026.10.0 beta; the release blog is out, the stable artifact is not on
+  PyPI yet). HA replaced voluptuous with
   probatio, made the flow-result types generic and moved component enums
   into per-component `const` modules (implicit re-exports only). Runtime was
   never affected — HA aliases `import voluptuous` to probatio — but strict
