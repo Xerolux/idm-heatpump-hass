@@ -13,6 +13,39 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.1-b2] - 2026-10-01
+
+### Added
+
+- **Differential-temperature circuits are detected automatically through the
+  local web interface** (#429): the Navigator 10 `system/overview` frame lists
+  every configured heating circuit with its regulation type and answers on a
+  plain PIN session (live-verified on firmware T_NAV10_20.24-1580 — the
+  level-2 Heizsystem setting page is display-gated, this frame is not), so a
+  differential circuit no longer has to be selected by hand where a web PIN is
+  configured. The manual selection stays authoritative and covers installations
+  without the web supplement. The type numbering follows the Heizsystem
+  choicelist order with `2` = *Geregelt* live-confirmed; the differential value
+  rests on that order — please report an unexpectedly shaped circuit as an
+  issue.
+- **Diagnostics expose the web-reported circuit types**
+  (`heating_circuit_types`): circuit letters with the raw regulation-type
+  numbers, nothing personal — the field-confirmation basis for the detection
+  mapping.
+
+### Changed
+
+- **The transport packages became Home-Assistant-owned** — HA's built-in
+  modbus integration adopted `modbus-connection`/`tmodbus` (2026.10), and
+  hassfest therefore now rejects exact pins for them. The requirements state
+  minimum versions instead (`modbus-connection>=4.12.3`,
+  `tmodbus[async-serial]>=0.6.2`); the floor is the validated transport pair,
+  the daily freshness pipeline keeps raising it after validating runs, and a
+  newer major is never picked up automatically.
+- The device-logic dependency moves to `idm-heatpump-api[web]==2.14.0`, which
+  adds the read-only complete-plant `system/overview` frame this detection
+  consumes.
+
 ## [0.20.1-b1] - 2026-09-30
 
 ### Added
