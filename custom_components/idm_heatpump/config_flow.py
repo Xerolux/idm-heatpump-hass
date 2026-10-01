@@ -14,7 +14,6 @@ from enum import StrEnum
 from time import monotonic
 from typing import Any
 
-import voluptuous as vol
 from homeassistant import config_entries
 from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import CONF_HOST, CONF_NAME, CONF_PORT
@@ -234,6 +233,7 @@ from .const import (
     REGISTER_ADDRESS_CONNECTION_PROBE,
     REGISTER_COUNT_CONNECTION_PROBE,
 )
+from .ha_compat import vol
 from .knx_catalog import (
     KNX_OBJECTS,
     OBJECT_GROUPS,

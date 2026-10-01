@@ -9,7 +9,6 @@ from statistics import median
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -19,6 +18,7 @@ from homeassistant.const import EntityCategory
 from .calculated_sensors import _cop
 from .coordinator import IdmCoordinator
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
+from .ha_compat import BinarySensorDeviceClass
 
 
 @dataclass(frozen=True)

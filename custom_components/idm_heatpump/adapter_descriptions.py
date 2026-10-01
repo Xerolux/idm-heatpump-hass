@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntityDescription,
@@ -17,6 +16,7 @@ from idm_heatpump import RegisterDef
 from .adapter_metadata import entity_enabled_by_default
 from .binary_semantics import infer_binary_device_class as infer_binary_device_class  # noqa: PLC0414
 from .entity_names import ENGLISH_NAMES, translation_key_for_register
+from .ha_compat import BinarySensorDeviceClass
 
 # Compatibility export used by tests and downstream consumers that inspect the
 # legacy keyword table. Actual inference lives in binary_semantics and prefers

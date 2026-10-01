@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Mapping
 from functools import partial
 
-import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.exceptions import HomeAssistantError, ServiceValidationError
@@ -18,6 +17,7 @@ from .dhw_boost import (
     DhwBoostManager,
     async_get_dhw_boost_manager,
 )
+from .ha_compat import vol
 
 _START_SERVICE = "start_dhw_boost"
 _CANCEL_SERVICE = "cancel_dhw_boost"

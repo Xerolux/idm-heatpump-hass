@@ -440,6 +440,7 @@ def _stub_homeassistant() -> None:
             return {"type": "abort", "reason": reason}
 
     ha.components.repairs.RepairsFlow = _RepairsFlow
+    ha.components.repairs.RepairsFlowResult = dict
 
     # homeassistant.exceptions
     class _HomeAssistantError(Exception):

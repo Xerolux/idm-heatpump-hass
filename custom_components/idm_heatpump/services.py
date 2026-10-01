@@ -13,7 +13,6 @@ from datetime import datetime
 from functools import partial
 from typing import TYPE_CHECKING
 
-import voluptuous as vol
 from homeassistant.config_entries import ConfigEntryState
 from homeassistant.core import (
     HomeAssistant,
@@ -47,6 +46,7 @@ from .error_messages import (
     write_error_detail,
     write_error_placeholders,
 )
+from .ha_compat import vol
 from .knx_catalog import (
     KNX_OBJECTS,
     OBJECT_GROUPS,

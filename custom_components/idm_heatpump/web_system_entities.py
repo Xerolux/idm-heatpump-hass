@@ -13,7 +13,6 @@ from __future__ import annotations
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -36,6 +35,7 @@ from idm_heatpump import (
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
+from .ha_compat import BinarySensorDeviceClass
 from .web_data import IdmWebSupplement
 
 
