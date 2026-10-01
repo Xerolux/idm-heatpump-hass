@@ -2979,6 +2979,10 @@
     "knx_not_available": {
       "title": "KNX-Bridge inaktiv",
       "description": "Die KNX-Bridge ist für die IDM-Wärmepumpe aktiviert, aber die KNX-Integration von Home Assistant ist nicht eingerichtet. KNX-Integration hinzufügen (sie liefert auch KNX Secure und die Gateway-Verbindung) und den IDM-Heatpump-Eintrag neu laden."
+    },
+    "modbus_degraded_web_active": {
+      "title": "IDM-Modbus-Verbindung gestört — Webdaten aktiv",
+      "description": "Die Modbus-Verbindung zu **{host}** ist derzeit gestört. Die Daten deiner Wärmepumpe laufen über die lokale Navigator-Weboberfläche weiter, daher aktualisieren sich die Web-Entitäten weiterhin.\n\nDiese Meldung verschwindet automatisch, sobald die Modbus-Verbindung wiederhergestellt ist — es ist nichts zu tun. Falls sie bestehen bleibt, prüfe die Netzwerkverbindung der Wärmepumpe oder tippe auf dem Geräte-Panel der Integration auf *Verbindung neu laden*."
     }
   },
   "services": {

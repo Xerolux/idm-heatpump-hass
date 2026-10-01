@@ -13,6 +13,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Modbus outages heal themselves and stop alarming users.** While the
+  local web interface keeps delivering (web PIN configured, web path
+  answering), a failed Modbus poll now raises the calm repair notice
+  *IDM Modbus connection interrupted — web data active* — it states that the
+  data keeps flowing through the web interface and disappears automatically
+  on the first successful poll. The log stays quiet after the first error
+  line per outage (previously one ERROR per scan interval).
+- **A recovery watchdog reloads entries stuck in Home Assistant's
+  setup-retry backoff**: when a reload fails (transient proxy/controller
+  outage), a background probe checks the configured Modbus endpoint once a
+  minute and reloads the entry automatically as soon as it answers again —
+  bounded by consecutive-success requirements and a per-entry cooldown. The
+  watchdog only runs while an entry is actually waiting, so a healthy
+  installation owns no task, and the *Verbindung neu laden* button remains
+  the manual shortcut.
+
 ## [0.20.1-b3] - 2026-10-01
 
 ### Changed

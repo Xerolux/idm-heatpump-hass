@@ -2979,6 +2979,10 @@
     "knx_not_available": {
       "title": "KNX bridge inactive",
       "description": "The KNX bridge is enabled for the IDM heat pump, but the Home Assistant KNX integration is not set up. Add the KNX integration (it also provides KNX Secure and the gateway connection), then reload the IDM Heatpump entry."
+    },
+    "modbus_degraded_web_active": {
+      "title": "IDM Modbus connection interrupted — web data active",
+      "description": "The Modbus connection to **{host}** is currently interrupted. Your heat pump data keeps flowing through the local Navigator web interface, so the web entities continue to update.\n\nThis message disappears automatically as soon as the Modbus connection recovers — no action needed. If it persists, check the heat pump's network connection or use the *Reload connection* button on the integration's device page."
     }
   },
   "services": {

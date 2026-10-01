@@ -337,3 +337,24 @@ Please **never** run write operations on Modbus (`write_register`) live against 
 | Incorrect temperatures | Check register mapping, report bug |
 | Write failed | Register writable? Note EEPROM warning |
 | All entities "unavailable" | Navigator reachable? Modbus TCP enabled? |
+
+## Self-Healing After a Modbus Outage
+
+A transient Modbus outage (proxy restart, controller reboot) heals itself —
+no action needed:
+
+- **While the web interface keeps delivering** (a web PIN is configured and
+  the web path answers), a failed Modbus poll raises the calm repair notice
+  *IDM Modbus connection interrupted — web data active* instead of a
+  connection error: it states that the data keeps flowing through the local
+  web interface and disappears automatically on the first successful poll.
+  The log stays quiet after the first error line per outage — one line
+  informs, one per scan interval would only cause alarm.
+- **When an entry is waiting out Home Assistant's setup-retry backoff**
+  (up to ~30 minutes after a failed reload), a background watchdog probes
+  the configured Modbus endpoint once a minute and reloads the entry
+  automatically as soon as it answers again. The watchdog only runs while
+  an entry is actually waiting and owns no task on a healthy installation.
+
+The *Reload connection* diagnostic button on the integration's device page
+remains the manual shortcut — same effect, immediately.

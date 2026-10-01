@@ -346,3 +346,26 @@ sofern der Besitzer nicht ausdrücklich einen bestimmten Schreibvorgang autorisi
 | Falsche Temperaturen | Register-Zuordnung prüfen, Bug melden |
 | Schreibvorgang fehlgeschlagen | Register schreibbar? EEPROM-Warnung beachten |
 | Alle Entitäten „nicht verfügbar“ | Navigator erreichbar? Modbus TCP aktiviert? |
+
+## Selbstheilung nach einem Modbus-Ausfall
+
+Ein vorübergehender Modbus-Ausfall (Proxy-Neustart, Regler-Neustart) heilt
+sich von selbst — es ist nichts zu tun:
+
+- **Solange die Weboberfläche Daten liefert** (Web-PIN konfiguriert, Web-Pfad
+  antwortet), erzeugt ein fehlgeschlagener Modbus-Poll die ruhige
+  Hinweismeldung *IDM-Modbus-Verbindung gestört — Webdaten aktiv* statt
+  eines Verbindungsfehlers: Sie besagt, dass die Daten über die lokale
+  Weboberfläche weiterlaufen, und verschwindet beim ersten erfolgreichen
+  Poll automatisch. Das Log bleibt nach der ersten Fehlerzeile pro Ausfall
+  still — eine Zeile informiert, eine pro Abfrageintervall würde nur
+  Beunruhigung stiften.
+- **Während ein Eintrag Home Assistants Setup-Wiederholungs-Backoff
+  abwartet** (bis zu ~30 Minuten nach einem fehlgeschlagenen Reload), prüft
+  ein Hintergrund-Wachhund den konfigurierten Modbus-Endpunkt einmal pro
+  Minute und lädt den Eintrag automatisch neu, sobald dieser wieder
+  antwortet. Der Wachhund läuft nur, während ein Eintrag tatsächlich wartet,
+  und besitzt auf einer gesunden Installation keinen Task.
+
+Der Diagnose-Button *Verbindung neu laden* auf dem Geräte-Panel der
+Integration bleibt der manuelle Shortcut — gleiche Wirkung, sofort.
