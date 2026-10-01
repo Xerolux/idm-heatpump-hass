@@ -1,30 +1,41 @@
 #!/usr/bin/env python3
 """Check — and optionally update — the runtime dependency pins in the manifest.
 
-The integration pins its runtime dependencies exactly, so a release is a
-reproducible pair of integration and library versions.  The cost of that is
-drift: nothing in the repository notices when a pinned library publishes a new
-version, which is how the transport pin sat on the ``modbus-connection==4.0.0a3``
-alpha while 4.8.1 was current.
+The integration pins ``idm-heatpump-api`` exactly, so a release is a
+reproducible pair of integration and library versions.  The two transport
+packages are different: Home Assistant itself depends on ``modbus-connection``
+and ``tmodbus`` since its built-in modbus integration adopted them (2026.10),
+and hassfest rejects custom integrations that exact-pin packages Home
+Assistant owns.  They are therefore declared as *minimum* requirements
+(``modbus-connection>=4.12.3``): the floor is the validated transport pair,
+and Home Assistant may resolve a newer compatible release alongside its own
+pin.  The cost of pins in either form is drift: nothing in the repository
+notices when a pinned library publishes a new version, which is how the
+transport pin sat on the ``modbus-connection==4.0.0a3`` alpha while 4.8.1 was
+current.
 
 This script closes that gap:
 
-* ``check_dependency_pins.py`` compares every exactly pinned requirement in
-  ``manifest.json`` against the newest release on PyPI and exits non-zero when a
-  pin is behind.  The release workflow runs it, so a release cannot silently
-  ship a stale pin.
+* ``check_dependency_pins.py`` compares every pin against the newest release
+  on PyPI and exits non-zero when a pin is behind — the exact ``==`` pin, and
+  the ``>=`` floor of the two Home-Assistant-owned transport packages.  The
+  release workflow runs it, so a release cannot silently ship a stale pin.
 * ``check_dependency_pins.py --update`` rewrites every updatable pin
   (``modbus-connection``, ``tmodbus`` and ``idm-heatpump-api``) to the newest
-  release, in the manifest and in every document that states the current pins.
+  release — the exact pin, and the validated floor for the transport pair —
+  in the manifest and in every document that states the current pins.
   The dependency-update workflow runs it daily and opens a pull request.
-* ``check_dependency_pins.py --set name==version`` rewrites one pin to a version
-  named by the caller instead of the newest one on PyPI.  The API repository
-  announces a release that way, before the artifact is visible on the index.
+* ``check_dependency_pins.py --set name==version`` rewrites one pin to a
+  version named by the caller instead of the newest one on PyPI.  The API
+  repository announces a release that way, before the artifact is visible on
+  the index.
 
 Pre-releases are ignored unless the current pin is itself a pre-release — the
-alpha this repository was stuck on must not be selectable by automation.
-Requirements with a version range (``pymodbus>=3.12.1,<4.0``) are reported but
-never fail the check: widening a range is a compatibility decision, not a bump.
+alpha this repository was stuck on must not be selectable by automation.  A
+newer *major* of a transport package never moves the floor automatically:
+crossing a major is a compatibility decision the pipeline holds for review.
+Requirements with any other version range are reported but never fail the
+check: widening a range is a compatibility decision, not a bump.
 
 Usage:
   python scripts/check_dependency_pins.py                 # check, non-zero if stale
@@ -55,10 +66,21 @@ MANIFEST_PATH = ROOT / "custom_components" / "idm_heatpump" / "manifest.json"
 PYPI_URL = "https://pypi.org/pypi/{name}/json"
 NETWORK_TIMEOUT = 30.0
 
-# Distributions this script may bump on its own: everything the integration
-# declares as an exact runtime requirement.  A range requirement is never bumped
+# Distributions this script may bump on its own.  ``idm-heatpump-api`` is an
+# exact pin; the two transport packages are Home-Assistant-owned minimums
+# (see ``HA_OWNED``).  Any other range requirement is never bumped
 # automatically -- widening a range is a compatibility decision, not a bump.
 UPDATABLE = ("modbus-connection", "tmodbus", "idm-heatpump-api")
+
+# Packages Home Assistant itself depends on (its built-in modbus integration
+# adopted modbus-connection/tmodbus in 2026.10).  hassfest rejects custom
+# integrations that exact-pin them, so the manifest states a minimum version
+# whose floor is the validated transport pair.  Home Assistant may resolve a
+# newer compatible release through its own requirement; a newer *major* is
+# never picked up automatically.
+HA_OWNED = ("modbus-connection", "tmodbus")
+
+_MINIMUM_SPECIFIER_RE = re.compile(r"^>=(?P<floor>\d+(?:\.\d+)+)$")
 
 # Documents that state the *current* pins.  Changelogs, wiki changelogs and
 # release-evidence records are deliberately absent: they are history and must
@@ -169,16 +191,32 @@ class Requirement:
     specifier: str
 
     @property
+    def is_ha_owned_minimum(self) -> bool:
+        """True for the Home-Assistant-owned packages stated as ``>=`` minimums."""
+        return self.name in HA_OWNED and bool(_MINIMUM_SPECIFIER_RE.match(self.specifier))
+
+    @property
     def pinned_version(self) -> str | None:
         """Return the exactly pinned version, or ``None`` for a range."""
         if not self.specifier.startswith("=="):
             return None
         return self.specifier[2:].strip()
 
+    @property
+    def floor_version(self) -> str | None:
+        """Return the validated minimum version of an HA-owned package."""
+        if self.name not in HA_OWNED:
+            return None
+        match = _MINIMUM_SPECIFIER_RE.match(self.specifier)
+        if match is None:
+            return None
+        return match.group("floor")
+
     def with_version(self, version: str) -> str:
         """Return this requirement re-rendered for another version."""
         extras = f"[{self.extras}]" if self.extras else ""
-        return f"{self.name}{extras}=={version}"
+        operator = ">=" if self.is_ha_owned_minimum else "=="
+        return f"{self.name}{extras}{operator}{version}"
 
 
 @dataclass(frozen=True)
@@ -251,6 +289,9 @@ def fetch_project(name: str) -> dict[str, Any]:
 
 def evaluate(requirement: Requirement, payload: dict[str, Any] | None) -> Finding:
     """Compare one requirement against the release index of its project."""
+    if requirement.is_ha_owned_minimum:
+        return _evaluate_ha_owned_minimum(requirement, payload)
+
     pinned = requirement.pinned_version
     if pinned is None:
         detail = f"{requirement.name}: version range {requirement.specifier} — reviewed by hand, not bumped here"
@@ -279,6 +320,51 @@ def evaluate(requirement: Requirement, payload: dict[str, Any] | None) -> Findin
             f"{requirement.name}: pinned {current}, newest {newest}",
         )
     return Finding(requirement, str(newest), "current", f"{requirement.name}: {current} is current")
+
+
+def _evaluate_ha_owned_minimum(requirement: Requirement, payload: dict[str, Any] | None) -> Finding:
+    """Evaluate the validated floor of a Home-Assistant-owned package.
+
+    A newer release inside the floor's major marks the floor stale so the
+    daily pipeline re-validates the pair and raises it.  A newer major never
+    moves the floor automatically — crossing it is a compatibility decision
+    the pipeline holds for review — but it is named in the detail line so it
+    is not silently ignored either.
+    """
+    floor = requirement.floor_version
+    assert floor is not None  # guarded by is_ha_owned_minimum
+    if payload is None:
+        return Finding(requirement, None, "unknown", f"{requirement.name}: release index unavailable")
+    try:
+        current = Version(floor)
+    except InvalidVersion:
+        return Finding(requirement, None, "unknown", f"{requirement.name}: unparsable floor {floor!r}")
+    newest = latest_version(payload, allow_prerelease=current.is_prerelease)
+    if newest is None:
+        return Finding(requirement, None, "unknown", f"{requirement.name}: no installable release found")
+    newest_in_major = newest
+    if newest.major != current.major:
+        same_major = [
+            version
+            for version in usable_versions(payload)
+            if version.major == current.major and not version.is_prerelease
+        ]
+        newest_in_major = same_major[-1] if same_major else current
+    if newest_in_major > current:
+        return Finding(
+            requirement,
+            str(newest_in_major),
+            "stale",
+            f"{requirement.name}: validated floor {current}, newest in major {newest_in_major}",
+        )
+    if newest > newest_in_major:
+        return Finding(
+            requirement,
+            str(newest_in_major),
+            "current",
+            f"{requirement.name}: floor {current} is current; newer major {newest} exists — held for review",
+        )
+    return Finding(requirement, str(newest), "current", f"{requirement.name}: floor {current} is current")
 
 
 def check(requirements: list[Requirement]) -> list[Finding]:
@@ -312,7 +398,7 @@ def residual_mentions(root: Path, name: str, version: str) -> list[str]:
     ``HISTORY_STATEMENTS`` are exempt: they date a change and keep their version
     forever.
     """
-    pattern = re.compile(rf"{re.escape(name)}(?:\[[^\]]*\])?\s*(?:==\s*|`?\s+)`?{re.escape(version)}\b")
+    pattern = re.compile(rf"{re.escape(name)}(?:\[[^\]]*\])?\s*(?:==\s*|>=\s*|`?\s+)`?{re.escape(version)}\b")
     found = []
     for relative_path in PIN_DOCUMENTS:
         path = root / relative_path
@@ -324,17 +410,22 @@ def residual_mentions(root: Path, name: str, version: str) -> list[str]:
     return found
 
 
+def current_version(requirement: Requirement) -> str | None:
+    """Return the version a requirement commits to: the pin, or the floor."""
+    return requirement.pinned_version or requirement.floor_version
+
+
 def apply_update(requirement: Requirement, new_version: str, root: Path | None = None) -> list[str]:
     """Rewrite one pin in the manifest and in every document stating it.
 
     Returns the paths that changed.  Raises when a document still names the old
     version afterwards, so a half-finished rewrite fails the workflow instead of
-    reaching a pull request.
+    reaching a pull request as a half-updated document.
     """
     root = root if root is not None else ROOT
-    old_version = requirement.pinned_version
+    old_version = current_version(requirement)
     if old_version is None:
-        raise ValueError(f"{requirement.name} is not exactly pinned")
+        raise ValueError(f"{requirement.name} is neither exactly pinned nor an HA-owned minimum")
     old_requirement = requirement.raw
     new_requirement = requirement.with_version(new_version)
     changed: list[str] = []
@@ -410,9 +501,9 @@ def parse_set_argument(raw: str) -> tuple[str, str]:
 
 def _apply(requirement: Requirement, new_version: str, root: Path | None = None) -> dict[str, Any]:
     """Apply one pin update and describe it for the report."""
-    old_version = requirement.pinned_version
+    old_version = current_version(requirement)
     if old_version is None:
-        raise ValueError(f"{requirement.name} is not exactly pinned")
+        raise ValueError(f"{requirement.name} is neither exactly pinned nor an HA-owned minimum")
     changed = apply_update(requirement, new_version, root=root)
     return {
         "name": requirement.name,
@@ -543,10 +634,10 @@ def _run_set(args: argparse.Namespace) -> int:
         if requirement is None:
             print(f"error: {name} is not a runtime requirement of this integration", file=sys.stderr)
             return 2
-        if requirement.pinned_version is None:
-            print(f"error: {name} is a version range, not an exact pin", file=sys.stderr)
+        if current_version(requirement) is None:
+            print(f"error: {name} is a version range, not a pin", file=sys.stderr)
             return 2
-        if requirement.pinned_version == version:
+        if current_version(requirement) == version:
             print(f"{name} already pinned to {version}")
             continue
         updates.append(_apply(requirement, version))

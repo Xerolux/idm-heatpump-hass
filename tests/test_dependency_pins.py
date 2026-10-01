@@ -387,3 +387,84 @@ def test_readiness_history_does_not_block_future_dependency_updates(tmp_path: Pa
     result = (tmp_path / path).read_text(encoding="utf-8")
     assert "`idm-heatpump-api` `99.0.0` form the current" in result
     assert "`beta.4`, on `idm-heatpump-api` `2.1.1` and `modbus-connection` `4.11.1`." in result
+
+
+def test_ha_owned_minimum_parsing_and_rendering() -> None:
+    """The transport packages are Home-Assistant-owned minimum requirements."""
+    requirement = pins.parse_requirement("modbus-connection>=9.0.0")
+
+    assert requirement.is_ha_owned_minimum
+    assert requirement.floor_version == "9.0.0"
+    assert requirement.pinned_version is None
+    assert requirement.with_version("9.1.0") == "modbus-connection>=9.1.0"
+
+    extras = pins.parse_requirement("tmodbus[async-serial]>=0.4.9")
+    assert extras.is_ha_owned_minimum
+    assert extras.with_version("0.5.0") == "tmodbus[async-serial]>=0.5.0"
+
+
+def test_a_range_of_a_foreign_package_is_not_an_ha_owned_minimum() -> None:
+    """Only the two transport names get minimum semantics; other ranges stay ranges."""
+    requirement = pins.parse_requirement("pymodbus>=3.12.1")
+
+    assert not requirement.is_ha_owned_minimum
+    assert requirement.floor_version is None
+
+
+def test_ha_owned_minimum_goes_stale_within_its_major() -> None:
+    requirement = pins.parse_requirement("modbus-connection>=9.0.0")
+
+    finding = pins.evaluate(requirement, _payload("9.0.0", "9.1.0"))
+
+    assert finding.status == "stale"
+    assert finding.latest == "9.1.0"
+
+
+def test_ha_owned_minimum_ignores_a_newer_major() -> None:
+    """A newer major never moves the floor automatically, but it is named."""
+    requirement = pins.parse_requirement("modbus-connection>=9.0.0")
+
+    finding = pins.evaluate(requirement, _payload("9.0.0", "10.0.0"))
+
+    assert finding.status == "current"
+    assert not finding.is_stale
+    assert "newer major 10.0.0" in finding.detail
+
+
+def test_ha_owned_minimum_current_when_floor_matches_newest() -> None:
+    # Deliberately not the version the manifest pins: this file must not read
+    # as a document that states the current pins.
+    requirement = pins.parse_requirement("tmodbus[async-serial]>=0.4.9")
+
+    finding = pins.evaluate(requirement, _payload("0.4.8", "0.4.9"))
+
+    assert finding.status == "current"
+
+
+def test_ha_owned_minimum_update_rewrites_manifest_and_documents(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", ("docs/pins.md",))
+    manifest = _write(
+        tmp_path,
+        "custom_components/idm_heatpump/manifest.json",
+        '{\n  "requirements": ["modbus-connection>=9.0.0"]\n}\n',
+    )
+    document = _write(tmp_path, "docs/pins.md", "runtime `modbus-connection>=9.0.0`\n")
+
+    changed = pins.apply_update(pins.parse_requirement("modbus-connection>=9.0.0"), "9.1.0", root=tmp_path)
+
+    assert json.loads(manifest.read_text(encoding="utf-8"))["requirements"] == ["modbus-connection>=9.1.0"]
+    assert document.read_text(encoding="utf-8") == "runtime `modbus-connection>=9.1.0`\n"
+    assert "custom_components/idm_heatpump/manifest.json" in changed[0]
+    assert "docs/pins.md" in changed
+
+
+def test_the_shipped_transport_requirements_are_ha_owned_minimums() -> None:
+    """The manifest must not exact-pin the packages Home Assistant owns."""
+    requirements = {requirement.name: requirement for requirement in pins.manifest_requirements()}
+
+    for name in pins.HA_OWNED:
+        assert requirements[name].is_ha_owned_minimum, (
+            f"{name} must be stated as a '>=' minimum: hassfest rejects exact pins of "
+            "packages Home Assistant depends on"
+        )
+    assert requirements["idm-heatpump-api"].pinned_version is not None
