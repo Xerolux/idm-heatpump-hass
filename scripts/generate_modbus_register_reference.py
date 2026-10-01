@@ -156,16 +156,22 @@ def _build_reference() -> str:
         "",
         f"> Generated from `idm-heatpump-api[web]=={pinned_version}`. Do not edit this section manually.",
         "",
-        f"This maximal catalog contains **{len(ordered)} logical register definitions**: all heating circuits A–G, "
-        "ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. "
-        "The integration selects only the subset supported and enabled on the detected installation.",
+        (
+            f"This maximal catalog contains **{len(ordered)} logical register definitions**: all heating circuits A–G, "
+            "ten zone modules with eight rooms each, and Solar, ISC, PV, cascade and Navigator 10 extensions. "
+            "The integration selects only the subset supported and enabled on the detected installation."
+        ),
         "",
-        f"Of these definitions, **{writable_count}** are writable, **{eeprom_count}** are EEPROM-sensitive "
-        f"and **{cyclic_count}** require cyclic writes. `FLOAT` values occupy two Modbus words; the table "
-        "therefore shows an address range for them. `R` means read-only, `RW` read/write and `W` write-only.",
+        (
+            f"Of these definitions, **{writable_count}** are writable, **{eeprom_count}** are EEPROM-sensitive "
+            f"and **{cyclic_count}** require cyclic writes. `FLOAT` values occupy two Modbus words; the table "
+            "therefore shows an address range for them. `R` means read-only, `RW` read/write and `W` write-only."
+        ),
         "",
-        "The German description is intended for identification; the code-form register name is the "
-        "authoritative key used by the integration. Availability can vary by Navigator model and firmware.",
+        (
+            "The German description is intended for identification; the code-form register name is the "
+            "authoritative key used by the integration. Availability can vary by Navigator model and firmware."
+        ),
         "",
     ]
 
