@@ -13,7 +13,6 @@ from typing import Any, Final
 from homeassistant.components.water_heater import (
     STATE_HEAT_PUMP,
     WaterHeaterEntity,
-    WaterHeaterEntityFeature,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import UnitOfTemperature
@@ -28,6 +27,7 @@ from .adapter_metadata import native_step_for_register
 from .coordinator import IdmCoordinator
 from .device_hierarchy import build_subdevice_info
 from .entity import async_write_translated, build_device_info
+from .ha_compat import WaterHeaterEntityFeature
 from .web_climate_entities import web_water_heater_entities
 
 _LOGGER = logging.getLogger(__name__)

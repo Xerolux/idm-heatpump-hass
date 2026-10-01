@@ -52,6 +52,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
 │   ├── versions.py                   # Runtime dependency versions for logs, sensors, and diagnostics
+│   ├── ha_compat.py                  # Version-tolerant imports across the supported HA range (vol/probatio, moved enums)
 │   ├── adapter_descriptions.py       # HA description helpers (icons, device classes)
 │   ├── adapter_enums.py              # Enum slug maps and translation keys
 │   ├── entity_names.py               # Entity translation keys, placeholders and canonical English names

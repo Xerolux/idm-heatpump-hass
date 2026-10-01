@@ -8,7 +8,6 @@ from datetime import datetime
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -22,6 +21,7 @@ from homeassistant.const import PERCENTAGE, UnitOfTime
 
 from .coordinator import IdmCoordinator
 from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
+from .ha_compat import BinarySensorDeviceClass
 from .operation_analysis import OperationAnalysis
 from .polling_plan import ensure_entity_aware_polling
 

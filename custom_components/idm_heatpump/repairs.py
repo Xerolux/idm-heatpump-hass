@@ -5,7 +5,6 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING, Any, TypeAlias
 
-import voluptuous as vol
 from homeassistant.components import repairs
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST
@@ -31,12 +30,15 @@ from .const import (
     DOMAIN,
 )
 from .error_messages import scoped_issue_id
+from .ha_compat import vol
 from .web_data import IdmWebAuthenticationFailed, async_read_web_supplement, web_pin_configured
 
 if TYPE_CHECKING:
-    from homeassistant.data_entry_flow import FlowResult
+    # The canonical repairs-step return type; typed as Any by the
+    # version-tolerant module so both HA generations accept it.
+    from .ha_compat import RepairsFlowResult
 else:
-    FlowResult: TypeAlias = dict[str, Any]
+    RepairsFlowResult: TypeAlias = dict[str, Any]
 
 _ISSUE_WEB_PIN_MISSING = "web_pin_missing"
 _ISSUE_WEB_AUTH_FAILED = "web_authentication_failed"
@@ -79,7 +81,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             self._entry = entries[0]
         return self._entry
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Choose how to resolve the missing PIN."""
         if self._get_entry() is None:
             return self.async_abort(reason="entry_not_found")
@@ -106,7 +108,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             ),
         )
 
-    async def async_step_set_pin(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_set_pin(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Store a valid local Navigator web PIN."""
         entry = self._get_entry()
         if entry is None:
@@ -178,7 +180,7 @@ class IdmWebPinMissingRepairFlow(repairs.RepairsFlow):
             errors=errors,
         )
 
-    async def async_step_disable_web(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_disable_web(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Disable optional web supplement data and clear the repair issue."""
         entry = self._get_entry()
         if entry is None:
@@ -218,7 +220,7 @@ class IdmSolarUnusedRepairFlow(repairs.RepairsFlow):
             return entries[0]
         return None
 
-    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_init(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Choose whether to switch the solar module off or keep it."""
         if user_input is not None:
             action = user_input.get("action")
@@ -242,7 +244,7 @@ class IdmSolarUnusedRepairFlow(repairs.RepairsFlow):
             ),
         )
 
-    async def async_step_disable(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_disable(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Turn the solar thermal module off and reload the entry."""
         entry = self._get_entry()
         if entry is None:
@@ -260,7 +262,7 @@ class IdmSolarUnusedRepairFlow(repairs.RepairsFlow):
         await self.hass.config_entries.async_reload(entry.entry_id)
         return self.async_create_entry(title="", data={})
 
-    async def async_step_keep(self, user_input: dict[str, Any] | None = None) -> FlowResult:
+    async def async_step_keep(self, user_input: dict[str, Any] | None = None) -> RepairsFlowResult:
         """Keep the module and dismiss this round of the suggestion."""
         entry = self._get_entry()
         if entry is None:

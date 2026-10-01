@@ -13,7 +13,7 @@ import math
 from collections.abc import Callable, Collection
 from typing import Any
 
-from homeassistant.components.binary_sensor import BinarySensorDeviceClass
+from .ha_compat import BinarySensorDeviceClass
 
 _GET_LIBRARY_BINARY_METADATA: Callable[[str], Any | None] | None
 try:

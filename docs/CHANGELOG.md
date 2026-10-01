@@ -13,6 +13,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed
+
+- **Home Assistant 2026.10 compatibility.** HA replaced voluptuous with
+  probatio, made the flow-result types generic and moved component enums
+  into per-component `const` modules (implicit re-exports only). Runtime was
+  never affected — HA aliases `import voluptuous` to probatio — but strict
+  mypy against 2026.10 rejected our schema objects and imports. The new
+  `ha_compat` module resolves the right implementation per HA generation and
+  types the re-exports as `Any`, the only static type both the 2026.8 and the
+  2026.10 annotations accept; config flow, services, repairs and the moved
+  enums import through it. The CI matrix's forward leg moves from 2026.9.0
+  to the 2026.10.0 beta so the deprecations surface before users hit them.
+  Validated with strict mypy and the real-Home-Assistant lifecycle suite
+  against both 2026.8.1 and 2026.10.0b0.
+
 ## [0.20.1-b2] - 2026-10-01
 
 ### Added

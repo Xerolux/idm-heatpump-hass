@@ -7,7 +7,6 @@ from dataclasses import dataclass
 from typing import Any
 
 from homeassistant.components.binary_sensor import (
-    BinarySensorDeviceClass,
     BinarySensorEntity,
     BinarySensorEntityDescription,
 )
@@ -21,6 +20,7 @@ from .device_hierarchy import (
 )
 from .entity import IdmCoordinatorEntityBase, build_device_info, build_entity_unique_id
 from .entity_names import web_translation_for_value
+from .ha_compat import BinarySensorDeviceClass
 
 
 @dataclass(frozen=True)
