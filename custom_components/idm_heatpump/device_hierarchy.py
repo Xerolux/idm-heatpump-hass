@@ -752,8 +752,7 @@ def shorten_legacy_differential_entity_ids(hass: HomeAssistant, coordinator: Idm
 
     registry = er.async_get(hass)
     legacy_segments = {
-        f"heizkreis_{circuit}{_LEGACY_DIFFERENTIAL_SLUG_SEGMENT}": f"heizkreis_{circuit}_"
-        for circuit in differential
+        f"heizkreis_{circuit}{_LEGACY_DIFFERENTIAL_SLUG_SEGMENT}": f"heizkreis_{circuit}_" for circuit in differential
     }
     for entity in list(er.async_entries_for_config_entry(registry, config_entry.entry_id)):
         old_entity_id = entity.entity_id

@@ -301,7 +301,11 @@ def test_legacy_differential_entity_ids_noop_without_differential_circuits(diffe
     coordinator.config_entry.options[CONF_DIFFERENTIAL_CIRCUITS] = []
     coordinator.set_web_differential_circuits(frozenset())
     registry = _patch_entity_registry(
-        [SimpleNamespace(unique_id="x", entity_id="sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d")]
+        [
+            SimpleNamespace(
+                unique_id="x", entity_id="sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d"
+            )
+        ]
     )
     try:
         shorten_legacy_differential_entity_ids(coordinator.hass, coordinator)
