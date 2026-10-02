@@ -170,6 +170,7 @@ from .device_hierarchy import (
     cleanup_stale_model_entities,
     cleanup_stale_web_sensor_entities,
     precreate_main_device,
+    shorten_legacy_differential_entity_ids,
 )
 from .energy_manager import EnergyManager, EnergyManagerConfig
 from .energy_statistics import EnergyStatistics
@@ -575,6 +576,7 @@ async def _async_setup_web_only_entry(
     cleanup_stale_model_entities(hass, coordinator)
     cleanup_stale_hierarchy_devices(hass, coordinator)
     cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
+    shorten_legacy_differential_entity_ids(hass, coordinator)
     cleanup_stale_web_sensor_entities(hass, coordinator)
 
     if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
@@ -1032,6 +1034,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         cleanup_disabled_feature_entities(hass, coordinator)
         cleanup_stale_hierarchy_devices(hass, coordinator)
         cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
+        shorten_legacy_differential_entity_ids(hass, coordinator)
         cleanup_stale_web_sensor_entities(hass, coordinator)
 
         # Activate entity-aware polling after platforms have created registry

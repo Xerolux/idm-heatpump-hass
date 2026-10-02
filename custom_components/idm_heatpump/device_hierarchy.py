@@ -721,6 +721,64 @@ def cleanup_deconfigured_heating_circuit_entities(hass: HomeAssistant, coordinat
         registry.async_remove(entity.entity_id)
 
 
+#: Slug segment every entity ID of a differential circuit carried while the
+#: device name still ended in "(Differenztemperaturgeregelt)" (0.20.1-b1…b4).
+_LEGACY_DIFFERENTIAL_SLUG_SEGMENT = "_differenztemperaturgeregelt_"
+
+
+def shorten_legacy_differential_entity_ids(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
+    """Shorten entity IDs still carrying the retired differential name suffix.
+
+    While a differential circuit was labelled ``Heizkreis D
+    (Differenztemperaturgeregelt)``, Home Assistant derived every newly
+    registered entity ID of the circuit from that device-name slug. Entities
+    that existed earlier kept their short IDs, so only IDs registered during
+    those prereleases carry the ``heizkreis_d_differenztemperaturgeregelt``
+    segment. This rewrites that segment to ``heizkreis_d`` once per setup for
+    circuits that are differential now, in whatever language the entity name
+    was rendered. A circuit no longer marked differential needs no rename:
+    its difference entity was just removed by
+    :func:`cleanup_deconfigured_heating_circuit_entities`.
+    """
+    config_entry = coordinator.config_entry
+    if config_entry is None:
+        return
+
+    from .differential_circuits import configured_differential_circuits
+
+    differential = configured_differential_circuits(coordinator)
+    if not differential:
+        return
+
+    registry = er.async_get(hass)
+    legacy_segments = {
+        f"heizkreis_{circuit}{_LEGACY_DIFFERENTIAL_SLUG_SEGMENT}": f"heizkreis_{circuit}_" for circuit in differential
+    }
+    for entity in list(er.async_entries_for_config_entry(registry, config_entry.entry_id)):
+        old_entity_id = entity.entity_id
+        for legacy_segment, short_segment in legacy_segments.items():
+            if legacy_segment not in old_entity_id:
+                continue
+            new_entity_id = old_entity_id.replace(legacy_segment, short_segment, 1)
+            try:
+                registry.async_update_entity(old_entity_id, new_entity_id=new_entity_id)
+            except ValueError:
+                # Another entity already owns the short ID; the long one keeps
+                # working, so leave it rather than invent a different name.
+                _LOGGER.debug(
+                    "Keeping entity ID %s: %s is already registered",
+                    old_entity_id,
+                    new_entity_id,
+                )
+            else:
+                _LOGGER.info(
+                    "Shortened differential-circuit entity ID %s to %s (#429)",
+                    old_entity_id,
+                    new_entity_id,
+                )
+            break
+
+
 _CLIMATE_HC_ENTITY_KEY = re.compile(r"^climate_hc_([a-g])$")
 _CLIMATE_ZM_ROOM_ENTITY_KEY = re.compile(r"^climate_zm(\d+)_room(\d+)$")
 
@@ -891,7 +949,11 @@ def _subdevice_labels(coordinator: IdmCoordinator, scope: DeviceScope) -> tuple[
         from .differential_circuits import configured_differential_circuits
 
         if circuit.lower() in configured_differential_circuits(coordinator):
-            return f"Heizkreis {circuit} (Differenztemperaturgeregelt)", "Differential temperature control"
+            # The circuit type rides on the model, never on the name: Home
+            # Assistant prefixes every new entity ID of the device with the
+            # name slug, and the former "(Differenztemperaturgeregelt)" suffix
+            # doubled those IDs (#429).
+            return f"Heizkreis {circuit}", "Differential temperature control"
         return f"Heizkreis {circuit}", "Heizkreis"
     if scope.kind in _MODULE_DEVICE_METADATA:
         _module, name, model = _MODULE_DEVICE_METADATA[scope.kind]

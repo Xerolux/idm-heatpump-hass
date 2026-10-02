@@ -13,6 +13,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.1-b5] - 2026-10-02
+
+### Changed
+
+- **Differential-circuit devices return to short entity IDs** (#429): the
+  sub-device of a differential circuit is now plain `Heizkreis D` with the
+  type on its model (*Differential temperature control*). Home Assistant
+  prefixes every new entity ID of a device with the device-name slug, so the
+  former `(Differenztemperaturgeregelt)` name suffix doubled the IDs —
+  `sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d`.
+  A one-time registry migration shortens the IDs registered during
+  0.20.1-b1…b4 on the next start, in whatever language the entity name was
+  rendered; dashboards and automations written against those long prerelease
+  IDs need the short spelling (`sensor.heizkreis_d_temperaturdifferenz_hk_d`).
+  Entity IDs the user renamed themselves, and short IDs already owned by
+  another entity, are left untouched.
+
+### Fixed
+
+- **The wiki contradicted itself about differential-circuit detection.** The
+  configuration and entity pages still stated the selection was manual
+  without automatic detection, while 0.20.1-b2 had introduced automatic
+  detection through the local web interface (its paragraph had also landed at
+  the end of the configuration page, next to room names). Both pages now
+  describe the detection where the option is explained, in English and in the
+  German mirror.
+- **The Navigator 1.x priority-charge button documentation now covers the
+  non-terminating charge** reported in
+  [#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319): on at
+  least one 1.x firmware a coil-triggered DHW priority charge keeps running
+  until error 020 (heat-pump flow maximum temperature), while the system
+  mode *Warmwasser einmalig* ends the charge normally. The entity
+  documentation (English and German) now describes the behavior, points to
+  the working alternative, and asks for firmware reports. The button itself
+  is unchanged: the coil falls back to 0 on verified firmware, so it keeps
+  writing ON exactly once and never OFF.
+
 ## [0.20.1-b4] - 2026-10-01
 
 ### Added
