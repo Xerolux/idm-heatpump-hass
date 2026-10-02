@@ -557,6 +557,8 @@ Ein einzelner Button (`button.idm_heatpump_acknowledge_errors`) quittiert aktive
 
 Bei erkanntem Navigator 1.0/1.7 kommt ein zweiter Button hinzu (`button.idm_heatpump_request_dhw_priority_charge`, *Vorrangladung anfordern*): Er fordert eine Warmwasser-Vorrangladung an — ein einzelner FC05-Write von ON auf Coil c3003. Nur für manuelle Nutzung — die offizielle Tabelle stellt den Coil-Block unter den EEPROM-Hinweis, also kein Zeitplan und keine getaktete Automation.
 
+Auf mindestens einer 1.x-Firmware endet die per Coil angeforderte Vorrangladung nicht von selbst: Der Regler bleibt im Warmwassermodus, bis der Fehler 020 (*Wärmepumpenvorlauf Maximaltemperatur*) auslöst ([Issue #319](https://github.com/Xerolux/idm-heatpump-hass/issues/319)). Verhält sich deine Anlage so, nutze stattdessen die Betriebsart *Warmwasser einmalig* (der `system_mode`-Select oder der Warmwasser-Boost) — dieser Weg beendet die Ladung auf der betroffenen Hardware normal. Auf verifizierter Firmware fällt der Coil unmittelbar nach dem Schreiben auf 0 zurück, deshalb schreibt der Button niemals OFF; melde das Verhalten deiner Firmware gerne im Issue.
+
 ---
 
 ## Zonenmodule
@@ -578,9 +580,11 @@ Ist ein Navigator-10-Heizkreis als **Differenztemperaturgeregelt** eingerichtet,
 wähle ihn unter **Konfigurieren → Anlage → Differenztemperaturgeregelte
 Heizkreise** und zusätzlich in der Liste installierter Heizkreise aus. Im
 erweiterten Formular steht die Auswahl neben **Heizkreise**. Standardmäßig ist
-sie leer; normale Heizkreise behalten ihr Verhalten. Die Auswahl erfolgt
-manuell, ohne automatische Erkennung. Dieser Heizkreistyp ist unabhängig vom
-separaten Modul für die interne Differenztemperaturregelung.
+sie leer; normale Heizkreise behalten ihr Verhalten. Die manuelle Auswahl ist
+maßgeblich und unabhängig vom separaten Modul für die interne
+Differenztemperaturregelung; mit konfiguriertem Web-PIN werden Kreise dieses
+Typs am Navigator 10 zusätzlich automatisch über die lokale
+Webschnittstelle erkannt.
 
 Die in [Issue #429](https://github.com/Xerolux/idm-heatpump-hass/issues/429)
 gemeldeten Messwerte für HK D werden folgendermaßen zugeordnet. Andere
@@ -608,6 +612,17 @@ Vorlaufabweichung und Web-Mischer-/Vorlaufsensoren werden für ausgewählte
 Differenzkreise aus der Registry entfernt. Passe betroffene Dashboards und
 Automationen an. Beim Abwählen entstehen normale Heizkreis-Entitäten erneut;
 der Differenzsensor entfällt. Anpassungen entfernter Regler bleiben nicht erhalten.
+
+**Entity-IDs:** Das Gerät des Kreises heißt `Heizkreis D` und trägt den Typ als
+Modell (*Differential temperature control*), denn Home Assistant stellt jeder
+neuen Entity-ID eines Geräts den Namens-Slug voran — ein Typ-Suffix im Namen
+verdoppelte die Länge aller IDs. Entity-IDs, die registriert wurden, solange der
+Gerätename noch mit `(Differenztemperaturgeregelt)` endete (0.20.1-b1…b4),
+werden beim nächsten Start automatisch gekürzt:
+`sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d`
+wird zu `sensor.heizkreis_d_temperaturdifferenz_hk_d`. Passe Dashboards an, die
+mit den langen Vorab-IDs erstellt wurden; selbst umbenannte Entity-IDs und kurz
+vergebene IDs, die bereits einem anderen Objekt gehören, bleiben unangetastet.
 
 **Unbestätigte Parameter:** Die API enthält keine bestätigten Register zur
 Heizkreistyp-Erkennung oder für Hysterese, Schwellwert und Maximaltemperatur

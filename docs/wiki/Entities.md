@@ -664,6 +664,15 @@ requests a DHW priority charge: a single FC05 write of ON to coil c3003.
 Manual use only — the official table puts the coil block under the EEPROM
 note, so it must not be driven by a schedule or a timed automation.
 
+On at least one 1.x firmware the coil-triggered priority charge does not
+terminate by itself: the controller stays in DHW mode until error 020
+(*Wärmepumpenvorlauf Maximaltemperatur*) trips ([issue #319](https://github.com/Xerolux/idm-heatpump-hass/issues/319)).
+If your unit behaves this way, use the system mode *Warmwasser einmalig*
+(the `system_mode` select, or the DHW boost) instead — that path ends the
+charge normally on the affected hardware. On verified firmware the coil
+falls back to 0 immediately after the write, which is why the button never
+writes OFF; please report your firmware behavior in the issue.
+
 ---
 
 ## Zone Modules
@@ -686,9 +695,10 @@ For a Navigator 10 circuit configured as **Differential temperature control**
 in **Configure → Plant → Differential-temperature controlled circuits**, as
 well as in the installed heating-circuit list. In the advanced form the same
 selection appears next to **Heating circuits**. The default is an empty list;
-normal heating circuits keep their existing behavior. This is a manual option,
-not automatic detection, and is separate from the controller's internal
-differential-control module.
+normal heating circuits keep their existing behavior. The manual selection is
+authoritative and separate from the controller's internal differential-control
+module; with a configured web PIN, Navigator 10 circuits of this type are
+additionally detected automatically through the local web interface.
 
 For HC D, the measurements reported in [issue #429](https://github.com/Xerolux/idm-heatpump-hass/issues/429)
 are mapped as follows; other selected circuits use their corresponding library
@@ -716,6 +726,17 @@ the registry for selected differential circuits. Update dashboards and
 automations that referenced those controls. Turning the option off recreates
 normal circuit entities and removes the difference sensor; customizations of
 removed controls are not preserved.
+
+**Entity IDs:** the circuit device is named `Heizkreis D` and carries the type
+as its model (*Differential temperature control*), because Home Assistant
+prefixes every new entity ID of a device with the device-name slug — a type
+suffix in the name would double the length of every ID. Entity IDs registered
+while the device name still ended in `(Differenztemperaturgeregelt)`
+(0.20.1-b1…b4) are shortened automatically on the next start:
+`sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d`
+becomes `sensor.heizkreis_d_temperaturdifferenz_hk_d`. Update dashboards
+written against those long prerelease IDs; entity IDs you renamed yourself and
+short IDs already owned by another entity are left untouched.
 
 **Unverified parameters:** the API does not provide a circuit-type detection
 register or confirmed differential hysteresis/threshold/maximum-temperature

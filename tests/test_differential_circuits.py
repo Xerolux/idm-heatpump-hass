@@ -20,6 +20,7 @@ from custom_components.idm_heatpump.device_hierarchy import (
     DeviceScope,
     _subdevice_labels,
     cleanup_deconfigured_heating_circuit_entities,
+    shorten_legacy_differential_entity_ids,
 )
 from custom_components.idm_heatpump.differential_circuits import (
     configured_differential_circuits,
@@ -172,9 +173,11 @@ def test_web_controls_suppressed_but_pump_kept(differential_coordinator):
     ):
         assert web_control_heatingcircuit_entities(coordinator) == []
         assert web_climate_entities(coordinator) == []
-    assert (
-        _subdevice_labels(coordinator, DeviceScope("heating_circuit", "D"))[0]
-        == "Heizkreis D (Differenztemperaturgeregelt)"
+    # The circuit type rides on the model only — the name is the slug every
+    # new entity ID of the device is prefixed with (#429).
+    assert _subdevice_labels(coordinator, DeviceScope("heating_circuit", "D")) == (
+        "Heizkreis D",
+        "Differential temperature control",
     )
 
 
@@ -220,6 +223,91 @@ def test_registry_migration_is_entry_scoped(differential_coordinator):
         coordinator.config_entry.options[CONF_DIFFERENTIAL_CIRCUITS] = []
         cleanup_deconfigured_heating_circuit_entities(coordinator.hass, coordinator)
         registry.async_remove.assert_called_once_with("hc_d_temperature_difference")
+
+
+def _patch_entity_registry(entities: list[Any]) -> MagicMock:
+    registry = MagicMock()
+    patcher_get = patch("custom_components.idm_heatpump.device_hierarchy.er.async_get", return_value=registry)
+    patcher_entries = patch(
+        "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_config_entry",
+        return_value=entities,
+    )
+    patcher_get.start()
+    patcher_entries.start()
+    return registry
+
+
+def test_legacy_differential_entity_ids_shortened(differential_coordinator):
+    """IDs registered under the suffixed device name lose only that segment."""
+    coordinator = differential_coordinator
+    entry_id = coordinator.config_entry.entry_id
+    entities = [
+        # German-rendered difference sensor, exactly as b1 registered it (#429).
+        SimpleNamespace(
+            unique_id=f"{entry_id}_hc_d_temperature_difference",
+            entity_id="sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d",
+        ),
+        # English rendering proves the shortening is language-agnostic.
+        SimpleNamespace(
+            unique_id=f"{entry_id}_hc_d_flow_temp",
+            entity_id="sensor.heizkreis_d_differenztemperaturgeregelt_temperature_difference_hc_d",
+        ),
+        # Entities without the legacy segment keep their IDs.
+        SimpleNamespace(
+            unique_id=f"{entry_id}_hc_d_room_temp",
+            entity_id="sensor.heizkreis_d_raumtemperatur_hk_d",
+        ),
+        SimpleNamespace(
+            unique_id=f"{entry_id}_hc_a_flow_temp",
+            entity_id="sensor.heizkreis_a_vorlauftemperatur_hk_a",
+        ),
+    ]
+    registry = _patch_entity_registry(entities)
+    try:
+        shorten_legacy_differential_entity_ids(coordinator.hass, coordinator)
+    finally:
+        patch.stopall()
+    renames = {call.args[0]: call.kwargs["new_entity_id"] for call in registry.async_update_entity.call_args_list}
+    assert renames == {
+        "sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d": (
+            "sensor.heizkreis_d_temperaturdifferenz_hk_d"
+        ),
+        "sensor.heizkreis_d_differenztemperaturgeregelt_temperature_difference_hc_d": (
+            "sensor.heizkreis_d_temperature_difference_hc_d"
+        ),
+    }
+
+
+def test_legacy_differential_entity_ids_conflict_keeps_long_id(differential_coordinator):
+    """A short ID owned by another entity wins; the long one keeps working."""
+    coordinator = differential_coordinator
+    entry_id = coordinator.config_entry.entry_id
+    entities = [
+        SimpleNamespace(
+            unique_id=f"{entry_id}_hc_d_temperature_difference",
+            entity_id="sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d",
+        ),
+    ]
+    registry = _patch_entity_registry(entities)
+    registry.async_update_entity.side_effect = ValueError("Entity with this ID is already registered")
+    try:
+        shorten_legacy_differential_entity_ids(coordinator.hass, coordinator)
+    finally:
+        patch.stopall()
+
+
+def test_legacy_differential_entity_ids_noop_without_differential_circuits(differential_coordinator):
+    coordinator = differential_coordinator
+    coordinator.config_entry.options[CONF_DIFFERENTIAL_CIRCUITS] = []
+    coordinator.set_web_differential_circuits(frozenset())
+    registry = _patch_entity_registry(
+        [SimpleNamespace(unique_id="x", entity_id="sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d")]
+    )
+    try:
+        shorten_legacy_differential_entity_ids(coordinator.hass, coordinator)
+    finally:
+        patch.stopall()
+    registry.async_update_entity.assert_not_called()
 
 
 class TestWebDetection:

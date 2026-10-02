@@ -59,10 +59,15 @@ for installations such as a wood-stove circuit connected to a storage tank.
 3. Save and let the integration reload. Check the storage/reference measurements
    against your controller. The difference is **reference minus storage**, in K.
 
-The selection is empty by default and works in both feature profiles. It changes
-the Home Assistant representation, not the controller's heating system, and
-does not detect the circuit type automatically. It is separate from the
-Navigator's internal differential-control module.
+The selection is empty by default and works in both feature profiles. With a
+configured web PIN on a Navigator 10, differential circuits are **detected
+automatically**: every web poll evaluates the controller's `system/overview`
+frame, which lists each heating circuit with its regulation type on the plain
+end-user level. The manual selection stays authoritative — it covers
+installations without the web supplement and overrides the detection. The
+selection changes the Home Assistant representation, not the controller's
+heating system, and is separate from the Navigator's internal
+differential-control module.
 
 Normal heating controls and climate entities are removed for selected circuits;
 review dashboards and automations using those controls before saving. The two
@@ -345,13 +350,6 @@ calculation method is intentionally not part of the public documentation.
 ### Room Names
 
 For each room in each zone, you can assign a custom name. These names are used as entity names in Home Assistant.
-
-With a configured web PIN on a Navigator 10, differential circuits are
-**detected automatically**: every web poll evaluates the controller's
-`system/overview` frame, which lists each heating circuit with its
-regulation type on the plain end-user level. The manual selection above
-stays authoritative — it covers installations without the web supplement
-and overrides the detection.
 
 ## Reconfiguration
 

@@ -67,9 +67,13 @@ anzeigen. Das ist beispielsweise für einen Holzofenkreis mit Speicher sinnvoll.
    Speicher**, angegeben in K.
 
 Die Auswahl ist standardmäßig leer und funktioniert in beiden Funktionsprofilen.
-Sie ändert die Darstellung in Home Assistant, nicht das Heizsystem am Regler.
-Es gibt keine automatische Erkennung; die Auswahl ist vom internen
-Differenzregelungsmodul des Navigators getrennt.
+Mit konfiguriertem Web-PIN an einem Navigator 10 werden Differenzkreise
+**automatisch erkannt**: jeder Web-Poll wertet den `system/overview`-Frame
+des Reglers aus, der auf der reinen Endanwender-Ebene jeden Heizkreis mit
+seiner Regelart auflistet. Die manuelle Auswahl bleibt maßgeblich — sie deckt
+Anlagen ohne Web-Supplement ab und überschreibt die Erkennung. Die Auswahl
+ändert die Darstellung in Home Assistant, nicht das Heizsystem am Regler, und
+ist vom internen Differenzregelungsmodul des Navigators getrennt.
 
 Normale Heizungsregler und Climate-Entitäten entfallen für ausgewählte Kreise.
 Prüfe vor dem Speichern darauf zugreifende Dashboards und Automationen. Die
@@ -379,12 +383,6 @@ Teil der öffentlichen Dokumentation.
 ### Raumnamen
 
 Für jeden Raum in jeder Zone kannst du einen eigenen Namen vergeben. Diese Namen werden als Entitätsnamen in Home Assistant verwendet.
-
-Mit konfiguriertem Web-PIN an einem Navigator 10 werden Differenzkreise
-**automatisch erkannt**: jeder Web-Poll wertet den `system/overview`-Frame
-des Reglers aus, der auf der reinen Endanwender-Ebene jeden Heizkreis mit
-seiner Regelart auflistet. Die manuelle Auswahl oben bleibt maßgeblich —
-sie deckt Anlagen ohne Web-Supplement ab und überschreibt die Erkennung.
 
 ## Neukonfiguration
 
