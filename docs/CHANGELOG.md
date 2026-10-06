@@ -13,47 +13,48 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.20.1-b5] - 2026-10-02
+## [0.20.1] - 2026-10-06
 
-### Changed
-
-- **Differential-circuit devices return to short entity IDs** (#429): the
-  sub-device of a differential circuit is now plain `Heizkreis D` with the
-  type on its model (*Differential temperature control*). Home Assistant
-  prefixes every new entity ID of a device with the device-name slug, so the
-  former `(Differenztemperaturgeregelt)` name suffix doubled the IDs —
-  `sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d`.
-  A one-time registry migration shortens the IDs registered during
-  0.20.1-b1…b4 on the next start, in whatever language the entity name was
-  rendered; dashboards and automations written against those long prerelease
-  IDs need the short spelling (`sensor.heizkreis_d_temperaturdifferenz_hk_d`).
-  Entity IDs the user renamed themselves, and short IDs already owned by
-  another entity, are left untouched.
-
-### Fixed
-
-- **The wiki contradicted itself about differential-circuit detection.** The
-  configuration and entity pages still stated the selection was manual
-  without automatic detection, while 0.20.1-b2 had introduced automatic
-  detection through the local web interface (its paragraph had also landed at
-  the end of the configuration page, next to room names). Both pages now
-  describe the detection where the option is explained, in English and in the
-  German mirror.
-- **The Navigator 1.x priority-charge button documentation now covers the
-  non-terminating charge** reported in
-  [#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319): on at
-  least one 1.x firmware a coil-triggered DHW priority charge keeps running
-  until error 020 (heat-pump flow maximum temperature), while the system
-  mode *Warmwasser einmalig* ends the charge normally. The entity
-  documentation (English and German) now describes the behavior, points to
-  the working alternative, and asks for firmware reports. The button itself
-  is unchanged: the coil falls back to 0 on verified firmware, so it keeps
-  writing ON exactly once and never OFF.
-
-## [0.20.1-b4] - 2026-10-01
+This release makes **Modbus interruptions self-healing** and completes the
+**differential-temperature circuit support** from the beta line (#429).
+While the local web interface keeps delivering, a failed Modbus poll stops
+alarming: a calm repair notice states that the data keeps flowing, and a
+background watchdog reloads entries stuck in Home Assistant's setup-retry
+backoff once the endpoint answers again. Differential circuits (for example
+a wood stove connected through HC D) are detected automatically through the
+local web interface, and their devices return to short entity IDs — a
+one-time migration shortens the long IDs the prereleases registered. The
+integration is validated against **Home Assistant 2026.10** (minimum stays
+2026.8.1); the transport packages became Home-Assistant-owned and are
+stated as minimum versions, and the device-logic dependency moves to
+`idm-heatpump-api[web]==2.14.0`. Everything stays 100 % local, and no
+configuration migration is needed beyond the automatic entity-ID
+shortening.
 
 ### Added
 
+- Opt-in differential-temperature controlled heating circuits (#429), for
+  example a wood stove connected through HC D on Navigator 10. The plant
+  options expose storage and reference temperatures with their existing entity
+  IDs, a reference-minus-storage difference in K, and contextual status
+  (`255` = standby). Normal heating controls, climate entities, flow deviation
+  and web mixer/flow entities are removed for selected circuits; the web pump
+  remains available. Switching the option off restores normal circuit entities.
+- **Differential circuits are detected automatically through the local web
+  interface** (#429): the Navigator 10 `system/overview` frame lists every
+  configured heating circuit with its regulation type and answers on a plain
+  PIN session (live-verified on firmware T_NAV10_20.24-1580 — the level-2
+  Heizsystem setting page is display-gated, this frame is not), so a
+  differential circuit no longer has to be selected by hand where a web PIN
+  is configured. The manual selection stays authoritative and covers
+  installations without the web supplement. The type numbering follows the
+  Heizsystem chooselist order with `2` = *Geregelt* live-confirmed; the
+  differential value rests on that order — please report an unexpectedly
+  shaped circuit as an issue.
+- **Diagnostics expose the web-reported circuit types**
+  (`heating_circuit_types`): circuit letters with the raw regulation-type
+  numbers, nothing personal — the field-confirmation basis for the detection
+  mapping.
 - **Modbus outages heal themselves and stop alarming users.** While the
   local web interface keeps delivering (web PIN configured, web path
   answering), a failed Modbus poll now raises the calm repair notice
@@ -70,47 +71,34 @@ All notable changes to this project will be documented in this file.
   installation owns no task, and the *Verbindung neu laden* button remains
   the manual shortcut.
 
-## [0.20.1-b3] - 2026-10-01
-
 ### Changed
 
-- **Home Assistant 2026.10 compatibility** (validated against the
-  2026.10.0 beta; the release blog is out, the stable artifact is not on
-  PyPI yet). HA replaced voluptuous with
-  probatio, made the flow-result types generic and moved component enums
-  into per-component `const` modules (implicit re-exports only). Runtime was
-  never affected — HA aliases `import voluptuous` to probatio — but strict
-  mypy against 2026.10 rejected our schema objects and imports. The new
-  `ha_compat` module resolves the right implementation per HA generation and
-  types the re-exports as `Any`, the only static type both the 2026.8 and the
-  2026.10 annotations accept; config flow, services, repairs and the moved
-  enums import through it. The CI matrix's forward leg moves from 2026.9.0
-  to the 2026.10.0 beta so the deprecations surface before users hit them.
-  Validated with strict mypy and the real-Home-Assistant lifecycle suite
-  against both 2026.8.1 and 2026.10.0b0.
-
-## [0.20.1-b2] - 2026-10-01
-
-### Added
-
-- **Differential-temperature circuits are detected automatically through the
-  local web interface** (#429): the Navigator 10 `system/overview` frame lists
-  every configured heating circuit with its regulation type and answers on a
-  plain PIN session (live-verified on firmware T_NAV10_20.24-1580 — the
-  level-2 Heizsystem setting page is display-gated, this frame is not), so a
-  differential circuit no longer has to be selected by hand where a web PIN is
-  configured. The manual selection stays authoritative and covers installations
-  without the web supplement. The type numbering follows the Heizsystem
-  choicelist order with `2` = *Geregelt* live-confirmed; the differential value
-  rests on that order — please report an unexpectedly shaped circuit as an
-  issue.
-- **Diagnostics expose the web-reported circuit types**
-  (`heating_circuit_types`): circuit letters with the raw regulation-type
-  numbers, nothing personal — the field-confirmation basis for the detection
-  mapping.
-
-### Changed
-
+- **Home Assistant 2026.10 compatibility** (validated against the 2026.10.0
+  beta line). HA replaced voluptuous with probatio, made the flow-result
+  types generic and moved component enums into per-component `const` modules
+  (implicit re-exports only). Runtime was never affected — HA aliases
+  `import voluptuous` to probatio — but strict mypy against 2026.10 rejected
+  our schema objects and imports. The new `ha_compat` module resolves the
+  right implementation per HA generation and types the re-exports as `Any`,
+  the only static type both the 2026.8 and the 2026.10 annotations accept;
+  config flow, services, repairs and the moved enums import through it. The
+  CI matrix's forward leg moves from 2026.9.0 to the 2026.10.0 beta so the
+  deprecations surface before users hit them. Validated with strict mypy and
+  the real-Home-Assistant lifecycle suite against both 2026.8.1 and
+  2026.10.0b0.
+- **Differential-circuit devices return to short entity IDs** (#429): the
+  sub-device of a differential circuit is now plain `Heizkreis D` with the
+  type on its model (*Differential temperature control*). Home Assistant
+  prefixes every new entity ID of a device with the device-name slug, so the
+  former `(Differenztemperaturgeregelt)` name suffix doubled the IDs —
+  `sensor.heizkreis_d_differenztemperaturgeregelt_temperaturdifferenz_hk_d`.
+  A one-time registry migration shortens the long IDs registered during the
+  0.20.1 prereleases on the next start, in whatever language the entity
+  name was rendered; dashboards and automations written against those long
+  prerelease IDs need the short spelling
+  (`sensor.heizkreis_d_temperaturdifferenz_hk_d`). Entity IDs the user
+  renamed themselves, and short IDs already owned by another entity, are
+  left untouched.
 - **The transport packages became Home-Assistant-owned** — HA's built-in
   modbus integration adopted `modbus-connection`/`tmodbus` (2026.10), and
   hassfest therefore now rejects exact pins for them. The requirements state
@@ -119,39 +107,34 @@ All notable changes to this project will be documented in this file.
   the daily freshness pipeline keeps raising it after validating runs, and a
   newer major is never picked up automatically.
 - The device-logic dependency moves to `idm-heatpump-api[web]==2.14.0`, which
-  adds the read-only complete-plant `system/overview` frame this detection
-  consumes.
+  adds the read-only complete-plant `system/overview` frame the automatic
+  circuit-type detection above consumes.
 
-## [0.20.1-b1] - 2026-09-30
+### Fixed
 
-### Added
+- **The wiki contradicted itself about differential-circuit detection.** The
+  configuration and entity pages still stated the selection was manual
+  without automatic detection, although the beta line had introduced
+  automatic detection through the local web interface (its paragraph had
+  also landed at the end of the configuration page, next to room names).
+  Both pages now describe the detection where the option is explained, in
+  English and in the German mirror.
+- **The Navigator 1.x priority-charge button documentation now covers the
+  non-terminating charge** reported in
+  [#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319): on at
+  least one 1.x firmware a coil-triggered DHW priority charge keeps running
+  until error 020 (heat-pump flow maximum temperature), while the system
+  mode *Warmwasser einmalig* ends the charge normally. The entity
+  documentation (English and German) now describes the behavior, points to
+  the working alternative, and asks for firmware reports. The button itself
+  is unchanged: the coil falls back to 0 on verified firmware, so it keeps
+  writing ON exactly once and never OFF.
 
-- Opt-in differential-temperature controlled heating circuits (#429), for
-  example a wood stove connected through HC D on Navigator 10. The plant
-  options expose storage and reference temperatures with their existing entity
-  IDs, a reference-minus-storage difference in K, and contextual status
-  (`255` = standby). Normal heating controls, climate entities, flow deviation
-  and web mixer/flow entities are removed for selected circuits; the web pump
-  remains available. Switching the option off restores normal circuit entities.
-- Hysteresis, threshold and maximum temperature remain unavailable until their
-  register meanings are verified. No additional device writes are introduced.
-- **Differential circuits are detected automatically through the local web
-  interface.** The Navigator 10 `system/overview` frame lists every configured
-  heating circuit with its regulation type and answers on a plain PIN session
-  (live-verified on firmware T_NAV10_20.24-1580: the level-2 Heizsystem
-  setting page is display-gated, this frame is not), so a differential
-  circuit no longer has to be selected by hand when a web PIN is configured.
-  The manual selection stays as the authoritative override and for
-  installations without the web supplement. The type numbering follows the
-  Heizsystem chooselist order with `2` = *Geregelt* live-confirmed; the
-  differential value rests on that order — please report an unexpectedly
-  shaped circuit as an issue.
-- The transport packages became Home-Assistant-owned (HA's built-in modbus
-  integration adopted them), so hassfest now requires minimum versions
-  instead of exact pins: `modbus-connection>=4.12.3`,
-  `tmodbus[async-serial]>=0.6.2` (the floor is the validated pair; a newer
-  major is never picked up automatically). `idm-heatpump-api[web]==2.14.0`
-  adds the read-only `system/overview` frame this detection consumes.
+### Notes
+
+- Hysteresis, threshold and maximum temperature of a differential circuit
+  remain unavailable until their register meanings are verified. The
+  differential-circuit support introduces no additional device writes.
 
 ## [0.20.0] - 2026-09-30
 
