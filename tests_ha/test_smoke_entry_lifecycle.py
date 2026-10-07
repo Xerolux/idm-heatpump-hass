@@ -125,3 +125,45 @@ async def test_connection_entities_register_as_diagnostics(smoke_hass, patched_c
 
     assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
     await smoke_hass.async_block_till_done()
+
+
+async def test_whats_new_notice_lands_in_repairs(smoke_hass, patched_client, smoke_entry) -> None:
+    """The one-time what's-new notice must reach the Repairs roll-up card.
+
+    The settings page's "N Reparaturen" card lists every active, non-dismissed
+    issue of the issue registry. This pins the real-registry behaviour: the
+    notice is there after setup, and once the user dismisses it, a reload (or
+    restart) must not bring it back — Home Assistant preserves the dismissal
+    because the issue is persistent.
+    """
+    from homeassistant.helpers import issue_registry as ir
+
+    from custom_components.idm_heatpump.const import DOMAIN
+    from custom_components.idm_heatpump.whats_new import WHATS_NEW_ISSUE_ID
+
+    await smoke_hass.config_entries.async_add(smoke_entry)
+    await smoke_hass.async_block_till_done()
+    assert smoke_entry.state is ConfigEntryState.LOADED
+
+    registry = ir.async_get(smoke_hass)
+    issue = registry.async_get_issue(DOMAIN, WHATS_NEW_ISSUE_ID)
+    assert issue is not None, "the what's-new notice never reached the issue registry"
+    assert issue.is_persistent is True
+    assert issue.is_fixable is False
+    assert issue.severity is ir.IssueSeverity.WARNING
+    assert issue.translation_key == WHATS_NEW_ISSUE_ID
+    assert issue.dismissed_version is None  # visible in the Repairs card
+
+    # The user dismisses the notice once …
+    registry.async_ignore(DOMAIN, WHATS_NEW_ISSUE_ID, True)
+    dismissed = registry.async_get_issue(DOMAIN, WHATS_NEW_ISSUE_ID)
+    assert dismissed is not None and dismissed.dismissed_version is not None
+
+    # … and neither a reload nor a fresh setup may resurrect it.
+    await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
+    after_reload = registry.async_get_issue(DOMAIN, WHATS_NEW_ISSUE_ID)
+    assert after_reload is not None and after_reload.dismissed_version is not None
+
+    assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+    await smoke_hass.async_block_till_done()
