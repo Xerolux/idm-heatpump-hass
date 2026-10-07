@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from contextlib import ExitStack
+from datetime import UTC, datetime
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -77,6 +78,25 @@ async def test_fresh_install_is_stamped_without_a_notice(mock_hass: Any) -> None
     ensure.assert_not_called()  # a new user did not update anything
     written = mock_hass.config_entries.async_update_entry.await_args.kwargs["data"]
     assert written[LAST_RUN_VERSION_DATA_KEY] == "0.21.0"
+
+
+async def test_stampless_pre_existing_entry_is_an_update(mock_hass: Any) -> None:
+    """0.20.1 installations never got a stamp: they are updates, not fresh.
+
+    The release introducing the notice is the only one that needs the
+    ``created_at`` heuristic; from the next release on the stamp decides.
+    """
+    old_entry = SimpleNamespace(data={"host": "h"}, created_at=datetime(2026, 9, 1, tzinfo=UTC))
+    fresh_entry = SimpleNamespace(data={"host": "h2"}, created_at=datetime.now(UTC))
+    mock_hass.config_entries.async_update_entry = AsyncMock()
+
+    with patch.object(whats_new, "ensure_whats_new_issue") as ensure:
+        await async_note_release(mock_hass, old_entry, "0.21.0-b1")  # type: ignore[arg-type]
+    ensure.assert_called_once()
+
+    with patch.object(whats_new, "ensure_whats_new_issue") as ensure:
+        await async_note_release(mock_hass, fresh_entry, "0.21.0-b1")  # type: ignore[arg-type]
+    ensure.assert_not_called()  # created minutes ago: a fresh install
 
 
 async def test_missing_version_is_a_noop(mock_hass: Any) -> None:
