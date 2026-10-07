@@ -29,9 +29,11 @@ profile. It works entirely locally; no data leaves your Home Assistant.
   them is optional — missing inputs simply disable the affected
   recommendation, nothing is invented.
 
-After an update you will find a one-time notice in **Settings → Repairs**
-("What's new since 0.20.1") summarizing what was added — dismiss it there
-once you have seen it.
+After installing an update you will find a one-time notice in
+**Settings → Repairs** ("What's new since 0.20.1") summarizing what was
+added — dismiss it there once you have seen it. It appears **exactly once
+per installed update**: never on a fresh installation, never again on
+restarts or reloads, and only again when the next update is installed.
 
 ## Entities
 

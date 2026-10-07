@@ -31,9 +31,12 @@ Er arbeitet vollständig lokal; keine Daten verlassen Ihr Home Assistant.
   Strompreis-Sensor. Alle sind optional — fehlende Eingaben deaktivieren nur
   die betroffene Empfehlung, nichts wird erfunden.
 
-Nach einem Update findest du einen einmaligen Hinweis unter
+Nach dem Einspielen eines Updates findest du einen einmaligen Hinweis unter
 **Einstellungen → Reparaturen** („Neu seit 0.20.1"), der zusammenfasst, was
-dazugekommen ist — dort einmal wegklicken, wenn du ihn gesehen hast.
+dazugekommen ist — dort einmal wegklicken, wenn du ihn gesehen hast. Er
+erscheint **genau einmal pro installiertem Update**: nie bei einer
+Neuinstallation, nie erneut nach Neustarts oder Reloads — erst wieder, wenn
+das nächste Update eingespielt wird.
 
 ## Entitäten
 

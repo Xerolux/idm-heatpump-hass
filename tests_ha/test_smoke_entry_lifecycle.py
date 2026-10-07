@@ -136,14 +136,36 @@ async def test_whats_new_notice_lands_in_repairs(smoke_hass, patched_client, smo
     restart) must not bring it back — Home Assistant preserves the dismissal
     because the issue is persistent.
     """
+    from homeassistant.config_entries import ConfigEntry
     from homeassistant.helpers import issue_registry as ir
 
     from custom_components.idm_heatpump.const import DOMAIN
-    from custom_components.idm_heatpump.whats_new import WHATS_NEW_ISSUE_ID
+    from custom_components.idm_heatpump.whats_new import LAST_RUN_VERSION_DATA_KEY, WHATS_NEW_ISSUE_ID
 
-    await smoke_hass.config_entries.async_add(smoke_entry)
+    # Simulate the update case: this entry last ran an older release. A
+    # fresh install (no stamp) must never produce the notice.
+    updated_entry = ConfigEntry(
+        version=1,
+        minor_version=1,
+        domain=DOMAIN,
+        title="IDM Update",
+        data={
+            "host": "192.0.2.1",
+            "port": 502,
+            "slave_id": 1,
+            "name": "IDM Update",
+            LAST_RUN_VERSION_DATA_KEY: "0.19.0",
+        },
+        options={},
+        unique_id="idm-heatpump-update-smoke",
+        source="user",
+        state=ConfigEntryState.NOT_LOADED,
+        discovery_keys={},
+        subentries_data={},
+    )
+    await smoke_hass.config_entries.async_add(updated_entry)
     await smoke_hass.async_block_till_done()
-    assert smoke_entry.state is ConfigEntryState.LOADED
+    assert updated_entry.state is ConfigEntryState.LOADED
 
     registry = ir.async_get(smoke_hass)
     issue = registry.async_get_issue(DOMAIN, WHATS_NEW_ISSUE_ID)
@@ -159,11 +181,35 @@ async def test_whats_new_notice_lands_in_repairs(smoke_hass, patched_client, smo
     dismissed = registry.async_get_issue(DOMAIN, WHATS_NEW_ISSUE_ID)
     assert dismissed is not None and dismissed.dismissed_version is not None
 
-    # … and neither a reload nor a fresh setup may resurrect it.
-    await smoke_hass.config_entries.async_reload(smoke_entry.entry_id)
+    # … and neither a reload nor a fresh setup may resurrect it: the entry
+    # now carries the current version stamp, so the notice code never even
+    # runs again for this release.
+    assert updated_entry.data[LAST_RUN_VERSION_DATA_KEY] != "0.19.0"
+    await smoke_hass.config_entries.async_reload(updated_entry.entry_id)
     await smoke_hass.async_block_till_done()
     after_reload = registry.async_get_issue(DOMAIN, WHATS_NEW_ISSUE_ID)
     assert after_reload is not None and after_reload.dismissed_version is not None
 
-    assert await smoke_hass.config_entries.async_unload(smoke_entry.entry_id)
+    assert await smoke_hass.config_entries.async_unload(updated_entry.entry_id)
+    await smoke_hass.async_block_till_done()
+
+    # A second, fresh entry on the same installation gets no notice at all.
+    fresh = ConfigEntry(
+        version=1,
+        minor_version=1,
+        domain=DOMAIN,
+        title="IDM Fresh",
+        data={"host": "192.0.2.2", "port": 502, "slave_id": 1, "name": "IDM Fresh"},
+        options={},
+        unique_id="idm-heatpump-fresh-smoke",
+        source="user",
+        state=ConfigEntryState.NOT_LOADED,
+        discovery_keys={},
+        subentries_data={},
+    )
+    await smoke_hass.config_entries.async_add(fresh)
+    await smoke_hass.async_block_till_done()
+    fresh_issue = registry.async_get_issue(DOMAIN, "whats_new_0_21_0")
+    assert fresh_issue is None or fresh_issue.dismissed_version is not None
+    await smoke_hass.config_entries.async_unload(fresh.entry_id)
     await smoke_hass.async_block_till_done()
