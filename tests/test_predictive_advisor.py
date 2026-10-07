@@ -340,6 +340,18 @@ def test_mark_lifecycle_never_writes(mock_hass: Any) -> None:
     assert mock_hass.bus.async_fire.call_args.args[1]["action"] == "status"
 
 
+def test_retract_withdraws_resolved_recommendation(mock_hass: Any) -> None:
+    advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
+    advisor.submit(_recommendation())
+    assert advisor.retract("missing") is False
+    assert advisor.retract(_recommendation().id) is True
+    assert advisor.recommendation_count == 0
+    assert advisor.history[-1].status is RecommendationStatus.OBSOLETE
+    assert mock_hass.bus.async_fire.call_args.args[1]["action"] == "status"
+    # Retracting twice is a no-op.
+    assert advisor.retract(_recommendation().id) is False
+
+
 def test_recommendations_expire_after_ttl(mock_hass: Any) -> None:
     coordinator = _coordinator(data={"outdoor_temp": 5.0}, hass=mock_hass)
     advisor = PredictiveAdvisor(coordinator)

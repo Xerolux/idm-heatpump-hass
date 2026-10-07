@@ -329,6 +329,21 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         # === Predictive advisor (Smart profile, read-only) ===
         "advisor_status": ("Advisor status", "Advisor-Status"),
         "advisor_recommendations": ("Advisor recommendations", "Advisor-Empfehlungen"),
+        "advisor_confidence": ("Advisor confidence", "Advisor-Konfidenz"),
+        "advisor_operation_reason": ("Advisor operation reason", "Advisor-Anforderungsgrund"),
+        "advisor_health_score": ("Advisor health score", "Advisor-Anlagenzustand"),
+        "advisor_efficiency_score": ("Advisor efficiency score", "Advisor-Effizienzwert"),
+        "advisor_expected_cop": ("Advisor expected COP", "Advisor-Erwartungs-COP"),
+        "advisor_building_heat_loss": ("Advisor building heat loss", "Advisor-Gebäudewärmeverlust"),
+        "advisor_building_thermal_inertia": ("Advisor building thermal inertia", "Advisor-Thermische Trägheit"),
+        "advisor_optimal_flow_temp": ("Advisor optimal flow temperature", "Advisor-Optimale Vorlauftemperatur"),
+        "advisor_curve_recommendation": (
+            "Advisor heating curve {circuit} recommendation",
+            "Advisor-Heizkurve {circuit} Empfehlung",
+        ),
+        "advisor_dhw_recommendation": ("Advisor hot water recommendation", "Advisor-Warmwasser-Empfehlung"),
+        "advisor_predicted_heat_demand": ("Advisor predicted heat demand 24h", "Advisor-Wärmebedarf 24 h"),
+        "advisor_next_24h": ("Advisor 24 hour plan", "Advisor-24-Stunden-Plan"),
         # === Calculated ===
         "calculated_hp_temperature_delta": (
             "Heat pump temperature spread",
@@ -557,6 +572,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     "binary_sensor": {
         "analysis_last_cycle_short": ("Last compressor cycle too short", "Letzter Verdichtertakt zu kurz"),
         "advisor_optimization_available": ("Advisor optimization available", "Advisor-Optimierung verfügbar"),
+        "advisor_anomaly_detected": ("Advisor anomaly detected", "Advisor-Anomalie erkannt"),
         "calculated_pv_surplus_operation": ("PV surplus operation", "PV-Überschussbetrieb"),
         "web_demand_reason_pv": ("PV demand reason (Web)", "PV-Anforderungsgrund (Web)"),
         # === Local Navigator web supplement ===

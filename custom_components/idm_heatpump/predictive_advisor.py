@@ -728,6 +728,22 @@ class PredictiveAdvisor:
         self._schedule_save()
         return True
 
+    def retract(self, recommendation_id: str) -> bool:
+        """Withdraw an active recommendation whose condition no longer holds.
+
+        Producers call this when the observation behind a recommendation
+        disappears (e.g. an anomaly resolved) so stale entries do not linger
+        until their TTL. The entry moves to history as obsolete.
+        """
+        rec = self._active.pop(recommendation_id, None)
+        if rec is None:
+            return False
+        obsolete = replace(rec, status=RecommendationStatus.OBSOLETE)
+        self._append_history(obsolete)
+        self._fire("status", obsolete)
+        self._schedule_save()
+        return True
+
     def _expire_recommendations(self, now: datetime) -> None:
         """Move recommendations older than the TTL to history as expired."""
         expired = [

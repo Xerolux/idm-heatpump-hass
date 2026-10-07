@@ -29,8 +29,11 @@ from .operation_entities import (
     short_cycle_binary_entities,
 )
 from .predictive_advisor_entities import (
+    IdmAdvisorAnomalyBinarySensor,
     IdmAdvisorOptimizationBinarySensor,
+    predictive_advisor_anomaly_binary,
     predictive_advisor_binary_entities,
+    runtime_advisor_engine,
     runtime_predictive_advisor,
 )
 from .registers import sort_entity_descriptions
@@ -56,6 +59,7 @@ async def async_setup_entry(
         | IdmWebDemandReasonPvBinarySensor
         | WebSystemBinaryEntity
         | IdmAdvisorOptimizationBinarySensor
+        | IdmAdvisorAnomalyBinarySensor
     ] = [
         IdmBinarySensor(coordinator, desc_info["register"], desc_info["description"])
         for desc_info in sort_entity_descriptions(coordinator.binary_sensor_descriptions)
@@ -73,6 +77,11 @@ async def async_setup_entry(
         entities += predictive_advisor_binary_entities(
             coordinator,
             runtime_predictive_advisor(entry.runtime_data),
+        )
+        entities += predictive_advisor_anomaly_binary(
+            coordinator,
+            runtime_predictive_advisor(entry.runtime_data),
+            runtime_advisor_engine(entry.runtime_data),
         )
         if entry.options.get(CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR):
             entities += health_binary_entities(

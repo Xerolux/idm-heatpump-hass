@@ -12,21 +12,44 @@ recommendations — it never changes anything on the heat pump by itself.
 The advisor is part of the [Smart Energy and Comfort](Smart-Energy-and-Comfort)
 profile. It works entirely locally; no data leaves your Home Assistant.
 
-## What phase 1 provides
+## Entities
 
-The first phase lays the foundation and starts collecting. After enabling
-the Smart profile you will see:
+All entities appear under the Smart profile and become meaningful as the
+advisor collects data. Sensors that depend on not-yet-learned models stay
+unavailable instead of guessing.
 
 | Entity | Meaning |
 |---|---|
 | `sensor.<device>_advisor_status` | Observation stage: **Collecting data** (day 1), **Early hints** (days 1–7), **Recommending** (from day 7), **Established** (from day 30). Attributes show detected plant capabilities, data quality and the current confidence |
 | `sensor.<device>_advisor_recommendations` | Number of active recommendations; each one is published with its full explanation (reasons, values, confidence) as an attribute |
+| `sensor.<device>_advisor_confidence` | Framework confidence in percent with its level |
+| `sensor.<device>_advisor_operation_reason` | Why the heat pump runs right now (PV surplus, hot water, a requesting heating circuit, controller demand reason), with the numbers behind it |
+| `binary_sensor.<device>_advisor_anomaly_detected` | On while an anomaly recommendation is active |
+| `sensor.<device>_advisor_health_score` | Plant health 0–100 from documented components (hydraulics, compressor, hot water, efficiency); each component exists only with baseline data |
+| `sensor.<device>_advisor_expected_cop` / `advisor_efficiency_score` | COP the learned outdoor/flow map expects at the current operating point, and how the observed 7-day COP compares |
+| `sensor.<device>_advisor_building_heat_loss` | Building heat loss in W/K from the thermal-power regression |
+| `sensor.<device>_advisor_building_thermal_inertia` | Effective heat capacity (kWh/K) from observed cooldown episodes |
+| `sensor.<device>_advisor_optimal_flow_temp` | Flow temperature the learned curve produced at the current outdoor temperature while rooms held their setpoint |
+| `sensor.<device>_advisor_hc_X_curve_recommendation` | Heating-curve recommendation per circuit — at most one documented 0.02 step at a time, only after 7 baseline days of room-temperature deviation |
+| `sensor.<device>_advisor_dhw_recommendation` | Best hot-water charging window from the PV forecast (preferred) or the cheapest heat cost (price ÷ expected COP) |
+| `sensor.<device>_advisor_predicted_heat_demand` | Predicted thermal demand for the next 24 hours (heat loss × forecast temperature difference) |
+| `sensor.<device>_advisor_next_24h` | The joined plan: expected PV, expensive hours, and a conflict warning when the hot-water window overlaps them |
 | `binary_sensor.<device>_advisor_optimization_available` | On while at least one unhandled recommendation is active |
 
-Recommendations themselves arrive with the later phases (heating curve, hot
-water, PV, electricity price, 24-hour plan — see the roadmap in
-`docs/dev/predictive-advisor-roadmap.md`). Until then the sensors honestly
-report that the advisor is still collecting.
+### Where the external inputs come from
+
+- **Weather**: the existing *Weather entity* option (hourly forecast via
+  `weather.get_forecasts`).
+- **PV forecast**: optional sensor in the options
+  (*Predictive advisor PV forecast sensor*); PVForecast-style
+  `detailed_forecast` attributes and Solcast-style `forecast` lists are
+  understood.
+- **Electricity price**: the existing *Dynamic electricity price sensor*
+  option; future hourly prices are read from common attribute shapes
+  (`today`/`tomorrow`/`data`/`prices` lists).
+
+Missing or unparsable inputs leave the affected recommendation out — the
+advisor never falls back to invented numbers.
 
 ### Events
 

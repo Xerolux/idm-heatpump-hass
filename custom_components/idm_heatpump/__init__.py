@@ -30,9 +30,12 @@ from idm_heatpump import (
     IdmModelInfo,
 )
 
+from .advisor_analytics import AdvisorAnalytics
+from .advisor_engine import AdvisorEngine, advisor_forecast_loop
 from .ai_advisor import AiAdvisor
 from .comfort_scheduler import ComfortScheduler, parse_schedule_rows
 from .const import (
+    CONF_ADVISOR_PV_FORECAST_ENTITY,
     CONF_COMFORT_SCHEDULE,
     CONF_COMFORT_SCHEDULE_CIRCUIT,
     CONF_COMFORT_SCHEDULE_END,
@@ -93,6 +96,7 @@ from .const import (
     CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
     CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
     CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
+    CONF_WEATHER_ENTITY,
     CONF_WEB_ENABLED,
     CONF_WEB_HOST,
     CONF_WEB_PIN,
@@ -151,6 +155,7 @@ from .const import (
     DEFAULT_STORAGE_TEMP_FORWARDING,
     DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL,
     DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE,
+    DEFAULT_WEATHER_ENTITY,
     DEFAULT_WEB_ENABLED,
     DEFAULT_WEB_SCAN_INTERVAL,
     DEFAULT_WRITE_COOLDOWN,
@@ -267,6 +272,9 @@ class IdmHeatpumpData:
     knx_bridge: KnxBridge | None = None
     operation_analysis: OperationAnalysis | None = None
     predictive_advisor: PredictiveAdvisor | None = None
+    advisor_analytics: AdvisorAnalytics | None = None
+    advisor_engine: AdvisorEngine | None = None
+    advisor_forecast_task: asyncio.Task[None] | None = None
     reload_fingerprint: str | None = None
     loaded_platforms: tuple[Platform, ...] = ()
 
@@ -954,6 +962,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         operation_analysis = None
         energy_statistics = None
         predictive_advisor = None
+        advisor_analytics = None
+        advisor_engine = None
         if smart_features_enabled:
             operation_analysis = OperationAnalysis(
                 hass,
@@ -987,6 +997,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             coordinator.register_required_registers("predictive_advisor", predictive_advisor.required_registers)
             entry.async_on_unload(coordinator.async_add_listener(predictive_advisor.observe))
             predictive_advisor.observe()
+            # Producers (phases 2-9): analytics models plus the engine that
+            # turns them, the web demand reason and external forecasts into
+            # recommendations. Still strictly read-only.
+            advisor_analytics = AdvisorAnalytics(hass, entry.entry_id)
+            await advisor_analytics.async_load()
+            advisor_engine = AdvisorEngine(
+                hass,
+                coordinator,
+                predictive_advisor,
+                advisor_analytics,
+                circuits=tuple(str(circuit).lower() for circuit in circuits),
+                weather_entity=str(entry.options.get(CONF_WEATHER_ENTITY, DEFAULT_WEATHER_ENTITY)).strip() or None,
+                pv_forecast_entity=str(entry.options.get(CONF_ADVISOR_PV_FORECAST_ENTITY, "")).strip() or None,
+                price_entity=str(entry.options.get(CONF_DYNAMIC_PRICE_ENTITY, "")).strip() or None,
+            )
+            entry.async_on_unload(coordinator.async_add_listener(advisor_engine.observe))
+            advisor_engine.observe()
 
         comfort_scheduler = None
         comfort_schedulers: list[ComfortScheduler] = []
@@ -1035,6 +1062,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             operation_analysis=operation_analysis,
             energy_statistics=energy_statistics,
             predictive_advisor=predictive_advisor,
+            advisor_analytics=advisor_analytics,
+            advisor_engine=advisor_engine,
             comfort_scheduler=comfort_scheduler,
             comfort_schedulers=tuple(comfort_schedulers),
             loaded_platforms=tuple(PLATFORMS),
@@ -1053,6 +1082,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         # entries. Idempotent — subsequent calls from operation_entities.py are no-ops.
         ensure_entity_aware_polling(coordinator)
 
+        if advisor_engine is not None:
+            entry.runtime_data.advisor_forecast_task = _create_entry_background_task(
+                hass,
+                entry,
+                advisor_forecast_loop(advisor_engine, 3 * 3600.0),
+                name=f"{DOMAIN}_advisor_forecast_{entry.entry_id}",
+            )
         if web_enabled and web_pin_configured(web_pin):
             entry.runtime_data.web_task = _create_entry_background_task(
                 hass,
@@ -1333,6 +1369,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
                 await predictive_advisor.async_save()
             except Exception:
                 _LOGGER.warning("Failed to persist IDM predictive advisor during unload", exc_info=True)
+        advisor_analytics = getattr(entry.runtime_data, "advisor_analytics", None)
+        if isinstance(advisor_analytics, AdvisorAnalytics):
+            try:
+                await advisor_analytics.async_save()
+            except Exception:
+                _LOGGER.warning("Failed to persist IDM advisor analytics during unload", exc_info=True)
         coordinator = getattr(entry.runtime_data, "coordinator", None)
         shutdown = getattr(coordinator, "async_shutdown", None)
         if callable(shutdown):

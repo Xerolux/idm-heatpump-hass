@@ -62,6 +62,7 @@ from .ai_cloud import (
 )
 from .comfort_scheduler import parse_schedule_rows
 from .const import (
+    CONF_ADVISOR_PV_FORECAST_ENTITY,
     CONF_AI_ADVISOR,
     CONF_COMFORT_SCHEDULE,
     CONF_COMFORT_SCHEDULE_CIRCUIT,
@@ -446,7 +447,12 @@ _GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], 
     "profile": (None, (CONF_FEATURE_PROFILE,), (), ()),
     "ai_advisor": (CONF_AI_ADVISOR, (CONF_AI_URL, CONF_AI_MODEL, CONF_AI_LANGUAGE, *AI_EXTRA_DEFAULTS), (), ()),
     "health": (CONF_HEALTH_MONITOR, (), (CONF_SHORT_CYCLE_MINUTES,), ()),
-    "energy": (None, (CONF_DYNAMIC_PRICE_ENTITY,), (CONF_ENERGY_PRICE, CONF_ENERGY_CO2_FACTOR), ()),
+    "energy": (
+        None,
+        (CONF_DYNAMIC_PRICE_ENTITY, CONF_ADVISOR_PV_FORECAST_ENTITY),
+        (CONF_ENERGY_PRICE, CONF_ENERGY_CO2_FACTOR),
+        (),
+    ),
     "energy_manager": (
         CONF_ENERGY_MANAGER,
         (CONF_ENERGY_MANAGER_EXCLUSIVE,),
@@ -561,6 +567,7 @@ def _default_options() -> dict[str, Any]:
         CONF_HEALTH_MONITOR: DEFAULT_HEALTH_MONITOR,
         CONF_ENERGY_PRICE: DEFAULT_ENERGY_PRICE,
         CONF_DYNAMIC_PRICE_ENTITY: "",
+        CONF_ADVISOR_PV_FORECAST_ENTITY: "",
         CONF_ENERGY_CO2_FACTOR: DEFAULT_ENERGY_CO2_FACTOR,
         CONF_COMFORT_SCHEDULE: DEFAULT_COMFORT_SCHEDULE,
         CONF_COMFORT_SCHEDULE_EXCLUSIVE: DEFAULT_COMFORT_SCHEDULE_EXCLUSIVE,
@@ -787,6 +794,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Optional(
                             CONF_DYNAMIC_PRICE_ENTITY,
                             **_entity_field_default(str(options.get(CONF_DYNAMIC_PRICE_ENTITY, ""))),
+                        ): EntitySelector(EntitySelectorConfig(domain="sensor")),
+                        vol.Optional(
+                            CONF_ADVISOR_PV_FORECAST_ENTITY,
+                            **_entity_field_default(str(options.get(CONF_ADVISOR_PV_FORECAST_ENTITY, ""))),
                         ): EntitySelector(EntitySelectorConfig(domain="sensor")),
                         vol.Required(
                             CONF_ENERGY_CO2_FACTOR,
