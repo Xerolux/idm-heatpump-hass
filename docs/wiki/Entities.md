@@ -9,7 +9,9 @@ and operating analysis. These are derived values, not additional physical
 meters. The required power registers must be available.
 
 Health Monitor adds eight problem checks and a report sensor. Heating-curve
-and weather advisers add read-only recommendations. The optional comfort
+and weather advisers add read-only recommendations. The [Predictive
+Advisor](Predictive-Advisor) adds a strictly read-only recommendation
+framework (status, recommendations, data quality). The optional comfort
 schedule changes the existing circuit room target; it does not create a
 second climate controller entity. Automatic DHW charging uses the existing
 boost controls and state machine.

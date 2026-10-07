@@ -1304,6 +1304,9 @@
   },
   "entity": {
     "binary_sensor": {
+      "advisor_optimization_available": {
+        "name": "Advisor optimization available"
+      },
       "analysis_last_cycle_short": {
         "name": "Last compressor cycle too short"
       },
@@ -1719,6 +1722,18 @@
       }
     },
     "sensor": {
+      "advisor_recommendations": {
+        "name": "Advisor recommendations"
+      },
+      "advisor_status": {
+        "name": "Advisor status",
+        "state": {
+          "collecting": "Collecting data",
+          "early_hints": "Early hints",
+          "recommending": "Recommending",
+          "established": "Established"
+        }
+      },
       "ai_coverage": {
         "name": "AI observed coverage"
       },

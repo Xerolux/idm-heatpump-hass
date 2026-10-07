@@ -13,6 +13,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+
+- **Predictive advisor framework (phase 1, strictly read-only).** A new analysis layer observes the plant, tracks data quality per watched register (unavailable / implausible / frozen / usable), detects plant capabilities and walks documented observation stages (`collecting` -> `early_hints` -> `recommending` -> `established`). New entities `sensor.advisor_status`, `sensor.advisor_recommendations` and `binary_sensor.advisor_optimization_available` (Smart profile) expose the state; every new, changed or acknowledged recommendation fires an `idm_advisor_recommendation` event with its full explanation (reasons, values, confidence level). The recommendation lifecycle (new -> viewed -> accepted/dismissed, bounded history) is restart-safe, and the advisor has no write path to the heat pump at all - accepting records only your acknowledgment. Concrete producers (heating curve, hot water, PV, electricity price, 24-hour plan) follow the phased plan in `docs/dev/predictive-advisor-roadmap.md`; a new wiki page *Predictive Advisor* documents the guarantees.
+
 ## [0.20.1] - 2026-10-06
 
 This release makes **Modbus interruptions self-healing** and completes the

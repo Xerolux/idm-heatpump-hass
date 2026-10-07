@@ -120,6 +120,10 @@ GERMAN_DOCUMENTATION_PAGES: dict[str, dict[str, str]] = {
         "title": "KI-Anlagenberater (experimentell)",
         "description": "Optionale schreibgeschützte Ollama-Berichte mit expliziter Aktivierung, lokalen Daten und sichtbaren Abdeckungsgrenzen einrichten.",
     },
+    "predictive-advisor": {
+        "title": "Predictive Advisor",
+        "description": "Den strikt schreibgeschützten Predictive Advisor verstehen: Beobachtungsstufen, Datenqualität, Konfidenzstufen und Empfehlungs-Ereignisse.",
+    },
     "local-ollama": {
         "title": "Lokale Ollama-Einrichtung",
         "description": "Ollama als Add-on, Docker-Container oder bestehenden Server für die lokalen KI-Berichte aufsetzen – Schritt für Schritt.",
@@ -247,6 +251,13 @@ DOCUMENTATION_PAGES: tuple[DocumentationPage, ...] = (
         "group": "automation",
         "title": "Experimental Local AI Adviser",
         "description": "Set up optional read-only Ollama reports with explicit activation, local data and visible coverage limits.",
+    },
+    {
+        "slug": "predictive-advisor",
+        "file": "Predictive-Advisor.md",
+        "group": "automation",
+        "title": "Predictive Advisor",
+        "description": "Understand the strictly read-only predictive advisor: observation stages, data quality, confidence levels and recommendation events.",
     },
     {
         "slug": "local-ollama",
