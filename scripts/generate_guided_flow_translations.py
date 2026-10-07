@@ -11,6 +11,7 @@ FEATURES = (
     "plant",
     "profile",
     "health",
+    "predictive_advisor",
     "energy",
     "energy_manager",
     "comfort",
@@ -23,15 +24,18 @@ FEATURES = (
     "external_power",
     "knx",
     "cascade",
+    "solar_thermal",
     "device_hierarchy",
     "technician_codes",
     "modbus",
+    "ai_advisor",
 )
 LABELS = {
     "en": (
         "Plant, heating circuits and zones",
         "Entity profile",
         "Health monitor",
+        "Predictive advisor",
         "Energy costs and carbon",
         "Automatic PV hot water",
         "Comfort schedule",
@@ -44,14 +48,17 @@ LABELS = {
         "External power and battery sensors",
         "KNX bridge",
         "Cascade registers",
+        "Solar thermal registers",
         "Device grouping",
         "Technician code sensors",
         "Modbus transport",
+        "AI adviser (experimental, read-only)",
     ),
     "de": (
         "Anlage, Heizkreise und Zonen",
         "Entitätsprofil",
         "Health Monitor",
+        "Predictive Advisor",
         "Energiekosten und CO₂",
         "Automatische PV-Warmwasserladung",
         "Komfort-Zeitplan",
@@ -64,9 +71,11 @@ LABELS = {
         "Externe Leistung und Batterie-Sensoren",
         "KNX-Bridge",
         "Kaskadenregister",
+        "Solarthermie",
         "Geräte gruppieren",
         "Fachmann-Code-Sensoren",
         "Modbus-Verbindung",
+        "KI-Anlagenberater (experimentell, nur lesend)",
     ),
 }
 PROSE = {
@@ -119,6 +128,17 @@ def update(path: Path) -> None:
         descriptions.update(group.get("data_description", {}))
     for root in ("config", "options"):
         steps = data[root]["step"]
+        # Hand-written guided keys that have no options-step label (for
+        # example the AI detail fields) must survive a regeneration, so the
+        # generated labels are merged over the previously shipped blocks.
+        previous_toggle_block = steps["guided_toggle"] if "guided_toggle" in steps else {}
+        previous_toggle = previous_toggle_block.get("data", {})
+        previous_toggle_descriptions = previous_toggle_block.get("data_description", {})
+        previous_detail = steps["guided_detail"] if "guided_detail" in steps else {}
+        toggle_data = {**previous_toggle, **labels}
+        toggle_descriptions = {**previous_toggle_descriptions, **descriptions}
+        detail_data = {**previous_detail.get("data", {}), **labels}
+        detail_descriptions = {**previous_detail.get("data_description", {}), **descriptions}
         steps["guided_mode"] = {
             "title": words["mode_title"],
             "description": words["mode_description"],
@@ -132,13 +152,14 @@ def update(path: Path) -> None:
         steps["guided_toggle"] = {
             "title": words["toggle_title"],
             "description": words["toggle_description"],
-            "data": labels,
+            "data": toggle_data,
+            "data_description": toggle_descriptions,
         }
         steps["guided_detail"] = {
             "title": words["detail_title"],
             "description": words["detail_description"],
-            "data": labels,
-            "data_description": descriptions,
+            "data": detail_data,
+            "data_description": detail_descriptions,
         }
         steps["guided_review"] = {
             "title": words["review_title"],

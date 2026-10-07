@@ -84,6 +84,7 @@ from .const import (
     CONF_MODBUS_MESSAGE_SPACING,
     CONF_MODBUS_TIMEOUT,
     CONF_POLLING_JITTER,
+    CONF_PREDICTIVE_ADVISOR,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -145,6 +146,7 @@ from .const import (
     DEFAULT_MODBUS_MESSAGE_SPACING,
     DEFAULT_MODBUS_TIMEOUT,
     DEFAULT_POLLING_JITTER,
+    DEFAULT_PREDICTIVE_ADVISOR,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
@@ -224,6 +226,7 @@ from .web_data import (
     async_read_web_supplement,
     web_pin_configured,
 )
+from .whats_new import ensure_whats_new_issue
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -989,31 +992,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             )
             await energy_statistics.async_load()
             coordinator.attach_energy_statistics(energy_statistics)
-            # The predictive advisor is strictly read-only (phase 1 of
+            # The predictive advisor is strictly read-only (see
             # docs/dev/predictive-advisor-roadmap.md): it observes snapshots,
             # manages recommendations and fires events, and never writes.
-            predictive_advisor = PredictiveAdvisor(coordinator)
-            await predictive_advisor.async_load()
-            coordinator.register_required_registers("predictive_advisor", predictive_advisor.required_registers)
-            entry.async_on_unload(coordinator.async_add_listener(predictive_advisor.observe))
-            predictive_advisor.observe()
-            # Producers (phases 2-9): analytics models plus the engine that
-            # turns them, the web demand reason and external forecasts into
-            # recommendations. Still strictly read-only.
-            advisor_analytics = AdvisorAnalytics(hass, entry.entry_id)
-            await advisor_analytics.async_load()
-            advisor_engine = AdvisorEngine(
-                hass,
-                coordinator,
-                predictive_advisor,
-                advisor_analytics,
-                circuits=tuple(str(circuit).lower() for circuit in circuits),
-                weather_entity=str(entry.options.get(CONF_WEATHER_ENTITY, DEFAULT_WEATHER_ENTITY)).strip() or None,
-                pv_forecast_entity=str(entry.options.get(CONF_ADVISOR_PV_FORECAST_ENTITY, "")).strip() or None,
-                price_entity=str(entry.options.get(CONF_DYNAMIC_PRICE_ENTITY, "")).strip() or None,
-            )
-            entry.async_on_unload(coordinator.async_add_listener(advisor_engine.observe))
-            advisor_engine.observe()
+            # On by default within the Smart profile; the options toggle
+            # removes it completely, entities included. The one-time
+            # what's-new notice points upgrade users at the feature.
+            if bool(entry.options.get(CONF_PREDICTIVE_ADVISOR, DEFAULT_PREDICTIVE_ADVISOR)):
+                ensure_whats_new_issue(hass)
+                predictive_advisor = PredictiveAdvisor(coordinator)
+                await predictive_advisor.async_load()
+                coordinator.register_required_registers("predictive_advisor", predictive_advisor.required_registers)
+                entry.async_on_unload(coordinator.async_add_listener(predictive_advisor.observe))
+                predictive_advisor.observe()
+                # Producers (phases 2-9): analytics models plus the engine
+                # that turns them, the web demand reason and external
+                # forecasts into recommendations. Still strictly read-only.
+                advisor_analytics = AdvisorAnalytics(hass, entry.entry_id)
+                await advisor_analytics.async_load()
+                advisor_engine = AdvisorEngine(
+                    hass,
+                    coordinator,
+                    predictive_advisor,
+                    advisor_analytics,
+                    circuits=tuple(str(circuit).lower() for circuit in circuits),
+                    weather_entity=str(entry.options.get(CONF_WEATHER_ENTITY, DEFAULT_WEATHER_ENTITY)).strip() or None,
+                    pv_forecast_entity=str(entry.options.get(CONF_ADVISOR_PV_FORECAST_ENTITY, "")).strip() or None,
+                    price_entity=str(entry.options.get(CONF_DYNAMIC_PRICE_ENTITY, "")).strip() or None,
+                )
+                entry.async_on_unload(coordinator.async_add_listener(advisor_engine.observe))
+                advisor_engine.observe()
 
         comfort_scheduler = None
         comfort_schedulers: list[ComfortScheduler] = []

@@ -81,6 +81,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── advisor_analytics.py          # Persistent advisor models: rolling baselines, COP map, building regressions
 │   ├── advisor_engine.py             # Producer orchestration: anomalies, heating curve, DHW window, 24 h plan
 │   ├── advisor_operation_reason.py   # Composes the why-is-the-heat-pump-running explanation
+│   ├── whats_new.py                  # One-time release notice in Home Assistant Repairs
 │   ├── energy_manager.py              # Optional, fail-closed PV surplus DHW automation
 │   ├── energy_statistics.py           # Persistent electrical/thermal energy and COP totals
 │   ├── energy_statistics_entities.py  # Home Assistant entities for energy statistics
@@ -185,6 +186,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_services.py
 │   ├── test_versions.py
 │   ├── test_web_binary_sensors.py
+│   ├── test_whats_new.py
 │   ├── test_web_data.py
 │   ├── test_web_demand_reason.py
 │   ├── test_web_status_entities.py

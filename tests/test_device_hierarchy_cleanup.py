@@ -240,6 +240,26 @@ def test_vanilla_profile_removes_smart_analysis_entities() -> None:
     }
 
 
+def test_disabling_the_advisor_removes_its_entities() -> None:
+    """Smart profile stays on; only the advisor toggle is off."""
+    entities = [
+        _entity("entry_advisor_status", "sensor.advisor_status"),
+        _entity("entry_advisor_hc_a_curve_recommendation", "sensor.advisor_curve"),
+        _entity("entry_calculated_cop", "sensor.cop"),
+    ]
+    registry = _run_feature_cleanup({"feature_profile": "smart", "predictive_advisor": False}, entities)
+    assert {call.args[0] for call in registry.async_remove.call_args_list} == {
+        "sensor.advisor_status",
+        "sensor.advisor_curve",
+    }
+
+
+def test_enabling_the_advisor_keeps_its_entities() -> None:
+    entities = [_entity("entry_advisor_status", "sensor.advisor_status")]
+    registry = _run_feature_cleanup({"feature_profile": "smart", "predictive_advisor": True}, entities)
+    assert registry.async_remove.call_count == 0
+
+
 def test_entities_of_deconfigured_circuits_are_removed() -> None:
     """Unchecking a circuit must not leave permanently unavailable entities behind."""
     coordinator = _circuit_coordinator(["a", "d"])

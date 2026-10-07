@@ -12,6 +12,29 @@ Empfehlungen — er verändert niemals selbst etwas an der Wärmepumpe.
 Der Advisor ist Teil des Profils [Smart Energy and Comfort](../Smart-Energy-and-Comfort).
 Er arbeitet vollständig lokal; keine Daten verlassen Ihr Home Assistant.
 
+## Aktivieren, deaktivieren und Voraussetzungen
+
+- **Wo**: Integration → *Konfigurieren* → *Darstellung und zusätzliche
+  Funktionen* → **Predictive Advisor aktivieren** (auch im geführten Setup
+  als eigene Seite). Mit dem Profil Smart Energy & Comfort standardmäßig
+  aktiv.
+- **Beim Deaktivieren** werden nach einem Neuladen alle `advisor_*`-Entitäten
+  entfernt; die gesammelten Statistiken bleiben erhalten und kommen zurück,
+  wenn du ihn wieder aktivierst.
+- **Keine KI nötig.** Alles ist deterministische Statistik — Baselines,
+  Regressionen und Fenstersuche — lokal auf deinem Home Assistant berechnet.
+  Es wird keine Cloud und kein LLM genutzt, benötigt oder angeboten. Der
+  *Experimentelle KI-Anlagenberater* ist ein völlig separates Feature; der
+  Predictive Advisor funktioniert ohne ihn.
+- **Optionale Eingaben**: eine Wetter-Entität (bereits für den
+  Wetter-Hinweis vorhanden), ein PV-Prognose-Sensor und ein dynamischer
+  Strompreis-Sensor. Alle sind optional — fehlende Eingaben deaktivieren nur
+  die betroffene Empfehlung, nichts wird erfunden.
+
+Nach einem Update findest du einen einmaligen Hinweis unter
+**Einstellungen → Reparaturen** („Neu seit 0.20.1"), der zusammenfasst, was
+dazugekommen ist — dort einmal wegklicken, wenn du ihn gesehen hast.
+
 ## Entitäten
 
 Alle Entitäten erscheinen mit dem Smart-Profil und werden bedeutsam, sobald

@@ -12,6 +12,27 @@ recommendations — it never changes anything on the heat pump by itself.
 The advisor is part of the [Smart Energy and Comfort](Smart-Energy-and-Comfort)
 profile. It works entirely locally; no data leaves your Home Assistant.
 
+## Enable, disable and what it needs
+
+- **Where**: integration → *Configure* → *Presentation and additional
+  features* → **Enable predictive advisor** (also part of the guided setup as
+  its own page). On by default with the Smart Energy & Comfort profile.
+- **Turning it off** removes every `advisor_*` entity after a reload; the
+  collected statistics are kept and return when you re-enable it.
+- **No AI required.** Everything is deterministic statistics — baselines,
+  regressions and window searches — computed locally on your Home
+  Assistant. It does not use, need or offer any cloud or LLM. The
+  *Experimental AI plant adviser* is a completely separate feature; the
+  predictive advisor works without it.
+- **Optional inputs**: a weather entity (already used by the weather advice),
+  a PV forecast sensor and a dynamic electricity price sensor. Every one of
+  them is optional — missing inputs simply disable the affected
+  recommendation, nothing is invented.
+
+After an update you will find a one-time notice in **Settings → Repairs**
+("What's new since 0.20.1") summarizing what was added — dismiss it there
+once you have seen it.
+
 ## Entities
 
 All entities appear under the Smart profile and become meaningful as the
