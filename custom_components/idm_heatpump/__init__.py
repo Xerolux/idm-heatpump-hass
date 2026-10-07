@@ -197,6 +197,7 @@ from .model_resolution import (
 )
 from .operation_analysis import OperationAnalysis
 from .polling_plan import ensure_entity_aware_polling
+from .predictive_advisor import PredictiveAdvisor
 from .registers import (
     get_all_binary_sensor_descriptions,
     get_all_number_descriptions,
@@ -265,6 +266,7 @@ class IdmHeatpumpData:
     comfort_schedulers: tuple[ComfortScheduler, ...] = ()
     knx_bridge: KnxBridge | None = None
     operation_analysis: OperationAnalysis | None = None
+    predictive_advisor: PredictiveAdvisor | None = None
     reload_fingerprint: str | None = None
     loaded_platforms: tuple[Platform, ...] = ()
 
@@ -951,6 +953,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
 
         operation_analysis = None
         energy_statistics = None
+        predictive_advisor = None
         if smart_features_enabled:
             operation_analysis = OperationAnalysis(
                 hass,
@@ -976,6 +979,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             )
             await energy_statistics.async_load()
             coordinator.attach_energy_statistics(energy_statistics)
+            # The predictive advisor is strictly read-only (phase 1 of
+            # docs/dev/predictive-advisor-roadmap.md): it observes snapshots,
+            # manages recommendations and fires events, and never writes.
+            predictive_advisor = PredictiveAdvisor(coordinator)
+            await predictive_advisor.async_load()
+            coordinator.register_required_registers("predictive_advisor", predictive_advisor.required_registers)
+            entry.async_on_unload(coordinator.async_add_listener(predictive_advisor.observe))
+            predictive_advisor.observe()
 
         comfort_scheduler = None
         comfort_schedulers: list[ComfortScheduler] = []
@@ -1023,6 +1034,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             client=client,
             operation_analysis=operation_analysis,
             energy_statistics=energy_statistics,
+            predictive_advisor=predictive_advisor,
             comfort_scheduler=comfort_scheduler,
             comfort_schedulers=tuple(comfort_schedulers),
             loaded_platforms=tuple(PLATFORMS),
@@ -1315,6 +1327,12 @@ async def async_unload_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool
                 await energy_statistics.async_save()
             except Exception:
                 _LOGGER.warning("Failed to persist IDM energy statistics during unload", exc_info=True)
+        predictive_advisor = getattr(entry.runtime_data, "predictive_advisor", None)
+        if isinstance(predictive_advisor, PredictiveAdvisor):
+            try:
+                await predictive_advisor.async_save()
+            except Exception:
+                _LOGGER.warning("Failed to persist IDM predictive advisor during unload", exc_info=True)
         coordinator = getattr(entry.runtime_data, "coordinator", None)
         shutdown = getattr(coordinator, "async_shutdown", None)
         if callable(shutdown):

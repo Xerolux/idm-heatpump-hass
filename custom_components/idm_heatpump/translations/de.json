@@ -1280,6 +1280,9 @@
   },
   "entity": {
     "binary_sensor": {
+      "advisor_optimization_available": {
+        "name": "Advisor-Optimierung verfügbar"
+      },
       "analysis_last_cycle_short": {
         "name": "Letzter Verdichtertakt zu kurz"
       },
@@ -1695,6 +1698,18 @@
       }
     },
     "sensor": {
+      "advisor_recommendations": {
+        "name": "Advisor-Empfehlungen"
+      },
+      "advisor_status": {
+        "name": "Advisor-Status",
+        "state": {
+          "collecting": "Sammelt Daten",
+          "early_hints": "Erste Hinweise",
+          "recommending": "Empfehlungen aktiv",
+          "established": "Basis etabliert"
+        }
+      },
       "ai_coverage": {
         "name": "KI-Datenabdeckung"
       },

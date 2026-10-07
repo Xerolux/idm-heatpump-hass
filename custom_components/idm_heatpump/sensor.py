@@ -76,6 +76,12 @@ from .operation_entities import (
     operation_sensor_entities,
     runtime_operation_analysis,
 )
+from .predictive_advisor_entities import (
+    IdmAdvisorRecommendationSensor,
+    IdmAdvisorStatusSensor,
+    predictive_advisor_sensor_entities,
+    runtime_predictive_advisor,
+)
 from .registers import entity_order_group, sort_entity_descriptions
 from .technician_codes import calculate_codes
 from .versions import RuntimeVersions, async_runtime_versions
@@ -461,6 +467,8 @@ async def async_setup_entry(
         | ComfortAdvisorySensor
         | IdmAiReportSensor
         | IdmAiMetricSensor
+        | IdmAdvisorStatusSensor
+        | IdmAdvisorRecommendationSensor
     ] = []
     if entry.options.get(CONF_AI_ADVISOR, False) is True:
         advisor = AiAdvisor(hass, entry, coordinator)
@@ -492,6 +500,10 @@ async def async_setup_entry(
             runtime_operation_analysis(entry.runtime_data),
         )
         entities += energy_statistics_entities(coordinator)
+        entities += predictive_advisor_sensor_entities(
+            coordinator,
+            runtime_predictive_advisor(entry.runtime_data),
+        )
         circuit = str(entry.options.get(CONF_COMFORT_SCHEDULE_CIRCUIT, "a")).lower()
         if entry.options.get(CONF_HEATING_CURVE_ASSISTANT, DEFAULT_HEATING_CURVE_ASSISTANT):
             entities.append(heating_curve_advisory(coordinator, circuit))

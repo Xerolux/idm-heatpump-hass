@@ -326,6 +326,9 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "ai_coverage": ("AI observed coverage", "KI-Datenabdeckung"),
         "ai_observed_cop": ("AI observed COP", "KI-Beobachtungs-COP"),
         "ai_report": ("AI report (experimental)", "KI-Bericht (experimentell)"),
+        # === Predictive advisor (Smart profile, read-only) ===
+        "advisor_status": ("Advisor status", "Advisor-Status"),
+        "advisor_recommendations": ("Advisor recommendations", "Advisor-Empfehlungen"),
         # === Calculated ===
         "calculated_hp_temperature_delta": (
             "Heat pump temperature spread",
@@ -553,6 +556,7 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
     },
     "binary_sensor": {
         "analysis_last_cycle_short": ("Last compressor cycle too short", "Letzter Verdichtertakt zu kurz"),
+        "advisor_optimization_available": ("Advisor optimization available", "Advisor-Optimierung verfügbar"),
         "calculated_pv_surplus_operation": ("PV surplus operation", "PV-Überschussbetrieb"),
         "web_demand_reason_pv": ("PV demand reason (Web)", "PV-Anforderungsgrund (Web)"),
         # === Local Navigator web supplement ===

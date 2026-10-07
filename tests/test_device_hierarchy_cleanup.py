@@ -227,6 +227,7 @@ def test_vanilla_profile_removes_smart_analysis_entities() -> None:
         _entity("entry_analysis_heat_pump_cycles_recorded", "sensor.cycles"),
         _entity("entry_energy_cost_today", "sensor.cost"),
         _entity("entry_calculated_cop", "sensor.cop"),
+        _entity("entry_advisor_status", "sensor.advisor"),
         _entity("entry_idm_api_version", "sensor.version"),
     ]
     registry = _run_feature_cleanup({"feature_profile": "vanilla"}, entities)
@@ -235,6 +236,7 @@ def test_vanilla_profile_removes_smart_analysis_entities() -> None:
         "sensor.cycles",
         "sensor.cost",
         "sensor.cop",
+        "sensor.advisor",
     }
 
 

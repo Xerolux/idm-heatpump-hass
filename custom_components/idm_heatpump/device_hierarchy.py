@@ -639,6 +639,7 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
                 not smart
                 and key.startswith(
                     (
+                        "advisor_",
                         "calculated_",
                         "analysis_",
                         "energy_electrical_",

@@ -4,7 +4,7 @@
 
 Das optionale [Smart Energy & Comfort](Smart-Energy-and-Comfort)-Profil ergänzt elektrische und thermische Energiezähler für Gesamtlaufzeit, Tag und Monat, COP für dieselben Zeiträume, geschätzte Kosten, CO₂ und optionale PV-Nutzung sowie die Verdichterzyklus- und Betriebsanalyse. Es handelt sich um abgeleitete Werte, nicht um zusätzliche physische Zähler. Die erforderlichen Leistungsregister müssen verfügbar sein.
 
-Der Health Monitor ergänzt acht Prüfungen auf Probleme und einen Berichtssensor. Heizkurven- und Wetterberater ergänzen schreibgeschützte Empfehlungen. Der optionale Komfort-Zeitplan verändert den bestehenden Raum-Sollwert des Heizkreises; er erzeugt keine zweite Klima-Regelentität. Das automatische Warmwasserladen nutzt die bestehenden Boost-Bedienelemente und die bestehende Zustandsmaschine.
+Der Health Monitor ergänzt acht Prüfungen auf Probleme und einen Berichtssensor. Heizkurven- und Wetterberater ergänzen schreibgeschützte Empfehlungen. Der [Predictive Advisor](Predictive-Advisor) ergänzt ein strikt schreibgeschütztes Empfehlungs-Framework (Status, Empfehlungen, Datenqualität). Der optionale Komfort-Zeitplan verändert den bestehenden Raum-Sollwert des Heizkreises; er erzeugt keine zweite Klima-Regelentität. Das automatische Warmwasserladen nutzt die bestehenden Boost-Bedienelemente und die bestehende Zustandsmaschine.
 
 Mit aktivierter Gerätehierarchie separieren **iDM Analytics**, **iDM Health Monitor**, **iDM Comfort** und **Diagnose** diese Funktionen von den Regler-Entitäten. Wird eine optionale Funktion deaktiviert, werden ihre Entitätsregistrierungen entfernt; beim erneuten Aktivieren werden dieselben IDs wiederhergestellt. Bestehende Regler-IDs bleiben erhalten.
 
