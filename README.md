@@ -115,6 +115,7 @@ KNX bridge**. Full details: **[KNX Bridge documentation][wiki-knx]**.
 | **☀️ Solar & PV** | Solar hot water heating, PV surplus utilization |
 | **⚡ Energy Monitoring** | Heat quantity, runtime, energy meters |
 | **📊 Smart Energy & Comfort** *(opt-in)* | Persistent electrical/thermal totals, daily &amp; monthly stats, COP, estimated cost, CO₂, PV self-consumption; read-only Health Monitor with 8 diagnostic checks; heating-curve and weather-preheat advice; optional comfort schedules (16 windows) and fail-closed PV-surplus DHW boost — both writing features require explicit confirmation. [Details][wiki-smart] |
+| **🧭 Predictive Advisor** *(read-only, on with Smart)* | Explains why the heat pump is running, detects anomalies against your plant's own baselines, scores health and efficiency, learns a COP map and building model, recommends heating-curve steps and hot-water windows from PV/price forecasts, and joins everything into a 24-hour plan. Works fully local and deterministic — no AI, cloud or LLM needed. Never changes a setting. [Details][wiki-advisor] |
 | **🤖 AI Plant Adviser** *(experimental, read-only)* | Daily/weekly/health/efficiency reports from measured facts by default; dedicated AI device, four report buttons, dashboard export, restart-safe schedule; optional model explanations via local Ollama, HA AI Task, OpenAI or Z.ai with a numeric-integrity guard and strict privacy boundaries; local statistical learning with live progress. [Details][wiki-ai] |
 | **❄️ Cascade & Bivalence** | Multi-heat pump control, heating element integration |
 | **📡 BMS Remote Maintenance** | BMS temperature requests (cyclic writing) |
@@ -348,6 +349,7 @@ This project is an **unofficial community project** and is **not affiliated with
 [wiki]: https://xerolux.github.io/idm-heatpump-hass/docs/
 [wiki-install]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/
 [wiki-smart]: https://xerolux.github.io/idm-heatpump-hass/docs/smart-energy-and-comfort/
+[wiki-advisor]: https://xerolux.github.io/idm-heatpump-hass/docs/predictive-advisor/
 [wiki-ai]: https://xerolux.github.io/idm-heatpump-hass/docs/experimental-ai-adviser/
 [wiki-install-modbus]: https://xerolux.github.io/idm-heatpump-hass/docs/installation-and-setup/#enable-modbus-tcp-on-the-idm-heat-pump
 [wiki-config]: https://xerolux.github.io/idm-heatpump-hass/docs/configuration/

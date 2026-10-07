@@ -19,12 +19,14 @@ from .const import (
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
     CONF_HEATING_CURVE_ASSISTANT,
+    CONF_PREDICTIVE_ADVISOR,
     CONF_TECHNICIAN_CODES,
     CONF_WEATHER_ENTITY,
     CONF_WEATHER_PREHEAT,
     DEFAULT_FEATURE_PROFILE,
     DEFAULT_HEALTH_MONITOR,
     DEFAULT_HEATING_CURVE_ASSISTANT,
+    DEFAULT_PREDICTIVE_ADVISOR,
     DEFAULT_WEATHER_ENTITY,
     DEFAULT_WEATHER_PREHEAT,
     DOMAIN,
@@ -616,6 +618,7 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
 
     options = config_entry.options
     smart = options.get(CONF_FEATURE_PROFILE, DEFAULT_FEATURE_PROFILE) == FEATURE_PROFILE_SMART
+    advisor = smart and options.get(CONF_PREDICTIVE_ADVISOR, DEFAULT_PREDICTIVE_ADVISOR)
     health = smart and options.get(CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR)
     heating_curve = smart and options.get(CONF_HEATING_CURVE_ASSISTANT, DEFAULT_HEATING_CURVE_ASSISTANT)
     weather = (
@@ -632,6 +635,7 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
         key = entity.unique_id[len(prefix) :]
         disabled = (
             (key.startswith("ai_") and not options.get(CONF_AI_ADVISOR, False))
+            or (key.startswith("advisor_") and not advisor)
             or (key.startswith("health_") and not health)
             or (key == "heating_curve_advice" and not heating_curve)
             or (key == "weather_preheat_advice" and not weather)
@@ -639,7 +643,6 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
                 not smart
                 and key.startswith(
                     (
-                        "advisor_",
                         "calculated_",
                         "analysis_",
                         "energy_electrical_",

@@ -93,7 +93,8 @@
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
           "differential_circuits": "Differential-temperature controlled circuits",
-          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor"
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "predictive_advisor": "Enable predictive advisor"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -110,7 +111,8 @@
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
-          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations."
+          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities."
         },
         "sections": {
           "features": {
@@ -147,7 +149,8 @@
               "short_cycle_minutes": "Short compressor-cycle threshold",
               "dynamic_price_entity": "Dynamic electricity price sensor",
               "comfort_schedule_windows": "Additional comfort windows",
-              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor"
+              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+              "predictive_advisor": "Enable predictive advisor"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -180,7 +183,8 @@
               "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
               "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
-              "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations."
+              "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+              "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities."
             }
           },
           "room_temperature_forwarding": {
@@ -520,11 +524,75 @@
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
           "ai_task_entity": "Home Assistant AI Task entity",
           "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
-          "differential_circuits": "Differential-temperature controlled circuits"
+          "differential_circuits": "Differential-temperature controlled circuits",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "predictive_advisor": "Enable predictive advisor",
+          "connection_mode": "Connection mode"
         },
         "data_description": {
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
+          "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
+          "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
+          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist.",
+          "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
+          "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
+          "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
+          "energy_manager_min_battery_soc": "Prevents automatic charging from using a battery below this state of charge. Leave the battery source empty in the external power mapping to disable this additional condition.",
+          "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
+          "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
+          "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
+          "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
+          "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
+          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
+          "energy_manager_exclusive_control": "The automatic DHW boost stays disabled unless this is confirmed. Do not enable it while Smartfox, openWB or another system controls DHW.",
+          "health_monitor": "Adds diagnostic problem sensors and a current health report. It only observes data and never writes to the heat pump. Disabled by default.",
+          "comfort_schedule": "Applies one daily comfort window to one heating circuit. Disabled by default.",
+          "comfort_schedule_exclusive_control": "The schedule stays disabled unless confirmed. Do not enable it while another system controls the heating circuit.",
+          "comfort_schedule_circuit": "Only the selected circuit is changed.",
+          "comfort_schedule_start": "Local start time. Use 24-hour HH:MM notation.",
+          "comfort_schedule_end": "Local end time. Use 24-hour HH:MM notation. Equal start and end disables the window.",
+          "comfort_schedule_target": "Target used during the comfort window.",
+          "heating_curve_assistant": "Adds a read-only recommendation when a heating circuit flow temperature consistently misses or exceeds its calculated setpoint.",
+          "weather_preheat_advisory": "Uses the selected weather entity's hourly forecast for the next six hours. The advice is unavailable if the provider has no valid forecast; no heat-pump setting is changed.",
+          "weather_entity": "Weather entity used for the advisory.",
+          "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
+          "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
+          "energy_co2_g_per_kwh": "Used for optional CO₂ sensors. Enter the emission factor of your electricity mix.",
+          "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
+          "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
+          "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
+          "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
+          "web_scan_interval": "Time between reads of the local Navigator web interface. This setting applies only when additional web data is enabled. Shorter intervals provide updates sooner but increase network traffic. Default: 30 seconds.",
+          "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
+          "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
+          "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
+          "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
+          "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
+          "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+          "humidity_forwarding": "Writes a selected Home Assistant humidity sensor to the global GLT humidity register.",
+          "humidity_forwarding_interval": "How often the selected humidity is checked; state changes are also forwarded immediately.",
+          "humidity_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+          "storage_temp_forwarding": "Writes selected Home Assistant temperature sensors to the GLT heat/cold/DHW storage registers.",
+          "storage_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
+          "storage_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
+          "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
+          "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
+          "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
+          "modbus_connect_delay": "Pause after the connection is established, before the first request is sent. Applies to the first connect and to every reconnect, not to individual requests. Default 0 seconds: disabled. Helps with gateways that need a moment after connecting before they answer reliably.",
+          "eeprom_write_interval": "Minimum time between writes to the same EEPROM register (for example, a heating/cooling limit). The 60-second default protects the EEPROM's limited write cycles. This protection applies additionally and independently of the general write cooldown. LOWERING IT IS AT YOUR OWN RISK and accelerates EEPROM wear.",
+          "polling_jitter": "Adds a random delay from 0 up to the selected percentage of the scan interval before every Modbus poll. Example: a 10-second scan interval with 20% adds 0–2 seconds. This spreads simultaneous requests from multiple systems. Default 0%: disabled.",
+          "communication_diagnostics": "Creates additional diagnostic entities for the last successful poll, poll duration, consecutive failures, and active registers. Total polls and failures are shown as attributes. No additional Modbus registers are read. Default: disabled.",
+          "write_cooldown": "Minimum time between writes to the same register address. A repeat attempt is completely rejected before transmission and Home Assistant shows the remaining wait. Other registers remain writable. Default: 5 seconds. 0 fully disables this general protection; 1–600 enforces it. Change at your own risk; separate EEPROM protection remains active.",
+          "knx_bridge": "Mirrors the IDM KNX communication objects onto the bus, so a KNX installation reaches the heat pump without a separate BAOS gateway.",
+          "knx_send": "Send a telegram whenever a value changes.",
+          "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
+          "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
+          "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
+          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
         }
       },
       "guided_detail": {
@@ -606,7 +674,10 @@
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
           "ai_task_entity": "Home Assistant AI Task entity",
           "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
-          "differential_circuits": "Differential-temperature controlled circuits"
+          "differential_circuits": "Differential-temperature controlled circuits",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "predictive_advisor": "Enable predictive advisor",
+          "connection_mode": "Connection mode"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -668,7 +739,10 @@
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
           "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
+          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
+          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured."
         }
       },
       "guided_review": {
@@ -738,7 +812,8 @@
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
           "differential_circuits": "Differential-temperature controlled circuits",
-          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor"
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "predictive_advisor": "Enable predictive advisor"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -755,7 +830,8 @@
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
-          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations."
+          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities."
         },
         "sections": {
           "features": {
@@ -792,7 +868,8 @@
               "short_cycle_minutes": "Short compressor-cycle threshold",
               "dynamic_price_entity": "Dynamic electricity price sensor",
               "comfort_schedule_windows": "Additional comfort windows",
-              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor"
+              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+              "predictive_advisor": "Enable predictive advisor"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -825,7 +902,8 @@
               "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
               "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
-              "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations."
+              "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+              "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities."
             }
           },
           "room_temperature_forwarding": {
@@ -1130,11 +1208,75 @@
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
           "ai_task_entity": "Home Assistant AI Task entity",
           "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
-          "differential_circuits": "Differential-temperature controlled circuits"
+          "differential_circuits": "Differential-temperature controlled circuits",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "predictive_advisor": "Enable predictive advisor",
+          "connection_mode": "Connection mode"
         },
         "data_description": {
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
+          "hide_unused_registers": "Does not create entities for unused or unsupported registers when the latest poll returns sentinel values such as −1.0, 255, 65535 or −32768. Normal 0 values stay visible.",
+          "heating_circuits": "Select all heating circuits that are installed and active in your system. Circuit A is always active.",
+          "zone_count": "Number of installed IDM zone modules. Select 0 if your system has none; selecting a higher number opens another page for the room count of each module. Reducing the count removes mappings for zones that no longer exist.",
+          "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
+          "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
+          "energy_manager_min_surplus_kw": "The surplus must remain above this threshold when evaluated. No write is made when a source is missing, unavailable or has an invalid unit.",
+          "energy_manager_min_battery_soc": "Prevents automatic charging from using a battery below this state of charge. Leave the battery source empty in the external power mapping to disable this additional condition.",
+          "energy_manager_dhw_target": "Target used by the existing safe DHW boost transaction. The previous setpoint and system mode are restored automatically.",
+          "energy_manager_dhw_timeout": "Maximum time for one automatic DHW boost before the previous state is restored.",
+          "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
+          "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
+          "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
+          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
+          "energy_manager_exclusive_control": "The automatic DHW boost stays disabled unless this is confirmed. Do not enable it while Smartfox, openWB or another system controls DHW.",
+          "health_monitor": "Adds diagnostic problem sensors and a current health report. It only observes data and never writes to the heat pump. Disabled by default.",
+          "comfort_schedule": "Applies one daily comfort window to one heating circuit. Disabled by default.",
+          "comfort_schedule_exclusive_control": "The schedule stays disabled unless confirmed. Do not enable it while another system controls the heating circuit.",
+          "comfort_schedule_circuit": "Only the selected circuit is changed.",
+          "comfort_schedule_start": "Local start time. Use 24-hour HH:MM notation.",
+          "comfort_schedule_end": "Local end time. Use 24-hour HH:MM notation. Equal start and end disables the window.",
+          "comfort_schedule_target": "Target used during the comfort window.",
+          "heating_curve_assistant": "Adds a read-only recommendation when a heating circuit flow temperature consistently misses or exceeds its calculated setpoint.",
+          "weather_preheat_advisory": "Uses the selected weather entity's hourly forecast for the next six hours. The advice is unavailable if the provider has no valid forecast; no heat-pump setting is changed.",
+          "weather_entity": "Weather entity used for the advisory.",
+          "weather_preheat_threshold": "Below this temperature, the advisory recommends preheating. It does not change any setpoint.",
+          "energy_price_per_kwh": "Used for optional cost sensors. This is a fixed local estimate and does not fetch tariff data.",
+          "energy_co2_g_per_kwh": "Used for optional CO₂ sensors. Enter the emission factor of your electricity mix.",
+          "technician_codes": "Creates two sensors with the time-dependent access codes for Installer Levels 1 and 2 and refreshes them every minute. Enable this only if these codes may be visible in Home Assistant. The codes are visible to every Home Assistant user who can access these entities.",
+          "enable_cascade": "Reads additional registers for a cascade of multiple heat pumps. Leave this disabled for a single heat pump to avoid unnecessary or unsupported register requests.",
+          "solar_thermal": "Reads the solar-thermal registers (collector, charging and solar return temperatures) and groups them under the Solaranlage device. Disable when the plant has no collectors: the solar registers leave the poll and the empty group disappears after a reload. Re-enabling restores the entities with their previous IDs.",
+          "web_extra_data": "Supplements Modbus data with information from the local Navigator web interface, such as messages. A valid local web PIN must be stored in the connection settings; no cloud service is used.",
+          "web_scan_interval": "Time between reads of the local Navigator web interface. This setting applies only when additional web data is enabled. Shorter intervals provide updates sooner but increase network traffic. Default: 30 seconds.",
+          "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
+          "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
+          "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
+          "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
+          "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
+          "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+          "humidity_forwarding": "Writes a selected Home Assistant humidity sensor to the global GLT humidity register.",
+          "humidity_forwarding_interval": "How often the selected humidity is checked; state changes are also forwarded immediately.",
+          "humidity_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+          "storage_temp_forwarding": "Writes selected Home Assistant temperature sensors to the GLT heat/cold/DHW storage registers.",
+          "storage_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
+          "storage_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
+          "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
+          "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
+          "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
+          "modbus_connect_delay": "Pause after the connection is established, before the first request is sent. Applies to the first connect and to every reconnect, not to individual requests. Default 0 seconds: disabled. Helps with gateways that need a moment after connecting before they answer reliably.",
+          "eeprom_write_interval": "Minimum time between writes to the same EEPROM register (for example, a heating/cooling limit). The 60-second default protects the EEPROM's limited write cycles. This protection applies additionally and independently of the general write cooldown. LOWERING IT IS AT YOUR OWN RISK and accelerates EEPROM wear.",
+          "polling_jitter": "Adds a random delay from 0 up to the selected percentage of the scan interval before every Modbus poll. Example: a 10-second scan interval with 20% adds 0–2 seconds. This spreads simultaneous requests from multiple systems. Default 0%: disabled.",
+          "communication_diagnostics": "Creates additional diagnostic entities for the last successful poll, poll duration, consecutive failures, and active registers. Total polls and failures are shown as attributes. No additional Modbus registers are read. Default: disabled.",
+          "write_cooldown": "Minimum time between writes to the same register address. A repeat attempt is completely rejected before transmission and Home Assistant shows the remaining wait. Other registers remain writable. Default: 5 seconds. 0 fully disables this general protection; 1–600 enforces it. Change at your own risk; separate EEPROM protection remains active.",
+          "knx_bridge": "Mirrors the IDM KNX communication objects onto the bus, so a KNX installation reaches the heat pump without a separate BAOS gateway.",
+          "knx_send": "Send a telegram whenever a value changes.",
+          "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
+          "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
+          "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
+          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
         }
       },
       "guided_detail": {
@@ -1216,7 +1358,10 @@
           "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
           "ai_task_entity": "Home Assistant AI Task entity",
           "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
-          "differential_circuits": "Differential-temperature controlled circuits"
+          "differential_circuits": "Differential-temperature controlled circuits",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "predictive_advisor": "Enable predictive advisor",
+          "connection_mode": "Connection mode"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1278,7 +1423,10 @@
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
           "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
+          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
+          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured."
         }
       },
       "guided_review": {
@@ -2723,6 +2871,7 @@
         "plant": "Plant, heating circuits and zones",
         "profile": "Entity profile",
         "health": "Health monitor",
+        "predictive_advisor": "Predictive advisor",
         "energy": "Energy costs and carbon",
         "energy_manager": "Automatic PV hot water",
         "comfort": "Comfort schedule",
@@ -3073,6 +3222,10 @@
     "modbus_degraded_web_active": {
       "title": "IDM Modbus connection interrupted — web data active",
       "description": "The Modbus connection to **{host}** is currently interrupted. Your heat pump data keeps flowing through the local Navigator web interface, so the web entities continue to update.\n\nThis message disappears automatically as soon as the Modbus connection recovers — no action needed. If it persists, check the heat pump's network connection or use the *Reload connection* button on the integration's device page."
+    },
+    "whats_new_0_21_0": {
+      "title": "What's new since 0.20.1: Predictive Advisor",
+      "description": "This is a notice, not an error. Version 0.21.0 adds the Predictive Advisor: a strictly read-only analysis layer that explains why the heat pump is running, detects anomalies against the plant's own baselines, scores health and efficiency, learns a COP map and building model, and recommends hot-water charging windows from a PV or price forecast plus a 24-hour plan. It never changes any setting on its own, works fully local and needs no AI. It is on by default with the Smart profile and can be disabled in the integration options."
     }
   },
   "services": {

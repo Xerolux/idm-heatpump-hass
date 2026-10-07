@@ -189,6 +189,25 @@ Warmwasser-Temperaturabweichung und unplausible Temperaturwerte. Der Sensor
 `iDM health report` zeigt `ok` oder `problem` und listet aktive Prüfungen in
 seinen Attributen auf. Er verändert keine Wärmepumpen-Einstellung.
 
+### Predictive Advisor
+
+Der **Predictive Advisor** ist eine strikt schreibgeschützte Analyse- und
+Empfehlungsebene und mit dem Smart-Profil standardmäßig aktiviert. Er
+erklärt, warum die Wärmepumpe läuft, erkennt Anomalien gegen die eigenen
+Baselines der Anlage, bewertet Zustand und Effizienz, lernt eine COP-Karte
+und ein Gebäudemodell und empfiehlt Heizkurven-Schritte, Warmwasser-Fenster
+und einen 24-Stunden-Plan. Details: [Predictive Advisor](Predictive-Advisor).
+
+| Option | Beschreibung | Standard |
+|--------|-------------|----------|
+| Predictive Advisor aktivieren | Schreibgeschützte Analyse und Empfehlungen; beim Deaktivieren werden alle zugehörigen Entitäten entfernt | an (mit Smart-Profil) |
+| PV-Prognose-Sensor für den Predictive Advisor | Optionaler Sensor mit stündlicher PV-Prognose (PVForecast- oder Solcast-Attribute); Grundlage für PV-basierte Warmwasser-Fenster | aus |
+| Dynamischer Strompreis-Sensor | Bestehende Option; liefert auch zukünftige Stundenpreise für die Wärmekosten-Optimierung | aus |
+
+Der Advisor arbeitet vollständig lokal und deterministisch — ohne KI, Cloud
+oder LLM. Der Strompreis-Sensor und die Wetter-Entität werden zusätzlich von
+den Energie-Statistiken bzw. dem Wetter-Hinweis genutzt.
+
 ### Abfrageintervall
 
 Das Abfrageintervall legt fest, wie oft Register abgefragt werden.

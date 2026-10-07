@@ -119,6 +119,7 @@ from .const import (
     CONF_MODBUS_TIMEOUT,
     CONF_MODEL_OVERRIDE,
     CONF_POLLING_JITTER,
+    CONF_PREDICTIVE_ADVISOR,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_ROOM_TEMP_FORWARDING_INTERVAL,
@@ -190,6 +191,7 @@ from .const import (
     DEFAULT_MODEL_OVERRIDE,
     DEFAULT_POLLING_JITTER,
     DEFAULT_PORT,
+    DEFAULT_PREDICTIVE_ADVISOR,
     DEFAULT_ROOM_TEMP_FORWARDING,
     DEFAULT_ROOM_TEMP_FORWARDING_INTERVAL,
     DEFAULT_ROOM_TEMP_FORWARDING_TOLERANCE,
@@ -447,6 +449,7 @@ _GUIDED_FEATURES: dict[str, tuple[str | None, tuple[str, ...], tuple[str, ...], 
     "profile": (None, (CONF_FEATURE_PROFILE,), (), ()),
     "ai_advisor": (CONF_AI_ADVISOR, (CONF_AI_URL, CONF_AI_MODEL, CONF_AI_LANGUAGE, *AI_EXTRA_DEFAULTS), (), ()),
     "health": (CONF_HEALTH_MONITOR, (), (CONF_SHORT_CYCLE_MINUTES,), ()),
+    "predictive_advisor": (CONF_PREDICTIVE_ADVISOR, (CONF_ADVISOR_PV_FORECAST_ENTITY,), (), ()),
     "energy": (
         None,
         (CONF_DYNAMIC_PRICE_ENTITY, CONF_ADVISOR_PV_FORECAST_ENTITY),
@@ -568,6 +571,7 @@ def _default_options() -> dict[str, Any]:
         CONF_ENERGY_PRICE: DEFAULT_ENERGY_PRICE,
         CONF_DYNAMIC_PRICE_ENTITY: "",
         CONF_ADVISOR_PV_FORECAST_ENTITY: "",
+        CONF_PREDICTIVE_ADVISOR: DEFAULT_PREDICTIVE_ADVISOR,
         CONF_ENERGY_CO2_FACTOR: DEFAULT_ENERGY_CO2_FACTOR,
         CONF_COMFORT_SCHEDULE: DEFAULT_COMFORT_SCHEDULE,
         CONF_COMFORT_SCHEDULE_EXCLUSIVE: DEFAULT_COMFORT_SCHEDULE_EXCLUSIVE,
@@ -779,6 +783,10 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                         vol.Required(CONF_AI_LANGUAGE, default=options.get(CONF_AI_LANGUAGE, "de")): SelectSelector(
                             SelectSelectorConfig(options=["de", "en"], mode=SelectSelectorMode.DROPDOWN)
                         ),
+                        vol.Required(
+                            CONF_PREDICTIVE_ADVISOR,
+                            default=options.get(CONF_PREDICTIVE_ADVISOR, DEFAULT_PREDICTIVE_ADVISOR),
+                        ): BooleanSelector(BooleanSelectorConfig()),
                         vol.Required(
                             CONF_HEALTH_MONITOR,
                             default=options.get(CONF_HEALTH_MONITOR, DEFAULT_HEALTH_MONITOR),

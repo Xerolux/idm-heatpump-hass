@@ -170,6 +170,25 @@ current COP, DHW temperature deviation and implausible temperature values. The
 `iDM health report` sensor exposes `ok` or `problem` and lists active checks in
 its attributes. It does not change any heat-pump setting.
 
+### Predictive Advisor
+
+The **Predictive Advisor** is a strictly read-only analysis and
+recommendation layer, on by default with the Smart profile. It explains why
+the heat pump is running, detects anomalies against the plant's own
+baselines, scores health and efficiency, learns a COP map and building
+model, and recommends heating-curve steps, hot-water windows and a 24-hour
+plan. Details: [Predictive Advisor](Predictive-Advisor).
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| Enable predictive advisor | Read-only analysis and recommendations; disabling removes all of its entities | on (with Smart profile) |
+| Predictive advisor PV forecast sensor | Optional sensor with an hourly PV forecast (PVForecast or Solcast attributes); basis for PV-based hot-water windows | off |
+| Dynamic electricity price sensor | Existing option; also supplies future hourly prices for the heat-cost optimization | off |
+
+The advisor works fully local and deterministic — no AI, cloud or LLM. The
+price sensor and the weather entity are additionally used by the energy
+statistics and the weather advice.
+
 ### Scan Interval
 
 The scan interval determines how often registers are polled.

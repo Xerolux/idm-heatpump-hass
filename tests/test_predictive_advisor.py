@@ -7,6 +7,8 @@ from types import SimpleNamespace
 from typing import Any
 from unittest.mock import MagicMock
 
+import pytest
+
 from custom_components.idm_heatpump.binary_sensor import async_setup_entry as async_setup_binary_sensors
 from custom_components.idm_heatpump.predictive_advisor import (
     EVENT_IDM_ADVISOR_RECOMMENDATION,
@@ -461,7 +463,9 @@ def test_entity_values_before_and_after_observation() -> None:
     attributes = status_sensor.extra_state_attributes
     assert attributes["write_actions"] is False
     assert attributes["capabilities"]["power_meter"] is False
-    assert attributes["observation_days"] == 0.0
+    # The first observation happened at T0; depending on the wall clock at
+    # test runtime that is a fraction of a day ago, never more than one day.
+    assert attributes["observation_days"] == pytest.approx(0.0, abs=1.0)
 
     advisor.submit(_recommendation())
     assert recommendation_sensor.native_value == 1
