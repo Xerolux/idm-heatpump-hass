@@ -78,6 +78,9 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── operation_entities.py         # Sensors publishing that analysis
 │   ├── predictive_advisor.py         # Read-only predictive advisor framework (recommendations, confidence, capabilities, data quality)
 │   ├── predictive_advisor_entities.py # Advisor status/recommendation sensors and optimization-available binary sensor
+│   ├── advisor_analytics.py          # Persistent advisor models: rolling baselines, COP map, building regressions
+│   ├── advisor_engine.py             # Producer orchestration: anomalies, heating curve, DHW window, 24 h plan
+│   ├── advisor_operation_reason.py   # Composes the why-is-the-heat-pump-running explanation
 │   ├── energy_manager.py              # Optional, fail-closed PV surplus DHW automation
 │   ├── energy_statistics.py           # Persistent electrical/thermal energy and COP totals
 │   ├── energy_statistics_entities.py  # Home Assistant entities for energy statistics
@@ -161,6 +164,9 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_model_resolution.py
 │   ├── test_operation_analysis.py
 │   ├── test_operation_entities.py
+│   ├── test_advisor_analytics.py
+│   ├── test_advisor_engine.py
+│   ├── test_advisor_operation_reason.py
 │   ├── test_predictive_advisor.py
 │   ├── test_pages_seo.py
 │   ├── test_platforms.py
@@ -541,7 +547,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | API register-failure log filter | `log_filter.py` | Suppresses repeated retry-exhaustion warnings for unsupported registers |
 | PV surplus operation | `calculated_sensors.py`, `web_demand_reason.py`, `web_demand_reason_entities.py` | Derived diagnostic binary sensor (issue #353): `on` when surplus is signalled (`pv_surplus` ≥ 0.05 kW or SG-Ready *Supergreen*) **and** the heat pump draws power (`power_consumption_hp` ≥ 0.05 kW, fallback `hp_operating_mode` ≠ Off). Base profile; only created when both source halves exist. OR-shaped source registers must stay listed in `polling_plan.py`. Navigator 10 web supplement additionally exposes the controller's own demand reason (`web_demand_reason`, `web_demand_reason_pv`) from the WebSocket `home/detail` frame |
 | Smart Energy & Comfort | `energy_statistics.py`, `health_monitor.py`, `comfort_advisory.py`, `comfort_scheduler.py`, `energy_manager.py`, `external_power_forwarding.py` | Opt-in Smart-profile package: persistent energy/COP/CO₂ totals, read-only health checks, comfort advice and scheduling, fail-closed PV-surplus DHW boost (needs exclusive-controller confirmation), optional forwarding of HA PV/house/battery sensors to GLT registers |
-| Predictive advisor (phase 1) | `predictive_advisor.py`, `predictive_advisor_entities.py` | Strictly read-only recommendation framework (`docs/dev/predictive-advisor-roadmap.md`): recommendation lifecycle with history, confidence levels, capability detection, data-quality gate, observation stages and `idm_advisor_recommendation` events. Smart profile. Producers (heating curve, PV, price, 24 h plan) follow in later phases; the advisor never writes to the heat pump |
+| Predictive advisor | `predictive_advisor.py`, `predictive_advisor_entities.py`, `advisor_analytics.py`, `advisor_engine.py`, `advisor_operation_reason.py` | Strictly read-only recommendation layer (`docs/dev/predictive-advisor-roadmap.md`): lifecycle/history/confidence/capabilities/data-quality, anomaly detection vs. own baselines, health and efficiency scores, COP map, building model, heating-curve recommendations, PV/price hot-water windows and the 24 h plan, `idm_advisor_recommendation` events. Smart profile; PV forecast sensor optionable (`advisor_pv_forecast_entity`). The advisor never writes to the heat pump |
 | AI plant adviser | `ai_advisor.py`, `ai_advisor_entities.py`, `ai_learning.py`, `ai_cloud.py` | Experimental, read-only, off by default. Deterministic measured-data reports; optional free-form explanations via local Ollama, an HA AI Task entity or explicitly consented cloud requests — the only authorized cloud exception (fixed endpoints, masked keys, numeric allowlist, persisted daily reservations) |
 
 ---

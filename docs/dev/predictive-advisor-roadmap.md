@@ -30,6 +30,14 @@ feeds `PredictiveAdvisor.submit()`; none of them adds a write path.
 
 ## Phase plan
 
+All nine phases are implemented. Phases 2-9 ship as producers on top of the
+phase-1 framework: `advisor_analytics.py` (baselines, COP map, building
+model), `advisor_operation_reason.py` (why is the heat pump running) and
+`advisor_engine.py` (anomalies, health/efficiency scores, heating curve,
+DHW window from PV/price forecasts, 24 h plan). The PV forecast sensor is
+the `advisor_pv_forecast_entity` option; the price sensor reuses the
+existing `dynamic_price_entity`.
+
 | Phase | Content | Builds on |
 |---|---|---|
 | 2 — Diagnostics | Operation reason ("why is the heat pump running"), DHW status explanation, flow/spread/DHW-charge-time baselines | `web_demand_reason.py` (Nav 10 demand reason already decoded), `operation_analysis.py` (cycle baselines; needs flow-rate + spread tracking added) |

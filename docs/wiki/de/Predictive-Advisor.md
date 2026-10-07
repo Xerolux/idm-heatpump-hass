@@ -12,21 +12,43 @@ Empfehlungen — er verändert niemals selbst etwas an der Wärmepumpe.
 Der Advisor ist Teil des Profils [Smart Energy and Comfort](../Smart-Energy-and-Comfort).
 Er arbeitet vollständig lokal; keine Daten verlassen Ihr Home Assistant.
 
-## Was Phase 1 liefert
+## Entitäten
 
-Die erste Phase legt das Fundament und beginnt mit der Datensammlung. Nach
-dem Aktivieren des Smart-Profils sehen Sie:
+Alle Entitäten erscheinen mit dem Smart-Profil und werden bedeutsam, sobald
+der Advisor Daten gesammelt hat. Sensoren, deren Modelle noch nicht gelernt
+sind, bleiben stattdessen nicht verfügbar — sie raten nie.
 
 | Entität | Bedeutung |
 |---|---|
 | `sensor.<Gerät>_advisor_status` | Beobachtungsstufe: **Sammelt Daten** (Tag 1), **Erste Hinweise** (Tag 1–7), **Empfehlungen aktiv** (ab Tag 7), **Basis etabliert** (ab Tag 30). Die Attribute zeigen erkannte Anlagenfähigkeiten, Datenqualität und die aktuelle Konfidenz |
 | `sensor.<Gerät>_advisor_recommendations` | Anzahl aktiver Empfehlungen; jede wird mit vollständiger Erklärung (Gründe, Werte, Konfidenz) als Attribut veröffentlicht |
+| `sensor.<Gerät>_advisor_confidence` | Konfidenz des Advisors in Prozent mit Stufe |
+| `sensor.<Gerät>_advisor_operation_reason` | Warum die Wärmepumpe gerade läuft (PV-Überschuss, Warmwasser, anfordernder Heizkreis, Anforderungsgrund der Regelung) — mit den Zahlen dahinter |
+| `binary_sensor.<Gerät>_advisor_anomaly_detected` | An, solange eine Anomalie-Empfehlung aktiv ist |
+| `sensor.<Gerät>_advisor_health_score` | Anlagenzustand 0–100 aus dokumentierten Komponenten (Hydraulik, Verdichter, Warmwasser, Effizienz); jede Komponente existiert nur mit Baseline-Daten |
+| `sensor.<Gerät>_advisor_expected_cop` / `advisor_efficiency_score` | COP, den die gelernte Außentemperatur/Vorlauf-Karte am aktuellen Betriebspunkt erwartet, und wie der beobachtete 7-Tage-COP dagegensteht |
+| `sensor.<Gerät>_advisor_building_heat_loss` | Gebäude-Wärmeverlust in W/K aus der Wärmeleistungs-Regression |
+| `sensor.<Gerät>_advisor_building_thermal_inertia` | Effektive Wärmekapazität (kWh/K) aus beobachteten Abkühl-Episoden |
+| `sensor.<Gerät>_advisor_optimal_flow_temp` | Vorlauftemperatur, die die gelernte Kurve bei der aktuellen Außentemperatur erzeugt hat, während die Räume im Soll lagen |
+| `sensor.<Gerät>_advisor_hc_X_curve_recommendation` | Heizkurven-Empfehlung je Heizkreis — höchstens ein dokumentierter 0,02-Schritt pro Empfehlung, erst nach 7 Baseline-Tagen Raumtemperatur-Abweichung |
+| `sensor.<Gerät>_advisor_dhw_recommendation` | Bestes Warmwasser-Ladefenster aus der PV-Prognose (bevorzugt) oder den günstigsten Wärmekosten (Preis ÷ erwarteter COP) |
+| `sensor.<Gerät>_advisor_predicted_heat_demand` | Prognostizierter Wärmebedarf der nächsten 24 Stunden (Wärmeverlust × prognostizierte Temperaturdifferenz) |
+| `sensor.<Gerät>_advisor_next_24h` | Der kombinierte Plan: erwartete PV, teure Stunden und eine Konfliktwarnung, wenn das Warmwasser-Fenster darin liegt |
 | `binary_sensor.<Gerät>_advisor_optimization_available` | An, solange mindestens eine unbearbeitete Empfehlung aktiv ist |
 
-Die Empfehlungen selbst kommen mit den späteren Phasen (Heizkurve,
-Warmwasser, PV, Strompreis, 24-Stunden-Plan — siehe Roadmap in
-`docs/dev/predictive-advisor-roadmap.md`). Bis dahin melden die Sensoren
-ehrlich, dass der Advisor noch sammelt.
+### Woher die externen Eingaben kommen
+
+- **Wetter**: die bestehende Option *Wetter-Entität* (stündliche Prognose
+  über `weather.get_forecasts`).
+- **PV-Prognose**: optionaler Sensor in den Optionen
+  (*PV-Prognose-Sensor für den Predictive Advisor*); PVForecast-Attribute
+  (`detailed_forecast`) und Solcast-Listen (`forecast`) werden verstanden.
+- **Strompreis**: die bestehende Option *Dynamischer Strompreis-Sensor*;
+  zukünftige Stundenpreise werden aus üblichen Attribut-Formen
+  (`today`/`tomorrow`/`data`/`prices`-Listen) gelesen.
+
+Fehlende oder nicht auswertbare Eingaben lassen die betroffene Empfehlung
+weg — der Advisor fällt nie auf erfundene Zahlen zurück.
 
 ### Ereignisse
 

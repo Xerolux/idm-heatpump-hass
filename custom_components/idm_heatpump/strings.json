@@ -92,7 +92,8 @@
           "energy_manager_cooldown": "Automation cooldown",
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
-          "differential_circuits": "Differential-temperature controlled circuits"
+          "differential_circuits": "Differential-temperature controlled circuits",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -108,7 +109,8 @@
           "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
+          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations."
         },
         "sections": {
           "features": {
@@ -144,7 +146,8 @@
               "device_hierarchy": "Group entities by system area",
               "short_cycle_minutes": "Short compressor-cycle threshold",
               "dynamic_price_entity": "Dynamic electricity price sensor",
-              "comfort_schedule_windows": "Additional comfort windows"
+              "comfort_schedule_windows": "Additional comfort windows",
+              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -176,7 +179,8 @@
               "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
               "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
-              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control."
+              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
+              "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations."
             }
           },
           "room_temperature_forwarding": {
@@ -733,7 +737,8 @@
           "energy_manager_cooldown": "Automation cooldown",
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
-          "differential_circuits": "Differential-temperature controlled circuits"
+          "differential_circuits": "Differential-temperature controlled circuits",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -749,7 +754,8 @@
           "energy_manager_cooldown": "Minimum time between automatic starts. This prevents repeated starts after a boost has ended.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
+          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations."
         },
         "sections": {
           "features": {
@@ -785,7 +791,8 @@
               "device_hierarchy": "Group entities by system area",
               "short_cycle_minutes": "Short compressor-cycle threshold",
               "dynamic_price_entity": "Dynamic electricity price sensor",
-              "comfort_schedule_windows": "Additional comfort windows"
+              "comfort_schedule_windows": "Additional comfort windows",
+              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -817,7 +824,8 @@
               "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
               "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
-              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control."
+              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
+              "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations."
             }
           },
           "room_temperature_forwarding": {
@@ -1304,6 +1312,9 @@
   },
   "entity": {
     "binary_sensor": {
+      "advisor_anomaly_detected": {
+        "name": "Advisor anomaly detected"
+      },
       "advisor_optimization_available": {
         "name": "Advisor optimization available"
       },
@@ -1722,6 +1733,46 @@
       }
     },
     "sensor": {
+      "advisor_building_heat_loss": {
+        "name": "Advisor building heat loss"
+      },
+      "advisor_building_thermal_inertia": {
+        "name": "Advisor building thermal inertia"
+      },
+      "advisor_confidence": {
+        "name": "Advisor confidence"
+      },
+      "advisor_curve_recommendation": {
+        "name": "Advisor heating curve {circuit} recommendation"
+      },
+      "advisor_dhw_recommendation": {
+        "name": "Advisor hot water recommendation"
+      },
+      "advisor_efficiency_score": {
+        "name": "Advisor efficiency score"
+      },
+      "advisor_expected_cop": {
+        "name": "Advisor expected COP"
+      },
+      "advisor_health_score": {
+        "name": "Advisor health score"
+      },
+      "advisor_next_24h": {
+        "name": "Advisor 24 hour plan",
+        "state": {
+          "ok": "OK",
+          "attention": "Attention"
+        }
+      },
+      "advisor_operation_reason": {
+        "name": "Advisor operation reason"
+      },
+      "advisor_optimal_flow_temp": {
+        "name": "Advisor optimal flow temperature"
+      },
+      "advisor_predicted_heat_demand": {
+        "name": "Advisor predicted heat demand 24h"
+      },
       "advisor_recommendations": {
         "name": "Advisor recommendations"
       },
