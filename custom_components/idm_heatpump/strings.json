@@ -3225,7 +3225,7 @@
     },
     "whats_new_0_21_0": {
       "title": "What's new since 0.20.1: many new features",
-      "description": "This is a notice, not an error. The update added many new features - above all the Predictive Advisor: it explains why the heat pump is running, detects anomalies, scores health and efficiency, learns a COP map and building model, and recommends heating-curve steps, hot-water windows from a PV or price forecast and a 24-hour plan. Everything is strictly read-only, fully local and works without any AI - and can be disabled in the integration options. See what is now possible: https://xerolux.github.io/idm-heatpump-hass/docs/predictive-advisor/"
+      "description": "This is a notice, not an error. The update added many new features - above all the Predictive Advisor: it explains why the heat pump is running, detects anomalies, scores health and efficiency, learns a COP map and building model, and recommends heating-curve steps, hot-water windows from a PV or price forecast and a 24-hour plan. Everything is strictly read-only, fully local and works without any AI - and can be disabled in the integration options. Tap \"Learn more\" for the full overview of everything that is now possible."
     }
   },
   "services": {
