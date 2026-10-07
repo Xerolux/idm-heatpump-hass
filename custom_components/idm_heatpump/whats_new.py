@@ -20,7 +20,8 @@ from __future__ import annotations
 import inspect
 import logging
 from collections.abc import Mapping
-from typing import Any
+from datetime import UTC, datetime, timedelta
+from typing import Any, Final
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -29,6 +30,13 @@ from homeassistant.helpers import issue_registry as ir
 from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
+
+#: A stamp-less entry older than this at its first contact with the notice
+#: code is a pre-existing installation that was just updated, not a fresh
+#: install (fresh entries are minutes old at their first setup). Only the
+#: release that introduces the stamp needs this; later releases rely on the
+#: stamp alone.
+_PRE_EXISTING_AFTER: Final = timedelta(hours=1)
 
 #: Bump to the next version (and move the old id into _SUPERSEDED_IDS) when
 #: a future release again warrants a notice. The id encodes the version so
@@ -83,6 +91,18 @@ async def async_note_release(hass: HomeAssistant, entry: ConfigEntry, current_ve
     if isinstance(stored, str) and stored:
         # An older version ran before: an update was just installed.
         ensure_whats_new_issue(hass)
+    else:
+        # No stamp: either a fresh install, or an entry from a release before
+        # the stamp existed (exactly this release's upgrade cohort). An old
+        # ``created_at`` distinguishes them: existing installations get their
+        # one notice, brand-new entries are stamped silently.
+        created = getattr(entry, "created_at", None)
+        if (
+            isinstance(created, datetime)
+            and created.tzinfo is not None
+            and (datetime.now(UTC) - created) > _PRE_EXISTING_AFTER
+        ):
+            ensure_whats_new_issue(hass)
     data[LAST_RUN_VERSION_DATA_KEY] = current_version
     update = getattr(hass.config_entries, "async_update_entry", None)
     if update is None:
