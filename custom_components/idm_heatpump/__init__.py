@@ -226,7 +226,7 @@ from .web_data import (
     async_read_web_supplement,
     web_pin_configured,
 )
-from .whats_new import ensure_whats_new_issue
+from .whats_new import LAST_RUN_VERSION_DATA_KEY, async_note_release
 
 CONFIG_SCHEMA = cv.config_entry_only_config_schema(DOMAIN)
 
@@ -252,6 +252,8 @@ _DETECTION_ONLY_DATA_KEYS = frozenset(
         CONF_DETECTED_NAVIGATOR_VERSION,
         CONF_DETECTED_SOFTWARE_VERSION,
         CONF_DETECTED_WEB_VARIANT,
+        # The what's-new stamp: bookkeeping, not a setting.
+        LAST_RUN_VERSION_DATA_KEY,
     }
 )
 
@@ -999,7 +1001,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             # removes it completely, entities included. The one-time
             # what's-new notice points upgrade users at the feature.
             if bool(entry.options.get(CONF_PREDICTIVE_ADVISOR, DEFAULT_PREDICTIVE_ADVISOR)):
-                ensure_whats_new_issue(hass)
+                # One-time-per-update notice: fires only when the entry last
+                # ran a different integration version (never fresh installs,
+                # never again on restarts).
+                integration = await async_get_integration(hass, DOMAIN)
+                await async_note_release(hass, entry, str(integration.manifest.get("version") or "") or None)
                 predictive_advisor = PredictiveAdvisor(coordinator)
                 await predictive_advisor.async_load()
                 coordinator.register_required_registers("predictive_advisor", predictive_advisor.required_registers)
