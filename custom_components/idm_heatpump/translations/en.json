@@ -3200,8 +3200,8 @@
       "description": "The Modbus connection to **{host}** is currently interrupted. Your heat pump data keeps flowing through the local Navigator web interface, so the web entities continue to update.\n\nThis message disappears automatically as soon as the Modbus connection recovers — no action needed. If it persists, check the heat pump's network connection or use the *Reload connection* button on the integration's device page."
     },
     "whats_new_0_21_0": {
-      "title": "What's new since 0.20.1: Predictive Advisor",
-      "description": "This is a notice, not an error. Version 0.21.0 adds the Predictive Advisor: a strictly read-only analysis layer that explains why the heat pump is running, detects anomalies against the plant's own baselines, scores health and efficiency, learns a COP map and building model, and recommends hot-water charging windows from a PV or price forecast plus a 24-hour plan. It never changes any setting on its own, works fully local and needs no AI. It is on by default with the Smart profile and can be disabled in the integration options."
+      "title": "What's new since 0.20.1: many new features",
+      "description": "This is a notice, not an error. The update added many new features - above all the Predictive Advisor: it explains why the heat pump is running, detects anomalies, scores health and efficiency, learns a COP map and building model, and recommends heating-curve steps, hot-water windows from a PV or price forecast and a 24-hour plan. Everything is strictly read-only, fully local and works without any AI - and can be disabled in the integration options. Tap \"Learn more\" for the full overview of everything that is now possible."
     }
   },
   "services": {

@@ -3200,8 +3200,8 @@
       "description": "Die Modbus-Verbindung zu **{host}** ist derzeit gestört. Die Daten deiner Wärmepumpe laufen über die lokale Navigator-Weboberfläche weiter, daher aktualisieren sich die Web-Entitäten weiterhin.\n\nDiese Meldung verschwindet automatisch, sobald die Modbus-Verbindung wiederhergestellt ist — es ist nichts zu tun. Falls sie bestehen bleibt, prüfe die Netzwerkverbindung der Wärmepumpe oder tippe auf dem Geräte-Panel der Integration auf *Verbindung neu laden*."
     },
     "whats_new_0_21_0": {
-      "title": "Neu seit 0.20.1: Predictive Advisor",
-      "description": "Dies ist ein Hinweis, kein Fehler. Version 0.21.0 ergänzt den Predictive Advisor: eine strikt schreibgeschützte Analyse-Ebene, die erklärt, warum die Wärmepumpe läuft, Anomalien gegen die eigenen Baselines der Anlage erkennt, Zustand und Effizienz bewertet, eine COP-Karte und ein Gebäudemodell lernt und Warmwasser-Ladefenster aus PV- oder Preisprognose sowie einen 24-Stunden-Plan empfiehlt. Sie verändert niemals selbst Einstellungen, arbeitet vollständig lokal und benötigt keine KI. Sie ist mit dem Smart-Profil standardmäßig aktiv und kann in den Optionen der Integration deaktiviert werden."
+      "title": "Neu seit 0.20.1: viele neue Funktionen",
+      "description": "Dies ist ein Hinweis, kein Fehler. Mit dem Update sind viele neue Funktionen dazugekommen - vor allem der Predictive Advisor: Er erklärt, warum die Wärmepumpe läuft, erkennt Anomalien, bewertet Zustand und Effizienz, lernt eine COP-Karte und ein Gebäudemodell und empfiehlt Heizkurven-Schritte, Warmwasser-Zeitfenster aus PV- oder Preisprognose sowie einen 24-Stunden-Plan. Alles ist strikt nur lesend, vollständig lokal und funktioniert ohne jede KI - und lässt sich in den Optionen der Integration deaktivieren. Tippe auf \"Mehr erfahren\" für den kompletten Überblick über alles, was jetzt möglich ist."
     }
   },
   "services": {
