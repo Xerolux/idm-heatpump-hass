@@ -7,7 +7,7 @@ This file is a short pointer for Claude-compatible agents.
 ## Snapshot (keep in sync with `manifest.json`)
 
 - **Domain**: `idm_heatpump`
-- **Version**: `0.17.0-beta.3` (previous stable: `0.16.2`; the `0.15.1` line was the last with pymodbus)
+- **Version**: `0.21.0-b1` (previous stable: `0.20.1`; the `0.15.1` line was the last with pymodbus)
 - **Min HA**: 2026.8.1
 - **Python**: 3.14+ (Home Assistant 2026.8 requires 3.14.2)
 - **Dependencies**: `modbus-connection>=4.12.3`, `tmodbus[async-serial]>=0.6.2`,
@@ -20,7 +20,7 @@ This file is a short pointer for Claude-compatible agents.
 - **Active roadmap**: `docs/dev/heatpump-feature-roadmap.md`
 - **Open work audit**: `docs/dev/open-work-audit.md`
 - **Component model evaluation**: `docs/dev/component-model-evaluation.md`
-- **Code audit and improvement plan**: `docs/dev/code-audit-2026-09.md`
+- **Code audit**: `docs/dev/code-audit-2026-09.md` (completed; historical record)
 
 **Language:** write everything in English — changelog, docs, commit messages,
 pull request text, comments. German belongs only in `README_de.md` and the Home

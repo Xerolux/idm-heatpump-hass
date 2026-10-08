@@ -58,9 +58,10 @@ Three findings surfaced while implementing that this audit had not recorded:
 - PyPI dependency check: all three runtime pins are current.
 - GitHub's existing main CI passed HACS, Hassfest and all four quality matrix
   legs. This is baseline evidence, not CI for the changes on this branch.
-- E1 remains open: the unit suite stubs Home Assistant. The CI matrix still names
-  the September beta `2026.9.0b0`; moving to the stable release is a separate D7
-  follow-up. No live Home Assistant or physical-device validation was performed.
+- E1 was still open at this validation: the unit suite stubs Home Assistant. The CI matrix
+  still names the September beta `2026.9.0b0`; moving to the stable release is a separate
+  D7 follow-up. No live Home Assistant or physical-device validation was performed.
+  (E1 has since shipped — see the implementation status table above.)
 
 
 
