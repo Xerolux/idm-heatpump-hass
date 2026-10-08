@@ -10,29 +10,58 @@ Den stabilen Kanal zeigt das [aktuelle stabile Release](https://github.com/Xerol
 Die Quellstand-Versionen unten werden automatisch geprüft. Alte Releases
 behalten die Abhängigkeiten ihres getaggten Manifests.
 
-## Release-Entscheidung zu 0.19.0
+## Release-Entscheidung zu 0.20.1
 
-**0.19.0** ist der stabile Schnitt der Linie
-aus sechzehn Betas. Sie macht den Navigator 1.0/1.7 zum vollwertigen
-Familienmitglied — der vollständige offizielle Schreibblock, ein
-firmware-ehrlicher Bereichsfilter, der capture-verifizierte FW030-Float-Sollwert
-und eine Warmwasser-Karte — und ergänzt PV-Sichtbarkeit (Issue #353), die
-Solar-Abschaltung, den Diagnoseexport je Register, einen ehrlicheren
-KI-Berater und das deutsche Wiki-Spiegel. Die Entscheidungen zu
-`0.17.x`/`0.16.x` unten bleiben wie veröffentlicht.
-
-Für den stabilen Schnitt waren automatisierte CI (inklusive der Smoke-Tests
-mit echtem Home Assistant), HACS, Hassfest, Sicherheitsprüfungen,
-Release-Paketierung, Verifikation der veröffentlichten Prüfsummen und der
-Paket-zu-Tag-Vergleich erfolgreich. `0.19.0-b15` lief mit sauberem Log auf der
-Produktionsanlage des Maintainers, und die Register-Korrekturen für den
-Navigator 1.0/1.7 wurden durch die Nach-Update-Diagnose eines Testers auf der
-veröffentlichten Version bestätigt (Issue #364). Die Warmwasser-Entität aus
-b16 deckt die automatisierte Suite ab; die 1.x-Registerkarte selbst steht auf
-der offiziellen Dokumentation, bestätigt durch zwei unabhängige
-Hardware-Aufzeichnungen.
+**0.20.1** ist der stabile Schnitt der selbstheilenden Linie aus fünf
+Prereleases (b1–b5, 30.09.–02.10.2026); am stabilen Tag änderte sich gegen
+b5 kein Code. Für den Schnitt waren automatisierte CI — inklusive der
+Lifecycle-Suite mit echtem Home Assistant sowohl auf dem Minimum 2026.8.1
+als auch auf der 2026.10.0-Beta — sowie HACS, Hassfest,
+Sicherheitsprüfungen, Release-Paketierung, Verifikation der veröffentlichten
+Prüfsummen und der Paket-zu-Tag-Vergleich erfolgreich. Die Linie lief ab
+dem 30.09.2026 auf der Navigator-10-Anlage des Maintainers; der unveränderte
+b5-Kandidat lief vom 02.10. bis zum Schnitt — vier Tage, unter dem
+siebentägigen Gate 6 — ohne dass ein bestätigter Datenfehler, eine
+Reconnect-Schleife, ein unsicherer Schreibzugriff oder eine
+Setup-Regression im Tracker gemeldet wurde. Die Issues
+[#429](https://github.com/Xerolux/idm-heatpump-hass/issues/429)
+(Differenztemperaturkreise, auf der Hardware des Reporters live validiert)
+und [#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319)
+(Vorrangladung am Navigator 1.x) wurden innerhalb der Linie abgeschlossen.
+Die Transport-Pins wurden Home-Assistant-eigene Mindestversionen — hassfest
+lehrt exakte Pins dafür ab — und die Gerätelogik ist auf
+`idm-heatpump-api[web]==2.14.0` gepinnt. Das Gate-6-Defizit ist hier
+festgehalten, damit es sichtbar bleibt.
 
 ## Frühere Release-Entscheidungen
+
+**`0.20.0`** war der web-first stabile Schnitt: Jede Schreibschnittstelle
+des steuerbaren Web-only-Modus — Betriebsart, Fehlerquittierung,
+Warmwasser-Sollwert, Heizkreis-Sollwerte und -Betriebsarten — war
+capture-bestätigt (28.09.2026) und auf der Anlage des Maintainers mit
+umkehrbaren Round-Trips live validiert; die Familie Navigator 1.0/1.7 wurde
+über den offiziellen Coil-Block (c3000–c3003) mit vom Tester bestätigtem
+Verhalten vervollständigt
+([#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319)). Die
+automatisierten Gates waren erfolgreich. Für diesen Schnitt existiert keine
+eigene Evidence-Datei — seine Validierung ist im Evidence-Eintrag der
+0.20.1-Linie festgehalten — und das Release wurde nach sechs Tagen von
+0.20.1 abgelöst, als die selbstheilende Linie bereit war.
+
+**`0.19.0`** ist der stabile Schnitt der Linie aus sechzehn Betas. Sie macht
+den Navigator 1.0/1.7 zum vollwertigen Familienmitglied — der vollständige
+offizielle Schreibblock, ein firmware-ehrter Bereichsfilter, der
+capture-verifizierte FW030-Float-Sollwert und eine Warmwasser-Karte — und
+ergänzt PV-Sichtbarkeit (Issue #353), die Solar-Abschaltung, den
+Diagnoseexport je Register, einen ehrlicheren KI-Berater und das deutsche
+Wiki-Spiegel. Automatisierte CI (inklusive der Smoke-Tests mit echtem Home
+Assistant), HACS, Hassfest, Sicherheitsprüfungen, Release-Paketierung,
+Verifikation der veröffentlichten Prüfsummen und der Paket-zu-Tag-Vergleich
+waren erfolgreich; `0.19.0-b15` lief mit sauberem Log auf der
+Produktionsanlage des Maintainers, und die Register-Korrekturen für den
+Navigator 1.0/1.7 wurden durch die Nach-Update-Diagnose eines Testers auf
+der veröffentlichten Version bestätigt (Issue #364). Die Entscheidungen zu
+`0.17.x`/`0.16.x` unten bleiben wie veröffentlicht.
 
 **`0.17.2-b6`/`0.18.0`:** Für den Kandidaten waren automatisierte CI, HACS,
 Hassfest, Sicherheitsprüfungen, Release-Paketierung, Verifikation der
