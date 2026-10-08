@@ -418,6 +418,25 @@ Für jeden Raum in jeder Zone kannst du einen eigenen Namen vergeben. Diese Name
      den gespeicherten Einstellungen durch. Es wird nichts gespeichert und
      niemals in Modbus-Register geschrieben.
 
+```mermaid
+flowchart TD
+    reconf["IDM Heatpump → Neu konfigurieren<br/>(Verbindung und Diagnose)"] --> choice{"Aktion wählen"}
+    choice -- "Verbindungseinstellungen ändern" --> conn["Host, Port, Slave-ID, Web-PIN,<br/>Proxy — Prüfung beim Absenden"]
+    conn --> ctest{"Prüfung"}
+    ctest -- "Modbus schlägt fehl,<br/>Web-PIN gültig" --> wofallback{"Web-only-Fallback angeboten"}
+    wofallback -- "annehmen" --> webonly["Web-only-Modus; bestehende Heizkreise, Zonen<br/>und Optionen bleiben erhalten"]
+    wofallback -- "Modbus erneut versuchen" --> conn
+    ctest -- "ok" --> applied["Eintrag mit den neuen<br/>Einstellungen neu geladen"]
+    webonly --> applied
+    choice -- "Funktionen konfigurieren" --> guided["Geführter Funktions-Editor — dieselben Schritte<br/>wie bei der Einrichtung, ohne die Verbindung anzutasten"]
+    guided --> applied
+    choice -- "Aktuelle Verbindung testen" --> diag["Schreibgeschützte Diagnose: DNS/TCP,<br/>ein bekanntes IDM-Register, optionaler Web-Endpunkt.<br/>Es wird nichts gespeichert oder geschrieben"]
+    diag --> result{"Ergebnis"}
+    result -- "ok" --> okmsg["Erfolg bestätigt"]
+    result -- "Fehler" --> errmsg["Genannte Ursache + Empfehlungen;<br/>Formular erneut absenden, um den Test zu wiederholen"]
+    result -.-> diag
+```
+
 Der Test liest ein bekanntes IDM-Modbus-Register. Schlägt das fehl, grenzt
 eine kurze DNS/TCP-Prüfung den Netzwerkfehler genauer ein. Ist ein lokaler
 Web-PIN konfiguriert, prüft er zusätzlich den Navigator-Web-Endpunkt und die

@@ -6,6 +6,8 @@ Das optionale [Smart Energy & Comfort](Smart-Energy-and-Comfort)-Profil ergänzt
 
 Der Health Monitor ergänzt acht Prüfungen auf Probleme und einen Berichtssensor. Heizkurven- und Wetterberater ergänzen schreibgeschützte Empfehlungen. Der [Predictive Advisor](Predictive-Advisor) ergänzt ein strikt schreibgeschütztes Empfehlungs-Framework (Status, Empfehlungen, Datenqualität). Der optionale Komfort-Zeitplan verändert den bestehenden Raum-Sollwert des Heizkreises; er erzeugt keine zweite Klima-Regelentität. Das automatische Warmwasserladen nutzt die bestehenden Boost-Bedienelemente und die bestehende Zustandsmaschine.
 
+Jede Entität, die diese Pakete erzeugen können, steht mit ihrem exakten Namen unter [Entitäten der optionalen Funktionen](#entitaten-der-optionalen-funktionen); die Unterteilung in Untergeräte beschreibt [Gerätegruppen (Gerätehierarchie)](#gerategruppen-geratehierarchie).
+
 Mit aktivierter Gerätehierarchie separieren **iDM Analytics**, **iDM Health Monitor**, **iDM Comfort** und **Diagnose** diese Funktionen von den Regler-Entitäten. Wird eine optionale Funktion deaktiviert, werden ihre Entitätsregistrierungen entfernt; beim erneuten Aktivieren werden dieselben IDs wiederhergestellt. Bestehende Regler-IDs bleiben erhalten.
 
 Die Integration erzeugt Entitäten dynamisch auf Grundlage deiner Wärmepumpen-Konfiguration (Heizkreise, Zonen, optionale Funktionen).
@@ -553,11 +555,163 @@ Nutzt denselben Schreibpfad des Koordinators wie die Klima-Entitäten.
 
 ## Button
 
-Ein einzelner Button (`button.idm_heatpump_acknowledge_errors`) quittiert aktive Fehler an der Wärmepumpe, indem er `1` in das Nur-Schreib-Register `error_acknowledge` schreibt. Er ist immer verfügbar, damit Automationen auf Änderungen des Alarmzustands reagieren können.
+Buttons sind Einmal-Aktionen. Welche Buttons existieren, hängt vom Navigator-Modell, vom Funktionsprofil und vom Verbindungsmodus ab:
+
+| Button | Erstellt wenn | Aktion |
+|--------|---------------|--------|
+| Fehler quittieren | Die Registerkarte enthält ein schreibbares `error_acknowledge` (alle Modelle) | Schreibt `1` und quittiert aktive Fehler |
+| Vorrangladung anfordern | Navigator 1.0/1.7 (schreibbarer `demand_dhw_17`-Coil c3003) | Ein einzelner FC05-Write von ON zur Vorrangladung |
+| Warmwasser-Boost starten | Smart-Profil, schreibbarer Systemmodus, Warmwasser-Sollwert und `dhw_temp_top` | Startet die restart-sichere Warmwasser-Boost-Zustandsmaschine |
+| Warmwasser-Boost abbrechen | dieselben Bedingungen wie beim Start | Bricht einen aktiven Boost ab und stellt den vorherigen Zustand wieder her |
+| KI-Tagesbericht (experimentell) | KI-Anlagenberater aktiviert | Erzeugt den Tagesbericht auf Abruf |
+| KI-Wochenbericht (experimentell) | KI-Anlagenberater aktiviert | Erzeugt den Wochenbericht auf Abruf |
+| KI-Zustand erklären (experimentell) | KI-Anlagenberater aktiviert | Erklärt die Zustandsbefunde in freiem Text |
+| KI-Effizienz erklären (experimentell) | KI-Anlagenberater aktiviert | Erklärt die Effizienzbefunde in freiem Text |
+| Verbindung neu laden | immer (Diagnose) | Lädt den Konfigurationseintrag sofort neu, statt den Setup-Wiederholungs-Backoff abzuwarten |
+
+In einem Web-only-Eintrag am Navigator 10 ergänzt das Web-Supplement einen eigenen Quittieren-Button mit demselben Namen, der über die Weboberfläche statt über Modbus arbeitet. Die Modbus-Buttons werden im Web-only-Modus nicht erstellt.
+
+Der Hauptbutton (`button.idm_heatpump_acknowledge_errors`) quittiert aktive Fehler an der Wärmepumpe, indem er `1` in das Nur-Schreib-Register `error_acknowledge` schreibt. Er ist immer verfügbar, damit Automationen auf Änderungen des Alarmzustands reagieren können.
 
 Bei erkanntem Navigator 1.0/1.7 kommt ein zweiter Button hinzu (`button.idm_heatpump_request_dhw_priority_charge`, *Vorrangladung anfordern*): Er fordert eine Warmwasser-Vorrangladung an — ein einzelner FC05-Write von ON auf Coil c3003. Nur für manuelle Nutzung — die offizielle Tabelle stellt den Coil-Block unter den EEPROM-Hinweis, also kein Zeitplan und keine getaktete Automation.
 
 Auf mindestens einer 1.x-Firmware endet die per Coil angeforderte Vorrangladung nicht von selbst: Der Regler bleibt im Warmwassermodus, bis der Fehler 020 (*Wärmepumpenvorlauf Maximaltemperatur*) auslöst ([Issue #319](https://github.com/Xerolux/idm-heatpump-hass/issues/319)). Verhält sich deine Anlage so, nutze stattdessen die Betriebsart *Warmwasser einmalig* (der `system_mode`-Select oder der Warmwasser-Boost) — dieser Weg beendet die Ladung auf der betroffenen Hardware normal. Auf verifizierter Firmware fällt der Coil unmittelbar nach dem Schreiben auf 0 zurück, deshalb schreibt der Button niemals OFF; melde das Verhalten deiner Firmware gerne im Issue.
+
+---
+
+## Entitäten der optionalen Funktionen
+
+Die optionalen Funktionspakete ergänzen die folgenden Entitäten. Die Tabellen listen jede Entität, die jedes Paket erzeugen kann, mit dem exakten Namen, den Home Assistant in einer deutschen Installation zeigt (englische Installationen zeigen die englischen Namen aus den Übersetzungsdateien). Entitäten einer deaktivierten Funktion werden aus der Registry entfernt; beim erneuten Aktivieren werden dieselben Entitäts-IDs wiederhergestellt.
+
+### Betriebsanalyse (Smart-Profil)
+
+Abgeleitet aus beobachteten Verdichter-, Abtau- und Betriebsart-Übergängen. Restart-sicher: Die Zähler überleben Home-Assistant-Neustarts, und Kommunikationslücken werden nie als Betriebsereignisse gewertet.
+
+| Entität | Beschreibung |
+|---------|--------------|
+| Wärmepumpentakte erfasst (`analysis_heat_pump_cycles_recorded`) | Insgesamt beobachtete Verdichtertakte seit Aktivierung des Profils |
+| Wärmepumpentakte heute (`analysis_heat_pump_cycles_today`) | Verdichtertakte seit Mitternacht |
+| Wärmepumpentakte letzte 2 Stunden (`analysis_heat_pump_cycles_2h`) | Rollierende 2-Stunden-Taktzahl |
+| Wärmepumpentakte letzte 4 Stunden (`analysis_heat_pump_cycles_4h`) | Rollierende 4-Stunden-Taktzahl |
+| Aktuelle Taktlaufzeit (`analysis_current_cycle_duration`) | Laufzeit des laufenden Verdichtertakts |
+| Durchschnittliche Taktlaufzeit (`analysis_average_cycle_duration`) | Mittlere Laufzeit über die vorgehaltene Takt-Historie |
+| Letzter Verdichterstart (`analysis_last_compressor_start`) | Zeitstempel des zuletzt beobachteten Starts |
+| Letzte Taktlaufzeit (`analysis_last_cycle_duration`) | Laufzeit des letzten abgeschlossenen Takts |
+| Letzter Verdichtertakt zu kurz (`analysis_last_cycle_short`) | Binär: Der letzte Takt blieb unter der konfigurierten Kurzzyklus-Schwelle |
+| Abtauvorgänge erfasst (`analysis_defrost_starts_recorded`) | Insgesamt beobachtete Abtaustarts |
+| Abtauvorgänge heute (`analysis_defrost_starts_today`) | Abtaustarts seit Mitternacht |
+| Letzter Abtaustart (`analysis_last_defrost_start`) | Zeitstempel des letzten Abtaustarts |
+| Zeit seit letztem Abtaustart (`analysis_time_since_last_defrost`) | Zeit seit dem letzten Abtaustart |
+| Betriebsanteil Heizen (`analysis_operating_share_heating`) | Anteil des Beobachtungsfensters im Heizbetrieb |
+| Betriebsanteil Warmwasser (`analysis_operating_share_dhw`) | Anteil im Warmwasserbetrieb |
+| Betriebsanteil Kühlen (`analysis_operating_share_cooling`) | Anteil im Kühlbetrieb |
+| Betriebsanteil Abtauen (`analysis_operating_share_defrost`) | Anteil im Abtaubetrieb |
+
+### Energiestatistik (Smart-Profil)
+
+Persistente Summen, berechnet aus den Leistungsregistern und pro Konfigurationseintrag gespeichert — Tag, Monat und Lebenszeit. Sie überstehen Neustarts; die Registerzähler des Geräts (Wärmemenge Heizen, Wärmemenge Warmwasser, …) sind eigene Entitäten unter [Energie & Leistung](#energie-leistung). Kosten und CO₂ nutzen die optionalen Preis- und Emissionsfaktoren aus dem Smart-Profil.
+
+| Entität | Beschreibung |
+|---------|--------------|
+| Elektrische Energie Wärmepumpe heute / diesen Monat / gesamt (`energy_electrical_today` …) | Elektrische Energie, die die Wärmepumpe im Zeitraum bezogen hat |
+| Thermische Energie Wärmepumpe heute / diesen Monat / gesamt (`energy_thermal_today` …) | Abgegebene thermische Energie im Zeitraum |
+| Jahresarbeitszahl Wärmepumpe heute / diesen Monat / gesamt (`energy_cop_today` …) | Arbeitszahl über den Zeitraum |
+| Stromkosten Wärmepumpe heute / diesen Monat / gesamt (`energy_cost_today` …) | Stromkosten des Zeitraums |
+| CO₂-Emissionen Wärmepumpe diesen Monat / gesamt (`energy_co2_month`, `energy_co2_total`) | CO₂-Emissionen des Zeitraums |
+| PV-Eigenverbrauch Wärmepumpe heute / diesen Monat / gesamt (`energy_pv_self_consumed_today` …) | Elektrische Energie, die im Zeitraum dem PV-Überschuss zugeordnet wird |
+
+### Health Monitor (Smart-Profil-Option)
+
+Schreibgeschützte Problemprüfungen plus ein kombinierter Bericht. Jede Prüfung ist ein Binärsensor, der `an` wird, wenn ihr Kriterium erfüllt ist; der Bericht bündelt die Befunde als Attribute.
+
+| Entität | Beschreibung |
+|---------|--------------|
+| iDM-Gesundheitsbericht (`health_report`) | Kombinierter Bericht aller Befunde, Details als Attribute |
+| Kommunikationsproblem (`health_communication`) | Wiederholte Modbus-Kommunikationsfehler |
+| Wiederkehrende Wärmepumpen-Alarme (`health_recurrent_alarms`) | Das Alarmsignal kehrt wiederholt zurück |
+| Warmwasser erreicht Sollwert nicht (`health_dhw_not_reaching_target`) | Warmwasser bleibt unter Last unter dem Sollwert |
+| COP ungewöhnlich niedrig (`health_low_cop`) | Der beobachtete COP liegt unter dem erwarteten Bereich |
+| Zu viele Verdichterstarts (`health_many_compressor_starts`) | Die Startanzahl übersteigt das konfigurierte Limit |
+| Verdichtertakte werden kürzer (`health_shortening_cycles`) | Taktlaufzeiten schrumpfen über die Zeit — klassischer Verschleißindikator |
+| Abtauvorgang ungewöhnlich lang (`health_long_defrost`) | Ein Abtauvorgang läuft deutlich länger als üblich |
+| Unplausibler Sensorwert (`health_implausible_sensor`) | Ein Sensor meldet einen physikalisch unplausiblen Wert |
+
+### Komfortberatung (Smart-Profil-Optionen)
+
+Schreibgeschützte Empfehlungen, je eine Entität:
+
+| Entität | Beschreibung |
+|---------|--------------|
+| Heizkurven-Empfehlung (`heating_curve_advice`) | Vergleicht Vorlauftemperatur mit dem angeforderten Sollwert: *erhöhen*, *senken* oder *stabil* |
+| Wetter-Vorheizen-Empfehlung (`weather_preheat_advice`) | Beobachtet die konfigurierte HA-Wetterentität und empfiehlt Vorheizen vor einer prognostizierten Kältewelle |
+
+Die Heizkurven-Entität wird für den im Komfort-Zeitplan ausgewählten Heizkreis erzeugt; die Wetter-Entität erfordert eine konfigurierte Wetter-Integration.
+
+### Predictive Advisor (Smart-Profil-Option)
+
+Strikt schreibgeschütztes Empfehlungs-Framework — der Advisor schreibt niemals auf die Wärmepumpe. Siehe [Predictive Advisor](Predictive-Advisor) für Schwellwerte, Beobachtungsstufen und das `idm_advisor_recommendation`-Ereignis.
+
+| Entität | Beschreibung |
+|---------|--------------|
+| Advisor-Status (`advisor_status`) | Lebenszyklus: Aufwärmen, Lernen, Aktiv, unzureichende Daten |
+| Advisor-Empfehlungen (`advisor_recommendations`) | Aktuelle Empfehlungen als Text |
+| Advisor-Konfidenz (`advisor_confidence`) | Konfidenzstufe der aktuellen Empfehlungen |
+| Advisor-Anforderungsgrund (`advisor_operation_reason`) | Warum die Wärmepumpe gerade läuft |
+| Advisor-Anlagenzustand (`advisor_health_score`) | Zustandswert der Anlage |
+| Advisor-Effizienzwert (`advisor_efficiency_score`) | Effizienzwert |
+| Advisor-Erwartungs-COP (`advisor_expected_cop`) | Vom gelernten Gebäudemodell erwarteter COP |
+| Advisor-Gebäudewärmeverlust (`advisor_building_heat_loss`) | Gelernter Wärmeverlust in kW |
+| Advisor-Thermische Trägheit (`advisor_building_thermal_inertia`) | Gelernte thermische Trägheit |
+| Advisor-Optimale Vorlauftemperatur (`advisor_optimal_flow_temp`) | Modell-optimale Vorlauftemperatur |
+| Advisor-Heizkurve {circuit} Empfehlung (`advisor_curve_recommendation`) | Heizkurven-Empfehlung pro Heizkreis |
+| Advisor-Warmwasser-Empfehlung (`advisor_dhw_recommendation`) | Empfehlung eines PV-/preis-optimierten Warmwasserfensters |
+| Advisor-Wärmebedarf 24 h (`advisor_predicted_heat_demand`) | Prognostizierter Wärmebedarf für die nächsten 24 Stunden |
+| Advisor-24-Stunden-Plan (`advisor_next_24h`) | Der 24-Stunden-Plan des Advisors |
+| Advisor-Optimierung verfügbar (`advisor_optimization_available`) | Binär: Eine Empfehlung ist anwendbar |
+| Advisor-Anomalie erkannt (`advisor_anomaly_detected`) | Binär: Das aktuelle Verhalten weicht von der gelernten Baseline ab |
+
+### KI-Anlagenberater (experimentell, standardmäßig aus)
+
+Deterministische Berichte aus Messwerten mit optionalen freien Erklärungen über lokales Ollama, eine HA-AI-Task-Entität oder ausdrücklich genehmigte Cloud-Anfragen. Siehe [Experimenteller KI-Berater](Experimental-AI-Adviser) und [Lokales Ollama](Local-Ollama) für die Datenschutzgrenze.
+
+| Entität | Beschreibung |
+|---------|--------------|
+| KI-Bericht (experimentell) (`ai_report`) | Der zuletzt erzeugte Bericht; Abdeckungsdetails als Attribute |
+| KI-Lernstatus (`ai_learning_status`) | Zustand des begrenzten lokalen Lernens |
+| KI-Speicherverbrauch (`ai_storage_used`) | Speicherbedarf der gelernten Baselines |
+| KI-Datenabdeckung (`ai_coverage`) | Anteil der Berichtsdaten, den der Berater tatsächlich beobachten konnte |
+| KI-Beobachtungs-COP (`ai_observed_cop`) | COP aus dem beobachteten Datenfenster |
+| KI-Tagesbericht (experimentell) (`ai_report_daily`) | Button: Tagesbericht auf Abruf erzeugen |
+| KI-Wochenbericht (experimentell) (`ai_report_weekly`) | Button: Wochenbericht auf Abruf erzeugen |
+| KI-Zustand erklären (experimentell) (`ai_report_health`) | Button: Zustandsbefunde erklären |
+| KI-Effizienz erklären (experimentell) (`ai_report_efficiency`) | Button: Effizienzbefunde erklären |
+
+Die vier Buttons stehen auch unter [Button](#button). Bei deaktivierter Gerätehierarchie ziehen die KI-Entitäten trotzdem auf ihr eigenes Gerät **iDM KI-Anlagenberater** um — die KI-Gruppe ist das einzige Untergerät, das unabhängig von der Hierarchie-Option existiert.
+
+---
+
+## Gerätegruppen (Gerätehierarchie)
+
+Mit aktivierter **Gerätehierarchie** (Konfigurieren → Funktionen) verteilt die Integration ihre Entitäten auf Untergeräte, damit das Hauptgerät der Wärmepumpe beim Regler bleibt. Ab Home Assistant 2026.9 sind diese Gruppen *Child-Devices* der Wärmepumpe; auf 2026.8 greift der `via_device`-Fallback, der beim Upgrade automatisch konvertiert wird. Zonenmodule bleiben gewöhnliche verknüpfte Geräte — eigene Hardware, kein logischer Teil — und ihre Räume sind Kinder des Moduls.
+
+| Gruppe | Erstellt wenn | Enthält |
+|--------|---------------|---------|
+| Heizkreis A–G | Heizkreis in der Anlagenkonfiguration aktiviert | Alle `hc_{x}_`-Register plus Web-Vorlauf-, Raum-, Mischer- und Pumpenwerte dieses Heizkreises |
+| Zonenmodul (z. B. Zonenmodul 1) | Zonenmodul mit konfigurierten Räumen | Register auf Modulebene `zm{z}_*`; verknüpftes Gerät (`via_device`), kein Child |
+| Zonenraum | Raum in seinem Zonenmodul konfiguriert | `zm{z}_room{r}_*`-Entitäten als Kinder des Zonenmoduls |
+| Solaranlage | Solar-Register vorhanden | `solar_*`-Entitäten |
+| IDM ISC | ISC-Register vorhanden | `isc_*`-Entitäten |
+| IDM Kaskade | Kaskade aktiviert | `cascade_*`-Entitäten |
+| Zusatzwärmeerzeuger | Booster-/Bivalenz-/Zweitwärmeerzeuger-/E-Heizungs-Register vorhanden | `booster_*`, `bivalence_*`, `second_heat_generator_*`, `eheating_*`, `electric_heater_*` |
+| Warmwasser | Warmwasser-Register vorhanden | `dhw_*`, `hotwater_*`, `water_temp_*` und verwandte Schlüssel |
+| Photovoltaik | PV-Register oder SG-Ready vorhanden | `pv_*`, `smart_grid_status`, PV-Überschussbetrieb, Web-Anforderungsgrund und Web-Energiefluss |
+| Diagnose | immer | Versionen, Fachmann-Codes, interne Meldung, Modbus-Poll-Gesundheit, Regler-Online-Zeit |
+| iDM Analytics | Smart-Profil | Berechnete Sensoren, Betriebsanalyse, Energiestatistik |
+| iDM Health Monitor | Health Monitor aktiviert | Alle `health_*`-Entitäten |
+| iDM Comfort | Komfortberatung aktiviert | Heizkurven-Empfehlung, Wetter-Vorheizen-Empfehlung |
+| iDM KI-Anlagenberater | KI-Berater aktiviert | Alle `ai_*`-Entitäten — auch ohne die Hierarchie-Option |
+
+Die Entitäten des Predictive Advisor (`advisor_*`) bleiben bewusst auf dem **Hauptgerät der Wärmepumpe**: Sie beschreiben die Anlage als Ganzes, nicht ein entfernbares Modul. Wird die Hierarchie deaktiviert, wandert jede Gruppe zurück auf das Hauptgerät (außer der KI-Gruppe); die Entitäts-IDs ändern sich dabei nie.
 
 ---
 

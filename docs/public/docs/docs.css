@@ -405,6 +405,16 @@ html[data-theme="light"] .moon-icon { display: block; }
 }
 html[data-theme="light"] .article-content pre { background: #14231c; color: #e8f1ec; }
 .article-content pre code { padding: 0; border: 0; background: transparent; color: inherit; font-size: 11px; }
+/* ```mermaid fences: monospace source until mermaid replaces them with an SVG. */
+.article-content pre.mermaid {
+  display: flex;
+  justify-content: center;
+  overflow-x: auto;
+  text-align: center;
+  font-size: 12px;
+}
+.article-content pre.mermaid svg { max-width: 100%; height: auto; }
+html[data-theme="light"] .article-content pre.mermaid svg { filter: invert(0.92) hue-rotate(180deg); }
 .copy-code { position: absolute; top: 9px; right: 9px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 7px; background: rgba(255,255,255,.06); color: rgba(255,255,255,.6); font-size: 8px; cursor: pointer; }
 .copy-code:hover { color: var(--lime); }
 .article-content img { display: block; max-width: 100%; height: auto; margin: 25px auto; border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }

@@ -56,6 +56,14 @@ const headings = [];
 marked.use({
   gfm: true,
   renderer: {
+    /* A ```mermaid fence becomes a render target for the client-side mermaid
+       build (see docs.js); every other language keeps the default code block. */
+    code({ text, lang }) {
+      if (lang && lang.trim().toLowerCase() === 'mermaid') {
+        return `<pre class="mermaid">${escapeAttribute(String(text))}</pre>`;
+      }
+      return false;
+    },
     heading({ tokens, depth }) {
       const text = this.parser.parseInline(tokens);
       const plainText = tokens.map((token) => token.text || token.raw || '').join('');
