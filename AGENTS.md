@@ -193,7 +193,8 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_web_system_entities.py
 │   ├── test_web_control_entities.py
 │   ├── test_web_climate_entities.py
-│   └── test_wiki_changelog.py
+│   ├── test_wiki_changelog.py
+│   └── test_wiki_stability_page.py
 │
 ├── tests_ha/                         # Real-Home-Assistant smoke tests (audit E1)
 │   ├── conftest.py                   # Boots a genuine HA in a temp config dir, fake Modbus client

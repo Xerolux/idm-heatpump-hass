@@ -11,27 +11,52 @@ for the installed stable channel. Current source-tree versions are documented
 below and checked automatically; an older release keeps the pins in its own
 tagged manifest. The release decisions below describe their original candidates.
 
-## 0.19.0 release decision
+## 0.20.1 release decision
 
-**0.19.0** is the stable cut of the line that
-ran through sixteen betas. It makes the Navigator 1.0/1.7 family a full
-citizen — the complete official holding block, a firmware-honest range
-guard, the capture-verified FW030 float setpoint and a water heater card —
-and adds PV visibility (issue #353), the solar thermal opt-out, the
-per-register diagnostics report, a more honest AI adviser and the German
-wiki mirror. The `0.17.x`/`0.16.x` decisions below remain as published.
-
-For the stable cut, automated CI (including the real-Home-Assistant smoke
-leg), HACS, Hassfest, security checks, release packaging, published
-checksum verification and package-to-tag comparison passed. `0.19.0-b15`
-ran on the maintainer's production plant with a clean log, and the
-Navigator 1.0/1.7 register corrections were confirmed by a tester's
-post-update diagnostics on the released version (issue #364). The b16
-water-heater addition is covered by the automated suite; the 1.x register
-map itself rests on the official documentation confirmed by two
-independent hardware captures.
+**0.20.1** is the stable cut of the self-healing line that ran through five
+prereleases (b1–b5, 2026-09-30 through 2026-10-02); the stable tag changed
+no code against b5. For the cut, automated CI — including the
+real-Home-Assistant lifecycle suite on both the minimum 2026.8.1 and the
+2026.10.0 beta — plus HACS, Hassfest, security checks, release packaging,
+published checksum verification and package-to-tag comparison passed. The
+line ran on the maintainer's Navigator 10 plant from 2026-09-30; the
+unchanged b5 candidate soaked from 2026-10-02 to the cut — four days, short
+of the seven-day gate 6, with no confirmed data corruption, reconnect loop,
+unsafe write or setup regression reported in the tracker. Issues
+[#429](https://github.com/Xerolux/idm-heatpump-hass/issues/429)
+(differential-temperature circuits, live-validated on the reporter's
+hardware) and
+[#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319) (Navigator
+1.x priority charge) closed completed inside the line. The transport pins
+became Home-Assistant-owned minimum versions — hassfest rejects exact pins
+for them — and the device logic is pinned to `idm-heatpump-api[web]==2.14.0`.
+The gate-6 shortfall is recorded here so it stays visible.
 
 ## Earlier release decisions
+
+**`0.20.0`** was the web-first stable cut: every write slice of the
+controllable web-only mode — operating mode, error acknowledgement, the
+hot-water setpoint, per-circuit setpoints and modes — was capture-confirmed
+(2026-09-28) and live-validated on the maintainer's plant with reversible
+round trips, and the Navigator 1.0/1.7 family was completed on the official
+coil block (c3000–c3003) with tester-confirmed behaviour
+([#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319)). The
+automated gates passed. No separate evidence file exists for this cut — its
+validation is recorded in the 0.20.1 line evidence — and the release was
+superseded by 0.20.1 after six days, when the self-healing line was ready.
+
+**`0.19.0`** is the stable cut of the line that ran through sixteen betas.
+It makes the Navigator 1.0/1.7 family a full citizen — the complete official
+holding block, a firmware-honest range guard, the capture-verified FW030
+float setpoint and a water heater card — and adds PV visibility (issue
+#353), the solar thermal opt-out, the per-register diagnostics report, a
+more honest AI adviser and the German wiki mirror. Automated CI (including
+the real-Home-Assistant smoke leg), HACS, Hassfest, security checks, release
+packaging, published checksum verification and package-to-tag comparison
+passed; `0.19.0-b15` ran on the maintainer's production plant with a clean
+log, and the Navigator 1.0/1.7 register corrections were confirmed by a
+tester's post-update diagnostics on the released version (issue #364). The
+`0.17.x`/`0.16.x` decisions below remain as published.
 
 **`0.17.2-b6`/`0.18.0`:** automated CI, HACS, Hassfest, security checks,
 release packaging, published checksum verification and package-to-tag
