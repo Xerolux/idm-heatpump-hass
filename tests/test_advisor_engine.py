@@ -37,7 +37,10 @@ from custom_components.idm_heatpump.predictive_advisor_entities import (
 )
 from custom_components.idm_heatpump.sensor import async_setup_entry as async_setup_sensors
 
-T0 = datetime(2026, 10, 7, 6, 0, tzinfo=UTC)
+# Anchored to the real clock so the tests never decay: observation stages
+# and status entities compare ``first_observed`` against ``datetime.now``,
+# and a fixed past date flips those assertions one day after it is written.
+T0 = datetime.now(UTC).replace(microsecond=0)
 
 
 def _day(offset: float) -> datetime:
@@ -101,7 +104,8 @@ def test_parse_hourly_temperatures_filters_horizon_and_garbage() -> None:
         "nope",
     ]
     parsed = parse_hourly_temperatures(payload, T0)
-    assert [(at.hour, value) for at, value in parsed] == [(7, 5.0), (8, 4.0)]
+    # Hour offsets from T0, not wall-clock hours: T0 follows the real clock.
+    assert [((at - T0) // timedelta(hours=1), value) for at, value in parsed] == [(1, 5.0), (2, 4.0)]
     assert parse_hourly_temperatures("nope", T0) == []
 
 
@@ -324,7 +328,7 @@ async def test_dhw_window_prefers_pv_forecast() -> None:
     assert datetime.fromisoformat(window["start"]) == _hour(4)
     recs = [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.DHW]
     assert len(recs) == 1
-    assert recs[0].recommended_value == "10:00-13:00"
+    assert recs[0].recommended_value == f"{_hour(4):%H:%M}-{_hour(7):%H:%M}"
 
 
 async def test_dhw_window_falls_back_to_price_forecast() -> None:
@@ -522,7 +526,7 @@ def test_producer_entity_values() -> None:
 
     dhw = IdmAdvisorDhwWindowSensor(coordinator, engine)
     engine._dhw_window = {"start": _iso(_hour(4)), "hours": 3, "source": "pv_surplus_forecast"}
-    assert dhw.native_value == "10:00-13:00"
+    assert dhw.native_value == f"{_hour(4):%H:%M}-{_hour(7):%H:%M}"
 
     demand = IdmAdvisorHeatDemandSensor(coordinator, engine)
     engine._plan = {"predicted_heat_demand_kwh": 31.4}
