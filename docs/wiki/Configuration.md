@@ -383,6 +383,25 @@ For each room in each zone, you can assign a custom name. These names are used a
    - **Test current connection** runs a read-only check against the saved
      settings. It does not save anything and never writes Modbus registers.
 
+```mermaid
+flowchart TD
+    reconf["IDM Heatpump → Reconfigure<br/>(Connection and diagnostics)"] --> choice{"Choose an action"}
+    choice -- "Change connection settings" --> conn["Host, port, slave ID, web PIN,<br/>proxy — validated on submit"]
+    conn --> ctest{"Validation"}
+    ctest -- "Modbus fails,<br/>web PIN valid" --> wofallback{"Web-only fallback offered"}
+    wofallback -- "accept" --> webonly["Web-only mode; existing circuits, zones<br/>and advanced options stay preserved"]
+    wofallback -- "retry Modbus" --> conn
+    ctest -- "ok" --> applied["Entry reloaded with the new settings"]
+    webonly --> applied
+    choice -- "Configure features" --> guided["Guided feature editor — the same steps<br/>as setup, without touching the connection"]
+    guided --> applied
+    choice -- "Test current connection" --> diag["Read-only diagnostics: DNS/TCP,<br/>a known IDM register, optional web endpoint.<br/>Nothing is saved or written"]
+    diag --> result{"Result"}
+    result -- "ok" --> okmsg["Success confirmed"]
+    result -- "error" --> errmsg["Named cause + recommended checks;<br/>resubmit the form to repeat the test"]
+    result -.-> diag
+```
+
 The test reads a known IDM Modbus register. If that fails, a short DNS/TCP
 check identifies the network failure more precisely. If a local web PIN is
 configured, it also verifies the Navigator web endpoint and authentication.

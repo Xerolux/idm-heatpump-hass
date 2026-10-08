@@ -107,6 +107,31 @@ Navigators zusätzlich in der [technischen PV-/GLT-Dokumentation](https://www.id
    - **Zonen**: Konfiguriere die Anzahl aktiver Räume für jedes ausgewählte Zonenmodul
 5. Prüfe und bestätige die Konfiguration zum Abschluss. Wie du die Einrichtungstiefe später änderst, steht in [Konfiguration](Configuration).
 
+### Ablauf der Einrichtung
+
+Derselbe Ablauf als Diagramm. Jeder Pfad endet in einem funktionierenden Eintrag — die geführten Stufen verändern nur, wie viel gefragt wird, nie welche Funktionen verfügbar sind:
+
+```mermaid
+flowchart TD
+    add["Integration hinzufügen → IDM Heatpump"] --> prereq{"Modbus TCP am Navigator<br/>aktiviert?"}
+    prereq -- "nein" --> enable["Am Regler aktivieren:<br/>Gebäudeleittechnik → Modbus TCP"]
+    enable --> conn
+    prereq -- "ja" --> conn["Verbindungsformular: Name, Host, Port 502,<br/>Slave-ID 1, optionaler Web-PIN / Proxy"]
+    conn --> validate{"Verbindung geprüft:<br/>DNS/TCP-Check, Modbus-Sonde,<br/>Web-Login bei gesetztem PIN"}
+    validate -- "Fehler" --> cause["Fehlerformular nennt die Ursache<br/>(siehe Tabelle unten)"]
+    cause --> conn
+    validate -- "Modbus nicht erreichbar,<br/>Web-PIN funktioniert" --> fallback{"Web-only-Modus nutzen?"}
+    fallback -- "ja" --> webonly["Web-only-Eintrag:<br/>Lesen + begrenzte Steuerung,<br/>Modbus-Optionen bleiben erhalten"]
+    fallback -- "Modbus erneut versuchen" --> conn
+    validate -- "ok" --> review["Erkennungs-Review: Navigator-Modell bestätigen,<br/>Einrichtungstiefe wählen"]
+    review -- "Standard / Erweitert / Experte" --> features["Funktionskategorien:<br/>Anlage, Profil, Energie, Health,<br/>Komfort, Weiterleitung, KNX"]
+    features --> pages["Funktionsseiten: angeforderte Sensoren,<br/>Heizkreis-Zuordnungen,<br/>Zuständigkeitsbestätigung für Schreibfunktionen"]
+    pages --> zones{"Zonenmodule<br/>ausgewählt?"}
+    zones -- "ja" --> rooms["Zonen: Anzahl aktiver Räume<br/>pro Zonenmodul"]
+    zones -- "nein" --> finish
+    rooms --> finish["Eintrag erstellt — Entitäten erscheinen<br/>nach der ersten erfolgreichen Abfrage"]
+```
+
 ### Lokaler Navigator-Web-PIN (keine Cloud-2FA)
 
 Der optionale Web-PIN ist der **lokale Netzwerk-Code, der am Navigator-Display

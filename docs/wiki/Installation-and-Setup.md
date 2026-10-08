@@ -105,6 +105,32 @@ Modbus communication in its [technical PV/GLT documentation](https://www.idm-ene
    - **Zones**: Configure the number of active rooms for each selected zone module
 5. Review and confirm the configuration to finish. See [Configuration](Configuration) for changing the setup depth later.
 
+### Setup flow
+
+The same flow as a diagram. Every path ends in a working entry — the guided
+levels only change how much is asked, never which features are available:
+
+```mermaid
+flowchart TD
+    add["Add Integration → IDM Heatpump"] --> prereq{"Modbus TCP enabled on<br/>the Navigator?"}
+    prereq -- "no" --> enable["Enable it on the controller:<br/>Building management system → Modbus TCP"]
+    enable --> conn
+    prereq -- "yes" --> conn["Connection form: name, host, port 502,<br/>slave ID 1, optional web PIN / proxy"]
+    conn --> validate{"Connection validated:<br/>DNS/TCP check, Modbus probe,<br/>web login when a PIN is set"}
+    validate -- "error" --> cause["Error form names the cause<br/>(see the table below)"]
+    cause --> conn
+    validate -- "Modbus unreachable,<br/>web PIN works" --> fallback{"Use web-only mode?"}
+    fallback -- "yes" --> webonly["Web-only entry:<br/>read + limited control,<br/>Modbus options preserved"]
+    fallback -- "retry Modbus" --> conn
+    validate -- "ok" --> review["Detection review: confirm the Navigator model,<br/>choose the setup depth"]
+    review -- "Standard / Advanced / Expert" --> features["Feature categories:<br/>plant, profile, energy, health,<br/>comfort, forwarding, KNX"]
+    features --> pages["Feature pages: requested sensors,<br/>circuit mappings, ownership<br/>confirmation for write features"]
+    pages --> zones{"Zone modules<br/>selected?"}
+    zones -- "yes" --> rooms["Zones: number of active<br/>rooms per zone module"]
+    zones -- "no" --> finish
+    rooms --> finish["Entry created — entities appear<br/>after the first successful poll"]
+```
+
 ### Local Navigator web PIN (not cloud 2FA)
 
 The optional web PIN is the **local network code configured on the Navigator

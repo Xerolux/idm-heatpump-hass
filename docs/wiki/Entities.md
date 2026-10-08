@@ -16,6 +16,11 @@ schedule changes the existing circuit room target; it does not create a
 second climate controller entity. Automatic DHW charging uses the existing
 boost controls and state machine.
 
+Every entity these packages can create is listed with its exact name under
+[Optional feature entities](#optional-feature-entities), and the sub-device
+grouping is described under
+[Device groups (device hierarchy)](#device-groups-device-hierarchy).
+
 With device hierarchy enabled, **iDM Analytics**, **iDM Health Monitor**,
 **iDM Comfort** and **Diagnostics** separate these features from controller
 entities. Disabling optional features removes their entity registrations;
@@ -656,7 +661,26 @@ Uses the same coordinator write path as climate entities.
 
 ## Button
 
-A single button (`button.idm_heatpump_acknowledge_errors`) acknowledges active
+Buttons are one-shot actions. Which buttons exist depends on the Navigator
+model, the feature profile and the connection mode:
+
+| Button | Created when | Action |
+|--------|--------------|--------|
+| Acknowledge Errors | The register map has a writable `error_acknowledge` (all models) | Writes `1` to acknowledge active errors |
+| Request DHW priority charge | Navigator 1.0/1.7 (writable `demand_dhw_17` coil c3003) | One FC05 write of ON to request a *Vorrangladung* |
+| Start DHW boost | Smart profile, writable system mode, DHW setpoint and `dhw_temp_top` | Starts the restart-safe DHW boost state machine |
+| Cancel DHW boost | same conditions as Start DHW boost | Cancels an active boost and restores the previous state |
+| AI daily report (experimental) | AI plant adviser enabled | Generates the daily AI report on demand |
+| AI weekly report (experimental) | AI plant adviser enabled | Generates the weekly AI report on demand |
+| AI health explanation (experimental) | AI plant adviser enabled | Explains the health findings in free text |
+| AI efficiency explanation (experimental) | AI plant adviser enabled | Explains the efficiency findings in free text |
+| Reload connection | always (diagnostic) | Reloads the config entry immediately instead of waiting out the setup-retry backoff |
+
+In a web-only entry on a Navigator 10 the web supplement adds its own
+acknowledge button with the same name, backed by the web interface instead of
+Modbus. The Modbus buttons are not created in web-only mode.
+
+The primary button (`button.idm_heatpump_acknowledge_errors`) acknowledges active
 errors on the heat pump by writing `1` to the `error_acknowledge` write-only
 register. Always available so automations can trigger on alarm state changes.
 
@@ -674,6 +698,172 @@ If your unit behaves this way, use the system mode *Warmwasser einmalig*
 charge normally on the affected hardware. On verified firmware the coil
 falls back to 0 immediately after the write, which is why the button never
 writes OFF; please report your firmware behavior in the issue.
+
+---
+
+## Optional feature entities
+
+The optional feature packages add the entities below. The tables list every
+entity each package can create, with the exact name Home Assistant shows in an
+English installation (German installations show the German names from the
+translation files). Entities of a disabled feature are removed from the
+registry; re-enabling the feature restores the same entity IDs.
+
+### Operating analysis (Smart profile)
+
+Derived from observed compressor, defrost and operating-mode transitions.
+Restart-safe: the counters persist across Home Assistant restarts, and
+communication gaps are never counted as operating events.
+
+| Entity | Description |
+|--------|-------------|
+| Heat pump cycles recorded (`analysis_heat_pump_cycles_recorded`) | Total observed compressor cycles since installation of the profile |
+| Heat pump cycles today (`analysis_heat_pump_cycles_today`) | Compressor cycles since midnight |
+| Heat pump cycles last 2 hours (`analysis_heat_pump_cycles_2h`) | Rolling 2-hour cycle count |
+| Heat pump cycles last 4 hours (`analysis_heat_pump_cycles_4h`) | Rolling 4-hour cycle count |
+| Current cycle runtime (`analysis_current_cycle_duration`) | Runtime of the currently running compressor cycle |
+| Average cycle runtime (`analysis_average_cycle_duration`) | Mean runtime over the retained cycle history |
+| Last compressor start (`analysis_last_compressor_start`) | Timestamp of the last observed start |
+| Last cycle runtime (`analysis_last_cycle_duration`) | Runtime of the last finished cycle |
+| Last compressor cycle too short (`analysis_last_cycle_short`) | Binary: the last cycle stayed below the configured short-cycle threshold |
+| Defrost cycles recorded (`analysis_defrost_starts_recorded`) | Total observed defrost starts |
+| Defrost cycles today (`analysis_defrost_starts_today`) | Defrost starts since midnight |
+| Last defrost start (`analysis_last_defrost_start`) | Timestamp of the last defrost start |
+| Time since last defrost start (`analysis_time_since_last_defrost`) | Time since the last defrost start |
+| Operating share heating (`analysis_operating_share_heating`) | Share of the observation window spent heating |
+| Operating share hot water (`analysis_operating_share_dhw`) | Share spent in domestic hot water mode |
+| Operating share cooling (`analysis_operating_share_cooling`) | Share spent cooling |
+| Operating share defrost (`analysis_operating_share_defrost`) | Share spent defrosting |
+
+### Energy statistics (Smart profile)
+
+Persistent totals computed from the power registers and stored per config
+entry — day, month and lifetime. They survive restarts; the device's own
+register meters (energy heating, energy DHW, …) are separate entities listed
+under [Energy & Power](#energy-power). Costs and CO₂ use the optional price
+and emission factors configured in the Smart profile.
+
+| Entity | Description |
+|--------|-------------|
+| Heat pump electrical energy today / this month / total (`energy_electrical_today` …) | Electrical energy the heat pump consumed in the period |
+| Heat pump thermal energy today / this month / total (`energy_thermal_today` …) | Thermal energy delivered in the period |
+| Heat pump COP today / this month / total (`energy_cop_today` …) | Seasonal performance factor over the period |
+| Heat pump electricity cost today / this month / total (`energy_cost_today` …) | Electricity cost of the period |
+| Heat pump CO₂ emissions this month / total (`energy_co2_month`, `energy_co2_total`) | CO₂ emissions of the period |
+| Heat pump PV self-consumption today / this month / total (`energy_pv_self_consumed_today` …) | Electrical energy attributed to PV surplus in the period |
+
+### Health monitor (Smart profile option)
+
+Read-only problem checks plus one combined report. Every check is a binary
+sensor that turns `on` when its criterion is met; the report bundles the
+findings as attributes.
+
+| Entity | Description |
+|--------|-------------|
+| iDM health report (`health_report`) | Combined report of all findings, with details as attributes |
+| Communication problem (`health_communication`) | Repeated Modbus communication failures |
+| Recurring heat-pump alarms (`health_recurrent_alarms`) | Alarm signal returns repeatedly |
+| DHW does not reach target (`health_dhw_not_reaching_target`) | Hot water stays below its setpoint under load |
+| COP unusually low (`health_low_cop`) | Observed COP is below the expected range |
+| Too many compressor starts (`health_many_compressor_starts`) | Compressor start count exceeds the configured limit |
+| Compressor cycles getting shorter (`health_shortening_cycles`) | Cycle runtimes shrink over time — a classic wear indicator |
+| Defrost cycle unusually long (`health_long_defrost`) | A defrost cycle runs far longer than usual |
+| Implausible sensor value (`health_implausible_sensor`) | A sensor reports a physically implausible value |
+
+### Comfort advisory (Smart profile options)
+
+Read-only recommendations, one entity each:
+
+| Entity | Description |
+|--------|-------------|
+| Heating curve advice (`heating_curve_advice`) | Compares flow temperature with the requested setpoint: *increase*, *decrease* or *stable* |
+| Weather preheat advice (`weather_preheat_advice`) | Watches the configured HA weather entity and recommends preheating before a forecast cold front |
+
+The heating-curve entity is created for the circuit selected in the comfort
+schedule option; the weather entity requires a configured weather integration.
+
+### Predictive advisor (Smart profile option)
+
+Strictly read-only recommendation framework — the advisor never writes to the
+heat pump. See [Predictive Advisor](Predictive-Advisor) for thresholds,
+observation levels and the `idm_advisor_recommendation` event.
+
+| Entity | Description |
+|--------|-------------|
+| Advisor status (`advisor_status`) | Lifecycle: warm-up, learning, active, insufficient data |
+| Advisor recommendations (`advisor_recommendations`) | Current recommendations as text |
+| Advisor confidence (`advisor_confidence`) | Confidence level of the current recommendations |
+| Advisor operation reason (`advisor_operation_reason`) | Why the heat pump is running right now |
+| Advisor health score (`advisor_health_score`) | Plant condition score |
+| Advisor efficiency score (`advisor_efficiency_score`) | Efficiency score |
+| Advisor expected COP (`advisor_expected_cop`) | COP expected from the learned building model |
+| Advisor building heat loss (`advisor_building_heat_loss`) | Learned heat loss in kW |
+| Advisor building thermal inertia (`advisor_building_thermal_inertia`) | Learned thermal inertia |
+| Advisor optimal flow temperature (`advisor_optimal_flow_temp`) | Model-optimal flow temperature |
+| Advisor heating curve {circuit} recommendation (`advisor_curve_recommendation`) | Heating-curve recommendation per circuit |
+| Advisor hot water recommendation (`advisor_dhw_recommendation`) | PV/price-optimized hot-water window recommendation |
+| Advisor predicted heat demand 24h (`advisor_predicted_heat_demand`) | Predicted heat demand for the next 24 hours |
+| Advisor 24 hour plan (`advisor_next_24h`) | The advisor's 24-hour plan |
+| Advisor optimization available (`advisor_optimization_available`) | Binary: a recommendation is ready to apply |
+| Advisor anomaly detected (`advisor_anomaly_detected`) | Binary: current behavior deviates from the learned baseline |
+
+### AI plant adviser (experimental, off by default)
+
+Deterministic measured-data reports with optional free-form explanations via
+local Ollama, an HA AI Task entity or explicitly consented cloud requests.
+See [Experimental AI Adviser](Experimental-AI-Adviser) and [Local
+Ollama](Local-Ollama) for the privacy boundary.
+
+| Entity | Description |
+|--------|-------------|
+| AI report (experimental) (`ai_report`) | The latest generated report; coverage details as attributes |
+| AI learning status (`ai_learning_status`) | State of the bounded local learning |
+| AI storage used (`ai_storage_used`) | Storage the learned baselines occupy |
+| AI observed coverage (`ai_coverage`) | Share of the report's data the adviser could actually observe |
+| AI observed COP (`ai_observed_cop`) | COP from the observed data window |
+| AI daily report (experimental) (`ai_report_daily`) | Button: generate the daily report on demand |
+| AI weekly report (experimental) (`ai_report_weekly`) | Button: generate the weekly report on demand |
+| AI health explanation (experimental) (`ai_report_health`) | Button: explain the health findings |
+| AI efficiency explanation (experimental) (`ai_report_efficiency`) | Button: explain the efficiency findings |
+
+The four buttons are also listed under [Button](#button). With the device
+hierarchy disabled the AI entities still move to their own **iDM
+KI-Anlagenberater** device — the AI group is the one sub-device that exists
+regardless of the hierarchy option.
+
+---
+
+## Device groups (device hierarchy)
+
+With **Device hierarchy** enabled (Configure → Features), the integration
+distributes its entities over sub-devices so the main heat-pump device stays
+focused on the controller. On Home Assistant 2026.9+ these groups are *child
+devices* of the heat pump; on 2026.8 they fall back to `via_device` links and
+convert automatically on upgrade. Zone modules stay ordinary linked devices —
+separate hardware, not a logical part — and their rooms are children of the
+module.
+
+| Group | Created when | Contains |
+|-------|--------------|----------|
+| Heizkreis A–G | Circuit enabled in the plant configuration | All `hc_{x}_*` registers plus the web flow, room, mixer and pump values of that circuit |
+| Zone module (e.g. Zonenmodul 1) | Zone module with rooms configured | Module-level `zm{z}_*` registers; linked device (`via_device`), not a child |
+| Zone room | Room configured in its zone module | `zm{z}_room{r}_*` entities as children of the zone module |
+| Solaranlage | Solar registers present | `solar_*` entities |
+| IDM ISC | ISC registers present | `isc_*` entities |
+| IDM Kaskade | Cascade enabled | `cascade_*` entities |
+| Zusatzwärmeerzeuger | Booster/bivalence/second-generator/e-heating registers present | `booster_*`, `bivalence_*`, `second_heat_generator_*`, `eheating_*`, `electric_heater_*` |
+| Warmwasser | DHW registers present | `dhw_*`, `hotwater_*`, `water_temp_*` and related keys |
+| Photovoltaik | PV registers or SG-Ready present | `pv_*`, `smart_grid_status`, PV surplus operation, web demand reason and web energy flow |
+| Diagnose | Always | Versions, technician codes, internal message, Modbus poll health, controller online time |
+| iDM Analytics | Smart profile | Calculated sensors, operating analysis, energy statistics |
+| iDM Health Monitor | Health monitor enabled | All `health_*` entities |
+| iDM Comfort | Comfort advisory enabled | Heating curve advice, weather preheat advice |
+| iDM KI-Anlagenberater | AI adviser enabled | All `ai_*` entities — also without the hierarchy option |
+
+The predictive advisor entities (`advisor_*`) deliberately stay on the **main
+heat-pump device**: they describe the plant as a whole, not one removable
+module. Disabling the hierarchy moves every group back onto the main device
+(except the AI group); entity IDs never change either way.
 
 ---
 

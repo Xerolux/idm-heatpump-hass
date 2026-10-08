@@ -245,6 +245,7 @@ const decorateContent = (html, page) => {
   });
 
   template.content.querySelectorAll('pre').forEach((pre) => {
+    if (pre.classList.contains('mermaid')) return; /* diagrams are not copyable code */
     const wrapper = document.createElement('div');
     wrapper.className = 'code-wrap';
     const button = document.createElement('button');
@@ -308,6 +309,73 @@ const renderPageNavigation = (page) => {
     ${next ? `<a class="page-nav-link next" href="${routeHref(next.slug)}"><p><small>${I18N[language].next}</small><strong>${escapeHtml(titleFor(next))}</strong></p><span>→</span></a>` : '<span></span>'}`;
 };
 
+/* ```mermaid fences become render targets for the vendored mermaid build;
+   every other language keeps the default code block. The same override runs
+   at build time in scripts/render_pages_markdown.cjs. */
+marked.use({
+  gfm: true,
+  renderer: {
+    code({ text, lang }) {
+      if (lang && lang.trim().toLowerCase() === 'mermaid') {
+        return `<pre class="mermaid">${escapeHtml(String(text))}</pre>`;
+      }
+      return false;
+    },
+  },
+});
+
+/* The mermaid library is loaded only when a page actually contains a diagram.
+   Diagrams are drawn for the dark default theme; the light theme inverts
+   them in CSS. */
+let mermaidPromise;
+const ensureMermaid = () => {
+  if (!mermaidPromise) {
+    mermaidPromise = new Promise((resolve) => {
+      const ownScript = document.querySelector('script[src*="docs.js"]');
+      const base = ownScript ? ownScript.getAttribute('src').replace(/docs\.js.*$/, '') : '';
+      const script = document.createElement('script');
+      script.src = `${base}vendor/mermaid.min.js`;
+      script.onload = () => {
+        const mermaid = window.mermaid;
+        if (!mermaid) { resolve(null); return; }
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: 'strict',
+          theme: 'base',
+          themeVariables: {
+            background: 'transparent',
+            fontFamily: 'inherit',
+            fontSize: '14px',
+            primaryColor: '#20362a',
+            primaryTextColor: '#e8f1ec',
+            primaryBorderColor: '#7bb661',
+            lineColor: '#9db8a6',
+            textColor: '#dce9e2',
+            edgeLabelBackground: '#0a1510',
+          },
+          flowchart: { curve: 'basis', useMaxWidth: true },
+        });
+        resolve(mermaid);
+      };
+      script.onerror = () => resolve(null);
+      document.head.appendChild(script);
+    });
+  }
+  return mermaidPromise;
+};
+
+const renderMermaidDiagrams = async () => {
+  const blocks = document.querySelectorAll('pre.mermaid');
+  if (!blocks.length) return;
+  const mermaid = await ensureMermaid();
+  if (!mermaid) return;
+  try {
+    await mermaid.run({ nodes: Array.from(blocks) });
+  } catch {
+    /* A diagram that fails to parse keeps its source text visible. */
+  }
+};
+
 const loadRoute = async () => {
   const parsed = parseRoute();
   const page = pageFor(parsed.slug);
@@ -334,6 +402,7 @@ const loadRoute = async () => {
     article.innerHTML = '';
     article.append(fragment);
     article.dataset.renderedSlug = page.slug;
+    renderMermaidDiagrams();
     renderToc(headings);
     document.title = `${titleFor(page)} | ${I18N[language].titleSuffix}`;
     contentLanguage.hidden = !record.fallback;
