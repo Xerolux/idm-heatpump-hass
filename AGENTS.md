@@ -14,10 +14,10 @@ This file provides guidance for AI assistants working on this codebase.
 - **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
 - **Direct Modbus Runtime**: `modbus-connection>=4.12.3`, `tmodbus[async-serial]>=0.6.2`
 - **Device Logic**: `idm-heatpump-api[web]==2.14.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
-- **Open improvement plan**: `docs/dev/code-audit-2026-09.md` — the reviewed list of defects and
-  cleanups with a work package per fix. Read it before starting unrelated refactoring; pick a
-  package from it instead of inventing one. The 0.20.0 web-first line is documented in
-  `docs/dev/ws-first-roadmap.md`.
+- **Completed audit**: `docs/dev/code-audit-2026-09.md` — the September 2026 full-read audit.
+  Every work package shipped (D5 was attempted and closed as won't-fix); the document stays as
+  the historical record of what was reviewed and why each change was made. The 0.20.0 web-first
+  line is documented (and closed) in `docs/dev/ws-first-roadmap.md`.
 
 ---
 
