@@ -5,6 +5,90 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.0-b1 — 2026-10-07
+
+First beta of the `0.21.0` line and the biggest analysis feature so far: the
+**Predictive Advisor** — a strictly read-only recommendation layer that
+observes the plant, tracks per-register data quality and walks documented
+observation stages (collecting → early hints → recommending → established).
+It answers *why the heat pump is running*, detects anomalies against the
+plant's own 30-day baselines, computes health and efficiency scores, learns
+a building model (heat loss, thermal inertia, optimal flow temperature),
+recommends heating-curve corrections in careful 0.02 steps, finds hot-water
+windows from a PV forecast or a dynamic price sensor, and joins everything
+into a 24-hour plan. Recommendations fire `idm_advisor_recommendation`
+events with their full explanation. Fully local and deterministic — no AI,
+no cloud, no LLM — and **no write path to the heat pump at all**. On by
+default with the Smart profile, with its own toggle; a one-time What's-new
+notice in Settings → Repairs summarizes the changes.
+
+## v0.20.1 — 2026-10-06
+
+This release makes **Modbus interruptions self-healing** and completes the
+**differential-temperature circuits** from the beta line (#429): while the
+local web interface keeps delivering data, a failed Modbus poll stops
+alarming — a calm repair notice states that data keeps flowing, and a
+background watchdog reloads entries stuck in Home Assistant's setup-retry
+backoff once the endpoint answers again. Differential circuits (for example
+a wood stove connected through HC D) are detected automatically through the
+local web interface, and their devices return to short entity IDs via a
+one-time migration. The integration is validated against **Home Assistant
+2026.10** (minimum stays 2026.8.1); the transport packages became
+Home-Assistant-owned minimum pins and the device logic moves to
+`idm-heatpump-api[web]==2.14.0`.
+
+## v0.20.0 — 2026-09-30
+
+The local **Navigator web interface becomes a first-class data path**:
+`web_only` grows from an emergency read-only fallback into a real operating
+mode — the Navigator 10 WebSocket delivers statistics, freshwater status,
+the controller clock, performance, weather and iON data, and carries
+capture-confirmed writes for the operating mode, error acknowledgement, the
+hot-water setpoint and per-circuit setpoints and modes, with climate and
+water-heater cards on top. An explicit connection-mode option, two
+connection-state entities and a one-tap reload button make the data paths
+transparent. The **Navigator 1.0/1.7 integration is complete** (issue #319):
+the official FC01/FC05 coil block c3000–c3003 brings the acknowledge button
+and its own *Vorrangladung* button. Controller error codes become readable
+German text through the packaged vendor database, and a sensitive-data
+guard joins CI.
+
+## v0.19.0 — 2026-09-26
+
+The **Navigator 1.0/1.7 becomes a first-class citizen** and
+**photovoltaics gets a face** — plus an honest AI adviser and a fully
+bilingual documentation site. The 1.x family gains the complete official
+writable holding table, a firmware-honest range guard, the per-register
+diagnostics report, a working freshwater setpoint (a capture-verified float
+pair the official table types wrong) and its own warm-water card. PV
+visibility (issue #353) arrives as a derived surplus diagnostic, the
+Navigator 10's own demand reason from its web interface and a dedicated
+*Photovoltaik* device group. Everything stays 100 % local; no entity IDs
+change. Runtime: `idm-heatpump-api[web]==2.4.3`.
+
+## v0.18.0 — 2026-09-20
+
+Two flagship feature sets on top of 0.17.1: the optional **Smart Energy &
+Comfort** package and the experimental **AI plant adviser** — plus a guided
+setup that replaces the long options form. Smart Energy & Comfort brings
+persistent energy/COP/CO₂ statistics, a read-only Health Monitor,
+heating-curve and weather comfort advice, comfort scheduling and a
+fail-closed PV-surplus hot-water boost (both writing features need explicit
+exclusive-controller confirmation). The AI plant adviser is read-only and
+off by default: deterministic measured-data reports, with optional free-form
+explanations through local Ollama, a Home Assistant AI Task entity or
+explicitly consented cloud requests — the only authorized cloud exception.
+Everything stays 100 % local by default. Runtime: `idm-heatpump-api[web]==2.2.0`.
+
+## v0.17.1 — 2026-09-14
+
+Dependency and hardening patch on 0.17.0: the tested runtime moves to
+`idm-heatpump-api[web]==2.1.2`, `modbus-connection==4.12.1` and
+`tmodbus[async-serial]==0.6.2`; release validation always rejects stale
+runtime pins now (the bypass input is gone), and the Navigator variant
+fallback stops after a successful Navigator 10 WebSocket login instead of
+misreporting the protocol family.
+
 ## v0.17.0 — 2026-09-13
 
 The stable cut of the 0.17.0 line, consolidating its whole beta cycle. The

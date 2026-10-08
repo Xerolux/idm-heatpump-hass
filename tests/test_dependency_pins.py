@@ -17,6 +17,7 @@ ROOT = Path(__file__).resolve().parents[1]
 HISTORY_PREFIXES = (
     "docs/CHANGELOG.md",
     "docs/wiki/Changelog.md",
+    "docs/wiki/de/Changelog.md",
     "docs/release-evidence/",
     "docs/dev/modbus-transport-preparation.md",
     # An audit records which revision was reviewed, pinned dependencies
