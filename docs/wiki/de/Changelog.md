@@ -5,6 +5,96 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.0-b1 — 2026-10-07
+
+Erste Beta der `0.21.0`-Linie und das größte Analyse-Feature bislang: der
+**Predictive Advisor** — eine strikt schreibgeschützte Empfehlungsebene, die
+die Anlage beobachtet, die Datenqualität je Register verfolgt und
+dokumentierte Beobachtungsstufen durchläuft (Sammeln → erste Hinweise →
+Empfehlungen → etabliert). Er beantwortet, *warum die Wärmepumpe gerade
+läuft*, erkennt Anomalien gegen die eigenen 30-Tage-Basenlinien, berechnet
+Gesundheits- und Effizienzwerte, lernt ein Gebäudemodell (Wärmeverlust,
+thermische Trägheit, optimale Vorlauftemperatur), empfiehlt Heizkurven-
+Korrekturen in vorsichtigen 0,02-Schritten, findet Warmwasserfenster aus
+PV-Prognose oder dynamischem Strompreis und bündelt alles in einem
+24-Stunden-Plan. Empfehlungen feuern `idm_advisor_recommendation`-Ereignisse
+mit vollständiger Erklärung. Vollständig lokal und deterministisch — keine
+KI, keine Cloud, kein LLM — und **ohne jeden Schreibzugriff auf die
+Wärmepumpe**. Mit dem Smart-Profil standardmäßig aktiv, mit eigenem
+Schalter; ein einmaliger Was-ist-neu-Hinweis unter Einstellungen → Repairs
+fasst die Änderungen zusammen.
+
+## v0.20.1 — 2026-10-06
+
+Dieses Release macht **Modbus-Unterbrechungen selbstheilend** und
+vervollständigt die **Differenztemperaturkreise** aus der Beta-Linie
+(#429): Liefert das lokale Webinterface weiter Daten, löst eine gescheiterte
+Modbus-Abfrage keinen Dauerfehler mehr aus — ein ruhiger Repairs-Hinweis
+meldet, dass die Daten weiterfließen, und ein Hintergrund-Watchdog holt
+Einträge aus dem Setup-Wiederholungs-Backoff zurück, sobald der Endpunkt
+wieder antwortet. Differenztemperaturkreise (zum Beispiel ein Kachelofen an
+HK D) werden über das lokale Webinterface automatisch erkannt, und ihre
+Geräte kehren über eine einmalige Migration zu kurzen Entitäts-IDs zurück.
+Die Integration ist gegen **Home Assistant 2026.10** validiert (Minimum
+bleibt 2026.8.1); die Transport-Pakete wurden Home-Assistant-eigene
+Mindestversionen, die Gerätelogik zieht auf `idm-heatpump-api[web]==2.14.0`.
+
+## v0.20.0 — 2026-09-30
+
+Das lokale **Navigator-Webinterface wird ein vollwertiger Datenpfad**:
+`web_only` wächst vom notfallmäßigen Lesezugriff zum echten Betriebsmodus —
+der Navigator-10-WebSocket liefert Statistiken, Frischwasserstatus, die
+Regler-Uhrzeit, Leistung, Wetter und iON-Daten und trägt capture-bestätigte
+Schreibzugriffe für Betriebsart, Fehlerquittierung, Warmwasser-Sollwert und
+Heizkreis-Sollwerte und -Betriebsarten, inklusive Klima- und
+Warmwasser-Karten. Eine explizite Verbindungsmodus-Option, zwei
+Verbindungsstatus-Entitäten und ein Reload-Button machen die Datenpfade
+transparent. Die **Navigator-1.0/1.7-Integration ist komplett** (Issue
+#319): der offizielle FC01/FC05-Coil-Block c3000–c3003 bringt den
+Quittieren-Button und einen eigenen *Vorrangladung*-Button. Fehlercodes des
+Reglers erscheinen als lesbarer deutscher Text über die mitgelieferte
+Hersteller-Datenbank, und ein Sensitivdaten-Wächter ergänzt die CI.
+
+## v0.19.0 — 2026-09-26
+
+Der **Navigator 1.0/1.7 wird zum vollwertigen Familienmitglied**, und die
+**Photovoltaik bekommt ein Gesicht** — dazu ein ehrlicher KI-Berater und
+eine vollständig zweisprachige Dokumentationsseite. Die 1.x-Familie erhält
+die vollständige offizielle schreibbare Haltetabelle, einen
+firmware-ehrten Bereichsschutz, der Diagnosebericht je Register, einen
+funktionierenden Frischwasser-Sollwert (ein capture-verifiziertes
+Float-Paar, das die offizielle Tabelle falsch typisiert) und eine eigene
+Warmwasser-Karte. Die PV-Sichtbarkeit (Issue #353) kommt als abgeleitete
+Überschuss-Diagnose, als eigener Anforderungsgrund des Navigator 10 aus
+seinem Webinterface und als eigene Gerätegruppe *Photovoltaik*. Alles
+bleibt 100 % lokal; keine Entitäts-ID ändert sich. Laufzeit:
+`idm-heatpump-api[web]==2.4.3`.
+
+## v0.18.0 — 2026-09-20
+
+Zwei Leitfeatures auf Basis von 0.17.1: das optionale Paket **Smart Energy &
+Comfort** und der experimentelle **KI-Anlagenberater** — dazu eine geführte
+Einrichtung, die das lange Optionsformular ersetzt. Smart Energy & Comfort
+bringt persistente Energie-/COP-/CO₂-Statistiken, einen schreibgeschützten
+Health Monitor, Heizkurven- und Wetter-Komfortberatung, Komfort-Zeitpläne
+und einen fail-closed PV-Überschuss-Warmwasser-Boost (beide Schreib-Features
+erfordern eine explizite Bestätigung des exklusiven Reglers). Der
+KI-Anlagenberater ist schreibgeschützt und standardmäßig aus:
+deterministische Berichte aus Messwerten, optional freie Erklärungen über
+lokales Ollama, eine Home-Assistant-AI-Task-Entität oder ausdrücklich
+genehmigte Cloud-Anfragen — die einzige autorisierte Cloud-Ausnahme.
+Alles bleibt standardmäßig 100 % lokal. Laufzeit:
+`idm-heatpump-api[web]==2.2.0`.
+
+## v0.17.1 — 2026-09-14
+
+Abhängigkeits- und Härtungs-Patch auf 0.17.0: Die getestete Laufzeit zieht
+auf `idm-heatpump-api[web]==2.1.2`, `modbus-connection==4.12.1` und
+`tmodbus[async-serial]==0.6.2`; die Release-Validierung lehnt jetzt immer
+veraltete Runtime-Pins ab (der Bypass-Eingang ist entfernt), und der
+Navigator-Varianten-Fallback stoppt nach erfolgreicher Navigator-10-
+WebSocket-Anmeldung, statt die Protokollfamilie falsch zu melden.
+
 ## v0.17.0 — 2026-09-13
 
 Der stabile Schnitt der 0.17.0-Linie, der ihren gesamten Beta-Zyklus zusammenfasst. Die
