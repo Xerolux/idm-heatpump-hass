@@ -7,7 +7,10 @@ from unittest.mock import MagicMock
 
 from custom_components.idm_heatpump.advisor_analytics import AdvisorAnalytics
 
-T0 = datetime(2026, 10, 7, 6, 0, tzinfo=UTC)
+# Anchored to the real clock so the tests never decay: observation stages
+# and status entities compare ``first_observed`` against ``datetime.now``,
+# and a fixed past date flips those assertions one day after it is written.
+T0 = datetime.now(UTC).replace(microsecond=0)
 
 
 def _analytics(mock_hass=None) -> AdvisorAnalytics:

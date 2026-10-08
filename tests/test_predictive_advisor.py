@@ -38,7 +38,10 @@ from custom_components.idm_heatpump.predictive_advisor_entities import (
 )
 from custom_components.idm_heatpump.sensor import async_setup_entry as async_setup_sensors
 
-T0 = datetime(2026, 10, 7, 6, 0, tzinfo=UTC)
+# Anchored to the real clock so the tests never decay: observation stages
+# and status entities compare ``first_observed`` against ``datetime.now``,
+# and a fixed past date flips those assertions one day after it is written.
+T0 = datetime.now(UTC).replace(microsecond=0)
 
 
 def _coordinator(
