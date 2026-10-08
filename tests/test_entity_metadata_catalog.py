@@ -63,12 +63,11 @@ def test_modbus_transport_issue_template_keeps_runtime_guardrails() -> None:
 
 
 def test_open_work_audit_separates_local_work_from_external_blockers() -> None:
-    todo = (ROOT / "docs" / "IMPLEMENTATION_TODO.md").read_text(encoding="utf-8")
     audit = (ROOT / "docs" / "dev" / "open-work-audit.md").read_text(encoding="utf-8")
 
-    assert "docs/dev/open-work-audit.md" in todo
     assert "Done locally" in audit
     assert "Externally blocked" in audit
+    assert "Smart Energy & Comfort follow-up" in audit
     assert "do not estimate, and do not change write paths" in audit
     assert "stable contract for custom\nintegrations" in audit
     assert "supports_shared_connection=False" in audit

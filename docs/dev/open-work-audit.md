@@ -1,6 +1,6 @@
 # Open Work Audit
 
-Last updated: 2026-08-26
+Last updated: 2026-10-08
 
 This audit separates work that can be finished locally from items that cannot be
 completed safely without real-system data or without a central Home Assistant
@@ -157,6 +157,10 @@ system is available:
   Navigator firmware levels.
 - Unambiguous identification of the flow setpoint the heat pump actually
   requests.
+- Publish the flow-temperature-deviation sensor (`actual flow − requested flow`)
+  only after the delineation from the heating curve, mixer setpoint, maximum
+  flow temperature and heating-circuit setpoint is documented, and the behavior
+  with several heating circuits and with cascades has been checked.
 - Binary register verification on Navigator 10 and Navigator 2.0, including
   active-low and special values.
 - Load tests with the maximum number of heating circuits, zones and rooms **on
@@ -172,6 +176,26 @@ system is available:
 The required artifacts are described in the field diagnostics template and in
 the field diagnostics guide. Without that data the safe decision stands: do not
 publish, do not estimate, and do not change write paths.
+
+### Smart Energy & Comfort follow-up
+
+Forwarded from the retired `docs/IMPLEMENTATION_TODO.md` (folded into this
+audit on 2026-10-08). These items stay open until real-system data, user
+consent or explicit controller-ownership decisions are available:
+
+- Validate optional automatic domestic hot water and comfort writes on the
+  owner's hardware with a separately authorized, bounded test and a verified
+  rollback.
+- Develop and validate actual failure prediction against labeled fault
+  histories; the current checks — including the read-only predictive advisor —
+  describe observations and trends only.
+- Specify tariff-based control and PV/battery optimization with explicit
+  controller ownership, equipment constraints and fail-closed behavior.
+  Dynamic tariff pricing currently affects cost estimates only.
+- Define occupancy, geofencing and per-room schedules with the user's available
+  sensors and consent; current windows apply per heating circuit.
+- Collect Navigator 2.0/Pro diagnostics and load-test the maximum plant
+  configuration before making model-wide runtime claims.
 
 ### Home Assistant shared-connection contract
 
