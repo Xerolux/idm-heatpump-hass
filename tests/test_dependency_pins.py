@@ -468,3 +468,59 @@ def test_the_shipped_transport_requirements_are_ha_owned_minimums() -> None:
             "packages Home Assistant depends on"
         )
     assert requirements["idm-heatpump-api"].pinned_version is not None
+
+
+def test_ha_owned_floor_held_below_home_assistants_own_pin() -> None:
+    """Upstream ahead of HA's own pin never marks the floor stale.
+
+    Field case 2026-10-09: modbus-connection 4.12.4 shipped on PyPI while
+    Home Assistant's core modbus integration still exact-pins 4.12.3 — a
+    floor above that cannot be installed next to HA and hassfest rejects
+    it, so 4.12.3 is the ceiling, not a stale floor.
+    """
+    requirement = pins.parse_requirement("modbus-connection>=9.0.0")
+
+    finding = pins.evaluate(requirement, _payload("9.0.0", "9.1.0"), ha_pin=pins.Version("9.0.0"))
+
+    assert finding.status == "current"
+    assert not finding.is_stale
+    assert "Home Assistant's own pin 9.0.0" in finding.detail
+
+
+def test_ha_owned_floor_follows_home_assistants_pin_upward() -> None:
+    """A new upstream release only moves the floor as far as HA's own pin."""
+    requirement = pins.parse_requirement("modbus-connection>=9.0.0")
+
+    finding = pins.evaluate(requirement, _payload("9.0.0", "9.2.0"), ha_pin=pins.Version("9.1.0"))
+
+    assert finding.status == "stale"
+    assert finding.latest == "9.1.0"
+
+
+def test_ha_owned_floor_above_home_assistants_pin_is_lowered() -> None:
+    """A floor above HA's own pin cannot install next to HA — it must come down."""
+    requirement = pins.parse_requirement("modbus-connection>=9.2.0")
+
+    finding = pins.evaluate(requirement, _payload("9.2.0", "9.2.0"), ha_pin=pins.Version("9.1.0"))
+
+    assert finding.status == "stale"
+    assert finding.latest == "9.1.0"
+
+
+def test_pins_from_requires_dist_parses_extras_and_skips_soft_specifiers() -> None:
+    """The HA core modbus manifest pins with an extra: modbus-connection[tmodbus]==X."""
+    parsed = pins.pins_from_requires_dist(
+        [
+            "modbus-connection[tmodbus]==4.12.3",
+            "tmodbus==0.6.2",
+            "pymodbus==3.13.1",
+            "foo>=1.0",
+            "bar==2.0 ; python_version < '3.10'",
+        ]
+    )
+
+    assert parsed == {
+        "modbus-connection": pins.Version("4.12.3"),
+        "tmodbus": pins.Version("0.6.2"),
+        "pymodbus": pins.Version("3.13.1"),
+    }
