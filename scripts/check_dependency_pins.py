@@ -75,9 +75,13 @@ UPDATABLE = ("modbus-connection", "tmodbus", "idm-heatpump-api")
 # Packages Home Assistant itself depends on (its built-in modbus integration
 # adopted modbus-connection/tmodbus in 2026.10).  hassfest rejects custom
 # integrations that exact-pin them, so the manifest states a minimum version
-# whose floor is the validated transport pair.  Home Assistant may resolve a
-# newer compatible release through its own requirement; a newer *major* is
-# never picked up automatically.
+# whose floor is the validated transport pair.  Home Assistant exact-pins
+# these packages in its own requirements, so a floor above that pin cannot be
+# installed next to Home Assistant -- hassfest rejects it.  The HA pin is the
+# hard ceiling: an upstream release Home Assistant has not adopted yet is
+# reported but never marks the floor stale (2026-10-09: modbus-connection
+# 4.12.4 vs Home Assistant's own ==4.12.3 pin).  A newer *major* is never
+# picked up automatically either.
 HA_OWNED = ("modbus-connection", "tmodbus")
 
 _MINIMUM_SPECIFIER_RE = re.compile(r"^>=(?P<floor>\d+(?:\.\d+)+)$")
@@ -287,10 +291,64 @@ def fetch_project(name: str) -> dict[str, Any]:
         return json.loads(response.read().decode("utf-8"))
 
 
-def evaluate(requirement: Requirement, payload: dict[str, Any] | None) -> Finding:
+def pins_from_requires_dist(requires_dist: list[str] | None) -> dict[str, Version]:
+    """Map exact-pinned distributions out of a requirement list.
+
+    Only ``name==X.Y.Z`` entries (an ``[extra]`` suffix is allowed and
+    stripped) without an environment marker count: those are the hard pins
+    of the depending project. Entries with markers or range specifiers are
+    ignored.
+    """
+    pins: dict[str, Version] = {}
+    for entry in requires_dist or []:
+        if ";" in entry:
+            continue  # environment-marked entries are conditional, not hard pins
+        spec = entry.strip()
+        matched = re.match(
+            r"^(?P<name>[A-Za-z0-9_.-]+)(?:\[[A-Za-z0-9_.,-]+\])?==(?P<version>[0-9][^\s;]*)$",
+            spec,
+        )
+        if matched is None:
+            continue
+        try:
+            pins[matched.group("name")] = Version(matched.group("version"))
+        except InvalidVersion:
+            continue
+    return pins
+
+
+def homeassistant_pins() -> dict[str, Version]:
+    """Return the exact transport pins Home Assistant's core modbus carries.
+
+    Home Assistant does not list the transport packages in the
+    ``homeassistant`` distribution itself — its built-in modbus integration
+    exact-pins them in its manifest (``modbus-connection[tmodbus]==4.12.3``,
+    ``tmodbus==0.6.2`` as of 2026.10). A custom-integration floor above that
+    pin cannot be installed next to Home Assistant — hassfest rejects it —
+    so it is the hard ceiling for our own minimum versions. Raises on
+    network problems; the caller decides how loud that is.
+    """
+    payload = fetch_project("homeassistant")
+    stable = latest_version(payload, allow_prerelease=False)
+    if stable is None:
+        return {}
+    manifest_url = (
+        f"https://raw.githubusercontent.com/home-assistant/core/{stable}/homeassistant/components/modbus/manifest.json"
+    )
+    with urllib.request.urlopen(manifest_url, timeout=NETWORK_TIMEOUT) as response:
+        manifest = json.loads(response.read().decode("utf-8"))
+    requirements = manifest.get("requirements") or []
+    return {name: pin for name, pin in pins_from_requires_dist(requirements).items() if name in HA_OWNED}
+
+
+def evaluate(
+    requirement: Requirement,
+    payload: dict[str, Any] | None,
+    ha_pin: Version | None = None,
+) -> Finding:
     """Compare one requirement against the release index of its project."""
     if requirement.is_ha_owned_minimum:
-        return _evaluate_ha_owned_minimum(requirement, payload)
+        return _evaluate_ha_owned_minimum(requirement, payload, ha_pin=ha_pin)
 
     pinned = requirement.pinned_version
     if pinned is None:
@@ -322,14 +380,20 @@ def evaluate(requirement: Requirement, payload: dict[str, Any] | None) -> Findin
     return Finding(requirement, str(newest), "current", f"{requirement.name}: {current} is current")
 
 
-def _evaluate_ha_owned_minimum(requirement: Requirement, payload: dict[str, Any] | None) -> Finding:
+def _evaluate_ha_owned_minimum(
+    requirement: Requirement,
+    payload: dict[str, Any] | None,
+    ha_pin: Version | None = None,
+) -> Finding:
     """Evaluate the validated floor of a Home-Assistant-owned package.
 
-    A newer release inside the floor's major marks the floor stale so the
-    daily pipeline re-validates the pair and raises it.  A newer major never
-    moves the floor automatically — crossing it is a compatibility decision
-    the pipeline holds for review — but it is named in the detail line so it
-    is not silently ignored either.
+    The floor follows the newest release inside its major — but never above
+    the exact pin Home Assistant itself carries for the package
+    (``ha_pin``): a floor above that cannot be installed next to Home
+    Assistant and hassfest rejects it.  An upstream release Home Assistant
+    has not adopted yet is named in the detail line instead of marking the
+    floor stale.  A newer major never moves the floor automatically —
+    crossing it is a compatibility decision the pipeline holds for review.
     """
     floor = requirement.floor_version
     assert floor is not None  # guarded by is_ha_owned_minimum
@@ -350,12 +414,23 @@ def _evaluate_ha_owned_minimum(requirement: Requirement, payload: dict[str, Any]
             if version.major == current.major and not version.is_prerelease
         ]
         newest_in_major = same_major[-1] if same_major else current
-    if newest_in_major > current:
+    target = newest_in_major
+    if ha_pin is not None and target > ha_pin:
+        target = ha_pin
+    if target != current:
         return Finding(
             requirement,
-            str(newest_in_major),
+            str(target),
             "stale",
-            f"{requirement.name}: validated floor {current}, newest in major {newest_in_major}",
+            f"{requirement.name}: validated floor {current}, target {target}",
+        )
+    if newest_in_major > target:
+        held_by = f"Home Assistant's own pin {ha_pin}" if ha_pin is not None else "review"
+        return Finding(
+            requirement,
+            str(target),
+            "current",
+            f"{requirement.name}: floor {current} is current; newer in major {newest_in_major} is held below {held_by}",
         )
     if newest > newest_in_major:
         return Finding(
@@ -369,6 +444,15 @@ def _evaluate_ha_owned_minimum(requirement: Requirement, payload: dict[str, Any]
 
 def check(requirements: list[Requirement]) -> list[Finding]:
     """Evaluate every requirement against PyPI, tolerating network failures."""
+    ha_pins: dict[str, Version] = {}
+    if any(requirement.is_ha_owned_minimum for requirement in requirements):
+        try:
+            ha_pins = homeassistant_pins()
+        except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
+            print(
+                f"warning: could not determine Home Assistant's own transport pins: {error}",
+                file=sys.stderr,
+            )
     findings = []
     for requirement in requirements:
         try:
@@ -376,7 +460,7 @@ def check(requirements: list[Requirement]) -> list[Finding]:
         except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as error:
             print(f"warning: could not reach PyPI for {requirement.name}: {error}", file=sys.stderr)
             payload = None
-        findings.append(evaluate(requirement, payload))
+        findings.append(evaluate(requirement, payload, ha_pin=ha_pins.get(requirement.name)))
     return findings
 
 
