@@ -5,6 +5,16 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.0-b2 — 2026-10-09
+
+Second beta of the `0.21.0` line, a maintenance cut: a register that answers
+with a **permanently invalid value** no longer floods the Home Assistant log
+with one warning per poll (#460 — every 12 s, more than 6600 entries per day
+on an AEOR ALM 4-12 whose `dhw_charge_off_temp` sits outside the documented
+46–53 °C range). The warning now fires once per register, repeats go to the
+debug log, and the message names the value, the rejection reason and the
+documented range. The device logic moves to `idm-heatpump-api[web]==2.14.1`.
+
 ## v0.21.0-b1 — 2026-10-07
 
 First beta of the `0.21.0` line and the biggest analysis feature so far: the

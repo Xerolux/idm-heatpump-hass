@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.0-b2 — 2026-10-09
+
+Zweite Beta der `0.21.0`-Linie, ein Wartungsschnitt: Ein Register, das mit
+einem **dauerhaft ungültigen Wert** antwortet, flutet das Home-Assistant-
+Protokoll nicht mehr mit einer Warnung pro Abfrage (#460 — alle 12 s, über
+6600 Einträge pro Tag bei einer AEOR ALM 4-12, deren `dhw_charge_off_temp`
+außerhalb des dokumentierten Bereichs von 46–53 °C liegt). Die Warnung
+feuert jetzt einmal pro Register, Wiederholungen gehen ins Debug-Protokoll,
+und die Meldung nennt Wert, Ablehnungsgrund und dokumentierten Bereich.
+Die Geräte-Logik zieht auf `idm-heatpump-api[web]==2.14.1`.
+
 ## v0.21.0-b1 — 2026-10-07
 
 Erste Beta der `0.21.0`-Linie und das größte Analyse-Feature bislang: der

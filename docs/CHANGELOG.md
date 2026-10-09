@@ -13,6 +13,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.21.0-b2] - 2026-10-09
+
+### Fixed
+
+- **A register with a permanently invalid value no longer floods the log** (#460): when a controller answers a register but stores a value outside its documented range — as an AEOR ALM 4-12 does at `dhw_charge_off_temp` (address 1034, documented 46–53 °C) — the library warned once per poll, in the report every 12 seconds and more than 6600 log entries per day. The device-logic dependency moves to `idm-heatpump-api[web]==2.14.1`, which logs that WARNING once per register and episode: repeat occurrences go to the debug log, and a clean read re-arms the warning. The register keeps being polled — unlike an unimplemented address the value can come back into range, for example after a controller menu change — and stays visible in the diagnostics export with its raw value. The first-occurrence message now also names the offending value, the rejection reason and the documented range, so a log excerpt alone is enough for a precise register report. If you see this warning for a register, please attach the redacted diagnostics export to a register report: it contains the value and raw words the controller actually returned, which is what a range correction needs.
+
 ## [0.21.0-b1] - 2026-10-07
 
 ### Added
