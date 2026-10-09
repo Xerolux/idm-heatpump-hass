@@ -29,7 +29,7 @@ hardware) and
 [#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319) (Navigator
 1.x priority charge) closed completed inside the line. The transport pins
 became Home-Assistant-owned minimum versions — hassfest rejects exact pins
-for them — and the device logic is pinned to `idm-heatpump-api[web]==2.14.0`.
+for them — and the device logic is pinned to `idm-heatpump-api[web]==2.14.1`.
 The gate-6 shortfall is recorded here so it stays visible.
 
 ## Earlier release decisions
@@ -87,7 +87,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.21.0-b1` and `idm-heatpump-api` `2.14.0` form the current
+Source-tree integration `0.21.0-b1` and `idm-heatpump-api` `2.14.1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
