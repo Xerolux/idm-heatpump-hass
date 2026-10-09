@@ -10,6 +10,23 @@ Den stabilen Kanal zeigt das [aktuelle stabile Release](https://github.com/Xerol
 Die Quellstand-Versionen unten werden automatisch geprüft. Alte Releases
 behalten die Abhängigkeiten ihres getaggten Manifests.
 
+## Release-Entscheidung zu 0.20.2
+
+**0.20.2** ist ein reiner Pin- und Dokumentations-Schnitt auf Basis von
+0.20.1, abgezweigt vom Tag `v0.20.1`: Die Geräte-Logik zieht auf
+`idm-heatpump-api[web]==2.14.1`, deren einzige Änderung die WARNUNG pro
+Abfrage bei einem dauerhaft ungültigen Registerwert beruhigt (Issue
+[#460](https://github.com/Xerolux/idm-heatpump-hass/issues/460)) — eine
+Warnung pro Register und Episode statt eine pro Abfrage. Gegen 0.20.1
+änderte sich kein Integrations-Code. Der Release-Lauf validierte den
+getaggten Baum mit der vollständigen Qualitätsmatrix; Paketierung,
+Prüfsummen- und Paket-zu-Tag-Verifikation bestanden. Die
+Abhängigkeitsänderung startet formal die Dauertest-Uhr (Gate 6) neu; der
+Maintainer entschied dennoch zu veröffentlichen, weil das Delta ein
+reiner Logging-Patch der Bibliothek ist, der bereits die volle Prüfung
+durchlaufen hat, und die 0.21.0-Beta-Linie denselben Pin seit 0.21.0-b2
+trägt. Die 0.21.0-Linie läuft von diesem Schnitt unabhängig weiter.
+
 ## Release-Entscheidung zu 0.20.1
 
 **0.20.1** ist der stabile Schnitt der selbstheilenden Linie aus fünf

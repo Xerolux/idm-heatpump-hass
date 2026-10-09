@@ -32,6 +32,18 @@ no cloud, no LLM — and **no write path to the heat pump at all**. On by
 default with the Smart profile, with its own toggle; a one-time What's-new
 notice in Settings → Repairs summarizes the changes.
 
+## v0.20.2 — 2026-10-09
+
+Stable maintenance release on the 0.20.x line: a register that answers with a
+**permanently invalid value** no longer floods the Home Assistant log with one
+warning per poll (#460 — every 12 s, more than 6600 entries per day on an
+AEOR ALM 4-12 whose `dhw_charge_off_temp` sits outside the documented
+46–53 °C range). The warning now fires once per register, repeats go to the
+debug log, and the message names the value, the rejection reason and the
+documented range. Pin-and-documentation-only cut on top of 0.20.1 — the device
+logic moves to `idm-heatpump-api[web]==2.14.1`; the same fix ships in the
+0.21.0 beta line from 0.21.0-b2 on.
+
 ## v0.20.1 — 2026-10-06
 
 This release makes **Modbus interruptions self-healing** and completes the
