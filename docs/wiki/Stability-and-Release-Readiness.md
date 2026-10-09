@@ -11,6 +11,22 @@ for the installed stable channel. Current source-tree versions are documented
 below and checked automatically; an older release keeps the pins in its own
 tagged manifest. The release decisions below describe their original candidates.
 
+## 0.20.2 release decision
+
+**0.20.2** is a pin-and-documentation-only maintenance cut on top of 0.20.1,
+branched from the `v0.20.1` tag: the device logic moves to
+`idm-heatpump-api[web]==2.14.1`, whose only change calms the per-poll WARNING
+for a persistently invalid register value (issue
+[#460](https://github.com/Xerolux/idm-heatpump-hass/issues/460)) — one
+warning per register and episode instead of one per poll. No integration code
+changed against 0.20.1. The release run validated the tagged tree with the
+full quality matrix; packaging, checksum and package-to-tag verification
+passed. The dependency move formally restarts the soak clock (gate 6); the
+maintainer decided to ship anyway because the delta is a logging-only library
+patch already exercised by the full gate, and the 0.21.0 beta line has
+carried the identical pin since 0.21.0-b2. The 0.21.0 line continues
+independently of this cut.
+
 ## 0.20.1 release decision
 
 **0.20.1** is the stable cut of the self-healing line that ran through five

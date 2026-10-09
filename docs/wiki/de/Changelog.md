@@ -35,6 +35,19 @@ Wärmepumpe**. Mit dem Smart-Profil standardmäßig aktiv, mit eigenem
 Schalter; ein einmaliger Was-ist-neu-Hinweis unter Einstellungen → Repairs
 fasst die Änderungen zusammen.
 
+## v0.20.2 — 2026-10-09
+
+Stabiles Wartungs-Release auf der 0.20.x-Linie: Ein Register, das mit einem
+**dauerhaft ungültigen Wert** antwortet, flutet das Home-Assistant-Protokoll
+nicht mehr mit einer Warnung pro Abfrage (#460 — alle 12 s, über 6600
+Einträge pro Tag bei einer AEOR ALM 4-12, deren `dhw_charge_off_temp`
+außerhalb des dokumentierten Bereichs von 46–53 °C liegt). Die Warnung
+feuert jetzt einmal pro Register, Wiederholungen gehen ins Debug-Protokoll,
+und die Meldung nennt Wert, Ablehnungsgrund und dokumentierten Bereich.
+Reiner Pin- und Dokumentations-Schnitt auf 0.20.1 — die Geräte-Logik zieht
+auf `idm-heatpump-api[web]==2.14.1`; derselbe Fix ist ab 0.21.0-b2 auch in
+der 0.21.0-Beta-Linie enthalten.
+
 ## v0.20.1 — 2026-10-06
 
 Dieses Release macht **Modbus-Unterbrechungen selbstheilend** und
