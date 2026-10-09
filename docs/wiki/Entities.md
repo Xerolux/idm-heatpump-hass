@@ -530,7 +530,7 @@ issue #319). The coils therefore carry no state entities:
 |--------|----------|-------|
 | `dhw_setpoint` | 1032 | 35–95 °C |
 | `dhw_charge_on_temp` | 1033 | 30–50 °C |
-| `dhw_charge_off_temp` | 1034 | 46–53 °C |
+| `dhw_charge_off_temp` | 1034 | 46–67 °C |
 
 ### Heating Circuit (per circuit)
 

@@ -15,7 +15,7 @@ tagged manifest. The release decisions below describe their original candidates.
 
 **0.20.2** is a pin-and-documentation-only maintenance cut on top of 0.20.1,
 branched from the `v0.20.1` tag: the device logic moves to
-`idm-heatpump-api[web]==2.14.1`, whose only change calms the per-poll WARNING
+`idm-heatpump-api[web]==2.14.2`, whose only change calms the per-poll WARNING
 for a persistently invalid register value (issue
 [#460](https://github.com/Xerolux/idm-heatpump-hass/issues/460)) — one
 warning per register and episode instead of one per poll. No integration code
@@ -45,7 +45,7 @@ hardware) and
 [#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319) (Navigator
 1.x priority charge) closed completed inside the line. The transport pins
 became Home-Assistant-owned minimum versions — hassfest rejects exact pins
-for them — and the device logic is pinned to `idm-heatpump-api[web]==2.14.1`.
+for them — and the device logic is pinned to `idm-heatpump-api[web]==2.14.2`.
 The gate-6 shortfall is recorded here so it stays visible.
 
 ## Earlier release decisions
@@ -103,7 +103,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.21.0-b2` and `idm-heatpump-api` `2.14.1` form the current
+Source-tree integration `0.21.0-b3` and `idm-heatpump-api` `2.14.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
