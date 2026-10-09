@@ -363,7 +363,7 @@ async def _handle_set_controller_clock(hass: HomeAssistant, call: ServiceCall) -
     moment = call.data.get("datetime")
     if isinstance(moment, str) and moment.strip():
         try:
-            moment = datetime.fromisoformat(moment.strip().replace("Z", "+00:00"))
+            moment = datetime.fromisoformat(moment.strip())
         except ValueError as err:
             raise ServiceValidationError(
                 translation_domain=DOMAIN,

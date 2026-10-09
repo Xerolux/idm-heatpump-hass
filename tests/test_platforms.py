@@ -926,7 +926,7 @@ class TestIdmTechnicianCodeSensor:
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        fixed_dt = datetime(2025, 6, 15, 14, 30)  # noqa: DTZ001
+        fixed_dt = datetime(2025, 6, 15, 14, 30)
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
         with patch("custom_components.idm_heatpump.sensor.dt_util") as mock_dt:
@@ -941,7 +941,7 @@ class TestIdmTechnicianCodeSensor:
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        fixed_dt = datetime(2025, 6, 15, 14, 30)  # noqa: DTZ001
+        fixed_dt = datetime(2025, 6, 15, 14, 30)
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_2")
         sensor._codes_cache = None
@@ -981,7 +981,7 @@ class TestIdmTechnicianCodeSensor:
 
         from custom_components.idm_heatpump.sensor import IdmTechnicianCodeSensor
 
-        fixed_dt = datetime(2025, 6, 15, 14, 30)  # noqa: DTZ001
+        fixed_dt = datetime(2025, 6, 15, 14, 30)
         coord = _make_coordinator()
         sensor = IdmTechnicianCodeSensor(coord, "level_1")
         sensor.async_write_ha_state = MagicMock()
@@ -1012,7 +1012,7 @@ class TestIdmTechnicianCodeSensor:
                 "custom_components.idm_heatpump.sensor.dt_util",
             ) as mock_dt,
         ):
-            mock_dt.now.return_value = datetime(2025, 6, 15, 14, 30)  # noqa: DTZ001
+            mock_dt.now.return_value = datetime(2025, 6, 15, 14, 30)
             await sensor.async_added_to_hass()
         mock_timer.assert_called_once()
         assert sensor._cancel_timer is cancel_mock
@@ -1789,7 +1789,7 @@ class TestTechnicianCodes:
 
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        dt = datetime(2025, 3, 15, 10, 30)  # noqa: DTZ001
+        dt = datetime(2025, 3, 15, 10, 30)
         result = calculate_codes(dt)
         assert result["level_1"] == "1503"
 
@@ -1798,7 +1798,7 @@ class TestTechnicianCodes:
 
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        dt = datetime(2025, 3, 15, 10, 30)  # noqa: DTZ001
+        dt = datetime(2025, 3, 15, 10, 30)
         # hours=10 -> hh_last=0, hh_first=1; year_last=5; month_last=3; day_last=5
         result = calculate_codes(dt)
         assert result["level_2"] == "01535"
@@ -1809,7 +1809,7 @@ class TestTechnicianCodes:
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
         result = calculate_codes()
-        now = datetime.now()  # noqa: DTZ005
+        now = datetime.now()
         # level_1 should be DDMM of today
         expected_level_1 = f"{now.day:02d}{now.month:02d}"
         assert result["level_1"] == expected_level_1
@@ -1819,7 +1819,7 @@ class TestTechnicianCodes:
 
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        dt = datetime(2025, 1, 5, 8, 0)  # noqa: DTZ001
+        dt = datetime(2025, 1, 5, 8, 0)
         result = calculate_codes(dt)
         assert result["level_1"] == "0501"
 
@@ -1828,7 +1828,7 @@ class TestTechnicianCodes:
 
         from custom_components.idm_heatpump.technician_codes import calculate_codes
 
-        dt = datetime(2025, 3, 15, 0, 0)  # noqa: DTZ001
+        dt = datetime(2025, 3, 15, 0, 0)
         result = calculate_codes(dt)
         # hours=00 -> hh_last=0, hh_first=0
         assert result["level_2"][0] == "0"

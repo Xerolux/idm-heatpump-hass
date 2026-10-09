@@ -23,7 +23,7 @@ def calculate_codes(now: datetime | None = None) -> dict[str, str]:
     desired local timezone when needed.
     """
     if now is None:
-        now = datetime.now()  # noqa: DTZ005
+        now = datetime.now()
 
     d_padded = f"{now.day:02d}"
     m_padded = f"{now.month:02d}"
