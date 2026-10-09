@@ -11,6 +11,27 @@ for the installed stable channel. Current source-tree versions are documented
 below and checked automatically; an older release keeps the pins in its own
 tagged manifest. The release decisions below describe their original candidates.
 
+## 0.20.3 release decision
+
+**0.20.3** is a pin-and-documentation-only maintenance cut on top of 0.20.2,
+branched from the `v0.20.2` tag: the device logic moves to
+`idm-heatpump-api[web]==2.14.2`, whose only change widens the
+`dhw_charge_off_temp` validation range from the documented 46..53 °C to
+46..67 °C — the reporter's plant in issue
+[#460](https://github.com/Xerolux/idm-heatpump-hass/issues/460) measures
+63 °C there and the controller's own web interface offers 50..67 °C. The
+tree additionally cherry-picks two maintenance fixes needed to build and
+release against that day's tooling: the ruff 0.17 lint findings and the
+Home-Assistant-pin ceiling that keeps the `modbus-connection` floor at the
+4.12.3 Home Assistant itself pins (upstream 4.12.4 is uninstallable next to
+HA; without the ceiling rule every release — including this one — was
+blocked). The release run validated the tagged tree with the full quality
+matrix; packaging, checksum and package-to-tag verification passed. The
+dependency move formally restarts the soak clock (gate 6); the maintainer
+decided to ship for the same reasons as 0.20.2 — the delta is a register-
+data patch in the library plus tree-identical transport pins — and the
+0.21.0 line has carried the same pin since 0.21.0-b3.
+
 ## 0.20.2 release decision
 
 **0.20.2** is a pin-and-documentation-only maintenance cut on top of 0.20.1,

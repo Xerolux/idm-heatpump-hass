@@ -43,6 +43,19 @@ no cloud, no LLM — and **no write path to the heat pump at all**. On by
 default with the Smart profile, with its own toggle; a one-time What's-new
 notice in Settings → Repairs summarizes the changes.
 
+## v0.20.3 — 2026-10-09
+
+Second stable maintenance release on the 0.20.x line, driven by the
+reporter's evidence in #460: the controller stores **63 °C** in
+`dhw_charge_off_temp` and its own web interface offers **50–67 °C** there, so
+the documented 46–53 °C range was too narrow. The validation range widens to
+**46–67 °C** (`idm-heatpump-api 2.14.2`): the *Hot water charge stop
+temperature* entity now reports instead of staying unavailable, and writes
+can use the full window the controller itself offers. Pin-and-documentation-
+only cut on top of 0.20.2 (plus the cherry-picked ruff 0.17 and
+Home-Assistant-pin-ceiling maintenance needed to release against today's
+tooling); the same range fix ships in the 0.21.0 beta line from 0.21.0-b3 on.
+
 ## v0.20.2 — 2026-10-09
 
 Stable maintenance release on the 0.20.x line: a register that answers with a

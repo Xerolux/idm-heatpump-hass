@@ -47,6 +47,20 @@ Wärmepumpe**. Mit dem Smart-Profil standardmäßig aktiv, mit eigenem
 Schalter; ein einmaliger Was-ist-neu-Hinweis unter Einstellungen → Repairs
 fasst die Änderungen zusammen.
 
+## v0.20.3 — 2026-10-09
+
+Zweites stabiles Wartungs-Release auf der 0.20.x-Linie, angestoßen durch die
+Belege des Reporters in #460: Der Regler speichert **63 °C** in
+`dhw_charge_off_temp`, und seine eigene Weboberfläche bietet dort **50–67
+°C** an — der dokumentierte Bereich von 46–53 °C war also zu eng. Der
+Validierungsbereich wächst auf **46–67 °C** (`idm-heatpump-api 2.14.2`): Das
+Entity *WW Ausschalttemperatur* zeigt jetzt einen Wert, statt unverfügbar zu
+bleiben, und Schreiben kann das volle Fenster nutzen. Reiner Pin- und
+Dokumentations-Schnitt auf 0.20.2 (plus die cherry-gemappten
+Wartungsfixes für ruff 0.17 und die Home-Assistant-Pin-Deckelung, ohne die
+gegen heutige Tooling-Stände kein Release möglich wäre); derselbe
+Range-Fix liegt ab 0.21.0-b3 auch in der Beta-Linie.
+
 ## v0.20.2 — 2026-10-09
 
 Stabiles Wartungs-Release auf der 0.20.x-Linie: Ein Register, das mit einem
