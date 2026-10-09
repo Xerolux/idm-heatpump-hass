@@ -13,6 +13,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.3] - 2026-10-09
+
+### Fixed
+
+- **`dhw_charge_off_temp` now reports real values: validation range widened to 46–67 °C** (#460): the reporter's diagnostics showed the controller storing **63 °C** at address 1034, and the controller's own web interface (`system/detail/freshwater`) offers **50–67 °C** for this setting — the previously documented 46–53 °C rejected such values on every read, leaving the *Hot water charge stop temperature* entity unavailable and writes above 53 impossible. The device logic moves to `idm-heatpump-api[web]==2.14.2`, which keeps the documented lower bound (46) and raises the upper bound to what the controller itself accepts (67). This is a pin-and-documentation-only maintenance release on top of 0.20.2; the same range fix ships in the 0.21.0 beta line from 0.21.0-b3 on. The tree also carries two maintenance fixes needed to build and release against today's tooling: the ruff 0.17 lint findings (dead DTZ `noqa` directives, native `Z` parsing in `set_controller_clock`) and the Home-Assistant-pin ceiling for the transport floors (`modbus-connection` stays at 4.12.3 — the version Home Assistant itself pins — instead of chasing 4.12.4, which cannot be installed next to HA).
+
 ## [0.20.2] - 2026-10-09
 
 ### Fixed
