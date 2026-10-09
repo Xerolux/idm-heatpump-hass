@@ -5,6 +5,18 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.0-b3 — 2026-10-09
+
+Dritte Beta der `0.21.0`-Linie, eine Datenkorrektur nach den Belegen des
+Reporters in #460: Der Regler speichert **63 °C** in `dhw_charge_off_temp`,
+und seine eigene Weboberfläche bietet dort **50–67 °C** an — der
+dokumentierte Bereich von 46–53 °C war also zu eng. Der
+Validierungsbereich wächst auf **46–67 °C** (`idm-heatpump-api 2.14.2`):
+Das Entity *WW Ausschalttemperatur* zeigt jetzt einen Wert, statt
+unverfügbar zu bleiben, und Schreiben kann das volle Fenster nutzen, das
+der Regler selbst anbietet. Die Register-Referenz ist regeneriert;
+derselbe Fix liegt ab 0.20.3 auch auf der stabilen Linie.
+
 ## v0.21.0-b2 — 2026-10-09
 
 Zweite Beta der `0.21.0`-Linie, ein Wartungsschnitt: Ein Register, das mit

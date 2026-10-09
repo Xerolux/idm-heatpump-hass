@@ -13,6 +13,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.21.0-b3] - 2026-10-09
+
+### Fixed
+
+- **`dhw_charge_off_temp` now reports real values: validation range widened to 46–67 °C** (#460): the reporter's diagnostics showed the controller storing **63 °C** at address 1034, and the controller's own web interface (`system/detail/freshwater`) offers **50–67 °C** for this setting — the previously documented 46–53 °C rejected such values on every read. The device logic moves to `idm-heatpump-api[web]==2.14.2`, which keeps the documented lower bound (46) and raises the upper bound to what the controller itself accepts (67): reads of previously rejected values now pass, the *Hot water charge stop temperature* entity reports instead of staying unavailable, and writes may use the full window the web interface offers. The same range fix ships in the 0.20.x stable line from 0.20.3 on. Also satisfies ruff 0.17 (dead DTZ `noqa` directives removed; `set_controller_clock` parses a trailing `Z` natively) and carries the regenerated register reference (Modbus-Register, Entities — both languages).
+
 ## [0.21.0-b2] - 2026-10-09
 
 ### Fixed
