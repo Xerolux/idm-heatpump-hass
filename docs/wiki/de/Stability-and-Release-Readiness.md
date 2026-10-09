@@ -10,6 +10,28 @@ Den stabilen Kanal zeigt das [aktuelle stabile Release](https://github.com/Xerol
 Die Quellstand-Versionen unten werden automatisch geprüft. Alte Releases
 behalten die Abhängigkeiten ihres getaggten Manifests.
 
+## Release-Entscheidung zu 0.20.3
+
+**0.20.3** ist ein reiner Pin- und Dokumentations-Schnitt auf Basis von
+0.20.2, abgezweigt vom Tag `v0.20.2`: Die Geräte-Logik zieht auf
+`idm-heatpump-api[web]==2.14.2`, deren einzige Änderung den
+Validierungsbereich von `dhw_charge_off_temp` vom dokumentierten 46..53 °C
+auf 46..67 °C weitet — die Anlage des Reporters in Issue
+[#460](https://github.com/Xerolux/idm-heatpump-hass/issues/460) misst dort
+63 °C, und die Weboberfläche des Reglers bietet 50..67 °C an. Der Baum
+trägt zusätzlich zwei cherry-gemappte Wartungsfixes, ohne die an diesem Tag
+nicht gebaut und Released werden konnte: die ruff-0.17-Lint-Befunde und die
+Home-Assistant-Pin-Deckelung, die den `modbus-connection`-Floor bei der
+4.12.3 hält, die Home Assistant selbst pinnt (Upstream 4.12.4 ist neben HA
+nicht installierbar; ohne die Deckel-Regel war jedes Release blockiert,
+auch dieses). Der Release-Lauf validierte den getaggten Baum mit der
+vollständigen Qualitätsmatrix; Paketierung, Prüfsummen- und
+Paket-zu-Tag-Verifikation bestanden. Die Abhängigkeitsänderung startet
+formal die Dauertest-Uhr (Gate 6) neu; der Maintainer entschied aus
+denselben Gründen wie bei 0.20.2 zu veröffentlichen — das Delta ist ein
+Register-Datenpatch der Bibliothek bei baumidentischen Transport-Pins —,
+und die 0.21.0-Linie trägt denselben Pin seit 0.21.0-b3.
+
 ## Release-Entscheidung zu 0.20.2
 
 **0.20.2** ist ein reiner Pin- und Dokumentations-Schnitt auf Basis von
