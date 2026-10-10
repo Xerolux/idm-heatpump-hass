@@ -992,8 +992,13 @@ def _write_sitemap(output: Path) -> None:
 def build_site(output: Path) -> None:
     """Build a complete Pages artifact at *output*."""
     output = output.resolve()
-    forbidden_outputs = {ROOT.resolve(), PUBLIC_DIR.resolve(), ROOT.parent.resolve()}
-    if output in forbidden_outputs or output == output.parent:
+    protected_sources = [
+        ROOT / name for name in (".git", ".github", "custom_components", "docs", "scripts", "tests", "tests_ha")
+    ]
+    if ROOT.resolve().is_relative_to(output) or any(
+        output.is_relative_to(source.resolve()) or source.resolve().is_relative_to(output)
+        for source in protected_sources
+    ):
         raise ValueError(f"Unsafe Pages output directory: {output}")
     if output.exists():
         shutil.rmtree(output)
