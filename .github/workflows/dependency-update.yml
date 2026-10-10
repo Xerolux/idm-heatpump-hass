@@ -212,11 +212,11 @@ jobs:
 
       - name: Lint with Ruff
         if: steps.summary.outputs.updated == 'true'
-        run: ruff check custom_components/idm_heatpump tests --line-length=120 --output-format=github
+        run: ruff check custom_components/idm_heatpump tests tests_ha --line-length=120 --output-format=github
 
       - name: Format check with Ruff
         if: steps.summary.outputs.updated == 'true'
-        run: ruff format custom_components/idm_heatpump tests --check
+        run: ruff format custom_components/idm_heatpump tests tests_ha --check
 
       - name: Type check with mypy
         if: steps.summary.outputs.updated == 'true'
@@ -248,6 +248,10 @@ jobs:
             --cov=custom_components.idm_heatpump.config_flow \
             --cov-report=term-missing \
             --cov-fail-under=100
+
+      - name: Run real-Home-Assistant smoke tests
+        if: steps.summary.outputs.updated == 'true'
+        run: pytest tests_ha/ -v --tb=short
 
       # Reads the working tree, so it validates the updated manifest without a
       # second checkout.
@@ -289,6 +293,7 @@ jobs:
             - ruff, ruff format, mypy and the documentation language check;
             - the full test suite at the minimum supported Home Assistant, with
               the coverage gates ci.yml enforces;
+            - real-Home-Assistant setup, reload and unload smoke tests;
             - hassfest.
 
             The pull request is merged automatically once that gate is green — a
