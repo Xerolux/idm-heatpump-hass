@@ -210,8 +210,8 @@ Maintainer sollten vor einem stabilen Release den
 
 - Home Assistant **2026.8.1+**
 - HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
-- IDM Navigator 2.0 / 10 / Pro Wärmepumpe mit aktiviertem Modbus TCP (Port 502)
-- Optionale lokale Navigator-Web-PIN für zusätzliche read-only Webdiagnosen
+- IDM Navigator 2.0 / 10 / Pro Wärmepumpe mit aktiviertem Modbus TCP (Port 502), oder Navigator 10/Pro im Modus `web_only` mit lokaler Web-PIN
+- Lokale Navigator-Web-PIN für optionale Web-Daten und unterstützte Navigator-10/Pro-Steuerungen im reinen Web-Betrieb
 - Python 3.14+ (wird von Home Assistant bereitgestellt)
 - `modbus-connection>=4.12.3` · `tmodbus[async-serial]>=0.6.2` (direkter Modbus-Socket)
 - `idm-heatpump-api[web]==2.14.2` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
@@ -250,7 +250,7 @@ Home Assistant
     │       │                       FC 03: Read Holding Registers
     │       │                       FC 16: Write Multiple Registers
     │       │
-    │       ├── Optionale lokale Web-Zusatzdaten (PIN, read-only, eigenes Intervall)
+    │       ├── Lokale Web-Daten und unterstützte Web-Steuerungen (PIN)
     │       │
     │       ├── Optionaler RoomTempForwarder (HA-Sensoren -> externe Raumtemperaturregister)
     │       │
@@ -272,7 +272,7 @@ Home Assistant
 - **Werte-Sicherheit**: deklarierte Nicht-verfügbar-Sentinels gelten als unbenutzt; unplausible Batch-Werte werden einzeln geprüft und für die laufende Client-Sitzung aus Batches ausgeschlossen
 - **Datentypen**: FLOAT (IEEE 754, zwei Register), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden erfasst und vor zu häufigem Schreiben geschützt
-- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über exakt `modbus-connection>=4.12.3` und `tmodbus[async-serial]>=0.6.2`; `4.12.3` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
+- **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über die HA-kompatiblen Anforderungen `modbus-connection>=4.12.3` und `tmodbus[async-serial]>=0.6.2`; `4.12.3` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
 - **API-Grenze**: `idm-heatpump-api[web]==2.14.2` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
 - **Auto-Recovery**: Retry-/Backoff-Strategie der API plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
 - **Bibliotheksbasiert**: Alle Registerdefinitionen stammen aus [`idm-heatpump-api`](https://github.com/Xerolux/idm-heatpump-api) und bleiben so über alle Werkzeuge hinweg konsistent

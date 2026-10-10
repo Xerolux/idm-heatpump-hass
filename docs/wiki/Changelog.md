@@ -5,6 +5,12 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## Unreleased
+
+- Harden Pages builds against unsafe output directories and preserve UTF-8 in the Windows KNX parity check.
+- Check stable Home Assistant 2026.10.0 alongside the minimum supported version, verify HA after dependency installation and require real-HA lifecycle tests before automated dependency merges.
+- Correct web-only control documentation and distinguish unreleased changes from published release decisions.
+
 ## v0.21.0-b3 — 2026-10-09
 
 Third beta of the `0.21.0` line, a data fix following the reporter's evidence
