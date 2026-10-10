@@ -50,7 +50,10 @@ function pythonOutput(base, selection, format) {
   if (selection.groups) {
     cliArgs.push("--groups", selection.groups.join(","));
   }
-  const result = spawnSync(pythonBin, [generatorPath, ...cliArgs], { encoding: "utf8" });
+  const result = spawnSync(pythonBin, [generatorPath, ...cliArgs], {
+    encoding: "utf8",
+    env: { ...process.env, PYTHONIOENCODING: "utf-8" },
+  });
   return result;
 }
 
