@@ -52,13 +52,31 @@ focused source review, not a claim that every possible defect has been excluded.
 - Latest baseline GitHub runs: CI, security, sensitive-data guard and Pages green.
   These establish baseline health, not remote validation of this local branch.
 
-## Limits and remaining observations
+## Initial local audit limits and remaining observations
 
 No live Home Assistant installation, physical Modbus/KNX plant, write action,
-release or deployment was part of this audit. Browser interaction and visual
+release or deployment was part of the initial local audit. Browser interaction and visual
 accessibility were not manually tested. Existing test output includes asyncio
 policy deprecations and mock-related unawaited watchdog-coroutine warnings;
 the real minimum-HA lifecycle tests pass without leaked-task failures. Overall
 coverage is close to the 95% gate, so future code needs corresponding tests.
-GitHub HACS/Hassfest/CodeQL results are baseline evidence; this branch has not
-been pushed and its remote jobs have not run.
+At the initial local checkpoint, GitHub HACS/Hassfest/CodeQL results were baseline
+evidence; the branch had not yet been pushed and its remote jobs had not run.
+
+## Publication follow-up
+
+The owner authorized merging and publishing the audited changes on 2026-10-10.
+[PR #470](https://github.com/Xerolux/idm-heatpump-hass/pull/470) carries the changes.
+Remote validation records:
+
+- [PR CI matrix and genuine HA smoke](https://github.com/Xerolux/idm-heatpump-hass/actions/runs/38045603801).
+- [PR CodeQL and pip-audit](https://github.com/Xerolux/idm-heatpump-hass/actions/runs/38045603536).
+- [PR sensitive-data guard](https://github.com/Xerolux/idm-heatpump-hass/actions/runs/38045603569).
+
+The separate GitHub Advanced Security AI review failed with HTTP 402 because its
+monthly quota was exhausted. This is an external service limitation, not a code
+finding; the standard CodeQL and pip-audit jobs passed. Main-branch CI and Pages
+deployment results remain available in the repository's Actions history after
+merge. Physical-device and manual browser/accessibility validation remain outside
+this publication follow-up.
+
