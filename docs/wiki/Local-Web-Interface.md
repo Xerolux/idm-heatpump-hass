@@ -2,19 +2,23 @@
 
 ## Purpose and boundaries
 
-The optional web connection supplements Modbus with local, read-only Navigator
-metadata and diagnostics. It never uses the myIDM cloud and it does not replace
-Modbus for normal register monitoring or control.
+The optional local web connection supplies Navigator metadata and diagnostics
+without the myIDM cloud. Select `auto`, `modbus_web`, `modbus_only` or `web_only`
+in the connection settings; `auto` can fall back to the web connection when
+Modbus is unavailable and a working web PIN is configured.
 
 | Operating mode | Modbus | Local web | Available functions |
 |----------------|--------|-----------|---------------------|
-| Modbus only | yes | no | Full Modbus entities, controls and actions |
-| Modbus + web supplement | yes | yes | Full Modbus functions plus additional web sensors |
-| Web-only fallback | no | yes | Web sensor platform only; no Modbus entities or writes |
+| Modbus only | yes | no | Full supported Modbus entities, controls and actions |
+| Modbus + web supplement | yes | yes | Modbus functions plus additional web data |
+| Web only, Navigator 10/Pro | no | yes | Web data, system mode, DHW setpoint, error acknowledgement, circuit mode/setpoint and climate/water-heater cards when exposed by the controller |
+| Web only, Navigator 2.0 | no | yes | Read-only values returned by the local HTTP interface |
 
-In web-only mode there are no Modbus register reads, binary sensors, numbers,
-selects, switches, raw register writes, system-mode actions or error
-acknowledgement. Only values returned by the local web interface are available.
+Navigator 10/Pro web controls validate writes against the controller's declared
+ranges. Differential-temperature circuits omit room controls. Raw Modbus
+register writes and the one-shot DHW boost are unavailable in `web_only`.
+The web interface exposes boost as a weekly timetable; rewriting that timetable
+is outside this integration's supported controls.
 
 ## Supported local login variants
 

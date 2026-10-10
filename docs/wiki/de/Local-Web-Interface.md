@@ -2,20 +2,24 @@
 
 ## Zweck und Grenzen
 
-Die optionale Web-Verbindung ergänzt Modbus um lokale, schreibgeschützte
-Navigator-Metadaten und Diagnose. Sie nutzt niemals die myIDM-Cloud und ersetzt
-Modbus weder für die normale Registerüberwachung noch für die Steuerung.
+Die optionale lokale Web-Verbindung liefert Navigator-Metadaten und Diagnose
+ohne myIDM-Cloud. In den Verbindungseinstellungen stehen `auto`, `modbus_web`,
+`modbus_only` und `web_only` zur Wahl. Bei funktionierender Web-PIN kann `auto`
+auf die Web-Verbindung ausweichen, wenn Modbus nicht verfügbar ist.
 
 | Betriebsmodus | Modbus | Lokales Web | Verfügbare Funktionen |
 |---------------|--------|-------------|-----------------------|
-| Nur Modbus | ja | nein | Volle Modbus-Entitäten, Steuerelemente und Aktionen |
-| Modbus + Web-Supplement | ja | ja | Volle Modbus-Funktionen plus zusätzliche Web-Sensoren |
-| Reiner Web-Betrieb (Fallback) | nein | ja | Nur die Web-Sensorplattform; keine Modbus-Entitäten oder Schreibvorgänge |
+| Nur Modbus | ja | nein | Alle unterstützten Modbus-Entitäten, Steuerelemente und Aktionen |
+| Modbus + Web-Supplement | ja | ja | Modbus-Funktionen plus zusätzliche Web-Daten |
+| Nur Web, Navigator 10/Pro | nein | ja | Web-Daten, Systemmodus, Warmwasser-Sollwert, Störungsquittierung, Heizkreismodus/-Sollwert und Klima-/Warmwasserkarten, soweit vom Regler bereitgestellt |
+| Nur Web, Navigator 2.0 | nein | ja | Ausschließlich lesbare Werte der lokalen HTTP-Oberfläche |
 
-Im reinen Web-Betrieb gibt es keine Modbus-Registerlesezugriffe, Binärsensoren,
-Number-, Select- oder Switch-Entitäten, keine rohen Register-Schreibvorgänge, keine
-Systemmodus-Aktionen und keine Störungsquittierung. Verfügbar sind nur Werte, die
-die lokale Weboberfläche zurückliefert.
+Web-Steuerungen für Navigator 10/Pro prüfen Schreibwerte gegen die vom Regler
+angegebenen Grenzen. Differenztemperaturgeregelte Kreise erhalten keine
+Raumsteuerungen. Rohe Modbus-Registerschreibzugriffe und der einmalige
+Warmwasser-Boost sind unter `web_only` nicht verfügbar. Die Weboberfläche bildet
+den Boost als Wochenzeitplan ab; dessen Änderung gehört nicht zu den
+unterstützten Steuerungen dieser Integration.
 
 ## Unterstützte lokale Anmeldevarianten
 

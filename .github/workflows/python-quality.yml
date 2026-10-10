@@ -56,25 +56,6 @@ jobs:
           # and no test imports it, so nothing here needs it.
           pip install ruff mypy pytest pytest-cov pytest-asyncio
 
-      - name: Verify the requested Home Assistant version is the installed one
-        env:
-          HOME_ASSISTANT_VERSION: ${{ inputs.home-assistant-version }}
-        run: |
-          python - <<'PY'
-          import os
-          import sys
-
-          from homeassistant.const import __version__
-
-          requested = os.environ["HOME_ASSISTANT_VERSION"]
-          if __version__ != requested:
-              # A transitive pin displaced the matrix version. Fail loudly rather
-              # than reporting a green run for a version that was never tested.
-              print(f"Requested Home Assistant {requested}, but {__version__} is installed")
-              sys.exit(1)
-          print(f"Home Assistant {__version__} confirmed")
-          PY
-
       - name: Install manifest runtime dependencies
         env:
           API_DEPENDENCY_MODE: ${{ inputs.api-dependency-mode }}
@@ -107,6 +88,25 @@ jobs:
         run: |
           pip install --upgrade \
             "idm-heatpump-api[web] @ git+https://github.com/Xerolux/idm-heatpump-api.git@main"
+
+      - name: Verify the requested Home Assistant version is the installed one
+        env:
+          HOME_ASSISTANT_VERSION: ${{ inputs.home-assistant-version }}
+        run: |
+          python - <<'PY'
+          import os
+          import sys
+
+          from homeassistant.const import __version__
+
+          requested = os.environ["HOME_ASSISTANT_VERSION"]
+          if __version__ != requested:
+              # A transitive pin displaced the matrix version. Fail loudly rather
+              # than reporting a green run for a version that was never tested.
+              print(f"Requested Home Assistant {requested}, but {__version__} is installed")
+              sys.exit(1)
+          print(f"Home Assistant {__version__} confirmed")
+          PY
 
       - name: Smoke test production Modbus backend
         run: |

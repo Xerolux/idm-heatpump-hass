@@ -139,11 +139,13 @@ Reparaturprobleme. Keiner von beiden stoppt eine funktionierende Modbus-Abfrage.
 
 ### Der reine Web-Betrieb stellt weniger Entitäten bereit als erwartet
 
-Das ist beabsichtigt. Der reine Web-Betrieb lädt nur schreibgeschützte Sensoren, die die lokale
-Weboberfläche zurückliefert. Es gibt keine Modbus-Abfrage, keine Binärsensoren, Number-,
-Select- und Switch-Entitäten, keine Register-Schreibvorgänge, keine Systemmodus-Aktion und
-keine Störungsquittierung. Werte, die im letzten erfolgreichen Web-Schnappschuss fehlen,
-bleiben unverfügbar.
+Der Funktionsumfang hängt vom Navigator und den bereitgestellten Web-Daten ab.
+Navigator 10/Pro bietet Web-Sensoren sowie unterstützte Steuerungen für
+Systemmodus, Warmwasser und Heizkreise, einschließlich Störungsquittierung und
+Klima-/Warmwasserkarten. Navigator 2.0 über HTTP bleibt rein lesend. Rohe
+Registerschreibzugriffe und einmaliger Warmwasser-Boost benötigen Modbus.
+Fehlende Werte im letzten erfolgreichen Web-Schnappschuss bleiben unverfügbar.
+Siehe [Lokale Weboberfläche](Local-Web-Interface) für die Grenzen je Modell.
 
 ## Probleme mit Entitäten
 

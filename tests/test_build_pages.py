@@ -10,8 +10,25 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from scripts import build_pages
 from scripts import generate_knx_group_addresses as generator
+
+
+@pytest.mark.parametrize("target", [".", "..", "docs", "docs/wiki", "scripts", "tests", "custom_components", ".git"])
+def test_build_rejects_source_directories_before_deleting(tmp_path: Path, monkeypatch, target: str) -> None:
+    root = tmp_path / "repository"
+    root.mkdir()
+    source = root / "docs" / "wiki" / "Home.md"
+    source.parent.mkdir(parents=True)
+    source.write_text("Keep this source", encoding="utf-8")
+    monkeypatch.setattr(build_pages, "ROOT", root)
+
+    with pytest.raises(ValueError, match="Unsafe Pages output directory"):
+        build_pages.build_site(root / target)
+
+    assert source.read_text(encoding="utf-8") == "Keep this source"
 
 
 def test_catalogue_json_mirrors_the_knx_catalogue(tmp_path: Path) -> None:

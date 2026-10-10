@@ -50,7 +50,7 @@ must be limited to documented safe registers.
   fails the release when a pin is behind, without an override.
   The daily `dependency-freshness.yml` workflow updates
   every pin, validates the result (ruff, mypy, the suite with the coverage gates
-  at the minimum supported Home Assistant, hassfest) and merges it into `main` on
+  at the minimum supported Home Assistant, real-HA lifecycle smoke tests, hassfest) and merges it into `main` on
   its own; a major version bump is validated but left open for review.
   A runtime dependency change restarts the soak clock, so it ships through the
   pre-release channel.
@@ -61,9 +61,11 @@ must be limited to documented safe registers.
   automation also synchronizes these claims before validation. Historical
   release decisions, changelogs and release evidence keep their published
   versions; older installations must use their own tagged manifest.
-- `pytest tests/ -v --tb=short --cov=custom_components/idm_heatpump --cov-report=term-missing`
-- `ruff check custom_components/idm_heatpump tests`
-- `ruff format custom_components/idm_heatpump tests --check`
+- `pytest tests/ -v --tb=short --cov=custom_components/idm_heatpump --cov-report=term-missing --cov-fail-under=95`
+- `pytest tests/ -q --cov=custom_components.idm_heatpump.config_flow --cov-fail-under=100`
+- `pytest tests_ha/ -v --tb=short` against the real minimum supported Home Assistant runtime.
+- `ruff check custom_components/idm_heatpump tests tests_ha`
+- `ruff format custom_components/idm_heatpump tests tests_ha --check`
 - `mypy custom_components/idm_heatpump`
 - HACS validation.
 - Hassfest validation.

@@ -208,8 +208,8 @@ before publishing a stable release.
 
 - Home Assistant **2026.8.1+**
 - HACS ([Installation guide](https://hacs.xyz/docs/setup/download))
-- IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502)
-- Optional local Navigator web PIN for additional read-only web diagnostics
+- IDM Navigator 2.0 / 10 / Pro heat pump with Modbus TCP enabled (port 502), or Navigator 10/Pro in `web_only` mode with a local web PIN
+- Local Navigator web PIN for optional web data and supported Navigator 10/Pro web-only controls
 - Python 3.14+ (provided by Home Assistant)
 - `modbus-connection>=4.12.3` · `tmodbus[async-serial]>=0.6.2` (direct Modbus socket runtime)
 - `idm-heatpump-api[web]==2.14.2` (device logic: register metadata, batching, decoding, model detection, write safety)
@@ -248,7 +248,7 @@ Home Assistant
     │       │                       FC 03: Read Holding Registers
     │       │                       FC 16: Write Multiple Registers
     │       │
-    │       ├── Optional local web supplement (PIN, read-only, separate interval)
+    │       ├── Local web data and supported web-only controls (PIN)
     │       │
     │       ├── Optional RoomTempForwarder (HA sensors -> external room temperature registers)
     │       │
@@ -270,7 +270,7 @@ Home Assistant
 - **Value safety**: declared unavailable sentinels are treated as unused; implausible batch values are verified individually and quarantined for the client session
 - **Data types**: FLOAT (IEEE 754, two registers), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM protection**: 88 EEPROM-sensitive registers are tracked and protected from excessive writing
-- **Direct local transport**: raw FC03/FC04 reads and FC16 writes use the exact `modbus-connection>=4.12.3` and `tmodbus[async-serial]>=0.6.2` runtime; version 4.12.3 is the transport library version, not the IDM integration version
+- **Direct local transport**: raw FC03/FC04 reads and FC16 writes use the Home Assistant-compatible `modbus-connection>=4.12.3` and `tmodbus[async-serial]>=0.6.2` runtime; version 4.12.3 is the transport library version, not the IDM integration version
 - **API boundary**: `idm-heatpump-api[web]==2.14.2` supplies register metadata, batching, encoding/decoding, model detection and write safety. Since that release the API owns its own exception hierarchy and pymodbus is gone: this integration installs no Modbus stack it does not speak
 - **Auto-recovery**: API retry/backoff policy plus reconnect-on-demand in the tmodbus-backed connection
 - **Library-powered**: All register definitions sourced from [`idm-heatpump-api`](https://github.com/Xerolux/idm-heatpump-api) for consistency across tools

@@ -15,6 +15,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 CHANGELOG = ROOT / "docs" / "CHANGELOG.md"
 WIKI_PAGES = (
@@ -25,7 +27,7 @@ _HEADING = re.compile(r"^## v(?P<version>[0-9][^\s—-]*(?:-[0-9A-Za-z.]+)?)", r
 
 
 def _newest_changelog_version() -> str:
-    match = re.search(r"^## \[([^\]]+)\]", CHANGELOG.read_text(encoding="utf-8"), re.MULTILINE)
+    match = re.search(r"^## \[([0-9][^\]]+)\]", CHANGELOG.read_text(encoding="utf-8"), re.MULTILINE)
     assert match is not None, "docs/CHANGELOG.md has no version section"
     return match.group(1)
 
@@ -62,3 +64,10 @@ def test_wiki_headlines_carry_dates() -> None:
         sections = _HEADING.findall(text)
         dated = pattern.findall(text)
         assert len(sections) == len(dated), f"{page}: every '## v<version>' section must carry a '— YYYY-MM-DD' date"
+
+
+def test_newest_release_skips_unreleased(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("## [Unreleased]\n\n## [9.0.0-b1]\n", encoding="utf-8")
+    monkeypatch.setattr(f"{__name__}.CHANGELOG", changelog)
+    assert _newest_changelog_version() == "9.0.0-b1"

@@ -258,12 +258,13 @@ def test_dependency_update_runs_the_quality_gate_before_merging() -> None:
     )[0]
 
     assert "ruff check custom_components/idm_heatpump tests" in gate
-    assert "ruff format custom_components/idm_heatpump tests --check" in gate
+    assert "ruff format custom_components/idm_heatpump tests tests_ha --check" in gate
     assert "mypy custom_components/idm_heatpump" in gate
     assert "python scripts/check_documentation_language.py" in gate
     assert "--cov-fail-under=95" in gate
     assert "--cov-fail-under=100" in gate
     assert "home-assistant/actions/hassfest" in gate
+    assert "pytest tests_ha/ -v --tb=short" in gate
     # The gate runs against the Home Assistant the release workflow validates.
     assert 'MINIMUM_HOME_ASSISTANT: "2026.8.1"' in workflow
     assert "Requested Home Assistant {requested}, but {__version__} is installed" in workflow
@@ -562,3 +563,11 @@ def test_agents_md_lists_every_module_and_test() -> None:
 
     assert not missing_modules, f"AGENTS.md does not mention these modules: {missing_modules}"
     assert not missing_tests, f"AGENTS.md does not mention these test files: {missing_tests}"
+
+
+def test_quality_checks_home_assistant_after_all_dependency_installs() -> None:
+    workflow = _read(ROOT / ".github" / "workflows" / "python-quality.yml")
+    check = workflow.index("      - name: Verify the requested Home Assistant version")
+    assert check > workflow.index("      - name: Install manifest runtime dependencies")
+    assert check > workflow.index("      - name: Install API main branch")
+    assert check < workflow.index("      - name: Smoke test production Modbus backend")

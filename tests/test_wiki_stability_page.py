@@ -15,6 +15,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parents[1]
 CHANGELOG = ROOT / "docs" / "CHANGELOG.md"
 STABILITY_PAGES = {
@@ -31,7 +33,7 @@ STABILITY_PAGES = {
 
 def _newest_stable_version() -> str:
     """Return the newest changelog version without a prerelease suffix."""
-    for match in re.finditer(r"^## \[([^\]]+)\]", CHANGELOG.read_text(encoding="utf-8"), re.MULTILINE):
+    for match in re.finditer(r"^## \[([0-9][^\]]+)\]", CHANGELOG.read_text(encoding="utf-8"), re.MULTILINE):
         version = match.group(1)
         if "-" not in version:
             return version
@@ -62,3 +64,10 @@ def test_stability_decision_is_not_left_below_earlier_heading() -> None:
         )
         assert decision != -1 and earlier != -1
         assert decision < earlier, f"{page}: the {version} decision belongs above the earlier-decisions section"
+
+
+def test_newest_stable_skips_unreleased_and_prereleases(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    changelog = tmp_path / "CHANGELOG.md"
+    changelog.write_text("## [Unreleased]\n\n## [9.0.0-b1]\n\n## [8.0.0]\n", encoding="utf-8")
+    monkeypatch.setattr(f"{__name__}.CHANGELOG", changelog)
+    assert _newest_stable_version() == "8.0.0"

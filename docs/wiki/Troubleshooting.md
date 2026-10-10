@@ -95,12 +95,13 @@ firewall failure.
 
 ### Modbus is not available on the heat pump
 
-Enter the local Navigator web PIN during setup. If the web interface can be
-authenticated, the recovery step offers **web data only**. This mode exposes
-read-only web sensors but no Modbus heating-circuit/zone registers, writable
-entities, mode control, or error acknowledgement. Full functionality still
-requires Modbus TCP to be enabled by the installer or iDM service if the local
-controller does not expose the setting.
+Enter the local Navigator web PIN during setup. When authentication succeeds,
+select `web_only` (or allow `auto` to fall back). Navigator 10/Pro exposes web
+sensors and supported operating-mode, hot-water and heating-circuit controls,
+including error acknowledgement and climate/water-heater cards. Navigator 2.0
+HTTP remains read-only. Raw register writes and one-shot DHW boost require
+Modbus; availability also depends on the controller's exposed web data. See
+[Local Web Interface](Local-Web-Interface) for the model-specific limits.
 
 ### "Navigator web PIN rejected"
 

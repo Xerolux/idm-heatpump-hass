@@ -26,10 +26,9 @@ jobs:
           # The declared minimum in hacs.json/manifest.json, and the version the
           # release workflow validates against.
           - "2026.8.1"
-          # The next Home Assistant release, so its device-registry
-          # deprecations and API removals surface here before users hit them.
-          # Move this to "2026.10.0" once the stable artifact is on PyPI.
-          - "2026.10.0b0"
+          # The current stable Home Assistant release complements the minimum
+          # supported version and catches API and registry changes.
+          - "2026.10.0"
         api-dependency-mode:
           - manifest-pinned
           - api-main

@@ -8,7 +8,7 @@
 > **Die vollständige Dokumentation** der IDM-Heatpump-Integration.
 > Von der Installation bis zur Fehlerbehebung — mit allen Funktionen, Entitäten und Aktionen.
 
-> **Wichtige Voraussetzung:** Modbus TCP muss auf dem IDM
+> **Für Modbus-Betrieb:** Modbus TCP muss auf dem IDM
 > Navigator/Regler unter **Gebäudeleittechnik → Modbus TCP → Ein**
 > aktiviert sein. Siehe
 > [Installation & Einrichtung](Installation-and-Setup#modbus-tcp-an-der-idm-warmepumpe-aktivieren).
@@ -22,7 +22,7 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 | Funktion | Details |
 |---------|---------|
 | **Protokoll** | Modbus TCP (Port 502, Slave-ID 1) |
-| **Optionales Supplement** | Lokale Navigator-Web-API, nur lesend, PIN optional |
+| **Optionales Supplement** | Lokale Navigator-Web-API; PIN für Web-Zugriff erforderlich, unterstützte Steuerungen im Navigator-10/Pro-Modus `web_only` |
 | **Dokumentationsversion** | Quellstand `0.21.0-b3`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Unterstützte/getestete HA-Baseline** | 2026.8.1 |
 | **Python** | 3.14+ (von Home Assistant verwaltet) |

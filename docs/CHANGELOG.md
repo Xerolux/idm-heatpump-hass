@@ -13,6 +13,20 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Protect Pages source directories and repository ancestors from deletion when a build receives an unsafe output path.
+- Keep the KNX website/CLI parity check UTF-8 on Windows, preserving German object names.
+- Exclude `Unreleased` from wiki release-summary and stable-decision checks.
+- Correct README and English/German wiki descriptions of Navigator 10/Pro web-only controls and their prerequisites.
+
+### Changed
+
+- Validate the minimum supported Home Assistant and stable 2026.10.0 in CI; verify the installed HA version after all runtime dependencies are installed.
+- Run genuine Home Assistant lifecycle smoke tests before dependency-update pull requests can be merged automatically, and lint their test sources.
+
 ## [0.21.0-b3] - 2026-10-09
 
 ### Fixed
