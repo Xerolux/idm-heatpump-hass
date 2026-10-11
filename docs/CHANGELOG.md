@@ -13,6 +13,13 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.20.4] - 2026-10-11
+
+### Fixed
+
+- **Guided configuration of external power forwarding on the advanced level no longer fails** (#471): the guided flow offered the external-power interval as an advanced detail, but the options page never defined that field, so opening the feature's page on the *advanced* level crashed with an unknown error (the *standard* level worked, which made it look like an expert-mode quirk). The interval is now a real option (*External power forwarding interval*, 30–3600 s slider, default 60 s) with labels in all three translation files, and a regression test walks every guided feature at every level so a missing options field can never ship again. The same report's log showed the forwarder warning `register … rejected the value` on every cycle: sensor-driven forwards fire on every source update, and the coordinator's per-register write cooldown quietly drops those inside the throttle window — that error is now classified as what it is and logged at debug level instead of masquerading as a controller rejection. The Smart Energy wiki page documents the interval and the event-driven behaviour in both languages.
+- The transport floor follows Home Assistant 2026.10.1: `modbus-connection>=4.12.4` (Home Assistant's own core modbus pin moved to 4.12.4, so the validated pair rises with it; `tmodbus` stays at 0.6.2). No configuration change is needed.
+
 ## [0.21.0-b4] - 2026-10-11
 
 ### Fixed

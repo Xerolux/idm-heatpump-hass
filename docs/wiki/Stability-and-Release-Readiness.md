@@ -11,6 +11,25 @@ for the installed stable channel. Current source-tree versions are documented
 below and checked automatically; an older release keeps the pins in its own
 tagged manifest. The release decisions below describe their original candidates.
 
+## 0.20.4 release decision
+
+**0.20.4** is a maintenance cut on top of 0.20.3, branched from the `v0.20.3`
+tag: it cherry-picks the issue
+[#471](https://github.com/Xerolux/idm-heatpump-hass/issues/471) fix (the
+external power forwarding interval becomes a real options field — the guided
+advanced page crashed on the missing key — plus quiet write-cooldown skips
+and a regression test over every guided feature and level) and raises the
+`modbus-connection` floor to `>=4.12.4`, following Home Assistant 2026.10.1's
+own core modbus pin; the HA-pin ceiling rule built for 0.20.3 now permits the
+rise. The release run validated the tagged tree with the full quality matrix
+including the real-Home-Assistant lifecycle suite; packaging, checksum and
+package-to-tag verification passed. The dependency moves formally restart the
+soak clock (gate 6); the maintainer shipped for the same reasons as 0.20.2
+and 0.20.3 — the functional delta is a configuration-flow fix with
+regression tests, and the transport bump tracks the exact pair Home Assistant
+itself installs at its newest stable release. The 0.21.0 line has carried the
+guided fix since 0.21.0-b4.
+
 ## 0.20.3 release decision
 
 **0.20.3** is a pin-and-documentation-only maintenance cut on top of 0.20.2,
