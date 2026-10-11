@@ -5,11 +5,22 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
-## Unreleased
+## v0.21.0-b4 — 2026-10-11
 
-- Harden Pages builds against unsafe output directories and preserve UTF-8 in the Windows KNX parity check.
-- Check stable Home Assistant 2026.10.0 alongside the minimum supported version, verify HA after dependency installation and require real-HA lifecycle tests before automated dependency merges.
-- Correct web-only control documentation and distinguish unreleased changes from published release decisions.
+Fourth beta of the `0.21.0` line. **Guided configuration of external power
+forwarding no longer crashes on the advanced level** (#471): the wizard
+advertised a forwarding interval the options page never had, so the feature's
+advanced page died with an *Unknown error* while the standard level worked.
+The **external power forwarding interval** is now a real option (30–3600 s,
+default 60 s), and a regression test walks every guided feature at every
+level so a missing option can never ship again. Sensor-driven forwards that
+arrive faster than the integration's per-register write cooldown are now
+skipped quietly at debug level instead of logging `rejected the value` on
+every cycle — expected self-throttling, not a controller fault. Also in this
+cut: hardened Pages builds against unsafe output directories, UTF-8 preserved
+in the Windows KNX parity check, corrected web-only control descriptions,
+stable Home Assistant 2026.10.0 validated alongside the minimum in CI, and
+real-HA lifecycle tests required before automated dependency merges.
 
 ## v0.21.0-b3 — 2026-10-09
 
