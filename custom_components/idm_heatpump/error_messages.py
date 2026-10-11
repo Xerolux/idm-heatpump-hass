@@ -238,6 +238,8 @@ def classify_write_error(err: Exception) -> str:
     # controller rejection sends the user looking in the wrong place.
     if "eeprom" in message and any(marker in message for marker in ("too recently", "write cycle")):
         return "write_eeprom_blocked"
+    if getattr(err, "translation_key", None) == "write_cooldown_active" or "cooldown" in message:
+        return "write_cooldown_active"
     if any(marker in message for marker in ("read only", "readonly", "not writable", "write protected")):
         return "write_read_only"
     if any(marker in message for marker in ("out of range", "outside", "minimum", "maximum", "min_val", "max_val")):
@@ -278,10 +280,11 @@ def friendly_write_error(translation_key: str, register_name: str) -> str:
         "write_connection_failed": "the Modbus connection to the heat pump failed",
         "write_read_only": "the target register is read-only or currently locked",
         "write_out_of_range": "the temperature is outside the permitted register range",
-        "write_not_supported": "the target register is not supported by this heat pump",
+        "write_not_supported": "the register is not supported by this heat pump",
         "write_invalid_value": "the value has an invalid format or data type",
         "write_eeprom_blocked": "the EEPROM write protection is still blocking this register",
         "write_rejected_by_device": "the heat pump answered the write with a Modbus exception",
+        "write_cooldown_active": "the integration's write cooldown is still active for this register",
     }
     return messages.get(translation_key, f"register {register_name} rejected the value")
 

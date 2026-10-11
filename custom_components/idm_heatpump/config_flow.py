@@ -210,6 +210,7 @@ from .const import (
     FEATURE_PROFILE_SMART,
     HEATING_CIRCUITS,
     MAX_EEPROM_WRITE_INTERVAL,
+    MAX_EXTERNAL_POWER_FORWARDING_INTERVAL,
     MAX_KNX_RESEND_INTERVAL,
     MAX_KNX_TOLERANCE,
     MAX_MODBUS_CONNECT_DELAY,
@@ -221,6 +222,7 @@ from .const import (
     MAX_WRITE_COOLDOWN,
     MAX_ZONE_COUNT,
     MIN_EEPROM_WRITE_INTERVAL,
+    MIN_EXTERNAL_POWER_FORWARDING_INTERVAL,
     MIN_KNX_RESEND_INTERVAL,
     MIN_KNX_TOLERANCE,
     MIN_MODBUS_CONNECT_DELAY,
@@ -945,6 +947,23 @@ def _build_options_schema(options: dict[str, Any]) -> vol.Schema:
                             CONF_EXTERNAL_POWER_FORWARDING,
                             default=options.get(CONF_EXTERNAL_POWER_FORWARDING, DEFAULT_EXTERNAL_POWER_FORWARDING),
                         ): BooleanSelector(BooleanSelectorConfig()),
+                        vol.Required(
+                            CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
+                            default=int(
+                                options.get(
+                                    CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
+                                    DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
+                                )
+                            ),
+                        ): NumberSelector(
+                            NumberSelectorConfig(
+                                min=MIN_EXTERNAL_POWER_FORWARDING_INTERVAL,
+                                max=MAX_EXTERNAL_POWER_FORWARDING_INTERVAL,
+                                step=10,
+                                mode=NumberSelectorMode.SLIDER,
+                                unit_of_measurement="s",
+                            )
+                        ),
                         vol.Required(
                             CONF_WEB_ENABLED,
                             default=options.get(CONF_WEB_ENABLED, DEFAULT_WEB_ENABLED),

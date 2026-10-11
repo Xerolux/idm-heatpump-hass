@@ -138,6 +138,14 @@ nicht durch die PV-Bruttoproduktion minus Hausverbrauch. Ohne
 Überschussquelle kann er diese Differenz aus zwei gültigen, nicht-negativen
 Leistungsmesswerten ableiten.
 
+Die Weiterleitung ist ereignisgetrieben: Eine Sensor-Aktualisierung wird
+innerhalb von etwa einer Sekunde geschrieben, mit einem periodischen
+Fallback-Zyklus von standardmäßig 60 Sekunden (die Option *Weiterleitungsintervall
+für externe Leistungswerte*, 30–3600 Sekunden; der Schreib-Cooldown der
+Integration pro Register drosselt Bursts). Sensor-Aktualisierungen während
+dieses Cooldowns werden still übersprungen — wenn eine Quelle schneller
+aktualisiert als die Drossel, ist nichts falsch.
+
 Der aktuelle Assistent öffnet die Seite der Quellzuordnung über die
 aktivierte externe Leistungsweiterleitung. Bestehende Zuordnungen bleiben
 mit deaktivierter Weiterleitung nutzbar; ein eigenständiger, nur lesender

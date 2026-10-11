@@ -101,6 +101,33 @@ async def test_register_guards_and_transport_error(caplog: pytest.LogCaptureFixt
     assert "Could not forward" in caplog.text
 
 
+async def test_write_cooldown_is_not_a_warning(caplog: pytest.LogCaptureFixture) -> None:
+    """Cooldown skips are expected self-throttling, not a device problem (#471).
+
+    Sensor-driven forwards fire on every source update; the coordinator drops
+    those inside the per-register write cooldown. That used to log
+    "rejected the value" on every cycle and read like a controller fault.
+    """
+    caplog.clear()
+    forwarder, coordinator = _forwarder({"sensor.pv": _state(-3.5)}, {"pv_surplus": "sensor.pv"})
+    register = SimpleNamespace(name="pv_surplus", writable=True, min_val=None, max_val=None)
+    coordinator.get_register.side_effect = None
+    coordinator.get_register.return_value = register
+
+    class _CooldownError(RuntimeError):
+        translation_key = "write_cooldown_active"
+
+    coordinator.async_write_register.side_effect = _CooldownError(
+        "Writing pv_surplus is still paused: 3.2 s of the 5 s write cooldown remain"
+    )
+    with caplog.at_level("DEBUG", logger="custom_components.idm_heatpump.external_power_forwarding"):
+        await forwarder.async_forward()
+
+    assert "Could not forward" not in caplog.text
+    assert "rejected the value" not in caplog.text
+    assert "write cooldown" in caplog.text
+
+
 async def test_run_cleans_up_listener_on_cancellation(monkeypatch: pytest.MonkeyPatch) -> None:
     forwarder, _ = _forwarder({}, {})
     unsubscribe = MagicMock()

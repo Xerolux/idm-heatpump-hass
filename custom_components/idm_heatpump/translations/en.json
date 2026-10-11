@@ -132,7 +132,8 @@
               "device_hierarchy": "Group entities by system area",
               "short_cycle_minutes": "Short compressor-cycle threshold",
               "dynamic_price_entity": "Dynamic electricity price sensor",
-              "comfort_schedule_windows": "Additional comfort windows"
+              "comfort_schedule_windows": "Additional comfort windows",
+              "external_power_forwarding_interval": "External power forwarding interval"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -164,7 +165,8 @@
               "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
               "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
-              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control."
+              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
+              "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
             }
           },
           "room_temperature_forwarding": {
@@ -436,6 +438,7 @@
           "feature_profile": "Feature profile",
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
+          "differential_circuits": "Differential-temperature controlled circuits",
           "energy_manager": "Enable automatic PV surplus DHW charging",
           "energy_manager_exclusive_control": "Confirm Home Assistant is the only DHW controller",
           "health_monitor": "Enable iDM Health Monitor",
@@ -464,6 +467,7 @@
           "device_hierarchy": "Group entities by system area",
           "short_cycle_minutes": "Short compressor-cycle threshold",
           "comfort_schedule_windows": "Additional comfort windows",
+          "external_power_forwarding_interval": "External power forwarding interval",
           "room_temp_forwarding": "Forward external room temperatures",
           "room_temp_forwarding_interval": "Forwarding interval",
           "room_temp_forwarding_tolerance": "Change tolerance",
@@ -473,6 +477,7 @@
           "storage_temp_forwarding": "Forward external storage temperatures",
           "storage_temp_forwarding_interval": "Forwarding interval",
           "storage_temp_forwarding_tolerance": "Change tolerance",
+          "connection_mode": "Connection mode",
           "modbus_timeout": "Response timeout",
           "modbus_retries": "Retries",
           "modbus_message_spacing": "Pause between requests (seconds)",
@@ -486,29 +491,7 @@
           "knx_receive": "Accept commands from KNX",
           "knx_resend_interval": "Full resend interval",
           "knx_tolerance": "Change tolerance",
-          "knx_respond_to_read": "Answer read requests",
-          "ai_advisor": "Experimental AI adviser (read-only)",
-          "ai_url": "Local Ollama base URL",
-          "ai_model": "Installed local model",
-          "ai_language": "Report language",
-          "ai_learning": "Learn local operating baselines",
-          "ai_storage_mib": "Maximum AI data storage (MiB)",
-          "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
-          "ai_notifications": "Notify about new measured health flags",
-          "ai_schedule_report": "Automatically generated report type",
-          "ai_provider": "Report provider (experimental)",
-          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
-          "ai_cloud_model": "Cloud model ID (required for cloud reports)",
-          "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
-          "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
-          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
-          "ai_task_entity": "Home Assistant AI Task entity",
-          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
-          "differential_circuits": "Differential-temperature controlled circuits"
-        },
-        "data_description": {
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "knx_respond_to_read": "Answer read requests"
         }
       },
       "guided_detail": {
@@ -522,6 +505,7 @@
           "feature_profile": "Feature profile",
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
+          "differential_circuits": "Differential-temperature controlled circuits",
           "energy_manager": "Enable automatic PV surplus DHW charging",
           "energy_manager_exclusive_control": "Confirm Home Assistant is the only DHW controller",
           "health_monitor": "Enable iDM Health Monitor",
@@ -550,6 +534,7 @@
           "device_hierarchy": "Group entities by system area",
           "short_cycle_minutes": "Short compressor-cycle threshold",
           "comfort_schedule_windows": "Additional comfort windows",
+          "external_power_forwarding_interval": "External power forwarding interval",
           "room_temp_forwarding": "Forward external room temperatures",
           "room_temp_forwarding_interval": "Forwarding interval",
           "room_temp_forwarding_tolerance": "Change tolerance",
@@ -559,6 +544,7 @@
           "storage_temp_forwarding": "Forward external storage temperatures",
           "storage_temp_forwarding_interval": "Forwarding interval",
           "storage_temp_forwarding_tolerance": "Change tolerance",
+          "connection_mode": "Connection mode",
           "modbus_timeout": "Response timeout",
           "modbus_retries": "Retries",
           "modbus_message_spacing": "Pause between requests (seconds)",
@@ -572,25 +558,7 @@
           "knx_receive": "Accept commands from KNX",
           "knx_resend_interval": "Full resend interval",
           "knx_tolerance": "Change tolerance",
-          "knx_respond_to_read": "Answer read requests",
-          "ai_advisor": "Experimental AI adviser (read-only)",
-          "ai_url": "Local Ollama base URL",
-          "ai_model": "Installed local model",
-          "ai_language": "Report language",
-          "ai_learning": "Learn local operating baselines",
-          "ai_storage_mib": "Maximum AI data storage (MiB)",
-          "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
-          "ai_notifications": "Notify about new measured health flags",
-          "ai_schedule_report": "Automatically generated report type",
-          "ai_provider": "Report provider (experimental)",
-          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
-          "ai_cloud_model": "Cloud model ID (required for cloud reports)",
-          "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
-          "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
-          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
-          "ai_task_entity": "Home Assistant AI Task entity",
-          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
-          "differential_circuits": "Differential-temperature controlled circuits"
+          "knx_respond_to_read": "Answer read requests"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -600,6 +568,7 @@
           "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
           "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
           "energy_manager_exclusive_control": "The automatic DHW boost stays disabled unless this is confirmed. Do not enable it while Smartfox, openWB or another system controls DHW.",
           "health_monitor": "Adds diagnostic problem sensors and a current health report. It only observes data and never writes to the heat pump. Disabled by default.",
@@ -628,6 +597,7 @@
           "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
           "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
           "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
           "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
           "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
           "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
@@ -637,6 +607,7 @@
           "storage_temp_forwarding": "Writes selected Home Assistant temperature sensors to the GLT heat/cold/DHW storage registers.",
           "storage_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
           "storage_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
           "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
           "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
           "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
@@ -650,9 +621,7 @@
           "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
-          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
         }
       },
       "guided_review": {
@@ -761,7 +730,8 @@
               "device_hierarchy": "Group entities by system area",
               "short_cycle_minutes": "Short compressor-cycle threshold",
               "dynamic_price_entity": "Dynamic electricity price sensor",
-              "comfort_schedule_windows": "Additional comfort windows"
+              "comfort_schedule_windows": "Additional comfort windows",
+              "external_power_forwarding_interval": "External power forwarding interval"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -793,7 +763,8 @@
               "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
               "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
-              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control."
+              "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
+              "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
             }
           },
           "room_temperature_forwarding": {
@@ -1030,6 +1001,7 @@
           "feature_profile": "Feature profile",
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
+          "differential_circuits": "Differential-temperature controlled circuits",
           "energy_manager": "Enable automatic PV surplus DHW charging",
           "energy_manager_exclusive_control": "Confirm Home Assistant is the only DHW controller",
           "health_monitor": "Enable iDM Health Monitor",
@@ -1058,6 +1030,7 @@
           "device_hierarchy": "Group entities by system area",
           "short_cycle_minutes": "Short compressor-cycle threshold",
           "comfort_schedule_windows": "Additional comfort windows",
+          "external_power_forwarding_interval": "External power forwarding interval",
           "room_temp_forwarding": "Forward external room temperatures",
           "room_temp_forwarding_interval": "Forwarding interval",
           "room_temp_forwarding_tolerance": "Change tolerance",
@@ -1067,6 +1040,7 @@
           "storage_temp_forwarding": "Forward external storage temperatures",
           "storage_temp_forwarding_interval": "Forwarding interval",
           "storage_temp_forwarding_tolerance": "Change tolerance",
+          "connection_mode": "Connection mode",
           "modbus_timeout": "Response timeout",
           "modbus_retries": "Retries",
           "modbus_message_spacing": "Pause between requests (seconds)",
@@ -1080,29 +1054,7 @@
           "knx_receive": "Accept commands from KNX",
           "knx_resend_interval": "Full resend interval",
           "knx_tolerance": "Change tolerance",
-          "knx_respond_to_read": "Answer read requests",
-          "ai_advisor": "Experimental AI adviser (read-only)",
-          "ai_url": "Local Ollama base URL",
-          "ai_model": "Installed local model",
-          "ai_language": "Report language",
-          "ai_learning": "Learn local operating baselines",
-          "ai_storage_mib": "Maximum AI data storage (MiB)",
-          "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
-          "ai_notifications": "Notify about new measured health flags",
-          "ai_schedule_report": "Automatically generated report type",
-          "ai_provider": "Report provider (experimental)",
-          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
-          "ai_cloud_model": "Cloud model ID (required for cloud reports)",
-          "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
-          "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
-          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
-          "ai_task_entity": "Home Assistant AI Task entity",
-          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
-          "differential_circuits": "Differential-temperature controlled circuits"
-        },
-        "data_description": {
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "knx_respond_to_read": "Answer read requests"
         }
       },
       "guided_detail": {
@@ -1116,6 +1068,7 @@
           "feature_profile": "Feature profile",
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
+          "differential_circuits": "Differential-temperature controlled circuits",
           "energy_manager": "Enable automatic PV surplus DHW charging",
           "energy_manager_exclusive_control": "Confirm Home Assistant is the only DHW controller",
           "health_monitor": "Enable iDM Health Monitor",
@@ -1144,6 +1097,7 @@
           "device_hierarchy": "Group entities by system area",
           "short_cycle_minutes": "Short compressor-cycle threshold",
           "comfort_schedule_windows": "Additional comfort windows",
+          "external_power_forwarding_interval": "External power forwarding interval",
           "room_temp_forwarding": "Forward external room temperatures",
           "room_temp_forwarding_interval": "Forwarding interval",
           "room_temp_forwarding_tolerance": "Change tolerance",
@@ -1153,6 +1107,7 @@
           "storage_temp_forwarding": "Forward external storage temperatures",
           "storage_temp_forwarding_interval": "Forwarding interval",
           "storage_temp_forwarding_tolerance": "Change tolerance",
+          "connection_mode": "Connection mode",
           "modbus_timeout": "Response timeout",
           "modbus_retries": "Retries",
           "modbus_message_spacing": "Pause between requests (seconds)",
@@ -1166,25 +1121,7 @@
           "knx_receive": "Accept commands from KNX",
           "knx_resend_interval": "Full resend interval",
           "knx_tolerance": "Change tolerance",
-          "knx_respond_to_read": "Answer read requests",
-          "ai_advisor": "Experimental AI adviser (read-only)",
-          "ai_url": "Local Ollama base URL",
-          "ai_model": "Installed local model",
-          "ai_language": "Report language",
-          "ai_learning": "Learn local operating baselines",
-          "ai_storage_mib": "Maximum AI data storage (MiB)",
-          "ai_interval_hours": "Automatic report interval (hours; 0 = manual, 24 = daily, 168 = weekly)",
-          "ai_notifications": "Notify about new measured health flags",
-          "ai_schedule_report": "Automatically generated report type",
-          "ai_provider": "Report provider (experimental)",
-          "ai_cloud_consent": "Allow sending selected operating data to the chosen AI provider (HA AI Task / cloud)",
-          "ai_cloud_model": "Cloud model ID (required for cloud reports)",
-          "ai_openai_key": "OpenAI API key (blank: keep; -: delete)",
-          "ai_zai_key": "Z.ai API key (blank: keep; -: delete)",
-          "ai_cloud_daily_limit": "Maximum HA AI tasks / direct cloud requests per UTC day",
-          "ai_task_entity": "Home Assistant AI Task entity",
-          "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
-          "differential_circuits": "Differential-temperature controlled circuits"
+          "knx_respond_to_read": "Answer read requests"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1194,6 +1131,7 @@
           "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
+          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
           "energy_manager": "Starts the safe DHW boost automatically when the explicitly selected PV surplus (or PV production minus house consumption) is available. External power forwarding must be configured with the source entities. Disabled by default.",
           "energy_manager_exclusive_control": "The automatic DHW boost stays disabled unless this is confirmed. Do not enable it while Smartfox, openWB or another system controls DHW.",
           "health_monitor": "Adds diagnostic problem sensors and a current health report. It only observes data and never writes to the heat pump. Disabled by default.",
@@ -1222,6 +1160,7 @@
           "device_hierarchy": "Assigns entities to child devices for heating circuits, zone modules, rooms, domestic hot water, diagnostics, and other detected system areas, making the device view easier to navigate. Entity IDs, readings, and control remain unchanged. When disabled, all entities remain directly under the heat pump.",
           "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
           "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
           "room_temp_forwarding": "Writes selected Home Assistant temperature sensors to the active heating circuits.",
           "room_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
           "room_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
@@ -1231,6 +1170,7 @@
           "storage_temp_forwarding": "Writes selected Home Assistant temperature sensors to the GLT heat/cold/DHW storage registers.",
           "storage_temp_forwarding_interval": "How often selected temperatures are checked; state changes are also forwarded immediately.",
           "storage_temp_forwarding_tolerance": "Only write again after the value changed by at least this amount.",
+          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
           "modbus_timeout": "Maximum wait for one Modbus response before the attempt is aborted.",
           "modbus_retries": "Number of retries with exponential backoff before a polling cycle fails.",
           "modbus_message_spacing": "Minimum pause between two Modbus requests, measured from the end of one request to the start of the next. Default 0 seconds: disabled. Helps with controllers or gateways that answer \"device busy\" or drop requests when these arrive back-to-back. The pause applies to every request, so a full polling cycle takes correspondingly longer.",
@@ -1244,9 +1184,7 @@
           "knx_receive": "Write values received on a writable object into the heat pump. Only objects IDM marks as writable are registered.",
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
-          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
-          "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection."
+          "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank."
         }
       },
       "guided_review": {
@@ -2645,11 +2583,9 @@
         "external_power": "External power and battery sensors",
         "knx": "KNX bridge",
         "cascade": "Cascade registers",
-        "solar_thermal": "Solar thermal registers",
         "device_hierarchy": "Device grouping",
         "technician_codes": "Technician code sensors",
-        "modbus": "Modbus transport",
-        "ai_advisor": "AI adviser (experimental, read-only)"
+        "modbus": "Modbus transport"
       }
     },
     "ai_provider": {
