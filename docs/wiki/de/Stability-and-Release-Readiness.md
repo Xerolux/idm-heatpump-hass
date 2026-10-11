@@ -64,7 +64,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.20.3` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
+Integration im Quellstand `0.20.4` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
@@ -76,7 +76,7 @@ eine eigene Ausnahme-Hierarchie (`IdmModbusError` und Unterklassen), statt von
 pymodbus zu erben, und verlagert seinen eingebauten Modbus-TCP-Transport hinter ein
 optionales Extra. Diese Integration injiziert einen tmodbus-basierten Transport und
 installiert damit nun keinen Modbus-Stack mehr, den sie nicht spricht. Die
-Transport-Pins sind `modbus-connection>=4.12.3` und `tmodbus[async-serial]>=0.6.2`.
+Transport-Pins sind `modbus-connection>=4.12.4` und `tmodbus[async-serial]>=0.6.2`.
 
 **`0.17.0-beta.2`** entfernt eine Sache, die `0.17.0-beta.1` eingeführt hatte: das
 Repair-Issue für ein Register, das die Wärmepumpe nicht implementiert. Ein
@@ -149,7 +149,7 @@ sind unverändert. Interoperabilität physischer Gruppenadress-Telegramme und Bu
 bleiben offen.
 
 **`0.15.1`** war die letzte Linie mit pymodbus: Sie pinnte `idm-heatpump-api`
-`1.0.3`, zog das Transportpaar auf `modbus-connection>=4.12.3` /
+`1.0.3`, zog das Transportpaar auf `modbus-connection>=4.12.4` /
 `tmodbus[async-serial]>=0.6.2` und trug die Schreib-Diagnose-Arbeiten aus
 [#237](https://github.com/Xerolux/idm-heatpump-hass/issues/237).
 

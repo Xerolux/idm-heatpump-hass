@@ -7,12 +7,12 @@ This file provides guidance for AI assistants working on this codebase.
 **IDM Heatpump** is a Home Assistant custom integration for controlling and monitoring IDM Navigator 1.0 / 1.7 / 2.0 / 10 / Pro heat pumps via Modbus TCP and an optional local web supplement (the 1.x controllers are served over Modbus coils, the 2.0/10/Pro families over the register map plus the web interface). It is an unofficial community project providing 100% local control (no cloud dependency).
 
 - **Domain**: `idm_heatpump`
-- **Current Version**: `0.20.3` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
+- **Current Version**: `0.20.4` (source-tree manifest; [latest stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest))
 - **Quality Scale**: Gold (targets official Home Assistant Core integration standards)
 - **License**: MIT
 - **Min HA Version**: 2026.8.1
 - **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
-- **Direct Modbus Runtime**: `modbus-connection>=4.12.3`, `tmodbus[async-serial]>=0.6.2`
+- **Direct Modbus Runtime**: `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`
 - **Device Logic**: `idm-heatpump-api[web]==2.14.2` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Open improvement plan**: `docs/dev/code-audit-2026-09.md` — the reviewed list of defects and
   cleanups with a work package per fix. Read it before starting unrelated refactoring; pick a
@@ -329,7 +329,7 @@ mypy). Recreate it and check through it with:
 ```bash
 py -3.14 -m venv test_ha
 test_ha/Scripts/python -m pip install homeassistant==2026.8.1 \
-    "modbus-connection>=4.12.3" "tmodbus[async-serial]>=0.6.2" \
+    "modbus-connection>=4.12.4" "tmodbus[async-serial]>=0.6.2" \
     "idm-heatpump-api[web]==2.14.2" mypy
 test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
 ```
@@ -465,7 +465,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 - Never bump a runtime pin by hand without checking PyPI first: `python scripts/check_dependency_pins.py` reports every pin that is behind, `--update` rewrites every updatable pin (`modbus-connection`, `tmodbus`, `idm-heatpump-api`) and every document that states them, and `--set name==version` pins a version the caller names. The daily `dependency-freshness.yml` workflow does exactly this, validates the result and merges it; the release workflow always refuses to publish stale runtime pins (no override). Automation never selects a pre-release for a stable pin — that is how the `4.0.0a3` alpha stayed pinned for two weeks — and it never merges a major bump on its own.
 - A sentence that dates a change (`pymodbus is gone as of idm-heatpump-api 2.0.0`) is history and keeps its version. Those sentences are listed in `HISTORY_STATEMENTS` in `scripts/check_dependency_pins.py`; everything else naming a pin is rewritten. Do not write a document that states the current pin in a spelling the updater does not cover — `tests/test_dependency_pins.py` fails when one appears.
 - A document that states the current pins belongs in `PIN_DOCUMENTS` in `scripts/check_dependency_pins.py`; `tests/test_dependency_pins.py` fails when a new one is missing there.
-- `modbus-connection` and `tmodbus` are Home-Assistant-owned packages (HA's built-in modbus integration adopted them in 2026.10), so hassfest rejects exact pins for them: the manifest states minimum requirements whose floor is the validated transport pair — raise both floors together after a validating run, and never pick up a newer major automatically. **Home Assistant's core modbus integration exact-pins these packages itself** (`modbus-connection[tmodbus]==4.12.3`, `tmodbus==0.6.2` as of HA 2026.10), so a floor above HA's own pin cannot be installed next to HA and hassfest rejects it; `check_dependency_pins.py` therefore treats HA's own pin (fetched from the core modbus manifest at the newest stable tag) as the ceiling — an upstream release HA has not adopted yet is reported as *held*, never as stale (2026-10-09: `modbus-connection` 4.12.4 on PyPI vs HA's `==4.12.3` blocked every release until this rule existed). `4.12.3` is the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
+- `modbus-connection` and `tmodbus` are Home-Assistant-owned packages (HA's built-in modbus integration adopted them in 2026.10), so hassfest rejects exact pins for them: the manifest states minimum requirements whose floor is the validated transport pair — raise both floors together after a validating run, and never pick up a newer major automatically. **Home Assistant's core modbus integration exact-pins these packages itself** (see the core modbus manifest at the newest stable tag for its current versions), so a floor above HA's own pin cannot be installed next to HA and hassfest rejects it; `check_dependency_pins.py` therefore treats HA's own pin as the ceiling — an upstream release HA has not adopted yet is reported as *held*, never as stale (2026-10-09: `modbus-connection` 4.12.4 on PyPI vs HA's then-`==4.12.3` pin blocked every release until this rule existed; two days later HA 2026.10.1 adopted 4.12.4 and the floor followed). A `>=` floor names the `modbus-connection` library version, not the integration version. The `tmodbus[async-serial]` extra is required even though this integration is TCP-only: since `modbus-connection` 4.7.0 the `modbus_connection.tmodbus` backend module imports `serialx` at module level, so importing the backend fails without it. Do not drop the extra to save the dependency.
 - pymodbus is gone as of `idm-heatpump-api` 2.0.0 / integration 0.16.0. Do not reintroduce it: the API owns `IdmModbusError` and its subclasses, and this integration's transport maps `modbus-connection` errors straight onto them.
 
 #### Prerelease naming

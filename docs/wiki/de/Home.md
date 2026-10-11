@@ -23,10 +23,10 @@ Die **IDM-Heatpump-Home-Assistant-Integration** verbindet [Home Assistant](https
 |---------|---------|
 | **Protokoll** | Modbus TCP (Port 502, Slave-ID 1) |
 | **Optionales Supplement** | Lokale Navigator-Web-API, nur lesend, PIN optional |
-| **Dokumentationsversion** | Quellstand `0.20.3`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
+| **Dokumentationsversion** | Quellstand `0.20.4`; [aktuellstes stabiles Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest) |
 | **Unterstützte/getestete HA-Baseline** | 2026.8.1 |
 | **Python** | 3.14+ (von Home Assistant verwaltet) |
-| **Verbindungsbibliothek** | modbus-connection>=4.12.3 |
+| **Verbindungsbibliothek** | modbus-connection>=4.12.4 |
 | **Socket-Backend** | tmodbus[async-serial]>=0.6.2 |
 | **Geräte-/Web-Bibliothek** | idm-heatpump-api[web]==2.14.2 |
 | **Lizenz** | MIT |
@@ -177,7 +177,7 @@ Datenschutz und das Dashboard.
 - **Sichtbare Runtime-Versionen**: Die Versionen der Integration, von `idm-heatpump-api`, `modbus-connection` und `tmodbus` stehen in einem Diagnose-Sensor, in Diagnose-Exporten und in den Startprotokollen zur Verfügung
 - **Datentypen**: FLOAT, UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: Sensible Register werden verfolgt und geschützt
-- **Transportgrenze**: Rohe FC03/FC04-Lese- und FC16-Schreibvorgänge nutzen das exakte Paar `modbus-connection>=4.12.3` / `tmodbus[async-serial]>=0.6.2`; `4.12.2` ist die Version der Verbindungsbibliothek, nicht die Version der IDM-Integration
+- **Transportgrenze**: Rohe FC03/FC04-Lese- und FC16-Schreibvorgänge nutzen das exakte Paar `modbus-connection>=4.12.4` / `tmodbus[async-serial]>=0.6.2`; `4.12.2` ist die Version der Verbindungsbibliothek, nicht die Version der IDM-Integration
 - **API-Grenze**: `idm-heatpump-api[web]==2.14.2` stellt Batching, Dekodierung und Schreibsicherheit bereit. Die API besitzt ihre eigene Exception-Hierarchie; die Integration nutzt den tmodbus-gestützten Socket ohne pymodbus-Abhängigkeit
 - **Automatische Wiederherstellung**: API-Retry/Backoff plus Wiederverbindung nach Bedarf in der tmodbus-gestützten Verbindung
 - **Verbindungsbesitz**: Jeder Konfigurationseintrag besitzt einen Socket und meldet `supports_shared_connection: false`; das zentrale Teilen über Konfigurationseinträge in Home Assistant gibt es derzeit nicht
