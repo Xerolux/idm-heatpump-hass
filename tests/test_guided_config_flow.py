@@ -203,3 +203,21 @@ async def test_every_level_can_enable_every_switch(level: str) -> None:
         result = await flow.async_step_guided_choose({"selected_features": [feature]})
         assert result["step_id"] == "guided_toggle"
         assert toggle in _markers(_build_guided_field_schema(flow._options, (toggle,)))
+
+
+@pytest.mark.parametrize("level", ["standard", "advanced", "expert"])
+def test_every_guided_detail_key_resolves_in_the_options_schema(level: str) -> None:
+    """Every guided detail field must exist on the full options page.
+
+    Issue #471: the external power feature advertised
+    ``external_power_forwarding_interval`` as an advanced detail, but the
+    options schema never defined the field — ``_build_guided_field_schema``
+    then raised ``KeyError`` and the guided flow died with an "Unknown
+    error" the moment that feature was configured on the advanced level.
+    Walking every feature at every level keeps future option additions from
+    reintroducing that gap.
+    """
+    for feature in flow_module._GUIDED_FEATURES:
+        keys = flow_module._guided_detail_keys(feature, level)
+        schema = flow_module._build_guided_field_schema({}, keys)
+        assert set(_markers(schema)) == set(keys)

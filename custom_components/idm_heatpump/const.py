@@ -214,6 +214,11 @@ DEFAULT_STORAGE_TEMP_FORWARDING_INTERVAL: int = 300
 DEFAULT_STORAGE_TEMP_FORWARDING_TOLERANCE: float = 0.5
 DEFAULT_EXTERNAL_POWER_FORWARDING: bool = False
 DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 60
+# The forwarder never writes faster than every 30 s regardless of the
+# configured interval (external_power_forwarding.AsyncPowerForwarder loop),
+# so the selector floor matches that clamp.
+MIN_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 30
+MAX_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 3600
 DEFAULT_EXTERNAL_POWER_FORWARDING_ENTITIES: dict[str, str] = {}
 DEFAULT_EXTERNAL_POWER_BATTERY_SIGN: str = "as_is"
 DEFAULT_KNX_BRIDGE: bool = False

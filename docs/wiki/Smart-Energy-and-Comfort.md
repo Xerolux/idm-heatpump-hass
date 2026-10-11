@@ -124,6 +124,13 @@ the manager does not substitute gross PV production minus house consumption.
 Without a surplus source it can derive that difference from two valid,
 non-negative power readings.
 
+Forwards are event-driven: a sensor update is written within about a second,
+with a periodic fallback cycle every 60 seconds by default (the *external
+power forwarding interval* option, 30–3600 seconds; the per-register write
+cooldown of the integration throttles bursts). Sensor updates arriving during
+that cooldown are skipped quietly — nothing is wrong when a source updates
+faster than the throttle.
+
 The current wizard opens the source-mapping page through enabled external
 power forwarding. Existing mappings remain usable with forwarding off; a
 standalone read-only source picker is not currently offered. See

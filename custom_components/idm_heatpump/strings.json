@@ -150,7 +150,8 @@
               "dynamic_price_entity": "Dynamic electricity price sensor",
               "comfort_schedule_windows": "Additional comfort windows",
               "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
-              "predictive_advisor": "Enable predictive advisor"
+              "predictive_advisor": "Enable predictive advisor",
+              "external_power_forwarding_interval": "External power forwarding interval"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -184,7 +185,8 @@
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
               "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
               "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
-              "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities."
+              "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
+              "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
             }
           },
           "room_temperature_forwarding": {
@@ -527,7 +529,8 @@
           "differential_circuits": "Differential-temperature controlled circuits",
           "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
           "predictive_advisor": "Enable predictive advisor",
-          "connection_mode": "Connection mode"
+          "connection_mode": "Connection mode",
+          "external_power_forwarding_interval": "External power forwarding interval"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -592,7 +595,8 @@
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
         }
       },
       "guided_detail": {
@@ -677,7 +681,8 @@
           "differential_circuits": "Differential-temperature controlled circuits",
           "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
           "predictive_advisor": "Enable predictive advisor",
-          "connection_mode": "Connection mode"
+          "connection_mode": "Connection mode",
+          "external_power_forwarding_interval": "External power forwarding interval"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -742,7 +747,8 @@
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
           "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
-          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured."
+          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
         }
       },
       "guided_review": {
@@ -869,7 +875,8 @@
               "dynamic_price_entity": "Dynamic electricity price sensor",
               "comfort_schedule_windows": "Additional comfort windows",
               "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
-              "predictive_advisor": "Enable predictive advisor"
+              "predictive_advisor": "Enable predictive advisor",
+              "external_power_forwarding_interval": "External power forwarding interval"
             },
             "data_description": {
               "feature_profile": "Choose Vanilla for the core IDM integration only. Choose iDM Smart Energy & Comfort for the optional local analytics, cycle diagnostics and safe DHW boost controls. Existing external sensor forwarding remains separately configurable. Changing the profile reloads the integration and may remove or recreate optional entities.",
@@ -903,7 +910,8 @@
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
               "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
               "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
-              "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities."
+              "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
+              "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
             }
           },
           "room_temperature_forwarding": {
@@ -1211,7 +1219,8 @@
           "differential_circuits": "Differential-temperature controlled circuits",
           "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
           "predictive_advisor": "Enable predictive advisor",
-          "connection_mode": "Connection mode"
+          "connection_mode": "Connection mode",
+          "external_power_forwarding_interval": "External power forwarding interval"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1276,7 +1285,8 @@
           "knx_resend_interval": "Send every value again after this many seconds, for visualisations without their own cache. 0 sends only on change.",
           "knx_tolerance": "Only send a numeric value again once it moved by at least this much.",
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
-          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure."
+          "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
         }
       },
       "guided_detail": {
@@ -1361,7 +1371,8 @@
           "differential_circuits": "Differential-temperature controlled circuits",
           "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
           "predictive_advisor": "Enable predictive advisor",
-          "connection_mode": "Connection mode"
+          "connection_mode": "Connection mode",
+          "external_power_forwarding_interval": "External power forwarding interval"
         },
         "data_description": {
           "scan_interval": "How often to read data from the heat pump (in seconds). Shorter intervals mean faster updates but more network traffic.",
@@ -1426,7 +1437,8 @@
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
           "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
-          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured."
+          "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
+          "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
         }
       },
       "guided_review": {

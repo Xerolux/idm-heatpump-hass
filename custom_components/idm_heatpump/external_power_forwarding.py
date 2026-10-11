@@ -156,6 +156,17 @@ class ExternalPowerForwarder:
                 await self._coordinator.async_write_register(reg, value)
             except Exception as err:  # noqa: BLE001 - transport and API errors share no common base
                 kind = classify_write_error(err)
+                if kind == "write_cooldown_active":
+                    # Expected self-throttling: sensor-driven forwards fire on
+                    # every source update, the coordinator drops those inside
+                    # the per-register cooldown. Not a device problem (issue
+                    # #471: this used to log "rejected the value" per cycle).
+                    _LOGGER.debug(
+                        "External power forwarding to %s skipped: %s",
+                        reg.name,
+                        friendly_write_error(kind, reg.name),
+                    )
+                    continue
                 _LOGGER.warning(
                     "Could not forward %s from %s to %s: %s",
                     name,

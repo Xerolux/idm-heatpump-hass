@@ -38,6 +38,7 @@ from custom_components.idm_heatpump.const import (
     CONF_EXTERNAL_POWER_BATTERY_SIGN,
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
+    CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
     CONF_FEATURE_PROFILE,
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
@@ -84,6 +85,7 @@ from custom_components.idm_heatpump.const import (
     CONNECTION_MODE_WEB_ONLY,
     DEFAULT_COMMUNICATION_DIAGNOSTICS,
     DEFAULT_CONNECTION_MODE,
+    DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
     DEFAULT_MODBUS_CONNECT_DELAY,
     DEFAULT_MODBUS_MAX_RETRIES,
     DEFAULT_MODBUS_MESSAGE_SPACING,
@@ -2865,3 +2867,23 @@ async def test_external_power_forwarding_option_step_keeps_selected_sources() ->
         "battery_soc": "sensor.battery_soc",
     }
     assert result["options"][CONF_EXTERNAL_POWER_BATTERY_SIGN] == "invert"
+
+
+class TestExternalPowerForwardingIntervalField:
+    """The interval must be a real options field (issue #471).
+
+    The guided flow offers ``external_power_forwarding_interval`` as an
+    advanced detail of the external power feature. Before this field existed
+    on the options page, ``_build_guided_field_schema`` raised ``KeyError``
+    and configuring the feature on the advanced level died with an
+    "Unknown error".
+    """
+
+    def test_field_defaults_to_60s(self):
+        defaults = _marker_defaults(_build_options_schema({}).schema["features"])
+        assert defaults[CONF_EXTERNAL_POWER_FORWARDING_INTERVAL] == DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL
+
+    def test_field_keeps_stored_value(self):
+        schema = _build_options_schema({CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: 120}).schema["features"]
+        defaults = _marker_defaults(schema)
+        assert defaults[CONF_EXTERNAL_POWER_FORWARDING_INTERVAL] == 120
