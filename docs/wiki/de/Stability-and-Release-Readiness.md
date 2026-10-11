@@ -10,6 +10,27 @@ Den stabilen Kanal zeigt das [aktuelle stabile Release](https://github.com/Xerol
 Die Quellstand-Versionen unten werden automatisch geprüft. Alte Releases
 behalten die Abhängigkeiten ihres getaggten Manifests.
 
+## Release-Entscheidung zu 0.20.4
+
+**0.20.4** ist ein Wartungsschnitt auf Basis von 0.20.3, abgezweigt vom Tag
+`v0.20.3`: Er cherry-gemappt den Fix zu Issue
+[#471](https://github.com/Xerolux/idm-heatpump-hass/issues/471) (das
+Weiterleitungsintervall der externen Leistungswerte wird zu einem echten
+Optionsfeld — die erweiterte Guided-Seite crashte am fehlenden Schlüssel —
+plus stille Überspringung im Schreib-Cooldown und ein Regressionstest über
+jedes geführte Feature und Level) und hebt den `modbus-connection`-Floor auf
+`>=4.12.4`, dem eigenen Core-Modbus-Pin von Home Assistant 2026.10.1
+folgend; die für 0.20.3 gebaute HA-Pin-Deckelung erlaubt die Anhebung jetzt.
+Der Release-Lauf validierte den getaggten Baum mit der vollständigen
+Qualitätsmatrix inklusive der Lifecycle-Suite mit echtem Home Assistant;
+Paketierung, Prüfsummen- und Paket-zu-Tag-Verifikation bestanden. Die
+Abhängigkeitsänderungen starten formal die Dauertest-Uhr (Gate 6) neu; der
+Maintainer veröffentlichte aus denselben Gründen wie bei 0.20.2 und 0.20.3 —
+das funktionale Delta ist ein Configuration-Flow-Fix mit Regressionstests,
+und der Transport-Bump folgt exakt dem Paar, das Home Assistant selbst in
+seinem neuesten stabilen Release installiert. Die 0.21.0-Linie trägt den
+Guided-Fix seit 0.21.0-b4.
+
 ## Release-Entscheidung zu 0.20.3
 
 **0.20.3** ist ein reiner Pin- und Dokumentations-Schnitt auf Basis von

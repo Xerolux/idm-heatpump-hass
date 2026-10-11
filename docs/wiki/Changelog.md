@@ -6,6 +6,19 @@ and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases)
 This page only summarizes recent milestones.
 
 ## v0.21.0-b4 — 2026-10-11
+## v0.20.4 — 2026-10-11
+
+Third stable maintenance release on the 0.20.x line: **guided configuration of
+external power forwarding no longer crashes on the advanced level** (#471) —
+the wizard advertised a forwarding interval the options page never had, so the
+feature's advanced page died with an *Unknown error* while the standard level
+worked. The **external power forwarding interval** is now a real option
+(30–3600 s, default 60 s), a regression test walks every guided feature at
+every level, and sensor-driven forwards arriving faster than the write
+cooldown are skipped quietly instead of logging `rejected the value` every
+cycle. The `modbus-connection` floor follows Home Assistant 2026.10.1 to
+4.12.4. The same guided fix ships in the 0.21.0 beta line from 0.21.0-b4 on.
+
 
 Fourth beta of the `0.21.0` line. **Guided configuration of external power
 forwarding no longer crashes on the advanced level** (#471): the wizard

@@ -6,6 +6,21 @@ und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releas
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
 ## v0.21.0-b4 — 2026-10-11
+## v0.20.4 — 2026-10-11
+
+Drittes stabiles Wartungs-Release auf der 0.20.x-Linie: **Die geführte
+Konfiguration der externen Leistungsweiterleitung crasht nicht mehr auf dem
+erweiterten Level** (#471) — der Assistent bot ein Weiterleitungsintervall an,
+das die Optionsseite nie hatte, sodass die erweiterte Seite des Features mit
+einem *Unbekannten Fehler* starb, während das Standard-Level funktionierte. Das
+**Weiterleitungsintervall für externe Leistungswerte** ist jetzt eine echte
+Option (30–3600 s, Standard 60 s), ein Regressionstest durchläuft jedes
+geführte Feature auf jedem Level, und sensorgetriebene Weiterleitungen, die
+schneller kommen als der Schreib-Cooldown, werden still übersprungen, statt in
+jedem Zyklus `rejected the value` zu loggen. Der `modbus-connection`-Floor
+folgt Home Assistant 2026.10.1 auf 4.12.4. Derselbe Guided-Fix liegt ab
+0.21.0-b4 auch in der Beta-Linie.
+
 
 Vierte Beta der `0.21.0`-Linie. **Die geführte Konfiguration der externen
 Leistungsweiterleitung crasht nicht mehr auf dem erweiterten Level** (#471):
