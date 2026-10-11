@@ -49,7 +49,7 @@
 
 **HA:** 2026.8.1+
 **Python:** 3.14+
-**modbus-connection:** modbus-connection>=4.12.3
+**modbus-connection:** modbus-connection>=4.12.4
 **tmodbus:** tmodbus[async-serial]>=0.6.2
 **idm-heatpump-api[web]:** idm-heatpump-api[web]==2.14.2
 
