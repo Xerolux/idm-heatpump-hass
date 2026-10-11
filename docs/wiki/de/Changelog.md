@@ -5,11 +5,25 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
-## Unveröffentlicht
+## v0.21.0-b4 — 2026-10-11
 
-- Pages-Builds gegen unsichere Ausgabeverzeichnisse absichern und UTF-8 beim Windows-KNX-Vergleich erhalten.
-- Stabiles Home Assistant 2026.10.0 zusätzlich zur Mindestversion prüfen, HA nach Installation der Abhängigkeiten verifizieren und echte HA-Lifecycle-Tests vor automatischen Dependency-Merges verlangen.
-- Web-Steuerungen richtig dokumentieren und unveröffentlichte Änderungen von Release-Entscheidungen unterscheiden.
+Vierte Beta der `0.21.0`-Linie. **Die geführte Konfiguration der externen
+Leistungsweiterleitung crasht nicht mehr auf dem erweiterten Level** (#471):
+Der Assistent bot ein Weiterleitungsintervall an, das die Optionsseite nie
+hatte — die erweiterte Seite des Features starb daher mit einem *Unbekannten
+Fehler*, während das Standard-Level funktionierte. Das **Weiterleitungsintervall
+für externe Leistungswerte** ist jetzt eine echte Option (30–3600 s, Standard
+60 s), und ein Regressionstest durchläuft jedes geführte Feature auf jedem
+Level, damit eine fehlende Option nie wieder ausgeliefert werden kann.
+Sensorgetriebene Weiterleitungen, die schneller kommen als der
+Schreib-Cooldown der Integration pro Register, werden jetzt still auf
+Debug-Ebene übersprungen, statt in jedem Zyklus `rejected the value` zu
+loggen — erwartete Selbstregelung, kein Reglerfehler. Ebenfalls in diesem
+Schnitt: Pages-Builds gegen unsichere Ausgabeverzeichnisse gehärtet, UTF-8
+im Windows-KNX-Vergleich erhalten, Web-only-Steuerungen richtig
+dokumentiert, stabiles Home Assistant 2026.10.0 zusätzlich zur Mindestversion
+in der CI validiert und echte HA-Lifecycle-Tests vor automatischen
+Dependency-Merges verpflichtend.
 
 ## v0.21.0-b3 — 2026-10-09
 
