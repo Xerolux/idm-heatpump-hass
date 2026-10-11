@@ -138,7 +138,8 @@
               "dynamic_price_entity": "Sensor für dynamischen Strompreis",
               "comfort_schedule_windows": "Weitere Komfort-Zeitfenster",
               "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor",
-              "predictive_advisor": "Predictive Advisor aktivieren"
+              "predictive_advisor": "Predictive Advisor aktivieren",
+              "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
             },
             "data_description": {
               "feature_profile": "Wähle Vanilla für ausschließlich grundlegende IDM-Entitäten. iDM Smart Energy & Comfort aktiviert zusätzlich lokale Effizienz- und Taktungsanalysen, Kurzzyklus-Diagnose sowie die sichere Warmwasser-Boost-Steuerung. Die externe Sensorweitergabe bleibt separat konfigurierbar. Beim Wechsel wird die Integration neu geladen; optionale Entitäten können entfernt oder neu erstellt werden.",
@@ -172,7 +173,8 @@
               "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden.",
               "comfort_schedule_windows": "Optional: ein Fenster pro Zeile als Heizkreis,HH:MM,HH:MM,Zielwert (Beispiel: a,06:00,09:00,21.0). Bis zu 16 Zeitfenster ohne Überschneidung für konfigurierte Heizkreise. Diese ersetzen das bisherige einzelne Fenster. Exklusive Heizkreissteuerung ist erforderlich.",
               "advisor_pv_forecast_entity": "Optionaler Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute). Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
-              "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt."
+              "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
+              "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
             }
           },
           "room_temperature_forwarding": {
@@ -515,7 +517,8 @@
           "differential_circuits": "Differenztemperaturgeregelte Heizkreise",
           "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor",
           "predictive_advisor": "Predictive Advisor aktivieren",
-          "connection_mode": "Verbindungsmodus"
+          "connection_mode": "Verbindungsmodus",
+          "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -580,7 +583,8 @@
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
-          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
         }
       },
       "guided_detail": {
@@ -665,7 +669,8 @@
           "differential_circuits": "Differenztemperaturgeregelte Heizkreise",
           "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor",
           "predictive_advisor": "Predictive Advisor aktivieren",
-          "connection_mode": "Verbindungsmodus"
+          "connection_mode": "Verbindungsmodus",
+          "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -730,7 +735,8 @@
           "differential_circuits": "Nur installierte Heizkreise auswählen, deren Heizsystem im Navigator auf Differenztemperaturgeregelt steht (z. B. Holzofen). Zeigt Speicher, Referenz, Temperaturdifferenz und Status; normale Heizungsregler entfallen. Keine automatische Erkennung.",
           "advisor_pv_forecast_entity": "Optionaler Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute). Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
           "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
-          "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN."
+          "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN.",
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
         }
       },
       "guided_review": {
@@ -845,7 +851,8 @@
               "dynamic_price_entity": "Sensor für dynamischen Strompreis",
               "comfort_schedule_windows": "Weitere Komfort-Zeitfenster",
               "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor",
-              "predictive_advisor": "Predictive Advisor aktivieren"
+              "predictive_advisor": "Predictive Advisor aktivieren",
+              "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
             },
             "data_description": {
               "feature_profile": "Wähle Vanilla für ausschließlich grundlegende IDM-Entitäten. iDM Smart Energy & Comfort aktiviert zusätzlich lokale Effizienz- und Taktungsanalysen, Kurzzyklus-Diagnose sowie die sichere Warmwasser-Boost-Steuerung. Die externe Sensorweitergabe bleibt separat konfigurierbar. Beim Wechsel wird die Integration neu geladen; optionale Entitäten können entfernt oder neu erstellt werden.",
@@ -879,7 +886,8 @@
               "dynamic_price_entity": "Optionaler lokaler Home-Assistant-Sensor in EUR/kWh, €/kWh oder ct/kWh. Verbrauch wird zum jeweils aktuellen Tarif bewertet. Fehlende oder ungültige Preise bleiben unbewertet statt mit dem festen Schätzwert berechnet zu werden.",
               "comfort_schedule_windows": "Optional: ein Fenster pro Zeile als Heizkreis,HH:MM,HH:MM,Zielwert (Beispiel: a,06:00,09:00,21.0). Bis zu 16 Zeitfenster ohne Überschneidung für konfigurierte Heizkreise. Diese ersetzen das bisherige einzelne Fenster. Exklusive Heizkreissteuerung ist erforderlich.",
               "advisor_pv_forecast_entity": "Optionaler Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute). Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
-              "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt."
+              "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
+              "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
             }
           },
           "room_temperature_forwarding": {
@@ -1187,7 +1195,8 @@
           "differential_circuits": "Differenztemperaturgeregelte Heizkreise",
           "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor",
           "predictive_advisor": "Predictive Advisor aktivieren",
-          "connection_mode": "Verbindungsmodus"
+          "connection_mode": "Verbindungsmodus",
+          "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1252,7 +1261,8 @@
           "knx_resend_interval": "Alle Werte nach so vielen Sekunden erneut senden, für Visualisierungen ohne eigenen Zwischenspeicher. 0 sendet nur bei Änderung.",
           "knx_tolerance": "Zahlenwerte erst wieder senden, wenn sie sich um mindestens diesen Betrag ändern.",
           "knx_respond_to_read": "Eine KNX-Leseanfrage mit dem aktuellen Wert beantworten, damit ein Taster oder eine Visualisierung nach einem Neustart eine Antwort bekommt statt leer zu bleiben.",
-          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe."
+          "ai_advisor": "Standardmäßig aus. Messwertberichte ohne Modellaufruf. Freie KI-Erklärungen benötigen eine zusätzliche Freigabe und können falsch sein. Keine Anlagensteuerung oder Sprachfreigabe.",
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
         }
       },
       "guided_detail": {
@@ -1337,7 +1347,8 @@
           "differential_circuits": "Differenztemperaturgeregelte Heizkreise",
           "advisor_pv_forecast_entity": "PV-Prognose-Sensor für den Predictive Advisor",
           "predictive_advisor": "Predictive Advisor aktivieren",
-          "connection_mode": "Verbindungsmodus"
+          "connection_mode": "Verbindungsmodus",
+          "external_power_forwarding_interval": "Weiterleitungsintervall für externe Leistungswerte"
         },
         "data_description": {
           "scan_interval": "Wie oft Daten von der Wärmepumpe gelesen werden (in Sekunden). Kürzere Intervalle bedeuten schnellere Updates, erzeugen aber mehr Netzwerklast.",
@@ -1402,7 +1413,8 @@
           "differential_circuits": "Nur installierte Heizkreise auswählen, deren Heizsystem im Navigator auf Differenztemperaturgeregelt steht (z. B. Holzofen). Zeigt Speicher, Referenz, Temperaturdifferenz und Status; normale Heizungsregler entfallen. Keine automatische Erkennung.",
           "advisor_pv_forecast_entity": "Optionaler Home-Assistant-Sensor mit stündlicher PV-Erzeugungsprognose (z. B. PVForecast- oder Solcast-Attribute). Grundlage für PV-basierte Warmwasser-Zeitfenster-Empfehlungen.",
           "predictive_advisor": "Strikt schreibgeschützte Analyse und Empfehlungen: Anforderungsgrund, Anomalien gegen die eigenen Baselines der Anlage, Zustands- und Effizienzwerte, Heizkurven- und Warmwasser-Zeitfenster-Empfehlungen sowie ein 24-Stunden-Plan. Funktioniert vollständig lokal und deterministisch - ohne KI, Cloud oder LLM. Standardmäßig mit dem Smart-Profil aktiviert; beim Deaktivieren werden alle zugehörigen Entitäten entfernt.",
-          "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN."
+          "connection_mode": "Automatisch behält das empfohlene Verhalten: Modbus für Register und Schreibvorgänge, die lokale Web-Ergänzung für zusätzliche Werte, wenn eine PIN konfiguriert ist. Modbus + Web-Ergänzung legt beide Pfade fest und deaktiviert den Web-only-Fallback beim Einrichten. Nur Web betreibt den Eintrag ohne Modbus-Verbindung: Betriebsart und Störungsquittierung werden über die lokale Web-Oberfläche gesteuert; Sollwerte und weitere Steuermöglichkeiten erfordern weiterhin Modbus. Nur Modbus kontaktiert niemals das Web-Interface, auch nicht mit konfigurierter PIN.",
+          "external_power_forwarding_interval": "Fallback-Zyklus zum Schreiben der ausgewählten Leistungssensoren in die IDM-GLT-Register. Sensorgetriebene Aktualisierungen werden sofort weitergegeben (gedrosselt durch den Schreibschutz der Integration); dieses Intervall taktet nur ruhige Phasen. Standard: 60 Sekunden."
         }
       },
       "guided_review": {

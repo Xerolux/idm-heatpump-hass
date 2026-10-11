@@ -59,6 +59,10 @@ def test_classifies_web_errors(error: Exception, issue_id: str) -> None:
         (ValueError("cannot encode invalid value"), "write_invalid_value"),
         (RuntimeError("unknown failure"), "write_failed"),
         (
+            RuntimeError("Writing pv_surplus is still paused: 3.2 s of the 5 s write cooldown remain"),
+            "write_cooldown_active",
+        ),
+        (
             ValueError("EEPROM-sensitive register 'hc_c_room_setpoint_heat_normal' was written too recently"),
             "write_eeprom_blocked",
         ),
@@ -79,6 +83,17 @@ def test_classifies_web_errors(error: Exception, issue_id: str) -> None:
 def test_classifies_write_errors(error: Exception, translation_key: str) -> None:
     assert classify_write_error(error) == translation_key
     assert friendly_write_error(translation_key, "test_register")
+
+
+class _TranslatedCooldownError(Exception):
+    """Stand-in for HomeAssistantError(translation_key=...)."""
+
+    translation_key = "write_cooldown_active"
+
+
+def test_write_cooldown_error_is_recognized_by_translation_key() -> None:
+    assert classify_write_error(_TranslatedCooldownError("write_cooldown_active")) == "write_cooldown_active"
+    assert "cooldown" in friendly_write_error("write_cooldown_active", "pv_surplus")
 
 
 class TestWriteErrorDetail:
