@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.3-b4 — 2026-10-12
+
+Härtungsrunde für die Weiterleitungen aus dem Selbst-Audit zu #493: Jeder
+erfolgreiche GLT-Schreibvorgang ist jetzt im Debug-Log sichtbar, die
+Raumtemperatur- und Feuchtigkeits-Weiterleitung bricht bei Sensor-Bursts keine
+laufenden Schreibvorgänge mehr ab, Komfortzeitplan und Energiemanager schließen
+laufende Schreibvorgänge vor dem Stopp ab, und die zurückgestellte
+Web-Sitzungsfreigabe bleibt referenziert und meldet Fehler. Das
+Batterie-Anzeigeflackern (#493) bleibt bis zur Bestätigung auf der Firmware
+des Melders offen.
+
 ## v0.21.3-b3 — 2026-10-12
 
 Beta nach Prüfung und Ergänzung der Issue-Antworten; keine Funktionsänderungen

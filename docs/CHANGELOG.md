@@ -15,6 +15,18 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.3-b4] - 2026-10-12
+
+### Added
+
+- External power forwarding logs every successful GLT register write at debug level, so a debug log covering a flicker period shows exactly when each write reached the controller while investigating device-side clearing of RAM inputs (#493).
+
+### Fixed
+
+- Room temperature and humidity forwarding no longer cancels a write that is already in flight when a source sensor updates: bursts coalesce into follow-up passes that read the latest state, periodic and event-driven passes are serialized behind a lock, and unload awaits cancelled tasks. This ports the b1 external-power forwarding protection to the remaining GLT forwarders (self-audit around #493; no user report existed yet).
+- The comfort schedule and the energy manager finish an evaluation that is already writing — including its state save or boost start — before their stop path cancels the loop, so unloading or reloading the entry cannot abort a Modbus transaction mid-flight.
+- A deferred web-client session release keeps its task referenced until it finished (an unreferenced task can be garbage-collected mid-flight) and a failing release is now reported as a warning instead of surfacing as an unretrieved task exception.
+
 ## [0.21.3-b3] - 2026-10-12
 
 ### Documentation
