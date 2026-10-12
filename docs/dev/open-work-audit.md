@@ -1,12 +1,60 @@
 # Open Work Audit
 
-Last updated: 2026-10-08
+Last updated: 2026-10-12
 
 This audit separates work that can be finished locally from items that cannot be
 completed safely without real-system data or without a central Home Assistant
 shared-connection contract. The local tmodbus adapter is wired up in production;
 the goal remains to never declare an estimate, or a transport property that has
 not been validated on hardware, as finished.
+
+## Next actions
+
+Concrete, owner-assigned steps for the blocked items below — added 2026-10-12
+after the 0.21.0 stable cut. Every entry names who acts and what unblocks it;
+"community" means a public call in Discussions using the existing field
+diagnostics template, "maintainer" means Basti's own plant or decision.
+
+- **Advisor field feedback** *(maintainer, from ~2026-10-19)* — once the
+  7-day baselines have built on plants running the line since the betas,
+  compare the first heating-curve recommendations and the operation reason
+  against the controller's own display; collect further feedback through a
+  Discussions thread. Feeds either fine-tuning or the blocked list below.
+- **COP verification for DHW and defrost** *(community + maintainer)* —
+  post the field-data call (which entities, which observation window, what to
+  export); on the maintainer's plant, log one DHW charge and one defrost cycle
+  and reconcile the COP sensor against `power_consumption_hp` and
+  `thermal_power_flow_sensor` by hand.
+- **Flow setpoint identification → flow-deviation sensor** *(maintainer)* —
+  run the read-only probe during heating, DHW charge and standby and capture
+  `hc_*_setpoint_flow_temp`, `hc_*_setpoint_flow_constant`, the heating curve,
+  mixer state and the actual flow temperature together; document which value
+  is "requested" per operating mode, then release the sensor.
+- **Binary register verification on Navigator 2.0/Pro** *(community)* —
+  ask for reporters on those families to run the read-only verification
+  template; needed before any model-wide runtime claims.
+- **Real-hardware load test of the maximum plant** *(community)* — find a
+  plant with many circuits/zones (or a cascade) willing to run the full
+  configuration for a day while logging response times and batch behaviour.
+- **Authorized write validation (DHW/comfort)** *(maintainer decision, then
+  protocol)* — decide whether and when bounded write tests may run on the
+  maintainer's plant; if yes, define the protocol first (bounded steps,
+  verified rollback, before/after diagnostics).
+- **Failure prediction** *(waiting on data)* — collect labelled fault
+  histories before designing anything; format for the data call once enough
+  reporters exist. No code before data.
+- **Tariff-based control / PV-battery optimization** *(maintainer decision)* —
+  a product decision on automatic writes (controller ownership, fail-closed
+  behaviour, equipment constraints) must precede any design; a short options
+  paper is the next step once wanted.
+- **Occupancy/geofencing/per-room schedules** *(waiting on demand)* — pick up
+  when users ask for it with their own sensors and consent.
+- **Home Assistant shared-connection contract** *(watch point, no action)* —
+  re-check on HA release notes roughly monthly; everything else stays as
+  documented below.
+- **`via_device_id` fallback removal** *(scheduled by HA releases)* — revisit
+  when the declared minimum HA reaches 2026.9; custom integrations keep the
+  fallback until Core 2027.8, so there is no deadline pressure.
 
 ## Done locally
 
