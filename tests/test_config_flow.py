@@ -2968,3 +2968,29 @@ class TestFlowFieldLabelCoverage:
             data = json.loads(path.read_text(encoding="utf-8"))["config"]["step"].get(step_id, {}).get("data", {})
             missing = keys - set(data)
             assert not missing, f"{path.name}: config step {step_id} fields without label: {sorted(missing)}"
+
+
+@pytest.mark.parametrize("role", flow_module._EXTERNAL_POWER_KEYS)
+def test_configured_power_source_is_suggested_and_can_be_omitted_to_clear(role):
+    options = {CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {role: "sensor.previous"}}
+    schema = _build_external_power_forwarding_schema(options)
+    marker = next(marker for marker in schema.schema if marker.schema == f"external_power_forwarding_{role}")
+    assert marker.default is vol.UNDEFINED
+    assert marker.description["suggested_value"] == "sensor.previous"
+    submitted = schema({})
+    assert f"external_power_forwarding_{role}" not in submitted
+    flow_module._store_external_power_forwarding_entities(options, submitted)
+    assert options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {}
+
+
+@pytest.mark.parametrize("cleared", [None, "", "   "])
+def test_cleared_battery_mapping_does_not_become_none_entity_and_keeps_other_sources(cleared):
+    options = {CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {"battery_soc": "sensor.old", "pv_surplus": "sensor.pv"}}
+    flow_module._store_external_power_forwarding_entities(
+        options,
+        {
+            "external_power_forwarding_battery_soc": cleared,
+            "external_power_forwarding_pv_surplus": "sensor.pv",
+        },
+    )
+    assert options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {"pv_surplus": "sensor.pv"}

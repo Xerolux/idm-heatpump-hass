@@ -140,6 +140,16 @@ nicht durch die PV-Bruttoproduktion minus Hausverbrauch. Ohne
 Überschussquelle kann er diese Differenz aus zwei gültigen, nicht-negativen
 Leistungsmesswerten ableiten.
 
+Leistungsquellen lassen sich beim Rekonfigurieren wieder leeren. Vorhandene
+Werte sind Vorschläge. Das Entfernen der Batterie-SOC-Auswahl entfernt nach
+dem Reload diese Zuordnung und die optionale HA-Bedingung für den Boost-Start.
+Andere ausgewählte Quellen bleiben erhalten. Leeren stoppt die Weiterleitung,
+überschreibt aber keinen Reglerwert mit einem Ersatzwert. Der Regler kann den
+letzten Wert bis zu seinem eigenen Timeout oder einer Aktualisierung durch eine
+andere Quelle behalten. SOC-Quellen mit Nachkommastellen werden akzeptiert und
+für das GLT-Register gerundet (97,5 % wird 98 %). Die HA-Boost-Bedingung verwendet
+den ursprünglichen Wert mit Nachkommastellen.
+
 Die Weiterleitung ist ereignisgetrieben: Eine Sensor-Aktualisierung wird
 innerhalb von etwa einer Sekunde geschrieben, mit einem periodischen
 Fallback-Zyklus von standardmäßig 60 Sekunden (die Option *Weiterleitungsintervall

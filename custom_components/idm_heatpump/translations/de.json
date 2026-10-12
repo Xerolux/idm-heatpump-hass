@@ -443,7 +443,7 @@
           "external_power_forwarding_pv_production": "W oder kW; wird in IDM pv_production (Register 78–79) geschrieben.",
           "external_power_forwarding_house_consumption": "W oder kW; wird in IDM house_consumption (Register 82–83) geschrieben.",
           "external_power_forwarding_battery_discharge": "W oder kW. Invertieren wählen, wenn die Quelle die openWB-Konvention nutzt (negativ bedeutet Entladen).",
-          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100. Der Lese-Sentinel -1 bedeutet nicht verfügbar und wird nicht an die Wärmepumpe gesendet.",
+          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100, auch mit Nachkommastellen. Für das GLT-Register auf eine ganze Zahl gerundet. Feld leeren, um die Weiterleitung und die optionale HA-Batteriebedingung zu entfernen; kein Ersatzwert wird geschrieben. Der Lese-Sentinel -1 wird nicht gesendet.",
           "external_power_forwarding_electric_heater_power": "W oder kW; wird in IDM electric_heater_power (Register 76–77) geschrieben.",
           "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um."
         }
@@ -1155,7 +1155,7 @@
           "external_power_forwarding_pv_production": "W oder kW; wird in IDM pv_production (Register 78–79) geschrieben.",
           "external_power_forwarding_house_consumption": "W oder kW; wird in IDM house_consumption (Register 82–83) geschrieben.",
           "external_power_forwarding_battery_discharge": "W oder kW. Invertieren wählen, wenn die Quelle die openWB-Konvention nutzt (negativ bedeutet Entladen).",
-          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100. Der Lese-Sentinel -1 bedeutet nicht verfügbar und wird nicht an die Wärmepumpe gesendet.",
+          "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100, auch mit Nachkommastellen. Für das GLT-Register auf eine ganze Zahl gerundet. Feld leeren, um die Weiterleitung und die optionale HA-Batteriebedingung zu entfernen; kein Ersatzwert wird geschrieben. Der Lese-Sentinel -1 wird nicht gesendet.",
           "external_power_forwarding_electric_heater_power": "W oder kW; wird in IDM electric_heater_power (Register 76–77) geschrieben.",
           "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um."
         }

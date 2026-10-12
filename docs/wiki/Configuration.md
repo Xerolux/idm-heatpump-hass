@@ -112,6 +112,12 @@ their existing groups and retain their entity IDs.
 
 ### External power source mapping and forwarding
 
+The external-power selectors support clearing an existing source. Remove a
+selection and save to stop that register's automatic forwarding; remaining
+selected sources stay configured. Removing battery SOC also removes the optional
+HA energy-manager SOC condition. No fallback register value is written.
+Fractional SOC percentages are accepted and rounded for the integer GLT input.
+
 The **External power forwarding** category maps existing Home Assistant sensors
 to PV surplus, PV production, house consumption, battery charge/discharge,
 battery SOC and electric-heater power. The forwarding switch is off by default.

@@ -64,8 +64,10 @@ def _soc(value: Any, unit: str | None) -> float | None:
     number = _number(value)
     if number is None or unit not in (None, PERCENTAGE):
         return None
-    if not 0.0 <= number <= 100.0 or number != round(number):
+    if not 0.0 <= number <= 100.0:
         return None
+    # The GLT input is an integer percentage; HA battery aggregates may be
+    # fractional. Validate first, then round instead of dropping the sample.
     return float(round(number))
 
 

@@ -1552,7 +1552,9 @@ def _build_external_power_forwarding_schema(options: dict[str, Any]) -> vol.Sche
         schema_dict[
             vol.Optional(
                 f"external_power_forwarding_{key}",
-                **_entity_field_default(str(configured_entities.get(key, ""))),
+                # Suggestions prefill the selector without restoring a removed
+                # selection when the frontend omits the cleared field (#489).
+                description={"suggested_value": str(configured_entities.get(key, "")).strip()},
             )
         ] = _EXTERNAL_POWER_SENSOR_SELECTOR
     return vol.Schema(
@@ -1574,9 +1576,9 @@ def _build_external_power_forwarding_schema(options: dict[str, Any]) -> vol.Sche
 
 def _store_external_power_forwarding_entities(options: dict[str, Any], user_input: dict[str, Any]) -> None:
     options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] = {
-        key: str(user_input.get(f"external_power_forwarding_{key}", "")).strip()
+        key: value.strip()
         for key in _EXTERNAL_POWER_KEYS
-        if str(user_input.get(f"external_power_forwarding_{key}", "")).strip()
+        if isinstance(value := user_input.get(f"external_power_forwarding_{key}"), str) and value.strip()
     }
 
 

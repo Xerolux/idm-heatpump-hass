@@ -4,6 +4,18 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.21.2
+
+Dieser Wartungskandidat behebt das neu gemeldete #489: optionale externe
+Leistungsquellen sind Vorschläge statt erzwungener Standardwerte, und SOC mit
+Nachkommastellen wird geprüft und für den GLT-Eingang gerundet. Tests prüfen
+Leeren aller sechs Quellen, Erhalten anderer Zuordnungen, Null-/Leerwerte und
+Umrechnung, auch mit echter HA-Selector-Validierung. Vollständige Coverage-, Typ-,
+Lint-, Lebenszyklus- und GitHub-Prüfungen sind vor Veröffentlichung erforderlich.
+Abhängigkeiten und Transport bleiben gleich. Leeren stoppt Weiterleitung und
+optionale HA-Batteriebedingung; es setzt kein Reglerregister zurück und beweist
+nicht, dass der Navigator seinen letzten Messwert vergessen hat.
+
 ## Release-Entscheidung zu 0.21.1
 
 Dieser Wartungskandidat behebt bestätigte Integrationsfehler bei Sperrzeiten und
@@ -195,7 +207,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.21.1` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
+Integration im Quellstand `0.21.2` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

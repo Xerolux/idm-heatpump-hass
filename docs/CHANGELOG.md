@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.2] - 2026-10-12
+
+### Fixed
+
+- External power sources can be removed again (#489). Existing selections are form suggestions rather than validation defaults, so clearing a field no longer silently restores its previous sensor. Empty, omitted or null selections remove the corresponding mapping without discarding other selected sources. Removing the battery SOC mapping also removes the optional battery condition from the HA energy manager after reload. Clearing a mapping stops forwarding; it does not write a fallback value to the controller.
+- Accept fractional battery SOC readings from aggregated HA sensors in automatic power forwarding (#489): validate the finite 0–100 percent range first, then round to the integer percentage required by the GLT register (for example 97.5 percent becomes 98). Invalid readings and the unavailable sentinel remain skipped. The HA energy manager continues evaluating its battery threshold against the original fractional value.
+
 ## [0.21.1] - 2026-10-12
 
 ### Added
