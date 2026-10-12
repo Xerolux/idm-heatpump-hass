@@ -10,6 +10,30 @@ Den stabilen Kanal zeigt das [aktuelle stabile Release](https://github.com/Xerol
 Die Quellstand-Versionen unten werden automatisch geprüft. Alte Releases
 behalten die Abhängigkeiten ihres getaggten Manifests.
 
+## Release-Entscheidung zu 0.21.0
+
+**0.21.0** ist der stabile Schnitt der Predictive-Advisor-Linie aus vier
+Prereleases (b1–b4, 07.–11.10.2026). Der Advisor ist konstruktionsbedingt
+strikt nur lesend — sein Modul besitzt keinen Schreibpfad, und das Annehmen
+einer Empfehlung vermerkt lediglich eine Bestätigung — und arbeitet voll
+lokal und deterministisch. Für den Schnitt bestand die vollständige
+Qualitätsprüfung auf dem getaggten Baum: die Vier-Beine-Matrix (Python 3.14 ×
+HA 2026.8.1/2026.10.0 × manifest-pinned/api-main) mit Coverage 95 % und
+`config_flow` 100 %, strict mypy gegen die echte Home-Assistant-Runtime,
+ruff 0.17, hassfest, HACS, der Lifecycle-Smoke mit echtem Home Assistant inkl.
+der Assertion gegen leckende Tasks, Paketierung, Prüfsummen- und
+Paket-zu-Tag-Verifikation. Die Linie war innerhalb von Tagen im Feld — die
+Issues #460 und #471 wurden von externen Reportern gestellt, diagnostiziert
+und innerhalb der Linie gefixt (b2–b4 und die parallelen 0.20.x-Schnitte).
+Der unveränderte b4-Kandidat lief vom 11.10. bis zum Schnitt — ein Tag, unter
+dem siebentägigen Gate 6; der Maintainer entschied dennoch zu schneiden, weil
+der Advisor kein Schreibrisiko trägt und der Transport- und Polling-Kern
+dieses Baums byte-identisch mit der 0.20.x-Linie ist, die seit dem 09.10. der
+stabile Kanal ist. Die Lernphasen des Advisors (7-Tage-Basenlinien vor
+Heizkurven-Empfehlungen, gestufte Beobachtung) entfalten sich in den ersten
+Betriebstagen statt in einem Dauertest. Keine Konfigurationsmigration nötig;
+ein Rollback auf 0.20.x bleibt möglich.
+
 ## Release-Entscheidung zu 0.20.4
 
 **0.20.4** ist ein Wartungsschnitt auf Basis von 0.20.3, abgezweigt vom Tag
@@ -153,7 +177,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.21.0-b4` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
+Integration im Quellstand `0.21.0` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
