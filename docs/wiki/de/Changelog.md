@@ -5,6 +5,15 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.3-b1 — 2026-10-12
+
+Die externe Leistungsweiterleitung bricht laufende Modbus-Durchgänge bei neuen
+Sensorwerten nicht mehr ab. Aktualisierungen werden mit begrenzter Anfangswartezeit
+gebündelt, periodische und ereignisgesteuerte Durchgänge laufen nacheinander und
+das Entladen wartet auf das Ende des Ereignistasks. Regressionstests sichern
+die Korrekturen ab. Das separate Batterieanzeige-Problem #493 wird für die
+Firmware des Melders weiter untersucht.
+
 ## v0.21.2 — 2026-10-12
 
 Externe Leistungssensoren lassen sich wieder abwählen (#489), einschließlich

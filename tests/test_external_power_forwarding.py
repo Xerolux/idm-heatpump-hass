@@ -154,7 +154,7 @@ async def test_state_changes_debounce_to_one_forward() -> None:
     assert forwarder._pending_task is None
 
 
-async def test_cancelled_debounce_does_not_lose_replacement_task() -> None:
+async def test_sensor_bursts_do_not_postpone_the_pending_forward() -> None:
     forwarder, _ = _forwarder({}, {})
     forwarder._hass.async_create_task.side_effect = asyncio.create_task
     forwarder.async_forward = AsyncMock()
@@ -162,13 +162,84 @@ async def test_cancelled_debounce_does_not_lose_replacement_task() -> None:
     first = forwarder._pending_task
     await asyncio.sleep(0)
     forwarder._state_changed(None)
-    replacement = forwarder._pending_task
+    assert forwarder._pending_task is first
     try:
-        await asyncio.gather(first, return_exceptions=True)
-        assert forwarder._pending_task is replacement
+        await asyncio.sleep(1.1)
+        forwarder.async_forward.assert_awaited_once()
+        assert forwarder._pending_task is None
     finally:
-        replacement.cancel()
-        await asyncio.gather(replacement, return_exceptions=True)
+        first.cancel()
+        await asyncio.gather(first, return_exceptions=True)
+
+
+async def test_sensor_event_during_write_finishes_the_batch_and_forwards_latest_state() -> None:
+    states = {"sensor.pv": _state(1), "sensor.soc": _state(80, "%")}
+    forwarder, coordinator = _forwarder(states, {"pv_production": "sensor.pv", "battery_soc": "sensor.soc"})
+    forwarder._hass.async_create_task.side_effect = asyncio.create_task
+    started = asyncio.Event()
+    release = asyncio.Event()
+    writes: list[tuple[str, float]] = []
+
+    async def write(reg: SimpleNamespace, value: float) -> None:
+        writes.append((reg.name, value))
+        if len(writes) == 1:
+            started.set()
+            await release.wait()
+
+    coordinator.async_write_register.side_effect = write
+    forwarder._state_changed(None)
+    task = forwarder._pending_task
+    try:
+        await asyncio.wait_for(started.wait(), 2)
+        states["sensor.pv"] = _state(2)
+        forwarder._state_changed(None)
+        assert forwarder._pending_task is task
+        release.set()
+        await asyncio.wait_for(task, 3)
+        assert writes == [
+            ("pv_production", 1.0),
+            ("battery_soc", 80.0),
+            ("pv_production", 2.0),
+            ("battery_soc", 80.0),
+        ]
+    finally:
+        release.set()
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+
+
+async def test_periodic_and_event_forwards_never_interleave_batches() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.pv": _state(1), "sensor.soc": _state(80, "%")},
+        {"pv_production": "sensor.pv", "battery_soc": "sensor.soc"},
+    )
+    started = asyncio.Event()
+    release = asyncio.Event()
+    writes: list[str] = []
+
+    async def write(reg: SimpleNamespace, value: float) -> None:
+        writes.append(reg.name)
+        if len(writes) == 1:
+            started.set()
+            await release.wait()
+
+    coordinator.async_write_register.side_effect = write
+    first = asyncio.create_task(forwarder.async_forward())
+    second = None
+    try:
+        await asyncio.wait_for(started.wait(), 1)
+        second = asyncio.create_task(forwarder.async_forward())
+        await asyncio.sleep(0)
+        assert writes == ["pv_production"]
+        release.set()
+        await asyncio.wait_for(asyncio.gather(first, second), 1)
+        assert writes == ["pv_production", "battery_soc", "pv_production", "battery_soc"]
+    finally:
+        release.set()
+        for task in (first, second):
+            if task is not None:
+                task.cancel()
+        await asyncio.gather(*(task for task in (first, second) if task is not None), return_exceptions=True)
 
 
 @pytest.mark.parametrize("surplus", [-2.0, 0.0, 3.0])

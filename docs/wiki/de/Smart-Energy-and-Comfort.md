@@ -151,8 +151,11 @@ für das GLT-Register gerundet (97,5 % wird 98 %). Die HA-Boost-Bedingung verwen
 den ursprünglichen Wert mit Nachkommastellen.
 
 Die Weiterleitung ist ereignisgetrieben: Eine Sensor-Aktualisierung wird
-innerhalb von etwa einer Sekunde geschrieben, mit einem periodischen
-Fallback-Zyklus von standardmäßig 60 Sekunden (die Option *Weiterleitungsintervall
+innerhalb von etwa einer Sekunde geschrieben. Weitere Aktualisierungen werden
+gebündelt, ohne einen laufenden Übertragungsdurchgang abzubrechen. Änderungen
+während der Übertragung lösen einen weiteren Durchgang mit den aktuellen
+Quellwerten aus. Periodische und ereignisgesteuerte Durchgänge überlappen nicht.
+Der periodische Fallback-Zyklus beträgt standardmäßig 60 Sekunden (die Option *Weiterleitungsintervall
 für externe Leistungswerte*, 30–3600 Sekunden; der Schreib-Cooldown der
 Integration pro Register drosselt Bursts). Sensor-Aktualisierungen während
 dieses Cooldowns werden still übersprungen — wenn eine Quelle schneller

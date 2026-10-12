@@ -15,6 +15,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.3-b1] - 2026-10-12
+
+### Fixed
+
+- External power forwarding coalesces sensor bursts without cancelling an in-flight Modbus batch or postponing writes indefinitely. Periodic and event-driven batches are serialized, and unloading awaits cancellation of the owned event task. This addresses an independently reproduced forwarding race investigated alongside #493; controller-side battery-display flicker is not yet established as having the same cause.
+
 ## [0.21.2] - 2026-10-12
 
 ### Fixed

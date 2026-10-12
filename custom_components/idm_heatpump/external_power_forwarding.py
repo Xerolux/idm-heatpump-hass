@@ -90,6 +90,8 @@ class ExternalPowerForwarder:
         self._config = config
         self._unsub: Callable[[], None] | None = None
         self._pending_task: asyncio.Task[None] | None = None
+        self._forward_again = False
+        self._forward_lock = asyncio.Lock()
 
     async def async_run(self) -> None:
         self._unsub = async_track_state_change_event(
@@ -107,16 +109,25 @@ class ExternalPowerForwarder:
                 self._unsub()
             if self._pending_task is not None:
                 self._pending_task.cancel()
+                await asyncio.gather(self._pending_task, return_exceptions=True)
 
     @callback
     def _state_changed(self, _event: Any) -> None:
         if self._pending_task is not None and not self._pending_task.done():
-            self._pending_task.cancel()
+            self._forward_again = True
+            return
 
         async def _debounced() -> None:
             try:
-                await asyncio.sleep(1)
-                await self.async_forward()
+                while True:
+                    # Coalesce bursts without postponing the first write or
+                    # cancelling an in-flight Modbus request. Events during
+                    # a write schedule another pass with the latest states.
+                    await asyncio.sleep(1)
+                    self._forward_again = False
+                    await self.async_forward()
+                    if not self._forward_again:
+                        break
             finally:
                 if self._pending_task is asyncio.current_task():
                     self._pending_task = None
@@ -136,6 +147,10 @@ class ExternalPowerForwarder:
         return value
 
     async def async_forward(self) -> None:
+        async with self._forward_lock:
+            await self._async_forward_locked()
+
+    async def _async_forward_locked(self) -> None:
         for name, entity_id in self._config.entities.items():
             if name not in EXTERNAL_POWER_MEASUREMENT_NAMES:
                 continue
