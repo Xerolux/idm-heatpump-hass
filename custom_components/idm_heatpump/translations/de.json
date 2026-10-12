@@ -3282,6 +3282,10 @@
     "whats_new_0_21_0": {
       "title": "Neu seit 0.20.1: viele neue Funktionen",
       "description": "Dies ist ein Hinweis, kein Fehler. Mit dem Update sind viele neue Funktionen dazugekommen - vor allem der Predictive Advisor: Er erklärt, warum die Wärmepumpe läuft, erkennt Anomalien, bewertet Zustand und Effizienz, lernt eine COP-Karte und ein Gebäudemodell und empfiehlt Heizkurven-Schritte, Warmwasser-Zeitfenster aus PV- oder Preisprognose sowie einen 24-Stunden-Plan. Alles ist strikt nur lesend, vollständig lokal und funktioniert ohne jede KI - und lässt sich in den Optionen der Integration deaktivieren. Tippe auf \"Mehr erfahren\" für den kompletten Überblick über alles, was jetzt möglich ist."
+    },
+    "write_connection_failed": {
+      "title": "IDM-Verbindung beim Registerschreiben fehlgeschlagen",
+      "description": "Die Zustellung des Schreibvorgangs auf Register **{register}** an Adresse **{address}** konnte wegen eines Modbus-Verbindungsfehlers nicht bestätigt werden. Das ist keine Ablehnung der Registerfreigabe durch den Regler.\n\nTechnisches Detail: `{detail}`\n\nPrüfe das konfigurierte Ziel und den Port. Bei ModBridge oder einem anderen Proxy prüfe dessen Listener, Zielroute, Dienstverfügbarkeit und Verbindung zum Navigator. Bei einer direkten Verbindung prüfe die Modbus-TCP-Verfügbarkeit am Navigator und das Netzwerk.\n\nDiese Warnung verschwindet nach einem erfolgreichen Schreibvorgang auf dasselbe Register."
     }
   },
   "services": {

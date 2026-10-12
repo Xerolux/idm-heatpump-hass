@@ -1861,7 +1861,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 self._scoped_issue_id("write_rejected"),
                 is_fixable=False,
                 severity=ir.IssueSeverity.WARNING,
-                translation_key="write_rejected",
+                translation_key=(
+                    "write_connection_failed"
+                    if classify_write_error(err) == "write_connection_failed"
+                    else "write_rejected"
+                ),
                 translation_placeholders={
                     "register": reg.name,
                     "address": str(reg.address),
@@ -1870,6 +1874,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
             raise
         self._last_write_error = None
+        self._clear_confirmed_write_issue(reg)
         self._write_timestamps[reg.address] = time.monotonic()
         # Optimistic update so entities reflect the new value immediately.
         # Replace the snapshot dict (do not mutate in place) so concurrent web
@@ -1889,6 +1894,17 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             old_task.cancel()
         self._delayed_refresh_task = self._create_confirmation_task()
         return safety_result
+
+    def _clear_confirmed_write_issue(self, reg: RegisterDef) -> None:
+        """Clear a persisted warning only after its own register writes successfully."""
+        issue_id = self._scoped_issue_id("write_rejected")
+        issue = ir.async_get(self.hass).async_get_issue(DOMAIN, issue_id)
+        if (
+            issue is not None
+            and issue.translation_placeholders is not None
+            and issue.translation_placeholders.get("address") == str(reg.address)
+        ):
+            ir.async_delete_issue(self.hass, DOMAIN, issue_id)
 
     def _create_confirmation_task(self) -> asyncio.Task[None]:
         """Start the short confirmation refresh as a task the entry owns.

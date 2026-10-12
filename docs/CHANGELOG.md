@@ -15,6 +15,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.3-b2] - 2026-10-12
+
+### Added
+
+- Document a SolarEdge GLT setup for a battery-connected hybrid inverter and additional inverters, including explicit source signs, partial aggregates, dropout/recovery, battery-export exclusion and the limits of HA-side failure handling. Add a standalone generator for reviewable HA template YAML and an IDM source-mapping reference; it performs no HA or hardware writes. Unit-labelled inputs and explicit sign choices are required. English and German setup guides are published together.
+
+### Fixed
+
+- Report Modbus delivery/connection failures separately from controller register-access rejections, including proxy endpoint failures. Clear a persisted write repair only after that same register is successfully written; success on another register does not conceal its failure. Keep the existing scoped repair identity so recovery also clears warnings created by earlier versions.
+
 ## [0.21.3-b1] - 2026-10-12
 
 ### Fixed

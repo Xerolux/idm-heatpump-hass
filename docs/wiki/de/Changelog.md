@@ -5,6 +5,14 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.3-b2 — 2026-10-12
+
+Die SolarEdge-GLT-Einrichtung enthält einen Template-Generator mit ausdrücklich
+gewählten Quellen und eine Anleitung zum Ausfallverhalten auf Deutsch und
+Englisch. Modbus-Proxy-/Verbindungsfehler erhalten eine passende Schreibwarnung.
+Ein erfolgreicher Schreibvorgang auf dasselbe Register entfernt dessen
+gespeicherte Warnung, ohne einen Fehler eines anderen Registers zu verdecken.
+
 ## v0.21.3-b1 — 2026-10-12
 
 Die externe Leistungsweiterleitung bricht laufende Modbus-Durchgänge bei neuen

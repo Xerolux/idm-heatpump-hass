@@ -211,6 +211,105 @@ Der Manager steuert weder die Heizkurve noch die elektrische Zusatzheizung.
 Der optionale Tarifsensor beeinflusst nur die Kostenrechnung;
 tarifgesteuerte Schreibzugriffe auf die Wärmepumpe sind nicht aktiviert.
 
+## SolarEdge mit Batterie und mehreren Wechselrichtern über GLT
+
+Diese Anleitung gilt, wenn HA mehrere SolarEdge-Wechselrichter und die Batterie
+liest und der Navigator die Energiedaten der Anlage über GLT erhalten soll.
+Die [aktuell von IDM verlinkte SolarEdge-Anleitung](https://www.idm-energie.at/wp-content/uploads/2021/04/SolarEdge-DE.pdf)
+schließt Batteriespeicher und mehrere Wechselrichter bei der nativen Verbindung
+aus. Die Anleitung ist älter; prüfe die Unterstützung deiner konkreten
+Regler-Firmware, bevor du stattdessen die native Verbindung auswählst.
+
+### Zuständigkeit und Quellenauswahl
+
+1. Wähle im Navigator **Gebäudeleittechnik / Smartfox** als PV-Signal. Beende die
+   native SolarEdge-Abfrage und weitere Schreiber auf dieselben GLT-Eingänge.
+2. Wähle alle Wechselrichter derselben Anlage und desselben Netz-Zählers.
+   Vermische keine anderen Anlagen und addiere keinen Summensensor zusätzlich
+   zu seinen einzelnen Quellen.
+3. Bestimme den Wechselrichter mit Batterieanschluss. Prüfe Batteriestatus und
+   SOC-Verlauf, um das Leistungsvorzeichen zu bestätigen; der Sensorname reicht nicht.
+4. Prüfe das Netz-Zähler-Vorzeichen bei beobachtetem Bezug oder Einspeisung.
+   Der Generator verlangt für Batterie und Netz eine ausdrückliche Auswahl.
+5. Verwende momentane Leistung in **W**, keine Energiezähler in kWh. Wandle
+   kW-Quellen zuerst mit eigenen Helfern in W um. Der Batterie-SOC muss Prozent liefern.
+
+### HA-Templates erzeugen
+
+Lade [generate_solaredge_glt_templates.py](https://github.com/Xerolux/idm-heatpump-hass/blob/main/scripts/generate_solaredge_glt_templates.py)
+herunter oder führe es im Repository aus. Das Skript verwendet die
+Python-Standardbibliothek und erzeugt Dateien, ohne auf HA zuzugreifen oder
+Hardware zu beschreiben. Ersetze die Beispiel-IDs durch deine Quellen:
+
+```bash
+python scripts/generate_solaredge_glt_templates.py --inverter sensor.pv_hybrid_power --inverter sensor.pv_second_power --inverter sensor.pv_third_power --inverter sensor.pv_fourth_power --hybrid-inverter sensor.pv_hybrid_power --battery-power sensor.battery_power --battery-soc sensor.battery_soc --grid-power sensor.grid_power --battery-positive charging --grid-positive export --output solaredge-glt.yaml --mapping-output solaredge-glt-mapping.json
+```
+
+Im Beispiel bedeutet positive Batterieleistung Laden und positive Netzleistung
+Einspeisung. Passe beide Vorzeichenargumente an bestätigte Messungen an.
+Die Liste kann beliebig viele Wechselrichter mit einem batteriegekoppelten
+Hybrid-Wechselrichter enthalten. Doppelte oder überlappende Quell-IDs werden
+abgelehnt. Mehrere Batterien oder Hybrid-Wechselrichter benötigen eine separat
+geprüfte Aggregation; der Generator errät deren Aufbau nicht.
+
+Prüfe das YAML und füge dessen Sensorblock in deine vorhandene `template:`-
+Konfiguration ein; erzeuge keine doppelten Hauptschlüssel. Prüfe die HA-
+Konfiguration, lade Template-Entitäten neu oder starte HA neu und kontrolliere
+die erzeugten Sensoren. Bestehende Namen können andere Entitäts-IDs verursachen:
+Prüfe die tatsächlichen IDs vor der Zuordnung. Das JSON ist eine Referenz für
+den IDM-Optionsassistenten, **keine** Datei zum Einfügen in HA `.storage`.
+Vorhandene Ausgabedateien werden nicht überschrieben. Die Dateien enthalten
+deine ausgewählten Entitäts-IDs; prüfe sie vor einer Weitergabe.
+
+### Berechnung und Verhalten bei Ausfällen
+
+| Erzeugte Messung | Berechnung / Verhalten |
+|---|---|
+| Wechselrichterleistung | Summe der aktuell gültigen AC-Wechselrichterquellen in W |
+| PV-Produktion | Gültige Erzeugung der übrigen Wechselrichter plus Hybrid-AC-Leistung minus normalisierte Batterieentladung; jeder Beitrag mindestens null |
+| Hausverbrauch | Verfügbare AC-Wechselrichtersumme minus normalisierte Netzeinspeisung, mindestens null |
+| PV-Überschuss | Netzeinspeisung minus Batterieentladung, mindestens null; fehlende Netz-/Batteriedaten oder alle Wechselrichter offline ergeben null |
+| Batterieentladung | Positiv beim Entladen, negativ beim Laden |
+| Verfügbare Wechselrichter | Anzahl gültiger Wechselrichterquellen in W |
+
+Ein nicht verfügbarer Wechselrichter wird ausgelassen und bei gültigen Werten
+automatisch wieder berücksichtigt. Fehlt der Hybrid-Wechselrichter oder dessen
+Batterieleistung, entfällt sein PV-Beitrag; die anderen liefern weiter ihre
+Beiträge. Ohne gültigen Wechselrichter sind Wechselrichter-/PV-/Hauswerte nicht
+verfügbar. Ohne Netz-Zähler ist auch der Hausverbrauch nicht verfügbar.
+Ungültige Batterieleistung oder eine falsche Einheit macht den Batteriewert
+nicht verfügbar. Der ausdrückliche Null-Überschuss-Helfer verhindert neue PV-
+Ladung, solange HA läuft. Er verändert nicht die allgemeine Integrationsregel,
+ungültige Quellen zu überspringen.
+
+Teilsummen sind unvollständige Schätzungen, keine vollständige Anlagenmessung.
+Die Kombination von AC-Wechselrichter- und DC-Batterieleistung enthält zusätzlich
+Umwandlungsverluste und zeitlichen Messversatz. Bevorzuge unabhängig gemessene
+und geprüfte PV-/Verbrauchssummen, wenn vorhanden. Diese Anleitung stellt keinen
+reglerseitigen Wächter bei einem HA- oder Netzwerkausfall bereit: Der Navigator
+kann letzte Werte behalten. Sein Timeout-Verhalten muss separat geprüft werden;
+allein mit diesen Templates ist keine vollständig ausfallsichere Anlage belegt.
+
+### Weiterleitung konfigurieren und prüfen
+
+Aktiviere in den IDM-Optionen **Externe Leistungsweiterleitung**, wähle 30 Sekunden
+als periodisches Intervall und verwende die erzeugte Zuordnung als Referenz.
+Wähle beim Batterievorzeichen **Unverändert**, weil der erzeugte Batteriehelfer
+bereits normalisiert. SOC nutzt den ursprünglichen Prozentsensor und wird von
+der Integration gerundet. Ordne keine E-Heizstab-Leistung zu, wenn sie nicht
+unabhängig gemessen wird. Die Weiterleitung versorgt die PV-Regelung des
+Navigators; lasse den separaten automatischen HA-Warmwasser-Manager für diese
+Einrichtung deaktiviert. Die Zuordnungsreferenz hält diese Zuständigkeit
+ausdrücklich fest.
+
+Vergleiche alle fünf weitergeleiteten Messungen mit dem Navigator, einschließlich
+Batterie-SOC und Entladung. Rücklesen vom Gerät ist aussagekräftiger als ein
+optimistischer HA-Entitätswert unmittelbar nach dem Schreiben. Prüfe Laden und
+Entladen, Wechselrichterausfall und Rückkehr sowie fehlende Netz-/Batteriedaten.
+Die Verfügbarkeitszahl zeigt Teilsummen an. Ein kurzer erfolgreicher Test belegt
+keine langfristige Zuverlässigkeit. Das Batterieanzeige-Problem #493 bei älterer
+Firmware bleibt vom behobenen Abbruch laufender Übertragungen zu unterscheiden.
+
 ## Komfort-Zeitplan und schreibgeschützte Berater
 
 Der optionale Komfort-Zeitplan kann ausgewählte Raumtemperatur-Ziele auf
