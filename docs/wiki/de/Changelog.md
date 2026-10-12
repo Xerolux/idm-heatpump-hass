@@ -5,6 +5,16 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.1 — 2026-10-12
+
+Wartungsrelease für automatische PV-Warmwasserladung (#487) und Fachmann-Codes
+auf Navigator 1.7 (#486). Automatische Boosts erhalten die Heizungsbetriebsart,
+benötigen 5 °C Abstand zum Ziel und behalten eine volle Sperrzeit ab Ladeende
+über Reloads und Neustarts. Navigator 1.7 erhält seinen unterstützten
+Level-1-Code; die alte Level-2-Entität wird entfernt. Die PV-Pufferregelung
+des Navigators bleibt unabhängig. Differenzkreis-Parameterzuordnungen sind
+weiterhin unbestätigt.
+
 ## v0.21.0-b4 — 2026-10-11
 ## v0.21.0 — 2026-10-12
 

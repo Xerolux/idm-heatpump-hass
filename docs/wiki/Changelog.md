@@ -5,6 +5,15 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.1 — 2026-10-12
+
+Maintenance release for automatic PV DHW charging (#487) and Navigator 1.7
+technician codes (#486). Automatic boosts preserve normal heating mode,
+require 5 °C of reheat headroom and retain a full completion-based cooldown
+across reloads and restarts. Navigator 1.7 receives its supported level-1
+code; the obsolete level-2 entity is removed. Navigator PV buffer regulation
+remains independent. Differential-circuit parameter mappings remain unverified.
+
 ## v0.21.0-b4 — 2026-10-11
 ## v0.21.0 — 2026-10-12
 

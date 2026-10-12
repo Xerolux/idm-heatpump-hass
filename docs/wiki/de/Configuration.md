@@ -80,7 +80,11 @@ Prüfe vor dem Speichern darauf zugreifende Dashboards und Automationen. Die
 beiden Temperatursensoren behalten ihre Entity-IDs. Zurückschalten stellt normale
 Regler wieder her; Anpassungen entfernter Regler bleiben dabei nicht erhalten.
 Hysterese, Schwellen und Maximaltemperatur werden wegen unbestätigter Register
-nicht angeboten. Die Zuordnung basiert auf dem Navigator-10-Bericht in Issue
+nicht angeboten. Die Nachprüfung für 0.21.1 fand weder im API-Katalog noch
+in der verfügbaren Modbus-Tabelle eine bestätigte Parameterzuordnung.
+Insbesondere ist `hc_d_setpoint_flow_constant` als Sollwert eines Konstantkreises
+dokumentiert; ein gleicher Messwert beweist keine Zuordnung zum Differenzschwellwert.
+Die Zuordnung basiert auf dem Navigator-10-Bericht in Issue
 #429 und muss noch auf Hardware mit Differenzregelung bestätigt werden.
 Siehe [Entitäten, Statuswerte und Migration](Entities#differenztemperaturgeregelte-heizkreise).
 
@@ -379,9 +383,13 @@ Gib die Anzahl der Zonenmodule (0–10) und die aktiven Räume je Modul an. Die 
 
 ### Codes für die Fachmann-Ebene
 
-Aktiviere diese optionale Funktion, um zwei Sensor-Entitäten hinzuzufügen, die
-die aktuellen Zugangscodes für *Fachmann Ebene 1* und *Fachmann Ebene 2* auf
-dem IDM Navigator anzeigen. Die Funktion ist standardmäßig deaktiviert.
+Aktiviere diese optionale Funktion für die aktuellen Zugangscodes. Navigator
+2.0/10/Pro zeigt *Fachmann Ebene 1* und *Fachmann Ebene 2*, Navigator 1.7 nur
+seinen unterstützten dreistelligen Level-1-Code. Die Reglerfamilie wird
+automatisch ausgewählt. Das Update entfernt die alte Level-2-Entität auf
+Navigator 1.7 und erhält die Level-1-Entitäts-ID. Die lokale Home-Assistant-Zeit
+muss bei Datum und Stunde mit dem Regler übereinstimmen. Die Funktion ist
+standardmäßig deaktiviert.
 
 | Sensor | Beschreibung |
 |--------|-------------|

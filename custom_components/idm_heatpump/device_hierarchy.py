@@ -33,6 +33,7 @@ from .const import (
     FEATURE_PROFILE_SMART,
     MANUFACTURER,
 )
+from .technician_codes import technician_code_levels
 
 if TYPE_CHECKING:
     from .coordinator import IdmCoordinator
@@ -635,6 +636,7 @@ def cleanup_disabled_feature_entities(hass: HomeAssistant, coordinator: IdmCoord
         key = entity.unique_id[len(prefix) :]
         disabled = (
             (key.startswith("ai_") and not options.get(CONF_AI_ADVISOR, False))
+            or (key == "technician_level_2" and "level_2" not in technician_code_levels(coordinator.model_name))
             or (key.startswith("advisor_") and not advisor)
             or (key.startswith("health_") and not health)
             or (key == "heating_curve_advice" and not heating_curve)

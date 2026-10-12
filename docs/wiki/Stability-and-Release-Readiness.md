@@ -4,6 +4,23 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.21.1 release decision
+
+This maintenance candidate addresses confirmed integration defects in automatic
+PV DHW boost pacing and system-mode ownership (#487), and adds the controller-
+family-specific Navigator 1.7 technician code (#486). Runtime dependencies,
+transport and register maps are unchanged. Publication requires both full-suite
+coverage gates, strict runtime typing, lint, the real-HA lifecycle suite and the
+GitHub quality/security gates to pass on the candidate.
+
+The tests cover mode-preserving start, enforcement, rollback and recovery,
+restart-safe cooldown, invalid readings and family-specific code selection.
+No physical controller writes or extended field soak were performed. Automated
+validation does not prove the sole cause of the reporter's buffer cycles or
+on-device acceptance of the Navigator 1.7 code. Navigator PV buffer control is
+independent of the HA DHW cooldown. The optional parameters from #429 remain
+unavailable because their register mapping is unverified; no mapping is guessed.
+
 ## Current Status
 
 See the [published stable release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest)
@@ -166,7 +183,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.21.0` and `idm-heatpump-api` `2.14.2` form the current
+Source-tree integration `0.21.1` and `idm-heatpump-api` `2.14.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
