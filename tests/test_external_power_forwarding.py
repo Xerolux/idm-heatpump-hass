@@ -49,7 +49,7 @@ def test_soc_and_battery_sign_are_validated() -> None:
     assert forwarder._value("battery_discharge", _state(500, "W")) == -0.5
     assert forwarder._value("battery_soc", _state(75, "%")) == 75.0
     assert forwarder._value("battery_soc", _state(-1, "%")) is None
-    assert forwarder._value("battery_soc", _state(75.5, "%")) is None
+    assert forwarder._value("battery_soc", _state(75.5, "%")) == 76.0
     assert forwarder._value("battery_soc", _state(101, "%")) is None
     assert forwarder._value("battery_soc", _state("unavailable", "%")) is None
     assert forwarder._value("pv_production", None) is None
@@ -183,3 +183,10 @@ async def test_forwarding_preserves_signed_measurements_without_control_writes(s
     await forwarder.async_forward()
     writes = [(call.args[0].name, call.args[1]) for call in coordinator.async_write_register.await_args_list]
     assert writes == [("pv_surplus", surplus), ("pv_production", 4.0), ("battery_soc", 80.0)]
+
+
+@pytest.mark.parametrize("soc,expected", [(97.5, 98.0), (0.1, 0.0), (99.9, 100.0), (98.5, 98.0)])
+async def test_fractional_battery_soc_is_forwarded_as_integer_percentage(soc, expected):
+    forwarder, coordinator = _forwarder({"sensor.soc": _state(soc, "%")}, {"battery_soc": "sensor.soc"})
+    await forwarder.async_forward()
+    assert coordinator.async_write_register.await_args.args[1] == expected

@@ -455,7 +455,7 @@
           "external_power_forwarding_pv_production": "W or kW; written to IDM pv_production (registers 78–79).",
           "external_power_forwarding_house_consumption": "W or kW; written to IDM house_consumption (registers 82–83).",
           "external_power_forwarding_battery_discharge": "W or kW. Select invert when the source uses the openWB convention (negative means discharge).",
-          "external_power_forwarding_battery_soc": "Percent from 0 to 100. The read sentinel -1 means unavailable and is not sent to the heat pump.",
+          "external_power_forwarding_battery_soc": "Percent from 0 to 100, including fractional values. Rounded to an integer for the GLT register. Clear this field to stop forwarding and remove the optional HA battery condition; no fallback is written. The read sentinel -1 is not sent.",
           "external_power_forwarding_electric_heater_power": "W or kW; written to IDM electric_heater_power (registers 76–77).",
           "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign."
         }
@@ -1179,7 +1179,7 @@
           "external_power_forwarding_pv_production": "W or kW; written to IDM pv_production (registers 78–79).",
           "external_power_forwarding_house_consumption": "W or kW; written to IDM house_consumption (registers 82–83).",
           "external_power_forwarding_battery_discharge": "W or kW. Select invert when the source uses the openWB convention (negative means discharge).",
-          "external_power_forwarding_battery_soc": "Percent from 0 to 100. The read sentinel -1 means unavailable and is not sent to the heat pump.",
+          "external_power_forwarding_battery_soc": "Percent from 0 to 100, including fractional values. Rounded to an integer for the GLT register. Clear this field to stop forwarding and remove the optional HA battery condition; no fallback is written. The read sentinel -1 is not sent.",
           "external_power_forwarding_electric_heater_power": "W or kW; written to IDM electric_heater_power (registers 76–77).",
           "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign."
         }

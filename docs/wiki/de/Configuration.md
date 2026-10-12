@@ -121,6 +121,13 @@ Entitäts-IDs.
 
 ### Zuordnung und Weiterleitung externer Leistung
 
+Bestehende externe Leistungsquellen können wieder geleert werden. Entferne die
+Auswahl und speichere, um die automatische Weiterleitung dieses Registers zu
+stoppen; andere ausgewählte Quellen bleiben erhalten. Das Entfernen von Batterie-
+SOC entfernt auch die optionale SOC-Bedingung im HA-Energiemanager. Es wird kein
+Ersatzwert ins Register geschrieben. SOC mit Nachkommastellen wird akzeptiert
+und für den ganzzahligen GLT-Eingang gerundet.
+
 Die Kategorie **Externe Leistungsweiterleitung** ordnet bestehende
 Home-Assistant-Sensoren PV-Überschuss, PV-Produktion, Hausverbrauch, Batterie
 Laden/Entladen, Batterie-SOC und Heizstab-Leistung zu. Der

@@ -126,6 +126,15 @@ the manager does not substitute gross PV production minus house consumption.
 Without a surplus source it can derive that difference from two valid,
 non-negative power readings.
 
+Power-source fields can be cleared when reconfiguring. Existing values are
+suggestions, so removing the battery SOC selection removes that mapping and
+its optional HA boost-start condition after reload. Other selected sources
+remain mapped. Clearing stops forwarding; it does not overwrite the controller's
+last value with a fallback. The controller may retain that value until its own
+timeout or another source updates it. Fractional SOC sources are accepted
+and rounded to the integer GLT percentage (97.5% becomes 98%); the HA boost
+condition uses the original fractional value.
+
 Forwards are event-driven: a sensor update is written within about a second,
 with a periodic fallback cycle every 60 seconds by default (the *external
 power forwarding interval* option, 30–3600 seconds; the per-register write

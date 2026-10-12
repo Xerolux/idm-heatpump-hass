@@ -5,6 +5,13 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.2 — 2026-10-12
+
+Externe Leistungssensoren lassen sich wieder abwählen (#489), einschließlich
+der Batteriequelle und ihrer optionalen HA-Boost-Bedingung. SOC mit Nachkomma-
+stellen wird für den GLT-Eingang gerundet statt abgelehnt. Leeren schreibt keinen
+Ersatzwert. Alle Änderungen aus 0.21.1 bleiben enthalten.
+
 ## v0.21.1 — 2026-10-12
 
 Wartungsrelease für automatische PV-Warmwasserladung (#487) und Fachmann-Codes

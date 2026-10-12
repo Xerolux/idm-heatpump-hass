@@ -213,3 +213,19 @@ async def test_whats_new_notice_lands_in_repairs(smoke_hass, patched_client, smo
     assert fresh_issue is None or fresh_issue.dismissed_version is not None
     await smoke_hass.config_entries.async_unload(fresh.entry_id)
     await smoke_hass.async_block_till_done()
+
+
+async def test_external_power_source_can_be_cleared_with_real_ha_selectors() -> None:
+    """A cleared suggested entity must stay absent after actual HA validation."""
+    from custom_components.idm_heatpump.config_flow import (
+        _build_external_power_forwarding_schema,
+        _store_external_power_forwarding_entities,
+    )
+    from custom_components.idm_heatpump.const import CONF_EXTERNAL_POWER_FORWARDING_ENTITIES
+
+    options = {CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {"battery_soc": "sensor.battery_soc"}}
+    schema = _build_external_power_forwarding_schema(options)
+    submitted = schema({"external_power_forwarding_pv_production": "sensor.pv"})
+    assert "external_power_forwarding_battery_soc" not in submitted
+    _store_external_power_forwarding_entities(options, submitted)
+    assert options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {"pv_production": "sensor.pv"}

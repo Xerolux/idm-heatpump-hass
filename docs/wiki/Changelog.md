@@ -5,6 +5,13 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.2 — 2026-10-12
+
+External power sensor selections can be cleared again (#489), including the
+battery source and its optional HA boost condition. Fractional SOC readings are
+rounded for the integer GLT input instead of being rejected. Clearing a mapping
+does not write a fallback value. All changes from 0.21.1 remain included.
+
 ## v0.21.1 — 2026-10-12
 
 Maintenance release for automatic PV DHW charging (#487) and Navigator 1.7

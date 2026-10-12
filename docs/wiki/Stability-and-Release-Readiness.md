@@ -4,6 +4,18 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.21.2 release decision
+
+This maintenance candidate addresses the newly reported #489: optional external
+power selections are suggested instead of enforced as defaults, and fractional
+SOC readings are validated and rounded to the integer GLT input. Tests exercise
+clearing all six roles, preserving remaining mappings, null/blank handling and
+fractional conversion, including a genuine HA selector-validation smoke test.
+The full coverage, runtime typing, lint, lifecycle and GitHub gates are required
+before publication. Dependency pins and transport remain unchanged. Clearing
+stops forwarding and the optional HA battery condition; it does not reset a
+controller register or prove that the Navigator has forgotten its last sample.
+
 ## 0.21.1 release decision
 
 This maintenance candidate addresses confirmed integration defects in automatic
@@ -183,7 +195,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.21.1` and `idm-heatpump-api` `2.14.2` form the current
+Source-tree integration `0.21.2` and `idm-heatpump-api` `2.14.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
