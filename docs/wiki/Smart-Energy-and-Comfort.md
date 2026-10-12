@@ -135,8 +135,11 @@ timeout or another source updates it. Fractional SOC sources are accepted
 and rounded to the integer GLT percentage (97.5% becomes 98%); the HA boost
 condition uses the original fractional value.
 
-Forwards are event-driven: a sensor update is written within about a second,
-with a periodic fallback cycle every 60 seconds by default (the *external
+Forwards are event-driven: a sensor update is written within about a second.
+Further updates are coalesced without cancelling an active batch. Updates
+during an active batch request another pass with the latest source states.
+Periodic and event-driven batches cannot interleave.
+A periodic fallback cycle runs every 60 seconds by default (the *external
 power forwarding interval* option, 30–3600 seconds; the per-register write
 cooldown of the integration throttles bursts). Sensor updates arriving during
 that cooldown are skipped quietly — nothing is wrong when a source updates

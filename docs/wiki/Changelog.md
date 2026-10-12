@@ -5,6 +5,14 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.3-b1 — 2026-10-12
+
+External power forwarding no longer cancels an active Modbus batch when another
+sensor changes. Bursts are coalesced with a bounded initial delay, overlapping
+periodic/event batches are serialized, and unloading awaits the event task.
+Regression tests cover these races. The separate battery-display report #493
+remains under investigation on the reporter's firmware.
+
 ## v0.21.2 — 2026-10-12
 
 External power sensor selections can be cleared again (#489), including the
