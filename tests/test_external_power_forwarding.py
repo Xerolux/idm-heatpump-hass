@@ -74,6 +74,21 @@ async def test_battery_soc_unavailable_sentinel_is_not_written() -> None:
     coordinator.async_write_register.assert_not_awaited()
 
 
+async def test_successful_forward_is_logged(caplog: pytest.LogCaptureFixture) -> None:
+    """Successful GLT writes are visible so logs show the refresh cadence.
+
+    When a controller clears a RAM input on its own (#493), the timestamps of
+    our successful writes are the only way to tell integration-side throttling
+    apart from device-side clearing.
+    """
+    forwarder, coordinator = _forwarder({"sensor.soc": _state(98, "%")}, {"battery_soc": "sensor.soc"})
+    with caplog.at_level("DEBUG", logger="custom_components.idm_heatpump.external_power_forwarding"):
+        await forwarder.async_forward()
+
+    coordinator.async_write_register.assert_awaited_once()
+    assert "Forwarded external power battery_soc = 98.0" in caplog.text
+
+
 async def test_register_guards_and_transport_error(caplog: pytest.LogCaptureFixture) -> None:
     forwarder, coordinator = _forwarder({"sensor.pv": _state(2)}, {"pv_production": "sensor.pv"})
     coordinator.get_register.return_value = None

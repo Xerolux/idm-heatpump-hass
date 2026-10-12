@@ -171,6 +171,10 @@ class ExternalPowerForwarder:
                 continue
             try:
                 await self._coordinator.async_write_register(reg, value)
+                # Successful GLT writes stay visible in debug logs: the write
+                # cadence separates integration-side throttling from a
+                # device-side clearing of the RAM inputs (#493).
+                _LOGGER.debug("Forwarded external power %s = %s", name, value)
             except Exception as err:  # noqa: BLE001 - transport and API errors share no common base
                 kind = classify_write_error(err)
                 if kind == "write_cooldown_active":
