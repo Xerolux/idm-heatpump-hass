@@ -10,7 +10,9 @@ from custom_components.idm_heatpump.services import (
     _encoded_registers_from_safety_result,
     _get_coordinator,
     _handle_acknowledge_errors,
+    _handle_export_ai_dashboard,
     _handle_export_knx_group_addresses,
+    _handle_generate_ai_report,
     _handle_set_controller_clock,
     _handle_set_external_climate,
     _handle_set_external_power,
@@ -1246,3 +1248,212 @@ class TestExportKnxGroupAddressesGroupFallback:
 
         assert {row["register"] for row in response["objects"]} == set(registers)
         assert response["count"] == len(registers)
+
+
+# ---------------------------------------------------------------------------
+# AI report service: explicit entry resolution, no fallback to another plant
+# ---------------------------------------------------------------------------
+
+
+def _ai_entry(entry_id: str = "entry-1", *, manager: object | None = "create", domain: str = DOMAIN, state=None):
+    """Build an entry whose runtime data carries a real AiAdvisor.
+
+    ``manager="create"`` builds a genuine instance (the handler isinstance-checks
+    it); any other value is stored verbatim so rejection paths can be exercised.
+    """
+    from types import SimpleNamespace
+
+    from homeassistant.config_entries import ConfigEntryState
+
+    from custom_components.idm_heatpump.ai_advisor import AiAdvisor
+
+    entry = SimpleNamespace(entry_id=entry_id, domain=domain, state=state or ConfigEntryState.LOADED, options={})
+    coordinator = SimpleNamespace(config_entry=entry)
+    if manager == "create":
+        manager = AiAdvisor(SimpleNamespace(), entry, coordinator)
+    entry.runtime_data = SimpleNamespace(ai_advisor=manager, coordinator=coordinator)
+    return entry
+
+
+def _ai_call(entry_id: str = "entry-1", **data):
+    call = MagicMock()
+    call.data = {"entry_id": entry_id, **data}
+    return call
+
+
+class TestGenerateAiReport:
+    async def test_unknown_entry_is_rejected(self, mock_hass):
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=None)
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_generate_ai_report(mock_hass, _ai_call("missing"))
+
+        assert exc_info.value.translation_key == "ai_disabled"
+
+    async def test_foreign_domain_entry_is_rejected(self, mock_hass):
+        entry = _ai_entry(domain="other_integration")
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_generate_ai_report(mock_hass, _ai_call())
+
+        assert exc_info.value.translation_key == "ai_disabled"
+
+    async def test_not_loaded_entry_is_rejected(self, mock_hass):
+        from homeassistant.config_entries import ConfigEntryState
+
+        entry = _ai_entry(state=ConfigEntryState.SETUP_ERROR)
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_generate_ai_report(mock_hass, _ai_call())
+
+        assert exc_info.value.translation_key == "ai_disabled"
+
+    async def test_entry_without_a_loaded_manager_is_rejected(self, mock_hass):
+        entry = _ai_entry(manager=None)
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_generate_ai_report(mock_hass, _ai_call())
+
+        assert exc_info.value.translation_key == "ai_disabled"
+
+    async def test_returns_the_manager_report(self, mock_hass):
+        entry = _ai_entry()
+        entry.runtime_data.ai_advisor.async_generate = AsyncMock(return_value={"report": "Measured report"})
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        result = await _handle_generate_ai_report(mock_hass, _ai_call(report_type="weekly"))
+
+        assert result == {"report": "Measured report"}
+        entry.runtime_data.ai_advisor.async_generate.assert_awaited_once_with("weekly")
+
+    async def test_advisor_error_becomes_a_translated_home_assistant_error(self, mock_hass):
+        from custom_components.idm_heatpump.ai_advisor import AdvisorError
+
+        entry = _ai_entry()
+        entry.runtime_data.ai_advisor.async_generate = AsyncMock(side_effect=AdvisorError("ai_busy"))
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await _handle_generate_ai_report(mock_hass, _ai_call())
+
+        assert exc_info.value.translation_key == "ai_busy"
+        assert exc_info.value.translation_domain == DOMAIN
+
+
+class TestExportAiDashboard:
+    @staticmethod
+    def _registry(entry_id: str, *, include_report: bool = True, include_extras: bool = True):
+        """Fake the entity-registry lookups the exporter performs."""
+
+        class _FakeEntityRegistry:
+            def __init__(self, unique_ids: dict[str, str]) -> None:
+                self._unique_ids = unique_ids
+
+            def async_get_entity_id(self, domain: str, platform: str, unique_id: str) -> str | None:
+                return self._unique_ids.get(unique_id)
+
+        unique_ids: dict[str, str] = {}
+        if include_report:
+            unique_ids[f"{entry_id}_ai_report"] = "sensor.idm_ai_report"
+        if include_extras:
+            for key in ("ai_learning_status", "ai_storage_used", "ai_coverage", "ai_observed_cop"):
+                unique_ids[f"{entry_id}_{key}"] = f"sensor.idm_{key}"
+            for kind in ("daily", "weekly", "health", "efficiency"):
+                unique_ids[f"{entry_id}_ai_report_{kind}"] = f"button.idm_ai_report_{kind}"
+        return _FakeEntityRegistry(unique_ids)
+
+    async def test_unknown_entry_is_rejected(self, mock_hass):
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=None)
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_export_ai_dashboard(mock_hass, _ai_call("missing"))
+
+        assert exc_info.value.translation_key == "ai_disabled"
+
+    async def test_entry_without_a_manager_is_rejected(self, mock_hass):
+        from unittest.mock import patch
+
+        entry = _ai_entry(manager=None)
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        with (
+            patch("homeassistant.helpers.entity_registry.async_get", return_value=self._registry("entry-1")),
+            pytest.raises(ServiceValidationError) as exc_info,
+        ):
+            await _handle_export_ai_dashboard(mock_hass, _ai_call())
+
+        assert exc_info.value.translation_key == "ai_disabled"
+
+    async def test_missing_report_sensor_is_rejected(self, mock_hass):
+        from unittest.mock import patch
+
+        entry = _ai_entry()
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        with patch(
+            "homeassistant.helpers.entity_registry.async_get",
+            return_value=self._registry("entry-1", include_report=False),
+        ), pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_export_ai_dashboard(mock_hass, _ai_call())
+
+        assert exc_info.value.translation_key == "ai_disabled"
+
+    async def test_builds_the_dashboard_from_registered_entity_ids(self, mock_hass):
+        from unittest.mock import patch
+
+        entry = _ai_entry()
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        with patch("homeassistant.helpers.entity_registry.async_get", return_value=self._registry("entry-1")):
+            result = await _handle_export_ai_dashboard(mock_hass, _ai_call())
+
+        assert set(result) == {"dashboard"}
+        view = result["dashboard"]["views"][0]
+        assert view["path"] == "ai"
+        cards = view["cards"]
+
+        assert cards[0]["type"] == "markdown"
+        entities_card = cards[1]
+        assert entities_card == {
+            "type": "entities",
+            "entities": [
+                "sensor.idm_ai_report",
+                "sensor.idm_ai_learning_status",
+                "sensor.idm_ai_storage_used",
+                "sensor.idm_ai_coverage",
+                "sensor.idm_ai_observed_cop",
+                "button.idm_ai_report_daily",
+                "button.idm_ai_report_weekly",
+                "button.idm_ai_report_health",
+                "button.idm_ai_report_efficiency",
+            ],
+        }
+        report_cards = [card for card in cards if card["type"] == "markdown" and "title" in card]
+        assert [card["title"] for card in report_cards] == ["Daily", "Weekly", "Health", "Efficiency"]
+        assert "sensor.idm_ai_report" in report_cards[0]["content"]
+        # History graphs only for the metrics that exist.
+        history_cards = [card for card in cards if card["type"] == "history-graph"]
+        assert [card["entities"] for card in history_cards] == [
+            ["sensor.idm_ai_coverage"],
+            ["sensor.idm_ai_observed_cop"],
+            ["sensor.idm_ai_storage_used"],
+        ]
+
+    async def test_omits_metrics_and_buttons_that_are_not_registered(self, mock_hass):
+        from unittest.mock import patch
+
+        entry = _ai_entry("entry-2")
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
+
+        with patch(
+            "homeassistant.helpers.entity_registry.async_get",
+            return_value=self._registry("entry-2", include_extras=False),
+        ):
+            result = await _handle_export_ai_dashboard(mock_hass, _ai_call("entry-2"))
+
+        cards = result["dashboard"]["views"][0]["cards"]
+        assert cards[1]["entities"] == ["sensor.idm_ai_report"]
+        assert not [card for card in cards if card["type"] == "history-graph"]

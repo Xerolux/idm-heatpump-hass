@@ -995,3 +995,126 @@ class TestClimateSharedBehaviour:
         climate, coord = self._zone(data={"zm1_room2_mode": RoomMode.ECO})
         await climate.async_set_hvac_mode("dry")
         coord.async_write_register.assert_not_awaited()
+
+
+# ---------------------------------------------------------------------------
+# Additional edge cases for previously uncovered branches
+# ---------------------------------------------------------------------------
+
+
+def _hc_climate(data=None):
+    """Build one heating-circuit climate on a fresh mocked coordinator."""
+    from custom_components.idm_heatpump.climate import IdmHeatingCircuitClimate
+
+    coord = _make_coordinator(data=data)
+    mode, target, current = _hc_registers("a")
+    return IdmHeatingCircuitClimate(coord, "a", mode, target, current), coord
+
+
+def _zone_climate(data=None):
+    """Build one zone-room climate on a fresh mocked coordinator."""
+    from custom_components.idm_heatpump.climate import IdmZoneRoomClimate
+
+    coord = _make_coordinator(data=data)
+    mode = _make_register("zm1_room2_mode", 3000, datatype=DataType.UCHAR, writable=True)
+    target = _make_register("zm1_room2_setpoint", 3001)
+    current = _make_register("zm1_room2_temp", 3002)
+    return IdmZoneRoomClimate(coord, 1, 2, mode, target, current), coord
+
+
+class TestClimateSetupDifferentialCircuits:
+    """A circuit opted into differential control is served by its own
+    translated measurement registers, not by a room-setpoint climate card."""
+
+    async def test_configured_differential_circuit_is_skipped(self):
+        from custom_components.idm_heatpump.climate import async_setup_entry
+
+        coord = _make_coordinator()
+        mode, target, current = _hc_registers("a")
+        coord.active_registers = [mode, target, current]
+        coord.get_register = MagicMock(
+            side_effect=lambda name: next((r for r in coord.active_registers if r.name == name), None)
+        )
+        coord.config_entry.options = {"heating_circuits": ["a"], "differential_circuits": ["a"]}
+
+        added = []
+        await async_setup_entry(MagicMock(), _entry(coord), lambda e: added.extend(e))
+
+        assert added == []
+
+    async def test_non_differential_circuit_is_still_created(self):
+        from custom_components.idm_heatpump.climate import IdmHeatingCircuitClimate, async_setup_entry
+
+        coord = _make_coordinator()
+        mode, target, current = _hc_registers("a")
+        coord.active_registers = [mode, target, current]
+        coord.get_register = MagicMock(
+            side_effect=lambda name: next((r for r in coord.active_registers if r.name == name), None)
+        )
+        # Only circuit b is differential; circuit a keeps its climate card.
+        coord.config_entry.options = {"heating_circuits": ["a", "b"], "differential_circuits": ["b"]}
+
+        added = []
+        await async_setup_entry(MagicMock(), _entry(coord), lambda e: added.extend(e))
+
+        assert len(added) == 1
+        assert isinstance(added[0], IdmHeatingCircuitClimate)
+        assert added[0]._circuit == "A"
+
+
+class TestClimateNonNumericReadings:
+    """A reading that is not a number must never reach the climate card."""
+
+    def test_current_temperature_none_when_the_reading_is_not_numeric(self):
+        climate, _coord = _hc_climate(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_room_temp": "sensor error",
+            }
+        )
+
+        assert climate.current_temperature is None
+
+    def test_target_temperature_none_when_the_setpoint_is_not_numeric(self):
+        climate, _coord = _hc_climate(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": "-",
+            }
+        )
+
+        assert climate.target_temperature is None
+
+    def test_hvac_action_idle_when_the_circuit_active_mode_is_not_numeric(self):
+        """A garbled per-circuit state is an idle circuit, not a crash."""
+        from homeassistant.components.climate import HVACAction
+
+        climate, _coord = _hc_climate(
+            data={
+                "hc_a_mode": CircuitMode.NORMAL,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+                "hc_a_active_mode": "not a number",
+                "hp_operating_mode": int(HeatPumpStatus.HEATING),
+            }
+        )
+
+        # The per-circuit register answered, so the plant fallback is not used.
+        assert climate.hvac_action == HVACAction.IDLE
+
+
+class TestClimatePresetEdgeCases:
+    def test_preset_mode_none_with_an_empty_snapshot(self):
+        climate, _coord = _hc_climate(data={})
+
+        assert climate.preset_mode is None
+
+    async def test_zone_room_preset_falls_back_to_normal(self):
+        """Any preset that is neither eco nor comfort writes NORMAL."""
+        from homeassistant.components.climate import PRESET_NONE
+
+        climate, coord = _zone_climate(data={"zm1_room2_mode": RoomMode.ECO})
+
+        await climate.async_set_preset_mode(PRESET_NONE)
+
+        coord.async_write_register.assert_awaited_once_with(climate._mode_reg, RoomMode.NORMAL)

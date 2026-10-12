@@ -660,3 +660,109 @@ def test_backend_connection_stays_unpaced_by_default(monkeypatch: pytest.MonkeyP
 
     assert recorded["message_spacing"] == 0.0
     assert recorded["connect_delay"] == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Transport-failure classification (timeout / connection / protocol / device)
+# ---------------------------------------------------------------------------
+
+
+def test_timeout_error_translates_to_builtin_timeout() -> None:
+    from modbus_connection import ModbusTimeoutError
+
+    error = ModbusTimeoutError("request timed out")
+    result = modbus_transport._translate_backend_error(error, "read", 1000)
+
+    assert isinstance(result, TimeoutError)
+    assert not isinstance(result, IdmModbusError)
+    assert "Modbus read at address 1000 failed" in str(result)
+
+
+def test_connection_error_translates_to_idm_connection_error() -> None:
+    from idm_heatpump import IdmConnectionError
+    from modbus_connection import ModbusConnectionError
+
+    error = ModbusConnectionError("socket closed")
+    result = modbus_transport._translate_backend_error(error, "write", 1200)
+
+    assert isinstance(result, IdmConnectionError)
+    assert "Modbus write at address 1200 failed" in str(result)
+
+
+def test_protocol_error_translates_to_idm_transport_error() -> None:
+    from modbus_connection import ModbusProtocolError
+
+    error = ModbusProtocolError("desynchronized reply")
+    result = modbus_transport._translate_backend_error(error, "read coils", 3001)
+
+    assert isinstance(result, IdmTransportError)
+    assert "Modbus read coils at address 3001 failed" in str(result)
+
+
+def test_unknown_backend_error_translates_to_idm_device_error() -> None:
+    from idm_heatpump import IdmDeviceError
+    from modbus_connection import ModbusError
+
+    error = ModbusError("unclassified backend failure")
+    result = modbus_transport._translate_backend_error(error, "write coil", 3000)
+
+    assert type(result) is IdmDeviceError
+    assert result.args[0] == "Modbus write coil at address 3000 failed: unclassified backend failure"
+
+
+def _lifecycle_connection(*, connect_error: BaseException | None = None, close_error: BaseException | None = None):
+    """Connection double whose lifecycle raises the given backend errors."""
+
+    class Unit:
+        async def read_holding_registers(self, address: int, count: int) -> list[int]:
+            return [0] * count
+
+    class Connection:
+        connected = False
+
+        def for_unit(self, unit_id: int) -> Unit:
+            return Unit()
+
+        async def connect(self) -> None:
+            if connect_error is not None:
+                raise connect_error
+            self.connected = True
+
+        async def close(self) -> None:
+            self.connected = False
+            if close_error is not None:
+                raise close_error
+
+    return Connection()
+
+
+@pytest.mark.asyncio
+async def test_connect_translates_backend_errors() -> None:
+    """A backend failure during setup-time validation keeps the API contract."""
+    from modbus_connection import ModbusTimeoutError
+
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 1, 1.0, 0)
+    transport = ModbusConnectionTransport(
+        endpoint,
+        connection_factory=lambda _: _lifecycle_connection(connect_error=ModbusTimeoutError("no answer")),  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(TimeoutError, match="Modbus connect at address 0 failed"):
+        await transport.connect()
+
+
+@pytest.mark.asyncio
+async def test_close_translates_backend_errors() -> None:
+    from idm_heatpump import IdmConnectionError
+    from modbus_connection import ModbusConnectionError
+
+    endpoint = ModbusTcpEndpoint("192.0.2.10", 502, 1, 1.0, 0)
+    transport = ModbusConnectionTransport(
+        endpoint,
+        connection_factory=lambda _: _lifecycle_connection(close_error=ModbusConnectionError("socket gone")),  # type: ignore[arg-type]
+    )
+
+    with pytest.raises(IdmConnectionError, match="Modbus disconnect at address 0 failed"):
+        await transport.close()
+    # The close error still marks the transport closed: a second close is a no-op.
+    await transport.close()

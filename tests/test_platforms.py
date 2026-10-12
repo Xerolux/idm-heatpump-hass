@@ -2341,3 +2341,283 @@ class TestTechnicianCodeSensorIdentity:
 
         assert value == sensor._codes_cache["level_1"]
         assert isinstance(value, str) and value
+
+
+# ---------------------------------------------------------------------------
+# Water heater platform
+# ---------------------------------------------------------------------------
+
+
+class TestWaterHeaterSetupEntry:
+    async def test_web_water_heater_entities_are_added(self):
+        """A web-only entry serves its hot-water card before any register lookup."""
+        from unittest.mock import patch
+
+        from custom_components.idm_heatpump import water_heater
+
+        coord = _make_coordinator()
+        coord.get_register = MagicMock(return_value=None)
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+
+        web_entities = [MagicMock(name="web_water_heater")]
+        added: list = []
+        with patch.object(water_heater, "web_water_heater_entities", return_value=web_entities):
+            await water_heater.async_setup_entry(MagicMock(), entry, MagicMock(side_effect=added.extend))
+
+        assert added == web_entities
+
+
+class TestWaterHeaterEntityEdges:
+    def _make(self, data=None):
+        from custom_components.idm_heatpump.water_heater import IdmWaterHeater
+
+        coord = _make_coordinator(data=data)
+        current = _make_register("dhw_temp_top", 100)
+        target = _make_register("dhw_setpoint", 200, writable=True, datatype=DataType.UCHAR)
+        return IdmWaterHeater(coord, current, target), coord
+
+    def test_device_info_falls_back_to_the_main_device(self):
+        """Without a DHW subdevice scope the card joins the main device."""
+        from unittest.mock import patch
+
+        from custom_components.idm_heatpump import water_heater
+
+        wh, coord = self._make()
+        fallback = {"identifiers": {("idm_heatpump", "test_entry")}}
+
+        with (
+            patch.object(water_heater, "build_subdevice_info", return_value=None) as subdevice,
+            patch.object(water_heater, "build_device_info", return_value=fallback) as device_info,
+        ):
+            assert wh.device_info is fallback
+
+        subdevice.assert_called_once_with(coord, "dhw_setpoint")
+        device_info.assert_called_once_with(coord)
+
+    def test_available_false_when_a_register_is_missing_from_the_snapshot(self):
+        """A poll that omits one DHW register must hide the entity, not show
+        a card built from half the data."""
+        wh, _coord = self._make(data={"dhw_temp_top": 50.0})
+
+        assert wh.available is False
+
+    def test_current_temperature_none_when_the_reading_is_not_numeric(self):
+        wh, _coord = self._make(data={"dhw_temp_top": "sensor error", "dhw_setpoint": 55})
+
+        assert wh.current_temperature is None
+
+    def test_target_temperature_none_when_the_setpoint_is_not_numeric(self):
+        wh, _coord = self._make(data={"dhw_temp_top": 50.0, "dhw_setpoint": "-"})
+
+        assert wh.target_temperature is None
+
+
+# ---------------------------------------------------------------------------
+# Button platform
+# ---------------------------------------------------------------------------
+
+
+def _button_entry(coord, options):
+    entry = MagicMock()
+    entry.runtime_data.coordinator = coord
+    entry.options = options
+    return entry
+
+
+class TestButtonSetupEntryOptionalButtons:
+    async def test_smart_profile_with_writable_dhw_registers_adds_boost_buttons(self):
+        from custom_components.idm_heatpump.button import (
+            IdmDhwBoostCancelButton,
+            IdmDhwBoostStartButton,
+            async_setup_entry,
+        )
+        from custom_components.idm_heatpump.const import (
+            CONF_FEATURE_PROFILE,
+            FEATURE_PROFILE_SMART,
+        )
+
+        coord = _make_coordinator()
+        registers = {
+            "system_mode": _make_register("system_mode", 1050, writable=True, datatype=DataType.UCHAR),
+            "dhw_setpoint": _make_register("dhw_setpoint", 1000, writable=True, datatype=DataType.UCHAR),
+            "dhw_temp_top": _make_register("dhw_temp_top", 1001),
+        }
+        coord.get_register = MagicMock(side_effect=registers.get)
+        coord.hass = MagicMock()
+        coord.async_add_listener = MagicMock(return_value=lambda: None)
+
+        added: list = []
+        await async_setup_entry(
+            MagicMock(), _button_entry(coord, {CONF_FEATURE_PROFILE: FEATURE_PROFILE_SMART}), lambda e: added.extend(e)
+        )
+
+        types = {type(entity).__name__ for entity in added}
+        assert "IdmDhwBoostStartButton" in types
+        assert "IdmDhwBoostCancelButton" in types
+        boost = next(entity for entity in added if isinstance(entity, IdmDhwBoostStartButton))
+        cancel = next(entity for entity in added if isinstance(entity, IdmDhwBoostCancelButton))
+        assert boost._attr_unique_id == "test_entry_dhw_boost_start"
+        assert cancel._attr_unique_id == "test_entry_dhw_boost_cancel"
+        # One shared manager drives both buttons.
+        assert boost._manager is cancel._manager
+
+    async def test_no_boost_buttons_when_a_dhw_register_is_not_writable(self):
+        from custom_components.idm_heatpump.button import async_setup_entry
+        from custom_components.idm_heatpump.const import (
+            CONF_FEATURE_PROFILE,
+            FEATURE_PROFILE_SMART,
+        )
+
+        coord = _make_coordinator()
+        registers = {
+            "system_mode": _make_register("system_mode", 1050, writable=True, datatype=DataType.UCHAR),
+            "dhw_setpoint": _make_register("dhw_setpoint", 1000, datatype=DataType.UCHAR),
+            "dhw_temp_top": _make_register("dhw_temp_top", 1001),
+        }
+        coord.get_register = MagicMock(side_effect=registers.get)
+
+        added: list = []
+        await async_setup_entry(
+            MagicMock(), _button_entry(coord, {CONF_FEATURE_PROFILE: FEATURE_PROFILE_SMART}), lambda e: added.extend(e)
+        )
+
+        assert "IdmDhwBoostStartButton" not in {type(entity).__name__ for entity in added}
+
+    async def test_ai_report_buttons_added_when_the_option_is_enabled(self):
+        from custom_components.idm_heatpump.ai_advisor import REPORT_TYPES
+        from custom_components.idm_heatpump.ai_advisor_entities import IdmAiReportButton
+        from custom_components.idm_heatpump.button import async_setup_entry
+        from custom_components.idm_heatpump.const import (
+            CONF_AI_ADVISOR,
+            CONF_FEATURE_PROFILE,
+            FEATURE_PROFILE_VANILLA,
+        )
+
+        coord = _make_coordinator()
+        coord.get_register = MagicMock(return_value=None)
+
+        added: list = []
+        await async_setup_entry(
+            MagicMock(),
+            _button_entry(coord, {CONF_FEATURE_PROFILE: FEATURE_PROFILE_VANILLA, CONF_AI_ADVISOR: True}),
+            lambda e: added.extend(e),
+        )
+
+        ai_buttons = [entity for entity in added if isinstance(entity, IdmAiReportButton)]
+        assert {button.report_type for button in ai_buttons} == set(REPORT_TYPES)
+        assert {button._attr_unique_id for button in ai_buttons} == {
+            f"test_entry_ai_report_{kind}" for kind in REPORT_TYPES
+        }
+
+    async def test_no_ai_report_buttons_when_the_option_is_off(self):
+        from custom_components.idm_heatpump.ai_advisor_entities import IdmAiReportButton
+        from custom_components.idm_heatpump.button import async_setup_entry
+        from custom_components.idm_heatpump.const import (
+            CONF_AI_ADVISOR,
+            CONF_FEATURE_PROFILE,
+            FEATURE_PROFILE_VANILLA,
+        )
+
+        coord = _make_coordinator()
+        coord.get_register = MagicMock(return_value=None)
+
+        added: list = []
+        await async_setup_entry(
+            MagicMock(),
+            _button_entry(coord, {CONF_FEATURE_PROFILE: FEATURE_PROFILE_VANILLA, CONF_AI_ADVISOR: False}),
+            lambda e: added.extend(e),
+        )
+
+        assert not [entity for entity in added if isinstance(entity, IdmAiReportButton)]
+
+
+class TestButtonDeviceInfo:
+    def test_register_button_falls_back_to_the_main_device(self):
+        from custom_components.idm_heatpump.button import IdmAcknowledgeErrorsButton
+        from custom_components.idm_heatpump.const import DOMAIN
+
+        coord = _make_coordinator()
+        button = IdmAcknowledgeErrorsButton(coord, _make_register("error_acknowledge", 1999, writable=True))
+
+        info = button.device_info
+
+        assert (DOMAIN, "test_entry") in info["identifiers"]
+
+    def test_boost_button_falls_back_to_the_main_device(self):
+        from types import SimpleNamespace
+
+        from custom_components.idm_heatpump.button import IdmDhwBoostStartButton
+        from custom_components.idm_heatpump.const import DOMAIN
+
+        coord = _make_coordinator()
+        manager = SimpleNamespace(state_attributes={"active": False})
+        button = IdmDhwBoostStartButton(coord, manager)
+
+        info = button.device_info
+
+        assert (DOMAIN, "test_entry") in info["identifiers"]
+
+    def test_boost_buttons_expose_the_manager_state_attributes(self):
+        from types import SimpleNamespace
+
+        from custom_components.idm_heatpump.button import IdmDhwBoostCancelButton, IdmDhwBoostStartButton
+
+        coord = _make_coordinator()
+        manager = SimpleNamespace(state_attributes={"active": True, "status": "boosting"})
+        start = IdmDhwBoostStartButton(coord, manager)
+        cancel = IdmDhwBoostCancelButton(coord, manager)
+
+        assert start.extra_state_attributes == {"active": True, "status": "boosting"}
+        assert cancel.extra_state_attributes == {"active": True, "status": "boosting"}
+
+
+# ---------------------------------------------------------------------------
+# Binary sensor platform: optional health-monitor entities
+# ---------------------------------------------------------------------------
+
+
+class TestBinarySensorHealthMonitorSetup:
+    async def test_smart_profile_with_health_monitor_adds_health_entities(self):
+        from custom_components.idm_heatpump.binary_sensor import async_setup_entry
+        from custom_components.idm_heatpump.const import (
+            CONF_FEATURE_PROFILE,
+            CONF_HEALTH_MONITOR,
+            FEATURE_PROFILE_SMART,
+        )
+        from custom_components.idm_heatpump.health_monitor import IdmHealthBinarySensor
+
+        coord = _make_coordinator()
+        coord.web_enabled = False
+        coord.binary_sensor_descriptions = []
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {CONF_FEATURE_PROFILE: FEATURE_PROFILE_SMART, CONF_HEALTH_MONITOR: True}
+
+        added: list = []
+        await async_setup_entry(MagicMock(), entry, MagicMock(side_effect=added.extend))
+
+        assert added
+        assert all(isinstance(entity, IdmHealthBinarySensor) for entity in added)
+        assert len(added) == len({entity._attr_unique_id for entity in added})
+
+    async def test_health_monitor_off_adds_no_health_entities(self):
+        from custom_components.idm_heatpump.binary_sensor import async_setup_entry
+        from custom_components.idm_heatpump.const import (
+            CONF_FEATURE_PROFILE,
+            CONF_HEALTH_MONITOR,
+            FEATURE_PROFILE_SMART,
+        )
+        from custom_components.idm_heatpump.health_monitor import IdmHealthBinarySensor
+
+        coord = _make_coordinator()
+        coord.web_enabled = False
+        coord.binary_sensor_descriptions = []
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {CONF_FEATURE_PROFILE: FEATURE_PROFILE_SMART, CONF_HEALTH_MONITOR: False}
+
+        added: list = []
+        await async_setup_entry(MagicMock(), entry, MagicMock(side_effect=added.extend))
+
+        assert not [entity for entity in added if isinstance(entity, IdmHealthBinarySensor)]
