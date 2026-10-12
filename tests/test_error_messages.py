@@ -148,9 +148,9 @@ def test_unknown_connection_failure_gets_the_generic_connect_explanation() -> No
     """An error without any recognized marker falls through to the generic text."""
     err = Exception("mystery transport failure")
     issue_id = error_messages.classify_communication_error(err)
-    text = error_messages.friendly_communication_error(issue_id, "192.168.1.9", 502, err)
+    text = error_messages.friendly_communication_error(issue_id, "192.0.2.9", 502, err)
     assert "could not connect" in text
-    assert "192.168.1.9:502" in text
+    assert "192.0.2.9:502" in text
 
 
 def test_exception_code_attribute_is_read_directly() -> None:
