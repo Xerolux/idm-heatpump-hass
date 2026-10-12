@@ -115,6 +115,7 @@ class DhwBoostManager:
         self.previous_mode: int | None = None
         self.previous_setpoint: int | None = None
         self.last_reason: str | None = None
+        self.preserve_system_mode = False
 
     @property
     def default_target_temperature(self) -> int:
@@ -154,6 +155,8 @@ class DhwBoostManager:
         self.previous_mode = self._safe_int(stored.get("previous_mode"))
         self.previous_setpoint = self._safe_int(stored.get("previous_setpoint"))
         self.last_reason = "startup_recovery"
+        # Old snapshots describe the manual, hot-water-only boost.
+        self.preserve_system_mode = stored.get("preserve_system_mode") is True
 
         async with self._lock:
             try:
@@ -170,6 +173,7 @@ class DhwBoostManager:
         *,
         target_temperature: int = _DEFAULT_TARGET,
         timeout_minutes: int = _DEFAULT_TIMEOUT_MINUTES,
+        preserve_system_mode: bool = False,
     ) -> None:
         """Persist the snapshot, then activate DHW priority and target."""
         async with self._lock:
@@ -219,6 +223,7 @@ class DhwBoostManager:
             self.previous_mode = previous_mode
             self.previous_setpoint = previous_setpoint
             self.last_reason = None
+            self.preserve_system_mode = preserve_system_mode
 
             # Persist before the first device write. This is the recovery
             # contract if Home Assistant stops between the two writes.
@@ -227,7 +232,8 @@ class DhwBoostManager:
 
             try:
                 await self._async_write("dhw_setpoint", target)
-                await self._async_write("system_mode", _HOT_WATER_ONLY_MODE)
+                if not self.preserve_system_mode:
+                    await self._async_write("system_mode", _HOT_WATER_ONLY_MODE)
             except Exception as err:
                 self.status = "start_failed"
                 self.last_reason = "start_failed"
@@ -334,7 +340,7 @@ class DhwBoostManager:
                 try:
                     if data.get("dhw_setpoint") != self.target_temperature:
                         await self._async_enforce("dhw_setpoint", self.target_temperature)
-                    if data.get("system_mode") != _HOT_WATER_ONLY_MODE:
+                    if not self.preserve_system_mode and data.get("system_mode") != _HOT_WATER_ONLY_MODE:
                         await self._async_enforce("system_mode", _HOT_WATER_ONLY_MODE)
                 except _EnforcementPaced:
                     # Write pacing, not a fault: the controller reports the
@@ -394,7 +400,8 @@ class DhwBoostManager:
         await self._async_save()
         try:
             await self._async_write("dhw_setpoint", self.previous_setpoint)
-            await self._async_write("system_mode", self.previous_mode)
+            if not self.preserve_system_mode:
+                await self._async_write("system_mode", self.previous_mode)
         except Exception as err:
             self.status = "recovery_required"
             await self._async_save()
@@ -451,6 +458,7 @@ class DhwBoostManager:
                 "previous_mode": self.previous_mode,
                 "previous_setpoint": self.previous_setpoint,
                 "last_reason": self.last_reason,
+                "preserve_system_mode": self.preserve_system_mode,
             }
         )
 
@@ -518,7 +526,11 @@ class DhwBoostManager:
             "started_at": self.started_at,
             "deadline": self.deadline,
             "last_reason": self.last_reason,
-            "priority": "dhw_setpoint_and_hot_water_only_until_end_or_cancel",
+            "priority": (
+                "dhw_setpoint_only_until_end_or_cancel"
+                if self.preserve_system_mode
+                else "dhw_setpoint_and_hot_water_only_until_end_or_cancel"
+            ),
         }
 
 

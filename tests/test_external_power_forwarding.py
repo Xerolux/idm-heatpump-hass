@@ -169,3 +169,17 @@ async def test_cancelled_debounce_does_not_lose_replacement_task() -> None:
     finally:
         replacement.cancel()
         await asyncio.gather(replacement, return_exceptions=True)
+
+
+@pytest.mark.parametrize("surplus", [-2.0, 0.0, 3.0])
+async def test_forwarding_preserves_signed_measurements_without_control_writes(surplus):
+    forwarder, coordinator = _forwarder(
+        {"sensor.net": _state(surplus), "sensor.pv": _state(4), "sensor.soc": _state(80, "%")},
+        {"pv_surplus": "sensor.net", "pv_production": "sensor.pv", "battery_soc": "sensor.soc"},
+    )
+    coordinator.get_register.side_effect = lambda name: SimpleNamespace(
+        name=name, writable=True, min_val=None, max_val=None
+    )
+    await forwarder.async_forward()
+    writes = [(call.args[0].name, call.args[1]) for call in coordinator.async_write_register.await_args_list]
+    assert writes == [("pv_surplus", surplus), ("pv_production", 4.0), ("battery_soc", 80.0)]

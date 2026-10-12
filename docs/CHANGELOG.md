@@ -13,6 +13,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+
+- Reduce automatic PV DHW cycling (#487): use a setpoint-only boost without interrupting room heating or restoring an unrelated system-mode change. Require a successful controller snapshot, Automatic/Hot-water-only mode and a DHW temperature at least 5 °C below the target. Start the full cooldown after observed completion, persist the anti-cycle reservation before device writes and retain it across reloads/restarts and failed starts. Keep required registers in entity-aware polling. Manual DHW priority retains its existing mode and recovery behavior. Clarify that external power forwarding can independently activate the Navigator's own PV heating-buffer charging, outside the HA DHW cooldown.
+
 ## [0.21.0] - 2026-10-12
 0.21.0 is the **Predictive Advisor** release: a strictly read-only analysis layer
 that observes the plant, learns its own baselines and explains, recommends and

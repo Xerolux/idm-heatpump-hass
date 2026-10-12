@@ -5,17 +5,25 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, PERCENTAGE
 from homeassistant.core import HomeAssistant
+from homeassistant.helpers.storage import Store
 
-from .dhw_boost import DhwBoostError, async_get_dhw_boost_manager
+from .const import DOMAIN, SystemMode
+from .dhw_boost import DhwBoostError, _finite_number, _parse_datetime, async_get_dhw_boost_manager
 
 _LOGGER = logging.getLogger(__name__)
 _POWER_UNITS = frozenset({"W", "kW", "MW"})
+_REHEAT_HYSTERESIS_C = 5.0
+
+
+def _utcnow() -> datetime:
+    return datetime.now(UTC)
 
 
 @dataclass(frozen=True)
@@ -81,17 +89,31 @@ class EnergyManager:
         self._hass = hass
         self._coordinator = coordinator
         self._config = config
-        self._last_start_monotonic: float | None = None
+        self._store: Store[dict[str, Any]] = Store(
+            hass, 1, f"{DOMAIN}.energy_manager.{coordinator.config_entry.entry_id}"
+        )
+        self._loaded = False
+        self._waiting_for_end = False
+        self._blocked_until: datetime | None = None
+        self._lock = asyncio.Lock()
+        self._release_demand: Callable[[], None] | None = None
         self._task: asyncio.Task[None] | None = None
 
     def start(self) -> asyncio.Task[None]:
         """Start the periodic evaluation loop."""
         if self._task is None or self._task.done():
+            if self._release_demand is None:
+                self._release_demand = self._coordinator.register_required_registers(
+                    "energy_manager", {"dhw_temp_top", "dhw_setpoint", "system_mode"}
+                )
             self._task = self._hass.async_create_task(self._run())
         return self._task
 
     async def async_stop(self) -> None:
         """Stop the manager without cancelling an active DHW boost."""
+        if self._release_demand is not None:
+            self._release_demand()
+            self._release_demand = None
         if self._task is None:
             return
         self._task.cancel()
@@ -128,26 +150,64 @@ class EnergyManager:
 
     async def async_evaluate_once(self) -> bool:
         """Evaluate once; return whether a boost was started."""
-        if not self._ready():
-            return False
-        now = asyncio.get_running_loop().time()
-        if (
-            self._last_start_monotonic is not None
-            and now - self._last_start_monotonic < self._config.cooldown_minutes * 60
-        ):
-            return False
+        async with self._lock:
+            return await self._async_evaluate_locked()
+
+    async def _async_save(self) -> None:
+        await self._store.async_save(
+            {
+                "waiting_for_end": self._waiting_for_end,
+                "blocked_until": self._blocked_until.isoformat() if self._blocked_until else None,
+            }
+        )
+
+    async def _async_evaluate_locked(self) -> bool:
+        if not self._loaded:
+            stored = await self._store.async_load()
+            if isinstance(stored, dict):
+                self._waiting_for_end = stored.get("waiting_for_end") is True
+                self._blocked_until = _parse_datetime(stored.get("blocked_until"))
+            self._loaded = True
         manager = await async_get_dhw_boost_manager(self._coordinator)
         if manager.active:
             return False
+        now = _utcnow()
+        if self._waiting_for_end:
+            # Observe completion even without sun. A reload conservatively starts
+            # a full cooldown after recovery, rather than forgetting the boost.
+            self._blocked_until = now + timedelta(minutes=self._config.cooldown_minutes)
+            await self._store.async_save(
+                {
+                    "waiting_for_end": False,
+                    "blocked_until": self._blocked_until.isoformat(),
+                }
+            )
+            self._waiting_for_end = False
+        if self._blocked_until is not None and now < self._blocked_until:
+            return False
+        if not self._ready() or not self._coordinator.last_update_success:
+            return False
+        data = self._coordinator.data or {}
+        temperature = _finite_number(data.get("dhw_temp_top"))
+        if temperature is None or temperature > self._config.target_temperature - _REHEAT_HYSTERESIS_C:
+            return False
+        if data.get("system_mode") not in (SystemMode.AUTOMATIC, SystemMode.HOT_WATER_ONLY):
+            return False
+        # Persist the reservation before any device write. Storage failures and
+        # interrupted/failed starts cannot erase the automatic anti-cycle guard.
+        self._waiting_for_end = True
+        await self._async_save()
         try:
             await manager.async_start(
                 target_temperature=self._config.target_temperature,
                 timeout_minutes=self._config.timeout_minutes,
+                preserve_system_mode=True,
             )
         except DhwBoostError as err:
             _LOGGER.warning("IDM energy manager could not start DHW boost: %s", err)
             return False
-        self._last_start_monotonic = now
+        if not manager.active:
+            return False
         _LOGGER.info("IDM energy manager started DHW boost using %.2f kW surplus", self._surplus_kw() or 0.0)
         return True
 
