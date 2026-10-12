@@ -9,10 +9,22 @@ from __future__ import annotations
 from datetime import datetime
 
 
-def calculate_codes(now: datetime | None = None) -> dict[str, str]:
+def technician_code_levels(model_name: str | None = None) -> tuple[str, ...]:
+    """Return only the access levels supported by the resolved controller."""
+    if isinstance(model_name, str):
+        normalized = model_name.casefold().replace(" ", "_").replace("-", "_")
+        while "__" in normalized:
+            normalized = normalized.replace("__", "_")
+        if "navigator_1.7" in normalized or "navigator_1_7" in normalized or normalized.endswith("navigator_17"):
+            return ("level_1",)
+    return ("level_1", "level_2")
+
+
+def calculate_codes(now: datetime | None = None, *, model_name: str | None = None) -> dict[str, str]:
     """Calculate Fachmann Ebene Level 1 and Level 2 codes for the given time.
 
-    Level 1: DDMM  (day zero-padded + month zero-padded)
+    Navigator 1.7: one three-digit level-1 code, day parity + padded hour.
+    Navigator 2.0/10/Pro Level 1: DDMM (day + month, both zero-padded).
     Level 2: last digit of hour, first digit of hour, last digit of year,
              last digit of month, last digit of day
 
@@ -24,6 +36,11 @@ def calculate_codes(now: datetime | None = None) -> dict[str, str]:
     """
     if now is None:
         now = datetime.now()
+
+    if technician_code_levels(model_name) == ("level_1",):
+        # Navigator 1.7 has one three-digit installer code (issue #486).
+        # Preserve the leading zero on even days and single-digit hours.
+        return {"level_1": f"{now.day % 2}{now.hour:02d}"}
 
     d_padded = f"{now.day:02d}"
     m_padded = f"{now.month:02d}"

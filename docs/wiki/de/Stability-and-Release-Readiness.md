@@ -4,6 +4,24 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.21.1
+
+Dieser Wartungskandidat behebt bestätigte Integrationsfehler bei Sperrzeiten und
+Betriebsartsteuerung automatischer PV-Warmwasser-Boosts (#487) und ergänzt den
+reglerabhängigen Fachmann-Code für Navigator 1.7 (#486). Abhängigkeiten,
+Transport und Registertabellen bleiben gleich. Die Veröffentlichung setzt
+beide vollständigen Coverage-Prüfungen, strikte Typprüfung gegen die Runtime,
+Lint, den echten HA-Lebenszyklustest und die GitHub-Qualitätsprüfungen voraus.
+
+Die Tests prüfen Start, Nachsetzen, Rollback und Wiederherstellung ohne
+Betriebsartwechsel, neustartfeste Sperrzeit, ungültige Werte und Codeauswahl.
+Es erfolgten keine Schreibzugriffe auf echte Regler und kein längerer Feldtest.
+Automatische Tests beweisen weder die alleinige Ursache der gemeldeten
+Pufferzyklen noch die Annahme des Navigator-1.7-Codes am Gerät. Die PV-Puffer-
+steuerung des Navigators bleibt unabhängig. Die optionalen Parameter aus #429
+bleiben mangels bestätigter Registerzuordnung nicht verfügbar; es wird keine
+Zuordnung geraten.
+
 ## Aktueller Status
 
 Den stabilen Kanal zeigt das [aktuelle stabile Release](https://github.com/Xerolux/idm-heatpump-hass/releases/latest).
@@ -177,7 +195,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.21.0` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
+Integration im Quellstand `0.21.1` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

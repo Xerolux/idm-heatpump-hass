@@ -86,7 +86,7 @@ from .predictive_advisor_entities import (
     runtime_predictive_advisor,
 )
 from .registers import entity_order_group, sort_entity_descriptions
-from .technician_codes import calculate_codes
+from .technician_codes import calculate_codes, technician_code_levels
 from .versions import RuntimeVersions, async_runtime_versions
 from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
 from .web_demand_reason_entities import IdmWebDemandReasonSensor, web_demand_reason_sensor_entities
@@ -676,10 +676,7 @@ def _communication_diagnostic_entities(coordinator: IdmCoordinator) -> list[IdmC
 
 
 def _technician_code_entities(coordinator: IdmCoordinator) -> list[IdmTechnicianCodeSensor]:
-    return [
-        IdmTechnicianCodeSensor(coordinator, "level_1"),
-        IdmTechnicianCodeSensor(coordinator, "level_2"),
-    ]
+    return [IdmTechnicianCodeSensor(coordinator, level) for level in technician_code_levels(coordinator.model_name)]
 
 
 class IdmSensor(IdmEntity, SensorEntity):
@@ -881,7 +878,7 @@ class IdmTechnicianCodeBaseSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @callback
     def _refresh_codes(self) -> None:
-        self._codes_cache = calculate_codes(now=dt_util.now())
+        self._codes_cache = calculate_codes(now=dt_util.now(), model_name=self.coordinator.model_name)
 
     @callback
     def _async_refresh(self, _now: object = None) -> None:
@@ -910,7 +907,7 @@ class IdmTechnicianCodeSensor(
         self._attr_translation_key = f"technician_{level}"
 
     @property
-    def native_value(self) -> str:
+    def native_value(self) -> str | None:
         if self._codes_cache is not None:
             return self._codes_cache.get(self._level, "")
-        return calculate_codes(now=dt_util.now())[self._level]
+        return calculate_codes(now=dt_util.now(), model_name=self.coordinator.model_name).get(self._level)

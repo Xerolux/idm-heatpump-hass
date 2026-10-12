@@ -15,6 +15,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.1] - 2026-10-12
+
+### Added
+
+- Support the Navigator 1.7 technician code (#486) using the resolved controller family and Home Assistant local time. Expose only its supported level-1 sensor, preserve its unique ID and remove the obsolete level-2 registry entry during reload. Navigator 2.0/10/Pro calculations and the opt-in setting remain unchanged.
+
 ### Fixed
 
 - Reduce automatic PV DHW cycling (#487): use a setpoint-only boost without interrupting room heating or restoring an unrelated system-mode change. Require a successful controller snapshot, Automatic/Hot-water-only mode and a DHW temperature at least 5 °C below the target. Start the full cooldown after observed completion, persist the anti-cycle reservation before device writes and retain it across reloads/restarts and failed starts. Keep required registers in entity-aware polling. Manual DHW priority retains its existing mode and recovery behavior. Clarify that external power forwarding can independently activate the Navigator's own PV heating-buffer charging, outside the HA DHW cooldown.

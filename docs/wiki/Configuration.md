@@ -74,7 +74,10 @@ review dashboards and automations using those controls before saving. The two
 temperature sensors keep their existing entity IDs. Switching back restores
 normal controls, but customizations of removed controls are not preserved.
 Hysteresis, thresholds and maximum-temperature settings are not exposed because
-their registers are unverified. The mapping follows the Navigator 10 report in
+their registers are unverified. A follow-up review for 0.21.1 found no confirmed
+parameter mapping in the API catalog or the available Modbus table. In
+particular, `hc_d_setpoint_flow_constant` is documented as the constant-flow
+setpoint; an equal observed value does not prove it is the differential threshold. The mapping follows the Navigator 10 report in
 issue #429 and still needs confirmation on differential-control hardware.
 See [entities, status meanings and migration details](Entities#differential-temperature-controlled-heating-circuits).
 
@@ -348,8 +351,12 @@ Specify the number of zone modules (0–10) and the active rooms per module. The
 
 ### Technician Level Codes
 
-Enable this optional feature to add two sensor entities that display the current
-access codes for *Fachmann Ebene 1* and *Fachmann Ebene 2* on the IDM Navigator.
+Enable this optional feature to display the current access codes. Navigator
+2.0/10/Pro exposes *Fachmann Ebene 1* and *Fachmann Ebene 2*; Navigator 1.7
+exposes only its supported three-digit level-1 code. The controller family is
+selected automatically. Upgrading removes the obsolete level-2 entity for
+Navigator 1.7 while keeping the level-1 entity ID. Home Assistant local time
+must agree with the controller date and hour.
 The feature is disabled by default.
 
 | Sensor | Description |

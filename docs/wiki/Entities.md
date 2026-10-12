@@ -80,8 +80,11 @@ identified by the `modbus_connection_version` and `tmodbus_version` attributes.
 
 ### Technician-level access codes
 
-When enabled in the integration options, two additional sensors expose the
-current access codes for *Fachmann Ebene 1* and *Fachmann Ebene 2*. They update
+When enabled in the integration options, Navigator 2.0/10/Pro exposes two
+access-code sensors for *Fachmann Ebene 1* and *Fachmann Ebene 2*. Navigator 1.7
+exposes only its supported three-digit level-1 code. The resolved controller
+family selects the calculation automatically. The sensors use Home Assistant
+local time; its date and hour must agree with the controller. They update
 once per minute, are placed at the top of the IDM device entity list and are not
 Modbus registers.
 
