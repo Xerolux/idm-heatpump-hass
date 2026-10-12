@@ -11,6 +11,29 @@ for the installed stable channel. Current source-tree versions are documented
 below and checked automatically; an older release keeps the pins in its own
 tagged manifest. The release decisions below describe their original candidates.
 
+## 0.21.0 release decision
+
+**0.21.0** is the stable cut of the Predictive Advisor line that ran through
+four prereleases (b1–b4, 2026-10-07 through 2026-10-11). The advisor is
+strictly read-only by construction — its module owns no write path, and the
+accepting of a recommendation records only an acknowledgment — and it is fully
+local and deterministic. For the cut, the full quality gate passed on the
+tagged tree: the four-leg matrix (Python 3.14 × HA 2026.8.1/2026.10.0 ×
+manifest-pinned/api-main) with coverage 95 % and `config_flow` 100 %, strict
+mypy against the real Home Assistant runtime, ruff 0.17, hassfest, HACS, the
+real-Home-Assistant lifecycle smoke including the no-leaked-tasks assertion,
+packaging, checksum and package-to-tag verification. The line was exercised in
+the field by external reporters within days (issues #460 and #471 were filed,
+diagnosed and fixed inside the line, and their fixes shipped through b2–b4 and
+the parallel 0.20.x cuts). The unchanged b4 candidate soaked from 2026-10-11
+to the cut — one day, short of the seven-day gate 6; the maintainer decided to
+cut anyway because the advisor carries no write risk and the same tree's
+transport and polling core is byte-identical to the 0.20.x line that has been
+the stable channel since 2026-10-09. The advisor's learning phases (7-day
+baselines before heating-curve recommendations, staged observation) mean its
+full behavior unfolds over the first days of operation rather than in a soak.
+No configuration migration is needed; rolling back to 0.20.x keeps working.
+
 ## 0.20.4 release decision
 
 **0.20.4** is a maintenance cut on top of 0.20.3, branched from the `v0.20.3`
@@ -143,7 +166,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.21.0-b4` and `idm-heatpump-api` `2.14.2` form the current
+Source-tree integration `0.21.0` and `idm-heatpump-api` `2.14.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

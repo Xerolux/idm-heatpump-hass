@@ -6,6 +6,23 @@ und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releas
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
 ## v0.21.0-b4 — 2026-10-11
+## v0.21.0 — 2026-10-12
+
+Das **Predictive-Advisor**-Release: eine strikt schreibgeschützte Analyseebene,
+die die Anlage beobachtet, eigene Basenlinien lernt und beantwortet, *warum die
+Wärmepumpe gerade läuft* — Anomalieerkennung gegen 30-Tage-Basenlinien, Health-
+und Effizienzwerte, ein gelerntes Gebäudemodell, Heizkurven-Empfehlungen in
+vorsichtigen 0,02-Schritten, Warmwasserfenster aus PV-Prognose oder dynamischen
+Preisen und ein 24-Stunden-Plan. Empfehlungen feuern Ereignisse mit vollständiger
+Erklärung und abgesenktem, restart-sicherem Lebenszyklus. **Kein Schreibzugriff
+auf die Wärmepumpe, keine KI, keine Cloud** — mit dem Smart-Profil standardmäßig
+an, mit eigenem Schalter und einmaligem Was-ist-neu-Hinweis. Das Release bringt
+zusätzlich die Feldhärtung der letzten Tage: die Bereichskorrektur für
+`dhw_charge_off_temp` (46–67 °C, aus den Belegen in #460), den Log-Flut-Fix für
+dauerhaft ungültige Register, funktionierende geführte Konfiguration der externen
+Leistung auf jedem Level (#471), Labels für alle KI-Optionsfelder und den
+Transport-Floor auf dem Stand von Home Assistant 2026.10.1.
+
 ## v0.20.4 — 2026-10-11
 
 Drittes stabiles Wartungs-Release auf der 0.20.x-Linie: **Die geführte
