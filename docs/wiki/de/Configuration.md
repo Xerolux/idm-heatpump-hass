@@ -121,6 +121,15 @@ Entitäts-IDs.
 
 ### Zuordnung und Weiterleitung externer Leistung
 
+Bei ModBridge oder einem anderen Modbus-Proxy müssen Modbus-Host und -Port dessen
+Listener benennen; der Web-Host bleibt der tatsächliche Navigator. Beispielsweise
+kann `192.0.2.10:5020` auf einen Navigator unter `192.0.2.20:502` weiterleiten,
+während das Web-Supplement `192.0.2.20` verwendet. Ein Port wie 5020 ist nicht
+grundsätzlich falsch; maßgeblich ist die konfigurierte Proxy-Route. Bei
+Verbindungsfehlern sind diese Route und deren Verfügbarkeit zu prüfen, nicht die
+Registerfreigabe. Die Schreibwarnung verschwindet nach einem erfolgreichen
+Schreibvorgang auf ihr Register. Erfolg auf einem anderen Register entfernt sie nicht.
+
 Bestehende externe Leistungsquellen können wieder geleert werden. Entferne die
 Auswahl und speichere, um die automatische Weiterleitung dieses Registers zu
 stoppen; andere ausgewählte Quellen bleiben erhalten. Das Entfernen von Batterie-
@@ -136,7 +145,7 @@ Werte bei Änderungen der Quelle und periodisch (Standard: 60 Sekunden) in die
 entsprechenden IDM-GLT-Register geschrieben.
 
 Leistungssensoren müssen W, kW oder MW liefern; die Weiterleitung rechnet in kW
-um. Der Batterie-SOC muss ein ganzzahliger Prozentsatz von 0 bis 100 sein. Das
+um. Der Batterie-SOC muss ein endlicher Prozentsatz von 0 bis 100 sein; Nachkommastellen werden für GLT gerundet. Das
 Batterievorzeichen kann beibehalten oder invertiert werden, um zur Konvention
 der Quelle zu passen. Ungültige oder außerhalb des Bereichs liegende Werte
 werden übersprungen; eine nicht verfügbare Quelle schreibt keinen Ersatzwert
@@ -150,6 +159,8 @@ Zuordnungsseite nur, wenn die Weiterleitung aktiviert ist; eine separate
 Seite zur Quellenauswahl nur für den Lesezugriff gibt es noch nicht. Siehe
 [Einrichtung der externen Leistungsweiterleitung](Installation-and-Setup#automatische-externe-leistungsweiterleitung-von-home-assistant)
 zur Vorbereitung des Reglers und zu den Feldzuordnungen.
+Für einen SolarEdge-Wechselrichter mit Batterie und weitere Wechselrichter siehe
+[GLT-Anleitung und Template-Generator](Smart-Energy-and-Comfort#solaredge-mit-batterie-und-mehreren-wechselrichtern-uber-glt).
 
 ### Optionaler PV-Energiemanager
 

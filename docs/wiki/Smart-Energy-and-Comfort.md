@@ -191,6 +191,101 @@ The manager does not control the heating curve or the electric heater. The
 optional tariff sensor affects cost accounting only; tariff-controlled heat
 pump writes are not enabled.
 
+## SolarEdge battery and multiple inverters over GLT
+
+Use this recipe when HA reads several SolarEdge inverters and the battery, while
+the Navigator should receive the site's energy measurements through GLT.
+The [SolarEdge instructions currently linked by IDM](https://www.idm-energie.at/wp-content/uploads/2021/04/SolarEdge-DE.pdf)
+exclude batteries and multiple inverters from the native connection. Those
+instructions are older; check support for the exact controller firmware before
+choosing native communication instead.
+
+### Ownership and source selection
+
+1. In the Navigator, select **Building management system / Smartfox** as the PV
+   signal. Stop native SolarEdge polling and other writers to the same GLT inputs.
+2. Select every inverter that belongs to the same site and grid meter. Do not
+   aggregate unrelated installations or both a total sensor and its components.
+3. Identify the inverter connected to the battery. Check battery status and the
+   direction of SOC movement to confirm the power sign; do not infer it from a name.
+4. Confirm the grid-meter sign using an observed import/export period. The
+   generator requires an explicit sign choice for both battery and grid.
+5. Use instantaneous power sources in **W**, not energy counters in kWh. Convert
+   kW sources into separate W helpers first. Use a battery SOC source in percent.
+
+### Generate the HA templates
+
+Download or run [generate_solaredge_glt_templates.py](https://github.com/Xerolux/idm-heatpump-hass/blob/main/scripts/generate_solaredge_glt_templates.py).
+It uses Python's standard library and generates files without accessing HA or
+writing to hardware. Replace the example IDs with your own sources:
+
+```bash
+python scripts/generate_solaredge_glt_templates.py --inverter sensor.pv_hybrid_power --inverter sensor.pv_second_power --inverter sensor.pv_third_power --inverter sensor.pv_fourth_power --hybrid-inverter sensor.pv_hybrid_power --battery-power sensor.battery_power --battery-soc sensor.battery_soc --grid-power sensor.grid_power --battery-positive charging --grid-positive export --output solaredge-glt.yaml --mapping-output solaredge-glt-mapping.json
+```
+
+The example assumes positive battery power means charging and positive grid
+power means export. Change the two sign arguments to match verified readings.
+The inverter list can contain any number of inverters, with one battery-connected
+hybrid inverter. Duplicate or overlapping input IDs are rejected. Multiple
+batteries or hybrid inverters require a separately validated aggregate; this
+generator does not infer their topology.
+
+Review the YAML and merge its sensor block into your existing `template:`
+configuration; do not create duplicate top-level keys. Check the HA configuration,
+reload template entities or restart HA, and inspect the generated sensors.
+Existing names can cause HA to assign a different entity ID: verify the actual
+IDs before applying the mapping. The JSON is a configuration reference for the
+IDM options wizard, **not** a file to paste into HA's `.storage` directory.
+Output files are not overwritten. They contain your selected entity IDs; review
+them before sharing.
+
+### Calculations and failure behavior
+
+| Generated measurement | Calculation / behavior |
+|---|---|
+| Inverter power | Sum of currently valid W-valued AC inverter sources |
+| PV production | Sum of valid non-hybrid generation plus the hybrid AC power minus normalized battery discharge, clamped at zero per contribution |
+| House consumption | Available inverter AC sum minus normalized grid export, clamped at zero |
+| PV surplus | Grid export minus any battery discharge, clamped at zero; missing grid/battery data or all inverters offline produces zero |
+| Battery discharge | Positive for discharge, negative for charging |
+| Inverters available | Count of valid W-valued inverter sources |
+
+An unavailable inverter is omitted and rejoins automatically when its source
+becomes valid. If the hybrid inverter or its battery power is unavailable, its
+PV contribution is omitted while the other inverters keep contributing.
+No valid inverter makes the inverter/PV/house readings unavailable. A missing
+grid reading also makes house consumption unavailable. Invalid or incorrectly
+unit-labelled battery power makes the battery reading unavailable. The explicit
+zero-surplus helper inhibits new PV charging while HA remains operational;
+it does not change the integration's general skip-invalid-source policy.
+
+Partial sums are incomplete estimates, not a full-site measurement. Combining
+AC inverter power with DC battery power also introduces conversion-loss and
+sampling-time error. Prefer independently measured PV and consumption totals
+where available and validated. This recipe does not provide a controller-side
+watchdog if HA or the network stops: the Navigator may retain the last values.
+Its timeout behavior must be verified separately; do not claim a fully fail-safe
+installation from these templates alone.
+
+### Configure and validate forwarding
+
+In IDM options, enable **External power forwarding**, choose a 30-second fallback
+interval, and use the generated mapping as the source-selection reference.
+Select **as is** for battery sign because the generated battery helper already
+normalizes it. SOC uses the original percentage sensor and is rounded by the
+integration. Leave electric-heater power unmapped unless it is independently
+measured. Forwarding feeds the Navigator's PV controller; keep the separate
+HA automatic DHW manager disabled for this recipe. The mapping reference records
+that ownership choice explicitly.
+
+Compare all five forwarded measurements with the Navigator, including battery
+SOC and discharge. Read-back from the device is stronger evidence than an
+optimistic HA entity state immediately after a write. Verify charging and
+discharging, an inverter dropout and recovery, and missing grid/battery data.
+Watch the availability count to identify a partial sum. A short successful test
+does not establish long-term reliability. The battery-display report #493 on
+older firmware remains distinct from the fixed forwarding cancellation race.
+
 ## Comfort schedule and read-only advisers
 
 The optional comfort schedule can write selected room-temperature targets on

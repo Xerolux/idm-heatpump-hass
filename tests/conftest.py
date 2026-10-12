@@ -921,6 +921,9 @@ def _stub_homeassistant() -> None:
     issue_registry_mod.IssueSeverity = _IssueSeverity
     issue_registry_mod.async_create_issue = MagicMock()
     issue_registry_mod.async_delete_issue = MagicMock()
+    issue_registry = MagicMock()
+    issue_registry.async_get_issue.return_value = None
+    issue_registry_mod.async_get = MagicMock(return_value=issue_registry)
 
     # homeassistant.helpers.entity_platform
     entity_platform_mod = _make_module("homeassistant.helpers.entity_platform")

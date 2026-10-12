@@ -1369,6 +1369,48 @@ class TestAsyncWriteRegister:
 
         assert coord.last_write_error is None
 
+    @pytest.mark.parametrize(
+        "error",
+        [
+            IdmConnectionError("could not connect to example.invalid:5020"),
+            IdmTransportError("connection reset"),
+            TimeoutError("timed out"),
+        ],
+    )
+    async def test_connection_write_failure_is_not_a_device_rejection(
+        self, mock_hass: MagicMock, mock_config_entry: MagicMock, error: Exception
+    ) -> None:
+        client = MagicMock()
+        client.write_register = AsyncMock(side_effect=error)
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        reg = RegisterDef(address=74, datatype=DataType.FLOAT, name="pv_surplus", writable=True)
+        with patch("custom_components.idm_heatpump.coordinator.ir") as registry, pytest.raises(type(error)):
+            await coord.async_write_register(reg, 0)
+        assert registry.async_create_issue.call_args.kwargs["translation_key"] == "write_connection_failed"
+        assert registry.async_create_issue.call_args.args[2] == "write_rejected_test_entry_id"
+
+    @pytest.mark.parametrize(
+        "placeholders,cleared", [({"address": "74"}, True), ({"address": "86"}, False), (None, False)]
+    )
+    async def test_recovered_write_clears_only_the_matching_persisted_issue(
+        self, mock_hass: MagicMock, mock_config_entry: MagicMock, placeholders: dict[str, str] | None, cleared: bool
+    ) -> None:
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        reg = RegisterDef(address=74, datatype=DataType.FLOAT, name="pv_surplus", writable=True)
+        with patch("custom_components.idm_heatpump.coordinator.ir") as registry:
+            registry.async_get.return_value.async_get_issue.return_value = SimpleNamespace(
+                translation_placeholders=placeholders
+            )
+            await coord.async_write_register(reg, 0)
+        if cleared:
+            registry.async_delete_issue.assert_called_once_with(
+                mock_hass, "idm_heatpump", "write_rejected_test_entry_id"
+            )
+        else:
+            registry.async_delete_issue.assert_not_called()
+
     async def test_multiple_writes_update_data_and_listeners(self, mock_hass, mock_config_entry):
         """Multiple consecutive writes each update data and notify listeners."""
         client = MagicMock()

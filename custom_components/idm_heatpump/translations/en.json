@@ -3282,6 +3282,10 @@
     "whats_new_0_21_0": {
       "title": "What's new since 0.20.1: many new features",
       "description": "This is a notice, not an error. The update added many new features - above all the Predictive Advisor: it explains why the heat pump is running, detects anomalies, scores health and efficiency, learns a COP map and building model, and recommends heating-curve steps, hot-water windows from a PV or price forecast and a 24-hour plan. Everything is strictly read-only, fully local and works without any AI - and can be disabled in the integration options. Tap \"Learn more\" for the full overview of everything that is now possible."
+    },
+    "write_connection_failed": {
+      "title": "IDM register write connection failed",
+      "description": "Delivery of the write to register **{register}** at address **{address}** could not be confirmed because the Modbus connection failed. This is not a register-access rejection from the controller.\n\nTechnical detail: `{detail}`\n\nCheck the configured endpoint and port. If using ModBridge or another proxy, check its listener, upstream route, service availability and connection to the Navigator. For a direct connection, check Navigator Modbus TCP availability and the network.\n\nThis warning clears after a successful write to the same register."
     }
   },
   "services": {

@@ -112,6 +112,15 @@ their existing groups and retain their entity IDs.
 
 ### External power source mapping and forwarding
 
+When using ModBridge or another Modbus proxy, the Modbus host/port must name its
+listener, while the web host must name the actual Navigator. For example, a
+proxy listener on `192.0.2.10:5020` can forward to a Navigator on
+`192.0.2.20:502`, with the web supplement using `192.0.2.20`. A port such as
+5020 is not inherently incorrect; use the configured proxy route. Connection
+failures require checking that route and its availability, not register access
+permissions. The write warning clears after a successful write to its own
+register. Success on a different register does not dismiss it.
+
 The external-power selectors support clearing an existing source. Remove a
 selection and save to stop that register's automatic forwarding; remaining
 selected sources stay configured. Removing battery SOC also removes the optional
@@ -125,7 +134,7 @@ When enabled, valid values are written to the corresponding IDM GLT registers
 on source changes and periodically (default: 60 seconds).
 
 Power sensors must report W, kW or MW; forwarding converts to kW. Battery SOC
-must be a whole percentage from 0 to 100. The battery sign can be kept or
+must be a finite percentage from 0 to 100; fractional values are rounded for GLT. The battery sign can be kept or
 inverted to match the source convention. Invalid or out-of-range values are
 skipped; an unavailable source does not write a fallback zero. Blank fields
 leave their registers untouched. Do not have another energy manager write the
@@ -137,6 +146,8 @@ current guided wizard shows the mapping page only when forwarding is enabled;
 it does not yet provide a separate source-selection page for read-only use.
 See [external power setup](Installation-and-Setup#automatic-external-power-forwarding-from-home-assistant)
 for controller preparation and field mappings.
+For a battery-connected SolarEdge inverter with additional inverters, see the
+[GLT recipe and template generator](Smart-Energy-and-Comfort#solaredge-battery-and-multiple-inverters-over-glt).
 
 ### Optional PV energy manager
 

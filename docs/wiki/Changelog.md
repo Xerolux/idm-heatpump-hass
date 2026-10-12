@@ -5,6 +5,13 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.3-b2 — 2026-10-12
+
+SolarEdge GLT setup now includes a reviewed-source template generator and
+English/German failure-handling guidance. Modbus proxy/connection failures have
+their own write-repair explanation. A successful write to the same register
+clears its persisted warning without hiding a different register's failure.
+
 ## v0.21.3-b1 — 2026-10-12
 
 External power forwarding no longer cancels an active Modbus batch when another
