@@ -10,6 +10,8 @@ from homeassistant.const import EntityCategory, UnitOfTemperature
 
 from custom_components.idm_heatpump.calculated_sensors import (
     calculated_sensor_entities,
+    differential_temperature_entities,
+    evaluate_pv_surplus_state,
     pv_surplus_binary_entities,
 )
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
@@ -539,3 +541,94 @@ def test_pv_surplus_state_recalculated_from_latest_snapshot():
 
     coordinator.data = {"pv_surplus": 0.0, "hp_operating_mode": 1}
     assert sensor.is_on is False
+
+
+def test_flow_deviation_none_when_flow_temperature_implausible():
+    """A valid setpoint with an implausible flow reading stays 'unknown' (BL-003)."""
+    coordinator = _coordinator({"hc_a_flow_temp": 250.0, "hc_a_setpoint_flow_temp": 32.0})
+
+    sensor = _entities_by_key(coordinator)[_flow_deviation_key("a")]
+
+    assert sensor.native_value is None
+    assert sensor.available is True
+
+
+def test_cop_suppressed_for_negative_power_measurement():
+    """A negative electrical power reading is an artefact, never a COP operand.
+
+    Covers both guards: _power rejects the negative value and _cop then has no
+    electrical operand left.
+    """
+    coordinator = _coordinator({"power_consumption_hp": -1.0, "thermal_power_flow_sensor": 4.0})
+
+    sensor = _entities_by_key(coordinator)["calculated_cop"]
+
+    assert sensor.native_value is None
+    assert sensor.available is True
+
+
+def test_existing_sensor_unavailable_when_the_snapshot_becomes_empty():
+    coordinator = _coordinator({"hp_flow_temp": 35.0, "hp_return_temp": 30.0})
+    sensor = _entities_by_key(coordinator)["calculated_hp_temperature_delta"]
+    assert sensor.native_value == 5.0
+
+    coordinator.data = {}
+
+    assert sensor.available is False
+    assert sensor.native_value is None
+
+
+def test_differential_temperature_entities_for_selected_circuits():
+    """The opt-in differential circuits get the reference-minus-storage sensor."""
+    coordinator = _coordinator({"hc_a_flow_temp": 30.0, "hc_a_room_temp": 21.0})
+    coordinator.config_entry.options = {"heating_circuits": ["a"], "differential_circuits": ["a"]}
+
+    entities = differential_temperature_entities(coordinator)
+
+    assert [entity.entity_description.key for entity in entities] == ["hc_a_temperature_difference"]
+    sensor = entities[0]
+    assert sensor.native_value == -9.0
+    assert sensor.entity_description.translation_key == "hc_temperature_difference"
+    assert sensor._attr_translation_placeholders == {"circuit": "A"}
+    assert sensor.entity_description.native_unit_of_measurement == "K"
+    # A differential circuit is served by the difference, not the flow deviation.
+    assert _flow_deviation_key("a") not in _entities_by_key(coordinator)
+
+
+def test_pv_surplus_evaluation_rejects_non_finite_sources():
+    state = evaluate_pv_surplus_state({"pv_surplus": math.inf, "power_consumption_hp": 2.2})
+    assert state.pv_surplus_kw is None
+    assert state.surplus_available is None
+    assert state.heat_pump_running is True
+    assert state.is_on is None
+
+    state = evaluate_pv_surplus_state({"smart_grid_status": math.inf, "hp_operating_mode": 1})
+    assert state.surplus_available is None
+    assert state.is_on is None
+
+    state = evaluate_pv_surplus_state({"pv_surplus": 1.5, "hp_operating_mode": math.inf})
+    assert state.surplus_available is True
+    assert state.heat_pump_running is None
+    assert state.power_source is None
+    assert state.is_on is None
+
+
+def test_pv_surplus_stays_on_the_main_device_without_hierarchy():
+    coordinator = _coordinator({"pv_surplus": 1.5, "hp_operating_mode": 1})
+    coordinator.device_hierarchy_enabled = False
+
+    sensor = _pv_entities(coordinator)[0]
+
+    assert sensor.device_info["name"] == coordinator.config_entry.title
+
+
+def test_pv_surplus_unknown_with_bare_attributes_when_the_snapshot_becomes_empty():
+    coordinator = _coordinator({"pv_surplus": 1.5, "hp_operating_mode": 1})
+    sensor = _pv_entities(coordinator)[0]
+    assert sensor.is_on is True
+
+    coordinator.data = {}
+
+    assert sensor.is_on is None
+    assert sensor.extra_state_attributes == {}
+    assert sensor.available is False

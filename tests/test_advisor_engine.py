@@ -23,6 +23,7 @@ from custom_components.idm_heatpump.binary_sensor import async_setup_entry as as
 from custom_components.idm_heatpump.predictive_advisor import (
     PredictiveAdvisor,
     RecommendationCategory,
+    RecommendationSeverity,
 )
 from custom_components.idm_heatpump.predictive_advisor_entities import (
     IdmAdvisorConfidenceSensor,
@@ -562,3 +563,226 @@ async def test_platforms_create_producer_entities() -> None:
     added_binaries: list[Any] = []
     await async_setup_binary_sensors(MagicMock(), entry, MagicMock(side_effect=added_binaries.extend))
     assert "advisor_anomaly_detected" in {entity.entity_description.key for entity in added_binaries}
+
+
+# ----------------------------------------------------------------------
+# Additional forecast-parsing shapes and window guards
+# ----------------------------------------------------------------------
+
+
+def test_parse_forecasts_accept_integer_hours_and_naive_timestamps() -> None:
+    # Integer keys are hour offsets from now (PVForecast detailed shape).
+    detailed = SimpleNamespace(attributes={"detailed_forecast": {2: 1.25}})
+    assert parse_pv_hourly_kwh(detailed, T0) == [
+        (T0.replace(minute=0, second=0, microsecond=0) + timedelta(hours=2), 1.25)
+    ]
+
+    # Naive ISO timestamps are interpreted as UTC and stay inside the horizon.
+    naive_stamp = _hour(3).replace(tzinfo=None).isoformat()
+    assert parse_hourly_temperatures([{"datetime": naive_stamp, "temperature": 9.0}], T0) == [(_hour(3), 9.0)]
+
+
+def test_parse_forecasts_skip_non_mapping_entries() -> None:
+    pv = SimpleNamespace(attributes={"forecast": ["nope", {"period_start": _iso(_hour(1)), "pv_estimate": 2.0}]})
+    assert parse_pv_hourly_kwh(pv, T0) == [(_hour(1), 2.0)]
+
+    price = SimpleNamespace(attributes={"today": ["nope", {"start": _iso(_hour(1)), "price": 0.20}]})
+    assert parse_price_hourly(price, T0) == [(_hour(1), 0.2)]
+
+
+def test_best_window_none_for_a_too_short_series() -> None:
+    assert best_window([(_hour(1), 1.0), (_hour(2), 2.0)], highest=True) is None
+    assert best_window([], highest=False) is None
+
+
+# ----------------------------------------------------------------------
+# observe(): clock anchor, COP intervals and cooldown guards
+# ----------------------------------------------------------------------
+
+
+def test_observe_without_now_anchor_uses_the_clock() -> None:
+    data = {
+        "power_consumption_hp": 2.0,
+        "hc_a_room_temp": 21.0,
+        "outdoor_temp": 5.0,
+        "thermal_power_flow_sensor": 4.8,
+    }
+    engine, _advisor, analytics, _coordinator = _engine(data)
+
+    engine.observe()  # no anchor: the engine stamps the sample from the clock
+
+    assert analytics.building_model["heat_fit_samples"] == 1
+
+
+def test_consecutive_running_samples_integrate_a_cop_interval() -> None:
+    data = {
+        "outdoor_temp": 5.0,
+        "power_consumption_hp": 2.0,
+        "thermal_power_flow_sensor": 4.8,
+        "hp_flow_temp": 30.0,
+        "hp_return_temp": 26.0,
+    }
+    engine, _advisor, analytics, _coordinator = _engine(data)
+
+    engine.observe(now=T0)
+    engine.observe(now=_hour(1))
+    engine.observe(now=_hour(2))
+
+    # Two consecutive running samples close two half-hour-capped intervals, so
+    # the operating point reaches the one-hour minimum of the COP map.
+    assert analytics.building_model["cop_buckets"] == 1
+    expected = analytics.expected_cop(5.0, 30.0)
+    assert expected is not None
+    assert expected.cop == 2.4  # 4.8 kW thermal / 2.0 kW electric
+    assert expected.hours == 1.0
+
+
+def test_observe_idle_guards_ignore_short_and_stable_episodes() -> None:
+    engine, _advisor, analytics, coordinator = _engine(
+        {"power_consumption_hp": 2.0, "hc_a_room_temp": 21.0, "outdoor_temp": 0.0}
+    )
+    engine.observe(now=T0)
+    coordinator.data = {"power_consumption_hp": 0.0, "hc_a_room_temp": 21.0, "outdoor_temp": 0.0}
+    engine.observe(now=_hour(1))  # compressor stops: episode bookkeeping starts
+    engine.observe(now=_hour(2))  # one hour in: below the 3 h minimum, ignored
+    coordinator.data = {"power_consumption_hp": 0.0, "hc_a_room_temp": 20.95, "outdoor_temp": 0.0}
+    engine.observe(now=_hour(5))  # 4 h in but only 0.05 K drop: closed without a sample
+    engine.observe(now=_hour(6))  # already recorded: nothing further happens
+
+    assert analytics.building_model["cooldown_episodes"] == 0
+
+
+def test_observe_ignores_cooldown_while_indoor_matches_outdoor() -> None:
+    engine, _advisor, analytics, coordinator = _engine(
+        {"power_consumption_hp": 2.0, "hc_a_room_temp": 5.2, "outdoor_temp": 5.0}
+    )
+    engine.observe(now=T0)
+    coordinator.data = {"power_consumption_hp": 0.0, "hc_a_room_temp": 5.2, "outdoor_temp": 5.0}
+    engine.observe(now=_hour(1))
+    coordinator.data = {"power_consumption_hp": 0.0, "hc_a_room_temp": 1.0, "outdoor_temp": 5.0}
+    engine.observe(now=_hour(5))  # 4.2 K drop, but the mean room is colder than outside
+
+    assert analytics.building_model["cooldown_episodes"] == 0
+
+
+# ----------------------------------------------------------------------
+# Anomaly producer: spread baseline and withdrawal
+# ----------------------------------------------------------------------
+
+
+def test_anomaly_producer_flags_high_spread_and_retracts_when_healed() -> None:
+    data = {"power_consumption_hp": 2.0, "hp_flow_temp": 30.0, "hp_return_temp": 22.0}
+    engine, advisor, analytics, coordinator = _engine(data)
+    _seed_days(analytics, "hp_temperature_spread", 4.0)
+    engine.observe(now=T0)
+    spread_recs = [
+        rec
+        for rec in advisor.active_recommendations
+        if rec.category is RecommendationCategory.ANOMALY and "spread_high" in rec.id
+    ]
+    assert len(spread_recs) == 1
+    assert spread_recs[0].severity == RecommendationSeverity.WARNING  # 4 K is double the threshold
+
+    # Seven hours later the spread normalized: the recommendation is withdrawn.
+    coordinator.data = {"power_consumption_hp": 2.0, "hp_flow_temp": 30.0, "hp_return_temp": 27.0}
+    engine.observe(now=_hour(7))
+    assert not [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
+    assert engine.anomaly_active is False
+
+
+# ----------------------------------------------------------------------
+# Heating-curve producer: raise recommendation and flow excess
+# ----------------------------------------------------------------------
+
+
+def test_heating_curve_producer_recommends_raise_and_notes_flow_excess() -> None:
+    data = {
+        "power_consumption_hp": 2.0,
+        "outdoor_temp": 0.0,
+        "hc_a_heating_curve": 1.20,
+        "hc_a_room_temp": 20.2,
+        "hc_a_room_setpoint_heat_normal": 21.0,
+        "hc_a_flow_temp": 45.0,
+    }
+    engine, advisor, analytics, _coordinator = _engine(data)
+    _seed_days(analytics, "room_deviation_a", -0.9, days=8)
+    # Learned flow curve: flow falls 0.5 K per K outdoor, so 40 degC at 0 degC.
+    for outdoor in range(60):
+        analytics.observe_flow_pair(float(outdoor), 40.0 - 0.5 * outdoor)
+
+    engine.observe(now=T0)
+
+    recs = [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.HEATING_CURVE]
+    assert len(recs) == 1
+    assert recs[0].current_value == 1.20
+    assert recs[0].recommended_value == 1.22
+    assert "room_temperature_below_target" in recs[0].reasons
+    # The measured flow runs 5 K above the estimated requirement at 0 degC.
+    assert "flow_temperature_above_estimated_requirement" in recs[0].reasons
+    assert engine.curve_recommendations["a"]["recommended"] == 1.22
+
+
+# ----------------------------------------------------------------------
+# Forecast refresh without a weather entity
+# ----------------------------------------------------------------------
+
+
+async def test_dhw_price_window_without_weather_uses_cop_fallback() -> None:
+    data = {"power_consumption_hp": 2.0}
+    engine, advisor, _analytics, _coordinator = _engine(data, price_entity="sensor.price")
+    price = SimpleNamespace(
+        attributes={
+            "unit_of_measurement": "EUR/kWh",
+            "today": [{"start": _iso(_hour(i)), "price": 0.40 - 0.05 * i} for i in range(1, 7)],
+        }
+    )
+    _configure_hass(engine, price=price)
+
+    await engine.async_refresh_forecasts(now=T0)
+
+    # No weather entity is configured, so the weather leg stays empty and every
+    # price hour falls back to the typical COP of 3.5.
+    assert engine.weather_hours == []
+    assert engine.pv_hours == []
+    assert len(engine.price_hours) == 6
+    window = engine.dhw_window
+    assert window is not None
+    assert window["source"] == "electricity_price_forecast"
+    assert window["heat_cost_eur_per_kwh"] < 0.1
+    assert any(rec.category is RecommendationCategory.DHW for rec in advisor.active_recommendations)
+
+
+# ----------------------------------------------------------------------
+# Derived scores and pass-through properties
+# ----------------------------------------------------------------------
+
+
+def test_engine_exposes_analytics_and_demand_reason_guard() -> None:
+    engine, _advisor, analytics, coordinator = _engine({"power_consumption_hp": 2.0})
+    assert engine.analytics is analytics
+
+    coordinator.web_supplement = None
+    assert engine.demand_reason_label is None
+
+
+def test_health_and_efficiency_scores_compose_every_domain() -> None:
+    data = {"power_consumption_hp": 2.0, "outdoor_temp": 5.0, "hp_flow_temp": 30.0}
+    engine, _advisor, analytics, _coordinator = _engine(data)
+    _seed_days(analytics, "heat_sink_flow_rate", 1.5)
+    _seed_days(analytics, "compressor_starts", 8.0)
+    _seed_days(analytics, "dhw_charge_minutes", 60.0)
+    for _ in range(10):
+        analytics.observe_cop_sample(5.0, 30.0, thermal_kw=4.8, electric_kw=1.2, hours=0.2)
+
+    efficiency = engine.efficiency
+    assert efficiency["expected_cop"] == 4.0
+    assert efficiency["observed_cop"] == 4.0
+    assert efficiency["deviation_percent"] == 0.0
+    assert efficiency["score"] == 100
+
+    health = engine.health
+    assert set(health["components"]) == {"hydraulics", "compressor", "dhw", "efficiency"}
+    assert health["components"]["dhw"] == 100
+    assert health["score"] == 100
+    assert health["write_actions"] is False
+

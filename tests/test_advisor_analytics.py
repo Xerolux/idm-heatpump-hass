@@ -5,7 +5,12 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
-from custom_components.idm_heatpump.advisor_analytics import AdvisorAnalytics
+from custom_components.idm_heatpump import advisor_analytics
+from custom_components.idm_heatpump.advisor_analytics import (
+    AdvisorAnalytics,
+    _mean_absolute_deviation,
+    _median,
+)
 
 # Anchored to the real clock so the tests never decay: observation stages
 # and status entities compare ``first_observed`` against ``datetime.now``,
@@ -209,3 +214,76 @@ def test_daily_history_is_bounded() -> None:
     baseline = analytics.metric_baseline("heat_sink_flow_rate", T0)
     assert baseline is not None
     assert baseline.days <= 30
+
+
+def test_median_and_mad_helpers_handle_empty_input() -> None:
+    assert _median([]) is None
+    assert _mean_absolute_deviation([], 2.0) == 0.0
+    assert _median([3.0, 1.0, 2.0]) == 2.0
+    assert _median([1.0, 2.0, 3.0, 4.0]) == 2.5
+    assert _mean_absolute_deviation([1.0, 3.0], 2.0) == 1.0
+
+
+def test_optimal_flow_refuses_constant_outdoor_samples() -> None:
+    """Enough samples but zero spread in x: the regression cannot identify a slope."""
+    analytics = _analytics()
+    for _ in range(60):
+        analytics.observe_flow_pair(5.0, 30.0)
+
+    assert analytics.optimal_flow_temp(5.0) is None
+
+
+def test_metric_baseline_survives_a_failing_median(monkeypatch) -> None:
+    """Defensive guard: a median that cannot be computed yields no baseline."""
+    analytics = _analytics()
+    for offset in (3, 2, 1):
+        analytics.observe_metric("heat_sink_flow_rate", 1.5, _day(offset))
+    monkeypatch.setattr(advisor_analytics, "_median", lambda values: None)
+
+    assert analytics.metric_baseline("heat_sink_flow_rate", T0) is None
+
+
+def test_observed_cop_is_none_before_any_map_sample() -> None:
+    assert _analytics().observed_cop(now=T0) is None
+
+
+def test_rollover_prunes_the_cop_map_to_512_bins() -> None:
+    analytics = _analytics()
+    for index in range(520):
+        analytics.observe_cop_sample(float(index * 2), 35.0, 4.8, 1.2, 0.1)
+    # One clearly dominant bucket must survive the prune.
+    for _ in range(10):
+        analytics.observe_cop_sample(0.0, 35.0, 4.8, 1.2, 0.5)
+    assert analytics.building_model["cop_buckets"] == 520
+
+    # Any observation on a new day runs the rollover, which bounds the map.
+    analytics.observe_metric("rollover_trigger", 1.0, T0)
+
+    assert analytics.building_model["cop_buckets"] == 512
+    assert "+0:+8" in analytics._cop_map
+
+
+async def test_async_load_ignores_an_absent_payload() -> None:
+    analytics = _analytics()
+    analytics._store.data = None
+
+    await analytics.async_load()
+
+    assert analytics.building_model["cop_buckets"] == 0
+    assert analytics.metric_baseline("heat_sink_flow_rate", T0) is None
+
+
+async def test_async_save_persists_the_serialized_state() -> None:
+    analytics = _analytics()
+    analytics.observe_metric("heat_sink_flow_rate", 1.5, T0)
+    analytics.observe_cooldown_episode(0.05, 4.0)
+
+    await analytics.async_save()
+
+    stored = analytics._store.data
+    assert stored is not None
+    assert stored["version"] == 1
+    assert stored["daily"]["heat_sink_flow_rate"][T0.date().isoformat()] == [1.5, 1.0]
+    assert stored["cooldown_count"] == 1
+    assert stored["capacity_kwh_per_k"] == 4.0
+    assert stored["last_day"] == T0.date().isoformat()
