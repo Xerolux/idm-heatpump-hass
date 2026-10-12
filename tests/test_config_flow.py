@@ -8,15 +8,19 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 import voluptuous as vol
 
+from custom_components.idm_heatpump import config_flow as flow_module
 from custom_components.idm_heatpump.config_flow import (
+    _OPTIONS_SECTION_KEYS,
     IdmHeatpumpConfigFlow,
     IdmHeatpumpOptionsFlow,
     InvalidGroupAddressError,
     _build_external_power_forwarding_schema,
     _build_humidity_forwarding_schema,
+    _build_knx_bridge_schema,
     _build_modbus_failed_schema,
     _build_options_schema,
     _build_room_temp_forwarding_schema,
+    _build_setup_review_schema,
     _build_storage_temp_forwarding_schema,
     _build_zones_schema,
     _entity_field_default,
@@ -2887,3 +2891,80 @@ class TestExternalPowerForwardingIntervalField:
         schema = _build_options_schema({CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: 120}).schema["features"]
         defaults = _marker_defaults(schema)
         assert defaults[CONF_EXTERNAL_POWER_FORWARDING_INTERVAL] == 120
+
+
+class TestFlowFieldLabelCoverage:
+    """Every field a flow can show must carry a label in all three files.
+
+    The guided flow resolves its detail keys against the options schema (the
+    #471 regression test); this walks the other direction — every key of the
+    options page (top level and each section), of each optional follow-up
+    step and of each config-flow form must be labeled in strings, en and de,
+    or Home Assistant renders the raw key. Found the 17 AI fields unlabeled
+    on the options page while the guided pages were fine (2026-10-12).
+    """
+
+    @staticmethod
+    def _names(schema: vol.Schema) -> set[str]:
+        return {str(getattr(marker, "key", getattr(marker, "schema", marker))) for marker in schema.schema}
+
+    def test_options_page_fields_are_labeled(self) -> None:
+        schema = _build_options_schema({})
+        section_keys: dict[str, set[str]] = {}
+        top_keys: set[str] = set()
+        for marker in schema.schema:
+            name = str(getattr(marker, "key", getattr(marker, "schema", marker)))
+            if name in _OPTIONS_SECTION_KEYS:
+                nested = schema.schema[marker].schema
+                if not isinstance(nested, dict):
+                    nested = nested.schema
+                section_keys[name] = self._names(vol.Schema(nested))
+            else:
+                top_keys.add(name)
+
+        for path in TRANSLATION_FILES:
+            step = json.loads(path.read_text(encoding="utf-8"))["options"]["step"]["options"]
+            top = set(step.get("data", {}))
+            sections = {sec: set(body.get("data", {})) for sec, body in step.get("sections", {}).items()}
+            for key in top_keys:
+                assert key in top, f"{path.name}: options field {key} has no label"
+            for sec, keys in section_keys.items():
+                for key in keys:
+                    assert key in (sections.get(sec) or set()) or key in top, (
+                        f"{path.name}: options section field {sec}.{key} has no label"
+                    )
+
+    @pytest.mark.parametrize(
+        ("builder", "step_id", "zone_count"),
+        [
+            (_build_zones_schema, "zones", 2),
+            (_build_room_temp_forwarding_schema, "room_temp_forwarding", 0),
+            (_build_humidity_forwarding_schema, "humidity_forwarding", 0),
+            (_build_storage_temp_forwarding_schema, "storage_temp_forwarding", 0),
+            (_build_external_power_forwarding_schema, "external_power_forwarding", 0),
+            (_build_knx_bridge_schema, "knx_bridge", 0),
+        ],
+    )
+    def test_optional_step_fields_are_labeled(self, builder, step_id: str, zone_count: int) -> None:
+        schema = builder({}, zone_count) if step_id == "zones" else builder({})
+        keys = self._names(schema)
+        for path in TRANSLATION_FILES:
+            data = json.loads(path.read_text(encoding="utf-8"))["options"]["step"].get(step_id, {}).get("data", {})
+            missing = keys - set(data)
+            assert not missing, f"{path.name}: options step {step_id} fields without label: {sorted(missing)}"
+
+    @pytest.mark.parametrize(
+        ("schema", "step_id"),
+        [
+            (flow_module.STEP_USER_DATA_SCHEMA, "user"),
+            (flow_module.STEP_RECONFIGURE_SCHEMA, "connection"),
+            (_build_setup_review_schema({}), "setup_review"),
+            (_build_modbus_failed_schema({}), "modbus_failed"),
+        ],
+    )
+    def test_config_step_fields_are_labeled(self, schema, step_id: str) -> None:
+        keys = self._names(schema)
+        for path in TRANSLATION_FILES:
+            data = json.loads(path.read_text(encoding="utf-8"))["config"]["step"].get(step_id, {}).get("data", {})
+            missing = keys - set(data)
+            assert not missing, f"{path.name}: config step {step_id} fields without label: {sorted(missing)}"
