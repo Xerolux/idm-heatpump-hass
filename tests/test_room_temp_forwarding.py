@@ -418,12 +418,56 @@ class TestForwardingLifecycle:
         forwarder._handle_state_change(event)
         first = forwarder._pending_forward_tasks["sensor.living_room_temperature"]
         forwarder._handle_state_change(event)
-        second = forwarder._pending_forward_tasks["sensor.living_room_temperature"]
 
-        await asyncio.gather(first, second, return_exceptions=True)
+        assert forwarder._pending_forward_tasks["sensor.living_room_temperature"] is first
+        await asyncio.wait_for(first, 2)
 
-        assert first.cancelled()
+        assert not first.cancelled()
         coord.async_write_register.assert_awaited_once_with(reg, 22.3)
+
+    @pytest.mark.asyncio
+    async def test_sensor_event_during_write_is_not_cancelled_and_forwards_latest_state(self):
+        """A burst while the Modbus write is in flight must not cancel it.
+
+        Cancelling a task that is already writing aborts the FC16 transaction
+        mid-flight and starves the write (#493 — the same race #495 fixed for
+        external power). Events received during a write schedule a follow-up
+        pass that reads the latest state.
+        """
+        coord, _reg = _make_coordinator()
+        hass = _make_hass("22.3")
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        forwarder = self._forwarder(hass, coord)
+        forwarder._debounce_seconds = 0
+        started = asyncio.Event()
+        release = asyncio.Event()
+        writes: list[float] = []
+
+        async def write(_reg, value):
+            writes.append(value)
+            if len(writes) == 1:
+                started.set()
+                await release.wait()
+
+        coord.async_write_register = AsyncMock(side_effect=write)
+
+        event = SimpleNamespace(data={"entity_id": "sensor.living_room_temperature"})
+        forwarder._handle_state_change(event)
+        task = forwarder._pending_forward_tasks["sensor.living_room_temperature"]
+        try:
+            await asyncio.wait_for(started.wait(), 2)
+            hass.states.get = MagicMock(
+                return_value=SimpleNamespace(state="22.9", attributes={"unit_of_measurement": "°C"})
+            )
+            forwarder._handle_state_change(event)
+            assert forwarder._pending_forward_tasks["sensor.living_room_temperature"] is task
+            release.set()
+            await asyncio.wait_for(task, 3)
+            assert writes == [22.3, 22.9]
+        finally:
+            release.set()
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
 
     @pytest.mark.asyncio
     async def test_events_without_an_entity_id_are_ignored(self):
@@ -556,12 +600,50 @@ class TestHumidityForwarding:
         forwarder._handle_state_change(event)
         first = forwarder._pending_forward_task
         forwarder._handle_state_change(event)
-        second = forwarder._pending_forward_task
 
-        await asyncio.gather(first, second, return_exceptions=True)
+        assert forwarder._pending_forward_task is first
+        await asyncio.wait_for(first, 2)
 
-        assert first is not None and first.cancelled()
+        assert first is not None and not first.cancelled()
         coord.async_write_register.assert_awaited_once_with(reg, 55.0)
+
+    @pytest.mark.asyncio
+    async def test_sensor_event_during_write_is_not_cancelled_and_forwards_latest_state(self):
+        """A burst while the Modbus write is in flight must not cancel it (#493)."""
+        coord, _reg = self._coordinator()
+        hass = _make_hass("55")
+        hass.async_create_task.side_effect = asyncio.ensure_future
+        forwarder = self._forwarder(hass, coord)
+        forwarder._debounce_seconds = 0
+        started = asyncio.Event()
+        release = asyncio.Event()
+        writes: list[float] = []
+
+        async def write(_reg, value):
+            writes.append(value)
+            if len(writes) == 1:
+                started.set()
+                await release.wait()
+
+        coord.async_write_register = AsyncMock(side_effect=write)
+
+        event = SimpleNamespace(data={"entity_id": "sensor.living_room_humidity"})
+        forwarder._handle_state_change(event)
+        task = forwarder._pending_forward_task
+        try:
+            await asyncio.wait_for(started.wait(), 2)
+            hass.states.get = MagicMock(
+                return_value=SimpleNamespace(state="60", attributes={"unit_of_measurement": "%"})
+            )
+            forwarder._handle_state_change(event)
+            assert forwarder._pending_forward_task is task
+            release.set()
+            await asyncio.wait_for(task, 3)
+            assert writes == [55.0, 60.0]
+        finally:
+            release.set()
+            task.cancel()
+            await asyncio.gather(task, return_exceptions=True)
 
     @pytest.mark.asyncio
     async def test_events_without_an_entity_id_are_ignored(self):
