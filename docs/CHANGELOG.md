@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.3-b3] - 2026-10-12
+
+### Documentation
+
+- Publish a beta checkpoint after the issue-response audit. Include the validated SolarEdge GLT setup and connection-repair behavior from b2, the forwarding race fix from b1, and the Navigator 1.7 code/PV DHW/source-removal fixes from 0.21.1 and 0.21.2. No functional change from b2 is introduced.
+- Keep battery-display flicker (#493) open pending confirmation on the reporter's firmware; successful reference-installation checks do not establish resolution there. Stable promotion remains subject to the existing soak and sign-off gates.
+
 ## [0.21.3-b2] - 2026-10-12
 
 ### Added
