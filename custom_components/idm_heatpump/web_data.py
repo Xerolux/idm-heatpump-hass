@@ -790,9 +790,25 @@ class _SessionReleasingWebClient:
             raise close_error
 
 
+#: Pending background session releases. Holding a reference keeps the task
+#: alive until it finished; an unreferenced task can be garbage-collected
+#: mid-flight and its exception is never retrieved, which Home Assistant
+#: reports as a floating-task risk.
+_pending_session_releases: set[asyncio.Task[None]] = set()
+
+
+async def _release_and_warn(release: _SessionRelease) -> None:
+    try:
+        await release()
+    except Exception:
+        _LOGGER.warning("Could not release the IDM web client session", exc_info=True)
+
+
 def _release_session_later(release: _SessionRelease) -> None:
     """Schedule a session release from synchronous client-factory error paths."""
-    asyncio.create_task(release())
+    task = asyncio.create_task(_release_and_warn(release))
+    _pending_session_releases.add(task)
+    task.add_done_callback(_pending_session_releases.discard)
 
 
 def _create_web_client_with_optional_ip_session(

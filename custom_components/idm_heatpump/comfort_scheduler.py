@@ -100,6 +100,7 @@ class ComfortScheduler:
         )
         self._task: asyncio.Task[None] | None = None
         self._release_register_demand: Callable[[], None] | None = None
+        self._eval_lock = asyncio.Lock()
         self._active = False
         self._previous: float | None = None
         self._active_target: float | None = None
@@ -164,6 +165,10 @@ class ComfortScheduler:
         return number if math.isfinite(number) and number != -1.0 else None
 
     async def async_evaluate_once(self, *, now: datetime | None = None) -> None:
+        async with self._eval_lock:
+            await self._async_evaluate_locked(now)
+
+    async def _async_evaluate_locked(self, now: datetime | None) -> None:
         register = self._coordinator.get_register(self.register_name)
         if register is None:
             return
@@ -224,13 +229,19 @@ class ComfortScheduler:
             self._task = self._hass.async_create_task(self._run())
 
     async def async_stop(self) -> None:
-        if self._task is not None:
-            self._task.cancel()
-            try:
-                await self._task
-            except asyncio.CancelledError:
-                pass
-            self._task = None
+        # Hold the evaluation lock while cancelling: an evaluation that is
+        # already writing must finish — including its state save — before the
+        # loop task goes away. Cancelling a task mid-write aborts the Modbus
+        # transaction in flight (#493 race class; the same protection
+        # DhwBoostManager has through its own lock).
+        async with self._eval_lock:
+            if self._task is not None:
+                self._task.cancel()
+                try:
+                    await self._task
+                except asyncio.CancelledError:
+                    pass
+                self._task = None
         if self._release_register_demand is not None:
             self._release_register_demand()
             self._release_register_demand = None
