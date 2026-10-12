@@ -5,6 +5,15 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.3-b4 — 2026-10-12
+
+Forwarding hardening round from the #493 self-audit: every successful GLT
+write is now visible in debug logs, room temperature and humidity forwarding
+no longer cancels in-flight writes on sensor bursts, the comfort schedule and
+energy manager finish an in-flight write before stopping, and a deferred
+web-session release stays referenced and reports failures. Battery display
+flicker (#493) remains open pending reporter-firmware confirmation.
+
 ## v0.21.3-b3 — 2026-10-12
 
 Issue-response audit checkpoint; no functional changes from b2. All earlier
