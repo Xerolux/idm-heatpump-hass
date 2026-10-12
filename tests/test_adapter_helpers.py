@@ -501,7 +501,7 @@ def test_selects_from_register_map_falls_back_to_library_options_without_slug_ma
 
     registers = {
         "custom_demand_mode": RegisterDef(
-            address=201,
+            address=200,
             datatype=DataType.UCHAR,
             name="custom_demand_mode",
             writable=True,
@@ -523,3 +523,35 @@ def test_selects_from_register_map_falls_back_to_library_options_without_slug_ma
     assert descriptions["custom_demand_mode"].options == ["Normal", "Boost"]
     # Without exclusions the library options pass through in declared order.
     assert descriptions["custom_output_level"].options == ["Low", "High"]
+
+
+def test_icon_helper_maps_heat_sink_and_percentage_fallbacks() -> None:
+    """The icon helper covers the heat-sink and generic percentage branches."""
+    from custom_components.idm_heatpump.adapter_descriptions import get_icon_for_register
+
+    assert get_icon_for_register("heat_sink_flow_temp") == "mdi:heat-pump"
+    assert get_icon_for_register("heat_sink_return_temp") == "mdi:heat-pump"
+    # A name without any known fragment and a percent unit stays a gauge.
+    assert get_icon_for_register("some_fill_level", "%") == "mdi:gauge"
+
+
+def test_name_kwargs_falls_back_to_the_options_translation_key() -> None:
+    """An untranslated register keeps its fallback name plus the enum option key.
+
+    A register that a newer idm-heatpump-api release adds before a translation
+    exists must still expose selectable option labels through ``options_key``.
+    """
+    from custom_components.idm_heatpump.adapter_descriptions import name_kwargs
+
+    kwargs = name_kwargs(
+        "brand_new_technical_value",
+        "Brand new technical value",
+        options_key="custom_options_key",
+    )
+
+    assert kwargs == {
+        "name": "Brand new technical value",
+        "translation_key": "custom_options_key",
+    }
+    # A translated register is named through its own key only.
+    assert name_kwargs("outdoor_temp", "Außentemperatur") == {"translation_key": "outdoor_temp"}

@@ -2282,3 +2282,888 @@ class TestUnloadCancelsBackgroundTasks:
 
         for name, task in tasks.items():
             assert task.cancelled(), f"{name} was left running"
+
+
+class TestWebOnlyModelOverride:
+    """A stored model override stays authoritative in web-only mode."""
+
+    def _make_entry(self):
+        entry = MagicMock()
+        entry.entry_id = "web_override_id"
+        entry.title = "IDM Web Override"
+        entry.data = {
+            "host": "192.0.2.60",
+            "port": 502,
+            "slave_id": 1,
+            "web_pin": "1234",
+            "web_host": "192.0.2.60",
+            "web_only_mode": True,
+            "model_override": "navigator_10",
+        }
+        entry.options = {
+            "scan_interval": 10,
+            "web_scan_interval": 30,
+            "web_enabled": True,
+        }
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    async def test_override_beats_the_web_supplement_model(self, mock_hass):
+        from custom_components.idm_heatpump import IdmCoordinator
+
+        entry = self._make_entry()
+        supplement = MagicMock(spec=IdmWebSupplement)
+        supplement.model_name = "Navigator 2.0"
+        supplement.software_version = "NAV20_1.2"
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=MagicMock()),
+            patch("custom_components.idm_heatpump.async_read_web_supplement", AsyncMock(return_value=supplement)),
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+        ):
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        assert isinstance(entry.runtime_data.coordinator, IdmCoordinator)
+        # The user-selected model wins even though the web supplement
+        # reported a different controller.
+        assert entry.runtime_data.coordinator.model_name == "Navigator 10"
+
+
+class TestWebOnlyKnxInvalidBaseAddress:
+    """An unusable KNX base address must not fail web-only setup."""
+
+    def _make_entry(self):
+        entry = MagicMock()
+        entry.entry_id = "web_knx_invalid_id"
+        entry.title = "IDM Web KNX"
+        entry.data = {
+            "host": "192.0.2.61",
+            "port": 502,
+            "slave_id": 1,
+            "web_pin": "1234",
+            "web_host": "192.0.2.61",
+        }
+        entry.options = {
+            "connection_mode": "web_only",
+            "scan_interval": 10,
+            "heating_circuits": ["a"],
+            "zone_count": 0,
+            "zone_rooms": {},
+            "web_enabled": True,
+            "web_scan_interval": 10,
+            "knx_bridge": True,
+        }
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    async def test_invalid_base_address_leaves_setup_running_without_the_bridge(self, mock_hass):
+        from custom_components.idm_heatpump.knx_catalog import InvalidGroupAddressError
+
+        entry = self._make_entry()
+        supplement = MagicMock(spec=IdmWebSupplement)
+        supplement.model_name = "Navigator 10"
+        bridge = MagicMock()
+        bridge.async_start = AsyncMock(side_effect=InvalidGroupAddressError("base address out of range"))
+
+        with (
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=MagicMock()),
+            patch("custom_components.idm_heatpump.async_read_web_supplement", AsyncMock(return_value=supplement)),
+            patch("custom_components.idm_heatpump.ir"),
+            patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()),
+            patch("custom_components.idm_heatpump.KnxBridge", return_value=bridge),
+        ):
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        bridge.async_start.assert_awaited_once()
+        # The failed bridge is not reachable for teardown later on.
+        assert entry.runtime_data.knx_bridge is None
+
+
+class TestAsyncMigrateEntryOtherVersions:
+    async def test_entries_from_other_schema_versions_are_left_alone(self, mock_hass):
+        entry = MagicMock()
+        entry.version = 2
+        entry.minor_version = 0
+
+        assert await async_migrate_entry(mock_hass, entry) is True
+        mock_hass.config_entries.async_update_entry.assert_not_called()
+
+
+class _LegacyClientWithoutEepromSetter:
+    """Stand-in for an older API client whose EEPROM interval cannot be set."""
+
+    def __init__(self) -> None:
+        self.host = "192.0.2.50"
+        self.port = 502
+        self.connect = AsyncMock()
+        self.disconnect = AsyncMock()
+        self.detect_model = AsyncMock(return_value=MagicMock(model_name="Navigator 10"))
+
+    @property
+    def eeprom_write_interval(self) -> float:
+        """Property without a setter: assignment raises AttributeError."""
+        return 60.0
+
+
+class TestAsyncSetupEntryResilience:
+    """Fallback branches of the Modbus setup path."""
+
+    def _make_entry(self, options=None, data_extra=None):
+        entry = MagicMock()
+        entry.entry_id = "resilience_id"
+        entry.title = "IDM Resilience"
+        entry.data = {
+            "host": "192.0.2.50",
+            "port": 502,
+            "slave_id": 1,
+            **(data_extra or {}),
+        }
+        entry.options = {
+            "scan_interval": 10,
+            "heating_circuits": ["a"],
+            "zone_count": 0,
+            "zone_rooms": {},
+            "hide_unused_registers": True,
+            # Keep the optional advisor out of these failure-path tests.
+            "predictive_advisor": False,
+            **(options or {}),
+        }
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    def _patch_list(self, mock_client, mock_coordinator):
+        return [
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ]
+
+    def _client_and_coordinator(self):
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+        return mock_client, mock_coordinator
+
+    async def test_eeprom_write_interval_setter_failure_is_tolerated(self, mock_hass):
+        """An older API without the EEPROM setter must not fail setup."""
+        entry = self._make_entry()
+        legacy_client = _LegacyClientWithoutEepromSetter()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(legacy_client, mock_coordinator):
+                stack.enter_context(item)
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        assert entry.runtime_data is not None
+
+    async def test_disconnect_failure_after_connect_failure_is_tolerated(self, mock_hass):
+        from homeassistant.exceptions import ConfigEntryNotReady
+
+        entry = self._make_entry()
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock(side_effect=Exception("connection refused"))
+        mock_client.disconnect = AsyncMock(side_effect=Exception("socket already closed"))
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(mock_client, MagicMock()):
+                stack.enter_context(item)
+            with pytest.raises(ConfigEntryNotReady):
+                await async_setup_entry(mock_hass, entry)
+
+        mock_client.disconnect.assert_awaited_once()
+
+    async def test_rejected_web_pin_during_setup_keeps_modbus_running(self, mock_hass):
+        from custom_components.idm_heatpump.web_data import IdmWebAuthenticationFailed
+
+        entry = self._make_entry(data_extra={"web_pin": "1234"})
+        mock_client, mock_coordinator = self._client_and_coordinator()
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(mock_client, mock_coordinator):
+                stack.enter_context(item)
+            stack.enter_context(
+                patch(
+                    "custom_components.idm_heatpump.async_read_web_supplement",
+                    AsyncMock(side_effect=IdmWebAuthenticationFailed),
+                )
+            )
+            stack.enter_context(patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()))
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        assert entry.runtime_data is not None
+
+    async def test_unreachable_web_interface_during_setup_keeps_modbus_running(self, mock_hass):
+        entry = self._make_entry(data_extra={"web_pin": "1234"})
+        mock_client, mock_coordinator = self._client_and_coordinator()
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(mock_client, mock_coordinator):
+                stack.enter_context(item)
+            stack.enter_context(
+                patch(
+                    "custom_components.idm_heatpump.async_read_web_supplement",
+                    AsyncMock(side_effect=TimeoutError("web interface unreachable")),
+                )
+            )
+            stack.enter_context(patch("custom_components.idm_heatpump._web_poll_loop", AsyncMock()))
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        assert entry.runtime_data is not None
+
+    async def test_invalid_knx_base_address_disables_the_bridge_but_not_setup(self, mock_hass):
+        from custom_components.idm_heatpump.knx_catalog import InvalidGroupAddressError
+
+        entry = self._make_entry(options={"knx_bridge": True, "knx_send": True})
+        mock_client, mock_coordinator = self._client_and_coordinator()
+        bridge = MagicMock()
+        bridge.async_start = AsyncMock(side_effect=InvalidGroupAddressError("bad base address"))
+        bridge.async_stop = AsyncMock()
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(mock_client, mock_coordinator):
+                stack.enter_context(item)
+            stack.enter_context(patch("custom_components.idm_heatpump.KnxBridge", return_value=bridge))
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        bridge.async_start.assert_awaited_once()
+        bridge.async_stop.assert_awaited_once()
+        # The failed bridge must not stay reachable for the unload teardown.
+        assert entry.runtime_data.knx_bridge is None
+
+    async def test_secondary_unwind_failures_do_not_mask_the_original_error(self, mock_hass):
+        """Every teardown step is best-effort; the original setup error survives."""
+        entry = self._make_entry(options={"knx_bridge": True, "knx_send": True})
+        mock_client, mock_coordinator = self._client_and_coordinator()
+        mock_client.disconnect = AsyncMock(side_effect=Exception("close failed"))
+        mock_coordinator.async_shutdown = AsyncMock(side_effect=Exception("shutdown failed"))
+        bridge = MagicMock()
+        bridge.async_start = AsyncMock(side_effect=RuntimeError("knx exploded"))
+        bridge.async_stop = AsyncMock(side_effect=Exception("stop failed"))
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(side_effect=Exception("unload failed"))
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(mock_client, mock_coordinator):
+                stack.enter_context(item)
+            stack.enter_context(patch("custom_components.idm_heatpump.KnxBridge", return_value=bridge))
+            with pytest.raises(RuntimeError, match="knx exploded"):
+                await async_setup_entry(mock_hass, entry)
+
+        # Each best-effort cleanup ran despite raising on its own.
+        bridge.async_stop.assert_awaited_once()
+        mock_coordinator.async_shutdown.assert_awaited_once()
+        mock_hass.config_entries.async_unload_platforms.assert_awaited_once()
+        mock_client.disconnect.assert_awaited_once()
+
+
+class TestTeardownPartialSetup:
+    async def test_without_runtime_data_nothing_is_torn_down(self, mock_hass):
+        from custom_components.idm_heatpump import _async_teardown_partial_setup
+
+        entry = MagicMock()
+        entry.runtime_data = None
+
+        await _async_teardown_partial_setup(mock_hass, entry)
+
+        mock_hass.config_entries.async_unload_platforms.assert_not_awaited()
+
+
+class TestOptionalFeatureStartup:
+    """The optional forwarders, schedulers and managers wired into setup."""
+
+    def _make_entry(self, options=None):
+        entry = MagicMock()
+        entry.entry_id = "features_id"
+        entry.title = "IDM Features"
+        entry.data = {"host": "192.0.2.51", "port": 502, "slave_id": 1}
+        entry.options = {
+            "scan_interval": 10,
+            "heating_circuits": ["a"],
+            "zone_count": 0,
+            "zone_rooms": {},
+            "hide_unused_registers": True,
+            "predictive_advisor": False,
+            **(options or {}),
+        }
+        entry.runtime_data = None
+        entry.add_update_listener = MagicMock(return_value=lambda: None)
+        entry.async_on_unload = MagicMock()
+        return entry
+
+    def _patch_list(self, mock_client, mock_coordinator):
+        return [
+            patch("custom_components.idm_heatpump.get_idm_client", return_value=mock_client),
+            patch("custom_components.idm_heatpump.IdmCoordinator", return_value=mock_coordinator),
+            patch(
+                "custom_components.idm_heatpump.async_get_integration",
+                return_value=MagicMock(manifest={"version": "0.5.0"}),
+            ),
+            patch("custom_components.idm_heatpump.get_all_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_binary_sensor_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_number_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_select_descriptions", return_value=[]),
+            patch("custom_components.idm_heatpump.get_all_switch_descriptions", return_value=[]),
+        ]
+
+    def _client_and_coordinator(self):
+        mock_client = AsyncMock()
+        mock_client.connect = AsyncMock()
+        mock_coordinator = MagicMock()
+        mock_coordinator.async_config_entry_first_refresh = AsyncMock()
+        mock_coordinator.setup_registers = MagicMock()
+        return mock_client, mock_coordinator
+
+    async def _run_setup(self, mock_hass, entry, extra_patches=(), *, client=None, coordinator=None):
+        mock_client, mock_coordinator = self._client_and_coordinator()
+        if client is not None:
+            mock_client = client
+        if coordinator is not None:
+            mock_coordinator = coordinator
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(mock_client, mock_coordinator):
+                stack.enter_context(item)
+            for item in extra_patches:
+                stack.enter_context(item)
+            return await async_setup_entry(mock_hass, entry)
+
+    async def test_room_temperature_forwarding_starts_with_configured_entities(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_ROOM_TEMP_FORWARDING,
+            CONF_ROOM_TEMP_FORWARDING_ENTITIES,
+            CONF_ROOM_TEMP_FORWARDING_INTERVAL,
+            CONF_ROOM_TEMP_FORWARDING_TOLERANCE,
+        )
+
+        task = object()
+        mock_hass.async_create_task = MagicMock(return_value=task)
+        entry = self._make_entry(
+            options={
+                CONF_ROOM_TEMP_FORWARDING: True,
+                CONF_ROOM_TEMP_FORWARDING_ENTITIES: {"a": "sensor.living_room", "b": "   "},
+                CONF_ROOM_TEMP_FORWARDING_INTERVAL: 120,
+                CONF_ROOM_TEMP_FORWARDING_TOLERANCE: 0.5,
+            }
+        )
+        constructed: list[tuple[tuple, dict]] = []
+        forwarders: list[MagicMock] = []
+
+        def _make_forwarder(*args, **kwargs):
+            constructed.append((args, kwargs))
+            instance = MagicMock()
+            forwarders.append(instance)
+            return instance
+
+        result = await self._run_setup(
+            mock_hass, entry, [patch("custom_components.idm_heatpump.RoomTempForwarder", side_effect=_make_forwarder)]
+        )
+
+        assert result is True
+        assert entry.runtime_data.room_temp_forwarding_task is task
+        config = constructed[0][0][2]
+        # Blank entity ids are filtered before the forwarder is built.
+        assert config.entities == {"a": "sensor.living_room"}
+        assert config.interval == 120
+        assert config.tolerance == 0.5
+        forwarders[0].async_run.assert_called_once_with()
+
+    async def test_humidity_forwarding_starts_with_the_configured_entity(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_HUMIDITY_FORWARDING,
+            CONF_HUMIDITY_FORWARDING_ENTITY,
+            CONF_HUMIDITY_FORWARDING_INTERVAL,
+            CONF_HUMIDITY_FORWARDING_TOLERANCE,
+        )
+
+        task = object()
+        mock_hass.async_create_task = MagicMock(return_value=task)
+        entry = self._make_entry(
+            options={
+                CONF_HUMIDITY_FORWARDING: True,
+                CONF_HUMIDITY_FORWARDING_ENTITY: "sensor.living_room_humidity",
+                CONF_HUMIDITY_FORWARDING_INTERVAL: 90,
+                CONF_HUMIDITY_FORWARDING_TOLERANCE: 3.0,
+            }
+        )
+        constructed: list[tuple[tuple, dict]] = []
+        forwarders: list[MagicMock] = []
+
+        def _make_forwarder(*args, **kwargs):
+            constructed.append((args, kwargs))
+            instance = MagicMock()
+            forwarders.append(instance)
+            return instance
+
+        result = await self._run_setup(
+            mock_hass, entry, [patch("custom_components.idm_heatpump.HumidityForwarder", side_effect=_make_forwarder)]
+        )
+
+        assert result is True
+        assert entry.runtime_data.humidity_forwarding_task is task
+        config = constructed[0][0][2]
+        assert config.entity_id == "sensor.living_room_humidity"
+        assert config.interval == 90
+        assert config.tolerance == 3.0
+        forwarders[0].async_run.assert_called_once_with()
+
+    async def test_storage_temperature_forwarding_uses_the_storage_register_resolver(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_STORAGE_TEMP_FORWARDING,
+            CONF_STORAGE_TEMP_FORWARDING_ENTITIES,
+            CONF_STORAGE_TEMP_FORWARDING_INTERVAL,
+            CONF_STORAGE_TEMP_FORWARDING_TOLERANCE,
+        )
+        from custom_components.idm_heatpump.room_temp_forwarding import register_for_storage_temp_key
+
+        task = object()
+        mock_hass.async_create_task = MagicMock(return_value=task)
+        entry = self._make_entry(
+            options={
+                CONF_STORAGE_TEMP_FORWARDING: True,
+                CONF_STORAGE_TEMP_FORWARDING_ENTITIES: {"hwt1": "sensor.storage_top", "hwt2": ""},
+                CONF_STORAGE_TEMP_FORWARDING_INTERVAL: 240,
+                CONF_STORAGE_TEMP_FORWARDING_TOLERANCE: 0.4,
+            }
+        )
+        constructed: list[tuple[tuple, dict]] = []
+        forwarders: list[MagicMock] = []
+
+        def _make_forwarder(*args, **kwargs):
+            constructed.append((args, kwargs))
+            instance = MagicMock()
+            forwarders.append(instance)
+            return instance
+
+        result = await self._run_setup(
+            mock_hass, entry, [patch("custom_components.idm_heatpump.RoomTempForwarder", side_effect=_make_forwarder)]
+        )
+
+        assert result is True
+        assert entry.runtime_data.storage_temp_forwarding_task is task
+        args, kwargs = constructed[0]
+        config = args[2]
+        assert config.entities == {"hwt1": "sensor.storage_top"}
+        assert config.interval == 240
+        assert config.tolerance == 0.4
+        # The storage forwarder reuses RoomTempForwarder with fixed registers.
+        assert kwargs["register_for_key"] is register_for_storage_temp_key
+        assert kwargs["key_label"] == "storage key"
+        assert kwargs["value_label"] == "storage temperature"
+        forwarders[0].async_run.assert_called_once_with()
+
+    async def test_external_power_forwarding_starts_with_configured_sources(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_EXTERNAL_POWER_FORWARDING,
+            CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
+            CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
+        )
+
+        task = object()
+        mock_hass.async_create_task = MagicMock(return_value=task)
+        entry = self._make_entry(
+            options={
+                CONF_EXTERNAL_POWER_FORWARDING: True,
+                CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {
+                    "pv_production": "sensor.pv_power",
+                    "house_consumption": "sensor.house_power",
+                },
+                CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: 45,
+            }
+        )
+        constructed: list[tuple[tuple, dict]] = []
+        forwarders: list[MagicMock] = []
+
+        def _make_forwarder(*args, **kwargs):
+            constructed.append((args, kwargs))
+            instance = MagicMock()
+            forwarders.append(instance)
+            return instance
+
+        result = await self._run_setup(
+            mock_hass,
+            entry,
+            [patch("custom_components.idm_heatpump.ExternalPowerForwarder", side_effect=_make_forwarder)],
+        )
+
+        assert result is True
+        assert entry.runtime_data.external_power_forwarding_task is task
+        config = constructed[0][0][2]
+        assert config.entities == {
+            "pv_production": "sensor.pv_power",
+            "house_consumption": "sensor.house_power",
+        }
+        assert config.interval == 45
+        assert config.battery_sign == "as_is"
+        forwarders[0].async_run.assert_called_once_with()
+
+    async def test_energy_manager_starts_with_confirmed_exclusive_control(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_ENERGY_MANAGER,
+            CONF_ENERGY_MANAGER_COOLDOWN,
+            CONF_ENERGY_MANAGER_EXCLUSIVE,
+            CONF_ENERGY_MANAGER_MIN_SOC,
+            CONF_ENERGY_MANAGER_MIN_SURPLUS,
+            CONF_ENERGY_MANAGER_TARGET,
+            CONF_ENERGY_MANAGER_TIMEOUT,
+            CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
+        )
+
+        entry = self._make_entry(
+            options={
+                CONF_ENERGY_MANAGER: True,
+                CONF_ENERGY_MANAGER_EXCLUSIVE: True,
+                CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {
+                    "pv_production": "sensor.pv_power",
+                    "battery_soc": "  ",
+                },
+                CONF_ENERGY_MANAGER_MIN_SURPLUS: 1.5,
+                CONF_ENERGY_MANAGER_MIN_SOC: 30,
+                CONF_ENERGY_MANAGER_TARGET: 60,
+                CONF_ENERGY_MANAGER_TIMEOUT: 45,
+                CONF_ENERGY_MANAGER_COOLDOWN: 15,
+            }
+        )
+        manager = MagicMock()
+        constructed: list[tuple[tuple, dict]] = []
+
+        def _make_manager(*args, **kwargs):
+            constructed.append((args, kwargs))
+            return manager
+
+        result = await self._run_setup(
+            mock_hass, entry, [patch("custom_components.idm_heatpump.EnergyManager", side_effect=_make_manager)]
+        )
+
+        assert result is True
+        assert entry.runtime_data.energy_manager is manager
+        manager.start.assert_called_once_with()
+        config = constructed[0][0][2]
+        assert config.sources == {"pv_production": "sensor.pv_power"}
+        assert config.minimum_surplus_kw == 1.5
+        assert config.minimum_battery_soc == 30.0
+        assert config.target_temperature == 60
+        assert config.timeout_minutes == 45
+        assert config.cooldown_minutes == 15
+
+    async def test_energy_manager_stays_off_without_usable_sources(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_ENERGY_MANAGER,
+            CONF_ENERGY_MANAGER_EXCLUSIVE,
+            CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
+        )
+
+        entry = self._make_entry(
+            options={
+                CONF_ENERGY_MANAGER: True,
+                CONF_ENERGY_MANAGER_EXCLUSIVE: True,
+                # Every configured source entity is blank.
+                CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: {"pv_production": " "},
+            }
+        )
+        manager = MagicMock()
+
+        result = await self._run_setup(
+            mock_hass, entry, [patch("custom_components.idm_heatpump.EnergyManager", return_value=manager)]
+        )
+
+        assert result is True
+        # Blank sources never construct the manager, let alone start it.
+        manager.start.assert_not_called()
+        assert entry.runtime_data.energy_manager is None
+
+    async def test_comfort_schedule_starts_one_scheduler_per_windowed_circuit(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_COMFORT_SCHEDULE,
+            CONF_COMFORT_SCHEDULE_EXCLUSIVE,
+            CONF_COMFORT_WINDOWS,
+        )
+
+        entry = self._make_entry(
+            options={
+                CONF_COMFORT_SCHEDULE: True,
+                CONF_COMFORT_SCHEDULE_EXCLUSIVE: True,
+                CONF_COMFORT_WINDOWS: "a, 05:00, 22:00, 21.0\nb, 06:00, 22:00, 22.5",
+                "heating_circuits": ["a", "b"],
+            }
+        )
+        constructed: list[tuple[tuple, dict]] = []
+        schedulers: list[MagicMock] = []
+
+        def _make_scheduler(*args, **kwargs):
+            instance = MagicMock()
+            instance.register_name = f"comfort_reg_{len(schedulers)}"
+            schedulers.append(instance)
+            constructed.append((args, kwargs))
+            return instance
+
+        # Circuit "a" has a writable register; circuit "b" does not, so its
+        # scheduler is constructed but never started.
+        coordinator = MagicMock()
+        coordinator.async_config_entry_first_refresh = AsyncMock()
+        coordinator.setup_registers = MagicMock()
+        coordinator.get_register = MagicMock(side_effect=lambda name: {"comfort_reg_0": object()}.get(name))
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(AsyncMock(), coordinator):
+                stack.enter_context(item)
+            stack.enter_context(patch("custom_components.idm_heatpump.ComfortScheduler", side_effect=_make_scheduler))
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        assert len(schedulers) == 2
+        assert entry.runtime_data.comfort_schedulers == (schedulers[0],)
+        assert entry.runtime_data.comfort_scheduler is schedulers[0]
+        schedulers[0].start.assert_called_once_with()
+        schedulers[1].start.assert_not_called()
+        # Schedules are built per circuit, sorted, with that circuit's windows.
+        first_args, first_kwargs = constructed[0]
+        assert first_args[2] == "a"
+        assert [window.circuit for window in first_kwargs["windows"]] == ["a"]
+        second_args, second_kwargs = constructed[1]
+        assert second_args[2] == "b"
+        assert [window.circuit for window in second_kwargs["windows"]] == ["b"]
+
+    async def test_comfort_schedule_without_windows_uses_the_default_circuit(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_COMFORT_SCHEDULE,
+            CONF_COMFORT_SCHEDULE_CIRCUIT,
+            CONF_COMFORT_SCHEDULE_END,
+            CONF_COMFORT_SCHEDULE_EXCLUSIVE,
+            CONF_COMFORT_SCHEDULE_START,
+            CONF_COMFORT_SCHEDULE_TARGET,
+        )
+
+        entry = self._make_entry(
+            options={
+                CONF_COMFORT_SCHEDULE: True,
+                CONF_COMFORT_SCHEDULE_EXCLUSIVE: True,
+                CONF_COMFORT_SCHEDULE_CIRCUIT: "b",
+                CONF_COMFORT_SCHEDULE_START: "05:30",
+                CONF_COMFORT_SCHEDULE_END: "23:00",
+                CONF_COMFORT_SCHEDULE_TARGET: 20.0,
+                "heating_circuits": ["b"],
+            }
+        )
+        constructed: list[tuple[tuple, dict]] = []
+
+        def _make_scheduler(*args, **kwargs):
+            constructed.append((args, kwargs))
+            instance = MagicMock()
+            instance.register_name = "comfort_reg"
+            return instance
+
+        coordinator = MagicMock()
+        coordinator.async_config_entry_first_refresh = AsyncMock()
+        coordinator.setup_registers = MagicMock()
+        coordinator.get_register = MagicMock(return_value=object())
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(AsyncMock(), coordinator):
+                stack.enter_context(item)
+            stack.enter_context(patch("custom_components.idm_heatpump.ComfortScheduler", side_effect=_make_scheduler))
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        assert len(constructed) == 1
+        args, kwargs = constructed[0]
+        assert args[2] == "b"
+        assert args[3] == "05:30"
+        assert args[4] == "23:00"
+        assert args[5] == 20.0
+        # No windows were configured, so the schedule carries none.
+        assert kwargs["windows"] is None
+        assert entry.runtime_data.comfort_scheduler is not None
+
+    async def test_comfort_schedule_ignores_invalid_saved_windows(self, mock_hass):
+        from custom_components.idm_heatpump.const import (
+            CONF_COMFORT_SCHEDULE,
+            CONF_COMFORT_SCHEDULE_EXCLUSIVE,
+            CONF_COMFORT_WINDOWS,
+        )
+
+        entry = self._make_entry(
+            options={
+                CONF_COMFORT_SCHEDULE: True,
+                CONF_COMFORT_SCHEDULE_EXCLUSIVE: True,
+                # "99:00" is not a valid local time.
+                CONF_COMFORT_WINDOWS: "a, 99:00, 23:00, 21.0",
+            }
+        )
+        constructed: list[tuple[tuple, dict]] = []
+
+        def _make_scheduler(*args, **kwargs):
+            constructed.append((args, kwargs))
+            instance = MagicMock()
+            instance.register_name = "comfort_reg"
+            return instance
+
+        coordinator = MagicMock()
+        coordinator.async_config_entry_first_refresh = AsyncMock()
+        coordinator.setup_registers = MagicMock()
+        coordinator.get_register = MagicMock(return_value=object())
+
+        with contextlib.ExitStack() as stack:
+            for item in self._patch_list(AsyncMock(), coordinator):
+                stack.enter_context(item)
+            stack.enter_context(patch("custom_components.idm_heatpump.ComfortScheduler", side_effect=_make_scheduler))
+            result = await async_setup_entry(mock_hass, entry)
+
+        assert result is True
+        # The invalid rows are dropped and the default circuit schedule remains.
+        assert len(constructed) == 1
+        assert constructed[0][0][2] == "a"
+        assert constructed[0][1]["windows"] is None
+
+
+class TestUnloadPersistsAndStopsSmartComponents:
+    """Unload saves the persistent components and stops the managers."""
+
+    def _make_entry(self, runtime):
+        entry = MagicMock()
+        entry.runtime_data = runtime
+        return entry
+
+    def _make_runtime(self):
+        runtime = MagicMock()
+        runtime.client = AsyncMock()
+        runtime.coordinator = MagicMock()
+        runtime.knx_bridge = None
+        runtime.operation_analysis = None
+        runtime.energy_statistics = None
+        runtime.predictive_advisor = None
+        runtime.advisor_analytics = None
+        runtime.energy_manager = None
+        runtime.comfort_schedulers = ()
+        runtime.comfort_scheduler = None
+        return runtime
+
+    async def test_unload_persists_every_smart_component(self, mock_hass):
+        from custom_components.idm_heatpump import (
+            AdvisorAnalytics,
+            EnergyStatistics,
+            OperationAnalysis,
+            PredictiveAdvisor,
+        )
+
+        runtime = self._make_runtime()
+        components = []
+        for cls in (OperationAnalysis, EnergyStatistics, PredictiveAdvisor, AdvisorAnalytics):
+            component = cls.__new__(cls)
+            component.async_save = AsyncMock()
+            components.append(component)
+        (
+            runtime.operation_analysis,
+            runtime.energy_statistics,
+            runtime.predictive_advisor,
+            runtime.advisor_analytics,
+        ) = components
+        entry = self._make_entry(runtime)
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        assert await async_unload_entry(mock_hass, entry) is True
+
+        for component in components:
+            component.async_save.assert_awaited_once()
+
+    async def test_unload_survives_persistence_failures(self, mock_hass):
+        from custom_components.idm_heatpump import (
+            AdvisorAnalytics,
+            EnergyStatistics,
+            OperationAnalysis,
+            PredictiveAdvisor,
+        )
+
+        runtime = self._make_runtime()
+        for cls, attribute in (
+            (OperationAnalysis, "operation_analysis"),
+            (EnergyStatistics, "energy_statistics"),
+            (PredictiveAdvisor, "predictive_advisor"),
+            (AdvisorAnalytics, "advisor_analytics"),
+        ):
+            component = cls.__new__(cls)
+            component.async_save = AsyncMock(side_effect=RuntimeError("disk full"))
+            setattr(runtime, attribute, component)
+        entry = self._make_entry(runtime)
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        assert await async_unload_entry(mock_hass, entry) is True
+
+    async def test_unload_stops_the_energy_manager(self, mock_hass):
+        from custom_components.idm_heatpump import EnergyManager
+
+        runtime = self._make_runtime()
+        manager = EnergyManager.__new__(EnergyManager)
+        manager.async_stop = AsyncMock()
+        runtime.energy_manager = manager
+        entry = self._make_entry(runtime)
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        assert await async_unload_entry(mock_hass, entry) is True
+
+        manager.async_stop.assert_awaited_once()
+
+    async def test_unload_stops_every_comfort_scheduler(self, mock_hass):
+        from custom_components.idm_heatpump import ComfortScheduler
+
+        runtime = self._make_runtime()
+        schedulers = []
+        for _ in range(2):
+            scheduler = ComfortScheduler.__new__(ComfortScheduler)
+            scheduler.async_stop = AsyncMock()
+            schedulers.append(scheduler)
+        runtime.comfort_schedulers = tuple(schedulers)
+        entry = self._make_entry(runtime)
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        assert await async_unload_entry(mock_hass, entry) is True
+
+        for scheduler in schedulers:
+            scheduler.async_stop.assert_awaited_once()
+
+    async def test_unload_stops_a_single_legacy_comfort_scheduler(self, mock_hass):
+        from custom_components.idm_heatpump import ComfortScheduler
+
+        runtime = self._make_runtime()
+        scheduler = ComfortScheduler.__new__(ComfortScheduler)
+        scheduler.async_stop = AsyncMock()
+        runtime.comfort_scheduler = scheduler
+        entry = self._make_entry(runtime)
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        assert await async_unload_entry(mock_hass, entry) is True
+
+        scheduler.async_stop.assert_awaited_once()
+
+    async def test_unload_survives_a_failing_client_disconnect(self, mock_hass):
+        runtime = self._make_runtime()
+        runtime.client.disconnect = AsyncMock(side_effect=Exception("close failed"))
+        entry = self._make_entry(runtime)
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        assert await async_unload_entry(mock_hass, entry) is True
+
+        runtime.client.disconnect.assert_awaited_once()

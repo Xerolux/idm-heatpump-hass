@@ -292,3 +292,39 @@ async def test_solar_repair_init_routes_the_keep_action(mock_hass, repair_entry)
 
     assert result["type"] == "create_entry"
     coordinator.dismiss_solar_suggestion.assert_called_once_with()
+
+
+@pytest.mark.asyncio
+async def test_solar_repair_init_routes_the_disable_action(mock_hass, repair_entry) -> None:
+    from custom_components.idm_heatpump.repairs import _ACTION_DISABLE_SOLAR
+
+    ir.async_delete_issue.reset_mock()
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(
+        mock_hass, f"solar_module_unused_{repair_entry.entry_id}", {"entry_id": repair_entry.entry_id}
+    )
+
+    result = await flow.async_step_init({"action": _ACTION_DISABLE_SOLAR})
+
+    assert result["type"] == "create_entry"
+    _, kwargs = mock_hass.config_entries.async_update_entry.call_args
+    assert kwargs["options"][CONF_SOLAR_THERMAL] is False
+    ir.async_delete_issue.assert_called_once_with(
+        mock_hass, "idm_heatpump", f"solar_module_unused_{repair_entry.entry_id}"
+    )
+    mock_hass.config_entries.async_reload.assert_awaited_once_with(repair_entry.entry_id)
+
+
+@pytest.mark.asyncio
+async def test_solar_repair_finds_the_only_entry_without_an_id(mock_hass, repair_entry) -> None:
+    """Like the web-pin flow: a single entry is picked without an issue entry id."""
+    ir.async_delete_issue.reset_mock()
+    mock_hass.config_entries.async_entries.return_value = [repair_entry]
+    flow = await async_create_fix_flow(mock_hass, "solar_module_unused", {})
+
+    result = await flow.async_step_disable({})
+
+    assert result["type"] == "create_entry"
+    _, kwargs = mock_hass.config_entries.async_update_entry.call_args
+    assert kwargs["options"][CONF_SOLAR_THERMAL] is False
+    mock_hass.config_entries.async_reload.assert_awaited_once_with(repair_entry.entry_id)

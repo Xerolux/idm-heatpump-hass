@@ -5,6 +5,7 @@ from __future__ import annotations
 from types import SimpleNamespace
 from unittest.mock import MagicMock
 
+import pytest
 from homeassistant.components.binary_sensor import BinarySensorDeviceClass
 from idm_heatpump import DataType, RegisterDef
 

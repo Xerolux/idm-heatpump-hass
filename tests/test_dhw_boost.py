@@ -677,3 +677,45 @@ async def test_automatic_boost_start_failure_never_restores_system_mode(monkeypa
         await manager.async_start(target_temperature=60, timeout_minutes=30, preserve_system_mode=True)
     assert not any(event[:2] == ("write", "system_mode") for event in coordinator.events)
     await manager.async_shutdown()
+
+
+@pytest.mark.asyncio
+async def test_shutdown_cancels_a_pending_evaluation_task(monkeypatch) -> None:
+    """A scheduled evaluation must not outlive the shutdown that restores."""
+    manager, _coordinator, _store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30)
+
+    manager._handle_coordinator_update()
+    pending = manager._evaluation_task
+    assert pending is not None
+
+    await manager.async_shutdown()
+
+    assert manager._evaluation_task is None
+    with pytest.raises(asyncio.CancelledError):
+        await pending
+
+
+@pytest.mark.asyncio
+async def test_evaluation_returns_while_the_boost_is_not_active(monkeypatch) -> None:
+    """Evaluation on an idle manager takes the lock and stops at the guard."""
+    manager, coordinator, _store = await _manager(monkeypatch)
+
+    await manager._async_evaluate()
+
+    assert manager.active is False
+    # No enforcement write may happen without an active boost.
+    assert not any(event[:2] == ("write", "system_mode") for event in coordinator.events)
+
+
+@pytest.mark.asyncio
+async def test_enforcement_reraises_home_assistant_errors_outside_pacing():
+    """A HomeAssistantError that is not write pacing is a real failure."""
+    from homeassistant.exceptions import HomeAssistantError
+
+    manager = _active_manager(HomeAssistantError(translation_key="idm_write_failed"))
+
+    await manager._async_evaluate()
+
+    assert manager.status == "enforcement_failed"
+    manager._async_save.assert_awaited()

@@ -353,6 +353,16 @@ def test_learning_metric_exposes_progress_attributes():
     assert sensor.extra_state_attributes == {"enabled": False}
 
 
+def test_plain_metric_sensors_carry_no_state_attributes():
+    """Only the learning metric has attributes; the numbers stay history-clean."""
+    obj = manager()
+    obj._options[ai.CONF_AI_LEARNING] = True
+    obj._coordinator.data["hp_operating_mode"] = 1
+    for key in ("ai_storage_used", "ai_coverage", "ai_observed_cop"):
+        sensor = IdmAiMetricSensor(obj._coordinator, obj, key)
+        assert sensor.extra_state_attributes == {}
+
+
 def test_report_sensor_next_run_utc_attribute():
     from custom_components.idm_heatpump.ai_advisor_entities import IdmAiReportSensor
 

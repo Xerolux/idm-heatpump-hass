@@ -1393,10 +1393,13 @@ class TestExportAiDashboard:
         entry = _ai_entry()
         mock_hass.config_entries.async_get_entry = MagicMock(return_value=entry)
 
-        with patch(
-            "homeassistant.helpers.entity_registry.async_get",
-            return_value=self._registry("entry-1", include_report=False),
-        ), pytest.raises(ServiceValidationError) as exc_info:
+        with (
+            patch(
+                "homeassistant.helpers.entity_registry.async_get",
+                return_value=self._registry("entry-1", include_report=False),
+            ),
+            pytest.raises(ServiceValidationError) as exc_info,
+        ):
             await _handle_export_ai_dashboard(mock_hass, _ai_call())
 
         assert exc_info.value.translation_key == "ai_disabled"

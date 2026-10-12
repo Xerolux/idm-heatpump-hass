@@ -785,4 +785,3 @@ def test_health_and_efficiency_scores_compose_every_domain() -> None:
     assert health["components"]["dhw"] == 100
     assert health["score"] == 100
     assert health["write_actions"] is False
-
