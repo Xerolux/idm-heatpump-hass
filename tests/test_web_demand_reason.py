@@ -9,6 +9,8 @@ from unittest.mock import AsyncMock, MagicMock
 import pytest
 from idm_heatpump import IdmWebHomeDetail, parse_navigator_home_response
 
+from custom_components.idm_heatpump import web_demand_reason_entities
+from custom_components.idm_heatpump.const import DOMAIN
 from custom_components.idm_heatpump.web_data import IdmWebSupplement, _read_optional_demand_reason
 from custom_components.idm_heatpump.web_demand_reason import (
     async_read_home_detail,
@@ -151,3 +153,62 @@ def test_entity_states_follow_the_supplement() -> None:
     coordinator.web_supplement = IdmWebSupplement(web_variant="nav10")
     assert sensor.available is False
     assert binary.available is False
+
+
+def test_demand_reason_state_requires_a_nav10_supplement() -> None:
+    assert web_demand_reason_entities._nav10_demand_reason(_coordinator(None)) is None
+    assert web_demand_reason_entities._nav10_demand_reason(_coordinator(IdmWebSupplement(web_variant="nav20"))) is None
+
+    supplement = _nav10_supplement({"homeDetail": {"data": {"10": {"operationMode": 1, "info": 32}}}})
+    assert web_demand_reason_entities._nav10_demand_reason(_coordinator(supplement)) is supplement.demand_reason
+
+
+def test_entities_report_empty_attributes_before_the_first_frame() -> None:
+    waiting = _coordinator(IdmWebSupplement(web_variant="nav10"))
+    sensor = web_demand_reason_sensor_entities(waiting)[0]
+    binary = web_demand_reason_binary_entities(waiting)[0]
+
+    assert sensor.extra_state_attributes == {}
+    assert binary.extra_state_attributes == {}
+
+
+def _hierarchy_coordinator(supplement: IdmWebSupplement) -> MagicMock:
+    """A coordinator with the opt-in device hierarchy enabled and wired."""
+    coordinator = _coordinator(supplement)
+    coordinator.device_hierarchy_enabled = True
+    coordinator.hierarchy_device_ids = {(DOMAIN, "test_entry"): "main-device-id"}
+    return coordinator
+
+
+def test_sensor_device_info_uses_the_pv_subdevice_when_hierarchy_is_enabled() -> None:
+    coordinator = _hierarchy_coordinator(_nav10_supplement({"homeDetail": {"data": {"10": {"operationMode": 0}}}}))
+
+    sensor = web_demand_reason_sensor_entities(coordinator)[0]
+
+    info = sensor.device_info
+    assert info["identifiers"] == {(DOMAIN, "test_entry_module_pv")}
+
+
+def test_sensor_device_info_falls_back_to_the_main_device() -> None:
+    coordinator = _coordinator(_nav10_supplement({"homeDetail": {"data": {"10": {"operationMode": 0}}}}))
+
+    sensor = web_demand_reason_sensor_entities(coordinator)[0]
+
+    assert sensor.device_info is coordinator.device_info.return_value
+
+
+def test_binary_device_info_uses_the_pv_subdevice_when_hierarchy_is_enabled() -> None:
+    coordinator = _hierarchy_coordinator(_nav10_supplement({"homeDetail": {"data": {"10": {"operationMode": 0}}}}))
+
+    binary = web_demand_reason_binary_entities(coordinator)[0]
+
+    info = binary.device_info
+    assert info["identifiers"] == {(DOMAIN, "test_entry_module_pv")}
+
+
+def test_binary_device_info_falls_back_to_the_main_device() -> None:
+    coordinator = _coordinator(_nav10_supplement({"homeDetail": {"data": {"10": {"operationMode": 0}}}}))
+
+    binary = web_demand_reason_binary_entities(coordinator)[0]
+
+    assert binary.device_info is coordinator.device_info.return_value
