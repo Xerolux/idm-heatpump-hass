@@ -119,6 +119,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_changelog_consolidation.py
 │   ├── test_config_flow.py
 │   ├── test_connection_entities.py
+│   ├── test_technician_codes.py
 │   ├── test_const.py
 │   ├── test_controller_stats_reference.py
 │   ├── test_coordinator.py
