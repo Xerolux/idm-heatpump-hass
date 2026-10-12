@@ -114,14 +114,19 @@ class EnergyManager:
         if self._release_demand is not None:
             self._release_demand()
             self._release_demand = None
-        if self._task is None:
-            return
-        self._task.cancel()
-        try:
-            await self._task
-        except asyncio.CancelledError:
-            pass
-        self._task = None
+        # Hold the evaluation lock while cancelling so an evaluation that is
+        # already starting its boost finishes its writes first: cancelling a
+        # task mid-write aborts the Modbus transaction in flight (#493 race
+        # class).
+        async with self._lock:
+            if self._task is None:
+                return
+            self._task.cancel()
+            try:
+                await self._task
+            except asyncio.CancelledError:
+                pass
+            self._task = None
 
     def _surplus_kw(self) -> float | None:
         surplus_entity = self._config.sources.get("pv_surplus")

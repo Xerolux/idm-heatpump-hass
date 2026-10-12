@@ -336,3 +336,47 @@ async def test_pending_boost_waits_for_recovery_before_cooldown(monkeypatch):
     assert await manager.async_evaluate_once() is False
     assert manager._blocked_until is None
     boost.async_start.assert_not_awaited()
+
+
+async def test_stop_waits_for_an_in_flight_evaluation(monkeypatch):
+    """Stopping must not cancel an evaluation that is already running.
+
+    Cancelling the loop task mid-write aborts the Modbus transaction in
+    flight (#493 race class). async_stop holds the evaluation lock so a
+    started evaluation — including its boost start — finishes first.
+    """
+    from unittest.mock import MagicMock as _MagicMock
+
+    hass = _hass({})
+    hass.async_create_task = asyncio.create_task
+    manager = module.EnergyManager(hass, _coordinator(), module.EnergyManagerConfig(sources={}))
+    started = asyncio.Event()
+    release = asyncio.Event()
+    finished = asyncio.Event()
+    boost = _MagicMock()
+    boost.active = False
+
+    async def slow_get_manager(_coordinator):
+        started.set()
+        await release.wait()
+        finished.set()
+        return boost
+
+    monkeypatch.setattr(module, "async_get_dhw_boost_manager", slow_get_manager)
+    task = manager.start()
+    stop_task: asyncio.Task[None] | None = None
+    try:
+        await asyncio.wait_for(started.wait(), 2)
+        stop_task = asyncio.get_running_loop().create_task(manager.async_stop())
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        assert not stop_task.done(), "async_stop returned while an evaluation was still in flight"
+        release.set()
+        await asyncio.wait_for(stop_task, 2)
+        assert finished.is_set()
+        assert manager._task is None
+    finally:
+        release.set()
+        await asyncio.gather(task, return_exceptions=True)
+        if stop_task is not None:
+            await asyncio.gather(stop_task, return_exceptions=True)

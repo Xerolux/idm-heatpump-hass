@@ -1579,3 +1579,30 @@ async def test_system_overview_reader_tolerates_older_api_clients() -> None:
     result = await _read_optional_system_overview(_NoSystemOverviewClient(), supplement)
 
     assert result.system_overview is None
+
+
+async def test_release_session_later_holds_the_reference_and_reports_failures(caplog) -> None:
+    """The deferred session release must stay referenced and never fail silently.
+
+    An unreferenced asyncio task can be garbage-collected mid-flight and its
+    exception is never retrieved — Home Assistant reports that as a
+    floating-task risk (#493 self-audit).
+    """
+    finished = asyncio.Event()
+
+    async def failing_release() -> None:
+        await asyncio.sleep(0)
+        raise RuntimeError("session close failed")
+
+    async def working_release() -> None:
+        await asyncio.sleep(0)
+        finished.set()
+
+    web_data._release_session_later(failing_release)
+    web_data._release_session_later(working_release)
+    assert len(web_data._pending_session_releases) == 2
+
+    await asyncio.wait_for(finished.wait(), 2)
+    await asyncio.sleep(0)  # let the done callbacks discard the finished tasks
+    assert web_data._pending_session_releases == set()
+    assert "Could not release the IDM web client session" in caplog.text

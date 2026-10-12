@@ -194,3 +194,49 @@ async def test_start_and_stop_cancel_loop(monkeypatch: pytest.MonkeyPatch) -> No
     schedule.start()
     await asyncio.sleep(0)
     await schedule.async_stop()
+
+
+async def test_stop_waits_for_an_in_flight_write(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Stopping must not cancel a comfort write that is already on the wire.
+
+    Cancelling the loop task mid-Modbus-write aborts the transaction in
+    flight (#493 race class). async_stop holds the evaluation lock so a
+    started write — and its state save — completes before the task goes away.
+    """
+
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 9, 17, 7, tzinfo=UTC)
+
+    monkeypatch.setattr(module, "datetime", FixedDatetime)
+    import homeassistant.util.dt as dt_util
+
+    monkeypatch.setattr(dt_util, "as_local", lambda value: value)
+    started = asyncio.Event()
+    release = asyncio.Event()
+    completed = asyncio.Event()
+
+    async def slow_write(_coordinator, _register, _value, *, action_label):
+        started.set()
+        await release.wait()
+        completed.set()
+
+    monkeypatch.setattr(module, "async_write_translated", slow_write)
+    schedule, _coordinator = _scheduler()
+    stop_task: asyncio.Task[None] | None = None
+    schedule.start()
+    try:
+        await asyncio.wait_for(started.wait(), 2)
+        stop_task = asyncio.get_running_loop().create_task(schedule.async_stop())
+        await asyncio.sleep(0)
+        await asyncio.sleep(0)
+        assert not stop_task.done(), "async_stop returned while the write was still in flight"
+        release.set()
+        await asyncio.wait_for(stop_task, 2)
+        assert completed.is_set()
+        assert schedule._task is None
+    finally:
+        release.set()
+        if stop_task is not None:
+            await asyncio.gather(stop_task, return_exceptions=True)
