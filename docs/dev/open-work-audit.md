@@ -30,6 +30,13 @@ diagnostics template, "maintainer" means Basti's own plant or decision.
   `hc_*_setpoint_flow_temp`, `hc_*_setpoint_flow_constant`, the heating curve,
   mixer state and the actual flow temperature together; document which value
   is "requested" per operating mode, then release the sensor.
+- **Heat-sink flow-rate correction** *(community)* — plants *with* a plate
+  heat exchanger: read 1068-1077 while the heat pump runs and attach the raw
+  words. Without a TWT the controller fills the block with the FLOAT `-1.0`
+  not-present pattern and the UCHAR-documented flow rate (1072) decodes its
+  low word as a spurious 0.0 L/min; one TWT reading decides between an
+  UCHAR sentinel fix and re-typing the register (maintainer's plant probed
+  2026-10-12: 1070-1073 = `-1.0`/`-1.0`, 1074 = `0xffff`).
 - **Binary register verification on Navigator 2.0/Pro** *(community)* —
   ask for reporters on those families to run the read-only verification
   template; needed before any model-wide runtime claims.

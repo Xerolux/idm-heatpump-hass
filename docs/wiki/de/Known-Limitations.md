@@ -76,6 +76,20 @@
   Siehe die [Navigator-Protokollanalyse](Navigator-Protocol-Analysis) für den
   vollständigen verifizierten Controller-Katalog.
 
+## Wärmesenken-Sensoren ohne Trennwärmetauscher
+
+Der Wärmesenken-Block (Rücklauf-/Vorlauftemperatur, Durchfluss,
+Ladepumpen-Signal) existiert nur an Anlagen mit Trennwärmetauscher. Ohne ihn
+meldet der Regler den Nicht-vorhanden-Sentinel für den ganzen Block: Die
+Temperatur-Entities zeigen korrekt *nicht verfügbar*. Das Durchfluss-Entity
+(`heat_sink_flow_rate`, Adresse 1072, dokumentiert UCHAR L/min) kann auf
+einigen Firmwares stattdessen ein scheinbares **0,0 L/min** zeigen — der
+Regler füllt den Slot mit dem FLOAT-`-1.0`-Muster, und die UCHAR-Dekodierung
+des Low-Words ergibt null. Für eine Korrektur fehlt eine Messung von einer
+Anlage *mit* Trennwärmetauscher im Betrieb (siehe Open Work Audit); bis dahin
+kann das Entity an Anlagen ohne TWT deaktiviert werden — mit der Wärmepumpe
+ist alles in Ordnung.
+
 ## Bewusst nicht implementiert
 
 - **Web-Verbindung als Kernpfad:** Der Modbus-Betrieb hängt nicht von einem

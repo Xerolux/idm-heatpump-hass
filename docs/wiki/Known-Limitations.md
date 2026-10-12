@@ -71,6 +71,19 @@
   See [Navigator Protocol Analysis](Navigator-Protocol-Analysis) for the
   full verified controller catalog.
 
+## Heat-sink Sensors Without Plate Heat Exchanger
+
+The heat-sink block (return/flow temperature, flow rate, charging-pump signal)
+only exists on plants with a plate heat exchanger (Trennwärmetauscher). Without
+one, the controller reports the not-present sentinel for the whole block: the
+temperature entities correctly show *unavailable*. The flow-rate entity
+(`heat_sink_flow_rate`, address 1072, documented UCHAR L/min) can show a
+spurious **0.0 L/min** instead on some firmwares — the controller fills the
+slot with the FLOAT `-1.0` not-present pattern and the UCHAR decode of its low
+word reads as zero. A correction needs one reading from a plant *with* a plate
+heat exchanger while it runs (see the open work audit); until then, disable the
+entity on plants without one — nothing is wrong with the heat pump.
+
 ## Deliberately Not Implemented
 
 - **Web connection as the core path:** Modbus operation does not depend on a web
