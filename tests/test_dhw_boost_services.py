@@ -249,3 +249,65 @@ class TestCancelHandler:
             await module._handle_cancel(hass, _make_call())
 
         assert exc_info.value.translation_key == "dhw_boost_restore_failed"
+
+
+# ---------------------------------------------------------------------------
+# Feature-profile and coordinator guards
+# ---------------------------------------------------------------------------
+
+
+class TestGetManagerGuards:
+    async def test_non_smart_profile_is_rejected(self):
+        """The boost belongs to the Smart profile; a vanilla entry refuses
+        the service instead of touching the controller."""
+        entry = _make_entry(coordinator=_make_coordinator())
+        entry.options = {"feature_profile": "vanilla"}
+        hass = _make_hass([entry])
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await module._get_manager(hass, _make_call())
+
+        assert exc_info.value.translation_key == "smart_features_disabled"
+        assert exc_info.value.translation_domain == module.DOMAIN
+
+    async def test_missing_coordinator_raises_no_device_configured(self):
+        entry = _make_entry(coordinator=None)
+        hass = _make_hass([entry])
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await module._get_manager(hass, _make_call())
+
+        assert exc_info.value.translation_key == "no_device_configured"
+        assert exc_info.value.translation_domain == module.DOMAIN
+
+
+class TestStartHandlerValueCoercion:
+    """The int() conversions around ``manager.async_start`` answer a plain
+    HomeAssistantError, not a translated validation error."""
+
+    async def test_start_with_unconvertible_target_temperature(self, _patch_manager_factory):
+        entry = _make_entry(coordinator=_make_coordinator())
+        hass = _make_hass([entry])
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await module._handle_start(hass, _make_call({"target_temperature": "not-a-number"}))
+
+        assert not isinstance(exc_info.value, ServiceValidationError)
+        assert "invalid literal" in str(exc_info.value)
+        # The failure happens before the manager is asked to start.
+        manager: _CapturingManager = _patch_manager_factory["manager"]
+        assert manager.start_calls == []
+
+    async def test_start_with_unconvertible_default_timeout(self, _patch_manager_factory):
+        entry = _make_entry(coordinator=_make_coordinator())
+        hass = _make_hass([entry])
+
+        manager = await module._get_manager(hass, _make_call())
+        manager.default_timeout_minutes = None
+
+        with pytest.raises(HomeAssistantError) as exc_info:
+            await module._handle_start(hass, _make_call())
+
+        assert not isinstance(exc_info.value, ServiceValidationError)
+        assert "int()" in str(exc_info.value)
+        assert manager.start_calls == []

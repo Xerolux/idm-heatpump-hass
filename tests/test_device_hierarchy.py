@@ -440,3 +440,202 @@ def test_pv_subdevice_seeds_only_when_entities_can_exist() -> None:
     nav10_web.active_registers = [_register_named("outdoor_temp")]
     nav10_web.web_supplement = MagicMock(web_variant="nav10")
     assert (DOMAIN, "entry_module_pv") in expected_subdevice_identifiers(nav10_web)
+
+
+# ---------------------------------------------------------------------------
+# Registry edge cases, option fallbacks and label guard branches
+# ---------------------------------------------------------------------------
+
+
+def test_precreate_without_a_config_entry_is_a_noop() -> None:
+    """A coordinator without an entry cannot name a device, so nothing is created."""
+    coordinator = _hierarchy_coordinator()
+    coordinator.config_entry = None
+    registry = _stub_registry()
+
+    with patch(
+        "custom_components.idm_heatpump.device_hierarchy.dr.async_get",
+        return_value=registry,
+    ):
+        precreate_main_device(MagicMock(), coordinator)
+
+    assert registry.devices == {}
+    assert coordinator.hierarchy_device_ids == {}
+
+
+def test_precreate_skips_a_child_device_whose_parent_was_not_created() -> None:
+    """A room whose zone module has no device of its own is skipped, not crashed on.
+
+    ``build_subdevice_info`` then falls back to an unlinked ordinary device and
+    the next reload creates the child once the parent is back.
+    """
+    from custom_components.idm_heatpump.device_hierarchy import SubdevicePlacement
+
+    coordinator = _hierarchy_coordinator()
+    registry = _stub_registry()
+    missing_module = (DOMAIN, "entry_zone_module_2")
+    orphan_room = (DOMAIN, "entry_zone_module_2_room_4")
+    subdevices = {orphan_room: SubdevicePlacement("zone_room", missing_module)}
+
+    with (
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.expected_subdevices",
+            return_value=subdevices,
+        ),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_get",
+            return_value=registry,
+        ),
+    ):
+        precreate_main_device(MagicMock(), coordinator)
+
+    assert set(coordinator.hierarchy_device_ids) == {(DOMAIN, "entry")}
+    created_identifiers = {identifier for device in registry.devices.values() for identifier in device.identifiers}
+    assert orphan_room not in created_identifiers
+
+
+def test_active_heating_circuits_tolerates_a_non_iterable_option() -> None:
+    from custom_components.idm_heatpump.const import CONF_HEATING_CIRCUITS
+    from custom_components.idm_heatpump.device_hierarchy import active_heating_circuits
+
+    coordinator = _coordinator()
+    coordinator.active_registers = []
+    coordinator.config_entry.options = {CONF_HEATING_CIRCUITS: 42}
+
+    assert active_heating_circuits(coordinator) == ("A",)
+
+
+def test_active_heating_circuits_skips_non_string_circuit_entries() -> None:
+    from custom_components.idm_heatpump.const import CONF_HEATING_CIRCUITS
+    from custom_components.idm_heatpump.device_hierarchy import active_heating_circuits
+
+    coordinator = _coordinator()
+    coordinator.active_registers = []
+    coordinator.config_entry.options = {CONF_HEATING_CIRCUITS: [7, " b ", "X"]}
+
+    # 7 is not a circuit letter and X is not a circuit; " b " normalizes to B.
+    assert active_heating_circuits(coordinator) == ("A", "B")
+
+
+def test_scope_identifiers_collects_every_device_a_scope_needs() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import DeviceScope, _scope_identifiers
+
+    coordinator = _coordinator()
+
+    assert _scope_identifiers(coordinator, DeviceScope("heating_circuit", "B")) == {
+        (DOMAIN, "entry_heating_circuit_b"),
+    }
+    # A room cannot exist without its zone module: both identifiers are required.
+    assert _scope_identifiers(coordinator, DeviceScope("zone_room", "2", 4)) == {
+        (DOMAIN, "entry_zone_module_2"),
+        (DOMAIN, "entry_zone_module_2_room_4"),
+    }
+
+
+def test_web_sensor_values_seed_their_subdevices() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import expected_subdevice_identifiers
+
+    with_web_values = _coordinator()
+    with_web_values.active_registers = [_register_named("outdoor_temp")]
+    with_web_values.web_supplement = MagicMock(sensor_values={"web_flow_temp_HK_A": 21.5})
+
+    without_web_values = _coordinator()
+    without_web_values.active_registers = [_register_named("outdoor_temp")]
+    without_web_values.web_supplement = None
+
+    web_identifiers = expected_subdevice_identifiers(with_web_values)
+
+    assert (DOMAIN, "entry_heating_circuit_a") in web_identifiers
+    assert (DOMAIN, "entry_heating_circuit_a") not in expected_subdevice_identifiers(without_web_values)
+
+
+def test_technician_codes_option_seeds_the_diagnostics_device(monkeypatch: pytest.MonkeyPatch) -> None:
+    """The technician-code entities come from an option, not the register table."""
+    from custom_components.idm_heatpump import device_hierarchy
+    from custom_components.idm_heatpump.const import CONF_TECHNICIAN_CODES
+
+    resolved: list[str] = []
+    real_resolve = device_hierarchy.resolve_device_scope
+
+    def _recording_resolve(entity_key: str):
+        resolved.append(entity_key)
+        return real_resolve(entity_key)
+
+    monkeypatch.setattr(device_hierarchy, "resolve_device_scope", _recording_resolve)
+
+    coordinator = _coordinator()
+    coordinator.active_registers = [_register_named("outdoor_temp")]
+    coordinator.web_supplement = None
+    coordinator.config_entry.options = {CONF_TECHNICIAN_CODES: True}
+
+    identifiers = device_hierarchy.expected_subdevice_identifiers(coordinator)
+
+    assert "technician_codes" in resolved
+    assert (DOMAIN, "entry_module_diagnostics") in identifiers
+
+
+def test_ai_advisor_option_seeds_the_ai_subdevice() -> None:
+    from custom_components.idm_heatpump.const import CONF_AI_ADVISOR
+    from custom_components.idm_heatpump.device_hierarchy import expected_subdevice_identifiers
+
+    with_advisor = _coordinator()
+    with_advisor.active_registers = [_register_named("outdoor_temp")]
+    with_advisor.web_supplement = None
+    with_advisor.config_entry.options = {CONF_AI_ADVISOR: True}
+
+    without_advisor = _coordinator()
+    without_advisor.active_registers = [_register_named("outdoor_temp")]
+    without_advisor.web_supplement = None
+    without_advisor.config_entry.options = {}
+
+    assert (DOMAIN, "entry_module_ai") in expected_subdevice_identifiers(with_advisor)
+    assert (DOMAIN, "entry_module_ai") not in expected_subdevice_identifiers(without_advisor)
+
+
+def test_cleanups_skip_a_coordinator_without_a_config_entry() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import (
+        cleanup_disabled_feature_entities,
+        cleanup_stale_hierarchy_devices,
+        cleanup_stale_web_sensor_entities,
+        shorten_legacy_differential_entity_ids,
+    )
+
+    coordinator = _coordinator()
+    coordinator.config_entry = None
+    entity_registry = MagicMock()
+
+    with (
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.dr.async_get",
+            return_value=_stub_registry(),
+        ) as device_registry_get,
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_get",
+            return_value=entity_registry,
+        ) as entity_registry_get,
+    ):
+        cleanup_stale_hierarchy_devices(MagicMock(), coordinator)
+        cleanup_disabled_feature_entities(MagicMock(), coordinator)
+        shorten_legacy_differential_entity_ids(MagicMock(), coordinator)
+        cleanup_stale_web_sensor_entities(MagicMock(), coordinator)
+
+    # Every cleanup returned before touching either registry.
+    device_registry_get.assert_not_called()
+    entity_registry_get.assert_not_called()
+    entity_registry.async_remove.assert_not_called()
+
+
+def test_zone_room_scope_without_a_room_number_has_no_labels() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import DeviceScope, _subdevice_labels
+
+    assert _subdevice_labels(_coordinator(), DeviceScope("zone_room", "2")) is None
+
+
+def test_build_subdevice_info_returns_none_for_a_scope_without_labels() -> None:
+    from custom_components.idm_heatpump.device_hierarchy import DeviceScope
+
+    with patch(
+        "custom_components.idm_heatpump.device_hierarchy.resolve_device_scope",
+        return_value=DeviceScope("zone_room", "2"),
+    ):
+        assert build_subdevice_info(_coordinator(), "zm2_room4_setpoint") is None

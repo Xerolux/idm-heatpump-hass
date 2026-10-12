@@ -186,3 +186,21 @@ def test_entity_profile_classifies_core_advanced_and_expert_entities():
         == EntityProfile.DIAGNOSTIC_EXPERT
     )
     assert entity_profile("cascade_power_heating") == EntityProfile.DIAGNOSTIC_EXPERT
+
+
+def test_entity_profile_without_metadata_defaults_to_basic():
+    """Generated entities without metadata follow the generated default profile."""
+    assert entity_profile("hp_flow_temp") == EntityProfile.BASIC
+    # An explicitly disabled default keeps even a core entity expert.
+    assert entity_profile("hp_flow_temp", default=False) == EntityProfile.DIAGNOSTIC_EXPERT
+
+
+def test_metadata_category_normalizes_empty_and_enum_categories():
+    from custom_components.idm_heatpump.adapter_metadata import _metadata_category
+
+    assert _metadata_category(None) is None
+    assert _metadata_category({}) is None
+    assert _metadata_category({"entity_category": None}) is None
+    # HA enum members and plain strings normalize to the same value.
+    assert _metadata_category({"entity_category": EntityCategory.DIAGNOSTIC}) == "diagnostic"
+    assert _metadata_category({"entity_category": "Config"}) == "config"

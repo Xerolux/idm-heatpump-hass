@@ -160,3 +160,14 @@ class TestReloadButton:
         button = connection_button_entities(coordinator)[0]
 
         await button.async_press()
+
+
+def test_attributes_default_to_auto_without_a_config_entry() -> None:
+    """A coordinator whose entry is cleared mid-teardown keeps working (#381-style guard)."""
+    coordinator = _coordinator()
+    mode = connection_sensor_entities(coordinator)[0]
+    coordinator.config_entry = None
+
+    attributes = mode.extra_state_attributes
+
+    assert attributes == {"configured_mode": "auto", "web_variant": "nav10"}

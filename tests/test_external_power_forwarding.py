@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -276,3 +276,52 @@ async def test_fractional_battery_soc_is_forwarded_as_integer_percentage(soc, ex
     forwarder, coordinator = _forwarder({"sensor.soc": _state(soc, "%")}, {"battery_soc": "sensor.soc"})
     await forwarder.async_forward()
     assert coordinator.async_write_register.await_args.args[1] == expected
+
+
+async def test_run_cancels_and_awaits_a_pending_forward_task(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Unload must cancel the owned debounce task and await it (#495 shape)."""
+    forwarder, _coordinator = _forwarder({}, {"pv_production": "sensor.pv"})
+    unsub = MagicMock()
+    with patch(
+        "custom_components.idm_heatpump.external_power_forwarding.async_track_state_change_event",
+        return_value=unsub,
+    ):
+        loop_task = asyncio.get_running_loop().create_task(forwarder.async_run())
+        try:
+            await asyncio.sleep(0)
+            await asyncio.sleep(0)
+            pending = asyncio.get_running_loop().create_task(asyncio.sleep(60))
+            forwarder._pending_task = pending
+
+            loop_task.cancel()
+            with pytest.raises(asyncio.CancelledError):
+                await loop_task
+
+            assert pending.cancelled()
+            assert forwarder._pending_task is None or forwarder._pending_task.done()
+        finally:
+            await asyncio.gather(loop_task, return_exceptions=True)
+    unsub.assert_called_once()
+
+
+async def test_periodic_pass_runs_after_the_interval(monkeypatch: pytest.MonkeyPatch) -> None:
+    forwarder, _coordinator = _forwarder({"sensor.pv": _state(1)}, {"pv_production": "sensor.pv"})
+    real_sleep = asyncio.sleep
+
+    async def short_sleep(_delay: float) -> None:
+        await real_sleep(0)
+
+    monkeypatch.setattr(module.asyncio, "sleep", short_sleep)
+    unsub = MagicMock()
+    with patch(
+        "custom_components.idm_heatpump.external_power_forwarding.async_track_state_change_event",
+        return_value=unsub,
+    ):
+        loop_task = asyncio.get_running_loop().create_task(forwarder.async_run())
+        try:
+            for _ in range(6):
+                await asyncio.sleep(0)
+            assert _coordinator.async_write_register.await_count >= 2
+        finally:
+            loop_task.cancel()
+            await asyncio.gather(loop_task, return_exceptions=True)

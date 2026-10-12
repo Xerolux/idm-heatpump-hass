@@ -4,6 +4,7 @@ import json
 from pathlib import Path
 from unittest.mock import patch
 
+import pytest
 from idm_heatpump import (
     MODEL_NAVIGATOR_10,
     MODEL_NAVIGATOR_20,
@@ -337,3 +338,220 @@ def test_library_register_limits_are_not_duplicated_in_metadata() -> None:
         assert "min" not in meta and "max" not in meta, (
             f"{name} redefines a range that idm-heatpump-api already provides as min_val/max_val"
         )
+
+
+def test_coerce_sensor_state_class_passes_none_and_unknown_through() -> None:
+    """Neutral state-class strings map to HA enum values; anything else degrades to None."""
+    from custom_components.idm_heatpump.library_adapter import _coerce_sensor_state_class
+
+    assert _coerce_sensor_state_class(None) is None
+    assert _coerce_sensor_state_class("measurement") == "measurement"
+    assert _coerce_sensor_state_class("total_increasing") == "total_increasing"
+    assert _coerce_sensor_state_class("bogus_state_class") is None
+
+
+def test_clone_register_for_room_rejects_non_zone_room_register() -> None:
+    """Cloning is only defined for zm<zone>_room<room>_* registers."""
+    from custom_components.idm_heatpump.library_adapter import _clone_register_for_room
+
+    reg = RegisterDef(address=100, datatype=DataType.FLOAT, name="pv_surplus")
+
+    with pytest.raises(ValueError, match="not a zone room register"):
+        _clone_register_for_room(reg, 7, 120)
+
+
+def test_clone_register_for_room_supports_non_dataclass_registers() -> None:
+    """Older idm-heatpump-api releases ship duck-typed registers without dataclass support.
+
+    ``dataclasses.replace`` rejects those with a TypeError; the clone helper
+    must fall back to building a fresh ``RegisterDef`` from the attributes.
+    """
+    from custom_components.idm_heatpump.library_adapter import _clone_register_for_room
+
+    class _LegacyNonDataclassRegister:
+        """Duck-typed register as shipped by pre-dataclass API releases."""
+
+        address = 300
+        datatype = DataType.FLOAT
+        name = "zm1_room6_temp"
+        unit = "°C"
+        multiplier = 0.1
+        enum_options = None
+        writable = True
+        binary = False
+        write_only = False
+        exclude_from_write = None
+        icon = None
+        min_val = 5.0
+        max_val = 35.0
+        enabled_by_default = True
+        state_class = None
+
+    clone = _clone_register_for_room(_LegacyNonDataclassRegister(), 7, 310)
+
+    assert isinstance(clone, RegisterDef)
+    assert clone.name == "zm1_room7_temp"
+    assert clone.address == 310
+    assert clone.unit == "°C"
+    assert clone.multiplier == 0.1
+    assert clone.writable is True
+    assert clone.min_val == 5.0
+    assert clone.max_val == 35.0
+
+
+def test_get_zone_module_registers_reraises_library_value_error_for_small_room_counts(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A library rejection for a supported room count is a real error, not a trigger to extend."""
+    import custom_components.idm_heatpump.library_adapter as adapter
+
+    def _reject(zone_idx: int, room_count: int = 6) -> dict:
+        raise ValueError(f"rooms must be 1-6, got {room_count}")
+
+    monkeypatch.setattr(adapter, "_library_get_zone_module_registers", _reject)
+
+    with pytest.raises(ValueError, match="rooms must be 1-6"):
+        adapter._get_zone_module_registers(1, 6)
+
+
+def test_get_library_sensors_skips_write_only_glt_registers(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A write-only GLT demand never becomes a sensor, unlike writable GLT measurements."""
+    import custom_components.idm_heatpump.library_adapter as adapter
+
+    registers = {
+        "outside_air_temperature": RegisterDef(
+            address=100,
+            datatype=DataType.FLOAT,
+            name="outside_air_temperature",
+            unit="°C",
+        ),
+        "pv_production": RegisterDef(
+            address=104,
+            datatype=DataType.FLOAT,
+            name="pv_production",
+            writable=True,
+        ),
+        "pv_surplus": RegisterDef(
+            address=106,
+            datatype=DataType.FLOAT,
+            name="pv_surplus",
+            writable=True,
+            write_only=True,
+        ),
+    }
+    monkeypatch.setattr(adapter, "build_filtered_register_map", lambda *args, **kwargs: dict(registers))
+
+    names = {item["register"].name for item in adapter.get_library_sensors()}
+
+    assert "outside_air_temperature" in names
+    # A writable GLT measurement is dual-exposed as a sensor and a number.
+    assert "pv_production" in names
+    # A write-only GLT demand is a command target, never a measurement display.
+    assert "pv_surplus" not in names
+
+
+def test_heating_circuit_sensor_generator_survives_library_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    """One unknown circuit must not tear down the whole sensor platform setup."""
+    import custom_components.idm_heatpump.library_adapter as adapter
+
+    def _explode(circuit: str) -> dict:
+        raise RuntimeError(f"unknown circuit {circuit}")
+
+    monkeypatch.setattr(adapter, "get_heating_circuit_registers", _explode)
+
+    assert adapter.get_library_heating_circuit_sensors("z") == []
+
+
+def test_zone_generators_survive_library_errors(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Every per-zone generator degrades to an empty list when the library rejects the zone."""
+    import custom_components.idm_heatpump.library_adapter as adapter
+
+    def _reject(zone_idx: int, room_count: int = 6) -> dict:
+        raise ValueError(f"zone {zone_idx} not configured")
+
+    monkeypatch.setattr(adapter, "_library_get_zone_module_registers", _reject)
+
+    assert adapter.get_library_zone_sensors(1) == []
+    assert adapter.get_library_zone_binary_sensors(1) == []
+    assert adapter.get_library_zone_selects(1) == []
+    assert adapter.get_library_zone_numbers(1) == []
+
+
+def test_selects_from_register_map_skips_write_only_registers() -> None:
+    """A write-only enum register is an action target, not a selectable state."""
+    from custom_components.idm_heatpump.library_adapter import _selects_from_register_map
+
+    registers = {
+        "custom_write_trigger": RegisterDef(
+            address=200,
+            datatype=DataType.UCHAR,
+            name="custom_write_trigger",
+            writable=True,
+            write_only=True,
+            enum_options={0: "Idle", 1: "Fire"},
+        ),
+    }
+
+    assert _selects_from_register_map(registers) == []
+
+
+def test_selects_from_register_map_falls_back_to_library_options_without_slug_map() -> None:
+    """Registers without a translation slug map expose their library labels as options."""
+    from custom_components.idm_heatpump.library_adapter import _selects_from_register_map
+
+    registers = {
+        "custom_demand_mode": RegisterDef(
+            address=200,
+            datatype=DataType.UCHAR,
+            name="custom_demand_mode",
+            writable=True,
+            enum_options={0: "Normal", 1: "Boost", 255: "Reserved"},
+            exclude_from_write={255},
+        ),
+        "custom_output_level": RegisterDef(
+            address=202,
+            datatype=DataType.UCHAR,
+            name="custom_output_level",
+            writable=True,
+            enum_options={0: "Low", 1: "High"},
+        ),
+    }
+
+    descriptions = {item["register"].name: item["description"] for item in _selects_from_register_map(registers)}
+
+    # exclude_from_write values drop out even without a slug map.
+    assert descriptions["custom_demand_mode"].options == ["Normal", "Boost"]
+    # Without exclusions the library options pass through in declared order.
+    assert descriptions["custom_output_level"].options == ["Low", "High"]
+
+
+def test_icon_helper_maps_heat_sink_and_percentage_fallbacks() -> None:
+    """The icon helper covers the heat-sink and generic percentage branches."""
+    from custom_components.idm_heatpump.adapter_descriptions import get_icon_for_register
+
+    assert get_icon_for_register("heat_sink_flow_temp") == "mdi:heat-pump"
+    assert get_icon_for_register("heat_sink_return_temp") == "mdi:heat-pump"
+    # A name without any known fragment and a percent unit stays a gauge.
+    assert get_icon_for_register("some_fill_level", "%") == "mdi:gauge"
+
+
+def test_name_kwargs_falls_back_to_the_options_translation_key() -> None:
+    """An untranslated register keeps its fallback name plus the enum option key.
+
+    A register that a newer idm-heatpump-api release adds before a translation
+    exists must still expose selectable option labels through ``options_key``.
+    """
+    from custom_components.idm_heatpump.adapter_descriptions import name_kwargs
+
+    kwargs = name_kwargs(
+        "brand_new_technical_value",
+        "Brand new technical value",
+        options_key="custom_options_key",
+    )
+
+    assert kwargs == {
+        "name": "Brand new technical value",
+        "translation_key": "custom_options_key",
+    }
+    # A translated register is named through its own key only.
+    assert name_kwargs("outdoor_temp", "Außentemperatur") == {"translation_key": "outdoor_temp"}

@@ -290,3 +290,37 @@ def test_dhw_circulation_resolves_from_freshwater_values():
         sensor_values={"dhw_circulation_active": IdmWebSensorValue(value="off", native_value=0.0)}
     )
     assert circulation.is_on is False
+
+
+def test_state_stays_unknown_once_the_supplement_disappears():
+    """``is_on`` must resolve to unknown, not keep the last boolean, without web."""
+    coordinator = _coordinator({"compressor_1": IdmWebSensorValue("Ein", 1.0)})
+    sensor = _entities_by_key(coordinator)["web_compressor_1"]
+    coordinator.web_supplement = None
+
+    assert sensor.is_on is None
+    assert sensor.available is False
+
+
+def test_device_info_falls_back_to_the_main_device():
+    coordinator = _coordinator({"compressor_1": IdmWebSensorValue("Ein", 1.0)})
+    main_info = {"identifiers": {("idm_heatpump", "test_entry")}}
+    coordinator.device_info = MagicMock(return_value=main_info)
+
+    sensor = _entities_by_key(coordinator)["web_compressor_1"]
+
+    assert sensor.device_info is main_info
+
+
+def test_pump_sensor_lands_on_its_heating_circuit_subdevice():
+    """With the device hierarchy on, the pump belongs to its circuit device."""
+    coordinator = _coordinator({"pump_heating_circuitA": IdmWebSensorValue("Ein", 1.0)})
+    coordinator.device_hierarchy_enabled = True
+    coordinator.hierarchy_device_ids = {}
+
+    sensor = _entities_by_key(coordinator)["web_pump_heating_circuitA"]
+    info = sensor.device_info
+
+    assert info["name"] == "Heizkreis A"
+    assert info["model"] == "Heizkreis"
+    assert info["identifiers"] == {("idm_heatpump", "test_entry_heating_circuit_a")}

@@ -7,9 +7,10 @@ import time
 from types import SimpleNamespace
 from typing import Any
 
+import pytest
 from homeassistant.config_entries import ConfigEntryState
 
-from custom_components.idm_heatpump.const import CONF_HOST, CONF_PORT, DOMAIN
+from custom_components.idm_heatpump.const import CONF_HOST, CONF_PORT, DEFAULT_PORT, DOMAIN
 from custom_components.idm_heatpump.recovery_watchdog import (
     RecoveryWatchdog,
     WatchedEntry,
@@ -124,6 +125,18 @@ class TestRecoveryWatchdog:
         assert await watchdog.tick([entry]) == ["e1"]
         assert reloads.entry_ids == ["e1", "e1"]
 
+    async def test_retrying_entry_without_a_host_is_never_probed(self) -> None:
+        reloads = _ReloadRecorder()
+        probe = _ProbeScript([True, True])
+        watchdog = RecoveryWatchdog(reloads, probe, clock=time.monotonic)
+        hostless = _entry("e1", state=ConfigEntryState.SETUP_RETRY, host="")
+
+        assert await watchdog.tick([hostless]) == []
+        assert await watchdog.tick([hostless]) == []
+
+        assert probe.calls == []
+        assert reloads.entry_ids == []
+
 
 class TestTcpProbe:
     async def test_open_port_answers_true(self) -> None:
@@ -143,6 +156,26 @@ class TestTcpProbe:
         await server.wait_closed()
 
         assert await tcp_probe("127.0.0.1", port) is False
+
+    async def test_probe_tolerates_a_failing_close_handshake(self, monkeypatch) -> None:
+        """A writer whose wait_closed() fails still counts as a reachable port."""
+        import custom_components.idm_heatpump.recovery_watchdog as rw
+
+        class _Writer:
+            closed = False
+
+            def close(self) -> None:
+                self.closed = True
+
+            async def wait_closed(self) -> None:
+                raise OSError("connection reset while closing")
+
+        async def _open_connection(host: str, port: int):
+            return object(), _Writer()
+
+        monkeypatch.setattr(rw.asyncio, "open_connection", _open_connection)
+
+        assert await tcp_probe("127.0.0.1", 502) is True
 
 
 class TestWatchdogLifecycle:
@@ -198,3 +231,113 @@ class TestWatchdogLifecycle:
         result = _snapshot(mock_hass)
 
         assert [(e.entry_id, e.host, e.port) for e in result] == [("e1", "192.0.2.5", 502)]
+
+    async def test_snapshot_skips_non_string_hosts_and_defaults_non_int_ports(self, mock_hass) -> None:
+        from custom_components.idm_heatpump.recovery_watchdog import _snapshot
+
+        hostless = SimpleNamespace(
+            entry_id="e1",
+            data={CONF_HOST: 502, CONF_PORT: 502},
+            state=None,
+        )
+        odd_port = SimpleNamespace(
+            entry_id="e2",
+            data={CONF_HOST: "192.0.2.7", CONF_PORT: "1502"},
+            state=None,
+        )
+        mock_hass.config_entries.async_entries = lambda domain: [hostless, odd_port]
+
+        result = _snapshot(mock_hass)
+
+        assert [(e.entry_id, e.host, e.port) for e in result] == [("e2", "192.0.2.7", DEFAULT_PORT)]
+
+    async def test_loop_probes_a_retrying_entry_and_reloads_it_once_recovered(self, mock_hass, monkeypatch) -> None:
+        import custom_components.idm_heatpump.recovery_watchdog as rw
+
+        monkeypatch.setattr(rw, "PROBE_INTERVAL", 0.02)
+
+        async def _probe(host: str, port: int) -> bool:
+            return True
+
+        monkeypatch.setattr(rw, "tcp_probe", _probe)
+
+        state = {"value": ConfigEntryState.SETUP_RETRY}
+
+        def _entries(domain: str):
+            return [
+                SimpleNamespace(
+                    entry_id="e1",
+                    data={CONF_HOST: "127.0.0.1", CONF_PORT: 502},
+                    state=state["value"],
+                )
+            ]
+
+        async def _mark_loaded(entry_id: str) -> None:
+            state["value"] = ConfigEntryState.LOADED
+
+        mock_hass.config_entries.async_entries = _entries
+        mock_hass.config_entries.async_reload.side_effect = _mark_loaded
+        if hasattr(mock_hass, "async_create_task"):
+            monkeypatch.delattr(mock_hass, "async_create_task")
+
+        ensure_recovery_watchdog(mock_hass)
+        task = mock_hass.data[DOMAIN]["recovery_watchdog_task"]
+
+        # The reload ends the retry state, so the next round ends the loop.
+        await asyncio.wait_for(task, timeout=2.0)
+
+        mock_hass.config_entries.async_reload.assert_awaited_once_with("e1")
+        assert "recovery_watchdog_task" not in mock_hass.data[DOMAIN]
+
+    async def test_loop_cancellation_is_reraised_and_still_cleans_the_slot(self, mock_hass, monkeypatch) -> None:
+        import custom_components.idm_heatpump.recovery_watchdog as rw
+
+        monkeypatch.setattr(rw, "PROBE_INTERVAL", 30.0)
+        retrying = SimpleNamespace(
+            entry_id="e1",
+            data={CONF_HOST: "127.0.0.1", CONF_PORT: 502},
+            state=ConfigEntryState.SETUP_RETRY,
+        )
+        mock_hass.config_entries.async_entries = lambda domain: [retrying]
+        if hasattr(mock_hass, "async_create_task"):
+            monkeypatch.delattr(mock_hass, "async_create_task")
+
+        ensure_recovery_watchdog(mock_hass)
+        task = mock_hass.data[DOMAIN]["recovery_watchdog_task"]
+
+        await asyncio.sleep(0.05)
+        task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await task
+
+        assert "recovery_watchdog_task" not in mock_hass.data[DOMAIN]
+        mock_hass.config_entries.async_reload.assert_not_awaited()
+
+    async def test_loop_stops_quietly_on_an_unexpected_error(self, mock_hass, monkeypatch) -> None:
+        import custom_components.idm_heatpump.recovery_watchdog as rw
+
+        monkeypatch.setattr(rw, "PROBE_INTERVAL", 0.02)
+
+        def _boom(domain: str):
+            raise RuntimeError("config entry registry is gone")
+
+        mock_hass.config_entries.async_entries = _boom
+        if hasattr(mock_hass, "async_create_task"):
+            monkeypatch.delattr(mock_hass, "async_create_task")
+
+        ensure_recovery_watchdog(mock_hass)
+        task = mock_hass.data[DOMAIN]["recovery_watchdog_task"]
+
+        # The loop logged the failure and unwound instead of leaking the task.
+        await asyncio.wait_for(task, timeout=2.0)
+
+        assert "recovery_watchdog_task" not in mock_hass.data[DOMAIN]
+
+    async def test_async_reload_swallows_a_failing_reload(self, mock_hass) -> None:
+        from custom_components.idm_heatpump.recovery_watchdog import _async_reload
+
+        mock_hass.config_entries.async_reload.side_effect = RuntimeError("Home Assistant is stopping")
+
+        await _async_reload(mock_hass, "e1")
+
+        mock_hass.config_entries.async_reload.assert_awaited_once_with("e1")

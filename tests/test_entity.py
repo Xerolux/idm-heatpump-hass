@@ -510,3 +510,31 @@ class TestDocumentedRangeAvailability:
         )
         entity = _make_entity(coordinator=coord, reg=reg)
         assert entity.available is True
+
+
+class TestRegisterVisibilityAndRangeGuards:
+    """Cover the empty-data and documented-range guard returns."""
+
+    def test_should_add_entity_with_empty_snapshot_keeps_registers(self):
+        from custom_components.idm_heatpump.entity import should_add_entity
+
+        coordinator = _make_coordinator(hide_unused=True, data={})
+        assert should_add_entity(coordinator, _make_register("temp")) is True
+
+    def test_value_is_sentinel_with_empty_snapshot_is_false(self):
+        coordinator = _make_coordinator(hide_unused=True, data={})
+        entity = _make_entity(coordinator=coordinator)
+        assert entity._value_is_sentinel() is False
+
+    def test_documented_range_guard_with_empty_snapshot_is_false(self):
+        coordinator = _make_coordinator(hide_unused=True, data={})
+        entity = _make_entity(coordinator=coordinator)
+        assert entity._value_out_of_documented_range() is False
+
+    def test_reading_below_the_documented_minimum_is_garbage(self):
+        coordinator = _make_coordinator(hide_unused=True, data={"temp": -5.0})
+        reg = _make_register()
+        reg.min_val = 0
+        reg.max_val = 100
+        entity = _make_entity(coordinator=coordinator, reg=reg)
+        assert entity._value_out_of_documented_range() is True

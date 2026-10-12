@@ -1606,3 +1606,195 @@ async def test_release_session_later_holds_the_reference_and_reports_failures(ca
     await asyncio.sleep(0)  # let the done callbacks discard the finished tasks
     assert web_data._pending_session_releases == set()
     assert "Could not release the IDM web client session" in caplog.text
+
+
+class TestOptionalReaderRobustness:
+    """Every optional Navigator reader must tolerate missing and failing clients."""
+
+    async def test_clients_without_statistics_are_accepted_for_nav10(self) -> None:
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        assert await web_data._read_optional_statistics(SimpleNamespace(), supplement) is supplement
+
+    async def test_clients_without_freshwater_are_accepted(self) -> None:
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        assert await web_data._read_optional_freshwater(SimpleNamespace(), supplement) is supplement
+
+    async def test_clients_without_status_are_accepted(self) -> None:
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        assert await web_data._read_optional_status(SimpleNamespace(), supplement) is supplement
+
+    async def test_clients_without_nav20_statistics_are_accepted(self) -> None:
+        supplement = IdmWebSupplement(web_variant="nav20")
+
+        assert await web_data._read_optional_nav20_statistics(SimpleNamespace(), supplement) is supplement
+
+    async def test_home_overview_frame_is_stored(self) -> None:
+        overview = SimpleNamespace(mode_value=2, selectable_values=(0, 1, 2))
+
+        async def read_home_overview():
+            return overview
+
+        client = SimpleNamespace(read_home_overview=read_home_overview)
+
+        result = await web_data._read_optional_home_overview(client, IdmWebSupplement(web_variant="nav10"))
+
+        assert result.home_overview is overview
+
+    async def test_home_overview_failure_keeps_the_snapshot(self) -> None:
+        async def read_home_overview():
+            raise RuntimeError("home controller silent")
+
+        client = SimpleNamespace(read_home_overview=read_home_overview)
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        assert await web_data._read_optional_home_overview(client, supplement) is supplement
+
+    async def test_dhw_setpoint_failure_keeps_the_snapshot(self) -> None:
+        async def read_setting_parameter(setting_id: str):
+            raise RuntimeError("settings tree unavailable")
+
+        client = SimpleNamespace(read_setting_parameter=read_setting_parameter)
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        assert await web_data._read_optional_dhw_setpoint(client, supplement) is supplement
+
+    async def test_heatingcircuit_failure_keeps_the_snapshot(self) -> None:
+        async def read_heatingcircuit(hc_id: str):
+            raise RuntimeError("circuit controller silent")
+
+        client = SimpleNamespace(read_heatingcircuit=read_heatingcircuit)
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        assert await web_data._read_optional_heatingcircuits(client, supplement) is supplement
+
+    async def test_heatingcircuit_failure_mid_walk_keeps_the_snapshot(self) -> None:
+        """A circuit list that answers but then dies must not leak a partial walk."""
+        from idm_heatpump import IdmWebHeatingCircuit, IdmWebHeatingCircuitRef
+
+        first = IdmWebHeatingCircuit(
+            hc_id="A",
+            mode_value=0,
+            mode_parameter_id="HKA01",
+            available_circuits=(IdmWebHeatingCircuitRef("A"), IdmWebHeatingCircuitRef("D")),
+        )
+
+        async def read_heatingcircuit(hc_id: str):
+            if hc_id == "A":
+                return first
+            raise RuntimeError("circuit D silent")
+
+        client = SimpleNamespace(read_heatingcircuit=read_heatingcircuit)
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        assert await web_data._read_optional_heatingcircuits(client, supplement) is supplement
+
+    async def test_a_stuck_home_detail_read_is_bounded(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        """A home/detail read that never answers must not stall the supplement."""
+        monkeypatch.setattr(web_data, "WEB_READ_TIMEOUT", 0.01)
+
+        async def read_home_detail():
+            await asyncio.sleep(30)
+
+        client = SimpleNamespace(read_home_detail=read_home_detail)
+        supplement = IdmWebSupplement(web_variant="nav10")
+
+        assert await web_data._read_optional_demand_reason(client, supplement) is supplement
+
+    async def test_home_detail_frame_is_stored(self) -> None:
+        from idm_heatpump import IdmWebHomeDetail
+
+        detail = IdmWebHomeDetail(demand_reasons=())
+
+        async def read_home_detail():
+            return detail
+
+        client = SimpleNamespace(read_home_detail=read_home_detail)
+
+        result = await web_data._read_optional_demand_reason(client, IdmWebSupplement(web_variant="nav10"))
+
+        assert result.demand_reason is detail
+
+
+class TestStatisticValueNormalisation:
+    def test_unparseable_heat_quantities_stay_text(self) -> None:
+        value = web_data._statistic_sensor_value("--")
+
+        assert value == IdmWebSensorValue(value="--", native_value="--", unit="kWh")
+
+
+class TestApiSymbolFallbacks:
+    """The readers must keep working on API releases without the newer symbols."""
+
+    def test_authentication_detection_survives_a_missing_api_symbol(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delattr(idm_heatpump, "IdmWebAuthenticationError")
+
+        # The class-name check still recognizes an authentication rejection.
+        assert web_data._is_authentication_error(IdmWebAuthenticationError("pin rejected")) is True
+        assert web_data._is_authentication_error(RuntimeError("unrelated")) is False
+
+    def test_web_pin_configured_assumes_a_pin_without_the_api_symbol(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delattr(idm_heatpump, "web_pin_configured")
+
+        assert web_pin_configured(" 1234 ") is True
+        # The disabled-endpoint codes stay "not configured" without the API.
+        assert web_pin_configured("0") is False
+
+    def test_wrong_variant_detection_survives_a_missing_api_symbol(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.delattr(idm_heatpump, "IdmWebResponseError")
+
+        class ClientConnectorError(Exception):
+            """Fake transport error name from the fallback list."""
+
+        assert web_data._is_wrong_variant_error(ClientConnectorError("refused")) is True
+        assert web_data._is_wrong_variant_error(RuntimeError("unrelated")) is False
+
+
+class TestSessionHandling:
+    def test_a_factory_without_an_inspectable_signature_gets_no_session(self) -> None:
+        assert web_data._session_factory_supports_session(min) is False
+
+    def test_no_ip_cookie_session_without_aiohttp(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        import sys
+
+        monkeypatch.setitem(sys.modules, "aiohttp", None)
+
+        assert web_data._create_ip_cookie_session("192.168.1.50") is None
+
+    async def test_unsafe_cookie_jar_is_an_aiohttp_jar(self) -> None:
+        import aiohttp
+
+        jar = web_data._unsafe_cookie_jar()
+
+        assert isinstance(jar, aiohttp.CookieJar)
+
+
+class TestWebToRegisterAliases:
+    def test_known_web_values_bridge_to_register_names(self) -> None:
+        assert web_data.web_to_register_value("flow_temperature") == "hp_flow_temp"
+        assert web_data.web_to_register_value("water_temp_top") == "dhw_temp_top"
+        assert web_data.web_to_register_value("compressor_1") == "compressor_status_1"
+
+    def test_heating_circuit_web_values_bridge_per_circuit(self) -> None:
+        assert web_data.web_to_register_value("flow_temp_HK_D") == "hc_d_flow_temp"
+        assert web_data.web_to_register_value("room_temperature_HK_A") == "hc_a_room_temp"
+
+    def test_unknown_values_do_not_bridge(self) -> None:
+        assert web_data.web_to_register_value("mysterious_value") is None
+
+
+def test_a_hint_naming_both_generations_picks_no_variant() -> None:
+    """A hint that names Navigator 2 and Navigator 10 is ambiguous, not wrong."""
+    assert _preferred_web_variant("Navigator 2.0 und Navigator 10") is None
+
+
+def test_merge_model_info_without_a_web_supplement() -> None:
+    assert merge_model_info("Navigator 10", "1.2", None) == ("Navigator 10", "1.2")
+
+
+def test_model_name_falls_back_to_the_heatpump_model() -> None:
+    supplement = IdmWebSupplement(heatpump_model="TERRA SWC 6-17")
+
+    assert supplement.model_name == "TERRA SWC 6-17"

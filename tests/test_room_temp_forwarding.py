@@ -673,3 +673,56 @@ class TestHumidityForwarding:
 
         unsub.assert_called_once()
         assert forwarder._pending_forward_task is None
+
+
+@pytest.mark.asyncio
+async def test_run_cancels_and_awaits_pending_debounce_tasks():
+    """Unload cancels owned debounce tasks and awaits them (#500 shape)."""
+    coord, _reg = _make_coordinator()
+    hass = _make_hass("22.0")
+    hass.async_create_task.side_effect = asyncio.ensure_future
+    forwarder = TestForwardingLifecycle()._forwarder(hass, coord)
+    forwarder._debounce_seconds = 30  # keep the debounce task pending
+    unsub = MagicMock()
+    with patch(
+        "custom_components.idm_heatpump.room_temp_forwarding.async_track_state_change_event",
+        return_value=unsub,
+    ):
+        run_task = asyncio.get_running_loop().create_task(forwarder.async_run())
+        await asyncio.sleep(0)
+        forwarder._handle_state_change(SimpleNamespace(data={"entity_id": "sensor.living_room_temperature"}))
+        pending = forwarder._pending_forward_tasks.get("sensor.living_room_temperature")
+        assert pending is not None and not pending.done()
+
+        run_task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await run_task
+
+        assert pending.cancelled()
+        assert forwarder._pending_forward_tasks == {}
+
+
+@pytest.mark.asyncio
+async def test_humidity_run_cancels_and_awaits_its_pending_task():
+    coord, _reg = TestHumidityForwarding()._coordinator()
+    hass = _make_hass("55")
+    hass.async_create_task.side_effect = asyncio.ensure_future
+    forwarder = TestHumidityForwarding()._forwarder(hass, coord)
+    forwarder._debounce_seconds = 30
+    unsub = MagicMock()
+    with patch(
+        "custom_components.idm_heatpump.room_temp_forwarding.async_track_state_change_event",
+        return_value=unsub,
+    ):
+        run_task = asyncio.get_running_loop().create_task(forwarder.async_run())
+        await asyncio.sleep(0)
+        forwarder._handle_state_change(SimpleNamespace(data={"entity_id": "sensor.living_room_humidity"}))
+        pending = forwarder._pending_forward_task
+        assert pending is not None and not pending.done()
+
+        run_task.cancel()
+        with pytest.raises(asyncio.CancelledError):
+            await run_task
+
+        assert pending.cancelled()
+        assert forwarder._pending_forward_task is None

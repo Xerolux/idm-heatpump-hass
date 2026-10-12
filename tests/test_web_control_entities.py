@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+from dataclasses import replace as dc_replace
 from unittest.mock import AsyncMock, MagicMock
 
+import pytest
 from idm_heatpump import (
     IdmWebHeatingCircuit,
     IdmWebHeatingCircuitChoice,
@@ -237,3 +239,192 @@ class TestHeatingCircuitEntities:
         select_a = next(e for e in entities if "_mode" in e._attr_unique_id and "_a_" in e._attr_unique_id)
         await select_a.async_select_option("eco")
         coordinator.async_web_set_heatingcircuit_parameter.assert_awaited_once_with("HKA01", 3.0)
+
+
+def _circuit_a_with(**changes):
+    """Return heating circuit A with individual fields replaced."""
+    return dc_replace(_circuit("A"), **changes)
+
+
+def _replace_circuits(coordinator, *circuits):
+    """Point the coordinator's supplement at a new circuit tuple."""
+    coordinator.web_supplement = dc_replace(coordinator.web_supplement, heating_circuits=tuple(circuits))
+
+
+class TestWebControlGate:
+    def test_no_entities_without_a_config_entry(self):
+        coordinator = _coordinator()
+        coordinator.config_entry = None
+
+        assert web_control_select_entities(coordinator) == []
+        assert web_control_number_entities(coordinator) == []
+        assert web_control_button_entities(coordinator) == []
+        assert web_control_heatingcircuit_entities(coordinator) == []
+
+    def test_no_heating_circuit_entities_outside_web_only(self):
+        coordinator = _coordinator(connection_mode="auto")
+
+        assert web_control_heatingcircuit_entities(coordinator) == []
+
+    def test_circuits_without_an_id_are_skipped(self):
+        coordinator = _coordinator()
+        _replace_circuits(coordinator, IdmWebHeatingCircuit(hc_id=""), _circuit("A"))
+
+        unique_ids = {e._attr_unique_id for e in web_control_heatingcircuit_entities(coordinator)}
+
+        assert len(unique_ids) == 2  # setpoint + mode of circuit A only
+        assert all("_a_" in uid for uid in unique_ids)
+
+    def test_differential_circuits_get_no_web_controls(self):
+        coordinator = _coordinator()
+        coordinator.config_entry.options = {
+            "connection_mode": CONNECTION_MODE_WEB_ONLY,
+            "heating_circuits": ["a", "d"],
+            "differential_circuits": ["a"],
+        }
+
+        entities = web_control_heatingcircuit_entities(coordinator)
+
+        assert len(entities) == 2  # circuit D keeps both, differential A is excluded
+        assert all("_d_" in e._attr_unique_id for e in entities)
+
+
+class TestWebControlDeviceInfo:
+    def test_every_control_reports_the_main_device(self):
+        coordinator = _coordinator()
+        main_info = {"identifiers": {("idm_heatpump", "web_entry")}}
+        coordinator.device_info = MagicMock(return_value=main_info)
+
+        assert web_control_select_entities(coordinator)[0].device_info is main_info
+        assert web_control_number_entities(coordinator)[0].device_info is main_info
+        assert web_control_button_entities(coordinator)[0].device_info is main_info
+        for entity in web_control_heatingcircuit_entities(coordinator):
+            assert entity.device_info is main_info
+
+
+class TestSystemModeSelectGuards:
+    def test_current_option_none_once_the_supplement_is_gone(self):
+        coordinator = _coordinator()
+        select = web_control_select_entities(coordinator)[0]
+        coordinator.web_supplement = None
+
+        assert select.current_option is None
+        assert select.available is False
+
+
+class TestDhwSetpointNumberGuards:
+    def test_unavailable_once_the_supplement_is_gone(self):
+        coordinator = _coordinator()
+        number = web_control_number_entities(coordinator)[0]
+        coordinator.web_supplement = None
+
+        assert number.available is False
+        assert number.native_value is None
+        assert number.native_min_value == 30.0
+        assert number.native_max_value == 60.0
+        assert number.native_step == 0.5
+
+
+class TestHeatingCircuitSetpointGuards:
+    def _number_a(self, coordinator):
+        entities = web_control_heatingcircuit_entities(coordinator)
+        return next(e for e in entities if "setpoint" in e._attr_unique_id and "_a_" in e._attr_unique_id)
+
+    def test_available_while_the_circuit_and_setpoint_exist(self):
+        assert self._number_a(_coordinator()).available is True
+
+    def test_unavailable_once_the_supplement_is_gone(self):
+        coordinator = _coordinator()
+        number = self._number_a(coordinator)
+        coordinator.web_supplement = None
+
+        assert number.available is False
+        assert number.native_value is None
+
+    def test_unavailable_when_the_circuit_disappears(self):
+        coordinator = _coordinator()
+        number = self._number_a(coordinator)
+        _replace_circuits(coordinator, _circuit("D", mode_value=0, setpoint=22.0, param="HKD"))
+
+        assert number.available is False
+        assert number.native_value is None
+
+    def test_native_value_none_when_the_device_value_is_missing(self):
+        coordinator = _coordinator()
+        number = self._number_a(coordinator)
+        _replace_circuits(
+            coordinator,
+            _circuit_a_with(setpoint_normal=IdmWebHeatingCircuitValue(parameter_id="HKA04")),
+        )
+
+        assert number.native_value is None
+
+    def test_step_falls_back_without_a_numeric_increment(self):
+        coordinator = _coordinator()
+        number = self._number_a(coordinator)
+        _replace_circuits(
+            coordinator,
+            _circuit_a_with(
+                setpoint_normal=IdmWebHeatingCircuitValue(parameter_id="HKA04", value=21.5, increment="auto")
+            ),
+        )
+
+        assert number.native_step == 0.1
+
+    async def test_write_is_skipped_without_a_setpoint_parameter(self):
+        coordinator = _coordinator()
+        number = self._number_a(coordinator)
+        _replace_circuits(coordinator, _circuit_a_with(setpoint_normal=None))
+
+        await number.async_set_native_value(22.0)
+
+        coordinator.async_web_set_heatingcircuit_parameter.assert_not_awaited()
+
+
+class TestHeatingCircuitModeGuards:
+    def _select_a(self, coordinator):
+        entities = web_control_heatingcircuit_entities(coordinator)
+        return next(e for e in entities if "_mode" in e._attr_unique_id and "_a_" in e._attr_unique_id)
+
+    def test_available_while_the_mode_parameter_exists(self):
+        assert self._select_a(_coordinator()).available is True
+
+    def test_unavailable_once_the_supplement_is_gone(self):
+        coordinator = _coordinator()
+        select = self._select_a(coordinator)
+        coordinator.web_supplement = None
+
+        assert select.available is False
+        assert select.current_option is None
+
+    def test_unavailable_when_the_circuit_disappears(self):
+        coordinator = _coordinator()
+        select = self._select_a(coordinator)
+        _replace_circuits(coordinator, _circuit("D", mode_value=0, setpoint=22.0, param="HKD"))
+
+        assert select.available is False
+
+    def test_current_option_none_without_a_mode_value(self):
+        coordinator = _coordinator()
+        select = self._select_a(coordinator)
+        _replace_circuits(coordinator, _circuit("A", mode_value=None))
+
+        assert select.current_option is None
+
+    async def test_unknown_option_is_rejected(self):
+        coordinator = _coordinator()
+        select = self._select_a(coordinator)
+
+        with pytest.raises(ValueError, match="Unknown heating-circuit mode"):
+            await select.async_select_option("warp_drive")
+
+        coordinator.async_web_set_heatingcircuit_parameter.assert_not_awaited()
+
+    async def test_write_is_skipped_without_a_mode_parameter(self):
+        coordinator = _coordinator()
+        select = self._select_a(coordinator)
+        _replace_circuits(coordinator, _circuit_a_with(mode_parameter_id=None))
+
+        await select.async_select_option("normal")
+
+        coordinator.async_web_set_heatingcircuit_parameter.assert_not_awaited()

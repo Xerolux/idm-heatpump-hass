@@ -187,3 +187,26 @@ def test_energy_entities_require_sources_and_publish_all_metrics() -> None:
         description = entity.entity_description
         if description.device_class == "energy":
             assert description.state_class == "total_increasing"
+
+
+def test_tariff_and_pv_helpers_reject_unparseable_states() -> None:
+    stats = EnergyStatistics(
+        SimpleNamespace(states=None), "entry", 30, price_source="sensor.price", pv_source="sensor.pv"
+    )
+    states = {
+        "sensor.price": SimpleNamespace(state="not-a-number", attributes={"unit_of_measurement": "EUR/kWh"}),
+        "sensor.pv": SimpleNamespace(state="garbage", attributes={"unit_of_measurement": "kW"}),
+    }
+    stats._hass = SimpleNamespace(states=SimpleNamespace(get=states.get))
+
+    assert stats._current_price() is None
+    assert stats._pv_power_kw() is None
+
+
+def test_month_cost_and_month_co2_round_from_month_totals() -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30, price_per_kwh=0.4, co2_g_per_kwh=500)
+    stats.month_electrical_kwh = 1.234
+    stats.month_cost_eur = 0.4936
+
+    assert stats.month_cost == 0.49
+    assert stats.month_co2_kg == 0.62

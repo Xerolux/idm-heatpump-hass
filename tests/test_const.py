@@ -143,3 +143,19 @@ class TestHeatPumpStatus:
         assert HeatPumpStatus.HEATING in combined
         assert HeatPumpStatus.WATER in combined
         assert HeatPumpStatus.COOLING not in combined
+
+
+def test_recommended_web_scan_interval_falls_back_without_the_api(monkeypatch):
+    """Without idm-heatpump-api the default interval must stay usable."""
+    import importlib
+    import sys
+
+    from custom_components.idm_heatpump import const as const_module
+
+    monkeypatch.setitem(sys.modules, "idm_heatpump", None)
+    try:
+        importlib.reload(const_module)
+        assert const_module.RECOMMENDED_WEB_SCAN_INTERVAL == 30.0
+    finally:
+        monkeypatch.undo()
+        importlib.reload(const_module)

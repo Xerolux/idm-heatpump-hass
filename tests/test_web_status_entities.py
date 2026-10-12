@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 
 from idm_heatpump import IdmWebStatus
 
+from custom_components.idm_heatpump import web_status_entities
 from custom_components.idm_heatpump.web_data import IdmWebSupplement
 from custom_components.idm_heatpump.web_status_entities import web_status_sensor_entities
 
@@ -75,3 +76,39 @@ def test_a_missing_timestamp_yields_no_state() -> None:
 
     assert entity.available is True
     assert entity.native_value is None
+
+
+def test_an_unrepresentable_timestamp_yields_no_state() -> None:
+    """A corrupted clock value must not break the entity, only its state."""
+    status = IdmWebStatus(json_version=11, timestamp_ms=10**30)
+    entity = web_status_sensor_entities(_coordinator(status))[0]
+
+    assert entity.available is True
+    assert entity.native_value is None
+    # The support facts stay readable even when the clock itself cannot render.
+    assert entity.extra_state_attributes["json_version"] == 11
+
+
+def test_status_lookup_requires_a_nav10_supplement() -> None:
+    without_supplement = _coordinator(None)
+    without_supplement.web_supplement = None
+    assert web_status_entities._nav10_status(without_supplement) is None
+    assert web_status_entities._nav10_status(_coordinator(None, variant="nav20")) is None
+
+    status = _live_status()
+    assert web_status_entities._nav10_status(_coordinator(status)) is status
+
+
+def test_device_info_stays_on_the_main_device() -> None:
+    """The controller clock has no subdevice scope of its own.
+
+    Even with the device hierarchy enabled, ``build_subdevice_info`` resolves
+    no scope for ``web_controller_clock``, so the sensor keeps the shared
+    main-device info.
+    """
+    coordinator = _coordinator(_live_status())
+    coordinator.device_hierarchy_enabled = True
+
+    entity = web_status_sensor_entities(coordinator)[0]
+
+    assert entity.device_info is coordinator.device_info.return_value

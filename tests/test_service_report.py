@@ -85,3 +85,12 @@ def test_installer_report_handles_unavailable_analysis_and_bad_values() -> None:
     assert report["operation"] == {}
     assert report["energy_kwh"] == {}
     assert report["temperatures_c"] == {"hp_flow_temp": None, "dhw_temp_top": None}
+
+
+def test_finite_helper_excludes_nonnumeric_controller_values() -> None:
+    from custom_components.idm_heatpump.service_report import _finite
+
+    assert _finite(True) is None  # bools are truth flags, not measurements
+    assert _finite("nan") is None
+    assert _finite(-1) is None  # unavailable sentinel
+    assert _finite("2.5") == 2.5

@@ -3123,3 +3123,770 @@ class TestGetRegisterFallback:
 
         assert register is not None
         assert register.address == 3000
+
+
+class TestNavigatorFamilySeparatorCollapsing:
+    """Mixed human/slug model names must normalize before family detection."""
+
+    def test_repeated_separators_collapse_to_one(self):
+        # "Navigator--10" normalizes to "navigator__10" before collapsing.
+        assert navigator_family("Navigator--10") == "navigator_10"
+        assert navigator_family("IDM Navigator__Pro") == "navigator_pro"
+        assert navigator_family("navigator  2.0") == "navigator_20"
+
+    def test_collapsing_does_not_invent_a_family(self):
+        assert navigator_family("Some--Unknown") is None
+
+
+class TestExternalRegisterDemand:
+    """Non-entity consumers declare the registers they need polled."""
+
+    def test_demand_round_trip_notifies_the_polling_plan(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        assert coord.externally_required_registers == frozenset()
+
+        manager = MagicMock()
+        coord.attach_entity_aware_polling_manager(manager)
+        assert coord.entity_aware_polling_manager is manager
+
+        release = coord.register_required_registers("knx_bridge", frozenset({"hp_flow_temp"}))
+        assert coord.externally_required_registers == frozenset({"hp_flow_temp"})
+        manager.schedule_replan.assert_called_once()
+
+        release()
+        assert coord.externally_required_registers == frozenset()
+        assert manager.schedule_replan.call_count == 2
+
+    def test_releasing_an_already_released_owner_stays_silent(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        manager = MagicMock()
+        coord.attach_entity_aware_polling_manager(manager)
+        release = coord.register_required_registers("knx_bridge", frozenset({"hp_flow_temp"}))
+        manager.schedule_replan.reset_mock()
+
+        release()
+        release()  # the owner is gone; the second release must not re-plan
+
+        assert manager.schedule_replan.call_count == 1
+
+
+class TestCoordinatorDiagnosticSurfaces:
+    """The surfaces diagnostics and sensors read stay consistent with the poll."""
+
+    async def test_poll_statistics_reflect_one_successful_poll(self, mock_hass, mock_config_entry):
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 20.0})
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[reg],
+            polling_jitter_percent=7,
+            write_cooldown_seconds=12.0,
+        )
+        coord.set_active_registers([reg], total=1)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            await coord._async_update_data()
+
+        stats = coord.poll_statistics
+        assert stats.total_polls == 1
+        assert stats.total_failures == 0
+        assert stats.consecutive_failures == 0
+        assert stats.last_success is not None
+        assert stats.last_duration is not None
+        assert stats.planned_registers == 1
+        assert stats.known_registers == 1
+        assert stats.jitter_percent == 7
+        assert stats.write_cooldown_seconds == 12.0
+
+    def test_alias_map_and_hierarchy_ids_are_exposed(self, mock_hass, mock_config_entry):
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, registers=[reg])
+        assert coord.alias_map == {}
+        coord._alias_map = {1000: ["temp", "temp_set"]}
+        assert coord.alias_map == {1000: ["temp", "temp_set"]}
+
+        assert coord.hierarchy_device_ids == {}
+        coord.set_hierarchy_device_ids({("idm_heatpump", "test_entry_id"): "registry-device-1"})
+        assert coord.hierarchy_device_ids == {("idm_heatpump", "test_entry_id"): "registry-device-1"}
+
+    def test_dhw_boost_manager_attach_and_read(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        assert coord.dhw_boost_manager is None
+        manager = MagicMock()
+        coord.attach_dhw_boost_manager(manager)
+        assert coord.dhw_boost_manager is manager
+
+    def test_web_accessors_before_any_web_poll(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="1234",
+            web_host="192.0.2.9",
+        )
+        assert coord.web_enabled is True
+        assert coord.web_host == "192.0.2.9"
+        assert coord.web_alive is None
+        assert coord.web_last_success is None
+
+        without_pin, _ = _make_coordinator(mock_hass, mock_config_entry)
+        assert without_pin.web_enabled is False
+
+    def test_web_value_accessors_without_a_supplement(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        assert coord.web_value_keys == ()
+        assert coord.missing_web_core_values == ()
+        assert coord._web_register_bridge_data() == {}
+
+
+class TestModelConflictSummaryFallbacks:
+    """The summary stays usable when the config entry data is unusable."""
+
+    def test_non_dict_entry_data_is_treated_as_empty(self, mock_hass, mock_config_entry):
+        mock_config_entry.data = None
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 10")
+
+        summary = coord.model_conflict_summary
+
+        assert summary["selected_family"] == "navigator_10"
+        assert summary["stored_family"] is None
+        assert summary["manual_override"] is None
+        assert summary["conflict"] is False
+
+    def test_navigator_17_family_implies_no_web_variant(self, mock_hass, mock_config_entry):
+        """The 1.x family has no local web access, so no variant is expected."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, model_name="Navigator 1.7")
+
+        summary = coord.model_conflict_summary
+
+        assert summary["selected_family"] == "navigator_17"
+        assert summary["expected_web_variant"] is None
+        assert summary["web_variant_conflict"] is False
+
+
+class TestAnalysisAndStatisticsHooks:
+    """Attached analyses receive each successful snapshot and never break the poll."""
+
+    def _polling_coordinator(self, mock_hass, mock_config_entry):
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 20.0})
+        return _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[reg])
+
+    async def test_poll_feeds_the_attached_operation_analysis(self, mock_hass, mock_config_entry):
+        coord, _ = self._polling_coordinator(mock_hass, mock_config_entry)
+        analysis = SimpleNamespace(process_snapshot=MagicMock())
+        coord.attach_operation_analysis(analysis)
+        assert coord.operation_analysis is analysis
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        analysis.process_snapshot.assert_called_once_with(data, coord.unused_registers)
+
+    async def test_operation_analysis_failure_does_not_break_the_poll(self, mock_hass, mock_config_entry, caplog):
+        coord, _ = self._polling_coordinator(mock_hass, mock_config_entry)
+        analysis = SimpleNamespace(process_snapshot=MagicMock(side_effect=RuntimeError("analysis bug")))
+        coord.attach_operation_analysis(analysis)
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            caplog.at_level(logging.WARNING, logger="custom_components.idm_heatpump.coordinator"),
+        ):
+            data = await coord._async_update_data()
+
+        assert data["temp"] == 20.0
+        assert any("Could not update IDM operation analysis" in record.getMessage() for record in caplog.records)
+
+    async def test_poll_feeds_the_attached_energy_statistics(self, mock_hass, mock_config_entry):
+        coord, _ = self._polling_coordinator(mock_hass, mock_config_entry)
+        statistics = SimpleNamespace(
+            required_registers=frozenset({"power_consumption_hp"}),
+            process_snapshot=MagicMock(),
+        )
+        coord.attach_energy_statistics(statistics)
+        assert coord.energy_statistics is statistics
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            data = await coord._async_update_data()
+
+        statistics.process_snapshot.assert_called_once_with(data)
+
+    async def test_energy_statistics_failure_does_not_break_the_poll(self, mock_hass, mock_config_entry, caplog):
+        coord, _ = self._polling_coordinator(mock_hass, mock_config_entry)
+        statistics = SimpleNamespace(
+            required_registers=frozenset({"power_consumption_hp"}),
+            process_snapshot=MagicMock(side_effect=RuntimeError("statistics bug")),
+        )
+        coord.attach_energy_statistics(statistics)
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+            caplog.at_level(logging.WARNING, logger="custom_components.idm_heatpump.coordinator"),
+        ):
+            data = await coord._async_update_data()
+
+        assert data["temp"] == 20.0
+        assert any("Could not update IDM energy statistics" in record.getMessage() for record in caplog.records)
+
+
+class TestRoomModeValidationScheduling:
+    """Individual room-mode validation is throttled and fails loudly."""
+
+    def _room_mode_coordinator(self, mock_hass, mock_config_entry, read_register):
+        room_mode = RegisterDef(address=2025, datatype=DataType.UCHAR, name="zm1_room3_mode")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={room_mode.name: 3})
+        client.read_register = read_register
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[room_mode],
+        )
+        return coord, room_mode
+
+    async def test_validation_runs_on_the_first_poll_then_skips_most(self, mock_hass, mock_config_entry):
+        client_read = AsyncMock(return_value=3)
+        coord, room_mode = self._room_mode_coordinator(mock_hass, mock_config_entry, client_read)
+
+        data = {room_mode.name: 3}
+        await coord._async_refresh_zone_room_modes(data)
+        assert client_read.await_count == 1
+
+        # The second call is inside the validation interval: no individual read.
+        await coord._async_refresh_zone_room_modes(data)
+        assert client_read.await_count == 1
+
+    async def test_cancellation_during_individual_read_propagates(self, mock_hass, mock_config_entry):
+        import asyncio
+
+        coord, room_mode = self._room_mode_coordinator(
+            mock_hass,
+            mock_config_entry,
+            AsyncMock(side_effect=asyncio.CancelledError()),
+        )
+
+        with pytest.raises(asyncio.CancelledError):
+            await coord._async_refresh_zone_room_modes({room_mode.name: 3})
+
+    async def test_transport_error_during_individual_read_propagates(self, mock_hass, mock_config_entry):
+        coord, room_mode = self._room_mode_coordinator(
+            mock_hass,
+            mock_config_entry,
+            AsyncMock(side_effect=OSError("connection reset")),
+        )
+
+        with pytest.raises(OSError, match="connection reset"):
+            await coord._async_refresh_zone_room_modes({room_mode.name: 3})
+
+
+class TestResilientReadGuards:
+    async def test_fully_unsupported_register_set_short_circuits_the_read(self, mock_hass, mock_config_entry):
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 1.0})
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[reg])
+        coord._unsupported_registers = {"temp"}
+
+        assert await coord._async_read_registers_resilient([reg]) == {}
+        client.read_batch.assert_not_awaited()
+
+
+class TestSolarSuggestionTiming:
+    """The unused-solar suggestion waits for its window and never duplicates itself."""
+
+    def _solar_coordinator(self, mock_hass, mock_config_entry, window):
+        registers = [
+            RegisterDef(address=1850, datatype=DataType.FLOAT, name="solar_collector_temp"),
+            RegisterDef(address=1851, datatype=DataType.FLOAT, name="solar_charging_temp"),
+        ]
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            registers=registers,
+            unused_module_suggestion_seconds=window,
+        )
+        coord._unused_registers = {"solar_collector_temp", "solar_charging_temp"}
+        return coord
+
+    def test_no_suggestion_before_the_window_elapses(self, mock_hass, mock_config_entry):
+        import time
+
+        coord = self._solar_coordinator(mock_hass, mock_config_entry, window=3600.0)
+        coord._solar_unused_since = time.monotonic() - 60.0
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            mock_ir.async_get.return_value.async_get_issue.return_value = None
+            coord._evaluate_unused_solar_suggestion()
+
+        mock_ir.async_create_issue.assert_not_called()
+
+    def test_existing_issue_is_not_recreated(self, mock_hass, mock_config_entry):
+        import time
+
+        coord = self._solar_coordinator(mock_hass, mock_config_entry, window=0.0)
+        coord._solar_unused_since = time.monotonic() - 60.0
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            mock_ir.async_get.return_value.async_get_issue.return_value = object()
+            coord._evaluate_unused_solar_suggestion()
+
+        mock_ir.async_create_issue.assert_not_called()
+
+
+class TestScanIntervalGuardEdges:
+    def test_zero_interval_disables_the_evaluation(self, mock_hass, mock_config_entry):
+        """A zero interval has no idle time to protect; the metric is meaningless."""
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coord.update_interval = timedelta(0)
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            coord._evaluate_poll_duration(0.0)
+            coord._evaluate_poll_duration(9.9)
+
+        mock_ir.async_create_issue.assert_not_called()
+        assert coord._slow_poll_streak == 0
+        assert coord._fast_poll_streak == 0
+
+
+class TestWebRefreshGuards:
+    async def test_refresh_without_a_web_pin_is_a_noop(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coord._refresh_web_supplement_inner = AsyncMock()
+
+        await coord.async_refresh_web_supplement()
+
+        coord._refresh_web_supplement_inner.assert_not_awaited()
+
+    async def test_none_supplement_marks_the_web_path_dead(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="1234",
+            web_host="192.0.2.10",
+        )
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.async_read_web_supplement", return_value=None),
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.last_web_error == "No web supplement data returned"
+        assert coord.web_alive is False
+        assert coord.web_supplement is None
+        mock_ir.async_create_issue.assert_not_called()
+
+    async def test_authentication_failure_blocks_further_web_polling(self, mock_hass, mock_config_entry):
+        """A refused PIN must stop web polling so the controller never locks out."""
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="1234",
+            web_host="192.0.2.10",
+        )
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.async_read_web_supplement",
+                side_effect=IdmWebAuthenticationFailed("PIN rejected"),
+            ),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.web_auth_blocked is True
+
+
+class TestWebDifferentialCircuitsReport:
+    def test_a_change_is_published_with_a_reload_hint(self, mock_hass, mock_config_entry, caplog):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        assert coord.web_differential_circuits == frozenset()
+
+        with caplog.at_level(logging.INFO, logger="custom_components.idm_heatpump.coordinator"):
+            coord.set_web_differential_circuits(frozenset({"hk2"}))
+
+        assert coord.web_differential_circuits == frozenset({"hk2"})
+        assert any(
+            "differential heating circuits" in record.getMessage() and "HK2" in record.getMessage()
+            for record in caplog.records
+        )
+
+        # An unchanged detection stays quiet.
+        caplog.clear()
+        coord.set_web_differential_circuits(frozenset({"hk2"}))
+        assert not caplog.records
+
+
+class TestWebCounterGuardProgress:
+    def test_positive_progress_on_a_web_lifetime_counter_passes(self, mock_hass, mock_config_entry):
+        """A counter moving forward is normal progress, never a transient zero."""
+        coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coordinator._web_supplement = IdmWebSupplement(
+            sensor_values={"heat_quantity_heating_total": IdmWebSensorValue("500.0", 500.0, "kWh")}
+        )
+        incoming = IdmWebSupplement(
+            sensor_values={"heat_quantity_heating_total": IdmWebSensorValue("501.5", 501.5, "kWh")}
+        )
+
+        guarded = coordinator._suppress_transient_web_counter_zeros(incoming)
+
+        assert guarded is incoming
+        assert coordinator.transient_zero_suppressed == 0
+
+
+class TestWebRegisterBridgeGuards:
+    def test_non_numeric_value_on_a_mapped_name_is_not_bridged(self, mock_hass, mock_config_entry):
+        supplement = SimpleNamespace(
+            sensor_values={
+                "flow_temperature": SimpleNamespace(native_value="35.0C"),
+                "outside_air_temperature": SimpleNamespace(native_value=12.0),
+            },
+            heating_circuits=(),
+            dhw_setpoint=None,
+        )
+        coordinator, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coordinator._web_supplement = supplement
+
+        bridged = coordinator._web_register_bridge_data()
+
+        assert "hp_flow_temp" not in bridged
+        assert bridged["outdoor_temp"] == 12.0
+
+
+class TestGetRegisterEdgeCases:
+    def test_unknown_name_on_a_known_model_stays_none(self, mock_hass, mock_config_entry):
+        """The model map is authoritative, but it cannot invent registers."""
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_info=IdmModelInfo(
+                model_name=MODEL_NAVIGATOR_10,
+                active_heating_circuits=["A"],
+                zone_modules=0,
+                has_solar=False,
+                has_isc=False,
+                has_pv=False,
+                has_cascade=False,
+            ),
+        )
+
+        assert coord.get_register("totally_unknown_register") is None
+        assert "totally_unknown_register" not in coord._register_by_name
+
+
+class TestModelInfoFallbackMutation:
+    """dataclasses.replace only works on dataclasses; a foreign model_info
+    object falls back to an in-place mutation instead of failing the poll."""
+
+    async def test_non_dataclass_model_info_is_mutated_on_model_agreement(self, mock_hass, mock_config_entry):
+        coord, client = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0 / 10",
+            model_info=SimpleNamespace(model_name="Unknown Controller"),
+            web_pin="1234",
+        )
+        client.set_model_info.reset_mock()
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(navigator_version="Navigator 10")
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.async_read_web_supplement", return_value=supplement),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.model_name == "Navigator 10"
+        assert coord.model_info is not None
+        assert coord.model_info.model_name == "Navigator 10"
+        client.set_model_info.assert_called_once_with(coord.model_info)
+
+    async def test_non_dataclass_model_info_is_mutated_on_nav10_correction(self, mock_hass, mock_config_entry):
+        coord, client = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 2.0",
+            model_info=SimpleNamespace(model_name="Navigator 2.0"),
+            web_pin="1234",
+        )
+        client.set_model_info.reset_mock()
+        coord.data = {}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(navigator_version="Navigator 10", software_version="NAV10_20.24")
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.async_read_web_supplement", return_value=supplement),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.model_name == "Navigator 10"
+        assert coord.model_info is not None
+        assert coord.model_info.model_name == "Navigator 10"
+        assert coord.firmware_version == "NAV10_20.24"
+        client.set_model_info.assert_called_once_with(coord.model_info)
+
+
+class TestPersistWebDetectionGuards:
+    def test_missing_config_entry_skips_persistence(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coord.config_entry = None
+
+        coord._persist_web_detection(IdmWebSupplement(navigator_version="Navigator 10"), False)
+
+        mock_hass.config_entries.async_update_entry.assert_not_called()
+
+    def test_non_dict_entry_data_skips_persistence(self, mock_hass, mock_config_entry):
+        mock_config_entry.data = None
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        coord._persist_web_detection(IdmWebSupplement(navigator_version="Navigator 10"), False)
+
+        mock_hass.config_entries.async_update_entry.assert_not_called()
+
+    def test_a_failing_entry_update_is_logged_and_swallowed(self, mock_hass, mock_config_entry, caplog):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        mock_hass.config_entries.async_update_entry = MagicMock(side_effect=RuntimeError("store closed"))
+
+        with caplog.at_level(logging.DEBUG, logger="custom_components.idm_heatpump.coordinator"):
+            coord._persist_web_detection(IdmWebSupplement(navigator_version="Navigator 10"), False)
+
+        assert any(
+            "Failed to persist retroactive IDM web detection" in record.getMessage() for record in caplog.records
+        )
+
+
+class TestWriteValidationSurfaces:
+    async def test_locally_refused_write_is_reported_as_blocked_before_sending(
+        self, mock_hass, mock_config_entry, caplog
+    ):
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        client.simulate_write = MagicMock(side_effect=ValueError("Value 900 is out of range"))
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        reg = RegisterDef(address=1405, datatype=DataType.FLOAT, name="hc_c_room_setpoint_heat_normal", writable=True)
+        with (
+            caplog.at_level(logging.WARNING, logger="custom_components.idm_heatpump.coordinator"),
+            pytest.raises(ValueError, match="out of range"),
+        ):
+            await coord.async_write_register(reg, 900.0)
+
+        assert any("blocked before it was sent" in record.getMessage() for record in caplog.records)
+        client.write_register.assert_not_awaited()
+        assert coord.last_write_error is not None
+        assert coord.last_write_error["translation_key"] == "write_out_of_range"
+        assert coord.last_write_error["reached_device"] is False
+
+    def test_simulate_write_delegates_with_custom_registers(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        reg = RegisterDef(address=5000, datatype=DataType.FLOAT, name="custom_reg", writable=True)
+
+        coord.simulate_write(reg, 7.5, dry_run=False, allow_custom_register=True)
+
+        client.simulate_write.assert_called_once_with(reg, 7.5, dry_run=False, allow_custom_register=True)
+
+    async def test_modbus_write_can_target_a_custom_register(self, mock_hass, mock_config_entry):
+        import asyncio
+
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        reg = RegisterDef(address=5000, datatype=DataType.FLOAT, name="custom_reg", writable=True)
+
+        await coord.async_write_register(reg, 7.5, allow_custom_register=True)
+
+        client.write_register.assert_awaited_once_with(reg, 7.5, allow_custom_register=True)
+        # End the confirmation task deterministically instead of sleeping 0.5 s.
+        task = coord._delayed_refresh_task
+        assert task is not None
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
+class TestWebWriteHelpers:
+    async def test_heating_circuit_parameter_write_uses_the_pooled_client(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        client.save_heatingcircuit_parameter = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        pool = MagicMock()
+        pool.get.return_value = (client, "nav10")
+        coord._web_client_pool = pool
+        coord.async_refresh_web_supplement = AsyncMock()
+
+        await coord.async_web_set_heatingcircuit_parameter("HKA04", 21.5, min_value=15.0, max_value=30.0)
+
+        client.save_heatingcircuit_parameter.assert_awaited_once_with("HKA04", 21.5, min_value=15.0, max_value=30.0)
+        coord.async_refresh_web_supplement.assert_awaited_once()
+
+    def test_register_named_write_without_a_supplement_is_unhandled(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+
+        assert coord._web_write_register_by_name("system_mode", 1) is False
+        assert coord._pending_web_writes == []
+
+    def test_circuit_mode_write_without_a_mode_parameter_is_unhandled(self, mock_hass, mock_config_entry):
+        supplement = IdmWebSupplement(
+            heating_circuits=(SimpleNamespace(hc_id="A", mode_parameter_id=None, setpoint_normal=None),)
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_supplement=supplement)
+
+        assert coord._web_write_register_by_name("hc_a_mode", 3) is False
+        assert coord._pending_web_writes == []
+
+    def test_circuit_setpoint_write_without_a_parameter_is_unhandled(self, mock_hass, mock_config_entry):
+        supplement = IdmWebSupplement(
+            heating_circuits=(SimpleNamespace(hc_id="A", mode_parameter_id="HKA01", setpoint_normal=None),)
+        )
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, web_supplement=supplement)
+
+        assert coord._web_write_register_by_name("hc_a_room_setpoint_heat_normal", 21.0) is False
+        assert coord._pending_web_writes == []
+
+    async def test_flush_without_pending_writes_touches_no_client(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coord._web_write_client = MagicMock()
+
+        await coord._async_flush_web_writes()
+
+        coord._web_write_client.assert_not_called()
+
+
+class TestConfirmationTaskCreation:
+    async def test_the_entry_background_task_hook_is_used_when_available(self, mock_hass, mock_config_entry):
+        """A real ConfigEntry offers async_create_background_task; the entry owns the task."""
+        import asyncio
+
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+
+        created: dict[str, str] = {}
+
+        class _EntryWithBackgroundTasks:
+            entry_id = "test_entry_id"
+
+            @staticmethod
+            def async_create_background_task(entry, hass, target, name):
+                created["name"] = name
+                return asyncio.create_task(target)
+
+        coord.config_entry = _EntryWithBackgroundTasks()
+        reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
+
+        await coord.async_write_register(reg, 1)
+
+        assert created["name"] == "idm_heatpump_write_confirmation_test_entry_id"
+        task = coord._delayed_refresh_task
+        assert task is not None
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+
+
+class TestMainDeviceRegistrySync:
+    def test_firmware_and_model_are_pushed_to_the_registered_device(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            model_name="Navigator 10",
+            firmware_version="NAV10_20.24",
+        )
+        coord.set_hierarchy_device_ids({("idm_heatpump", "test_entry_id"): "registry-device-1"})
+
+        with patch("custom_components.idm_heatpump.coordinator.dr") as mock_dr:
+            coord._sync_main_device_registry()
+
+        mock_dr.async_get.return_value.async_update_device.assert_called_once_with(
+            "registry-device-1", model="Navigator 10", sw_version="NAV10_20.24"
+        )
+
+    def test_sync_without_a_config_entry_is_a_noop(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        coord.config_entry = None
+
+        with patch("custom_components.idm_heatpump.coordinator.dr") as mock_dr:
+            coord._sync_main_device_registry()  # must not raise
+
+        mock_dr.async_get.assert_not_called()
+
+
+class TestDeviceInfo:
+    def test_device_info_reflects_metadata_and_is_cached(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            firmware_version="NAV10_20.24",
+            web_supplement=IdmWebSupplement(myidm_id="MYIDM42"),
+        )
+
+        info = coord.device_info()
+
+        assert info["identifiers"] == {("idm_heatpump", "test_entry_id")}
+        assert info["name"] == "IDM Test"
+        assert info["model"] == "Navigator 2.0 / 10"
+        assert info["sw_version"] == "NAV10_20.24"
+        assert info["serial_number"] == "MYIDM42"
+
+        # The cached object is returned unchanged until metadata changes.
+        assert coord.device_info() is info
+        coord._invalidate_device_info_cache()
+        assert coord.device_info() is not info
+        assert coord.device_info()["model"] == "Navigator 2.0 / 10"
+
+
+class TestDeviceHierarchyFlag:
+    def test_hierarchy_flag_defaults_off_and_can_be_enabled(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        assert coord.device_hierarchy_enabled is False
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={})
+        enabled = IdmCoordinator(
+            hass=mock_hass,
+            config_entry=mock_config_entry,
+            client=client,
+            scan_interval=timedelta(seconds=10),
+            sensor_descriptions=[],
+            binary_sensor_descriptions=[],
+            number_descriptions=[],
+            select_descriptions=[],
+            switch_descriptions=[],
+            device_hierarchy_enabled=True,
+        )
+        assert enabled.device_hierarchy_enabled is True
+
+
+class TestSetupRegistersFromDescriptions:
+    def test_entity_descriptions_drive_the_register_collection(self, mock_hass, mock_config_entry):
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry)
+        desc_reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="desc_flow_temp")
+        descriptions = [{"key": "desc_flow_temp"}]
+
+        with (
+            patch(
+                "custom_components.idm_heatpump.coordinator.collect_registers_from_descriptions",
+                return_value=[desc_reg],
+            ) as mock_collect,
+            patch(
+                "custom_components.idm_heatpump.coordinator.collect_aliases_from_descriptions",
+                return_value={1000: ["desc_flow_temp"]},
+            ) as mock_aliases,
+        ):
+            coord.setup_registers(["a"], 0, {}, descriptions=descriptions)
+
+        mock_collect.assert_called_once_with(descriptions)
+        mock_aliases.assert_called_once_with(descriptions)
+        assert coord.registers_count == 1
+        assert coord._register_by_name["desc_flow_temp"] is desc_reg

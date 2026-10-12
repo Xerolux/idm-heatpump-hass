@@ -431,3 +431,76 @@ async def test_report_deadline_cancels_stalled_inference():
     ):
         await ai.async_local_report("http://127.0.0.1", "gemma3:12b", "de", {})
     assert cancelled.is_set()
+
+
+def test_fact_report_tolerates_a_non_mapping_health_section():
+    """Corrupted persisted facts degrade to unknown checks, not a crash."""
+    facts = {
+        "period": {
+            "start_utc": "2026-10-11T00:00:00+00:00",
+            "end_utc": "2026-10-12T00:00:00+00:00",
+            "energy_counter_coverage_percent": 30.0,
+            "electrical_kwh_observed": 1.0,
+            "thermal_kwh_observed": 4.0,
+            "cop_observed": 4.0,
+            "first_observation_utc": None,
+        },
+        "current": {
+            "connected": True,
+            "outdoor_temp": 5.0,
+            "hp_flow_temp": 30.0,
+            "hp_return_temp": 25.0,
+            "dhw_temp_top": 45.0,
+            "dhw_setpoint": 50.0,
+        },
+        "health_checks_current": "corrupted",
+    }
+
+    text = ai.fact_report(facts, "en")
+
+    assert "Flagged measurement checks: 0" in text
+    assert f"Checks without sufficient data: {len(ai.HEALTH_CHECKS)}" in text
+    # The measured values still render.
+    assert "5.00 °C" in text
+
+
+def test_storage_shrink_drops_learning_buckets_before_giving_up():
+    """Eviction order: records first, then learning buckets, never reports."""
+    obj = manager()
+    obj._options[ai.CONF_AI_STORAGE] = 5  # smallest budget: 5 MiB
+    obj.records = []
+    obj.learning.buckets = {
+        "20000:1:0": [1.0, 2.0, 3.0, 4.0],
+        "20000:2:0": [5.0, 6.0, 7.0, 8.0],
+    }
+    # A report that alone exceeds the budget: buckets go, then the loop stops.
+    obj.reports = {"daily": {"report": "x" * (6 * 1024 * 1024)}}
+
+    payload = obj.storage_payload()
+
+    assert payload["records"] == []
+    assert obj.learning.buckets == {}
+    assert obj.storage_bytes > 5 * 1024 * 1024
+
+
+async def test_schedule_loop_keeps_waiting_without_a_next_run():
+    """No scheduled run is invented while next_run is unset."""
+    obj = manager()
+    obj.next_run = None
+    real_sleep = asyncio.sleep
+    spins = 0
+
+    async def fast_sleep(_delay: float) -> None:
+        nonlocal spins
+        spins += 1
+        await real_sleep(0)
+
+    with patch.object(ai, "asyncio", SimpleNamespace(sleep=fast_sleep)):
+        task = asyncio.create_task(obj._schedule_loop(3600))
+        await real_sleep(0.1)
+        obj._stopped = True
+        await asyncio.wait_for(task, timeout=5)
+
+    assert spins >= 3
+    assert obj.status == "idle"
+    assert obj.report is None

@@ -7,6 +7,7 @@ import socket
 import pytest
 from idm_heatpump import IdmConnectionError, IdmDeviceError, IdmModbusError
 
+from custom_components.idm_heatpump import error_messages
 from custom_components.idm_heatpump.error_messages import (
     classify_communication_error,
     classify_web_error,
@@ -141,3 +142,18 @@ def test_scoped_issue_id_differs_across_entries() -> None:
 
 def test_scoped_issue_id_falls_back_without_entry_id() -> None:
     assert scoped_issue_id(None, "web_pin_missing") == "web_pin_missing"
+
+
+def test_unknown_connection_failure_gets_the_generic_connect_explanation() -> None:
+    """An error without any recognized marker falls through to the generic text."""
+    err = Exception("mystery transport failure")
+    issue_id = error_messages.classify_communication_error(err)
+    text = error_messages.friendly_communication_error(issue_id, "192.0.2.9", 502, err)
+    assert "could not connect" in text
+    assert "192.0.2.9:502" in text
+
+
+def test_exception_code_attribute_is_read_directly() -> None:
+    err = Exception("write refused")
+    err.exception_code = 3
+    assert error_messages.modbus_exception_code(err) == 3

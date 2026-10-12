@@ -12,6 +12,8 @@ from idm_heatpump import DataType, RegisterDef
 from custom_components.idm_heatpump.coordinator import IdmCoordinator
 from custom_components.idm_heatpump.operation_analysis import OperationAnalysis
 from custom_components.idm_heatpump.operation_entities import (
+    IdmOperationSensor,
+    OperationSensorDefinition,
     operation_sensor_entities,
     runtime_operation_analysis,
     short_cycle_binary_entities,
@@ -154,3 +156,55 @@ def test_runtime_tracker_accepts_real_instance() -> None:
     runtime_data.operation_analysis = analysis
 
     assert runtime_operation_analysis(runtime_data) is analysis
+
+
+def test_sensor_availability_requires_a_native_value() -> None:
+    entities = _by_key(operation_sensor_entities(_coordinator(), _analysis()))
+    assert entities["analysis_heat_pump_cycles_today"].available is True
+
+    # An analysis without the value behind one sensor makes it unavailable,
+    # not a sensor publishing a wrong default.
+    analysis = _analysis()
+    analysis.last_compressor_start = None
+    entities = _by_key(operation_sensor_entities(_coordinator(), analysis))
+    assert entities["analysis_last_compressor_start"].native_value is None
+    assert entities["analysis_last_compressor_start"].available is False
+
+
+def test_extra_state_attributes_document_the_recording_scope() -> None:
+    entities = _by_key(operation_sensor_entities(_coordinator(), _analysis()))
+
+    attributes = entities["analysis_defrost_starts_today"].extra_state_attributes
+
+    assert attributes == {
+        "recording_scope": "observed_since_feature_activation",
+        "compressor_counting_method": "aggregate_any_compressor_off_to_on",
+    }
+
+
+def test_compressor_scoped_sensor_adds_cycle_sample_count() -> None:
+    definition = OperationSensorDefinition(
+        key="analysis_compressor_probe",
+        value=lambda _analysis: 0,
+        icon="mdi:counter",
+        source="compressor",
+    )
+
+    sensor = IdmOperationSensor(_coordinator(), _analysis(), definition)
+
+    attributes = sensor.extra_state_attributes
+    assert attributes["recording_scope"] == "observed_since_feature_activation"
+    assert attributes["completed_cycles_used_for_average"] == 2
+    assert sensor.native_value == 0
+
+
+def test_short_cycle_availability_requires_a_decidable_state() -> None:
+    sensor = short_cycle_binary_entities(_coordinator(), _analysis())[0]
+    assert sensor.is_on is True
+    assert sensor.available is True
+
+    analysis = _analysis()
+    analysis.last_cycle_was_short = None
+    sensor = short_cycle_binary_entities(_coordinator(), analysis)[0]
+    assert sensor.is_on is None
+    assert sensor.available is False

@@ -155,6 +155,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_humidity_forwarding.py
 │   ├── test_guided_config_flow.py
 │   ├── test_init.py
+   ├── test_internal_messages.py
 │   ├── test_knx_bridge.py
 │   ├── test_knx_catalog.py
 │   ├── test_knx_evidence.py
