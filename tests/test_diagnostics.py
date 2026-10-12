@@ -1,4 +1,5 @@
 from datetime import UTC, datetime, timedelta
+from types import SimpleNamespace
 from unittest.mock import MagicMock
 
 from idm_heatpump import IdmModelInfo
@@ -596,3 +597,76 @@ class TestRegisterReadReport:
             "by_status": {},
             "registers": [],
         }
+
+
+class TestDiagnosticHelpersEdgeCases:
+    def test_sanitized_error_preserves_the_web_no_data_marker(self) -> None:
+        from custom_components.idm_heatpump.diagnostics import _sanitized_error_message
+
+        marker = "No web supplement data returned"
+        assert _sanitized_error_message(marker, fallback="x") == marker
+        assert _sanitized_error_message("ValueError: boom", fallback="x") == "ValueError"
+        assert _sanitized_error_message("   ", fallback="x") is None
+        assert _sanitized_error_message("plain words", fallback="x") == "x"
+
+    def test_client_diagnostics_tolerate_missing_or_uncallable_helper(self) -> None:
+        from custom_components.idm_heatpump.diagnostics import _client_diagnostics
+
+        class _Plain:
+            pass
+
+        assert _client_diagnostics(_Plain()) == {}
+        assert _client_diagnostics(SimpleNamespace(client_diagnostics="not callable")) == {}
+        assert _client_diagnostics(SimpleNamespace(client_diagnostics=lambda: "not a dict")) == {}
+
+    def test_model_conflict_block_without_a_summary_lists_empty_fields(self) -> None:
+        from custom_components.idm_heatpump.diagnostics import _model_conflict_diagnostics
+
+        block = _model_conflict_diagnostics(SimpleNamespace(model_conflict_summary="junk"))
+
+        assert block["selected_family"] is None
+        assert block["web_variant_conflict"] is False
+
+    def test_connection_diagnostics_survive_an_overflowing_controller_clock(self) -> None:
+        from custom_components.idm_heatpump.diagnostics import _connection_diagnostics
+
+        entry = SimpleNamespace(options={}, data={})
+        coordinator = MagicMock()
+        coordinator.web_supplement = SimpleNamespace(status=SimpleNamespace(timestamp_ms=10**30))
+
+        block = _connection_diagnostics(entry, coordinator)  # type: ignore[arg-type]
+
+        assert block["controller_clock"] is None
+
+    def test_register_report_marks_device_and_decode_errors_and_sorts_by_outcome_address(self) -> None:
+        from custom_components.idm_heatpump.diagnostics import _register_read_report
+
+        reg_a = SimpleNamespace(
+            name="reg_a", address=5, write_only=False, register_type=None, min_val=None, max_val=None
+        )
+        coordinator = SimpleNamespace(
+            register_map_names=frozenset({"reg_a", "reg_b", "reg_c"}),
+            data={},
+            unused_registers=[],
+            unsupported_registers=[],
+            active_registers=[],
+            client=SimpleNamespace(
+                get_register_outcomes=lambda: {
+                    "reg_a": {"status": "device_error"},
+                    "reg_b": {"status": "decode_error", "address": 2},
+                },
+                get_batch_unsafe_registers=list,
+            ),
+            get_register=lambda name: reg_a if name == "reg_a" else None,
+        )
+
+        report = _register_read_report(coordinator)
+        rows = {row["name"]: row for row in report["registers"]}
+
+        assert rows["reg_a"]["status"] == "device_error"
+        assert rows["reg_b"]["status"] == "decode_error"
+        assert rows["reg_b"]["address"] == 2  # register missing: address from the outcome
+        assert rows["reg_c"]["status"] == "not_polled"
+        # reg_c has no address anywhere and sorts by name at 0; reg_b carries
+        # outcome address 2; reg_a its register address 5.
+        assert [row["name"] for row in report["registers"]] == ["reg_c", "reg_b", "reg_a"]

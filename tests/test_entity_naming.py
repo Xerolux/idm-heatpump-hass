@@ -64,3 +64,10 @@ def test_web_heating_circuit_pump_names_exist_for_every_circuit() -> None:
         binary_sensors = _load_json(translations)["entity"]["binary_sensor"]
         assert "web_pump_heating_circuit" in binary_sensors
         assert "{circuit}" in binary_sensors["web_pump_heating_circuit"]["name"]
+
+
+def test_has_translated_name_distinguishes_mapped_and_unmapped_registers() -> None:
+    from custom_components.idm_heatpump.entity_names import has_translated_name
+
+    assert has_translated_name("pv_surplus") is True
+    assert has_translated_name("zz_not_a_register") is False

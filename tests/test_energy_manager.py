@@ -380,3 +380,34 @@ async def test_stop_waits_for_an_in_flight_evaluation(monkeypatch):
         await asyncio.gather(task, return_exceptions=True)
         if stop_task is not None:
             await asyncio.gather(stop_task, return_exceptions=True)
+
+
+def test_unit_and_number_helpers_reject_unusable_states() -> None:
+    assert module._unit(SimpleNamespace(attributes=None)) is None
+    assert module._unit(SimpleNamespace(attributes={"unit_of_measurement": 3.5})) is None
+    assert module._number(SimpleNamespace(state="garbage", attributes={})) is None
+    assert module._number(None) is None
+
+
+async def test_soc_source_below_minimum_or_invalid_blocks_readiness() -> None:
+    hass = _hass(
+        {
+            "sensor.surplus": _state(5),
+            "sensor.low_soc": _state(10, "%"),
+            "sensor.bad_soc": _state("unavailable", "%"),
+        }
+    )
+    coordinator = _coordinator()
+    below = module.EnergyManager(
+        hass,
+        coordinator,
+        module.EnergyManagerConfig(sources={"pv_surplus": "sensor.surplus", "battery_soc": "sensor.low_soc"}),
+    )
+    invalid = module.EnergyManager(
+        hass,
+        coordinator,
+        module.EnergyManagerConfig(sources={"pv_surplus": "sensor.surplus", "battery_soc": "sensor.bad_soc"}),
+    )
+
+    assert below._ready() is False
+    assert invalid._ready() is False

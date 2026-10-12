@@ -176,3 +176,54 @@ async def test_forecast_loop_survives_an_unexpected_failure(
     with pytest.raises(asyncio.CancelledError):
         await adviser._poll_forecast()
     assert len(calls) == 2  # the loop reached its next cycle after the crash
+
+
+async def test_forecast_task_spawns_through_every_hass_tier() -> None:
+    """The spawn helper degrades from background tasks down to bare asyncio."""
+    from types import SimpleNamespace
+
+    from custom_components.idm_heatpump.comfort_advisory import WeatherForecastAdvisorySensor
+
+    coordinator = _coordinator({"outdoor_temp": 5.0})
+    tasks = []
+
+    class _EntryWithBackground:
+        entry_id = "entry"
+
+        @staticmethod
+        def async_create_background_task(entry, hass, coro, name=None):
+            return asyncio.ensure_future(coro)
+
+    class _HassWithBackground:
+        @staticmethod
+        def async_create_background_task(hass, coro, name=None):
+            return asyncio.ensure_future(coro)
+
+    class _HassCreateTask:
+        def async_create_task(self, coro):
+            return asyncio.ensure_future(coro)
+
+    class _HassBare:
+        pass
+
+    try:
+        coordinator.config_entry = _EntryWithBackground()
+        sensor = WeatherForecastAdvisorySensor(_HassWithBackground(), coordinator, "weather.entity", 1.0)
+        tasks.append(sensor._start_forecast_task())
+
+        coordinator.config_entry = SimpleNamespace(entry_id="entry")
+        sensor = WeatherForecastAdvisorySensor(_HassWithBackground(), coordinator, "weather.entity", 1.0)
+        tasks.append(sensor._start_forecast_task())
+
+        sensor = WeatherForecastAdvisorySensor(_HassCreateTask(), coordinator, "weather.entity", 1.0)
+        tasks.append(sensor._start_forecast_task())
+
+        sensor = WeatherForecastAdvisorySensor(_HassBare(), coordinator, "weather.entity", 1.0)
+        tasks.append(sensor._start_forecast_task())
+
+        assert len(tasks) == 4
+        assert all(isinstance(task, asyncio.Task) for task in tasks)
+    finally:
+        for task in tasks:
+            task.cancel()
+        await asyncio.gather(*tasks, return_exceptions=True)

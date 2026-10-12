@@ -435,3 +435,26 @@ def test_value_helpers_reject_unusable_input() -> None:
     assert module._finite_non_negative(float("inf")) is None
     assert module._finite_non_negative(3.5) == 3.5
     assert module._non_negative_int(True) == 0
+
+
+def test_current_defrost_minutes_reports_the_observed_cycle(monkeypatch) -> None:
+    analysis, _store = _analysis(monkeypatch)
+
+    # Before the first mode snapshot the defrost state is undecidable, not zero.
+    assert analysis.current_defrost_minutes() is None
+
+    now = datetime(2026, 7, 20, 8, 0, tzinfo=UTC)
+    # First mode snapshot only reconciles: defrost is off afterwards.
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=now)
+    assert analysis.current_defrost_minutes(now=now) == 0.0
+
+    # The observed off -> defrost edge starts the clock.
+    analysis.process_snapshot(_snapshot(mode=8), set(), now=now + timedelta(minutes=10))
+    assert analysis.last_defrost_start == now + timedelta(minutes=10)
+    assert analysis.current_defrost_minutes(now=now + timedelta(minutes=40)) == 30.0
+    # Never negative, even when queried with an earlier timestamp.
+    assert analysis.current_defrost_minutes(now=now) == 0.0
+
+    # Leaving defrost reconciles again: the cycle is over, so zero, not None.
+    analysis.process_snapshot(_snapshot(mode=1), set(), now=now + timedelta(minutes=45))
+    assert analysis.current_defrost_minutes(now=now + timedelta(minutes=50)) == 0.0

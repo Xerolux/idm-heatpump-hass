@@ -187,3 +187,10 @@ async def test_setup_skips_advisor_and_notice_when_disabled(mock_hass: Any) -> N
     ensure.assert_not_called()
     assert entry.runtime_data.predictive_advisor is None
     assert entry.runtime_data.advisor_engine is None
+
+
+async def test_missing_update_helper_stamps_nothing_and_returns(mock_hass: Any) -> None:
+    """Older HA without async_update_entry is tolerated: the stamp is skipped."""
+    entry = SimpleNamespace(data={"host": "h"})
+    mock_hass.config_entries.async_update_entry = None
+    await async_note_release(mock_hass, entry, "0.21.0")  # type: ignore[arg-type]

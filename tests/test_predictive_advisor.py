@@ -9,6 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from custom_components.idm_heatpump.advisor_analytics import AdvisorAnalytics
+from custom_components.idm_heatpump.advisor_engine import AdvisorEngine
 from custom_components.idm_heatpump.binary_sensor import async_setup_entry as async_setup_binary_sensors
 from custom_components.idm_heatpump.predictive_advisor import (
     EVENT_IDM_ADVISOR_RECOMMENDATION,
@@ -29,9 +31,23 @@ from custom_components.idm_heatpump.predictive_advisor import (
     recommendation_from_dict,
 )
 from custom_components.idm_heatpump.predictive_advisor_entities import (
+    IdmAdvisorAnomalyBinarySensor,
+    IdmAdvisorBuildingHeatLossSensor,
+    IdmAdvisorBuildingInertiaSensor,
+    IdmAdvisorConfidenceSensor,
+    IdmAdvisorCurveSensor,
+    IdmAdvisorDhwWindowSensor,
+    IdmAdvisorEfficiencySensor,
+    IdmAdvisorExpectedCopSensor,
+    IdmAdvisorHealthScoreSensor,
+    IdmAdvisorHeatDemandSensor,
+    IdmAdvisorOperationReasonSensor,
+    IdmAdvisorOptimalFlowSensor,
     IdmAdvisorOptimizationBinarySensor,
+    IdmAdvisorPlanSensor,
     IdmAdvisorRecommendationSensor,
     IdmAdvisorStatusSensor,
+    _coordinator_number,
     predictive_advisor_binary_entities,
     predictive_advisor_sensor_entities,
     runtime_predictive_advisor,
@@ -513,3 +529,356 @@ async def test_platforms_create_advisor_entities() -> None:
     added_binaries: list[Any] = []
     await async_setup_binary_sensors(MagicMock(), entry, MagicMock(side_effect=added_binaries.extend))
     assert any(entity.entity_description.key == "advisor_optimization_available" for entity in added_binaries)
+
+
+# ----------------------------------------------------------------------
+# Persistence, defensive parsing and event-bus tolerance
+# ----------------------------------------------------------------------
+
+
+async def test_async_load_parses_timestamps_defensively(mock_hass: Any) -> None:
+    advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
+    advisor._store.data = {"first_observed": "not-a-timestamp"}
+    await advisor.async_load()
+    assert advisor.first_observed is None
+
+    # A naive timestamp is interpreted as UTC instead of being discarded.
+    advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
+    advisor._store.data = {"first_observed": T0.replace(tzinfo=None).isoformat()}
+    await advisor.async_load()
+    assert advisor.first_observed == T0
+
+
+def test_observe_counts_implausible_samples(mock_hass: Any) -> None:
+    coordinator = _coordinator(
+        data={"outdoor_temp": 999.0, "power_consumption_hp": "many"},
+        hass=mock_hass,
+    )
+    advisor = PredictiveAdvisor(coordinator)
+    advisor.observe(now=T0)
+    summary = advisor.quality_summary()
+    # Out-of-range and non-numeric readings are implausible, not unavailable.
+    assert summary["outdoor_temp"]["implausible"] == 1
+    assert summary["power_consumption_hp"]["implausible"] == 1
+    assert summary["outdoor_temp"]["samples"] == 1
+
+
+async def test_async_load_restores_quality_defensively(mock_hass: Any) -> None:
+    advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
+    advisor._store.data = {
+        "quality": {
+            "outdoor_temp": "nope",
+            "power_consumption_hp": {"samples": True, "usable": -1, "frozen": 2},
+        }
+    }
+    await advisor.async_load()
+    summary = advisor.quality_summary()
+    # A non-mapping row restores empty statistics: no samples, no fraction.
+    assert summary["outdoor_temp"]["samples"] == 0
+    assert summary["outdoor_temp"]["usable_fraction"] is None
+    # Bool and negative counters are discarded; the valid one survives.
+    assert summary["power_consumption_hp"]["samples"] == 0
+    assert summary["power_consumption_hp"]["usable_fraction"] is None
+    assert summary["power_consumption_hp"]["frozen"] == 2
+
+
+def test_configured_circuits_falls_back_for_malformed_option() -> None:
+    # A single string instead of a list must not break circuit resolution.
+    advisor = PredictiveAdvisor(_coordinator(options={"heating_circuits": "a"}))
+    assert "hc_a_room_temp" in advisor.required_registers
+    assert "hc_b_room_temp" not in advisor.required_registers
+
+
+def test_fire_tolerates_event_bus_without_async_fire() -> None:
+    coordinator = _coordinator(hass=SimpleNamespace(bus=SimpleNamespace()))
+    advisor = PredictiveAdvisor(coordinator)
+    assert advisor.submit(_recommendation()) is True
+    assert advisor.recommendation_count == 1
+
+
+async def test_async_save_persists_state_immediately(mock_hass: Any) -> None:
+    coordinator = _coordinator(data={"outdoor_temp": 5.0}, hass=mock_hass)
+    advisor = PredictiveAdvisor(coordinator)
+    advisor.observe(now=T0)
+    advisor.submit(_recommendation())
+    await advisor.async_save()
+    stored = advisor._store.data
+    assert stored is not None
+    assert stored["version"] == 1
+    assert stored["first_observed"] == T0.isoformat()
+    assert stored["active"][0]["id"] == _recommendation().id
+    assert stored["quality"]["outdoor_temp"]["samples"] == 1
+
+
+# ----------------------------------------------------------------------
+# Producer entities (roadmap phases 2-9)
+# ----------------------------------------------------------------------
+
+
+def _producer_setup(
+    data: dict[str, Any] | None = None,
+) -> tuple[AdvisorEngine, PredictiveAdvisor, AdvisorAnalytics, MagicMock]:
+    """Build the engine triple the producer entities read from."""
+    coordinator = _coordinator(data=data)
+    coordinator.web_supplement = None
+    coordinator.operation_analysis = None
+    hass = MagicMock()
+    advisor = PredictiveAdvisor(coordinator)
+    analytics = AdvisorAnalytics(hass, "entry1")
+    engine = AdvisorEngine(hass, coordinator, advisor, analytics)
+    return engine, advisor, analytics, coordinator
+
+
+def _learn_cop_map(analytics: AdvisorAnalytics) -> None:
+    """Learn one COP bin of 4.8 kW thermal / 1.2 kW electric over one hour."""
+    for _ in range(2):
+        analytics.observe_cop_sample(5.0, 30.0, thermal_kw=4.8, electric_kw=1.2, hours=0.5)
+
+
+def test_coordinator_number_filters_unusable_values() -> None:
+    assert _coordinator_number(_coordinator(data={"outdoor_temp": 3}), "outdoor_temp") == 3.0
+    assert _coordinator_number(_coordinator(data={}), "outdoor_temp") is None
+    assert _coordinator_number(_coordinator(data={"outdoor_temp": True}), "outdoor_temp") is None
+    assert _coordinator_number(_coordinator(data={"outdoor_temp": "5.0"}), "outdoor_temp") is None
+    assert _coordinator_number(_coordinator(data={"outdoor_temp": float("nan")}), "outdoor_temp") is None
+    assert _coordinator_number(_coordinator(data={"outdoor_temp": float("inf")}), "outdoor_temp") is None
+    coordinator = _coordinator(data={})
+    coordinator.data = None
+    assert _coordinator_number(coordinator, "outdoor_temp") is None
+
+
+def test_confidence_sensor_before_and_after_observation() -> None:
+    coordinator = _coordinator(data={"outdoor_temp": 5.0})
+    advisor = PredictiveAdvisor(coordinator)
+    sensor = IdmAdvisorConfidenceSensor(coordinator, advisor)
+
+    # Before the first snapshot there is no confidence to publish.
+    assert sensor.native_value is None
+    attributes = sensor.extra_state_attributes
+    assert attributes["level"] == "low"
+    assert attributes["write_actions"] is False
+    assert "formula" in attributes
+
+    advisor.observe(now=T0)
+    assert sensor.native_value == round(advisor.confidence * 100)
+    assert sensor.extra_state_attributes["level"] == str(confidence_level(advisor.confidence))
+
+
+def test_operation_reason_sensor_requires_mapping_snapshot() -> None:
+    engine, _advisor, _analytics, coordinator = _producer_setup()
+    sensor = IdmAdvisorOperationReasonSensor(coordinator, engine)
+
+    # A non-mapping snapshot yields no reason at all.
+    coordinator.data = None
+    assert sensor.native_value is None
+    assert sensor.available is False
+    assert sensor.extra_state_attributes == {"write_actions": False}
+
+    coordinator.data = {"hp_operating_mode": 1, "power_consumption_hp": 2.0}
+    assert sensor.native_value == "Heating"
+    assert sensor.available is True
+    attributes = sensor.extra_state_attributes
+    assert attributes["mode"] == "Heating"
+    assert attributes["operating_mode"] == 1
+    assert attributes["write_actions"] is False
+
+    # The coordinator availability still gates the sensor.
+    coordinator.last_update_success = False
+    assert sensor.available is False
+
+
+def test_anomaly_binary_sensor_tracks_anomaly_findings() -> None:
+    engine, advisor, _analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
+    sensor = IdmAdvisorAnomalyBinarySensor(coordinator, engine)
+    assert sensor.is_on is False
+    assert sensor.extra_state_attributes == {"findings": [], "write_actions": False}
+
+    advisor.submit(
+        _recommendation(
+            id="anomaly_flow_rate_low_20261012",
+            category=RecommendationCategory.ANOMALY,
+            severity=RecommendationSeverity.HINT,
+            title="Heat-circle flow is 20% below its 5-day baseline",
+        )
+    )
+    assert sensor.is_on is True
+    findings = sensor.extra_state_attributes["findings"]
+    assert [finding["id"] for finding in findings] == ["anomaly_flow_rate_low_20261012"]
+    assert findings[0]["severity"] == "hint"
+
+
+def test_health_score_sensor_needs_two_domains() -> None:
+    engine, _advisor, analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
+    sensor = IdmAdvisorHealthScoreSensor(coordinator, engine)
+
+    # With no baselined domain the score stays unpublished.
+    assert sensor.native_value is None
+    assert sensor.available is False
+    assert sensor.extra_state_attributes["write_actions"] is False
+
+    for days_ago in range(1, 4):
+        at = T0 - timedelta(days=days_ago)
+        analytics.observe_metric("heat_sink_flow_rate", 1.2, at)
+        analytics.observe_metric("compressor_starts", 10.0, at, mode="max")
+    assert sensor.native_value == 100
+    assert sensor.available is True
+    assert sensor.extra_state_attributes["components"] == {"hydraulics": 100.0, "compressor": 100.0}
+
+
+def test_efficiency_sensor_exposes_learned_cop_map() -> None:
+    engine, _advisor, analytics, coordinator = _producer_setup(
+        data={"outdoor_temp": 5.0, "hp_flow_temp": 30.0, "power_consumption_hp": 1.2}
+    )
+    sensor = IdmAdvisorEfficiencySensor(coordinator, engine)
+    assert sensor.native_value is None
+    assert sensor.available is False
+    assert sensor.extra_state_attributes == {
+        "expected_cop": None,
+        "observed_cop_7d": None,
+        "deviation_percent": None,
+        "write_actions": False,
+    }
+
+    _learn_cop_map(analytics)
+    # The engine publishes the score as a rounded float, so the int-typed
+    # native value stays unpublished; the numbers arrive as attributes.
+    assert sensor.native_value is None
+    assert sensor.available is False
+    attributes = sensor.extra_state_attributes
+    assert attributes["expected_cop"] == 4.0
+    assert attributes["observed_cop_7d"] == 4.0
+    assert attributes["deviation_percent"] == 0.0
+
+
+def test_expected_cop_sensor_uses_learned_map() -> None:
+    engine, _advisor, analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0, "hp_flow_temp": 30.0})
+    sensor = IdmAdvisorExpectedCopSensor(coordinator, engine)
+
+    # Without learned bins there is no expected COP and no availability.
+    assert sensor.native_value is None
+    assert sensor.available is False
+    assert sensor.extra_state_attributes == {"learned_hours": None, "deviation_percent": None, "write_actions": False}
+
+    _learn_cop_map(analytics)
+    assert sensor.native_value == 4.0
+    assert sensor.available is True
+    attributes = sensor.extra_state_attributes
+    assert attributes["learned_hours"] == 1.0
+    assert attributes["deviation_percent"] == 0.0
+
+
+def test_building_model_sensors_publish_learned_model() -> None:
+    engine, _advisor, analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
+    heat_loss = IdmAdvisorBuildingHeatLossSensor(coordinator, engine)
+    inertia = IdmAdvisorBuildingInertiaSensor(coordinator, engine)
+
+    assert heat_loss.native_value is None
+    assert heat_loss.available is False
+    assert heat_loss.extra_state_attributes["heat_loss_w_per_k"] is None
+    assert heat_loss.extra_state_attributes["write_actions"] is False
+    assert inertia.native_value is None
+    assert inertia.available is False
+    assert inertia.extra_state_attributes["cooldown_episodes"] == 0
+
+    # 60 regression samples with slope 0.2 kW/K learn a 200 W/K heat loss.
+    for index in range(60):
+        delta = 15.0 + (index % 7)
+        analytics.observe_heating(delta, 0.2 * delta)
+    # Three cooldown episodes establish the inertia estimate.
+    for _ in range(3):
+        analytics.observe_cooldown_episode(0.1, 12.5)
+
+    assert heat_loss.native_value == 200.0
+    assert heat_loss.available is True
+    assert inertia.native_value == 12.5
+    assert inertia.available is True
+    assert heat_loss.extra_state_attributes["heat_fit_samples"] == 60
+    assert inertia.extra_state_attributes["cooldown_episodes"] == 3
+
+
+def test_optimal_flow_sensor_requires_outdoor_and_learned_curve() -> None:
+    engine, _advisor, analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
+    sensor = IdmAdvisorOptimalFlowSensor(coordinator, engine)
+
+    # Without a learned flow curve the optimal flow temperature is None.
+    assert sensor.native_value is None
+    assert sensor.available is False
+
+    # 60 samples along flow = 35 - 0.5 * outdoor learn a falling curve.
+    for outdoor in range(-30, 30):
+        analytics.observe_flow_pair(float(outdoor), 35.0 - 0.5 * outdoor)
+    assert sensor.native_value == 32.5
+    assert sensor.available is True
+
+    # A non-numeric outdoor temperature disables the sensor again.
+    coordinator.data = {"outdoor_temp": "frozen"}
+    assert sensor.native_value is None
+    assert sensor.available is False
+
+
+def test_curve_sensor_publishes_recommendation_details() -> None:
+    engine, _advisor, _analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
+    sensor = IdmAdvisorCurveSensor(coordinator, engine, "a")
+    assert sensor.native_value is None
+    assert sensor.available is False
+    assert sensor.extra_state_attributes == {"write_actions": False}
+
+    engine._curve_recommendations = {"a": {"recommended": 0.32, "current": 0.35, "baseline_days": 9}}
+    assert sensor.native_value == 0.32
+    assert sensor.available is True
+    attributes = sensor.extra_state_attributes
+    assert attributes["recommended"] == 0.32
+    assert attributes["current"] == 0.35
+    assert attributes["write_actions"] is False
+
+
+def test_dhw_window_sensor_formats_window_and_attributes() -> None:
+    engine, _advisor, _analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
+    sensor = IdmAdvisorDhwWindowSensor(coordinator, engine)
+    assert sensor.native_value is None
+    assert sensor.available is False
+    assert sensor.extra_state_attributes == {"write_actions": False}
+
+    start = T0 + timedelta(hours=4)
+    engine._dhw_window = {
+        "start": start.isoformat(),
+        "hours": 3,
+        "source": "pv_surplus_forecast",
+        "expected_pv_kwh": 4.2,
+    }
+    assert sensor.native_value == f"{start:%H:%M}-{start + timedelta(hours=3):%H:%M}"
+    assert sensor.available is True
+    assert sensor.extra_state_attributes["expected_pv_kwh"] == 4.2
+
+
+def test_heat_demand_sensor_reads_plan_values() -> None:
+    engine, _advisor, _analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
+    sensor = IdmAdvisorHeatDemandSensor(coordinator, engine)
+    assert sensor.native_value is None
+    assert sensor.available is False
+
+    engine._plan = {"expected_pv_kwh": 6.4}
+    assert sensor.native_value is None  # no predicted demand in the plan yet
+    attributes = sensor.extra_state_attributes
+    assert attributes["expected_pv_kwh"] == 6.4
+    assert attributes["indoor_reference"] == "measured room temperature, 21 C fallback"
+
+    engine._plan = {"predicted_heat_demand_kwh": 18.2, "expected_pv_kwh": 6.4}
+    assert sensor.native_value == 18.2
+    assert sensor.available is True
+
+
+def test_plan_sensor_gates_on_plan_presence() -> None:
+    engine, _advisor, _analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
+    sensor = IdmAdvisorPlanSensor(coordinator, engine)
+    assert sensor.native_value is None
+    assert sensor.available is False
+    assert sensor.extra_state_attributes == {"write_actions": False}
+
+    engine._plan = {"predicted_heat_demand_kwh": 18.2}
+    assert sensor.native_value == "ok"
+    assert sensor.available is True
+    assert sensor.extra_state_attributes["predicted_heat_demand_kwh"] == 18.2
+
+    engine._plan = {"dhw_window_conflicts_with_expensive_hours": True}
+    assert sensor.native_value == "attention"

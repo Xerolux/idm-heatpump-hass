@@ -618,3 +618,66 @@ class TestGetAllSwitchDescriptions:
         addrs = sorted(d["register"].address for d in descs)
         assert len(addrs) == 4
         assert addrs == [1710, 1711, 1712, 1713]
+
+
+def test_normalize_zone_rooms_returns_empty_for_non_dict_input():
+    """HA options may hold anything; a non-dict carries no zone configuration."""
+    assert normalize_zone_rooms(None) == {}
+    assert normalize_zone_rooms(["0=2"]) == {}
+    assert normalize_zone_rooms("0:2") == {}
+
+
+def _raise_library_error(*args, **kwargs):
+    raise RuntimeError("library generator explosion")
+
+
+class TestLibraryGeneratorResilience:
+    """A raising library generator must degrade to the remaining sources, not fail setup."""
+
+    def test_sensor_descriptions_survive_library_generator_errors(self, monkeypatch):
+        import custom_components.idm_heatpump.registers as registers_module
+
+        monkeypatch.setattr(registers_module, "get_library_sensors", _raise_library_error)
+
+        names = {d["register"].name for d in get_all_sensor_descriptions(["a"], 1, {0: 1})}
+
+        # The per-circuit and per-zone generators still feed the platform.
+        assert any(name.startswith("hc_a_") for name in names)
+        assert "zm1_room1_temp" in names
+
+    def test_binary_sensor_descriptions_survive_library_generator_errors(self, monkeypatch):
+        import custom_components.idm_heatpump.registers as registers_module
+
+        monkeypatch.setattr(registers_module, "get_library_binary_sensors", _raise_library_error)
+
+        names = {d["register"].name for d in get_all_binary_sensor_descriptions(["a"], 1, {0: 2})}
+
+        # The per-zone loop remains the authoritative source for room relays.
+        assert "zm1_room1_relay" in names
+        assert "zm1_room2_relay" in names
+
+    def test_number_descriptions_survive_library_generator_errors(self, monkeypatch):
+        import custom_components.idm_heatpump.registers as registers_module
+
+        monkeypatch.setattr(registers_module, "get_library_numbers", _raise_library_error)
+
+        names = {d["register"].name for d in get_all_number_descriptions(["a"], 1, {0: 2})}
+
+        assert "zm1_room1_setpoint" in names
+
+    def test_select_descriptions_survive_library_generator_errors(self, monkeypatch):
+        import custom_components.idm_heatpump.registers as registers_module
+
+        monkeypatch.setattr(registers_module, "get_library_selects", _raise_library_error)
+
+        names = {d["register"].name for d in get_all_select_descriptions(["a"], 1, {0: 2})}
+
+        assert "zm1_room1_mode" in names
+
+    def test_switch_descriptions_survive_library_generator_errors(self, monkeypatch):
+        import custom_components.idm_heatpump.registers as registers_module
+
+        monkeypatch.setattr(registers_module, "get_library_switches", _raise_library_error)
+
+        # Switches have no per-zone fallback; the platform simply gets nothing.
+        assert get_all_switch_descriptions(["a"], 0, {}) == []

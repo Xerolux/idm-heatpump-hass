@@ -184,3 +184,30 @@ def test_library_metadata_is_optional(monkeypatch):
 
     assert binary_semantics._library_metadata("compressor_status_1") is None
     assert binary_value_is_on(_register(), 1) is True
+
+
+def test_name_tokens_map_to_heat_and_running_classes() -> None:
+    assert infer_binary_device_class("dhw") == BinarySensorDeviceClass.HEAT
+    assert infer_binary_device_class("heatpump_heating") == BinarySensorDeviceClass.HEAT
+    assert infer_binary_device_class("circulation_pump") == BinarySensorDeviceClass.RUNNING
+    assert infer_binary_device_class("compressor_demand") == BinarySensorDeviceClass.RUNNING
+
+
+def test_binary_value_is_on_rejects_none_and_passes_plain_bools() -> None:
+    register = SimpleNamespace()
+    assert binary_value_is_on(register, None) is False
+    assert binary_value_is_on(register, True) is True
+    assert binary_value_is_on(register, False) is False
+
+
+def test_library_metadata_import_fallback_without_the_api(monkeypatch: pytest.MonkeyPatch) -> None:
+    import importlib
+    import sys
+
+    monkeypatch.setitem(sys.modules, "idm_heatpump", None)
+    try:
+        reloaded = importlib.reload(binary_semantics)
+        assert reloaded._GET_LIBRARY_BINARY_METADATA is None
+    finally:
+        monkeypatch.undo()
+        importlib.reload(binary_semantics)

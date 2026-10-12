@@ -2,11 +2,19 @@
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass
+from datetime import timedelta
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump import polling_plan
+from custom_components.idm_heatpump.polling_plan import (
+    EntityAwarePollingManager,
+    ensure_entity_aware_polling,
+)
 
 
 @dataclass
@@ -196,3 +204,210 @@ def test_water_heater_dependencies_cover_the_navigator_17_sensor(
     # Absent from the 1.x map, so neither the always-required set nor the
     # entity dependency may resurrect it.
     assert "dhw_temp_top" not in required
+
+
+# ---------------------------------------------------------------------------
+# EntityAwarePollingManager: replan scheduling and early-out branches
+# ---------------------------------------------------------------------------
+
+
+class _PlanCoordinator:
+    """Stands in for IdmCoordinator with the surface the plan manager uses."""
+
+    def __init__(self, registers: list[RegisterDef]) -> None:
+        self._registers = list(registers)
+        self.alias_map: dict[int, list[str]] = {}
+        self.externally_required_registers: frozenset[str] = frozenset()
+        self.async_request_refresh = AsyncMock()
+        self.applied: list[frozenset[str]] = []
+
+    @property
+    def active_registers(self) -> tuple[RegisterDef, ...]:
+        return tuple(self._registers)
+
+    def set_active_registers(self, registers: list[RegisterDef], *, total: int) -> None:
+        self._registers = list(registers)
+        self.applied.append(frozenset(register.name for register in registers))
+
+
+def _patch_entity_registry(monkeypatch: pytest.MonkeyPatch, entries: list[_RegistryEntry]) -> None:
+    monkeypatch.setattr(polling_plan.er, "async_get", lambda hass: object())
+    monkeypatch.setattr(
+        polling_plan.er,
+        "async_entries_for_config_entry",
+        lambda registry, entry_id: entries,
+    )
+
+
+def _plan_manager(
+    monkeypatch: pytest.MonkeyPatch,
+    entries: list[_RegistryEntry],
+    registers: list[RegisterDef],
+    *,
+    debounce_seconds: float = 0.0,
+) -> tuple[EntityAwarePollingManager, _PlanCoordinator]:
+    _patch_entity_registry(monkeypatch, entries)
+    hass = MagicMock()
+    hass.async_create_task.side_effect = asyncio.ensure_future
+    coordinator = _PlanCoordinator(registers)
+    manager = EntityAwarePollingManager(
+        hass,
+        MagicMock(entry_id="entry"),
+        coordinator,
+        debounce_seconds=debounce_seconds,
+    )
+    return manager, coordinator
+
+
+async def test_registry_event_without_a_string_entity_id_is_ignored(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    manager, _coordinator = _plan_manager(monkeypatch, [], [])
+
+    manager._handle_registry_event(MagicMock(data={"entity_id": 123}))
+
+    assert manager._refresh_task is None
+    manager._hass.async_create_task.assert_not_called()
+
+
+async def test_schedule_replan_cancels_a_pending_debounce_and_rearms(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    entries = [_RegistryEntry("entry_hp_flow_temp")]
+    registers = [
+        RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),
+        RegisterDef(address=1050, datatype=DataType.FLOAT, name="hp_flow_temp"),
+        RegisterDef(address=1052, datatype=DataType.FLOAT, name="hp_return_temp"),
+    ]
+    manager, coordinator = _plan_manager(
+        monkeypatch,
+        entries,
+        registers,
+        debounce_seconds=0.05,
+    )
+
+    manager.schedule_replan()
+    first = manager._refresh_task
+    assert first is not None
+
+    manager.schedule_replan()  # cancels the queued debounce and re-arms it
+    second = manager._refresh_task
+    assert second is not None
+    assert second is not first
+
+    await asyncio.gather(first, second, return_exceptions=True)
+
+    assert first.cancelled()
+    # Only the surviving debounce applied a plan and asked for a refresh.
+    assert coordinator.applied == [{"outdoor_temp", "hp_flow_temp"}]
+    coordinator.async_request_refresh.assert_awaited_once()
+
+
+async def test_apply_plan_keeps_the_plan_when_nothing_is_selectable(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    entries = [_RegistryEntry("entry_hp_flow_temp")]
+    registers = [RegisterDef(address=1670, datatype=DataType.FLOAT, name="variable_input")]
+    manager, coordinator = _plan_manager(monkeypatch, entries, registers)
+
+    await manager._async_apply_plan(request_refresh=True)
+
+    # No always-required register is known and no entity demands one, so the
+    # plan stays untouched rather than polling an empty register set.
+    assert coordinator.applied == []
+    coordinator.async_request_refresh.assert_not_awaited()
+
+
+async def test_apply_plan_skips_the_update_when_the_selection_did_not_change(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    entries = [_RegistryEntry("entry_hp_flow_temp")]
+    registers = [
+        RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),
+        RegisterDef(address=1050, datatype=DataType.FLOAT, name="hp_flow_temp"),
+        RegisterDef(address=1052, datatype=DataType.FLOAT, name="hp_return_temp"),
+    ]
+    manager, coordinator = _plan_manager(monkeypatch, entries, registers)
+
+    await manager._async_apply_plan(request_refresh=True)
+    await manager._async_apply_plan(request_refresh=True)
+
+    # The second pass found the plan already in place and changed nothing.
+    assert coordinator.applied == [{"outdoor_temp", "hp_flow_temp"}]
+    coordinator.async_request_refresh.assert_awaited_once()
+
+
+# ---------------------------------------------------------------------------
+# ensure_entity_aware_polling: only a genuine coordinator gets a manager
+# ---------------------------------------------------------------------------
+
+
+def _real_coordinator(
+    mock_hass: MagicMock,
+    mock_config_entry: MagicMock,
+    registers: list[RegisterDef] | None = None,
+):
+    from custom_components.idm_heatpump.coordinator import IdmCoordinator
+
+    client = MagicMock()
+    client.read_batch = AsyncMock(return_value={})
+    client.write_register = AsyncMock()
+    coordinator = IdmCoordinator(
+        hass=mock_hass,
+        config_entry=mock_config_entry,
+        client=client,
+        scan_interval=timedelta(seconds=10),
+        sensor_descriptions=[],
+        binary_sensor_descriptions=[],
+        number_descriptions=[],
+        select_descriptions=[],
+        switch_descriptions=[],
+    )
+    if registers is not None:
+        coordinator._registers = list(registers)
+        coordinator._register_by_name = {register.name: register for register in registers}
+    return coordinator
+
+
+async def test_ensure_returns_none_without_a_config_entry(
+    mock_hass: MagicMock,
+    mock_config_entry: MagicMock,
+) -> None:
+    coordinator = _real_coordinator(mock_hass, mock_config_entry)
+    coordinator.config_entry = None
+
+    assert ensure_entity_aware_polling(coordinator) is None
+    assert coordinator.entity_aware_polling_manager is None
+
+
+async def test_ensure_returns_none_without_active_registers(
+    mock_hass: MagicMock,
+    mock_config_entry: MagicMock,
+) -> None:
+    coordinator = _real_coordinator(mock_hass, mock_config_entry)
+
+    assert ensure_entity_aware_polling(coordinator) is None
+    assert coordinator.entity_aware_polling_manager is None
+
+
+async def test_ensure_creates_exactly_one_manager_for_a_real_coordinator(
+    mock_hass: MagicMock,
+    mock_config_entry: MagicMock,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    _patch_entity_registry(monkeypatch, [])
+    mock_hass.async_create_task.side_effect = asyncio.ensure_future
+    coordinator = _real_coordinator(
+        mock_hass,
+        mock_config_entry,
+        [RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp")],
+    )
+
+    manager = ensure_entity_aware_polling(coordinator)
+    assert manager is not None
+    assert coordinator.entity_aware_polling_manager is manager
+
+    # The attached manager is reused rather than replaced.
+    assert ensure_entity_aware_polling(coordinator) is manager
+
+    await manager.async_shutdown()

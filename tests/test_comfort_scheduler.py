@@ -240,3 +240,16 @@ async def test_stop_waits_for_an_in_flight_write(monkeypatch: pytest.MonkeyPatch
         release.set()
         if stop_task is not None:
             await asyncio.gather(stop_task, return_exceptions=True)
+
+
+def test_more_than_sixteen_windows_are_rejected() -> None:
+    rows = "\n".join(f"a,{hour:02d}:00,{hour + 1:02d}:00,21" for hour in range(17))
+    with pytest.raises(ValueError, match="at most 16"):
+        module.parse_schedule_rows(rows, {"a"})
+
+
+def test_unparseable_time_or_target_is_rejected() -> None:
+    with pytest.raises(ValueError, match="invalid time or target"):
+        module.parse_schedule_rows("a,0x:00,09:00,21", {"a"})
+    with pytest.raises(ValueError, match="invalid time or target"):
+        module.parse_schedule_rows("a,06:00,09:00,warm", {"a"})
