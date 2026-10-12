@@ -188,6 +188,8 @@ class RoomTempForwarder:
         self._last_written: dict[str, float] = {}
         self._unsub_state: list[Callable[[], None]] = []
         self._pending_forward_tasks: dict[str, asyncio.Task[None]] = {}
+        self._forward_again: set[str] = set()
+        self._forward_lock = asyncio.Lock()
         self._debounce_seconds = 1.0
 
     async def async_run(self) -> None:
@@ -204,10 +206,12 @@ class RoomTempForwarder:
                 except Exception:
                     _LOGGER.exception("IDM %s forwarding cycle failed; retrying next interval", self._value_label)
         finally:
-            for task in self._pending_forward_tasks.values():
-                if not task.done():
-                    task.cancel()
+            tasks = list(self._pending_forward_tasks.values())
             self._pending_forward_tasks.clear()
+            for task in tasks:
+                task.cancel()
+            if tasks:
+                await asyncio.gather(*tasks, return_exceptions=True)
             for unsub in self._unsub_state:
                 unsub()
             self._unsub_state.clear()
@@ -225,29 +229,42 @@ class RoomTempForwarder:
         entity_id = event.data.get("entity_id")
         if not isinstance(entity_id, str):
             return
-        # Debounce noisy sensors: replace any pending forward for this entity
-        # so rapid updates collapse into one Modbus write.
         existing = self._pending_forward_tasks.get(entity_id)
         if existing is not None and not existing.done():
-            existing.cancel()
+            self._forward_again.add(entity_id)
+            return
 
         async def _debounced() -> None:
             try:
-                await asyncio.sleep(self._debounce_seconds)
-                await self.async_forward_entity(entity_id)
+                while True:
+                    # Coalesce bursts without cancelling an in-flight Modbus
+                    # request: cancelling a task that is already writing can
+                    # abort the FC16 transaction mid-flight and starve the
+                    # write (#493, same race #495 fixed for external power).
+                    # Events during a write schedule another pass that reads
+                    # the latest state.
+                    await asyncio.sleep(self._debounce_seconds)
+                    self._forward_again.discard(entity_id)
+                    await self.async_forward_entity(entity_id)
+                    if entity_id not in self._forward_again:
+                        break
             finally:
-                current = self._pending_forward_tasks.get(entity_id)
-                if current is not None and current.done():
+                if self._pending_forward_tasks.get(entity_id) is asyncio.current_task():
                     self._pending_forward_tasks.pop(entity_id, None)
 
         self._pending_forward_tasks[entity_id] = self._hass.async_create_task(_debounced())
 
     async def async_forward_all(self) -> None:
-        for entity_id in self._config.entities.values():
-            if entity_id:
-                await self.async_forward_entity(entity_id)
+        async with self._forward_lock:
+            for entity_id in self._config.entities.values():
+                if entity_id:
+                    await self._async_forward_entity_locked(entity_id)
 
     async def async_forward_entity(self, entity_id: str) -> None:
+        async with self._forward_lock:
+            await self._async_forward_entity_locked(entity_id)
+
+    async def _async_forward_entity_locked(self, entity_id: str) -> None:
         circuits = [circuit for circuit, source in self._config.entities.items() if source == entity_id]
         state = self._hass.states.get(entity_id)
         try:
@@ -362,6 +379,8 @@ class HumidityForwarder:
         self._last_written: float | None = None
         self._unsub_state: Callable[[], None] | None = None
         self._pending_forward_task: asyncio.Task[None] | None = None
+        self._forward_again = False
+        self._forward_lock = asyncio.Lock()
         self._debounce_seconds = 1.0
 
     async def async_run(self) -> None:
@@ -379,8 +398,9 @@ class HumidityForwarder:
                 except Exception:
                     _LOGGER.exception("IDM humidity forwarding cycle failed; retrying next interval")
         finally:
-            if self._pending_forward_task is not None and not self._pending_forward_task.done():
+            if self._pending_forward_task is not None:
                 self._pending_forward_task.cancel()
+                await asyncio.gather(self._pending_forward_task, return_exceptions=True)
             self._pending_forward_task = None
             if self._unsub_state is not None:
                 self._unsub_state()
@@ -400,19 +420,30 @@ class HumidityForwarder:
         if not isinstance(entity_id, str):
             return
         if self._pending_forward_task is not None and not self._pending_forward_task.done():
-            self._pending_forward_task.cancel()
+            self._forward_again = True
+            return
 
         async def _debounced() -> None:
             try:
-                await asyncio.sleep(self._debounce_seconds)
-                await self.async_forward()
+                while True:
+                    # Coalesce bursts without cancelling an in-flight Modbus
+                    # request (#493, same race #495 fixed for external power).
+                    await asyncio.sleep(self._debounce_seconds)
+                    self._forward_again = False
+                    await self.async_forward()
+                    if not self._forward_again:
+                        break
             finally:
-                if self._pending_forward_task is not None and self._pending_forward_task.done():
+                if self._pending_forward_task is asyncio.current_task():
                     self._pending_forward_task = None
 
         self._pending_forward_task = self._hass.async_create_task(_debounced())
 
     async def async_forward(self) -> None:
+        async with self._forward_lock:
+            await self._async_forward_locked()
+
+    async def _async_forward_locked(self) -> None:
         entity_id = self._config.entity_id
         if not entity_id:
             return
