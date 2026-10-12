@@ -5,6 +5,13 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.3-b3 — 2026-10-12
+
+Beta nach Prüfung und Ergänzung der Issue-Antworten; keine Funktionsänderungen
+gegenüber b2. Die bisherigen Beta-Fixes und die Navigator-1.7-Codes bleiben
+enthalten. Das Batterie-Anzeigeflackern (#493) bleibt bis zur Bestätigung auf
+der Firmware des Melders offen.
+
 ## v0.21.3-b2 — 2026-10-12
 
 Die SolarEdge-GLT-Einrichtung enthält einen Template-Generator mit ausdrücklich
