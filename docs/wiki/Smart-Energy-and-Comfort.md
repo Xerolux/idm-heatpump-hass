@@ -92,8 +92,10 @@ controller values and does not change entity IDs.
 
 The **automatic PV surplus DHW charging** option is disabled by default. It
 uses the selected external power sensors and only starts the existing
-transactional DHW boost. Normal heating, the heating curve and the electric
-heater are not changed.
+transactional DHW boost with a temporary DHW setpoint only. The automatic
+boost leaves the system mode unchanged, so room heating remains available.
+The manual boost still selects hot-water-only mode. Neither path changes the
+heating curve or the electric heater settings.
 
 Requirements:
 
@@ -114,7 +116,7 @@ DHW target, maximum duration and cooldown are configurable.
 | Minimum battery SOC, when a sensor is selected | 20% | Advanced / Expert |
 | DHW target | 55 °C | Advanced / Expert |
 | Maximum boost duration | 90 minutes | Expert |
-| Time between automatic starts | 60 minutes | Expert |
+| Cooldown after automatic boost completion | 60 minutes | Expert |
 
 Select the sensors in the external power mapping; the mapping is shared, but
 writing those values into GLT registers is separately enabled. Power sources
@@ -140,10 +142,38 @@ before changing a setup that already has an external energy controller.
 The manager evaluates about every 30 seconds. Its surplus and SOC checks gate
 the **start** of a boost. A later drop in surplus or SOC does not automatically
 cancel a boost that is already running; the boost's target, timeout and restore
-rules still apply. The cooldown starts at the last successful automatic start.
+rules still apply. An automatic boost starts only in Automatic or Hot-water-only
+mode, with a successful controller update and a finite DHW temperature at least
+5 °C below its target. This fixed reheat hysteresis avoids topping up every
+small temperature drop. The full configured cooldown starts when the manager
+observes boost completion, cancellation or timeout, even if there is no sun.
+Its reservation is persisted before device writes. Reloads and restarts keep
+the guard; after recovering an interrupted boost, a full cooldown starts at
+the first evaluation. Failed or no-op starts also retain this conservative
+guard. The required DHW and mode registers stay polled even with disabled raw
+entities.
 The exclusive-control checkbox declares ownership; it cannot discover or stop
 another controller for you. A transient evaluation error is logged and the
 next evaluation is retried.
+
+### Controller PV charging and heating-buffer cycles
+
+External power forwarding is independent of the DHW automation. It mirrors
+selected measurements, including signed `pv_surplus`, to the Navigator. These
+inputs can activate the **controller's own PV charging of DHW and the heating
+buffer**, according to its PV thresholds, storage limits and hysteresis. The
+DHW automation cooldown does not inhibit that controller logic. Forwarding
+never writes system mode, heating-buffer targets, heating curves or SG-Ready.
+
+Use a net-surplus source with **positive values for export/surplus** and negative
+values for grid import; check the inverter sensor's sign convention. Forwarding
+preserves its sign and does not convert grid import into surplus. Prefer one
+owner for PV charging: the Navigator using forwarded measurements, or the HA
+DHW automation using the source mapping with forwarding disabled. Selecting
+both is not a shared anti-cycle controller. Review the Navigator's PV heating
+buffer settings if the buffer repeatedly charges near its upper limit. The
+integration cannot guarantee that DHW and buffer charging use one compressor
+cycle; the Navigator owns their sequencing and normal heating demand.
 
 The manager does not control the heating curve or the electric heater. The
 optional tariff sensor affects cost accounting only; tariff-controlled heat

@@ -621,3 +621,59 @@ async def test_enforcement_still_reports_a_real_refusal():
 
     assert manager.status == "enforcement_failed"
     manager._async_save.assert_awaited()
+
+
+@pytest.mark.parametrize("reason", ["target", "cancel", "timeout", "unload"])
+async def test_automatic_boost_never_writes_system_mode(monkeypatch, reason):
+    manager, coordinator, store = await _manager(monkeypatch)
+    await manager.async_start(target_temperature=60, timeout_minutes=30, preserve_system_mode=True)
+    assert coordinator.data["system_mode"] == 1
+    assert store.saved[-1]["preserve_system_mode"] is True
+    assert manager.state_attributes["priority"] == "dhw_setpoint_only_until_end_or_cancel"
+    # Even an external mode change during the boost belongs to the controller.
+    coordinator.data["system_mode"] = 2
+    coordinator.data["dhw_setpoint"] = 48
+    await manager._async_evaluate()
+    assert coordinator.data["dhw_setpoint"] == 60
+    assert coordinator.data["system_mode"] == 2
+    if reason == "target":
+        coordinator.data["dhw_temp_top"] = 60
+        await manager._async_evaluate()
+    elif reason == "cancel":
+        await manager.async_cancel()
+    elif reason == "timeout":
+        manager.deadline = datetime.now(UTC) - timedelta(seconds=1)
+        await manager._async_evaluate()
+    else:
+        await manager.async_shutdown()
+    assert not manager.active
+    assert coordinator.data["dhw_setpoint"] == 48
+    assert coordinator.data["system_mode"] == 2
+    assert not any(event[:2] == ("write", "system_mode") for event in coordinator.events)
+    await manager.async_shutdown()
+
+
+async def test_automatic_boost_restart_restores_only_setpoint(monkeypatch):
+    loaded = {
+        "active": True,
+        "preserve_system_mode": True,
+        "previous_mode": 4,
+        "previous_setpoint": 48,
+        "target_temperature": 60,
+        "timeout_minutes": 30,
+    }
+    manager, coordinator, _store = await _manager(monkeypatch, loaded=loaded)
+    assert not manager.active
+    assert coordinator.data["system_mode"] == 1
+    assert not any(event[:2] == ("write", "system_mode") for event in coordinator.events)
+    await manager.async_shutdown()
+
+
+async def test_automatic_boost_start_failure_never_restores_system_mode(monkeypatch):
+    manager, coordinator, _store = await _manager(monkeypatch)
+    coordinator.fail_write_name = "dhw_setpoint"
+    coordinator.fail_write_once = True
+    with pytest.raises(DhwBoostError):
+        await manager.async_start(target_temperature=60, timeout_minutes=30, preserve_system_mode=True)
+    assert not any(event[:2] == ("write", "system_mode") for event in coordinator.events)
+    await manager.async_shutdown()

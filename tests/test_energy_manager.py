@@ -20,10 +20,19 @@ def _hass(states: dict[str, SimpleNamespace]):
     return SimpleNamespace(states=SimpleNamespace(get=states.get))
 
 
+def _coordinator():
+    return SimpleNamespace(
+        config_entry=SimpleNamespace(entry_id="test"),
+        data={"dhw_temp_top": 45.0, "dhw_setpoint": 48, "system_mode": 1},
+        last_update_success=True,
+        register_required_registers=lambda *_: lambda: None,
+    )
+
+
 async def test_surplus_is_derived_from_production_and_consumption():
     manager = module.EnergyManager(
         _hass({"sensor.pv": _state(4), "sensor.house": _state(1)}),
-        object(),
+        _coordinator(),
         module.EnergyManagerConfig(
             sources={"pv_production": "sensor.pv", "house_consumption": "sensor.house"},
             minimum_surplus_kw=2,
@@ -37,7 +46,7 @@ async def test_surplus_is_derived_from_production_and_consumption():
 async def test_invalid_or_missing_power_source_fails_closed():
     manager = module.EnergyManager(
         _hass({"sensor.pv": _state("unknown")}),
-        object(),
+        _coordinator(),
         module.EnergyManagerConfig(sources={"pv_production": "sensor.pv"}),
     )
 
@@ -48,7 +57,7 @@ async def test_invalid_or_missing_power_source_fails_closed():
 async def test_configured_surplus_failure_does_not_fall_back_to_gross_production():
     manager = module.EnergyManager(
         _hass({"sensor.net": _state("unavailable"), "sensor.pv": _state(5), "sensor.house": _state(1)}),
-        object(),
+        _coordinator(),
         module.EnergyManagerConfig(
             sources={"pv_surplus": "sensor.net", "pv_production": "sensor.pv", "house_consumption": "sensor.house"}
         ),
@@ -60,7 +69,7 @@ async def test_configured_surplus_failure_does_not_fall_back_to_gross_production
 async def test_negative_production_or_consumption_cannot_trigger_boost(pv, house):
     manager = module.EnergyManager(
         _hass({"sensor.pv": _state(pv), "sensor.house": _state(house)}),
-        object(),
+        _coordinator(),
         module.EnergyManagerConfig(sources={"pv_production": "sensor.pv", "house_consumption": "sensor.house"}),
     )
     assert manager._surplus_kw() is None
@@ -70,7 +79,7 @@ async def test_negative_production_or_consumption_cannot_trigger_boost(pv, house
 async def test_periodic_task_survives_transient_evaluation_failure(monkeypatch):
     hass = _hass({})
     hass.async_create_task = asyncio.create_task
-    manager = module.EnergyManager(hass, object(), module.EnergyManagerConfig(sources={}))
+    manager = module.EnergyManager(hass, _coordinator(), module.EnergyManagerConfig(sources={}))
     recovered = asyncio.Event()
 
     async def evaluate():
@@ -96,11 +105,16 @@ async def test_periodic_task_survives_transient_evaluation_failure(monkeypatch):
 
 
 async def test_ready_starts_existing_transactional_boost(monkeypatch):
-    boost = SimpleNamespace(active=False, async_start=AsyncMock())
+    boost = SimpleNamespace(active=False)
+
+    async def activate(**_kwargs):
+        boost.active = True
+
+    boost.async_start = AsyncMock(side_effect=activate)
     monkeypatch.setattr(module, "async_get_dhw_boost_manager", AsyncMock(return_value=boost))
     manager = module.EnergyManager(
         _hass({"sensor.surplus": _state(3), "sensor.soc": _state(80, "%")}),
-        object(),
+        _coordinator(),
         module.EnergyManagerConfig(
             sources={"pv_surplus": "sensor.surplus", "battery_soc": "sensor.soc"},
             minimum_surplus_kw=2,
@@ -111,7 +125,7 @@ async def test_ready_starts_existing_transactional_boost(monkeypatch):
     )
 
     assert await manager.async_evaluate_once() is True
-    boost.async_start.assert_awaited_once_with(target_temperature=57, timeout_minutes=45)
+    boost.async_start.assert_awaited_once_with(target_temperature=57, timeout_minutes=45, preserve_system_mode=True)
     assert await manager.async_evaluate_once() is False
     boost.async_start.assert_awaited_once()
 
@@ -121,7 +135,7 @@ async def test_battery_below_threshold_does_not_write(monkeypatch):
     monkeypatch.setattr(module, "async_get_dhw_boost_manager", get_manager)
     manager = module.EnergyManager(
         _hass({"sensor.surplus": _state(3), "sensor.soc": _state(10, "%")}),
-        object(),
+        _coordinator(),
         module.EnergyManagerConfig(
             sources={"pv_surplus": "sensor.surplus", "battery_soc": "sensor.soc"},
             minimum_surplus_kw=2,
@@ -130,7 +144,7 @@ async def test_battery_below_threshold_does_not_write(monkeypatch):
     )
 
     assert await manager.async_evaluate_once() is False
-    get_manager.assert_not_awaited()
+    get_manager.return_value.async_start.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -142,11 +156,11 @@ async def test_insufficient_or_invalid_surplus_never_requests_boost(monkeypatch,
     monkeypatch.setattr(module, "async_get_dhw_boost_manager", get_manager)
     manager = module.EnergyManager(
         _hass({"sensor.surplus": _state(value, unit)}),
-        object(),
+        _coordinator(),
         module.EnergyManagerConfig(sources={"pv_surplus": "sensor.surplus"}, minimum_surplus_kw=2),
     )
     assert await manager.async_evaluate_once() is False
-    get_manager.assert_not_awaited()
+    get_manager.return_value.async_start.assert_not_called()
 
 
 async def test_existing_boost_and_boost_error_fail_closed(monkeypatch):
@@ -154,7 +168,7 @@ async def test_existing_boost_and_boost_error_fail_closed(monkeypatch):
     monkeypatch.setattr(module, "async_get_dhw_boost_manager", AsyncMock(return_value=boost))
     manager = module.EnergyManager(
         _hass({"sensor.surplus": _state(3)}),
-        object(),
+        _coordinator(),
         module.EnergyManagerConfig(sources={"pv_surplus": "sensor.surplus"}),
     )
     assert await manager.async_evaluate_once() is False
@@ -177,7 +191,7 @@ async def test_power_and_soc_units_fail_closed() -> None:
 async def test_periodic_task_starts_once_and_stops() -> None:
     hass = _hass({})
     hass.async_create_task = asyncio.create_task
-    manager = module.EnergyManager(hass, object(), module.EnergyManagerConfig(sources={}))
+    manager = module.EnergyManager(hass, _coordinator(), module.EnergyManagerConfig(sources={}))
     manager.async_evaluate_once = AsyncMock(return_value=False)
     first = manager.start()
     assert manager.start() is first
@@ -186,3 +200,139 @@ async def test_periodic_task_starts_once_and_stops() -> None:
     await manager.async_stop()
     assert manager._task is None
     await manager.async_stop()
+
+
+async def _automatic_manager(monkeypatch, **config):
+    boost = SimpleNamespace(active=False)
+
+    async def activate(**_kwargs):
+        boost.active = True
+
+    boost.async_start = AsyncMock(side_effect=activate)
+    monkeypatch.setattr(module, "async_get_dhw_boost_manager", AsyncMock(return_value=boost))
+    manager = module.EnergyManager(
+        _hass({"sensor.surplus": _state(3)}),
+        _coordinator(),
+        module.EnergyManagerConfig(sources={"pv_surplus": "sensor.surplus"}, **config),
+    )
+    return manager, boost
+
+
+@pytest.mark.parametrize("temperature", [50.01, 54.9, 55, None, float("nan"), float("inf"), True])
+async def test_small_temperature_drops_and_invalid_samples_never_restart(monkeypatch, temperature):
+    manager, boost = await _automatic_manager(monkeypatch)
+    manager._coordinator.data["dhw_temp_top"] = temperature
+    assert await manager.async_evaluate_once() is False
+    boost.async_start.assert_not_awaited()
+
+
+@pytest.mark.parametrize("mode", [0, 2, 3, 5, None])
+async def test_automatic_boost_respects_modes_without_normal_dhw(monkeypatch, mode):
+    manager, boost = await _automatic_manager(monkeypatch)
+    manager._coordinator.data["system_mode"] = mode
+    assert await manager.async_evaluate_once() is False
+    boost.async_start.assert_not_awaited()
+
+
+async def test_failed_poll_never_starts_from_cached_temperature(monkeypatch):
+    manager, boost = await _automatic_manager(monkeypatch)
+    manager._coordinator.last_update_success = False
+    assert await manager.async_evaluate_once() is False
+    boost.async_start.assert_not_awaited()
+
+
+async def test_full_cooldown_after_long_boost_even_without_sun(monkeypatch):
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime(2026, 10, 12, tzinfo=UTC)
+    monkeypatch.setattr(module, "_utcnow", lambda: now)
+    manager, boost = await _automatic_manager(monkeypatch)
+    manager._coordinator.data["dhw_temp_top"] = 50
+    assert await manager.async_evaluate_once() is True
+    now += timedelta(minutes=90)
+    boost.active = False
+    manager._hass.states.get = lambda _: _state(0)
+    assert await manager.async_evaluate_once() is False
+    manager._hass.states.get = lambda _: _state(3)
+    now += timedelta(minutes=59)
+    assert await manager.async_evaluate_once() is False
+    now += timedelta(minutes=1)
+    assert await manager.async_evaluate_once() is True
+    assert boost.async_start.await_count == 2
+
+
+async def test_restart_retains_pending_boost_and_completed_cooldown(monkeypatch):
+    from datetime import UTC, datetime, timedelta
+
+    now = datetime(2026, 10, 12, tzinfo=UTC)
+    monkeypatch.setattr(module, "_utcnow", lambda: now)
+    manager, _boost = await _automatic_manager(monkeypatch)
+    assert await manager.async_evaluate_once() is True
+    snapshot = manager._store.data.copy()
+    restarted, _boost = await _automatic_manager(monkeypatch)
+    restarted._store.data = snapshot
+    assert await restarted.async_evaluate_once() is False
+    assert restarted._store.data["waiting_for_end"] is False
+    again, _boost = await _automatic_manager(monkeypatch)
+    again._store.data = restarted._store.data.copy()
+    now += timedelta(minutes=59)
+    assert await again.async_evaluate_once() is False
+    now += timedelta(minutes=1)
+    assert await again.async_evaluate_once() is True
+
+
+async def test_storage_failure_prevents_device_action(monkeypatch):
+    manager, boost = await _automatic_manager(monkeypatch)
+    manager._store.async_save = AsyncMock(side_effect=OSError("disk full"))
+    with pytest.raises(OSError):
+        await manager.async_evaluate_once()
+    boost.async_start.assert_not_awaited()
+
+
+async def test_noop_start_is_not_reported_as_success(monkeypatch):
+    manager, boost = await _automatic_manager(monkeypatch)
+    boost.async_start.side_effect = None
+    assert await manager.async_evaluate_once() is False
+
+
+async def test_register_demand_survives_disabled_raw_entities_and_is_released():
+    from unittest.mock import MagicMock
+
+    hass = _hass({})
+    hass.async_create_task = asyncio.create_task
+    coordinator = _coordinator()
+    release = MagicMock()
+    coordinator.register_required_registers = MagicMock(return_value=release)
+    manager = module.EnergyManager(hass, coordinator, module.EnergyManagerConfig(sources={}))
+    manager.async_evaluate_once = AsyncMock(return_value=False)
+    manager.start()
+    manager.start()
+    coordinator.register_required_registers.assert_called_once_with(
+        "energy_manager", {"dhw_temp_top", "dhw_setpoint", "system_mode"}
+    )
+    await manager.async_stop()
+    release.assert_called_once()
+
+
+async def test_storage_load_failure_never_requests_boost(monkeypatch):
+    manager, boost = await _automatic_manager(monkeypatch)
+    manager._store.async_load = AsyncMock(side_effect=OSError("storage unavailable"))
+    with pytest.raises(OSError):
+        await manager.async_evaluate_once()
+    boost.async_start.assert_not_awaited()
+    assert not manager._loaded
+
+
+async def test_concurrent_evaluations_start_only_one_boost(monkeypatch):
+    manager, boost = await _automatic_manager(monkeypatch)
+    assert await asyncio.gather(manager.async_evaluate_once(), manager.async_evaluate_once()) == [True, False]
+    boost.async_start.assert_awaited_once()
+
+
+async def test_pending_boost_waits_for_recovery_before_cooldown(monkeypatch):
+    manager, boost = await _automatic_manager(monkeypatch)
+    manager._store.data = {"waiting_for_end": True}
+    boost.active = True
+    assert await manager.async_evaluate_once() is False
+    assert manager._blocked_until is None
+    boost.async_start.assert_not_awaited()

@@ -103,8 +103,10 @@ Wärmepumpe auf die Reglerwerte fokussiert und ändert keine Entitäts-IDs.
 Die Option **Automatisches PV-Überschuss-Warmwasser-Laden** ist
 standardmäßig deaktiviert. Sie nutzt die ausgewählten externen
 Leistungssensoren und startet nur den bestehenden transaktionalen
-Warmwasser-Boost. Normales Heizen, die Heizkurve und die elektrische
-Zusatzheizung werden nicht verändert.
+Warmwasser-Boost mit einem vorübergehend erhöhten Warmwasser-Sollwert. Der
+automatische Boost lässt die Betriebsart unverändert, sodass die Raumheizung
+verfügbar bleibt. Der manuelle Boost schaltet weiterhin auf nur Warmwasser.
+Heizkurve und Einstellungen der Zusatzheizung werden nicht verändert.
 
 Voraussetzungen:
 
@@ -127,7 +129,7 @@ Warmwasser-Ziel, maximale Dauer und Cooldown sind konfigurierbar.
 | Minimaler Batterie-SOC, wenn ein Sensor ausgewählt ist | 20 % | Erweitert / Experte |
 | Warmwasser-Ziel | 55 °C | Erweitert / Experte |
 | Maximale Boost-Dauer | 90 Minuten | Experte |
-| Zeit zwischen automatischen Starts | 60 Minuten | Experte |
+| Sperrzeit nach Ende des automatischen Boosts | 60 Minuten | Experte |
 
 Wähle die Sensoren in der externen Leistungszuordnung aus; die Zuordnung ist
 gemeinsam, aber das Schreiben dieser Werte in GLT-Register wird separat
@@ -157,10 +159,40 @@ Der Manager wertet etwa alle 30 Sekunden aus. Seine Überschuss- und
 SOC-Prüfungen steuern den **Start** eines Boosts. Ein späterer Abfall von
 Überschuss oder SOC bricht einen bereits laufenden Boost nicht automatisch
 ab; Ziel, Timeout und Wiederherstellungsregeln des Boosts gelten weiterhin.
-Der Cooldown beginnt beim letzten erfolgreichen automatischen Start. Die
+Ein automatischer Boost startet nur im Automatik- oder Nur-Warmwasser-Modus,
+nach erfolgreicher Reglerabfrage und mit gültiger Warmwassertemperatur mindestens
+5 °C unter seinem Ziel. Diese feste Nachladehysterese verhindert Nachladen bei
+kleinen Temperaturabfällen. Die volle Sperrzeit beginnt, wenn der Manager das
+Ende, den Abbruch oder das Zeitlimit erkennt, auch ohne Sonne. Die Reservierung
+wird vor dem ersten Schreibzugriff gespeichert. Reloads und Neustarts erhalten
+den Schutz; nach Wiederherstellung eines unterbrochenen Boosts beginnt bei der
+ersten Auswertung eine volle Sperrzeit. Auch fehlgeschlagene Starts und Starts
+ohne tatsächlich aktivierten Boost behalten diesen vorsichtigen Schutz.
+Benötigte Warmwasser- und Betriebsartregister bleiben auch bei deaktivierten
+Rohentitäten in der Abfrage. Die
 Checkbox zur exklusiven Steuerung erklärt die Eigentümerschaft; sie kann
 einen anderen Regler weder finden noch stoppen. Ein vorübergehender
 Auswertungsfehler wird geloggt und die nächste Auswertung erneut versucht.
+
+### PV-Ladung des Reglers und Heizpufferzyklen
+
+Die externe Leistungsweiterleitung ist unabhängig vom Warmwasserautomaten.
+Sie übergibt ausgewählte Messwerte einschließlich des vorzeichenbehafteten
+`pv_surplus` an den Navigator. Damit kann dessen **eigene PV-Ladung von
+Warmwasser und Heizpuffer** entsprechend seinen PV-Schwellen, Speichergrenzen
+und seiner Hysterese aktiv werden. Die Sperrzeit des Warmwasserautomaten
+blockiert diese Reglerlogik nicht. Die Weiterleitung schreibt keine Betriebsart,
+Heizpufferziele, Heizkurven oder SG-Ready-Werte.
+
+Der Nettoüberschuss muss **bei Einspeisung positiv** und bei Netzbezug negativ
+sein; prüfe die Vorzeichenkonvention des Wechselrichtersensors. Die Weiterleitung
+erhält das Vorzeichen. Wähle möglichst einen Verantwortlichen für die PV-Ladung:
+den Navigator mit weitergeleiteten Messwerten oder den HA-Warmwasserautomaten
+mit vorhandener Quellzuordnung und deaktivierter Weiterleitung. Beide zusammen
+bilden keinen gemeinsamen Taktschutz. Lädt der Heizpuffer wiederholt nahe seiner
+Obergrenze, prüfe die PV-Heizpuffereinstellungen im Navigator. Die Integration
+kann keinen gemeinsamen Verdichterzyklus für Warmwasser und Puffer garantieren;
+der Navigator bestimmt Reihenfolge und normalen Heizbedarf.
 
 Der Manager steuert weder die Heizkurve noch die elektrische Zusatzheizung.
 Der optionale Tarifsensor beeinflusst nur die Kostenrechnung;
