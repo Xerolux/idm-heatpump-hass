@@ -226,3 +226,80 @@ class TestIonEntity:
         attributes = entity.extra_state_attributes
         assert attributes["enabled_setting_id"] == "CE001"
         assert attributes["subscription_status"] == -1
+
+
+def _sensor_by_key(coordinator: MagicMock, key: str):
+    return next(s for s in web_system_sensor_entities(coordinator) if s.entity_description.key == key)
+
+
+def _binary_by_key(coordinator: MagicMock, key: str):
+    return next(b for b in web_system_binary_entities(coordinator) if b.entity_description.key == key)
+
+
+class TestAbsentFrames:
+    def test_frames_are_absent_once_the_supplement_disappears(self) -> None:
+        coordinator = _coordinator(_supplement())
+        sensors = web_system_sensor_entities(coordinator)
+        binaries = web_system_binary_entities(coordinator)
+        coordinator.web_supplement = None
+
+        assert all(sensor.available is False for sensor in sensors)
+        assert all(sensor.native_value is None for sensor in sensors)
+        assert all(sensor.extra_state_attributes == {} for sensor in sensors)
+        assert all(entity.available is False for entity in binaries)
+        assert all(entity.is_on is None for entity in binaries)
+
+    def test_performance_attributes_empty_before_the_frame_lands(self) -> None:
+        coordinator = _coordinator(IdmWebSupplement(web_variant="nav10"))
+
+        consumption = _sensor_by_key(coordinator, "web_hp_power_consumption")
+        environment = _sensor_by_key(coordinator, "web_hp_power_environment")
+        heating_rod = _binary_by_key(coordinator, "web_hp_heating_rod")
+
+        assert consumption.extra_state_attributes == {}
+        assert environment.extra_state_attributes == {}
+        assert heating_rod.is_on is None
+
+    def test_energyflow_attributes_empty_before_the_frame_lands(self) -> None:
+        coordinator = _coordinator(IdmWebSupplement(web_variant="nav10"))
+
+        assert _sensor_by_key(coordinator, "web_energyflow_grid").extra_state_attributes == {}
+        assert _sensor_by_key(coordinator, "web_energyflow_pv").extra_state_attributes == {}
+
+    def test_weather_attributes_empty_before_the_frame_lands(self) -> None:
+        coordinator = _coordinator(IdmWebSupplement(web_variant="nav10"))
+
+        assert _sensor_by_key(coordinator, "web_weather_forecast").extra_state_attributes == {}
+
+    def test_ion_attributes_empty_before_the_frame_lands(self) -> None:
+        coordinator = _coordinator(IdmWebSupplement(web_variant="nav10"))
+
+        assert _binary_by_key(coordinator, "web_ion_active").extra_state_attributes == {}
+
+    def test_pv_sensor_exposes_the_frame_attributes(self, nav10_coordinator) -> None:
+        pv_sensor = _sensor_by_key(nav10_coordinator, "web_energyflow_pv")
+
+        assert pv_sensor.extra_state_attributes == {"signal": 16, "type": 4}
+
+
+class TestEnergyflowDevicePlacement:
+    def test_energyflow_sensors_fall_back_to_the_main_device(self) -> None:
+        coordinator = _coordinator(_supplement())
+        main_info = {"identifiers": {("idm_heatpump", "test_entry")}}
+        coordinator.device_info = MagicMock(return_value=main_info)
+
+        assert _sensor_by_key(coordinator, "web_energyflow_grid").device_info is main_info
+        assert _sensor_by_key(coordinator, "web_energyflow_pv").device_info is main_info
+
+    def test_energyflow_sensors_move_to_the_pv_subdevice_when_hierarchy_is_on(self) -> None:
+        coordinator = _coordinator(_supplement())
+        coordinator.device_hierarchy_enabled = True
+        coordinator.hierarchy_device_ids = {}
+
+        grid_info = _sensor_by_key(coordinator, "web_energyflow_grid").device_info
+        pv_info = _sensor_by_key(coordinator, "web_energyflow_pv").device_info
+
+        assert grid_info["name"] == "Photovoltaik"
+        assert grid_info["model"] == "PV & Energie"
+        assert grid_info["identifiers"] == {("idm_heatpump", "test_entry_module_pv")}
+        assert pv_info["identifiers"] == {("idm_heatpump", "test_entry_module_pv")}
