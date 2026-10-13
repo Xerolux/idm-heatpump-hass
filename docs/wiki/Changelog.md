@@ -7,53 +7,15 @@ This page only summarizes recent milestones.
 
 ## v0.22.0-b1 — 2026-10-13
 
-Opens the 0.22 line: read-only Home Assistant room-temperature sources for
-the predictive advisor (circuits without a wired sensor, #504), a connected
-nav20 web client now corrects a Navigator-10 misdetection, and forwarder
-connection outages are reported once instead of per refresh pass.
-
-## v0.21.3-b6 — 2026-10-13
-
-The predictive advisor ignores implausible room temperatures (-327.33 from
-circuits without a wired sensor, #504): the plausibility range now guards the
-engine reads, polluted baselines and the capability flag.
-
-## v0.21.3-b5 — 2026-10-13
-
-The #493 root cause is fixed: GLT RAM inputs are refreshed every 5 s because
-some Navigator firmwares clear them ~10 s after the last write; the energy
-manager and comfort schedule no longer hold up Home Assistant's startup.
-Awaiting the reporter's confirmation.
-
-## v0.21.3-b4 — 2026-10-12
-
-Forwarding hardening round from the #493 self-audit: every successful GLT
-write is now visible in debug logs, room temperature and humidity forwarding
-no longer cancels in-flight writes on sensor bursts, the comfort schedule and
-energy manager finish an in-flight write before stopping, and a deferred
-web-session release stays referenced and reports failures. Battery display
-flicker (#493) remains open pending reporter-firmware confirmation.
-
-## v0.21.3-b3 — 2026-10-12
-
-Issue-response audit checkpoint; no functional changes from b2. All earlier
-0.21.3 beta fixes and the Navigator 1.7 code support remain included. Battery
-display flicker (#493) remains open pending reporter-firmware confirmation.
-
-## v0.21.3-b2 — 2026-10-12
-
-SolarEdge GLT setup now includes a reviewed-source template generator and
-English/German failure-handling guidance. Modbus proxy/connection failures have
-their own write-repair explanation. A successful write to the same register
-clears its persisted warning without hiding a different register's failure.
-
-## v0.21.3-b1 — 2026-10-12
-
-External power forwarding no longer cancels an active Modbus batch when another
-sensor changes. Bursts are coalesced with a bounded initial delay, overlapping
-periodic/event batches are serialized, and unloading awaits the event task.
-Regression tests cover these races. The separate battery-display report #493
-remains under investigation on the reporter's firmware.
+Opens the 0.22 line and absorbs the never-promoted 0.21.3 beta line
+(everything since 0.21.2). GLT RAM inputs are refreshed every 5 s because
+some controllers clear them ~10 s after the last write (#493); the advisor
+ignores implausible room temperatures and gains read-only Home Assistant
+room-temperature sources for circuits without a wired sensor (#504); a
+connected nav20 web client corrects Navigator-10 misdetections; sensor
+bursts never cancel in-flight writes; and connection outages are reported
+once instead of per refresh pass. Includes the SolarEdge GLT setup guide
+and clearer write-failure repairs.
 
 ## v0.21.2 — 2026-10-12
 
