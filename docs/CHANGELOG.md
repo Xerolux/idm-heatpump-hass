@@ -15,6 +15,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.22.0-b1] - 2026-10-13
+
+### Added
+
+- The predictive advisor accepts one read-only Home Assistant temperature sensor per heating circuit as its room-temperature source (options step "Advisor room temperature sources", English and German). For circuits without a wired room sensor — which report uninitialized memory on the `hc_x_room_temp` register (#504) — the mapped sensor feeds the advisor's models, data quality and capability detection under the same 0-50 °C plausibility range; an unavailable source counts as an unavailable sample and never falls back to the register garbage. Nothing is written to the heat pump.
+
+### Fixed
+
+- A connected nav20 web client corrects a Navigator model misdetected as Navigator 10, mirroring the long-standing nav10 correction: the web variant that actually connected is definitive in both directions (observed on a Navigator 2.0 reporting m_20.23 firmware, #504 follow-up). Previously such plants kept the wrong model and a recurring web-variant-conflict warning.
+- The external power, room temperature and humidity forwarders report a Modbus connection outage once per outage instead of on every refresh pass, and return to normal logging after the next successful write (warning spam observed at the GLT refresh cadence during a proxy outage).
+
 ## [0.21.3-b6] - 2026-10-13
 
 ### Fixed
