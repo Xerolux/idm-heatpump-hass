@@ -5,6 +5,12 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.3-b6 — 2026-10-13
+
+Der Predictive Advisor ignoriert unplausible Raumtemperaturen (-327,33 bei
+Heizkreisen ohne Raumfühler, #504): Der Plausibilitätsbereich schützt jetzt
+die Engine-Lesungen, verschmutzte Baselines und die Capability-Meldung.
+
 ## v0.21.3-b5 — 2026-10-13
 
 Die Ursache von #493 ist behoben: GLT-RAM-Werte werden alle 5 s erneuert, da

@@ -15,6 +15,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.3-b6] - 2026-10-13
+
+### Fixed
+
+- The predictive advisor treats implausible room temperatures as missing. A circuit without a wired room sensor reports uninitialized memory (observed as -327.33 on a Navigator 2.0, #504); the value is finite, so the engine's numeric guard accepted it and silently fed the heat-loss regression, the heat-demand plan and the room-deviation metric with deltas around -339 K, while the advisor's own quality tracker correctly reported 0 percent usable. Every engine room-temperature read now applies the advisor's plausibility range (0-50 C), room-deviation baselines beyond the plausible span are skipped so storage polluted before this fix cannot produce curve recommendations, and capabilities.room_temperature is only reported for range-valid readings.
+
 ## [0.21.3-b5] - 2026-10-13
 
 ### Fixed
