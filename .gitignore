@@ -1,5 +1,7 @@
 __pycache__/
-.coverage
+# Coverage data files, including the per-agent suffixed variants
+# parallel test runs write next to the default one
+.coverage*
 htmlcov/
 .pytest_cache/
 
