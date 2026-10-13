@@ -8,7 +8,7 @@ import math
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.const import ATTR_UNIT_OF_MEASUREMENT, PERCENTAGE
 from homeassistant.core import HomeAssistant
@@ -24,6 +24,22 @@ _REHEAT_HYSTERESIS_C = 5.0
 
 def _utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+def _spawn_background_task(hass: HomeAssistant, coro: Any, *, name: str) -> asyncio.Task[None]:
+    """Create a loop task Home Assistant's startup does not wait for.
+
+    The ``type()`` lookup keeps MagicMock-based unit tests on the real
+    ``asyncio.create_task`` fallback (same pattern as
+    ``_create_entry_background_task`` in ``__init__.py``).
+    """
+    background = getattr(type(hass), "async_create_background_task", None)
+    if callable(background):
+        return cast("asyncio.Task[None]", background(hass, coro, name=name))
+    create_task = getattr(hass, "async_create_task", None)
+    if callable(create_task):
+        return cast("asyncio.Task[None]", create_task(coro))
+    return asyncio.create_task(coro)
 
 
 @dataclass(frozen=True)
@@ -100,13 +116,20 @@ class EnergyManager:
         self._task: asyncio.Task[None] | None = None
 
     def start(self) -> asyncio.Task[None]:
-        """Start the periodic evaluation loop."""
+        """Start the periodic evaluation loop as a background task.
+
+        A foreground ``hass.async_create_task`` loop never finishes, so Home
+        Assistant's startup wrap-up waits on it and logs a bootstrap timeout
+        (#493 reporter log). Background tasks are exempt from that wait.
+        """
         if self._task is None or self._task.done():
             if self._release_demand is None:
                 self._release_demand = self._coordinator.register_required_registers(
                     "energy_manager", {"dhw_temp_top", "dhw_setpoint", "system_mode"}
                 )
-            self._task = self._hass.async_create_task(self._run())
+            self._task = _spawn_background_task(
+                self._hass, self._run(), name=f"{DOMAIN}_energy_manager_{self._coordinator.config_entry.entry_id}"
+            )
         return self._task
 
     async def async_stop(self) -> None:

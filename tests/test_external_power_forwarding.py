@@ -325,3 +325,47 @@ async def test_periodic_pass_runs_after_the_interval(monkeypatch: pytest.MonkeyP
         finally:
             loop_task.cancel()
             await asyncio.gather(loop_task, return_exceptions=True)
+
+
+async def test_periodic_pass_refreshes_below_the_controller_ram_hold_window(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Some firmwares clear GLT RAM inputs about ten seconds after the last write (#493).
+
+    With quiet sources (no events at night) only the periodic pass refreshes
+    the registers, so it must run at the firmware-safe cadence regardless of
+    the configured fallback interval — a 30-60 s pass let the controller
+    forget the battery between writes on the reporter's installation.
+    """
+    hass = MagicMock()
+    hass.states.get.side_effect = {"sensor.soc": _state(90, "%")}.get
+    coordinator = MagicMock()
+    coordinator.get_register.side_effect = lambda name: SimpleNamespace(
+        name=name, writable=True, min_val=0, max_val=100
+    )
+    coordinator.async_write_register = AsyncMock()
+    forwarder = module.ExternalPowerForwarder(
+        hass, coordinator, module.ExternalPowerForwardingConfig({"battery_soc": "sensor.soc"}, 60)
+    )
+    real_sleep = asyncio.sleep
+    delays: list[float] = []
+
+    async def record_sleep(delay: float) -> None:
+        delays.append(delay)
+        await real_sleep(0)
+
+    monkeypatch.setattr(module.asyncio, "sleep", record_sleep)
+    unsub = MagicMock()
+    with patch(
+        "custom_components.idm_heatpump.external_power_forwarding.async_track_state_change_event",
+        return_value=unsub,
+    ):
+        loop_task = asyncio.get_running_loop().create_task(forwarder.async_run())
+        try:
+            for _ in range(200):
+                if len(delays) >= 4:
+                    break
+                await real_sleep(0)
+            assert delays == [5.0, 5.0, 5.0, 5.0]
+            assert coordinator.async_write_register.await_count >= 4
+        finally:
+            loop_task.cancel()
+            await asyncio.gather(loop_task, return_exceptions=True)
