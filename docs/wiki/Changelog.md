@@ -5,6 +5,16 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.22.0-b3 — 2026-10-13
+
+GLT RAM inputs stay solid on Navigator 10: fallback periodic refresh cadence
+is reduced to 3.0 s ($T/2$ of the ~5.0 s controller watchdog), write cooldown
+is capped to 2.0 s specifically for external power registers so RAM inputs
+are never choked by general cooldown settings, post-write confirmation poll
+storms are suppressed on external power writes, battery SoC is rounded to
+an integer (`int`), and an informative hint logs when `battery_soc` is mapped
+without `battery_discharge`.
+
 ## v0.22.0-b2 — 2026-10-13
 
 Short Modbus outages stay quiet: a connection failure that recovers within

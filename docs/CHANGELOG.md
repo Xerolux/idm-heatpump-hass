@@ -15,6 +15,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.22.0-b3] - 2026-10-13
+
+### Fixed
+
+- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 3 seconds instead of the configured fallback interval (#493). Live diagnosis on Navigator 10 (NAV10_20.23-903) revealed that the controller watchdog expires after roughly 5 seconds; a 5-second interval combined with network latency, write cooldown (default 5.0 s) or full coordinator polls (~2.2 s) caused the watchdog to briefly expire every cycle, producing visible UI flicker. To keep GLT inputs continuously active:
+  - The fallback periodic refresh runs every 3.0 seconds ($T/2$ of the controller watchdog).
+  - Write cooldown is capped at 2.0 seconds for external power measurement registers (`battery_soc`, `battery_discharge`, `pv_surplus`, `pv_production`), ensuring cyclic RAM streaming is never choked by a user-configured general cooldown.
+  - Periodic external power writes bypass the post-write confirmation poll storm, preventing coordinator bus congestion.
+  - Battery SoC is rounded and forwarded as an integer (`int`), preventing continuous `int`-vs-`float` state oscillation in Home Assistant.
+  - The forwarder logs an informative hint when `battery_soc` is mapped without `battery_discharge`, explaining that Navigator 10 displays the battery UI card only when both power and SoC are present.
+
 ## [0.22.0-b2] - 2026-10-13
 
 ### Fixed

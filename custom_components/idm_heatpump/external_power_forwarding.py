@@ -23,13 +23,13 @@ _LOGGER = logging.getLogger(__name__)
 _POWER_UNITS = frozenset({"W", "kW", "MW"})
 _POWER_NAMES = frozenset(name for name in EXTERNAL_POWER_MEASUREMENT_NAMES if name != "battery_soc")
 
-#: Some Navigator firmwares clear GLT RAM inputs roughly ten seconds after
+#: Some Navigator firmwares clear GLT RAM inputs roughly 5-10 seconds after
 #: the last write (observed on NAV10_20.23-903, #493: the battery rows appear
-#: for ~10 s after each write and disappear until the next one). Sensor-driven
+#: after each write and disappear when the controller watchdog expires). Sensor-driven
 #: forwards naturally refresh faster; the fallback periodic pass must stay
-#: below that hold window or the values vanish between passes. The per-register
-#: write cooldown still throttles the actual writes.
-_RAM_INPUT_REFRESH_SECONDS = 5.0
+#: well below that hold window (3.0 s) so jitter and full coordinator polls
+#: (~2.2 s) do not stretch the interval beyond the controller watchdog.
+_RAM_INPUT_REFRESH_SECONDS = 3.0
 
 
 @dataclass(frozen=True)
@@ -68,15 +68,16 @@ def _power_kw(value: Any, unit: str | None) -> float | None:
     return number
 
 
-def _soc(value: Any, unit: str | None) -> float | None:
+def _soc(value: Any, unit: str | None) -> int | None:
     number = _number(value)
     if number is None or unit not in (None, PERCENTAGE):
         return None
     if not 0.0 <= number <= 100.0:
         return None
     # The GLT input is an integer percentage; HA battery aggregates may be
-    # fractional. Validate first, then round instead of dropping the sample.
-    return float(round(number))
+    # fractional. Validate first, then round to an integer instead of sending
+    # floats (e.g. 92.0) that cause continuous int-vs-float state toggling in HA.
+    return round(number)
 
 
 class ExternalPowerForwarder:
@@ -104,6 +105,13 @@ class ExternalPowerForwarder:
         # every few seconds and would otherwise repeat the same delivery
         # failure per register per pass for the whole outage.
         self._connection_down = False
+        if "battery_soc" in self._config.entities and "battery_discharge" not in self._config.entities:
+            _LOGGER.info(
+                "IDM external power forwarding has battery_soc mapped (%s), but battery_discharge is unmapped. "
+                "Navigator 10 displays the battery widget with both power and SoC; consider mapping your "
+                "battery power sensor (or 0 W) to battery_discharge to keep the battery widget fully populated",
+                self._config.entities["battery_soc"],
+            )
 
     async def async_run(self) -> None:
         self._unsub = async_track_state_change_event(
@@ -149,7 +157,7 @@ class ExternalPowerForwarder:
 
         self._pending_task = self._hass.async_create_task(_debounced())
 
-    def _value(self, name: str, state: Any) -> float | None:
+    def _value(self, name: str, state: Any) -> float | int | None:
         if state is None or getattr(state, "state", None) in ("unknown", "unavailable", "none"):
             return None
         if name == "battery_soc":

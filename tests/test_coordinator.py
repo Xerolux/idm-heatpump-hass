@@ -1408,6 +1408,58 @@ class TestAsyncWriteRegister:
 
         assert client.write_register.await_count == 2
 
+    async def test_external_power_measurement_cooldown_capped_at_two_seconds(
+        self, mock_hass: MagicMock, mock_config_entry: MagicMock
+    ) -> None:
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            write_cooldown_seconds=10.0,
+        )
+        reg = RegisterDef(address=86, datatype=DataType.FLOAT, name="battery_soc", writable=True)
+
+        current_time = 100.0
+        with patch("custom_components.idm_heatpump.coordinator.time.monotonic", side_effect=lambda: current_time):
+            await coord.async_write_register(reg, 90)
+            assert client.write_register.await_count == 1
+
+            # Still within 2.0 s cooldown -> rejected
+            current_time = 101.0
+            with pytest.raises(Exception) as err:
+                await coord.async_write_register(reg, 91)
+            assert getattr(err.value, "translation_key", None) == "write_cooldown_active"
+            assert getattr(err.value, "translation_placeholders", {}).get("cooldown") == "2"
+
+            # Past 2.0 s (at 2.5 s elapsed) -> allowed even though configured cooldown is 10.0 s
+            current_time = 102.5
+            await coord.async_write_register(reg, 92)
+            assert client.write_register.await_count == 2
+
+    async def test_external_power_measurement_skips_delayed_refresh_task(
+        self, mock_hass: MagicMock, mock_config_entry: MagicMock
+    ) -> None:
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        reg = RegisterDef(address=86, datatype=DataType.FLOAT, name="battery_soc", writable=True)
+
+        await coord.async_write_register(reg, 90)
+        assert coord._delayed_refresh_task is None
+
+    async def test_write_with_confirm_false_skips_delayed_refresh_task(
+        self, mock_hass: MagicMock, mock_config_entry: MagicMock
+    ) -> None:
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
+
+        await coord.async_write_register(reg, 1, confirm=False)
+        assert coord._delayed_refresh_task is None
+
     async def test_polling_jitter_delays_poll_within_configured_limit(self, mock_hass, mock_config_entry):
         reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
         client = MagicMock()
