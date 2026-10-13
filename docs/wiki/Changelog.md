@@ -5,6 +5,13 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.3-b5 — 2026-10-13
+
+The #493 root cause is fixed: GLT RAM inputs are refreshed every 5 s because
+some Navigator firmwares clear them ~10 s after the last write; the energy
+manager and comfort schedule no longer hold up Home Assistant's startup.
+Awaiting the reporter's confirmation.
+
 ## v0.21.3-b4 — 2026-10-12
 
 Forwarding hardening round from the #493 self-audit: every successful GLT
