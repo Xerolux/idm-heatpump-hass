@@ -346,16 +346,30 @@ class RoomTempForwarder:
                 return
             if error_kind == "write_connection_failed":
                 self._connection_down = True
-            _LOGGER.warning(
-                "Could not forward %s %.2f from %s to %s because %s. "
-                "Check the source sensor and integration configuration",
-                self._value_label,
-                temperature,
-                entity_id,
-                reg.name,
-                friendly_write_error(error_kind, reg.name),
-            )
-            _LOGGER.warning("Technical IDM write error for %s: %s", reg.name, write_error_detail(err))
+                # One gray line per outage: the coordinator announces the
+                # outage itself (or stays quiet inside its short-outage
+                # window); a warning here only produced panic reports for
+                # blips that self-healed.
+                _LOGGER.info(
+                    "Could not forward %s %.2f from %s to %s because %s. "
+                    "Check the source sensor and integration configuration",
+                    self._value_label,
+                    temperature,
+                    entity_id,
+                    reg.name,
+                    friendly_write_error(error_kind, reg.name),
+                )
+            else:
+                _LOGGER.warning(
+                    "Could not forward %s %.2f from %s to %s because %s. "
+                    "Check the source sensor and integration configuration",
+                    self._value_label,
+                    temperature,
+                    entity_id,
+                    reg.name,
+                    friendly_write_error(error_kind, reg.name),
+                )
+            _LOGGER.debug("Technical IDM write error for %s: %s", reg.name, write_error_detail(err))
             _LOGGER.debug("Technical %s forwarding error", self._value_label, exc_info=True)
             return
 
@@ -511,15 +525,26 @@ class HumidityForwarder:
                 return
             if error_kind == "write_connection_failed":
                 self._connection_down = True
-            _LOGGER.warning(
-                "Could not forward humidity %.2f from %s to %s because %s. "
-                "Check the source sensor and integration configuration",
-                humidity,
-                entity_id,
-                reg.name,
-                friendly_write_error(error_kind, reg.name),
-            )
-            _LOGGER.warning("Technical IDM write error for %s: %s", reg.name, write_error_detail(err))
+                # Same quiet-outage reasoning as the temperature forwarder:
+                # one gray line per outage instead of a panic warning.
+                _LOGGER.info(
+                    "Could not forward humidity %.2f from %s to %s because %s. "
+                    "Check the source sensor and integration configuration",
+                    humidity,
+                    entity_id,
+                    reg.name,
+                    friendly_write_error(error_kind, reg.name),
+                )
+            else:
+                _LOGGER.warning(
+                    "Could not forward humidity %.2f from %s to %s because %s. "
+                    "Check the source sensor and integration configuration",
+                    humidity,
+                    entity_id,
+                    reg.name,
+                    friendly_write_error(error_kind, reg.name),
+                )
+            _LOGGER.debug("Technical IDM write error for %s: %s", reg.name, write_error_detail(err))
             _LOGGER.debug("Technical humidity forwarding error", exc_info=True)
             return
 

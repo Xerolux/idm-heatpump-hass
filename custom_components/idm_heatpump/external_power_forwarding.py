@@ -212,11 +212,23 @@ class ExternalPowerForwarder:
                     continue
                 if kind == "write_connection_failed":
                     self._connection_down = True
-                _LOGGER.warning(
-                    "Could not forward %s from %s to %s: %s",
-                    name,
-                    entity_id,
-                    reg.name,
-                    friendly_write_error(kind, reg.name),
-                )
+                    # One gray line per outage: the coordinator announces the
+                    # outage itself (or stays quiet inside its short-outage
+                    # window); a warning here only produced panic reports for
+                    # blips that self-healed.
+                    _LOGGER.info(
+                        "Could not forward %s from %s to %s: %s",
+                        name,
+                        entity_id,
+                        reg.name,
+                        friendly_write_error(kind, reg.name),
+                    )
+                else:
+                    _LOGGER.warning(
+                        "Could not forward %s from %s to %s: %s",
+                        name,
+                        entity_id,
+                        reg.name,
+                        friendly_write_error(kind, reg.name),
+                    )
                 _LOGGER.debug("Technical external power forwarding error: %s", write_error_detail(err))

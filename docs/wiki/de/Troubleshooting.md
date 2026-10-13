@@ -354,8 +354,20 @@ sofern der Besitzer nicht ausdrücklich einen bestimmten Schreibvorgang autorisi
 Ein vorübergehender Modbus-Ausfall (Proxy-Neustart, Regler-Neustart) heilt
 sich von selbst — es ist nichts zu tun:
 
-- **Solange die Weboberfläche Daten liefert** (Web-PIN konfiguriert, Web-Pfad
-  antwortet), erzeugt ein fehlgeschlagener Modbus-Poll die ruhige
+- **Kurze Aussetzer bleiben komplett still.** Ein Verbindungsfehler, der
+  sich innerhalb von fünf Minuten erholt, erreicht die Reparatur-Seite und
+  das Fehler-Log gar nicht mehr: Der Coordinator bedient weiterhin den
+  letzten Datenstand (Webdaten laufen in ihrem eigenen Takt weiter),
+  anstehende Schreibzugriffe pausieren still und setzen sich im eigenen
+  Wiederholungstakt fort, und das Log erhält eine graue Info-Zeile beim
+  Abbrechen und eine beim Wiederkehren der Verbindung. Erst ein
+  Verbindungsfehler, der länger als fünf Minuten anhält, eskaliert zur
+  sichtbaren Reparatur-Meldung und Fehlerzeile — Fehler, die der Regler
+  selbst beantwortet (falsche Slave-ID, Firmware), eskalieren weiterhin
+  sofort, weil sie ein stilles Fenster nicht heilen kann.
+- **Nach Ablauf des stillen Fensters bleibt die Weboberfläche beim ruhigen
+  Ton, solange sie liefert** (Web-PIN konfiguriert, Web-Pfad antwortet):
+  Ein fehlgeschlagener Modbus-Poll erzeugt die ruhige
   Hinweismeldung *IDM-Modbus-Verbindung gestört — Webdaten aktiv* statt
   eines Verbindungsfehlers: Sie besagt, dass die Daten über die lokale
   Weboberfläche weiterlaufen, und verschwindet beim ersten erfolgreichen

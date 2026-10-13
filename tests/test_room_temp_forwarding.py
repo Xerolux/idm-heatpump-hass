@@ -741,6 +741,9 @@ async def test_connection_outage_is_reported_once_until_recovery(caplog):
             await forwarder.async_forward_entity("sensor.living_room_temperature")
 
     assert caplog.text.count("Could not forward room temperature") == 1  # user-facing line once
+    outage_lines = [r for r in caplog.records if "Could not forward room temperature" in r.getMessage()]
+    # Gray, not red: connection blips that self-heal must not read as errors.
+    assert outage_lines[0].levelname == "INFO"
     assert caplog.text.count("still paused") == 2
 
     coord.async_write_register.side_effect = None
@@ -767,4 +770,7 @@ async def test_humidity_connection_outage_is_reported_once(caplog):
             await forwarder.async_forward()
 
     assert caplog.text.count("Could not forward humidity") == 1
+    humidity_lines = [r for r in caplog.records if "Could not forward humidity" in r.getMessage()]
+    # Gray, not red: connection blips that self-heal must not read as errors.
+    assert humidity_lines[0].levelname == "INFO"
     assert caplog.text.count("still paused") == 2
