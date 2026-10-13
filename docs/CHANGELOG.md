@@ -15,6 +15,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.22.0-b2] - 2026-10-13
+
+### Fixed
+
+- Short Modbus outages stay quiet. A connection failure that recovers within five minutes no longer raises a repair issue, an error line or unavailable entities: the coordinator keeps serving the last snapshot (the web supplement keeps refreshing on its own schedule), pending writes pause at debug level without a write repair, and the log gets one gray info line when the connection drops and one when it recovers; a delivered write closes the outage early. Only a connection failure that outlasts the five-minute window escalates to the previous visible behavior — the calm `modbus_degraded_web_active` notice and one error line per outage. Failures the controller itself answers with (wrong slave ID, firmware, no data) still escalate immediately, because a quiet window cannot heal them. The room-temperature, humidity and external-power forwarders log their once-per-outage line at info instead of warning. Motivation: a flapping proxy host produced 69 write warnings and 8 error pairs in a single morning, and users reading the log history afterwards filed reports for outages that had long self-healed.
+
 ## [0.22.0-b1] - 2026-10-13
 
 0.22.0-b1 opens the 0.22 line and absorbs the never-promoted 0.21.3 beta
