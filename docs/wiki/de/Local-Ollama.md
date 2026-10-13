@@ -11,7 +11,7 @@ Der Add-on-Weg wurde Ende-to-End auf Home Assistant OS 2026.9 validiert
 (Add-on v0.34.4, `gemma3:4b`): Ein Tagesbericht entstand auf dem lokalen
 Modell in rund einer Minute mit sauberem Qualitäts-Guard. Der Weg über einen
 dedizierten Server wurde genauso mit `gemma3:12b` auf einem separaten
-Proxmox-LXC validiert.
+Proxmox-LXC validiert. Im Oktober 2026 wurde der dedizierte Server erneut geprüft: Ollama 0.35.0 auf einer Proxmox-VM, auf der sowohl `gemma3:4b` als auch `gemma3:12b` über die Bericht-Buttons der Integration bewachte Berichte erzeugten (`output_source: ai`).
 
 ## Was du brauchst
 
@@ -156,6 +156,8 @@ in deinem Heimnetz.
 | Bericht bricht nach fünf Minuten ab | Modell zu groß für die Hardware. Kleineres Modell verwenden, Modell resident halten (Keep-alive `-1`) oder CPU-Kerne ergänzen. |
 | Erster Bericht deutlich langsamer als spätere | Modell-Ladezeit; mit dem Standard-Keep-alive entlädt Ollama Modelle nach fünf Minuten Ruhe. |
 | Verbindung von HA abgewiesen, von anderem Rechner funktioniert | Ollama lauscht nur auf `127.0.0.1` — `OLLAMA_HOST=0.0.0.0` setzen (Docker: Port veröffentlichen). |
+| Ein Bericht-Button zeigt `unknown` | Button-Entities haben bis zum ersten Tastendruck keinen Zustand — das ist kein Fehler, der Button funktioniert trotzdem. |
+| Berichte werden erzeugt, sagen aber *Messwertbericht – ohne KI-Deutung* | Der Berater bleibt im Messwertmodus: Provider oder Basis-URL erreichen das Modell nicht, oder **Freie, nicht vollständig geprüfte KI-Erklärungen** ist aus. Provider, URL und Schalter prüfen; die Bericht-Attribute zeigen den aktiven `provider` und das `model` je Berichtstyp. |
 
 ## Datenschutz-Zusammenfassung
 
