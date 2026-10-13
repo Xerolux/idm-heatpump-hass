@@ -791,6 +791,28 @@
         "data": {
           "save_configuration": "Save this configuration"
         }
+      },
+      "advisor_room_sources": {
+        "title": "Advisor room temperature sources",
+        "description": "Optional read-only Home Assistant temperature sensors the predictive advisor uses for circuits without a wired room sensor. Nothing is written to the heat pump; values outside the advisor's plausibility range are ignored.",
+        "data": {
+          "advisor_room_temp_a": "Heating circuit A room temperature sensor (advisor source)",
+          "advisor_room_temp_b": "Heating circuit B room temperature sensor (advisor source)",
+          "advisor_room_temp_c": "Heating circuit C room temperature sensor (advisor source)",
+          "advisor_room_temp_d": "Heating circuit D room temperature sensor (advisor source)",
+          "advisor_room_temp_e": "Heating circuit E room temperature sensor (advisor source)",
+          "advisor_room_temp_f": "Heating circuit F room temperature sensor (advisor source)",
+          "advisor_room_temp_g": "Heating circuit G room temperature sensor (advisor source)"
+        },
+        "data_description": {
+          "advisor_room_temp_a": "Use this sensor as circuit A's room temperature for advisor models and recommendations instead of the hc_a_room_temp register.",
+          "advisor_room_temp_b": "Use this sensor as circuit B's room temperature for advisor models and recommendations instead of the hc_b_room_temp register.",
+          "advisor_room_temp_c": "Use this sensor as circuit C's room temperature for advisor models and recommendations instead of the hc_c_room_temp register.",
+          "advisor_room_temp_d": "Use this sensor as circuit D's room temperature for advisor models and recommendations instead of the hc_d_room_temp register.",
+          "advisor_room_temp_e": "Use this sensor as circuit E's room temperature for advisor models and recommendations instead of the hc_e_room_temp register.",
+          "advisor_room_temp_f": "Use this sensor as circuit F's room temperature for advisor models and recommendations instead of the hc_f_room_temp register.",
+          "advisor_room_temp_g": "Use this sensor as circuit G's room temperature for advisor models and recommendations instead of the hc_g_room_temp register."
+        }
       }
     },
     "error": {
@@ -1514,6 +1536,28 @@
         "description": "Functions selected for editing: {selected_count}. Saving reloads the integration and updates its entities. Review automatic controls and KNX settings before confirming.",
         "data": {
           "save_configuration": "Save this configuration"
+        }
+      },
+      "advisor_room_sources": {
+        "title": "Advisor room temperature sources",
+        "description": "Optional read-only Home Assistant temperature sensors the predictive advisor uses for circuits without a wired room sensor. Nothing is written to the heat pump; values outside the advisor's plausibility range are ignored.",
+        "data": {
+          "advisor_room_temp_a": "Heating circuit A room temperature sensor (advisor source)",
+          "advisor_room_temp_b": "Heating circuit B room temperature sensor (advisor source)",
+          "advisor_room_temp_c": "Heating circuit C room temperature sensor (advisor source)",
+          "advisor_room_temp_d": "Heating circuit D room temperature sensor (advisor source)",
+          "advisor_room_temp_e": "Heating circuit E room temperature sensor (advisor source)",
+          "advisor_room_temp_f": "Heating circuit F room temperature sensor (advisor source)",
+          "advisor_room_temp_g": "Heating circuit G room temperature sensor (advisor source)"
+        },
+        "data_description": {
+          "advisor_room_temp_a": "Use this sensor as circuit A's room temperature for advisor models and recommendations instead of the hc_a_room_temp register.",
+          "advisor_room_temp_b": "Use this sensor as circuit B's room temperature for advisor models and recommendations instead of the hc_b_room_temp register.",
+          "advisor_room_temp_c": "Use this sensor as circuit C's room temperature for advisor models and recommendations instead of the hc_c_room_temp register.",
+          "advisor_room_temp_d": "Use this sensor as circuit D's room temperature for advisor models and recommendations instead of the hc_d_room_temp register.",
+          "advisor_room_temp_e": "Use this sensor as circuit E's room temperature for advisor models and recommendations instead of the hc_e_room_temp register.",
+          "advisor_room_temp_f": "Use this sensor as circuit F's room temperature for advisor models and recommendations instead of the hc_f_room_temp register.",
+          "advisor_room_temp_g": "Use this sensor as circuit G's room temperature for advisor models and recommendations instead of the hc_g_room_temp register."
         }
       }
     },

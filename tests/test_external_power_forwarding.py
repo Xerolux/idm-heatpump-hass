@@ -369,3 +369,36 @@ async def test_periodic_pass_refreshes_below_the_controller_ram_hold_window(monk
         finally:
             loop_task.cancel()
             await asyncio.gather(loop_task, return_exceptions=True)
+
+
+async def test_connection_outage_is_reported_once_until_recovery(caplog: pytest.LogCaptureFixture) -> None:
+    """The RAM refresh cadence retries every 5 s; one outage must not spam.
+
+    A proxy outage observed in the wild (#493 maintainer log) repeated the
+    per-register delivery warning on every pass for the whole outage.
+    """
+    forwarder, coordinator = _forwarder(
+        {"sensor.pv": _state(1), "sensor.soc": _state(80, "%")},
+        {"pv_production": "sensor.pv", "battery_soc": "sensor.soc"},
+    )
+
+    def _connection_lost():
+        return OSError("could not connect to 192.0.2.9:5020")
+
+    coordinator.async_write_register.side_effect = _connection_lost()
+    with caplog.at_level("DEBUG", logger="custom_components.idm_heatpump.external_power_forwarding"):
+        for _ in range(4):
+            await forwarder.async_forward()
+
+    warnings = [record for record in caplog.records if record.levelname == "WARNING"]
+    assert len(warnings) == 1  # one per outage, not per register per pass
+    assert caplog.text.count("still paused") == 7  # every suppressed retry
+
+    # Recovery clears the latch: a later outage is reported again.
+    coordinator.async_write_register.side_effect = None
+    with caplog.at_level("DEBUG", logger="custom_components.idm_heatpump.external_power_forwarding"):
+        await forwarder.async_forward()
+        coordinator.async_write_register.side_effect = _connection_lost()
+        await forwarder.async_forward()
+
+    assert len([record for record in caplog.records if record.levelname == "WARNING"]) == 2

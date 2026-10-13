@@ -24,6 +24,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
 from .const import (
+    CONF_ADVISOR_ROOM_TEMP_ENTITIES,
     CONF_DYNAMIC_PRICE_ENTITY,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_HEATING_CIRCUITS,
@@ -559,6 +560,12 @@ class PredictiveAdvisor:
         pv_source = forwarding.get("pv_production") if isinstance(forwarding, Mapping) else None
         self._pv_source = str(pv_source).strip() or None if isinstance(pv_source, str) else None
         self._circuits = _configured_circuits(coordinator)
+        room_sources = options.get(CONF_ADVISOR_ROOM_TEMP_ENTITIES, {})
+        self._room_temp_entities: dict[str, str] = {
+            str(circuit).lower(): str(entity_id).strip()
+            for circuit, entity_id in (room_sources.items() if isinstance(room_sources, Mapping) else ())
+            if str(entity_id).strip()
+        }
         room_keys = frozenset(_room_temp_key(circuit) for circuit in self._circuits)
         self._watched_keys: tuple[str, ...] = tuple(_PLAUSIBILITY) + tuple(sorted(room_keys))
         self._room_keys = room_keys
@@ -594,6 +601,30 @@ class PredictiveAdvisor:
         """Current observation stage."""
         return observation_stage(self._first_observed, _utcnow())
 
+    def _watched_value(self, key: str, data: Mapping[str, Any]) -> Any:
+        """Watched value for one key; a mapped HA source stands in for its register.
+
+        Circuits without a wired room sensor report uninitialized memory on
+        the register (#504). When the user selected a read-only Home Assistant
+        sensor for such a circuit, its state is what data quality must track.
+        A configured source that is currently unavailable yields None, which
+        classifies as an unavailable sample rather than falling back to the
+        garbage register value.
+        """
+        for circuit, entity_id in self._room_temp_entities.items():
+            if _room_temp_key(circuit) == key:
+                state = self._hass.states.get(entity_id)
+                if state is None:
+                    return None
+                raw = getattr(state, "state", None)
+                if raw is None or raw in ("unknown", "unavailable", "none"):
+                    return None
+                try:
+                    return float(raw)  # HA states are strings; classify numerically
+                except (TypeError, ValueError):
+                    return raw  # present but unparseable: implausible, not unavailable
+        return data.get(key)
+
     def observe(self, now: datetime | None = None) -> None:
         """Consume one coordinator snapshot: quality stats and TTL expiry.
 
@@ -610,8 +641,9 @@ class PredictiveAdvisor:
         for key in self._watched_keys:
             low, high = _ROOM_TEMP_RANGE if key in self._room_keys else _PLAUSIBILITY[key]
             quality = self._quality.setdefault(key, _KeyQuality())
+            value = self._watched_value(key, data)
             classification = classify_sample(
-                data.get(key),
+                value,
                 low=low,
                 high=high,
                 previous_value=quality.last_value,
@@ -619,7 +651,7 @@ class PredictiveAdvisor:
                 now=current,
                 frozen_sensitive=key in _FROZEN_SENSITIVE,
             )
-            quality.record(classification, data.get(key), current)
+            quality.record(classification, value, current)
         self._expire_recommendations(current)
         self._schedule_save()
 
@@ -657,13 +689,18 @@ class PredictiveAdvisor:
     @property
     def capabilities(self) -> AdvisorCapabilities:
         """Capabilities of the plant behind the last snapshot."""
-        return detect_capabilities(
+        capabilities = detect_capabilities(
             self._coordinator.data if isinstance(self._coordinator.data, Mapping) else {},
             register_getter=self._coordinator.get_register,
             web_variant=getattr(self._coordinator, "web_variant", None),
             price_source=self._price_source,
             pv_source=self._pv_source,
         )
+        if self._room_temp_entities and not capabilities.has_room_temperature:
+            # A mapped read-only source stands in for the missing wired
+            # sensor; data quality tracks the source itself (#504).
+            capabilities = replace(capabilities, has_room_temperature=True)
+        return capabilities
 
     # ------------------------------------------------------------------
     # Recommendation lifecycle

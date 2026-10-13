@@ -38,6 +38,21 @@ erscheint **genau einmal pro installiertem Update**: nie bei einer
 Neuinstallation, nie erneut nach Neustarts oder Reloads — erst wieder, wenn
 das nächste Update eingespielt wird.
 
+
+### Raumtemperatur ohne Raumfühler
+
+Heizkreise ohne am Navigator angeschlossenen Raumfühler melden auf dem
+`hc_x_room_temp`-Register uninitialisierten Speicher (beobachtet als
+-327,33 auf einem Navigator 2.0, [#504](https://github.com/Xerolux/idm-heatpump-hass/issues/504)). Der Advisor
+ignoriert solche Werte. Wenn der Predictive Advisor in den Optionen
+aktiviert ist, bietet der Optionsdialog pro Heizkreis einen **nur
+lesenden** Home-Assistant-Temperatursensor als Raumtemperaturquelle des
+Beraters an. Es wird nichts an die Wärmepumpe geschrieben; der Sensorwert
+speist Modelle, Datenqualität und Fähigkeitserkennung unter demselben
+Plausibilitätsbereich (0-50 °C) wie das Register. Eine konfigurierte,
+nicht verfügbare Quelle zählt als nicht verfügbares Sample - ein
+Zurückfallen auf den Müllwert des Registers gibt es nicht.
+
 ## Entitäten
 
 Alle Entitäten erscheinen mit dem Smart-Profil und werden bedeutsam, sobald

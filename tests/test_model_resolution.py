@@ -326,6 +326,37 @@ class TestWebAgainstModbus:
         assert resolution.data_updates[CONF_DETECTED_NAVIGATOR_VERSION] == NAV10
         assert resolution.data_updates[CONF_DETECTED_WEB_VARIANT] == "nav10"
 
+    def test_a_connected_nav20_client_corrects_a_nav10_misdetection(self):
+        """The nav20 web client only answers on the Navigator 2.0 family.
+
+        A Navigator 2.0 whose Modbus probe answered the Navigator-10-only
+        register (observed on m_20.23 firmware, #504 follow-up) is corrected
+        by the variant that actually connected, mirroring the nav10 path.
+        """
+        resolution = _resolve(
+            fresh=DetectionResult(model_name=NAV10, model_info=_info(NAV10)),
+            web=_web(model_name=NAV20, software_version="m_20.23-165-ga41ba74fb", web_variant="nav20"),
+        )
+
+        assert resolution.model_name == NAV20
+        assert resolution.model_info.model_name == MODEL_NAVIGATOR_20
+        assert resolution.data_updates[CONF_DETECTED_NAVIGATOR_VERSION] == NAV20
+        assert resolution.data_updates[CONF_DETECTED_WEB_VARIANT] == "nav20"
+        assert resolution.data_updates[CONF_DETECTED_SOFTWARE_VERSION] == "m_20.23-165-ga41ba74fb"
+        assert any(
+            level == logging.INFO and "based on the connected %s web client" in message and "nav20" in str(args)
+            for level, message, args in resolution.log_lines
+        )
+
+    def test_a_web_model_of_the_wrong_variant_is_still_ignored(self):
+        """A nav20 connection cannot vouch for a nav10-family web model name."""
+        resolution = _resolve(
+            fresh=DetectionResult(model_name=NAV20, model_info=_info(NAV20)),
+            web=_web(model_name=NAV10, software_version="m_20.23-165", web_variant="nav20"),
+        )
+
+        assert resolution.model_name == NAV20
+
     def test_a_conflicting_web_model_without_that_evidence_is_ignored(self):
         resolution = _resolve(
             fresh=DetectionResult(model_name=NAV20, model_info=_info(NAV20)),

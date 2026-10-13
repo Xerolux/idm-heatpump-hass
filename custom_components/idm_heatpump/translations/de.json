@@ -779,6 +779,28 @@
         "data": {
           "save_configuration": "Diese Konfiguration speichern"
         }
+      },
+      "advisor_room_sources": {
+        "title": "Raumtemperaturquellen des Beraters",
+        "description": "Optionale, nur lesende Home-Assistant-Temperatursensoren, die der Predictive Advisor für Heizkreise ohne Raumfühler nutzt. Es wird nichts an die Wärmepumpe geschrieben; Werte außerhalb des Plausibilitätsbereichs werden ignoriert.",
+        "data": {
+          "advisor_room_temp_a": "Raumtemperatursensor Heizkreis A (Beraterquelle)",
+          "advisor_room_temp_b": "Raumtemperatursensor Heizkreis B (Beraterquelle)",
+          "advisor_room_temp_c": "Raumtemperatursensor Heizkreis C (Beraterquelle)",
+          "advisor_room_temp_d": "Raumtemperatursensor Heizkreis D (Beraterquelle)",
+          "advisor_room_temp_e": "Raumtemperatursensor Heizkreis E (Beraterquelle)",
+          "advisor_room_temp_f": "Raumtemperatursensor Heizkreis F (Beraterquelle)",
+          "advisor_room_temp_g": "Raumtemperatursensor Heizkreis G (Beraterquelle)"
+        },
+        "data_description": {
+          "advisor_room_temp_a": "Diesen Sensor statt des hc_a_room_temp-Registers als Raumtemperatur von Heizkreis A in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_b": "Diesen Sensor statt des hc_b_room_temp-Registers als Raumtemperatur von Heizkreis B in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_c": "Diesen Sensor statt des hc_c_room_temp-Registers als Raumtemperatur von Heizkreis C in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_d": "Diesen Sensor statt des hc_d_room_temp-Registers als Raumtemperatur von Heizkreis D in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_e": "Diesen Sensor statt des hc_e_room_temp-Registers als Raumtemperatur von Heizkreis E in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_f": "Diesen Sensor statt des hc_f_room_temp-Registers als Raumtemperatur von Heizkreis F in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_g": "Diesen Sensor statt des hc_g_room_temp-Registers als Raumtemperatur von Heizkreis G in Modellen und Empfehlungen des Beraters verwenden."
+        }
       }
     },
     "error": {
@@ -1490,6 +1512,28 @@
         "description": "Zur Bearbeitung ausgewählte Funktionen: {selected_count}. Beim Speichern wird die Integration neu geladen und die Entitäten werden angepasst. Prüfe automatische Steuerungen und KNX-Einstellungen vor der Bestätigung.",
         "data": {
           "save_configuration": "Diese Konfiguration speichern"
+        }
+      },
+      "advisor_room_sources": {
+        "title": "Raumtemperaturquellen des Beraters",
+        "description": "Optionale, nur lesende Home-Assistant-Temperatursensoren, die der Predictive Advisor für Heizkreise ohne Raumfühler nutzt. Es wird nichts an die Wärmepumpe geschrieben; Werte außerhalb des Plausibilitätsbereichs werden ignoriert.",
+        "data": {
+          "advisor_room_temp_a": "Raumtemperatursensor Heizkreis A (Beraterquelle)",
+          "advisor_room_temp_b": "Raumtemperatursensor Heizkreis B (Beraterquelle)",
+          "advisor_room_temp_c": "Raumtemperatursensor Heizkreis C (Beraterquelle)",
+          "advisor_room_temp_d": "Raumtemperatursensor Heizkreis D (Beraterquelle)",
+          "advisor_room_temp_e": "Raumtemperatursensor Heizkreis E (Beraterquelle)",
+          "advisor_room_temp_f": "Raumtemperatursensor Heizkreis F (Beraterquelle)",
+          "advisor_room_temp_g": "Raumtemperatursensor Heizkreis G (Beraterquelle)"
+        },
+        "data_description": {
+          "advisor_room_temp_a": "Diesen Sensor statt des hc_a_room_temp-Registers als Raumtemperatur von Heizkreis A in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_b": "Diesen Sensor statt des hc_b_room_temp-Registers als Raumtemperatur von Heizkreis B in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_c": "Diesen Sensor statt des hc_c_room_temp-Registers als Raumtemperatur von Heizkreis C in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_d": "Diesen Sensor statt des hc_d_room_temp-Registers als Raumtemperatur von Heizkreis D in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_e": "Diesen Sensor statt des hc_e_room_temp-Registers als Raumtemperatur von Heizkreis E in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_f": "Diesen Sensor statt des hc_f_room_temp-Registers als Raumtemperatur von Heizkreis F in Modellen und Empfehlungen des Beraters verwenden.",
+          "advisor_room_temp_g": "Diesen Sensor statt des hc_g_room_temp-Registers als Raumtemperatur von Heizkreis G in Modellen und Empfehlungen des Beraters verwenden."
         }
       }
     },

@@ -2281,7 +2281,11 @@ class TestConfigFlowFullFlow:
                 CONF_TECHNICIAN_CODES: False,
             }
         )
-        assert step2["step_id"] == "feature_notice"
+        # The advisor defaults to on, so a custom setup offers its optional
+        # read-only room temperature sources before the feature notice.
+        assert step2["step_id"] == "advisor_room_sources"
+        sources = await flow.async_step_advisor_room_sources({})
+        assert sources["step_id"] == "feature_notice"
         created = await flow.async_step_feature_notice({"confirm_new_features": True})
         assert created["type"] == "create_entry"
         assert created["title"] == "IDM Heat"
@@ -2994,3 +2998,62 @@ def test_cleared_battery_mapping_does_not_become_none_entity_and_keeps_other_sou
         },
     )
     assert options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {"pv_surplus": "sensor.pv"}
+
+
+async def test_advisor_room_sources_step_stores_the_mapping():
+    """The step appears for advisor plants and stores a cleaned circuit map."""
+    from custom_components.idm_heatpump.config_flow import (
+        _build_advisor_room_sources_schema,
+        _store_advisor_room_temp_entities,
+    )
+    from custom_components.idm_heatpump.const import CONF_ADVISOR_ROOM_TEMP_ENTITIES, CONF_PREDICTIVE_ADVISOR
+
+    schema = _build_advisor_room_sources_schema({CONF_HEATING_CIRCUITS: ["a", "d"]})
+    markers = {marker.schema: marker for marker in schema.schema}
+    assert markers["advisor_room_temp_a"].default is vol.UNDEFINED
+    assert markers["advisor_room_temp_d"].default is vol.UNDEFINED
+
+    options: dict[str, object] = {CONF_HEATING_CIRCUITS: ["a", "d"]}
+    _store_advisor_room_temp_entities(options, {"advisor_room_temp_a": " sensor.room ", "advisor_room_temp_d": ""})
+    assert options[CONF_ADVISOR_ROOM_TEMP_ENTITIES] == {"a": "sensor.room"}
+
+    flow = _make_flow()
+    flow._data = {"name": "IDM Test", "host": "192.0.2.10"}
+    result = await flow.async_step_options(
+        {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HIDE_UNUSED: True,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 0,
+            CONF_TECHNICIAN_CODES: False,
+            CONF_WEB_ENABLED: True,
+            CONF_WEB_SCAN_INTERVAL: 30,
+            CONF_PREDICTIVE_ADVISOR: True,
+        }
+    )
+    assert result["type"] == "form"
+    assert result["step_id"] == "advisor_room_sources"
+
+    submitted = await flow.async_step_advisor_room_sources({"advisor_room_temp_a": "sensor.room_a"})
+    assert submitted["type"] != "form" or submitted["step_id"] != "advisor_room_sources"
+    assert flow._options[CONF_ADVISOR_ROOM_TEMP_ENTITIES] == {"a": "sensor.room_a"}
+
+
+async def test_advisor_room_sources_step_is_skipped_without_the_advisor():
+    from custom_components.idm_heatpump.const import CONF_PREDICTIVE_ADVISOR
+
+    flow = _make_flow()
+    flow._data = {"name": "IDM Test", "host": "192.0.2.10"}
+    result = await flow.async_step_options(
+        {
+            CONF_SCAN_INTERVAL: 10,
+            CONF_HIDE_UNUSED: True,
+            CONF_HEATING_CIRCUITS: ["a"],
+            CONF_ZONE_COUNT: 0,
+            CONF_TECHNICIAN_CODES: False,
+            CONF_WEB_ENABLED: True,
+            CONF_WEB_SCAN_INTERVAL: 30,
+            CONF_PREDICTIVE_ADVISOR: False,
+        }
+    )
+    assert result["type"] != "form" or result["step_id"] != "advisor_room_sources"

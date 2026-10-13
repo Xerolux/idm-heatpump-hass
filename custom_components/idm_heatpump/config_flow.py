@@ -63,6 +63,7 @@ from .ai_cloud import (
 from .comfort_scheduler import parse_schedule_rows
 from .const import (
     CONF_ADVISOR_PV_FORECAST_ENTITY,
+    CONF_ADVISOR_ROOM_TEMP_ENTITIES,
     CONF_AI_ADVISOR,
     CONF_COMFORT_SCHEDULE,
     CONF_COMFORT_SCHEDULE_CIRCUIT,
@@ -1473,6 +1474,36 @@ def _build_room_temp_forwarding_schema(options: dict[str, Any]) -> vol.Schema:
     return vol.Schema(schema_dict)
 
 
+def _advisor_room_sources_enabled(options: dict[str, Any]) -> bool:
+    # Explicitly stored True only: the advisor defaults to on, and showing an
+    # extra step to every options walk that never mentioned the advisor would
+    # surprise plants that only came to change their scan interval. The flag
+    # is stored by the features section, so real advisor plants have it.
+    return options.get(CONF_PREDICTIVE_ADVISOR) is True
+
+
+def _build_advisor_room_sources_schema(options: dict[str, Any]) -> vol.Schema:
+    configured = options.get(CONF_ADVISOR_ROOM_TEMP_ENTITIES, {})
+    schema_dict: dict[Any, Any] = {}
+    for circuit in options.get(CONF_HEATING_CIRCUITS, ["a"]):
+        schema_dict[
+            vol.Optional(
+                f"advisor_room_temp_{circuit}",
+                **_entity_field_default(str(configured.get(circuit, ""))),
+            )
+        ] = _ROOM_TEMPERATURE_SELECTOR
+    return vol.Schema(schema_dict)
+
+
+def _store_advisor_room_temp_entities(options: dict[str, Any], user_input: dict[str, Any]) -> None:
+    circuits = options.get(CONF_HEATING_CIRCUITS, ["a"])
+    options[CONF_ADVISOR_ROOM_TEMP_ENTITIES] = {
+        circuit: str(user_input.get(f"advisor_room_temp_{circuit}", "")).strip()
+        for circuit in circuits
+        if str(user_input.get(f"advisor_room_temp_{circuit}", "")).strip()
+    }
+
+
 def _store_room_temp_forwarding_entities(options: dict[str, Any], user_input: dict[str, Any]) -> None:
     circuits = options.get(CONF_HEATING_CIRCUITS, ["a"])
     options[CONF_ROOM_TEMP_FORWARDING_ENTITIES] = {
@@ -1652,6 +1683,7 @@ def _build_knx_bridge_schema(options: dict[str, Any]) -> vol.Schema:
 # no other step needs to know it exists, since _async_continue_optional_steps
 # looks steps up by name instead of each step hardcoding what comes next.
 _OPTIONAL_FLOW_STEPS: tuple[tuple[str, Callable[[dict[str, Any]], bool]], ...] = (
+    ("advisor_room_sources", _advisor_room_sources_enabled),
     ("room_temp_forwarding", _room_temp_forwarding_enabled),
     ("humidity_forwarding", _humidity_forwarding_enabled),
     ("storage_temp_forwarding", _storage_temp_forwarding_enabled),
@@ -1965,6 +1997,18 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
             step_id="zones",
             data_schema=_build_zones_schema(self._options, zone_count),
             description_placeholders={"zone_count": str(zone_count)},
+            errors={},
+        )
+
+    async def async_step_advisor_room_sources(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
+        if user_input is not None:
+            _store_advisor_room_temp_entities(self._options, user_input)
+            return await self._async_continue_optional_steps("advisor_room_sources")
+
+        return self.async_show_form(
+            step_id="advisor_room_sources",
+            data_schema=_build_advisor_room_sources_schema(self._options),
+            description_placeholders={"name": self._flow_name_placeholder()},
             errors={},
         )
 

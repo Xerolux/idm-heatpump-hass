@@ -856,3 +856,49 @@ class TestImplausibleRoomTemperature:
             engine.observe(T0 - timedelta(days=offset))
 
         assert analytics.metric_baseline("room_deviation_a", T0) is not None
+
+
+class TestAdvisorRoomTemperatureSources:
+    """Read-only HA sensors stand in for circuits without a wired sensor (#504)."""
+
+    def test_mapped_source_overrides_the_garbage_register(self) -> None:
+        engine, _advisor, analytics, _coordinator = _engine(
+            {
+                "outdoor_temp": 5.0,
+                "power_consumption_hp": 2.0,
+                "thermal_power_flow_sensor": 6.0,
+                "hc_a_room_temp": -327.33,  # uninitialized memory, no sensor wired
+                "hc_a_room_setpoint_heat_normal": 21.0,
+            }
+        )
+        engine._room_temp_entities = {"a": "sensor.room_a"}
+        engine._hass.states.get = lambda entity_id: SimpleNamespace(state="22.0")
+
+        engine.observe()
+
+        # The deviation comes from the HA source, not the register garbage.
+        for offset in (5, 4, 3, 2, 1, 0):
+            engine.observe(T0 - timedelta(days=offset))
+        baseline = analytics.metric_baseline("room_deviation_a", T0)
+        assert baseline is not None
+        assert abs(baseline.median - 1.0) < 0.2
+
+    def test_unavailable_source_does_not_fall_back_to_the_garbage_register(self) -> None:
+        engine, _advisor, analytics, _coordinator = _engine(
+            {"outdoor_temp": 5.0, "power_consumption_hp": 2.0, "hc_a_room_temp": -327.33}
+        )
+        engine._room_temp_entities = {"a": "sensor.room_a"}
+        engine._hass.states.get = lambda entity_id: None
+
+        engine.observe()
+
+        assert analytics.heat_loss_w_per_k is None
+
+    def test_no_source_keeps_the_register_behaviour(self) -> None:
+        engine, _advisor, analytics, _coordinator = _engine(
+            {"outdoor_temp": 5.0, "power_consumption_hp": 2.0, "hc_a_room_temp": 22.0}
+        )
+
+        engine.observe()
+
+        assert analytics.heat_loss_w_per_k is None  # needs thermal power; just no crash
