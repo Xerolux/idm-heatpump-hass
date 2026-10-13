@@ -8,7 +8,7 @@ import math
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, time
-from typing import Any
+from typing import Any, cast
 
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
@@ -226,7 +226,23 @@ class ComfortScheduler:
             self._release_register_demand = self._coordinator.register_required_registers(
                 f"comfort_schedule_{self._circuit}", {self.register_name}
             )
-            self._task = self._hass.async_create_task(self._run())
+            # A foreground hass.async_create_task loop never finishes, so Home
+            # Assistant's startup wrap-up waits on it and logs a bootstrap
+            # timeout (#493 reporter log). The type() lookup keeps
+            # MagicMock-based unit tests on the plain-task fallback.
+            coro = self._run()
+            background = getattr(type(self._hass), "async_create_background_task", None)
+            if callable(background):
+                self._task = cast(
+                    "asyncio.Task[None]",
+                    background(self._hass, coro, name=f"{DOMAIN}_comfort_schedule_{self._circuit}"),
+                )
+            else:
+                create_task = getattr(self._hass, "async_create_task", None)
+                self._task = cast(
+                    "asyncio.Task[None]",
+                    create_task(coro) if callable(create_task) else asyncio.create_task(coro),
+                )
 
     async def async_stop(self) -> None:
         # Hold the evaluation lock while cancelling: an evaluation that is

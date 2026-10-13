@@ -253,3 +253,25 @@ def test_unparseable_time_or_target_is_rejected() -> None:
         module.parse_schedule_rows("a,0x:00,09:00,21", {"a"})
     with pytest.raises(ValueError, match="invalid time or target"):
         module.parse_schedule_rows("a,06:00,09:00,warm", {"a"})
+
+
+async def test_start_spawns_a_background_task_bootstrap_does_not_wait_for(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A foreground create_task loop makes HA's startup wrap-up time out (#493)."""
+    schedule, _coordinator = _scheduler()
+    schedule.async_evaluate_once = AsyncMock()
+    created = []
+
+    class _HassBackground:
+        @staticmethod
+        def async_create_background_task(hass, coro, name=None):
+            task = asyncio.ensure_future(coro)
+            created.append(name)
+            return task
+
+    schedule._hass = _HassBackground()
+    schedule.start()
+    await asyncio.sleep(0)
+
+    assert created == ["idm_heatpump_comfort_schedule_a"]
+    await schedule.async_stop()
+    assert schedule._task is None

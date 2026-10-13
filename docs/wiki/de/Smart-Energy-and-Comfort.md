@@ -292,8 +292,12 @@ allein mit diesen Templates ist keine vollständig ausfallsichere Anlage belegt.
 
 ### Weiterleitung konfigurieren und prüfen
 
-Aktiviere in den IDM-Optionen **Externe Leistungsweiterleitung**, wähle 30 Sekunden
-als periodisches Intervall und verwende die erzeugte Zuordnung als Referenz.
+Aktiviere in den IDM-Optionen **Externe Leistungsweiterleitung** und verwende die
+erzeugte Zuordnung als Referenz. Die Weiterleitung erneuert die GLT-RAM-Werte von
+sich aus in einer firmware-sicheren Kadenz: Manche Navigator-Firmwares löschen
+nicht erneuerte Werte etwa zehn Sekunden nach dem letzten Schreibvorgang
+(#493) — das Fallback-Intervall steuert die Anwesenheit daher nicht mehr,
+lasse die Schreib-Abklingzeit auf dem Standard.
 Wähle beim Batterievorzeichen **Unverändert**, weil der erzeugte Batteriehelfer
 bereits normalisiert. SOC nutzt den ursprünglichen Prozentsensor und wird von
 der Integration gerundet. Ordne keine E-Heizstab-Leistung zu, wenn sie nicht

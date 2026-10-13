@@ -23,6 +23,14 @@ _LOGGER = logging.getLogger(__name__)
 _POWER_UNITS = frozenset({"W", "kW", "MW"})
 _POWER_NAMES = frozenset(name for name in EXTERNAL_POWER_MEASUREMENT_NAMES if name != "battery_soc")
 
+#: Some Navigator firmwares clear GLT RAM inputs roughly ten seconds after
+#: the last write (observed on NAV10_20.23-903, #493: the battery rows appear
+#: for ~10 s after each write and disappear until the next one). Sensor-driven
+#: forwards naturally refresh faster; the fallback periodic pass must stay
+#: below that hold window or the values vanish between passes. The per-register
+#: write cooldown still throttles the actual writes.
+_RAM_INPUT_REFRESH_SECONDS = 5.0
+
 
 @dataclass(frozen=True)
 class ExternalPowerForwardingConfig:
@@ -102,7 +110,10 @@ class ExternalPowerForwarder:
         try:
             await self.async_forward()
             while True:
-                await asyncio.sleep(max(30, self._config.interval))
+                # Refresh below the controller's RAM hold window (#493), not
+                # at the configured fallback interval: a 30-60 s pass lets the
+                # controller forget the values between writes.
+                await asyncio.sleep(_RAM_INPUT_REFRESH_SECONDS)
                 await self.async_forward()
         finally:
             if self._unsub is not None:

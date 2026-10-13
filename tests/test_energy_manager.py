@@ -411,3 +411,29 @@ async def test_soc_source_below_minimum_or_invalid_blocks_readiness() -> None:
 
     assert below._ready() is False
     assert invalid._ready() is False
+
+
+async def test_start_spawns_a_background_task_bootstrap_does_not_wait_for(monkeypatch):
+    """A foreground create_task loop makes HA's startup wrap-up time out (#493)."""
+    from unittest.mock import MagicMock as _MagicMock
+
+    created = []
+
+    class _HassBackground:
+        states = SimpleNamespace(get={}.get)
+
+        @staticmethod
+        def async_create_background_task(hass, coro, name=None):
+            task = asyncio.ensure_future(coro)
+            created.append(name)
+            return task
+
+    monkeypatch.setattr(module, "async_get_dhw_boost_manager", AsyncMock(return_value=_MagicMock(active=False)))
+    manager = module.EnergyManager(_HassBackground(), _coordinator(), module.EnergyManagerConfig(sources={}))
+
+    task = manager.start()
+
+    assert created and created[0].startswith("idm_heatpump_energy_manager")
+    assert not task.done()
+    await manager.async_stop()
+    assert manager._task is None
