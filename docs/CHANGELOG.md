@@ -15,6 +15,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.21.3-b5] - 2026-10-13
+
+### Fixed
+
+- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 5 seconds instead of the configured fallback interval. The #493 reporter's log proved that some Navigator firmwares (observed on NAV10_20.23-903) clear unrefreshed GLT inputs roughly ten seconds after the last write: a battery SoC written once per minute was visible for ten seconds and cleared for the remaining fifty. Sensor-driven forwarding is unchanged; the per-register write cooldown still throttles actual writes. The SolarEdge GLT setup advice (EN/DE) now states that the fallback interval no longer governs presence.
+- The energy-manager and comfort-schedule loops run as Home Assistant background tasks. Their never-finishing foreground tasks previously made the bootstrap log "Setup timed out for bootstrap waiting on EnergyManager._run" (#493 reporter log).
+
 ## [0.21.3-b4] - 2026-10-12
 
 ### Added

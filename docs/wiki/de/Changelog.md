@@ -5,6 +5,13 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.21.3-b5 — 2026-10-13
+
+Die Ursache von #493 ist behoben: GLT-RAM-Werte werden alle 5 s erneuert, da
+manche Navigator-Firmwares sie ~10 s nach dem letzten Schreibvorgang löschen;
+Energiemanager und Komfortzeitplan blockieren den HA-Start nicht mehr.
+Bestätigung des Melders steht aus.
+
 ## v0.21.3-b4 — 2026-10-12
 
 Härtungsrunde für die Weiterleitungen aus dem Selbst-Audit zu #493: Jeder
