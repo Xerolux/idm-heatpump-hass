@@ -378,7 +378,8 @@ async def test_connection_outage_is_reported_once_until_recovery(caplog: pytest.
     per-register delivery warning on every pass for the whole outage.
     """
     forwarder, coordinator = _forwarder(
-        {"sensor.pv": _state(1), "sensor.soc": _state(80, "%")}, {"pv_production": "sensor.pv", "battery_soc": "sensor.soc"}
+        {"sensor.pv": _state(1), "sensor.soc": _state(80, "%")},
+        {"pv_production": "sensor.pv", "battery_soc": "sensor.soc"},
     )
 
     def _connection_lost():

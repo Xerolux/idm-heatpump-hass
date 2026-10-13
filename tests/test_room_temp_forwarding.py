@@ -744,9 +744,7 @@ async def test_connection_outage_is_reported_once_until_recovery(caplog):
     assert caplog.text.count("still paused") == 2
 
     coord.async_write_register.side_effect = None
-    hass.states.get = MagicMock(
-        return_value=SimpleNamespace(state="22.9", attributes={"unit_of_measurement": "°C"})
-    )
+    hass.states.get = MagicMock(return_value=SimpleNamespace(state="22.9", attributes={"unit_of_measurement": "°C"}))
     with caplog.at_level("DEBUG"):
         await forwarder.async_forward_entity("sensor.living_room_temperature")
         coord.async_write_register.side_effect = lost

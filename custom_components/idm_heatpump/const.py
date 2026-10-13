@@ -117,6 +117,9 @@ CONF_HEALTH_MONITOR: str = "health_monitor"
 CONF_ENERGY_PRICE: str = "energy_price_per_kwh"
 CONF_DYNAMIC_PRICE_ENTITY: str = "dynamic_price_entity"
 CONF_ADVISOR_PV_FORECAST_ENTITY: str = "advisor_pv_forecast_entity"
+#: Read-only HA temperature sensors standing in for circuits without a wired
+#: room sensor; consumed by the predictive advisor only (#504 follow-up).
+CONF_ADVISOR_ROOM_TEMP_ENTITIES: str = "advisor_room_temp_entities"
 CONF_PREDICTIVE_ADVISOR: str = "predictive_advisor"
 CONF_SETUP_LEVEL: str = "setup_level"
 CONF_ENERGY_CO2_FACTOR: str = "energy_co2_g_per_kwh"

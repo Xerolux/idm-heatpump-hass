@@ -35,6 +35,21 @@ added — dismiss it there once you have seen it. It appears **exactly once
 per installed update**: never on a fresh installation, never again on
 restarts or reloads, and only again when the next update is installed.
 
+
+### Room temperature without a wired sensor
+
+Circuits that have no room sensor wired to the Navigator report
+uninitialized memory on the `hc_x_room_temp` register (observed as
+-327.33 on a Navigator 2.0, [#504](https://github.com/Xerolux/idm-heatpump-hass/issues/504)). The advisor
+ignores such values. If the integration options enable the predictive
+advisor, the options walk offers one **read-only** Home Assistant
+temperature sensor per heating circuit as the advisor's room temperature
+source. Nothing is written to the heat pump; the sensor value feeds the
+advisor's models, data quality and capability detection under the same
+plausibility range (0-50 °C) as the register. A configured source that
+is unavailable counts as an unavailable sample - it never falls back to
+the garbage register value.
+
 ## Entities
 
 All entities appear under the Smart profile and become meaningful as the

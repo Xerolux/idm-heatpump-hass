@@ -36,6 +36,7 @@ from .ai_advisor import AiAdvisor
 from .comfort_scheduler import ComfortScheduler, parse_schedule_rows
 from .const import (
     CONF_ADVISOR_PV_FORECAST_ENTITY,
+    CONF_ADVISOR_ROOM_TEMP_ENTITIES,
     CONF_COMFORT_SCHEDULE,
     CONF_COMFORT_SCHEDULE_CIRCUIT,
     CONF_COMFORT_SCHEDULE_END,
@@ -1025,6 +1026,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     weather_entity=str(entry.options.get(CONF_WEATHER_ENTITY, DEFAULT_WEATHER_ENTITY)).strip() or None,
                     pv_forecast_entity=str(entry.options.get(CONF_ADVISOR_PV_FORECAST_ENTITY, "")).strip() or None,
                     price_entity=str(entry.options.get(CONF_DYNAMIC_PRICE_ENTITY, "")).strip() or None,
+                    room_temp_entities=dict(
+                        entry.options.get(CONF_ADVISOR_ROOM_TEMP_ENTITIES, {})
+                        if isinstance(entry.options.get(CONF_ADVISOR_ROOM_TEMP_ENTITIES, {}), dict)
+                        else {}
+                    ),
                 )
                 entry.async_on_unload(coordinator.async_add_listener(advisor_engine.observe))
                 advisor_engine.observe()

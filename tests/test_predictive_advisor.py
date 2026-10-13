@@ -897,3 +897,53 @@ def test_room_temperature_capability_requires_a_plausible_reading() -> None:
     assert _capabilities({"hc_a_room_temp": 22.0}) is True
     assert _capabilities({"hc_b_room_temp": 22.0}) is True
     assert _capabilities({"other": 22.0}) is False
+
+
+class TestAdvisorRoomTemperatureSources:
+    """Mapped read-only HA sensors stand in for missing wired sensors (#504)."""
+
+    def _advisor(self, options: dict[str, object], states: dict[str, Any]):
+        coordinator = MagicMock()
+        coordinator.data = {"hc_a_room_temp": -327.33}
+        coordinator.get_register = lambda name: None
+        coordinator.web_variant = None
+        coordinator.config_entry = SimpleNamespace(entry_id="entry1", options=options)
+        coordinator.hass = MagicMock()
+        coordinator.hass.states.get = states.get
+        advisor = PredictiveAdvisor(coordinator)
+        advisor._first_observed = datetime.now(UTC) - timedelta(days=2)
+        return advisor
+
+    def test_quality_tracks_the_mapped_source_instead_of_the_register(self):
+        from custom_components.idm_heatpump.const import CONF_ADVISOR_ROOM_TEMP_ENTITIES
+
+        advisor = self._advisor(
+            {CONF_ADVISOR_ROOM_TEMP_ENTITIES: {"a": "sensor.room_a"}},
+            {"sensor.room_a": SimpleNamespace(state="22.1")},
+        )
+
+        advisor.observe()
+        quality = advisor.quality_summary()["hc_a_room_temp"]
+
+        assert quality["usable"] == 1
+        assert quality["implausible"] == 0  # the register garbage never counted
+
+    def test_unavailable_source_counts_as_unavailable_not_implausible(self):
+        from custom_components.idm_heatpump.const import CONF_ADVISOR_ROOM_TEMP_ENTITIES
+
+        advisor = self._advisor({CONF_ADVISOR_ROOM_TEMP_ENTITIES: {"a": "sensor.room_a"}}, {})
+
+        advisor.observe()
+        quality = advisor.quality_summary()["hc_a_room_temp"]
+
+        assert quality["unavailable"] == 1
+
+    def test_capabilities_report_room_temperature_with_a_mapped_source(self):
+        from custom_components.idm_heatpump.const import CONF_ADVISOR_ROOM_TEMP_ENTITIES
+
+        advisor = self._advisor(
+            {CONF_ADVISOR_ROOM_TEMP_ENTITIES: {"a": "sensor.room_a"}},
+            {"sensor.room_a": SimpleNamespace(state="22.1")},
+        )
+
+        assert advisor.capabilities.has_room_temperature is True

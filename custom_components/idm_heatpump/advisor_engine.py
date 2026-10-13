@@ -240,12 +240,18 @@ class AdvisorEngine:
         weather_entity: str | None = None,
         pv_forecast_entity: str | None = None,
         price_entity: str | None = None,
+        room_temp_entities: Mapping[str, str] | None = None,
     ) -> None:
         self._hass = hass
         self._coordinator = coordinator
         self._advisor = advisor
         self._analytics = analytics
         self._circuits = circuits
+        self._room_temp_entities = {
+            str(circuit).lower(): str(entity_id)
+            for circuit, entity_id in (room_temp_entities or {}).items()
+            if str(entity_id).strip()
+        }
         self._weather_entity = weather_entity
         self._pv_forecast_entity = pv_forecast_entity
         self._price_entity = price_entity
@@ -291,7 +297,7 @@ class AdvisorEngine:
             self._observe_idle(current, room, outdoor)
 
         for value_circuit in self._circuits:
-            room_temp = _room_temp(data.get(f"hc_{value_circuit}_room_temp"))
+            room_temp = self._room_temp_for(value_circuit, data)
             room_setpoint = _number(data.get(f"hc_{value_circuit}_room_setpoint_heat_normal"))
             if room_temp is not None and room_setpoint is not None and room_setpoint > 5.0:
                 self._analytics.observe_metric(f"room_deviation_{value_circuit}", room_temp - room_setpoint, current)
@@ -309,9 +315,29 @@ class AdvisorEngine:
         self._last_sample_at = current
         self._maybe_run_sync_producers(current)
 
+    def _room_temp_for(self, circuit: str, data: Mapping[str, Any]) -> float | None:
+        """Room temperature for one circuit: a mapped HA source wins read-only.
+
+        Circuits without a wired room sensor report uninitialized memory on
+        the register (#504); an explicitly selected Home Assistant sensor is
+        the trustworthy source for the advisor's models. The same
+        plausibility range applies to both sources.
+        """
+        entity_id = self._room_temp_entities.get(circuit)
+        if entity_id:
+            state = self._hass.states.get(entity_id)
+            if state is not None:
+                try:
+                    override = _room_temp(float(getattr(state, "state", "")))  # HA states are strings
+                except (TypeError, ValueError):
+                    override = None
+                if override is not None:
+                    return override
+        return _room_temp(data.get(f"hc_{circuit}_room_temp"))
+
     def _primary_room_temp(self, data: Mapping[str, Any]) -> tuple[float | None, str | None]:
         for circuit in self._circuits:
-            room = _room_temp(data.get(f"hc_{circuit}_room_temp"))
+            room = self._room_temp_for(circuit, data)
             if room is not None:
                 return room, circuit
         return None, None
@@ -340,7 +366,7 @@ class AdvisorEngine:
         if room is not None and outdoor is not None and thermal is not None and thermal > 0.5:
             self._analytics.observe_heating(room - outdoor, thermal)
         for circuit in self._circuits:
-            room_temp = _room_temp(data.get(f"hc_{circuit}_room_temp"))
+            room_temp = self._room_temp_for(circuit, data)
             room_setpoint = _number(data.get(f"hc_{circuit}_room_setpoint_heat_normal"))
             circuit_flow = _number(data.get(f"hc_{circuit}_flow_temp"))
             if (
