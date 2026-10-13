@@ -20,6 +20,7 @@ from homeassistant.core import HomeAssistant
 
 from .advisor_analytics import AdvisorAnalytics
 from .predictive_advisor import (
+    _ROOM_TEMP_RANGE,
     PredictiveAdvisor,
     Recommendation,
     RecommendationCategory,
@@ -59,6 +60,22 @@ def _number(value: Any) -> float | None:
         return None
     numeric = float(value)
     return numeric if math.isfinite(numeric) else None
+
+
+def _room_temp(value: Any) -> float | None:
+    """Room temperature within the advisor's plausibility range, else None.
+
+    A circuit without a wired room sensor reports uninitialized memory
+    (observed as -327.33 on a Navigator 2.0, #504): finite, so it passes
+    ``_number()``, but it must not feed models, metrics or plans. The
+    advisor's quality tracker already classifies it as implausible; the
+    engine must not disagree with its own data quality.
+    """
+    numeric = _number(value)
+    if numeric is None:
+        return None
+    low, high = _ROOM_TEMP_RANGE
+    return numeric if low <= numeric <= high else None
 
 
 def _day_stamp(now: datetime) -> str:
@@ -274,7 +291,7 @@ class AdvisorEngine:
             self._observe_idle(current, room, outdoor)
 
         for value_circuit in self._circuits:
-            room_temp = _number(data.get(f"hc_{value_circuit}_room_temp"))
+            room_temp = _room_temp(data.get(f"hc_{value_circuit}_room_temp"))
             room_setpoint = _number(data.get(f"hc_{value_circuit}_room_setpoint_heat_normal"))
             if room_temp is not None and room_setpoint is not None and room_setpoint > 5.0:
                 self._analytics.observe_metric(f"room_deviation_{value_circuit}", room_temp - room_setpoint, current)
@@ -294,7 +311,7 @@ class AdvisorEngine:
 
     def _primary_room_temp(self, data: Mapping[str, Any]) -> tuple[float | None, str | None]:
         for circuit in self._circuits:
-            room = _number(data.get(f"hc_{circuit}_room_temp"))
+            room = _room_temp(data.get(f"hc_{circuit}_room_temp"))
             if room is not None:
                 return room, circuit
         return None, None
@@ -323,7 +340,7 @@ class AdvisorEngine:
         if room is not None and outdoor is not None and thermal is not None and thermal > 0.5:
             self._analytics.observe_heating(room - outdoor, thermal)
         for circuit in self._circuits:
-            room_temp = _number(data.get(f"hc_{circuit}_room_temp"))
+            room_temp = _room_temp(data.get(f"hc_{circuit}_room_temp"))
             room_setpoint = _number(data.get(f"hc_{circuit}_room_setpoint_heat_normal"))
             circuit_flow = _number(data.get(f"hc_{circuit}_flow_temp"))
             if (
@@ -465,16 +482,22 @@ class AdvisorEngine:
             curve = _number(data.get(f"hc_{circuit}_heating_curve"))
             active = False
             if baseline is not None and baseline.days >= _CURVE_MIN_DAYS and curve is not None:
-                deviation = baseline.median
+                deviation: float | None = baseline.median
+                if deviation is not None and abs(deviation) > _ROOM_TEMP_RANGE[1] - _ROOM_TEMP_RANGE[0]:
+                    # Storage from before the plausibility filter (#504) can
+                    # hold deviations of hundreds of kelvin; a room and its
+                    # setpoint cannot differ by more than the plausibility
+                    # span. Skip instead of advising on garbage.
+                    deviation = None
                 reasons: list[str] = []
                 recommended: float | None = None
-                if deviation >= _CURVE_DEVIATION_K:
+                if deviation is not None and deviation >= _CURVE_DEVIATION_K:
                     recommended = round(max(_CURVE_MIN, curve - _CURVE_STEP), 2)
                     reasons = ["room_temperature_above_target", f"mean_deviation_{deviation:+.1f}K"]
-                elif deviation <= -_CURVE_DEVIATION_K:
+                elif deviation is not None and deviation <= -_CURVE_DEVIATION_K:
                     recommended = round(min(_CURVE_MAX, curve + _CURVE_STEP), 2)
                     reasons = ["room_temperature_below_target", f"mean_deviation_{deviation:+.1f}K"]
-                if recommended is not None and recommended != curve:
+                if recommended is not None and deviation is not None and recommended != curve:
                     optimal = self._analytics.optimal_flow_temp(outdoor) if outdoor is not None else None
                     flow = _number(data.get(f"hc_{circuit}_flow_temp"))
                     if optimal is not None and flow is not None and flow - optimal >= _FLOW_EXCESS_K:

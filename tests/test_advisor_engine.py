@@ -785,3 +785,74 @@ def test_health_and_efficiency_scores_compose_every_domain() -> None:
     assert health["components"]["dhw"] == 100
     assert health["score"] == 100
     assert health["write_actions"] is False
+
+
+class TestImplausibleRoomTemperature:
+    """A circuit without a wired room sensor reports uninitialized memory (#504).
+
+    -327.33 is finite and slipped through ``_number()``, so the engine fed it
+    to the heat-loss regression, the room-deviation metric and the heat-demand
+    plan while the advisor's quality tracker correctly reported 0 % usable.
+    """
+
+    def test_implausible_room_temp_is_treated_as_missing(self) -> None:
+        engine, _advisor, analytics, _coordinator = _engine(
+            {
+                "outdoor_temp": 5.0,
+                "power_consumption_hp": 2.0,
+                "thermal_power_flow_sensor": 6.0,
+                "hc_a_room_temp": -327.33,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+            }
+        )
+
+        engine.observe()
+
+        assert analytics.metric_baseline("room_deviation_a", T0) is None
+        assert analytics.heat_loss_w_per_k is None  # no observe_heating sample
+
+    def test_implausible_room_temp_never_reaches_the_plan_indoor_temperature(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        engine, _advisor, analytics, _coordinator = _engine(
+            {"outdoor_temp": 5.0, "power_consumption_hp": 0.0, "hc_a_room_temp": -327.33}
+        )
+        engine._weather_hours = [(T0, 5.0)] * 24
+        monkeypatch.setattr(type(analytics), "heat_loss_w_per_k", property(lambda self: 2000.0))
+
+        engine._compute_plan(T0)
+
+        # indoor falls back to the 21 C default: 2 kW/K * (21-5) K * 24 h
+        assert engine._plan == {"predicted_heat_demand_kwh": round(2.0 * 16.0 * 24.0, 1)}
+
+    def test_polluted_room_deviation_storage_never_recommends(self) -> None:
+        engine, advisor, _analytics, _coordinator = _engine(
+            {"hc_a_heating_curve": 1.2, "hc_a_room_temp": -327.33, "hc_a_room_setpoint_heat_normal": 21.0}
+        )
+        # Simulate storage polluted before the plausibility filter existed.
+        baseline = SimpleNamespace(days=10, median=-349.0)
+        engine._analytics.metric_baseline = lambda name, now: baseline if name == "room_deviation_a" else None
+
+        engine._produce_heating_curve(T0)
+
+        assert not [
+            recommendation
+            for recommendation in advisor.active_recommendations
+            if recommendation.category is RecommendationCategory.HEATING_CURVE
+        ]
+
+    def test_plausible_room_temp_still_feeds_the_models(self) -> None:
+        engine, _advisor, analytics, _coordinator = _engine(
+            {
+                "outdoor_temp": 5.0,
+                "power_consumption_hp": 2.0,
+                "thermal_power_flow_sensor": 6.0,
+                "hc_a_room_temp": 22.0,
+                "hc_a_room_setpoint_heat_normal": 21.0,
+            }
+        )
+
+        for offset in (5, 4, 3, 2, 1, 0):
+            engine.observe(T0 - timedelta(days=offset))
+
+        assert analytics.metric_baseline("room_deviation_a", T0) is not None
