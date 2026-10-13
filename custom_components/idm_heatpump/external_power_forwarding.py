@@ -100,6 +100,10 @@ class ExternalPowerForwarder:
         self._pending_task: asyncio.Task[None] | None = None
         self._forward_again = False
         self._forward_lock = asyncio.Lock()
+        # One WARNING per connection outage: the RAM refresh cadence retries
+        # every few seconds and would otherwise repeat the same delivery
+        # failure per register per pass for the whole outage.
+        self._connection_down = False
 
     async def async_run(self) -> None:
         self._unsub = async_track_state_change_event(
@@ -186,6 +190,7 @@ class ExternalPowerForwarder:
                 # cadence separates integration-side throttling from a
                 # device-side clearing of the RAM inputs (#493).
                 _LOGGER.debug("Forwarded external power %s = %s", name, value)
+                self._connection_down = False
             except Exception as err:  # noqa: BLE001 - transport and API errors share no common base
                 kind = classify_write_error(err)
                 if kind == "write_cooldown_active":
@@ -199,6 +204,14 @@ class ExternalPowerForwarder:
                         friendly_write_error(kind, reg.name),
                     )
                     continue
+                if kind == "write_connection_failed" and self._connection_down:
+                    # Already reported for this outage; every retry would only
+                    # repeat it (observed as warning spam during a proxy
+                    # outage at the #493 refresh cadence).
+                    _LOGGER.debug("External power forwarding still paused: no Modbus connection")
+                    continue
+                if kind == "write_connection_failed":
+                    self._connection_down = True
                 _LOGGER.warning(
                     "Could not forward %s from %s to %s: %s",
                     name,

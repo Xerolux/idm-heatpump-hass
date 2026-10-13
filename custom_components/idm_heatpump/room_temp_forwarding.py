@@ -190,6 +190,9 @@ class RoomTempForwarder:
         self._pending_forward_tasks: dict[str, asyncio.Task[None]] = {}
         self._forward_again: set[str] = set()
         self._forward_lock = asyncio.Lock()
+        # One WARNING per connection outage; retries during the outage stay
+        # at debug (see ExternalPowerForwarder._connection_down).
+        self._connection_down = False
         self._debounce_seconds = 1.0
 
     async def async_run(self) -> None:
@@ -335,8 +338,14 @@ class RoomTempForwarder:
 
         try:
             await self._coordinator.async_write_register(reg, temperature)
+            self._connection_down = False
         except Exception as err:
             error_kind = classify_write_error(err)
+            if error_kind == "write_connection_failed" and self._connection_down:
+                _LOGGER.debug("IDM %s forwarding still paused: no Modbus connection", self._value_label)
+                return
+            if error_kind == "write_connection_failed":
+                self._connection_down = True
             _LOGGER.warning(
                 "Could not forward %s %.2f from %s to %s because %s. "
                 "Check the source sensor and integration configuration",
@@ -381,6 +390,7 @@ class HumidityForwarder:
         self._pending_forward_task: asyncio.Task[None] | None = None
         self._forward_again = False
         self._forward_lock = asyncio.Lock()
+        self._connection_down = False
         self._debounce_seconds = 1.0
 
     async def async_run(self) -> None:
@@ -493,8 +503,14 @@ class HumidityForwarder:
 
         try:
             await self._coordinator.async_write_register(reg, humidity)
+            self._connection_down = False
         except Exception as err:
             error_kind = classify_write_error(err)
+            if error_kind == "write_connection_failed" and self._connection_down:
+                _LOGGER.debug("IDM humidity forwarding still paused: no Modbus connection")
+                return
+            if error_kind == "write_connection_failed":
+                self._connection_down = True
             _LOGGER.warning(
                 "Could not forward humidity %.2f from %s to %s because %s. "
                 "Check the source sensor and integration configuration",

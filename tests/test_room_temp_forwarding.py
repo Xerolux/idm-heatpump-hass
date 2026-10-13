@@ -726,3 +726,47 @@ async def test_humidity_run_cancels_and_awaits_its_pending_task():
 
         assert pending.cancelled()
         assert forwarder._pending_forward_task is None
+
+
+@pytest.mark.asyncio
+async def test_connection_outage_is_reported_once_until_recovery(caplog):
+    """Retries during a Modbus outage must not repeat the warning per pass."""
+    coord, _reg = _make_coordinator()
+    hass = _make_hass("22.0")
+    forwarder = TestForwardingLifecycle()._forwarder(hass, coord)
+    lost = OSError("could not connect to 192.0.2.9:5020")
+    coord.async_write_register = AsyncMock(side_effect=lost)
+    with caplog.at_level("DEBUG"):
+        for _ in range(3):
+            await forwarder.async_forward_entity("sensor.living_room_temperature")
+
+    assert caplog.text.count("Could not forward room temperature") == 1  # user-facing line once
+    assert caplog.text.count("still paused") == 2
+
+    coord.async_write_register.side_effect = None
+    hass.states.get = MagicMock(
+        return_value=SimpleNamespace(state="22.9", attributes={"unit_of_measurement": "°C"})
+    )
+    with caplog.at_level("DEBUG"):
+        await forwarder.async_forward_entity("sensor.living_room_temperature")
+        coord.async_write_register.side_effect = lost
+        hass.states.get = MagicMock(
+            return_value=SimpleNamespace(state="23.5", attributes={"unit_of_measurement": "°C"})
+        )
+        await forwarder.async_forward_entity("sensor.living_room_temperature")
+
+    assert caplog.text.count("Could not forward room temperature") == 2
+
+
+@pytest.mark.asyncio
+async def test_humidity_connection_outage_is_reported_once(caplog):
+    coord, _reg = TestHumidityForwarding()._coordinator()
+    forwarder = TestHumidityForwarding()._forwarder(_make_hass("55"), coord)
+    lost = OSError("could not connect to 192.0.2.9:5020")
+    coord.async_write_register = AsyncMock(side_effect=lost)
+    with caplog.at_level("DEBUG"):
+        for _ in range(3):
+            await forwarder.async_forward()
+
+    assert caplog.text.count("Could not forward humidity") == 1
+    assert caplog.text.count("still paused") == 2
