@@ -23,6 +23,11 @@ def is_glt_measurement(name: str) -> bool:
     return name in _GLT_MEASUREMENT_NAMES or _ZONE_ROOM_MEASUREMENT_RE.match(name) is not None
 
 
+def is_external_power_measurement(name: str) -> bool:
+    """Return true when a register represents a volatile external power measurement input."""
+    return name in _GLT_MEASUREMENT_NAMES
+
+
 def is_zone_room_measurement(name: str) -> bool:
     """Return true for zone room temperature and humidity GLT measurement inputs."""
     return _ZONE_ROOM_MEASUREMENT_RE.match(name) is not None

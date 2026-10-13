@@ -131,10 +131,10 @@ def update(path: Path) -> None:
         # Hand-written guided keys that have no options-step label (for
         # example the AI detail fields) must survive a regeneration, so the
         # generated labels are merged over the previously shipped blocks.
-        previous_toggle_block = steps["guided_toggle"] if "guided_toggle" in steps else {}
+        previous_toggle_block = steps.get("guided_toggle", {})
         previous_toggle = previous_toggle_block.get("data", {})
         previous_toggle_descriptions = previous_toggle_block.get("data_description", {})
-        previous_detail = steps["guided_detail"] if "guided_detail" in steps else {}
+        previous_detail = steps.get("guided_detail", {})
         toggle_data = {**previous_toggle, **labels}
         toggle_descriptions = {**previous_toggle_descriptions, **descriptions}
         detail_data = {**previous_detail.get("data", {}), **labels}

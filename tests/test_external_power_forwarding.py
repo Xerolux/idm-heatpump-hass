@@ -47,9 +47,9 @@ def test_power_conversion(value: object, unit: str | None, expected: float | Non
 def test_soc_and_battery_sign_are_validated() -> None:
     forwarder, _ = _forwarder({}, {}, battery_sign="invert")
     assert forwarder._value("battery_discharge", _state(500, "W")) == -0.5
-    assert forwarder._value("battery_soc", _state(75, "%")) == 75.0
+    assert forwarder._value("battery_soc", _state(75, "%")) == 75
     assert forwarder._value("battery_soc", _state(-1, "%")) is None
-    assert forwarder._value("battery_soc", _state(75.5, "%")) == 76.0
+    assert forwarder._value("battery_soc", _state(75.5, "%")) == 76
     assert forwarder._value("battery_soc", _state(101, "%")) is None
     assert forwarder._value("battery_soc", _state("unavailable", "%")) is None
     assert forwarder._value("pv_production", None) is None
@@ -86,7 +86,16 @@ async def test_successful_forward_is_logged(caplog: pytest.LogCaptureFixture) ->
         await forwarder.async_forward()
 
     coordinator.async_write_register.assert_awaited_once()
-    assert "Forwarded external power battery_soc = 98.0" in caplog.text
+    assert "Forwarded external power battery_soc = 98" in caplog.text
+
+
+def test_unmapped_battery_discharge_logs_info_hint(caplog: pytest.LogCaptureFixture) -> None:
+    hass = MagicMock()
+    coordinator = MagicMock()
+    config = module.ExternalPowerForwardingConfig({"battery_soc": "sensor.soc"}, 60)
+    with caplog.at_level("INFO", logger="custom_components.idm_heatpump.external_power_forwarding"):
+        module.ExternalPowerForwarder(hass, coordinator, config)
+    assert "battery_discharge is unmapped" in caplog.text
 
 
 async def test_register_guards_and_transport_error(caplog: pytest.LogCaptureFixture) -> None:
@@ -213,9 +222,9 @@ async def test_sensor_event_during_write_finishes_the_batch_and_forwards_latest_
         await asyncio.wait_for(task, 3)
         assert writes == [
             ("pv_production", 1.0),
-            ("battery_soc", 80.0),
+            ("battery_soc", 80),
             ("pv_production", 2.0),
-            ("battery_soc", 80.0),
+            ("battery_soc", 80),
         ]
     finally:
         release.set()
@@ -268,10 +277,10 @@ async def test_forwarding_preserves_signed_measurements_without_control_writes(s
     )
     await forwarder.async_forward()
     writes = [(call.args[0].name, call.args[1]) for call in coordinator.async_write_register.await_args_list]
-    assert writes == [("pv_surplus", surplus), ("pv_production", 4.0), ("battery_soc", 80.0)]
+    assert writes == [("pv_surplus", surplus), ("pv_production", 4.0), ("battery_soc", 80)]
 
 
-@pytest.mark.parametrize("soc,expected", [(97.5, 98.0), (0.1, 0.0), (99.9, 100.0), (98.5, 98.0)])
+@pytest.mark.parametrize("soc,expected", [(97.5, 98), (0.1, 0), (99.9, 100), (98.5, 98)])
 async def test_fractional_battery_soc_is_forwarded_as_integer_percentage(soc, expected):
     forwarder, coordinator = _forwarder({"sensor.soc": _state(soc, "%")}, {"battery_soc": "sensor.soc"})
     await forwarder.async_forward()
@@ -364,7 +373,7 @@ async def test_periodic_pass_refreshes_below_the_controller_ram_hold_window(monk
                 if len(delays) >= 4:
                     break
                 await real_sleep(0)
-            assert delays == [5.0, 5.0, 5.0, 5.0]
+            assert delays == [3.0, 3.0, 3.0, 3.0]
             assert coordinator.async_write_register.await_count >= 4
         finally:
             loop_task.cancel()

@@ -16,7 +16,11 @@ from custom_components.idm_heatpump.adapter_enums import (
     get_bitflag_de_labels,
     get_slug_map_and_key,
 )
-from custom_components.idm_heatpump.adapter_glt import is_glt_measurement, is_zone_room_measurement
+from custom_components.idm_heatpump.adapter_glt import (
+    is_external_power_measurement,
+    is_glt_measurement,
+    is_zone_room_measurement,
+)
 from custom_components.idm_heatpump.adapter_registers import (
     build_filtered_register_map,
     model_info_from_flags,
@@ -86,6 +90,10 @@ def test_glt_measurement_classification() -> None:
     assert not is_glt_measurement("hc_a_mode")
     assert is_zone_room_measurement("zm2_room3_temp")
     assert not is_zone_room_measurement("pv_surplus")
+    assert is_external_power_measurement("pv_surplus")
+    assert is_external_power_measurement("battery_soc")
+    assert not is_external_power_measurement("zm2_room3_humidity")
+    assert not is_external_power_measurement("hc_a_mode")
 
 
 def test_model_flag_helper_builds_cascade_aware_navigator_10_info() -> None:

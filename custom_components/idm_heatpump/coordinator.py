@@ -34,6 +34,7 @@ from idm_heatpump import (
     get_register as _api_get_register,
 )
 
+from .adapter_glt import is_external_power_measurement
 from .const import (
     CONF_DETECTED_NAVIGATOR_VERSION,
     CONF_DETECTED_SOFTWARE_VERSION,
@@ -1908,6 +1909,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         value: Any,
         *,
         allow_custom_register: bool = False,
+        confirm: bool = True,
     ) -> Any:
         if self.update_interval is None and self._web_write_register_by_name(reg.name, value):
             # Web-only operation: the write goes through the local web
@@ -1917,19 +1919,26 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             return value
         now = time.monotonic()
         last = self._write_timestamps.get(reg.address)
+        effective_cooldown = self._write_cooldown_seconds
+        if is_external_power_measurement(reg.name) and effective_cooldown > 2.0:
+            # GLT RAM inputs are cleared by the controller watchdog if not
+            # refreshed cyclically. Cap the write cooldown to 2.0 s so cyclic
+            # refresh (3.0 s cadence) is never throttled by a user-configured
+            # 5-600 s general cooldown (#493).
+            effective_cooldown = 2.0
         if (
-            self._write_cooldown_seconds > 0
+            effective_cooldown > 0
             and last is not None
-            and (elapsed := now - last) < self._write_cooldown_seconds
+            and (elapsed := now - last) < effective_cooldown
         ):
-            remaining = self._write_cooldown_seconds - elapsed
+            remaining = effective_cooldown - elapsed
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
                 translation_key="write_cooldown_active",
                 translation_placeholders={
                     "register": reg.name,
                     "remaining": f"{remaining:.1f}",
-                    "cooldown": f"{self._write_cooldown_seconds:g}",
+                    "cooldown": f"{effective_cooldown:g}",
                 },
             )
         # Local write safety runs first and separately from the network write:
@@ -1988,10 +1997,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 updated[reg.name] = value
             self.data = updated
         self.async_update_listeners()
-        old_task = self._delayed_refresh_task
-        if old_task is not None and not old_task.done():
-            old_task.cancel()
-        self._delayed_refresh_task = self._create_confirmation_task()
+        if confirm and not is_external_power_measurement(reg.name):
+            old_task = self._delayed_refresh_task
+            if old_task is not None and not old_task.done():
+                old_task.cancel()
+            self._delayed_refresh_task = self._create_confirmation_task()
         return safety_result
 
     def _clear_confirmed_write_issue(self, reg: RegisterDef) -> None:

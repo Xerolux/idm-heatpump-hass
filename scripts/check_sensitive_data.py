@@ -27,15 +27,22 @@ ALLOWLIST_FILENAME = "sensitive-data-allowlist.txt"
 SCRIPT_FILENAME = "check_sensitive_data.py"
 
 SKIP_DIRS = {
+    ".claude",
+    ".codex-remote-attachments",
     ".git",
     ".mypy_cache",
     ".pytest_cache",
     ".ruff_cache",
+    ".storage",
     ".venv",
+    ".zcode",
     "__pycache__",
     "build",
     "dist",
+    "logs",
     "node_modules",
+    "release",
+    "results",
     "test_ha",
     "venv",
 }
@@ -237,7 +244,7 @@ def scan_tree(root: Path, allowlist_path: Path | None = None) -> list[Finding]:
     for path in sorted(root.rglob("*")):
         if not path.is_file():
             continue
-        if path.name in (ALLOWLIST_FILENAME, SCRIPT_FILENAME):
+        if path.name in (ALLOWLIST_FILENAME, SCRIPT_FILENAME, ".env"):
             continue
         if any(part in SKIP_DIRS for part in path.parts):
             continue
