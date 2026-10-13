@@ -1926,11 +1926,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             # refresh (3.0 s cadence) is never throttled by a user-configured
             # 5-600 s general cooldown (#493).
             effective_cooldown = 2.0
-        if (
-            effective_cooldown > 0
-            and last is not None
-            and (elapsed := now - last) < effective_cooldown
-        ):
+        if effective_cooldown > 0 and last is not None and (elapsed := now - last) < effective_cooldown:
             remaining = effective_cooldown - elapsed
             raise HomeAssistantError(
                 translation_domain=DOMAIN,
