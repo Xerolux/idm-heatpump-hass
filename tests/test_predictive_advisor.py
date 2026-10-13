@@ -882,3 +882,18 @@ def test_plan_sensor_gates_on_plan_presence() -> None:
 
     engine._plan = {"dhw_window_conflicts_with_expensive_hours": True}
     assert sensor.native_value == "attention"
+
+
+def test_room_temperature_capability_requires_a_plausible_reading() -> None:
+    """Uninitialized memory (-327.33) is not a room sensor (#504)."""
+    from custom_components.idm_heatpump.predictive_advisor import detect_capabilities
+
+    def _capabilities(data: dict[str, Any]) -> bool:
+        return detect_capabilities(
+            data=data, register_getter=lambda _name: None, web_variant=None, price_source=None, pv_source=None
+        ).has_room_temperature
+
+    assert _capabilities({"hc_a_room_temp": -327.33}) is False
+    assert _capabilities({"hc_a_room_temp": 22.0}) is True
+    assert _capabilities({"hc_b_room_temp": 22.0}) is True
+    assert _capabilities({"other": 22.0}) is False

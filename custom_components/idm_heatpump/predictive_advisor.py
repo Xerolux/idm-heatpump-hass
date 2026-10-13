@@ -492,8 +492,14 @@ def detect_capabilities(
     pv_source: str | None,
 ) -> AdvisorCapabilities:
     """Detect plant capabilities from one coordinator snapshot and options."""
+    low, high = _ROOM_TEMP_RANGE
     has_room_temperature = any(
-        key.startswith("hc_") and key.endswith("_room_temp") and data.get(key) is not None for key in data
+        key.startswith("hc_")
+        and key.endswith("_room_temp")
+        and isinstance(value := data.get(key), (int, float))
+        and not isinstance(value, bool)
+        and low <= float(value) <= high
+        for key in data
     )
     return AdvisorCapabilities(
         has_power_meter="power_consumption_hp" in data,
