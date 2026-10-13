@@ -15,6 +15,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.22.0-b3] - 2026-10-13
+
+### Fixed
+
+- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 3 seconds instead of the configured fallback interval (#493). Live diagnosis on Navigator 10 (NAV10_20.23-903) revealed that the controller watchdog expires after roughly 5 seconds; a 5-second interval combined with network latency, write cooldown (default 5.0 s) or full coordinator polls (~2.2 s) caused the watchdog to briefly expire every cycle, producing visible UI flicker. To keep GLT inputs continuously active:
+  - The fallback periodic refresh runs every 3.0 seconds ($T/2$ of the controller watchdog).
+  - Write cooldown is capped at 2.0 seconds for external power measurement registers (`battery_soc`, `battery_discharge`, `pv_surplus`, `pv_production`), ensuring cyclic RAM streaming is never choked by a user-configured general cooldown.
+  - Periodic external power writes bypass the post-write confirmation poll storm, preventing coordinator bus congestion.
+  - Battery SoC is rounded and forwarded as an integer (`int`), preventing continuous `int`-vs-`float` state oscillation in Home Assistant.
+  - The forwarder logs an informative hint when `battery_soc` is mapped without `battery_discharge`, explaining that Navigator 10 displays the battery UI card only when both power and SoC are present.
+
 ## [0.22.0-b2] - 2026-10-13
 
 ### Fixed
@@ -39,12 +50,7 @@ quieter failure logging throughout the GLT forwarders.
 
 ### Fixed
 
-- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 3 seconds instead of the configured fallback interval (#493). Live diagnosis on Navigator 10 (NAV10_20.23-903) revealed that the controller watchdog expires after roughly 5 seconds; a 5-second interval combined with network latency, write cooldown (default 5.0 s) or full coordinator polls (~2.2 s) caused the watchdog to briefly expire every cycle, producing visible UI flicker. To keep GLT inputs continuously active:
-  - The fallback periodic refresh runs every 3.0 seconds ($T/2$ of the controller watchdog).
-  - Write cooldown is capped at 2.0 seconds for external power measurement registers (`battery_soc`, `battery_discharge`, `pv_surplus`, `pv_production`), ensuring cyclic RAM streaming is never choked by a user-configured general cooldown.
-  - Periodic external power writes bypass the post-write confirmation poll storm, preventing coordinator bus congestion.
-  - Battery SoC is rounded and forwarded as an integer (`int`), preventing continuous `int`-vs-`float` state oscillation in Home Assistant.
-  - The forwarder logs an informative hint when `battery_soc` is mapped without `battery_discharge`, explaining that Navigator 10 displays the battery UI card only when both power and SoC are present.
+- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 5 seconds instead of the configured fallback interval. The #493 reporter's log proved that some Navigator firmwares (observed on NAV10_20.23-903) clear unrefreshed GLT inputs roughly ten seconds after the last write: a battery SoC written once per minute was visible for ten seconds and cleared for the remaining fifty. Sensor-driven forwarding is unchanged; the per-register write cooldown still throttles actual writes. The SolarEdge GLT setup advice (EN/DE) now states that the fallback interval no longer governs presence.
 - The predictive advisor treats implausible room temperatures as missing (#504). A circuit without a wired room sensor reports uninitialized memory (observed as -327.33 on a Navigator 2.0); the value is finite, so the engine's numeric guard accepted it and silently fed the heat-loss regression, the heat-demand plan and the room-deviation metric with deltas around -339 K, while the advisor's own quality tracker correctly reported 0 percent usable. Every engine room-temperature read now applies the advisor's plausibility range (0-50 °C), room-deviation baselines beyond the plausible span are skipped so storage polluted before this fix cannot produce curve recommendations, and capabilities.room_temperature is only reported for range-valid readings.
 - A connected nav20 web client corrects a Navigator model misdetected as Navigator 10, mirroring the long-standing nav10 correction: the web variant that actually connected is definitive in both directions (observed on a Navigator 2.0 reporting m_20.23 firmware, #504 follow-up). Previously such plants kept the wrong model and a recurring web-variant-conflict warning.
 - Sensor bursts no longer cancel an in-flight Modbus write in any GLT forwarder: external power, room temperature and humidity forwarding coalesce bursts into follow-up passes that read the latest state, periodic and event-driven passes are serialized behind a lock, and unload awaits cancelled tasks (#493 investigation; the external-power race was independently reproduced, the other forwarders were fixed proactively).
