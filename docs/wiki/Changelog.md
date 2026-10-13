@@ -5,6 +5,13 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.22.0-b1 — 2026-10-13
+
+Opens the 0.22 line: read-only Home Assistant room-temperature sources for
+the predictive advisor (circuits without a wired sensor, #504), a connected
+nav20 web client now corrects a Navigator-10 misdetection, and forwarder
+connection outages are reported once instead of per refresh pass.
+
 ## v0.21.3-b6 — 2026-10-13
 
 The predictive advisor ignores implausible room temperatures (-327.33 from

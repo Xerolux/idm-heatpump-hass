@@ -5,6 +5,14 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.22.0-b1 — 2026-10-13
+
+Eröffnet die 0.22-Linie: Nur lesende Home-Assistant-Raumtemperaturquellen
+für den Predictive Advisor (Heizkreise ohne Raumfühler, #504), ein
+verbundener nav20-Webclient korrigiert jetzt eine Navigator-10-
+Fehldetektion, und Verbindungsausfälle der Weiterleitungen werden einmal
+statt pro Aktualisierungsdurchlauf gemeldet.
+
 ## v0.21.3-b6 — 2026-10-13
 
 Der Predictive Advisor ignoriert unplausible Raumtemperaturen (-327,33 bei
