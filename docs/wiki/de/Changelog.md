@@ -5,6 +5,18 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.22.0-b2 — 2026-10-13
+
+Kurze Modbus-Aussetzer bleiben still: Ein Verbindungsfehler, der sich
+innerhalb von fünf Minuten erholt, erzeugt keine Reparatur-Meldung, keine
+Fehlerzeile und keine unavailable Entities mehr — der Coordinator bedient
+weiterhin den letzten Datenstand, anstehende Schreibzugriffe pausieren
+still, und das Log erhält eine graue Info-Zeile beim Abbrechen und eine
+beim Wiederkehren der Verbindung; ein zugestellter Schreibvorgang beendet
+den Ausfall vorzeitig. Nur Ausfälle länger als fünf Minuten eskalieren zur
+sichtbaren Reparatur, und vom Regler beantwortete Fehler (falsche Slave-ID,
+Firmware) eskalieren weiterhin sofort.
+
 ## v0.22.0-b1 — 2026-10-13
 
 Eröffnet die 0.22-Linie und nimmt die nie stabile 0.21.3-Beta-Linie auf

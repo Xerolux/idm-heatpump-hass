@@ -5,6 +5,16 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.22.0-b2 — 2026-10-13
+
+Short Modbus outages stay quiet: a connection failure that recovers within
+five minutes no longer raises a repair issue, an error line or unavailable
+entities — the coordinator keeps serving the last snapshot, pending writes
+pause silently, and the log gets one gray info line on loss and one on
+recovery; a delivered write closes the outage early. Only outages longer
+than five minutes escalate to the visible repair, and controller-answered
+errors (wrong slave ID, firmware) always escalate immediately.
+
 ## v0.22.0-b1 — 2026-10-13
 
 Opens the 0.22 line and absorbs the never-promoted 0.21.3 beta line
