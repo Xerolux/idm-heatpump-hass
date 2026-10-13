@@ -127,6 +127,16 @@ _SCAN_INTERVAL_TOO_LOW_ISSUE = "scan_interval_too_low"
 _SLOW_POLL_RATIO = 0.8
 _SLOW_POLL_STREAK_TO_WARN = 10
 _FAST_POLL_STREAK_TO_CLEAR = 10
+# A rebooting proxy, a switching hiccup or a short network partition lasts
+# seconds to minutes and self-heals. Raising a repair issue, an error line
+# and unavailable entities for every such blip trained users to read the log
+# history, see a red error and file a report for an outage that had long
+# recovered. Connection-class failures now stay quiet for this long before
+# the coordinator escalates to the visible repair and error line; failures
+# the controller itself answers (wrong slave ID, firmware, empty data) still
+# escalate immediately because a quiet window cannot heal them.
+_QUIET_OUTAGE_PERIOD = 300.0
+_QUIET_OUTAGE_ISSUES = frozenset({"cannot_connect", "modbus_connection_refused", "modbus_timeout", "host_not_found"})
 _ZONE_ROOM_MODE_PREFIX = "zm"
 _ZONE_ROOM_MODE_MARKER = "_room"
 _ZONE_ROOM_MODE_SUFFIX = "_mode"
@@ -320,6 +330,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_poll_duration: float | None = None
         self._last_poll_success: datetime | None = None
         self._consecutive_poll_failures = 0
+        self._quiet_outage_period = _QUIET_OUTAGE_PERIOD
+        self._outage_started: float | None = None
+        self._outage_escalated = False
         self._pending_web_writes: list[tuple[str, Any]] = []
         self._transient_zero_suppressed = 0
         self._total_poll_count = 0
@@ -1139,6 +1152,31 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             self._consecutive_poll_failures += 1
             self._total_poll_failures += 1
             issue_id = _repair_issue_for_error(err)
+            if issue_id in _QUIET_OUTAGE_ISSUES:
+                self._note_connection_failure()
+                if self._quiet_outage_active():
+                    # Short outage: keep serving the last snapshot (the web
+                    # supplement keeps refreshing on its own schedule), stay
+                    # out of the repairs page and keep the log free of error
+                    # lines. Blips inside the window self-heal; anything
+                    # longer escalates below once the window has passed.
+                    if self._consecutive_poll_failures == 1:
+                        _LOGGER.info(
+                            "Modbus connection to %s lost; retrying quietly before raising a repair issue",
+                            self._client.host,
+                        )
+                    else:
+                        _LOGGER.debug(
+                            "Modbus connection to %s still down (failed poll %s)",
+                            self._client.host,
+                            self._consecutive_poll_failures,
+                        )
+                    data = dict(self.data or {})
+                    data.update(self._web_metadata_data())
+                    return data
+            was_escalated = self._outage_escalated
+            if self._outage_started is not None:
+                self._outage_escalated = True
             friendly_error = _friendly_communication_error(
                 issue_id,
                 self._client.host,
@@ -1165,7 +1203,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 translation_key=issue_id,
                 translation_placeholders={"host": self._client.host},
             )
-            if self._consecutive_poll_failures == 1:
+            if self._consecutive_poll_failures == 1 or (self._outage_started is not None and not was_escalated):
                 _LOGGER.error(
                     "%s; created repair issue %s",
                     friendly_error,
@@ -1246,6 +1284,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._last_poll_duration = time.monotonic() - poll_started
         self._last_poll_success = datetime.now(UTC)
         self._log_connection_state_change()
+        self._finish_connection_outage()
         self._consecutive_poll_failures = 0
         self._evaluate_poll_duration(self._last_poll_duration)
         return data
@@ -1300,6 +1339,46 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         elif self._scan_interval_issue_active and self._fast_poll_streak >= _FAST_POLL_STREAK_TO_CLEAR:
             self._scan_interval_issue_active = False
             ir.async_delete_issue(self.hass, DOMAIN, self._scoped_issue_id(_SCAN_INTERVAL_TOO_LOW_ISSUE))
+
+    def _quiet_outage_active(self) -> bool:
+        """Return whether a connection outage is still inside its quiet window."""
+        return (
+            self._outage_started is not None
+            and not self._outage_escalated
+            and (time.monotonic() - self._outage_started) < self._quiet_outage_period
+        )
+
+    def _note_connection_failure(self) -> None:
+        """Start the shared outage clock on the first connection-class failure."""
+        if self._outage_started is None:
+            self._outage_started = time.monotonic()
+            self._outage_escalated = False
+
+    def _connection_quiet_for_writes(self) -> bool:
+        """Fold a connection-class write failure into the quiet outage window.
+
+        A write often meets a dead connection before the next poll does, so it
+        starts the same clock the read path uses and both stay quiet together.
+        """
+        self._note_connection_failure()
+        return self._quiet_outage_active()
+
+    def _finish_connection_outage(self) -> None:
+        """Reset the outage clock and log one recovery line if one was running."""
+        if self._outage_started is None:
+            return
+        duration = time.monotonic() - self._outage_started
+        escalated = self._outage_escalated
+        self._outage_started = None
+        self._outage_escalated = False
+        if escalated:
+            _LOGGER.info("Modbus connection to %s recovered after %.0f s", self._client.host, duration)
+        else:
+            _LOGGER.info(
+                "Modbus connection to %s recovered after %.0f s; the short outage raised no repair issue",
+                self._client.host,
+                duration,
+            )
 
     def _log_connection_state_change(self) -> None:
         """Log the effective transport combination whenever it changes.
@@ -1581,6 +1660,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         err: Exception,
         *,
         reached_device: bool,
+        quiet: bool = False,
     ) -> None:
         """Log and remember why a write failed, at a level bug reports capture.
 
@@ -1621,13 +1701,26 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             )
         elif translation_key == "write_connection_failed":
             # The request never got an answer, so this is not a refusal.
-            _LOGGER.warning(
-                "The write of %s to %s (address %s) could not be delivered to the IDM controller: %s",
-                value,
-                reg.name,
-                reg.address,
-                detail,
-            )
+            if quiet:
+                # Part of a connection outage inside its quiet window: the
+                # read path already announced the outage once (or is staying
+                # quiet itself), and one warning per failed write only
+                # produced panic reports for blips that self-healed.
+                _LOGGER.debug(
+                    "The write of %s to %s (address %s) was not delivered during the Modbus outage: %s",
+                    value,
+                    reg.name,
+                    reg.address,
+                    detail,
+                )
+            else:
+                _LOGGER.warning(
+                    "The write of %s to %s (address %s) could not be delivered to the IDM controller: %s",
+                    value,
+                    reg.name,
+                    reg.address,
+                    detail,
+                )
         else:
             _LOGGER.warning(
                 "The IDM controller refused the write of %s to %s (address %s): %s",
@@ -1854,25 +1947,31 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             else:
                 await self._client.write_register(reg, value)
         except Exception as err:
-            self._record_write_error(reg, value, err, reached_device=True)
-            ir.async_create_issue(
-                self.hass,
-                DOMAIN,
-                self._scoped_issue_id("write_rejected"),
-                is_fixable=False,
-                severity=ir.IssueSeverity.WARNING,
-                translation_key=(
-                    "write_connection_failed"
-                    if classify_write_error(err) == "write_connection_failed"
-                    else "write_rejected"
-                ),
-                translation_placeholders={
-                    "register": reg.name,
-                    "address": str(reg.address),
-                    "detail": write_error_detail(err),
-                },
-            )
+            quiet = classify_write_error(err) == "write_connection_failed" and self._connection_quiet_for_writes()
+            self._record_write_error(reg, value, err, reached_device=True, quiet=quiet)
+            if not quiet:
+                ir.async_create_issue(
+                    self.hass,
+                    DOMAIN,
+                    self._scoped_issue_id("write_rejected"),
+                    is_fixable=False,
+                    severity=ir.IssueSeverity.WARNING,
+                    translation_key=(
+                        "write_connection_failed"
+                        if classify_write_error(err) == "write_connection_failed"
+                        else "write_rejected"
+                    ),
+                    translation_placeholders={
+                        "register": reg.name,
+                        "address": str(reg.address),
+                        "detail": write_error_detail(err),
+                    },
+                )
             raise
+        # A delivered write proves the connection is back even before the next
+        # poll confirms it, so it closes the outage clock (and its recovery
+        # line) right here.
+        self._finish_connection_outage()
         self._last_write_error = None
         self._clear_confirmed_write_issue(reg)
         self._write_timestamps[reg.address] = time.monotonic()

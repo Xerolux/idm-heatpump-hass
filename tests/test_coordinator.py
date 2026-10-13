@@ -72,6 +72,11 @@ def _make_coordinator(mock_hass, mock_config_entry, client=None, **kwargs):
         from custom_components.idm_heatpump.coordinator import _is_zone_room_mode_register
 
         coord._room_mode_registers = [reg for reg in registers if _is_zone_room_mode_register(reg)]
+    # Production absorbs short connection outages in a quiet window before
+    # escalating (see TestQuietOutageWindow). The rest of this suite tests
+    # the escalation semantics directly, so it opts out of the window here;
+    # the quiet behaviour itself is covered with the period set explicitly.
+    coord._quiet_outage_period = 0.0
     return coord, client
 
 
@@ -1133,6 +1138,239 @@ class TestAsyncUpdateData:
         with patch("custom_components.idm_heatpump.coordinator.ir"):
             await coord._async_update_data()
         assert coord._alias_primary_map is first_map
+
+
+class TestQuietOutageWindow:
+    """Short connection outages stay quiet before the coordinator escalates.
+
+    Inside the window a connection-class poll failure returns the last
+    snapshot without a repair issue, without UpdateFailed and without an
+    error line; connection-class write failures fold into the same window.
+    _make_coordinator disables the window for the rest of the suite, so
+    these tests re-enable it explicitly.
+    """
+
+    def _degrade_web_alive(self, coord) -> None:
+        from datetime import UTC, datetime
+
+        coord._web_pin = "1234"
+        coord._web_alive = True
+        coord._last_web_success = datetime.now(UTC)
+
+    async def test_failure_inside_window_returns_last_snapshot_without_issue(
+        self, mock_hass, mock_config_entry, caplog
+    ):
+        import logging
+
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 20.0})
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[reg])
+        with patch("custom_components.idm_heatpump.coordinator.ir"):
+            # async_refresh would store the poll result on the coordinator;
+            # calling the data callback directly skips that, so do it by hand.
+            coord.data = await coord._async_update_data()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord._quiet_outage_period = 300.0
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+            caplog.at_level(logging.INFO),
+        ):
+            result = await coord._async_update_data()
+
+        assert result["temp"] == 20.0
+        mock_ir.async_create_issue.assert_not_called()
+        assert "retrying quietly" in caplog.text
+        assert "created repair issue" not in caplog.text
+
+    async def test_repeat_failures_inside_window_stay_at_debug_without_issue(
+        self, mock_hass, mock_config_entry, caplog
+    ):
+        import logging
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")],
+        )
+        coord._quiet_outage_period = 300.0
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, caplog.at_level(logging.DEBUG):
+            await coord._async_update_data()
+            await coord._async_update_data()
+            await coord._async_update_data()
+
+        mock_ir.async_create_issue.assert_not_called()
+        assert caplog.text.count("retrying quietly") == 1
+        assert caplog.text.count("still down") == 2
+        assert "created repair issue" not in caplog.text
+
+    async def test_window_expiry_escalates_once_with_error_and_issue(self, mock_hass, mock_config_entry, caplog):
+        import logging
+
+        from homeassistant.helpers.update_coordinator import UpdateFailed
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")],
+        )
+        coord._quiet_outage_period = 300.0
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, caplog.at_level(logging.DEBUG):
+            await coord._async_update_data()
+            assert coord._outage_started is not None
+            # Force the window to have elapsed; the next poll must escalate.
+            coord._outage_started -= 400.0
+            with pytest.raises(UpdateFailed):
+                await coord._async_update_data()
+            assert mock_ir.async_create_issue.call_args.args[2] == "cannot_connect_test_entry_id"
+            assert caplog.text.count("created repair issue") == 1
+            # Further failures keep the issue but do not repeat the error.
+            with pytest.raises(UpdateFailed):
+                await coord._async_update_data()
+            assert caplog.text.count("created repair issue") == 1
+
+            # Recovery after escalation logs the escalated wording (an issue
+            # had been raised), not the short-outage one.
+            client.read_batch = AsyncMock(return_value={"temp": 21.0})
+            await coord._async_update_data()
+            assert "recovered after" in caplog.text
+            assert "raised no repair issue" not in caplog.text
+
+    async def test_web_alive_short_outage_raises_no_degraded_issue_until_escalation(self, mock_hass, mock_config_entry):
+        from homeassistant.helpers.update_coordinator import UpdateFailed
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")],
+        )
+        self._degrade_web_alive(coord)
+        coord._quiet_outage_period = 300.0
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir:
+            await coord._async_update_data()
+            mock_ir.async_create_issue.assert_not_called()
+
+            coord._outage_started -= 400.0
+            with pytest.raises(UpdateFailed):
+                await coord._async_update_data()
+        assert mock_ir.async_create_issue.call_args.args[2] == "modbus_degraded_web_active_test_entry_id"
+
+    async def test_recovery_inside_window_closes_outage_and_next_outage_starts_fresh(
+        self, mock_hass, mock_config_entry, caplog
+    ):
+        import logging
+
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 20.0})
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, registers=[reg])
+        coord._quiet_outage_period = 300.0
+
+        with patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir, caplog.at_level(logging.INFO):
+            client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+            await coord._async_update_data()
+            assert coord._outage_started is not None
+
+            client.read_batch = AsyncMock(return_value={"temp": 21.0})
+            await coord._async_update_data()
+            assert coord._outage_started is None
+            assert "recovered after" in caplog.text
+            assert "raised no repair issue" in caplog.text
+            mock_ir.async_create_issue.assert_not_called()
+
+            # A later blip is a fresh window: one new quiet line, still no issue.
+            client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+            await coord._async_update_data()
+        assert caplog.text.count("retrying quietly") == 2
+        mock_ir.async_create_issue.assert_not_called()
+
+    async def test_successful_write_closes_the_quiet_outage(self, mock_hass, mock_config_entry, caplog):
+        import logging
+
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp")
+        write_reg = RegisterDef(address=1002, datatype=DataType.FLOAT, name="temp_set", writable=True)
+        client = MagicMock()
+        client.read_batch = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            client=client,
+            registers=[reg, write_reg],
+            write_cooldown_seconds=0,
+        )
+        coord._quiet_outage_period = 300.0
+
+        with patch("custom_components.idm_heatpump.coordinator.ir"), caplog.at_level(logging.INFO):
+            await coord._async_update_data()
+            assert coord._outage_started is not None
+
+            await coord.async_write_register(write_reg, 21.0)
+        assert coord._outage_started is None
+        assert "recovered after" in caplog.text
+
+    async def test_write_failure_inside_window_skips_issue_and_logs_debug(self, mock_hass, mock_config_entry, caplog):
+        import logging
+
+        write_reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 20.0})
+        client.write_register = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, write_cooldown_seconds=0)
+        coord._quiet_outage_period = 300.0
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+            caplog.at_level(logging.DEBUG),
+            pytest.raises(IdmConnectionError),
+        ):
+            await coord.async_write_register(write_reg, 21.0)
+
+        mock_ir.async_create_issue.assert_not_called()
+        assert "was not delivered during the Modbus outage" in caplog.text
+        assert "could not be delivered to the IDM controller" not in caplog.text
+
+    async def test_write_failure_after_escalation_keeps_warning_and_issue(self, mock_hass, mock_config_entry, caplog):
+        import logging
+        import time as time_module
+
+        write_reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="temp_set", writable=True)
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={"temp": 20.0})
+        client.write_register = AsyncMock(side_effect=IdmConnectionError("connection lost"))
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client, write_cooldown_seconds=0)
+        coord._quiet_outage_period = 300.0
+        # An outage that already escalated (long outage) keeps the visible path.
+        coord._outage_started = time_module.monotonic() - 400.0
+        coord._outage_escalated = True
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.ir") as mock_ir,
+            caplog.at_level(logging.DEBUG),
+            pytest.raises(IdmConnectionError),
+        ):
+            await coord.async_write_register(write_reg, 21.0)
+
+        mock_ir.async_create_issue.assert_called_once()
+        assert "could not be delivered to the IDM controller" in caplog.text
+
+    def test_production_default_quiet_period_is_five_minutes(self):
+        from custom_components.idm_heatpump import coordinator as coordinator_module
+
+        assert coordinator_module._QUIET_OUTAGE_PERIOD == 300.0
 
 
 class TestAsyncWriteRegister:

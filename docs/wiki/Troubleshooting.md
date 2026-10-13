@@ -344,7 +344,18 @@ Please **never** run write operations on Modbus (`write_register`) live against 
 A transient Modbus outage (proxy restart, controller reboot) heals itself —
 no action needed:
 
-- **While the web interface keeps delivering** (a web PIN is configured and
+- **Short outages stay completely quiet.** A connection failure that
+  recovers within five minutes never reaches the repairs page or the error
+  log at all: the coordinator keeps serving the last snapshot (web data
+  keeps flowing on its own schedule), pending writes pause silently and
+  resume on their own retry cycle, and the log gets one gray info line when
+  the connection drops and one when it recovers. Only a connection failure
+  that lasts longer than five minutes escalates to the visible repair
+  notice and error line — errors the controller itself answers with (wrong
+  slave ID, firmware mismatch) always escalate immediately, because a quiet
+  window cannot heal them.
+- **Once the quiet window has passed, the web interface keeps the calm tone
+  while it keeps delivering** (a web PIN is configured and
   the web path answers), a failed Modbus poll raises the calm repair notice
   *IDM Modbus connection interrupted — web data active* instead of a
   connection error: it states that the data keeps flowing through the local

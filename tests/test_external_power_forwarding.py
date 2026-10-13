@@ -390,8 +390,11 @@ async def test_connection_outage_is_reported_once_until_recovery(caplog: pytest.
         for _ in range(4):
             await forwarder.async_forward()
 
-    warnings = [record for record in caplog.records if record.levelname == "WARNING"]
-    assert len(warnings) == 1  # one per outage, not per register per pass
+    outage_lines = [record for record in caplog.records if "Could not forward" in record.getMessage()]
+    assert len(outage_lines) == 1  # one per outage, not per register per pass
+    # Gray, not red: connection blips that self-heal must not read as errors
+    # in a log history scan (the coordinator owns the visible outage line).
+    assert outage_lines[0].levelname == "INFO"
     assert caplog.text.count("still paused") == 7  # every suppressed retry
 
     # Recovery clears the latch: a later outage is reported again.
@@ -401,4 +404,4 @@ async def test_connection_outage_is_reported_once_until_recovery(caplog: pytest.
         coordinator.async_write_register.side_effect = _connection_lost()
         await forwarder.async_forward()
 
-    assert len([record for record in caplog.records if record.levelname == "WARNING"]) == 2
+    assert len([record for record in caplog.records if "Could not forward" in record.getMessage()]) == 2
