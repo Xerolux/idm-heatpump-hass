@@ -413,6 +413,10 @@ ruff check custom_components tests
   while prerelease headings remain after their stable cut. This applies from
   `0.17.0` on; older history keeps the shape it was published with, and the
   per-beta record stays available in git and the GitHub prerelease tags.
+  A prerelease line that is never promoted stable is folded into the next line's
+  prerelease section instead (0.21.3-b1..b6 folded into 0.22.0-b1): same
+  nothing-dropped rule, and the fold is editorial because the script only folds
+  within one version.
 - Released changelog sections stay as published; they are history. The rule
   applies to the unreleased entries and to the section of the version in the
   manifest.

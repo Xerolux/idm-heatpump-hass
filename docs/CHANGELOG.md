@@ -17,62 +17,31 @@ All notable changes to this project will be documented in this file.
 
 ## [0.22.0-b1] - 2026-10-13
 
+0.22.0-b1 opens the 0.22 line and absorbs the never-promoted 0.21.3 beta
+line: everything since 0.21.2 ships here. The two field investigations
+dominate — GLT RAM inputs that some controllers clear ten seconds after the
+last write (#493), and implausible room temperatures feeding the advisor's
+models (#504) — plus the read-only Home Assistant room-temperature sources
+that fix the advisor for heating circuits without a wired sensor, and
+quieter failure logging throughout the GLT forwarders.
+
 ### Added
 
 - The predictive advisor accepts one read-only Home Assistant temperature sensor per heating circuit as its room-temperature source (options step "Advisor room temperature sources", English and German). For circuits without a wired room sensor — which report uninitialized memory on the `hc_x_room_temp` register (#504) — the mapped sensor feeds the advisor's models, data quality and capability detection under the same 0-50 °C plausibility range; an unavailable source counts as an unavailable sample and never falls back to the register garbage. Nothing is written to the heat pump.
-
-### Fixed
-
-- A connected nav20 web client corrects a Navigator model misdetected as Navigator 10, mirroring the long-standing nav10 correction: the web variant that actually connected is definitive in both directions (observed on a Navigator 2.0 reporting m_20.23 firmware, #504 follow-up). Previously such plants kept the wrong model and a recurring web-variant-conflict warning.
-- The external power, room temperature and humidity forwarders report a Modbus connection outage once per outage instead of on every refresh pass, and return to normal logging after the next successful write (warning spam observed at the GLT refresh cadence during a proxy outage).
-
-## [0.21.3-b6] - 2026-10-13
-
-### Fixed
-
-- The predictive advisor treats implausible room temperatures as missing. A circuit without a wired room sensor reports uninitialized memory (observed as -327.33 on a Navigator 2.0, #504); the value is finite, so the engine's numeric guard accepted it and silently fed the heat-loss regression, the heat-demand plan and the room-deviation metric with deltas around -339 K, while the advisor's own quality tracker correctly reported 0 percent usable. Every engine room-temperature read now applies the advisor's plausibility range (0-50 C), room-deviation baselines beyond the plausible span are skipped so storage polluted before this fix cannot produce curve recommendations, and capabilities.room_temperature is only reported for range-valid readings.
-
-## [0.21.3-b5] - 2026-10-13
-
-### Fixed
-
-- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 5 seconds instead of the configured fallback interval. The #493 reporter's log proved that some Navigator firmwares (observed on NAV10_20.23-903) clear unrefreshed GLT inputs roughly ten seconds after the last write: a battery SoC written once per minute was visible for ten seconds and cleared for the remaining fifty. Sensor-driven forwarding is unchanged; the per-register write cooldown still throttles actual writes. The SolarEdge GLT setup advice (EN/DE) now states that the fallback interval no longer governs presence.
-- The energy-manager and comfort-schedule loops run as Home Assistant background tasks. Their never-finishing foreground tasks previously made the bootstrap log "Setup timed out for bootstrap waiting on EnergyManager._run" (#493 reporter log).
-
-## [0.21.3-b4] - 2026-10-12
-
-### Added
-
+- Document a SolarEdge GLT setup for a battery-connected hybrid inverter and additional inverters, including explicit source signs, partial aggregates, dropout/recovery, battery-export exclusion and the limits of HA-side failure handling. Add a standalone generator for reviewable HA template YAML and an IDM source-mapping reference; it performs no HA or hardware writes. Unit-labelled inputs and explicit sign choices are required. English and German setup guides are published together.
 - External power forwarding logs every successful GLT register write at debug level, so a debug log covering a flicker period shows exactly when each write reached the controller while investigating device-side clearing of RAM inputs (#493).
 
 ### Fixed
 
-- Room temperature and humidity forwarding no longer cancels a write that is already in flight when a source sensor updates: bursts coalesce into follow-up passes that read the latest state, periodic and event-driven passes are serialized behind a lock, and unload awaits cancelled tasks. This ports the b1 external-power forwarding protection to the remaining GLT forwarders (self-audit around #493; no user report existed yet).
+- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 5 seconds instead of the configured fallback interval. The #493 reporter's log proved that some Navigator firmwares (observed on NAV10_20.23-903) clear unrefreshed GLT inputs roughly ten seconds after the last write: a battery SoC written once per minute was visible for ten seconds and cleared for the remaining fifty. Sensor-driven forwarding is unchanged; the per-register write cooldown still throttles actual writes. The SolarEdge GLT setup advice (EN/DE) now states that the fallback interval no longer governs presence.
+- The predictive advisor treats implausible room temperatures as missing (#504). A circuit without a wired room sensor reports uninitialized memory (observed as -327.33 on a Navigator 2.0); the value is finite, so the engine's numeric guard accepted it and silently fed the heat-loss regression, the heat-demand plan and the room-deviation metric with deltas around -339 K, while the advisor's own quality tracker correctly reported 0 percent usable. Every engine room-temperature read now applies the advisor's plausibility range (0-50 °C), room-deviation baselines beyond the plausible span are skipped so storage polluted before this fix cannot produce curve recommendations, and capabilities.room_temperature is only reported for range-valid readings.
+- A connected nav20 web client corrects a Navigator model misdetected as Navigator 10, mirroring the long-standing nav10 correction: the web variant that actually connected is definitive in both directions (observed on a Navigator 2.0 reporting m_20.23 firmware, #504 follow-up). Previously such plants kept the wrong model and a recurring web-variant-conflict warning.
+- Sensor bursts no longer cancel an in-flight Modbus write in any GLT forwarder: external power, room temperature and humidity forwarding coalesce bursts into follow-up passes that read the latest state, periodic and event-driven passes are serialized behind a lock, and unload awaits cancelled tasks (#493 investigation; the external-power race was independently reproduced, the other forwarders were fixed proactively).
 - The comfort schedule and the energy manager finish an evaluation that is already writing — including its state save or boost start — before their stop path cancels the loop, so unloading or reloading the entry cannot abort a Modbus transaction mid-flight.
-- A deferred web-client session release keeps its task referenced until it finished (an unreferenced task can be garbage-collected mid-flight) and a failing release is now reported as a warning instead of surfacing as an unretrieved task exception.
-
-## [0.21.3-b3] - 2026-10-12
-
-### Documentation
-
-- Publish a beta checkpoint after the issue-response audit. Include the validated SolarEdge GLT setup and connection-repair behavior from b2, the forwarding race fix from b1, and the Navigator 1.7 code/PV DHW/source-removal fixes from 0.21.1 and 0.21.2. No functional change from b2 is introduced.
-- Keep battery-display flicker (#493) open pending confirmation on the reporter's firmware; successful reference-installation checks do not establish resolution there. Stable promotion remains subject to the existing soak and sign-off gates.
-
-## [0.21.3-b2] - 2026-10-12
-
-### Added
-
-- Document a SolarEdge GLT setup for a battery-connected hybrid inverter and additional inverters, including explicit source signs, partial aggregates, dropout/recovery, battery-export exclusion and the limits of HA-side failure handling. Add a standalone generator for reviewable HA template YAML and an IDM source-mapping reference; it performs no HA or hardware writes. Unit-labelled inputs and explicit sign choices are required. English and German setup guides are published together.
-
-### Fixed
-
+- The energy-manager and comfort-schedule loops run as Home Assistant background tasks; their never-finishing foreground tasks previously made the bootstrap log "Setup timed out for bootstrap waiting on EnergyManager._run" (#493 reporter log).
+- The external power, room temperature and humidity forwarders report a Modbus connection outage once per outage instead of on every refresh pass, and return to normal logging after the next successful write (warning spam observed at the GLT refresh cadence during a proxy outage).
 - Report Modbus delivery/connection failures separately from controller register-access rejections, including proxy endpoint failures. Clear a persisted write repair only after that same register is successfully written; success on another register does not conceal its failure. Keep the existing scoped repair identity so recovery also clears warnings created by earlier versions.
-
-## [0.21.3-b1] - 2026-10-12
-
-### Fixed
-
-- External power forwarding coalesces sensor bursts without cancelling an in-flight Modbus batch or postponing writes indefinitely. Periodic and event-driven batches are serialized, and unloading awaits cancellation of the owned event task. This addresses an independently reproduced forwarding race investigated alongside #493; controller-side battery-display flicker is not yet established as having the same cause.
+- A deferred web-client session release keeps its task referenced until it finished (an unreferenced task can be garbage-collected mid-flight) and a failing release is now reported as a warning instead of surfacing as an unretrieved task exception.
 
 ## [0.21.2] - 2026-10-12
 

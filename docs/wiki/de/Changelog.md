@@ -7,59 +7,15 @@ Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
 ## v0.22.0-b1 — 2026-10-13
 
-Eröffnet die 0.22-Linie: Nur lesende Home-Assistant-Raumtemperaturquellen
-für den Predictive Advisor (Heizkreise ohne Raumfühler, #504), ein
-verbundener nav20-Webclient korrigiert jetzt eine Navigator-10-
-Fehldetektion, und Verbindungsausfälle der Weiterleitungen werden einmal
-statt pro Aktualisierungsdurchlauf gemeldet.
-
-## v0.21.3-b6 — 2026-10-13
-
-Der Predictive Advisor ignoriert unplausible Raumtemperaturen (-327,33 bei
-Heizkreisen ohne Raumfühler, #504): Der Plausibilitätsbereich schützt jetzt
-die Engine-Lesungen, verschmutzte Baselines und die Capability-Meldung.
-
-## v0.21.3-b5 — 2026-10-13
-
-Die Ursache von #493 ist behoben: GLT-RAM-Werte werden alle 5 s erneuert, da
-manche Navigator-Firmwares sie ~10 s nach dem letzten Schreibvorgang löschen;
-Energiemanager und Komfortzeitplan blockieren den HA-Start nicht mehr.
-Bestätigung des Melders steht aus.
-
-## v0.21.3-b4 — 2026-10-12
-
-Härtungsrunde für die Weiterleitungen aus dem Selbst-Audit zu #493: Jeder
-erfolgreiche GLT-Schreibvorgang ist jetzt im Debug-Log sichtbar, die
-Raumtemperatur- und Feuchtigkeits-Weiterleitung bricht bei Sensor-Bursts keine
-laufenden Schreibvorgänge mehr ab, Komfortzeitplan und Energiemanager schließen
-laufende Schreibvorgänge vor dem Stopp ab, und die zurückgestellte
-Web-Sitzungsfreigabe bleibt referenziert und meldet Fehler. Das
-Batterie-Anzeigeflackern (#493) bleibt bis zur Bestätigung auf der Firmware
-des Melders offen.
-
-## v0.21.3-b3 — 2026-10-12
-
-Beta nach Prüfung und Ergänzung der Issue-Antworten; keine Funktionsänderungen
-gegenüber b2. Die bisherigen Beta-Fixes und die Navigator-1.7-Codes bleiben
-enthalten. Das Batterie-Anzeigeflackern (#493) bleibt bis zur Bestätigung auf
-der Firmware des Melders offen.
-
-## v0.21.3-b2 — 2026-10-12
-
-Die SolarEdge-GLT-Einrichtung enthält einen Template-Generator mit ausdrücklich
-gewählten Quellen und eine Anleitung zum Ausfallverhalten auf Deutsch und
-Englisch. Modbus-Proxy-/Verbindungsfehler erhalten eine passende Schreibwarnung.
-Ein erfolgreicher Schreibvorgang auf dasselbe Register entfernt dessen
-gespeicherte Warnung, ohne einen Fehler eines anderen Registers zu verdecken.
-
-## v0.21.3-b1 — 2026-10-12
-
-Die externe Leistungsweiterleitung bricht laufende Modbus-Durchgänge bei neuen
-Sensorwerten nicht mehr ab. Aktualisierungen werden mit begrenzter Anfangswartezeit
-gebündelt, periodische und ereignisgesteuerte Durchgänge laufen nacheinander und
-das Entladen wartet auf das Ende des Ereignistasks. Regressionstests sichern
-die Korrekturen ab. Das separate Batterieanzeige-Problem #493 wird für die
-Firmware des Melders weiter untersucht.
+Eröffnet die 0.22-Linie und nimmt die nie stabile 0.21.3-Beta-Linie auf
+(alles seit 0.21.2). GLT-RAM-Werte werden alle 5 s erneuert, da manche
+Controller sie ~10 s nach dem letzten Schreibvorgang löschen (#493); der
+Advisor ignoriert unplausible Raumtemperaturen und erhält nur lesende
+Home-Assistant-Raumtemperaturquellen für Heizkreise ohne Raumfühler
+(#504); ein verbundener nav20-Webclient korrigiert Navigator-10-
+Fehldetektionen; Sensor-Bursts brechen keine laufenden Schreibvorgänge
+mehr ab; Verbindungsausfälle werden einmal statt pro Durchlauf gemeldet.
+Enthält die SolarEdge-GLT-Anleitung und klarere Schreibfehler-Reparaturen.
 
 ## v0.21.2 — 2026-10-12
 
