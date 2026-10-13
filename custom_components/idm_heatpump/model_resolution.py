@@ -56,7 +56,7 @@ from .const import (
     MODEL_OVERRIDE_NAVIGATOR_20,
     MODEL_OVERRIDE_NAVIGATOR_PRO,
 )
-from .coordinator import navigator_family
+from .coordinator import _web_variant_from_family, navigator_family
 from .web_data import IdmWebSupplement, _firmware_indicates_nav10, merge_model_info
 
 #: One deferred log call: level, message, arguments. Collected rather than
@@ -404,6 +404,30 @@ def resolve_model(
                     web_correction_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
                 if web.web_variant:
                     web_correction_updates[CONF_DETECTED_WEB_VARIANT] = web.web_variant
+            elif (
+                web.web_variant is not None
+                and _web_variant_from_family(navigator_family(web_model_name)) == web.web_variant
+            ):
+                # The variant that actually connected is definitive in both
+                # directions: the nav20 client only answers on the Navigator
+                # 2.0 family, exactly as the nav10 client only answers on
+                # Navigator 10/Pro. A Modbus probe that misselected the other
+                # generation (observed on a Navigator 2.0, #504 follow-up) is
+                # corrected instead of warned about forever.
+                logs.append(
+                    (
+                        logging.INFO,
+                        "Correcting Modbus-detected model %s to %s based on the connected %s web client",
+                        (reconciled.modbus_model_name, web_model_name, web.web_variant),
+                    )
+                )
+                model_name = web_model_name
+                firmware_version = web.software_version or firmware_version
+                model_info = model_info_from_name(model_name, plant)
+                web_correction_updates[CONF_DETECTED_NAVIGATOR_VERSION] = model_name
+                if firmware_version:
+                    web_correction_updates[CONF_DETECTED_SOFTWARE_VERSION] = firmware_version
+                web_correction_updates[CONF_DETECTED_WEB_VARIANT] = web.web_variant
             else:
                 stale_navigator_version = web_model_name
                 logs.append(
