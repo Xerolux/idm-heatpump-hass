@@ -9,7 +9,10 @@ choice, and the exact integration settings.
 The add-on path below was validated end-to-end on Home Assistant OS 2026.9
 (add-on v0.34.4, `gemma3:4b`): a daily report generated on the local model in
 about one minute with a clean quality guard. The dedicated-server path was
-validated the same way with `gemma3:12b` on a separate Proxmox LXC.
+validated the same way with `gemma3:12b` on a separate Proxmox LXC, and again
+in October 2026 with Ollama 0.35.0 on a Proxmox VM where both `gemma3:4b` and
+`gemma3:12b` produced guarded reports (`output_source: ai`) through the
+integration's report buttons.
 
 ## What you need
 
@@ -144,6 +147,8 @@ endpoint differs. Everything the model receives stays inside your LAN.
 | Report aborts after five minutes | Model too large for the hardware. Use a smaller model, keep the model resident (keep-alive `-1`) or add CPU cores. |
 | First report much slower than later ones | Model load time; with the default keep-alive Ollama unloads idle models after five minutes. |
 | Connection refused from HA, works from another machine | Ollama listens on `127.0.0.1` only — set `OLLAMA_HOST=0.0.0.0` (Docker: publish the port). |
+| A report button shows `unknown` | Button entities have no state until they are pressed once — that is not an error, and the button works regardless. |
+| Reports are generated but without an AI interpretation section (measured-data mode) | The adviser stays in measured-data mode: the provider or base URL does not reach the model, or **free-form, not fully verifiable AI explanations** is off. Check the provider, the URL and the switch; the report attributes show the active `provider` and `model` per report type. |
 
 ## Privacy summary
 
