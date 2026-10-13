@@ -5,6 +5,12 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.21.3-b6 — 2026-10-13
+
+The predictive advisor ignores implausible room temperatures (-327.33 from
+circuits without a wired sensor, #504): the plausibility range now guards the
+engine reads, polluted baselines and the capability flag.
+
 ## v0.21.3-b5 — 2026-10-13
 
 The #493 root cause is fixed: GLT RAM inputs are refreshed every 5 s because
