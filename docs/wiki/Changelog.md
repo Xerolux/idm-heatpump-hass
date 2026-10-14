@@ -5,6 +5,19 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.22.0-b6 — 2026-10-14
+
+External power forwarding writes quantized values (#519): derived sums
+such as household consumption used to carry floating-point arithmetic
+noise (e.g. `0.3569999999999999` instead of `0.357`) into the entity
+state, which the next poll then replaced with the register's rounded
+readback — the entity visibly alternated between both spellings. Writes
+are now rounded to the register resolution (10 W) before reaching the
+controller, so the state is stable and always matches what the heat pump
+actually stores. The cyclic 3-second refresh stays: GLT inputs live in
+controller RAM (not EEPROM — no write-cycle wear) and some firmwares
+clear them seconds after the last write.
+
 ## v0.22.0-b5 — 2026-10-14
 
 External power forwarding accepts a bidirectional grid meter directly
