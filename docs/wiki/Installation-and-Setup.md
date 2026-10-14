@@ -210,8 +210,20 @@ Home Assistant sensor entities:
 - Battery charge/discharge → `battery_discharge` (84–85)
 - Battery state of charge → `battery_soc` (86)
 - Electric heater power → `electric_heater_power` (76–77)
+- Bidirectional grid meter → derives `pv_surplus` (74–75); with a PV production sensor also `house_consumption` (82–83)
 
 Power sensors must expose `W` or `kW`; values are converted to kW before writing. Battery SOC is a whole percentage from 0 to 100; `-1` means no battery. If the energy manager uses the openWB sign convention (negative means discharge), choose **Invert source sign**. Unavailable or invalid sensors are skipped; the integration never writes zero as a fallback.
+
+A bidirectional grid meter can be selected directly (#519): choose its sign
+convention (**positive = grid import** or **positive = export**), and the
+integration normalizes the sign and derives the signed `pv_surplus`; together
+with the PV production sensor it also derives `house_consumption`, including
+mapped battery flow (charging counts negative). Explicitly selected surplus
+and house-consumption sensors take precedence over the derivation, the grid
+meter alone is never written as household consumption, and a mapping that
+leaves the grid meter nothing to derive is rejected. See
+[Smart Energy & Comfort](Smart-Energy-and-Comfort#bidirectional-grid-meter-as-the-surplus-source)
+for the details.
 
 ### Important ownership rule
 

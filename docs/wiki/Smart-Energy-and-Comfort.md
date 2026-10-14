@@ -179,13 +179,38 @@ never writes system mode, heating-buffer targets, heating curves or SG-Ready.
 
 Use a net-surplus source with **positive values for export/surplus** and negative
 values for grid import; check the inverter sensor's sign convention. Forwarding
-preserves its sign and does not convert grid import into surplus. Prefer one
+preserves the sign of a directly selected surplus source and does not convert
+grid import into surplus — a bidirectional grid meter instead uses the
+dedicated grid sensor field described below. Prefer one
 owner for PV charging: the Navigator using forwarded measurements, or the HA
 DHW automation using the source mapping with forwarding disabled. Selecting
 both is not a shared anti-cycle controller. Review the Navigator's PV heating
 buffer settings if the buffer repeatedly charges near its upper limit. The
 integration cannot guarantee that DHW and buffer charging use one compressor
 cycle; the Navigator owns their sequencing and normal heating demand.
+
+### Bidirectional grid meter as the surplus source
+
+A single bidirectional grid meter at the grid connection point can feed the
+mapping directly instead of template helpers (#519). Select it as
+**Bidirectional grid power sensor** and choose its sign convention:
+
+- **Positive = grid import** (negative = export) — the common meter default.
+- **Positive = export** (negative = grid import).
+
+The integration normalizes the sign and derives `pv_surplus` (registers
+74–75) in the IDM convention: positive = export/surplus, negative = grid
+import. When a PV production sensor is also selected, `house_consumption`
+(registers 82–83) is derived from the site balance — PV production plus grid
+import, plus the mapped battery flow (charging counts negative). A PV surplus
+or house-consumption sensor that is selected explicitly takes precedence over
+its derivation; the grid meter alone is never written as household
+consumption, because grid import is not total consumption while PV generates.
+House consumption is not derived while the PV production source is unmapped or
+invalid, a derived negative value is clamped to zero, and W or kW units are
+converted automatically. The configuration dialog rejects a grid meter that
+has nothing left to derive (an explicit surplus sensor together with an
+explicit house sensor, or a missing PV production source).
 
 The manager does not control the heating curve or the electric heater. The
 optional tariff sensor affects cost accounting only; tariff-controlled heat

@@ -436,7 +436,9 @@
           "external_power_forwarding_battery_discharge": "Batterie-Lade-/Entlade-Sensor",
           "external_power_forwarding_battery_soc": "Batterie-Ladezustand-Sensor",
           "external_power_forwarding_electric_heater_power": "Elektroheizungs-Leistungssensor",
-          "external_power_battery_sign": "Vorzeichen der Batterieleistung"
+          "external_power_forwarding_grid_power": "Bidirektionaler Netzleistungssensor",
+          "external_power_battery_sign": "Vorzeichen der Batterieleistung",
+          "external_power_grid_sign": "Vorzeichenkonvention des Netzleistungssensors"
         },
         "data_description": {
           "external_power_forwarding_pv_surplus": "W oder kW; wird in IDM pv_surplus (Register 74–75) geschrieben.",
@@ -445,7 +447,9 @@
           "external_power_forwarding_battery_discharge": "W oder kW. Invertieren wählen, wenn die Quelle die openWB-Konvention nutzt (negativ bedeutet Entladen).",
           "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100, auch mit Nachkommastellen. Für das GLT-Register auf eine ganze Zahl gerundet. Feld leeren, um die Weiterleitung und die optionale HA-Batteriebedingung zu entfernen; kein Ersatzwert wird geschrieben. Der Lese-Sentinel -1 wird nicht gesendet.",
           "external_power_forwarding_electric_heater_power": "W oder kW; wird in IDM electric_heater_power (Register 76–77) geschrieben.",
-          "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um."
+          "external_power_forwarding_grid_power": "W oder kW eines bidirektionalen Netzleistungssensors am Netzverknüpfungspunkt. Die Integration normalisiert das Vorzeichen und leitet daraus pv_surplus (Register 74–75) ab; zusammen mit dem PV-Produktionssensor wird auch house_consumption (Register 82–83) abgeleitet, einschließlich einer gemappten Batterieleistung. Explizite Überschuss- und Verbrauchssensoren haben Vorrang.",
+          "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um.",
+          "external_power_grid_sign": "Positiv = Netzbezug (negativ = Einspeisung) oder positiv = Einspeisung (negativ = Netzbezug). Der abgeleitete pv_surplus meldet immer positiv für Überschuss/Einspeisung und negativ für Netzbezug."
         }
       },
       "feature_notice": {
@@ -825,6 +829,7 @@
       "invalid_comfort_windows": "Bis zu 16 Zeitfenster ohne Überschneidung auf konfigurierten Heizkreisen angeben: Heizkreis,HH:MM,HH:MM,Zielwert (15–30 °C).",
       "guided_review_required": "Bestätige die Übersicht vor dem Speichern.",
       "weather_entity_required": "Wähle eine Wetter-Entität für den Wetter-Hinweis.",
+      "grid_power_unused": "Der Netzleistungssensor würde nicht verwendet: Es ist ein expliziter PV-Überschusssensor ausgewählt, und der Hausverbrauch ist ebenfalls explizit oder es ist kein PV-Produktionssensor für die Ableitung ausgewählt. Leere den Netzleistungssensor oder die expliziten Überschuss-/Verbrauchssensoren.",
       "invalid_ai_endpoint": "Lokale HTTP(S)-Adresse mit IP ohne Zugangsdaten, Pfad oder Suchparameter eingeben, zum Beispiel http://192.168.1.20:11434.",
       "invalid_ai_model": "Ein installiertes lokales Modell angeben. Cloud-Modelle werden nicht unterstützt.",
       "invalid_ai_language": "de oder en auswählen.",
@@ -1170,7 +1175,9 @@
           "external_power_forwarding_battery_discharge": "Batterie-Lade-/Entlade-Sensor",
           "external_power_forwarding_battery_soc": "Batterie-Ladezustand-Sensor",
           "external_power_forwarding_electric_heater_power": "Elektroheizungs-Leistungssensor",
-          "external_power_battery_sign": "Vorzeichen der Batterieleistung"
+          "external_power_forwarding_grid_power": "Bidirektionaler Netzleistungssensor",
+          "external_power_battery_sign": "Vorzeichen der Batterieleistung",
+          "external_power_grid_sign": "Vorzeichenkonvention des Netzleistungssensors"
         },
         "data_description": {
           "external_power_forwarding_pv_surplus": "W oder kW; wird in IDM pv_surplus (Register 74–75) geschrieben.",
@@ -1179,7 +1186,9 @@
           "external_power_forwarding_battery_discharge": "W oder kW. Invertieren wählen, wenn die Quelle die openWB-Konvention nutzt (negativ bedeutet Entladen).",
           "external_power_forwarding_battery_soc": "Prozentwert von 0 bis 100, auch mit Nachkommastellen. Für das GLT-Register auf eine ganze Zahl gerundet. Feld leeren, um die Weiterleitung und die optionale HA-Batteriebedingung zu entfernen; kein Ersatzwert wird geschrieben. Der Lese-Sentinel -1 wird nicht gesendet.",
           "external_power_forwarding_electric_heater_power": "W oder kW; wird in IDM electric_heater_power (Register 76–77) geschrieben.",
-          "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um."
+          "external_power_forwarding_grid_power": "W oder kW eines bidirektionalen Netzleistungssensors am Netzverknüpfungspunkt. Die Integration normalisiert das Vorzeichen und leitet daraus pv_surplus (Register 74–75) ab; zusammen mit dem PV-Produktionssensor wird auch house_consumption (Register 82–83) abgeleitet, einschließlich einer gemappten Batterieleistung. Explizite Überschuss- und Verbrauchssensoren haben Vorrang.",
+          "external_power_battery_sign": "Unverändert bedeutet IDM-Vorzeichen. Invertieren dreht das Vorzeichen der Batterieleistung um.",
+          "external_power_grid_sign": "Positiv = Netzbezug (negativ = Einspeisung) oder positiv = Einspeisung (negativ = Netzbezug). Der abgeleitete pv_surplus meldet immer positiv für Überschuss/Einspeisung und negativ für Netzbezug."
         }
       },
       "feature_notice": {
@@ -1545,6 +1554,7 @@
       "invalid_comfort_windows": "Bis zu 16 Zeitfenster ohne Überschneidung auf konfigurierten Heizkreisen angeben: Heizkreis,HH:MM,HH:MM,Zielwert (15–30 °C).",
       "guided_review_required": "Bestätige die Übersicht vor dem Speichern.",
       "weather_entity_required": "Wähle eine Wetter-Entität für den Wetter-Hinweis.",
+      "grid_power_unused": "Der Netzleistungssensor würde nicht verwendet: Es ist ein expliziter PV-Überschusssensor ausgewählt, und der Hausverbrauch ist ebenfalls explizit oder es ist kein PV-Produktionssensor für die Ableitung ausgewählt. Leere den Netzleistungssensor oder die expliziten Überschuss-/Verbrauchssensoren.",
       "invalid_ai_endpoint": "Lokale HTTP(S)-Adresse mit IP ohne Zugangsdaten, Pfad oder Suchparameter eingeben, zum Beispiel http://192.168.1.20:11434.",
       "invalid_ai_model": "Ein installiertes lokales Modell angeben. Cloud-Modelle werden nicht unterstützt.",
       "invalid_ai_language": "de oder en auswählen.",
@@ -2957,6 +2967,12 @@
       "options": {
         "as_is": "Quellenvorzeichen (IDM-Konvention)",
         "invert": "Quellenvorzeichen invertieren (openWB-Quelle)"
+      }
+    },
+    "external_power_grid_sign": {
+      "options": {
+        "import": "Positiv = Netzbezug (negativ = Einspeisung)",
+        "export": "Positiv = Einspeisung (negativ = Netzbezug)"
       }
     },
     "guided_level": {

@@ -95,6 +95,7 @@ from .const import (
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
+    CONF_EXTERNAL_POWER_GRID_SIGN,
     CONF_FEATURE_PROFILE,
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
@@ -171,6 +172,7 @@ from .const import (
     DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
     DEFAULT_EXTERNAL_POWER_FORWARDING,
     DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
+    DEFAULT_EXTERNAL_POWER_GRID_SIGN,
     DEFAULT_FEATURE_PROFILE,
     DEFAULT_HEALTH_MONITOR,
     DEFAULT_HEATING_CURVE_ASSISTANT,
@@ -210,6 +212,7 @@ from .const import (
     DEFAULT_WEB_SCAN_INTERVAL,
     DEFAULT_WRITE_COOLDOWN,
     DOMAIN,
+    EXTERNAL_POWER_GRID_KEY,
     FEATURE_PROFILE_OPTIONS,
     FEATURE_PROFILE_SMART,
     HEATING_CIRCUITS,
@@ -239,6 +242,7 @@ from .const import (
     REGISTER_ADDRESS_CONNECTION_PROBE,
     REGISTER_COUNT_CONNECTION_PROBE,
 )
+from .external_power_forwarding import grid_meter_is_usable
 from .ha_compat import vol
 from .knx_catalog import (
     KNX_OBJECTS,
@@ -1569,6 +1573,7 @@ _EXTERNAL_POWER_KEYS: tuple[str, ...] = (
     "battery_discharge",
     "battery_soc",
     "electric_heater_power",
+    EXTERNAL_POWER_GRID_KEY,
 )
 
 
@@ -1599,6 +1604,16 @@ def _build_external_power_forwarding_schema(options: dict[str, Any]) -> vol.Sche
                     options=["as_is", "invert"],
                     mode=SelectSelectorMode.DROPDOWN,
                     translation_key="external_power_battery_sign",
+                )
+            ),
+            vol.Required(
+                CONF_EXTERNAL_POWER_GRID_SIGN,
+                default=options.get(CONF_EXTERNAL_POWER_GRID_SIGN, DEFAULT_EXTERNAL_POWER_GRID_SIGN),
+            ): SelectSelector(
+                SelectSelectorConfig(
+                    options=["import", "export"],
+                    mode=SelectSelectorMode.DROPDOWN,
+                    translation_key="external_power_grid_sign",
                 )
             ),
         }
@@ -2054,6 +2069,18 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
             self._options[CONF_EXTERNAL_POWER_BATTERY_SIGN] = str(
                 user_input.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN)
             )
+            self._options[CONF_EXTERNAL_POWER_GRID_SIGN] = str(
+                user_input.get(CONF_EXTERNAL_POWER_GRID_SIGN, DEFAULT_EXTERNAL_POWER_GRID_SIGN)
+            )
+            if self._options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES].get(
+                EXTERNAL_POWER_GRID_KEY, ""
+            ).strip() and not grid_meter_is_usable(self._options[CONF_EXTERNAL_POWER_FORWARDING_ENTITIES]):
+                return self.async_show_form(
+                    step_id="external_power_forwarding",
+                    data_schema=_build_external_power_forwarding_schema(self._options),
+                    description_placeholders={"name": self._flow_name_placeholder()},
+                    errors={"base": "grid_power_unused"},
+                )
             return await self._async_continue_optional_steps("external_power_forwarding")
 
         return self.async_show_form(

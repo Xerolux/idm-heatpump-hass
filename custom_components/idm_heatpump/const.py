@@ -72,6 +72,14 @@ CONF_EXTERNAL_POWER_FORWARDING: str = "external_power_forwarding"
 CONF_EXTERNAL_POWER_FORWARDING_INTERVAL: str = "external_power_forwarding_interval"
 CONF_EXTERNAL_POWER_FORWARDING_ENTITIES: str = "external_power_forwarding_entities"
 CONF_EXTERNAL_POWER_BATTERY_SIGN: str = "external_power_battery_sign"
+# Sign convention of the optional bidirectional grid meter source
+# ("grid_power" in the entity mapping): positive = grid import or positive = export.
+CONF_EXTERNAL_POWER_GRID_SIGN: str = "external_power_grid_sign"
+# Mapping key of the optional bidirectional grid meter inside the external
+# power entity map. It is a source for derivations, not a GLT register of
+# its own: it feeds pv_surplus (always) and house_consumption (together
+# with the PV production source) unless those have explicit sources.
+EXTERNAL_POWER_GRID_KEY: str = "grid_power"
 # KNX bridge: mirror controller values onto a KNX bus through Home
 # Assistant's own ``knx`` integration and accept commands back from it.
 # The base address plus the IDM KNX object number gives every object its
@@ -224,6 +232,8 @@ MIN_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 30
 MAX_EXTERNAL_POWER_FORWARDING_INTERVAL: int = 3600
 DEFAULT_EXTERNAL_POWER_FORWARDING_ENTITIES: dict[str, str] = {}
 DEFAULT_EXTERNAL_POWER_BATTERY_SIGN: str = "as_is"
+# Most bidirectional meters report grid draw as positive values.
+DEFAULT_EXTERNAL_POWER_GRID_SIGN: str = "import"
 DEFAULT_KNX_BRIDGE: bool = False
 # 8/0/0 keeps the whole catalogue inside one free main group on a default
 # ETS three-level project (8/0/1 .. 8/3/231).

@@ -199,13 +199,40 @@ Heizpufferziele, Heizkurven oder SG-Ready-Werte.
 
 Der Nettoüberschuss muss **bei Einspeisung positiv** und bei Netzbezug negativ
 sein; prüfe die Vorzeichenkonvention des Wechselrichtersensors. Die Weiterleitung
-erhält das Vorzeichen. Wähle möglichst einen Verantwortlichen für die PV-Ladung:
+erhält das Vorzeichen einer direkt gewählten Überschussquelle — ein
+bidirektionaler Netzleistungszähler gehört stattdessen in das weiter unten
+beschriebene eigene Feld. Wähle möglichst einen Verantwortlichen für die PV-Ladung:
 den Navigator mit weitergeleiteten Messwerten oder den HA-Warmwasserautomaten
 mit vorhandener Quellzuordnung und deaktivierter Weiterleitung. Beide zusammen
 bilden keinen gemeinsamen Taktschutz. Lädt der Heizpuffer wiederholt nahe seiner
 Obergrenze, prüfe die PV-Heizpuffereinstellungen im Navigator. Die Integration
 kann keinen gemeinsamen Verdichterzyklus für Warmwasser und Puffer garantieren;
 der Navigator bestimmt Reihenfolge und normalen Heizbedarf.
+
+### Bidirektionaler Netzzähler als Überschussquelle
+
+Statt eines dedizierten Überschusssensors kann ein einzelner bidirektionaler
+Netzleistungszähler am Netzverknüpfungspunkt die Zuordnung direkt speisen,
+ohne Template-Helfer (#519). Wähle ihn als **Bidirektionaler
+Netzleistungssensor** und lege seine Vorzeichenkonvention fest:
+
+- **Positiv = Netzbezug** (negativ = Einspeisung) — der übliche Standard.
+- **Positiv = Einspeisung** (negativ = Netzbezug).
+
+Die Integration normalisiert das Vorzeichen und leitet `pv_surplus` (Register
+74–75) in der IDM-Konvention ab: positiv = Überschuss/Einspeisung, negativ =
+Netzbezug. Ist zusätzlich ein PV-Produktionssensor gewählt, wird
+`house_consumption` (Register 82–83) aus der Anlagenbilanz abgeleitet —
+PV-Produktion plus Netzbezug, plus die gemappte Batterieleistung (Laden zählt
+negativ). Ein explizit gewählter Überschuss- oder Verbrauchssensor hat Vorrang
+vor seiner Ableitung; der Netzleistungszähler allein wird nie als
+Hausverbrauch geschrieben, denn Netzbezug ist nicht der Gesamtverbrauch, solange
+PV erzeugt. Ohne gültige PV-Produktionsquelle wird kein Hausverbrauch abgeleitet,
+ein negativ abgeleiteter Wert wird auf null begrenzt, und W- oder kW-Quellen
+werden automatisch umgerechnet. Der Konfigurationsdialog lehnt einen
+Netzleistungssensor ab, für den keine Ableitung übrig bleibt (expliziter
+Überschusssensor zusammen mit explizitem Verbrauchssensor oder fehlende
+PV-Produktionsquelle).
 
 Der Manager steuert weder die Heizkurve noch die elektrische Zusatzheizung.
 Der optionale Tarifsensor beeinflusst nur die Kostenrechnung;

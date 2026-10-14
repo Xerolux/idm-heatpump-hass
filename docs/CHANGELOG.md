@@ -15,6 +15,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- External power forwarding accepts a bidirectional grid meter directly (#519). The new *Bidirectional grid power sensor* field takes a single signed grid-connection power sensor with a selectable sign convention (positive = grid import, the default, or positive = export). The forwarder normalizes the sign and derives `pv_surplus` (registers 74–75) in the IDM convention (positive = export/surplus, negative = grid import); when a PV production sensor is also mapped it derives `house_consumption` (registers 82–83) from the site balance, including mapped battery flow (charging counts negative). Explicitly mapped surplus and house-consumption sensors keep precedence, the grid meter alone is never written as household consumption, invalid sources are skipped as before, and a derived negative household consumption is clamped to zero. The mapping dialog rejects a grid sensor that has nothing left to derive. This removes the two template helpers (sign inversion and consumption calculation) previously needed on plants with a bidirectional meter.
+
 ## [0.22.0-b4] - 2026-10-14
 
 ### Fixed
