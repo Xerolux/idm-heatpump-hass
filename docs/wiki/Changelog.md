@@ -5,6 +5,19 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.22.0-b4 — 2026-10-14
+
+Room temperature, storage temperature and humidity forwarding survive a
+controller restart: every periodic interval pass now rewrites the GLT
+registers even when the source value has not moved. Previously the
+tolerance guard suppressed every rewrite of an unchanged value, so a
+controller or Modbus-service restart — which wipes the volatile GLT RAM
+inputs — silently disabled external room-temperature influence until the
+source value drifted (observed live on a Navigator 10 during the #493
+investigation: the register sat at the -1 sentinel for a quarter hour).
+Event-driven writes keep the tolerance skip, so bursty sources neither
+spam writes nor trip the write cooldown.
+
 ## v0.22.0-b3 — 2026-10-13
 
 GLT RAM inputs stay solid on Navigator 10: fallback periodic refresh cadence
