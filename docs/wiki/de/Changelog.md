@@ -5,6 +5,20 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.22.0-b5 — 2026-10-14
+
+Die externe Leistungsweiterleitung nimmt einen bidirektionalen
+Netzleistungszähler direkt an (#519): Das neue Feld *Bidirektionaler
+Netzleistungssensor* nimmt einen einzelnen signierten Sensor am
+Netzverknüpfungspunkt mit wählbarer Vorzeichenkonvention (positiv =
+Netzbezug oder positiv = Einspeisung). Die Integration normalisiert das
+Vorzeichen und leitet den signierten `pv_surplus` ab; zusammen mit dem
+PV-Produktionssensor wird auch der Hausverbrauch abgeleitet, einschließlich
+gemappter Batterieleistung. Explizit gewählte Überschuss- und
+Verbrauchssensoren behalten Vorrang, und der Netzleistungszähler allein
+wird nie als Hausverbrauch geschrieben. Template-Helfer sind auf Anlagen
+mit bidirektionalem Zähler damit nicht mehr nötig.
+
 ## v0.22.0-b4 — 2026-10-14
 
 Raumtemperatur-, Speichertemperatur- und Feuchtigkeits-Weiterleitung
