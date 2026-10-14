@@ -153,6 +153,47 @@ async def test_forward_entity_skips_change_inside_tolerance():
 
 
 @pytest.mark.asyncio
+async def test_interval_pass_rewrites_unchanged_value():
+    coord, reg = _make_coordinator()
+    hass = _make_hass("21.5")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(entities={"a": "sensor.living_room_temperature"}, interval=300, tolerance=0.2),
+    )
+
+    await forwarder.async_forward_entity("sensor.living_room_temperature")
+    assert coord.async_write_register.await_count == 1
+
+    # One interval later the register is rewritten although the source value
+    # has not moved: a controller restart wipes the GLT RAM register and an
+    # unchanged value would otherwise never be restored.
+    forwarder._last_write_monotonic["a"] -= 300.5
+    await forwarder.async_forward_entity("sensor.living_room_temperature")
+
+    assert coord.async_write_register.await_count == 2
+    coord.async_write_register.assert_any_await(reg, 21.5)
+
+
+@pytest.mark.asyncio
+async def test_recent_refresh_keeps_tolerating_unchanged_value():
+    coord, reg = _make_coordinator()
+    hass = _make_hass("21.5")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(entities={"a": "sensor.living_room_temperature"}, interval=300, tolerance=0.2),
+    )
+
+    await forwarder.async_forward_entity("sensor.living_room_temperature")
+    # Immediately afterwards the periodic pass must not pile up writes (and
+    # must not trip the coordinator write cooldown) for an unchanged value.
+    await forwarder.async_forward_all()
+
+    coord.async_write_register.assert_awaited_once_with(reg, 21.5)
+
+
+@pytest.mark.asyncio
 async def test_forward_entity_ignores_invalid_sensor_state():
     coord, _reg = _make_coordinator()
     hass = _make_hass("unavailable")

@@ -81,6 +81,47 @@ async def test_forward_skips_change_inside_tolerance():
 
 
 @pytest.mark.asyncio
+async def test_interval_pass_rewrites_unchanged_value():
+    coord, reg = _make_coordinator()
+    hass = _make_hass("50.0")
+    forwarder = HumidityForwarder(
+        hass,
+        coord,
+        HumidityForwardingConfig(entity_id="sensor.living_room_humidity", interval=300, tolerance=2.0),
+    )
+
+    await forwarder.async_forward()
+    assert coord.async_write_register.await_count == 1
+
+    # One interval later the register is rewritten although the source value
+    # has not moved: a controller restart wipes the GLT RAM register and an
+    # unchanged value would otherwise never be restored.
+    forwarder._last_write_monotonic -= 300.5
+    await forwarder.async_forward()
+
+    assert coord.async_write_register.await_count == 2
+    coord.async_write_register.assert_any_await(reg, 50.0)
+
+
+@pytest.mark.asyncio
+async def test_recent_refresh_keeps_tolerating_unchanged_value():
+    coord, reg = _make_coordinator()
+    hass = _make_hass("50.0")
+    forwarder = HumidityForwarder(
+        hass,
+        coord,
+        HumidityForwardingConfig(entity_id="sensor.living_room_humidity", interval=300, tolerance=2.0),
+    )
+
+    await forwarder.async_forward()
+    # Immediately afterwards the periodic pass must not pile up writes (and
+    # must not trip the coordinator write cooldown) for an unchanged value.
+    await forwarder.async_forward()
+
+    coord.async_write_register.assert_awaited_once_with(reg, 50.0)
+
+
+@pytest.mark.asyncio
 async def test_forward_ignores_invalid_sensor_state():
     coord, _reg = _make_coordinator()
     hass = _make_hass("unavailable")

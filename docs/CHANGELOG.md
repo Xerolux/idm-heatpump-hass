@@ -15,6 +15,10 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Room temperature, storage temperature and humidity forwarding now rewrite their GLT registers once per configured interval even when the source value has not moved. The tolerance guard used to suppress every rewrite of an unchanged value, so after a controller or Modbus-service restart — which wipes the volatile GLT RAM inputs — the external room temperature stayed at its -1 sentinel indefinitely and the affected heating circuit silently lost room-temperature influence until the source value drifted beyond tolerance (observed live on a Navigator 10 during the #493 investigation: the register sat at the sentinel for a quarter hour while the source was steady). Event-driven writes keep the tolerance skip; only the periodic interval pass refreshes unconditionally.
+
 ## [0.22.0-b3] - 2026-10-13
 
 ### Fixed
