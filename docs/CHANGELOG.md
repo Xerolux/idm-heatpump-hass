@@ -15,6 +15,12 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.22.0-b6] - 2026-10-14
+
+### Fixed
+
+- External power forwarding writes quantized values (#519). Derived sums such as household consumption (PV production + grid import + battery flow) carried float64 arithmetic noise — e.g. `0.3569999999999999` instead of `0.357` — into the optimistic entity state, which the next poll then replaced with the register's two-decimal readback, so the entity visibly alternated between both spellings. Forwarder writes are now rounded to the register resolution (10 W) before reaching the coordinator: the optimistic state and the readback are identical, `-0.0` is normalized away, and the written payload only changes when a value actually moves by ≥ 10 W. The cyclic refresh cadence (3 s) is unchanged — GLT RAM inputs must be refreshed because some firmwares clear them seconds after the last write (#493) — and the affected registers are RAM inputs, not EEPROM, so the refresh causes no write-cycle wear.
+
 ## [0.22.0-b5] - 2026-10-14
 
 ### Added

@@ -5,6 +5,20 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.22.0-b6 — 2026-10-14
+
+Die externe Leistungsweiterleitung schreibt quantisierte Werte (#519):
+Abgeleitete Summen wie der Hausverbrauch trugen bisher
+Gleitkomma-Artefakte (z. B. `0,3569999999999999` statt `0,357`) in den
+Entity-State, den der nächste Poll durch das gerundete Register-Readback
+ersetzte — die Entity wechselte sichtbar zwischen beiden Schreibweisen.
+Writes werden jetzt vor dem Schreiben auf die Registerauflösung (10 W)
+gerundet, damit der State stabil bleibt und immer dem entspricht, was die
+Wärmepumpe tatsächlich gespeichert hat. Der zyklische 3-Sekunden-Refresh
+bleibt: GLT-Inputs liegen im Controller-RAM (nicht im EEPROM — kein
+Schreibzyklen-Verschleiß), und manche Firmwares löschen sie wenige
+Sekunden nach dem letzten Write.
+
 ## v0.22.0-b5 — 2026-10-14
 
 Die externe Leistungsweiterleitung nimmt einen bidirektionalen
