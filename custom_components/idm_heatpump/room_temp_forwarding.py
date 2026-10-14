@@ -21,6 +21,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import math
+import time
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Any
@@ -186,6 +187,7 @@ class RoomTempForwarder:
         self._convert = convert
         self._reported_unit_mismatches: set[str] = set()
         self._last_written: dict[str, float] = {}
+        self._last_write_monotonic: dict[str, float] = {}
         self._unsub_state: list[Callable[[], None]] = []
         self._pending_forward_tasks: dict[str, asyncio.Task[None]] = {}
         self._forward_again: set[str] = set()
@@ -333,7 +335,16 @@ class RoomTempForwarder:
             return
 
         last = self._last_written.get(circuit)
-        if last is not None and abs(last - temperature) < self._config.tolerance:
+        # GLT RAM inputs are volatile: a controller or Modbus-service restart
+        # wipes them (observed live on a Navigator 10: the external room
+        # temperature and humidity registers sat at the -1 sentinel for a
+        # quarter hour because the tolerance guard suppressed every rewrite of
+        # an unchanged value). The tolerance skip may therefore only bridge
+        # the gap between two periodic refreshes; each interval pass rewrites
+        # the register even when the source value has not moved.
+        last_write = self._last_write_monotonic.get(circuit)
+        refreshed_recently = last_write is not None and time.monotonic() - last_write < self._config.interval
+        if last is not None and refreshed_recently and abs(last - temperature) < self._config.tolerance:
             return
 
         try:
@@ -374,6 +385,7 @@ class RoomTempForwarder:
             return
 
         self._last_written[circuit] = temperature
+        self._last_write_monotonic[circuit] = time.monotonic()
         _LOGGER.debug("Forwarded %s %.2f from %s to %s", self._value_label, temperature, entity_id, reg.name)
 
 
@@ -400,6 +412,7 @@ class HumidityForwarder:
         self._config = config
         self._reported_unit_mismatch = False
         self._last_written: float | None = None
+        self._last_write_monotonic: float | None = None
         self._unsub_state: Callable[[], None] | None = None
         self._pending_forward_task: asyncio.Task[None] | None = None
         self._forward_again = False
@@ -512,7 +525,18 @@ class HumidityForwarder:
             )
             return
 
-        if self._last_written is not None and abs(self._last_written - humidity) < self._config.tolerance:
+        # Same volatile-RAM reasoning as the temperature forwarder: the
+        # tolerance skip only bridges the gap between two periodic refreshes,
+        # so a wiped register is rewritten on the next interval pass even with
+        # an unchanged source value.
+        refreshed_recently = self._last_write_monotonic is not None and (
+            time.monotonic() - self._last_write_monotonic < self._config.interval
+        )
+        if (
+            self._last_written is not None
+            and refreshed_recently
+            and abs(self._last_written - humidity) < self._config.tolerance
+        ):
             return
 
         try:
@@ -549,4 +573,5 @@ class HumidityForwarder:
             return
 
         self._last_written = humidity
+        self._last_write_monotonic = time.monotonic()
         _LOGGER.debug("Forwarded humidity %.2f from %s to %s", humidity, entity_id, reg.name)
