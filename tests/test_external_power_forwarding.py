@@ -391,6 +391,42 @@ async def test_grid_meter_watts_are_converted() -> None:
     assert _writes(coordinator) == {"pv_surplus": 1.5}
 
 
+async def test_written_values_are_quantized_to_the_register_read_resolution() -> None:
+    """Float writes mirror the API's two-decimal FLOAT decode (#519).
+
+    The derived house consumption is a float64 sum whose arithmetic noise
+    (e.g. 2.643 + -2.286 = 0.35699999999999976) used to reach the optimistic
+    entity state and then flip to the rounded poll readback. Quantizing the
+    write keeps the optimistic state and the readback identical.
+    """
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(-2.286), "sensor.pv": _state(2.643)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_production": 2.64, "pv_surplus": 2.29, "house_consumption": 0.36}
+
+
+async def test_quantized_write_normalizes_negative_zero() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(0.001), "sensor.pv": _state(0.0)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_production": 0.0, "pv_surplus": 0.0, "house_consumption": 0.0}
+    for call in coordinator.async_write_register.await_args_list:
+        assert str(call.args[1]) != "-0.0"
+
+
+async def test_explicit_watt_sources_are_quantized_to_ten_watts() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.pv": _state(2714, "W"), "sensor.net": _state(-357, "W")},
+        {"pv_production": "sensor.pv", "pv_surplus": "sensor.net"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_production": 2.71, "pv_surplus": -0.36}
+
+
 async def test_invalid_grid_state_derives_nothing() -> None:
     forwarder, coordinator = _forwarder(
         {"sensor.grid": _state("unavailable"), "sensor.pv": _state(3.0)},
