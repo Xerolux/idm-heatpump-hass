@@ -274,6 +274,17 @@ class ExternalPowerForwarder:
         if reg is None or not reg.writable:
             _LOGGER.warning("Skipping IDM external power forwarding: register %s is unavailable or read-only", name)
             return
+        if isinstance(value, float):
+            # Quantize to the register's read resolution before writing. The
+            # API decodes FLOAT registers rounded to two decimals, so writing
+            # the raw float would publish its arithmetic noise (e.g. a derived
+            # 0.3569999999999999 kW) as the optimistic state and then flip the
+            # entity to the rounded readback on the next poll (#519). A
+            # quantized write also keeps the written payload stable while the
+            # sources wiggle below the 10 W resolution.
+            value = round(value, 2)
+            if value == 0:
+                value = 0.0  # normalize -0.0
         if reg.min_val is not None and value < float(reg.min_val):
             _LOGGER.warning("Skipping %s: %.3f is below IDM minimum %.3f", name, value, float(reg.min_val))
             return
