@@ -5,6 +5,19 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.22.0-b5 — 2026-10-14
+
+External power forwarding accepts a bidirectional grid meter directly
+(#519): the new *Bidirectional grid power sensor* field takes a single
+signed grid-connection sensor with a selectable sign convention (positive
+= grid import or positive = export). The integration normalizes the sign
+and derives the signed `pv_surplus`; together with the PV production
+sensor it also derives `house_consumption`, including mapped battery flow.
+Explicitly selected surplus and house-consumption sensors keep
+precedence, and the grid meter alone is never written as household
+consumption. No template helpers are needed any more on plants with a
+bidirectional meter.
+
 ## v0.22.0-b4 — 2026-10-14
 
 Room temperature, storage temperature and humidity forwarding survive a
