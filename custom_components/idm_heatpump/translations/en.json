@@ -436,7 +436,9 @@
           "external_power_forwarding_battery_discharge": "Battery charge/discharge sensor",
           "external_power_forwarding_battery_soc": "Battery state of charge sensor",
           "external_power_forwarding_electric_heater_power": "Electric heater power sensor",
-          "external_power_battery_sign": "Battery sign convention"
+          "external_power_forwarding_grid_power": "Bidirectional grid power sensor",
+          "external_power_battery_sign": "Battery sign convention",
+          "external_power_grid_sign": "Grid meter sign convention"
         },
         "data_description": {
           "external_power_forwarding_pv_surplus": "W or kW; written to IDM pv_surplus (registers 74–75).",
@@ -445,7 +447,9 @@
           "external_power_forwarding_battery_discharge": "W or kW. Select invert when the source uses the openWB convention (negative means discharge).",
           "external_power_forwarding_battery_soc": "Percent from 0 to 100, including fractional values. Rounded to an integer for the GLT register. Clear this field to stop forwarding and remove the optional HA battery condition; no fallback is written. The read sentinel -1 is not sent.",
           "external_power_forwarding_electric_heater_power": "W or kW; written to IDM electric_heater_power (registers 76–77).",
-          "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign."
+          "external_power_forwarding_grid_power": "W or kW from a bidirectional grid-connection meter. The integration normalizes the sign and derives pv_surplus (registers 74–75); together with the PV production sensor it also derives house_consumption (registers 82–83), including mapped battery flow. Explicit surplus and house-consumption sensors take precedence.",
+          "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign.",
+          "external_power_grid_sign": "Positive = grid import (negative = export) or positive = export (negative = grid import). The derived pv_surplus always reports positive for export/surplus and negative for grid import."
         }
       },
       "feature_notice": {
@@ -825,6 +829,7 @@
       "invalid_comfort_windows": "Use at most 16 non-overlapping windows on configured circuits, each as circuit,HH:MM,HH:MM,target (15–30 °C).",
       "guided_review_required": "Confirm the summary before saving.",
       "weather_entity_required": "Choose a weather entity for weather advice.",
+      "grid_power_unused": "The grid meter would not be used: an explicit PV surplus sensor is selected and house consumption is explicit too, or no PV production sensor is selected for the house-consumption derivation. Clear the grid sensor or the explicit surplus/house-consumption sensors.",
       "invalid_ai_endpoint": "Enter a local IP-based HTTP(S) URL without credentials, path or query, for example http://192.168.1.20:11434.",
       "invalid_ai_model": "Enter an installed local model name. Cloud models are not supported.",
       "invalid_ai_language": "Choose de or en.",
@@ -1170,7 +1175,9 @@
           "external_power_forwarding_battery_discharge": "Battery charge/discharge sensor",
           "external_power_forwarding_battery_soc": "Battery state of charge sensor",
           "external_power_forwarding_electric_heater_power": "Electric heater power sensor",
-          "external_power_battery_sign": "Battery sign convention"
+          "external_power_forwarding_grid_power": "Bidirectional grid power sensor",
+          "external_power_battery_sign": "Battery sign convention",
+          "external_power_grid_sign": "Grid meter sign convention"
         },
         "data_description": {
           "external_power_forwarding_pv_surplus": "W or kW; written to IDM pv_surplus (registers 74–75).",
@@ -1179,7 +1186,9 @@
           "external_power_forwarding_battery_discharge": "W or kW. Select invert when the source uses the openWB convention (negative means discharge).",
           "external_power_forwarding_battery_soc": "Percent from 0 to 100, including fractional values. Rounded to an integer for the GLT register. Clear this field to stop forwarding and remove the optional HA battery condition; no fallback is written. The read sentinel -1 is not sent.",
           "external_power_forwarding_electric_heater_power": "W or kW; written to IDM electric_heater_power (registers 76–77).",
-          "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign."
+          "external_power_forwarding_grid_power": "W or kW from a bidirectional grid-connection meter. The integration normalizes the sign and derives pv_surplus (registers 74–75); together with the PV production sensor it also derives house_consumption (registers 82–83), including mapped battery flow. Explicit surplus and house-consumption sensors take precedence.",
+          "external_power_battery_sign": "As-is means the source already uses the IDM convention. Invert changes the battery value's sign.",
+          "external_power_grid_sign": "Positive = grid import (negative = export) or positive = export (negative = grid import). The derived pv_surplus always reports positive for export/surplus and negative for grid import."
         }
       },
       "feature_notice": {
@@ -1545,6 +1554,7 @@
       "invalid_comfort_windows": "Use at most 16 non-overlapping windows on configured circuits, each as circuit,HH:MM,HH:MM,target (15–30 °C).",
       "guided_review_required": "Confirm the summary before saving.",
       "weather_entity_required": "Choose a weather entity for weather advice.",
+      "grid_power_unused": "The grid meter would not be used: an explicit PV surplus sensor is selected and house consumption is explicit too, or no PV production sensor is selected for the house-consumption derivation. Clear the grid sensor or the explicit surplus/house-consumption sensors.",
       "invalid_ai_endpoint": "Enter a local IP-based HTTP(S) URL without credentials, path or query, for example http://192.168.1.20:11434.",
       "invalid_ai_model": "Enter an installed local model name. Cloud models are not supported.",
       "invalid_ai_language": "Choose de or en.",
@@ -2957,6 +2967,12 @@
       "options": {
         "as_is": "Use source sign (IDM convention)",
         "invert": "Invert source sign (openWB-style source)"
+      }
+    },
+    "external_power_grid_sign": {
+      "options": {
+        "import": "Positive = grid import (negative = export)",
+        "export": "Positive = export (negative = grid import)"
       }
     },
     "guided_level": {

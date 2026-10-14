@@ -43,6 +43,7 @@ from custom_components.idm_heatpump.const import (
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
+    CONF_EXTERNAL_POWER_GRID_SIGN,
     CONF_FEATURE_PROFILE,
     CONF_HEALTH_MONITOR,
     CONF_HEATING_CIRCUITS,
@@ -297,6 +298,7 @@ class TestForwardingEntityFieldDefaults:
             "battery_discharge",
             "battery_soc",
             "electric_heater_power",
+            "grid_power",
         ):
             assert markers[f"external_power_forwarding_{key}"].default is vol.UNDEFINED
 
@@ -2875,6 +2877,71 @@ async def test_external_power_forwarding_option_step_keeps_selected_sources() ->
         "battery_soc": "sensor.battery_soc",
     }
     assert result["options"][CONF_EXTERNAL_POWER_BATTERY_SIGN] == "invert"
+
+
+async def test_external_power_forwarding_option_step_stores_grid_meter_and_sign() -> None:
+    flow = _make_flow()
+    flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+    flow._options = {CONF_HEATING_CIRCUITS: ["a"], CONF_EXTERNAL_POWER_FORWARDING: True}
+
+    result = await flow.async_step_external_power_forwarding(
+        {
+            "external_power_forwarding_grid_power": "sensor.grid_power",
+            "external_power_forwarding_pv_production": "sensor.pv_power",
+            CONF_EXTERNAL_POWER_GRID_SIGN: "export",
+        }
+    )
+    assert result["step_id"] == "feature_notice"
+    result = await flow.async_step_feature_notice({"confirm_new_features": True})
+    assert result["type"] == "create_entry"
+    assert result["options"][CONF_EXTERNAL_POWER_FORWARDING_ENTITIES] == {
+        "grid_power": "sensor.grid_power",
+        "pv_production": "sensor.pv_power",
+    }
+    assert result["options"][CONF_EXTERNAL_POWER_GRID_SIGN] == "export"
+    assert result["options"][CONF_EXTERNAL_POWER_BATTERY_SIGN] == "as_is"
+
+
+@pytest.mark.parametrize(
+    ("extra_fields", "used"),
+    [
+        # Without an explicit surplus source the grid meter derives it.
+        ({"external_power_forwarding_house_consumption": "sensor.house"}, True),
+        # Explicit surplus keeps the surplus register, and a PV production
+        # source lets the grid meter derive house consumption.
+        (
+            {
+                "external_power_forwarding_pv_surplus": "sensor.net",
+                "external_power_forwarding_pv_production": "sensor.pv",
+            },
+            True,
+        ),
+        # Explicit surplus and house leave the grid meter nothing to derive.
+        (
+            {
+                "external_power_forwarding_pv_surplus": "sensor.net",
+                "external_power_forwarding_house_consumption": "sensor.house",
+            },
+            False,
+        ),
+        # Without a PV production source the house derivation cannot run either.
+        ({"external_power_forwarding_pv_surplus": "sensor.net"}, False),
+    ],
+)
+async def test_external_power_step_rejects_unused_grid_meter(extra_fields, used: bool) -> None:
+    flow = _make_flow()
+    flow._data = {"name": "IDM Test", "host": "192.168.1.100"}
+    flow._options = {CONF_HEATING_CIRCUITS: ["a"], CONF_EXTERNAL_POWER_FORWARDING: True}
+
+    result = await flow.async_step_external_power_forwarding(
+        {"external_power_forwarding_grid_power": "sensor.grid_power", **extra_fields}
+    )
+    if used:
+        assert result["step_id"] == "feature_notice"
+    else:
+        assert result["type"] == "form"
+        assert result["step_id"] == "external_power_forwarding"
+        assert result["errors"] == {"base": "grid_power_unused"}
 
 
 class TestExternalPowerForwardingIntervalField:

@@ -64,6 +64,7 @@ from .const import (
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
     CONF_EXTERNAL_POWER_FORWARDING_INTERVAL,
+    CONF_EXTERNAL_POWER_GRID_SIGN,
     CONF_FEATURE_PROFILE,
     CONF_HEATING_CIRCUITS,
     CONF_HIDE_UNUSED,
@@ -130,6 +131,7 @@ from .const import (
     DEFAULT_EXTERNAL_POWER_BATTERY_SIGN,
     DEFAULT_EXTERNAL_POWER_FORWARDING,
     DEFAULT_EXTERNAL_POWER_FORWARDING_INTERVAL,
+    DEFAULT_EXTERNAL_POWER_GRID_SIGN,
     DEFAULT_FEATURE_PROFILE,
     DEFAULT_HIDE_UNUSED,
     DEFAULT_HUMIDITY_FORWARDING,
@@ -740,6 +742,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     external_power_battery_sign = str(
         entry.options.get(CONF_EXTERNAL_POWER_BATTERY_SIGN, DEFAULT_EXTERNAL_POWER_BATTERY_SIGN)
     )
+    external_power_grid_sign = str(entry.options.get(CONF_EXTERNAL_POWER_GRID_SIGN, DEFAULT_EXTERNAL_POWER_GRID_SIGN))
     energy_manager_enabled = bool(entry.options.get(CONF_ENERGY_MANAGER, DEFAULT_ENERGY_MANAGER))
     energy_manager_exclusive = bool(entry.options.get(CONF_ENERGY_MANAGER_EXCLUSIVE, DEFAULT_ENERGY_MANAGER_EXCLUSIVE))
     knx_bridge_enabled = bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE))
@@ -1196,6 +1199,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                         entities=forwarding_entities,
                         interval=external_power_forwarding_interval,
                         battery_sign=external_power_battery_sign,
+                        grid_sign=external_power_grid_sign,
                     ),
                 )
                 entry.runtime_data.external_power_forwarding_task = _create_entry_background_task(

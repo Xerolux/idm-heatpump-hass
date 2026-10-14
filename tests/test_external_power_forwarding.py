@@ -16,20 +16,28 @@ def _state(value: object, unit: str | None = "kW") -> SimpleNamespace:
 
 
 def _forwarder(
-    states: dict[str, SimpleNamespace], entities: dict[str, str], *, battery_sign: str = "as_is"
+    states: dict[str, SimpleNamespace],
+    entities: dict[str, str],
+    *,
+    battery_sign: str = "as_is",
+    grid_sign: str = "import",
 ) -> tuple[module.ExternalPowerForwarder, MagicMock]:
     hass = MagicMock()
     hass.states.get.side_effect = states.get
     coordinator = MagicMock()
     coordinator.get_register.side_effect = lambda name: SimpleNamespace(
-        name=name, writable=True, min_val=0 if name != "battery_discharge" else -20, max_val=100
+        name=name,
+        writable=True,
+        # pv_surplus and battery_discharge are the signed power registers.
+        min_val=-20 if name in ("battery_discharge", "pv_surplus") else 0,
+        max_val=100,
     )
     coordinator.async_write_register = AsyncMock()
     return (
         module.ExternalPowerForwarder(
             hass,
             coordinator,
-            module.ExternalPowerForwardingConfig(entities, 30, battery_sign),
+            module.ExternalPowerForwardingConfig(entities, 30, battery_sign, grid_sign),
         ),
         coordinator,
     )
@@ -278,6 +286,147 @@ async def test_forwarding_preserves_signed_measurements_without_control_writes(s
     await forwarder.async_forward()
     writes = [(call.args[0].name, call.args[1]) for call in coordinator.async_write_register.await_args_list]
     assert writes == [("pv_surplus", surplus), ("pv_production", 4.0), ("battery_soc", 80)]
+
+
+def _writes(coordinator: MagicMock) -> dict[str, float | int]:
+    return {call.args[0].name: call.args[1] for call in coordinator.async_write_register.await_args_list}
+
+
+async def test_grid_meter_derives_surplus_and_house_consumption() -> None:
+    """The issue #519 example: PV 3 kW, grid -1.5 kW (exporting).
+
+    Surplus normalizes to +1.5 kW (IDM: positive = export); household
+    consumption closes the site balance at 1.5 kW without HA helpers.
+    """
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(-1.5), "sensor.pv": _state(3.0)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_production": 3.0, "pv_surplus": 1.5, "house_consumption": 1.5}
+
+
+async def test_grid_meter_import_becomes_negative_surplus() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(0.5), "sensor.pv": _state(1.0)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_production": 1.0, "pv_surplus": -0.5, "house_consumption": 1.5}
+
+
+async def test_grid_meter_export_sign_convention_is_normalized() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(1.5), "sensor.pv": _state(3.0)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+        grid_sign="export",
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_production": 3.0, "pv_surplus": 1.5, "house_consumption": 1.5}
+
+
+async def test_grid_meter_alone_forwards_only_surplus() -> None:
+    """Without a PV production source the grid meter never poses as house
+    consumption (grid import is not household use while PV generates)."""
+    forwarder, coordinator = _forwarder({"sensor.grid": _state(-2.0)}, {"grid_power": "sensor.grid"})
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_surplus": 2.0}
+
+
+async def test_grid_derived_house_consumption_requires_valid_pv_source() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(-1.5), "sensor.pv": _state("unknown")},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_surplus": 1.5}
+
+
+async def test_explicit_sources_take_precedence_over_grid_derivation() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(-1.5), "sensor.pv": _state(3.0), "sensor.net": _state(0.9)},
+        {
+            "grid_power": "sensor.grid",
+            "pv_production": "sensor.pv",
+            "pv_surplus": "sensor.net",
+        },
+    )
+    await forwarder.async_forward()
+    # The explicit surplus sensor wins; house consumption is still derived.
+    assert _writes(coordinator) == {"pv_production": 3.0, "pv_surplus": 0.9, "house_consumption": 1.5}
+
+
+async def test_grid_derived_house_consumption_includes_mapped_battery_flow() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(-1.5), "sensor.pv": _state(3.0), "sensor.bat": _state(0.4)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv", "battery_discharge": "sensor.bat"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator)["house_consumption"] == 1.9
+
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(-1.5), "sensor.pv": _state(3.0), "sensor.bat": _state(0.4)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv", "battery_discharge": "sensor.bat"},
+        battery_sign="invert",
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator)["house_consumption"] == 1.1
+
+
+async def test_grid_derived_house_consumption_is_clamped_at_zero() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(-1.5), "sensor.pv": _state(0.2)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator)["house_consumption"] == 0.0
+
+
+async def test_grid_meter_watts_are_converted() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state(-1500, "W")},
+        {"grid_power": "sensor.grid"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_surplus": 1.5}
+
+
+async def test_invalid_grid_state_derives_nothing() -> None:
+    forwarder, coordinator = _forwarder(
+        {"sensor.grid": _state("unavailable"), "sensor.pv": _state(3.0)},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_production": 3.0}
+
+
+def test_unusable_grid_meter_mapping_logs_warning(caplog: pytest.LogCaptureFixture) -> None:
+    hass = MagicMock()
+    coordinator = MagicMock()
+    config = module.ExternalPowerForwardingConfig(
+        {
+            "grid_power": "sensor.grid",
+            "pv_surplus": "sensor.net",
+            "house_consumption": "sensor.house",
+        },
+        60,
+    )
+    with caplog.at_level("WARNING", logger="custom_components.idm_heatpump.external_power_forwarding"):
+        module.ExternalPowerForwarder(hass, coordinator, config)
+    assert "grid meter" in caplog.text and "not used" in caplog.text
+
+
+def test_grid_meter_usable_mappings_do_not_warn(caplog: pytest.LogCaptureFixture) -> None:
+    hass = MagicMock()
+    coordinator = MagicMock()
+    for entities in (
+        {"grid_power": "sensor.grid"},
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv"},
+        {"grid_power": "sensor.grid", "pv_surplus": "sensor.net", "pv_production": "sensor.pv"},
+    ):
+        with caplog.at_level("WARNING", logger="custom_components.idm_heatpump.external_power_forwarding"):
+            module.ExternalPowerForwarder(hass, coordinator, module.ExternalPowerForwardingConfig(entities, 60))
+    assert "not used" not in caplog.text
 
 
 @pytest.mark.parametrize("soc,expected", [(97.5, 98), (0.1, 0), (99.9, 100), (98.5, 98)])
