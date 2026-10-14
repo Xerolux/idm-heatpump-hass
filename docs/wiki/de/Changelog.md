@@ -5,6 +5,21 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.22.0-b4 — 2026-10-14
+
+Raumtemperatur-, Speichertemperatur- und Feuchtigkeits-Weiterleitung
+übersteht einen Regler-Neustart: Jeder periodische Intervall-Durchlauf
+schreibt die GLT-Register jetzt neu, auch wenn sich der Quellwert nicht
+bewegt hat. Zuvor unterdrückte der Toleranz-Filter jedes erneute Schreiben
+unveränderter Werte, sodass ein Neustart des Reglers oder des
+Modbus-Dienstes — der die flüchtigen GLT-RAM-Eingänge löscht — den
+externen Raumtemperatur-Einfluss still abschaltete, bis der Quellwert
+driftete (live auf einem Navigator 10 während der #493-Untersuchung
+beobachtet: das Register stand eine Viertelstunde auf dem -1-Sentinel).
+Ereignisgesteuerte Schreibvorgänge behalten den Toleranz-Filter, sodass
+flatternde Quellen weder Schreibvorgänge spammen noch den Write-Cooldown
+auslösen.
+
 ## v0.22.0-b3 — 2026-10-13
 
 GLT-RAM-Eingänge bleiben auf Navigator 10 stabil: Die periodische
