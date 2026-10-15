@@ -1837,6 +1837,7 @@ class _IdmOptionsStepsMixin(config_entries.ConfigEntryBaseFlow):
                 return await self.async_step_zones()
             self._options[CONF_ZONE_ROOMS] = {}
         mapping_steps = {
+            "predictive_advisor": "advisor_room_sources",
             "room_forwarding": "room_temp_forwarding",
             "humidity_forwarding": "humidity_forwarding",
             "storage_forwarding": "storage_temp_forwarding",
