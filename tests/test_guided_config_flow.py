@@ -26,6 +26,7 @@ from custom_components.idm_heatpump.const import (
     CONF_KNX_BRIDGE,
     CONF_KNX_GROUPS,
     CONF_MODBUS_TIMEOUT,
+    CONF_PREDICTIVE_ADVISOR,
     CONF_ROOM_TEMP_FORWARDING,
     CONF_ROOM_TEMP_FORWARDING_ENTITIES,
     CONF_SCAN_INTERVAL,
@@ -89,6 +90,21 @@ async def test_mapping_step_returns_to_next_selected_feature() -> None:
         result = await flow._async_continue_optional_steps("room_temp_forwarding")
     assert result["step_id"] == "guided_toggle"
     next_step.assert_awaited_once()
+
+
+async def test_predictive_advisor_reaches_advisor_room_sources() -> None:
+    """Regression for #527: the guided walk must offer the advisor room sources step."""
+    flow = _options_flow()
+    await flow.async_step_init()
+    await flow.async_step_guided_mode({CONF_SETUP_LEVEL: "standard"})
+    result = await flow.async_step_guided_choose({"selected_features": ["predictive_advisor"]})
+    assert result["step_id"] == "guided_toggle"
+    result = await flow.async_step_guided_toggle({CONF_PREDICTIVE_ADVISOR: True})
+    assert result["step_id"] == "guided_detail"
+    result = await flow.async_step_guided_detail({})
+    assert result["step_id"] == "advisor_room_sources"
+    result = await flow.async_step_advisor_room_sources({})
+    assert result["step_id"] == "guided_review"
 
 
 async def test_health_only_reconfigure_skips_unchanged_knx() -> None:
