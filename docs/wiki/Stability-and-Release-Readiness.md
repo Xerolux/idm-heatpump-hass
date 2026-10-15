@@ -4,6 +4,36 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.22.0 release decision
+
+**0.22.0** is the stable cut of the resilience line that ran through seven
+prereleases (b1–b7, 2026-10-13 through 2026-10-15) and absorbed the
+never-promoted 0.21.3 line. For the cut, the full quality gate passed on the
+tagged tree: the four-leg matrix (Python 3.14 × HA 2026.8.1/2026.10.0 ×
+manifest-pinned/api-main) with coverage 95 % and `config_flow` 100 %, strict
+mypy against the real Home Assistant runtime, ruff, hassfest, HACS, the
+real-Home-Assistant lifecycle smoke including the no-leaked-tasks assertion,
+packaging, checksum and package-to-tag verification. The line was exercised
+in the field continuously: the outage dampening and the five-minute quiet
+window ran on the maintainer's own plant through recurring Modbus proxy
+outages (verified clean from b1 on — dampening works, repairs self-clear),
+and external reporters validated the bidirectional grid meter (#519,
+confirmed on b5 with its rounding follow-up on b6) and drove the #493 and
+#504 investigations whose fixes shipped through the absorbed 0.21.3 line and
+the 0.22 betas. The unchanged b7 candidate soaked for under a day — short
+of the seven-day gate 6, and the line's code changed almost daily; the
+maintainer decided to cut anyway because the write-surface changes are
+confined to GLT RAM inputs (no EEPROM-sensitive register is touched by any
+new path, and the RAM refresh cadence is mandatory on the affected
+firmwares) while the register map, the model-detection core and the web
+supplement are unchanged from the 0.21.x stable. Issue #493 remains open
+for a reporter's firmware-specific battery display flicker: the
+integration-side handling (cyclic RAM refresh) is validated on the
+reference plant, the residual flicker is controller-internal and under
+investigation with IDM support, and it affects neither control nor data
+integrity. No configuration migration is needed; rolling back to 0.21.2
+keeps working.
+
 ## 0.21.2 release decision
 
 This maintenance candidate addresses the newly reported #489: optional external
@@ -195,7 +225,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.22.0-b7` and `idm-heatpump-api` `2.14.2` form the current
+Source-tree integration `0.22.0` and `idm-heatpump-api` `2.14.2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

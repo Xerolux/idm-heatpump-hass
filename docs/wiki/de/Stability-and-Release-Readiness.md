@@ -4,6 +4,38 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.22.0
+
+**0.22.0** ist der stabile Schnitt der Resilienz-Linie aus sieben Prereleases
+(b1–b7, 13.–15.10.2026) inklusive der nie beförderten 0.21.3-Linie. Für den
+Schnitt bestand die vollständige Qualitätsprüfung auf dem getaggten Baum:
+die Vier-Beine-Matrix (Python 3.14 × HA 2026.8.1/2026.10.0 ×
+manifest-pinned/api-main) mit Coverage 95 % und `config_flow` 100 %, strict
+mypy gegen die echte Home-Assistant-Runtime, ruff, hassfest, HACS, der
+Lifecycle-Smoke mit echtem Home Assistant inkl. der Assertion gegen
+leckende Tasks, Paketierung, Prüfsummen- und Paket-zu-Tag-Verifikation.
+Die Linie lief durchgehend im Feld: Die Ausfall-Dämpfung und das
+fünfminütige Ruhe-Fenster liefen auf der Anlage des Maintainers durch
+wiederkehrende Modbus-Proxy-Ausfälle (ab b1 verifiziert sauber — Dämpfung
+wirkt, Repairs räumen sich selbst ab), und externe Reporter haben den
+bidirektionalen Netzleistungszähler validiert (#519, bestätigt auf b5 mit
+dem Rundungs-Follow-up auf b6) sowie die #493- und #504-Untersuchungen
+vorangetrieben, deren Fixes über die absorbierte 0.21.3-Linie und die
+0.22-Betas ausgeliefert wurden. Der unveränderte b7-Kandidat lief weniger
+als einen Tag — unter dem siebentägigen Gate 6, und der Code der Linie
+änderte sich fast täglich; der Maintainer entschied dennoch zu schneiden,
+weil die Änderungen an der Schreibfläche auf GLT-RAM-Inputs beschränkt
+sind (kein EEPROM-sensibles Register wird von einem neuen Pfad berührt,
+und die RAM-Refresh-Kadenz ist auf den betroffenen Firmwares zwingend),
+während Registerkarte, Modellerkennungskern und Web-Supplement gegenüber
+dem 0.21.x-Stable unverändert sind. Issue #493 bleibt für ein
+firmware-spezifisches Batterie-Anzeige-Flackern eines Reporters offen:
+Die integrationsseitige Behandlung (zyklischer RAM-Refresh) ist auf der
+Referenzanlage validiert, das restliche Flackern ist controller-intern und
+mit dem IDM-Support in Klärung, und es betrifft weder Steuerung noch
+Datenintegrität. Keine Konfigurationsmigration nötig; ein Rollback auf
+0.21.2 bleibt möglich.
+
 ## Release-Entscheidung zu 0.21.2
 
 Dieser Wartungskandidat behebt das neu gemeldete #489: optionale externe
@@ -207,7 +239,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.22.0-b7` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
+Integration im Quellstand `0.22.0` und `idm-heatpump-api` `2.14.2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

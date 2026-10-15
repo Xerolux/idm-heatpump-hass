@@ -15,79 +15,46 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.22.0-b7] - 2026-10-15
+## [0.22.0] - 2026-10-15
 
-### Fixed
-
-- Guided configuration reaches the advisor room temperature sources step again (#527). The guided options walk never offered the *Advisor room temperature sources* step when the predictive advisor was selected: after the advisor's detail step the flow jumped straight to the review, so the advisor's room temperature source entities (added with #504) could not be selected from the UI — only the classic options flow reached the step. The feature-to-step mapping in `_async_complete_guided_feature()` now routes `predictive_advisor` to the room-sources step, which returns to the guided review after submitting, exactly like the other guided follow-up steps. A regression test walks the whole guided sequence and pins the step.
-
-### Documentation
-
-- The Configuration wiki page (English and German) explains the Home Assistant 2026.8+ entry points (#526): integration options live behind the icon-only gear on the config-entry row, while *Reconfigure* is the labeled ⋮ menu item that only re-runs connection setup. Added after users repeatedly landed in the reconfigure wizard while looking for the options.
-
-## [0.22.0-b6] - 2026-10-14
-
-### Fixed
-
-- External power forwarding writes quantized values (#519). Derived sums such as household consumption (PV production + grid import + battery flow) carried float64 arithmetic noise — e.g. `0.3569999999999999` instead of `0.357` — into the optimistic entity state, which the next poll then replaced with the register's two-decimal readback, so the entity visibly alternated between both spellings. Forwarder writes are now rounded to the register resolution (10 W) before reaching the coordinator: the optimistic state and the readback are identical, `-0.0` is normalized away, and the written payload only changes when a value actually moves by ≥ 10 W. The cyclic refresh cadence (3 s) is unchanged — GLT RAM inputs must be refreshed because some firmwares clear them seconds after the last write (#493) — and the affected registers are RAM inputs, not EEPROM, so the refresh causes no write-cycle wear.
-
-## [0.22.0-b5] - 2026-10-14
-
-### Added
-
-- External power forwarding accepts a bidirectional grid meter directly (#519). The new *Bidirectional grid power sensor* field takes a single signed grid-connection power sensor with a selectable sign convention (positive = grid import, the default, or positive = export). The forwarder normalizes the sign and derives `pv_surplus` (registers 74–75) in the IDM convention (positive = export/surplus, negative = grid import); when a PV production sensor is also mapped it derives `house_consumption` (registers 82–83) from the site balance, including mapped battery flow (charging counts negative). Explicitly mapped surplus and house-consumption sensors keep precedence, the grid meter alone is never written as household consumption, invalid sources are skipped as before, and a derived negative household consumption is clamped to zero. The mapping dialog rejects a grid sensor that has nothing left to derive. This removes the two template helpers (sign inversion and consumption calculation) previously needed on plants with a bidirectional meter.
-
-## [0.22.0-b4] - 2026-10-14
-
-### Fixed
-
-- Room temperature, storage temperature and humidity forwarding now rewrite their GLT registers once per configured interval even when the source value has not moved. The tolerance guard used to suppress every rewrite of an unchanged value, so after a controller or Modbus-service restart — which wipes the volatile GLT RAM inputs — the external room temperature stayed at its -1 sentinel indefinitely and the affected heating circuit silently lost room-temperature influence until the source value drifted beyond tolerance (observed live on a Navigator 10 during the #493 investigation: the register sat at the sentinel for a quarter hour while the source was steady). Event-driven writes keep the tolerance skip; only the periodic interval pass refreshes unconditionally.
-
-## [0.22.0-b3] - 2026-10-13
-
-### Fixed
-
-- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 3 seconds instead of the configured fallback interval (#493). Live diagnosis on Navigator 10 (NAV10_20.23-903) revealed that the controller watchdog expires after roughly 5 seconds; a 5-second interval combined with network latency, write cooldown (default 5.0 s) or full coordinator polls (~2.2 s) caused the watchdog to briefly expire every cycle, producing visible UI flicker. To keep GLT inputs continuously active:
-  - The fallback periodic refresh runs every 3.0 seconds ($T/2$ of the controller watchdog).
-  - Write cooldown is capped at 2.0 seconds for external power measurement registers (`battery_soc`, `battery_discharge`, `pv_surplus`, `pv_production`), ensuring cyclic RAM streaming is never choked by a user-configured general cooldown.
-  - Periodic external power writes bypass the post-write confirmation poll storm, preventing coordinator bus congestion.
-  - Battery SoC is rounded and forwarded as an integer (`int`), preventing continuous `int`-vs-`float` state oscillation in Home Assistant.
-  - The forwarder logs an informative hint when `battery_soc` is mapped without `battery_discharge`, explaining that Navigator 10 displays the battery UI card only when both power and SoC are present.
-
-## [0.22.0-b2] - 2026-10-13
-
-### Fixed
-
-- Short Modbus outages stay quiet. A connection failure that recovers within five minutes no longer raises a repair issue, an error line or unavailable entities: the coordinator keeps serving the last snapshot (the web supplement keeps refreshing on its own schedule), pending writes pause at debug level without a write repair, and the log gets one gray info line when the connection drops and one when it recovers; a delivered write closes the outage early. Only a connection failure that outlasts the five-minute window escalates to the previous visible behavior — the calm `modbus_degraded_web_active` notice and one error line per outage. Failures the controller itself answers with (wrong slave ID, firmware, no data) still escalate immediately, because a quiet window cannot heal them. The room-temperature, humidity and external-power forwarders log their once-per-outage line at info instead of warning. Motivation: a flapping proxy host produced 69 write warnings and 8 error pairs in a single morning, and users reading the log history afterwards filed reports for outages that had long self-healed.
-
-## [0.22.0-b1] - 2026-10-13
-
-0.22.0-b1 opens the 0.22 line and absorbs the never-promoted 0.21.3 beta
-line: everything since 0.21.2 ships here. The two field investigations
-dominate — GLT RAM inputs that some controllers clear ten seconds after the
-last write (#493), and implausible room temperatures feeding the advisor's
-models (#504) — plus the read-only Home Assistant room-temperature sources
-that fix the advisor for heating circuits without a wired sensor, and
-quieter failure logging throughout the GLT forwarders.
+0.22.0 is the stable cut of the line that ran through seven prereleases
+(b1–b7, 2026-10-13 through 2026-10-15) and absorbs the never-promoted 0.21.3
+beta line — everything since 0.21.2 ships here. Two field investigations
+dominate: GLT RAM inputs that some controllers clear seconds after the last
+write (#493), and implausible room temperatures feeding the advisor's models
+(#504). Around them the line gained quieter outage behavior, a bidirectional
+grid meter input, restart-safe forwarding and write-path hardening. No
+configuration migration is needed; rolling back to 0.21.2 keeps working.
 
 ### Added
 
 - The predictive advisor accepts one read-only Home Assistant temperature sensor per heating circuit as its room-temperature source (options step "Advisor room temperature sources", English and German). For circuits without a wired room sensor — which report uninitialized memory on the `hc_x_room_temp` register (#504) — the mapped sensor feeds the advisor's models, data quality and capability detection under the same 0-50 °C plausibility range; an unavailable source counts as an unavailable sample and never falls back to the register garbage. Nothing is written to the heat pump.
+- External power forwarding accepts a bidirectional grid meter directly (#519). The new *Bidirectional grid power sensor* field takes a single signed grid-connection power sensor with a selectable sign convention (positive = grid import, the default, or positive = export). The forwarder normalizes the sign and derives `pv_surplus` (registers 74–75) in the IDM convention (positive = export/surplus, negative = grid import); when a PV production sensor is also mapped it derives `house_consumption` (registers 82–83) from the site balance, including mapped battery flow (charging counts negative). Explicitly mapped surplus and house-consumption sensors keep precedence, the grid meter alone is never written as household consumption, invalid sources are skipped as before, and a derived negative household consumption is clamped to zero. The mapping dialog rejects a grid sensor that has nothing left to derive. This removes the two template helpers (sign inversion and consumption calculation) previously needed on plants with a bidirectional meter.
 - Document a SolarEdge GLT setup for a battery-connected hybrid inverter and additional inverters, including explicit source signs, partial aggregates, dropout/recovery, battery-export exclusion and the limits of HA-side failure handling. Add a standalone generator for reviewable HA template YAML and an IDM source-mapping reference; it performs no HA or hardware writes. Unit-labelled inputs and explicit sign choices are required. English and German setup guides are published together.
 - External power forwarding logs every successful GLT register write at debug level, so a debug log covering a flicker period shows exactly when each write reached the controller while investigating device-side clearing of RAM inputs (#493).
 
 ### Fixed
 
-- External power forwarding refreshes GLT RAM inputs at a fixed firmware-safe cadence of 5 seconds instead of the configured fallback interval. The #493 reporter's log proved that some Navigator firmwares (observed on NAV10_20.23-903) clear unrefreshed GLT inputs roughly ten seconds after the last write: a battery SoC written once per minute was visible for ten seconds and cleared for the remaining fifty. Sensor-driven forwarding is unchanged; the per-register write cooldown still throttles actual writes. The SolarEdge GLT setup advice (EN/DE) now states that the fallback interval no longer governs presence.
+- Short Modbus outages stay quiet. A connection failure that recovers within five minutes no longer raises a repair issue, an error line or unavailable entities: the coordinator keeps serving the last snapshot (the web supplement keeps refreshing on its own schedule), pending writes pause at debug level without a write repair, and the log gets one gray info line when the connection drops and one when it recovers; a delivered write closes the outage early. Only a connection failure that outlasts the five-minute window escalates to the previous visible behavior — the calm `modbus_degraded_web_active` notice and one error line per outage. Failures the controller itself answers with (wrong slave ID, firmware, no data) still escalate immediately, because a quiet window cannot heal them. The room-temperature, humidity and external-power forwarders log their once-per-outage line at info instead of warning. Motivation: a flapping proxy host produced 69 write warnings and 8 error pairs in a single morning, and users reading the log history afterwards filed reports for outages that had long self-healed.
+- External power forwarding keeps GLT RAM inputs continuously alive at a fixed firmware-safe cadence (#493). Live diagnosis on Navigator 10 (NAV10_20.23-903) showed that some firmwares clear unrefreshed GLT inputs: the reporter's log first proved the clear itself (a battery SoC written once per minute was visible for ten seconds and cleared for the remaining fifty), and further measurement pinned the watchdog at roughly 5 seconds, so an early 5-second refresh interval still let it expire within every cycle and caused visible UI flicker. Final behavior:
+  - The periodic refresh runs every 3.0 seconds (half the controller watchdog), independent of the configured fallback interval; sensor-driven forwarding is unchanged and the per-register write cooldown still throttles actual writes. The SolarEdge GLT setup advice (EN/DE) states that the fallback interval no longer governs presence.
+  - The write cooldown is capped at 2.0 seconds for external power measurement registers (`battery_soc`, `battery_discharge`, `pv_surplus`, `pv_production`), so cyclic RAM streaming is never choked by a user-configured general cooldown.
+  - Periodic external power writes bypass the post-write confirmation poll, preventing coordinator bus congestion.
+  - Battery SoC is rounded and forwarded as an integer, preventing continuous `int`-vs-`float` state oscillation in Home Assistant; a hint is logged when `battery_soc` is mapped without `battery_discharge`, because Navigator 10 shows the battery UI card only when both are present.
+- Room temperature, storage temperature and humidity forwarding rewrite their GLT registers once per configured interval even when the source value has not moved. The tolerance guard used to suppress every rewrite of an unchanged value, so after a controller or Modbus-service restart — which wipes the volatile GLT RAM inputs — the external room temperature stayed at its -1 sentinel indefinitely and the affected heating circuit silently lost room-temperature influence until the source value drifted beyond tolerance (observed live on a Navigator 10 during the #493 investigation). Event-driven writes keep the tolerance skip; only the periodic interval pass refreshes unconditionally.
 - The predictive advisor treats implausible room temperatures as missing (#504). A circuit without a wired room sensor reports uninitialized memory (observed as -327.33 on a Navigator 2.0); the value is finite, so the engine's numeric guard accepted it and silently fed the heat-loss regression, the heat-demand plan and the room-deviation metric with deltas around -339 K, while the advisor's own quality tracker correctly reported 0 percent usable. Every engine room-temperature read now applies the advisor's plausibility range (0-50 °C), room-deviation baselines beyond the plausible span are skipped so storage polluted before this fix cannot produce curve recommendations, and capabilities.room_temperature is only reported for range-valid readings.
 - A connected nav20 web client corrects a Navigator model misdetected as Navigator 10, mirroring the long-standing nav10 correction: the web variant that actually connected is definitive in both directions (observed on a Navigator 2.0 reporting m_20.23 firmware, #504 follow-up). Previously such plants kept the wrong model and a recurring web-variant-conflict warning.
 - Sensor bursts no longer cancel an in-flight Modbus write in any GLT forwarder: external power, room temperature and humidity forwarding coalesce bursts into follow-up passes that read the latest state, periodic and event-driven passes are serialized behind a lock, and unload awaits cancelled tasks (#493 investigation; the external-power race was independently reproduced, the other forwarders were fixed proactively).
-- The comfort schedule and the energy manager finish an evaluation that is already writing — including its state save or boost start — before their stop path cancels the loop, so unloading or reloading the entry cannot abort a Modbus transaction mid-flight.
-- The energy-manager and comfort-schedule loops run as Home Assistant background tasks; their never-finishing foreground tasks previously made the bootstrap log "Setup timed out for bootstrap waiting on EnergyManager._run" (#493 reporter log).
+- The comfort schedule and the energy manager finish an evaluation that is already writing — including its state save or boost start — before their stop path cancels the loop, so unloading or reloading the entry cannot abort a Modbus transaction mid-flight. Their evaluation loops run as Home Assistant background tasks; the never-finishing foreground tasks previously made the bootstrap log "Setup timed out for bootstrap waiting on EnergyManager._run" (#493 reporter log).
 - The external power, room temperature and humidity forwarders report a Modbus connection outage once per outage instead of on every refresh pass, and return to normal logging after the next successful write (warning spam observed at the GLT refresh cadence during a proxy outage).
-- Report Modbus delivery/connection failures separately from controller register-access rejections, including proxy endpoint failures. Clear a persisted write repair only after that same register is successfully written; success on another register does not conceal its failure. Keep the existing scoped repair identity so recovery also clears warnings created by earlier versions.
-- A deferred web-client session release keeps its task referenced until it finished (an unreferenced task can be garbage-collected mid-flight) and a failing release is now reported as a warning instead of surfacing as an unretrieved task exception.
+- Modbus delivery/connection failures are reported separately from controller register-access rejections, including proxy endpoint failures. A persisted write repair is cleared only after that same register is successfully written; success on another register does not conceal its failure. The existing scoped repair identity is kept so recovery also clears warnings created by earlier versions.
+- A deferred web-client session release keeps its task referenced until it finished (an unreferenced task can be garbage-collected mid-flight) and a failing release is reported as a warning instead of surfacing as an unretrieved task exception.
+- External power forwarding writes quantized values (#519). Derived sums such as household consumption (PV production + grid import + battery flow) carried float64 arithmetic noise — e.g. `0.3569999999999999` instead of `0.357` — into the optimistic entity state, which the next poll then replaced with the register's two-decimal readback, so the entity visibly alternated between both spellings. Forwarder writes are now rounded to the register resolution (10 W) before reaching the coordinator: the optimistic state and the readback are identical, `-0.0` is normalized away, and the written payload only changes when a value actually moves by ≥ 10 W. The cyclic refresh cadence (3 s) is unchanged — GLT RAM inputs must be refreshed because some firmwares clear them seconds after the last write (#493) — and the affected registers are RAM inputs, not EEPROM, so the refresh causes no write-cycle wear.
+- Guided configuration reaches the advisor room temperature sources step again (#527). The guided options walk never offered the *Advisor room temperature sources* step when the predictive advisor was selected: after the advisor's detail step the flow jumped straight to the review, so the advisor's room temperature source entities (added with #504) could not be selected from the UI — only the classic options flow reached the step. The feature-to-step mapping in `_async_complete_guided_feature()` now routes `predictive_advisor` to the room-sources step, which returns to the guided review after submitting, exactly like the other guided follow-up steps. A regression test walks the whole guided sequence and pins the step.
 
+### Documentation
+
+- The Configuration wiki page (English and German) explains the Home Assistant 2026.8+ entry points (#526): integration options live behind the icon-only gear on the config-entry row, while *Reconfigure* is the labeled ⋮ menu item that only re-runs connection setup. Added after users repeatedly landed in the reconfigure wizard while looking for the options.
 ## [0.21.2] - 2026-10-12
 
 ### Fixed

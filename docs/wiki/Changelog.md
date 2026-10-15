@@ -5,6 +5,22 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.22.0 — 2026-10-15
+
+The stable cut of the 0.22 line (seven betas, 2026-10-13 through
+2026-10-15, absorbing the never-released 0.21.3 line). Two field topics
+dominate: some controllers clear GLT RAM inputs seconds after the last
+write (#493) — the forwarders now refresh them at a firmware-safe
+3-second cadence and rewrite unchanged values after controller restarts —
+and implausible room temperatures no longer feed the predictive advisor
+(#504), which can additionally take Home Assistant temperature sensors as
+room sources now. On top: short Modbus outages stay quiet for five
+minutes instead of flooding errors and repairs, a bidirectional grid
+meter is accepted directly (#519), forwarded values are written quantized
+to the register resolution, and the guided options walk reaches the
+advisor room-sources step again (#527). Rolling back to 0.21.2 keeps
+working.
+
 ## v0.22.0-b7 — 2026-10-15
 
 Guided configuration shows the advisor room temperature sources step
