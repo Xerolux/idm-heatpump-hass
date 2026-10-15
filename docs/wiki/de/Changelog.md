@@ -5,6 +5,23 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.22.0 — 2026-10-15
+
+Der stabile Schnitt der 0.22-Linie (sieben Betas, 13.–15.10.2026,
+inklusive der nie veröffentlichten 0.21.3-Linie). Zwei Feldthemen
+dominieren: Manche Controller löschen GLT-RAM-Inputs wenige Sekunden nach
+dem letzten Write (#493) — die Weiterleitungen refreshen sie jetzt in
+firmware-sicherer 3-Sekunden-Kadenz und schreiben unveränderte Werte nach
+einem Controller-Neustart neu — und unplausible Raumtemperaturen fließen
+nicht mehr in den Predictive Advisor (#504), der zusätzlich jetzt
+Home-Assistant-Temperatursensoren als Raumquellen nehmen kann. Dazu:
+Kurze Modbus-Ausfälle bleiben fünf Minuten still, statt Fehler und
+Repairs zu fluten, ein bidirektionaler Netzleistungszähler wird direkt
+akzeptiert (#519), weitergeleitete Werte werden quantisiert auf die
+Registerauflösung geschrieben, und die geführte Options-Tour erreicht die
+Advisor-Raumquellen-Stufe wieder (#527). Ein Rollback auf 0.21.2 bleibt
+möglich.
+
 ## v0.22.0-b7 — 2026-10-15
 
 Die geführte Konfiguration zeigt die *Raumtemperaturquellen des Beraters*
