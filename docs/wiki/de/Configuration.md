@@ -38,9 +38,10 @@ Schalter sowie die gegebenenfalls benötigten Sensor-, Heizkreis- oder
 Gruppenzuordnungen. Eine abschließende Bestätigung speichert die Konfiguration
 und lädt den Eintrag neu. Einstellungen aus einem tieferen Modus bleiben
 gespeichert, wenn du später einen einfacheren Modus wählst. Du kannst die Tiefe
-jederzeit über Neu konfigurieren > Funktionen wechseln. Neu konfigurieren >
-Verbindung ändert Host, Web-Zugriff und Modbus-Proxy. Bestehende Optionen
-bleiben unverändert, wenn ihre Funktion im Assistenten nicht ausgewählt war.
+jederzeit über Neu konfigurieren (Drei-Punkte-Menü ⋮ der Eintragszeile) >
+Funktionen wechseln. Neu konfigurieren > Verbindung ändert Host, Web-Zugriff
+und Modbus-Proxy. Bestehende Optionen bleiben unverändert, wenn ihre Funktion
+im Assistenten nicht ausgewählt war.
 
 Wenn Beta-Funktionen neu aktiviert werden, erscheint vor dem Speichern eine
 zusätzliche Bestätigungsseite. Sie ist getrennt von der Bestätigung der
@@ -431,9 +432,20 @@ Für jeden Raum in jeder Zone kannst du einen eigenen Namen vergeben. Diese Name
 
 ## Neukonfiguration
 
+**Wo diese Punkte zu finden sind:** Aktuelle Home-Assistant-Versionen zeigen
+keinen beschrifteten Button „Konfigurieren“ mehr — das Optionsfenster öffnet
+das **Zahnrad-Symbol (⚙)** am rechten Ende der Zeile deines Anlagen-Eintrags
+unter **Einstellungen → Geräte & Dienste → IDM Wärmepumpe**. Der beschriftete
+Punkt **Neu konfigurieren** liegt im Drei-Punkte-Menü (⋮) derselben Zeile und
+öffnet den Verbindungs-Assistenten; dessen Aktion **Funktionen konfigurieren**
+führt zu denselben Optionen. Solange der Eintrag einen Fehlerzustand anzeigt,
+ist das Zahnrad ausgeblendet — benutze in dem Fall den Weg über **Neu
+konfigurieren**.
+
 1. Öffne **Einstellungen → Geräte & Dienste**
 2. Klicke auf **IDM Heatpump**
-3. Klicke auf **Neu konfigurieren**
+3. Öffne das Drei-Punkte-Menü (⋮) deiner Eintragszeile und klicke auf
+   **Neu konfigurieren**
 4. Wähle die benötigte Aktion:
    - **Funktionen** öffnet die Standard-, Erweitert- oder Experte-Einrichtung,
      um Einstellungen ausgewählter Funktionen zu ändern, ohne nicht
@@ -483,13 +495,13 @@ Bestehende Heizkreis-, Zonen- und erweiterte Modbus-Optionen bleiben
 erhalten, während der reine Web-Betrieb aktiv ist, und stehen nach der
 Wiederherstellung von Modbus wieder zur Verfügung.
 
-Verwende **Konfigurieren** oder **Neu konfigurieren → Funktionen
-konfigurieren**, um das vollständige Optionsformular zu bearbeiten,
-einschließlich Abfrageintervall, Heizkreisen, Zonen, Smart Energy & Comfort,
-Gesundheitsüberwachung, Weiterleitungen und automatischen Steuerungen. Das
-Speichern lädt die Integration neu, sodass optionale Entitäten den
-ausgewählten Einstellungen folgen. Neu aktivierte Beta-Funktionen erfordern
-vor dem Speichern eine ausdrückliche Bestätigung.
+Verwende **Konfigurieren** (das Zahnrad-Symbol in der Eintragszeile) oder
+**Neu konfigurieren → Funktionen konfigurieren**, um das vollständige
+Optionsformular zu bearbeiten, einschließlich Abfrageintervall, Heizkreisen,
+Zonen, Smart Energy & Comfort, Gesundheitsüberwachung, Weiterleitungen und
+automatischen Steuerungen. Das Speichern lädt die Integration neu, sodass
+optionale Entitäten den ausgewählten Einstellungen folgen. Neu aktivierte
+Beta-Funktionen erfordern vor dem Speichern eine ausdrückliche Bestätigung.
 
 ### Erweiterte Modbus-Optionen
 

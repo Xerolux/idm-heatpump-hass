@@ -34,9 +34,9 @@ to change; each selected function opens a short page for its switch and any
 needed sensor, circuit or group mapping. A final confirmation saves the
 configuration and reloads the entry. Settings from a deeper mode remain saved
 when you later choose a simpler mode. You can switch depth at any time through
-Reconfigure > Features. Reconfigure > Connection changes the host, web access
-and Modbus proxy. Existing options remain in place if their function was not
-selected in the wizard.
+Reconfigure (in the row's ⋮ menu) > Features. Reconfigure > Connection changes
+the host, web access and Modbus proxy. Existing options remain in place if
+their function was not selected in the wizard.
 
 When newly enabling beta features, an additional acknowledgement page appears
 before saving. It is separate from the ownership confirmation required by the
@@ -396,9 +396,17 @@ For each room in each zone, you can assign a custom name. These names are used a
 
 ## Reconfiguration
 
+**Where these buttons live:** current Home Assistant versions show no labeled
+*Configure* button anymore — the options dialog opens with the **gear icon (⚙)**
+at the right end of your entry's row under **Settings → Devices & Services →
+IDM Heatpump**. The labeled **Reconfigure** item sits in the three-dot menu (⋮)
+of that row and opens the connection wizard, whose **Configure features**
+action leads to the same options. While the entry shows an error state the gear
+icon is hidden — use the Reconfigure menu in that case.
+
 1. Go to **Settings → Devices & Services**
 2. Click **IDM Heatpump**
-3. Click **Reconfigure**
+3. Open the three-dot menu (⋮) of your entry's row and click **Reconfigure**
 4. Choose the action you need:
    - **Features** opens Standard, Advanced or Expert setup to change selected
      feature settings without changing unselected categories.
@@ -443,11 +451,12 @@ the fallback flag after a successful Modbus check. Existing heating-circuit,
 zone and advanced Modbus options are preserved while web-only mode is active,
 so they are available again after Modbus is restored.
 
-Use **Configure** or **Reconfigure → Configure features** to edit the complete
-options form, including scan interval, circuits, zones, Smart Energy & Comfort,
-health monitoring, forwarding, and automatic controls. Saving reloads the
-integration so optional entities follow the selected settings. Newly enabled
-beta features require an explicit acknowledgement before saving.
+Use **Configure** (the gear icon on the entry row) or **Reconfigure →
+Configure features** to edit the complete options form, including scan
+interval, circuits, zones, Smart Energy & Comfort, health monitoring,
+forwarding, and automatic controls. Saving reloads the integration so optional
+entities follow the selected settings. Newly enabled beta features require an
+explicit acknowledgement before saving.
 
 ### Advanced Modbus options
 
