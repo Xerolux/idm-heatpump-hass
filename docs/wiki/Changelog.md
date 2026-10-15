@@ -5,6 +5,19 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.22.0-b7 — 2026-10-15
+
+Guided configuration shows the advisor room temperature sources step
+again (#527): selecting the predictive advisor in the guided options walk
+used to skip straight past the *Advisor room temperature sources* step to
+the review, so the advisor's room temperature source entities could not
+be picked from the UI — only the classic options flow reached the step.
+It now appears right after the advisor detail step and returns to the
+guided review as usual. The Configuration page also documents the Home
+Assistant 2026.8+ entry points: options sit behind the gear icon on the
+config-entry row, while *Reconfigure* only re-runs connection setup
+(#526).
+
 ## v0.22.0-b6 — 2026-10-14
 
 External power forwarding writes quantized values (#519): derived sums

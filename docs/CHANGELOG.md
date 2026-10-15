@@ -15,6 +15,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.22.0-b7] - 2026-10-15
+
+### Fixed
+
+- Guided configuration reaches the advisor room temperature sources step again (#527). The guided options walk never offered the *Advisor room temperature sources* step when the predictive advisor was selected: after the advisor's detail step the flow jumped straight to the review, so the advisor's room temperature source entities (added with #504) could not be selected from the UI — only the classic options flow reached the step. The feature-to-step mapping in `_async_complete_guided_feature()` now routes `predictive_advisor` to the room-sources step, which returns to the guided review after submitting, exactly like the other guided follow-up steps. A regression test walks the whole guided sequence and pins the step.
+
+### Documentation
+
+- The Configuration wiki page (English and German) explains the Home Assistant 2026.8+ entry points (#526): integration options live behind the icon-only gear on the config-entry row, while *Reconfigure* is the labeled ⋮ menu item that only re-runs connection setup. Added after users repeatedly landed in the reconfigure wizard while looking for the options.
+
 ## [0.22.0-b6] - 2026-10-14
 
 ### Fixed
