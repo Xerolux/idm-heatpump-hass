@@ -5,6 +5,19 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.22.0-b7 — 2026-10-15
+
+Die geführte Konfiguration zeigt die *Raumtemperaturquellen des Beraters*
+wieder an (#527): Wer in der geführten Options-Tour den Predictive Advisor
+auswählte, sprang bisher an diesem Schritt direkt zur Übersicht — die
+Raumtemperatur-Quellen des Advisors ließen sich damit nicht über die UI
+auswählen, nur der klassische Optionsfluss erreichte den Schritt. Er
+erscheint jetzt direkt nach der Advisor-Detailstufe und kehrt danach wie
+gewohnt zur Übersicht zurück. Die Konfigurationsseite dokumentiert zudem
+die Einstiegspunkte ab Home Assistant 2026.8: Die Optionen liegen hinter
+dem Zahnrad-Symbol in der Eintragszeile, „Neu konfigurieren“ startet nur
+das Verbindungs-Setup (#526).
+
 ## v0.22.0-b6 — 2026-10-14
 
 Die externe Leistungsweiterleitung schreibt quantisierte Werte (#519):
