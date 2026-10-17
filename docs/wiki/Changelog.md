@@ -5,6 +5,22 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b1 — 2026-10-17
+
+First prerelease of the 0.23 line, built from issue #532's field
+evidence. Unconfigured plant features (no bivalence, solar, cooling or
+external demand source) no longer warn as invalid values on every
+restart — their "not present" fills (255 resp. 0) are declared as
+register sentinels in the device library (`idm-heatpump-api` 2.14.3), so
+the affected entities simply report *unavailable*, exactly like the
+storage-temperature registers always did. Genuinely out-of-range data
+from a live source (the reporter's KNX-fed 100.96 % humidity) stays
+rejected. And the Navigator web pages' `---` placeholder for "no value
+right now" (e.g. the projected hot-water power while no demand runs) now
+reports *unavailable* too, instead of crashing Home Assistant's sensor
+state machine on every update — the reporter's log counted 273 listener
+errors from that. No configuration change is needed.
+
 ## v0.22.0 — 2026-10-15
 
 The stable cut of the 0.22 line (seven betas, 2026-10-13 through

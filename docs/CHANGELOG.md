@@ -15,6 +15,44 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b1] - 2026-10-17
+
+First prerelease of the 0.23 line, cut from issue #532's field evidence
+(Navigator 2.0, diagnostics attached): unconfigured plant features no
+longer log validation warnings, and a web placeholder that crashed the
+sensor state machine is handled. The device logic moves to
+`idm-heatpump-api[web]==2.14.3`.
+
+### Fixed
+
+- **"Not present" fills are classified as sentinels instead of invalid
+  values (#532)**: plants without bivalence, solar, cooling circuits or an
+  external demand source read documented-out-of-range fills from those
+  registers and warned on every Home Assistant restart — `bivalence_state`
+  (1124) and `solar_mode` (1856) read 255 while `compressor_status_*`
+  already stayed silent on the identical raw `0xFFFF`, the per-circuit
+  cooling setpoints (1457+/1471+) read 0.0 below 15, and
+  `ext_demand_temp_heating`/`_cooling` (1694/1695) read 0 below their
+  minimums. `idm-heatpump-api` 2.14.3 declares those fills as per-register
+  sentinels, so the affected entities report *unavailable* without the
+  warn-once log; values outside the documented ranges that are not
+  declared sentinels stay rejected (the reporter's KNX-fed `ext_humidity`
+  of 100.96 % keeps being refused). The sentinels are deliberately
+  per-register, not validator-wide: the corrupt-batch re-read recovery of
+  issue #69 keeps flagging unexpected 255s on every other enum register,
+  and the Navigator 1.7 map is untouched.
+- **Web "no value" placeholders report unavailable instead of crashing the
+  sensor state (#532)**: the Navigator web pages fill slots without a
+  current value with the placeholder text `---` (for example the projected
+  hot-water power while no DHW demand runs). The integration passed that
+  text through as the entity state, so Home Assistant rejected the
+  non-numeric state of a kW power sensor on every coordinator update —
+  the reporter's log counted 273 `Unexpected error updating listener`
+  entries plus a `logging too frequently` notice. Placeholder values now
+  carry no native value and the entities report *unavailable*; the value
+  keys stay present so web liveness, the device hierarchy and the
+  numeric-only register bridging are unaffected.
+
 ## [0.22.0] - 2026-10-15
 
 0.22.0 is the stable cut of the line that ran through seven prereleases
