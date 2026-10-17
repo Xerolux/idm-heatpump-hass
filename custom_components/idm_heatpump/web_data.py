@@ -45,11 +45,24 @@ class IdmWebAuthenticationFailed(Exception):
 
 @dataclass(frozen=True)
 class IdmWebSensorValue:
-    """One normalized web supplement value for Home Assistant sensors."""
+    """One normalized web supplement value for Home Assistant sensors.
+
+    ``native_value`` is ``None`` when the controller's web page itself has no
+    value for this slot: Navigator web interfaces render placeholders such as
+    ``---`` while a demand is idle, and passing that text through as the state
+    of a numeric sensor makes Home Assistant reject the entity on every
+    update (issue #532: 273 listener errors on a kW power sensor).
+    """
 
     value: str
-    native_value: str | float
+    native_value: str | float | None
     unit: str | None = None
+
+
+# Text the Navigator web pages emit for "this slot has no value right now".
+# Kept deliberately small: only placeholders observed on real controllers
+# belong here, so a legitimate text value can never be swallowed.
+_NO_VALUE_TEXT_VALUES = frozenset({"---"})
 
 
 @dataclass(frozen=True)
@@ -154,6 +167,8 @@ def _normalize_sensor_value(value: Any) -> IdmWebSensorValue:
     text_value = str(raw_value).strip()
     numeric_value = getattr(value, "numeric_value", None)
     unit = getattr(value, "unit", None)
+    if text_value in _NO_VALUE_TEXT_VALUES:
+        return IdmWebSensorValue(value=text_value, native_value=None, unit=unit)
     if isinstance(numeric_value, (int, float)):
         return IdmWebSensorValue(value=text_value, native_value=float(numeric_value), unit=unit)
 

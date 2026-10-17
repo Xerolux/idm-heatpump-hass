@@ -626,6 +626,47 @@ class TestSensorAsyncSetupEntry:
             "test_entry_web_runtime_heating_hours"
         )
 
+    async def test_web_placeholder_value_reports_unavailable(self):
+        """A web slot the controller fills with "---" is unavailable, not a text state.
+
+        Issue #532: the projected hot-water power reads "---" while no DHW
+        demand runs; the text state on a kW power sensor made Home Assistant
+        raise ValueError on every coordinator update.
+        """
+        from custom_components.idm_heatpump.sensor import async_setup_entry
+
+        coord = _make_coordinator()
+        coord.sensor_descriptions = []
+        coord.web_enabled = True
+        coord.active_registers = []
+        coord.web_supplement = IdmWebSupplement(
+            navigator_version="Navigator 2.0",
+            software_version="20.24-311",
+            sensor_values={
+                "current_expected_power_hotwater": IdmWebSensorValue("---", None, "kW"),
+                "hotgas_temperature": IdmWebSensorValue("72.5°C", 72.5, "°C"),
+            },
+        )
+
+        entry = MagicMock()
+        entry.runtime_data.coordinator = coord
+        entry.options = {}
+
+        added_entities = []
+        async_add = MagicMock(side_effect=lambda entities: added_entities.extend(entities))
+        await async_setup_entry(MagicMock(), entry, async_add)
+
+        hotwater = next(
+            e for e in added_entities if e._attr_unique_id == "test_entry_web_current_expected_power_hotwater"
+        )
+        hotgas = next(e for e in added_entities if e._attr_unique_id == "test_entry_web_hotgas_temperature")
+
+        assert hotwater.available is False
+        assert hotwater.native_value is None
+        # A neighbouring slot with a real value stays fully functional.
+        assert hotgas.available is True
+        assert hotgas.native_value == 72.5
+
     async def test_heatpump_model_is_an_attribute_not_an_entity(self):
         """The heat pump model rides on the navigator-version sensor.
 
