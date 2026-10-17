@@ -5,6 +5,18 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b4 — 2026-10-17
+
+Second batch from the advisor field validation: the silent availability
+flap after every GLT forwarding pass is gone (#537) — a cancelled
+write-confirmation refresh made Home Assistant record a failed update
+without any log line, so all entities flipped *unavailable* for ~12 s
+every forwarding interval; the confirmation is now only cancelled while
+it still sleeps. The advisor operation reason stops mixing English and
+German labels for the same cause (#538), and the no-TWT fake flow rate
+no longer counts as usable advisor data (#539). No configuration change
+is needed.
+
 ## v0.23.0-b3 — 2026-10-17
 
 Third prerelease of the 0.23 line, built from an end-to-end simulation of a

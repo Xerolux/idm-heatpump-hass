@@ -4,6 +4,21 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.0-b4 release decision
+
+**0.23.0-b4** ships the three findings from the advisor field-feedback
+pass (reference plant, 0.23.0-b3, evidence in issues #537/#538/#539). The
+availability flap (#537) is the significant one: its root cause is a
+silently-swallowed `CancelledError` in Home Assistant's coordinator
+pinned by a real-HA probe, fixed by a scheduling guard — verified by
+three new real-Home-Assistant regression tests alongside the lifecycle
+smoke leg. #538 and #539 are read-path classifications (label vocabulary
+mapping, no-TWT flow gating). All three stay open until confirmed on the
+reference plant after the HACS update. The advisor's core question was
+answered by the same pass: the heating-curve recommendations match the
+controller's own display and the room temperatures, with rising daily
+confidence — the advisor itself needed no change.
+
 ## 0.23.0-b1 release decision
 
 **0.23.0-b1** opens the 0.23 line with two fixes carved from issue #532's
@@ -243,7 +258,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.23.0-b3` and `idm-heatpump-api` `2.14.3` form the current
+Source-tree integration `0.23.0-b4` and `idm-heatpump-api` `2.14.3` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
