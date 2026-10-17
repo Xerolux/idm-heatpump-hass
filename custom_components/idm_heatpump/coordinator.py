@@ -853,11 +853,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             if register_name is None or register_name not in data:
                 continue
             value = getattr(entry, "native_value", None)
-            if (
-                isinstance(value, bool)
-                or not isinstance(value, (int, float))
-                or not math.isfinite(float(value))
-            ):
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
                 continue
             if self._register_reports_not_present(register_name, data[register_name], data):
                 data[register_name] = value
