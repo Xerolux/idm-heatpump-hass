@@ -17,6 +17,7 @@ _STORAGE_VERSION = 1
 _MAX_INTERVAL_SECONDS = 180.0
 _ELECTRIC_KEY = "power_consumption_hp"
 _THERMAL_KEY = "thermal_power_flow_sensor"
+_FALLBACK_THERMAL_KEY = "current_power"
 
 
 def _power(value: Any) -> float | None:
@@ -32,7 +33,7 @@ def _power(value: Any) -> float | None:
 class EnergyStatistics:
     """Integrate validated electrical and thermal power readings in kWh."""
 
-    required_registers = frozenset({_ELECTRIC_KEY, _THERMAL_KEY})
+    required_registers = frozenset({_ELECTRIC_KEY, _THERMAL_KEY, _FALLBACK_THERMAL_KEY})
 
     def __init__(
         self,
@@ -152,6 +153,10 @@ class EnergyStatistics:
         observed_at = (now or datetime.now(UTC)).astimezone(UTC)
         electric = _power(data.get(_ELECTRIC_KEY))
         thermal = _power(data.get(_THERMAL_KEY))
+        if thermal is None or thermal == 0.0:
+            fallback_thermal = _power(data.get(_FALLBACK_THERMAL_KEY))
+            if fallback_thermal is not None and (thermal is None or fallback_thermal > 0.0):
+                thermal = fallback_thermal
         self._ensure_periods(observed_at)
         if electric is None or thermal is None:
             self._last_sample_at = None

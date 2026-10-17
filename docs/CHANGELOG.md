@@ -15,6 +15,59 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b2] - 2026-10-17
+
+Second prerelease of the 0.23 line, built from a read-only live audit on a
+Navigator 10 (`T_NAV10_20.24-1580-g02a20b66f`) installation: plants that
+report thermal output via `current_power` (register 1790) while
+`thermal_power_flow_sensor` (register 4126) stays at `0.0 kW` now compute
+COP, thermal energy totals and predictive-advisor models; stale entity
+cleanup runs on the normal Modbus setup path and removes retired/mismatched
+web sensors; and energy-flow sensors without a connected grid meter report
+*unavailable* instead of *unknown*.
+
+### Fixed
+
+- **Thermal power fallback to `current_power` (register 1790) when
+  `thermal_power_flow_sensor` (register 4126) is `0.0 kW` or absent**:
+  Navigator 10 plants without a Vortex flow-sensor thermal power reading
+  keep register 4126 at `0.0 kW` while reporting actual thermal output on
+  register 1790 (`current_power`). `calculated_cop`, `EnergyStatistics`
+  (thermal kWh and daily/monthly/total COP), `PredictiveAdvisor`
+  capability/quality tracking and `AdvisorEngine` COP-bucket and
+  building-model learning now fall back to `current_power` whenever
+  `thermal_power_flow_sensor` is `0.0` or absent, and entity-aware polling
+  keeps both candidate thermal registers in the poll plan.
+- **Model-change entity cleanup runs on the normal Modbus setup path**:
+  `cleanup_stale_model_entities` was previously called only in
+  `_async_setup_web_only_entry` (where the empty register map made it a
+  no-op) and omitted from `async_setup_entry`. Running it during normal
+  Modbus setup removes orphaned register-backed entities (such as cascade
+  entities left behind when cascade is not enabled), and running entity
+  cleanups before `cleanup_stale_hierarchy_devices` detaches any sub-device
+  emptied in the same setup pass.
+- **Orphaned `web_heatpump_model` and Navigator 2.0 `stat_*` web sensors
+  cleaned up on Navigator 10**: `cleanup_stale_web_sensor_entities` now
+  removes retired `_WEB_ATTRIBUTE_VALUE_NAMES` (`web_heatpump_model`, which
+  rides as an attribute on `navigator_version`) on all controllers, and
+  `_web_sensor_definitions` plus `cleanup_stale_web_sensor_entities` skip
+  and remove the 12 Navigator 2.0-only `stat_*` statistics sensors (`(Web
+  2.0)`) when the controller is confirmed as a Navigator 10.
+- **Web energy-flow sensors report *unavailable* when the controller omits
+  `grid_power` or `pv_power`**: on Navigator 10 installations without a
+  bidirectional grid meter wired to the controller, the `energyflow`
+  WebSocket frame carries `grid_power: None`. `IdmWebEnergyflowGridSensor`
+  and `IdmWebEnergyflowPvSensor` now require their respective value to be
+  non-`None` in `available`, preventing a permanently `unknown` sensor
+  state.
+
+### Documentation
+
+- **External Power Forwarding (#519)**: clarified in the English and German
+  configuration wiki how bidirectional grid-meter derivation works and how
+  the writable GLT `number` entities (`*(setpoint)*` / `*(Vorgabe)*`,
+  disabled by default) relate to the read-only `sensor` entities.
+
 ## [0.23.0-b1] - 2026-10-17
 
 First prerelease of the 0.23 line, cut from issue #532's field evidence

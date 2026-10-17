@@ -504,7 +504,7 @@ def detect_capabilities(
     )
     return AdvisorCapabilities(
         has_power_meter="power_consumption_hp" in data,
-        has_heat_meter="thermal_power_flow_sensor" in data,
+        has_heat_meter="thermal_power_flow_sensor" in data or "current_power" in data,
         has_room_temperature=has_room_temperature,
         has_flow_sensor="heat_sink_flow_rate" in data,
         has_compressor=any(key in data for key in _COMPRESSOR_KEYS),
@@ -582,7 +582,7 @@ class PredictiveAdvisor:
     @property
     def required_registers(self) -> tuple[str, ...]:
         """Registers the advisor watches; declare them for entity-aware polling."""
-        return self._watched_keys
+        return (*self._watched_keys, "current_power")
 
     @property
     def first_observed(self) -> datetime | None:
@@ -623,7 +623,16 @@ class PredictiveAdvisor:
                     return float(raw)  # HA states are strings; classify numerically
                 except (TypeError, ValueError):
                     return raw  # present but unparseable: implausible, not unavailable
-        return data.get(key)
+        value = data.get(key)
+        if key == "thermal_power_flow_sensor" and (value is None or value == 0.0):
+            fallback = data.get("current_power")
+            if (
+                not isinstance(fallback, bool)
+                and isinstance(fallback, (int, float))
+                and (value is None or float(fallback) > 0.0)
+            ):
+                return fallback
+        return value
 
     def observe(self, now: datetime | None = None) -> None:
         """Consume one coordinator snapshot: quality stats and TTL expiry.

@@ -684,3 +684,70 @@ def test_model_cleanup_ignores_entities_of_other_entries() -> None:
     registry = _run_model_cleanup(coordinator, entities)
 
     registry.async_remove.assert_not_called()
+
+
+def test_web_sensor_cleanup_removes_heatpump_model_and_nav20_stats_on_nav10() -> None:
+    """Retired web_heatpump_model and Nav 2.0 stat_* sensors are removed on Navigator 10."""
+    from custom_components.idm_heatpump.device_hierarchy import cleanup_stale_web_sensor_entities
+    from custom_components.idm_heatpump.sensor import _web_sensor_definitions
+
+    coordinator = MagicMock(spec=IdmCoordinator)
+    coordinator.config_entry = MagicMock()
+    coordinator.config_entry.entry_id = "entry"
+    coordinator.config_entry.options = {}
+    coordinator.active_registers = []
+    coordinator.web_variant = "nav10"
+    coordinator.model_name = "Navigator 10"
+
+    nav10_keys = {defn.key for defn in _web_sensor_definitions(coordinator)}
+    assert "stat_elcons_total_heating" not in nav10_keys
+
+    entities = []
+    for uid, eid in (
+        ("entry_web_heatpump_model", "sensor.web_model"),
+        ("entry_web_stat_elcons_total_heating", "sensor.web_stat_heating"),
+        ("entry_web_compressor_1", "sensor.web_compressor"),
+        ("entry_web_navigator_version", "sensor.web_nav_version"),
+    ):
+        entity = _entity(uid, eid)
+        entity.domain = "sensor"
+        entities.append(entity)
+
+    registry = MagicMock()
+    with (
+        patch("custom_components.idm_heatpump.device_hierarchy.er.async_get", return_value=registry),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_config_entry",
+            return_value=entities,
+        ),
+    ):
+        cleanup_stale_web_sensor_entities(MagicMock(), coordinator)
+
+    removed = {call.args[0] for call in registry.async_remove.call_args_list}
+    assert removed == {
+        "sensor.web_model",
+        "sensor.web_stat_heating",
+        "sensor.web_compressor",
+    }
+
+    # On Navigator 2.0, stat_* web sensors remain valid and are kept.
+    coordinator.web_variant = "nav20"
+    coordinator.model_name = "Navigator 2.0"
+    nav20_keys = {defn.key for defn in _web_sensor_definitions(coordinator)}
+    assert "stat_elcons_total_heating" in nav20_keys
+
+    registry_nav20 = MagicMock()
+    with (
+        patch("custom_components.idm_heatpump.device_hierarchy.er.async_get", return_value=registry_nav20),
+        patch(
+            "custom_components.idm_heatpump.device_hierarchy.er.async_entries_for_config_entry",
+            return_value=entities,
+        ),
+    ):
+        cleanup_stale_web_sensor_entities(MagicMock(), coordinator)
+
+    removed_nav20 = {call.args[0] for call in registry_nav20.async_remove.call_args_list}
+    assert removed_nav20 == {
+        "sensor.web_model",
+        "sensor.web_compressor",
+    }

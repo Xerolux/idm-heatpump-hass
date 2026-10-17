@@ -181,6 +181,24 @@ class TestEnergyflowEntities:
         sensors = {s.entity_description.key: s for s in web_system_sensor_entities(nav10_coordinator)}
         assert sensors["web_energyflow_grid"].extra_state_attributes["house_power"] == pytest.approx(0.469)
 
+    def test_unavailable_when_grid_or_pv_power_omitted(self, nav10_coordinator) -> None:
+        nav10_coordinator.web_supplement = replace(
+            nav10_coordinator.web_supplement,
+            energyflow=IdmWebEnergyflow(grid_power=None, pv_power=0.25, house_power=0.7, signal=5, type=6),
+        )
+        sensors = {s.entity_description.key: s for s in web_system_sensor_entities(nav10_coordinator)}
+        assert sensors["web_energyflow_grid"].available is False
+        assert sensors["web_energyflow_grid"].native_value is None
+        assert sensors["web_energyflow_pv"].available is True
+        assert sensors["web_energyflow_pv"].native_value == pytest.approx(0.25)
+
+        nav10_coordinator.web_supplement = replace(
+            nav10_coordinator.web_supplement,
+            energyflow=IdmWebEnergyflow(grid_power=0.5, pv_power=None, house_power=0.5, signal=5, type=6),
+        )
+        assert sensors["web_energyflow_grid"].available is True
+        assert sensors["web_energyflow_pv"].available is False
+
 
 class TestWeatherEntity:
     def test_state_is_today_temperature(self, nav10_coordinator) -> None:

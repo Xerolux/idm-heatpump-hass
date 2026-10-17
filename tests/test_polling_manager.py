@@ -144,7 +144,9 @@ class TestCalculatedSensorDependencies:
 
         for definition in (*CALCULATED_SENSOR_DEFINITIONS, *FLOW_DEVIATION_DEFINITIONS):
             declared = polling_plan._entity_dependencies(definition.key)
-            assert declared == set(definition.sources), f"{definition.key} would lose its source registers"
+            assert declared == {*definition.sources, *definition.any_of_sources}, (
+                f"{definition.key} would lose its source registers"
+            )
 
     @staticmethod
     def _registry(unique_id: str) -> MagicMock:

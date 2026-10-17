@@ -361,6 +361,41 @@ Werte werden bei Zustandsänderungen geschrieben und periodisch aktualisiert,
 ungültige oder außerhalb des Bereichs liegende Werte werden übersprungen, und
 ein leeres Feld eines Registers lässt dieses unangetastet.
 
+### Externe Leistungs-Weiterleitung (PV & Stromzähler)
+
+Die externe Leistungs-Weiterleitung ist optional und standardmäßig deaktiviert.
+Wenn aktiviert, leitet die Integration ausgewählte Home-Assistant-Leistungs- und
+Batteriesensoren — oder direkt einen Zweirichtungs-Netzstromzähler zusammen mit
+der PV-Erzeugung — in die IDM-GLT-Leistungsregister (`pv_surplus`,
+`pv_production`, `house_consumption`, `battery_discharge`,
+`battery_fill_level`) weiter.
+
+| Option | Beschreibung | Standard |
+|--------|-------------|---------|
+| Externe Leistungs-Weiterleitung | Aktiviert die Weiterleitung für ausgewählte Leistungs-/Batteriequellen | aus |
+| Weiterleitungsintervall | Periodisches Aktualisierungsintervall | 60 Sekunden |
+| Leistungstoleranz | Minimale Änderung, bevor ein Leistungswert erneut geschrieben wird | 0.1 kW |
+| Batterietoleranz | Minimale Änderung, bevor ein Batterie-Füllstand erneut geschrieben wird | 1 % |
+| Netzstromzähler-Sensor | Optionaler Zweirichtungszähler (Netzbezug/Netzeinspeisung) zur automatischen Berechnung von `pv_surplus` und `house_consumption` | leer |
+| Zähler-Vorzeichenkonvention | Vorzeichenkonvention des Zweirichtungszählers (`positive_import` oder `positive_export`) | `positive_import` |
+
+**Wichtiges Verhalten:**
+
+- Wenn ein **Netzstromzähler-Sensor** und ein **PV-Erzeugungs-Sensor**
+  ausgewählt sind, berechnet die Integration automatisch den PV-Überschuss
+  (`pv_surplus`) und den Hausverbrauch (`house_consumption`), sofern deren
+  direkte Sensorfelder leer gelassen werden (#519).
+- Die weitergeleiteten Werte werden in die GLT-Eingangsregister des Reglers
+  geschrieben (z. B. Register 74 `pv_surplus` und Register 82
+  `house_consumption`). In Home Assistant sind diese beschreibbaren
+  GLT-Eingangsregister als `number`-Entitäten mit dem Zusatz **(Vorgabe)**
+  angelegt (z. B. *Hausverbrauch (Vorgabe)*, standardmäßig in der
+  Entitätsregistrierung deaktiviert), während die gleichnamigen `sensor`-Entitäten
+  ohne diesen Zusatz (z. B. *Hausverbrauch*) den vom Regler zurückgemeldeten
+  Messwert anzeigen. Um den exakt per Weiterleitung geschriebenen GLT-Wert in
+  Home Assistant zu prüfen, aktiviere die entsprechende `number`-Entität mit
+  dem Zusatz *(Vorgabe)*.
+
 ### KNX-Bridge
 
 Die KNX-Bridge ist optional und standardmäßig deaktiviert. Wenn aktiviert,

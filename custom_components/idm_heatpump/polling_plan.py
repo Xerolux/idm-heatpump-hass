@@ -44,7 +44,7 @@ _ALWAYS_REQUIRED = frozenset(
 # missing here would drop those registers from the entity-aware poll plan and
 # leave the calculated sensor permanently unavailable.
 _CALCULATED_DEPENDENCIES: dict[str, frozenset[str]] = {
-    definition.key: frozenset(definition.sources)
+    definition.key: frozenset((*definition.sources, *definition.any_of_sources))
     for definition in (
         *CALCULATED_SENSOR_DEFINITIONS,
         *FLOW_DEVIATION_DEFINITIONS,
