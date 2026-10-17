@@ -821,7 +821,11 @@ class IdmWebSensor(IdmCoordinatorEntityBase, SensorEntity):
             return False
         if self._definition.key == "navigator_version":
             return bool(web_supplement.navigator_version)
-        return self._definition.key in web_supplement.sensor_values
+        entry = web_supplement.sensor_values.get(self._definition.key)
+        # A placeholder ("---") means the web page itself has no value for
+        # this slot right now — unavailable, not a text state on a numeric
+        # sensor (issue #532).
+        return entry is not None and entry.native_value is not None
 
     @property
     def native_value(self) -> str | float | None:

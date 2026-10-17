@@ -1298,6 +1298,22 @@ class TestWebValueNormalisation:
         assert value.native_value == "Heizen"
         assert value.unit is None
 
+    def test_placeholder_text_maps_to_no_value(self) -> None:
+        """The web page's own "---" placeholder means the slot has no value.
+
+        Issue #532: passing the text through as the state of a numeric kW
+        sensor made Home Assistant reject the entity on every coordinator
+        update (273 listener errors plus a log-flood notice).
+        """
+        value = web_data._normalize_sensor_value(SimpleNamespace(value="---", numeric_value=None, unit="kW"))
+
+        assert value.native_value is None
+        assert value.value == "---"
+        assert value.unit == "kW"
+
+        # Bare string input takes the same path.
+        assert web_data._normalize_sensor_value("---").native_value is None
+
 
 class TestSystemFrames:
     async def test_system_frames_are_attached_for_nav10(self) -> None:
