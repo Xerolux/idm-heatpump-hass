@@ -1,5 +1,7 @@
 """Tests for IdmCoordinator."""
 
+import asyncio
+import contextlib
 import logging
 import socket
 from datetime import timedelta
@@ -1540,6 +1542,68 @@ class TestAsyncWriteRegister:
 
         # Await the delayed refresh task directly instead of sleeping 0.6s for a
         # 0.5s delay (which is flaky on slow CI runners). Deterministic + fast.
+        assert coord._delayed_refresh_task is not None
+        await coord._delayed_refresh_task
+        coord.async_request_refresh.assert_called_once()
+
+    async def test_write_does_not_cancel_inflight_confirmation_refresh(self, mock_hass, mock_config_entry):
+        """#537: a confirmation task already refreshing is left alone.
+
+        Cancelling it inside async_request_refresh makes the DataUpdateCoordinator
+        record a silently failed update: last_update_success drops without any
+        log line and every entity reports unavailable until the next scheduled
+        poll. The write path must only cancel the task while it still sleeps.
+        """
+
+        async def slow_refresh():
+            await asyncio.sleep(0.2)
+
+        original_refresh = None
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord.data = {}
+        coord._write_cooldown_seconds = 0.0
+        original_refresh = coord.async_request_refresh
+        coord.async_request_refresh = slow_refresh
+
+        reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
+        await coord.async_write_register(reg, 1)
+        first_task = coord._delayed_refresh_task
+        assert first_task is not None
+
+        # Rush past the 0.5 s sleep so the first confirmation is inside its
+        # refresh, then write again: the in-flight task must survive.
+        await asyncio.sleep(0.55)
+        assert coord._confirmation_refresh_running is True
+        await coord.async_write_register(reg, 2)
+
+        assert not first_task.cancelled()
+        await first_task
+        coord.async_request_refresh = original_refresh
+
+    async def test_write_cancels_sleeping_confirmation_refresh(self, mock_hass, mock_config_entry):
+        """A confirmation still in its sleep phase is cancelled as before (#537)."""
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord.data = {}
+        coord._write_cooldown_seconds = 0.0
+        coord.async_request_refresh = AsyncMock()
+
+        reg = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode", writable=True)
+        await coord.async_write_register(reg, 1)
+        first_task = coord._delayed_refresh_task
+        assert first_task is not None
+        assert coord._confirmation_refresh_running is False
+
+        await coord.async_write_register(reg, 2)
+
+        # The sleep-phase cancellation ends the first task promptly (the
+        # coroutine swallows the CancelledError; awaiting still re-raises it
+        # to us, which is production-harmless — nothing awaits the old task).
+        with contextlib.suppress(asyncio.CancelledError):
+            await first_task
         assert coord._delayed_refresh_task is not None
         await coord._delayed_refresh_task
         coord.async_request_refresh.assert_called_once()

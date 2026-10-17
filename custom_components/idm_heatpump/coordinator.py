@@ -343,6 +343,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._scan_interval_issue_active = False
         self._dhw_boost_manager: DhwBoostManager | None = None
         self._delayed_refresh_task: asyncio.Task[None] | None = None
+        # True while the pending write-confirmation task is inside its
+        # refresh. Cancelling it there aborts Home Assistant's debounced
+        # refresh, which the DataUpdateCoordinator records as a silently
+        # failed update: last_update_success drops without any log line and
+        # every coordinator entity reports unavailable for one poll cycle
+        # (#537). The write path therefore only cancels while the task is
+        # still in its sleep phase.
+        self._confirmation_refresh_running = False
         self._write_timestamps: dict[int, float] = {}
         self._last_write_error: dict[str, Any] | None = None
         self._web_variant_conflict_logged = False
@@ -1646,11 +1654,13 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _delayed_refresh(self, delay: float = 0.5) -> None:
         try:
             await asyncio.sleep(delay)
+            self._confirmation_refresh_running = True
             self._refresh_is_on_demand = True
             try:
                 await self.async_request_refresh()
             finally:
                 self._refresh_is_on_demand = False
+                self._confirmation_refresh_running = False
         except asyncio.CancelledError:
             pass
 
@@ -1995,7 +2005,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.async_update_listeners()
         if confirm and not is_external_power_measurement(reg.name):
             old_task = self._delayed_refresh_task
-            if old_task is not None and not old_task.done():
+            if old_task is not None and not old_task.done() and not self._confirmation_refresh_running:
+                # Cancel only the sleep phase: a cancellation landing inside
+                # the refresh makes the coordinator record a silent failed
+                # update and every entity flaps unavailable (#537).
                 old_task.cancel()
             self._delayed_refresh_task = self._create_confirmation_task()
         return safety_result

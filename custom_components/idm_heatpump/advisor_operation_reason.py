@@ -23,6 +23,33 @@ _IDLE_DEMAND_REASONS: Final[frozenset[str]] = frozenset(
         REASON_LABELS["system_off"],
     }
 )
+# The controller's web supplement reports demand reasons in its German UI
+# wording. Passing those through verbatim made the sensor alternate between
+# the composer's English labels ("Heating circuit A") and the German web
+# label ("Heizkreis A") for the same physical cause (#538); known labels
+# are mapped onto the composer's English vocabulary, unknown ones stay
+# verbatim so a new controller wording remains recognizable.
+_WEB_DEMAND_LABELS_EN: Final[dict[str, str]] = {
+    **{REASON_LABELS[f"hc_{letter}"]: f"Heating circuit {letter.upper()}" for letter in "abcdefg"},
+    REASON_LABELS["pv"]: "PV surplus",
+    REASON_LABELS["more_demands"]: "Multiple demands",
+    REASON_LABELS["external_input"]: "External input",
+    REASON_LABELS["external_bus"]: "External bus",
+    REASON_LABELS["frost_protection"]: "Frost protection",
+    REASON_LABELS["ion"]: "ION",
+    REASON_LABELS["single_loading"]: "DHW single charge",
+    REASON_LABELS["single_loading_boost"]: "DHW single charge boost",
+    REASON_LABELS["schedule"]: "Schedule",
+    REASON_LABELS["schedule_boost"]: "Schedule boost",
+    REASON_LABELS["dhw_comfort"]: "DHW comfort",
+    REASON_LABELS["cascade"]: "Cascade",
+    REASON_LABELS["dhw_booster"]: "DHW booster",
+}
+
+
+def _normalize_web_demand_label(label: str) -> str:
+    """Map a controller web label onto the composer's English vocabulary."""
+    return _WEB_DEMAND_LABELS_EN.get(label, label)
 
 
 def _number(value: Any) -> float | None:
@@ -145,11 +172,12 @@ def compose_operation_reason(
             )
 
     if demand_reason and demand_reason not in _IDLE_DEMAND_REASONS:
+        normalized_reason = _normalize_web_demand_label(demand_reason)
         return OperationReason(
-            label=demand_reason,
+            label=normalized_reason,
             mode_label=mode_label,
-            explanation=f"The controller reports '{demand_reason}' as the demand reason.",
-            details={"operating_mode": mode, "demand_reason": demand_reason},
+            explanation=f"The controller reports '{normalized_reason}' as the demand reason.",
+            details={"operating_mode": mode, "demand_reason": normalized_reason, "demand_reason_raw": demand_reason},
         )
 
     return OperationReason(
