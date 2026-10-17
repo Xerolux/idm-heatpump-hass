@@ -646,6 +646,7 @@ def _is_authentication_error(err: Exception) -> bool:
 #: coordinator snapshot so register-keyed consumers (calculated sensors, the
 #: KNX bridge) keep working without a Modbus connection.
 WEB_TO_REGISTER_ALIASES: dict[str, str] = {
+    "flowmeter": "heat_sink_flow_rate",
     "flow_temperature": "hp_flow_temp",
     "return_temperature": "hp_return_temp",
     "outside_air_temperature": "outdoor_temp",

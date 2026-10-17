@@ -4,6 +4,23 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.0-b5 release decision
+
+**0.23.0-b5** carries the advisor presentation polish and the web-value
+fallback from the same field pass: the recommendation topic superseding
+(one active entry per topic, user status inherited across daily
+re-issues) and the #516 fallback (web values fill registers whose Modbus
+reading is the not-present pattern; real Modbus values always win). Both
+are read-path changes with focused tests (topic superseding, fallback
+selection matrix). The three b4 fixes were verified live on the reference
+plant after the HACS update and restart: the periodic coordinator-wide
+unavailability windows are gone (#537, verified across two forwarding
+intervals), the operation reason reports English labels only (#538) and
+the advisor shows `flow_sensor: false` with flow samples counting as
+unavailable on the no-TWT plant (#539) — which this beta's fallback can
+now lift again wherever the web supplement serves a real flowmeter
+value. Issues #537/#538/#539 closed as completed.
+
 ## 0.23.0-b4 release decision
 
 **0.23.0-b4** ships the three findings from the advisor field-feedback

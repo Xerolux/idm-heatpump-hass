@@ -65,6 +65,19 @@ reports *unavailable* too, instead of crashing Home Assistant's sensor
 state machine on every update — the reporter's log counted 273 listener
 errors from that. No configuration change is needed.
 
+## v0.23.0-b5 — 2026-10-17
+
+Third round of field feedback: Registers that report "not present" now
+show the web supplement's live value instead (discussion #516) — the
+heat-sink flow rate on plants without a plate heat exchanger reads the
+spurious 0 L/min from the Modbus pattern while the controller's own
+flowmeter serves the real value; not-present readings (documented
+sentinels or the no-TWT signature) are filled from the web, real Modbus
+values always win. And daily advisor recommendations supersede their
+topic predecessor instead of piling up as parallel "new" entries (one
+topic, one active entry, confidence and viewed-status carry over). No
+configuration change is needed.
+
 ## v0.22.0 — 2026-10-15
 
 The stable cut of the 0.22 line (seven betas, 2026-10-13 through

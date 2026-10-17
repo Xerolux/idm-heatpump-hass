@@ -4244,3 +4244,85 @@ class TestSetupRegistersFromDescriptions:
         mock_aliases.assert_called_once_with(descriptions)
         assert coord.registers_count == 1
         assert coord._register_by_name["desc_flow_temp"] is desc_reg
+
+
+class TestWebNotPresentFallback:
+    """Web values fill registers whose Modbus reading is the not-present pattern (#516)."""
+
+    def _coordinator_with_web(self, mock_hass, mock_config_entry, sensor_values, registers=()):
+        from custom_components.idm_heatpump.web_data import IdmWebSupplement
+
+        client = MagicMock()
+        client.read_batch = AsyncMock(return_value={})
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        # Auto mode: a live poll interval and the register map the fallback
+        # consults for not-present sentinels.
+        coord.update_interval = timedelta(seconds=10)
+        coord._register_by_name = {reg.name: reg for reg in registers}
+        coord._web_supplement = IdmWebSupplement(sensor_values=sensor_values)
+        return coord
+
+    def test_flowmeter_fills_the_no_twt_spurious_zero(self, mock_hass, mock_config_entry):
+        """The reporter's case: Modbus 0.0 from the -1.0 pattern, web 33.9."""
+        from custom_components.idm_heatpump.web_data import IdmWebSensorValue
+
+        coord = self._coordinator_with_web(
+            mock_hass,
+            mock_config_entry,
+            {"flowmeter": IdmWebSensorValue("33.9", 33.9, "l/min")},
+            registers=(
+                RegisterDef(address=1072, datatype=DataType.UCHAR, name="heat_sink_flow_rate"),
+                RegisterDef(address=1070, datatype=DataType.FLOAT, name="heat_sink_flow_temp"),
+            ),
+        )
+        data = {
+            "heat_sink_flow_rate": 0.0,
+            "heat_sink_flow_temp": -1.0,
+        }
+        result = coord._apply_web_not_present_fallback(data)
+        assert result["heat_sink_flow_rate"] == 33.9
+
+    def test_real_modbus_value_wins_over_web(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.web_data import IdmWebSensorValue
+
+        coord = self._coordinator_with_web(
+            mock_hass,
+            mock_config_entry,
+            {"flowmeter": IdmWebSensorValue("33.9", 33.9, "l/min")},
+        )
+        data = {"heat_sink_flow_rate": 12.4, "heat_sink_flow_temp": 22.5}
+        result = coord._apply_web_not_present_fallback(data)
+        assert result["heat_sink_flow_rate"] == 12.4
+
+    def test_twt_idle_zero_is_not_replaced(self, mock_hass, mock_config_entry):
+        """A real sensor's legitimate idle zero stays a Modbus measurement."""
+        from custom_components.idm_heatpump.web_data import IdmWebSensorValue
+
+        coord = self._coordinator_with_web(
+            mock_hass,
+            mock_config_entry,
+            {"flowmeter": IdmWebSensorValue("33.9", 33.9, "l/min")},
+        )
+        data = {"heat_sink_flow_rate": 0.0, "heat_sink_flow_temp": 21.8}
+        result = coord._apply_web_not_present_fallback(data)
+        assert result["heat_sink_flow_rate"] == 0.0
+
+    def test_sentinel_register_filled_from_web(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.web_data import IdmWebSensorValue
+
+        coord = self._coordinator_with_web(
+            mock_hass,
+            mock_config_entry,
+            {"outside_air_temperature": IdmWebSensorValue("7.5", 7.5, "°C")},
+            registers=(RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),),
+        )
+        data = {"outdoor_temp": -1.0}
+        result = coord._apply_web_not_present_fallback(data)
+        assert result["outdoor_temp"] == 7.5
+
+    def test_no_web_supplement_is_a_noop(self, mock_hass, mock_config_entry):
+        client = MagicMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        coord._web_supplement = None
+        data = {"heat_sink_flow_rate": 0.0}
+        assert coord._apply_web_not_present_fallback(data) is data

@@ -4,6 +4,24 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.23.0-b5
+
+**0.23.0-b5** bringt die Advisor-Darstellungs-Politur und den
+Web-Wert-Fallback aus demselben Feld-Durchlauf: die Themen-Ablösung der
+Empfehlungen (ein aktiver Eintrag pro Thema, Nutzer-Status vererbt über
+die tägliche Neuausgabe) und der #516-Fallback (Web-Werte füllen
+Register, deren Modbus-Lesung das Nicht-vorhanden-Muster trägt; echte
+Modbus-Werte gewinnen immer). Beides sind Lese-Pfad-Änderungen mit
+fokussierten Tests. Die drei b4-Fixes wurden nach HACS-Update und
+Neustart live auf der Referenzanlage verifiziert: Die periodischen
+koordinator-weiten Nicht-verfügbar-Fenster sind weg (#537, über zwei
+Weitergabe-Intervalle verifiziert), der Anforderungsgrund meldet nur
+noch englische Labels (#538) und der Advisor zeigt `flow_sensor: false`
+mit als nicht verfügbar zählenden Durchfluss-Samples auf der
+No-TWT-Anlage (#539) — was dieser Fallback nun überall dort wieder
+anheben kann, wo das Web-Supplement einen echten Flowmeter-Wert liefert.
+Die Issues #537/#538/#539 wurden als erledigt geschlossen.
+
 ## Release-Entscheidung zu 0.23.0-b4
 
 **0.23.0-b4** bringt die drei Befunde aus der Advisor-Feld-Validierung

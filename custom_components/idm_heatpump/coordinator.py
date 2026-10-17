@@ -796,6 +796,72 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         }
         return replace(supplement, values=values, sensor_values=sensor_values)
 
+    def _effective_sentinels_of(self, register_name: str) -> tuple[int | float | str, ...]:
+        """Return the register's effective sentinel set, empty when unknown."""
+        register = self._register_by_name.get(register_name)
+        if register is None and self._registers:
+            register = next((reg for reg in self._registers if reg.name == register_name), None)
+        sentinels = getattr(register, "effective_sentinel_values", None)
+        if sentinels is None:
+            sentinels = getattr(register, "sentinel_values", ())
+        return tuple(sentinels or ())
+
+    def _register_reports_not_present(self, register_name: str, value: Any, data: dict[str, Any]) -> bool:
+        """Whether a register reading means "no value" rather than a measurement.
+
+        Either the value is one of the register's documented not-present
+        sentinels, or — for the heat-sink flow rate — the reading is the
+        spurious UCHAR 0.0 that plants without a plate heat exchanger decode
+        from the FLOAT -1.0 pattern (Known Limitations, discussion #516):
+        there the sibling flow temperature still reporting the sentinel is
+        the signature.
+        """
+        if value in self._effective_sentinels_of(register_name):
+            return True
+        if register_name == "heat_sink_flow_rate":
+            sibling = data.get("heat_sink_flow_temp")
+            sibling_is_sentinel = sibling is None or sibling in self._effective_sentinels_of("heat_sink_flow_temp")
+            if (
+                sibling_is_sentinel
+                and isinstance(value, (int, float))
+                and not isinstance(value, bool)
+                and float(value) == 0.0
+            ):
+                return True
+        return False
+
+    def _apply_web_not_present_fallback(self, data: dict[str, Any]) -> dict[str, Any]:
+        """Fill registers that report "not present" from the web supplement (#516).
+
+        In auto mode the Modbus poll owns register values, and an existing
+        register that reports its not-present pattern keeps its entity
+        unavailable even when the controller's web interface serves a live
+        value for the same quantity — the reporter of discussion #516 read a
+        permanent 0 L/min while the web flowmeter showed the real flow. Only
+        not-present readings are replaced; a real Modbus value always wins
+        over the slower web supplement. Web-only mode bridges these values
+        wholesale already and never runs this method.
+        """
+        supplement = self._web_supplement
+        if supplement is None or self.update_interval is None:
+            return data
+        from .web_data import web_to_register_value
+
+        replaced: list[str] = []
+        for name, entry in (supplement.sensor_values or {}).items():
+            register_name = web_to_register_value(name)
+            if register_name is None or register_name not in data:
+                continue
+            value = getattr(entry, "native_value", None)
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+                continue
+            if self._register_reports_not_present(register_name, data[register_name], data):
+                data[register_name] = value
+                replaced.append(f"{name}->{register_name}")
+        if replaced:
+            _LOGGER.debug("Web supplement filled not-present registers: %s", ", ".join(sorted(replaced)))
+        return data
+
     def _web_register_bridge_data(self) -> dict[str, Any]:
         """Bridge web values into register-named coordinator data.
 
@@ -1264,6 +1330,8 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # Preserve independently refreshed web metadata when the base
         # coordinator replaces self.data with this new Modbus snapshot.
         data.update(self._web_metadata_data())
+
+        data = self._apply_web_not_present_fallback(data)
 
         new_unused_registers: set[str] = set()
         for reg_name, value in data.items():
