@@ -134,6 +134,45 @@ sensor state machine is handled. The device logic moves to
   keys stay present so web liveness, the device hierarchy and the
   numeric-only register bridging are unaffected.
 
+## [0.23.0-b4] - 2026-10-17
+
+Second field-feedback batch from the advisor validation on the reference
+plant (issues #537, #538, #539). All three are read-path or scheduling
+changes; no register map, write path or configuration surface moved.
+
+### Fixed
+
+- **No more coordinator-wide unavailability windows after GLT forwarding
+  passes (#537)**: every write used to cancel the pending 0.5 s
+  write-confirmation task of the previous write — and when that
+  cancellation landed inside the confirmation's refresh, Home Assistant's
+  `DataUpdateCoordinator` recorded it as a *silently* failed update:
+  `last_update_success` dropped without any log line, and every
+  coordinator-backed entity (Modbus sensors, advisor entities, the web
+  demand reason) reported *unavailable* for one poll cycle — on the
+  reference plant a ~12-second window after every 300-second forwarding
+  pass, invisible in logs and repairs. The write path now cancels a
+  confirmation only while it is still sleeping; an in-flight confirmation
+  completes. A real-Home-Assistant regression test pins the underlying
+  coordinator behaviour and guards the fix.
+- **The advisor operation reason no longer mixes English and German labels
+  (#538)**: the controller's web supplement reports demand reasons in its
+  German UI wording ("Heizkreis A", "PV", "Zeitprogramm"), which the
+  composer passed through verbatim next to its own English labels — the
+  sensor state alternated between "Heating circuit A" and "Heizkreis A"
+  for the same physical cause. Known web labels now map onto the
+  composer's English vocabulary (the raw controller wording stays in the
+  entity details), unknown wordings remain verbatim, and the idle-label
+  suppression from 0.23.0-b3 is unchanged.
+- **The no-TWT fake flow rate no longer passes the advisor's data-quality
+  gate (#539)**: on plants without a plate heat exchanger the flow
+  register decodes a spurious constant 0.0 L/min from the FLOAT -1.0
+  not-present pattern (Known Limitations), yet the advisor counted it as
+  100 % usable samples with `flow_sensor: true`. The signature — zero
+  flow together with no real sibling flow temperature — now classifies as
+  *unavailable*, the capability stays false, and a real sensor's
+  legitimate idle zero keeps counting as usable.
+
 ## [0.22.0] - 2026-10-15
 
 0.22.0 is the stable cut of the line that ran through seven prereleases

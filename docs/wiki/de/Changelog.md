@@ -5,6 +5,19 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b4 — 2026-10-17
+
+Zweite Runde aus der Advisor-Feld-Validierung: Das lautlose
+Verfügbarkeits-Flattern nach jedem GLT-Weitergabe-Durchlauf ist behoben
+(#537) — ein abgebrochener Bestätigungs-Refresh ließ Home Assistant ein
+fehlgeschlagenes Update ohne jede Log-Zeile vermerken, sodass alle
+Entitäten für ~12 s *nicht verfügbar* waren, in jedem
+Weitergabe-Intervall; die Bestätigung wird jetzt nur abgebrochen, solange
+sie noch wartet. Der Advisor-Anforderungsgrund mischt keine englischen
+und deutschen Begriffe mehr für dieselbe Ursache (#538), und die
+Fake-Durchfluss-0 ohne Trennwärmetauscher zählt nicht länger als nutzbare
+Advisor-Daten (#539). Keine Konfigurationsänderung nötig.
+
 ## v0.23.0-b3 — 2026-10-17
 
 Drittes Prerelease der 0.23-Linie auf Basis einer vollständigen

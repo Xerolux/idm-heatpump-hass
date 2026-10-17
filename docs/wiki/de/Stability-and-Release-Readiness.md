@@ -4,6 +4,22 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.23.0-b4
+
+**0.23.0-b4** bringt die drei Befunde aus der Advisor-Feld-Validierung
+(Referenzanlage, 0.23.0-b3, Evidenz in den Issues #537/#538/#539). Das
+Verfügbarkeits-Flattern (#537) ist der gewichtige: Die Ursache ist ein
+lautlos verschluckter `CancelledError` im Home-Assistant-Koordinator,
+nachgewiesen durch eine echte-HA-Sonde, behoben durch eine
+Scheduling-Wache — abgesichert durch drei neue
+Real-Home-Assistant-Regressionstests neben dem Lifecycle-Smoke. #538 und
+#539 sind Lese-Pfad-Klassifizierungen (Label-Vokabular-Mapping,
+No-TWT-Durchfluss-Filter). Alle drei bleiben offen bis zur Bestätigung
+auf der Referenzanlage nach dem HACS-Update. Die Kernfrage des Advisors
+beantwortete derselbe Durchlauf: Die Heizkurven-Empfehlungen passen zur
+Controller-Eigenanzeige und den Raumtemperaturen bei täglich steigender
+Konfidenz — der Advisor selbst brauchte keine Änderung.
+
 ## Release-Entscheidung zu 0.23.0-b1
 
 **0.23.0-b1** eröffnet die 0.23-Linie mit zwei Fixes aus den Beweisen von
@@ -258,7 +274,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.23.0-b3` und `idm-heatpump-api` `2.14.3` bilden das aktuelle exakt
+Integration im Quellstand `0.23.0-b4` und `idm-heatpump-api` `2.14.3` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
