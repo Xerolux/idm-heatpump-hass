@@ -4,6 +4,24 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.0-b1 release decision
+
+**0.23.0-b1** opens the 0.23 line with two fixes carved from issue #532's
+evidence (Navigator 2.0 reporter, diagnostics and log attached): the
+register-side "not present" sentinels ship in the freshly released
+device-logic patch (exactly pinned in the manifest; compatibility matrix
+updated), and
+the integration-side `---` web placeholder handling. Both are read-path
+classification changes — no write path, no register map addresses, no
+configuration surface moved. The prerelease was cut to give the reporter
+and the field a testable build quickly; the issue stays open until the
+reporter confirms the warnings and the listener-error flood are gone on
+his plant. Deliberate non-changes: `ext_humidity` above 100 % stays
+rejected (upstream KNX data), the corrupt-batch re-read recovery of
+issue #69 is untouched (sentinels are per-register, not validator-wide),
+and the Navigator 1.7 map is not modified (separate protocol family, no
+hardware capture).
+
 ## 0.22.0 release decision
 
 **0.22.0** is the stable cut of the resilience line that ran through seven
@@ -116,7 +134,7 @@ guided fix since 0.21.0-b4.
 
 **0.20.3** is a pin-and-documentation-only maintenance cut on top of 0.20.2,
 branched from the `v0.20.2` tag: the device logic moves to
-`idm-heatpump-api[web]==2.14.2`, whose only change widens the
+`idm-heatpump-api[web]==2.14.3`, whose only change widens the
 `dhw_charge_off_temp` validation range from the documented 46..53 °C to
 46..67 °C — the reporter's plant in issue
 [#460](https://github.com/Xerolux/idm-heatpump-hass/issues/460) measures
@@ -137,7 +155,7 @@ data patch in the library plus tree-identical transport pins — and the
 
 **0.20.2** is a pin-and-documentation-only maintenance cut on top of 0.20.1,
 branched from the `v0.20.1` tag: the device logic moves to
-`idm-heatpump-api[web]==2.14.2`, whose only change calms the per-poll WARNING
+`idm-heatpump-api[web]==2.14.3`, whose only change calms the per-poll WARNING
 for a persistently invalid register value (issue
 [#460](https://github.com/Xerolux/idm-heatpump-hass/issues/460)) — one
 warning per register and episode instead of one per poll. No integration code
@@ -167,7 +185,7 @@ hardware) and
 [#319](https://github.com/Xerolux/idm-heatpump-hass/issues/319) (Navigator
 1.x priority charge) closed completed inside the line. The transport pins
 became Home-Assistant-owned minimum versions — hassfest rejects exact pins
-for them — and the device logic is pinned to `idm-heatpump-api[web]==2.14.2`.
+for them — and the device logic is pinned to `idm-heatpump-api[web]==2.14.3`.
 The gate-6 shortfall is recorded here so it stays visible.
 
 ## Earlier release decisions
@@ -225,7 +243,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.22.0` and `idm-heatpump-api` `2.14.2` form the current
+Source-tree integration `0.23.0-b1` and `idm-heatpump-api` `2.14.3` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
