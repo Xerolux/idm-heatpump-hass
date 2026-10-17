@@ -173,6 +173,36 @@ changes; no register map, write path or configuration surface moved.
   *unavailable*, the capability stays false, and a real sensor's
   legitimate idle zero keeps counting as usable.
 
+## [0.23.0-b5] - 2026-10-17
+
+Third field-feedback batch: advisor presentation polish and the web-value
+fallback from discussion #516. Read-path changes only.
+
+### Added
+
+- **Registers that report "not present" are filled from the web supplement
+  (discussion #516)**: in auto mode the Modbus poll owns register values,
+  so a register that reports its not-present pattern kept its entity
+  unavailable even when the controller's web interface served a live value
+  for the same quantity — the reporter read a permanent 0 L/min heat-sink
+  flow while the web flowmeter showed the real 33.9 L/min. Not-present
+  readings (documented sentinels, plus the no-TWT flow signature from
+  #539) are now replaced by the web supplement's value for aliased
+  quantities (starting with `flowmeter` → `heat_sink_flow_rate`); a real
+  Modbus value always wins over the slower web supplement, and web-only
+  mode bridges these values wholesale already.
+
+### Fixed
+
+- **Daily advisor recommendations supersede their topic predecessor
+  instead of accumulating** (field feedback from the reference plant):
+  producers re-issue recommendations with a day-stamped id, so every day
+  added a parallel "new" entry — four days had accumulated eight active
+  recommendations for two heating-curve topics. A submission now retires
+  the active predecessor of the same topic (id without the day stamp) to
+  history as obsolete and inherits its creation time and user status, so
+  one topic stays one active entry with the latest confidence, and a
+  viewed recommendation stays viewed across the daily re-issue.
 ## [0.22.0] - 2026-10-15
 
 0.22.0 is the stable cut of the line that ran through seven prereleases

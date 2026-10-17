@@ -331,6 +331,47 @@ def test_submit_inherits_status_of_replaced_recommendation(mock_hass: Any) -> No
     assert advisor.active_recommendations[0].created_at == T0
 
 
+def test_submit_supersedes_day_stamped_topic_predecessor(mock_hass: Any) -> None:
+    """Daily re-issues under a new day-stamped id supersede their topic.
+
+    Field feedback from the reference plant: four daily heating-curve
+    re-issues accumulated as eight parallel "new" recommendations because
+    the id changes every day. One topic must stay one active entry.
+    """
+    advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
+    advisor.submit(_recommendation(id="heating_curve_a_20261014"))
+    advisor.submit(_recommendation(id="heating_curve_a_20261015", confidence=0.8))
+
+    assert advisor.recommendation_count == 1
+    active = advisor.active_recommendations[0]
+    assert active.id == "heating_curve_a_20261015"
+    assert active.confidence == 0.8
+    assert active.created_at == T0
+    assert advisor.history[-1].id == "heating_curve_a_20261014"
+    assert advisor.history[-1].status is RecommendationStatus.OBSOLETE
+
+    # A different topic is untouched.
+    advisor.submit(_recommendation(id="heating_curve_d_20261015", title="HC D"))
+    assert advisor.recommendation_count == 2
+
+
+def test_submit_topic_supersede_inherits_user_status(mock_hass: Any) -> None:
+    """A viewed topic keeps its user status across the daily re-issue.
+
+    Dismissed recommendations leave the active set entirely (``mark``
+    archives them), so only viewed/accepted statuses can carry over —
+    the same semantics the same-id replacement path has.
+    """
+    advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
+    advisor.submit(_recommendation(id="heating_curve_a_20261014"))
+    advisor.mark("heating_curve_a_20261014", RecommendationStatus.VIEWED)
+    advisor.submit(_recommendation(id="heating_curve_a_20261015", confidence=0.7))
+
+    active = advisor.active_recommendations[0]
+    assert active.status is RecommendationStatus.VIEWED
+    assert active.created_at == T0
+
+
 def test_submit_clamps_confidence(mock_hass: Any) -> None:
     advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
     advisor.submit(_recommendation(confidence=7.0))

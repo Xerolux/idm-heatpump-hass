@@ -71,6 +71,19 @@ Sensor-Zustandsmaschine von Home Assistant crashen zu lassen — im Log des
 Reporters zählte das 273 Listener-Fehler. Keine Konfigurationsänderung
 nötig.
 
+## v0.23.0-b5 — 2026-10-17
+
+Dritte Runde Feld-Feedback: Register, die „nicht vorhanden" melden, zeigen
+jetzt den Live-Wert des Web-Supplements (Diskussion #516) — der
+Wärmesenken-Durchfluss liest ohne Trennwärmetauscher die Fake-0 aus dem
+Modbus-Muster, während der Flowmeter des Controllers den echten Wert
+liefert; Nicht-vorhanden-Lesungen (dokumentierte Sentinels oder die
+No-TWT-Signatur) werden aus dem Web gefüllt, echte Modbus-Werte gewinnen
+immer. Und tägliche Advisor-Empfehlungen lösen ihren Themen-Vorgänger ab,
+statt sich als parallele „neu"-Einträge zu stapeln (ein Thema, ein
+aktiver Eintrag, Konfidenz und „angesehen"-Status werden vererbt). Keine
+Konfigurationsänderung nötig.
+
 ## v0.22.0 — 2026-10-15
 
 Der stabile Schnitt der 0.22-Linie (sieben Betas, 13.–15.10.2026,

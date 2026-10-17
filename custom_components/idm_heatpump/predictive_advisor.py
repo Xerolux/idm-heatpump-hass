@@ -181,6 +181,21 @@ def _parse_datetime(value: Any) -> datetime | None:
     return parsed.astimezone(UTC)
 
 
+def _topic_of(recommendation_id: str) -> str:
+    """Strip a trailing day stamp so daily re-issues share one topic.
+
+    Producers re-issue recommendations daily with ids like
+    ``heating_curve_a_20261014``; the id changes but the topic does not.
+    Without the topic view each day's re-issue accumulated as a parallel
+    "new" entry (field feedback from the reference plant: eight active
+    recommendations for two heating-curve topics).
+    """
+    head, sep, tail = recommendation_id.rpartition("_")
+    if head and sep and len(tail) == 8 and tail.isdigit():
+        return head
+    return recommendation_id
+
+
 def clamp_confidence(value: float) -> float:
     """Clamp a confidence score to 0..1 with two decimals."""
     if math.isnan(value):
@@ -771,12 +786,15 @@ class PredictiveAdvisor:
         An unchanged resubmission is a no-op so daily producer runs do not
         spam events. A changed replacement inherits ``created_at`` and the
         user status of its predecessor; the predecessor moves to history as
-        obsolete.
+        obsolete. Daily re-issues under a new day-stamped id supersede their
+        topic predecessor the same way, so one topic stays one active entry
+        instead of accumulating parallel "new" recommendations.
         """
         rec = replace(recommendation, confidence=clamp_confidence(recommendation.confidence))
         existing = self._active.get(rec.id)
         if existing is not None and _same_recommendation_content(existing, rec):
             return False
+        superseded_topic_rec: Recommendation | None = None
         if existing is not None:
             self._append_history(replace(existing, status=RecommendationStatus.OBSOLETE))
             rec = replace(
@@ -784,8 +802,28 @@ class PredictiveAdvisor:
                 created_at=existing.created_at,
                 status=existing.status if existing.status in _USER_STATUSES else RecommendationStatus.NEW,
             )
+        else:
+            topic = _topic_of(rec.id)
+            for other_id, other in list(self._active.items()):
+                if other_id != rec.id and _topic_of(other_id) == topic:
+                    self._append_history(replace(other, status=RecommendationStatus.OBSOLETE))
+                    del self._active[other_id]
+                    superseded_topic_rec = other
+            if superseded_topic_rec is not None:
+                rec = replace(
+                    rec,
+                    created_at=superseded_topic_rec.created_at,
+                    status=(
+                        superseded_topic_rec.status
+                        if superseded_topic_rec.status in _USER_STATUSES
+                        else RecommendationStatus.NEW
+                    ),
+                )
         self._active[rec.id] = rec
-        self._fire("new" if existing is None else "updated", rec)
+        self._fire(
+            "updated" if existing is not None or superseded_topic_rec is not None else "new",
+            rec,
+        )
         self._schedule_save()
         return True
 
