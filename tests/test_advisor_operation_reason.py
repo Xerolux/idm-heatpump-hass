@@ -69,11 +69,44 @@ def test_web_demand_reason_used_as_fallback() -> None:
     assert "demand reason" in reason.explanation
 
 
-def test_mode_label_as_last_resort() -> None:
-    reason = compose_operation_reason({"hp_operating_mode": 8, "power_consumption_hp": 1.0}, demand_reason=None)
+def test_idle_web_demand_reason_ignored_when_running() -> None:
+    for idle_label in ("Keine Anforderung", "Aus", "System aus"):
+        reason = compose_operation_reason(
+            {
+                "hp_operating_mode": 1,
+                "power_consumption_hp": 1.46,
+                "hc_a_setpoint_flow_temp": 29.9,
+                "hc_a_flow_temp": 30.8,
+            },
+            demand_reason=idle_label,
+            circuits=("a",),
+        )
+        assert reason is not None
+        assert reason.label == "Heating"
+        assert reason.mode_label == "Heating"
+
+
+def test_defrosting_takes_precedence_over_heating_circuit_flow_drop() -> None:
+    reason = compose_operation_reason(
+        {
+            "hp_operating_mode": 8,
+            "power_consumption_hp": 1.8,
+            "hc_a_setpoint_flow_temp": 32.0,
+            "hc_a_flow_temp": 24.5,
+        },
+        demand_reason="Keine Anforderung",
+        circuits=("a",),
+    )
     assert reason is not None
     assert reason.label == "Defrosting"
     assert reason.mode_label == "Defrosting"
+
+
+def test_mode_label_as_last_resort() -> None:
+    reason = compose_operation_reason({"hp_operating_mode": 2, "power_consumption_hp": 1.0}, demand_reason=None)
+    assert reason is not None
+    assert reason.label == "Cooling"
+    assert reason.mode_label == "Cooling"
 
 
 def test_garbage_values_do_not_crash() -> None:

@@ -5,6 +5,19 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b3 — 2026-10-17
+
+Third prerelease of the 0.23 line, built from an end-to-end simulation of a
+live Navigator 10 (`AERO ALM 6-15`, `T_NAV10_20.24-1580-g02a20b66f`) plant in
+a real Home Assistant instance. Fixes `advisor_operation_reason`
+(`compose_operation_reason`) so idle web demand labels (`Keine Anforderung`,
+`Aus`, `System aus`) never override an active operating mode (`Heating`,
+`Cooling`) when the faster Modbus poll or compressor run-on sees the heat pump
+running before the web supplement updates, and checks `Defrosting`
+(`hp_operating_mode == 8`) before the heating-circuit flow-temperature loop so
+reverse-cycle defrosting is always reported as `Defrosting` instead of
+`Heating circuit A`.
+
 ## v0.23.0-b2 — 2026-10-17
 
 Second prerelease of the 0.23 line, built from a read-only live audit on a
