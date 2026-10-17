@@ -15,6 +15,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b3] - 2026-10-17
+
+Third prerelease of the 0.23 line, built from end-to-end simulation of a live
+Navigator 10 (`AERO ALM 6-15`, `T_NAV10_20.24-1580-g02a20b66f`) plant inside a
+real Home Assistant runtime: fixes the predictive advisor's
+`advisor_operation_reason` (`compose_operation_reason`) so stale or idle web
+demand labels never mask active heating/cooling operation, and active
+defrosting (`hp_operating_mode == 8`) always takes precedence over the
+reverse-cycle flow temperature drop.
+
+### Fixed
+
+- **`advisor_operation_reason` no longer reports `"Keine Anforderung"` while
+  the heat pump is running, and prioritizes `Defrosting` (`mode == 8`)**:
+  On Navigator 10 with the web supplement enabled, `web_demand_reason` returns
+  idle labels (`"Keine Anforderung"`, `"Aus"`, `"System aus"`) when the
+  `home/detail` widget shows no active demand. Because Modbus polls every
+  10 s while the web supplement refreshes every 60 s (or during compressor/buffer
+  run-on once the heating circuit reaches its flow setpoint), `compose_operation_reason`
+  previously returned `"Keine Anforderung"` as the operation reason even while
+  the heat pump was actively heating. Idle web demand labels are now ignored
+  when the heat pump is running so the reason falls back cleanly to the active
+  operating mode (`Heating`, `Cooling`). In addition, `hp_operating_mode == 8`
+  (`Defrosting`) is now checked before the heating-circuit flow-temperature
+  loop so reverse-cycle defrosting (which drops flow temperature below the
+  circuit setpoint) is always reported as `Defrosting` instead of `Heating
+  circuit A`.
+
 ## [0.23.0-b2] - 2026-10-17
 
 Second prerelease of the 0.23 line, built from a read-only live audit on a

@@ -5,6 +5,21 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b3 — 2026-10-17
+
+Drittes Prerelease der 0.23-Linie auf Basis einer vollständigen
+End-to-End-Simulation einer produktiven Navigator-10-Anlage (`AERO ALM 6-15`,
+`T_NAV10_20.24-1580-g02a20b66f`) in einer echten Home-Assistant-Instanz.
+Behebt in `advisor_operation_reason` (`compose_operation_reason`), dass
+Leerlauf-Meldungen der Web-Oberfläche (`Keine Anforderung`, `Aus`, `System
+aus`) während des aktiven Verdichterbetriebs (z. B. durch das schnellere
+10-s-Modbus-Intervall gegenüber dem 60-s-Web-Intervall oder im Nachlauf bei
+erreichter Vorlauf-Solltemperatur) nicht mehr den aktiven Betriebsmodus
+(`Heating`, `Cooling`) überdecken, und prüft den Abtaubetrieb
+(`hp_operating_mode == 8`) vor der Heizkreis-Vorlaufprüfung, sodass Abtauen
+durch Kreislaufumkehr stets als `Defrosting` statt `Heating circuit A`
+gemeldet wird.
+
 ## v0.23.0-b2 — 2026-10-17
 
 Zweites Prerelease der 0.23-Linie auf Basis eines lesenden Live-Audits an

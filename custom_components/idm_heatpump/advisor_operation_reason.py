@@ -13,8 +13,16 @@ from dataclasses import dataclass
 from typing import Any, Final
 
 from .calculated_sensors import evaluate_pv_surplus_state
+from .web_demand_reason import REASON_LABELS
 
 _MODE_LABELS: Final[dict[int, str]] = {1: "Heating", 2: "Cooling", 4: "Hot water", 8: "Defrosting"}
+_IDLE_DEMAND_REASONS: Final[frozenset[str]] = frozenset(
+    {
+        REASON_LABELS["no_info"],
+        REASON_LABELS["off"],
+        REASON_LABELS["system_off"],
+    }
+)
 
 
 def _number(value: Any) -> float | None:
@@ -42,9 +50,9 @@ def compose_operation_reason(
 ) -> OperationReason | None:
     """Explain the current operation from one snapshot.
 
-    Priority: off → PV surplus → hot water → requesting heating circuit →
-    the operating mode itself. Returns None when neither the operating mode
-    nor the power draw is readable.
+    Priority: off → PV surplus → hot water → defrosting → requesting heating
+    circuit → active controller demand reason → the operating mode itself.
+    Returns None when neither the operating mode nor the power draw is readable.
     """
     mode = data.get("hp_operating_mode")
     mode = mode if isinstance(mode, int) and not isinstance(mode, bool) else None
@@ -94,6 +102,14 @@ def compose_operation_reason(
             },
         )
 
+    if mode == 8:
+        return OperationReason(
+            label="Defrosting",
+            mode_label=mode_label,
+            explanation="The heat pump runs in mode 'Defrosting'.",
+            details={"operating_mode": mode, "outdoor_temp": outdoor, "power_consumption_kw": power},
+        )
+
     for circuit in circuits:
         room = _number(data.get(f"hc_{circuit}_room_temp"))
         room_setpoint = _number(data.get(f"hc_{circuit}_room_setpoint_heat_normal"))
@@ -128,7 +144,7 @@ def compose_operation_reason(
                 },
             )
 
-    if demand_reason:
+    if demand_reason and demand_reason not in _IDLE_DEMAND_REASONS:
         return OperationReason(
             label=demand_reason,
             mode_label=mode_label,
