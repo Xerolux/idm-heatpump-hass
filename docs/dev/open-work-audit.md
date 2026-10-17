@@ -15,11 +15,32 @@ after the 0.21.0 stable cut. Every entry names who acts and what unblocks it;
 "community" means a public call in Discussions using the existing field
 diagnostics template, "maintainer" means Basti's own plant or decision.
 
-- **Advisor field feedback** *(maintainer, from ~2026-10-19)* — once the
-  7-day baselines have built on plants running the line since the betas,
-  compare the first heating-curve recommendations and the operation reason
-  against the controller's own display; collect further feedback through a
-  Discussions thread. Feeds either fine-tuning or the blocked list below.
+- **Advisor field feedback** *(maintainer — reference-plant pass done
+  2026-10-17, community feedback ongoing in
+  [discussion #540](https://github.com/Xerolux/idm-heatpump-hass/discussions/540))*
+  — the reference plant (AERO ALM 6-15, Navigator 10, 0.23.0-b3) passed the
+  plausibility pass at 10.4 observation days / phase *recommending* /
+  confidence 0.84: the heating-curve recommendations (HC A 0.30 → 0.32 at
+  −1.2 K mean room deviation, HC D 0.50 → 0.48 at +1.1 K) match the room
+  temperatures, the controller's curve registers and the controller's own
+  demand display; data quality reports 100 % usable samples across 680k.
+  The long-term model entities (efficiency score, thermal inertia, building
+  heat loss, 24 h plan) staying *unavailable* is expected lifecycle gating,
+  not a fault. The pass produced four follow-ups, now tracked as issues:
+  coordinator-wide 12 s unavailability after every GLT forwarding pass
+  (#537), operation-reason label language mixing (#538), the no-TWT fake
+  flow rate passing the advisor's data-quality gate (#539), and the daily
+  re-issued heating-curve recommendations accumulating as parallel "new"
+  entries instead of superseding each other (polish, no issue yet — collect
+  reactions in #540 first).
+- **Web value when Modbus reports not-present** *(0.23 candidate, from
+  discussion #516)* — when an existing register reads the documented
+  not-present fill (FLOAT −1.0 pattern / decoded UCHAR 0.0, e.g.
+  `heat_sink_flow_rate` without a TWT), the web supplement's live value
+  (the controller's own flowmeter) could serve the entity instead of the
+  spurious zero. Today web values only bridge registers that are absent
+  from the map. Overlaps with #539 on the advisor side; both need the
+  not-present detection to stay strict.
 - **COP verification for DHW and defrost** *(community + maintainer)* —
   post the field-data call (which entities, which observation window, what to
   export); on the maintainer's plant, log one DHW charge and one defrost cycle
