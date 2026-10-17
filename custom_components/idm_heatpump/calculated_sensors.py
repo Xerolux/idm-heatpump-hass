@@ -54,6 +54,12 @@ class CalculatedSensorDefinition:
     # running would make its existence depend on the moment Home Assistant
     # restarts. Runtime availability still requires usable sources.
     require_sources_used: bool = True
+    # Optional OR-shaped source group: when non-empty, at least one register in
+    # this tuple must be present and usable alongside every register in
+    # ``sources``. Used by ``calculated_cop`` where installations without a
+    # Vortex flow sensor report thermal output on ``current_power`` (1790) while
+    # ``thermal_power_flow_sensor`` (4126) stays at 0.0 kW.
+    any_of_sources: tuple[str, ...] = ()
 
 
 def _temperature(data: Mapping[str, Any], key: str) -> float | None:
@@ -102,11 +108,13 @@ def _difference(first_key: str, second_key: str) -> Callable[[Mapping[str, Any]]
     return calculate
 
 
-# COP source registers verified against a live Navigator 10 (issue #135):
+# COP source registers verified against live Navigator 10 installations (issue #135):
 #   power_consumption_hp (4122) and thermal_power_flow_sensor (4126) are
-# implemented and return plausible values. The road-map rule "no estimated
+# implemented and return plausible values when a flow sensor is fitted; plants
+# without a flow-sensor power reading keep 4126 at 0.0 kW and report actual
+# thermal output on current_power (1790). The road-map rule "no estimated
 # values as measurements" (issue #135) is enforced inside _cop: while the
-# heat pump is idle both sources report 0 kW and COP is suppressed (None).
+# heat pump is idle all sources report 0 kW and COP is suppressed (None).
 #
 # Broad 15-day field verification (Navigator 10, firmware NAV10_20.24,
 # -7...+7 degC outdoor, 30 s sampling): the two source registers are stable
@@ -120,6 +128,7 @@ def _difference(first_key: str, second_key: str) -> Callable[[Mapping[str, Any]]
 # explicitly disallowed by issue #135.
 _COP_ELECTRIC_POWER_REGISTER = "power_consumption_hp"
 _COP_THERMAL_POWER_REGISTER = "thermal_power_flow_sensor"
+_COP_FALLBACK_THERMAL_POWER_REGISTER = "current_power"
 # Very low electrical input (<50 W) indicates standby/commissioning rather
 # than real operation; refuse to emit a (misleading) high COP ratio in that
 # band. Real heating operation reads in the kW range.
@@ -137,6 +146,16 @@ def _power(data: Mapping[str, Any], key: str) -> float | None:
     return numeric
 
 
+def _thermal_power(data: Mapping[str, Any]) -> float | None:
+    """Return thermal power in kW, falling back to current_power (1790) when 4126 is 0 or absent."""
+    thermal = _power(data, _COP_THERMAL_POWER_REGISTER)
+    if thermal is None or thermal <= 0.0:
+        fallback = _power(data, _COP_FALLBACK_THERMAL_POWER_REGISTER)
+        if fallback is not None and (thermal is None or fallback > 0.0):
+            return fallback
+    return thermal
+
+
 def _cop(data: Mapping[str, Any]) -> float | None:
     """Coefficient of Performance = thermal power / electrical power.
 
@@ -146,7 +165,7 @@ def _cop(data: Mapping[str, Any]) -> float | None:
     estimated or division-by-zero value — see issue #135.
     """
     electric = _power(data, _COP_ELECTRIC_POWER_REGISTER)
-    thermal = _power(data, _COP_THERMAL_POWER_REGISTER)
+    thermal = _thermal_power(data)
     if electric is None or thermal is None:
         return None
     if electric <= 0.0 or thermal <= 0.0:
@@ -177,7 +196,8 @@ CALCULATED_SENSOR_DEFINITIONS: tuple[CalculatedSensorDefinition, ...] = (
     ),
     CalculatedSensorDefinition(
         key="calculated_cop",
-        sources=(_COP_ELECTRIC_POWER_REGISTER, _COP_THERMAL_POWER_REGISTER),
+        sources=(_COP_ELECTRIC_POWER_REGISTER,),
+        any_of_sources=(_COP_THERMAL_POWER_REGISTER, _COP_FALLBACK_THERMAL_POWER_REGISTER),
         calculate=_cop,
         icon="mdi:gauge",
         suggested_display_precision=2,
@@ -278,9 +298,14 @@ def _definition_supported(coordinator: IdmCoordinator, definition: CalculatedSen
     if not data:
         return False
     if not definition.require_sources_used:
-        return all(source in data for source in definition.sources)
+        return all(source in data for source in definition.sources) and (
+            not definition.any_of_sources or any(source in data for source in definition.any_of_sources)
+        )
     unused = coordinator.unused_registers
-    return all(source in data and source not in unused for source in definition.sources)
+    return all(source in data and source not in unused for source in definition.sources) and (
+        not definition.any_of_sources
+        or any(source in data and source not in unused for source in definition.any_of_sources)
+    )
 
 
 def calculated_sensor_entities(coordinator: IdmCoordinator) -> list[IdmCalculatedSensor]:
@@ -327,6 +352,12 @@ class IdmCalculatedSensor(IdmCoordinatorEntityBase, SensorEntity):
             return subdevice
         return super().device_info
 
+    def _source_usable(self, source: str, data: Mapping[str, Any]) -> bool:
+        if source not in data or source in self.coordinator.unused_registers:
+            return False
+        value = data[source]
+        return not (isinstance(value, float) and (math.isnan(value) or math.isinf(value)))
+
     def _sources_available(self) -> bool:
         """Return True when every source register is present, not unused, and finite.
 
@@ -338,12 +369,10 @@ class IdmCalculatedSensor(IdmCoordinatorEntityBase, SensorEntity):
         data = self.coordinator.data
         if not data:
             return False
-        for source in self._definition.sources:
-            if source not in data or source in self.coordinator.unused_registers:
-                return False
-            value = data[source]
-            if isinstance(value, float) and (math.isnan(value) or math.isinf(value)):
-                return False
+        if not all(self._source_usable(source, data) for source in self._definition.sources):
+            return False
+        if self._definition.any_of_sources:
+            return any(self._source_usable(source, data) for source in self._definition.any_of_sources)
         return True
 
     def _calculate(self) -> float | None:

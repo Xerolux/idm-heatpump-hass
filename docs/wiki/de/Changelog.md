@@ -5,6 +5,26 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b2 — 2026-10-17
+
+Zweites Prerelease der 0.23-Linie auf Basis eines lesenden Live-Audits an
+einer Navigator-10-Anlage (`T_NAV10_20.24-1580-g02a20b66f`). Anlagen, die
+ihre thermische Leistung über `current_power` (Register 1790) melden,
+während `thermal_power_flow_sensor` (Register 4126) dauerhaft `0,0 kW`
+liefert, berechnen nun automatisch den `calculated_cop`, die thermischen
+Energiemengen (`energy_thermal_*`, `energy_cop_*`) sowie die COP- und
+Gebäudemodelle des Predictive Advisors. Zudem führt das reguläre
+Modbus-Setup nun `cleanup_stale_model_entities` aus (entfernt verwaiste
+Register-Entitäten wie nicht konfigurierte Kaskaden-Register vor dem
+Aufräumen leerer Sub-Geräte), `cleanup_stale_web_sensor_entities` bereinigt
+die abgelöste Entität `web_heatpump_model` sowie auf bestätigten
+Navigator-10-Reglern die 12 reinen Navigator-2.0-Statistiksensoren (`Web
+2.0`), und die Energiefluss-Sensoren (`web_energyflow_grid` /
+`web_energyflow_pv`) melden *nicht verfügbar* statt *unbekannt*, wenn der
+Regler `grid_power` bzw. `pv_power` weglässt. Außerdem wurde die
+Dokumentation der externen Leistungs-Weiterleitung zu `Hausverbrauch` vs.
+`Hausverbrauch (Vorgabe)` präzisiert (#519).
+
 ## v0.23.0-b1 — 2026-10-17
 
 Erstes Prerelease der 0.23-Linie aus den Feld-Beweisen von Issue #532.

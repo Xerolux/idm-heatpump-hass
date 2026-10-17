@@ -207,6 +207,25 @@ def test_observe_ignores_empty_snapshots() -> None:
     assert analytics.building_model["heat_fit_samples"] == 0
 
 
+def test_observe_falls_back_to_current_power_when_flow_sensor_is_zero() -> None:
+    data = {
+        "outdoor_temp": 5.0,
+        "power_consumption_hp": 0.62,
+        "thermal_power_flow_sensor": 0.0,
+        "current_power": 3.46,
+        "hp_flow_temp": 30.0,
+        "hp_return_temp": 26.0,
+        "hc_a_room_temp": 21.0,
+        "hc_a_room_setpoint_heat_normal": 21.0,
+        "hc_a_flow_temp": 29.0,
+    }
+    engine, _advisor, analytics, _coordinator = _engine(data)
+    engine.observe(now=T0)
+    engine.observe(now=T0 + timedelta(minutes=1))
+    assert analytics.building_model["heat_fit_samples"] == 2
+    assert len(analytics._cop_map) == 1
+
+
 # ----------------------------------------------------------------------
 # Anomaly producer
 # ----------------------------------------------------------------------

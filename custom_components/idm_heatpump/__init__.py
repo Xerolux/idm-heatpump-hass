@@ -592,10 +592,10 @@ async def _async_setup_web_only_entry(
     )
     cleanup_disabled_feature_entities(hass, coordinator)
     cleanup_stale_model_entities(hass, coordinator)
-    cleanup_stale_hierarchy_devices(hass, coordinator)
     cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
     shorten_legacy_differential_entity_ids(hass, coordinator)
     cleanup_stale_web_sensor_entities(hass, coordinator)
+    cleanup_stale_hierarchy_devices(hass, coordinator)
 
     if bool(entry.options.get(CONF_KNX_BRIDGE, DEFAULT_KNX_BRIDGE)):
         # The bridge serves register-named values from the web register
@@ -1096,10 +1096,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         precreate_main_device(hass, coordinator)
         await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
         cleanup_disabled_feature_entities(hass, coordinator)
-        cleanup_stale_hierarchy_devices(hass, coordinator)
+        cleanup_stale_model_entities(hass, coordinator)
         cleanup_deconfigured_heating_circuit_entities(hass, coordinator)
         shorten_legacy_differential_entity_ids(hass, coordinator)
         cleanup_stale_web_sensor_entities(hass, coordinator)
+        cleanup_stale_hierarchy_devices(hass, coordinator)
 
         # Activate entity-aware polling after platforms have created registry
         # entries. Idempotent — subsequent calls from operation_entities.py are no-ops.

@@ -210,3 +210,28 @@ def test_month_cost_and_month_co2_round_from_month_totals() -> None:
 
     assert stats.month_cost == 0.49
     assert stats.month_co2_kg == 0.62
+
+
+def test_snapshot_integration_falls_back_to_current_power() -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30)
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 0.0, "current_power": 4.0},
+        now=start,
+    )
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 0.0, "current_power": 4.0},
+        now=start + timedelta(minutes=1),
+    )
+
+    assert stats.total_electrical_kwh == pytest.approx(1.0 / 60.0)
+    assert stats.total_thermal_kwh == pytest.approx(4.0 / 60.0)
+    assert stats.total_cop == 4.0
+
+    coordinator = MagicMock()
+    coordinator.config_entry.entry_id = "entry"
+    coordinator.last_update_success = True
+    coordinator.energy_statistics = stats
+    coordinator.data = {"power_consumption_hp": 1.0, "current_power": 4.0}
+    entities = energy_statistics_entities(coordinator)
+    assert len(entities) == 17

@@ -284,6 +284,10 @@ class AdvisorEngine:
         outdoor = _number(data.get("outdoor_temp"))
         power = _number(data.get("power_consumption_hp"))
         thermal = _number(data.get("thermal_power_flow_sensor"))
+        if thermal is None or thermal <= 0.0:
+            fallback_thermal = _number(data.get("current_power"))
+            if fallback_thermal is not None and (thermal is None or fallback_thermal > 0.0):
+                thermal = fallback_thermal
         flow = _number(data.get("hp_flow_temp"))
         return_temp = _number(data.get("hp_return_temp"))
         room, _circuit = self._primary_room_temp(data)

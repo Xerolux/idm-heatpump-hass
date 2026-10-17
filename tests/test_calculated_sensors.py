@@ -227,6 +227,33 @@ def test_cop_not_registered_when_source_registers_unused():
     assert "calculated_cop" not in _entities_by_key(coordinator)
 
 
+def test_cop_falls_back_to_current_power_when_flow_sensor_is_zero_or_missing():
+    """Installations without a Vortex flow-sensor power reading report thermal output on current_power (1790)."""
+    coordinator = _coordinator(
+        {
+            "power_consumption_hp": 0.62,
+            "thermal_power_flow_sensor": 0.0,
+            "current_power": 3.46,
+        }
+    )
+    sensor = _entities_by_key(coordinator)["calculated_cop"]
+    assert sensor.available is True
+    assert sensor.native_value == 5.58
+
+    # Also works when thermal_power_flow_sensor is marked unused or absent.
+    fallback_only = _coordinator(
+        {
+            "power_consumption_hp": 0.62,
+            "thermal_power_flow_sensor": 0.0,
+            "current_power": 3.46,
+        },
+        unused={"thermal_power_flow_sensor"},
+    )
+    fallback_sensor = _entities_by_key(fallback_only)["calculated_cop"]
+    assert fallback_sensor.available is True
+    assert fallback_sensor.native_value == 5.58
+
+
 def _flow_deviation_key(circuit: str) -> str:
     return f"calculated_hc_{circuit}_flow_deviation"
 

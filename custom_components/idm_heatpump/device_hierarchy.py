@@ -917,21 +917,29 @@ def cleanup_stale_model_entities(hass: HomeAssistant, coordinator: IdmCoordinato
 
 
 def cleanup_stale_web_sensor_entities(hass: HomeAssistant, coordinator: IdmCoordinator) -> None:
-    """Remove orphaned sensor platform entities for keys migrated to binary_sensor."""
+    """Remove orphaned sensor platform entities for retired or mismatched web keys."""
     config_entry = coordinator.config_entry
     if config_entry is None:
         return
 
+    from .sensor import (
+        _WEB_ATTRIBUTE_VALUE_NAMES,
+        _WEB_NAV20_STAT_VALUE_NAMES,
+        _is_confirmed_navigator_10,
+    )
     from .web_binary_sensors import WEB_BINARY_VALUE_KEYS
 
     entry_id = config_entry.entry_id
     registry = er.async_get(hass)
-    stale_unique_ids = {f"{entry_id}_web_{key}" for key in WEB_BINARY_VALUE_KEYS}
+    stale_keys = set(WEB_BINARY_VALUE_KEYS) | set(_WEB_ATTRIBUTE_VALUE_NAMES)
+    if _is_confirmed_navigator_10(coordinator):
+        stale_keys |= set(_WEB_NAV20_STAT_VALUE_NAMES)
+    stale_unique_ids = {f"{entry_id}_web_{key}" for key in stale_keys}
 
     for entity in list(er.async_entries_for_config_entry(registry, entry_id)):
         if entity.domain == "sensor" and entity.unique_id in stale_unique_ids:
             _LOGGER.debug(
-                "Removing orphaned web sensor entity %s (migrated to binary_sensor)",
+                "Removing orphaned web sensor entity %s",
                 entity.entity_id,
             )
             registry.async_remove(entity.entity_id)

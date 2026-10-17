@@ -102,6 +102,25 @@ def test_pv_surplus_operation_keeps_or_sources_polled(monkeypatch: pytest.Monkey
     assert "unrelated_service_value" not in required
 
 
+def test_calculated_cop_keeps_both_thermal_power_sources_polled(monkeypatch: pytest.MonkeyPatch) -> None:
+    known = {
+        "outdoor_temp",
+        "power_consumption_hp",
+        "thermal_power_flow_sensor",
+        "current_power",
+        "unrelated_service_value",
+    }
+    required = _build(
+        monkeypatch,
+        [_RegistryEntry("entry_calculated_cop")],
+        known,
+    )
+
+    assert required is not None
+    assert {"power_consumption_hp", "thermal_power_flow_sensor", "current_power"} <= required
+    assert "unrelated_service_value" not in required
+
+
 def test_heating_climate_adds_current_target_mode_and_status(monkeypatch: pytest.MonkeyPatch) -> None:
     known = {
         "outdoor_temp",

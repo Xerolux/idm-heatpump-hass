@@ -5,6 +5,25 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b2 — 2026-10-17
+
+Second prerelease of the 0.23 line, built from a read-only live audit on a
+Navigator 10 (`T_NAV10_20.24-1580-g02a20b66f`) plant. Installations that
+report thermal output on `current_power` (register 1790) while
+`thermal_power_flow_sensor` (register 4126) stays at `0.0 kW` now compute
+`calculated_cop`, thermal energy totals (`energy_thermal_*`, `energy_cop_*`)
+and predictive-advisor COP/building models automatically. Normal Modbus
+entry setup now runs `cleanup_stale_model_entities` (cleaning up orphaned
+register entities such as unconfigured cascade registers before detaching
+empty sub-devices), `cleanup_stale_web_sensor_entities` removes the retired
+`web_heatpump_model` entity and skips/removes the 12 Navigator 2.0-only
+`stat_*` (`Web 2.0`) sensors on confirmed Navigator 10 controllers, and the
+Navigator 10 `web_energyflow_grid` / `web_energyflow_pv` sensors report
+*unavailable* instead of *unknown* when the controller omits `grid_power`
+or `pv_power`. Also clarifies External Power Forwarding GLT `number`
+(`(setpoint)` / `(Vorgabe)`) vs `sensor` entities in the configuration wiki
+(#519).
+
 ## v0.23.0-b1 — 2026-10-17
 
 First prerelease of the 0.23 line, built from issue #532's field

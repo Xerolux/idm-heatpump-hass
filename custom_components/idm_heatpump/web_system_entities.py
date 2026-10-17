@@ -223,7 +223,7 @@ class IdmWebEnergyflowGridSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and _energyflow(self.coordinator) is not None
+        return super().available and (flow := _energyflow(self.coordinator)) is not None and flow.grid_power is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -257,7 +257,7 @@ class IdmWebEnergyflowPvSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def available(self) -> bool:
-        return super().available and _energyflow(self.coordinator) is not None
+        return super().available and (flow := _energyflow(self.coordinator)) is not None and flow.pv_power is not None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:

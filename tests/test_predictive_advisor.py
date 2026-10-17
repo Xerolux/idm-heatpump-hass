@@ -437,6 +437,18 @@ def test_capabilities_read_coordinator_state() -> None:
     assert capabilities.has_dynamic_price_source is True
     assert capabilities.has_heat_meter is False
 
+    coordinator.data = {
+        "power_consumption_hp": 0.62,
+        "thermal_power_flow_sensor": 0.0,
+        "current_power": 3.46,
+    }
+    advisor = PredictiveAdvisor(coordinator)
+    assert advisor.capabilities.has_heat_meter is True
+    assert "current_power" in advisor.required_registers
+    advisor.observe(now=T0)
+    assert advisor.quality_summary()["thermal_power_flow_sensor"]["usable"] == 1
+    assert advisor._quality["thermal_power_flow_sensor"].last_value == pytest.approx(3.46)
+
 
 # ----------------------------------------------------------------------
 # Entities and platform wiring

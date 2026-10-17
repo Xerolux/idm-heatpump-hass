@@ -328,6 +328,37 @@ The same behavior notes as room temperature forwarding apply: values are
 written on state changes and refreshed periodically, invalid or out-of-range
 values are skipped, and leaving a register's field empty keeps it untouched.
 
+### External Power Forwarding
+
+External power forwarding is optional and disabled by default. When enabled, the
+integration forwards selected Home Assistant power and battery sensors — or a
+bidirectional grid meter together with PV production — to the IDM GLT power
+registers (`pv_surplus`, `pv_production`, `house_consumption`,
+`battery_discharge`, `battery_fill_level`).
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| External power forwarding | Enables forwarding for selected power/battery sources | off |
+| Forwarding interval | Periodic refresh interval | 60 seconds |
+| Power tolerance | Minimum change before a repeated power value is written again | 0.1 kW |
+| Battery tolerance | Minimum change before a repeated battery SoC value is written again | 1 % |
+| Grid meter sensor | Optional bidirectional grid meter (import/export) used to derive `pv_surplus` and `house_consumption` automatically | empty |
+| Grid meter convention | Sign convention of the bidirectional grid meter (`positive_import` or `positive_export`) | `positive_import` |
+
+Important behavior:
+
+- When a bidirectional **Grid meter sensor** and **PV production sensor** are
+  configured, the integration automatically derives `pv_surplus` and
+  `house_consumption` when their direct sensor fields are left empty (#519).
+- Forwarded values are written to the controller's GLT input registers (for
+  example register 74 `pv_surplus` and register 82 `house_consumption`). In Home
+  Assistant, the writable GLT input registers appear as `number` entities with
+  the *(setpoint)* / *(Vorgabe)* suffix (disabled by default in the entity
+  registry), whereas the read-only `sensor` entities without that suffix display
+  what the controller reports back. Enable the corresponding `number` entity in
+  Home Assistant if you want to inspect the exact GLT value written by
+  forwarding.
+
 ### KNX Bridge
 
 The KNX bridge is optional and disabled by default. When enabled, the

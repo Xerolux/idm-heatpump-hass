@@ -51,7 +51,7 @@ from .const import (
     DOMAIN,
     FEATURE_PROFILE_SMART,
 )
-from .coordinator import IdmCoordinator
+from .coordinator import IdmCoordinator, navigator_family
 from .device_hierarchy import HEATING_CIRCUIT_LETTERS, active_heating_circuits, build_subdevice_info
 from .differential_circuits import configured_differential_circuits, web_value_allowed
 from .energy_statistics_entities import IdmEnergyStatisticsSensor, energy_statistics_entities
@@ -230,6 +230,27 @@ _WEB_ONLY_EXTRA_VALUE_NAMES: tuple[str, ...] = ("navigator_version",)
 #: entity would sit unavailable forever on current firmware (live-verified;
 #: see IdmWebSensor.extra_state_attributes).
 _WEB_ATTRIBUTE_VALUE_NAMES: frozenset[str] = frozenset({"heatpump_model"})
+
+#: Navigator 2.0 statistics values read from ``/data/statistics.php``.
+#: Navigator 10 controllers never produce these keys, so creating entities for
+#: them on a confirmed Navigator 10 leaves 12 ``(Web 2.0)`` sensors permanently
+#: unavailable.
+_WEB_NAV20_STAT_VALUE_NAMES: frozenset[str] = frozenset(
+    {
+        "stat_elcons_total_cooling",
+        "stat_elcons_total_defrost",
+        "stat_elcons_total_heating",
+        "stat_elcons_total_hotwater",
+        "stat_genheat_total_cooling",
+        "stat_genheat_total_defrost",
+        "stat_genheat_total_heating",
+        "stat_genheat_total_hotwater",
+        "stat_runtime_total_cooling",
+        "stat_runtime_total_defrost",
+        "stat_runtime_total_heating",
+        "stat_runtime_total_hotwater",
+    }
+)
 
 _WEB_MODBUS_DUPLICATE_VALUES: frozenset[str] = frozenset(
     {
@@ -410,9 +431,18 @@ def all_supported_web_value_names() -> frozenset[str]:
     return frozenset(names)
 
 
+def _is_confirmed_navigator_10(coordinator: IdmCoordinator) -> bool:
+    """Return True when the coordinator is known to talk to a Navigator 10."""
+    return (
+        getattr(coordinator, "web_variant", None) == "nav10"
+        or navigator_family(getattr(coordinator, "model_name", None)) == "navigator_10"
+    )
+
+
 def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefinition]:
     modbus_register_names = {reg.name for reg in coordinator.active_registers}
     has_modbus = len(modbus_register_names) > 0
+    is_nav10 = _is_confirmed_navigator_10(coordinator)
     definitions = []
     seen: set[str] = set()
     for key in (
@@ -426,6 +456,8 @@ def _web_sensor_definitions(coordinator: IdmCoordinator) -> list[WebSensorDefini
             continue
         seen.add(key)
         if key in WEB_BINARY_VALUE_KEYS:
+            continue
+        if is_nav10 and key in _WEB_NAV20_STAT_VALUE_NAMES:
             continue
         if key in modbus_register_names:
             continue

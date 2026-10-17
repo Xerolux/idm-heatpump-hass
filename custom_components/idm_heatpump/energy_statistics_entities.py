@@ -81,7 +81,8 @@ def energy_statistics_entities(coordinator: IdmCoordinator) -> list[IdmEnergySta
     statistics = coordinator.energy_statistics
     if statistics is None:
         return []
-    if not {"power_consumption_hp", "thermal_power_flow_sensor"}.issubset(coordinator.data or {}):
+    data = coordinator.data or {}
+    if "power_consumption_hp" not in data or not ({"thermal_power_flow_sensor", "current_power"} & set(data)):
         return []
     return [IdmEnergyStatisticsSensor(coordinator, statistics, definition) for definition in _ENERGY_DEFINITIONS]
 
