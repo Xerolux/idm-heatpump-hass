@@ -959,3 +959,63 @@ class TestAdvisorRoomTemperatureSources:
         )
 
         assert advisor.capabilities.has_room_temperature is True
+
+
+def test_no_twt_spurious_flow_zero_is_not_a_flow_sensor(mock_hass) -> None:
+    """#539: a no-TWT plant's constant 0.0 L/min is not sensor data.
+
+    Without a plate heat exchanger the heat-sink block carries the FLOAT
+    -1.0 not-present pattern and the UCHAR flow rate decodes a spurious
+    0.0 — the capability must stay false and the samples must classify
+    as unavailable instead of 100 % usable.
+    """
+    coordinator = _coordinator(
+        data={
+            "heat_sink_flow_rate": 0.0,
+            "heat_sink_flow_temp": -1.0,
+            "power_consumption_hp": 2.4,
+            "outdoor_temp": 7.5,
+        },
+        hass=mock_hass,
+    )
+    advisor = PredictiveAdvisor(coordinator)
+    advisor.observe(now=T0)
+    quality = advisor.quality_summary()["heat_sink_flow_rate"]
+    assert quality["usable"] == 0
+    assert quality["unavailable"] == 1
+
+    capabilities = detect_capabilities(
+        {"heat_sink_flow_rate": 0.0, "heat_sink_flow_temp": -1.0},
+        web_variant="nav10",
+        register_getter=lambda _n: None,
+        price_source=None,
+        pv_source=None,
+    )
+    assert capabilities.has_flow_sensor is False
+
+
+def test_twt_idle_flow_zero_stays_usable(mock_hass) -> None:
+    """A real sensor's legitimate idle 0 L/min keeps counting as usable (#539)."""
+    coordinator = _coordinator(
+        data={
+            "heat_sink_flow_rate": 0.0,
+            "heat_sink_flow_temp": 22.5,
+            "power_consumption_hp": 0.0,
+            "outdoor_temp": 7.5,
+        },
+        hass=mock_hass,
+    )
+    advisor = PredictiveAdvisor(coordinator)
+    advisor.observe(now=T0)
+    quality = advisor.quality_summary()["heat_sink_flow_rate"]
+    assert quality["usable"] == 1
+    assert quality["unavailable"] == 0
+
+    capabilities = detect_capabilities(
+        {"heat_sink_flow_rate": 0.0, "heat_sink_flow_temp": 22.5},
+        web_variant="nav10",
+        register_getter=lambda _n: None,
+        price_source=None,
+        pv_source=None,
+    )
+    assert capabilities.has_flow_sensor is True

@@ -121,3 +121,49 @@ def test_garbage_values_do_not_crash() -> None:
         circuits=("a",),
     )
     assert reason is None  # neither mode nor a finite power reading
+
+
+def test_german_web_demand_labels_map_onto_english_vocabulary() -> None:
+    """#538: the controller's German web labels must not leak into the state.
+
+    The composer's own labels are English ("Heating circuit A", "PV
+    surplus"); the web supplement reports the same causes in the
+    controller's German UI wording. Known labels map onto the composer
+    vocabulary so the state stops alternating between languages.
+    """
+    heating = compose_operation_reason(
+        {"hp_operating_mode": 1, "power_consumption_hp": 1.2},
+        demand_reason="Heizkreis A",
+    )
+    assert heating is not None and heating.label == "Heating circuit A"
+    assert heating.details["demand_reason_raw"] == "Heizkreis A"
+
+    pv = compose_operation_reason(
+        {"hp_operating_mode": 1, "power_consumption_hp": 1.2},
+        demand_reason="PV",
+    )
+    assert pv is not None and pv.label == "PV surplus"
+
+    schedule = compose_operation_reason(
+        {"hp_operating_mode": 1, "power_consumption_hp": 1.2},
+        demand_reason="Zeitprogramm",
+    )
+    assert schedule is not None and schedule.label == "Schedule"
+
+
+def test_unknown_web_demand_label_stays_verbatim() -> None:
+    """A controller wording the table does not know stays recognizable."""
+    unknown = compose_operation_reason(
+        {"hp_operating_mode": 1, "power_consumption_hp": 1.2},
+        demand_reason="Sonderfall",
+    )
+    assert unknown is not None and unknown.label == "Sonderfall"
+
+
+def test_idle_german_web_labels_still_ignored() -> None:
+    """The idle suppression (0.23.0-b3) keeps working with the mapping in place."""
+    idle = compose_operation_reason(
+        {"hp_operating_mode": 1, "power_consumption_hp": 1.2},
+        demand_reason="Keine Anforderung",
+    )
+    assert idle is not None and idle.label != "Keine Anforderung"

@@ -93,6 +93,26 @@ _ROOM_TEMP_RANGE: Final = (0.0, 50.0)
 _COMPRESSOR_KEYS: Final = tuple(f"compressor_status_{index}" for index in range(1, 5))
 
 
+def _no_twt_flow_signature(data: Mapping[str, Any], value: Any) -> bool:
+    """Whether ``value`` is the spurious no-TWT flow zero (#539).
+
+    On plants without a plate heat exchanger the whole heat-sink block
+    carries the FLOAT ``-1.0`` not-present pattern; the flow rate is
+    documented UCHAR and decodes the pattern's low word as a constant
+    0.0 L/min (Known Limitations). The sibling flow temperature not
+    reporting a real value is the signature: a plant with a sensor reads
+    real temperatures even while the pump idles at a legitimate 0 L/min.
+    """
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or float(value) != 0.0:
+        return False
+    sibling = data.get("heat_sink_flow_temp")
+    if sibling is None:
+        return True
+    if isinstance(sibling, bool) or not isinstance(sibling, (int, float)):
+        return True
+    return float(sibling) <= 0.0
+
+
 class RecommendationCategory(StrEnum):
     """What area of the plant a recommendation belongs to."""
 
@@ -506,7 +526,9 @@ def detect_capabilities(
         has_power_meter="power_consumption_hp" in data,
         has_heat_meter="thermal_power_flow_sensor" in data or "current_power" in data,
         has_room_temperature=has_room_temperature,
-        has_flow_sensor="heat_sink_flow_rate" in data,
+        # A spurious 0.0 from a no-TWT plant is not a flow sensor (#539).
+        has_flow_sensor=not _no_twt_flow_signature(data, data.get("heat_sink_flow_rate"))
+        and "heat_sink_flow_rate" in data,
         has_compressor=any(key in data for key in _COMPRESSOR_KEYS),
         has_pv_signal="pv_surplus" in data or "smart_grid_status" in data,
         has_power_limit=register_getter("power_limit_hp") is not None,
@@ -632,6 +654,13 @@ class PredictiveAdvisor:
                 and (value is None or float(fallback) > 0.0)
             ):
                 return fallback
+        if key == "heat_sink_flow_rate" and _no_twt_flow_signature(data, value):
+            # Without a plate heat exchanger the controller fills the
+            # heat-sink block with the FLOAT -1.0 not-present pattern and the
+            # UCHAR-documented flow rate decodes its low word as a spurious
+            # 0.0 L/min (Known Limitations, #539): classify as no sensor,
+            # not as a usable zero.
+            return None
         return value
 
     def observe(self, now: datetime | None = None) -> None:
