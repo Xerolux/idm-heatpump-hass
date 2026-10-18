@@ -76,8 +76,16 @@ Die Option ist standardmäßig deaktiviert. Behandle die Werte als sensibel: bes
 |--------|----------|------|
 | Rücklauftemperatur Wärmesenke (B124) | 1068 | °C |
 | Vorlauftemperatur Wärmesenke (B125) | 1070 | °C |
-| Durchfluss Wärmesenke (B2) | 1072 | l/min |
+| Durchfluss Wärmesenke (B2) | 1072 | L/min |
 | Ladepumpe Wärmesenke (M73) | 1074 | % |
+
+Register 1072 ist ein wortgetauschtes FLOAT32 — die offizielle IDM-Doku
+nennt UCHAR, Feldmessungen haben aber den Float bewiesen (0.23.0-b8): Eine
+Anlage mit livem Durchfluss zeigt echte L/min-Werte. Ohne
+Trennwärmetauscher meldet der ganze Block „nicht vorhanden" (`-1.0`), und
+diese Entitäten bleiben *nicht verfügbar*; liefert das Web-Supplement eine
+eigene Durchflusszeile, füllt deren Wert den Durchfluss automatisch auf
+(siehe [Bekannte Einschränkungen](Known-Limitations)).
 
 ### Verdichter & Pumpen
 
@@ -217,9 +225,11 @@ Typische reine Web-Sensoren sind unter anderem:
 |--------|-------------|
 | Navigator-Version (Web) | Erkannte Navigator-Generation, zum Beispiel Navigator 2.0 oder Navigator 10; trägt das Wärmepumpenmodell als Attribut, wo die Firmware es meldet |
 | Software-Version (Web) | Software-Version des Reglers, gemeldet von der lokalen Weboberfläche |
-| myIDM-ID (Web) | Kompakte myIDM-ID, abgeleitet aus dem lokalen Web-Kontowert vor dem `@` |
+| myIDM-ID (Web) | Kompakte myIDM-ID, abgeleitet vom lokalen Web-Kontowert vor dem `@` |
 | Anzahl Infosystem-Meldungen (Web) | Anzahl aktiver Navigator-10-Infosystem-Meldungen |
 | Anforderungsgrund (Web) | Nur Navigator 10: der vom Regler selbst gemeldete Anforderungsgrund (Issue #353) |
+| Durchflussmesser (Web) | Durchfluss der Wärmesenke in L/min aus der eigenen Durchflusszeile des Reglers; meldet das Modbus-Register 1072 „nicht vorhanden“ (ohne Trennwärmetauscher), füllt dieser Wert automatisch die Entität *Durchfluss Wärmesenke (B2)* auf |
+| Warmwasserstation Durchfluss (Web) | Durchfluss durch die Warmwasserstation in L/min aus der Weboberfläche |
 
 Das Wärmepumpenmodell ist bewusst keine eigene Entität: Die Navigator-10-
 Firmware 20.24-1580 (ab 29.09.2026 installiert) hat die Modell-Zeile aus der
