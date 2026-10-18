@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b8 — 2026-10-18
+
+The heat-sink flow rate is read with the datatype the controller actually
+speaks: field readings (discussion #516) proved register 1072 is a
+word-swapped FLOAT32, not the UCHAR of the official IDM doc. A direct HA
+modbus `float32` read with word swap returned plausible values while the
+integration's UCHAR decode jumped wildly — it read one byte of the float's
+low word. Pins `idm-heatpump-api` 2.14.4: real flow values display
+correctly, not-present plants stay unavailable, and the web flowmeter
+fallback keeps filling them.
+
 ## v0.23.0-b7 — 2026-10-18
 
 Building-model regressions now require exclusive space heating and an active
