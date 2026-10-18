@@ -440,12 +440,12 @@
       },
       "external_power_forwarding": {
         "title": "External power forwarding – {name}",
-        "description": "Select existing Home Assistant sensors for PV, house consumption and battery values. Values are converted to kW where needed and written to the matching IDM GLT registers. Leave fields empty to skip them. Do not enable this together with SMARTFOX or openWB writing the same registers.",
+        "description": "Select existing Home Assistant sensors for PV, house consumption and battery. W/kW are converted and written to the matching IDM GLT registers. Empty fields are skipped. Do not enable this together with SMARTFOX or openWB writing the same registers.",
         "data": {
           "external_power_forwarding_pv_surplus": "PV surplus sensor",
           "external_power_forwarding_pv_production": "PV production sensor",
           "external_power_forwarding_house_consumption": "House consumption sensor",
-          "external_power_forwarding_battery_discharge": "Battery discharge/charge sensor",
+          "external_power_forwarding_battery_discharge": "Battery charge/discharge sensor",
           "external_power_forwarding_battery_soc": "Battery state of charge sensor",
           "external_power_forwarding_electric_heater_power": "Electric heater power sensor",
           "external_power_forwarding_grid_power": "Bidirectional grid power sensor",
@@ -1191,12 +1191,12 @@
       },
       "external_power_forwarding": {
         "title": "External power forwarding – {name}",
-        "description": "Select existing Home Assistant sensors for PV, house consumption and battery values. Values are converted to kW where needed and written to the matching IDM GLT registers. Leave fields empty to skip them. Do not enable this together with SMARTFOX or openWB writing the same registers.",
+        "description": "Select existing Home Assistant sensors for PV, house consumption and battery. W/kW are converted and written to the matching IDM GLT registers. Empty fields are skipped. Do not enable this together with SMARTFOX or openWB writing the same registers.",
         "data": {
           "external_power_forwarding_pv_surplus": "PV surplus sensor",
           "external_power_forwarding_pv_production": "PV production sensor",
           "external_power_forwarding_house_consumption": "House consumption sensor",
-          "external_power_forwarding_battery_discharge": "Battery discharge/charge sensor",
+          "external_power_forwarding_battery_discharge": "Battery charge/discharge sensor",
           "external_power_forwarding_battery_soc": "Battery state of charge sensor",
           "external_power_forwarding_electric_heater_power": "Electric heater power sensor",
           "external_power_forwarding_grid_power": "Bidirectional grid power sensor",

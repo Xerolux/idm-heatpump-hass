@@ -188,6 +188,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_scale_load.py
 │   ├── test_sensitive_data.py
 │   ├── test_services.py
+│   ├── test_translation_parity.py
 │   ├── test_versions.py
 │   ├── test_web_binary_sensors.py
 │   ├── test_whats_new.py
