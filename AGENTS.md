@@ -178,6 +178,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_platforms_navigator17.py
 │   ├── test_polling_manager.py
 │   ├── test_polling_plan.py
+│   ├── test_register_reference_parity.py
 │   ├── test_registers.py
 │   ├── test_recovery_watchdog.py
 │   ├── test_release_contract.py
