@@ -15,6 +15,46 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b9] - 2026-10-18
+
+Follow-up to b8, verified live on two plants: the option-flow translations
+that both UIs were missing, two consistency guards, and the register-doc
+revision story closed in the documentation. Discussion #516 confirmed the
+b8 flow reading live, and its reporter dug out why the map ever said UCHAR:
+the official IDM doc corrected 1072 to FLOAT in newer revisions (Navigator
+2.0 rev 12 → 13, Navigator 10 rev 0 → 1).
+
+### 🐛 Bugfixes
+
+- **Energy-manager option fields translated in both UIs**: the labels and
+  descriptions existed in `strings.json` only, but Home Assistant loads
+  custom-integration translations from `translations/*.json` — the plain
+  options step (setup and options flow) rendered raw field keys such as
+  `energy_manager_min_surplus_kw` in English *and* German. The German
+  wording is taken verbatim from the guided sections, so the terminology
+  matches everywhere.
+- **`strings.json` synced to the runtime wording** for the external-power
+  forwarding step: two strings had drifted behind the refined texts that
+  `en.json` and `de.json` already agreed on.
+
+### 💼 Maintenance
+
+- **Translation parity guard** (`tests/test_translation_parity.py`): every
+  `strings.json` key must exist in `en.json` with an identical value, every
+  `en.json` key must be non-empty in `de.json`, and German carries no orphan
+  keys — a strings edit without its translations now fails the build.
+- **German register reference + parity guard**: the German mirror row for
+  register 1072 carries the b8 FLOAT typing (1072–1073), two untranslated
+  cells are harmonized, and a parity test keeps both generated register
+  tables row-for-row identical.
+- **Single-Modbus-client rule documented** (Troubleshooting EN/DE): the
+  Navigator serves one active Modbus connection — a second client (probe
+  scripts, debug tools) receives the `-1.0` not-present sentinel on optional
+  blocks while the primary keeps live data. Direct API or register tests on
+  a running plant are only meaningful with the integration stopped. Found
+  live while verifying b8 on the reference plant, whose flow entity reads
+  real L/min values now.
+
 ## [0.23.0-b8] - 2026-10-18
 
 The heat-sink flow rate is finally read with the datatype the controller

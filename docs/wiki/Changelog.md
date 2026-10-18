@@ -5,6 +5,22 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b9 — 2026-10-18
+
+Follow-up to b8, now confirmed live on two plants (discussion #516 — where
+the reporter also traced the UCHAR to an official doc revision change:
+Navigator 2.0 rev 12 → 13 and Navigator 10 rev 0 → 1 corrected 1072 to
+FLOAT). The energy-manager option fields were missing from both translation
+files, so the plain options step showed raw field keys in English and German
+— translated now with the guided-sections terminology, plus parity guards
+that fail the build when `strings.json`, `en.json` and `de.json` drift apart
+or the German register reference misses an English regeneration. The
+troubleshooting pages now also document that the Navigator serves only one
+Modbus client at a time: a second connection reads `-1.0` sentinels on
+optional blocks while the primary keeps live data — direct tests need the
+integration stopped (verified live on the reference plant, whose flow entity
+now reads real L/min).
+
 ## v0.23.0-b8 — 2026-10-18
 
 The heat-sink flow rate is read with the datatype the controller actually

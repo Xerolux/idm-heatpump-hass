@@ -79,8 +79,10 @@ one, the controller reports the not-present sentinel (`-1.0`) for the whole
 block and the entities correctly show *unavailable*.
 
 The flow-rate register (`heat_sink_flow_rate`, address 1072) is listed as
-UCHAR in the official IDM doc, but field readings (discussion #516) proved the
-controller actually serves a **word-swapped FLOAT32** there. Before
+UCHAR in the older revisions of the official IDM doc (Navigator 2.0 up to
+rev 12, Navigator 10 rev 0); newer revisions corrected it to FLOAT, matching
+the **word-swapped FLOAT32** that field readings (discussion #516) proved the
+controller serves. Before
 integration 0.23.0-b8 (idm-heatpump-api 2.14.4) the UCHAR decode read one byte
 of the float's low word, which produced a spurious **0.0 L/min** on plants
 without a plate heat exchanger and jumping, far-too-high values on plants with
