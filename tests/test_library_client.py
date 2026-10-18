@@ -231,6 +231,22 @@ class TestReadRegister:
         reg = _make_reg(1000, DataType.UCHAR)
         assert await client.read_register(reg) == 7
 
+    async def test_heat_sink_flow_rate_is_word_swapped_float32(self, client_and_tcp):
+        """Discussion #516: 1072 serves a word-swapped FLOAT32, not UCHAR.
+
+        Raw words [0x999A, 0x4207] are 33.9 L/min; UCHAR decoding used to
+        read one byte of the low word (0x9A = 154). The register must come
+        from the real map so this doubles as a pin-level contract test.
+        """
+        from idm_heatpump.registers import get_register
+
+        client, tcp = client_and_tcp
+        tcp.read_input_registers.return_value = _mock_read_result([0x999A, 0x4207])
+        reg = get_register("heat_sink_flow_rate")
+        assert reg.address == 1072
+        assert reg.datatype == DataType.FLOAT
+        assert await client.read_register(reg) == 33.9
+
     async def test_read_reconnects_when_disconnected(self, client_and_tcp):
         client, tcp = client_and_tcp
         tcp.connected = False

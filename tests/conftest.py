@@ -1447,7 +1447,7 @@ def _stub_idm_heatpump() -> None:
         RegisterDef(1052, DataType.FLOAT, "hp_return_temp", unit="°C"),
         RegisterDef(1068, DataType.FLOAT, "heat_sink_return_temp", unit="°C"),
         RegisterDef(1070, DataType.FLOAT, "heat_sink_flow_temp", unit="°C"),
-        RegisterDef(1072, DataType.UCHAR, "heat_sink_flow_rate", unit="L/min"),
+        RegisterDef(1072, DataType.FLOAT, "heat_sink_flow_rate", unit="L/min"),
         RegisterDef(
             1074,
             DataType.INT16,

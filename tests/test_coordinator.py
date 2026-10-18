@@ -4282,6 +4282,31 @@ class TestWebNotPresentFallback:
         result = coord._apply_web_not_present_fallback(data)
         assert result["heat_sink_flow_rate"] == 33.9
 
+    def test_float_sentinel_flow_rate_filled_from_web(self, mock_hass, mock_config_entry):
+        """After the 1072 FLOAT re-typing (#516) not-present plants decode -1.0.
+
+        The FLOAT datatype default sentinel classifies the reading as not
+        present directly, without the spurious-zero signature detour, so the
+        web flowmeter still fills the register.
+        """
+        from custom_components.idm_heatpump.web_data import IdmWebSensorValue
+
+        coord = self._coordinator_with_web(
+            mock_hass,
+            mock_config_entry,
+            {"flowmeter": IdmWebSensorValue("33.9", 33.9, "l/min")},
+            registers=(
+                RegisterDef(address=1072, datatype=DataType.FLOAT, name="heat_sink_flow_rate"),
+                RegisterDef(address=1070, datatype=DataType.FLOAT, name="heat_sink_flow_temp"),
+            ),
+        )
+        data = {
+            "heat_sink_flow_rate": -1.0,
+            "heat_sink_flow_temp": -1.0,
+        }
+        result = coord._apply_web_not_present_fallback(data)
+        assert result["heat_sink_flow_rate"] == 33.9
+
     def test_real_modbus_value_wins_over_web(self, mock_hass, mock_config_entry):
         from custom_components.idm_heatpump.web_data import IdmWebSensorValue
 

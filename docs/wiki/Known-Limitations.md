@@ -75,14 +75,20 @@
 
 The heat-sink block (return/flow temperature, flow rate, charging-pump signal)
 only exists on plants with a plate heat exchanger (Trennwärmetauscher). Without
-one, the controller reports the not-present sentinel for the whole block: the
-temperature entities correctly show *unavailable*. The flow-rate entity
-(`heat_sink_flow_rate`, address 1072, documented UCHAR L/min) can show a
-spurious **0.0 L/min** instead on some firmwares — the controller fills the
-slot with the FLOAT `-1.0` not-present pattern and the UCHAR decode of its low
-word reads as zero. A correction needs one reading from a plant *with* a plate
-heat exchanger while it runs (see the open work audit); until then, disable the
-entity on plants without one — nothing is wrong with the heat pump.
+one, the controller reports the not-present sentinel (`-1.0`) for the whole
+block and the entities correctly show *unavailable*.
+
+The flow-rate register (`heat_sink_flow_rate`, address 1072) is listed as
+UCHAR in the official IDM doc, but field readings (discussion #516) proved the
+controller actually serves a **word-swapped FLOAT32** there. Before
+integration 0.23.0-b8 (idm-heatpump-api 2.14.4) the UCHAR decode read one byte
+of the float's low word, which produced a spurious **0.0 L/min** on plants
+without a plate heat exchanger and jumping, far-too-high values on plants with
+a live flow signal. The register is now read as a float: real flow values
+display correctly, not-present plants report *unavailable*, and when the web
+supplement serves a flowmeter value it fills in for the not-present register
+automatically. On plants without a plate heat exchanger and without a web
+flowmeter row, simply disable the entity — nothing is wrong with the heat pump.
 
 ## Deliberately Not Implemented
 

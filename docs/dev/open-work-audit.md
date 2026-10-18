@@ -1,6 +1,6 @@
 # Open Work Audit
 
-Last updated: 2026-10-12
+Last updated: 2026-10-18
 
 This audit separates work that can be finished locally from items that cannot be
 completed safely without real-system data or without a central Home Assistant
@@ -33,14 +33,12 @@ diagnostics template, "maintainer" means Basti's own plant or decision.
   re-issued heating-curve recommendations accumulating as parallel "new"
   entries instead of superseding each other (polish, no issue yet — collect
   reactions in #540 first).
-- **Web value when Modbus reports not-present** *(0.23 candidate, from
-  discussion #516)* — when an existing register reads the documented
-  not-present fill (FLOAT −1.0 pattern / decoded UCHAR 0.0, e.g.
-  `heat_sink_flow_rate` without a TWT), the web supplement's live value
-  (the controller's own flowmeter) could serve the entity instead of the
-  spurious zero. Today web values only bridge registers that are absent
-  from the map. Overlaps with #539 on the advisor side; both need the
-  not-present detection to stay strict.
+- **Web value when Modbus reports not-present** *(shipped 0.23.0-b5, discussion
+  #516)* — when an existing register reads the documented not-present fill
+  (FLOAT −1.0 pattern / decoded UCHAR 0.0, e.g. `heat_sink_flow_rate` without
+  a TWT), the web supplement's live value (the controller's own flowmeter)
+  serves the entity instead of the spurious zero. The not-present detection
+  stays strict; overlaps with #539 on the advisor side (also shipped, b4).
 - **COP verification for DHW and defrost** *(community + maintainer)* —
   post the field-data call (which entities, which observation window, what to
   export); on the maintainer's plant, log one DHW charge and one defrost cycle
@@ -51,13 +49,14 @@ diagnostics template, "maintainer" means Basti's own plant or decision.
   `hc_*_setpoint_flow_temp`, `hc_*_setpoint_flow_constant`, the heating curve,
   mixer state and the actual flow temperature together; document which value
   is "requested" per operating mode, then release the sensor.
-- **Heat-sink flow-rate correction** *(community)* — plants *with* a plate
-  heat exchanger: read 1068-1077 while the heat pump runs and attach the raw
-  words. Without a TWT the controller fills the block with the FLOAT `-1.0`
-  not-present pattern and the UCHAR-documented flow rate (1072) decodes its
-  low word as a spurious 0.0 L/min; one TWT reading decides between an
-  UCHAR sentinel fix and re-typing the register (maintainer's plant probed
-  2026-10-12: 1070-1073 = `-1.0`/`-1.0`, 1074 = `0xffff`).
+- **Heat-sink flow-rate correction** *(resolved 2026-10-18 by field evidence,
+  idm-heatpump-api 2.14.4)* — the official doc's UCHAR typing of 1072 was
+  wrong: a direct HA modbus `float32` read with word swap returned plausible
+  L/min on a plant with a live flow signal (discussion #516, aivatco), and
+  the no-TWT fill `[0, 49024]` is exactly the word-swapped FLOAT −1.0 pattern
+  (MandaLambda). The register is re-typed as word-swapped FLOAT32 in the API;
+  the UCHAR decode's one-byte read caused the jumping too-high values. A full
+  1068-1077 TWT-plant readout is no longer needed for the typing decision.
 - **Binary register verification on Navigator 2.0/Pro** *(community)* —
   ask for reporters on those families to run the read-only verification
   template; needed before any model-wide runtime claims.
@@ -98,7 +97,7 @@ diagnostics template, "maintainer" means Basti's own plant or decision.
 - Direct socket through `modbus-connection>=4.12.4` and the separately pinned
   backend level `tmodbus[async-serial]>=0.6.2`; the first integration version to
   ship it is `0.11.0-beta.1`.
-- API device logic stays with `idm-heatpump-api[web]==2.14.3`. The API owns its
+- API device logic stays with `idm-heatpump-api[web]==2.14.4`. The API owns its
   exception hierarchy and the injected transport path does not install or
   import pymodbus; the physical connection belongs to tmodbus.
 - Diagnostics export for the transport source, socket ownership, connection
