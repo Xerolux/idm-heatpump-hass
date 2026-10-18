@@ -1343,6 +1343,7 @@ async def _async_teardown_partial_setup(hass: HomeAssistant, entry: IdmConfigEnt
 async def _async_cancel_entry_tasks(runtime: Any) -> None:
     """Cancel and await every background task an entry owns."""
     for attribute in (
+        "advisor_forecast_task",
         "web_task",
         "room_temp_forwarding_task",
         "humidity_forwarding_task",

@@ -3167,3 +3167,20 @@ class TestUnloadPersistsAndStopsSmartComponents:
         assert await async_unload_entry(mock_hass, entry) is True
 
         runtime.client.disconnect.assert_awaited_once()
+
+    async def test_unload_cancels_advisor_forecast_task(self, mock_hass):
+        import asyncio
+
+        runtime = self._make_runtime()
+
+        async def _sleep_forever() -> None:
+            await asyncio.sleep(60)
+
+        forecast_task = asyncio.create_task(_sleep_forever())
+        await asyncio.sleep(0)
+        runtime.advisor_forecast_task = forecast_task
+        entry = self._make_entry(runtime)
+        mock_hass.config_entries.async_unload_platforms = AsyncMock(return_value=True)
+
+        assert await async_unload_entry(mock_hass, entry) is True
+        assert forecast_task.cancelled()

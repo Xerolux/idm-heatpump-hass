@@ -670,3 +670,39 @@ class TestDiagnosticHelpersEdgeCases:
         # reg_c has no address anywhere and sorts by name at 0; reg_b carries
         # outcome address 2; reg_a its register address 5.
         assert [row["name"] for row in report["registers"]] == ["reg_c", "reg_b", "reg_a"]
+
+    def test_register_report_marks_web_fallback_with_modbus_and_web_values(self) -> None:
+        from custom_components.idm_heatpump.diagnostics import _register_read_report
+
+        reg_flow = SimpleNamespace(
+            name="heat_sink_flow_rate",
+            address=1072,
+            write_only=False,
+            register_type=None,
+            datatype=SimpleNamespace(value="UCHAR"),
+            min_val=None,
+            max_val=None,
+            unit="L/min",
+        )
+        coordinator = SimpleNamespace(
+            register_map_names=frozenset({"heat_sink_flow_rate"}),
+            data={"heat_sink_flow_rate": 33.9},
+            unused_registers=set(),
+            web_fallback_registers={"heat_sink_flow_rate"},
+            unsupported_registers=set(),
+            active_registers=[reg_flow],
+            client=SimpleNamespace(
+                get_register_outcomes=lambda: {
+                    "heat_sink_flow_rate": {"status": "ok", "value": 0.0, "raw_words": (0,)}
+                },
+                get_batch_unsafe_registers=list,
+            ),
+            get_register=lambda name: reg_flow if name == "heat_sink_flow_rate" else None,
+        )
+
+        report = _register_read_report(coordinator)
+        assert report["by_status"] == {"web_fallback": 1}
+        row = report["registers"][0]
+        assert row["status"] == "web_fallback"
+        assert row["value"] == 0.0
+        assert row["web_value"] == 33.9

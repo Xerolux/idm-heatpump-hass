@@ -114,27 +114,31 @@ def compose_operation_reason(
             },
         )
 
-    if mode == 4 or (dhw_temp is not None and dhw_setpoint is not None and dhw_temp < dhw_setpoint - 3.0):
-        short = dhw_setpoint - dhw_temp if dhw_temp is not None and dhw_setpoint is not None else None
-        return OperationReason(
-            label="Hot water",
-            mode_label=mode_label,
-            explanation=(
-                "The hot-water tank is below its setpoint" + (f" by {short:.1f} K" if short is not None else "") + "."
-            ),
-            details={
-                "operating_mode": mode,
-                "dhw_temp_top": dhw_temp,
-                "dhw_setpoint": dhw_setpoint,
-            },
-        )
-
     if mode == 8:
         return OperationReason(
             label="Defrosting",
             mode_label=mode_label,
             explanation="The heat pump runs in mode 'Defrosting'.",
             details={"operating_mode": mode, "outdoor_temp": outdoor, "power_consumption_kw": power},
+        )
+
+    if mode == 4 or (
+        mode not in (2, 8) and dhw_temp is not None and dhw_setpoint is not None and dhw_temp < dhw_setpoint - 3.0
+    ):
+        short = dhw_setpoint - dhw_temp if dhw_temp is not None and dhw_setpoint is not None else None
+        return OperationReason(
+            label="Hot water",
+            mode_label=mode_label,
+            explanation=(
+                "The hot-water tank is below its setpoint"
+                + (f" by {short:.1f} K" if short is not None and short > 0 else "")
+                + "."
+            ),
+            details={
+                "operating_mode": mode,
+                "dhw_temp_top": dhw_temp,
+                "dhw_setpoint": dhw_setpoint,
+            },
         )
 
     for circuit in circuits:

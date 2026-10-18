@@ -341,3 +341,24 @@ class TestWatchdogLifecycle:
         await _async_reload(mock_hass, "e1")
 
         mock_hass.config_entries.async_reload.assert_awaited_once_with("e1")
+
+    async def test_ensure_uses_background_task_when_available_on_hass_class(self) -> None:
+        created: list[str] = []
+
+        class _HassWithBg:
+            def __init__(self) -> None:
+                self.data: dict[str, Any] = {}
+                self.config_entries = SimpleNamespace(async_entries=lambda domain: [])
+
+            def async_create_background_task(self, target: Any, name: str) -> asyncio.Task[None]:
+                created.append(name)
+                task = asyncio.create_task(target)
+                task.cancel()
+                return task
+
+        hass = _HassWithBg()
+        ensure_recovery_watchdog(hass)
+        assert created == ["idm_heatpump_recovery_watchdog"]
+        task = hass.data[DOMAIN]["recovery_watchdog_task"]
+        with pytest.raises(asyncio.CancelledError):
+            await task

@@ -15,6 +15,75 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b6] - 2026-10-18
+
+Comprehensive code-audit and runtime hardening pass across the predictive
+advisor, entity-aware polling, coordinator write/web-fallback lifecycle,
+diagnostics, forwarding and background task management.
+
+### Fixed
+
+- **Plausibility range for `heat_sink_flow_rate` matches its `L/min` unit, and
+  no-TWT plants with a web flowmeter stay usable in idle**:
+  `predictive_advisor.py` previously bounded `heat_sink_flow_rate` to
+  `(0.0, 15.0)`, which rejected normal heat-pump flow rates such as
+  `33.9 L/min` (filled by the #516 web fallback) as `implausible` and degraded
+  advisor confidence. The upper plausibility bound is now `250.0 L/min`. In
+  addition, when the web supplement provides a `flowmeter` value on a plant
+  without a plate heat exchanger (`heat_sink_flow_temp == -1.0`), a legitimate
+  idle `0.0 L/min` reading is no longer misclassified as the no-TWT not-present
+  signature and keeps `has_flow_sensor: true`.
+- **Entity-aware polling preserves `heat_sink_flow_temp` and all heating-circuit
+  registers required by the advisor engine**: `heat_sink_flow_rate` now declares
+  `heat_sink_flow_temp` as a companion dependency in `polling_plan.py` so the
+  no-TWT sentinel check and #516 web fallback keep working when the flow-temp
+  entity is disabled. `PredictiveAdvisor.required_registers` also registers
+  `heat_sink_flow_temp` and per-circuit `hc_{c}_heating_curve`,
+  `hc_{c}_room_setpoint_heat_normal`, `hc_{c}_flow_temp`, and
+  `hc_{c}_setpoint_flow_temp` so heating-curve and operation-reason analysis
+  keep receiving data regardless of which UI entities are enabled.
+- **Daily advisor recommendation re-issues roll over in place without history
+  spam, and `retract`/`mark` match across date-stamped IDs**: re-submitting an
+  active recommendation with a new `YYYYMMDD`-suffixed ID and unchanged content
+  now updates the active ID in place (preserving `created_at` and `user_status`)
+  without appending an `OBSOLETE` duplicate to the 50-entry history ring or
+  firing a redundant `updated` event. `retract()` and `mark()` also fall back to
+  topic matching (`_topic_of`) so an anomaly or recommendation that resolves on
+  a subsequent calendar day retracts the active entry from the earlier day.
+- **`advisor_operation_reason` prioritizes `Defrosting` (`mode == 8`) and
+  `Cooling` (`mode == 2`) ahead of the DHW temperature-delta heuristic and
+  omits negative shortfall text**: a cool domestic hot water tank no longer
+  causes active defrosting or cooling to be reported as `Hot water`, and
+  `hp_operating_mode == 4` while `dhw_temp_top >= dhw_setpoint` (e.g. during a
+  legionella or boost cycle) no longer formats a negative shortfall such as
+  `"below setpoint 48.0 °C by -2.0 K"`.
+- **Config entry unload cancels `advisor_forecast_task`**:
+  `_async_cancel_entry_tasks` in `__init__.py` now includes
+  `advisor_forecast_task` so unloading or reloading an entry never leaves the
+  hourly forecast loop running in the background.
+- **Web not-present fallback refreshes immediately on web poll and reports
+  `web_fallback` in diagnostics**: `async_refresh_web_supplement` now applies
+  `_apply_web_not_present_fallback` and refreshes `_unused_registers` as soon as
+  a web supplement arrives (so startup sentinels clear immediately without
+  waiting for the next Modbus poll), and `diagnostics.py` marks fallback-filled
+  registers with `status: "web_fallback"` and `web_value` instead of reporting
+  a clean Modbus read alongside a `-1.0` sentinel outcome.
+- **Per-task write confirmation tracking in `IdmCoordinator`**: tracking
+  in-flight confirmation refreshes per task (`_refreshing_confirmation_tasks`)
+  ensures that when a third write arrives while the first confirmation is still
+  refreshing and the second confirmation is sleeping, the sleeping second task
+  is properly cancelled instead of triggering a duplicate refresh.
+- **Room-temperature and humidity forwarding deduplication and quiet cooldown
+  handling**: `RoomTempForwarder.async_forward_all` deduplicates shared sensor
+  entity IDs across circuits so each circuit is written only once per periodic
+  pass, and `write_cooldown_active` rejections (when a periodic pass coincides
+  with a recent write) are logged at `DEBUG` instead of `WARNING`.
+- **Background task registration for `KnxBridge` and `recovery_watchdog`**:
+  worker loops now use `hass.async_create_background_task` when available so
+  Home Assistant startup stage completion is never blocked by long-running
+  workers, and `ensure_recovery_watchdog` closes its coroutine cleanly when a
+  test mock intercepts `async_create_task`.
+
 ## [0.23.0-b3] - 2026-10-17
 
 Third prerelease of the 0.23 line, built from end-to-end simulation of a live

@@ -261,6 +261,7 @@ def _register_read_report(coordinator: Any) -> dict[str, Any]:
 
     data = getattr(coordinator, "data", None) or {}
     unused = set(getattr(coordinator, "unused_registers", None) or ())
+    web_fallback = set(getattr(coordinator, "web_fallback_registers", None) or ())
     unsupported = set(getattr(coordinator, "unsupported_registers", None) or ())
     active_names = {reg.name for reg in (getattr(coordinator, "active_registers", None) or ())}
 
@@ -297,7 +298,12 @@ def _register_read_report(coordinator: Any) -> dict[str, Any]:
         elif outcome_status == "decode_error":
             status = "decode_error"
         elif name in data:
-            status = "unused_sentinel" if name in unused else "ok"
+            if name in unused:
+                status = "unused_sentinel"
+            elif name in web_fallback:
+                status = "web_fallback"
+            else:
+                status = "ok"
         elif name in active_names:
             # Polled, but the poll returned nothing usable for it.
             status = "no_data"
@@ -317,6 +323,8 @@ def _register_read_report(coordinator: Any) -> dict[str, Any]:
             row["datatype"] = datatype
         if value is not None:
             row["value"] = value
+        if status == "web_fallback" and name in data:
+            row["web_value"] = data[name]
         raw_words = outcome.get("raw_words")
         if raw_words:
             row["raw_words"] = list(raw_words)

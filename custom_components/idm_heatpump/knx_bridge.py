@@ -271,12 +271,27 @@ class KnxBridge:
         if self._config.receive_enabled:
             self._unsubscribers.append(self._hass.bus.async_listen(EVENT_KNX, self._handle_knx_event))
             if not await self._async_register_events():
-                self._registration_worker = self._hass.async_create_task(self._async_registration_worker())
+                self._registration_worker = self._spawn_background_task(
+                    self._async_registration_worker(),
+                    f"{DOMAIN}_knx_register_{self._entry_id}",
+                )
 
         if self._config.send_enabled:
-            self._worker = asyncio.create_task(self._async_send_worker())
+            self._worker = self._spawn_background_task(
+                self._async_send_worker(),
+                f"{DOMAIN}_knx_send_{self._entry_id}",
+            )
             self._unsubscribers.append(self._coordinator.async_add_listener(self._handle_coordinator_update))
             self._handle_coordinator_update()
+
+    def _spawn_background_task(self, coro: Any, name: str) -> asyncio.Task[None]:
+        """Create a background task that does not block Home Assistant startup."""
+        create_bg = getattr(type(self._hass), "async_create_background_task", None)
+        if callable(create_bg):
+            task = create_bg(self._hass, coro, name)
+            if isinstance(task, asyncio.Task):
+                return task
+        return asyncio.create_task(coro)
 
     async def async_stop(self) -> None:
         """Unsubscribe, deregister group addresses and stop the sender."""

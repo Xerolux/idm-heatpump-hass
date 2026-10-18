@@ -4326,3 +4326,110 @@ class TestWebNotPresentFallback:
         coord._web_supplement = None
         data = {"heat_sink_flow_rate": 0.0}
         assert coord._apply_web_not_present_fallback(data) is data
+
+    def test_web_fallback_registers_tracked_and_cleared_on_real_modbus_read(self, mock_hass, mock_config_entry):
+        from custom_components.idm_heatpump.web_data import IdmWebSensorValue
+
+        coord = self._coordinator_with_web(
+            mock_hass,
+            mock_config_entry,
+            {"outside_air_temperature": IdmWebSensorValue("7.5", 7.5, "°C")},
+            registers=(RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp"),),
+        )
+        data = {"outdoor_temp": -1.0}
+        coord._apply_web_not_present_fallback(data)
+        assert coord.web_fallback_registers == {"outdoor_temp"}
+
+        # A subsequent Modbus poll with a real value clears the fallback mark.
+        real = {"outdoor_temp": 8.2}
+        coord._apply_web_not_present_fallback(real, from_modbus_poll=True)
+        assert coord.web_fallback_registers == set()
+
+    async def test_web_refresh_fills_not_present_sentinel_and_clears_unused_immediately(
+        self, mock_hass, mock_config_entry
+    ):
+        from custom_components.idm_heatpump.web_data import IdmWebSensorValue
+
+        reg = RegisterDef(address=1000, datatype=DataType.FLOAT, name="outdoor_temp")
+        coord, _ = _make_coordinator(
+            mock_hass,
+            mock_config_entry,
+            web_pin="1234",
+            hide_unused=True,
+            registers=[reg],
+        )
+        coord.update_interval = timedelta(seconds=10)
+        coord.data = {"outdoor_temp": -1.0}
+        coord._unused_registers = {"outdoor_temp"}
+        coord.async_update_listeners = MagicMock()
+        supplement = IdmWebSupplement(
+            navigator_version="Navigator 10",
+            sensor_values={"outside_air_temperature": IdmWebSensorValue("7.5", 7.5, "°C")},
+        )
+
+        with (
+            patch("custom_components.idm_heatpump.coordinator.async_read_web_supplement", return_value=supplement),
+            patch("custom_components.idm_heatpump.coordinator.ir"),
+        ):
+            await coord.async_refresh_web_supplement()
+
+        assert coord.data["outdoor_temp"] == 7.5
+        assert "outdoor_temp" not in coord.unused_registers
+        assert "outdoor_temp" in coord.web_fallback_registers
+
+    async def test_third_write_cancels_second_sleeping_confirmation_while_first_refreshes(
+        self, mock_hass, mock_config_entry
+    ):
+        client = MagicMock()
+        client.write_register = AsyncMock()
+        coord, _ = _make_coordinator(mock_hass, mock_config_entry, client=client)
+        reg1 = RegisterDef(address=1000, datatype=DataType.UCHAR, name="mode1", writable=True)
+        reg2 = RegisterDef(address=1001, datatype=DataType.UCHAR, name="mode2", writable=True)
+        reg3 = RegisterDef(address=1002, datatype=DataType.UCHAR, name="mode3", writable=True)
+
+        refresh_started = asyncio.Event()
+        refresh_release = asyncio.Event()
+
+        async def _slow_refresh() -> None:
+            refresh_started.set()
+            await refresh_release.wait()
+
+        coord.async_request_refresh = AsyncMock(side_effect=_slow_refresh)
+
+        real_sleep = asyncio.sleep
+
+        async def _fast_first_sleep(delay: float) -> None:
+            if not refresh_started.is_set():
+                await real_sleep(0)
+            else:
+                await real_sleep(10)
+
+        with patch("custom_components.idm_heatpump.coordinator.asyncio.sleep", side_effect=_fast_first_sleep):
+            await coord.async_write_register(reg1, 1)
+            task1 = coord._delayed_refresh_task
+            assert task1 is not None
+            await asyncio.wait_for(refresh_started.wait(), 1.0)
+            assert task1 in coord._refreshing_confirmation_tasks
+
+            # Second write while task1 is refreshing: task1 is NOT cancelled, task2 starts sleeping.
+            await coord.async_write_register(reg2, 2)
+            task2 = coord._delayed_refresh_task
+            assert task2 is not None and task2 is not task1
+            await real_sleep(0)
+            assert not task1.cancelled()
+            assert not task2.done()
+
+            # Third write while task1 is STILL refreshing and task2 is sleeping:
+            # task2 MUST be cancelled in its sleep phase (catching CancelledError and exiting without refreshing)!
+            await coord.async_write_register(reg3, 3)
+            task3 = coord._delayed_refresh_task
+            assert task3 is not None and task3 is not task2
+            await real_sleep(0)
+            assert task2.done()
+            assert coord.async_request_refresh.await_count == 1
+            assert not task1.cancelled()
+
+            refresh_release.set()
+            await task1
+            await coord.async_shutdown()
+            assert task3.done()

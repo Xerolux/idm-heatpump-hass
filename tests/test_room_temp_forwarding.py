@@ -815,3 +815,61 @@ async def test_humidity_connection_outage_is_reported_once(caplog):
     # Gray, not red: connection blips that self-heal must not read as errors.
     assert humidity_lines[0].levelname == "INFO"
     assert caplog.text.count("still paused") == 2
+
+
+@pytest.mark.asyncio
+async def test_forward_all_deduplicates_shared_entity_across_circuits():
+    """Sharing one room sensor across circuits A and B must write each circuit only once per pass."""
+    reg_a = RegisterDef(1650, DataType.FLOAT, "hc_a_ext_room_temp", unit="°C", writable=True)
+    reg_b = RegisterDef(1652, DataType.FLOAT, "hc_b_ext_room_temp", unit="°C", writable=True)
+    coord = MagicMock()
+    coord.get_register = MagicMock(
+        side_effect=lambda name: {"hc_a_ext_room_temp": reg_a, "hc_b_ext_room_temp": reg_b}.get(name)
+    )
+    coord.async_write_register = AsyncMock()
+    hass = _make_hass("21.5")
+    forwarder = RoomTempForwarder(
+        hass,
+        coord,
+        RoomTempForwardingConfig(
+            entities={"a": "sensor.shared_room", "b": "sensor.shared_room"},
+            interval=300,
+            tolerance=0.0,
+        ),
+    )
+
+    await forwarder.async_forward_all()
+
+    assert coord.async_write_register.await_count == 2
+    coord.async_write_register.assert_any_await(reg_a, 21.5)
+    coord.async_write_register.assert_any_await(reg_b, 21.5)
+
+
+@pytest.mark.asyncio
+async def test_write_cooldown_is_logged_at_debug_for_room_temp_and_humidity(caplog):
+    """A write-cooldown rejection from a manual write must log at DEBUG, not WARNING."""
+    from custom_components.idm_heatpump.room_temp_forwarding import (
+        HumidityForwarder,
+        HumidityForwardingConfig,
+    )
+
+    cooldown_err = ValueError("Cooldown active for register 1650 (2.1s remaining)")
+    coord, _reg = _make_coordinator()
+    coord.async_write_register = AsyncMock(side_effect=cooldown_err)
+    rt_forwarder = TestForwardingLifecycle()._forwarder(_make_hass("22.0"), coord)
+
+    h_coord, _h_reg = TestHumidityForwarding()._coordinator()
+    h_coord.async_write_register = AsyncMock(side_effect=cooldown_err)
+    h_forwarder = HumidityForwarder(
+        _make_hass("55"),
+        h_coord,
+        HumidityForwardingConfig(entity_id="sensor.humidity", interval=300, tolerance=1.0),
+    )
+
+    with caplog.at_level("DEBUG"):
+        await rt_forwarder.async_forward_entity("sensor.living_room_temperature")
+        await h_forwarder.async_forward()
+
+    warnings = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert warnings == []
+    assert any("write cooldown active" in r.getMessage() for r in caplog.records)
