@@ -5,6 +5,16 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b7 — 2026-10-18
+
+Building-model regressions now require exclusive space heating and an active
+heating circuit (#546). Old heat-loss and flow-curve aggregates and derived
+thermal capacity relearn once; COP and other analytics remain intact. Grid-meter
+household consumption pauses when a mapped battery-power source is invalid,
+instead of using an incomplete balance (#519). Diagnostics privacy tests use a
+deterministic web-status fixture. Controller-side SOC resets (#493) remain an
+open firmware observation; cyclic GLT refresh stays enabled.
+
 ## v0.23.0-b6 — 2026-10-18
 
 Audit and runtime-hardening prerelease of the 0.23 line: raises the

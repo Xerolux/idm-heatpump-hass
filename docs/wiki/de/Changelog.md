@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b7 — 2026-10-18
+
+Das Gebäudemodell lernt nur bei reinem Heizbetrieb und aktivem Heizkreis
+(#546). Alte Wärmeverlust- und Vorlaufkurvendaten sowie die abgeleitete
+Wärmekapazität werden einmal neu gelernt; COP und andere Statistiken bleiben
+erhalten. Der vom Netzzähler abgeleitete Hausverbrauch pausiert bei ungültiger
+zugeordneter Batterieleistung, statt eine unvollständige Bilanz zu verwenden
+(#519). Die Datenschutztests nutzen einen festen Webstatus-Testzustand.
+Reglerseitiges Zurücksetzen des Batterie-SOC (#493) bleibt eine offene
+Firmwarebeobachtung; die zyklische GLT-Auffrischung bleibt erhalten.
+
 ## v0.23.0-b6 — 2026-10-18
 
 Audit- und Laufzeit-Härtungs-Prerelease der 0.23-Linie: hebt die
