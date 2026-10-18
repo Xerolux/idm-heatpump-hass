@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -32,6 +34,7 @@ def _make_hass_with_coordinator(mock_hass, mock_config_entry):
     coord.web_enabled = True
     coord.web_supplement = MagicMock()
     coord.web_supplement.system_overview = None
+    coord.web_supplement.status = None
     coord.last_web_error = None
     coord.web_value_keys = ("navigator_version", "software_version")
     coord.missing_web_core_values = ("heatpump_model",)

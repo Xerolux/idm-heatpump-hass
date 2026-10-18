@@ -37,3 +37,10 @@ controller behavior is fixed. Changes are unreleased until merged and shipped.
   and the manifest-pinned API installed.
 - Ruff lint and formatting, documentation language/version checks, the Pages
   build and the sensitive-data guard passed.
+
+The first remote matrix run exposed an unrelated intermittent diagnostics-test
+failure: unconfigured web status fields were `MagicMock` objects, and their
+random memory-address representation could contain the test PIN digits. The
+shared fixture now models an absent status frame as `None`, preserving the
+PIN-redaction assertion and the explicit real-status tests without dependence
+on memory allocation.
