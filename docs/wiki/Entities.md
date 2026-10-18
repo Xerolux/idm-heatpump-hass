@@ -116,8 +116,15 @@ and security guidance. The calculation method is deliberately not documented.
 |--------|----------|------|
 | Heat sink return temp (B124) | 1068 | °C |
 | Heat sink flow temp (B125) | 1070 | °C |
-| Heat sink flow rate (B2) | 1072 | l/min |
+| Heat sink flow rate (B2) | 1072 | L/min |
 | Heat sink charging pump signal (M73) | 1074 | % |
+
+Register 1072 is a word-swapped FLOAT32 — the official IDM doc lists UCHAR,
+but field readings proved the float (0.23.0-b8): a plant with a live flow
+signal shows real L/min values. Without a plate heat exchanger the whole
+block reports not-present (`-1.0`) and these entities stay *unavailable*;
+when the web supplement serves its own flowmeter row, that value fills the
+flow rate in automatically (see [Known Limitations](Known-Limitations)).
 
 ### Compressors & Pumps
 
@@ -293,6 +300,8 @@ Typical web-only sensors include:
 | myIDM ID (Web) | Compact myIDM ID derived from the local web account value before `@` |
 | Info system notification count (Web) | Number of active Navigator 10 infosystem notifications |
 | Anforderungsgrund (Web) | Navigator 10 only: the controller's own demand reason (issue #353) |
+| Flow meter (Web) | Heat-sink flow rate in L/min from the controller's own flowmeter row; when the Modbus register 1072 reports not-present (no plate heat exchanger), this value fills the *Heat sink flow rate (B2)* entity automatically |
+| Hot water station flow (Web) | Flow through the hot water station in L/min from the web interface |
 
 The heat pump model is deliberately no entity of its own: Navigator 10
 firmware 20.24-1580 (installed from 2026-09-29) removed the model row from
