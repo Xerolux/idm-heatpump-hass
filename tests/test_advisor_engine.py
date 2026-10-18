@@ -171,6 +171,8 @@ def test_observe_feeds_running_metrics_and_counters() -> None:
         "outdoor_temp": 5.0,
         "power_consumption_hp": 2.0,
         "thermal_power_flow_sensor": 4.8,
+        "hp_operating_mode": 1,
+        "hc_a_active_mode": 1,
         "hp_flow_temp": 30.0,
         "hp_return_temp": 26.0,
         "heat_sink_flow_rate": 1.5,
@@ -213,6 +215,8 @@ def test_observe_falls_back_to_current_power_when_flow_sensor_is_zero() -> None:
         "power_consumption_hp": 0.62,
         "thermal_power_flow_sensor": 0.0,
         "current_power": 3.46,
+        "hp_operating_mode": 1,
+        "hc_a_active_mode": 1,
         "hp_flow_temp": 30.0,
         "hp_return_temp": 26.0,
         "hc_a_room_temp": 21.0,
@@ -625,6 +629,8 @@ def test_observe_without_now_anchor_uses_the_clock() -> None:
         "hc_a_room_temp": 21.0,
         "outdoor_temp": 5.0,
         "thermal_power_flow_sensor": 4.8,
+        "hp_operating_mode": 1,
+        "hc_a_active_mode": 1,
     }
     engine, _advisor, analytics, _coordinator = _engine(data)
 
@@ -638,6 +644,8 @@ def test_consecutive_running_samples_integrate_a_cop_interval() -> None:
         "outdoor_temp": 5.0,
         "power_consumption_hp": 2.0,
         "thermal_power_flow_sensor": 4.8,
+        "hp_operating_mode": 1,
+        "hc_a_active_mode": 1,
         "hp_flow_temp": 30.0,
         "hp_return_temp": 26.0,
     }
@@ -921,3 +929,88 @@ class TestAdvisorRoomTemperatureSources:
         engine.observe()
 
         assert analytics.heat_loss_w_per_k is None  # needs thermal power; just no crash
+
+
+@pytest.mark.parametrize("mode", [None, 0, 2, 4, 8, 5, 9, True, "1", float("nan")])
+def test_building_model_rejects_nonexclusive_heating(mode: Any) -> None:
+    data = {
+        "hp_operating_mode": mode,
+        "power_consumption_hp": 2.0,
+        "thermal_power_flow_sensor": 8.0,
+        "outdoor_temp": 5.0,
+        "hc_a_room_temp": 21.0,
+        "hc_a_room_setpoint_heat_normal": 21.0,
+        "hc_a_flow_temp": 24.0,
+        "hc_a_active_mode": 1,
+        "hp_flow_temp": 50.0,
+        "hp_return_temp": 45.0,
+    }
+    engine, _, analytics, _ = _engine(data)
+    engine.observe(now=T0)
+    engine.observe(now=T0 + timedelta(minutes=1))
+    assert analytics.building_model["heat_fit_samples"] == 0
+    assert analytics.building_model["flow_curve_samples"] == 0
+    # The building-model gate does not disable general operating analytics.
+    assert analytics._cop_map
+
+
+@pytest.mark.parametrize(
+    ("active", "setpoint", "expected"),
+    [
+        (1, 30.0, 1),
+        (0, 30.0, 0),
+        (2, 30.0, 0),
+        (255, 30.0, 0),
+        (True, 30.0, 0),
+        ("1", 30.0, 0),
+        (None, 30.0, 1),
+        (None, 0.0, 0),
+        (None, None, 0),
+        (None, float("nan"), 0),
+    ],
+)
+def test_building_model_requires_an_active_heating_circuit(active: Any, setpoint: Any, expected: int) -> None:
+    data = {
+        "hp_operating_mode": 1,
+        "power_consumption_hp": 2.0,
+        "thermal_power_flow_sensor": 4.0,
+        "outdoor_temp": 5.0,
+        "hc_a_room_temp": 21.0,
+        "hc_a_room_setpoint_heat_normal": 21.0,
+        "hc_a_flow_temp": 30.0,
+        "hc_a_active_mode": active,
+        "hc_a_setpoint_flow_temp": setpoint,
+    }
+    engine, _, analytics, _ = _engine(data)
+    engine.observe(now=T0)
+    assert analytics.building_model["heat_fit_samples"] == expected
+    assert analytics.building_model["flow_curve_samples"] == expected
+
+
+def test_building_model_uses_room_and_flow_only_from_the_heating_circuit() -> None:
+    engine, _, analytics, coordinator = _engine(
+        {
+            "hp_operating_mode": 1,
+            "power_consumption_hp": 2.0,
+            "thermal_power_flow_sensor": 4.0,
+            "outdoor_temp": 5.0,
+            "hc_a_room_temp": 25.0,
+            "hc_a_room_setpoint_heat_normal": 25.0,
+            "hc_a_flow_temp": 20.0,
+            "hc_a_active_mode": 0,
+            "hc_b_room_temp": 21.0,
+            "hc_b_room_setpoint_heat_normal": 21.0,
+            "hc_b_flow_temp": 30.0,
+            "hc_b_active_mode": 1,
+        },
+        circuits=("a", "b"),
+    )
+    engine.observe(now=T0)
+    assert analytics._heat_fit.sx == 16.0
+    assert analytics._flow_fit.sy == 30.0
+    coordinator.data["hp_operating_mode"] = 4
+    engine.observe(now=T0 + timedelta(minutes=1))
+    assert analytics.building_model["heat_fit_samples"] == 1
+    coordinator.data["hp_operating_mode"] = 1
+    engine.observe(now=T0 + timedelta(minutes=2))
+    assert analytics.building_model["heat_fit_samples"] == 2

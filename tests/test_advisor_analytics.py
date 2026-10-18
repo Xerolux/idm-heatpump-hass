@@ -287,3 +287,31 @@ async def test_async_save_persists_the_serialized_state() -> None:
     assert stored["cooldown_count"] == 1
     assert stored["capacity_kwh_per_k"] == 4.0
     assert stored["last_day"] == T0.date().isoformat()
+
+
+async def test_legacy_building_models_are_reset_without_losing_other_analytics() -> None:
+    first = _analytics()
+    first.observe_heating(16.0, 8.0)
+    first.observe_flow_pair(5.0, 24.0)
+    first.observe_cop_sample(5.0, 30.0, 4.8, 1.2, 0.2)
+    first.observe_metric("heat_sink_flow_rate", 1.5, T0)
+    first.observe_cooldown_episode(0.05, 4.0)
+    legacy = first._serialize()
+    legacy.pop("building_model_version")
+    second = _analytics()
+    second._store.data = legacy
+    await second.async_load()
+    assert second.building_model["heat_fit_samples"] == 0
+    assert second.building_model["flow_curve_samples"] == 0
+    assert second.thermal_inertia_kwh_per_k is None
+    assert second._daily == first._daily
+    assert second._cop_map == first._cop_map
+    assert second._cop_days == first._cop_days
+    assert second.building_model["cooldown_episodes"] == 1
+    second.observe_heating(16.0, 4.0)
+    second.observe_flow_pair(5.0, 30.0)
+    third = _analytics()
+    third._store.data = second._serialize()
+    await third.async_load()
+    assert third.building_model["heat_fit_samples"] == 1
+    assert third.building_model["flow_curve_samples"] == 1

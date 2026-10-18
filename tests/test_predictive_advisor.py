@@ -1106,6 +1106,7 @@ def test_required_registers_include_engine_and_no_twt_dependencies() -> None:
     assert {
         "heat_sink_flow_temp",
         "hc_a_room_temp",
+        "hc_a_active_mode",
         "hc_a_heating_curve",
         "hc_a_room_setpoint_heat_normal",
         "hc_a_flow_temp",

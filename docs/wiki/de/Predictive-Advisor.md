@@ -130,6 +130,22 @@ Bereichs), eingefroren (ein von Null verschiedener Leistungs- oder
 Durchflusswert, der sich drei Stunden nicht bewegt hat) oder nutzbar.
 Empfehlungen werden nie aus schlechten Daten gebaut.
 
+### Lernen des Gebäudemodells
+
+Wärmeverlust und optimale Vorlauftemperatur lernen nur im reinen Heizbetrieb
+(`hp_operating_mode == 1`) mit einem aktiv heizenden Heizkreis. Eine vorhandene
+aktive Heizkreisbetriebsart muss Heizen melden; fehlt sie, ist ein positiver
+Vorlaufsollwert erforderlich. Warmwasser, Kühlen, Abtauen, gemischte oder
+unbekannte Betriebsarten und inaktive Heizkreise liefern keine Regressionsdaten.
+Die Wärmeverlustberechnung nutzt die Raumtemperatur eines aktiven Heizkreises.
+Allgemeine Betriebswerte und COP-Lernen laufen unabhängig davon weiter.
+
+Beim Update von der bisherigen Lernlogik beginnen Wärmeverlust, Vorlaufkurve
+und die daraus abgeleitete Wärmekapazität einmal neu: Alte Summendaten lassen
+sich nicht nach Heizen und Warmwasser trennen. Diese Sensoren bleiben bis zu
+ausreichend neuen Heizproben nicht verfügbar. Andere Analysen einschließlich
+Tagesreferenzen, COP-Daten und Abkühlbeobachtungen bleiben erhalten.
+
 ## Was der Advisor niemals tun wird
 
 - Sollwerte, Heizkurven, Betriebsarten, Zeitprogramme oder Leistungsgrenzen verändern

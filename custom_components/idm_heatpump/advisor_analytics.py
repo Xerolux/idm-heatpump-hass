@@ -22,6 +22,7 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 _STORAGE_VERSION: Final = 1
+_BUILDING_MODEL_VERSION: Final = 2
 _STORAGE_SAVE_DELAY: Final = 30.0
 _BASELINE_DAYS: Final = 30
 _BASELINE_MIN_DAYS: Final = 3
@@ -379,6 +380,7 @@ class AdvisorAnalytics:
     def _serialize(self) -> dict[str, Any]:
         return {
             "version": _STORAGE_VERSION,
+            "building_model_version": _BUILDING_MODEL_VERSION,
             "daily": self._daily,
             "cop_map": self._cop_map,
             "cop_days": self._cop_days,
@@ -424,6 +426,13 @@ class AdvisorAnalytics:
         self._cooldown_count = count if isinstance(count, int) and count >= 0 else 0
         self._cooldown_rate_1_per_h = _number(stored.get("cooldown_rate_1_per_h"))
         self._capacity_kwh_per_k = _number(stored.get("capacity_kwh_per_k"))
+        if stored.get("building_model_version") != _BUILDING_MODEL_VERSION:
+            # Old sufficient statistics cannot separate DHW/inactive samples
+            # from space heating. Relearn only the affected models (#546).
+            self._heat_fit = _OnlineRegression()
+            self._flow_fit = _OnlineRegression()
+            self._capacity_kwh_per_k = None
+            self._schedule_save()
         last_day = stored.get("last_day")
         self._last_day = last_day if isinstance(last_day, str) else None
 

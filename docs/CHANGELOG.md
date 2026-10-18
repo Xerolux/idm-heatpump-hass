@@ -15,6 +15,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **Building-model learning excludes DHW and inactive circuits** (#546):
+  heat-loss and flow-curve regressions now require exclusive space heating
+  and positive evidence of an actively heating circuit. Circuit active modes
+  remain polled for the advisor even when their entities are disabled. Existing
+  heat-loss/flow regressions and derived thermal capacity restart once because
+  old aggregates cannot separate DHW samples; other analytics are preserved.
+- **Grid-meter household consumption requires valid mapped battery power**
+  (#519): an unavailable or invalid battery source now pauses the derived
+  household-consumption write instead of silently omitting battery flow.
+  Independent PV and surplus forwarding continue and derivation resumes when
+  the battery source recovers.
+
 ## [0.23.0-b6] - 2026-10-18
 
 Comprehensive code-audit and runtime hardening pass across the predictive

@@ -19,6 +19,7 @@ from typing import Any, Final
 from homeassistant.core import HomeAssistant
 
 from .advisor_analytics import AdvisorAnalytics
+from .const import HeatPumpStatus
 from .predictive_advisor import (
     _ROOM_TEMP_RANGE,
     PredictiveAdvisor,
@@ -294,7 +295,7 @@ class AdvisorEngine:
         compressor_on = power is not None and power >= _COMPRESSOR_ON_KW
 
         if compressor_on:
-            self._observe_running(current, data, outdoor, power, thermal, flow, return_temp, room)
+            self._observe_running(current, data, outdoor, power, thermal, flow, return_temp)
             self._cooldown_recorded = False
             self._off_since = None
         else:
@@ -355,7 +356,6 @@ class AdvisorEngine:
         thermal: float | None,
         flow: float | None,
         return_temp: float | None,
-        room: float | None,
     ) -> None:
         flow_rate = _number(data.get("heat_sink_flow_rate"))
         if flow_rate is not None and flow_rate > 0.05:
@@ -367,9 +367,15 @@ class AdvisorEngine:
             if self._last_sample_at is not None and self._compressor_on:
                 hours = (current - self._last_sample_at).total_seconds() / 3600.0
             self._analytics.observe_cop_sample(outdoor, flow, thermal, power, hours)
+        # DHW, cooling, defrost and mixed modes do not deliver the measured
+        # thermal power exclusively to the building (#546).
+        if _number(data.get("hp_operating_mode")) != HeatPumpStatus.HEATING:
+            return
+        heating_circuits = tuple(c for c in self._circuits if self._circuit_is_heating(c, data))
+        room = next((t for c in heating_circuits if (t := self._room_temp_for(c, data)) is not None), None)
         if room is not None and outdoor is not None and thermal is not None and thermal > 0.5:
             self._analytics.observe_heating(room - outdoor, thermal)
-        for circuit in self._circuits:
+        for circuit in heating_circuits:
             room_temp = self._room_temp_for(circuit, data)
             room_setpoint = _number(data.get(f"hc_{circuit}_room_setpoint_heat_normal"))
             circuit_flow = _number(data.get(f"hc_{circuit}_flow_temp"))
@@ -381,6 +387,15 @@ class AdvisorEngine:
                 and circuit_flow is not None
             ):
                 self._analytics.observe_flow_pair(outdoor, circuit_flow)
+
+    @staticmethod
+    def _circuit_is_heating(circuit: str, data: Mapping[str, Any]) -> bool:
+        """Require positive circuit evidence; an explicit inactive mode wins."""
+        active = data.get(f"hc_{circuit}_active_mode")
+        if active is not None:
+            return _number(active) == 1
+        setpoint = _number(data.get(f"hc_{circuit}_setpoint_flow_temp"))
+        return setpoint is not None and setpoint > 0.0
 
     def _observe_idle(self, current: datetime, room: float | None, outdoor: float | None) -> None:
         """Track compressor-off episodes to estimate thermal inertia."""

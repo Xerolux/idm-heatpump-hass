@@ -643,6 +643,7 @@ class PredictiveAdvisor:
             f"hc_{circuit}_{suffix}"
             for circuit in self._circuits
             for suffix in (
+                "active_mode",
                 "heating_curve",
                 "room_setpoint_heat_normal",
                 "flow_temp",

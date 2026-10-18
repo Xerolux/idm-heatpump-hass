@@ -125,6 +125,22 @@ unavailable, implausible (outside the documented range), frozen (a nonzero
 power or flow reading that has not moved for three hours) or usable.
 Recommendations are never built on bad data.
 
+### Building-model learning
+
+Heat loss and optimal flow temperature learn only during exclusive space
+heating (`hp_operating_mode == 1`) with an actively heating circuit. An explicit
+circuit active mode must be heating; if it is absent, a positive circuit flow
+setpoint is required. DHW, cooling, defrost, mixed or unknown modes and inactive
+circuits cannot feed these regressions. Heat loss uses a room temperature from
+an active heating circuit. General operating metrics and COP learning continue
+independently.
+
+After upgrading from the earlier learning logic, the heat-loss and flow-curve
+regressions and their derived thermal-capacity estimate restart once: old
+aggregates cannot distinguish space heating from DHW. Those sensors remain
+unavailable until enough new heating samples exist. Other analytics, including
+daily baselines, COP data and cooldown observations, are preserved.
+
 ## What the advisor will never do
 
 - Change setpoints, heating curves, modes, schedules or power limits
