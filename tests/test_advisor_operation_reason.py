@@ -167,3 +167,47 @@ def test_idle_german_web_labels_still_ignored() -> None:
         demand_reason="Keine Anforderung",
     )
     assert idle is not None and idle.label != "Keine Anforderung"
+
+
+def test_defrosting_and_cooling_take_precedence_over_dhw_temperature_delta() -> None:
+    """A cool DHW tank during Defrosting (8) or Cooling (2) must not misclassify the mode as Hot water."""
+    defrosting = compose_operation_reason(
+        {
+            "hp_operating_mode": 8,
+            "power_consumption_hp": 1.8,
+            "dhw_temp_top": 42.0,
+            "dhw_setpoint": 50.0,
+        },
+        demand_reason=None,
+    )
+    assert defrosting is not None
+    assert defrosting.label == "Defrosting"
+
+    cooling = compose_operation_reason(
+        {
+            "hp_operating_mode": 2,
+            "power_consumption_hp": 1.4,
+            "dhw_temp_top": 42.0,
+            "dhw_setpoint": 50.0,
+        },
+        demand_reason=None,
+    )
+    assert cooling is not None
+    assert cooling.label == "Cooling"
+
+
+def test_dhw_mode_above_setpoint_never_emits_negative_shortfall() -> None:
+    """When mode == 4 and dhw_temp >= dhw_setpoint (e.g. legionella/boost), explanation has no negative K."""
+    reason = compose_operation_reason(
+        {
+            "hp_operating_mode": 4,
+            "power_consumption_hp": 2.1,
+            "dhw_temp_top": 52.0,
+            "dhw_setpoint": 48.0,
+        },
+        demand_reason=None,
+    )
+    assert reason is not None
+    assert reason.label == "Hot water"
+    assert "below setpoint" not in reason.explanation
+    assert "-4.0 K" not in reason.explanation

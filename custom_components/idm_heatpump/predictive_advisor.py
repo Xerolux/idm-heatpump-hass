@@ -68,7 +68,7 @@ _PLAUSIBILITY: Final[dict[str, tuple[float, float]]] = {
     "dhw_setpoint": (-10.0, 95.0),
     "power_consumption_hp": (0.0, 60.0),
     "thermal_power_flow_sensor": (0.0, 120.0),
-    "heat_sink_flow_rate": (0.0, 15.0),
+    "heat_sink_flow_rate": (0.0, 250.0),
     "storage_temp": (-10.0, 120.0),
     "pv_surplus": (-60.0, 60.0),
     "smart_grid_status": (0.0, 8.0),
@@ -93,7 +93,18 @@ _ROOM_TEMP_RANGE: Final = (0.0, 50.0)
 _COMPRESSOR_KEYS: Final = tuple(f"compressor_status_{index}" for index in range(1, 5))
 
 
-def _no_twt_flow_signature(data: Mapping[str, Any], value: Any) -> bool:
+def _web_provides_flowmeter(coordinator: Any) -> bool:
+    """Whether the coordinator's web supplement provides a numeric flowmeter reading."""
+    supplement = getattr(coordinator, "web_supplement", None)
+    sensor_values = getattr(supplement, "sensor_values", None)
+    if not isinstance(sensor_values, Mapping):
+        return False
+    entry = sensor_values.get("flowmeter")
+    value = getattr(entry, "native_value", None)
+    return not isinstance(value, bool) and isinstance(value, (int, float)) and math.isfinite(float(value))
+
+
+def _no_twt_flow_signature(data: Mapping[str, Any], value: Any, *, web_has_flowmeter: bool = False) -> bool:
     """Whether ``value`` is the spurious no-TWT flow zero (#539).
 
     On plants without a plate heat exchanger the whole heat-sink block
@@ -102,7 +113,11 @@ def _no_twt_flow_signature(data: Mapping[str, Any], value: Any) -> bool:
     0.0 L/min (Known Limitations). The sibling flow temperature not
     reporting a real value is the signature: a plant with a sensor reads
     real temperatures even while the pump idles at a legitimate 0 L/min.
+    When the web supplement provides a live ``flowmeter`` value (#516),
+    an idle 0.0 L/min is a genuine reading from the web flowmeter.
     """
+    if web_has_flowmeter:
+        return False
     if not isinstance(value, (int, float)) or isinstance(value, bool) or float(value) != 0.0:
         return False
     sibling = data.get("heat_sink_flow_temp")
@@ -526,6 +541,7 @@ def detect_capabilities(
     web_variant: str | None,
     price_source: str | None,
     pv_source: str | None,
+    web_has_flowmeter: bool = False,
 ) -> AdvisorCapabilities:
     """Detect plant capabilities from one coordinator snapshot and options."""
     low, high = _ROOM_TEMP_RANGE
@@ -542,7 +558,11 @@ def detect_capabilities(
         has_heat_meter="thermal_power_flow_sensor" in data or "current_power" in data,
         has_room_temperature=has_room_temperature,
         # A spurious 0.0 from a no-TWT plant is not a flow sensor (#539).
-        has_flow_sensor=not _no_twt_flow_signature(data, data.get("heat_sink_flow_rate"))
+        has_flow_sensor=not _no_twt_flow_signature(
+            data,
+            data.get("heat_sink_flow_rate"),
+            web_has_flowmeter=web_has_flowmeter,
+        )
         and "heat_sink_flow_rate" in data,
         has_compressor=any(key in data for key in _COMPRESSOR_KEYS),
         has_pv_signal="pv_surplus" in data or "smart_grid_status" in data,
@@ -619,7 +639,17 @@ class PredictiveAdvisor:
     @property
     def required_registers(self) -> tuple[str, ...]:
         """Registers the advisor watches; declare them for entity-aware polling."""
-        return (*self._watched_keys, "current_power")
+        circuit_keys = tuple(
+            f"hc_{circuit}_{suffix}"
+            for circuit in self._circuits
+            for suffix in (
+                "heating_curve",
+                "room_setpoint_heat_normal",
+                "flow_temp",
+                "setpoint_flow_temp",
+            )
+        )
+        return (*self._watched_keys, "current_power", "heat_sink_flow_temp", *circuit_keys)
 
     @property
     def first_observed(self) -> datetime | None:
@@ -669,7 +699,11 @@ class PredictiveAdvisor:
                 and (value is None or float(fallback) > 0.0)
             ):
                 return fallback
-        if key == "heat_sink_flow_rate" and _no_twt_flow_signature(data, value):
+        if key == "heat_sink_flow_rate" and _no_twt_flow_signature(
+            data,
+            value,
+            web_has_flowmeter=_web_provides_flowmeter(self._coordinator),
+        ):
             # Without a plate heat exchanger the controller fills the
             # heat-sink block with the FLOAT -1.0 not-present pattern and the
             # UCHAR-documented flow rate decodes its low word as a spurious
@@ -748,6 +782,7 @@ class PredictiveAdvisor:
             web_variant=getattr(self._coordinator, "web_variant", None),
             price_source=self._price_source,
             pv_source=self._pv_source,
+            web_has_flowmeter=_web_provides_flowmeter(self._coordinator),
         )
         if self._room_temp_entities and not capabilities.has_room_temperature:
             # A mapped read-only source stands in for the missing wired
@@ -806,7 +841,6 @@ class PredictiveAdvisor:
             topic = _topic_of(rec.id)
             for other_id, other in list(self._active.items()):
                 if other_id != rec.id and _topic_of(other_id) == topic:
-                    self._append_history(replace(other, status=RecommendationStatus.OBSOLETE))
                     del self._active[other_id]
                     superseded_topic_rec = other
             if superseded_topic_rec is not None:
@@ -819,6 +853,11 @@ class PredictiveAdvisor:
                         else RecommendationStatus.NEW
                     ),
                 )
+                if _same_recommendation_content(superseded_topic_rec, rec):
+                    self._active[rec.id] = rec
+                    self._schedule_save()
+                    return False
+                self._append_history(replace(superseded_topic_rec, status=RecommendationStatus.OBSOLETE))
         self._active[rec.id] = rec
         self._fire(
             "updated" if existing is not None or superseded_topic_rec is not None else "new",
@@ -834,15 +873,23 @@ class PredictiveAdvisor:
         heat pump, here or anywhere in this class. Returns False for unknown
         ids or statuses outside the user set.
         """
-        rec = self._active.get(recommendation_id)
+        active_id = recommendation_id
+        rec = self._active.get(active_id)
+        if rec is None:
+            topic = _topic_of(recommendation_id)
+            for other_id, other in self._active.items():
+                if _topic_of(other_id) == topic:
+                    active_id = other_id
+                    rec = other
+                    break
         if rec is None or status not in _USER_STATUSES or rec.status == status:
             return False
         updated = replace(rec, status=status)
         if status is RecommendationStatus.DISMISSED:
-            self._active.pop(recommendation_id)
+            self._active.pop(active_id)
             self._append_history(updated)
         else:
-            self._active[recommendation_id] = updated
+            self._active[active_id] = updated
         self._fire("status", updated)
         self._schedule_save()
         return True
@@ -852,9 +899,17 @@ class PredictiveAdvisor:
 
         Producers call this when the observation behind a recommendation
         disappears (e.g. an anomaly resolved) so stale entries do not linger
-        until their TTL. The entry moves to history as obsolete.
+        until their TTL. Matches either the exact id or its day-stamped topic
+        so a condition resolving on a later day withdraws the previous day's
+        active entry too. The entry moves to history as obsolete.
         """
         rec = self._active.pop(recommendation_id, None)
+        if rec is None:
+            topic = _topic_of(recommendation_id)
+            for other_id in list(self._active):
+                if _topic_of(other_id) == topic:
+                    rec = self._active.pop(other_id)
+                    break
         if rec is None:
             return False
         obsolete = replace(rec, status=RecommendationStatus.OBSOLETE)

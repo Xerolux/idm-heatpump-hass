@@ -64,6 +64,8 @@ _ZONE_CLIMATE = re.compile(r"^climate_zm(\d+)_room(\d+)$")
 
 def _entity_dependencies(unique_suffix: str) -> set[str]:
     """Return register dependencies for non-register entity unique IDs."""
+    if unique_suffix == "heat_sink_flow_rate":
+        return {"heat_sink_flow_temp"}
     if unique_suffix in _CALCULATED_DEPENDENCIES:
         return set(_CALCULATED_DEPENDENCIES[unique_suffix])
     if unique_suffix.startswith("ai_"):

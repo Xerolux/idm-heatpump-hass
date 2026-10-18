@@ -171,9 +171,17 @@ def ensure_recovery_watchdog(hass: Any) -> None:
             if isinstance(store, dict):
                 store.pop("recovery_watchdog_task", None)
 
-    store["recovery_watchdog_task"] = (
-        hass.async_create_task(_run()) if hasattr(hass, "async_create_task") else asyncio.create_task(_run())
-    )
+    coro = _run()
+    create_bg = getattr(type(hass), "async_create_background_task", None)
+    if callable(create_bg):
+        task = create_bg(hass, coro, f"{DOMAIN}_recovery_watchdog")
+    elif hasattr(hass, "async_create_task"):
+        task = hass.async_create_task(coro)
+    else:
+        task = asyncio.create_task(coro)
+    if not isinstance(task, asyncio.Future):
+        coro.close()
+    store["recovery_watchdog_task"] = task
 
 
 async def _async_reload(hass: Any, entry_id: str) -> None:

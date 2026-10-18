@@ -15,7 +15,7 @@ from custom_components.idm_heatpump.advisor_analytics import (
 # Anchored to the real clock so the tests never decay: observation stages
 # and status entities compare ``first_observed`` against ``datetime.now``,
 # and a fixed past date flips those assertions one day after it is written.
-T0 = datetime.now(UTC).replace(microsecond=0)
+T0 = datetime.now(UTC).replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 def _analytics(mock_hass=None) -> AdvisorAnalytics:

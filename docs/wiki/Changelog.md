@@ -5,6 +5,25 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b6 — 2026-10-18
+
+Audit and runtime-hardening prerelease of the 0.23 line: raises the
+`heat_sink_flow_rate` advisor plausibility ceiling to `250.0 L/min` so live
+flowmeter readings (such as `33.9 L/min` from the #516 web fallback) count as
+usable data, keeps `has_flow_sensor: true` on no-TWT plants during idle `0.0
+L/min` when a web flowmeter is present, and declares `heat_sink_flow_temp` plus
+the advisor's heating-circuit registers in the entity-aware polling plan.
+Daily recommendation re-issues with unchanged content now roll over their
+date-stamped ID in place without history churn, `retract()`/`mark()` match by
+topic across calendar days, `advisor_operation_reason` keeps `Defrosting` and
+`Cooling` ahead of the DHW temperature-delta heuristic without negative
+shortfall text, `advisor_forecast_task` is cancelled on entry unload, web
+not-present fallback clears unused sentinels immediately on web refresh and
+reports `status: "web_fallback"` in diagnostics, write confirmations track
+in-flight refreshes per task, room/humidity forwarding deduplicates shared
+sensors and logs write cooldowns at `DEBUG`, and KNX/watchdog workers spawn as
+Home Assistant background tasks.
+
 ## v0.23.0-b4 — 2026-10-17
 
 Second batch from the advisor field validation: the silent availability

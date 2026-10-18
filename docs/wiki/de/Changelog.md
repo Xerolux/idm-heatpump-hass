@@ -5,6 +5,26 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b6 — 2026-10-18
+
+Audit- und Laufzeit-Härtungs-Prerelease der 0.23-Linie: hebt die
+Advisor-Plausibilitätsobergrenze für `heat_sink_flow_rate` auf `250,0 L/min` an,
+damit reale Durchflusswerte (wie `33,9 L/min` aus dem #516-Web-Fallback) als
+nutzbare Messwerte zählen, erhält `has_flow_sensor: true` auf Anlagen ohne
+Trennwärmetauscher bei `0,0 L/min` im Leerlauf, sobald das Web-Supplement einen
+Flowmeter liefert, und nimmt `heat_sink_flow_temp` sowie die vom Advisor
+benötigten Heizkreis-Register fest in den entitätsbewussten Polling-Plan auf.
+Tägliche Empfehlungs-Neuausgaben mit unverändertem Inhalt aktualisieren ihre
+Datums-ID nun direkt ohne History-Duplikate, `retract()`/`mark()` gleichen
+Themen tagesübergreifend ab, `advisor_operation_reason` priorisiert `Defrosting`
+und `Cooling` vor der Warmwasser-Temperaturdifferenz und vermeidet negative
+Sollwert-Abstände, `advisor_forecast_task` wird beim Entladen sauber beendet,
+der Web-Fallback hebt ungenutzte Sentinels sofort beim Web-Refresh auf und
+meldet `status: "web_fallback"` in der Diagnose, Schreib-Bestätigungen werden
+pro Task verfolgt, die Raumtemperatur-/Feuchte-Weiterleitung dedupliziert
+geteilte Sensoren und protokolliert Schreib-Cooldowns auf `DEBUG`, und KNX-
+sowie Watchdog-Worker starten als Hintergrund-Tasks.
+
 ## v0.23.0-b4 — 2026-10-17
 
 Zweite Runde aus der Advisor-Feld-Validierung: Das lautlose

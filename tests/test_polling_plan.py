@@ -430,3 +430,22 @@ async def test_ensure_creates_exactly_one_manager_for_a_real_coordinator(
     assert ensure_entity_aware_polling(coordinator) is manager
 
     await manager.async_shutdown()
+
+
+def test_heat_sink_flow_rate_pulls_in_heat_sink_flow_temp_sentinel_companion(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    known = {
+        "outdoor_temp",
+        "heat_sink_flow_rate",
+        "heat_sink_flow_temp",
+        "unused_other",
+    }
+    required = _build(
+        monkeypatch,
+        [_RegistryEntry("entry_heat_sink_flow_rate")],
+        known,
+    )
+    assert required is not None
+    assert {"heat_sink_flow_rate", "heat_sink_flow_temp"} <= required
+    assert "unused_other" not in required

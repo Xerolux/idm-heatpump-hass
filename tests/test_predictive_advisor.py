@@ -1060,3 +1060,93 @@ def test_twt_idle_flow_zero_stays_usable(mock_hass) -> None:
         pv_source=None,
     )
     assert capabilities.has_flow_sensor is True
+
+
+def test_flow_rate_plausibility_accepts_liter_per_minute_readings(mock_hass) -> None:
+    """heat_sink_flow_rate (L/min) values like 33.9 L/min must be usable, not implausible."""
+    coordinator = _coordinator(
+        data={
+            "heat_sink_flow_rate": 33.9,
+            "heat_sink_flow_temp": 28.0,
+            "power_consumption_hp": 1.8,
+            "outdoor_temp": 6.0,
+        },
+        hass=mock_hass,
+    )
+    advisor = PredictiveAdvisor(coordinator)
+    advisor.observe(now=T0)
+    quality = advisor.quality_summary()["heat_sink_flow_rate"]
+    assert quality["usable"] == 1
+    assert quality["implausible"] == 0
+
+
+def test_no_twt_web_flowmeter_zero_stays_usable_and_detected(mock_hass) -> None:
+    """When the web supplement provides flowmeter, idle 0.0 L/min on a no-TWT plant stays usable."""
+    coordinator = _coordinator(
+        data={
+            "heat_sink_flow_rate": 0.0,
+            "heat_sink_flow_temp": -1.0,
+            "power_consumption_hp": 0.0,
+            "outdoor_temp": 7.5,
+        },
+        hass=mock_hass,
+    )
+    coordinator.web_supplement = SimpleNamespace(sensor_values={"flowmeter": SimpleNamespace(native_value=0.0)})
+    advisor = PredictiveAdvisor(coordinator)
+    advisor.observe(now=T0)
+    quality = advisor.quality_summary()["heat_sink_flow_rate"]
+    assert quality["usable"] == 1
+    assert quality["unavailable"] == 0
+    assert advisor.capabilities.has_flow_sensor is True
+
+
+def test_required_registers_include_engine_and_no_twt_dependencies() -> None:
+    advisor = PredictiveAdvisor(_coordinator(options={"heating_circuits": ["a"]}))
+    required = set(advisor.required_registers)
+    assert {
+        "heat_sink_flow_temp",
+        "hc_a_room_temp",
+        "hc_a_heating_curve",
+        "hc_a_room_setpoint_heat_normal",
+        "hc_a_flow_temp",
+        "hc_a_setpoint_flow_temp",
+    } <= required
+
+
+def test_submit_same_topic_new_date_id_identical_content_rolls_over_in_place() -> None:
+    """Daily re-issue of the same recommendation with a new date ID must not churn history or events."""
+    events: list[tuple[str, dict[str, Any]]] = []
+    hass = SimpleNamespace(bus=SimpleNamespace(async_fire=lambda name, payload: events.append((name, payload))))
+    advisor = PredictiveAdvisor(_coordinator(hass=hass))
+
+    day1 = _recommendation(id="curve_a_lower_20261018", created_at=T0)
+    assert advisor.submit(day1) is True
+    assert advisor.mark("curve_a_lower_20261018", RecommendationStatus.VIEWED) is True
+    events.clear()
+
+    day2 = _recommendation(
+        id="curve_a_lower_20261019",
+        created_at=T0 + timedelta(days=1),
+    )
+    assert advisor.submit(day2) is False
+    assert advisor.history == ()
+    assert events == []
+    active = advisor.active_recommendations
+    assert len(active) == 1
+    assert active[0].id == "curve_a_lower_20261019"
+    assert active[0].created_at == T0
+    assert active[0].status is RecommendationStatus.VIEWED
+
+
+def test_mark_and_retract_match_by_topic_across_date_stamps() -> None:
+    """Retracting or marking with today's date-stamped ID finds yesterday's active entry for the same topic."""
+    advisor = PredictiveAdvisor(_coordinator())
+    advisor.submit(_recommendation(id="anomaly_flow_rate_low_20261018", created_at=T0))
+    advisor.submit(_recommendation(id="curve_a_lower_20261018", created_at=T0))
+
+    assert advisor.mark("curve_a_lower_20261019", RecommendationStatus.VIEWED) is True
+    assert advisor.retract("anomaly_flow_rate_low_20261019") is True
+    assert [r.id for r in advisor.active_recommendations] == ["curve_a_lower_20261018"]
+    assert advisor.active_recommendations[0].status is RecommendationStatus.VIEWED
+    assert len(advisor.history) == 1
+    assert advisor.history[0].id == "anomaly_flow_rate_low_20261018"

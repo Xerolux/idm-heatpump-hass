@@ -261,7 +261,7 @@ class RoomTempForwarder:
 
     async def async_forward_all(self) -> None:
         async with self._forward_lock:
-            for entity_id in self._config.entities.values():
+            for entity_id in dict.fromkeys(self._config.entities.values()):
                 if entity_id:
                     await self._async_forward_entity_locked(entity_id)
 
@@ -352,6 +352,15 @@ class RoomTempForwarder:
             self._connection_down = False
         except Exception as err:
             error_kind = classify_write_error(err)
+            if error_kind == "write_cooldown_active":
+                _LOGGER.debug(
+                    "Skipping IDM %s forwarding from %s to %s: write cooldown active (%s)",
+                    self._value_label,
+                    entity_id,
+                    reg.name,
+                    write_error_detail(err),
+                )
+                return
             if error_kind == "write_connection_failed" and self._connection_down:
                 _LOGGER.debug("IDM %s forwarding still paused: no Modbus connection", self._value_label)
                 return
@@ -544,6 +553,14 @@ class HumidityForwarder:
             self._connection_down = False
         except Exception as err:
             error_kind = classify_write_error(err)
+            if error_kind == "write_cooldown_active":
+                _LOGGER.debug(
+                    "Skipping IDM humidity forwarding from %s to %s: write cooldown active (%s)",
+                    entity_id,
+                    reg.name,
+                    write_error_detail(err),
+                )
+                return
             if error_kind == "write_connection_failed" and self._connection_down:
                 _LOGGER.debug("IDM humidity forwarding still paused: no Modbus connection")
                 return

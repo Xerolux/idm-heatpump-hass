@@ -309,6 +309,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._web_alive: bool | None = None
         self._last_connection_state: str | None = None
         self._unused_registers: set[str] = set()
+        self._web_fallback_registers: set[str] = set()
         self._unused_module_suggestion_seconds = unused_module_suggestion_seconds
         self._solar_unused_since: float | None = None
         self._solar_suggestion_dismissed: bool = False
@@ -351,6 +352,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # (#537). The write path therefore only cancels while the task is
         # still in its sleep phase.
         self._confirmation_refresh_running = False
+        self._refreshing_confirmation_tasks: set[asyncio.Task[None]] = set()
         self._write_timestamps: dict[int, float] = {}
         self._last_write_error: dict[str, Any] | None = None
         self._web_variant_conflict_logged = False
@@ -830,7 +832,14 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
                 return True
         return False
 
-    def _apply_web_not_present_fallback(self, data: dict[str, Any]) -> dict[str, Any]:
+    @property
+    def web_fallback_registers(self) -> set[str]:
+        """Return registers whose not-present Modbus reading was filled from the web supplement."""
+        return set(self._web_fallback_registers)
+
+    def _apply_web_not_present_fallback(
+        self, data: dict[str, Any], *, from_modbus_poll: bool = False
+    ) -> dict[str, Any]:
         """Fill registers that report "not present" from the web supplement (#516).
 
         In auto mode the Modbus poll owns register values, and an existing
@@ -844,9 +853,13 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """
         supplement = self._web_supplement
         if supplement is None or self.update_interval is None:
+            if from_modbus_poll:
+                self._web_fallback_registers.clear()
             return data
         from .web_data import web_to_register_value
 
+        if from_modbus_poll:
+            self._web_fallback_registers.clear()
         replaced: list[str] = []
         for name, entry in (supplement.sensor_values or {}).items():
             register_name = web_to_register_value(name)
@@ -855,8 +868,11 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             value = getattr(entry, "native_value", None)
             if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
                 continue
-            if self._register_reports_not_present(register_name, data[register_name], data):
+            if (
+                not from_modbus_poll and register_name in self._web_fallback_registers
+            ) or self._register_reports_not_present(register_name, data[register_name], data):
                 data[register_name] = value
+                self._web_fallback_registers.add(register_name)
                 replaced.append(f"{name}->{register_name}")
         if replaced:
             _LOGGER.debug("Web supplement filled not-present registers: %s", ", ".join(sorted(replaced)))
@@ -1331,7 +1347,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # coordinator replaces self.data with this new Modbus snapshot.
         data.update(self._web_metadata_data())
 
-        data = self._apply_web_not_present_fallback(data)
+        data = self._apply_web_not_present_fallback(data, from_modbus_poll=True)
 
         new_unused_registers: set[str] = set()
         for reg_name, value in data.items():
@@ -1665,7 +1681,12 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         # flight; merging into a stale snapshot would drop those register values.
         live_data = cast(dict[str, Any] | None, getattr(self, "data", None))
         if live_data is not None:
-            self.data = {**live_data, **self._web_metadata_data()}
+            merged = self._apply_web_not_present_fallback({**live_data, **self._web_metadata_data()})
+            if self.update_interval is not None:
+                self._unused_registers = {
+                    reg_name for reg_name, value in merged.items() if self.is_register_unused(reg_name, value)
+                }
+            self.data = merged
         if self.update_interval is None:
             # Web-only operation: the web snapshot is the sole data source, so
             # the register bridge replaces (not merges into) the snapshot -
@@ -1722,13 +1743,19 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
     async def _delayed_refresh(self, delay: float = 0.5) -> None:
         try:
             await asyncio.sleep(delay)
+            current = asyncio.current_task()
+            if current is not None:
+                self._refreshing_confirmation_tasks.add(current)
             self._confirmation_refresh_running = True
             self._refresh_is_on_demand = True
             try:
                 await self.async_request_refresh()
             finally:
-                self._refresh_is_on_demand = False
-                self._confirmation_refresh_running = False
+                if current is not None:
+                    self._refreshing_confirmation_tasks.discard(current)
+                still_running = bool(self._refreshing_confirmation_tasks)
+                self._refresh_is_on_demand = still_running
+                self._confirmation_refresh_running = still_running
         except asyncio.CancelledError:
             pass
 
@@ -2073,7 +2100,10 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.async_update_listeners()
         if confirm and not is_external_power_measurement(reg.name):
             old_task = self._delayed_refresh_task
-            if old_task is not None and not old_task.done() and not self._confirmation_refresh_running:
+            old_refreshing = old_task in self._refreshing_confirmation_tasks or (
+                self._confirmation_refresh_running and not self._refreshing_confirmation_tasks
+            )
+            if old_task is not None and not old_task.done() and not old_refreshing:
                 # Cancel only the sleep phase: a cancellation landing inside
                 # the refresh makes the coordinator record a silent failed
                 # update and every entity flaps unavailable (#537).
@@ -2210,12 +2240,15 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         the coordinator alive next to the one a reload had just created.
         """
         await super().async_shutdown()
-        task = self._delayed_refresh_task
-        if task is not None and not task.done():
-            task.cancel()
-            try:
-                await task
-            except asyncio.CancelledError:
-                pass
+        tasks = set(self._refreshing_confirmation_tasks)
+        if self._delayed_refresh_task is not None:
+            tasks.add(self._delayed_refresh_task)
+        for task in tasks:
+            if not task.done():
+                task.cancel()
+                try:
+                    await task
+                except asyncio.CancelledError:
+                    pass
         # Release any held web client so the persistent connection is closed.
         await self._web_client_pool.close()

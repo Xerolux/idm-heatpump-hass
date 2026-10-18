@@ -978,3 +978,26 @@ class TestResilienceAndEdges:
 
     def test_incoming_coercion_takes_a_bool(self):
         assert _coerce_incoming(True, SYSTEM_MODE) == 1
+
+    async def test_workers_use_async_create_background_task_when_available(self):
+        created_names: list[str] = []
+
+        class _HassWithBg:
+            def __init__(self, base) -> None:
+                self.config = base.config
+                self.services = base.services
+                self.bus = base.bus
+
+            def async_create_background_task(self, target, name: str) -> asyncio.Task[None]:
+                created_names.append(name)
+                return asyncio.create_task(target)
+
+        base = _make_hass()
+        base.services.async_call = AsyncMock(side_effect=RuntimeError("knx starting"))
+        hass = _HassWithBg(base)
+        bridge = KnxBridge(hass, _make_coordinator(), _config(), entry_id="entry1")  # type: ignore[arg-type]
+
+        await bridge.async_start()
+        assert "idm_heatpump_knx_register_entry1" in created_names
+        assert "idm_heatpump_knx_send_entry1" in created_names
+        await bridge.async_stop()
