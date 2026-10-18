@@ -15,6 +15,27 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b8] - 2026-10-18
+
+The heat-sink flow rate is finally read with the datatype the controller
+actually speaks: field readings proved register 1072 is a word-swapped
+FLOAT32, not the UCHAR of the official IDM doc.
+
+### 🐛 Bugfixes
+
+- **Heat-sink flow rate (1072) read as word-swapped FLOAT32** (discussion
+  #516, via `idm-heatpump-api` 2.14.4): the official IDM register doc lists
+  the register as UCHAR, but two independent field reads proved a 32-bit
+  word-swapped float — a direct HA modbus `float32` read with word swap
+  returns plausible L/min on a plant with a live flow signal, and plants
+  without a plate heat exchanger answer the -1.0 float pattern. The UCHAR
+  decode read one byte of the float's low word, which produced jumping,
+  far-too-high values while the charging pump ran (aivatco's report) and a
+  spurious 0.0 L/min on no-TWT plants. Real flow values now display
+  correctly; not-present plants report unavailable and the web flowmeter
+  fallback keeps filling them. The known-limitations pages and the generated
+  register reference reflect the corrected type.
+
 ## [0.23.0-b7] - 2026-10-18
 
 The predictive advisor now learns the building model only from space heating,

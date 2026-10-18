@@ -5,6 +5,18 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b8 — 2026-10-18
+
+Der Durchfluss der Wärmesenke wird jetzt mit dem Datentyp gelesen, den der
+Regler tatsächlich spricht: Feldmessungen (Diskussion #516) haben bewiesen,
+dass Register 1072 ein wortgetauschtes FLOAT32 ist — nicht UCHAR, wie die
+offizielle IDM-Doku angibt. Ein direkter HA-Modbus-Sensor (float32 mit
+Worttausch) lieferte plausible Werte, während die UCHAR-Dekodierung der
+Integration wild springende Werte zeigte: Sie las nur ein Byte des
+Float-Low-Words. Pinnt `idm-heatpump-api` 2.14.4: Echte Durchflusswerte
+werden korrekt angezeigt, Anlagen ohne TWT bleiben nicht verfügbar, und der
+Web-Durchfluss-Fallback füllt sie weiter auf.
+
 ## v0.23.0-b7 — 2026-10-18
 
 Das Gebäudemodell lernt nur bei reinem Heizbetrieb und aktivem Heizkreis
