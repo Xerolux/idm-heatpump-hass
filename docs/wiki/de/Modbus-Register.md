@@ -183,7 +183,7 @@ Die deutsche Beschreibung dient der Identifikation; der Registername in Codeform
 | 1066–1067 | Ladefühler Temperatur | `charging_sensor_temp` | FLOAT | °C | R | — |
 | 1068–1069 | Rücklauftemperatur Wärmesenke | `heat_sink_return_temp` | FLOAT | °C | R | Navigator 10 |
 | 1070–1071 | Vorlauftemperatur Wärmesenke | `heat_sink_flow_temp` | FLOAT | °C | R | Navigator 10 |
-| 1072 | Durchfluss Wärmesenke (B2) | `heat_sink_flow_rate` | UCHAR | L/min | R | Navigator 10 |
+| 1072–1073 | Durchfluss Wärmesenke (B2) | `heat_sink_flow_rate` | FLOAT | L/min | R | Navigator 10 |
 | 1074 | Ladepumpe Wärmesenke | `heat_sink_charging_pump_signal` | INT16 | % | R | Navigator 10 |
 | 1086–1087 | Grundwassereintrittstemperatur 1 | `groundwater_inlet_temp_1` | FLOAT | °C | R | Navigator 10 |
 | 1088–1089 | Grundwassereintrittstemperatur 2 | `groundwater_inlet_temp_2` | FLOAT | °C | R | Navigator 10 |
@@ -1022,8 +1022,8 @@ Die Regler Navigator 1.0/1.7 verwenden ein anderes Registerlayout: Dieselbe Adre
 | 2148 | Bivalenzpunkt 2 | `bivalence_point_2_17` | INT16 | °C | RW · EEPROM |  |
 | 2150 | Betriebsart Solar | `solar_operating_mode_17` | UINT16 | — | RW · EEPROM |  |
 | 2152–2153 | Warmwasser Sollwert | `dhw_setpoint` | FLOAT | °C | RW · EEPROM |  |
-| 3000 | Fehlerquittierung | `error_acknowledge` | BOOL | — | W · write-only |  |
-| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | W · write-only |  |
+| 3000 | Fehlerquittierung | `error_acknowledge` | BOOL | — | W · nur schreibend |  |
+| 3003 | Anforderung Vorrangladung | `demand_dhw_17` | BOOL | — | W · nur schreibend |  |
 | 4122–4123 | Elektrische Leistungsaufnahme Wärmepumpe | `power_consumption_hp` | FLOAT | kW | R | PV-Supplement |
 
 <!-- END GENERATED REGISTER REFERENCE -->
