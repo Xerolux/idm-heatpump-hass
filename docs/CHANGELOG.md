@@ -15,7 +15,13 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-### Fixed
+## [0.23.0-b7] - 2026-10-18
+
+The predictive advisor now learns the building model only from space heating,
+keeping hot-water charges and inactive circuits out of its estimates. This beta
+also preserves a complete site balance when forwarding external power values.
+
+### 🐛 Bugfixes
 
 - **Building-model learning excludes DHW and inactive circuits** (#546):
   heat-loss and flow-curve regressions now require exclusive space heating
@@ -28,6 +34,26 @@ All notable changes to this project will be documented in this file.
   household-consumption write instead of silently omitting battery flow.
   Independent PV and surplus forwarding continue and derivation resumes when
   the battery source recovers.
+
+### 💼 Maintenance
+
+- **Deterministic diagnostics privacy tests**: the web-status fixture now
+  models an absent status frame explicitly, preventing random mock memory
+  addresses from triggering the PIN-redaction assertion.
+
+### Known limitations
+
+- **One-time building-model relearning**: existing heat-loss and flow-curve
+  regressions and derived thermal capacity are reset on upgrade. COP data,
+  daily baselines and other statistics remain available.
+- **Controller-side battery SOC resets** (#493) remain under investigation
+  with IDM. This beta retains the cyclic GLT refresh and does not claim to
+  resolve that firmware-specific observation.
+
+### ❤️ Thanks
+
+- Thanks to @dnamat88 for the detailed building-model investigation (#546),
+  and @7weazel7 for validating the grid-meter mapping and its follow-ups (#519).
 
 ## [0.23.0-b6] - 2026-10-18
 
