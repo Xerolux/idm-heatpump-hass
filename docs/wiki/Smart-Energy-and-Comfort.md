@@ -212,6 +212,10 @@ converted automatically. The configuration dialog rejects a grid meter that
 has nothing left to derive (an explicit surplus sensor together with an
 explicit house sensor, or a missing PV production source).
 
+If a mapped battery-power source becomes invalid or unavailable, derived
+household consumption is skipped until it recovers. It is never calculated
+from an incomplete site balance; independent surplus and PV inputs continue.
+
 The manager does not control the heating curve or the electric heater. The
 optional tariff sensor affects cost accounting only; tariff-controlled heat
 pump writes are not enabled.

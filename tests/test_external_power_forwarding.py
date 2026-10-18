@@ -599,3 +599,18 @@ async def test_connection_outage_is_reported_once_until_recovery(caplog: pytest.
         await forwarder.async_forward()
 
     assert len([record for record in caplog.records if "Could not forward" in record.getMessage()]) == 2
+
+
+@pytest.mark.parametrize("battery", [None, _state("unavailable"), _state("unknown"), _state("nan"), _state(5, "%")])
+async def test_invalid_mapped_battery_skips_house_derivation_and_recovers(battery: object) -> None:
+    states = {"sensor.grid": _state(-1.5), "sensor.pv": _state(3.0), "sensor.bat": battery}
+    forwarder, coordinator = _forwarder(
+        states,
+        {"grid_power": "sensor.grid", "pv_production": "sensor.pv", "battery_discharge": "sensor.bat"},
+    )
+    await forwarder.async_forward()
+    assert _writes(coordinator) == {"pv_production": 3.0, "pv_surplus": 1.5}
+    states["sensor.bat"] = _state(0.4)
+    coordinator.async_write_register.reset_mock()
+    await forwarder.async_forward()
+    assert _writes(coordinator)["house_consumption"] == 1.9

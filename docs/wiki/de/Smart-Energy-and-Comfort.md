@@ -234,6 +234,11 @@ Netzleistungssensor ab, für den keine Ableitung übrig bleibt (expliziter
 Überschusssensor zusammen mit explizitem Verbrauchssensor oder fehlende
 PV-Produktionsquelle).
 
+Wird eine zugeordnete Batterieleistungsquelle ungültig oder nicht verfügbar,
+entfällt der berechnete Hausverbrauch bis zu ihrer Rückkehr. Eine unvollständige
+Leistungsbilanz wird nicht verwendet; unabhängige Überschuss- und PV-Werte
+werden weitergeleitet.
+
 Der Manager steuert weder die Heizkurve noch die elektrische Zusatzheizung.
 Der optionale Tarifsensor beeinflusst nur die Kostenrechnung;
 tarifgesteuerte Schreibzugriffe auf die Wärmepumpe sind nicht aktiviert.

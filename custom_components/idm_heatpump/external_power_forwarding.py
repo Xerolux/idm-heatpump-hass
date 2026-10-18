@@ -243,8 +243,9 @@ class ExternalPowerForwarder:
                 house = production + grid_import
                 if entities.get("battery_discharge"):
                     discharge = self._value("battery_discharge", self._source_state(entities["battery_discharge"]))
-                    if discharge is not None:
-                        house += float(discharge)
+                    if discharge is None:
+                        return derived
+                    house += float(discharge)
                 # Valid sources can still be mutually inconsistent (an
                 # inverter reporting zero while the battery feeds the grid);
                 # household consumption has no meaningful negative value.
