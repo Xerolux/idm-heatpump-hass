@@ -134,6 +134,19 @@ run **Reconfigure → Change connection settings** to perform fresh detection.
 Web authentication and general web connection failures create separate repair
 issues. Neither failure stops working Modbus polling.
 
+### Only one Modbus client at a time
+
+The Navigator's Modbus TCP server serves a single active connection. While
+Home Assistant (or any other client) is connected, a second connection — a
+probe script, a Modbus debugging tool, another integration — is not rejected
+outright: it can read the base block, but optional blocks such as the
+heat-sink sensors answer the not-present sentinel (`-1.0`) for it, and the
+values it measures look "broken" while the primary client keeps receiving
+live data. To test the API or probe registers directly on your own plant,
+stop the integration first (disable the config entry or stop Home Assistant),
+and reconnect it afterwards. Never run a second permanent client next to this
+integration.
+
 ### Web-only mode exposes fewer entities than expected
 
 This is intentional. Web-only mode loads only read-only sensors returned by the

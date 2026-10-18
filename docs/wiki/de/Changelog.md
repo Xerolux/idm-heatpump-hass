@@ -5,6 +5,23 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b9 — 2026-10-18
+
+Nachlese zu b8, inzwischen auf zwei Anlagen live bestätigt (Diskussion #516 —
+der Melder dort hat auch aufgespürt, woher das UCHAR kam: Die offizielle Doku
+hat es mit den Revisionen Navigator 2.0 rev 12 → 13 und Navigator 10 rev 0 → 1
+auf FLOAT korrigiert). Die Energy-Manager-Optionsfelder fehlten in beiden
+Übersetzungsdateien, sodass der schlichte Options-Schritt in Deutsch und
+Englisch rohe Feldnamen zeigte — jetzt übersetzt mit der Terminologie der
+geführten Seiten, plus Parity-Guards, die den Build fehlschlagen lassen, wenn
+`strings.json`, `en.json` und `de.json` auseinanderdriften oder die deutsche
+Register-Referenz eine englische Regenerierung verpasst. Die
+Fehlerbehandlungsseiten dokumentieren außerdem, dass der Navigator nur einen
+Modbus-Client gleichzeitig bedient: Eine zweite Verbindung liest `-1.0`-
+Sentinels auf optionalen Blöcken, während der primäre Client Live-Daten
+behält — Direkttests brauchen die gestoppte Integration (live auf der
+Referenzanlage bestätigt, deren Durchfluss-Entität jetzt echte L/min liest).
+
 ## v0.23.0-b8 — 2026-10-18
 
 Der Durchfluss der Wärmesenke wird jetzt mit dem Datentyp gelesen, den der

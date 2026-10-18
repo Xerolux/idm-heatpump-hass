@@ -137,6 +137,20 @@ eine neue Erkennung durchzuführen.
 Web-Authentifizierungsfehler und allgemeine Web-Verbindungsfehler erzeugen getrennte
 Reparaturprobleme. Keiner von beiden stoppt eine funktionierende Modbus-Abfrage.
 
+### Nur ein Modbus-Client zur gleichen Zeit
+
+Der Modbus-TCP-Server des Navigators bedient genau eine aktive Verbindung.
+Solange Home Assistant (oder ein anderer Client) verbunden ist, wird eine
+zweite Verbindung — ein Probe-Skript, ein Modbus-Debug-Tool, eine weitere
+Integration — nicht einfach abgewiesen: Sie kann den Basisblock lesen, aber
+optionale Blöcke wie die Wärmesenken-Sensoren antworten ihr mit dem
+Nicht-vorhanden-Sentinel (`-1.0`). Die damit gemessenen Werte sehen „kaputt"
+aus, während der primäre Client weiterhin Live-Daten erhält. Wer die API
+testen oder Register direkt an der eigenen Anlage auslesen will, stoppt dafür
+zuerst die Integration (Config-Eintrag deaktivieren oder Home Assistant
+stoppen) und verbindet sie danach wieder. Kein zweiter dauerhafter Client
+neben dieser Integration betreiben.
+
 ### Der reine Web-Betrieb stellt weniger Entitäten bereit als erwartet
 
 Der Funktionsumfang hängt vom Navigator und den bereitgestellten Web-Daten ab.

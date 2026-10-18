@@ -83,10 +83,11 @@ Ladepumpen-Signal) existiert nur an Anlagen mit Trennwärmetauscher. Ohne ihn
 meldet der Regler den Nicht-vorhanden-Sentinel (`-1.0`) für den ganzen Block,
 und die Entities zeigen korrekt *nicht verfügbar*.
 
-Das Durchfluss-Register (`heat_sink_flow_rate`, Adresse 1072) ist in der
-offiziellen IDM-Doku als UCHAR gelistet — Feldmessungen (Diskussion #516)
-haben aber bewiesen, dass der Regler dort ein **wortgetauschtes FLOAT32**
-ausliefert. Vor Integration 0.23.0-b8 (idm-heatpump-api 2.14.4) las die
+Das Durchfluss-Register (`heat_sink_flow_rate`, Adresse 1072) ist in den
+älteren Revisionen der offiziellen IDM-Doku als UCHAR gelistet (Navigator 2.0
+bis rev 12, Navigator 10 rev 0); neuere Revisionen haben es auf FLOAT
+korrigiert — passend zum **wortgetauschten FLOAT32**, das Feldmessungen
+(Diskussion #516) nachgewiesen haben. Vor Integration 0.23.0-b8 (idm-heatpump-api 2.14.4) las die
 UCHAR-Dekodierung ein Byte des Low-Words des Floats: Auf Anlagen ohne
 Trennwärmetauscher erschien ein scheinbares **0,0 L/min**, auf Anlagen mit
 liveem Durchfluss signal wild springende, viel zu hohe Werte. Das Register
