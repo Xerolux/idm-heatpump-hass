@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b12] - 2026-10-19
+
 ### Added
 
 - **PV forecasts from the core Forecast.Solar integration**: the advisor's
