@@ -5,6 +5,12 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b12 — 2026-10-19
+
+The advisor can now read its PV forecast from the core Forecast.Solar
+integration (no account, no API key): point the *Predictive advisor PV
+forecast sensor* option at one of its sensors.
+
 ## v0.23.0-b11 — 2026-10-19
 
 Hotfix found live on the reference plant during the b10 verification: the
