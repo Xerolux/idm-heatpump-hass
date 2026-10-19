@@ -15,6 +15,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The advisor efficiency-score sensor never published its score**: the
+  engine rounded the score to a float while the sensor accepts only ints,
+  so `advisor_efficiency_score` stayed `unavailable` on real plants even
+  with a computed score (visible in the health components, which showed
+  the efficiency value all along). Found live on the reference plant
+  during the b10 verification; earlier field passes had read the missing
+  sensor as expected lifecycle gating. The engine now publishes the score
+  as an int.
+
 ## [0.23.0-b10] - 2026-10-19
 
 Advisor review pass (forecast time path, recommendation lifecycle, model
