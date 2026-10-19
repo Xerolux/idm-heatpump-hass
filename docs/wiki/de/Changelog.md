@@ -5,6 +5,12 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b11 — 2026-10-19
+
+Hotfix, live auf der Referenzanlage während der b10-Verifikation gefunden:
+Der Advisor-Effizienzwert-Sensor hat seinen Wert nie veröffentlicht (die
+Engine rundete auf einen Float, der Sensor akzeptiert nur Ganzzahlen).
+
 ## v0.23.0-b10 — 2026-10-19
 
 Advisor-Härtungs-Durchlauf plus Modus-COP: Die Warmwasser-Fensterzeiten
