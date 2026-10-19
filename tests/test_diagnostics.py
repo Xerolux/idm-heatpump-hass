@@ -709,3 +709,92 @@ class TestDiagnosticHelpersEdgeCases:
         assert row["status"] == "web_fallback"
         assert row["value"] == 0.0
         assert row["web_value"] == 33.9
+
+
+class TestAdvisorAndEnergySections:
+    def _runtime(self, mock_hass) -> tuple:
+        from custom_components.idm_heatpump.advisor_analytics import AdvisorAnalytics
+        from custom_components.idm_heatpump.advisor_engine import AdvisorEngine
+        from custom_components.idm_heatpump.energy_statistics import EnergyStatistics
+        from custom_components.idm_heatpump.predictive_advisor import PredictiveAdvisor
+
+        coordinator = MagicMock()
+        coordinator.hass = mock_hass
+        coordinator.data = {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0}
+        coordinator.config_entry = SimpleNamespace(entry_id="entry1", options={})
+        advisor = PredictiveAdvisor(coordinator)
+        advisor._first_observed = datetime(2026, 10, 11, tzinfo=UTC)
+        analytics = AdvisorAnalytics(mock_hass, "entry1")
+        engine = AdvisorEngine(mock_hass, coordinator, advisor, analytics)
+        statistics = EnergyStatistics(mock_hass, "entry1", 30)
+        statistics.heating_electrical_kwh = 10.0
+        statistics.heating_thermal_kwh = 40.0
+        statistics.dhw_electrical_kwh = 5.0
+        statistics.dhw_thermal_kwh = 10.0
+        coordinator.energy_statistics = statistics
+
+        runtime = SimpleNamespace(
+            coordinator=coordinator,
+            predictive_advisor=advisor,
+            advisor_engine=engine,
+        )
+        return runtime, advisor
+
+    async def test_advisor_section_publishes_quality_and_efficiency(self, mock_hass, mock_config_entry) -> None:
+        runtime, _advisor = self._runtime(mock_hass)
+        mock_config_entry.runtime_data = runtime
+        coordinator = runtime.coordinator
+        coordinator.update_interval = timedelta(seconds=30)
+        coordinator.poll_statistics = MagicMock(
+            last_success=None,
+            last_duration=0.2,
+            consecutive_failures=0,
+            total_polls=1,
+            total_failures=0,
+            planned_registers=1,
+            known_registers=1,
+            jitter_percent=0,
+            write_cooldown_seconds=0,
+        )
+        coordinator.registers_count = 1
+        coordinator.model_name = "Navigator 10"
+        coordinator.firmware_version = "1"
+        coordinator.web_supplement = None
+        coordinator.model_conflict_summary = None
+        coordinator.model_info = None
+        coordinator.heating_circuit_types = {}
+        coordinator.sensor_descriptions = []
+        coordinator.binary_sensor_descriptions = []
+        coordinator.number_descriptions = []
+        coordinator.select_descriptions = []
+        coordinator.switch_descriptions = []
+        coordinator.operation_analysis = None
+
+        from custom_components.idm_heatpump.diagnostics import (
+            _energy_statistics_diagnostics,
+            _predictive_advisor_diagnostics,
+        )
+
+        advisor_section = _predictive_advisor_diagnostics(mock_config_entry)
+        assert advisor_section is not None
+        assert advisor_section["stage"] == "recommending"
+        assert advisor_section["usable_fraction"] is None
+        assert "data_quality" in advisor_section
+        assert advisor_section["write_actions"] is False
+        assert "efficiency" in advisor_section  # engine present
+
+        energy_section = _energy_statistics_diagnostics(coordinator)
+        assert energy_section is not None
+        assert energy_section["heating_cop_total"] == 4.0
+        assert energy_section["dhw_cop_total"] == 2.0
+        assert energy_section["heating_electrical_kwh"] == 10.0
+
+    async def test_sections_are_none_without_the_modules(self, mock_hass, mock_config_entry) -> None:
+        from custom_components.idm_heatpump.diagnostics import (
+            _energy_statistics_diagnostics,
+            _predictive_advisor_diagnostics,
+        )
+
+        mock_config_entry.runtime_data = SimpleNamespace(coordinator=MagicMock())
+        assert _predictive_advisor_diagnostics(mock_config_entry) is None
+        assert _energy_statistics_diagnostics(SimpleNamespace(energy_statistics=None)) is None

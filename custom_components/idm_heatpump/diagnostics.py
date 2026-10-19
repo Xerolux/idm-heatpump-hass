@@ -420,7 +420,53 @@ async def async_get_config_entry_diagnostics(hass: HomeAssistant, entry: ConfigE
                 "number_count": len(coordinator.number_descriptions),
                 "select_count": len(coordinator.select_descriptions),
                 "switch_count": len(coordinator.switch_descriptions),
+                "predictive_advisor": _predictive_advisor_diagnostics(entry),
+                "energy_statistics": _energy_statistics_diagnostics(coordinator),
             },
             TO_REDACT,
         ),
+    }
+
+
+def _predictive_advisor_diagnostics(entry: ConfigEntry) -> dict[str, Any] | None:
+    """Advisor observation state and the full per-key quality table.
+
+    The quality counters change with every snapshot, so they deliberately do
+    not live in the status sensor's attributes (recorder churn); diagnostics
+    is their home.
+    """
+    from .predictive_advisor import PredictiveAdvisor
+    from .predictive_advisor_entities import runtime_advisor_engine, runtime_predictive_advisor
+
+    advisor = runtime_predictive_advisor(entry.runtime_data)
+    if not isinstance(advisor, PredictiveAdvisor):
+        return None
+    section: dict[str, Any] = {
+        "stage": advisor.stage,
+        "observation_days": advisor.observation_days,
+        "confidence": advisor.confidence,
+        "usable_fraction": advisor.usable_fraction,
+        "data_quality": advisor.quality_summary(),
+        "active_recommendations": [rec.id for rec in advisor.active_recommendations],
+        "write_actions": False,
+    }
+    engine = runtime_advisor_engine(entry.runtime_data)
+    if engine is not None:
+        section["efficiency"] = engine.efficiency
+    return section
+
+
+def _energy_statistics_diagnostics(coordinator: Any) -> dict[str, Any] | None:
+    """Per-mode COP split of the persistent energy statistics."""
+    statistics = getattr(coordinator, "energy_statistics", None)
+    if statistics is None:
+        return None
+    return {
+        "total_cop": statistics.total_cop,
+        "heating_cop_total": statistics.heating_cop_total,
+        "dhw_cop_total": statistics.dhw_cop_total,
+        "heating_electrical_kwh": round(statistics.heating_electrical_kwh, 2),
+        "heating_thermal_kwh": round(statistics.heating_thermal_kwh, 2),
+        "dhw_electrical_kwh": round(statistics.dhw_electrical_kwh, 2),
+        "dhw_thermal_kwh": round(statistics.dhw_thermal_kwh, 2),
     }

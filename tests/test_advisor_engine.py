@@ -7,9 +7,11 @@ from datetime import UTC, datetime, timedelta
 from types import SimpleNamespace
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
+from zoneinfo import ZoneInfo
 
 import pytest
 
+from custom_components.idm_heatpump import advisor_engine as advisor_engine_module
 from custom_components.idm_heatpump.advisor_analytics import AdvisorAnalytics
 from custom_components.idm_heatpump.advisor_engine import (
     AdvisorEngine,
@@ -41,7 +43,9 @@ from custom_components.idm_heatpump.sensor import async_setup_entry as async_set
 # Anchored to the real clock so the tests never decay: observation stages
 # and status entities compare ``first_observed`` against ``datetime.now``,
 # and a fixed past date flips those assertions one day after it is written.
-T0 = datetime.now(UTC).replace(microsecond=0)
+# Floored to the hour: forecast parsing folds sub-hourly samples onto
+# calendar hours, so the fixtures must sit on hour boundaries.
+T0 = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
 
 
 def _day(offset: float) -> datetime:
@@ -54,6 +58,14 @@ def _hour(offset: int) -> datetime:
 
 def _iso(at: datetime) -> str:
     return at.isoformat()
+
+
+_TEST_ZONE = ZoneInfo("Europe/Berlin")
+
+
+def _pin_local_zone(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Render window times in a fixed zone, independent of the host clock."""
+    monkeypatch.setattr(advisor_engine_module.dt_util, "as_local", lambda value: value.astimezone(_TEST_ZONE))
 
 
 def _engine(
@@ -128,6 +140,13 @@ def test_parse_pv_hourly_kwh_detailed_and_list_shapes() -> None:
 
     assert parse_pv_hourly_kwh(SimpleNamespace(attributes={}), T0) == []
     assert parse_pv_hourly_kwh(None, T0) == []
+    # A list whose entries all fail to parse folds an empty grid.
+    assert (
+        parse_pv_hourly_kwh(
+            SimpleNamespace(attributes={"forecast": [{"period_start": "garbage", "pv_estimate": 1.0}]}), T0
+        )
+        == []
+    )
 
 
 def test_parse_price_hourly_normalizes_cent_and_shapes() -> None:
@@ -159,6 +178,62 @@ def test_best_window_requires_consecutive_hours() -> None:
     lowest = best_window([(_hour(1), 0.30), (_hour(2), 0.10), (_hour(3), 0.20)], hours=3, highest=False)
     assert lowest is not None
     assert round(lowest[1], 2) == 0.20
+
+
+def test_cop_domain_maps_operating_modes() -> None:
+    from custom_components.idm_heatpump.advisor_engine import _cop_domain
+
+    assert _cop_domain(1) == "heating"
+    assert _cop_domain(4) == "dhw"
+    assert _cop_domain(8) == "total"  # defrost
+    assert _cop_domain(9) == "total"  # heating + defrost
+    assert _cop_domain(5) == "total"  # mixed heating + DHW
+    assert _cop_domain(2) == "total"  # cooling
+    assert _cop_domain(0) == "total"
+    assert _cop_domain(-1) == "total"  # not a valid flag combination
+    assert _cop_domain(None) == "total"
+    assert _cop_domain("garbage") == "total"
+
+
+def test_quarter_hour_price_grid_folds_onto_calendar_hours() -> None:
+    """15-minute day-ahead grids must not read as full hours (post-2025 EU)."""
+    quarter_hours = []
+    for hour in range(1, 7):
+        for quarter in range(4):
+            price = 0.40 if hour in (2, 3, 4) else 0.10
+            quarter_hours.append({"start": _iso(_hour(hour) + timedelta(minutes=15 * quarter)), "price": price})
+    state = SimpleNamespace(attributes={"today": quarter_hours})
+    parsed = parse_price_hourly(state, T0)
+    assert len(parsed) == 6
+    # Each hour carries the mean of its quarters (here: all quarters equal).
+    assert [round(value, 2) for _at, value in parsed] == [0.10, 0.40, 0.40, 0.40, 0.10, 0.10]
+    # A 3-hour window over the cheap tail (hours 4-6) sums hours, not slots.
+    window = best_window(parsed, hours=3, highest=False)
+    assert window is not None
+    assert window[0] == _hour(4)
+    assert round(window[1], 2) == 0.20
+
+
+def test_duplicate_price_timestamps_across_attributes_dedupe() -> None:
+    """The same hour under two attribute names must not kill the window."""
+    hours = [{"start": _iso(_hour(i)), "price": 0.40 - 0.05 * i} for i in range(1, 7)]
+    state = SimpleNamespace(attributes={"today": hours, "raw_today": [dict(entry) for entry in hours]})
+    parsed = parse_price_hourly(state, T0)
+    assert len(parsed) == 6
+    assert best_window(parsed, hours=3, highest=False) is not None
+
+
+def test_half_hourly_pv_grid_counts_real_kwh() -> None:
+    """A 30-minute Solcast-style grid contributes half of each kW value."""
+    entries = []
+    for hour in range(1, 7):
+        for half in range(2):
+            entries.append({"period_start": _iso(_hour(hour) + timedelta(minutes=30 * half)), "pv_estimate": 1.0})
+    state = SimpleNamespace(attributes={"forecast": entries})
+    parsed = parse_pv_hourly_kwh(state, T0)
+    assert len(parsed) == 6
+    # 1 kW for 30 min twice = 1 kWh per hour, not 2.
+    assert all(round(kwh, 3) == 1.0 for _at, kwh in parsed)
 
 
 # ----------------------------------------------------------------------
@@ -335,7 +410,8 @@ def _configure_hass(
     engine._hass.states.get = MagicMock(side_effect=lambda entity: states.get(entity))
 
 
-async def test_dhw_window_prefers_pv_forecast() -> None:
+async def test_dhw_window_prefers_pv_forecast(monkeypatch: pytest.MonkeyPatch) -> None:
+    _pin_local_zone(monkeypatch)
     data = {"power_consumption_hp": 2.0}
     engine, advisor, _analytics, _coordinator = _engine(
         data, weather_entity="weather.home", pv_forecast_entity="sensor.pv_forecast"
@@ -352,7 +428,10 @@ async def test_dhw_window_prefers_pv_forecast() -> None:
     assert datetime.fromisoformat(window["start"]) == _hour(4)
     recs = [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.DHW]
     assert len(recs) == 1
-    assert recs[0].recommended_value == f"{_hour(4):%H:%M}-{_hour(7):%H:%M}"
+    # The stored timestamps are UTC; the text is the user's wall clock.
+    assert (
+        recs[0].recommended_value == f"{_hour(4).astimezone(_TEST_ZONE):%H:%M}-{_hour(7).astimezone(_TEST_ZONE):%H:%M}"
+    )
 
 
 async def test_dhw_window_falls_back_to_price_forecast() -> None:
@@ -397,7 +476,9 @@ async def test_plan_joins_heat_demand_pv_price_and_conflict() -> None:
         data, weather_entity="weather.home", pv_forecast_entity="sensor.pv_forecast", price_entity="sensor.price"
     )
     for delta in range(1, 61):
-        analytics.observe_heating(float(delta), 0.2 * delta)  # 200 W/K
+        # Advancing timestamps: each sample carries the hours it represents
+        # (12 min), so the weighted fit has enough effective hours.
+        analytics.observe_heating(float(delta), 0.2 * delta, T0 + timedelta(minutes=12 * delta))  # 200 W/K
     pv = SimpleNamespace(
         attributes={"forecast": [{"period_start": _iso(_hour(i)), "pv_estimate": 0.2 + 0.6 * i} for i in range(1, 7)]}
     )
@@ -521,7 +602,8 @@ def test_producer_entity_factories_gate_on_engine() -> None:
     assert len(binaries) == 1
 
 
-def test_producer_entity_values() -> None:
+def test_producer_entity_values(monkeypatch: pytest.MonkeyPatch) -> None:
+    _pin_local_zone(monkeypatch)
     data = {
         "hp_operating_mode": 1,
         "power_consumption_hp": 2.0,
@@ -550,7 +632,7 @@ def test_producer_entity_values() -> None:
 
     dhw = IdmAdvisorDhwWindowSensor(coordinator, engine)
     engine._dhw_window = {"start": _iso(_hour(4)), "hours": 3, "source": "pv_surplus_forecast"}
-    assert dhw.native_value == f"{_hour(4):%H:%M}-{_hour(7):%H:%M}"
+    assert dhw.native_value == f"{_hour(4).astimezone(_TEST_ZONE):%H:%M}-{_hour(7).astimezone(_TEST_ZONE):%H:%M}"
 
     demand = IdmAdvisorHeatDemandSensor(coordinator, engine)
     engine._plan = {"predicted_heat_demand_kwh": 31.4}
@@ -593,16 +675,18 @@ async def test_platforms_create_producer_entities() -> None:
 # ----------------------------------------------------------------------
 
 
-def test_parse_forecasts_accept_integer_hours_and_naive_timestamps() -> None:
+def test_parse_forecasts_accept_integer_hours_and_reject_naive_timestamps() -> None:
     # Integer keys are hour offsets from now (PVForecast detailed shape).
     detailed = SimpleNamespace(attributes={"detailed_forecast": {2: 1.25}})
     assert parse_pv_hourly_kwh(detailed, T0) == [
         (T0.replace(minute=0, second=0, microsecond=0) + timedelta(hours=2), 1.25)
     ]
 
-    # Naive ISO timestamps are interpreted as UTC and stay inside the horizon.
+    # Naive ISO timestamps are rejected, not silently read as UTC: feeds
+    # stamping naive local time would otherwise shift the whole series.
     naive_stamp = _hour(3).replace(tzinfo=None).isoformat()
-    assert parse_hourly_temperatures([{"datetime": naive_stamp, "temperature": 9.0}], T0) == [(_hour(3), 9.0)]
+    assert parse_hourly_temperatures([{"datetime": naive_stamp, "temperature": 9.0}], T0) == []
+    assert parse_price_hourly(SimpleNamespace(attributes={"today": [{"start": naive_stamp, "price": 0.2}]}), T0) == []
 
 
 def test_parse_forecasts_skip_non_mapping_entries() -> None:
@@ -735,7 +819,7 @@ def test_heating_curve_producer_recommends_raise_and_notes_flow_excess() -> None
     _seed_days(analytics, "room_deviation_a", -0.9, days=8)
     # Learned flow curve: flow falls 0.5 K per K outdoor, so 40 degC at 0 degC.
     for outdoor in range(60):
-        analytics.observe_flow_pair(float(outdoor), 40.0 - 0.5 * outdoor)
+        analytics.observe_flow_pair(float(outdoor), 40.0 - 0.5 * outdoor, T0 + timedelta(minutes=12 * outdoor))
 
     engine.observe(now=T0)
 
@@ -777,6 +861,83 @@ async def test_dhw_price_window_without_weather_uses_cop_fallback() -> None:
     assert window["source"] == "electricity_price_forecast"
     assert window["heat_cost_eur_per_kwh"] < 0.1
     assert any(rec.category is RecommendationCategory.DHW for rec in advisor.active_recommendations)
+
+
+async def test_dhw_price_window_prefers_the_observed_dhw_cop() -> None:
+    data = {"power_consumption_hp": 2.0}
+    engine, advisor, analytics, _coordinator = _engine(data, price_entity="sensor.price")
+    # Observed DHW charging runs at COP 2.0 — well below the map's heating
+    # expectation; the heat cost must be scored with the honest number.
+    for _ in range(5):
+        analytics.observe_cop_sample(5.0, 60.0, thermal_kw=2.0, electric_kw=1.0, hours=0.2, domain="dhw")
+    price = SimpleNamespace(
+        attributes={
+            "unit_of_measurement": "EUR/kWh",
+            "today": [{"start": _iso(_hour(i)), "price": 0.40 - 0.05 * i} for i in range(1, 7)],
+        }
+    )
+    _configure_hass(engine, price=price)
+
+    await engine.async_refresh_forecasts(now=T0)
+
+    window = engine.dhw_window
+    assert window is not None
+    assert window["assumed_cop"] == 2.0
+    # Cheapest hours 4-6 at 0.20/0.15/0.10 EUR with COP 2 -> mean 0.075.
+    assert window["heat_cost_eur_per_kwh"] == pytest.approx(0.075, abs=0.001)
+    assert any(rec.category is RecommendationCategory.DHW for rec in advisor.active_recommendations)
+
+
+async def test_dhw_window_confidence_treats_zero_quality_as_zero() -> None:
+    data = {"power_consumption_hp": 2.0}
+    engine, advisor, _analytics, _coordinator = _engine(data, price_entity="sensor.price")
+    # Every watched sample implausible: usable_fraction is 0.0, which must
+    # lower the confidence, not read as "full quality" via `or`.
+    for _ in range(3):
+        advisor.observe(now=T0)
+    advisor._quality = {
+        key: type(quality)(samples=10, usable=0, unavailable=0, implausible=10, frozen=0)
+        for key, quality in advisor._quality.items()
+    }
+    assert advisor.usable_fraction == 0.0
+    price = SimpleNamespace(
+        attributes={
+            "unit_of_measurement": "EUR/kWh",
+            "today": [{"start": _iso(_hour(i)), "price": 0.40 - 0.05 * i} for i in range(1, 7)],
+        }
+    )
+    _configure_hass(engine, price=price)
+    await engine.async_refresh_forecasts(now=T0)
+
+    recs = [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.DHW]
+    assert recs
+    assert recs[0].confidence == 0.25  # 0.55 * 0.0 + 0.25
+
+
+def test_health_penalties_match_reason_codes_not_titles() -> None:
+    engine, advisor, analytics, _coordinator = _engine({"power_consumption_hp": 2.0})
+    for days_ago in range(1, 4):
+        at = T0 - timedelta(days=days_ago)
+        analytics.observe_metric("heat_sink_flow_rate", 1.2, at)
+        analytics.observe_metric("compressor_starts", 10.0, at, mode="max")
+    # A warning finding whose title shares no keyword with the domain name
+    # must still penalize it through its machine reason code.
+    from custom_components.idm_heatpump.predictive_advisor import Recommendation as _Recommendation
+    from custom_components.idm_heatpump.predictive_advisor import RecommendationCategory as _Category
+    from custom_components.idm_heatpump.predictive_advisor import RecommendationSeverity as _Severity
+
+    advisor.submit(
+        _Recommendation(
+            id=f"anomaly_flow_rate_low_{T0:%Y%m%d}",
+            category=_Category.ANOMALY,
+            severity=_Severity.WARNING,
+            title="Volumenstrom weit unterBaseline",
+            reasons=("heat_circle_flow_below_baseline",),
+        )
+    )
+    health = engine.health
+    assert health["components"]["hydraulics"] == 70.0
+    assert health["components"]["compressor"] == 100.0
 
 
 # ----------------------------------------------------------------------

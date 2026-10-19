@@ -40,6 +40,10 @@ _STORAGE_VERSION: Final = 1
 _STORAGE_SAVE_DELAY: Final = 10.0
 _MAX_HISTORY: Final = 50
 _RECOMMENDATION_TTL: Final = timedelta(days=7)
+# Quality counters change on every snapshot; persisting them on every poll
+# would write the store roughly every scan interval. Losing a few minutes of
+# counters to a crash is harmless, so their saves are throttled.
+_COUNTER_SAVE_INTERVAL: Final = timedelta(minutes=10)
 
 # Observation stages (spec section 15): nothing is recommended until the
 # advisor has seen the plant for a while. Day 1 is pure collection, days 1–7
@@ -278,6 +282,20 @@ class Recommendation:
     reasons: tuple[str, ...] = ()
     created_at: datetime = field(default_factory=_utcnow)
     status: RecommendationStatus = RecommendationStatus.NEW
+    refreshed_at: datetime | None = None
+
+    def __post_init__(self) -> None:
+        # The TTL runs against ``refreshed_at`` so a recommendation that is
+        # re-issued daily lives as long as its condition holds, not seven
+        # days after its first-ever issue.
+        if self.refreshed_at is None:
+            object.__setattr__(self, "refreshed_at", self.created_at)
+
+    @property
+    def effective_refreshed_at(self) -> datetime:
+        """``refreshed_at``, falling back to ``created_at`` for legacy records."""
+        refreshed = self.refreshed_at
+        return refreshed if refreshed is not None else self.created_at
 
     def to_dict(self) -> dict[str, Any]:
         """Return the JSON-serializable form used for storage and events."""
@@ -294,6 +312,7 @@ class Recommendation:
             "reasons": list(self.reasons),
             "created_at": self.created_at.isoformat(),
             "status": str(self.status),
+            "refreshed_at": self.effective_refreshed_at.isoformat(),
         }
 
     def summary(self) -> dict[str, Any]:
@@ -342,6 +361,10 @@ def recommendation_from_dict(value: Any) -> Recommendation | None:
     reasons = value.get("reasons")
     if not isinstance(reasons, list):
         reasons = []
+    created_at = _parse_datetime(value.get("created_at"))
+    if created_at is None:
+        created_at = _utcnow()
+    refreshed_at = _parse_datetime(value.get("refreshed_at"))
     return Recommendation(
         id=rec_id,
         category=category,
@@ -353,8 +376,9 @@ def recommendation_from_dict(value: Any) -> Recommendation | None:
         unit=value.get("unit") if isinstance(value.get("unit"), str) else None,
         confidence=clamp_confidence(float(confidence)),
         reasons=tuple(str(reason) for reason in reasons),
-        created_at=created_at if created_at is not None else _utcnow(),
+        created_at=created_at,
         status=status,
+        refreshed_at=refreshed_at if refreshed_at is not None else created_at,
     )
 
 
@@ -631,6 +655,7 @@ class PredictiveAdvisor:
         self._active: dict[str, Recommendation] = {}
         self._history: deque[Recommendation] = deque(maxlen=_MAX_HISTORY)
         self._quality: dict[str, _KeyQuality] = {}
+        self._counter_save_at: datetime | None = None
 
     # ------------------------------------------------------------------
     # Observation and data quality
@@ -724,7 +749,8 @@ class PredictiveAdvisor:
         if not isinstance(data, Mapping) or not data:
             return
         current = now if now is not None else _utcnow()
-        if self._first_observed is None:
+        first_snapshot = self._first_observed is None
+        if first_snapshot:
             self._first_observed = current
         for key in self._watched_keys:
             low, high = _ROOM_TEMP_RANGE if key in self._room_keys else _PLAUSIBILITY[key]
@@ -740,8 +766,18 @@ class PredictiveAdvisor:
                 frozen_sensitive=key in _FROZEN_SENSITIVE,
             )
             quality.record(classification, value, current)
-        self._expire_recommendations(current)
-        self._schedule_save()
+        expired = self._expire_recommendations(current)
+        if first_snapshot or expired:
+            self._counter_save_at = current
+            self._schedule_save()
+        else:
+            self._schedule_counter_save(current)
+
+    def _schedule_counter_save(self, current: datetime) -> None:
+        """Persist the quality counters at most every ten minutes."""
+        if self._counter_save_at is None or current - self._counter_save_at >= _COUNTER_SAVE_INTERVAL:
+            self._counter_save_at = current
+            self._schedule_save()
 
     def quality_summary(self) -> dict[str, dict[str, Any]]:
         """Return per-key sample statistics for diagnostics."""
@@ -830,38 +866,44 @@ class PredictiveAdvisor:
         existing = self._active.get(rec.id)
         if existing is not None and _same_recommendation_content(existing, rec):
             return False
-        superseded_topic_rec: Recommendation | None = None
+        superseded_topic_recs: list[Recommendation] = []
         if existing is not None:
             self._append_history(replace(existing, status=RecommendationStatus.OBSOLETE))
             rec = replace(
                 rec,
                 created_at=existing.created_at,
                 status=existing.status if existing.status in _USER_STATUSES else RecommendationStatus.NEW,
+                refreshed_at=_utcnow(),
             )
         else:
             topic = _topic_of(rec.id)
             for other_id, other in list(self._active.items()):
                 if other_id != rec.id and _topic_of(other_id) == topic:
                     del self._active[other_id]
-                    superseded_topic_rec = other
-            if superseded_topic_rec is not None:
+                    superseded_topic_recs.append(other)
+            if superseded_topic_recs:
+                predecessor = superseded_topic_recs[-1]
+                # Every superseded duplicate leaves an audit-trail entry;
+                # stores written before the topic dedup can hold several.
+                for other in superseded_topic_recs[:-1]:
+                    self._append_history(replace(other, status=RecommendationStatus.OBSOLETE))
                 rec = replace(
                     rec,
-                    created_at=superseded_topic_rec.created_at,
-                    status=(
-                        superseded_topic_rec.status
-                        if superseded_topic_rec.status in _USER_STATUSES
-                        else RecommendationStatus.NEW
-                    ),
+                    created_at=predecessor.created_at,
+                    status=(predecessor.status if predecessor.status in _USER_STATUSES else RecommendationStatus.NEW),
+                    refreshed_at=_utcnow(),
                 )
-                if _same_recommendation_content(superseded_topic_rec, rec):
+                if _same_recommendation_content(predecessor, rec):
+                    # Identical daily re-issue under the new day stamp: store
+                    # the rollover (with a refreshed TTL anchor) but stay
+                    # silent — there is nothing new to announce.
                     self._active[rec.id] = rec
                     self._schedule_save()
                     return False
-                self._append_history(replace(superseded_topic_rec, status=RecommendationStatus.OBSOLETE))
+                self._append_history(replace(predecessor, status=RecommendationStatus.OBSOLETE))
         self._active[rec.id] = rec
         self._fire(
-            "updated" if existing is not None or superseded_topic_rec is not None else "new",
+            "updated" if existing is not None or superseded_topic_recs else "new",
             rec,
         )
         self._schedule_save()
@@ -919,16 +961,26 @@ class PredictiveAdvisor:
         self._schedule_save()
         return True
 
-    def _expire_recommendations(self, now: datetime) -> None:
-        """Move recommendations older than the TTL to history as expired."""
+    def _expire_recommendations(self, now: datetime) -> bool:
+        """Move recommendations past their TTL to history as expired.
+
+        The TTL runs against ``refreshed_at``, which every replacement path
+        updates, so a daily re-issued topic survives as long as its condition
+        holds instead of expiring seven days after its first-ever issue. Each
+        expiry fires the same ``status`` event as ``mark``/``retract`` so
+        automations hear that a recommendation ended. Returns whether any
+        entry expired.
+        """
         expired = [
             replace(rec, status=RecommendationStatus.EXPIRED)
             for rec in self._active.values()
-            if now - rec.created_at >= _RECOMMENDATION_TTL
+            if now - rec.effective_refreshed_at >= _RECOMMENDATION_TTL
         ]
         for rec in expired:
             self._active.pop(rec.id, None)
             self._append_history(rec)
+            self._fire("status", rec)
+        return bool(expired)
 
     def _append_history(self, rec: Recommendation) -> None:
         self._history.append(rec)

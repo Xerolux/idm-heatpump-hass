@@ -2316,6 +2316,24 @@
       "energy_cooling": {
         "name": "Wärmemenge Kühlen"
       },
+      "energy_cop_dhw_month": {
+        "name": "COP der Wärmepumpe Warmwasser im Monat"
+      },
+      "energy_cop_dhw_today": {
+        "name": "COP der Wärmepumpe Warmwasser heute"
+      },
+      "energy_cop_dhw_total": {
+        "name": "COP der Wärmepumpe Warmwasser gesamt"
+      },
+      "energy_cop_heating_month": {
+        "name": "COP der Wärmepumpe Heizen im Monat"
+      },
+      "energy_cop_heating_today": {
+        "name": "COP der Wärmepumpe Heizen heute"
+      },
+      "energy_cop_heating_total": {
+        "name": "COP der Wärmepumpe Heizen gesamt"
+      },
       "energy_cop_month": {
         "name": "COP der Wärmepumpe im Monat"
       },

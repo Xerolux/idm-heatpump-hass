@@ -2316,6 +2316,24 @@
       "energy_cooling": {
         "name": "Cooling energy"
       },
+      "energy_cop_dhw_month": {
+        "name": "Heat pump COP hot water this month"
+      },
+      "energy_cop_dhw_today": {
+        "name": "Heat pump COP hot water today"
+      },
+      "energy_cop_dhw_total": {
+        "name": "Heat pump COP hot water total"
+      },
+      "energy_cop_heating_month": {
+        "name": "Heat pump COP heating this month"
+      },
+      "energy_cop_heating_today": {
+        "name": "Heat pump COP heating today"
+      },
+      "energy_cop_heating_total": {
+        "name": "Heat pump COP heating total"
+      },
       "energy_cop_month": {
         "name": "Heat pump COP this month"
       },

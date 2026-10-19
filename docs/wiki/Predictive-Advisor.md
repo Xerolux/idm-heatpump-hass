@@ -64,12 +64,12 @@ unavailable instead of guessing.
 | `sensor.<device>_advisor_operation_reason` | Why the heat pump runs right now (PV surplus, hot water, a requesting heating circuit, controller demand reason), with the numbers behind it |
 | `binary_sensor.<device>_advisor_anomaly_detected` | On while an anomaly recommendation is active |
 | `sensor.<device>_advisor_health_score` | Plant health 0–100 from documented components (hydraulics, compressor, hot water, efficiency); each component exists only with baseline data |
-| `sensor.<device>_advisor_expected_cop` / `advisor_efficiency_score` | COP the learned outdoor/flow map expects at the current operating point, and how the observed 7-day COP compares |
+| `sensor.<device>_advisor_expected_cop` / `advisor_efficiency_score` | COP the learned outdoor/flow map expects at the current operating point, and how the observed 7-day **heating** COP compares (the observed hot-water COP of the same window is published as an attribute; mixed or defrost intervals stay out of both per-mode values) |
 | `sensor.<device>_advisor_building_heat_loss` | Building heat loss in W/K from the thermal-power regression |
 | `sensor.<device>_advisor_building_thermal_inertia` | Effective heat capacity (kWh/K) from observed cooldown episodes |
 | `sensor.<device>_advisor_optimal_flow_temp` | Flow temperature the learned curve produced at the current outdoor temperature while rooms held their setpoint |
 | `sensor.<device>_advisor_hc_X_curve_recommendation` | Heating-curve recommendation per circuit — at most one documented 0.02 step at a time, only after 7 baseline days of room-temperature deviation |
-| `sensor.<device>_advisor_dhw_recommendation` | Best hot-water charging window from the PV forecast (preferred) or the cheapest heat cost (price ÷ expected COP) |
+| `sensor.<device>_advisor_dhw_recommendation` | Best hot-water charging window from the PV forecast (preferred) or the cheapest heat cost (price ÷ expected COP — the observed 7-day hot-water COP when available). Window times are shown in your Home Assistant time zone; the stored timestamps stay UTC |
 | `sensor.<device>_advisor_predicted_heat_demand` | Predicted thermal demand for the next 24 hours (heat loss × forecast temperature difference) |
 | `sensor.<device>_advisor_next_24h` | The joined plan: expected PV, expensive hours, and a conflict warning when the hot-water window overlaps them |
 | `binary_sensor.<device>_advisor_optimization_available` | On while at least one unhandled recommendation is active |

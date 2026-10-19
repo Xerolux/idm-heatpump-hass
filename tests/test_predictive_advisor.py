@@ -9,6 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from custom_components.idm_heatpump import predictive_advisor as predictive_advisor_module
+from custom_components.idm_heatpump import predictive_advisor_entities as predictive_advisor_entities_module
 from custom_components.idm_heatpump.advisor_analytics import AdvisorAnalytics
 from custom_components.idm_heatpump.advisor_engine import AdvisorEngine
 from custom_components.idm_heatpump.binary_sensor import async_setup_entry as async_setup_binary_sensors
@@ -422,6 +424,74 @@ def test_recommendations_expire_after_ttl(mock_hass: Any) -> None:
     advisor.observe(now=T0 + timedelta(days=8))
     assert advisor.recommendation_count == 0
     assert advisor.history[-1].status is RecommendationStatus.EXPIRED
+    # Expiry fires the same status event as mark/retract: automations
+    # listening on the recommendation event hear that it ended.
+    expiry_event = mock_hass.bus.async_fire.call_args
+    assert expiry_event.args[0] == EVENT_IDM_ADVISOR_RECOMMENDATION
+    assert expiry_event.args[1]["action"] == "status"
+    assert expiry_event.args[1]["status"] == "expired"
+
+
+def test_daily_re_issue_refreshes_the_ttl_anchor(monkeypatch: pytest.MonkeyPatch, mock_hass: Any) -> None:
+    """A daily re-issued topic outlives its first-ever issue date.
+
+    The TTL ran against the inherited ``created_at`` before: a topic
+    re-issued daily expired seven days after its first issue and came back
+    as a fresh "new" entry with a reset user status once per week.
+    """
+    coordinator = _coordinator(data={"outdoor_temp": 5.0}, hass=mock_hass)
+    advisor = PredictiveAdvisor(coordinator)
+    advisor.submit(_recommendation(id="heating_curve_a_20261012", created_at=T0))
+    for day in range(1, 10):
+        at = T0 + timedelta(days=day)
+        monkeypatch.setattr(predictive_advisor_module, "_utcnow", lambda at=at: at)
+        advisor.submit(_recommendation(id=f"heating_curve_a_{at.strftime('%Y%m%d')}"))
+        monkeypatch.undo()
+        advisor.observe(now=at)
+
+    # Ten days after the first issue the topic is still one active entry
+    # with no weekly expire/re-issue churn in the history.
+    assert advisor.recommendation_count == 1
+    assert not [rec for rec in advisor.history if rec.status is RecommendationStatus.EXPIRED]
+    active = advisor.active_recommendations[0]
+    assert active.created_at == T0
+    assert active.effective_refreshed_at == T0 + timedelta(days=9)
+
+
+def test_topic_supersede_archives_every_duplicate(mock_hass: Any) -> None:
+    """Pre-dedup stores can hold several active entries of one topic."""
+    advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
+    advisor._active = {
+        "heating_curve_a_20261014": _recommendation(id="heating_curve_a_20261014"),
+        "heating_curve_a_20261015": _recommendation(id="heating_curve_a_20261015"),
+        "heating_curve_a_20261016": _recommendation(id="heating_curve_a_20261016"),
+    }
+    advisor.submit(_recommendation(id="heating_curve_a_20261017"))
+
+    assert advisor.recommendation_count == 1
+    assert advisor.active_recommendations[0].id == "heating_curve_a_20261017"
+    # Identical content: the predecessor rolls over into the successor; the
+    # two extra duplicates leave as obsolete audit-trail entries.
+    archived = [rec for rec in advisor.history if rec.status is RecommendationStatus.OBSOLETE]
+    assert sorted(rec.id for rec in archived) == ["heating_curve_a_20261014", "heating_curve_a_20261015"]
+
+
+def test_observe_saves_counters_throttled_not_per_snapshot(mock_hass: Any) -> None:
+    coordinator = _coordinator(data={"outdoor_temp": 5.0}, hass=mock_hass)
+    advisor = PredictiveAdvisor(coordinator)
+    advisor._store.async_delay_save = MagicMock()
+    advisor.observe(now=T0)
+    assert advisor._store.async_delay_save.call_count == 1
+
+    # Snapshots inside the throttle window change only quality counters;
+    # they must not schedule another store write each scan interval.
+    for minutes in (1, 2, 5, 9):
+        advisor.observe(now=T0 + timedelta(minutes=minutes))
+    assert advisor._store.async_delay_save.call_count == 1
+
+    # Past the window the counters are persisted again.
+    advisor.observe(now=T0 + timedelta(minutes=11))
+    assert advisor._store.async_delay_save.call_count == 2
 
 
 async def test_persistence_round_trip(mock_hass: Any) -> None:
@@ -788,6 +858,8 @@ def test_efficiency_sensor_exposes_learned_cop_map() -> None:
     assert sensor.extra_state_attributes == {
         "expected_cop": None,
         "observed_cop_7d": None,
+        "observed_cop_heating_7d": None,
+        "observed_cop_dhw_7d": None,
         "deviation_percent": None,
         "write_actions": False,
     }
@@ -834,9 +906,10 @@ def test_building_model_sensors_publish_learned_model() -> None:
     assert inertia.extra_state_attributes["cooldown_episodes"] == 0
 
     # 60 regression samples with slope 0.2 kW/K learn a 200 W/K heat loss.
+    # Advancing timestamps: the weighted fit needs effective observed hours.
     for index in range(60):
         delta = 15.0 + (index % 7)
-        analytics.observe_heating(delta, 0.2 * delta)
+        analytics.observe_heating(delta, 0.2 * delta, T0 + timedelta(minutes=12 * index))
     # Three cooldown episodes establish the inertia estimate.
     for _ in range(3):
         analytics.observe_cooldown_episode(0.1, 12.5)
@@ -858,8 +931,8 @@ def test_optimal_flow_sensor_requires_outdoor_and_learned_curve() -> None:
     assert sensor.available is False
 
     # 60 samples along flow = 35 - 0.5 * outdoor learn a falling curve.
-    for outdoor in range(-30, 30):
-        analytics.observe_flow_pair(float(outdoor), 35.0 - 0.5 * outdoor)
+    for index, outdoor in enumerate(range(-30, 30)):
+        analytics.observe_flow_pair(float(outdoor), 35.0 - 0.5 * outdoor, T0 + timedelta(minutes=12 * index))
     assert sensor.native_value == 32.5
     assert sensor.available is True
 
@@ -885,7 +958,11 @@ def test_curve_sensor_publishes_recommendation_details() -> None:
     assert attributes["write_actions"] is False
 
 
-def test_dhw_window_sensor_formats_window_and_attributes() -> None:
+def test_dhw_window_sensor_formats_window_and_attributes(monkeypatch: pytest.MonkeyPatch) -> None:
+    from zoneinfo import ZoneInfo
+
+    zone = ZoneInfo("Europe/Berlin")
+    monkeypatch.setattr(predictive_advisor_entities_module.dt_util, "as_local", lambda value: value.astimezone(zone))
     engine, _advisor, _analytics, coordinator = _producer_setup(data={"outdoor_temp": 5.0})
     sensor = IdmAdvisorDhwWindowSensor(coordinator, engine)
     assert sensor.native_value is None
@@ -899,7 +976,10 @@ def test_dhw_window_sensor_formats_window_and_attributes() -> None:
         "source": "pv_surplus_forecast",
         "expected_pv_kwh": 4.2,
     }
-    assert sensor.native_value == f"{start:%H:%M}-{start + timedelta(hours=3):%H:%M}"
+    # The stored timestamps are UTC; the sensor renders the user's wall clock.
+    assert (
+        sensor.native_value == f"{start.astimezone(zone):%H:%M}-{(start + timedelta(hours=3)).astimezone(zone):%H:%M}"
+    )
     assert sensor.available is True
     assert sensor.extra_state_attributes["expected_pv_kwh"] == 4.2
 

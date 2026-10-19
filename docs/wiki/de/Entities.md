@@ -626,6 +626,8 @@ Persistente Summen, berechnet aus den Leistungsregistern und pro Konfigurationse
 | Elektrische Energie Wärmepumpe heute / diesen Monat / gesamt (`energy_electrical_today` …) | Elektrische Energie, die die Wärmepumpe im Zeitraum bezogen hat |
 | Thermische Energie Wärmepumpe heute / diesen Monat / gesamt (`energy_thermal_today` …) | Abgegebene thermische Energie im Zeitraum |
 | Jahresarbeitszahl Wärmepumpe heute / diesen Monat / gesamt (`energy_cop_today` …) | Arbeitszahl über den Zeitraum |
+| Jahresarbeitszahl Wärmepumpe Heizen heute / diesen Monat / gesamt (`energy_cop_heating_today` …) | Arbeitszahl über die reinen Heiz-Intervalle des Zeitraums; die elektrische/thermische Energie des Modus stehen als Attribute bereit. Intervalle mit gemischtem Modus, Abtauen, Kühlen oder unbekanntem Modus fließen nur in die Gesamt-Arbeitszahl und verfälschen die Modus-Werte nicht. Der Modus-Zähler beginnt mit der Installation der Funktion — ältere Gesamtsummen werden nicht zurückgerechnet |
+| Jahresarbeitszahl Wärmepumpe Warmwasser heute / diesen Monat / gesamt (`energy_cop_dhw_today` …) | Wie die Zeile Heizen, für reine Warmwasser-Lade-Intervalle |
 | Stromkosten Wärmepumpe heute / diesen Monat / gesamt (`energy_cost_today` …) | Stromkosten des Zeitraums |
 | CO₂-Emissionen Wärmepumpe diesen Monat / gesamt (`energy_co2_month`, `energy_co2_total`) | CO₂-Emissionen des Zeitraums |
 | PV-Eigenverbrauch Wärmepumpe heute / diesen Monat / gesamt (`energy_pv_self_consumed_today` …) | Elektrische Energie, die im Zeitraum dem PV-Überschuss zugeordnet wird |

@@ -15,12 +15,18 @@ from .entity import IdmCoordinatorEntityBase, build_entity_unique_id
 
 class _Definition:
     def __init__(
-        self, key: str, value: Callable[[EnergyStatistics], Any], icon: str, state_class: SensorStateClass
+        self,
+        key: str,
+        value: Callable[[EnergyStatistics], Any],
+        icon: str,
+        state_class: SensorStateClass,
+        attributes: Callable[[EnergyStatistics], dict[str, Any]] | None = None,
     ) -> None:
         self.key = key
         self.value = value
         self.icon = icon
         self.state_class = state_class
+        self.attributes = attributes
 
 
 _ENERGY_DEFINITIONS = (
@@ -51,6 +57,68 @@ _ENERGY_DEFINITIONS = (
     _Definition("energy_cop_total", lambda s: s.total_cop, "mdi:gauge", SensorStateClass.MEASUREMENT),
     _Definition("energy_cop_today", lambda s: s.today_cop, "mdi:gauge", SensorStateClass.MEASUREMENT),
     _Definition("energy_cop_month", lambda s: s.month_cop, "mdi:gauge", SensorStateClass.MEASUREMENT),
+    # Per-mode COP: only unambiguous intervals count (pure heating / pure
+    # hot-water charging); mixed, defrost and cooling stay in the totals.
+    _Definition(
+        "energy_cop_heating_total",
+        lambda s: s.heating_cop_total,
+        "mdi:radiator",
+        SensorStateClass.MEASUREMENT,
+        lambda s: {
+            "electrical_kwh": round(s.heating_electrical_kwh, 2),
+            "thermal_kwh": round(s.heating_thermal_kwh, 2),
+        },
+    ),
+    _Definition(
+        "energy_cop_heating_today",
+        lambda s: s.heating_cop_today,
+        "mdi:radiator",
+        SensorStateClass.MEASUREMENT,
+        lambda s: {
+            "electrical_kwh": round(s.today_heating_electrical_kwh, 2),
+            "thermal_kwh": round(s.today_heating_thermal_kwh, 2),
+        },
+    ),
+    _Definition(
+        "energy_cop_heating_month",
+        lambda s: s.heating_cop_month,
+        "mdi:radiator",
+        SensorStateClass.MEASUREMENT,
+        lambda s: {
+            "electrical_kwh": round(s.month_heating_electrical_kwh, 2),
+            "thermal_kwh": round(s.month_heating_thermal_kwh, 2),
+        },
+    ),
+    _Definition(
+        "energy_cop_dhw_total",
+        lambda s: s.dhw_cop_total,
+        "mdi:water-boiler",
+        SensorStateClass.MEASUREMENT,
+        lambda s: {
+            "electrical_kwh": round(s.dhw_electrical_kwh, 2),
+            "thermal_kwh": round(s.dhw_thermal_kwh, 2),
+        },
+    ),
+    _Definition(
+        "energy_cop_dhw_today",
+        lambda s: s.dhw_cop_today,
+        "mdi:water-boiler",
+        SensorStateClass.MEASUREMENT,
+        lambda s: {
+            "electrical_kwh": round(s.today_dhw_electrical_kwh, 2),
+            "thermal_kwh": round(s.today_dhw_thermal_kwh, 2),
+        },
+    ),
+    _Definition(
+        "energy_cop_dhw_month",
+        lambda s: s.dhw_cop_month,
+        "mdi:water-boiler",
+        SensorStateClass.MEASUREMENT,
+        lambda s: {
+            "electrical_kwh": round(s.month_dhw_electrical_kwh, 2),
+            "thermal_kwh": round(s.month_dhw_thermal_kwh, 2),
+        },
+    ),
     _Definition("energy_cost_total", lambda s: s.total_cost, "mdi:currency-eur", SensorStateClass.MEASUREMENT),
     _Definition("energy_cost_today", lambda s: s.today_cost, "mdi:currency-eur", SensorStateClass.MEASUREMENT),
     _Definition("energy_cost_month", lambda s: s.month_cost, "mdi:currency-eur", SensorStateClass.MEASUREMENT),
@@ -114,6 +182,11 @@ class IdmEnergyStatisticsSensor(IdmCoordinatorEntityBase, SensorEntity):
     @property
     def native_value(self) -> Any:
         return self._definition.value(self._statistics)
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        attributes = self._definition.attributes
+        return attributes(self._statistics) if attributes is not None else {}
 
     @property
     def available(self) -> bool:
