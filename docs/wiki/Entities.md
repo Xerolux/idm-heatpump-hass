@@ -760,6 +760,8 @@ and emission factors configured in the Smart profile.
 | Heat pump electrical energy today / this month / total (`energy_electrical_today` …) | Electrical energy the heat pump consumed in the period |
 | Heat pump thermal energy today / this month / total (`energy_thermal_today` …) | Thermal energy delivered in the period |
 | Heat pump COP today / this month / total (`energy_cop_today` …) | Seasonal performance factor over the period |
+| Heat pump COP heating today / this month / total (`energy_cop_heating_today` …) | COP over the periods' pure space-heating intervals; the period's heating electrical/thermal energies are attributes. Intervals with mixed, defrost, cooling or unknown operating modes stay in the all-mode totals and never bias the per-mode values. Per-mode counting starts when the feature is installed — the values are not reconstructed from earlier totals |
+| Heat pump COP hot water today / this month / total (`energy_cop_dhw_today` …) | Same as the heating row, for pure hot-water charging intervals |
 | Heat pump electricity cost today / this month / total (`energy_cost_today` …) | Electricity cost of the period |
 | Heat pump CO₂ emissions this month / total (`energy_co2_month`, `energy_co2_total`) | CO₂ emissions of the period |
 | Heat pump PV self-consumption today / this month / total (`energy_pv_self_consumed_today` …) | Electrical energy attributed to PV surplus in the period |

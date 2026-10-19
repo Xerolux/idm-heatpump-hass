@@ -67,12 +67,12 @@ sind, bleiben stattdessen nicht verfügbar — sie raten nie.
 | `sensor.<Gerät>_advisor_operation_reason` | Warum die Wärmepumpe gerade läuft (PV-Überschuss, Warmwasser, anfordernder Heizkreis, Anforderungsgrund der Regelung) — mit den Zahlen dahinter |
 | `binary_sensor.<Gerät>_advisor_anomaly_detected` | An, solange eine Anomalie-Empfehlung aktiv ist |
 | `sensor.<Gerät>_advisor_health_score` | Anlagenzustand 0–100 aus dokumentierten Komponenten (Hydraulik, Verdichter, Warmwasser, Effizienz); jede Komponente existiert nur mit Baseline-Daten |
-| `sensor.<Gerät>_advisor_expected_cop` / `advisor_efficiency_score` | COP, den die gelernte Außentemperatur/Vorlauf-Karte am aktuellen Betriebspunkt erwartet, und wie der beobachtete 7-Tage-COP dagegensteht |
+| `sensor.<Gerät>_advisor_expected_cop` / `advisor_efficiency_score` | COP, den die gelernte Außentemperatur/Vorlauf-Karte am aktuellen Betriebspunkt erwartet, und wie der beobachtete 7-Tage-**Heiz**-COP dagegensteht (der beobachtete Warmwasser-COP desselben Fensters ist als Attribut veröffentlicht; gemischte oder Abtau-Intervalle fließen in keinen der Modus-Werte) |
 | `sensor.<Gerät>_advisor_building_heat_loss` | Gebäude-Wärmeverlust in W/K aus der Wärmeleistungs-Regression |
 | `sensor.<Gerät>_advisor_building_thermal_inertia` | Effektive Wärmekapazität (kWh/K) aus beobachteten Abkühl-Episoden |
 | `sensor.<Gerät>_advisor_optimal_flow_temp` | Vorlauftemperatur, die die gelernte Kurve bei der aktuellen Außentemperatur erzeugt hat, während die Räume im Soll lagen |
 | `sensor.<Gerät>_advisor_hc_X_curve_recommendation` | Heizkurven-Empfehlung je Heizkreis — höchstens ein dokumentierter 0,02-Schritt pro Empfehlung, erst nach 7 Baseline-Tagen Raumtemperatur-Abweichung |
-| `sensor.<Gerät>_advisor_dhw_recommendation` | Bestes Warmwasser-Ladefenster aus der PV-Prognose (bevorzugt) oder den günstigsten Wärmekosten (Preis ÷ erwarteter COP) |
+| `sensor.<Gerät>_advisor_dhw_recommendation` | Bestes Warmwasser-Ladefenster aus der PV-Prognose (bevorzugt) oder den günstigsten Wärmekosten (Preis ÷ erwarteter COP — den beobachteten 7-Tage-Warmwasser-COP, sobald vorhanden). Die Fensterzeiten erscheinen in deiner Home-Assistant-Zeitzone; die gespeicherten Zeitstempel bleiben UTC |
 | `sensor.<Gerät>_advisor_predicted_heat_demand` | Prognostizierter Wärmebedarf der nächsten 24 Stunden (Wärmeverlust × prognostizierte Temperaturdifferenz) |
 | `sensor.<Gerät>_advisor_next_24h` | Der kombinierte Plan: erwartete PV, teure Stunden und eine Konfliktwarnung, wenn das Warmwasser-Fenster darin liegt |
 | `binary_sensor.<Gerät>_advisor_optimization_available` | An, solange mindestens eine unbearbeitete Empfehlung aktiv ist |

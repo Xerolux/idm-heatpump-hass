@@ -15,6 +15,97 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+Advisor review pass (forecast time path, recommendation lifecycle, model
+quality) plus per-mode COP statistics for heating and hot water.
+
+### Added
+
+- **Per-mode COP statistics (heating / hot water)**: six new Smart-profile
+  sensors `energy_cop_heating_total/today/month` and
+  `energy_cop_dhw_total/today/month`. Only unambiguous intervals count —
+  pure space heating (operating mode *Heizen*) and pure hot-water charging
+  (*Warmwasser*); mixed heating+DHW, defrost, cooling and unreadable modes
+  stay in the all-mode totals and never bias the per-mode values. The
+  period's per-mode electrical/thermal energies are attributes of each
+  sensor. Per-mode counting starts with this version; earlier totals are
+  not reconstructed.
+- **Advisor per-mode observed COP**: the efficiency sensor now publishes
+  the observed 7-day heating COP and hot-water COP as attributes, and the
+  efficiency comparison runs against the heating-domain value (an all-mode
+  COP contains the lower DHW cycles and showed a persistent negative
+  deviation proportional to the hot-water share).
+- **DHW price window uses the observed hot-water COP** when one exists
+  (documented as `assumed_cop` in the window), falling back to the learned
+  map expectation and then to 3.5 as before.
+- **Advisor quality data in diagnostics**: the config-entry diagnostics now
+  include the advisor stage, confidence, usable fraction and the full
+  per-key quality table (which previously lived in the status sensor's
+  attributes), plus the per-mode energy split.
+
+### Fixed
+
+- **DHW window times were shown in UTC**: the recommendation title and the
+  `advisor_dhw_recommendation` sensor rendered the UTC wall clock instead
+  of the configured Home Assistant time zone — a 2-hour error for Central
+  European users in the one number the recommendation exists to
+  communicate. Stored timestamps stay UTC (machine-readable); only the
+  display is converted.
+- **15-minute price and PV feeds were misread as full hours**: most EU
+  day-ahead markets moved to quarter-hour granularity, and three
+  15-minute slots were treated as a 3-hour window with 4× overstated PV
+  kWh. All forecast and price series are now folded onto calendar hours
+  (prices averaged, PV credited with the true period length) before the
+  window search.
+- **Duplicate price timestamps silently killed the price window**: a tariff
+  sensor exposing the same hours under two attribute names (e.g. `today`
+  and `raw_today`) produced doubled entries whose zero gaps rejected every
+  candidate window, without any error. Timestamps are now deduplicated
+  (first source wins).
+- **Naive forecast timestamps are rejected instead of silently read as
+  UTC** (same decision as the comfort advisory): a feed stamping naive
+  local time previously shifted every series by the UTC offset.
+- **Daily re-issued recommendations expired weekly**: the 7-day TTL ran
+  against the inherited first-issue `created_at`, so a topic re-issued
+  daily expired seven days after its first issue and returned as a fresh
+  "new" entry with a reset user status — the exact accumulation pattern
+  from discussion #540. A persisted `refreshed_at` anchor now refreshes on
+  every re-issue (additive storage change, no migration).
+- **Recommendation expiry is no longer silent**: expiry fires the same
+  `idm_advisor_recommendation` status event as dismiss/acknowledge, so
+  automations hear that a recommendation ended.
+- **Pre-dedup duplicate recommendations are archived, not erased**: when a
+  store from before the topic dedup holds several active entries of one
+  topic, every superseded duplicate now leaves an audit-trail history
+  entry.
+- **`usable_fraction or 1.0` inverted zero data quality** into "full
+  quality" in two confidence formulas; an explicit None check now applies.
+- **Health-score components match machine reason codes** instead of
+  English title substrings, so rewording a title can no longer silently
+  decouple the score from its findings.
+
+### Changed
+
+- **Building-model regressions weight and decay**: samples are weighted by
+  the hours they represent (capped at half an hour) and the accumulated
+  statistics decay with a 30-day half-life, so an applied heating-curve
+  change or renovation no longer biases the model forever, and one long
+  steady evening no longer dominates the heat-loss slope. Fits now also
+  require 12 effective observed hours. The building-model storage version
+  was bumped: the heat-loss and flow-curve models relearn once after the
+  update (same one-time reset as 0.23.0-b7, #546).
+- **Far fewer store writes**: advisor state and analytics saves are
+  throttled to one write per ~10 minutes for per-poll counter changes
+  (previously roughly one JSON write per 30-second poll, ~2,800/day);
+  recommendation changes still save immediately.
+- **Advisor status sensor attributes slimmed**: per-sample quality counters
+  and the float confidence left the attributes (they changed every poll
+  and persisted a recorder row per scan interval); the full quality table
+  moved to diagnostics, the confidence *level* stays as an attribute and
+  the confidence sensor keeps the precise value. Observation days are
+  published as whole days.
+- **The operation-reason composition is cached per snapshot** instead of
+  being recomputed three times per coordinator refresh.
+
 ## [0.23.0-b9] - 2026-10-18
 
 Follow-up to b8, verified live on two plants: the option-flow translations
