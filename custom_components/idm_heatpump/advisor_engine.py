@@ -711,8 +711,12 @@ class AdvisorEngine:
                 return None
             registry = entity_registry_module.async_get(self._hass)
             entry = registry.async_get(entity_id) if registry else None
-            domain = getattr(entry, "domain", None) or getattr(entry, "platform", None)
-            if entry is None or domain != "forecast_solar" or not entry.config_entry_id:
+            # ``platform`` carries the integration (verified live on
+            # 2026.10: the registry entry of a Forecast.Solar sensor reads
+            # platform="forecast_solar" while domain is the entity domain
+            # "sensor"). ``domain`` stays as a fallback for stubs.
+            platform = getattr(entry, "platform", None) or getattr(entry, "domain", None)
+            if entry is None or platform != "forecast_solar" or not entry.config_entry_id:
                 return None
             async with asyncio.timeout(30):
                 result = await self._hass.services.async_call(
