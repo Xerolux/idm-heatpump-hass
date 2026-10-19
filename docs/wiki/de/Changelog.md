@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b10 — 2026-10-19
+
+Advisor-Härtungs-Durchlauf plus Modus-COP: Die Warmwasser-Fensterzeiten
+erscheinen jetzt in deiner Home-Assistant-Zeitzone, Viertelstunden-Preis-
+und PV-Daten werden korrekt gelesen, täglich neu ausgegebene
+Empfehlungen laufen nicht mehr wöchentlich ab, die Gebäudemodelle
+gewichten und vergessen ihre Samples (einmaliges Neulernen), und sechs
+neue Sensoren verfolgen den COP von reinem Heizen und reinem
+Warmwasser-Laden getrennt (`energy_cop_heating_*`, `energy_cop_dhw_*`).
+Komplette Liste im [Changelog](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CHANGELOG.md).
+
 ## v0.23.0-b9 — 2026-10-18
 
 Nachlese zu b8, inzwischen auf zwei Anlagen live bestätigt (Diskussion #516 —

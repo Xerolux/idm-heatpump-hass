@@ -4,6 +4,24 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.23.0-b10
+
+**0.23.0-b10** bündelt den Advisor-Review-Durchlauf (Prognose-Zeitpfad,
+Empfehlungs-Lebenszyklus, Modellqualität, Schreib-Drossel) mit den neuen
+Modus-COP-Statistiken. Die risikoreichsten Punkte und ihre Begrenzung:
+Der Versions-Bump der Gebäudemodell-Speicherung erzwingt ein einmaliges
+Neulernen der Wärmeverlust- und Vorlaufkurven-Modelle (derselbe
+Mechanismus wie b7/#546, im Changelog dokumentiert); der
+`refreshed_at`-TTL-Anker ist ein additives Speicherfeld, das aus älteren
+Stores defensiv gelesen wird; und die Modus-Energiezähler starten bei
+Adoption bei null, ohne die bestehenden Gesamt-Summen anzufassen. Die
+Prognose-Fixes (Fensterzeiten in Ortszeit, Viertelstunden-Faltung,
+Preis-Dedup) sind reine Lese-Pfade. Die Live-Verifikation auf der
+Referenzanlage folgt diesem Release: neue Sensoren
+`energy_cop_heating_*` / `energy_cop_dhw_*`, Ortszeit-Fenster in der
+Warmwasser-Empfehlung und das einmalige Modell-Neulernen; die Evidenz-
+Datei `docs/release-evidence/0.23.0-b10.md` hält das Ergebnis fest.
+
 ## Release-Entscheidung zu 0.23.0-b5
 
 **0.23.0-b5** bringt die Advisor-Darstellungs-Politur und den
@@ -292,7 +310,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.23.0-b9` und `idm-heatpump-api` `2.14.4` bilden das aktuelle exakt
+Integration im Quellstand `0.23.0-b10` und `idm-heatpump-api` `2.14.4` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
