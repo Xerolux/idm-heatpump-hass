@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b13] - 2026-10-19
+
 ### Fixed
 
 - **The Forecast.Solar PV source never matched on real installations
