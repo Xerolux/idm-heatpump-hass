@@ -914,7 +914,11 @@ class AdvisorEngine:
         score = None
         if expected is not None and observed is not None and expected.cop > 0:
             ratio = observed / expected.cop
-            score = round(max(0.0, min(100.0, 100.0 - max(0.0, 1.0 - ratio) * 200.0)), 0)
+            # round() without digits yields an int: the efficiency sensor
+            # publishes only int scores, and a float here kept the sensor
+            # unavailable on real plants even with a computed score (found
+            # live on the reference plant, b10).
+            score = round(max(0.0, min(100.0, 100.0 - max(0.0, 1.0 - ratio) * 200.0)))
         return {
             "expected_cop": expected.cop if expected is not None else None,
             "expected_cop_hours": expected.hours if expected is not None else None,

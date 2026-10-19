@@ -865,10 +865,11 @@ def test_efficiency_sensor_exposes_learned_cop_map() -> None:
     }
 
     _learn_cop_map(analytics)
-    # The engine publishes the score as a rounded float, so the int-typed
-    # native value stays unpublished; the numbers arrive as attributes.
-    assert sensor.native_value is None
-    assert sensor.available is False
+    # The engine publishes the score as an int now: a rounded float kept the
+    # int-typed native value unpublished and the sensor unavailable on real
+    # plants even with a computed score (found live on the reference plant).
+    assert sensor.native_value == 100
+    assert sensor.available is True
     attributes = sensor.extra_state_attributes
     assert attributes["expected_cop"] == 4.0
     assert attributes["observed_cop_7d"] == 4.0
