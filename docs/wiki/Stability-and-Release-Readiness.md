@@ -4,6 +4,23 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.0-b10 release decision
+
+**0.23.0-b10** bundles the advisor review pass (forecast time path,
+recommendation lifecycle, model quality, write throttling) with the new
+per-mode COP statistics. The riskiest items and how they are contained:
+the building-model storage version bump forces a one-time relearn of the
+heat-loss and flow-curve models (same mechanism as b7/#546, documented in
+the changelog); the `refreshed_at` TTL anchor is an additive storage field
+parsed defensively from older stores; and the per-mode energy counters
+start at zero on adoption, never touching the existing all-mode totals.
+The forecast fixes (local-time window rendering, quarter-hour grid
+folding, price dedup) are read-path only. Live verification on the
+reference plant follows this release: new `energy_cop_heating_*` /
+`energy_cop_dhw_*` sensors, local window times on the DHW
+recommendation, and the one-time model relearn; the evidence file
+`docs/release-evidence/0.23.0-b10.md` records the outcome.
+
 ## 0.23.0-b5 release decision
 
 **0.23.0-b5** carries the advisor presentation polish and the web-value
@@ -275,7 +292,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.23.0-b9` and `idm-heatpump-api` `2.14.4` form the current
+Source-tree integration `0.23.0-b10` and `idm-heatpump-api` `2.14.4` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

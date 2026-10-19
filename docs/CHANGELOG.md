@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b10] - 2026-10-19
+
 Advisor review pass (forecast time path, recommendation lifecycle, model
 quality) plus per-mode COP statistics for heating and hot water.
 

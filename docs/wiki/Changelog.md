@@ -5,6 +5,16 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b10 — 2026-10-19
+
+Advisor hardening pass plus per-mode COP: the hot-water window times now
+render in your Home Assistant time zone, quarter-hour price and PV feeds
+are read correctly, daily re-issued recommendations no longer expire
+weekly, the building models weight and decay their samples (one-time
+relearn), and six new sensors track the COP of pure heating and pure
+hot-water charging separately (`energy_cop_heating_*`,
+`energy_cop_dhw_*`). Full list in the [changelog](https://github.com/Xerolux/idm-heatpump-hass/blob/main/docs/CHANGELOG.md).
+
 ## v0.23.0-b9 — 2026-10-18
 
 Follow-up to b8, now confirmed live on two plants (discussion #516 — where
