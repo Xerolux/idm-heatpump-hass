@@ -1272,3 +1272,26 @@ async def test_pv_forecast_service_errors_fall_back_silently(monkeypatch: pytest
     await engine.async_refresh_forecasts(now=T0)
 
     assert engine.pv_hours == []
+
+
+async def test_pv_forecast_recognizes_the_live_registry_entry_shape(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Live shape on HA 2026.10: platform holds the integration, domain is
+    the entity domain ("sensor"). The lookup must use the platform."""
+    import homeassistant.helpers.entity_registry as er_stub
+
+    class _LiveShapedEntry:
+        entity_id = "sensor.power_production_now"
+        config_entry_id = "fs_entry"
+        domain = "sensor"  # entity domain, NOT the integration
+        platform = "forecast_solar"
+
+    data = {"power_consumption_hp": 2.0}
+    engine, _advisor, _analytics, _coordinator = _engine(data, pv_forecast_entity="sensor.power_production_now")
+    monkeypatch.setattr(er_stub, "async_get", lambda hass: _FakeEntityRegistry(_LiveShapedEntry()))
+
+    async def fake_call(domain, service, payload, blocking=False, return_response=False):
+        return _forecast_solar_response()
+
+    engine._hass.services.async_call = fake_call
+    await engine.async_refresh_forecasts(now=T0)
+    assert [round(kwh, 1) for _at, kwh in engine.pv_hours] == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]

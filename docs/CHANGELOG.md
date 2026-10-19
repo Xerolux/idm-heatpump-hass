@@ -15,6 +15,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **The Forecast.Solar PV source never matched on real installations
+  (b12)**: the registry lookup compared the integration against the
+  entity-registry entry's ``domain``, which holds the *entity* domain
+  ("sensor") in a real Home Assistant — the integration lives in
+  ``platform``. Every entity therefore fell back to the attribute parsers
+  and the PV forecast stayed empty. The lookup now checks ``platform``
+  first (found live on the reference plant during the b12 verification).
+
 ## [0.23.0-b12] - 2026-10-19
 
 ### Added
