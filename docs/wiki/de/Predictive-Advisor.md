@@ -83,7 +83,10 @@ sind, bleiben stattdessen nicht verfügbar — sie raten nie.
   über `weather.get_forecasts`).
 - **PV-Prognose**: optionaler Sensor in den Optionen
   (*PV-Prognose-Sensor für den Predictive Advisor*); PVForecast-Attribute
-  (`detailed_forecast`) und Solcast-Listen (`forecast`) werden verstanden.
+  (`detailed_forecast`) und Solcast-Listen (`forecast`) werden verstanden,
+  und ein Sensor der Core-Integration **Forecast.Solar** wird über deren
+  `get_forecast`-Service gelesen (stündliches `wh_period`) — ihre eigenen
+  Sensoren tragen keine stündlichen Attribute.
 - **Strompreis**: die bestehende Option *Dynamischer Strompreis-Sensor*;
   zukünftige Stundenpreise werden aus üblichen Attribut-Formen
   (`today`/`tomorrow`/`data`/`prices`-Listen) gelesen.

@@ -15,6 +15,16 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **PV forecasts from the core Forecast.Solar integration**: the advisor's
+  PV forecast entity can now be a Forecast.Solar sensor. The integration's
+  sensors carry no hourly attributes, so the advisor reads its
+  `get_forecast` service (`resolution=hourly`, `wh_period` in Wh per hour)
+  through the entity's config entry and folds it onto calendar hours.
+  Solcast-style attribute entities keep working; any error or foreign
+  entity falls back to the attribute parsers.
+
 ## [0.23.0-b11] - 2026-10-19
 
 ### Fixed

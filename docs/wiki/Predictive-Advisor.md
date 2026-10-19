@@ -81,7 +81,9 @@ unavailable instead of guessing.
 - **PV forecast**: optional sensor in the options
   (*Predictive advisor PV forecast sensor*); PVForecast-style
   `detailed_forecast` attributes and Solcast-style `forecast` lists are
-  understood.
+  understood, and a sensor of the core **Forecast.Solar** integration is
+  read through its `get_forecast` service (hourly `wh_period`) — its own
+  sensors carry no hourly attributes.
 - **Electricity price**: the existing *Dynamic electricity price sensor*
   option; future hourly prices are read from common attribute shapes
   (`today`/`tomorrow`/`data`/`prices` lists).
