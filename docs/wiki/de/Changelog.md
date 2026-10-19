@@ -5,6 +5,14 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b13 — 2026-10-19
+
+Hotfix aus der PV-Inbetriebnahme auf der Referenzanlage: Die
+Forecast.Solar-Quelle aus b12 griff auf echten Installationen nie
+(Verwechslung von Registry-Attributen); die PV-Prognose blieb leer. Nach
+dem Fix live verifiziert: Der Advisor liest die Stundendaten und
+empfiehlt ein Warmwasser-Fenster.
+
 ## v0.23.0-b12 — 2026-10-19
 
 Der Advisor kann seine PV-Prognose jetzt aus der Core-Integration

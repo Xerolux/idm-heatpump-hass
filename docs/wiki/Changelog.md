@@ -5,6 +5,13 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b13 — 2026-10-19
+
+Hotfix from the reference-plant PV setup: the Forecast.Solar source of
+b12 never matched on real installations (registry platform/domain mixup);
+the PV forecast stayed empty. Verified live after the fix: the advisor
+reads the hourly forecast and recommends a hot-water window.
+
 ## v0.23.0-b12 — 2026-10-19
 
 The advisor can now read its PV forecast from the core Forecast.Solar
