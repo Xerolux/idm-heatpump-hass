@@ -87,13 +87,15 @@ def compose_operation_reason(
     if mode is None and power is None:
         return None
 
+    # The ``is not None`` guard is a type guard: the labels are keyed by int,
+    # and ``mode`` legitimately reaches here as None (power-only snapshots).
     mode_label = _MODE_LABELS.get(mode, "Unknown") if mode is not None else "Unknown"
     outdoor = _number(data.get("outdoor_temp"))
     flow = _number(data.get("hp_flow_temp"))
     dhw_temp = _number(data.get("dhw_temp_top"))
     dhw_setpoint = _number(data.get("dhw_setpoint"))
 
-    if mode == 0 or (power is not None and power < 0.05 and (mode is None or mode == 0)):
+    if mode == 0 or (power is not None and power < 0.05 and mode is None):
         return OperationReason(
             label="Off",
             mode_label=mode_label,
@@ -122,9 +124,7 @@ def compose_operation_reason(
             details={"operating_mode": mode, "outdoor_temp": outdoor, "power_consumption_kw": power},
         )
 
-    if mode == 4 or (
-        mode not in (2, 8) and dhw_temp is not None and dhw_setpoint is not None and dhw_temp < dhw_setpoint - 3.0
-    ):
+    if mode == 4 or (mode != 2 and dhw_temp is not None and dhw_setpoint is not None and dhw_temp < dhw_setpoint - 3.0):
         short = dhw_setpoint - dhw_temp if dhw_temp is not None and dhw_setpoint is not None else None
         return OperationReason(
             label="Hot water",

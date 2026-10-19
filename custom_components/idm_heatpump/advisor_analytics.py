@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import math
+import time
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from typing import Any, Final
@@ -22,8 +23,13 @@ from .const import DOMAIN
 _LOGGER = logging.getLogger(__name__)
 
 _STORAGE_VERSION: Final = 1
-_BUILDING_MODEL_VERSION: Final = 2
+# 3: weighted and decayed regression statistics (they are not comparable
+# with the unweighted sums of earlier versions; the fits relearn once).
+_BUILDING_MODEL_VERSION: Final = 3
 _STORAGE_SAVE_DELAY: Final = 30.0
+# Aggregates arrive with every coordinator poll; persisting at that cadence
+# writes the store roughly every scan interval for a few changed counters.
+_SAVE_THROTTLE: Final = 300.0
 _BASELINE_DAYS: Final = 30
 _BASELINE_MIN_DAYS: Final = 3
 _COP_BIN_OUTDOOR: Final = 2.0
@@ -32,6 +38,14 @@ _COP_NEIGHBOURHOOD: Final = 1  # 3x3 bins around the query point
 _COP_MIN_HOURS: Final = 1.0
 _COP_OBSERVED_DAYS: Final = 7
 _REGRESSION_MIN_SAMPLES: Final = 60
+# Effective observed hours required before a fit is trusted; one long
+# evening at a single operating point must not be enough (the samples are
+# autocorrelated at the scan interval).
+_REGRESSION_MIN_HOURS: Final = 12.0
+# Old samples lose half their weight per half-life so the models follow
+# building changes (renovation, an applied heating-curve change) instead of
+# averaging over the plant's whole history.
+_REGRESSION_HALF_LIFE: Final = timedelta(days=30)
 
 
 def _utcnow() -> datetime:
@@ -103,47 +117,68 @@ class LinearFit:
 
 @dataclass
 class _OnlineRegression:
-    """Sufficient statistics of an online OLS regression."""
+    """Sufficient statistics of a weighted, exponentially decayed OLS fit.
+
+    ``sx``…``sxy`` are decayed weighted sums, ``w`` their total weight and
+    ``n`` the raw sample count. Samples arrive at the scan interval and are
+    strongly autocorrelated, so each sample carries the hours it represents
+    as its weight, and every observe step first shrinks the accumulated
+    statistics by a half-life decay so the fit follows building changes
+    instead of averaging over the plant's whole history.
+    """
 
     n: int = 0
+    w: float = 0.0
     sx: float = 0.0
     sy: float = 0.0
     sxx: float = 0.0
     sxy: float = 0.0
 
-    def observe(self, x: float, y: float) -> _OnlineRegression:
+    def observe(self, x: float, y: float, *, weight: float = 1.0, decay: float = 1.0) -> _OnlineRegression:
+        if weight <= 0:
+            return self
         return _OnlineRegression(
             n=self.n + 1,
-            sx=self.sx + x,
-            sy=self.sy + y,
-            sxx=self.sxx + x * x,
-            sxy=self.sxy + x * y,
+            w=self.w * decay + weight,
+            sx=self.sx * decay + weight * x,
+            sy=self.sy * decay + weight * y,
+            sxx=self.sxx * decay + weight * x * x,
+            sxy=self.sxy * decay + weight * x * y,
         )
 
     def fit(self) -> LinearFit | None:
         """Slope/intercept once enough independent samples accumulated."""
-        if self.n < _REGRESSION_MIN_SAMPLES:
+        if self.n < _REGRESSION_MIN_SAMPLES or self.w < _REGRESSION_MIN_HOURS:
             return None
-        denominator = self.n * self.sxx - self.sx * self.sx
+        denominator = self.w * self.sxx - self.sx * self.sx
         if abs(denominator) < 1e-9:
             return None
-        slope = (self.n * self.sxy - self.sx * self.sy) / denominator
-        intercept = (self.sy - slope * self.sx) / self.n
+        slope = (self.w * self.sxy - self.sx * self.sy) / denominator
+        intercept = (self.sy - slope * self.sx) / self.w
         return LinearFit(slope=slope, intercept=intercept, samples=self.n)
 
     def to_dict(self) -> dict[str, float]:
-        return {"n": self.n, "sx": self.sx, "sy": self.sy, "sxx": self.sxx, "sxy": self.sxy}
+        return {
+            "n": self.n,
+            "w": self.w,
+            "sx": self.sx,
+            "sy": self.sy,
+            "sxx": self.sxx,
+            "sxy": self.sxy,
+        }
 
     @classmethod
     def from_dict(cls, value: Any) -> _OnlineRegression:
         if not isinstance(value, dict):
             return cls()
         stats = cls()
-        for name in ("n", "sx", "sy", "sxx", "sxy"):
+        for name in ("n", "w", "sx", "sy", "sxx", "sxy"):
             numeric = _number(value.get(name))
-            if numeric is None:
+            if numeric is None or numeric < 0:
                 return cls()
             setattr(stats, name, numeric)
+        if stats.n == 0:
+            return cls()
         return stats
 
 
@@ -166,12 +201,19 @@ class AdvisorAnalytics:
         self._cop_map: dict[str, list[float]] = {}
         # day -> [electric_kwh, thermal_kwh] for the observed-COP window
         self._cop_days: dict[str, list[float]] = {}
+        # Per-domain day totals: pure space heating and pure DHW charging
+        # have different COPs; mixing them hides both (discussion #540).
+        self._cop_days_heating: dict[str, list[float]] = {}
+        self._cop_days_dhw: dict[str, list[float]] = {}
         self._heat_fit = _OnlineRegression()
         self._flow_fit = _OnlineRegression()
+        self._heat_fit_at: datetime | None = None
+        self._flow_fit_at: datetime | None = None
         self._cooldown_count = 0
         self._cooldown_rate_1_per_h: float | None = None
         self._capacity_kwh_per_k: float | None = None
         self._last_day: str | None = None
+        self._last_save_schedule: float | None = None
 
     # ------------------------------------------------------------------
     # Daily metric aggregates and baselines
@@ -242,17 +284,32 @@ class AdvisorAnalytics:
         thermal_kw: float,
         electric_kw: float,
         hours: float,
+        *,
+        domain: str = "total",
     ) -> None:
-        """Integrate one operating interval into the outdoor/flow COP map."""
+        """Integrate one operating interval into the COP statistics.
+
+        ``domain`` additionally files the interval under ``"heating"`` or
+        ``"dhw"`` when the operating mode was unambiguous (pure space
+        heating / pure hot-water charging); mixed, defrost, cooling and
+        unknown modes only feed the all-mode totals.
+        """
         if outdoor is None or flow is None or hours <= 0 or electric_kw <= 0 or thermal_kw <= 0:
             return
         hours = min(hours, 0.5)
         key = _cop_bin_key(outdoor, flow)
         electric, thermal, mapped = self._cop_map.get(key, [0.0, 0.0, 0.0])
         self._cop_map[key] = [electric + electric_kw * hours, thermal + thermal_kw * hours, mapped + hours]
-        day = self._cop_days.setdefault(_day_key(_utcnow()), [0.0, 0.0])
-        day[0] += electric_kw * hours
-        day[1] += thermal_kw * hours
+        day = _day_key(_utcnow())
+        totals = self._cop_days.setdefault(day, [0.0, 0.0])
+        totals[0] += electric_kw * hours
+        totals[1] += thermal_kw * hours
+        if domain in ("heating", "dhw"):
+            domain_days = (self._cop_days_heating if domain == "heating" else self._cop_days_dhw).setdefault(
+                day, [0.0, 0.0]
+            )
+            domain_days[0] += electric_kw * hours
+            domain_days[1] += thermal_kw * hours
         self._schedule_save()
 
     def expected_cop(self, outdoor: float, flow: float) -> ExpectedCop | None:
@@ -276,14 +333,25 @@ class AdvisorAnalytics:
             return None
         return ExpectedCop(cop=round(thermal / electric, 2), hours=round(hours, 2), buckets=buckets)
 
-    def observed_cop(self, days: int = _COP_OBSERVED_DAYS, now: datetime | None = None) -> float | None:
-        """COP actually observed over the last N days of map samples."""
-        if not self._cop_days:
+    def observed_cop(
+        self, days: int = _COP_OBSERVED_DAYS, now: datetime | None = None, *, domain: str = "total"
+    ) -> float | None:
+        """COP actually observed over the last N days of map samples.
+
+        ``domain="heating"``/``"dhw"`` evaluates only the pure-mode intervals
+        of that domain; the all-mode total stays available as ``"total"``.
+        """
+        source = self._cop_days
+        if domain == "heating":
+            source = self._cop_days_heating
+        elif domain == "dhw":
+            source = self._cop_days_dhw
+        if not source:
             return None
         current = now or _utcnow()
         cutoff = (current - timedelta(days=days)).date().isoformat()
-        electric = sum(total[0] for day, total in self._cop_days.items() if day >= cutoff)
-        thermal = sum(total[1] for day, total in self._cop_days.items() if day >= cutoff)
+        electric = sum(total[0] for day, total in source.items() if day >= cutoff)
+        thermal = sum(total[1] for day, total in source.items() if day >= cutoff)
         if electric <= 0 or thermal <= 0:
             return None
         return round(thermal / electric, 2)
@@ -292,12 +360,32 @@ class AdvisorAnalytics:
     # Building model (phase 5)
     # ------------------------------------------------------------------
 
-    def observe_heating(self, indoor_outdoor_delta_k: float, thermal_kw: float) -> None:
-        """Feed the heat-loss regression (thermal power vs. temperature delta)."""
+    def observe_heating(self, indoor_outdoor_delta_k: float, thermal_kw: float, now: datetime | None = None) -> None:
+        """Feed the heat-loss regression (thermal power vs. temperature delta).
+
+        Each sample is weighted by the hours it represents (capped at half an
+        hour so a polling gap cannot turn one point into hours of evidence)
+        and the accumulated statistics decay with a 30-day half-life.
+        """
         if not math.isfinite(indoor_outdoor_delta_k) or thermal_kw <= 0:
             return
-        self._heat_fit = self._heat_fit.observe(indoor_outdoor_delta_k, thermal_kw)
+        current = now or _utcnow()
+        weight, decay = self._sample_weight_and_decay(self._heat_fit_at, current)
+        self._heat_fit_at = current
+        self._heat_fit = self._heat_fit.observe(indoor_outdoor_delta_k, thermal_kw, weight=weight, decay=decay)
         self._schedule_save()
+
+    def _sample_weight_and_decay(self, previous_at: datetime | None, current: datetime) -> tuple[float, float]:
+        """Interval hours as sample weight plus the decay since the last sample."""
+        if previous_at is None:
+            return 1.0, 1.0
+        elapsed = (current - previous_at).total_seconds()
+        if elapsed <= 0:
+            return 0.0, 1.0
+        hours = elapsed / 3600.0
+        weight = min(hours, 0.5)
+        decay = 0.5 ** (hours / (_REGRESSION_HALF_LIFE.total_seconds() / 3600.0))
+        return weight, decay
 
     @property
     def heat_loss_w_per_k(self) -> float | None:
@@ -307,9 +395,12 @@ class AdvisorAnalytics:
             return None
         return round(fit.slope * 1000.0, 1)
 
-    def observe_flow_pair(self, outdoor: float, flow: float) -> None:
+    def observe_flow_pair(self, outdoor: float, flow: float, now: datetime | None = None) -> None:
         """Feed the flow-temperature regression while the room holds target."""
-        self._flow_fit = self._flow_fit.observe(outdoor, flow)
+        current = now or _utcnow()
+        weight, decay = self._sample_weight_and_decay(self._flow_fit_at, current)
+        self._flow_fit_at = current
+        self._flow_fit = self._flow_fit.observe(outdoor, flow, weight=weight, decay=decay)
         self._schedule_save()
 
     def optimal_flow_temp(self, outdoor: float) -> float | None:
@@ -372,10 +463,13 @@ class AdvisorAnalytics:
             for key in [key for key in days if key < cutoff]:
                 days.pop(key)
         self._cop_days = {key: value for key, value in self._cop_days.items() if key >= cutoff}
+        self._cop_days_heating = {key: value for key, value in self._cop_days_heating.items() if key >= cutoff}
+        self._cop_days_dhw = {key: value for key, value in self._cop_days_dhw.items() if key >= cutoff}
         if len(self._cop_map) > 512:
             # Drop the least-used bins; the map relearns quickly.
             for key, _hours in sorted(self._cop_map.items(), key=lambda item: item[1][2])[: len(self._cop_map) - 512]:
                 self._cop_map.pop(key)
+        self._schedule_save(force=True)
 
     def _serialize(self) -> dict[str, Any]:
         return {
@@ -384,6 +478,8 @@ class AdvisorAnalytics:
             "daily": self._daily,
             "cop_map": self._cop_map,
             "cop_days": self._cop_days,
+            "cop_days_heating": self._cop_days_heating,
+            "cop_days_dhw": self._cop_days_dhw,
             "heat_fit": self._heat_fit.to_dict(),
             "flow_fit": self._flow_fit.to_dict(),
             "cooldown_count": self._cooldown_count,
@@ -392,7 +488,12 @@ class AdvisorAnalytics:
             "last_day": self._last_day,
         }
 
-    def _schedule_save(self) -> None:
+    def _schedule_save(self, *, force: bool = False) -> None:
+        """Schedule a store write at most every few minutes between rollovers."""
+        now = time.monotonic()
+        if not force and self._last_save_schedule is not None and now - self._last_save_schedule < _SAVE_THROTTLE:
+            return
+        self._last_save_schedule = now
         self._store.async_delay_save(self._serialize, _STORAGE_SAVE_DELAY)
 
     async def async_load(self) -> None:
@@ -419,7 +520,12 @@ class AdvisorAnalytics:
             }
         cop_days = stored.get("cop_days")
         if isinstance(cop_days, dict):
-            self._cop_days = {str(key): list(values) for key, values in cop_days.items() if isinstance(values, list)}
+            self._cop_days = {str(day): list(values) for day, values in cop_days.items() if isinstance(values, list)}
+        for attr, key in ((self._cop_days_heating, "cop_days_heating"), (self._cop_days_dhw, "cop_days_dhw")):
+            domain_days = stored.get(key)
+            if isinstance(domain_days, dict):
+                attr.clear()
+                attr.update({str(day): list(values) for day, values in domain_days.items() if isinstance(values, list)})
         self._heat_fit = _OnlineRegression.from_dict(stored.get("heat_fit"))
         self._flow_fit = _OnlineRegression.from_dict(stored.get("flow_fit"))
         count = stored.get("cooldown_count")
@@ -427,12 +533,13 @@ class AdvisorAnalytics:
         self._cooldown_rate_1_per_h = _number(stored.get("cooldown_rate_1_per_h"))
         self._capacity_kwh_per_k = _number(stored.get("capacity_kwh_per_k"))
         if stored.get("building_model_version") != _BUILDING_MODEL_VERSION:
-            # Old sufficient statistics cannot separate DHW/inactive samples
-            # from space heating. Relearn only the affected models (#546).
+            # Regression statistics from an earlier model generation (mode
+            # separation in v2, weighting and decay in v3) are not comparable
+            # with the current ones. Relearn only the affected models (#546).
             self._heat_fit = _OnlineRegression()
             self._flow_fit = _OnlineRegression()
             self._capacity_kwh_per_k = None
-            self._schedule_save()
+            self._schedule_save(force=True)
         last_day = stored.get("last_day")
         self._last_day = last_day if isinstance(last_day, str) else None
 

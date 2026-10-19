@@ -5,6 +5,8 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from unittest.mock import MagicMock
 
+import pytest
+
 from custom_components.idm_heatpump import advisor_analytics
 from custom_components.idm_heatpump.advisor_analytics import (
     AdvisorAnalytics,
@@ -110,6 +112,29 @@ def test_observed_cop_window_excludes_old_days() -> None:
     assert analytics.observed_cop(days=7, now=T0 + timedelta(days=30)) is None
 
 
+def test_observed_cop_splits_heating_and_dhw_domains() -> None:
+    analytics = _analytics()
+    # Heating: COP 4.0; DHW: COP 2.0; mixed mode feeds only the total.
+    for _ in range(10):
+        analytics.observe_cop_sample(5.0, 30.0, thermal_kw=4.0, electric_kw=1.0, hours=0.2, domain="heating")
+        analytics.observe_cop_sample(5.0, 60.0, thermal_kw=2.0, electric_kw=1.0, hours=0.2, domain="dhw")
+        analytics.observe_cop_sample(5.0, 45.0, thermal_kw=6.0, electric_kw=1.0, hours=0.2, domain="total")
+    assert analytics.observed_cop(now=T0) == pytest.approx(4.0)  # all-mode: 12/3
+    assert analytics.observed_cop(now=T0, domain="heating") == 4.0
+    assert analytics.observed_cop(now=T0, domain="dhw") == 2.0
+
+
+async def test_per_domain_cop_days_survive_the_round_trip() -> None:
+    first = _analytics()
+    first.observe_cop_sample(5.0, 30.0, 4.0, 1.0, 0.2, domain="heating")
+    first.observe_cop_sample(5.0, 60.0, 2.0, 1.0, 0.2, domain="dhw")
+    second = _analytics()
+    second._store.data = first._serialize()
+    await second.async_load()
+    assert second.observed_cop(now=T0, domain="heating") == 4.0
+    assert second.observed_cop(now=T0, domain="dhw") == 2.0
+
+
 # ----------------------------------------------------------------------
 # Building model
 # ----------------------------------------------------------------------
@@ -119,10 +144,36 @@ def test_heat_loss_regression() -> None:
     analytics = _analytics()
     assert analytics.heat_loss_w_per_k is None
     for delta in range(1, 61):
-        analytics.observe_heating(float(delta), 0.2 * delta)  # 200 W/K
+        # Advancing timestamps: the fit needs effective observed hours, not
+        # just raw sample counts (scan-interval samples are autocorrelated).
+        analytics.observe_heating(float(delta), 0.2 * delta, T0 + timedelta(minutes=12 * delta))  # 200 W/K
     heat_loss = analytics.heat_loss_w_per_k
     assert heat_loss is not None
     assert abs(heat_loss - 200.0) < 5.0
+
+
+def test_regression_without_effective_hours_stays_unlearned() -> None:
+    analytics = _analytics()
+    # Sixty samples at one instant carry no observed hours; one long evening
+    # at a single operating point must not be enough evidence.
+    for delta in range(1, 61):
+        analytics.observe_heating(float(delta), 0.2 * delta, T0)
+    assert analytics.heat_loss_w_per_k is None
+
+
+def test_regression_decays_older_regimes() -> None:
+    analytics = _analytics()
+    for delta in range(1, 61):
+        analytics.observe_heating(float(delta), 0.2 * delta, T0 + timedelta(minutes=12 * delta))  # 200 W/K
+    # A regime change (e.g. the user applied a recommended curve change),
+    # observed three half-lives later at 400 W/K.
+    later = T0 + timedelta(days=100)
+    for delta in range(1, 61):
+        analytics.observe_heating(float(delta), 0.4 * delta, later + timedelta(minutes=12 * delta))
+    heat_loss = analytics.heat_loss_w_per_k
+    assert heat_loss is not None
+    # The old regime keeps a decayed vote, not a permanent veto.
+    assert heat_loss > 350.0
 
 
 def test_heat_loss_rejects_invalid_samples() -> None:
@@ -135,7 +186,7 @@ def test_heat_loss_rejects_invalid_samples() -> None:
 def test_optimal_flow_regression_and_guards() -> None:
     analytics = _analytics()
     for outdoor in range(60):
-        analytics.observe_flow_pair(float(outdoor), 40.0 - 0.5 * outdoor)
+        analytics.observe_flow_pair(float(outdoor), 40.0 - 0.5 * outdoor, T0 + timedelta(minutes=12 * outdoor))
     optimal = analytics.optimal_flow_temp(0.0)
     assert optimal is not None
     assert abs(optimal - 40.0) < 1.0
@@ -144,7 +195,7 @@ def test_optimal_flow_regression_and_guards() -> None:
     # Rising fits are not heating curves.
     rising = _analytics()
     for outdoor in range(60):
-        rising.observe_flow_pair(float(outdoor), 20.0 + 0.4 * outdoor)
+        rising.observe_flow_pair(float(outdoor), 20.0 + 0.4 * outdoor, T0 + timedelta(minutes=12 * outdoor))
     assert rising.optimal_flow_temp(0.0) is None
 
 
@@ -227,8 +278,8 @@ def test_median_and_mad_helpers_handle_empty_input() -> None:
 def test_optimal_flow_refuses_constant_outdoor_samples() -> None:
     """Enough samples but zero spread in x: the regression cannot identify a slope."""
     analytics = _analytics()
-    for _ in range(60):
-        analytics.observe_flow_pair(5.0, 30.0)
+    for index in range(60):
+        analytics.observe_flow_pair(5.0, 30.0, T0 + timedelta(minutes=12 * index))
 
     assert analytics.optimal_flow_temp(5.0) is None
 
@@ -315,3 +366,18 @@ async def test_legacy_building_models_are_reset_without_losing_other_analytics()
     await third.async_load()
     assert third.building_model["heat_fit_samples"] == 1
     assert third.building_model["flow_curve_samples"] == 1
+
+
+async def test_unweighted_legacy_regression_dicts_are_reset() -> None:
+    """A v2 document (unweighted sufficient statistics) relearns, not mixes."""
+    first = _analytics()
+    legacy = {
+        "version": 1,
+        "building_model_version": 2,
+        "heat_fit": {"n": 500.0, "sx": 1.0, "sy": 2.0, "sxx": 3.0, "sxy": 4.0},
+        "flow_fit": {"n": 500.0, "sx": 1.0, "sy": 2.0, "sxx": 3.0, "sxy": 4.0},
+    }
+    first._store.data = legacy
+    await first.async_load()
+    assert first.building_model["heat_fit_samples"] == 0
+    assert first.building_model["flow_curve_samples"] == 0

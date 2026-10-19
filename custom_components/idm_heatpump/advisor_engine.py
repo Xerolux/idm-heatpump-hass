@@ -17,6 +17,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any, Final
 
 from homeassistant.core import HomeAssistant
+from homeassistant.util import dt as dt_util
 
 from .advisor_analytics import AdvisorAnalytics
 from .const import HeatPumpStatus
@@ -83,8 +84,38 @@ def _day_stamp(now: datetime) -> str:
     return now.astimezone(UTC).date().strftime("%Y%m%d")
 
 
+def _cop_domain(mode_value: Any) -> str:
+    """Attribute an operating interval to ``heating``/``dhw`` or all-mode total.
+
+    Only unambiguous modes count per domain: defrost, mixed heating+DHW,
+    cooling and unknown modes feed the totals alone, where they cannot bias
+    a per-mode COP.
+    """
+    numeric = _number(mode_value)
+    if numeric is None:
+        return "total"
+    # IntFlag accepts any int (negative values wrap around); the flag
+    # checks below are the actual safety net.
+    mode = HeatPumpStatus(int(numeric))
+    if mode & HeatPumpStatus.DEFROSTING:
+        return "total"
+    heating = bool(mode & HeatPumpStatus.HEATING)
+    water = bool(mode & HeatPumpStatus.WATER)
+    if heating and not water:
+        return "heating"
+    if water and not heating:
+        return "dhw"
+    return "total"
+
+
 def _parse_hour(value: Any, now: datetime) -> datetime | None:
-    """Parse one forecast timestamp: ISO string or hour-of-day int."""
+    """Parse one forecast timestamp: ISO string or hour-of-day int.
+
+    Naive ISO strings are rejected, not silently read as UTC: real feeds
+    exist that stamp forecasts in naive local time, and assuming UTC would
+    silently shift every series by the UTC offset (same decision as
+    ``comfort_advisory.py``).
+    """
     if isinstance(value, int) and not isinstance(value, bool):
         hour = now.replace(minute=0, second=0, microsecond=0) + timedelta(hours=value)
         return hour
@@ -95,8 +126,41 @@ def _parse_hour(value: Any, now: datetime) -> datetime | None:
     except ValueError:
         return None
     if parsed.tzinfo is None:
-        parsed = parsed.replace(tzinfo=UTC)
+        return None
     return parsed.astimezone(UTC)
+
+
+def _bucket_hourly_mean(series: list[tuple[datetime, float]]) -> list[tuple[datetime, float]]:
+    """Fold sub-hourly samples onto calendar hours by their mean."""
+    buckets: dict[datetime, tuple[float, int]] = {}
+    for at, value in series:
+        hour = at.replace(minute=0, second=0, microsecond=0)
+        total, count = buckets.get(hour, (0.0, 0))
+        buckets[hour] = (total + value, count + 1)
+    return [(hour, total / count) for hour, (total, count) in sorted(buckets.items()) if count]
+
+
+def _bucket_hourly_kwh(series: list[tuple[datetime, float]]) -> list[tuple[datetime, float]]:
+    """Fold sub-hourly period values onto calendar hours as kWh per hour.
+
+    ``series`` holds period-average power in kW (kW over one period equals
+    the kWh of that period). Each sample is credited with the shorter of its
+    gap to the next sample and one hour, so a 15-minute grid contributes a
+    quarter of each kW value instead of a full hour.
+    """
+    ordered = sorted(series)
+    if not ordered:
+        return []
+    hours: dict[datetime, float] = {}
+    for index, (at, kw) in enumerate(ordered):
+        if index + 1 < len(ordered):
+            gap = (ordered[index + 1][0] - at).total_seconds() / 3600.0
+        else:
+            gap = (at - ordered[index - 1][0]).total_seconds() / 3600.0 if index else 1.0
+        duration = max(1.0 / 60.0, min(gap, 1.0))
+        hour = at.replace(minute=0, second=0, microsecond=0)
+        hours[hour] = hours.get(hour, 0.0) + kw * duration
+    return sorted(hours.items())
 
 
 def parse_hourly_temperatures(
@@ -104,7 +168,11 @@ def parse_hourly_temperatures(
     now: datetime,
     horizon: timedelta = _FORECAST_HORIZON,
 ) -> list[tuple[datetime, float]]:
-    """Extract hourly temperatures from a ``weather.get_forecasts`` payload."""
+    """Extract hourly temperatures from a ``weather.get_forecasts`` payload.
+
+    Sub-hourly forecasts are folded onto calendar hours by their mean so the
+    window logic can keep working in whole hours.
+    """
     if not isinstance(forecast, list):
         return []
     temperatures: list[tuple[datetime, float]] = []
@@ -115,7 +183,7 @@ def parse_hourly_temperatures(
         value = _number(entry.get("temperature"))
         if at is not None and value is not None and now - timedelta(hours=1) <= at <= now + horizon:
             temperatures.append((at, value))
-    return temperatures
+    return _bucket_hourly_mean(temperatures)
 
 
 def parse_pv_hourly_kwh(state: Any, now: datetime) -> list[tuple[datetime, float]]:
@@ -123,7 +191,8 @@ def parse_pv_hourly_kwh(state: Any, now: datetime) -> list[tuple[datetime, float
 
     Supported shapes: ``detailed_forecast`` (mapping of ISO hour or
     hour-offset to kWh — PVForecast style) and ``forecast``/``forecasts``
-    (list with ``pv_estimate*`` in kW per hour — Solcast style).
+    (list with ``pv_estimate*`` in kW per period — Solcast style). Sub-hourly
+    grids are folded onto calendar hours with their true period length.
     """
     attributes = getattr(state, "attributes", None)
     if not isinstance(attributes, Mapping):
@@ -131,19 +200,20 @@ def parse_pv_hourly_kwh(state: Any, now: datetime) -> list[tuple[datetime, float
 
     detailed = attributes.get("detailed_forecast")
     if isinstance(detailed, Mapping):
-        parsed: list[tuple[datetime, float]] = []
+        parsed: dict[datetime, float] = {}
         for key, value in detailed.items():
             at = _parse_hour(key, now)
             kwh = _number(value)
             if at is not None and kwh is not None and kwh > 0 and now <= at <= now + _FORECAST_HORIZON:
-                parsed.append((at, kwh))
-        return parsed
+                hour = at.replace(minute=0, second=0, microsecond=0)
+                parsed[hour] = parsed.get(hour, 0.0) + kwh
+        return sorted(parsed.items())
 
     for list_key in ("forecast", "forecasts"):
         entries = attributes.get(list_key)
         if not isinstance(entries, list):
             continue
-        parsed = []
+        parsed_kw: list[tuple[datetime, float]] = []
         for entry in entries:
             if not isinstance(entry, Mapping):
                 continue
@@ -163,8 +233,8 @@ def parse_pv_hourly_kwh(state: Any, now: datetime) -> list[tuple[datetime, float
                 and kw > 0
                 and now - timedelta(hours=1) <= at <= now + _FORECAST_HORIZON
             ):
-                parsed.append((at, kw))  # kW averaged over one hour == kWh
-        return parsed
+                parsed_kw.append((at, kw))
+        return _bucket_hourly_kwh(parsed_kw)
     return []
 
 
@@ -173,14 +243,17 @@ def parse_price_hourly(state: Any, now: datetime) -> list[tuple[datetime, float]
 
     Supported attribute shapes: ``today``/``tomorrow``/``data``/``prices``/
     ``raw_today``/``raw_tomorrow`` lists with a timestamp and a price.
-    Cent prices are normalized when the state unit says ct/kWh.
+    Cent prices are normalized when the state unit says ct/kWh. Duplicate
+    timestamps (the same hour exposed under two attribute names) keep the
+    first source's value — a duplicate would break the consecutive-hour
+    check downstream. Sub-hourly grids are averaged onto calendar hours.
     """
     attributes = getattr(state, "attributes", None)
     if not isinstance(attributes, Mapping):
         return []
     unit = attributes.get("unit_of_measurement")
     scale = 0.01 if unit in {"ct/kWh", "c/kWh"} else 1.0
-    parsed: list[tuple[datetime, float]] = []
+    by_timestamp: dict[datetime, float] = {}
     for list_key in ("today", "tomorrow", "data", "prices", "raw_today", "raw_tomorrow"):
         entries = attributes.get(list_key)
         if not isinstance(entries, list):
@@ -199,8 +272,8 @@ def parse_price_hourly(state: Any, now: datetime) -> list[tuple[datetime, float]
                 if price is not None:
                     break
             if at is not None and price is not None and now - timedelta(hours=1) <= at <= now + _FORECAST_HORIZON:
-                parsed.append((at, price * scale))
-    return parsed
+                by_timestamp.setdefault(at, price * scale)
+    return _bucket_hourly_mean(sorted(by_timestamp.items()))
 
 
 def best_window(
@@ -366,7 +439,14 @@ class AdvisorEngine:
             hours = 0.0
             if self._last_sample_at is not None and self._compressor_on:
                 hours = (current - self._last_sample_at).total_seconds() / 3600.0
-            self._analytics.observe_cop_sample(outdoor, flow, thermal, power, hours)
+            self._analytics.observe_cop_sample(
+                outdoor,
+                flow,
+                thermal,
+                power,
+                hours,
+                domain=_cop_domain(data.get("hp_operating_mode")),
+            )
         # DHW, cooling, defrost and mixed modes do not deliver the measured
         # thermal power exclusively to the building (#546).
         if _number(data.get("hp_operating_mode")) != HeatPumpStatus.HEATING:
@@ -374,7 +454,7 @@ class AdvisorEngine:
         heating_circuits = tuple(c for c in self._circuits if self._circuit_is_heating(c, data))
         room = next((t for c in heating_circuits if (t := self._room_temp_for(c, data)) is not None), None)
         if room is not None and outdoor is not None and thermal is not None and thermal > 0.5:
-            self._analytics.observe_heating(room - outdoor, thermal)
+            self._analytics.observe_heating(room - outdoor, thermal, current)
         for circuit in heating_circuits:
             room_temp = self._room_temp_for(circuit, data)
             room_setpoint = _number(data.get(f"hc_{circuit}_room_setpoint_heat_normal"))
@@ -386,7 +466,7 @@ class AdvisorEngine:
                 and abs(room_temp - room_setpoint) <= 0.6
                 and circuit_flow is not None
             ):
-                self._analytics.observe_flow_pair(outdoor, circuit_flow)
+                self._analytics.observe_flow_pair(outdoor, circuit_flow, current)
 
     @staticmethod
     def _circuit_is_heating(circuit: str, data: Mapping[str, Any]) -> bool:
@@ -632,6 +712,7 @@ class AdvisorEngine:
         if self._advisor.stage not in ("recommending", "established"):
             self._advisor.retract(f"dhw_window_{_day_stamp(current)}")
             return
+        quality = self._advisor.usable_fraction
         window: dict[str, Any] | None = None
         if self._pv_hours:
             best = best_window(self._pv_hours, highest=True)
@@ -643,9 +724,12 @@ class AdvisorEngine:
                     "expected_pv_kwh": round(best[2], 2),
                 }
         if window is None and self._price_hours:
+            # Hot-water charging has its own (lower) COP; prefer the observed
+            # DHW COP over the heating-oriented map expectation.
+            observed_dhw_cop = self._analytics.observed_cop(domain="dhw")
             scored: list[tuple[datetime, float]] = []
             for at, price in self._price_hours:
-                cop = self._expected_cop_for_hour(at) or 3.5
+                cop = observed_dhw_cop if observed_dhw_cop is not None else (self._expected_cop_for_hour(at) or 3.5)
                 scored.append((at, price / cop))
             best = best_window(scored, highest=False)
             if best is not None:
@@ -655,15 +739,18 @@ class AdvisorEngine:
                     "hours": _WINDOW_HOURS,
                     "heat_cost_eur_per_kwh": round(best[1], 4),
                 }
+                if observed_dhw_cop is not None:
+                    window["assumed_cop"] = observed_dhw_cop
         self._dhw_window = window
         key = f"dhw_window_{_day_stamp(current)}"
         if window is None:
             self._advisor.retract(key)
             return
         start = datetime.fromisoformat(window["start"])
-        start_local = start.strftime("%H:%M")
-        end_local = (start + timedelta(hours=_WINDOW_HOURS)).strftime("%H:%M")
-        window_text = f"{start_local}-{end_local}"
+        # The timestamps are UTC; users charge hot water by their wall clock.
+        start_local = dt_util.as_local(start)
+        end_local = dt_util.as_local(start + timedelta(hours=_WINDOW_HOURS))
+        window_text = f"{start_local.strftime('%H:%M')}-{end_local.strftime('%H:%M')}"
         if window["source"] == "pv_surplus_forecast":
             title = f"Charge hot water {window_text}: expected PV surplus {window['expected_pv_kwh']} kWh"
             reasons = ("pv_forecast_surplus_window",)
@@ -677,7 +764,7 @@ class AdvisorEngine:
                 severity=RecommendationSeverity.INFO,
                 title=title,
                 recommended_value=window_text,
-                confidence=clamp_confidence(0.55 * (self._advisor.usable_fraction or 1.0) + 0.25),
+                confidence=clamp_confidence(0.55 * (quality if quality is not None else 1.0) + 0.25),
                 reasons=reasons,
             )
         )
@@ -708,6 +795,7 @@ class AdvisorEngine:
             avoid_end = avoid_start + timedelta(hours=plan["expensive_hours"]["hours"])
             if avoid_start <= dhw_start < avoid_end:
                 plan["dhw_window_conflicts_with_expensive_hours"] = True
+                plan_quality = self._advisor.usable_fraction
                 self._advisor.submit(
                     Recommendation(
                         id=f"plan_{_day_stamp(current)}",
@@ -715,7 +803,7 @@ class AdvisorEngine:
                         severity=RecommendationSeverity.WARNING,
                         title="Recommended hot-water window overlaps the most expensive hours",
                         reasons=("dhw_window_inside_expensive_hours",),
-                        confidence=clamp_confidence(0.6 * (self._advisor.usable_fraction or 1.0) + 0.2),
+                        confidence=clamp_confidence(0.6 * (plan_quality if plan_quality is not None else 1.0) + 0.2),
                     )
                 )
             else:
@@ -771,26 +859,28 @@ class AdvisorEngine:
 
         Each domain scores 100 minus 30 per warning or 12 per hint finding;
         the overall score is the mean of the available domains and is only
-        published when at least two domains have data.
+        published when at least two domains have data. Findings are matched
+        by their stable machine reason codes, never by title wording.
         """
-        findings = [
-            rec.title.lower()
+        reasons = {
+            reason
             for rec in self._advisor.active_recommendations
             if rec.category is RecommendationCategory.ANOMALY
-        ]
+            for reason in rec.reasons
+        }
         components: dict[str, Any] = {}
         if self._analytics.metric_baseline("heat_sink_flow_rate") is not None:
             penalty = (
                 30.0
-                if any("flow is" in title for title in findings)
-                else (12.0 if any("spread" in title for title in findings) else 0.0)
+                if "heat_circle_flow_below_baseline" in reasons
+                else (12.0 if "spread_above_baseline" in reasons else 0.0)
             )
             components["hydraulics"] = round(max(0.0, 100.0 - penalty), 0)
         if self._analytics.metric_baseline("compressor_starts") is not None:
-            penalty = 30.0 if any("starts" in title for title in findings) else 0.0
+            penalty = 30.0 if "compressor_starts_above_baseline" in reasons else 0.0
             components["compressor"] = round(max(0.0, 100.0 - penalty), 0)
         if self._analytics.metric_baseline("dhw_charge_minutes") is not None:
-            penalty = 30.0 if any("hot-water" in title for title in findings) else 0.0
+            penalty = 30.0 if "dhw_charge_time_above_baseline" in reasons else 0.0
             components["dhw"] = round(max(0.0, 100.0 - penalty), 0)
         efficiency = self.efficiency
         if efficiency["expected_cop"] is not None and efficiency["observed_cop"] is not None:
@@ -801,12 +891,21 @@ class AdvisorEngine:
 
     @property
     def efficiency(self) -> dict[str, Any]:
-        """Current operating point vs. the learned COP map (phase 4)."""
+        """Current operating point vs. the learned COP map (phase 4).
+
+        The observed side evaluates only pure heating intervals when the
+        per-domain statistics exist (an all-mode COP contains the lower DHW
+        cycles and would show a persistent negative deviation proportional
+        to the hot-water share, independent of machine health). The 7-day
+        COPs of both domains are published alongside for diagnostics.
+        """
         data = self._coordinator.data if isinstance(self._coordinator.data, Mapping) else {}
         outdoor = _number(data.get("outdoor_temp"))
         flow = _number(data.get("hp_flow_temp"))
         expected = self._analytics.expected_cop(outdoor, flow) if outdoor is not None and flow is not None else None
-        observed = self._analytics.observed_cop()
+        observed_heating = self._analytics.observed_cop(domain="heating")
+        observed_dhw = self._analytics.observed_cop(domain="dhw")
+        observed = observed_heating if observed_heating is not None else self._analytics.observed_cop()
         deviation = (
             round((observed - expected.cop) / expected.cop * 100.0, 1)
             if expected is not None and observed is not None and expected.cop > 0
@@ -820,6 +919,8 @@ class AdvisorEngine:
             "expected_cop": expected.cop if expected is not None else None,
             "expected_cop_hours": expected.hours if expected is not None else None,
             "observed_cop": observed,
+            "observed_cop_heating_7d": observed_heating,
+            "observed_cop_dhw_7d": observed_dhw,
             "deviation_percent": deviation,
             "score": score,
             "write_actions": False,

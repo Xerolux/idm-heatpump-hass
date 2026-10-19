@@ -16,6 +16,7 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
 )
 from homeassistant.const import EntityCategory
+from homeassistant.util import dt as dt_util
 
 from .advisor_engine import AdvisorEngine
 from .advisor_operation_reason import OperationReason, compose_operation_reason
@@ -127,14 +128,18 @@ class IdmAdvisorStatusSensor(IdmCoordinatorEntityBase, SensorEntity):
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
+        # Deliberately free of values that change every snapshot: attributes
+        # are part of the state, and per-sample counters would persist a
+        # recorder row per scan interval. The full per-key quality table
+        # lives in the config-entry diagnostics; the confidence *level*
+        # stands in for the float (the confidence sensor publishes the
+        # precise value).
         return {
-            "observation_days": self._advisor.observation_days,
+            "observation_days": int(self._advisor.observation_days or 0),
             "recommendations_allowed_after_days": 7,
             "long_term_baselines_after_days": 30,
-            "confidence": self._advisor.confidence,
-            "data_usable_fraction": self._advisor.usable_fraction,
+            "confidence_level": str(confidence_level(self._advisor.confidence)),
             "capabilities": self._advisor.capabilities.as_dict(),
-            "data_quality": self._advisor.quality_summary(),
             "active_recommendations": [rec.id for rec in self._advisor.active_recommendations],
             "history_entries": len(self._advisor.history),
             "event": "idm_advisor_recommendation",
@@ -265,16 +270,24 @@ class IdmAdvisorOperationReasonSensor(IdmCoordinatorEntityBase, SensorEntity):
             icon="mdi:help-circle-outline",
             entity_category=EntityCategory.DIAGNOSTIC,
         )
+        # The composed reason is identical for one snapshot; caching it by
+        # data identity keeps native_value/available/attributes from
+        # recomputing it three times per coordinator refresh.
+        self._reason_data: dict[str, Any] | None = None
+        self._reason_value: OperationReason | None = None
 
     def _reason(self) -> OperationReason | None:
         data = self.coordinator.data
         if not isinstance(data, dict):
             return None
-        return compose_operation_reason(
-            data,
-            demand_reason=self._engine.demand_reason_label,
-            circuits=self._engine.circuits,
-        )
+        if data is not self._reason_data:
+            self._reason_data = data
+            self._reason_value = compose_operation_reason(
+                data,
+                demand_reason=self._engine.demand_reason_label,
+                circuits=self._engine.circuits,
+            )
+        return self._reason_value
 
     @property
     def native_value(self) -> str | None:
@@ -381,6 +394,8 @@ class IdmAdvisorEfficiencySensor(IdmCoordinatorEntityBase, SensorEntity):
         return {
             "expected_cop": efficiency["expected_cop"],
             "observed_cop_7d": efficiency["observed_cop"],
+            "observed_cop_heating_7d": efficiency["observed_cop_heating_7d"],
+            "observed_cop_dhw_7d": efficiency["observed_cop_dhw_7d"],
             "deviation_percent": efficiency["deviation_percent"],
             "write_actions": False,
         }
@@ -566,7 +581,8 @@ class IdmAdvisorDhwWindowSensor(IdmCoordinatorEntityBase, SensorEntity):
             return None
         start = datetime.fromisoformat(window["start"])
         end = start + timedelta(hours=int(window.get("hours", 3)))
-        return f"{start.strftime('%H:%M')}-{end.strftime('%H:%M')}"
+        # The window timestamps are UTC; render them in the user's zone.
+        return f"{dt_util.as_local(start).strftime('%H:%M')}-{dt_util.as_local(end).strftime('%H:%M')}"
 
     @property
     def available(self) -> bool:
