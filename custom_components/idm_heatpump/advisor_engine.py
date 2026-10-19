@@ -661,7 +661,7 @@ class AdvisorEngine:
         """Fetch external forecasts and derive DHW window plus 24 h plan."""
         current = now if now is not None else _utcnow()
         self._weather_hours = await self._fetch_weather_forecast(current)
-        self._pv_hours = self._fetch_pv_forecast(current)
+        self._pv_hours = await self._fetch_pv_forecast(current)
         self._price_hours = self._fetch_price_forecast(current)
         self._compute_dhw_window(current)
         self._compute_plan(current)
@@ -685,10 +685,65 @@ class AdvisorEngine:
         forecast = item.get("forecast") if isinstance(item, Mapping) else None
         return parse_hourly_temperatures(forecast, current)
 
-    def _fetch_pv_forecast(self, current: datetime) -> list[tuple[datetime, float]]:
+    async def _fetch_pv_forecast(self, current: datetime) -> list[tuple[datetime, float]]:
         if not self._pv_forecast_entity:
             return []
+        hourly = await self._fetch_forecast_solar_hourly_kwh(current)
+        if hourly is not None:
+            return hourly
         return parse_pv_hourly_kwh(self._hass.states.get(self._pv_forecast_entity), current)
+
+    async def _fetch_forecast_solar_hourly_kwh(self, current: datetime) -> list[tuple[datetime, float]] | None:
+        """Hourly PV energy from the core Forecast.Solar integration, if wired.
+
+        The integration's sensors carry no hourly attributes; its
+        ``get_forecast`` service (``resolution=hourly``) returns
+        ``wh_period`` — watt-hours per hour with aware ISO timestamps. The
+        configured entity identifies the config entry through the entity
+        registry. None (service missing, entity from another integration,
+        any error) falls back to the entity-attribute parsers.
+        """
+        try:
+            from homeassistant.helpers import entity_registry as entity_registry_module
+
+            entity_id = self._pv_forecast_entity
+            if not entity_id:
+                return None
+            registry = entity_registry_module.async_get(self._hass)
+            entry = registry.async_get(entity_id) if registry else None
+            domain = getattr(entry, "domain", None) or getattr(entry, "platform", None)
+            if entry is None or domain != "forecast_solar" or not entry.config_entry_id:
+                return None
+            async with asyncio.timeout(30):
+                result = await self._hass.services.async_call(
+                    "forecast_solar",
+                    "get_forecast",
+                    {"config_entry": entry.config_entry_id, "resolution": "hourly"},
+                    blocking=True,
+                    return_response=True,
+                )
+        except Exception:
+            _LOGGER.debug("IDM advisor Forecast.Solar lookup unavailable", exc_info=True)
+            return None
+        wh_period = result.get("wh_period") if isinstance(result, Mapping) else None
+        if not isinstance(wh_period, Mapping):
+            return None
+        hours: list[tuple[datetime, float]] = []
+        for stamp, wh in wh_period.items():
+            if not isinstance(wh, (int, float)) or isinstance(wh, bool) or wh <= 0:
+                continue
+            at = _parse_hour(stamp, current) if isinstance(stamp, str) else None
+            if at is None:
+                continue
+            if current - timedelta(hours=1) <= at <= current + _FORECAST_HORIZON:
+                hours.append((at, float(wh) / 1000.0))
+        # wh_period holds energies per hour: sum sub-hourly duplicates
+        # instead of averaging them.
+        buckets: dict[datetime, float] = {}
+        for at, kwh in hours:
+            hour = at.replace(minute=0, second=0, microsecond=0)
+            buckets[hour] = buckets.get(hour, 0.0) + kwh
+        return sorted(buckets.items())
 
     def _fetch_price_forecast(self, current: datetime) -> list[tuple[datetime, float]]:
         if not self._price_entity:

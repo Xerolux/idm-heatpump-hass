@@ -1175,3 +1175,100 @@ def test_building_model_uses_room_and_flow_only_from_the_heating_circuit() -> No
     coordinator.data["hp_operating_mode"] = 1
     engine.observe(now=T0 + timedelta(minutes=2))
     assert analytics.building_model["heat_fit_samples"] == 2
+
+
+# ----------------------------------------------------------------------
+# Forecast.Solar core-integration source (hourly service, no attributes)
+# ----------------------------------------------------------------------
+
+
+class _FakeForecastSolarEntry:
+    def __init__(self, config_entry_id: str) -> None:
+        self.entity_id = "sensor.power_production_now"
+        self.config_entry_id = config_entry_id
+        self.domain = "forecast_solar"
+
+
+class _FakeEntityRegistry:
+    def __init__(self, entry: _FakeForecastSolarEntry | None) -> None:
+        self._entry = entry
+
+    def async_get(self, entity_id: str) -> _FakeForecastSolarEntry | None:
+        return self._entry if entity_id == "sensor.power_production_now" else None
+
+
+def _forecast_solar_response() -> dict[str, Any]:
+    return {"service_response": {}, "wh_period": {_iso(_hour(i)): 1000.0 * i for i in range(1, 7)}}
+
+
+async def test_pv_forecast_reads_the_forecast_solar_service(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Core Forecast.Solar sensors carry no hourly attributes; the advisor
+    reads the integration's get_forecast service through the entity's
+    config entry instead."""
+    data = {"power_consumption_hp": 2.0}
+    engine, _advisor, _analytics, _coordinator = _engine(data, pv_forecast_entity="sensor.power_production_now")
+
+    registry = _FakeEntityRegistry(_FakeForecastSolarEntry("fs_entry"))
+    # The engine resolves the registry module lazily; patch the stub module.
+    import homeassistant.helpers.entity_registry as er_stub
+
+    monkeypatch.setattr(er_stub, "async_get", lambda hass: registry)
+
+    calls: dict[str, Any] = {}
+
+    async def fake_call(domain, service, payload, blocking=False, return_response=False):
+        calls["payload"] = payload
+        return _forecast_solar_response()
+
+    engine._hass.services.async_call = fake_call
+    await engine.async_refresh_forecasts(now=T0)
+
+    assert calls["payload"] == {"config_entry": "fs_entry", "resolution": "hourly"}
+    # wh_period 1000..6000 Wh become 1..6 kWh per calendar hour.
+    assert [(at - T0) // timedelta(hours=1) for at, _kwh in engine.pv_hours] == [1, 2, 3, 4, 5, 6]
+    assert [round(kwh, 2) for _at, kwh in engine.pv_hours] == [1.0, 2.0, 3.0, 4.0, 5.0, 6.0]
+
+
+async def test_pv_forecast_falls_back_when_the_entity_is_not_forecast_solar(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    import homeassistant.helpers.entity_registry as er_stub
+
+    data = {"power_consumption_hp": 2.0}
+    engine, _advisor, _analytics, _coordinator = _engine(data, pv_forecast_entity="sensor.pv_forecast")
+    # Registry knows the entity but it belongs to another integration.
+    monkeypatch.setattr(er_stub, "async_get", lambda hass: _FakeEntityRegistry(None))
+    service_called = False
+
+    async def fake_call(*args: Any, **kwargs: Any) -> None:
+        nonlocal service_called
+        service_called = True
+
+    engine._hass.services.async_call = fake_call
+    # The state carries a Solcast-style attribute list the fallback parses.
+    engine._hass.states.get = MagicMock(
+        return_value=SimpleNamespace(
+            attributes={"forecast": [{"period_start": _iso(_hour(i)), "pv_estimate": 1.0} for i in range(1, 4)]}
+        )
+    )
+    await engine.async_refresh_forecasts(now=T0)
+
+    assert service_called is False
+    assert len(engine.pv_hours) == 3
+
+
+async def test_pv_forecast_service_errors_fall_back_silently(monkeypatch: pytest.MonkeyPatch) -> None:
+    import homeassistant.helpers.entity_registry as er_stub
+
+    data = {"power_consumption_hp": 2.0}
+    engine, _advisor, _analytics, _coordinator = _engine(data, pv_forecast_entity="sensor.power_production_now")
+    monkeypatch.setattr(er_stub, "async_get", lambda hass: _FakeEntityRegistry(_FakeForecastSolarEntry("fs_entry")))
+
+    async def failing_call(*args: Any, **kwargs: Any) -> None:
+        raise OSError("service down")
+
+    engine._hass.services.async_call = failing_call
+    engine._hass.states.get = MagicMock(return_value=None)
+    await engine.async_refresh_forecasts(now=T0)
+
+    assert engine.pv_hours == []
