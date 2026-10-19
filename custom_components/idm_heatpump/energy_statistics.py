@@ -5,12 +5,12 @@ from __future__ import annotations
 import logging
 import math
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Final
 
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from .const import DOMAIN
+from .const import DOMAIN, HeatPumpStatus
 
 _LOGGER = logging.getLogger(__name__)
 _STORAGE_VERSION = 1
@@ -18,6 +18,11 @@ _MAX_INTERVAL_SECONDS = 180.0
 _ELECTRIC_KEY = "power_consumption_hp"
 _THERMAL_KEY = "thermal_power_flow_sensor"
 _FALLBACK_THERMAL_KEY = "current_power"
+_MODE_KEY: Final = "hp_operating_mode"
+# Per-mode attribution only for unambiguous operating modes; mixed,
+# defrost, cooling and unknown intervals stay in the all-mode totals.
+_MODE_DOMAIN_HEATING: Final = "heating"
+_MODE_DOMAIN_DHW: Final = "dhw"
 
 
 def _power(value: Any) -> float | None:
@@ -33,7 +38,7 @@ def _power(value: Any) -> float | None:
 class EnergyStatistics:
     """Integrate validated electrical and thermal power readings in kWh."""
 
-    required_registers = frozenset({_ELECTRIC_KEY, _THERMAL_KEY, _FALLBACK_THERMAL_KEY})
+    required_registers = frozenset({_ELECTRIC_KEY, _THERMAL_KEY, _FALLBACK_THERMAL_KEY, _MODE_KEY})
 
     def __init__(
         self,
@@ -59,6 +64,21 @@ class EnergyStatistics:
         self.today_thermal_kwh = 0.0
         self.month_electrical_kwh = 0.0
         self.month_thermal_kwh = 0.0
+        # Pure space-heating and pure hot-water charging energies; intervals
+        # whose mode is ambiguous (mixed, defrost, cooling, unknown) or that
+        # span a mode change only feed the all-mode totals above.
+        self.heating_electrical_kwh = 0.0
+        self.heating_thermal_kwh = 0.0
+        self.today_heating_electrical_kwh = 0.0
+        self.today_heating_thermal_kwh = 0.0
+        self.month_heating_electrical_kwh = 0.0
+        self.month_heating_thermal_kwh = 0.0
+        self.dhw_electrical_kwh = 0.0
+        self.dhw_thermal_kwh = 0.0
+        self.today_dhw_electrical_kwh = 0.0
+        self.today_dhw_thermal_kwh = 0.0
+        self.month_dhw_electrical_kwh = 0.0
+        self.month_dhw_thermal_kwh = 0.0
         self.total_pv_self_consumed_kwh = 0.0
         self.today_pv_self_consumed_kwh = 0.0
         self.month_pv_self_consumed_kwh = 0.0
@@ -71,6 +91,7 @@ class EnergyStatistics:
         self._last_sample_at: datetime | None = None
         self._last_electric: float | None = None
         self._last_thermal: float | None = None
+        self._last_domain: str | None = None
 
     async def async_load(self) -> None:
         try:
@@ -87,6 +108,18 @@ class EnergyStatistics:
             "today_thermal_kwh",
             "month_electrical_kwh",
             "month_thermal_kwh",
+            "heating_electrical_kwh",
+            "heating_thermal_kwh",
+            "today_heating_electrical_kwh",
+            "today_heating_thermal_kwh",
+            "month_heating_electrical_kwh",
+            "month_heating_thermal_kwh",
+            "dhw_electrical_kwh",
+            "dhw_thermal_kwh",
+            "today_dhw_electrical_kwh",
+            "today_dhw_thermal_kwh",
+            "month_dhw_electrical_kwh",
+            "month_dhw_thermal_kwh",
             "total_pv_self_consumed_kwh",
             "today_pv_self_consumed_kwh",
             "month_pv_self_consumed_kwh",
@@ -118,6 +151,18 @@ class EnergyStatistics:
             "today_thermal_kwh": self.today_thermal_kwh,
             "month_electrical_kwh": self.month_electrical_kwh,
             "month_thermal_kwh": self.month_thermal_kwh,
+            "heating_electrical_kwh": self.heating_electrical_kwh,
+            "heating_thermal_kwh": self.heating_thermal_kwh,
+            "today_heating_electrical_kwh": self.today_heating_electrical_kwh,
+            "today_heating_thermal_kwh": self.today_heating_thermal_kwh,
+            "month_heating_electrical_kwh": self.month_heating_electrical_kwh,
+            "month_heating_thermal_kwh": self.month_heating_thermal_kwh,
+            "dhw_electrical_kwh": self.dhw_electrical_kwh,
+            "dhw_thermal_kwh": self.dhw_thermal_kwh,
+            "today_dhw_electrical_kwh": self.today_dhw_electrical_kwh,
+            "today_dhw_thermal_kwh": self.today_dhw_thermal_kwh,
+            "month_dhw_electrical_kwh": self.month_dhw_electrical_kwh,
+            "month_dhw_thermal_kwh": self.month_dhw_thermal_kwh,
             "total_pv_self_consumed_kwh": self.total_pv_self_consumed_kwh,
             "today_pv_self_consumed_kwh": self.today_pv_self_consumed_kwh,
             "month_pv_self_consumed_kwh": self.month_pv_self_consumed_kwh,
@@ -141,13 +186,45 @@ class EnergyStatistics:
             self.today_thermal_kwh = 0.0
             self.today_pv_self_consumed_kwh = 0.0
             self.today_cost_eur = 0.0
+            self.today_heating_electrical_kwh = 0.0
+            self.today_heating_thermal_kwh = 0.0
+            self.today_dhw_electrical_kwh = 0.0
+            self.today_dhw_thermal_kwh = 0.0
             self._period_day = day
         if self._period_month != month:
             self.month_electrical_kwh = 0.0
             self.month_thermal_kwh = 0.0
             self.month_cost_eur = 0.0
             self.month_pv_self_consumed_kwh = 0.0
+            self.month_heating_electrical_kwh = 0.0
+            self.month_heating_thermal_kwh = 0.0
+            self.month_dhw_electrical_kwh = 0.0
+            self.month_dhw_thermal_kwh = 0.0
             self._period_month = month
+
+    @staticmethod
+    def _mode_domain(value: Any) -> str | None:
+        """Map the operating-mode bitfield onto a per-mode COP domain.
+
+        ``heating`` and ``dhw`` require their flag set and the other's clear;
+        defrost (its thermal reading is not a heating measurement), mixed
+        heating+DHW, cooling and unreadable modes return None and stay in
+        the all-mode totals only.
+        """
+        if isinstance(value, bool) or not isinstance(value, int):
+            return None
+        # IntFlag accepts any int (negative values wrap around); the flag
+        # checks below are the actual safety net.
+        mode = HeatPumpStatus(value)
+        if mode & HeatPumpStatus.DEFROSTING:
+            return None
+        heating = bool(mode & HeatPumpStatus.HEATING)
+        water = bool(mode & HeatPumpStatus.WATER)
+        if heating and not water:
+            return _MODE_DOMAIN_HEATING
+        if water and not heating:
+            return _MODE_DOMAIN_DHW
+        return None
 
     def process_snapshot(self, data: dict[str, Any], *, now: datetime | None = None) -> None:
         observed_at = (now or datetime.now(UTC)).astimezone(UTC)
@@ -158,10 +235,12 @@ class EnergyStatistics:
             if fallback_thermal is not None and (thermal is None or fallback_thermal > 0.0):
                 thermal = fallback_thermal
         self._ensure_periods(observed_at)
+        domain = self._mode_domain(data.get(_MODE_KEY))
         if electric is None or thermal is None:
             self._last_sample_at = None
             self._last_electric = None
             self._last_thermal = None
+            self._last_domain = None
             return
         if self._last_sample_at is not None and self._last_electric is not None and self._last_thermal is not None:
             elapsed = (observed_at - self._last_sample_at).total_seconds()
@@ -180,6 +259,14 @@ class EnergyStatistics:
                 self.total_pv_self_consumed_kwh += pv_energy
                 self.today_pv_self_consumed_kwh += pv_energy
                 self.month_pv_self_consumed_kwh += pv_energy
+                if domain is not None and domain == self._last_domain:
+                    # Same unambiguous mode across the whole interval; feed
+                    # the domain's total/today/month accumulators.
+                    for prefix in (domain, f"today_{domain}", f"month_{domain}"):
+                        setattr(
+                            self, f"{prefix}_electrical_kwh", getattr(self, f"{prefix}_electrical_kwh") + electrical
+                        )
+                        setattr(self, f"{prefix}_thermal_kwh", getattr(self, f"{prefix}_thermal_kwh") + thermal_energy)
                 price = self._current_price()
                 if price is None:
                     self.unpriced_energy_kwh += electrical
@@ -191,6 +278,7 @@ class EnergyStatistics:
         self._last_sample_at = observed_at
         self._last_electric = electric
         self._last_thermal = thermal
+        self._last_domain = domain
 
     def _current_price(self) -> float | None:
         """Read an explicitly selected local HA tariff; reject stale units."""
@@ -246,6 +334,30 @@ class EnergyStatistics:
     @property
     def month_cop(self) -> float | None:
         return self._ratio(self.month_thermal_kwh, self.month_electrical_kwh)
+
+    @property
+    def heating_cop_total(self) -> float | None:
+        return self._ratio(self.heating_thermal_kwh, self.heating_electrical_kwh)
+
+    @property
+    def heating_cop_today(self) -> float | None:
+        return self._ratio(self.today_heating_thermal_kwh, self.today_heating_electrical_kwh)
+
+    @property
+    def heating_cop_month(self) -> float | None:
+        return self._ratio(self.month_heating_thermal_kwh, self.month_heating_electrical_kwh)
+
+    @property
+    def dhw_cop_total(self) -> float | None:
+        return self._ratio(self.dhw_thermal_kwh, self.dhw_electrical_kwh)
+
+    @property
+    def dhw_cop_today(self) -> float | None:
+        return self._ratio(self.today_dhw_thermal_kwh, self.today_dhw_electrical_kwh)
+
+    @property
+    def dhw_cop_month(self) -> float | None:
+        return self._ratio(self.month_dhw_thermal_kwh, self.month_dhw_electrical_kwh)
 
     @property
     def total_cost(self) -> float:

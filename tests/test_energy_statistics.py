@@ -176,17 +176,151 @@ def test_energy_entities_require_sources_and_publish_all_metrics() -> None:
     assert energy_statistics_entities(coordinator) == []
     coordinator.data = {"power_consumption_hp": 1, "thermal_power_flow_sensor": 3}
     entities = energy_statistics_entities(coordinator)
-    assert len(entities) == 17
+    assert len(entities) == 23
     assert entities[0].native_value == 0
     assert entities[0].available is True
     assert entities[6].native_value is None
     assert entities[6].available is False
     assert entities[0].entity_description.native_unit_of_measurement == "kWh"
-    assert entities[9].entity_description.native_unit_of_measurement == "€"
+    assert entities[15].entity_description.native_unit_of_measurement == "€"
     for entity in entities:
         description = entity.entity_description
         if description.device_class == "energy":
             assert description.state_class == "total_increasing"
+
+
+def test_per_mode_cop_attribution_follows_the_operating_mode() -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30)
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    # One minute heating (COP 4), one minute hot water (COP 2), one minute
+    # defrost: the defrost interval must not feed either per-mode bucket.
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 1}, now=start
+    )
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 1},
+        now=start + timedelta(minutes=1),
+    )
+    stats.process_snapshot(
+        {"power_consumption_hp": 2.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 4},
+        now=start + timedelta(minutes=2),
+    )
+    stats.process_snapshot(
+        {"power_consumption_hp": 2.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 4},
+        now=start + timedelta(minutes=3),
+    )
+    stats.process_snapshot(
+        {"power_consumption_hp": 3.0, "thermal_power_flow_sensor": 3.0, "hp_operating_mode": 9},  # defrost
+        now=start + timedelta(minutes=4),
+    )
+    stats.process_snapshot(
+        {"power_consumption_hp": 3.0, "thermal_power_flow_sensor": 3.0, "hp_operating_mode": 9},
+        now=start + timedelta(minutes=5),
+    )
+
+    assert stats.heating_cop_today == 4.0
+    assert stats.heating_cop_month == 4.0
+    assert stats.dhw_cop_today == 2.0
+    assert stats.dhw_cop_month == 2.0
+    assert stats.heating_electrical_kwh == pytest.approx(1.0 / 60.0)
+    assert stats.heating_thermal_kwh == pytest.approx(4.0 / 60.0)
+    assert stats.heating_cop_total == 4.0
+    assert stats.dhw_electrical_kwh == pytest.approx(2.0 / 60.0)
+    assert stats.dhw_thermal_kwh == pytest.approx(4.0 / 60.0)
+    assert stats.dhw_cop_total == 2.0
+    # The trapezoid across the two mode switches adds half-and-half
+    # transition intervals to the all-mode totals only.
+    assert stats.total_electrical_kwh == pytest.approx(10.0 / 60.0)
+    assert stats.total_thermal_kwh == pytest.approx(18.5 / 60.0)
+    assert stats.total_cop == pytest.approx(1.85)
+
+
+def test_mode_domain_rejects_non_flag_values() -> None:
+    assert EnergyStatistics._mode_domain(-1) is None  # not a valid flag value
+    assert EnergyStatistics._mode_domain(True) is None  # bools are not modes
+    assert EnergyStatistics._mode_domain(1.5) is None  # floats are not modes
+    assert EnergyStatistics._mode_domain("1") is None
+
+
+def test_mode_change_between_samples_stays_in_the_totals_only() -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30)
+    start = datetime(2026, 1, 1, tzinfo=UTC)
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 1}, now=start
+    )
+    # The compressor switched to hot water within the interval: the energy
+    # belongs to both modes in unknown shares, so no per-mode bucket gets it.
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 4},
+        now=start + timedelta(minutes=1),
+    )
+    assert stats.total_electrical_kwh == pytest.approx(1.0 / 60.0)
+    assert stats.heating_electrical_kwh == 0.0
+    assert stats.dhw_electrical_kwh == 0.0
+    # Mixed and cooling flags never attribute either.
+    for mode in (5, 2, 0):
+        stats.process_snapshot(
+            {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": mode},
+            now=start + timedelta(minutes=2),
+        )
+        stats.process_snapshot(
+            {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": mode},
+            now=start + timedelta(minutes=3),
+        )
+        assert stats.heating_electrical_kwh == 0.0
+        assert stats.dhw_electrical_kwh == 0.0
+
+
+async def test_per_mode_period_resets_and_persistence_round_trip() -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30)
+    start = datetime(2026, 1, 1, 12, tzinfo=UTC)
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 1}, now=start
+    )
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 1},
+        now=start + timedelta(minutes=1),
+    )
+    assert stats.today_heating_electrical_kwh == pytest.approx(1.0 / 60.0)
+
+    # A new day resets the per-mode today counters, not the lifetime ones.
+    stats.process_snapshot(
+        {"power_consumption_hp": 1.0, "thermal_power_flow_sensor": 4.0, "hp_operating_mode": 1},
+        now=start + timedelta(days=2),
+    )
+    assert stats.today_heating_electrical_kwh == 0.0
+    assert stats.heating_electrical_kwh == pytest.approx(1.0 / 60.0)
+
+    restored = EnergyStatistics(SimpleNamespace(), "entry", 30)
+    restored._store.data = stats._serialize()
+    await restored.async_load()
+    assert restored.heating_electrical_kwh == pytest.approx(1.0 / 60.0)
+    assert restored.dhw_thermal_kwh == 0.0
+
+
+def test_per_mode_cop_entities_publish_values_and_energies() -> None:
+    stats = EnergyStatistics(SimpleNamespace(), "entry", 30)
+    stats.heating_electrical_kwh = 10.0
+    stats.heating_thermal_kwh = 40.0
+    stats.dhw_electrical_kwh = 5.0
+    stats.dhw_thermal_kwh = 10.0
+    coordinator = MagicMock()
+    coordinator.config_entry.entry_id = "entry"
+    coordinator.last_update_success = True
+    coordinator.energy_statistics = stats
+    coordinator.data = {"power_consumption_hp": 1, "thermal_power_flow_sensor": 3}
+    entities = {entity.entity_description.key: entity for entity in energy_statistics_entities(coordinator)}
+
+    heating = entities["energy_cop_heating_total"]
+    assert heating.native_value == 4.0
+    assert heating.available is True
+    assert heating.extra_state_attributes == {"electrical_kwh": 10.0, "thermal_kwh": 40.0}
+    dhw = entities["energy_cop_dhw_total"]
+    assert dhw.native_value == 2.0
+    assert entities["energy_cop_heating_today"].native_value is None
+    assert entities["energy_cop_dhw_month"].native_value is None
+    plain = entities["energy_cop_total"]
+    assert plain.extra_state_attributes == {}
 
 
 def test_tariff_and_pv_helpers_reject_unparseable_states() -> None:
@@ -234,4 +368,4 @@ def test_snapshot_integration_falls_back_to_current_power() -> None:
     coordinator.energy_statistics = stats
     coordinator.data = {"power_consumption_hp": 1.0, "current_power": 4.0}
     entities = energy_statistics_entities(coordinator)
-    assert len(entities) == 17
+    assert len(entities) == 23
