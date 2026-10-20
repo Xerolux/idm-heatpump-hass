@@ -129,14 +129,16 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 
 ## ⚡ Schnellstart
 
-**1. HACS – Integration hinzufügen**
+**1. Installation – Marketplace (HA 2026.11+) oder HACS (HA 2026.8.1–2026.10)**
+
+Die Integration steht im Standard-Katalog von HACS/Marketplace – kein benutzerdefiniertes Repository nötig (ab HA 2026.11 auch kein GitHub-Konto).
 
 <a href="https://my.home-assistant.io/redirect/hacs_repository/?repository=https%3A%2F%2Fgithub.com%2FXerolux%2Fidm-heatpump-hass&owner=Xerolux&category=Integration" target="_blank" rel="noopener noreferrer"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store." /></a>
 
 ```
-HACS → Integrationen → ⋮ → Benutzerdefinierte Repositories
-URL: https://github.com/Xerolux/idm-heatpump-hass  |  Kategorie: Integration
-→ "IDM Heatpump" herunterladen → HA neu starten
+HA 2026.11+:  Einstellungen → Marketplace → „IDM Heatpump" suchen → Herunterladen
+HA ≤ 2026.10: HACS → Integrationen → „IDM Heatpump" suchen → Herunterladen
+→ HA neu starten
 ```
 
 **2. Modbus TCP an der IDM-Wärmepumpe aktivieren – für den vollen Betrieb zwingend erforderlich**
@@ -208,8 +210,7 @@ Maintainer sollten vor einem stabilen Release den
 
 ## 🔑 Voraussetzungen
 
-- Home Assistant **2026.8.1+**
-- HACS ([Installationsanleitung](https://hacs.xyz/docs/setup/download))
+- Home Assistant **2026.8.1+** (ab 2026.11 mit eingebautem Marketplace; 2026.8.1–2026.10 benötigt [HACS](https://hacs.xyz/docs/setup/download))
 - IDM Navigator 2.0 / 10 / Pro Wärmepumpe mit aktiviertem Modbus TCP (Port 502), oder Navigator 10/Pro im Modus `web_only` mit lokaler Web-PIN
 - Lokale Navigator-Web-PIN für optionale Web-Daten und unterstützte Navigator-10/Pro-Steuerungen im reinen Web-Betrieb
 - Python 3.14+ (wird von Home Assistant bereitgestellt)
