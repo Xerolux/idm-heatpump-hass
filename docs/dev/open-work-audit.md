@@ -15,6 +15,12 @@ after the 0.21.0 stable cut. Every entry names who acts and what unblocks it;
 "community" means a public call in Discussions using the existing field
 diagnostics template, "maintainer" means Basti's own plant or decision.
 
+- **Marketplace mention in the 0.23.0 stable release notes** *(maintainer)* —
+  HACS ships as the built-in **Marketplace** from Home Assistant 2026.11 (same
+  catalog, same `hacs.json`, automatic migration; the installation docs were
+  reworked accordingly in October 2026). When cutting 0.23.0 stable, mention
+  in the release notes and the what's-new notice that users on 2026.11
+  install and update through Settings → Marketplace without a GitHub account.
 - **Advisor field feedback** *(maintainer — reference-plant pass done
   2026-10-17, community feedback ongoing in
   [discussion #540](https://github.com/Xerolux/idm-heatpump-hass/discussions/540))*
