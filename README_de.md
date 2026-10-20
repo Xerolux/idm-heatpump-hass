@@ -133,7 +133,8 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 
 Die Integration steht im Standard-Katalog von HACS/Marketplace – kein benutzerdefiniertes Repository nötig (ab HA 2026.11 auch kein GitHub-Konto).
 
-<a href="https://my.home-assistant.io/redirect/hacs_repository/?repository=https%3A%2F%2Fgithub.com%2FXerolux%2Fidm-heatpump-hass&owner=Xerolux&category=Integration" target="_blank" rel="noopener noreferrer"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store." /></a>
+<a href="https://my.home-assistant.io/redirect/marketplace_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration" target="_blank" rel="noopener noreferrer"><img src="https://my.home-assistant.io/badges/marketplace_repository.svg" alt="Open your Home Assistant instance and open this repository in the Marketplace (HA 2026.11+)." /></a>
+<a href="https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration" target="_blank" rel="noopener noreferrer"><img src="https://my.home-assistant.io/badges/hacs_repository.svg" alt="Open your Home Assistant instance and open a repository inside the Home Assistant Community Store (HA 2026.10 and older)." /></a>
 
 ```
 HA 2026.11+:  Einstellungen → Marketplace → „IDM Heatpump" suchen → Herunterladen

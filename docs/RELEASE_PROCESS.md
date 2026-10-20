@@ -156,7 +156,7 @@ Each release should call out:
 
 1. Mark the GitHub release as pre-release or remove the latest marker if needed.
 2. Publish a patch release with a safe API pin and clear notes.
-3. Tell HACS users which version to install manually if automatic updates have
-   not propagated.
+3. Tell HACS/Marketplace users which version to install manually if automatic
+   updates have not propagated.
 4. Keep the rollback instructions in the release notes until the next stable
    release.

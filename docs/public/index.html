@@ -152,7 +152,7 @@
             </div>
             <ul class="trust-list" aria-label="Vorteile">
               <li><span>✓</span> 100 % lokal</li>
-              <li><span>✓</span> Über HACS installierbar</li>
+              <li><span>✓</span> Über Marketplace &amp; HACS installierbar</li>
               <li><span>✓</span> Open Source</li>
             </ul>
           </div>
@@ -456,17 +456,17 @@
           <div class="install-copy">
             <p class="eyebrow">In wenigen Minuten bereit</p>
             <h2>Einfach installieren.<br/><span>Lokal verbinden.</span></h2>
-            <p>Die Integration lässt sich direkt über HACS hinzufügen. Danach brauchst du nur noch die IP-Adresse deiner IDM Navigator Steuerung.</p>
+            <p>Die Integration steht im Standard-Katalog: ab Home Assistant 2026.11 im eingebauten Marketplace, davor in HACS – direkt per Suche, ohne GitHub-Konto und ohne benutzerdefiniertes Repository. Danach brauchst du nur noch die IP-Adresse deiner IDM Navigator Steuerung.</p>
 
             <div class="install-steps">
-              <div><span>1</span><p><strong>Repository hinzufügen</strong><small>IDM Heatpump als benutzerdefiniertes HACS-Repository eintragen.</small></p></div>
+              <div><span>1</span><p><strong>Im Marketplace finden</strong><small>„IDM Heatpump“ suchen und herunterladen – bis HA 2026.10 über HACS.</small></p></div>
               <div><span>2</span><p><strong>Modbus TCP aktivieren</strong><small>In der Gebäudeleittechnik des Navigators einschalten.</small></p></div>
               <div><span>3</span><p><strong>Integration konfigurieren</strong><small>IP-Adresse, Port 502 und üblicherweise Slave-ID 1 eingeben.</small></p></div>
             </div>
 
             <div class="requirements">
               <span>Benötigt</span>
-              <p>Home Assistant <span data-minimum-home-assistant-version>2026.8.1+</span> · HACS · IDM Navigator 2.0 / 10 / Pro</p>
+              <p>Home Assistant <span data-minimum-home-assistant-version>2026.8.1+</span> · Marketplace/HACS · IDM Navigator 2.0 / 10 / Pro</p>
             </div>
           </div>
 
@@ -483,9 +483,14 @@
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
             </a>
             <a class="hacs-link" href="https://github.com/Xerolux/idm-heatpump-hass/releases/latest">Aktuelle stabile Version</a>
-            <a class="hacs-link" href="https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=integration" target="_blank" rel="noreferrer">
+            <a class="hacs-link" href="https://my.home-assistant.io/redirect/marketplace_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration" target="_blank" rel="noreferrer">
+              <span class="hacs-symbol">M</span>
+              <span><strong>Im Marketplace öffnen</strong><small>Ab HA 2026.11 – empfohlene Installation</small></span>
+              <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
+            </a>
+            <a class="hacs-link" href="https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration" target="_blank" rel="noreferrer">
               <span class="hacs-symbol">H</span>
-              <span><strong>In HACS öffnen</strong><small>Empfohlene Installation</small></span>
+              <span><strong>In HACS öffnen</strong><small>Bis HA 2026.10</small></span>
               <svg viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m7 4 6 6-6 6" /></svg>
             </a>
 

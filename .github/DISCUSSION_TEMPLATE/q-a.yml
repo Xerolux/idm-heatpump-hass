@@ -36,7 +36,7 @@ body:
     id: integration-version
     attributes:
       label: Integrationsversion
-      description: Zu finden unter HACS oder Einstellungen > Geräte & Dienste.
+      description: Zu finden im Marketplace (ab HA 2026.11), in HACS (bis HA 2026.10) oder unter Einstellungen > Geräte & Dienste.
       placeholder: "z. B. 0.8.2"
     validations:
       required: true

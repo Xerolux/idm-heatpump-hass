@@ -1,11 +1,13 @@
 # Home Assistant Core Strategy
 
-The current decision is **HACS first, Core later**.
+The current decision is **HACS first, Core later** (since Home Assistant
+2026.11 HACS ships in core as the Marketplace, using the same catalog).
 
-The integration should continue as a HACS custom integration until the hardware
+The integration should continue as a community integration distributed through
+HACS/Marketplace until the hardware
 matrix, API contract, release process, and write-safety behavior have had a
 stable maintenance period. A Core PR should be small, boring, and reviewable
-rather than a direct move of every HACS feature.
+rather than a direct move of every HACS/Marketplace feature.
 
 ## Entry Criteria for a Core Attempt
 

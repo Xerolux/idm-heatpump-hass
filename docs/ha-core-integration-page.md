@@ -31,8 +31,8 @@ ha_requirements:
 ---
 
 > Draft for a possible future Home Assistant Core documentation page. The
-> current project is an unofficial HACS custom integration and is not yet part
-> of Home Assistant Core.
+> current project is an unofficial community integration distributed through
+> HACS/Marketplace and is not yet part of Home Assistant Core.
 
 The **IDM Heatpump** integration allows you to monitor and control your [IDM Navigator 2.0 / 10](https://www.idm-energiesysteme.de/) heat pump directly from Home Assistant using the Modbus TCP protocol. All communication is local — no cloud, no account required.
 
