@@ -2217,6 +2217,9 @@
       "calculated_heat_source_temperature_delta": {
         "name": "Wärmequellen-Spreizung"
       },
+      "calculated_hp_flow_deviation": {
+        "name": "Wärmepumpen Vorlauf-Abweichung"
+      },
       "calculated_hp_temperature_delta": {
         "name": "Wärmepumpen-Spreizung"
       },

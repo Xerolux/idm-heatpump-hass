@@ -2217,6 +2217,9 @@
       "calculated_heat_source_temperature_delta": {
         "name": "Heat source temperature spread"
       },
+      "calculated_hp_flow_deviation": {
+        "name": "Heat pump flow deviation"
+      },
       "calculated_hp_temperature_delta": {
         "name": "Heat pump temperature spread"
       },

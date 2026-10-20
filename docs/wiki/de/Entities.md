@@ -204,6 +204,7 @@ Diese Sensoren werden aus Registerwerten desselben Schnappschusses abgeleitet. N
 | `calculated_dhw_setpoint_deviation` | Warmwasser Ist minus Soll |
 | `calculated_cop` | Momentaner COP (thermische Leistung / elektrische Leistung) |
 | `calculated_hc_{x}_flow_deviation` | Vorlauf-Abweichung je Heizkreis |
+| `calculated_hp_flow_deviation` | Vorlauf-Abweichung der Wärmepumpe (nur im Heizbetrieb) |
 
 Die **Vorlauf-Abweichung je Heizkreis** vergleicht die gemessene Vorlauftemperatur eines Heizkreises (`hc_{x}_flow_temp`) mit dem Vorlauf-Sollwert, den der Regler für diesen Heizkreis aktuell anfordert (`hc_{x}_setpoint_flow_temp`):
 
@@ -213,7 +214,7 @@ Die **Vorlauf-Abweichung je Heizkreis** vergleicht die gemessene Vorlauftemperat
 
 Der Sensor wird **nicht verfügbar**, während der Heizkreis ruht (der Regler meldet `0.0`), und bei nicht konfigurierten Heizkreisen (`-1.0`). Das ist beabsichtigt: Eine Abweichung, die aus einem Platzhalterwert berechnet würde, wäre bedeutungslos. Die Entität selbst wird erzeugt, sobald beide Register existieren, sodass ein Home-Assistant-Neustart im Standby sie nicht verschwinden lässt.
 
-> Hier werden bewusst Werte **innerhalb eines Heizkreises** verglichen. Eine Abweichung auf Wärmepumpen-Ebene bräuchte ein eindeutiges Register für den Vorlauf-Sollwert, den die Wärmepumpe selbst anfordert, und bleibt ein offener Punkt auf der Roadmap.
+Die **Vorlauf-Abweichung der Wärmepumpe** (`calculated_hp_flow_deviation`) vergleicht den Vorlauf der Wärmepumpe selbst (`hp_flow_temp`, Register 1050) mit dem **höchsten Kreis-Sollwert, der aktuell Vorlauf anfordert**. Ein Register für einen Wärmepumpen-Sollwert existiert nicht (gegen die komplette Navigator-10-Registerkarte verifiziert), deshalb wird der angeforderte Wert aus den aktiven Kreis-Sollwerten abgeleitet — ruhende Kreise mit `0.0` und nicht konfigurierte Kreise mit `-1.0` bleiben außen vor. Der Sensor meldet **ausschließlich im reinen Heizbetrieb** (Register 1090): Während einer Warmwasser-Ladung steigt der Wärmepumpen-Vorlauf auf Ladetemperatur, während die Kreis-Sollwerte ihren Kurvenwerten folgen — diese Differenz als „Abweichung" zu melden wäre irreführend; dasselbe gilt für Kühlen, Abtauen, Standby und Kombinationen, die stattdessen gar keinen Wert melden. Feldbelege: Sonde vom 2026-10-20 auf der Referenzanlage, siehe `docs/dev/open-work-audit.md`.
 
 ### Optionale Web-Supplement-Sensoren
 

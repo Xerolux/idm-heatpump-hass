@@ -379,6 +379,114 @@ def test_flow_deviation_metadata():
     assert sensor._attr_unique_id == "test_entry_calculated_hc_a_flow_deviation"
 
 
+_HP_FLOW_DEVIATION_KEY = "calculated_hp_flow_deviation"
+
+
+def _hp_flow_coordinator(mode: object, hp_flow: float, setpoints: dict[str, float]):
+    data: dict[str, object] = {
+        "hp_flow_temp": hp_flow,
+        "hp_operating_mode": mode,
+    }
+    data.update(setpoints)
+    return _coordinator(data)
+
+
+def test_hp_flow_deviation_tracks_the_highest_active_circuit_setpoint():
+    """The heat pump serves the highest requesting circuit (probe 2026-10-20)."""
+    coordinator = _hp_flow_coordinator(
+        1,
+        44.9,
+        {"hc_a_setpoint_flow_temp": 47.5, "hc_d_setpoint_flow_temp": 28.0},
+    )
+
+    sensor = _entities_by_key(coordinator)[_HP_FLOW_DEVIATION_KEY]
+
+    assert sensor.native_value == -2.6
+    assert sensor.available is True
+
+
+def test_hp_flow_deviation_is_suppressed_during_dhw_charge():
+    """During a DHW charge the HP flow is charging temperature, not supply.
+
+    Live probe: hp_flow 60-62 degC while the circuit setpoints stayed at
+    their curve values — an unsuppressed deviation showed a ~+16 K overshoot.
+    """
+    coordinator = _hp_flow_coordinator(
+        4,
+        61.0,
+        {"hc_a_setpoint_flow_temp": 44.7, "hc_d_setpoint_flow_temp": 25.9},
+    )
+
+    sensor = _entities_by_key(coordinator)[_HP_FLOW_DEVIATION_KEY]
+
+    assert sensor.available is True
+    assert sensor.native_value is None
+
+
+def test_hp_flow_deviation_is_suppressed_outside_pure_heating_mode():
+    """Standby, cooling, defrost and combined bitflags never publish."""
+    setpoints = {"hc_a_setpoint_flow_temp": 44.7}
+    for mode in (0, 2, 8, 5):
+        coordinator = _hp_flow_coordinator(mode, 50.0, setpoints)
+
+        sensor = _entities_by_key(coordinator)[_HP_FLOW_DEVIATION_KEY]
+
+        assert sensor.native_value is None, f"mode {mode} must not publish"
+
+
+def test_hp_flow_deviation_ignores_idle_circuit_setpoints():
+    """A 0.0 no-request circuit must not cap the requested level."""
+    coordinator = _hp_flow_coordinator(
+        1,
+        30.5,
+        {"hc_a_setpoint_flow_temp": 0.0, "hc_d_setpoint_flow_temp": 28.0},
+    )
+
+    sensor = _entities_by_key(coordinator)[_HP_FLOW_DEVIATION_KEY]
+
+    assert sensor.native_value == 2.5
+
+
+def test_hp_flow_deviation_suppressed_when_no_circuit_requests_flow():
+    coordinator = _hp_flow_coordinator(1, 40.0, {"hc_a_setpoint_flow_temp": 0.0})
+
+    sensor = _entities_by_key(coordinator)[_HP_FLOW_DEVIATION_KEY]
+
+    assert sensor.available is True
+    assert sensor.native_value is None
+
+
+def test_hp_flow_deviation_needs_flow_mode_and_a_usable_setpoint():
+    coordinator = _coordinator({"hp_flow_temp": 40.0, "hp_operating_mode": 1})
+
+    assert _HP_FLOW_DEVIATION_KEY not in _entities_by_key(coordinator)
+
+    # A present-but-unused setpoint keeps the entity registered (register
+    # presence governs existence, mirroring the circuit sensors) but it stays
+    # unavailable until a usable setpoint exists.
+    coordinator = _coordinator(
+        {"hp_flow_temp": 40.0, "hp_operating_mode": 1, "hc_a_setpoint_flow_temp": 45.0},
+        unused={"hc_a_setpoint_flow_temp"},
+    )
+
+    sensor = _entities_by_key(coordinator)[_HP_FLOW_DEVIATION_KEY]
+
+    assert sensor.available is False
+    assert sensor.native_value is None
+
+
+def test_hp_flow_deviation_metadata():
+    coordinator = _hp_flow_coordinator(1, 44.9, {"hc_a_setpoint_flow_temp": 47.5})
+
+    sensor = _entities_by_key(coordinator)[_HP_FLOW_DEVIATION_KEY]
+
+    assert sensor.entity_description.translation_key == _HP_FLOW_DEVIATION_KEY
+    assert sensor.entity_description.native_unit_of_measurement == UnitOfTemperature.CELSIUS
+    assert sensor.entity_description.device_class == SensorDeviceClass.TEMPERATURE
+    assert sensor.entity_description.state_class == SensorStateClass.MEASUREMENT
+    assert sensor._attr_unique_id == f"test_entry_{_HP_FLOW_DEVIATION_KEY}"
+
+
 def test_unconfigured_circuit_sentinel_stays_unavailable():
     """A circuit that is not configured reports -1.0 permanently."""
     coordinator = _coordinator(

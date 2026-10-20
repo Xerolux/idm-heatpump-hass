@@ -1,6 +1,6 @@
 # Open Work Audit
 
-Last updated: 2026-10-18
+Last updated: 2026-10-20
 
 This audit separates work that can be finished locally from items that cannot be
 completed safely without real-system data or without a central Home Assistant
@@ -44,11 +44,35 @@ diagnostics template, "maintainer" means Basti's own plant or decision.
   export); on the maintainer's plant, log one DHW charge and one defrost cycle
   and reconcile the COP sensor against `power_consumption_hp` and
   `thermal_power_flow_sensor` by hand.
-- **Flow setpoint identification → flow-deviation sensor** *(maintainer)* —
-  run the read-only probe during heating, DHW charge and standby and capture
-  `hc_*_setpoint_flow_temp`, `hc_*_setpoint_flow_constant`, the heating curve,
-  mixer state and the actual flow temperature together; document which value
-  is "requested" per operating mode, then release the sensor.
+- **Flow setpoint identification → flow-deviation sensor** *(resolved
+  2026-10-20 by the read-only probe)* — the per-circuit deviation sensors
+  shipped with 0.23.0-b2 (`calculated_hc_{a..g}_flow_deviation`: actual flow
+  minus the circuit's calculated setpoint, suppressed while the circuit
+  requests nothing). The remaining heat-pump-level question was answered from
+  24 h of recorded reference-plant history covering heating, compressor
+  standby, demand-idle and two DHW charges:
+  - No register exists for a heat-pump-level flow setpoint. The full
+    Navigator 10 map (169 registers, reference configuration) offers only the
+    per-circuit `hc_*_setpoint_flow_temp`, the configurable
+    `hc_*_setpoint_flow_constant`/`_cooling`, and `dhw_setpoint`.
+  - During a DHW charge (mode bitflag 4) the heat-pump flow rises to
+    charging temperature (observed 60–62 °C) while the circuit setpoints
+    stay at their heating-curve values (HK A ≈ 44.7 °C) — an unsuppressed
+    heat-pump-level deviation would show a ~+16 K "overshoot" that is really
+    the DHW charge. Circuit-level sensors stay honest: the redirecting
+    circuit drifts to −3.7…−6.6 K while the mixer circuit stays ≈ 0.
+  - While rooms are under setpoint the curve setpoints persist through
+    compressor standby (HK A 44.3–47.6 °C, HK D 25.1–29.5 °C over 24 h); the
+    0.0 "no request" state did not occur once in that window, so the mode
+    gate — not a setpoint gate — keeps the heat-pump-level sensor honest.
+
+  The heat-pump-level sensor therefore derives its requested level as the
+  highest active circuit setpoint (0.0 no-request values excluded, unused
+  registers excluded by the sentinel filter) and publishes only in pure
+  heating mode: `calculated_hp_flow_deviation`. DHW, cooling, defrost,
+  standby and combined bitflags are suppressed. Residual field question:
+  cascade plants still need a report (the sensor reads the lead heat-pump
+  registers there).
 - **Heat-sink flow-rate correction** *(resolved 2026-10-18 by field evidence,
   idm-heatpump-api 2.14.4)* — the official doc's UCHAR typing of 1072 was
   wrong: a direct HA modbus `float32` read with word swap returned plausible
@@ -176,11 +200,22 @@ strictly read-only.
   `is_register_unused` filter correctly decodes as `unavailable`.
 - In addition there are configurable setpoint registers
   (`hc_*_setpoint_flow_constant`, `hc_*_heating_curve`, `hc_*_heating_limit`).
-  The flow deviation feature is therefore technically feasible; before it can be
-  published it still has to be clarified which setpoint is the "requested" one
+  The flow deviation feature is therefore technically feasible; before it can
+  be published it still has to be clarified which setpoint is the "requested" one
   and how it is assigned per heating circuit. The register variables are
   verified, so the feature stays classified as "implementable, but not
   released".
+
+  Addendum 2026-10-20 (read-only probe over recorded reference-plant
+  history): while rooms remain under setpoint the calculated setpoints
+  persist through compressor standby — HK A 44.3–47.6 °C and HK D
+  25.1–29.5 °C across 24 h — so the July "standby returns 0.0" observation
+  corresponds to the demand-satisfied state, not to compressor standby.
+  During DHW charges the circuit setpoints stay at their curve values while
+  the heat-pump flow rises to charging temperature (60–62 °C). The
+  per-circuit sensors shipped in 0.23.0-b2 and the heat-pump-level sensor
+  (highest active circuit setpoint, pure-heating mode only) resolved the
+  delineation; see the resolved *Flow setpoint identification* entry above.
 
 ### Binary and status sentinel values
 
@@ -232,10 +267,13 @@ system is available:
   Navigator firmware levels.
 - Unambiguous identification of the flow setpoint the heat pump actually
   requests.
-- Publish the flow-temperature-deviation sensor (`actual flow − requested flow`)
+- ~~Publish the flow-temperature-deviation sensor (`actual flow − requested flow`)
   only after the delineation from the heating curve, mixer setpoint, maximum
-  flow temperature and heating-circuit setpoint is documented, and the behavior
-  with several heating circuits and with cascades has been checked.
+  flow temperature and heating-circuit setpoint is documented~~ — shipped:
+  per-circuit since 0.23.0-b2, heat-pump-level (pure heating mode, highest
+  active circuit setpoint) after the 2026-10-20 probe. What still needs a
+  field report is the heat-pump-level sensor's behaviour on cascade plants
+  and on Navigator 2.0/Pro.
 - Binary register verification on Navigator 10 and Navigator 2.0, including
   active-low and special values.
 - Load tests with the maximum number of heating circuits, zones and rooms **on

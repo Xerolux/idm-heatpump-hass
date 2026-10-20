@@ -314,6 +314,7 @@ def calculated_sensor_entities(coordinator: IdmCoordinator) -> list[IdmCalculate
         IdmCalculatedSensor(coordinator, definition)
         for definition in (
             *CALCULATED_SENSOR_DEFINITIONS,
+            HP_FLOW_DEVIATION_DEFINITION,
             *(
                 flow_deviation_definition(c)
                 for c in FLOW_DEVIATION_CIRCUITS
@@ -424,6 +425,65 @@ _SMART_GRID_VALID_VALUES: Final = frozenset({0, 1, 2, 4})
 # Documented hp_operating_mode bitflag values (see operation_analysis).
 _HP_OPERATING_MODE_OFF: Final = 0
 _HP_OPERATING_MODE_VALID_VALUES: Final = frozenset({0, 1, 2, 4, 8})
+
+
+# Heat-pump-level flow deviation = measured ``hp_flow_temp`` minus the highest
+# circuit setpoint currently requesting flow, published only while the heat
+# pump reports pure heating mode. The 2026-10-20 read-only probe on the
+# reference plant (24 h of recorded history, heating/standby/DHW phases —
+# see docs/dev/open-work-audit.md) established:
+#   * No register exists for a heat-pump-level flow setpoint: the full
+#     Navigator 10 map offers only per-circuit ``hc_*_setpoint_flow_temp``,
+#     the configurable ``hc_*_setpoint_flow_constant``/``_cooling`` and
+#     ``dhw_setpoint``. The requested level is therefore derived as the
+#     maximum over the active circuit setpoints (0.0 = no request excluded,
+#     -1.0 unused registers excluded by the sentinel filter).
+#   * During a DHW charge the heat-pump flow rises to charging temperature
+#     (observed 60-62 degC) while the circuit setpoints stay at their heating
+#     curve values — an unsuppressed deviation would show a ~+16 K "overshoot"
+#     that is really the DHW charge. The same applies to defrost and standby,
+#     so only the exact Heating bitflag publishes; combined bitflags are
+#     suppressed.
+#   * Outside the heating phase the curve setpoints persist (the 0.0
+#     "no request" case did not occur once in 24 h with rooms under setpoint),
+#     so the mode gate — not a setpoint gate — is what keeps this sensor honest.
+_HP_FLOW_DEVIATION_FLOW_REGISTER: Final = "hp_flow_temp"
+_HP_FLOW_DEVIATION_HEATING_MODE: Final = 1
+_HP_FLOW_DEVIATION_SETPOINT_REGISTERS: Final = tuple(
+    f"hc_{circuit}_setpoint_flow_temp" for circuit in FLOW_DEVIATION_CIRCUITS
+)
+
+
+def _hp_flow_deviation(data: Mapping[str, Any]) -> float | None:
+    """Heat-pump flow minus the highest circuit setpoint, heating mode only."""
+    mode = _enum_value(data, _HP_OPERATING_MODE_REGISTER, _HP_OPERATING_MODE_VALID_VALUES)
+    if mode != _HP_FLOW_DEVIATION_HEATING_MODE:
+        return None
+    flow = _temperature(data, _HP_FLOW_DEVIATION_FLOW_REGISTER)
+    if flow is None:
+        return None
+    setpoints = [
+        value
+        for key in _HP_FLOW_DEVIATION_SETPOINT_REGISTERS
+        if (value := _temperature(data, key)) is not None and value > _NO_FLOW_REQUEST
+    ]
+    if not setpoints:
+        return None
+    return round(flow - max(setpoints), 2)
+
+
+HP_FLOW_DEVIATION_DEFINITION = CalculatedSensorDefinition(
+    key="calculated_hp_flow_deviation",
+    sources=(_HP_FLOW_DEVIATION_FLOW_REGISTER, _HP_OPERATING_MODE_REGISTER),
+    # A plant qualifies with at least one usable circuit setpoint; differential
+    # circuits without a flow setpoint satisfy this through their siblings.
+    any_of_sources=_HP_FLOW_DEVIATION_SETPOINT_REGISTERS,
+    calculate=_hp_flow_deviation,
+    icon="mdi:thermometer-chevron-up",
+    # The 0.0 no-request and idle-mode states are normal while the heat pump
+    # cycles, so the entity must exist independently of the momentary values.
+    require_sources_used=False,
+)
 
 
 @dataclass(frozen=True)

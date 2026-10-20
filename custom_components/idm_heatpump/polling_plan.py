@@ -16,6 +16,7 @@ from .calculated_sensors import (
     CALCULATED_SENSOR_DEFINITIONS,
     DIFFERENTIAL_TEMPERATURE_DEFINITIONS,
     FLOW_DEVIATION_DEFINITIONS,
+    HP_FLOW_DEVIATION_DEFINITION,
 )
 from .coordinator import IdmCoordinator
 
@@ -47,6 +48,7 @@ _CALCULATED_DEPENDENCIES: dict[str, frozenset[str]] = {
     definition.key: frozenset((*definition.sources, *definition.any_of_sources))
     for definition in (
         *CALCULATED_SENSOR_DEFINITIONS,
+        HP_FLOW_DEVIATION_DEFINITION,
         *FLOW_DEVIATION_DEFINITIONS,
         *DIFFERENTIAL_TEMPERATURE_DEFINITIONS,
     )
