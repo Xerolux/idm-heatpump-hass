@@ -15,6 +15,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **Heat pump flow deviation sensor** (`calculated_hp_flow_deviation`): the
+  heat pump's own flow temperature versus the highest circuit setpoint
+  currently requesting flow, published only while the heat pump reports pure
+  heating mode. No heat-pump-level setpoint register exists (verified against
+  the full Navigator 10 register map), so the requested level derives from
+  the active `hc_*_setpoint_flow_temp` values; idle (`0.0`) and unconfigured
+  (`-1.0`) circuits are excluded. During DHW charges, cooling, defrost,
+  standby and combined states the sensor reports no value instead of a
+  misleading deviation — during a DHW charge the heat-pump flow rises to
+  charging temperature (measured 60–62 °C) while the circuit setpoints stay
+  at their curve values. Design based on the 2026-10-20 read-only probe on
+  the reference plant (24 h across heating, standby and two DHW charges);
+  the delineation is documented in `docs/dev/open-work-audit.md`.
+
 ## [0.23.0-b13] - 2026-10-19
 
 ### Fixed

@@ -264,6 +264,7 @@ value rather than a guess when its sources are not meaningful.
 | `calculated_dhw_setpoint_deviation` | DHW actual minus setpoint |
 | `calculated_cop` | Momentary COP (thermal power / electrical power) |
 | `calculated_hc_{x}_flow_deviation` | Flow deviation per heating circuit |
+| `calculated_hp_flow_deviation` | Heat pump flow deviation (heating mode only) |
 
 **Flow deviation per heating circuit** compares the measured flow temperature of
 a circuit (`hc_{x}_flow_temp`) with the flow setpoint the controller currently
@@ -281,9 +282,19 @@ intentional: a deviation calculated from a placeholder value would be
 meaningless. The entity itself is created as soon as both registers exist, so a
 Home Assistant restart during standby does not make it disappear.
 
-> This deliberately compares values **within one heating circuit**. A deviation
-> at heat-pump level needs an unambiguous register for the flow setpoint the
-> heat pump itself requests and remains an open roadmap item.
+**Heat pump flow deviation** (`calculated_hp_flow_deviation`) compares the
+heat pump's own flow temperature (`hp_flow_temp`, register 1050) with the
+**highest circuit setpoint currently requesting flow**. No register exists
+for a heat-pump-level flow setpoint (verified against the full Navigator 10
+map), so the requested level is derived from the active circuit setpoints —
+idle circuits reporting `0.0` and unconfigured circuits reporting `-1.0` are
+excluded. The sensor publishes **only while the heat pump reports pure
+heating mode** (register 1090): during a DHW charge the heat-pump flow rises
+to charging temperature while the circuit setpoints stay at their curve
+values, and reporting that difference as a "deviation" would be misleading —
+the same applies to cooling, defrost, standby and combined states, which
+report no value instead. Field evidence: 2026-10-20 probe on the reference
+plant, see `docs/dev/open-work-audit.md`.
 
 ### Optional Web Supplement Sensors
 

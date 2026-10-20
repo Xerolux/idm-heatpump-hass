@@ -365,6 +365,10 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
             "Heating circuit {circuit} flow deviation",
             "Heizkreis {circuit} Vorlauf-Abweichung",
         ),
+        "calculated_hp_flow_deviation": (
+            "Heat pump flow deviation",
+            "Wärmepumpen Vorlauf-Abweichung",
+        ),
         # === Operating analysis ===
         "analysis_heat_pump_cycles_recorded": ("Heat pump cycles recorded", "Wärmepumpentakte erfasst"),
         "analysis_heat_pump_cycles_today": ("Heat pump cycles today", "Wärmepumpentakte heute"),
