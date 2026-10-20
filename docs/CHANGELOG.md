@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.0-b14] - 2026-10-20
+
 ### Added
 
 - **Heat pump flow deviation sensor** (`calculated_hp_flow_deviation`): the

@@ -5,6 +5,15 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0-b14 — 2026-10-20
+
+New heat-pump-level flow deviation sensor: the heat pump's own flow
+temperature versus the highest circuit setpoint currently requesting
+flow, published only in pure heating mode — during DHW charges the flow
+is charging temperature, not supply, and is deliberately not reported.
+Design based on a 24-hour read-only probe on the reference plant; the
+delineation is documented in the open work audit.
+
 ## v0.23.0-b13 — 2026-10-19
 
 Hotfix from the reference-plant PV setup: the Forecast.Solar source of
