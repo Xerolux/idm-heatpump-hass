@@ -80,7 +80,8 @@ installation test.
 
 ## 2. Fresh Installation
 
-1. Install the release through HACS, or copy the unpacked artifact to
+1. Install the release through the Marketplace (HA 2026.11+) or HACS (older),
+   or copy the unpacked artifact to
    `custom_components/idm_heatpump`.
 2. Restart Home Assistant.
 3. Confirm Home Assistant starts without setup import errors for
@@ -173,7 +174,8 @@ specifically changes EEPROM protection.
 2. Unload the config entry and confirm the Modbus client disconnects cleanly.
 3. Re-enable or reload the entry and confirm polling resumes.
 4. In a separate instance or after restoring a snapshot, upgrade from the
-   immediately preceding published release to this candidate through HACS.
+   immediately preceding published release to this candidate through the
+   Marketplace (HA 2026.11+) or HACS (older).
 5. Confirm entity unique IDs, device registry entries, and user customizations
    are preserved.
 

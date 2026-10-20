@@ -29,6 +29,11 @@ repository is needed, and from Home Assistant 2026.11 no GitHub account either.
 3. Click **Download**
 4. **Restart Home Assistant**
 
+Direct links — they open the repository page in your own Home Assistant:
+
+- [Open IDM Heatpump in the Marketplace](https://my.home-assistant.io/redirect/marketplace_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration) (Home Assistant 2026.11+)
+- [Open IDM Heatpump in HACS](https://my.home-assistant.io/redirect/hacs_repository/?owner=Xerolux&repository=idm-heatpump-hass&category=Integration) (Home Assistant 2026.10 and older)
+
 When Home Assistant is upgraded from 2026.10 or older to 2026.11 or newer,
 HACS migrates to the Marketplace automatically: installed downloads and update
 entities carry over. Nothing has to be reinstalled or reconfigured.

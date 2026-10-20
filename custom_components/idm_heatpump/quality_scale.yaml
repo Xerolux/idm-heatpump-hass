@@ -84,7 +84,8 @@ rules:
     status: done
     comment: >
       docs/wiki/Installation-and-Setup.md contains step-by-step installation
-      instructions including HACS and manual install.
+      instructions covering the Marketplace (HA 2026.11+), HACS and manual
+      install.
 
   docs-removal-instructions:
     status: done

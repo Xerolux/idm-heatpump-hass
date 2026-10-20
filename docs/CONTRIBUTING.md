@@ -24,8 +24,8 @@ scripts/check_documentation_language.py` checks the documents, and
 
 The changelog section of a version becomes the release notes verbatim
 (`.github/workflows/release.yml` extracts it), and those notes are what
-users see in the HACS update dialog. Write them for that reader — not as
-an internal audit log:
+users see in the HACS/Marketplace update dialog. Write them for that reader —
+not as an internal audit log:
 
 - Open with one or two sentences of narrative that say *why the release
   matters*, not just what it contains. The release workflow injects the

@@ -88,7 +88,7 @@ body:
     id: integration_version
     attributes:
       label: IDM Heatpump integration version
-      description: Find it in HACS, the integration diagnostics, or the IDM API Version diagnostic entity attributes.
+      description: Find it in the Marketplace (HA 2026.11+) or HACS (HA 2026.10 and older), in the integration diagnostics, or in the IDM API Version diagnostic entity attributes.
       placeholder: "0.8.1-beta.22"
     validations:
       required: true

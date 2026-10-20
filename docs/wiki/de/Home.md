@@ -195,7 +195,7 @@ Datenschutz und das Dashboard.
 | GitHub-Repository | https://github.com/Xerolux/idm-heatpump-hass |
 | Community, Fragen & Ideen | https://github.com/Xerolux/idm-heatpump-hass/discussions |
 | Issues & Bugs | https://github.com/Xerolux/idm-heatpump-hass/issues |
-| HACS | https://hacs.xyz/ |
+| Marketplace / HACS | https://www.hacs.xyz/docs/marketplace |
 | Home Assistant | https://www.home-assistant.io/ |
 | IDM EnergieSysteme | https://www.idm-energiesysteme.de/ |
 

@@ -494,8 +494,8 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 #### Prerelease naming
 
 - **The integration uses SemVer tags:** `v0.16.0-beta.1`, `v0.16.0-rc.1`. The
-  `manifest.json` version matches the tag without the `v`. This is what HACS and
-  Home Assistant read, so it does not change.
+  `manifest.json` version matches the tag without the `v`. This is what
+  HACS/Marketplace and Home Assistant read, so it does not change.
 - **Since 0.17.2 the short prerelease form is the convention:** iteration betas
   are tagged `-bN` (`v0.17.2-b6` … `v0.17.2-b14`, `v0.19.0-b1`). Both spellings
   are valid SemVer prereleases and the release workflow accepts either; prefer
