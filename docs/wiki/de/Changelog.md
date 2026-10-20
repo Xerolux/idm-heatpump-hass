@@ -5,6 +5,16 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0-b14 — 2026-10-20
+
+Neuer Sensor für die Vorlauf-Abweichung auf Wärmepumpen-Ebene: der
+Vorlauf der Wärmepumpe im Vergleich zum höchsten Kreis-Sollwert, der
+aktuell Vorlauf anfordert — gemeldet nur im reinen Heizbetrieb, denn
+während einer Warmwasser-Ladung ist der Vorlauf Ladetemperatur und
+keine Versorgung. Entwurf nach einer 24-stündigen rein lesenden Sonde
+auf der Referenzanlage; die Abgrenzung ist im Open-Work-Audit
+dokumentiert.
+
 ## v0.23.0-b13 — 2026-10-19
 
 Hotfix aus der PV-Inbetriebnahme auf der Referenzanlage: Die
