@@ -4,6 +4,34 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.23.0
+
+**0.23.0** ist der stabile Schnitt der Linie aus vierzehn Prereleases
+(b1–b14, 17.–20.10.2026). Für den Schnitt bestand das volle Qualitäts-Gate
+auf dem Release-Baum: die vierbeinige CI-Matrix (Python 3.14 ×
+HA 2026.8.1/2026.10.0 × manifest-gepinnt/api-main) mit den Coverage-Gates,
+strict mypy gegen die echte Home-Assistant-Runtime, ruff, hassfest, HACS,
+die echte Lifecycle-Smoke-Strecke und die Paket-zu-Tag-Verifikation des
+Release-Workflows. Die Linie lief durchgehend im Feld: Jede Beta lief beim
+Erscheinen live auf der Navigator-10-Anlage des Maintainers (die
+Advisor-Arbeiten b10–b14 wurden dort Stunde für Stunde verifiziert,
+endend in einer beobachteten Warmwasser-Ladung innerhalb des empfohlenen
+PV-Fensters am 20.10.2026), die FLOAT32-Korrektur des Durchfluss-Registers
+wurde auf zwei Anlagen live bestätigt (Diskussion #516), und die Reporter
+zu #532, #537–#539 und #546 haben ihre Fixes direkt validiert. Der
+unveränderte b14-Kandidat soakte vor diesem Schnitt etwa einen Tag —
+unterhalb des Sieben-Tage-Gates, und der Code der Linie änderte sich fast
+täglich. Der Maintainer entschied sich dennoch für den Schnitt: Die
+einzigen Schreibpfad-Änderungen der Linie beschränken sich auf das
+Scheduling der Schreib-Bestätigungen (#537 samt Per-Task-Nachzug, live auf
+der Referenzanlage seit 17./18.10.2026), die Register-Map-Änderung ist
+eine Korrektur des Lesetyps, die Advisor- und Speicher-Änderungen sind
+lokal (additive Speicherfelder, einmaliges Gebäudemodell-Neulernen,
+Modus-Zähler ab null), und kein EEPROM-sensibles Register wird von einem
+neuen Pfad berührt. Issue #493 ist geschlossen (controller-intern auf der
+Firmware des Reporters; der zyklische GLT-Refresh bleibt);
+`idm-heatpump-api` `2.14.4` ist das mit diesem Schnitt validierte Paar.
+
 ## Release-Entscheidung zu 0.23.0-b10
 
 **0.23.0-b10** bündelt den Advisor-Review-Durchlauf (Prognose-Zeitpfad,
@@ -310,7 +338,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.23.0-b14` und `idm-heatpump-api` `2.14.4` bilden das aktuelle exakt
+Integration im Quellstand `0.23.0` und `idm-heatpump-api` `2.14.4` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

@@ -171,10 +171,12 @@ HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
         r"\*\*`0\.15\.0`\*\* moved that pair[\s\S]*?`tmodbus\[async-serial\]==0\.5\.1`",
         r"\(`modbus-connection` `[0-9][0-9a-z.]*`, `idm-heatpump-api` `[0-9][0-9a-z.]*`\); no register map or",
         r"`beta\.4`, on `idm-heatpump-api` `[0-9][0-9a-z.]*` and `modbus-connection` `[0-9][0-9a-z.]*`\.",
+        r"`idm-heatpump-api` `[0-9][0-9a-z.]*` is[\s\S]*?validated pair with this cut\.",
     ),
     "docs/wiki/de/Stability-and-Release-Readiness.md": (
         r"Bis\s+einschließlich `0\.14\.1`[\s\S]*?`tmodbus==0\.5\.0` gepinnt\.",
         r"\*\*`0\.15\.0`\*\* zog dieses Paar[\s\S]*?`tmodbus\[async-serial\]==0\.5\.1`",
+        r"`idm-heatpump-api` `[0-9][0-9a-z.]*` ist das mit diesem Schnitt[\s\S]*?validierte Paar\.",
     ),
 }
 

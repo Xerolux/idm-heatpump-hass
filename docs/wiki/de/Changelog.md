@@ -5,6 +5,28 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.0 — 2026-10-21
+
+Der stabile Schnitt der 0.23-Linie (vierzehn Betas, 17.–20.10.2026). Der
+Predictive Advisor ist im Feld gereift: Sechs neue Sensoren verfolgen den
+COP von reinem Heizen und reinem Warmwasser-Laden getrennt,
+Warmwasser-Fenster erscheinen in deiner Home-Assistant-Zeitzone aus
+korrekt gefalteten Viertelstunden-Preis- und PV-Daten
+(Forecast.Solar-Sensoren funktionieren ohne Zusatzkonfiguration),
+Empfehlungen bleiben ein stabiler Eintrag pro Thema, und das Gebäudemodell
+lernt nur noch aus reinem Heizbetrieb (einmaliges Neulernen beim Update).
+Der Wärmetauscher-Durchfluss wird endlich korrekt gelesen: Feldbelege
+bewiesen, dass Register 1072 ein wortgetauschtes FLOAT32 ist, kein UCHAR —
+die Geräte-Logik zieht auf `idm-heatpump-api[web]==2.14.4` um. Nicht
+konfigurierte Anlagen-Features loggen keine Validierungswarnungen mehr,
+und ein Web-Platzhalter `---` bringt den Sensor-Zustand nicht mehr zum
+Absturz (#532). GLT-Weitergaben öffnen keine koordinator-weiten
+Nicht-verfügbar-Fenster mehr (#537), und ein neuer Sensor für die
+Vorlauf-Abweichung auf Wärmepumpen-Ebene rundet die Linie ab. Mit Home
+Assistant 2026.11 installiert der eingebaute Marketplace (HACS-Nachfolger,
+gleicher Katalog) die Integration direkt. Rollback auf 0.22.0 bleibt
+möglich.
+
 ## v0.23.0-b14 — 2026-10-20
 
 Neuer Sensor für die Vorlauf-Abweichung auf Wärmepumpen-Ebene: der
