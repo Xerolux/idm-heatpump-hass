@@ -4,6 +4,33 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.0 release decision
+
+**0.23.0** is the stable cut of the line that ran through fourteen
+prereleases (b1–b14, 2026-10-17 through 2026-10-20). For the cut, the
+full quality gate passed on the release tree: the four-leg CI matrix
+(Python 3.14 × HA 2026.8.1/2026.10.0 × manifest-pinned/api-main) with the
+coverage gates, strict mypy against the real Home Assistant runtime,
+ruff, hassfest, HACS, the real-Home-Assistant lifecycle smoke leg and the
+release workflow's package-to-tag verification. The line was exercised in
+the field continuously: every beta ran live on the maintainer's Navigator
+10 plant as it shipped (the b10–b14 advisor work was verified there hour
+by hour, ending in an observed hot-water charge inside the recommended PV
+window on 2026-10-20), the FLOAT32 flow-register correction was confirmed
+live on two plants (discussion #516), and the reporters behind #532,
+#537–#539 and #546 validated their fixes directly. The unchanged b14
+candidate soaked for about a day before this cut — short of the seven-day
+gate, and the line's code changed almost daily. The maintainer decided to
+cut anyway: the only write-path changes in the line confine themselves to
+write-confirmation scheduling (#537 and its per-task tracking follow-up,
+running live on the reference plant since 2026-10-17/18), the register-map
+change is a read-typing correction, the advisor and storage changes are
+local (additive storage fields, one-time building-model relearn, per-mode
+counters starting at zero), and no EEPROM-sensitive register is touched by
+any new path. Issue #493 is closed (controller-internal on the reporter's
+firmware; the cyclic GLT refresh stays); `idm-heatpump-api` `2.14.4` is
+the validated pair with this cut.
+
 ## 0.23.0-b10 release decision
 
 **0.23.0-b10** bundles the advisor review pass (forecast time path,
@@ -292,7 +319,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.23.0-b14` and `idm-heatpump-api` `2.14.4` form the current
+Source-tree integration `0.23.0` and `idm-heatpump-api` `2.14.4` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

@@ -15,68 +15,43 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [0.23.0-b14] - 2026-10-20
+## [0.23.0] - 2026-10-21
+
+0.23.0 is the stable cut of the line that ran through fourteen prereleases
+(b1–b14, 2026-10-17 through 2026-10-20) — everything since 0.22.0 ships
+here. The predictive advisor grew up on field feedback: per-mode COP
+statistics for heating and hot water, hot-water windows rendered in the
+Home Assistant time zone from correctly folded quarter-hour price and PV
+feeds (including the core Forecast.Solar integration), recommendations
+that stay one stable entry per topic instead of accumulating, and a
+building model that learns only from space heating through weighted,
+decaying samples. The register map itself was corrected: the heat-sink
+flow rate (1072) is a word-swapped FLOAT32, not the UCHAR of the official
+IDM doc (device logic moves to `idm-heatpump-api[web]==2.14.4`).
+Unconfigured plant features no longer log validation warnings and a web
+placeholder no longer crashes the sensor state (#532), GLT forwarding
+passes no longer open coordinator-wide unavailability windows (#537), and
+a new heat-pump-level flow deviation sensor rounds the line off. No
+configuration migration is needed; rolling back to 0.22.0 keeps working
+(advisor state carries only additive fields, and the per-mode COP counters
+simply stop). And a note for installations: with Home Assistant 2026.11
+the built-in Marketplace — HACS's successor on the same catalog — installs
+and updates this integration directly; existing HACS installations keep
+working.
 
 ### Added
 
-- **Heat pump flow deviation sensor** (`calculated_hp_flow_deviation`): the
-  heat pump's own flow temperature versus the highest circuit setpoint
-  currently requesting flow, published only while the heat pump reports pure
-  heating mode. No heat-pump-level setpoint register exists (verified against
-  the full Navigator 10 register map), so the requested level derives from
-  the active `hc_*_setpoint_flow_temp` values; idle (`0.0`) and unconfigured
-  (`-1.0`) circuits are excluded. During DHW charges, cooling, defrost,
-  standby and combined states the sensor reports no value instead of a
-  misleading deviation — during a DHW charge the heat-pump flow rises to
-  charging temperature (measured 60–62 °C) while the circuit setpoints stay
-  at their curve values. Design based on the 2026-10-20 read-only probe on
-  the reference plant (24 h across heating, standby and two DHW charges);
-  the delineation is documented in `docs/dev/open-work-audit.md`.
-
-## [0.23.0-b13] - 2026-10-19
-
-### Fixed
-
-- **The Forecast.Solar PV source never matched on real installations
-  (b12)**: the registry lookup compared the integration against the
-  entity-registry entry's ``domain``, which holds the *entity* domain
-  ("sensor") in a real Home Assistant — the integration lives in
-  ``platform``. Every entity therefore fell back to the attribute parsers
-  and the PV forecast stayed empty. The lookup now checks ``platform``
-  first (found live on the reference plant during the b12 verification).
-
-## [0.23.0-b12] - 2026-10-19
-
-### Added
-
-- **PV forecasts from the core Forecast.Solar integration**: the advisor's
-  PV forecast entity can now be a Forecast.Solar sensor. The integration's
-  sensors carry no hourly attributes, so the advisor reads its
-  `get_forecast` service (`resolution=hourly`, `wh_period` in Wh per hour)
-  through the entity's config entry and folds it onto calendar hours.
-  Solcast-style attribute entities keep working; any error or foreign
-  entity falls back to the attribute parsers.
-
-## [0.23.0-b11] - 2026-10-19
-
-### Fixed
-
-- **The advisor efficiency-score sensor never published its score**: the
-  engine rounded the score to a float while the sensor accepts only ints,
-  so `advisor_efficiency_score` stayed `unavailable` on real plants even
-  with a computed score (visible in the health components, which showed
-  the efficiency value all along). Found live on the reference plant
-  during the b10 verification; earlier field passes had read the missing
-  sensor as expected lifecycle gating. The engine now publishes the score
-  as an int.
-
-## [0.23.0-b10] - 2026-10-19
-
-Advisor review pass (forecast time path, recommendation lifecycle, model
-quality) plus per-mode COP statistics for heating and hot water.
-
-### Added
-
+- **Registers that report "not present" are filled from the web supplement
+  (discussion #516)**: in auto mode the Modbus poll owns register values,
+  so a register that reports its not-present pattern kept its entity
+  unavailable even when the controller's web interface served a live value
+  for the same quantity — the reporter read a permanent 0 L/min heat-sink
+  flow while the web flowmeter showed the real 33.9 L/min. Not-present
+  readings (documented sentinels, plus the no-TWT flow signature from
+  #539) are now replaced by the web supplement's value for aliased
+  quantities (starting with `flowmeter` → `heat_sink_flow_rate`); a real
+  Modbus value always wins over the slower web supplement, and web-only
+  mode bridges these values wholesale already.
 - **Per-mode COP statistics (heating / hot water)**: six new Smart-profile
   sensors `energy_cop_heating_total/today/month` and
   `energy_cop_dhw_total/today/month`. Only unambiguous intervals count —
@@ -98,9 +73,172 @@ quality) plus per-mode COP statistics for heating and hot water.
   include the advisor stage, confidence, usable fraction and the full
   per-key quality table (which previously lived in the status sensor's
   attributes), plus the per-mode energy split.
+- **PV forecasts from the core Forecast.Solar integration**: the advisor's
+  PV forecast entity can now be a Forecast.Solar sensor. The integration's
+  sensors carry no hourly attributes, so the advisor reads its
+  `get_forecast` service (`resolution=hourly`, `wh_period` in Wh per hour)
+  through the entity's config entry and folds it onto calendar hours.
+  Solcast-style attribute entities keep working; any error or foreign
+  entity falls back to the attribute parsers.
+- **Heat pump flow deviation sensor** (`calculated_hp_flow_deviation`): the
+  heat pump's own flow temperature versus the highest circuit setpoint
+  currently requesting flow, published only while the heat pump reports pure
+  heating mode. No heat-pump-level setpoint register exists (verified against
+  the full Navigator 10 register map), so the requested level derives from
+  the active `hc_*_setpoint_flow_temp` values; idle (`0.0`) and unconfigured
+  (`-1.0`) circuits are excluded. During DHW charges, cooling, defrost,
+  standby and combined states the sensor reports no value instead of a
+  misleading deviation — during a DHW charge the heat-pump flow rises to
+  charging temperature (measured 60–62 °C) while the circuit setpoints stay
+  at their curve values. Design based on the 2026-10-20 read-only probe on
+  the reference plant (24 h across heating, standby and two DHW charges);
+  the delineation is documented in `docs/dev/open-work-audit.md`.
+
+### Changed
+
+- **Building-model regressions weight and decay**: samples are weighted by
+  the hours they represent (capped at half an hour) and the accumulated
+  statistics decay with a 30-day half-life, so an applied heating-curve
+  change or renovation no longer biases the model forever, and one long
+  steady evening no longer dominates the heat-loss slope. Fits now also
+  require 12 effective observed hours. The building-model storage version
+  was bumped: the heat-loss and flow-curve models relearn once after the
+  update (the same one-time reset as the #546 fix below).
+- **Far fewer store writes**: advisor state and analytics saves are
+  throttled to one write per ~10 minutes for per-poll counter changes
+  (previously roughly one JSON write per 30-second poll, ~2,800/day);
+  recommendation changes still save immediately.
+- **Advisor status sensor attributes slimmed**: per-sample quality counters
+  and the float confidence left the attributes (they changed every poll
+  and persisted a recorder row per scan interval); the full quality table
+  moved to diagnostics, the confidence *level* stays as an attribute and
+  the confidence sensor keeps the precise value. Observation days are
+  published as whole days.
+- **The operation-reason composition is cached per snapshot** instead of
+  being recomputed three times per coordinator refresh.
 
 ### Fixed
 
+- **No more coordinator-wide unavailability windows after GLT forwarding
+  passes (#537)**: every write used to cancel the pending 0.5 s
+  write-confirmation task of the previous write — and when that
+  cancellation landed inside the confirmation's refresh, Home Assistant's
+  `DataUpdateCoordinator` recorded it as a *silently* failed update:
+  `last_update_success` dropped without any log line, and every
+  coordinator-backed entity (Modbus sensors, advisor entities, the web
+  demand reason) reported *unavailable* for one poll cycle — on the
+  reference plant a ~12-second window after every 300-second forwarding
+  pass, invisible in logs and repairs. The write path now cancels a
+  confirmation only while it is still sleeping; an in-flight confirmation
+  completes. A real-Home-Assistant regression test pins the underlying
+  coordinator behaviour and guards the fix.
+- **Heat-sink flow rate (1072) read as word-swapped FLOAT32** (discussion
+  #516, via `idm-heatpump-api` 2.14.4): the official IDM register doc lists
+  the register as UCHAR, but two independent field reads proved a 32-bit
+  word-swapped float — a direct HA modbus `float32` read with word swap
+  returns plausible L/min on a plant with a live flow signal, and plants
+  without a plate heat exchanger answer the -1.0 float pattern. The UCHAR
+  decode read one byte of the float's low word, which produced jumping,
+  far-too-high values while the charging pump ran (aivatco's report) and a
+  spurious 0.0 L/min on no-TWT plants. Real flow values now display
+  correctly; not-present plants report unavailable and the web flowmeter
+  fallback keeps filling them. The reporter also traced why the map ever
+  said UCHAR: the official IDM doc corrected 1072 to FLOAT in newer
+  revisions (Navigator 2.0 rev 12 → 13, Navigator 10 rev 0 → 1). The
+  known-limitations pages and the generated register reference reflect the
+  corrected type.
+- **"Not present" fills are classified as sentinels instead of invalid
+  values (#532)**: plants without bivalence, solar, cooling circuits or an
+  external demand source read documented-out-of-range fills from those
+  registers and warned on every Home Assistant restart — `bivalence_state`
+  (1124) and `solar_mode` (1856) read 255 while `compressor_status_*`
+  already stayed silent on the identical raw `0xFFFF`, the per-circuit
+  cooling setpoints (1457+/1471+) read 0.0 below 15, and
+  `ext_demand_temp_heating`/`_cooling` (1694/1695) read 0 below their
+  minimums. `idm-heatpump-api` 2.14.3 declared those fills as per-register
+  sentinels, so the affected entities report *unavailable* without the
+  warn-once log; values outside the documented ranges that are not
+  declared sentinels stay rejected (the reporter's KNX-fed `ext_humidity`
+  of 100.96 % keeps being refused). The sentinels are deliberately
+  per-register, not validator-wide: the corrupt-batch re-read recovery of
+  issue #69 keeps flagging unexpected 255s on every other enum register,
+  and the Navigator 1.7 map is untouched.
+- **Web "no value" placeholders report unavailable instead of crashing the
+  sensor state (#532)**: the Navigator web pages fill slots without a
+  current value with the placeholder text `---` (for example the projected
+  hot-water power while no DHW demand runs). The integration passed that
+  text through as the entity state, so Home Assistant rejected the
+  non-numeric state of a kW power sensor on every coordinator update —
+  the reporter's log counted 273 `Unexpected error updating listener`
+  entries plus a `logging too frequently` notice. Placeholder values now
+  carry no native value and the entities report *unavailable*; the value
+  keys stay present so web liveness, the device hierarchy and the
+  numeric-only register bridging are unaffected.
+- **Thermal power fallback to `current_power` (register 1790) when
+  `thermal_power_flow_sensor` (register 4126) is `0.0 kW` or absent**:
+  Navigator 10 plants without a Vortex flow-sensor thermal power reading
+  keep register 4126 at `0.0 kW` while reporting actual thermal output on
+  register 1790 (`current_power`). `calculated_cop`, `EnergyStatistics`
+  (thermal kWh and daily/monthly/total COP), `PredictiveAdvisor`
+  capability/quality tracking and `AdvisorEngine` COP-bucket and
+  building-model learning now fall back to `current_power` whenever
+  `thermal_power_flow_sensor` is `0.0` or absent, and entity-aware polling
+  keeps both candidate thermal registers in the poll plan.
+- **The advisor operation reason reflects what the plant is actually
+  doing**: stale or idle web demand labels
+  (`"Keine Anforderung"`, `"Aus"`, `"System aus"`) no longer mask active
+  operation when the faster Modbus poll disagrees with the 60-second web
+  supplement; active defrosting (`hp_operating_mode == 8`) and cooling
+  (mode 2) now take priority both over the heating-circuit
+  flow-temperature loop and over the hot-water temperature-delta
+  heuristic, so reverse-cycle defrosting is never reported as `Heating
+  circuit A` and a cool DHW tank never disguises defrost or cooling as
+  `Hot water`; and `hp_operating_mode == 4` while `dhw_temp_top >=
+  dhw_setpoint` (e.g. during a legionella or boost cycle) no longer
+  formats a negative shortfall such as `"below setpoint 48.0 °C by -2.0
+  K"`.
+- **The advisor operation reason no longer mixes English and German labels
+  (#538)**: the controller's web supplement reports demand reasons in its
+  German UI wording ("Heizkreis A", "PV", "Zeitprogramm"), which the
+  composer passed through verbatim next to its own English labels — the
+  sensor state alternated between "Heating circuit A" and "Heizkreis A"
+  for the same physical cause. Known web labels now map onto the
+  composer's English vocabulary (the raw controller wording stays in the
+  entity details) and unknown wordings remain verbatim.
+- **Building-model learning excludes DHW and inactive circuits** (#546):
+  heat-loss and flow-curve regressions now require exclusive space heating
+  and positive evidence of an actively heating circuit. Circuit active modes
+  remain polled for the advisor even when their entities are disabled. Existing
+  heat-loss/flow regressions and derived thermal capacity restart once because
+  old aggregates cannot separate DHW samples; other analytics are preserved.
+- **Grid-meter household consumption requires valid mapped battery power**
+  (#519): an unavailable or invalid battery source now pauses the derived
+  household-consumption write instead of silently omitting battery flow.
+  Independent PV and surplus forwarding continue and derivation resumes when
+  the battery source recovers.
+- **Daily re-issued advisor recommendations stay one stable entry per
+  topic — and no longer expire weekly**: producers re-issue
+  recommendations with a day-stamped id, and every re-issue used to add a
+  parallel "new" entry (four days had accumulated eight active
+  recommendations for two heating-curve topics) until the first topic
+  dedup retired the predecessor; the dedup was then hardened so an
+  unchanged re-issue rolls the active id over in place (preserving
+  `created_at` and `user_status`) without appending an `OBSOLETE`
+  duplicate to the 50-entry history ring or firing a redundant `updated`
+  event, and `retract()`/`mark()` fall back to topic matching so an entry
+  that resolves on a later calendar day retracts its predecessor. Finally,
+  the 7-day TTL ran against the inherited first-issue `created_at`, so a
+  topic re-issued daily expired seven days after its first issue and
+  returned as a fresh "new" entry with a reset user status — the exact
+  accumulation pattern from discussion #540. A persisted `refreshed_at`
+  anchor now refreshes on every re-issue (additive storage change, no
+  migration).
+- **Recommendation expiry is no longer silent**: expiry fires the same
+  `idm_advisor_recommendation` status event as dismiss/acknowledge, so
+  automations hear that a recommendation ended. And when a store from
+  before the topic dedup holds several active entries of one topic, every
+  superseded duplicate now leaves an audit-trail history entry instead of
+  being erased.
 - **DHW window times were shown in UTC**: the recommendation title and the
   `advisor_dhw_recommendation` sensor rendered the UTC wall clock instead
   of the configured Home Assistant time zone — a 2-hour error for Central
@@ -121,59 +259,103 @@ quality) plus per-mode COP statistics for heating and hot water.
 - **Naive forecast timestamps are rejected instead of silently read as
   UTC** (same decision as the comfort advisory): a feed stamping naive
   local time previously shifted every series by the UTC offset.
-- **Daily re-issued recommendations expired weekly**: the 7-day TTL ran
-  against the inherited first-issue `created_at`, so a topic re-issued
-  daily expired seven days after its first issue and returned as a fresh
-  "new" entry with a reset user status — the exact accumulation pattern
-  from discussion #540. A persisted `refreshed_at` anchor now refreshes on
-  every re-issue (additive storage change, no migration).
-- **Recommendation expiry is no longer silent**: expiry fires the same
-  `idm_advisor_recommendation` status event as dismiss/acknowledge, so
-  automations hear that a recommendation ended.
-- **Pre-dedup duplicate recommendations are archived, not erased**: when a
-  store from before the topic dedup holds several active entries of one
-  topic, every superseded duplicate now leaves an audit-trail history
-  entry.
-- **`usable_fraction or 1.0` inverted zero data quality** into "full
-  quality" in two confidence formulas; an explicit None check now applies.
-- **Health-score components match machine reason codes** instead of
-  English title substrings, so rewording a title can no longer silently
-  decouple the score from its findings.
-
-### Changed
-
-- **Building-model regressions weight and decay**: samples are weighted by
-  the hours they represent (capped at half an hour) and the accumulated
-  statistics decay with a 30-day half-life, so an applied heating-curve
-  change or renovation no longer biases the model forever, and one long
-  steady evening no longer dominates the heat-loss slope. Fits now also
-  require 12 effective observed hours. The building-model storage version
-  was bumped: the heat-loss and flow-curve models relearn once after the
-  update (same one-time reset as 0.23.0-b7, #546).
-- **Far fewer store writes**: advisor state and analytics saves are
-  throttled to one write per ~10 minutes for per-poll counter changes
-  (previously roughly one JSON write per 30-second poll, ~2,800/day);
-  recommendation changes still save immediately.
-- **Advisor status sensor attributes slimmed**: per-sample quality counters
-  and the float confidence left the attributes (they changed every poll
-  and persisted a recorder row per scan interval); the full quality table
-  moved to diagnostics, the confidence *level* stays as an attribute and
-  the confidence sensor keeps the precise value. Observation days are
-  published as whole days.
-- **The operation-reason composition is cached per snapshot** instead of
-  being recomputed three times per coordinator refresh.
-
-## [0.23.0-b9] - 2026-10-18
-
-Follow-up to b8, verified live on two plants: the option-flow translations
-that both UIs were missing, two consistency guards, and the register-doc
-revision story closed in the documentation. Discussion #516 confirmed the
-b8 flow reading live, and its reporter dug out why the map ever said UCHAR:
-the official IDM doc corrected 1072 to FLOAT in newer revisions (Navigator
-2.0 rev 12 → 13, Navigator 10 rev 0 → 1).
-
-### 🐛 Bugfixes
-
+- **The advisor efficiency-score sensor never published its score**: the
+  engine rounded the score to a float while the sensor accepts only ints,
+  so `advisor_efficiency_score` stayed `unavailable` on real plants even
+  with a computed score (visible in the health components, which showed
+  the efficiency value all along). Found live on the reference plant
+  during field verification; earlier field passes had read the missing
+  sensor as expected lifecycle gating. The engine now publishes the score
+  as an int.
+- **The Forecast.Solar PV source never matched on real installations**: the
+  registry lookup compared the integration against the entity-registry
+  entry's ``domain``, which holds the *entity* domain ("sensor") in a real
+  Home Assistant — the integration lives in ``platform``. Every entity
+  therefore fell back to the attribute parsers and the PV forecast stayed
+  empty. The lookup now checks ``platform`` first (found live on the
+  reference plant during field verification).
+- **Plausibility range for `heat_sink_flow_rate` matches its `L/min` unit,
+  and no-TWT plants with a web flowmeter stay usable in idle**:
+  `predictive_advisor.py` previously bounded `heat_sink_flow_rate` to
+  `(0.0, 15.0)`, which rejected normal heat-pump flow rates such as
+  `33.9 L/min` (filled by the #516 web fallback) as `implausible` and
+  degraded advisor confidence. The upper plausibility bound is now
+  `250.0 L/min`. In addition, when the web supplement provides a
+  `flowmeter` value on a plant without a plate heat exchanger
+  (`heat_sink_flow_temp == -1.0`), a legitimate idle `0.0 L/min` reading
+  is no longer misclassified as the no-TWT not-present signature and keeps
+  `has_flow_sensor: true`.
+- **The no-TWT fake flow rate no longer passes the advisor's data-quality
+  gate (#539)**: on plants without a plate heat exchanger the flow
+  register decodes a spurious constant 0.0 L/min from the FLOAT -1.0
+  not-present pattern (Known Limitations), yet the advisor counted it as
+  100 % usable samples with `flow_sensor: true`. The signature — zero
+  flow together with no real sibling flow temperature — now classifies as
+  *unavailable*, the capability stays false, and a real sensor's
+  legitimate idle zero keeps counting as usable.
+- **Entity-aware polling preserves `heat_sink_flow_temp` and all
+  heating-circuit registers required by the advisor engine**:
+  `heat_sink_flow_rate` now declares `heat_sink_flow_temp` as a companion
+  dependency in `polling_plan.py` so the no-TWT sentinel check and #516
+  web fallback keep working when the flow-temp entity is disabled.
+  `PredictiveAdvisor.required_registers` also registers
+  `heat_sink_flow_temp` and per-circuit `hc_{c}_heating_curve`,
+  `hc_{c}_room_setpoint_heat_normal`, `hc_{c}_flow_temp`, and
+  `hc_{c}_setpoint_flow_temp` so heating-curve and operation-reason
+  analysis keep receiving data regardless of which UI entities are
+  enabled.
+- **Web not-present fallback refreshes immediately on web poll and reports
+  `web_fallback` in diagnostics**: `async_refresh_web_supplement` now
+  applies `_apply_web_not_present_fallback` and refreshes
+  `_unused_registers` as soon as a web supplement arrives (so startup
+  sentinels clear immediately without waiting for the next Modbus poll),
+  and `diagnostics.py` marks fallback-filled registers with
+  `status: "web_fallback"` and `web_value` instead of reporting a clean
+  Modbus read alongside a `-1.0` sentinel outcome.
+- **Per-task write confirmation tracking in `IdmCoordinator`**: tracking
+  in-flight confirmation refreshes per task
+  (`_refreshing_confirmation_tasks`) ensures that when a third write
+  arrives while the first confirmation is still refreshing and the second
+  confirmation is sleeping, the sleeping second task is properly cancelled
+  instead of triggering a duplicate refresh.
+- **Room-temperature and humidity forwarding deduplication and quiet
+  cooldown handling**: `RoomTempForwarder.async_forward_all` deduplicates
+  shared sensor entity IDs across circuits so each circuit is written only
+  once per periodic pass, and `write_cooldown_active` rejections (when a
+  periodic pass coincides with a recent write) are logged at `DEBUG`
+  instead of `WARNING`.
+- **Config entry unload cancels `advisor_forecast_task`**:
+  `_async_cancel_entry_tasks` in `__init__.py` now includes
+  `advisor_forecast_task` so unloading or reloading an entry never leaves
+  the hourly forecast loop running in the background.
+- **Background task registration for `KnxBridge` and
+  `recovery_watchdog`**: worker loops now use
+  `hass.async_create_background_task` when available so Home Assistant
+  startup stage completion is never blocked by long-running workers, and
+  `ensure_recovery_watchdog` closes its coroutine cleanly when a test
+  mock intercepts `async_create_task`.
+- **Model-change entity cleanup runs on the normal Modbus setup path**:
+  `cleanup_stale_model_entities` was previously called only in
+  `_async_setup_web_only_entry` (where the empty register map made it a
+  no-op) and omitted from `async_setup_entry`. Running it during normal
+  Modbus setup removes orphaned register-backed entities (such as cascade
+  entities left behind when cascade is not enabled), and running entity
+  cleanups before `cleanup_stale_hierarchy_devices` detaches any
+  sub-device emptied in the same setup pass.
+- **Orphaned `web_heatpump_model` and Navigator 2.0 `stat_*` web sensors
+  cleaned up on Navigator 10**: `cleanup_stale_web_sensor_entities` now
+  removes retired `_WEB_ATTRIBUTE_VALUE_NAMES` (`web_heatpump_model`,
+  which rides as an attribute on `navigator_version`) on all controllers,
+  and `_web_sensor_definitions` plus `cleanup_stale_web_sensor_entities`
+  skip and remove the 12 Navigator 2.0-only `stat_*` statistics sensors
+  (`(Web 2.0)`) when the controller is confirmed as a Navigator 10.
+- **Web energy-flow sensors report *unavailable* when the controller omits
+  `grid_power` or `pv_power`**: on Navigator 10 installations without a
+  bidirectional grid meter wired to the controller, the `energyflow`
+  WebSocket frame carries `grid_power: None`.
+  `IdmWebEnergyflowGridSensor` and `IdmWebEnergyflowPvSensor` now require
+  their respective value to be non-`None` in `available`, preventing a
+  permanently `unknown` sensor state.
 - **Energy-manager option fields translated in both UIs**: the labels and
   descriptions existed in `strings.json` only, but Home Assistant loads
   custom-integration translations from `translations/*.json` — the plain
@@ -184,228 +366,11 @@ the official IDM doc corrected 1072 to FLOAT in newer revisions (Navigator
 - **`strings.json` synced to the runtime wording** for the external-power
   forwarding step: two strings had drifted behind the refined texts that
   `en.json` and `de.json` already agreed on.
-
-### 💼 Maintenance
-
-- **Translation parity guard** (`tests/test_translation_parity.py`): every
-  `strings.json` key must exist in `en.json` with an identical value, every
-  `en.json` key must be non-empty in `de.json`, and German carries no orphan
-  keys — a strings edit without its translations now fails the build.
-- **German register reference + parity guard**: the German mirror row for
-  register 1072 carries the b8 FLOAT typing (1072–1073), two untranslated
-  cells are harmonized, and a parity test keeps both generated register
-  tables row-for-row identical.
-- **Single-Modbus-client rule documented** (Troubleshooting EN/DE): the
-  Navigator serves one active Modbus connection — a second client (probe
-  scripts, debug tools) receives the `-1.0` not-present sentinel on optional
-  blocks while the primary keeps live data. Direct API or register tests on
-  a running plant are only meaningful with the integration stopped. Found
-  live while verifying b8 on the reference plant, whose flow entity reads
-  real L/min values now.
-
-## [0.23.0-b8] - 2026-10-18
-
-The heat-sink flow rate is finally read with the datatype the controller
-actually speaks: field readings proved register 1072 is a word-swapped
-FLOAT32, not the UCHAR of the official IDM doc.
-
-### 🐛 Bugfixes
-
-- **Heat-sink flow rate (1072) read as word-swapped FLOAT32** (discussion
-  #516, via `idm-heatpump-api` 2.14.4): the official IDM register doc lists
-  the register as UCHAR, but two independent field reads proved a 32-bit
-  word-swapped float — a direct HA modbus `float32` read with word swap
-  returns plausible L/min on a plant with a live flow signal, and plants
-  without a plate heat exchanger answer the -1.0 float pattern. The UCHAR
-  decode read one byte of the float's low word, which produced jumping,
-  far-too-high values while the charging pump ran (aivatco's report) and a
-  spurious 0.0 L/min on no-TWT plants. Real flow values now display
-  correctly; not-present plants report unavailable and the web flowmeter
-  fallback keeps filling them. The known-limitations pages and the generated
-  register reference reflect the corrected type.
-
-## [0.23.0-b7] - 2026-10-18
-
-The predictive advisor now learns the building model only from space heating,
-keeping hot-water charges and inactive circuits out of its estimates. This beta
-also preserves a complete site balance when forwarding external power values.
-
-### 🐛 Bugfixes
-
-- **Building-model learning excludes DHW and inactive circuits** (#546):
-  heat-loss and flow-curve regressions now require exclusive space heating
-  and positive evidence of an actively heating circuit. Circuit active modes
-  remain polled for the advisor even when their entities are disabled. Existing
-  heat-loss/flow regressions and derived thermal capacity restart once because
-  old aggregates cannot separate DHW samples; other analytics are preserved.
-- **Grid-meter household consumption requires valid mapped battery power**
-  (#519): an unavailable or invalid battery source now pauses the derived
-  household-consumption write instead of silently omitting battery flow.
-  Independent PV and surplus forwarding continue and derivation resumes when
-  the battery source recovers.
-
-### 💼 Maintenance
-
-- **Deterministic diagnostics privacy tests**: the web-status fixture now
-  models an absent status frame explicitly, preventing random mock memory
-  addresses from triggering the PIN-redaction assertion.
-
-### Known limitations
-
-- **One-time building-model relearning**: existing heat-loss and flow-curve
-  regressions and derived thermal capacity are reset on upgrade. COP data,
-  daily baselines and other statistics remain available.
-- **Controller-side battery SOC resets** (#493) remain under investigation
-  with IDM. This beta retains the cyclic GLT refresh and does not claim to
-  resolve that firmware-specific observation.
-
-### ❤️ Thanks
-
-- Thanks to @dnamat88 for the detailed building-model investigation (#546),
-  and @7weazel7 for validating the grid-meter mapping and its follow-ups (#519).
-
-## [0.23.0-b6] - 2026-10-18
-
-Comprehensive code-audit and runtime hardening pass across the predictive
-advisor, entity-aware polling, coordinator write/web-fallback lifecycle,
-diagnostics, forwarding and background task management.
-
-### Fixed
-
-- **Plausibility range for `heat_sink_flow_rate` matches its `L/min` unit, and
-  no-TWT plants with a web flowmeter stay usable in idle**:
-  `predictive_advisor.py` previously bounded `heat_sink_flow_rate` to
-  `(0.0, 15.0)`, which rejected normal heat-pump flow rates such as
-  `33.9 L/min` (filled by the #516 web fallback) as `implausible` and degraded
-  advisor confidence. The upper plausibility bound is now `250.0 L/min`. In
-  addition, when the web supplement provides a `flowmeter` value on a plant
-  without a plate heat exchanger (`heat_sink_flow_temp == -1.0`), a legitimate
-  idle `0.0 L/min` reading is no longer misclassified as the no-TWT not-present
-  signature and keeps `has_flow_sensor: true`.
-- **Entity-aware polling preserves `heat_sink_flow_temp` and all heating-circuit
-  registers required by the advisor engine**: `heat_sink_flow_rate` now declares
-  `heat_sink_flow_temp` as a companion dependency in `polling_plan.py` so the
-  no-TWT sentinel check and #516 web fallback keep working when the flow-temp
-  entity is disabled. `PredictiveAdvisor.required_registers` also registers
-  `heat_sink_flow_temp` and per-circuit `hc_{c}_heating_curve`,
-  `hc_{c}_room_setpoint_heat_normal`, `hc_{c}_flow_temp`, and
-  `hc_{c}_setpoint_flow_temp` so heating-curve and operation-reason analysis
-  keep receiving data regardless of which UI entities are enabled.
-- **Daily advisor recommendation re-issues roll over in place without history
-  spam, and `retract`/`mark` match across date-stamped IDs**: re-submitting an
-  active recommendation with a new `YYYYMMDD`-suffixed ID and unchanged content
-  now updates the active ID in place (preserving `created_at` and `user_status`)
-  without appending an `OBSOLETE` duplicate to the 50-entry history ring or
-  firing a redundant `updated` event. `retract()` and `mark()` also fall back to
-  topic matching (`_topic_of`) so an anomaly or recommendation that resolves on
-  a subsequent calendar day retracts the active entry from the earlier day.
-- **`advisor_operation_reason` prioritizes `Defrosting` (`mode == 8`) and
-  `Cooling` (`mode == 2`) ahead of the DHW temperature-delta heuristic and
-  omits negative shortfall text**: a cool domestic hot water tank no longer
-  causes active defrosting or cooling to be reported as `Hot water`, and
-  `hp_operating_mode == 4` while `dhw_temp_top >= dhw_setpoint` (e.g. during a
-  legionella or boost cycle) no longer formats a negative shortfall such as
-  `"below setpoint 48.0 °C by -2.0 K"`.
-- **Config entry unload cancels `advisor_forecast_task`**:
-  `_async_cancel_entry_tasks` in `__init__.py` now includes
-  `advisor_forecast_task` so unloading or reloading an entry never leaves the
-  hourly forecast loop running in the background.
-- **Web not-present fallback refreshes immediately on web poll and reports
-  `web_fallback` in diagnostics**: `async_refresh_web_supplement` now applies
-  `_apply_web_not_present_fallback` and refreshes `_unused_registers` as soon as
-  a web supplement arrives (so startup sentinels clear immediately without
-  waiting for the next Modbus poll), and `diagnostics.py` marks fallback-filled
-  registers with `status: "web_fallback"` and `web_value` instead of reporting
-  a clean Modbus read alongside a `-1.0` sentinel outcome.
-- **Per-task write confirmation tracking in `IdmCoordinator`**: tracking
-  in-flight confirmation refreshes per task (`_refreshing_confirmation_tasks`)
-  ensures that when a third write arrives while the first confirmation is still
-  refreshing and the second confirmation is sleeping, the sleeping second task
-  is properly cancelled instead of triggering a duplicate refresh.
-- **Room-temperature and humidity forwarding deduplication and quiet cooldown
-  handling**: `RoomTempForwarder.async_forward_all` deduplicates shared sensor
-  entity IDs across circuits so each circuit is written only once per periodic
-  pass, and `write_cooldown_active` rejections (when a periodic pass coincides
-  with a recent write) are logged at `DEBUG` instead of `WARNING`.
-- **Background task registration for `KnxBridge` and `recovery_watchdog`**:
-  worker loops now use `hass.async_create_background_task` when available so
-  Home Assistant startup stage completion is never blocked by long-running
-  workers, and `ensure_recovery_watchdog` closes its coroutine cleanly when a
-  test mock intercepts `async_create_task`.
-
-## [0.23.0-b3] - 2026-10-17
-
-Third prerelease of the 0.23 line, built from end-to-end simulation of a live
-Navigator 10 (`AERO ALM 6-15`, `T_NAV10_20.24-1580-g02a20b66f`) plant inside a
-real Home Assistant runtime: fixes the predictive advisor's
-`advisor_operation_reason` (`compose_operation_reason`) so stale or idle web
-demand labels never mask active heating/cooling operation, and active
-defrosting (`hp_operating_mode == 8`) always takes precedence over the
-reverse-cycle flow temperature drop.
-
-### Fixed
-
-- **`advisor_operation_reason` no longer reports `"Keine Anforderung"` while
-  the heat pump is running, and prioritizes `Defrosting` (`mode == 8`)**:
-  On Navigator 10 with the web supplement enabled, `web_demand_reason` returns
-  idle labels (`"Keine Anforderung"`, `"Aus"`, `"System aus"`) when the
-  `home/detail` widget shows no active demand. Because Modbus polls every
-  10 s while the web supplement refreshes every 60 s (or during compressor/buffer
-  run-on once the heating circuit reaches its flow setpoint), `compose_operation_reason`
-  previously returned `"Keine Anforderung"` as the operation reason even while
-  the heat pump was actively heating. Idle web demand labels are now ignored
-  when the heat pump is running so the reason falls back cleanly to the active
-  operating mode (`Heating`, `Cooling`). In addition, `hp_operating_mode == 8`
-  (`Defrosting`) is now checked before the heating-circuit flow-temperature
-  loop so reverse-cycle defrosting (which drops flow temperature below the
-  circuit setpoint) is always reported as `Defrosting` instead of `Heating
-  circuit A`.
-
-## [0.23.0-b2] - 2026-10-17
-
-Second prerelease of the 0.23 line, built from a read-only live audit on a
-Navigator 10 (`T_NAV10_20.24-1580-g02a20b66f`) installation: plants that
-report thermal output via `current_power` (register 1790) while
-`thermal_power_flow_sensor` (register 4126) stays at `0.0 kW` now compute
-COP, thermal energy totals and predictive-advisor models; stale entity
-cleanup runs on the normal Modbus setup path and removes retired/mismatched
-web sensors; and energy-flow sensors without a connected grid meter report
-*unavailable* instead of *unknown*.
-
-### Fixed
-
-- **Thermal power fallback to `current_power` (register 1790) when
-  `thermal_power_flow_sensor` (register 4126) is `0.0 kW` or absent**:
-  Navigator 10 plants without a Vortex flow-sensor thermal power reading
-  keep register 4126 at `0.0 kW` while reporting actual thermal output on
-  register 1790 (`current_power`). `calculated_cop`, `EnergyStatistics`
-  (thermal kWh and daily/monthly/total COP), `PredictiveAdvisor`
-  capability/quality tracking and `AdvisorEngine` COP-bucket and
-  building-model learning now fall back to `current_power` whenever
-  `thermal_power_flow_sensor` is `0.0` or absent, and entity-aware polling
-  keeps both candidate thermal registers in the poll plan.
-- **Model-change entity cleanup runs on the normal Modbus setup path**:
-  `cleanup_stale_model_entities` was previously called only in
-  `_async_setup_web_only_entry` (where the empty register map made it a
-  no-op) and omitted from `async_setup_entry`. Running it during normal
-  Modbus setup removes orphaned register-backed entities (such as cascade
-  entities left behind when cascade is not enabled), and running entity
-  cleanups before `cleanup_stale_hierarchy_devices` detaches any sub-device
-  emptied in the same setup pass.
-- **Orphaned `web_heatpump_model` and Navigator 2.0 `stat_*` web sensors
-  cleaned up on Navigator 10**: `cleanup_stale_web_sensor_entities` now
-  removes retired `_WEB_ATTRIBUTE_VALUE_NAMES` (`web_heatpump_model`, which
-  rides as an attribute on `navigator_version`) on all controllers, and
-  `_web_sensor_definitions` plus `cleanup_stale_web_sensor_entities` skip
-  and remove the 12 Navigator 2.0-only `stat_*` statistics sensors (`(Web
-  2.0)`) when the controller is confirmed as a Navigator 10.
-- **Web energy-flow sensors report *unavailable* when the controller omits
-  `grid_power` or `pv_power`**: on Navigator 10 installations without a
-  bidirectional grid meter wired to the controller, the `energyflow`
-  WebSocket frame carries `grid_power: None`. `IdmWebEnergyflowGridSensor`
-  and `IdmWebEnergyflowPvSensor` now require their respective value to be
-  non-`None` in `available`, preventing a permanently `unknown` sensor
-  state.
+- **`usable_fraction or 1.0` inverted zero data quality** into "full
+  quality" in two confidence formulas; an explicit None check now applies.
+- **Health-score components match machine reason codes** instead of
+  English title substrings, so rewording a title can no longer silently
+  decouple the score from its findings.
 
 ### Documentation
 
@@ -413,114 +378,52 @@ web sensors; and energy-flow sensors without a connected grid meter report
   configuration wiki how bidirectional grid-meter derivation works and how
   the writable GLT `number` entities (`*(setpoint)*` / `*(Vorgabe)*`,
   disabled by default) relate to the read-only `sensor` entities.
+- **Single-Modbus-client rule documented** (Troubleshooting EN/DE): the
+  Navigator serves one active Modbus connection — a second client (probe
+  scripts, debug tools) receives the `-1.0` not-present sentinel on
+  optional blocks while the primary keeps live data. Direct API or
+  register tests on a running plant are only meaningful with the
+  integration stopped. Found live while verifying the flow-register fix on
+  the reference plant, whose flow entity reads real L/min values now.
 
-## [0.23.0-b1] - 2026-10-17
+### Maintenance
 
-First prerelease of the 0.23 line, cut from issue #532's field evidence
-(Navigator 2.0, diagnostics attached): unconfigured plant features no
-longer log validation warnings, and a web placeholder that crashed the
-sensor state machine is handled. The device logic moves to
-`idm-heatpump-api[web]==2.14.3`.
+- **Translation parity guard** (`tests/test_translation_parity.py`): every
+  `strings.json` key must exist in `en.json` with an identical value, every
+  `en.json` key must be non-empty in `de.json`, and German carries no
+  orphan keys — a strings edit without its translations now fails the
+  build.
+- **German register reference + parity guard**: the German mirror row for
+  register 1072 carries the corrected FLOAT typing (1072–1073), two
+  untranslated cells are harmonized, and a parity test keeps both
+  generated register tables row-for-row identical.
+- **Deterministic diagnostics privacy tests**: the web-status fixture now
+  models an absent status frame explicitly, preventing random mock memory
+  addresses from triggering the PIN-redaction assertion.
 
-### Fixed
+### Notes
 
-- **"Not present" fills are classified as sentinels instead of invalid
-  values (#532)**: plants without bivalence, solar, cooling circuits or an
-  external demand source read documented-out-of-range fills from those
-  registers and warned on every Home Assistant restart — `bivalence_state`
-  (1124) and `solar_mode` (1856) read 255 while `compressor_status_*`
-  already stayed silent on the identical raw `0xFFFF`, the per-circuit
-  cooling setpoints (1457+/1471+) read 0.0 below 15, and
-  `ext_demand_temp_heating`/`_cooling` (1694/1695) read 0 below their
-  minimums. `idm-heatpump-api` 2.14.3 declares those fills as per-register
-  sentinels, so the affected entities report *unavailable* without the
-  warn-once log; values outside the documented ranges that are not
-  declared sentinels stay rejected (the reporter's KNX-fed `ext_humidity`
-  of 100.96 % keeps being refused). The sentinels are deliberately
-  per-register, not validator-wide: the corrupt-batch re-read recovery of
-  issue #69 keeps flagging unexpected 255s on every other enum register,
-  and the Navigator 1.7 map is untouched.
-- **Web "no value" placeholders report unavailable instead of crashing the
-  sensor state (#532)**: the Navigator web pages fill slots without a
-  current value with the placeholder text `---` (for example the projected
-  hot-water power while no DHW demand runs). The integration passed that
-  text through as the entity state, so Home Assistant rejected the
-  non-numeric state of a kW power sensor on every coordinator update —
-  the reporter's log counted 273 `Unexpected error updating listener`
-  entries plus a `logging too frequently` notice. Placeholder values now
-  carry no native value and the entities report *unavailable*; the value
-  keys stay present so web liveness, the device hierarchy and the
-  numeric-only register bridging are unaffected.
+- **One-time building-model relearning**: existing heat-loss and flow-curve
+  regressions and derived thermal capacity are reset on upgrade. COP data,
+  daily baselines and other statistics remain available.
+- **Controller-side battery SOC resets** (#493) were confirmed
+  controller-internal on the reporter's firmware; this release retains the
+  cyclic GLT refresh and claims no integration-side resolution of that
+  firmware-specific observation.
+- **Home Assistant 2026.11 installs this integration through the built-in
+  Marketplace** (Settings → Marketplace) — HACS's successor on the same
+  catalog. Existing HACS installations keep updating as before and migrate
+  automatically; nothing changes for the integration itself.
 
-## [0.23.0-b4] - 2026-10-17
+### ❤️ Thanks
 
-Second field-feedback batch from the advisor validation on the reference
-plant (issues #537, #538, #539). All three are read-path or scheduling
-changes; no register map, write path or configuration surface moved.
+- Thanks to @aivatco for the heat-sink flow investigation that proved the
+  FLOAT32 typing and traced the official register-doc revisions
+  (discussion #516), @dnamat88 for the detailed building-model
+  investigation (#546), @7weazel7 for validating the grid-meter mapping
+  and its follow-ups (#519), and the #532 reporter whose diagnostics drove
+  the validation-warning cleanup.
 
-### Fixed
-
-- **No more coordinator-wide unavailability windows after GLT forwarding
-  passes (#537)**: every write used to cancel the pending 0.5 s
-  write-confirmation task of the previous write — and when that
-  cancellation landed inside the confirmation's refresh, Home Assistant's
-  `DataUpdateCoordinator` recorded it as a *silently* failed update:
-  `last_update_success` dropped without any log line, and every
-  coordinator-backed entity (Modbus sensors, advisor entities, the web
-  demand reason) reported *unavailable* for one poll cycle — on the
-  reference plant a ~12-second window after every 300-second forwarding
-  pass, invisible in logs and repairs. The write path now cancels a
-  confirmation only while it is still sleeping; an in-flight confirmation
-  completes. A real-Home-Assistant regression test pins the underlying
-  coordinator behaviour and guards the fix.
-- **The advisor operation reason no longer mixes English and German labels
-  (#538)**: the controller's web supplement reports demand reasons in its
-  German UI wording ("Heizkreis A", "PV", "Zeitprogramm"), which the
-  composer passed through verbatim next to its own English labels — the
-  sensor state alternated between "Heating circuit A" and "Heizkreis A"
-  for the same physical cause. Known web labels now map onto the
-  composer's English vocabulary (the raw controller wording stays in the
-  entity details), unknown wordings remain verbatim, and the idle-label
-  suppression from 0.23.0-b3 is unchanged.
-- **The no-TWT fake flow rate no longer passes the advisor's data-quality
-  gate (#539)**: on plants without a plate heat exchanger the flow
-  register decodes a spurious constant 0.0 L/min from the FLOAT -1.0
-  not-present pattern (Known Limitations), yet the advisor counted it as
-  100 % usable samples with `flow_sensor: true`. The signature — zero
-  flow together with no real sibling flow temperature — now classifies as
-  *unavailable*, the capability stays false, and a real sensor's
-  legitimate idle zero keeps counting as usable.
-
-## [0.23.0-b5] - 2026-10-17
-
-Third field-feedback batch: advisor presentation polish and the web-value
-fallback from discussion #516. Read-path changes only.
-
-### Added
-
-- **Registers that report "not present" are filled from the web supplement
-  (discussion #516)**: in auto mode the Modbus poll owns register values,
-  so a register that reports its not-present pattern kept its entity
-  unavailable even when the controller's web interface served a live value
-  for the same quantity — the reporter read a permanent 0 L/min heat-sink
-  flow while the web flowmeter showed the real 33.9 L/min. Not-present
-  readings (documented sentinels, plus the no-TWT flow signature from
-  #539) are now replaced by the web supplement's value for aliased
-  quantities (starting with `flowmeter` → `heat_sink_flow_rate`); a real
-  Modbus value always wins over the slower web supplement, and web-only
-  mode bridges these values wholesale already.
-
-### Fixed
-
-- **Daily advisor recommendations supersede their topic predecessor
-  instead of accumulating** (field feedback from the reference plant):
-  producers re-issue recommendations with a day-stamped id, so every day
-  added a parallel "new" entry — four days had accumulated eight active
-  recommendations for two heating-curve topics. A submission now retires
-  the active predecessor of the same topic (id without the day stamp) to
-  history as obsolete and inherits its creation time and user status, so
-  one topic stays one active entry with the latest confidence, and a
-  viewed recommendation stays viewed across the daily re-issue.
 ## [0.22.0] - 2026-10-15
 
 0.22.0 is the stable cut of the line that ran through seven prereleases

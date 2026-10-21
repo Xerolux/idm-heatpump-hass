@@ -5,6 +5,26 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.0 — 2026-10-21
+
+The stable cut of the 0.23 line (fourteen betas, 2026-10-17 through
+2026-10-20). The predictive advisor matured on field feedback: six new
+sensors track the COP of pure heating and pure hot-water charging
+separately, hot-water windows render in your Home Assistant time zone
+from correctly folded quarter-hour price and PV feeds (Forecast.Solar
+sensors work without extra setup), recommendations stay one stable entry
+per topic, and the building model learns only from space heating (one-time
+relearn on upgrade). The heat-sink flow rate is finally read correctly:
+field evidence proved register 1072 is a word-swapped FLOAT32, not UCHAR —
+the device-logic dependency moves to `idm-heatpump-api[web]==2.14.4`.
+Unconfigured plant features stopped logging validation warnings and a web
+`---` placeholder no longer crashes the sensor state (#532), GLT
+forwarding passes no longer open coordinator-wide unavailability windows
+(#537), and a new heat-pump-level flow deviation sensor rounds the line
+off. With Home Assistant 2026.11, the built-in Marketplace (HACS's
+successor, same catalog) installs the integration directly. Rollback to
+0.22.0 keeps working.
+
 ## v0.23.0-b14 — 2026-10-20
 
 New heat-pump-level flow deviation sensor: the heat pump's own flow
