@@ -79,6 +79,7 @@ if TYPE_CHECKING:
 from .web_data import (
     IdmWebAuthenticationFailed,
     IdmWebClientPool,
+    IdmWebSensorValue,
     IdmWebSupplement,
     _firmware_indicates_nav10,
     async_read_web_supplement,
@@ -96,6 +97,20 @@ _WEB_LIFETIME_COUNTER_KEYS: frozenset[str] = frozenset(
         "hotwater_circulation_heat_quantity",
     }
 )
+# The controller integrates lifetime kWh itself and serves the totals as
+# FLOAT32, so consecutive polls can wobble in the second decimal (observed
+# ±0.01 kWh at ~19 000 kWh, #578). A step back within this band is rounding
+# noise, not a meter reset; the relative term keeps covering the FLOAT32
+# resolution as totals grow.
+_COUNTER_JITTER_ABS_KWH = 0.05
+_COUNTER_JITTER_RELATIVE = 1e-6
+
+
+def _counter_jitter_tolerance(last: float) -> float:
+    """Return the band a lifetime counter may step back without being a reset."""
+    return max(_COUNTER_JITTER_ABS_KWH, abs(last) * _COUNTER_JITTER_RELATIVE)
+
+
 _ILLEGAL_ADDRESS_MARKERS = ("exception_code=2", "illegal data address")
 _CONNECTIVITY_REPAIR_ISSUES = (
     "cannot_connect",
@@ -337,6 +352,7 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self._outage_escalated = False
         self._pending_web_writes: list[tuple[str, Any]] = []
         self._transient_zero_suppressed = 0
+        self._counter_jitter_suppressed = 0
         self._total_poll_count = 0
         self._total_poll_failures = 0
         self._slow_poll_streak = 0
@@ -722,35 +738,55 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         """Return how many single-poll zero readings were suppressed."""
         return self._transient_zero_suppressed
 
-    def _suppress_transient_counter_zeros(self, data: dict[str, Any]) -> None:
-        """Drop single-poll zero readings on lifetime energy counters.
+    @property
+    def counter_jitter_suppressed(self) -> int:
+        """Return how many sub-tolerance counter step-backs were held."""
+        return self._counter_jitter_suppressed
 
-        A same-generation Navigator controller was observed answering one
-        poll with 0.0 on a monotonic kWh counter and the correct lifetime
-        value again on the next poll (kodebach/hacs-idm-heatpump#322). Home
-        Assistant reads a ``total_increasing`` drop to zero as a meter reset,
-        so ``utility_meter`` and long-term statistics book the whole lifetime
-        counter as fresh consumption. Holding the value unavailable for one
-        poll makes a genuine device-side reset appear one cycle later; the
-        previous snapshot no longer carries the key then, so the zero passes.
+    def _suppress_transient_counter_zeros(self, data: dict[str, Any]) -> None:
+        """Guard lifetime energy counters against device-side glitches.
+
+        Two glitches on the same counter family, both read by Home Assistant
+        as a meter reset on a ``total_increasing`` state, which books the
+        whole lifetime counter as fresh consumption:
+
+        * a single-poll 0.0 answer on a monotonic kWh counter
+          (kodebach/hacs-idm-heatpump#322): the key is dropped for one poll —
+          a genuine device-side reset then appears one cycle later, when the
+          previous snapshot no longer carries the key;
+        * a step back within FLOAT32 rounding noise (#578): the controller
+          integrates the totals itself and wobbles in the second decimal
+          between polls. The previous value is held; a real reset drops far
+          below the tolerance and passes through unchanged.
         """
         previous = self.data if isinstance(self.data, dict) else {}
         for name in LIFETIME_ENERGY_COUNTER_REGISTERS:
             if name not in data:
                 continue
             value = data[name]
-            if isinstance(value, bool) or not isinstance(value, (int, float)) or value != 0:
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
                 continue
             last = previous.get(name)
             if isinstance(last, bool) or not isinstance(last, (int, float)) or last <= 0:
                 continue
-            del data[name]
-            self._transient_zero_suppressed += 1
-            _LOGGER.debug(
-                "Suppressing transient zero on lifetime counter %s (was %s last poll)",
-                name,
-                last,
-            )
+            if value == 0:
+                del data[name]
+                self._transient_zero_suppressed += 1
+                _LOGGER.debug(
+                    "Suppressing transient zero on lifetime counter %s (was %s last poll)",
+                    name,
+                    last,
+                )
+                continue
+            if 0 < last - value <= _counter_jitter_tolerance(last):
+                data[name] = last
+                self._counter_jitter_suppressed += 1
+                _LOGGER.debug(
+                    "Holding lifetime counter %s at %s; the controller answered %s within rounding noise",
+                    name,
+                    last,
+                    value,
+                )
 
     @staticmethod
     def _web_counter_dropped_keys(supplement: Any, previous: Any) -> set[str]:
@@ -774,20 +810,55 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
             dropped.add(key)
         return dropped
 
+    @staticmethod
+    def _web_counter_held_values(supplement: Any, previous: Any) -> dict[str, IdmWebSensorValue]:
+        """Return lifetime web counters whose new reading is rounding jitter.
+
+        Same tolerance as the Modbus path (#578): a step back within the
+        band keeps the previous entry so the entity state never decreases.
+        """
+        if previous is None:
+            return {}
+        new_values = getattr(supplement, "sensor_values", None) or {}
+        old_values = getattr(previous, "sensor_values", None) or {}
+        held: dict[str, IdmWebSensorValue] = {}
+        for key in _WEB_LIFETIME_COUNTER_KEYS:
+            entry = new_values.get(key)
+            if entry is None:
+                continue
+            value = entry.native_value
+            if isinstance(value, bool) or not isinstance(value, (int, float)) or value <= 0:
+                continue
+            old_entry = old_values.get(key)
+            if not isinstance(old_entry, IdmWebSensorValue):
+                continue
+            last = old_entry.native_value
+            if isinstance(last, bool) or not isinstance(last, (int, float)) or last <= 0:
+                continue
+            if 0 < last - value <= _counter_jitter_tolerance(last):
+                held[key] = old_entry
+        return held
+
     def _suppress_transient_web_counter_zeros(self, supplement: Any) -> Any:
-        """Apply the transient-zero guard to lifetime web energy counters.
+        """Apply the counter glitch guards to lifetime web energy counters.
 
         Same rationale as ``_suppress_transient_counter_zeros``: the
         device-side heat-quantity totals arrive as ``total_increasing`` kWh
         values, and a single-poll zero would corrupt downstream meter
-        statistics. Today's counters are deliberately excluded — they
-        legitimately return to zero at day boundaries.
+        statistics, while a sub-tolerance step back is held at the previous
+        value so the state never decreases. Today's counters are deliberately
+        excluded — they legitimately return to zero at day boundaries.
         """
         dropped = self._web_counter_dropped_keys(supplement, self._web_supplement)
-        if not dropped:
+        held = self._web_counter_held_values(supplement, self._web_supplement)
+        if not dropped and not held:
             return supplement
-        self._transient_zero_suppressed += len(dropped)
-        _LOGGER.debug("Suppressing transient zero on web lifetime counters %s", sorted(dropped))
+        if dropped:
+            self._transient_zero_suppressed += len(dropped)
+            _LOGGER.debug("Suppressing transient zero on web lifetime counters %s", sorted(dropped))
+        if held:
+            self._counter_jitter_suppressed += len(held)
+            _LOGGER.debug("Holding web lifetime counters within rounding noise: %s", sorted(held))
         sensor_values = {
             name: value
             for name, value in (getattr(supplement, "sensor_values", None) or {}).items()
@@ -796,6 +867,9 @@ class IdmCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         values = {
             name: value for name, value in (getattr(supplement, "values", None) or {}).items() if name not in dropped
         }
+        for name, entry in held.items():
+            sensor_values[name] = entry
+            values[name] = entry.value
         return replace(supplement, values=values, sensor_values=sensor_values)
 
     def _effective_sentinels_of(self, register_name: str) -> tuple[int | float | str, ...]:

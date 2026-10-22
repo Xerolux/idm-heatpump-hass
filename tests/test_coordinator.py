@@ -3053,6 +3053,42 @@ class TestTransientZeroGuard:
         assert data["energy_heating"] == 40484.52
         assert coordinator.transient_zero_suppressed == 0
 
+    def test_sub_tolerance_step_back_is_held(self, mock_hass, mock_config_entry):
+        """The controller's own kWh integration wobbles by a cent (#578).
+
+        A step back within the rounding band keeps the previous value, so the
+        published state never decreases on a total_increasing counter.
+        """
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator.data = {"energy_heating": 10036.0, "energy_total": 18713.12}
+
+        data = {"energy_heating": 10035.99, "energy_total": 18713.11}
+        coordinator._suppress_transient_counter_zeros(data)
+
+        assert data["energy_heating"] == 10036.0
+        assert data["energy_total"] == 18713.12
+        assert coordinator.counter_jitter_suppressed == 2
+
+    def test_real_counter_reset_passes_through(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator.data = {"energy_heating": 18713.12}
+
+        data = {"energy_heating": 12.4}
+        coordinator._suppress_transient_counter_zeros(data)
+
+        assert data["energy_heating"] == 12.4
+        assert coordinator.counter_jitter_suppressed == 0
+
+    def test_energy_total_zero_is_suppressed_like_the_other_totals(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator.data = {"energy_total": 18713.12}
+
+        data = {"energy_total": 0.0}
+        coordinator._suppress_transient_counter_zeros(data)
+
+        assert "energy_total" not in data
+        assert coordinator.transient_zero_suppressed == 1
+
     def test_web_lifetime_counter_zero_is_suppressed(self, mock_hass, mock_config_entry):
         coordinator = self._coordinator(mock_hass, mock_config_entry)
         coordinator._web_supplement = IdmWebSupplement(
@@ -3072,6 +3108,22 @@ class TestTransientZeroGuard:
         # ... while today's counter legitimately returns to zero and passes.
         assert "heat_quantity_heating_today" in guarded.sensor_values
         assert coordinator.transient_zero_suppressed == 1
+
+    def test_web_sub_tolerance_step_back_is_held(self, mock_hass, mock_config_entry):
+        coordinator = self._coordinator(mock_hass, mock_config_entry)
+        coordinator._web_supplement = IdmWebSupplement(
+            sensor_values={"heat_quantity_heating_total": IdmWebSensorValue("18713.12", 18713.12, "kWh")}
+        )
+        incoming = IdmWebSupplement(
+            values={"heat_quantity_heating_total": "18713.11"},
+            sensor_values={"heat_quantity_heating_total": IdmWebSensorValue("18713.11", 18713.11, "kWh")},
+        )
+
+        guarded = coordinator._suppress_transient_web_counter_zeros(incoming)
+
+        assert guarded.sensor_values["heat_quantity_heating_total"].native_value == 18713.12
+        assert guarded.values["heat_quantity_heating_total"] == "18713.12"
+        assert coordinator.counter_jitter_suppressed == 1
 
     def test_web_second_consecutive_zero_passes(self, mock_hass, mock_config_entry):
         coordinator = self._coordinator(mock_hass, mock_config_entry)
