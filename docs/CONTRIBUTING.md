@@ -31,14 +31,28 @@ not as an internal audit log:
   matters*, not just what it contains. The release workflow injects the
   ⭐ star callout directly below that intro, before the first section
   heading — never write it into the changelog file yourself.
-- Group entries under emoji headers: `### ✨ New`, `### 🐛 Bugfixes`,
-  `### 💼 Maintenance`, `### ❤️ Thanks`.
+- Follow the narrative with `### ⚠️ Upgrade notes`, and keep that block to
+  at most five bullets: one-time resets (a model that relearns), counters
+  that start fresh with the new version, new options or entities worth
+  enabling, and whether rolling back to the previous version is safe. When
+  nothing else applies, the rollback bullet alone is a valid block — and
+  prerelease sections carry the block too. The upgrade block is the first
+  section heading of every release's notes.
+- Group the remaining entries under these emoji headers and no others:
+  `### ✨ New`, `### 🐛 Bugfixes`, `### 💼 Maintenance`, `### ❤️ Thanks`.
 - Lead every bullet with a short bold phrase, then explain in one or two
-  sentences. Link the issue (`#364`) instead of restating the report.
+  sentences — about 60 words at most. Link the issue (`#364`) instead of
+  restating the report. Code-level detail (private method names, test
+  lists, task handling) goes into one 💼 Maintenance bullet or stays in
+  the commit log.
 - Credit reporters and contributors by @mention under `### ❤️ Thanks`
   whenever a release was shaped by field data.
 - Keep the technical depth, but keep it readable — a user should
   understand the first screen without scrolling.
+- `tests/test_changelog_style.py` fails the build when a section newer
+  than 0.23.0 opens without the upgrade block, uses a header outside the
+  set above, or carries a bullet beyond 60 words. Sections already
+  released keep the shape they were published with.
 - Section headings inside a version stay `###` so the `## [version]`
   heading keeps its hierarchy; never rename the `## [version] - date`
   headings, the release workflow matches them exactly.

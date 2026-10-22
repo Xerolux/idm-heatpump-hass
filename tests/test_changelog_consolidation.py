@@ -131,6 +131,44 @@ def test_fold_deduplicates_identical_bullets() -> None:
     assert result.count("- Bug A initial fix.") == 1
 
 
+def test_fold_orders_the_style_headers_upgrade_notes_first() -> None:
+    """A post-0.23.0 line writes emoji headers; the draft must keep their order.
+
+    Without the emoji names in ``CATEGORY_ORDER`` the fold would still keep
+    every bullet (unknown categories are appended), but the upgrade block —
+    the one part users read first — would land after the feature sections.
+    """
+    sample = """# Changelog
+
+## [Unreleased]
+
+## [0.19.0-b2] - 2026-10-02
+
+### 🐛 Bugfixes
+
+- Fix two.
+
+### ⚠️ Upgrade notes
+
+- Rollback to 0.18.0 keeps working.
+
+## [0.19.0-b1] - 2026-10-01
+
+### ✨ New
+
+- Feature one.
+
+## [0.18.0] - 2026-09-20
+
+Older release.
+"""
+    result = fold_module.fold(sample, "0.19.0", "2026-10-03")
+
+    headers = [line.removeprefix("### ") for line in result.splitlines() if line.startswith("### ")]
+    assert headers == ["⚠️ Upgrade notes", "✨ New", "🐛 Bugfixes"]
+    assert "Rollback to 0.18.0 keeps working." in result
+
+
 def test_fold_refuses_when_the_stable_already_exists() -> None:
     try:
         fold_module.fold(SAMPLE, "0.17.0", "2026-10-03")
