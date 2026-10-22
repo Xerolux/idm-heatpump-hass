@@ -15,6 +15,28 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### ⚠️ Upgrade notes
+
+- **Hybrid Navigator 1.7 plants re-detect as 1.7 after the update**: a 1.7
+  controller with a 2.0-generation web module resolves correctly in auto mode
+  again, so the entity set changes once — shared-family entities that never
+  validated disappear while the 1.x entities return. Rolling back is safe;
+  the detection keys are rewritten by whichever version runs next.
+
+### 🐛 Bugfixes
+
+- **A connected nav20 web client no longer overrides a Navigator 1.7 Modbus
+  detection (#577)**: the web variant proves the web interface's generation,
+  not the controller's, so auto mode stops flipping the register map to
+  Navigator 2.0 on hybrid plants — which dropped twenty Modbus entities to
+  register-validation failures. Within the shared 2.0/10/Pro family it still
+  corrects misprobes (#504 follow-up).
+
+### ❤️ Thanks
+
+- Reported by @pcemerikic-bot in #577 — the diagnostics offer pinpointed both
+  regressions.
+
 ## [0.23.0] - 2026-10-21
 
 0.23.0 is the stable cut of the line that ran through fourteen prereleases

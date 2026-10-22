@@ -407,6 +407,13 @@ def resolve_model(
             elif (
                 web.web_variant is not None
                 and _web_variant_from_family(navigator_family(web_model_name)) == web.web_variant
+                # The connected variant identifies the web interface's
+                # generation, not the controller's: a Navigator 1.7 with a
+                # 2.0-generation web module answers the nav20 client too
+                # (#577). The 1.x coil detection is a different protocol and
+                # cannot be contradicted by a web variant, so the correction
+                # stays within the shared family.
+                and navigator_family(reconciled.modbus_model_name) != "navigator_17"
             ):
                 # The variant that actually connected is definitive in both
                 # directions: the nav20 client only answers on the Navigator
