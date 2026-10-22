@@ -31,11 +31,18 @@ All notable changes to this project will be documented in this file.
   Navigator 2.0 on hybrid plants — which dropped twenty Modbus entities to
   register-validation failures. Within the shared 2.0/10/Pro family it still
   corrects misprobes (#504 follow-up).
+- **Lifetime heat-quantity counters no longer step back by a cent (#578)**:
+  the controller integrates its kWh totals itself and wobbles in the second
+  decimal between polls, which the recorder flagged as non-increasing
+  `total_increasing` states. Steps back within rounding noise hold the
+  previous value; real resets pass through, `energy_total` joins the guarded
+  counters, and web heat totals get the same guard.
 
 ### ❤️ Thanks
 
 - Reported by @pcemerikic-bot in #577 — the diagnostics offer pinpointed both
   regressions.
+- Reported by @7weazel7 in #578.
 
 ## [0.23.0] - 2026-10-21
 

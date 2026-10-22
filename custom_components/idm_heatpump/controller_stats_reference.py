@@ -254,6 +254,7 @@ LIFETIME_ENERGY_COUNTER_REGISTERS: frozenset[str] = frozenset(
         "energy_dhw",
         "energy_electric_heater",
         "energy_heating",
+        "energy_total",
         "total_heat_energy",
     }
 )
