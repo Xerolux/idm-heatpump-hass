@@ -5,6 +5,17 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.1 — 2026-10-22
+
+A fix release for two field reports. Hybrid Navigator 1.7 plants — a 1.7
+controller with a 2.0-generation web module — resolve to Navigator 1.7 in
+auto mode again; since 0.22.0 the connected web client had flipped the
+register map to Navigator 2.0, dropping about twenty Modbus entities
+(#577). Lifetime heat-quantity counters no longer step back by a cent:
+the controller's own kWh integration wobbles in the second decimal, and
+the new guard holds the previous value within rounding noise while real
+resets pass through (#578).
+
 ## v0.23.0 — 2026-10-21
 
 The stable cut of the 0.23 line (fourteen betas, 2026-10-17 through

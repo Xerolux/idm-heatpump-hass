@@ -4,6 +4,22 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Release-Entscheidung zu 0.23.1
+
+**0.23.1** ist ein stabiles Fix-Release direkt von main, ohne
+Prerelease-Linie: Beide Fixes sind klein, lokal begrenzt und von
+fokussierten Tests getragen. Das volle Qualitäts-Gate lief vor dem Merge
+über beide Pull Requests (#579, #580): die vierbeinige CI-Matrix
+(Python 3.14 × HA 2026.8.1/2026.10.0 × manifest-gepinnt/api-main) mit
+den Coverage-Gates, strict mypy gegen die echte Home-Assistant-Runtime,
+ruff, hassfest, die echte Lifecycle-Smoke-Strecke und der
+Credentials-Scan. Die Registerkarten-Korrektur wurde vor der
+Code-Änderung lokal am puren Resolver reproduziert, die Zähler-Sicherung
+mit den exakten Werten des Reporters verifiziert (10036.0 → 10035.99).
+Feld-Bestätigung wird von beiden Reportern zur Release erwartet; #577
+bleibt offen, bis der Reporter den Automatikmodus auf seiner
+Hybrid-Anlage bestätigt hat.
+
 ## Release-Entscheidung zu 0.23.0
 
 **0.23.0** ist der stabile Schnitt der Linie aus vierzehn Prereleases
@@ -338,7 +354,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.23.0` und `idm-heatpump-api` `2.14.4` bilden das aktuelle exakt
+Integration im Quellstand `0.23.1` und `idm-heatpump-api` `2.14.4` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
