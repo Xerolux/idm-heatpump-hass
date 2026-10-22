@@ -13,8 +13,10 @@ This script does the mechanical part of the fold so nothing is lost:
   newest-first, so they are read in reverse to restore chronological order);
 * intro paragraphs are collected oldest-first, each marked with the beta it
   came from, so the editor sees what the release is assembling;
-* category bullets (``### Added`` / ``### Changed`` / ``### Fixed`` / ...)
-  are merged in chronological order and exact duplicates are dropped;
+* category bullets (``### ⚠️ Upgrade notes`` / ``### ✨ New`` /
+  ``### 🐛 Bugfixes`` / ... and the legacy ``### Added`` / ``### Fixed``
+  spellings) are merged in chronological order and exact duplicates are
+  dropped;
 * the merged draft replaces the prerelease sections as
   ``## [<version>] - UNRELEASED DRAFT``.
 
@@ -43,7 +45,22 @@ from pathlib import Path
 CHANGELOG = Path(__file__).resolve().parents[1] / "docs" / "CHANGELOG.md"
 
 #: Categories recognized by the fold, in the order the draft emits them.
-CATEGORY_ORDER = ("Added", "Changed", "Deprecated", "Removed", "Fixed", "Security")
+#: The emoji headers are the release-notes style since 0.24.0
+#: (CONTRIBUTING.md, "Release Notes Style"); the legacy keep-a-changelog
+#: names stay so a line that started before the style rule still folds.
+CATEGORY_ORDER = (
+    "⚠️ Upgrade notes",
+    "✨ New",
+    "🐛 Bugfixes",
+    "💼 Maintenance",
+    "❤️ Thanks",
+    "Added",
+    "Changed",
+    "Deprecated",
+    "Removed",
+    "Fixed",
+    "Security",
+)
 
 EDITORIAL_MARKER = (
     "<!-- consolidation draft: fold complete. Rework the prose, remove the\n"

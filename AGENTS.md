@@ -117,6 +117,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_calculated_sensors.py
 │   ├── test_differential_circuits.py
 │   ├── test_changelog_consolidation.py
+│   ├── test_changelog_style.py        # Release-notes style: upgrade-notes block first, closed header set, 60-word bullets (sections after 0.23.0)
 │   ├── test_config_flow.py
 │   ├── test_connection_entities.py
 │   ├── test_technician_codes.py
@@ -419,6 +420,16 @@ ruff check custom_components tests
   prerelease section instead (0.21.3-b1..b6 folded into 0.22.0-b1): same
   nothing-dropped rule, and the fold is editorial because the script only folds
   within one version.
+- Release notes follow the *Release Notes Style* in `docs/CONTRIBUTING.md`
+  for every section written after the `0.23.0` stable cut: an
+  `### ⚠️ Upgrade notes` block leads the section (one-time resets, counters
+  that start fresh, new options or entities worth enabling, rollback safety —
+  at most five bullets, a lone rollback bullet is enough), then only the
+  emoji headers that style defines, and bullets of about 60 words with a bold
+  lead. `tests/test_changelog_style.py` fails the build otherwise; released
+  sections keep the shape they were published with. "Nothing may be dropped
+  by the fold" therefore means one such short bullet per change survives —
+  not the full write-up of every beta.
 - Released changelog sections stay as published; they are history. The rule
   applies to the unreleased entries and to the section of the version in the
   manifest.
