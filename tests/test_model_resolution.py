@@ -495,6 +495,43 @@ class TestNavigator17:
         # The library's richer info survives: has_pv keeps the PV supplement.
         assert result.model_info.has_pv
 
+    def test_a_connected_nav20_client_never_corrects_a_1_7_detection(self):
+        """A Navigator 1.7 may carry a 2.0-generation web module (#577).
+
+        The connected nav20 client proves the web interface's generation, not
+        the controller's: the 1.x coil detection is a different protocol and
+        keeps the 1.x register map. The web supplement still delivers its
+        values; only its model claim is ignored.
+        """
+        result = _resolve(
+            fresh=DetectionResult(model_name=NAV17, model_info=_info(NAV17)),
+            web=_web(model_name=NAV20, software_version="m_20.23-165", web_variant="nav20"),
+        )
+
+        assert result.model_name == NAV17
+        assert result.model_info.model_name == MODEL_NAVIGATOR_17
+        assert any(
+            level == logging.WARNING
+            and "Ignoring conflicting stored/web Navigator model" in message
+            and "Navigator 2.0" in str(args)
+            for level, message, args in result.log_lines
+        )
+        # The working detection is persisted, with the web variant so runtime
+        # keeps addressing the nav20 interface directly.
+        assert result.data_updates[CONF_DETECTED_NAVIGATOR_VERSION] == NAV17
+        assert result.data_updates[CONF_DETECTED_WEB_VARIANT] == "nav20"
+
+    def test_a_nav20_web_model_of_a_1_7_produces_no_2_0_register_map(self):
+        """The hybrid conflict must not leak shared-family registers (#577)."""
+        result = _resolve(
+            fresh=DetectionResult(model_name=NAV17, model_info=_info(NAV17)),
+            web=_web(model_name=NAV20, software_version="m_20.23-165", web_variant="nav20"),
+        )
+        map_names = set(build_filtered_register_map(result.model_info))
+
+        assert "thermal_power_hp_flow" in map_names
+        assert "battery_soc" not in map_names
+
     def test_1_7_web_hint_uses_the_modbus_model(self):
         plan = plan_web_read(
             DetectionResult(model_name=NAV17, model_info=_info(NAV17)),
