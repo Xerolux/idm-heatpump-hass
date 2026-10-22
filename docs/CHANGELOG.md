@@ -15,6 +15,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [0.23.1] - 2026-10-22
+
 ### ⚠️ Upgrade notes
 
 - **Hybrid Navigator 1.7 plants re-detect as 1.7 after the update**: a 1.7

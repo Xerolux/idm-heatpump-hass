@@ -4,6 +4,21 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.1 release decision
+
+**0.23.1** is a stable fix release straight off main, no prerelease line:
+both fixes are small, locally bounded and carried by focused tests. The
+full quality gate passed on both pull requests before the merge
+(#579, #580): the four-leg CI matrix (Python 3.14 × HA
+2026.8.1/2026.10.0 × manifest-pinned/api-main) with the coverage gates,
+strict mypy against the real Home Assistant runtime, ruff, hassfest, the
+real-Home-Assistant lifecycle smoke leg and the credential scan. The
+register-map correction was reproduced locally against the pure resolver
+before any code changed, and the counter guard was verified with the
+reporter's exact readings (10036.0 → 10035.99). Field confirmation is
+expected from both reporters on the release; #577 stays open until the
+reporter confirms auto mode on his hybrid plant.
+
 ## 0.23.0 release decision
 
 **0.23.0** is the stable cut of the line that ran through fourteen
@@ -319,7 +334,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.23.0` and `idm-heatpump-api` `2.14.4` form the current
+Source-tree integration `0.23.1` and `idm-heatpump-api` `2.14.4` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

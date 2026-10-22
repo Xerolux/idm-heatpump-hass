@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.1 — 2026-10-22
+
+Ein Fix-Release nach zwei Feldmeldungen. Hybrid-Anlagen — Navigator 1.7
+mit Web-Modul der 2.0-Generation — lösen im Automatikmodus wieder korrekt
+als Navigator 1.7 auf; seit 0.22.0 hatte der verbundene Web-Client die
+Registerkarte auf Navigator 2.0 gekippt und rund zwanzig Modbus-Entitäten
+fallen gelassen (#577). Lebenslange Wärmemengen-Zähler treten nicht mehr
+um einen Cent zurück: Die eigene kWh-Integration des Controllers schwankt
+in der zweiten Nachkommastelle; die neue Sicherung hält innerhalb des
+Rundungsrauschens den vorherigen Wert, echte Resets kommen durch (#578).
+
 ## v0.23.0 — 2026-10-21
 
 Der stabile Schnitt der 0.23-Linie (vierzehn Betas, 17.–20.10.2026). Der
