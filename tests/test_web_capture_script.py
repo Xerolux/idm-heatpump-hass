@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import importlib.util
 import inspect
+import itertools
 import json
 import socket
 import struct
@@ -711,3 +712,56 @@ class TestVersionLogic:
 
     def test_update_url_is_the_tool_site(self) -> None:
         assert capture.UPDATE_URL == "https://idmtools.xerolux.de/version.txt"
+
+
+class TestProgressReporting:
+    def test_progress_is_monotonic_and_complete(self) -> None:
+        # nav20 fake server
+        server = ThreadingHTTPServer(("127.0.0.1", 0), _FakeNav20Handler)
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+
+        # nav10 fake server
+        ws_listener = socket.socket()
+        ws_listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        ws_listener.bind(("127.0.0.1", 0))
+        ws_listener.listen(1)
+        ws_port = ws_listener.getsockname()[1]
+        threading.Thread(target=lambda: _fake_nav10_server(_accept(ws_listener)), daemon=True).start()
+
+        # modbus fake server (whole holding range refused → still progresses)
+        mb_listener = socket.socket()
+        mb_listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        mb_listener.bind(("127.0.0.1", 0))
+        mb_listener.listen(1)
+        mb_port = mb_listener.getsockname()[1]
+        threading.Thread(
+            target=lambda: _fake_modbus_server(_accept(mb_listener), set(range(2000, 2200))),
+            daemon=True,
+        ).start()
+
+        samples: list[float] = []
+        try:
+            capture.perform_capture(
+                host="127.0.0.1",
+                pin="1",
+                web_port=server.server_address[1],
+                ws_port=ws_port,
+                modbus_port=mb_port,
+                only=None,
+                progress=lambda fraction, label: samples.append(fraction),
+            )
+        finally:
+            server.shutdown()
+            ws_listener.close()
+            mb_listener.close()
+
+        assert samples, "no progress reported"
+        assert all(a <= b + 1e-9 for a, b in itertools.pairwise(samples)), "progress must not go backwards"
+        assert samples[-1] >= 0.99
+        assert samples[0] <= 0.05
+
+
+def _accept(listener: socket.socket) -> socket.socket:
+    sock_in, _ = listener.accept()
+    sock_in.settimeout(5)
+    return sock_in
