@@ -666,3 +666,29 @@ class TestModbusSweep:
             names = archive.namelist()
         assert manifest["variants"]["modbus"]["outcome"] == "skipped"
         assert not any(n.startswith("modbus/") for n in names)
+
+
+class TestEmptyPinContinues:
+    def test_perform_capture_with_empty_pin_still_sweeps_modbus(self, tmp_path: Path) -> None:
+        # A plant without a web interface has no PIN: the web legs fail their
+        # login and get recorded, the Modbus sweep still runs — one data
+        # source beats none.
+        lines: list[str] = []
+        zip_path, ok, _warnings = capture.perform_capture(
+            host="192.0.2.99", pin="", out_dir=str(tmp_path), log=lines.append
+        )
+        assert Path(zip_path).exists()
+        assert ok is False  # nothing answers on 192.0.2.99
+        assert any("nav20" in line for line in lines)
+        assert any("modbus" in line for line in lines)
+        with zipfile.ZipFile(zip_path) as archive:
+            manifest = json.loads(archive.read("manifest.json"))
+        assert manifest["variants"]["nav20"]["outcome"] == "unavailable"
+        assert manifest["variants"]["modbus"]["outcome"] == "unavailable"
+
+    def test_cli_empty_pin_warns_and_continues(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(capture.getpass, "getpass", lambda *_a, **_k: "")
+        code = capture.main(["192.0.2.99", "--pin", "", "--out", str(tmp_path)])
+        assert code == 2  # total failure on the dead host, but no PIN abort
+        zips = list(tmp_path.glob("idm_web_capture_*.zip"))
+        assert len(zips) == 1

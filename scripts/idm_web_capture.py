@@ -974,6 +974,8 @@ def perform_capture(
     Returns ``(zip_path, ok, warnings)``. ``ok`` is True when at least one
     variant delivered usable data; the evidence ZIP is written either way —
     a failed capture documents its own failure and is still worth sending.
+    An empty PIN leaves the web legs to fail their login (recorded) while
+    the Modbus sweep still delivers its data.
     """
     files: dict[str, str] = {}
     entries: list[dict] = []
@@ -1046,7 +1048,11 @@ def main(argv: list[str] | None = None) -> int:
         help=f"per-request timeout in seconds (default {DEFAULT_TIMEOUT})",
     )
     parser.add_argument("--out", default=".", help="output directory for the ZIP file")
-    parser.add_argument("--only", choices=("nav20", "nav10"), help="capture only one interface variant (default: both)")
+    parser.add_argument(
+        "--only",
+        choices=("nav20", "nav10"),
+        help="capture only one interface variant (default: both)",
+    )
     parser.add_argument(
         "--no-modbus",
         action="store_true",
@@ -1077,11 +1083,11 @@ def main(argv: list[str] | None = None) -> int:
         try:
             pin = getpass.getpass("Web-PIN des Navigators / Navigator web PIN: ")
         except (EOFError, OSError):
-            print("No PIN entered - aborting.", file=sys.stderr)
-            return 2
+            pin = ""
     if not pin:
-        print("An empty PIN cannot log in - aborting.", file=sys.stderr)
-        return 2
+        # A plant without a web interface still has Modbus — one data source
+        # beats none, so warn and continue instead of aborting.
+        print("No PIN given - the web legs cannot log in; continuing with Modbus.", file=sys.stderr)
 
     out_path, ok, warnings = perform_capture(
         host=args.host,
@@ -1230,7 +1236,10 @@ def run_gui() -> int:
             ttk.Label(row2, text="Web-PIN:").pack(side="left")
             pin_var = tk.StringVar()
             ttk.Entry(row2, textvariable=pin_var, show="•", width=28).pack(side="left", padx=8)
-            ttk.Label(row2, text="(Eingabe bleibt verborgen)").pack(side="left")
+            ttk.Label(
+                row2,
+                text="(Eingabe bleibt verborgen; ohne PIN läuft nur Modbus)",
+            ).pack(side="left")
             info = tk.Label(frame, text=GUI_INFO_TEXT, justify="left", wraplength=560, relief="groove", padding=10)
             info.pack(fill="x", pady=14)
 
@@ -1291,8 +1300,17 @@ def run_gui() -> int:
                 self._alert("Bitte die IP-Adresse oder den Hostnamen Ihres Navigators angeben.")
                 return
             if not pin:
-                self._alert("Bitte Ihre Web-PIN eingeben (die PIN der lokalen Weboberfläche).")
-                return
+                from tkinter import messagebox
+
+                confirmed = messagebox.askyesno(
+                    "IDM Web-Capture",
+                    "Ohne Web-PIN können die Webdaten nicht abgerufen werden.\n\n"
+                    "Trotzdem fortfahren? Die Modbus-Register werden dann weiterhin "
+                    "aufgezeichnet (lieber eine Datenquelle als keine).",
+                    parent=self,
+                )
+                if not confirmed:
+                    return
             try:
                 modbus_port_value = int(modbus_port) if modbus_port else DEFAULT_MODBUS_PORT
                 modbus_slave_value = int(modbus_slave) if modbus_slave else DEFAULT_MODBUS_SLAVE
