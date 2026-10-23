@@ -43,12 +43,13 @@ import urllib.error
 import urllib.parse
 import urllib.request
 import zipfile
+from collections.abc import Callable
 from datetime import datetime, timezone
 from html import unescape
 from html.parser import HTMLParser
 from http import cookiejar
 
-SCRIPT_VERSION = "1.3.0"
+SCRIPT_VERSION = "1.4.0"
 
 DEFAULT_WEB_PORT = 80
 DEFAULT_WS_PORT = 61220
@@ -266,6 +267,13 @@ def _extend_http_meta(entry: dict, content_type: str | None, effective_url: str 
         entry["redirected_to"] = effective_url
 
 
+ProgressSink = Callable[[float, str], None]
+
+
+def _silent_progress(_fraction: float, _label: str) -> None:
+    """Progress sink for callers that do not show a progress bar."""
+
+
 def capture_nav20(
     host: str,
     port: int,
@@ -273,12 +281,15 @@ def capture_nav20(
     timeout: float,
     files: dict[str, str],
     entries: list[dict],
+    progress: ProgressSink | None = None,
 ) -> dict:
     """Log into the NAV2 HTTP interface and capture every known read-only page."""
     session = HttpSession(timeout)
     base = _http_base(host, port)
     summary: dict = {"variant": "nav20", "outcome": "unavailable", "login": None}
 
+    report = progress or _silent_progress
+    report(0.05, "Web-Seiten: Startseite laden")
     try:
         status, text, content_type, effective_url = session.request("GET", base + "/")
     except (urllib.error.URLError, OSError, CaptureError) as err:
@@ -343,7 +354,8 @@ def capture_nav20(
     captured = 0
     targets = [(f"data_{_safe_name(path)}", path) for path in NAV20_DATA_PATHS]
     targets += [(f"statistics_{name}", url) for name, url in NAV20_STATISTICS_QUERIES]
-    for label, path in targets:
+    for index, (label, path) in enumerate(targets):
+        report(0.3 + 0.7 * index / len(targets), f"Web-Seiten: {path}")
         try:
             status, text, content_type, effective_url = session.request("GET", base + path, headers=headers)
         except (urllib.error.URLError, OSError, CaptureError) as err:
@@ -372,6 +384,7 @@ def capture_nav20(
         entries.append(entry)
         time.sleep(REQUEST_DELAY)
 
+    report(1.0, "Web-Seiten abgeschlossen")
     summary["outcome"] = "ok" if captured else "no_usable_pages"
     summary["pages_captured"] = captured
     return summary
@@ -585,6 +598,7 @@ def capture_nav10(
     timeout: float,
     files: dict[str, str],
     entries: list[dict],
+    progress: ProgressSink | None = None,
 ) -> dict:
     """Authenticate the Navigator 10 WebSocket and capture every read-only frame."""
     summary: dict = {"variant": "nav10", "outcome": "unavailable"}
@@ -621,7 +635,10 @@ def capture_nav10(
             return summary
 
         captured = 0
-        for filename, label, request in build_nav10_frames():
+        report = progress or _silent_progress
+        frames = build_nav10_frames()
+        for index, (filename, label, request) in enumerate(frames):
+            report(index / (len(frames) + 1), f"WebSocket-Datenkanäle: {label}")
             try:
                 client.send_text(json.dumps(request))
                 response = client.recv_text()
@@ -632,6 +649,7 @@ def capture_nav10(
             entries.append({"variant": "nav10", "step": label, "status": "ok", "file": f"nav10/{filename}.json"})
             captured += 1
             time.sleep(REQUEST_DELAY)
+        report(1.0, "WebSocket-Datenkanäle abgeschlossen")
         summary["outcome"] = "ok" if captured else "no_frames"
         summary["frames_captured"] = captured
         return summary
@@ -795,6 +813,7 @@ def capture_modbus(
     timeout: float,
     files: dict[str, str],
     entries: list[dict],
+    progress: ProgressSink | None = None,
 ) -> dict:
     """Sweep the documented register ranges read-only and store raw words.
 
@@ -811,16 +830,16 @@ def capture_modbus(
         return summary
 
     segments_read = 0
+    report = progress or _silent_progress
+    plan = [(4, start, "input") for start in MODBUS_INPUT_BLOCKS] + [
+        (3, start, "holding") for start in MODBUS_HOLDING_BLOCKS
+    ]
     try:
-        for function, starts, label in (
-            (4, MODBUS_INPUT_BLOCKS, "input"),
-            (3, MODBUS_HOLDING_BLOCKS, "holding"),
-        ):
-            for start in starts:
-                segments_read += _read_segment(
-                    reader, function, start, MODBUS_BLOCK_WORDS, label, slave, files, entries
-                )
-                time.sleep(REQUEST_DELAY)
+        for index, (function, start, label) in enumerate(plan):
+            report(index / len(plan), f"Modbus-Register: FC{function} Block {start}")
+            segments_read += _read_segment(reader, function, start, MODBUS_BLOCK_WORDS, label, slave, files, entries)
+            time.sleep(REQUEST_DELAY)
+        report(1.0, "Modbus-Register abgeschlossen")
     finally:
         reader.close()
     summary["outcome"] = "ok" if segments_read else "no_blocks"
@@ -972,6 +991,7 @@ def perform_capture(
     modbus_port: int = DEFAULT_MODBUS_PORT,
     modbus_slave: int = DEFAULT_MODBUS_SLAVE,
     log=_silent_log,
+    progress: ProgressSink | None = None,
 ) -> tuple[str, bool, list[str]]:
     """Run the captures and write the evidence ZIP; shared by CLI and GUI.
 
@@ -987,19 +1007,57 @@ def perform_capture(
     nav10: dict = {"variant": "nav10", "outcome": "skipped"}
     modbus_summary: dict = {"variant": "modbus", "outcome": "skipped"}
 
+    # Leg weights for the overall progress bar: web pages are quick, the
+    # 37 WebSocket frames and the Modbus sweep dominate the runtime.
+    nav20_weight, nav10_weight, modbus_weight = 0.2, 0.4, 0.4
+    report = progress or _silent_progress
+    done_weight = 0.0
+
     if only != "nav10":
         log(f"Capturing Navigator 2.0 HTTP interface at {host}:{web_port} ...")
-        nav20 = capture_nav20(host, web_port, pin, timeout, files, entries)
+        nav20 = capture_nav20(
+            host,
+            web_port,
+            pin,
+            timeout,
+            files,
+            entries,
+            progress=lambda fraction, label: report(done_weight + fraction * nav20_weight, label),
+        )
+        done_weight += nav20_weight
         log(f"  nav20: {nav20['outcome']}")
+    else:
+        done_weight += nav20_weight
     if only != "nav20":
         log(f"Capturing Navigator 10/Pro WebSocket at {host}:{ws_port} ...")
-        nav10 = capture_nav10(host, ws_port, pin, timeout, files, entries)
+        nav10 = capture_nav10(
+            host,
+            ws_port,
+            pin,
+            timeout,
+            files,
+            entries,
+            progress=lambda fraction, label: report(done_weight + fraction * nav10_weight, label),
+        )
+        done_weight += nav10_weight
         log(f"  nav10: {nav10['outcome']}")
+    else:
+        done_weight += nav10_weight
     if modbus:
         modbus_target = modbus_host or host
         log(f"Sweeping Modbus registers read-only at {modbus_target}:{modbus_port} (slave {modbus_slave}) ...")
-        modbus_summary = capture_modbus(modbus_target, modbus_port, modbus_slave, timeout, files, entries)
+        modbus_summary = capture_modbus(
+            modbus_target,
+            modbus_port,
+            modbus_slave,
+            timeout,
+            files,
+            entries,
+            progress=lambda fraction, label: report(done_weight + fraction * modbus_weight, label),
+        )
         log(f"  modbus: {modbus_summary['outcome']} ({modbus_summary.get('segments_read', 0)} segments)")
+    else:
+        report(done_weight + modbus_weight, "")
 
     warnings: list[str] = []
     redacted = redact_pin(files, pin)
@@ -1168,10 +1226,10 @@ GUI_INFO_TEXT = (
     "Was jetzt passiert: Das Werkzeug meldet sich mit Ihrer Web-PIN an der "
     "Weboberfläche Ihres Navigators an und liest ausschließlich lesend alle "
     "bekannten Datenseiten (Navigator 2.0) bzw. Nur-Lese-Datenkanäle "
-    "(Navigator 10 / Pro) aus. Zusätzlich werden — wenn aktiviert — die "
-    "Modbus-Register rein lesend ausgelesen (Rohwerte; bei einem Modbus-Proxy "
-    "einfach dessen Adresse angeben). Daraus entsteht eine ZIP-Datei mit den "
-    "Rohdaten und einer manifest.json, die jeden Abruf dokumentiert.\n\n"
+    "(Navigator 10 / Pro) aus — zusätzlich immer die Modbus-Register als "
+    "Rohwerte (bei einem Modbus-Proxy einfach dessen Adresse angeben). "
+    "Daraus entsteht eine ZIP-Datei mit den Rohdaten und einer manifest.json, "
+    "die jeden Abruf dokumentiert.\n\n"
     "Ihre PIN erscheint NICHT in der Datei. Es wird nichts geändert und "
     "nichts automatisch versendet."
 )
@@ -1216,7 +1274,10 @@ def run_gui() -> int:
             self._queue: queue.Queue = queue.Queue()
             self.container = ttk.Frame(self, padding=14)
             self.container.pack(fill="both", expand=True)
+            self._update_notice = ("", "#5b6673")
+            self._update_check_running = False
             self._show_license()
+            self._start_update_check()
 
         # --- step 1: license -------------------------------------------------
         def _show_license(self) -> None:
@@ -1265,34 +1326,11 @@ def run_gui() -> int:
             info = tk.Label(frame, text=GUI_INFO_TEXT, justify="left", wraplength=560, relief="groove")
             info.pack(fill="x", pady=14, ipadx=10, ipady=10)
 
-            update_var = tk.BooleanVar(value=True)
-            self._update_check_running = False
-            ttk.Checkbutton(
+            ttk.Label(
                 frame,
-                variable=update_var,
-                text="Beim Start auf Updates prüfen (einzige optionale Verbindung zu "
-                "idmtools.xerolux.de; es werden keine Anlagendaten übertragen)",
-            ).pack(anchor="w", pady=(10, 0))
-            self._update_label = ttk.Label(frame, text="", foreground="#5b6673", wraplength=560, justify="left")
-            self._update_label.pack(anchor="w")
-
-            def on_update_toggle(*_args: object) -> None:
-                if update_var.get():
-                    self._start_update_check()
-                else:
-                    self._update_label.configure(text="")
-
-            update_var.trace_add("write", on_update_toggle)
-            if update_var.get():
-                self._start_update_check()
-
-            ttk.Label(frame, text="Modbus (optional, nur lesend)", font=("", 11, "bold")).pack(anchor="w", pady=(2, 4))
-            modbus_var = tk.BooleanVar(value=True)
-            ttk.Checkbutton(
-                frame,
-                variable=modbus_var,
-                text="Zusätzlich die Modbus-Register auslesen (empfohlen — Rohwerte, nichts wird geändert)",
-            ).pack(anchor="w")
+                text="Modbus über Proxy / Gateway (optional — sonst leer lassen)",
+                font=("", 11, "bold"),
+            ).pack(anchor="w", pady=(2, 4))
             mb_row = ttk.Frame(frame)
             mb_row.pack(fill="x", pady=(4, 0))
             ttk.Label(mb_row, text="Modbus-Host:").pack(side="left")
@@ -1307,11 +1345,16 @@ def run_gui() -> int:
             ttk.Label(
                 frame,
                 text="Modbus-Host leer lassen = gleiche Adresse wie oben. Läuft Modbus über einen "
-                "Proxy bzw. eine Gateway-Box, deren Adresse und Port eintragen.",
+                "Proxy bzw. eine Gateway-Box, deren Adresse und Port eintragen. Die Modbus-Register "
+                "werden immer mit aufgezeichnet (rein lesend).",
                 foreground="#5b6673",
                 wraplength=560,
                 justify="left",
             ).pack(anchor="w", pady=(4, 0))
+
+            self._update_label = ttk.Label(frame, text="", foreground="#5b6673", wraplength=560, justify="left")
+            self._update_label.pack(anchor="w", pady=(8, 0))
+            self._render_update_notice()
 
             buttons = ttk.Frame(frame)
             buttons.pack(fill="x", pady=(14, 0))
@@ -1322,7 +1365,6 @@ def run_gui() -> int:
                 command=lambda: self._start(
                     host_var.get().strip(),
                     pin_var.get(),
-                    modbus_var.get(),
                     modbus_host_var.get().strip(),
                     modbus_port_var.get().strip(),
                     modbus_slave_var.get().strip(),
@@ -1334,7 +1376,6 @@ def run_gui() -> int:
             self,
             host: str,
             pin: str,
-            modbus_enabled: bool,
             modbus_host: str,
             modbus_port: str,
             modbus_slave: str,
@@ -1366,7 +1407,7 @@ def run_gui() -> int:
             self._show_progress()
             threading.Thread(
                 target=self._worker,
-                args=(host, pin, modbus_enabled, modbus_host, modbus_port_value, modbus_slave_value),
+                args=(host, pin, modbus_host, modbus_port_value, modbus_slave_value),
                 daemon=True,
             ).start()
 
@@ -1374,7 +1415,6 @@ def run_gui() -> int:
             self,
             host: str,
             pin: str,
-            modbus_enabled: bool,
             modbus_host: str,
             modbus_port: int,
             modbus_slave: int,
@@ -1383,11 +1423,12 @@ def run_gui() -> int:
                 out_path, ok, warnings = perform_capture(
                     host=host,
                     pin=pin,
-                    modbus=modbus_enabled,
+                    modbus=True,
                     modbus_host=modbus_host or None,
                     modbus_port=modbus_port,
                     modbus_slave=modbus_slave,
                     log=self._queue.put,
+                    progress=lambda fraction, label: self._queue.put((fraction, label)),
                 )
             except Exception as err:  # noqa: BLE001 - the GUI must never die silently
                 self._queue.put(f"Unerwarteter Fehler / unexpected error: {_err_text(err)}")
@@ -1404,12 +1445,30 @@ def run_gui() -> int:
             frame = ttk.Frame(self.container)
             frame.pack(fill="both", expand=True)
             ttk.Label(frame, text="Aufzeichnung läuft …", font=("", 13, "bold")).pack(anchor="w", pady=(0, 8))
-            ttk.Label(frame, text="Bitte warten; das dauert typischerweise unter einer Minute.").pack(
-                anchor="w", pady=(0, 8)
-            )
-            self._log = scrolledtext.ScrolledText(frame, wrap="word", height=16)
+            self._progress_bar = ttk.Progressbar(frame, maximum=100, length=560)
+            self._progress_bar.pack(fill="x", pady=(0, 4))
+            self._progress_status = ttk.Label(frame, text="Starte … 0 % — Restzeit wird geschätzt")
+            self._progress_status.pack(anchor="w", pady=(0, 8))
+            self._capture_started = time.monotonic()
+            self._last_fraction = 0.0
+            self._log = scrolledtext.ScrolledText(frame, wrap="word", height=14)
             self._log.pack(fill="both", expand=True)
             self.after(100, self._poll)
+
+        def _apply_progress(self, fraction: float, label: str) -> None:
+            fraction = max(0.0, min(fraction, 1.0))
+            self._last_fraction = fraction
+            self._progress_bar["value"] = fraction * 100
+            elapsed = time.monotonic() - self._capture_started
+            if fraction >= 0.98:
+                eta = ""
+            elif fraction > 0.02:
+                remaining = elapsed * (1.0 - fraction) / fraction
+                eta = f" — noch ca. {max(1, round(remaining))} s"
+            else:
+                eta = " — Restzeit wird geschätzt"
+            step = f" · {label}" if label else ""
+            self._progress_status.configure(text=f"{round(fraction * 100)} %{eta}{step}")
 
         def _poll(self) -> None:
             finished = False
@@ -1419,11 +1478,18 @@ def run_gui() -> int:
                     if item is None:
                         finished = True
                         break
+                    if isinstance(item, tuple) and len(item) == 2:
+                        self._apply_progress(item[0], item[1])
+                        continue
                     self._log.insert("end", item + "\n")
                     self._log.see("end")
             except queue.Empty:
                 pass
             if finished:
+                try:
+                    self._apply_progress(1.0, "abgeschlossen")
+                except Exception:  # noqa: BLE001, S110 - cosmetic only
+                    pass
                 self._show_result()
             else:
                 self.after(100, self._poll)
@@ -1520,13 +1586,13 @@ def run_gui() -> int:
             webbrowser.open(ISSUE_URL)
 
         def _start_update_check(self) -> None:
-            """Fetch the published version number in the background.
+            """Fetch the published version number once, right at startup.
 
-            The only outbound connection the tool can make, only with the
-            checkbox enabled: one HTTPS GET of a plain-text version file.
-            Nothing about the plant is transmitted; failures stay silent.
+            The tool's only outbound connection: one HTTPS GET of a plain-text
+            version file from idmtools.xerolux.de. Nothing about the plant is
+            transmitted; failures stay silent (offline = normal start).
             """
-            if getattr(self, "_update_check_running", False):
+            if self._update_check_running:
                 return
             self._update_check_running = True
 
@@ -1537,24 +1603,31 @@ def run_gui() -> int:
                         available = response.read(64).decode("ascii", errors="replace").strip()
                 except Exception:  # noqa: BLE001 - an update check must never disturb the tool
                     available = None
-
-                def apply_result() -> None:
-                    self._update_check_running = False
-                    if available and is_newer_version(SCRIPT_VERSION, available):
-                        self._update_label.configure(
-                            foreground="#9a6700",
-                            text=f"⚠ Version {available} verfügbar — bitte die aktuelle Version von "
-                            f"https://idmtools.xerolux.de laden (diese Version: {SCRIPT_VERSION}).",
-                        )
-                    elif available:
-                        self._update_label.configure(text=f"✓ Aktuelle Version ({SCRIPT_VERSION}).")
-
+                if available and is_newer_version(SCRIPT_VERSION, available):
+                    notice = (
+                        (
+                            f"⚠ Version {available} verfügbar — bitte die aktuelle Version von "
+                            f"https://idmtools.xerolux.de laden (diese Version: {SCRIPT_VERSION})."
+                        ),
+                        "#9a6700",
+                    )
+                elif available:
+                    notice = (f"✓ Aktuelle Version ({SCRIPT_VERSION}).", "#5b6673")
+                else:
+                    notice = ("", "#5b6673")
+                self._update_notice = notice
                 try:
-                    self.after(0, apply_result)
+                    self.after(0, self._render_update_notice)
                 except tk.TclError:
                     pass  # window already closed
 
             threading.Thread(target=worker, daemon=True).start()
+
+        def _render_update_notice(self) -> None:
+            label = getattr(self, "_update_label", None)
+            if label is not None:
+                text, color = self._update_notice
+                label.configure(text=text, foreground=color)
 
         def _alert(self, message: str) -> None:
             from tkinter import messagebox
