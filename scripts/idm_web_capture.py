@@ -48,7 +48,7 @@ from html import unescape
 from html.parser import HTMLParser
 from http import cookiejar
 
-SCRIPT_VERSION = "1.0.0"
+SCRIPT_VERSION = "1.1.0"
 
 DEFAULT_WEB_PORT = 80
 DEFAULT_WS_PORT = 61220
@@ -177,7 +177,13 @@ def looks_like_auth_failure(text: str) -> bool:
 
 
 class HttpSession:
-    """Cookie-keeping HTTP client returning (status, text) even on HTTP errors."""
+    """Cookie-keeping HTTP client returning rich results even on HTTP errors.
+
+    ``request`` answers a ``(status, text, content_type, effective_url)``
+    tuple: the content type and the URL after redirects tell a page that
+    answers with data from one that bounces to an error handler — the exact
+    difference a parser diagnosis needs.
+    """
 
     def __init__(self, timeout: float) -> None:
         self._timeout = timeout
@@ -190,7 +196,7 @@ class HttpSession:
         url: str,
         data: dict[str, str] | None = None,
         headers: dict[str, str] | None = None,
-    ) -> tuple[int, str]:
+    ) -> tuple[int, str, str | None, str | None]:
         body = urllib.parse.urlencode(data).encode("utf-8") if data is not None else None
         request = urllib.request.Request(url, data=body, method=method)
         for name, value in (headers or {}).items():
@@ -199,12 +205,28 @@ class HttpSession:
         try:
             with self._opener.open(request, timeout=self._timeout) as response:
                 raw = response.read(MAX_RESPONSE_BYTES + 1)
-                return response.status, _decode_body(raw)
+                return (
+                    response.status,
+                    _decode_body(raw),
+                    response.headers.get("Content-Type"),
+                    self._effective_url(url, response.geturl()),
+                )
         except urllib.error.HTTPError as err:
             # The NAV2 firmware answers rejected sessions with 401/403 and a
             # body worth keeping as evidence.
             raw = err.read(MAX_RESPONSE_BYTES + 1)
-            return err.code, _decode_body(raw)
+            return (
+                err.code,
+                _decode_body(raw),
+                err.headers.get("Content-Type") if err.headers is not None else None,
+                self._effective_url(url, err.geturl() if err.headers is not None else None),
+            )
+
+    @staticmethod
+    def _effective_url(requested: str, after_redirects: str | None) -> str | None:
+        if after_redirects is None or after_redirects == requested:
+            return None
+        return after_redirects
 
 
 def _decode_body(raw: bytes) -> str:
@@ -223,6 +245,15 @@ def _safe_name(path_or_label: str) -> str:
     return re.sub(r"[^A-Za-z0-9._=-]", "_", name) or "response"
 
 
+def _extend_http_meta(entry: dict, content_type: str | None, effective_url: str | None) -> None:
+    """Attach response metadata a parser diagnosis needs: what the server
+    says it is serving, and whether the request was redirected."""
+    if content_type:
+        entry["content_type"] = content_type
+    if effective_url:
+        entry["redirected_to"] = effective_url
+
+
 def capture_nav20(
     host: str,
     port: int,
@@ -237,22 +268,22 @@ def capture_nav20(
     summary: dict = {"variant": "nav20", "outcome": "unavailable", "login": None}
 
     try:
-        status, text = session.request("GET", base + "/")
+        status, text, content_type, effective_url = session.request("GET", base + "/")
     except (urllib.error.URLError, OSError, CaptureError) as err:
         entries.append({"variant": "nav20", "step": "initial_get", "status": "error", "detail": _err_text(err)})
         return summary
     files["nav20/initial_page.html"] = text
     csrf_token = extract_csrf_token(text)
-    entries.append(
-        {
-            "variant": "nav20",
-            "step": "initial_get",
-            "status": "ok",
-            "http_status": status,
-            "file": "nav20/initial_page.html",
-            "looks_like_login_page": looks_like_login_page(text),
-        }
-    )
+    initial_entry: dict = {
+        "variant": "nav20",
+        "step": "initial_get",
+        "status": "ok" if 200 <= status < 300 else f"http_{status}",
+        "http_status": status,
+        "file": "nav20/initial_page.html",
+        "looks_like_login_page": looks_like_login_page(text),
+    }
+    _extend_http_meta(initial_entry, content_type, effective_url)
+    entries.append(initial_entry)
 
     # Login handshake: try each form field name the firmwares use. Request
     # bodies are deliberately never captured — one of them contains the PIN.
@@ -262,7 +293,7 @@ def capture_nav20(
         accepted = False
         for field in NAV20_LOGIN_FIELDS:
             try:
-                login_status, text = session.request("POST", base + path, data={field: pin})
+                login_status, text, _, _ = session.request("POST", base + path, data={field: pin})
             except (urllib.error.URLError, OSError, CaptureError) as err:
                 login_error = _err_text(err)
                 continue
@@ -302,19 +333,29 @@ def capture_nav20(
     targets += [(f"statistics_{name}", url) for name, url in NAV20_STATISTICS_QUERIES]
     for label, path in targets:
         try:
-            status, text = session.request("GET", base + path, headers=headers)
+            status, text, content_type, effective_url = session.request("GET", base + path, headers=headers)
         except (urllib.error.URLError, OSError, CaptureError) as err:
             entries.append({"variant": "nav20", "step": path, "status": "error", "detail": _err_text(err)})
             continue
-        entry: dict = {"variant": "nav20", "step": path, "status": "ok", "http_status": status}
+        entry: dict = {"variant": "nav20", "step": path, "http_status": status}
         lowered = text.lower()
         if "invalid csrf token" in lowered:
             entry["status"] = "csrf_rejected"
         elif looks_like_auth_failure(text) or looks_like_login_page(text):
             entry["status"] = "auth_response"
+        elif not 200 <= status < 300:
+            # A 404/5xx answer is evidence too (Nav-10-generation modules
+            # serve a 404 stub on the old PHP pages) — save the body, but do
+            # not count it as a page carrying data.
+            entry["status"] = f"http_{status}"
+        else:
+            entry["status"] = "ok"
+        _extend_http_meta(entry, content_type, effective_url)
+        # Save every classified body: stubs and error pages are exactly the
+        # evidence a parser diagnosis needs.
+        files[f"nav20/{label}.capture"] = text
+        entry["file"] = f"nav20/{label}.capture"
         if entry["status"] == "ok":
-            files[f"nav20/{label}.capture"] = text
-            entry["file"] = f"nav20/{label}.capture"
             captured += 1
         entries.append(entry)
         time.sleep(REQUEST_DELAY)
