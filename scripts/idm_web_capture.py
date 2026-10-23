@@ -48,13 +48,25 @@ from html import unescape
 from html.parser import HTMLParser
 from http import cookiejar
 
-SCRIPT_VERSION = "1.1.0"
+SCRIPT_VERSION = "1.2.0"
 
 DEFAULT_WEB_PORT = 80
 DEFAULT_WS_PORT = 61220
+DEFAULT_MODBUS_PORT = 502
+DEFAULT_MODBUS_SLAVE = 1
 DEFAULT_TIMEOUT = 10.0
 REQUEST_DELAY = 0.1
 MAX_RESPONSE_BYTES = 5 * 1024 * 1024
+
+# Read-only Modbus sweep: fixed 50-word blocks over the documented input
+# (FC04) and holding (FC03) ranges of every Navigator family. Nothing is
+# decoded here — the raw words plus each block's status ARE the evidence
+# (which blocks answer, which answer "illegal address", is exactly what a
+# model-mismatch diagnosis needs). 50 words stays far below the 125-word
+# protocol limit and keeps each block inside one documented register group.
+MODBUS_INPUT_BLOCKS = tuple(range(1000, 1900, 50))
+MODBUS_HOLDING_BLOCKS = tuple(range(2000, 2200, 50))
+MODBUS_BLOCK_WORDS = 50
 
 # --- Navigator 2.0 (plain HTTP interface) — mirrors idm-heatpump-api web.py ---
 
@@ -632,6 +644,161 @@ def _err_text(err: BaseException) -> str:
 
 
 # ----------------------------------------------------------------------------
+# Read-only Modbus TCP sweep (stdlib sockets, FC03/FC04 only)
+# ----------------------------------------------------------------------------
+
+_MODBUS_EXCEPTION_NAMES = {
+    0x01: "illegal_function",
+    0x02: "illegal_data_address",
+    0x03: "illegal_data_value",
+    0x04: "slave_device_failure",
+    0x0A: "gateway_path_unavailable",
+    0x0B: "gateway_target_failed",
+}
+
+
+class ModbusCaptureError(CaptureError):
+    """A Modbus block could not be read; the reason goes into the manifest."""
+
+
+class ModbusReader:
+    """Minimal read-only Modbus TCP client: FC03/FC04, one connection."""
+
+    def __init__(self, host: str, port: int, slave: int, timeout: float) -> None:
+        self._host = host
+        self._port = port
+        self._slave = slave
+        self._timeout = timeout
+        self._sock: socket.socket | None = None
+        self._transaction = 0
+
+    def connect(self) -> None:
+        self._sock = socket.create_connection((self._host, self._port), timeout=self._timeout)
+        self._sock.settimeout(self._timeout)
+
+    def close(self) -> None:
+        if self._sock is not None:
+            try:
+                self._sock.close()
+            except OSError:
+                pass
+            self._sock = None
+
+    def read_words(self, function: int, start: int, count: int) -> list[int]:
+        """Read ``count`` registers starting at ``start`` (FC03/FC04 only)."""
+        if self._sock is None:
+            raise ModbusCaptureError("modbus connection is not open")
+        if function not in (3, 4):
+            raise ValueError("only read functions 3 and 4 are permitted")
+        self._transaction = (self._transaction + 1) & 0xFFFF
+        request = struct.pack(
+            ">HHHBBHH",
+            self._transaction,
+            0,  # protocol id: Modbus TCP
+            6,  # following length
+            self._slave,
+            function,
+            start,
+            count,
+        )
+        self._sock.sendall(request)
+        header = self._read_exact(7)
+        transaction, _protocol, length = struct.unpack(">HHH", header[:6])
+        if transaction != self._transaction:
+            raise ModbusCaptureError("modbus transaction id mismatch")
+        if length < 3 or length > 260:
+            raise ModbusCaptureError(f"modbus response length out of range: {length}")
+        # ``length`` counts the unit id (already read as header[6]) plus PDU;
+        # the PDU therefore starts at payload[1].
+        payload = header[6:7] + self._read_exact(length - 1)
+        function_code = payload[1]
+        if function_code & 0x80:
+            code = payload[2] if len(payload) > 2 else 0
+            name = _MODBUS_EXCEPTION_NAMES.get(code, f"exception_{code}")
+            raise ModbusCaptureError(f"modbus FC{function} @{start}: {name}")
+        if function_code != function:
+            raise ModbusCaptureError(f"modbus answered FC{function_code}, not FC{function}")
+        byte_count = payload[2]
+        if byte_count != count * 2 or len(payload) != 3 + byte_count:
+            raise ModbusCaptureError("modbus response length does not match the request")
+        return [struct.unpack(">H", payload[3 + i * 2 : 5 + i * 2])[0] for i in range(count)]
+
+    def _read_exact(self, count: int) -> bytes:
+        assert self._sock is not None
+        data = b""
+        while len(data) < count:
+            chunk = self._sock.recv(count - len(data))
+            if not chunk:
+                raise ModbusCaptureError("modbus connection ended mid-frame")
+            data += chunk
+        return data
+
+
+def capture_modbus(
+    host: str,
+    port: int,
+    slave: int,
+    timeout: float,
+    files: dict[str, str],
+    entries: list[dict],
+) -> dict:
+    """Sweep the documented register ranges read-only and store raw words.
+
+    A proxy setup is just a different host/port — the GUI and CLI accept both.
+    Blocks the controller refuses are recorded as their own outcome; the
+    pattern of refusals is diagnostic evidence, not an error to hide.
+    """
+    summary: dict = {"variant": "modbus", "outcome": "unavailable"}
+    reader = ModbusReader(host, port, slave, timeout)
+    try:
+        reader.connect()
+    except (OSError, ModbusCaptureError) as err:
+        entries.append({"variant": "modbus", "step": "connect", "status": "unavailable", "detail": _err_text(err)})
+        return summary
+
+    blocks_read = 0
+    try:
+        for function, starts, label in (
+            (4, MODBUS_INPUT_BLOCKS, "input"),
+            (3, MODBUS_HOLDING_BLOCKS, "holding"),
+        ):
+            for start in starts:
+                entry: dict = {
+                    "variant": "modbus",
+                    "step": f"FC{function} {label} {start}-{start + MODBUS_BLOCK_WORDS - 1}",
+                    "function": function,
+                    "start": start,
+                    "words": MODBUS_BLOCK_WORDS,
+                }
+                try:
+                    words = reader.read_words(function, start, MODBUS_BLOCK_WORDS)
+                except (OSError, ModbusCaptureError) as err:
+                    entry["status"] = "error"
+                    entry["detail"] = _err_text(err)
+                    entries.append(entry)
+                    continue
+                record = {
+                    "function": function,
+                    "start": start,
+                    "count": MODBUS_BLOCK_WORDS,
+                    "unit": slave,
+                    "raw_words": words,
+                }
+                name = f"modbus/{label}_{start}.json"
+                files[name] = json.dumps(record, indent=1)
+                entry["status"] = "ok"
+                entry["file"] = name
+                entries.append(entry)
+                blocks_read += 1
+                time.sleep(REQUEST_DELAY)
+    finally:
+        reader.close()
+    summary["outcome"] = "ok" if blocks_read else "no_blocks"
+    summary["blocks_read"] = blocks_read
+    return summary
+
+
+# ----------------------------------------------------------------------------
 # Manifest, README and ZIP packaging
 # ----------------------------------------------------------------------------
 
@@ -675,6 +842,9 @@ def build_manifest(
     nav10: dict,
     entries: list[dict],
     redacted_files: list[str],
+    modbus: dict | None = None,
+    modbus_port: int = DEFAULT_MODBUS_PORT,
+    modbus_slave: int = DEFAULT_MODBUS_SLAVE,
 ) -> str:
     safety = dict(SAFETY_STATEMENTS)
     safety["pin_redacted_files"] = redacted_files
@@ -685,10 +855,12 @@ def build_manifest(
         "host": host,
         "web_port": web_port,
         "ws_port": ws_port,
+        "modbus_port": modbus_port,
+        "modbus_slave": modbus_slave,
         "python": sys.version.split()[0],
         "platform": platform.platform(),
         "safety": safety,
-        "variants": {"nav20": nav20, "nav10": nav10},
+        "variants": {"nav20": nav20, "nav10": nav10, "modbus": modbus or {"outcome": "skipped"}},
         "captures": entries,
     }
     text = json.dumps(manifest, indent=2, ensure_ascii=False)
@@ -749,6 +921,76 @@ def _sanitize_for_filename(host: str) -> str:
     return re.sub(r"[^A-Za-z0-9.-]", "-", host).strip("-") or "host"
 
 
+def _silent_log(_line: str) -> None:
+    """Progress sink for callers that do not care about progress lines."""
+
+
+def perform_capture(
+    host: str,
+    pin: str,
+    web_port: int = DEFAULT_WEB_PORT,
+    ws_port: int = DEFAULT_WS_PORT,
+    timeout: float = DEFAULT_TIMEOUT,
+    out_dir: str = ".",
+    only: str | None = None,
+    modbus: bool = True,
+    modbus_host: str | None = None,
+    modbus_port: int = DEFAULT_MODBUS_PORT,
+    modbus_slave: int = DEFAULT_MODBUS_SLAVE,
+    log=_silent_log,
+) -> tuple[str, bool, list[str]]:
+    """Run the captures and write the evidence ZIP; shared by CLI and GUI.
+
+    Returns ``(zip_path, ok, warnings)``. ``ok`` is True when at least one
+    variant delivered usable data; the evidence ZIP is written either way —
+    a failed capture documents its own failure and is still worth sending.
+    """
+    files: dict[str, str] = {}
+    entries: list[dict] = []
+    nav20: dict = {"variant": "nav20", "outcome": "skipped"}
+    nav10: dict = {"variant": "nav10", "outcome": "skipped"}
+    modbus_summary: dict = {"variant": "modbus", "outcome": "skipped"}
+
+    if only != "nav10":
+        log(f"Capturing Navigator 2.0 HTTP interface at {host}:{web_port} ...")
+        nav20 = capture_nav20(host, web_port, pin, timeout, files, entries)
+        log(f"  nav20: {nav20['outcome']}")
+    if only != "nav20":
+        log(f"Capturing Navigator 10/Pro WebSocket at {host}:{ws_port} ...")
+        nav10 = capture_nav10(host, ws_port, pin, timeout, files, entries)
+        log(f"  nav10: {nav10['outcome']}")
+    if modbus:
+        modbus_target = modbus_host or host
+        log(f"Sweeping Modbus registers read-only at {modbus_target}:{modbus_port} (slave {modbus_slave}) ...")
+        modbus_summary = capture_modbus(modbus_target, modbus_port, modbus_slave, timeout, files, entries)
+        log(f"  modbus: {modbus_summary['outcome']} ({modbus_summary.get('blocks_read', 0)} blocks)")
+
+    warnings: list[str] = []
+    redacted = redact_pin(files, pin)
+    if redacted:
+        warnings.append(f"Warning: PIN redacted inside {len(redacted)} captured file(s): {', '.join(redacted)}")
+    manifest_text = build_manifest(
+        host,
+        web_port,
+        ws_port,
+        nav20,
+        nav10,
+        entries,
+        redacted,
+        modbus=modbus_summary,
+        modbus_port=modbus_port,
+        modbus_slave=modbus_slave,
+    )
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+    abs_out_dir = os.path.abspath(out_dir)
+    os.makedirs(abs_out_dir, exist_ok=True)
+    out_path = os.path.join(abs_out_dir, f"idm_web_capture_{_sanitize_for_filename(host)}_{stamp}.zip")
+    write_zip(out_path, files, manifest_text)
+
+    ok = nav20.get("outcome") == "ok" or nav10.get("outcome") == "ok" or modbus_summary.get("outcome") == "ok"
+    return out_path, ok, warnings
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         description="Capture read-only evidence from an IDM Navigator local web interface."
@@ -775,6 +1017,29 @@ def main(argv: list[str] | None = None) -> int:
     )
     parser.add_argument("--out", default=".", help="output directory for the ZIP file")
     parser.add_argument("--only", choices=("nav20", "nav10"), help="capture only one interface variant (default: both)")
+    parser.add_argument(
+        "--no-modbus",
+        action="store_true",
+        help="skip the read-only Modbus register sweep (default: sweep it)",
+    )
+    parser.add_argument(
+        "--modbus-host",
+        help="Modbus host when it differs from the web host (e.g. a proxy box); default: same as host",
+    )
+    parser.add_argument(
+        "--modbus-port",
+        type=int,
+        default=DEFAULT_MODBUS_PORT,
+        help=f"Modbus TCP port (default {DEFAULT_MODBUS_PORT}; a proxy usually has its own)",
+    )
+    parser.add_argument(
+        "--modbus-slave",
+        type=int,
+        default=DEFAULT_MODBUS_SLAVE,
+        help=f"Modbus slave/unit id (default {DEFAULT_MODBUS_SLAVE})",
+    )
+    parser.add_argument("--gui", action="store_true", help=argparse.SUPPRESS)
+    parser.add_argument("--cli", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
 
     pin = args.pin or os.environ.get("IDM_WEB_PIN") or ""
@@ -785,34 +1050,26 @@ def main(argv: list[str] | None = None) -> int:
             print("No PIN entered - aborting.", file=sys.stderr)
             return 2
     if not pin:
-        print("An empty PIN cannot log in — aborting.", file=sys.stderr)
+        print("An empty PIN cannot log in - aborting.", file=sys.stderr)
         return 2
 
-    files: dict[str, str] = {}
-    entries: list[dict] = []
-    nav20: dict = {"variant": "nav20", "outcome": "skipped"}
-    nav10: dict = {"variant": "nav10", "outcome": "skipped"}
+    out_path, ok, warnings = perform_capture(
+        host=args.host,
+        pin=pin,
+        web_port=args.web_port,
+        ws_port=args.ws_port,
+        timeout=args.timeout,
+        out_dir=args.out,
+        only=args.only,
+        modbus=not args.no_modbus,
+        modbus_host=args.modbus_host,
+        modbus_port=args.modbus_port,
+        modbus_slave=args.modbus_slave,
+        log=print,
+    )
+    for warning in warnings:
+        print(warning, file=sys.stderr)
 
-    if args.only != "nav10":
-        print(f"Capturing Navigator 2.0 HTTP interface at {args.host}:{args.web_port} ...")
-        nav20 = capture_nav20(args.host, args.web_port, pin, args.timeout, files, entries)
-        print(f"  nav20: {nav20['outcome']}")
-    if args.only != "nav20":
-        print(f"Capturing Navigator 10/Pro WebSocket at {args.host}:{args.ws_port} ...")
-        nav10 = capture_nav10(args.host, args.ws_port, pin, args.timeout, files, entries)
-        print(f"  nav10: {nav10['outcome']}")
-
-    redacted = redact_pin(files, pin)
-    if redacted:
-        print(f"Warning: PIN redacted inside {len(redacted)} captured file(s): {', '.join(redacted)}", file=sys.stderr)
-    manifest_text = build_manifest(args.host, args.web_port, args.ws_port, nav20, nav10, entries, redacted)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    out_dir = os.path.abspath(args.out)
-    os.makedirs(out_dir, exist_ok=True)
-    out_path = os.path.join(out_dir, f"idm_web_capture_{_sanitize_for_filename(args.host)}_{stamp}.zip")
-    write_zip(out_path, files, manifest_text)
-
-    ok = nav20.get("outcome") == "ok" or nav10.get("outcome") == "ok"
     print()
     # Console output stays ASCII: Windows cmd.exe code pages mangle umlauts.
     print(f"ZIP erstellt / ZIP created: {out_path}")
@@ -820,5 +1077,370 @@ def main(argv: list[str] | None = None) -> int:
     return 0 if ok else 2
 
 
+# ----------------------------------------------------------------------------
+# Guided Windows GUI (tkinter, standard library only)
+# ----------------------------------------------------------------------------
+
+CONTACT_EMAIL = "git@xerolux.de"
+ISSUE_URL = "https://github.com/Xerolux/idm-heatpump-hass/issues/new"
+
+GUI_LICENSE_TEXT = """IDM Web-Capture — Haftungsausschluss & Nutzungsbedingungen
+
+Dieses Werkzeug gehört zum Open-Source-Projekt „IDM Heatpump für Home
+Assistant" (github.com/Xerolux/idm-heatpump-hass, MIT-Lizenz).
+
+• Das Werkzeug verbindet sich ausschließlich mit dem von Ihnen angegebenen
+  Gerät in Ihrem lokalen Netzwerk. Kein Cloud-Dienst, keine Telemetrie,
+  kein automatischer Versand von Daten.
+
+• Es greift ausschließlich LESEND auf die Weboberfläche zu: Es gibt keine
+  Schreibbefehle, es werden keine Einstellungen geändert, und keine höheren
+  Zugriffsebenen (Service-/Fachmann-Ebene) werden geöffnet.
+
+• Ihre Web-PIN wird nur für den Login verwendet. Sie wird nicht gespeichert
+  und nicht in die erzeugte ZIP-Datei geschrieben.
+
+• Die erzeugte ZIP-Datei enthält Rohdaten Ihrer Anlage (Temperaturen,
+  Betriebszustände, Einstellwerte, Geräte-Kennungen). Sie entscheiden, ob
+  und an wen Sie sie senden. Beachten Sie: GitHub-Issues sind öffentlich.
+
+Nutzung auf eigene Gefahr: Das Werkzeug wird unentgeltlich und ohne
+Garantie oder Gewährleistung bereitgestellt. Eine Haftung für direkte,
+indirekte oder Folgeschäden jedweder Art ist, soweit gesetzlich zulässig,
+ausgeschlossen.
+
+Mit „Akzeptieren" bestätigen Sie, diesen Text gelesen und verstanden zu
+haben."""
+
+GUI_INFO_TEXT = (
+    "Was jetzt passiert: Das Werkzeug meldet sich mit Ihrer Web-PIN an der "
+    "Weboberfläche Ihres Navigators an und liest ausschließlich lesend alle "
+    "bekannten Datenseiten (Navigator 2.0) bzw. Nur-Lese-Datenkanäle "
+    "(Navigator 10 / Pro) aus. Zusätzlich werden — wenn aktiviert — die "
+    "Modbus-Register rein lesend ausgelesen (Rohwerte; bei einem Modbus-Proxy "
+    "einfach dessen Adresse angeben). Daraus entsteht eine ZIP-Datei mit den "
+    "Rohdaten und einer manifest.json, die jeden Abruf dokumentiert.\n\n"
+    "Ihre PIN erscheint NICHT in der Datei. Es wird nichts geändert und "
+    "nichts automatisch versendet."
+)
+
+
+def gui_available() -> bool:
+    try:
+        import tkinter  # noqa: F401
+    except Exception:  # noqa: BLE001 - headless or stripped interpreters
+        return False
+    return True
+
+
+def should_launch_gui(argv: list[str]) -> bool:
+    """Decide between the guided GUI and the command line.
+
+    Double-clicking the Windows executable arrives with no arguments at all;
+    that user gets the wizard. Anyone naming a host (or passing --cli) is an
+    expert and keeps the scriptable console behaviour on every platform.
+    """
+    if "--cli" in argv:
+        return False
+    if "--gui" in argv:
+        return True
+    return os.name == "nt" and len(argv) == 1
+
+
+def run_gui() -> int:
+    """Run the guided wizard: license, host+PIN entry, progress, result."""
+    import queue
+    import threading
+    import tkinter as tk
+    from tkinter import scrolledtext, ttk
+
+    class Wizard(tk.Tk):
+        def __init__(self) -> None:
+            super().__init__()
+            self.title("IDM Web-Capture — Nur-Lese-Diagnose")
+            self.minsize(620, 480)
+            self.result_zip: str | None = None
+            self.result_ok = False
+            self._queue: queue.Queue = queue.Queue()
+            self.container = ttk.Frame(self, padding=14)
+            self.container.pack(fill="both", expand=True)
+            self._show_license()
+
+        # --- step 1: license -------------------------------------------------
+        def _show_license(self) -> None:
+            self._clear()
+            frame = ttk.Frame(self.container)
+            frame.pack(fill="both", expand=True)
+            ttk.Label(frame, text="Haftungsausschluss & Nutzungsbedingungen", font=("", 13, "bold")).pack(
+                anchor="w", pady=(0, 8)
+            )
+            text = scrolledtext.ScrolledText(frame, wrap="word", height=18)
+            text.insert("1.0", GUI_LICENSE_TEXT)
+            text.configure(state="disabled")
+            text.pack(fill="both", expand=True)
+            buttons = ttk.Frame(frame)
+            buttons.pack(fill="x", pady=(10, 0))
+            ttk.Button(buttons, text="Abbrechen", command=self.destroy).pack(side="right")
+            ttk.Button(buttons, text="Akzeptieren", command=self._show_input).pack(side="right", padx=(0, 8))
+
+        # --- step 2: host + PIN ---------------------------------------------
+        def _show_input(self) -> None:
+            self._clear()
+            frame = ttk.Frame(self.container)
+            frame.pack(fill="both", expand=True)
+            ttk.Label(frame, text="Verbindung zur Wärmepumpe", font=("", 13, "bold")).pack(anchor="w", pady=(0, 8))
+            row = ttk.Frame(frame)
+            row.pack(fill="x")
+            ttk.Label(row, text="IP-Adresse / Hostname:").pack(side="left")
+            host_var = tk.StringVar()
+            ttk.Entry(row, textvariable=host_var, width=28).pack(side="left", padx=8)
+            ttk.Label(row, text="(wie in der Home-Assistant-Integration)").pack(side="left")
+            row2 = ttk.Frame(frame)
+            row2.pack(fill="x", pady=(8, 0))
+            ttk.Label(row2, text="Web-PIN:").pack(side="left")
+            pin_var = tk.StringVar()
+            ttk.Entry(row2, textvariable=pin_var, show="•", width=28).pack(side="left", padx=8)
+            ttk.Label(row2, text="(Eingabe bleibt verborgen)").pack(side="left")
+            info = tk.Label(frame, text=GUI_INFO_TEXT, justify="left", wraplength=560, relief="groove", padding=10)
+            info.pack(fill="x", pady=14)
+
+            ttk.Label(frame, text="Modbus (optional, nur lesend)", font=("", 11, "bold")).pack(anchor="w", pady=(2, 4))
+            modbus_var = tk.BooleanVar(value=True)
+            ttk.Checkbutton(
+                frame,
+                variable=modbus_var,
+                text="Zusätzlich die Modbus-Register auslesen (empfohlen — Rohwerte, nichts wird geändert)",
+            ).pack(anchor="w")
+            mb_row = ttk.Frame(frame)
+            mb_row.pack(fill="x", pady=(4, 0))
+            ttk.Label(mb_row, text="Modbus-Host:").pack(side="left")
+            modbus_host_var = tk.StringVar()
+            ttk.Entry(mb_row, textvariable=modbus_host_var, width=22).pack(side="left", padx=(8, 4))
+            ttk.Label(mb_row, text="Port:").pack(side="left")
+            modbus_port_var = tk.StringVar(value=str(DEFAULT_MODBUS_PORT))
+            ttk.Entry(mb_row, textvariable=modbus_port_var, width=6).pack(side="left", padx=(8, 4))
+            ttk.Label(mb_row, text="Slave-ID:").pack(side="left")
+            modbus_slave_var = tk.StringVar(value=str(DEFAULT_MODBUS_SLAVE))
+            ttk.Entry(mb_row, textvariable=modbus_slave_var, width=4).pack(side="left", padx=(8, 0))
+            ttk.Label(
+                frame,
+                text="Modbus-Host leer lassen = gleiche Adresse wie oben. Läuft Modbus über einen "
+                "Proxy bzw. eine Gateway-Box, deren Adresse und Port eintragen.",
+                foreground="#5b6673",
+                wraplength=560,
+                justify="left",
+            ).pack(anchor="w", pady=(4, 0))
+
+            buttons = ttk.Frame(frame)
+            buttons.pack(fill="x", pady=(14, 0))
+            ttk.Button(buttons, text="Beenden", command=self.destroy).pack(side="right")
+            start = ttk.Button(
+                buttons,
+                text="Aufzeichnung starten",
+                command=lambda: self._start(
+                    host_var.get().strip(),
+                    pin_var.get(),
+                    modbus_var.get(),
+                    modbus_host_var.get().strip(),
+                    modbus_port_var.get().strip(),
+                    modbus_slave_var.get().strip(),
+                ),
+            )
+            start.pack(side="right", padx=(0, 8))
+
+        def _start(
+            self,
+            host: str,
+            pin: str,
+            modbus_enabled: bool,
+            modbus_host: str,
+            modbus_port: str,
+            modbus_slave: str,
+        ) -> None:
+            if not host:
+                self._alert("Bitte die IP-Adresse oder den Hostnamen Ihres Navigators angeben.")
+                return
+            if not pin:
+                self._alert("Bitte Ihre Web-PIN eingeben (die PIN der lokalen Weboberfläche).")
+                return
+            try:
+                modbus_port_value = int(modbus_port) if modbus_port else DEFAULT_MODBUS_PORT
+                modbus_slave_value = int(modbus_slave) if modbus_slave else DEFAULT_MODBUS_SLAVE
+            except ValueError:
+                self._alert("Modbus-Port und Slave-ID müssen Zahlen sein.")
+                return
+            if not 1 <= modbus_port_value <= 65535 or not 1 <= modbus_slave_value <= 255:
+                self._alert("Modbus-Port (1-65535) oder Slave-ID (1-255) ist außerhalb des gültigen Bereichs.")
+                return
+            self._show_progress()
+            threading.Thread(
+                target=self._worker,
+                args=(host, pin, modbus_enabled, modbus_host, modbus_port_value, modbus_slave_value),
+                daemon=True,
+            ).start()
+
+        def _worker(
+            self,
+            host: str,
+            pin: str,
+            modbus_enabled: bool,
+            modbus_host: str,
+            modbus_port: int,
+            modbus_slave: int,
+        ) -> None:
+            try:
+                out_path, ok, warnings = perform_capture(
+                    host=host,
+                    pin=pin,
+                    modbus=modbus_enabled,
+                    modbus_host=modbus_host or None,
+                    modbus_port=modbus_port,
+                    modbus_slave=modbus_slave,
+                    log=self._queue.put,
+                )
+            except Exception as err:  # noqa: BLE001 - the GUI must never die silently
+                self._queue.put(f"Unerwarteter Fehler / unexpected error: {_err_text(err)}")
+                out_path, ok, warnings = None, False, []
+            self.result_zip = out_path
+            self.result_ok = ok
+            for warning in warnings:
+                self._queue.put(warning)
+            self._queue.put(None)  # sentinel: finished
+
+        # --- step 3: progress -------------------------------------------------
+        def _show_progress(self) -> None:
+            self._clear()
+            frame = ttk.Frame(self.container)
+            frame.pack(fill="both", expand=True)
+            ttk.Label(frame, text="Aufzeichnung läuft …", font=("", 13, "bold")).pack(anchor="w", pady=(0, 8))
+            ttk.Label(frame, text="Bitte warten; das dauert typischerweise unter einer Minute.").pack(
+                anchor="w", pady=(0, 8)
+            )
+            self._log = scrolledtext.ScrolledText(frame, wrap="word", height=16)
+            self._log.pack(fill="both", expand=True)
+            self.after(100, self._poll)
+
+        def _poll(self) -> None:
+            finished = False
+            try:
+                while True:
+                    item = self._queue.get_nowait()
+                    if item is None:
+                        finished = True
+                        break
+                    self._log.insert("end", item + "\n")
+                    self._log.see("end")
+            except queue.Empty:
+                pass
+            if finished:
+                self._show_result()
+            else:
+                self.after(100, self._poll)
+
+        # --- step 4: result ---------------------------------------------------
+        def _show_result(self) -> None:
+            self._clear()
+            frame = ttk.Frame(self.container)
+            frame.pack(fill="both", expand=True)
+            if self.result_zip is None:
+                ttk.Label(frame, text="Fehler — keine Datei erstellt", font=("", 13, "bold")).pack(
+                    anchor="w", pady=(0, 6)
+                )
+                ttk.Label(
+                    frame,
+                    text="Bitte die Meldung oben im Verlauf beachten und erneut versuchen.",
+                    wraplength=560,
+                    justify="left",
+                ).pack(anchor="w")
+            elif self.result_ok:
+                ttk.Label(frame, text="✓ Fertig — Datei gespeichert:", font=("", 13, "bold")).pack(
+                    anchor="w", pady=(0, 6)
+                )
+                ttk.Label(frame, text=self.result_zip, wraplength=560, justify="left").pack(anchor="w", pady=(0, 10))
+                ttk.Label(
+                    frame,
+                    text=f"Bitte die komplette ZIP-Datei an {CONTACT_EMAIL} senden "
+                    f"oder als Anhang in Ihren GitHub-Issue anfügen — ein Klick auf "
+                    f"„E-Mail vorbereiten“ bzw. „GitHub-Issue öffnen“ richtet alles ein, "
+                    f"die Datei selbst dann als Anhang hinzufügen.",
+                    wraplength=560,
+                    justify="left",
+                ).pack(anchor="w")
+            else:
+                ttk.Label(frame, text="⚠ Keine Nutzdaten empfangen", font=("", 13, "bold")).pack(
+                    anchor="w", pady=(0, 6)
+                )
+                ttk.Label(
+                    frame,
+                    text=f"Die Diagnose-Datei mit den Fehlerdetails wurde trotzdem "
+                    f"gespeichert:\n{self.result_zip}\n\nAuch sie hilft der "
+                    f"Fehlersuche — bitte ebenfalls an {CONTACT_EMAIL} senden oder "
+                    f"an den GitHub-Issue anhängen.",
+                    wraplength=560,
+                    justify="left",
+                ).pack(anchor="w")
+            buttons = ttk.Frame(frame)
+            buttons.pack(fill="x", pady=(14, 0))
+            if self.result_zip:
+                ttk.Button(buttons, text="Ordner öffnen", command=lambda: self._open_folder()).pack(side="left")
+                ttk.Button(buttons, text="Dateipfad kopieren", command=lambda: self._copy_path()).pack(
+                    side="left", padx=8
+                )
+                ttk.Button(buttons, text="E-Mail vorbereiten", command=lambda: self._prepare_mail()).pack(side="left")
+                ttk.Button(buttons, text="GitHub-Issue öffnen", command=lambda: self._open_issue()).pack(
+                    side="left", padx=8
+                )
+            if not self.result_ok:
+                ttk.Button(buttons, text="Erneut versuchen", command=self._show_input).pack(side="left", padx=8)
+            ttk.Button(buttons, text="Beenden", command=self.destroy).pack(side="right")
+
+        def _open_folder(self) -> None:
+            if self.result_zip and hasattr(os, "startfile"):
+                os.startfile(os.path.dirname(self.result_zip))
+
+        def _copy_path(self) -> None:
+            if not self.result_zip:
+                return
+            self.clipboard_clear()
+            self.clipboard_append(self.result_zip)
+            self.update()  # keep the clipboard after the window closes
+
+        def _prepare_mail(self) -> None:
+            if not self.result_zip:
+                return
+            import webbrowser
+
+            subject = f"IDM Web-Capture {os.path.basename(self.result_zip)}"
+            body = (
+                "Hallo,\n\n"
+                "anbei die Aufzeichnung meiner Navigator-Weboberfläche.\n\n"
+                f"Datei (bitte als Anhang hinzufügen): {self.result_zip}\n\n"
+                "Viele Grüße"
+            )
+            webbrowser.open(
+                f"mailto:{CONTACT_EMAIL}?subject={urllib.parse.quote(subject)}&body={urllib.parse.quote(body)}"
+            )
+
+        def _open_issue(self) -> None:
+            import webbrowser
+
+            webbrowser.open(ISSUE_URL)
+
+        def _alert(self, message: str) -> None:
+            from tkinter import messagebox
+
+            messagebox.showwarning("IDM Web-Capture", message, parent=self)
+
+        def _clear(self) -> None:
+            for child in self.container.winfo_children():
+                child.destroy()
+
+    app = Wizard()
+    app.mainloop()
+    return 0
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    if should_launch_gui(sys.argv) and gui_available():
+        sys.exit(run_gui())
+    sys.exit(main(sys.argv[1:]))

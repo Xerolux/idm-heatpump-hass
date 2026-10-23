@@ -442,3 +442,180 @@ def test_total_failure_still_writes_evidence_zip(tmp_path: Path) -> None:
     with zipfile.ZipFile(zips[0]) as archive:
         manifest = json.loads(archive.read("manifest.json"))
     assert manifest["variants"]["nav20"]["outcome"] == "unavailable"
+
+
+# ---------------------------------------------------------------------------
+# Guided GUI (logic only — no Tk window is ever instantiated here)
+# ---------------------------------------------------------------------------
+
+
+class TestGuiLaunchRules:
+    def test_double_click_on_windows_opens_the_wizard(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(capture.os, "name", "nt")
+        assert capture.should_launch_gui(["idm_web_capture.exe"]) is True
+
+    def test_named_host_stays_command_line(self) -> None:
+        assert capture.should_launch_gui(["prog", "192.0.2.10"]) is False
+
+    def test_cli_flag_forces_command_line_everywhere(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(capture.os, "name", "nt")
+        assert capture.should_launch_gui(["prog", "--cli"]) is False
+
+    def test_gui_flag_forces_the_wizard(self) -> None:
+        assert capture.should_launch_gui(["prog", "--gui"]) is True
+
+    def test_linux_without_arguments_stays_command_line(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(capture.os, "name", "posix")
+        assert capture.should_launch_gui(["prog"]) is False
+
+
+class TestGuiContract:
+    def test_license_text_carries_the_disclaimer_essentials(self) -> None:
+        text = capture.GUI_LICENSE_TEXT
+        for needle in (
+            "Haftungsausschluss",
+            "auf eigene Gefahr",
+            "MIT-Lizenz",
+            "ausschließlich LESEND",
+            "nicht in die erzeugte ZIP-Datei geschrieben",
+            "GitHub-Issues sind öffentlich",
+        ):
+            assert needle in text, needle
+
+    def test_contact_constants(self) -> None:
+        assert capture.CONTACT_EMAIL == "git@xerolux.de"
+        assert capture.ISSUE_URL.startswith("https://github.com/Xerolux/idm-heatpump-hass")
+
+    def test_perform_capture_tuple_contract(self, tmp_path: Path) -> None:
+        lines: list[str] = []
+        zip_path, ok, warnings = capture.perform_capture(
+            host="192.0.2.99",
+            pin="1",
+            only=None,
+            out_dir=str(tmp_path),
+            log=lines.append,
+        )
+        assert zip_path.endswith(".zip")
+        assert ok is False  # nothing listens on 192.0.2.99 — evidence still written
+        assert warnings == []
+        assert any("nav20" in line for line in lines)
+        assert any("nav10" in line for line in lines)
+        assert Path(zip_path).exists()
+
+
+# ---------------------------------------------------------------------------
+# Read-only Modbus sweep
+# ---------------------------------------------------------------------------
+
+
+def _fake_modbus_server(sock_in: socket.socket, refusals: set[tuple[int, int]]) -> None:
+    """Answer FC03/FC04 reads; blocks in ``refusals`` answer illegal address."""
+    while True:
+        try:
+            header = b""
+            while len(header) < 7:
+                chunk = sock_in.recv(7 - len(header))
+                if not chunk:
+                    return
+                header += chunk
+            transaction, _proto, length = struct.unpack(">HHH", header[:6])
+            # length counts the unit id (header[6]) + PDU; read only the PDU.
+            unit = header[6]
+            pdu = b""
+            while len(pdu) < length - 1:
+                chunk = sock_in.recv(length - 1 - len(pdu))
+                if not chunk:
+                    return
+                pdu += chunk
+            function, start, count = struct.unpack(">BHH", pdu)
+            if (function, start) in refusals:
+                body = struct.pack(">BB", function | 0x80, 0x02)
+            elif function in (3, 4):
+                words = [(start * 7 + i) & 0xFFFF for i in range(count)]
+                body = struct.pack(">BB", function, count * 2) + b"".join(struct.pack(">H", w) for w in words)
+            else:
+                body = struct.pack(">BB", function | 0x80, 0x01)
+            response = struct.pack(">HHH", transaction, 0, len(body) + 1) + bytes([unit]) + body
+            sock_in.sendall(response)
+        except OSError:
+            return
+
+
+class TestModbusSweep:
+    def test_reader_round_trip_and_refusals(self) -> None:
+        listener = socket.socket()
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        port = listener.getsockname()[1]
+        done = threading.Event()
+
+        def serve() -> None:
+            sock_in, _ = listener.accept()
+            sock_in.settimeout(5)
+            _fake_modbus_server(sock_in, {(4, 1050)})
+            done.set()
+
+        threading.Thread(target=serve, daemon=True).start()
+        reader = capture.ModbusReader("127.0.0.1", port, 1, timeout=5)
+        reader.connect()
+        try:
+            words = reader.read_words(4, 1000, 50)
+            assert words[0] == (1000 * 7) & 0xFFFF
+            assert len(words) == 50
+            with pytest.raises(capture.ModbusCaptureError, match="illegal_data_address"):
+                reader.read_words(4, 1050, 50)
+            with pytest.raises(ValueError, match="only read functions"):
+                reader.read_words(6, 1000, 10)
+        finally:
+            reader.close()
+            listener.close()
+
+    def test_capture_modbus_writes_blocks_and_refusal_pattern(self, tmp_path: Path) -> None:
+        listener = socket.socket()
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        port = listener.getsockname()[1]
+
+        def serve() -> None:
+            sock_in, _ = listener.accept()
+            sock_in.settimeout(5)
+            _fake_modbus_server(sock_in, {(3, 2100)})
+
+        threading.Thread(target=serve, daemon=True).start()
+        files: dict[str, str] = {}
+        entries: list[dict] = []
+        summary = capture.capture_modbus("127.0.0.1", port, 1, 5, files, entries)
+        listener.close()
+
+        assert summary["outcome"] == "ok"
+        assert summary["blocks_read"] == len(capture.MODBUS_INPUT_BLOCKS) + len(capture.MODBUS_HOLDING_BLOCKS) - 1
+        assert "modbus/input_1000.json" in files
+        record = json.loads(files["modbus/input_1000.json"])
+        assert record["function"] == 4 and record["count"] == 50 and len(record["raw_words"]) == 50
+        refused = [e for e in entries if e.get("status") == "error"]
+        assert len(refused) == 1 and "illegal_data_address" in refused[0]["detail"]
+
+    def test_perform_capture_includes_modbus_by_default(self, tmp_path: Path) -> None:
+        # Nothing listens on 192.0.2.99: the sweep must be recorded as
+        # unavailable, the ZIP still written, ok=False only when all legs fail.
+        zip_path, ok, _warnings = capture.perform_capture(
+            host="192.0.2.99", pin="1", out_dir=str(tmp_path), modbus=True
+        )
+        assert Path(zip_path).exists()
+        assert ok is False
+        with zipfile.ZipFile(zip_path) as archive:
+            manifest = json.loads(archive.read("manifest.json"))
+        assert manifest["variants"]["modbus"]["outcome"] == "unavailable"
+        assert manifest["modbus_port"] == 502
+
+    def test_perform_capture_can_skip_modbus(self, tmp_path: Path) -> None:
+        zip_path, _ok, _warnings = capture.perform_capture(
+            host="192.0.2.99", pin="1", out_dir=str(tmp_path), modbus=False
+        )
+        with zipfile.ZipFile(zip_path) as archive:
+            manifest = json.loads(archive.read("manifest.json"))
+            names = archive.namelist()
+        assert manifest["variants"]["modbus"]["outcome"] == "skipped"
+        assert not any(n.startswith("modbus/") for n in names)

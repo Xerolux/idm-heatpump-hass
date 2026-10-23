@@ -21,7 +21,7 @@ All notable changes to this project will be documented in this file.
 
 ### ✨ New
 
-- **Raw web evidence capture for issue reports** (`scripts/idm_web_capture.py`, plus a Windows executable): logs into the Navigator web interface with the user-level PIN and packs every read-only page and WebSocket frame into a ZIP whose manifest records HTTP status, content type and redirects. The PIN never enters the archive; no write commands exist and the access level stays the PIN's own.
+- **Raw evidence capture for issue reports** (`scripts/idm_web_capture.py`, Windows executable with a guided German wizard): logs into the Navigator web interface with the user-level PIN and packs every read-only page and WebSocket frame plus a read-only Modbus register sweep into a ZIP whose manifest records HTTP status, redirects and per-block refusals. The PIN never enters the archive; no write commands exist.
 
 ## [0.23.1] - 2026-10-22
 
