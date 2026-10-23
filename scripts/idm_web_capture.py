@@ -48,7 +48,7 @@ from html import unescape
 from html.parser import HTMLParser
 from http import cookiejar
 
-SCRIPT_VERSION = "1.2.1"
+SCRIPT_VERSION = "1.3.0"
 
 DEFAULT_WEB_PORT = 80
 DEFAULT_WS_PORT = 61220
@@ -1123,6 +1123,18 @@ def main(argv: list[str] | None = None) -> int:
 
 CONTACT_EMAIL = "git@xerolux.de"
 ISSUE_URL = "https://github.com/Xerolux/idm-heatpump-hass/issues/new"
+UPDATE_URL = "https://idmtools.xerolux.de/version.txt"
+
+
+def is_newer_version(current: str, available: str) -> bool:
+    """Return whether ``available`` is a newer dotted version than ``current``."""
+    try:
+        current_parts = tuple(int(part) for part in current.strip().split("."))
+        available_parts = tuple(int(part) for part in available.strip().split("."))
+    except ValueError:
+        return False
+    return available_parts > current_parts
+
 
 GUI_LICENSE_TEXT = """IDM Web-Capture — Haftungsausschluss & Nutzungsbedingungen
 
@@ -1197,7 +1209,7 @@ def run_gui() -> int:
     class Wizard(tk.Tk):
         def __init__(self) -> None:
             super().__init__()
-            self.title("IDM Web-Capture — Nur-Lese-Diagnose")
+            self.title(f"IDM Web-Capture {SCRIPT_VERSION} — Nur-Lese-Diagnose")
             self.minsize(620, 480)
             self.result_zip: str | None = None
             self.result_ok = False
@@ -1211,10 +1223,14 @@ def run_gui() -> int:
             self._clear()
             frame = ttk.Frame(self.container)
             frame.pack(fill="both", expand=True)
-            ttk.Label(frame, text="Haftungsausschluss & Nutzungsbedingungen", font=("", 13, "bold")).pack(
-                anchor="w", pady=(0, 8)
-            )
-            text = scrolledtext.ScrolledText(frame, wrap="word", height=18)
+            ttk.Label(
+                frame,
+                text=f"Haftungsausschluss & Nutzungsbedingungen — Tool-Version {SCRIPT_VERSION}",
+                font=("", 13, "bold"),
+            ).pack(anchor="w", pady=(0, 8))
+            # An explicit crisp font: the Tk default bitmap font renders
+            # blurry on Windows high-DPI displays even with DPI awareness on.
+            text = scrolledtext.ScrolledText(frame, wrap="word", height=18, font=("Segoe UI", 10))
             text.insert("1.0", GUI_LICENSE_TEXT)
             text.configure(state="disabled")
             text.pack(fill="both", expand=True)
@@ -1244,8 +1260,31 @@ def run_gui() -> int:
                 row2,
                 text="(Eingabe bleibt verborgen; ohne PIN läuft nur Modbus)",
             ).pack(side="left")
-            info = tk.Label(frame, text=GUI_INFO_TEXT, justify="left", wraplength=560, relief="groove", padding=10)
-            info.pack(fill="x", pady=14)
+            # tk.Label has no padding option (that broke the whole frame
+            # silently in earlier builds) — the padding lives in pack().
+            info = tk.Label(frame, text=GUI_INFO_TEXT, justify="left", wraplength=560, relief="groove")
+            info.pack(fill="x", pady=14, ipadx=10, ipady=10)
+
+            update_var = tk.BooleanVar(value=True)
+            self._update_check_running = False
+            ttk.Checkbutton(
+                frame,
+                variable=update_var,
+                text="Beim Start auf Updates prüfen (einzige optionale Verbindung zu "
+                "idmtools.xerolux.de; es werden keine Anlagendaten übertragen)",
+            ).pack(anchor="w", pady=(10, 0))
+            self._update_label = ttk.Label(frame, text="", foreground="#5b6673", wraplength=560, justify="left")
+            self._update_label.pack(anchor="w")
+
+            def on_update_toggle(*_args: object) -> None:
+                if update_var.get():
+                    self._start_update_check()
+                else:
+                    self._update_label.configure(text="")
+
+            update_var.trace_add("write", on_update_toggle)
+            if update_var.get():
+                self._start_update_check()
 
             ttk.Label(frame, text="Modbus (optional, nur lesend)", font=("", 11, "bold")).pack(anchor="w", pady=(2, 4))
             modbus_var = tk.BooleanVar(value=True)
@@ -1480,6 +1519,43 @@ def run_gui() -> int:
 
             webbrowser.open(ISSUE_URL)
 
+        def _start_update_check(self) -> None:
+            """Fetch the published version number in the background.
+
+            The only outbound connection the tool can make, only with the
+            checkbox enabled: one HTTPS GET of a plain-text version file.
+            Nothing about the plant is transmitted; failures stay silent.
+            """
+            if getattr(self, "_update_check_running", False):
+                return
+            self._update_check_running = True
+
+            def worker() -> None:
+                available = None
+                try:
+                    with urllib.request.urlopen(UPDATE_URL, timeout=5) as response:
+                        available = response.read(64).decode("ascii", errors="replace").strip()
+                except Exception:  # noqa: BLE001 - an update check must never disturb the tool
+                    available = None
+
+                def apply_result() -> None:
+                    self._update_check_running = False
+                    if available and is_newer_version(SCRIPT_VERSION, available):
+                        self._update_label.configure(
+                            foreground="#9a6700",
+                            text=f"⚠ Version {available} verfügbar — bitte die aktuelle Version von "
+                            f"https://idmtools.xerolux.de laden (diese Version: {SCRIPT_VERSION}).",
+                        )
+                    elif available:
+                        self._update_label.configure(text=f"✓ Aktuelle Version ({SCRIPT_VERSION}).")
+
+                try:
+                    self.after(0, apply_result)
+                except tk.TclError:
+                    pass  # window already closed
+
+            threading.Thread(target=worker, daemon=True).start()
+
         def _alert(self, message: str) -> None:
             from tkinter import messagebox
 
@@ -1488,6 +1564,19 @@ def run_gui() -> int:
         def _clear(self) -> None:
             for child in self.container.winfo_children():
                 child.destroy()
+
+    # Crisp rendering on high-DPI Windows: without process DPI awareness the
+    # window bitmap is stretched by the system and every glyph looks blurry.
+    if os.name == "nt":
+        try:
+            import ctypes
+
+            try:
+                ctypes.windll.shcore.SetProcessDpiAwareness(2)  # per-monitor v2
+            except Exception:  # noqa: BLE001 - older Windows
+                ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:  # noqa: BLE001 - never block the GUI for DPI setup
+            _silent_log("could not set process DPI awareness")
 
     app = Wizard()
     app.mainloop()

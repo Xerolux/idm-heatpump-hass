@@ -692,3 +692,22 @@ class TestEmptyPinContinues:
         assert code == 2  # total failure on the dead host, but no PIN abort
         zips = list(tmp_path.glob("idm_web_capture_*.zip"))
         assert len(zips) == 1
+
+
+class TestVersionLogic:
+    def test_newer_version_detection(self) -> None:
+        assert capture.is_newer_version("1.2.1", "1.3.0") is True
+        assert capture.is_newer_version("1.3.0", "1.3.1") is True
+        assert capture.is_newer_version("1.3.0", "2.0.0") is True
+        assert capture.is_newer_version("1.3.0", "1.3.0") is False
+        assert capture.is_newer_version("1.3.0", "1.2.9") is False
+
+    def test_version_comparison_tolerates_garbage(self) -> None:
+        assert capture.is_newer_version("1.3.0", "") is False
+        assert capture.is_newer_version("1.3.0", "not-a-version") is False
+        # "1.3" is a PREFIX of "1.3.0" and therefore not newer (tuple compare).
+        assert capture.is_newer_version("1.3.0", "1.3") is False
+        assert capture.is_newer_version("1.3", "1.3.0") is True
+
+    def test_update_url_is_the_tool_site(self) -> None:
+        assert capture.UPDATE_URL == "https://idmtools.xerolux.de/version.txt"
