@@ -741,7 +741,7 @@ def main(argv: list[str] | None = None) -> int:
         try:
             pin = getpass.getpass("Web-PIN des Navigators / Navigator web PIN: ")
         except (EOFError, OSError):
-            print("No PIN entered — aborting.", file=sys.stderr)
+            print("No PIN entered - aborting.", file=sys.stderr)
             return 2
     if not pin:
         print("An empty PIN cannot log in — aborting.", file=sys.stderr)
@@ -773,8 +773,9 @@ def main(argv: list[str] | None = None) -> int:
 
     ok = nav20.get("outcome") == "ok" or nav10.get("outcome") == "ok"
     print()
+    # Console output stays ASCII: Windows cmd.exe code pages mangle umlauts.
     print(f"ZIP erstellt / ZIP created: {out_path}")
-    print("Bitte die komplette Datei anhängen / please attach the whole file.")
+    print("Bitte die komplette Datei senden / please send the whole file.")
     return 0 if ok else 2
 
 
