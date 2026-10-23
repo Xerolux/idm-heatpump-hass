@@ -337,6 +337,10 @@ class WebSocketClient:
         self._port = port
         self._timeout = timeout
         self._sock: socket.socket | None = None
+        # Bytes read past the HTTP handshake header: controllers routinely
+        # send the 101 response and the first frame in one TCP segment, and
+        # discarding them would lose the authorization frame.
+        self._buffer = b""
 
     def connect(self, path: str) -> None:
         host_part = f"[{self._host}]" if ":" in self._host else self._host
@@ -363,6 +367,7 @@ class WebSocketClient:
         status_line = response.split(b"\r\n", 1)[0].decode("ascii", errors="replace")
         if " 101 " not in f"{status_line} ":
             raise CaptureError(f"websocket handshake refused: {status_line.strip()}")
+        self._buffer = response.split(b"\r\n\r\n", 1)[1]
 
     def send_text(self, text: str) -> None:
         if self._sock is None:
@@ -436,12 +441,12 @@ class WebSocketClient:
 
     def _read_exact(self, count: int) -> bytes:
         assert self._sock is not None
-        data = b""
-        while len(data) < count:
-            chunk = self._sock.recv(count - len(data))
+        while len(self._buffer) < count:
+            chunk = self._sock.recv(count - len(self._buffer))
             if not chunk:
                 raise CaptureError("websocket connection ended mid-frame")
-            data += chunk
+            self._buffer += chunk
+        data, self._buffer = self._buffer[:count], self._buffer[count:]
         return data
 
     def _send_frame(self, opcode: int, payload: bytes) -> None:

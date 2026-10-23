@@ -335,12 +335,15 @@ def _fake_nav10_server(sock_in: socket.socket) -> None:
         assert chunk
         request += chunk
     assert b"auth_code=9999" in request
+    # Headers and the auth frame deliberately travel in ONE send: controllers
+    # coalesce them into a single TCP segment, and a client that discards the
+    # bytes after the handshake terminator loses the auth frame (found as a
+    # flake here, but it would fail against every real device).
     sock_in.sendall(
         b"HTTP/1.1 101 Switching Protocols\r\n"
         b"Upgrade: websocket\r\nConnection: Upgrade\r\n"
-        b"Sec-WebSocket-Accept: fixed\r\n\r\n"
+        b"Sec-WebSocket-Accept: fixed\r\n\r\n" + _server_frame(b'{"authorized": true, "userlevel": 0}')
     )
-    sock_in.sendall(_server_frame(b'{"authorized": true, "userlevel": 0}'))
     for _ in range(40):
         try:
             opcode, payload = _read_client_frame(sock_in)
