@@ -68,8 +68,10 @@ class TestApiParity:
 
     def test_csrf_extraction_matches_the_api(self) -> None:
         samples = (
-            ('<html><form><input type="hidden" name="csrf_token" value="abc123">'
-            '<input type="password" name="pin"></form></html>'),
+            (
+                '<html><form><input type="hidden" name="csrf_token" value="abc123">'
+                '<input type="password" name="pin"></form></html>'
+            ),
             '<html><head><meta name="csrf-token" content="tok-2"></head></html>',
             "<script>var csrfToken = 'js-token';</script>",
             "<html>no token anywhere</html>",
@@ -87,10 +89,7 @@ class TestApiParity:
         )
         for page in pages:
             assert capture.looks_like_login_page(page) == api_web._looks_like_login_page(page)
-            assert (
-                capture.looks_like_auth_failure(page)
-                == api_web._looks_like_auth_failure(page)
-            )
+            assert capture.looks_like_auth_failure(page) == api_web._looks_like_auth_failure(page)
 
 
 class TestReadOnlyContract:
@@ -230,10 +229,15 @@ class TestPinSafety:
         assert files["nav10/x.json"] == '{"v": 1}'
 
     def test_manifest_states_safety_and_takes_no_pin(self) -> None:
-        text = capture.build_manifest("192.0.2.10", 80, 61220,
-                                      {"variant": "nav20", "outcome": "ok"},
-                                      {"variant": "nav10", "outcome": "skipped"},
-                                      [], [])
+        text = capture.build_manifest(
+            "192.0.2.10",
+            80,
+            61220,
+            {"variant": "nav20", "outcome": "ok"},
+            {"variant": "nav10", "outcome": "skipped"},
+            [],
+            [],
+        )
         manifest = json.loads(text)
         assert manifest["safety"]["pin_included"] is False
         assert manifest["safety"]["write_commands_sent"] is False
@@ -268,8 +272,7 @@ class _FakeNav20Handler(BaseHTTPRequestHandler):
             self._serve(200, body)
             return
         if self.path.startswith("/data/"):
-            self._serve(200, "<html><table><tr><td>Au&szlig;entemperatur</td>"
-                             "<td>17.5 &deg;C</td></tr></table></html>")
+            self._serve(200, "<html><table><tr><td>Au&szlig;entemperatur</td><td>17.5 &deg;C</td></tr></table></html>")
             return
         self._serve(404, "not found")
 
@@ -277,8 +280,7 @@ class _FakeNav20Handler(BaseHTTPRequestHandler):
         length = int(self.headers.get("Content-Length", "0"))
         form = self.rfile.read(length).decode()
         if f"pin={_FakeNav20Handler.pin}" in form:
-            self._serve(200, '<html><body>main page<meta name="csrf-token" '
-                             'content="tok-session"></body></html>')
+            self._serve(200, '<html><body>main page<meta name="csrf-token" content="tok-session"></body></html>')
         else:
             self._serve(200, '<html><form><input type="password" name="pin"></form></html>')
 
@@ -296,13 +298,19 @@ def test_end_to_end_nav20(tmp_path: Path) -> None:
     thread = threading.Thread(target=server.serve_forever, daemon=True)
     thread.start()
     try:
-        code = capture.main([
-            "127.0.0.1",
-            "--web-port", str(server.server_address[1]),
-            "--only", "nav20",
-            "--pin", _FakeNav20Handler.pin,
-            "--out", str(tmp_path),
-        ])
+        code = capture.main(
+            [
+                "127.0.0.1",
+                "--web-port",
+                str(server.server_address[1]),
+                "--only",
+                "nav20",
+                "--pin",
+                _FakeNav20Handler.pin,
+                "--out",
+                str(tmp_path),
+            ]
+        )
     finally:
         server.shutdown()
 
@@ -363,13 +371,19 @@ def test_end_to_end_nav10(tmp_path: Path) -> None:
     thread = threading.Thread(target=serve, daemon=True)
     thread.start()
     try:
-        code = capture.main([
-            "127.0.0.1",
-            "--ws-port", str(port),
-            "--only", "nav10",
-            "--pin", "9999",
-            "--out", str(tmp_path),
-        ])
+        code = capture.main(
+            [
+                "127.0.0.1",
+                "--ws-port",
+                str(port),
+                "--only",
+                "nav10",
+                "--pin",
+                "9999",
+                "--out",
+                str(tmp_path),
+            ]
+        )
     finally:
         listener.close()
 
@@ -387,14 +401,22 @@ def test_end_to_end_nav10(tmp_path: Path) -> None:
 
 def test_total_failure_still_writes_evidence_zip(tmp_path: Path) -> None:
     with pytest.MonkeyPatch.context() as patch:
-        patch.setattr(capture, "capture_nav20", lambda *a, **k: (
-            a[5].append({"variant": "nav20", "step": "connect", "status": "error"}),
-            {"variant": "nav20", "outcome": "unavailable"},
-        )[1])
-        patch.setattr(capture, "capture_nav10", lambda *a, **k: (
-            a[5].append({"variant": "nav10", "step": "connect", "status": "error"}),
-            {"variant": "nav10", "outcome": "unavailable"},
-        )[1])
+        patch.setattr(
+            capture,
+            "capture_nav20",
+            lambda *a, **k: (
+                a[5].append({"variant": "nav20", "step": "connect", "status": "error"}),
+                {"variant": "nav20", "outcome": "unavailable"},
+            )[1],
+        )
+        patch.setattr(
+            capture,
+            "capture_nav10",
+            lambda *a, **k: (
+                a[5].append({"variant": "nav10", "step": "connect", "status": "error"}),
+                {"variant": "nav10", "outcome": "unavailable"},
+            )[1],
+        )
         code = capture.main(["127.0.0.1", "--pin", "1", "--out", str(tmp_path)])
     assert code == 2
     zips = list(tmp_path.glob("idm_web_capture_*.zip"))

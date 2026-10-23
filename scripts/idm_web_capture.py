@@ -90,6 +90,7 @@ class CaptureError(Exception):
 # CSRF / page classification helpers (ported from idm-heatpump-api web.py)
 # ----------------------------------------------------------------------------
 
+
 class _CsrfTokenParser(HTMLParser):
     def __init__(self) -> None:
         super().__init__(convert_charrefs=True)
@@ -174,15 +175,14 @@ def looks_like_auth_failure(text: str) -> bool:
 # HTTP session for the Navigator 2.0 interface (stdlib urllib + cookies)
 # ----------------------------------------------------------------------------
 
+
 class HttpSession:
     """Cookie-keeping HTTP client returning (status, text) even on HTTP errors."""
 
     def __init__(self, timeout: float) -> None:
         self._timeout = timeout
         self._jar = cookiejar.CookieJar()
-        self._opener = urllib.request.build_opener(
-            urllib.request.HTTPCookieProcessor(self._jar)
-        )
+        self._opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(self._jar))
 
     def request(
         self,
@@ -239,14 +239,20 @@ def capture_nav20(
     try:
         status, text = session.request("GET", base + "/")
     except (urllib.error.URLError, OSError, CaptureError) as err:
-        entries.append({"variant": "nav20", "step": "initial_get", "status": "error",
-                        "detail": _err_text(err)})
+        entries.append({"variant": "nav20", "step": "initial_get", "status": "error", "detail": _err_text(err)})
         return summary
     files["nav20/initial_page.html"] = text
     csrf_token = extract_csrf_token(text)
-    entries.append({"variant": "nav20", "step": "initial_get", "status": "ok",
-                    "http_status": status, "file": "nav20/initial_page.html",
-                    "looks_like_login_page": looks_like_login_page(text)})
+    entries.append(
+        {
+            "variant": "nav20",
+            "step": "initial_get",
+            "status": "ok",
+            "http_status": status,
+            "file": "nav20/initial_page.html",
+            "looks_like_login_page": looks_like_login_page(text),
+        }
+    )
 
     # Login handshake: try each form field name the firmwares use. Request
     # bodies are deliberately never captured — one of them contains the PIN.
@@ -280,8 +286,9 @@ def capture_nav20(
     if summary["login"] is None:
         summary["outcome"] = "login_failed"
         summary["login_error"] = login_error or "no login variant was accepted"
-        entries.append({"variant": "nav20", "step": "login", "status": "login_failed",
-                        "detail": summary["login_error"]})
+        entries.append(
+            {"variant": "nav20", "step": "login", "status": "login_failed", "detail": summary["login_error"]}
+        )
         return summary
 
     headers = {"X-Requested-With": "XMLHttpRequest"}
@@ -297,11 +304,9 @@ def capture_nav20(
         try:
             status, text = session.request("GET", base + path, headers=headers)
         except (urllib.error.URLError, OSError, CaptureError) as err:
-            entries.append({"variant": "nav20", "step": path, "status": "error",
-                            "detail": _err_text(err)})
+            entries.append({"variant": "nav20", "step": path, "status": "error", "detail": _err_text(err)})
             continue
-        entry: dict = {"variant": "nav20", "step": path, "status": "ok",
-                       "http_status": status}
+        entry: dict = {"variant": "nav20", "step": path, "status": "ok", "http_status": status}
         lowered = text.lower()
         if "invalid csrf token" in lowered:
             entry["status"] = "csrf_rejected"
@@ -322,6 +327,7 @@ def capture_nav20(
 # ----------------------------------------------------------------------------
 # Minimal RFC 6455 WebSocket client (stdlib sockets, client side only)
 # ----------------------------------------------------------------------------
+
 
 class WebSocketClient:
     """Text-frame WebSocket client: enough for the Navigator 10 protocol."""
@@ -463,49 +469,54 @@ def build_nav10_frames() -> list[tuple[str, str, dict]]:
     repository enforces that no write command ever enters this list.
     """
     frames: list[tuple[str, str, dict]] = [
-        ("status_overview", "status/overview",
-         {"controller": "status", "command": "overview"}),
-        ("home_detail", "home/detail",
-         {"controller": "home", "command": "detail"}),
-        ("home_overview", "home/overview",
-         {"controller": "home", "command": "overview"}),
-        ("notifications_overview", "notification/overview",
-         {"controller": "notification", "command": "overview"}),
-        ("system_overview", "system/overview",
-         {"controller": "system", "command": "overview"}),
-        ("freshwater_overview", "system.freshwater/overview",
-         {"controller": "system.freshwater", "command": "overview"}),
-        ("performance_detail", "system.heatpump.performance/detail",
-         {"controller": "system.heatpump.performance", "command": "detail"}),
-        ("weather_detail", "weather/detail",
-         {"controller": "weather", "command": "detail"}),
-        ("ion_overview", "ion/overview",
-         {"controller": "ion", "command": "overview"}),
-        ("energyflow_overview", "energyflow/overview",
-         {"controller": "energyflow", "command": "overview"}),
+        ("status_overview", "status/overview", {"controller": "status", "command": "overview"}),
+        ("home_detail", "home/detail", {"controller": "home", "command": "detail"}),
+        ("home_overview", "home/overview", {"controller": "home", "command": "overview"}),
+        ("notifications_overview", "notification/overview", {"controller": "notification", "command": "overview"}),
+        ("system_overview", "system/overview", {"controller": "system", "command": "overview"}),
+        (
+            "freshwater_overview",
+            "system.freshwater/overview",
+            {"controller": "system.freshwater", "command": "overview"},
+        ),
+        (
+            "performance_detail",
+            "system.heatpump.performance/detail",
+            {"controller": "system.heatpump.performance", "command": "detail"},
+        ),
+        ("weather_detail", "weather/detail", {"controller": "weather", "command": "detail"}),
+        ("ion_overview", "ion/overview", {"controller": "ion", "command": "overview"}),
+        ("energyflow_overview", "energyflow/overview", {"controller": "energyflow", "command": "overview"}),
     ]
     for setting_id in NAV10_SETTING_IDS:
-        frames.append((
-            f"setting_{setting_id}",
-            f"setting/detail {setting_id}",
-            {"controller": "setting", "command": "detail", "data": {"settingId": setting_id}},
-        ))
+        frames.append(
+            (
+                f"setting_{setting_id}",
+                f"setting/detail {setting_id}",
+                {"controller": "setting", "command": "detail", "data": {"settingId": setting_id}},
+            )
+        )
     for circuit in NAV10_HEATING_CIRCUITS:
-        frames.append((
-            f"heatingcircuit_{circuit}",
-            f"system.heatingcircuit/detail {circuit}",
-            {"controller": "system.heatingcircuit", "command": "detail",
-             "data": {"hcId": circuit}},
-        ))
+        frames.append(
+            (
+                f"heatingcircuit_{circuit}",
+                f"system.heatingcircuit/detail {circuit}",
+                {"controller": "system.heatingcircuit", "command": "detail", "data": {"hcId": circuit}},
+            )
+        )
     for stat_type in NAV10_STATISTIC_TYPES:
         for period in NAV10_STATISTIC_PERIODS:
-            frames.append((
-                f"statistic_t{stat_type}_p{period}",
-                f"statistic/detail type={stat_type} period={period}",
-                {"controller": "statistic", "command": "detail",
-                 "data": {"statisticType": stat_type, "periodType": period,
-                          "statisticSubType": None}},
-            ))
+            frames.append(
+                (
+                    f"statistic_t{stat_type}_p{period}",
+                    f"statistic/detail type={stat_type} period={period}",
+                    {
+                        "controller": "statistic",
+                        "command": "detail",
+                        "data": {"statisticType": stat_type, "periodType": period, "statisticSubType": None},
+                    },
+                )
+            )
     return frames
 
 
@@ -525,8 +536,7 @@ def capture_nav10(
         client.connect("/?auth_code=" + urllib.parse.quote(pin, safe=""))
         auth_raw = client.recv_text()
     except (OSError, CaptureError) as err:
-        entries.append({"variant": "nav10", "step": "connect", "status": "unavailable",
-                        "detail": _err_text(err)})
+        entries.append({"variant": "nav10", "step": "connect", "status": "unavailable", "detail": _err_text(err)})
         client.close()
         return summary
 
@@ -539,8 +549,15 @@ def capture_nav10(
         except json.JSONDecodeError:
             pass
         files["nav10/auth_response.json"] = auth_raw
-        entries.append({"variant": "nav10", "step": "auth", "status": "ok",
-                        "authorized": authorized, "file": "nav10/auth_response.json"})
+        entries.append(
+            {
+                "variant": "nav10",
+                "step": "auth",
+                "status": "ok",
+                "authorized": authorized,
+                "file": "nav10/auth_response.json",
+            }
+        )
         if authorized is not True:
             summary["outcome"] = "pin_rejected"
             return summary
@@ -551,12 +568,10 @@ def capture_nav10(
                 client.send_text(json.dumps(request))
                 response = client.recv_text()
             except (OSError, CaptureError) as err:
-                entries.append({"variant": "nav10", "step": label, "status": "error",
-                                "detail": _err_text(err)})
+                entries.append({"variant": "nav10", "step": label, "status": "error", "detail": _err_text(err)})
                 continue
             files[f"nav10/{filename}.json"] = response
-            entries.append({"variant": "nav10", "step": label, "status": "ok",
-                            "file": f"nav10/{filename}.json"})
+            entries.append({"variant": "nav10", "step": label, "status": "ok", "file": f"nav10/{filename}.json"})
             captured += 1
             time.sleep(REQUEST_DELAY)
         summary["outcome"] = "ok" if captured else "no_frames"
@@ -693,17 +708,27 @@ def main(argv: list[str] | None = None) -> int:
         description="Capture read-only evidence from an IDM Navigator local web interface."
     )
     parser.add_argument("host", help="IP address or host name of the Navigator")
-    parser.add_argument("--pin", help="web PIN (default: hidden prompt; "
-                                      "or set the IDM_WEB_PIN environment variable)")
-    parser.add_argument("--web-port", type=int, default=DEFAULT_WEB_PORT,
-                        help=f"HTTP port of the web interface (default {DEFAULT_WEB_PORT})")
-    parser.add_argument("--ws-port", type=int, default=DEFAULT_WS_PORT,
-                        help=f"WebSocket port, Navigator 10/Pro (default {DEFAULT_WS_PORT})")
-    parser.add_argument("--timeout", type=float, default=DEFAULT_TIMEOUT,
-                        help=f"per-request timeout in seconds (default {DEFAULT_TIMEOUT})")
+    parser.add_argument("--pin", help="web PIN (default: hidden prompt; or set the IDM_WEB_PIN environment variable)")
+    parser.add_argument(
+        "--web-port",
+        type=int,
+        default=DEFAULT_WEB_PORT,
+        help=f"HTTP port of the web interface (default {DEFAULT_WEB_PORT})",
+    )
+    parser.add_argument(
+        "--ws-port",
+        type=int,
+        default=DEFAULT_WS_PORT,
+        help=f"WebSocket port, Navigator 10/Pro (default {DEFAULT_WS_PORT})",
+    )
+    parser.add_argument(
+        "--timeout",
+        type=float,
+        default=DEFAULT_TIMEOUT,
+        help=f"per-request timeout in seconds (default {DEFAULT_TIMEOUT})",
+    )
     parser.add_argument("--out", default=".", help="output directory for the ZIP file")
-    parser.add_argument("--only", choices=("nav20", "nav10"),
-                        help="capture only one interface variant (default: both)")
+    parser.add_argument("--only", choices=("nav20", "nav10"), help="capture only one interface variant (default: both)")
     args = parser.parse_args(argv)
 
     pin = args.pin or os.environ.get("IDM_WEB_PIN") or ""
@@ -733,10 +758,8 @@ def main(argv: list[str] | None = None) -> int:
 
     redacted = redact_pin(files, pin)
     if redacted:
-        print(f"Warning: PIN redacted inside {len(redacted)} captured file(s): "
-              f"{', '.join(redacted)}", file=sys.stderr)
-    manifest_text = build_manifest(args.host, args.web_port, args.ws_port,
-                                   nav20, nav10, entries, redacted)
+        print(f"Warning: PIN redacted inside {len(redacted)} captured file(s): {', '.join(redacted)}", file=sys.stderr)
+    manifest_text = build_manifest(args.host, args.web_port, args.ws_port, nav20, nav10, entries, redacted)
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
     out_dir = os.path.abspath(args.out)
     os.makedirs(out_dir, exist_ok=True)
