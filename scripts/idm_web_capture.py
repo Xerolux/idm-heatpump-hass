@@ -48,7 +48,7 @@ from html import unescape
 from html.parser import HTMLParser
 from http import cookiejar
 
-SCRIPT_VERSION = "1.2.0"
+SCRIPT_VERSION = "1.2.1"
 
 DEFAULT_WEB_PORT = 80
 DEFAULT_WS_PORT = 61220
@@ -913,8 +913,10 @@ login request bodies were not captured, no setting was changed, and nothing
 beyond the access level your PIN grants was opened. The file manifest.json
 records these guarantees.
 
-Please send the whole ZIP file as it is (GitHub issue: drag & drop; e-mail:
-attachment). It helps fix parsing problems like unreadable web values.
+Please send the whole ZIP file as it is BY E-MAIL to the maintainer
+(git@xerolux.de). Do NOT attach it to a public GitHub issue: the archive can
+contain device identifiers such as your myIDM id. It helps fix parsing
+problems like unreadable web values.
 
 DE — Was dieses Archiv enthaelt
 -------------------------------
@@ -929,9 +931,11 @@ die Login-Anfragen selbst wurden nicht mitgeschnitten, es wurde keine
 Einstellung geaendert und nichts ueber die Ebene hinaus geoeffnet, die Ihre
 PIN freigibt. Diese Zusicherungen stehen auch in der manifest.json.
 
-Bitte senden Sie die komplette ZIP-Datei unveraendert (GitHub-Issue: per
-Drag & Drop anhängen; E-Mail: als Anhang). Sie hilft bei der Fehlersuche,
-zum Beispiel bei nicht lesbaren Web-Werten.
+Bitte senden Sie die komplette ZIP-Datei unveraendert PER E-MAIL an den
+Betreuer (git@xerolux.de) und haengen Sie sie NICHT oeffentlich in einen
+GitHub-Issue: das Archiv kann Geraete-Kennungen wie Ihre myIDM-Kennung
+enthalten. Es hilft bei der Fehlersuche, zum Beispiel bei nicht lesbaren
+Web-Werten.
 """
 
 
@@ -1407,10 +1411,10 @@ def run_gui() -> int:
                 ttk.Label(frame, text=self.result_zip, wraplength=560, justify="left").pack(anchor="w", pady=(0, 10))
                 ttk.Label(
                     frame,
-                    text=f"Bitte die komplette ZIP-Datei an {CONTACT_EMAIL} senden "
-                    f"oder als Anhang in Ihren GitHub-Issue anfügen — ein Klick auf "
-                    f"„E-Mail vorbereiten“ bzw. „GitHub-Issue öffnen“ richtet alles ein, "
-                    f"die Datei selbst dann als Anhang hinzufügen.",
+                    text=f"Wichtig: Die Datei kann Geräte-Kennungen (z. B. myIDM) enthalten — "
+                    f"bitte NICHT öffentlich im GitHub-Issue anhängen, sondern per E-Mail an "
+                    f"{CONTACT_EMAIL} senden. „E-Mail vorbereiten“ richtet alles ein; die Datei "
+                    f"dann als Anhang hinzufügen.",
                     wraplength=560,
                     justify="left",
                 ).pack(anchor="w")
@@ -1422,8 +1426,8 @@ def run_gui() -> int:
                     frame,
                     text=f"Die Diagnose-Datei mit den Fehlerdetails wurde trotzdem "
                     f"gespeichert:\n{self.result_zip}\n\nAuch sie hilft der "
-                    f"Fehlersuche — bitte ebenfalls an {CONTACT_EMAIL} senden oder "
-                    f"an den GitHub-Issue anhängen.",
+                    f"Fehlersuche — bitte ebenfalls per E-Mail an {CONTACT_EMAIL} senden "
+                    f"(nicht öffentlich anhängen).",
                     wraplength=560,
                     justify="left",
                 ).pack(anchor="w")
@@ -1435,9 +1439,11 @@ def run_gui() -> int:
                     side="left", padx=8
                 )
                 ttk.Button(buttons, text="E-Mail vorbereiten", command=lambda: self._prepare_mail()).pack(side="left")
-                ttk.Button(buttons, text="GitHub-Issue öffnen", command=lambda: self._open_issue()).pack(
-                    side="left", padx=8
-                )
+                ttk.Button(
+                    buttons,
+                    text="GitHub-Issue (nur Problem schildern, ohne Datei)",
+                    command=lambda: self._open_issue(),
+                ).pack(side="left", padx=8)
             if not self.result_ok:
                 ttk.Button(buttons, text="Erneut versuchen", command=self._show_input).pack(side="left", padx=8)
             ttk.Button(buttons, text="Beenden", command=self.destroy).pack(side="right")
