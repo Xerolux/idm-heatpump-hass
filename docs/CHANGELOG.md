@@ -23,6 +23,10 @@ All notable changes to this project will be documented in this file.
 
 - **Raw evidence capture for issue reports** (`scripts/idm_web_capture.py`, Windows executable with a guided German wizard): logs into the Navigator web interface with the user-level PIN and packs every read-only page and WebSocket frame plus a hole-bisected Modbus raw-word sweep into a ZIP recording HTTP status and redirects. The PIN never enters the archive; no write commands exist.
 
+### 💼 Maintenance
+
+- **The capture executable now carries a version resource and an icon** (`scripts/idm_web_capture_version.txt`, `scripts/idm_web_capture.ico`): the PyInstaller build embeds product metadata and trims unused standard-library modules, which lowers machine-learning false positives on the unsigned binary. The Python script itself is unchanged and byte-identical.
+
 ## [0.23.1] - 2026-10-22
 
 ### ⚠️ Upgrade notes

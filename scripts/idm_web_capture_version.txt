@@ -1,0 +1,34 @@
+# UTF-8
+#
+# Version resource for the idm_web_capture Windows EXE (PyInstaller --version-file).
+# Keep in sync with SCRIPT_VERSION in scripts/idm_web_capture.py.
+VSVersionInfo(
+  ffi = FixedFileInfo(
+    filevers = (1, 4, 0, 0),
+    prodvers = (1, 4, 0, 0),
+    mask = 0x3f,
+    flags = 0x0,
+    OS = 0x40004,
+    fileType = 0x1,
+    subtype = 0x0,
+    date = (0, 0)
+  ),
+  kids = [
+    StringFileInfo(
+      [
+        StringTable(
+          '040904B0',
+          [
+            StringStruct('CompanyName', 'Xerolux (open-source project)'),
+            StringStruct('FileDescription', 'IDM Web Capture - read-only heat pump diagnostics'),
+            StringStruct('FileVersion', '1.4.0'),
+            StringStruct('InternalName', 'idm_web_capture'),
+            StringStruct('LegalCopyright', 'MIT License - github.com/Xerolux/idm-heatpump-hass'),
+            StringStruct('OriginalFilename', 'idm_web_capture.exe'),
+            StringStruct('ProductName', 'IDM Web Capture'),
+            StringStruct('ProductVersion', '1.4.0')
+          ])
+      ]),
+    VarFileInfo([VarStruct('Translation', [1033, 1200])])
+  ]
+)
