@@ -508,8 +508,13 @@ class TestGuiContract:
 # ---------------------------------------------------------------------------
 
 
-def _fake_modbus_server(sock_in: socket.socket, refusals: set[tuple[int, int]]) -> None:
-    """Answer FC03/FC04 reads; blocks in ``refusals`` answer illegal address."""
+def _fake_modbus_server(sock_in: socket.socket, holes: set[int]) -> None:
+    """Answer FC03/FC04 reads; any read overlapping a hole address is refused.
+
+    That is how the real controllers behave: a multi-register read crossing
+    an undocumented hole fails as a whole, which is what the sweep's bisection
+    has to untangle.
+    """
     while True:
         try:
             header = b""
@@ -528,7 +533,7 @@ def _fake_modbus_server(sock_in: socket.socket, refusals: set[tuple[int, int]]) 
                     return
                 pdu += chunk
             function, start, count = struct.unpack(">BHH", pdu)
-            if (function, start) in refusals:
+            if any(addr in holes for addr in range(start, start + count)):
                 body = struct.pack(">BB", function | 0x80, 0x02)
             elif function in (3, 4):
                 words = [(start * 7 + i) & 0xFFFF for i in range(count)]
@@ -553,7 +558,7 @@ class TestModbusSweep:
         def serve() -> None:
             sock_in, _ = listener.accept()
             sock_in.settimeout(5)
-            _fake_modbus_server(sock_in, {(4, 1050)})
+            _fake_modbus_server(sock_in, {1050})
             done.set()
 
         threading.Thread(target=serve, daemon=True).start()
@@ -564,14 +569,16 @@ class TestModbusSweep:
             assert words[0] == (1000 * 7) & 0xFFFF
             assert len(words) == 50
             with pytest.raises(capture.ModbusCaptureError, match="illegal_data_address"):
-                reader.read_words(4, 1050, 50)
+                reader.read_words(4, 1050, 50)  # crosses the hole at 1050
+            with pytest.raises(capture.ModbusCaptureError, match="illegal_data_address"):
+                reader.read_words(4, 1050, 1)
             with pytest.raises(ValueError, match="only read functions"):
                 reader.read_words(6, 1000, 10)
         finally:
             reader.close()
             listener.close()
 
-    def test_capture_modbus_writes_blocks_and_refusal_pattern(self, tmp_path: Path) -> None:
+    def test_capture_modbus_bisects_across_holes(self) -> None:
         listener = socket.socket()
         listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         listener.bind(("127.0.0.1", 0))
@@ -581,7 +588,8 @@ class TestModbusSweep:
         def serve() -> None:
             sock_in, _ = listener.accept()
             sock_in.settimeout(5)
-            _fake_modbus_server(sock_in, {(3, 2100)})
+            # A two-register hole inside the first input block.
+            _fake_modbus_server(sock_in, {1010, 1011})
 
         threading.Thread(target=serve, daemon=True).start()
         files: dict[str, str] = {}
@@ -590,12 +598,51 @@ class TestModbusSweep:
         listener.close()
 
         assert summary["outcome"] == "ok"
-        assert summary["blocks_read"] == len(capture.MODBUS_INPUT_BLOCKS) + len(capture.MODBUS_HOLDING_BLOCKS) - 1
-        assert "modbus/input_1000.json" in files
-        record = json.loads(files["modbus/input_1000.json"])
+        # Bisection splits at halves, so segment boundaries land on powers of
+        # two — what matters is the complete, disjoint coverage of the block.
+        first_block = [
+            e
+            for e in entries
+            if e.get("variant") == "modbus" and e.get("start", 999) < 1050 and e.get("status") in ("ok", "hole")
+        ]
+        covered: set[int] = set()
+        for e in first_block:
+            span = set(range(e["start"], e["start"] + e["words"]))
+            assert not (covered & span), "segments must not overlap"
+            covered |= span
+        assert covered == set(range(1000, 1050))
+        # The hole is pinned down to single addresses.
+        holes = [e for e in entries if e.get("status") == "hole"]
+        assert sorted(e["start"] for e in holes) == [1010, 1011]
+        # Untouched blocks come through whole.
+        record = json.loads(files["modbus/input_1100_1149.json"])
         assert record["function"] == 4 and record["count"] == 50 and len(record["raw_words"]) == 50
-        refused = [e for e in entries if e.get("status") == "error"]
-        assert len(refused) == 1 and "illegal_data_address" in refused[0]["detail"]
+        assert not [e for e in entries if e.get("status") == "error"]
+
+    def test_capture_modbus_reports_whole_range_refusals(self) -> None:
+        listener = socket.socket()
+        listener.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        listener.bind(("127.0.0.1", 0))
+        listener.listen(1)
+        port = listener.getsockname()[1]
+
+        def serve() -> None:
+            sock_in, _ = listener.accept()
+            sock_in.settimeout(5)
+            # The whole holding range is one hole: bisection bottoms out and
+            # records the per-address refusals as holes, not as errors.
+            _fake_modbus_server(sock_in, set(range(2000, 2200)))
+
+        threading.Thread(target=serve, daemon=True).start()
+        files: dict[str, str] = {}
+        entries: list[dict] = []
+        summary = capture.capture_modbus("127.0.0.1", port, 1, 5, files, entries)
+        listener.close()
+
+        assert summary["outcome"] == "ok"  # input blocks answered
+        holes = [e for e in entries if e.get("status") == "hole"]
+        assert all(2000 <= e["start"] < 2200 for e in holes)
+        assert not [e for e in entries if e.get("status") == "error"]
 
     def test_perform_capture_includes_modbus_by_default(self, tmp_path: Path) -> None:
         # Nothing listens on 192.0.2.99: the sweep must be recorded as
@@ -619,3 +666,29 @@ class TestModbusSweep:
             names = archive.namelist()
         assert manifest["variants"]["modbus"]["outcome"] == "skipped"
         assert not any(n.startswith("modbus/") for n in names)
+
+
+class TestEmptyPinContinues:
+    def test_perform_capture_with_empty_pin_still_sweeps_modbus(self, tmp_path: Path) -> None:
+        # A plant without a web interface has no PIN: the web legs fail their
+        # login and get recorded, the Modbus sweep still runs — one data
+        # source beats none.
+        lines: list[str] = []
+        zip_path, ok, _warnings = capture.perform_capture(
+            host="192.0.2.99", pin="", out_dir=str(tmp_path), log=lines.append
+        )
+        assert Path(zip_path).exists()
+        assert ok is False  # nothing answers on 192.0.2.99
+        assert any("nav20" in line for line in lines)
+        assert any("modbus" in line for line in lines)
+        with zipfile.ZipFile(zip_path) as archive:
+            manifest = json.loads(archive.read("manifest.json"))
+        assert manifest["variants"]["nav20"]["outcome"] == "unavailable"
+        assert manifest["variants"]["modbus"]["outcome"] == "unavailable"
+
+    def test_cli_empty_pin_warns_and_continues(self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+        monkeypatch.setattr(capture.getpass, "getpass", lambda *_a, **_k: "")
+        code = capture.main(["192.0.2.99", "--pin", "", "--out", str(tmp_path)])
+        assert code == 2  # total failure on the dead host, but no PIN abort
+        zips = list(tmp_path.glob("idm_web_capture_*.zip"))
+        assert len(zips) == 1

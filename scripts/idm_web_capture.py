@@ -734,6 +734,60 @@ class ModbusReader:
         return data
 
 
+def _read_segment(
+    reader: ModbusReader,
+    function: int,
+    start: int,
+    count: int,
+    label: str,
+    slave: int,
+    files: dict[str, str],
+    entries: list[dict],
+) -> int:
+    """Read one segment, bisecting across undocumented register holes.
+
+    Controllers refuse a multi-register read whose range crosses a hole — a
+    live Navigator 10 answered single registers at 1000 and 1050 but refused
+    the 50-word block spanning the gap between them. Halving the range on
+    refusal reconstructs the readable segments and pins the holes down to
+    single addresses; that readable-region map is exactly the evidence a
+    register-map diagnosis needs.
+    """
+    entry: dict = {
+        "variant": "modbus",
+        "function": function,
+        "start": start,
+        "words": count,
+        "step": f"FC{function} {label} {start}-{start + count - 1}",
+    }
+    try:
+        words = reader.read_words(function, start, count)
+    except (OSError, ModbusCaptureError) as err:
+        bisectable = isinstance(err, ModbusCaptureError) and "illegal_data_address" in str(err)
+        if bisectable and count > 1:
+            half = count // 2
+            read_low = _read_segment(reader, function, start, half, label, slave, files, entries)
+            read_high = _read_segment(reader, function, start + half, count - half, label, slave, files, entries)
+            return read_low + read_high
+        entry["status"] = "hole" if bisectable else "error"
+        entry["detail"] = _err_text(err)
+        entries.append(entry)
+        return 0
+    record = {
+        "function": function,
+        "start": start,
+        "count": count,
+        "unit": slave,
+        "raw_words": words,
+    }
+    name = f"modbus/{label}_{start}_{start + count - 1}.json"
+    files[name] = json.dumps(record, indent=1)
+    entry["status"] = "ok"
+    entry["file"] = name
+    entries.append(entry)
+    return 1
+
+
 def capture_modbus(
     host: str,
     port: int,
@@ -745,8 +799,8 @@ def capture_modbus(
     """Sweep the documented register ranges read-only and store raw words.
 
     A proxy setup is just a different host/port — the GUI and CLI accept both.
-    Blocks the controller refuses are recorded as their own outcome; the
-    pattern of refusals is diagnostic evidence, not an error to hide.
+    Blocks are bisected across register holes, so the readable-region map of
+    the controller lands in the archive next to the raw words.
     """
     summary: dict = {"variant": "modbus", "outcome": "unavailable"}
     reader = ModbusReader(host, port, slave, timeout)
@@ -756,45 +810,21 @@ def capture_modbus(
         entries.append({"variant": "modbus", "step": "connect", "status": "unavailable", "detail": _err_text(err)})
         return summary
 
-    blocks_read = 0
+    segments_read = 0
     try:
         for function, starts, label in (
             (4, MODBUS_INPUT_BLOCKS, "input"),
             (3, MODBUS_HOLDING_BLOCKS, "holding"),
         ):
             for start in starts:
-                entry: dict = {
-                    "variant": "modbus",
-                    "step": f"FC{function} {label} {start}-{start + MODBUS_BLOCK_WORDS - 1}",
-                    "function": function,
-                    "start": start,
-                    "words": MODBUS_BLOCK_WORDS,
-                }
-                try:
-                    words = reader.read_words(function, start, MODBUS_BLOCK_WORDS)
-                except (OSError, ModbusCaptureError) as err:
-                    entry["status"] = "error"
-                    entry["detail"] = _err_text(err)
-                    entries.append(entry)
-                    continue
-                record = {
-                    "function": function,
-                    "start": start,
-                    "count": MODBUS_BLOCK_WORDS,
-                    "unit": slave,
-                    "raw_words": words,
-                }
-                name = f"modbus/{label}_{start}.json"
-                files[name] = json.dumps(record, indent=1)
-                entry["status"] = "ok"
-                entry["file"] = name
-                entries.append(entry)
-                blocks_read += 1
+                segments_read += _read_segment(
+                    reader, function, start, MODBUS_BLOCK_WORDS, label, slave, files, entries
+                )
                 time.sleep(REQUEST_DELAY)
     finally:
         reader.close()
-    summary["outcome"] = "ok" if blocks_read else "no_blocks"
-    summary["blocks_read"] = blocks_read
+    summary["outcome"] = "ok" if segments_read else "no_blocks"
+    summary["segments_read"] = segments_read
     return summary
 
 
@@ -944,6 +974,8 @@ def perform_capture(
     Returns ``(zip_path, ok, warnings)``. ``ok`` is True when at least one
     variant delivered usable data; the evidence ZIP is written either way —
     a failed capture documents its own failure and is still worth sending.
+    An empty PIN leaves the web legs to fail their login (recorded) while
+    the Modbus sweep still delivers its data.
     """
     files: dict[str, str] = {}
     entries: list[dict] = []
@@ -963,7 +995,7 @@ def perform_capture(
         modbus_target = modbus_host or host
         log(f"Sweeping Modbus registers read-only at {modbus_target}:{modbus_port} (slave {modbus_slave}) ...")
         modbus_summary = capture_modbus(modbus_target, modbus_port, modbus_slave, timeout, files, entries)
-        log(f"  modbus: {modbus_summary['outcome']} ({modbus_summary.get('blocks_read', 0)} blocks)")
+        log(f"  modbus: {modbus_summary['outcome']} ({modbus_summary.get('segments_read', 0)} segments)")
 
     warnings: list[str] = []
     redacted = redact_pin(files, pin)
@@ -1016,7 +1048,11 @@ def main(argv: list[str] | None = None) -> int:
         help=f"per-request timeout in seconds (default {DEFAULT_TIMEOUT})",
     )
     parser.add_argument("--out", default=".", help="output directory for the ZIP file")
-    parser.add_argument("--only", choices=("nav20", "nav10"), help="capture only one interface variant (default: both)")
+    parser.add_argument(
+        "--only",
+        choices=("nav20", "nav10"),
+        help="capture only one interface variant (default: both)",
+    )
     parser.add_argument(
         "--no-modbus",
         action="store_true",
@@ -1047,11 +1083,11 @@ def main(argv: list[str] | None = None) -> int:
         try:
             pin = getpass.getpass("Web-PIN des Navigators / Navigator web PIN: ")
         except (EOFError, OSError):
-            print("No PIN entered - aborting.", file=sys.stderr)
-            return 2
+            pin = ""
     if not pin:
-        print("An empty PIN cannot log in - aborting.", file=sys.stderr)
-        return 2
+        # A plant without a web interface still has Modbus — one data source
+        # beats none, so warn and continue instead of aborting.
+        print("No PIN given - the web legs cannot log in; continuing with Modbus.", file=sys.stderr)
 
     out_path, ok, warnings = perform_capture(
         host=args.host,
@@ -1200,7 +1236,10 @@ def run_gui() -> int:
             ttk.Label(row2, text="Web-PIN:").pack(side="left")
             pin_var = tk.StringVar()
             ttk.Entry(row2, textvariable=pin_var, show="•", width=28).pack(side="left", padx=8)
-            ttk.Label(row2, text="(Eingabe bleibt verborgen)").pack(side="left")
+            ttk.Label(
+                row2,
+                text="(Eingabe bleibt verborgen; ohne PIN läuft nur Modbus)",
+            ).pack(side="left")
             info = tk.Label(frame, text=GUI_INFO_TEXT, justify="left", wraplength=560, relief="groove", padding=10)
             info.pack(fill="x", pady=14)
 
@@ -1261,8 +1300,17 @@ def run_gui() -> int:
                 self._alert("Bitte die IP-Adresse oder den Hostnamen Ihres Navigators angeben.")
                 return
             if not pin:
-                self._alert("Bitte Ihre Web-PIN eingeben (die PIN der lokalen Weboberfläche).")
-                return
+                from tkinter import messagebox
+
+                confirmed = messagebox.askyesno(
+                    "IDM Web-Capture",
+                    "Ohne Web-PIN können die Webdaten nicht abgerufen werden.\n\n"
+                    "Trotzdem fortfahren? Die Modbus-Register werden dann weiterhin "
+                    "aufgezeichnet (lieber eine Datenquelle als keine).",
+                    parent=self,
+                )
+                if not confirmed:
+                    return
             try:
                 modbus_port_value = int(modbus_port) if modbus_port else DEFAULT_MODBUS_PORT
                 modbus_slave_value = int(modbus_slave) if modbus_slave else DEFAULT_MODBUS_SLAVE
