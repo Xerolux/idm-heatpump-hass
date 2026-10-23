@@ -15,6 +15,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### ⚠️ Upgrade notes
+
+- **Nothing changes for existing installations**: the capture tool is a standalone script and executable for issue reports, not part of the integration. No migration, no new entities; rollback is trivial because nothing is installed.
+
+### ✨ New
+
+- **Raw web evidence capture for issue reports** (`scripts/idm_web_capture.py`, Windows executable on the release page): logs into the local Navigator web interface with the user-level PIN and packs every read-only page and WebSocket frame into a ZIP with a manifest. The PIN never enters the archive; the tool has no write commands and never raises the access level.
+
 ## [0.23.1] - 2026-10-22
 
 ### ⚠️ Upgrade notes

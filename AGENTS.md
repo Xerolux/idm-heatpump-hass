@@ -192,6 +192,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_translation_parity.py
 │   ├── test_versions.py
 │   ├── test_web_binary_sensors.py
+│   ├── test_web_capture_script.py      # Contract of the user-facing web capture tool
 │   ├── test_whats_new.py
 │   ├── test_web_data.py
 │   ├── test_web_demand_reason.py
@@ -213,6 +214,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── consolidate_changelog.py      # Folds prerelease changelog sections into the stable section
 │   ├── generate_entity_translations.py # Writes the entity blocks in strings.json + translations
 │   ├── generate_solaredge_glt_templates.py # Explicit-source SolarEdge GLT YAML and mapping generator
+│   ├── idm_web_capture.py            # User-facing read-only web evidence capture (ZIP for issue reports)
 │   └── (further generators)          # Register reference, KNX group addresses/export parity, guided-flow
 │                                      # translations, metadata catalog, social card, pages build, release
 │                                      # discussion publishing — see the scripts/ directory
