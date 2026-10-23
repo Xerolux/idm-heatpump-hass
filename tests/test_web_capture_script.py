@@ -271,6 +271,11 @@ class _FakeNav20Handler(BaseHTTPRequestHandler):
             )
             self._serve(200, body)
             return
+        if self.path == "/data/state.php":
+            # Nav-10-generation modules answer the old PHP pages with a 404
+            # stub — the body is evidence, but not a page carrying data.
+            self._serve(404, "<html><body><h1>404 Not Found</h1></body></html>")
+            return
         if self.path.startswith("/data/"):
             self._serve(200, "<html><table><tr><td>Au&szlig;entemperatur</td><td>17.5 &deg;C</td></tr></table></html>")
             return
@@ -320,11 +325,21 @@ def test_end_to_end_nav20(tmp_path: Path) -> None:
     with zipfile.ZipFile(zips[0]) as archive:
         manifest = json.loads(archive.read("manifest.json"))
         pages = [n for n in archive.namelist() if n.startswith("nav20/data_")]
-    assert manifest["variants"]["nav20"]["outcome"] == "ok"
-    assert manifest["variants"]["nav20"]["login"]["field"] == "pin"
+    nav20 = manifest["variants"]["nav20"]
+    assert nav20["outcome"] == "ok"
+    assert nav20["login"]["field"] == "pin"
     assert manifest["safety"]["pin_included"] is False
     assert _FakeNav20Handler.pin not in json.dumps(manifest)
-    assert len(pages) == len(capture.NAV20_DATA_PATHS)
+    # Five of the six data pages answer with data; the 404 stub is saved as
+    # evidence but neither counted as captured nor marked "ok".
+    assert nav20["pages_captured"] == len(capture.NAV20_DATA_PATHS) - 1 + len(capture.NAV20_STATISTICS_QUERIES)
+    stub_entry = next(e for e in manifest["captures"] if e["step"] == "/data/state.php")
+    assert stub_entry["status"] == "http_404"
+    assert stub_entry["http_status"] == 404
+    assert stub_entry["file"].startswith("nav20/")
+    assert stub_entry["file"] in pages
+    ok_entries = [e for e in manifest["captures"] if e.get("status") == "ok" and e["variant"] == "nav20"]
+    assert all(200 <= e["http_status"] < 300 for e in ok_entries)
 
 
 def _fake_nav10_server(sock_in: socket.socket) -> None:
