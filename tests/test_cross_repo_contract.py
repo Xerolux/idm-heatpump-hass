@@ -159,3 +159,20 @@ def test_every_navigator_web_value_reaches_an_entity() -> None:
         "definitions (web_binary_sensors.py), together with a German name and translations - "
         "or, for a value consumed without an entity, to _WEB_ATTRIBUTE_VALUE_NAMES."
     )
+
+
+@pytest.mark.parametrize("model_info", [_navigator_20(), _navigator_10()])
+def test_system_mode_selector_options_pass_api_validation(model_info: IdmModelInfo) -> None:
+    """Issue #596: an HA option must not be rejected by the real API map."""
+    from idm_heatpump import IdmModbusClient
+
+    from custom_components.idm_heatpump.adapter_enums import get_slug_map_and_key
+
+    item = next(item for item in _platform_descriptions(model_info)["select"] if item["register"].name == "system_mode")
+    reg = item["register"]
+    slugs, _ = get_slug_map_and_key(reg.name)
+    assert slugs is not None and slugs[3] == "holiday"
+    assert reg.enum_options is not None
+    assert set(slugs) == set(reg.enum_options)
+    for value in slugs:
+        assert IdmModbusClient._suspect_reason(reg, value) is None

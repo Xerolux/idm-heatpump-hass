@@ -4,6 +4,20 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.2-b1 validation scope
+
+This beta consumes the published API Holiday-mode correction and preserves the
+existing selector, register encoding and EEPROM protection. Fake-transport
+tests cover all six shared-family modes and reject unknown values; integration
+contracts prevent the selector and API enum from drifting apart again.
+No controller settings or physical operating cycles were changed for this fix.
+
+Issue #577 remains open for the Navigator 1.7 web responses and exact raw
+status-register requests. Issue #493 was reopened after the reported recurrence;
+its cause and controller-side retention are not proven. Earlier release
+decisions below record the evidence and decisions made at their respective
+dates, not the current issue status. Neither issue is claimed fixed by this beta.
+
 ## 0.23.1 release decision
 
 **0.23.1** is a stable fix release straight off main, no prerelease line:
@@ -334,7 +348,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.23.1` and `idm-heatpump-api` `2.14.4` form the current
+Source-tree integration `0.23.2-b1` and `idm-heatpump-api` `2.14.5b1` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

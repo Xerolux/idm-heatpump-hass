@@ -139,11 +139,20 @@ Forwards are event-driven: a sensor update is written within about a second.
 Further updates are coalesced without cancelling an active batch. Updates
 during an active batch request another pass with the latest source states.
 Periodic and event-driven batches cannot interleave.
-A periodic fallback cycle runs every 60 seconds by default (the *external
-power forwarding interval* option, 30–3600 seconds; the per-register write
-cooldown of the integration throttles bursts). Sensor updates arriving during
-that cooldown are skipped quietly — nothing is wrong when a source updates
-faster than the throttle.
+While forwarding is enabled, a periodic pass refreshes valid mapped GLT inputs
+every three seconds, including unchanged sources. This RAM refresh takes
+precedence over the configured *external power forwarding interval* (30–3600
+seconds). The integration caps the per-register cooldown for these inputs at
+two seconds; faster sensor events can be skipped quietly.
+
+Disabling forwarding or unloading the integration stops these writes without
+sending zero, an unavailable sentinel, or a restore command. Re-enabling starts
+with the current valid source states, not a saved copy of the previous values.
+There is no universal controller timeout guarantee: a retained value and a
+temporarily unavailable controller display both need firmware-specific evidence.
+The recurrence reported in #493 on 2026-10-21 remains unresolved; a successful
+write or an optimistic HA state does not prove a continuously valid Navigator
+display. A blanket reset on shutdown could overwrite another GLT writer.
 
 The current wizard opens the source-mapping page through enabled external
 power forwarding. Existing mappings remain usable with forwarding off; a

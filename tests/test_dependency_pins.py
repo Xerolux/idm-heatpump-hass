@@ -298,6 +298,27 @@ def test_the_repository_history_statements_are_anchored_on_real_sentences() -> N
             assert re.search(pattern, text), f"{relative_path}: {pattern} matches nothing"
 
 
+@pytest.mark.parametrize(
+    "relative_path",
+    ["docs/dev/open-work-audit.md", "docs/wiki/de/Stability-and-Release-Readiness.md"],
+)
+def test_api_pin_update_preserves_recorded_release_versions(tmp_path: Path, monkeypatch, relative_path: str) -> None:
+    """A pin bump changes current claims while preserving dated release evidence."""
+    original = (ROOT / relative_path).read_text(encoding="utf-8")
+    patterns = pins.HISTORY_STATEMENTS[relative_path]
+    history = [re.findall(pattern, original) for pattern in patterns]
+    _write(tmp_path, relative_path, original)
+    requirement = next(item for item in pins.manifest_requirements() if item.name == "idm-heatpump-api")
+    _write(tmp_path, "custom_components/idm_heatpump/manifest.json", json.dumps({"requirements": [requirement.raw]}))
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", (relative_path,))
+
+    pins.apply_update(requirement, "99.0.0", root=tmp_path)
+
+    updated = (tmp_path / relative_path).read_text(encoding="utf-8")
+    assert "99.0.0" in updated
+    assert [re.findall(pattern, updated) for pattern in patterns] == history
+
+
 def test_bump_kind_separates_a_breaking_release_from_a_routine_one() -> None:
     assert pins.bump_kind("1.2.3", "2.0.0") == "major"
     assert pins.bump_kind("1.2.3", "1.3.0") == "minor"

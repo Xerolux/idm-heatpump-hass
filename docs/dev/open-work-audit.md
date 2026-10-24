@@ -127,7 +127,7 @@ diagnostics template, "maintainer" means Basti's own plant or decision.
 - Direct socket through `modbus-connection>=4.12.4` and the separately pinned
   backend level `tmodbus[async-serial]>=0.6.2`; the first integration version to
   ship it is `0.11.0-beta.1`.
-- API device logic stays with `idm-heatpump-api[web]==2.14.4`. The API owns its
+- API device logic stays with `idm-heatpump-api[web]==2.14.5b1`. The API owns its
   exception hierarchy and the injected transport path does not install or
   import pymodbus; the physical connection belongs to tmodbus.
 - Diagnostics export for the transport source, socket ownership, connection

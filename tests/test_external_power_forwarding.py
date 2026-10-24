@@ -174,6 +174,30 @@ async def test_run_cleans_up_listener_on_cancellation(monkeypatch: pytest.Monkey
     forwarder.async_forward.assert_awaited_once()
 
 
+async def test_disable_and_restart_use_current_sources_without_reset_writes(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Issue #493: stop writes on unload, then read fresh values on restart."""
+    states = {"sensor.pv": _state(1.0), "sensor.soc": _state(80, "%")}
+    entities = {"pv_surplus": "sensor.pv", "battery_soc": "sensor.soc"}
+    forwarder, coordinator = _forwarder(states, entities)
+    unsubscribe = MagicMock()
+    monkeypatch.setattr(module, "async_track_state_change_event", lambda *_: unsubscribe)
+    task = asyncio.create_task(forwarder.async_run())
+    try:
+        await asyncio.sleep(0)
+        assert _writes(coordinator) == {"pv_surplus": 1.0, "battery_soc": 80}
+    finally:
+        task.cancel()
+        await asyncio.gather(task, return_exceptions=True)
+    unsubscribe.assert_called_once()
+    # No zero/sentinel/restore batch on unload, and no cached old values on restart.
+    assert coordinator.async_write_register.await_count == 2
+    states["sensor.pv"] = _state(-0.5)
+    states["sensor.soc"] = _state(65.5, "%")
+    restarted, restarted_coordinator = _forwarder(states, entities)
+    await restarted.async_forward()
+    assert _writes(restarted_coordinator) == {"pv_surplus": -0.5, "battery_soc": 66}
+
+
 async def test_state_changes_debounce_to_one_forward() -> None:
     forwarder, _ = _forwarder({}, {})
     forwarder._hass.async_create_task.side_effect = asyncio.create_task
@@ -522,12 +546,9 @@ async def test_periodic_pass_runs_after_the_interval(monkeypatch: pytest.MonkeyP
 
 
 async def test_periodic_pass_refreshes_below_the_controller_ram_hold_window(monkeypatch: pytest.MonkeyPatch) -> None:
-    """Some firmwares clear GLT RAM inputs about ten seconds after the last write (#493).
+    """Retain the three-second mitigation even with quiet sources (#493).
 
-    With quiet sources (no events at night) only the periodic pass refreshes
-    the registers, so it must run at the firmware-safe cadence regardless of
-    the configured fallback interval — a 30-60 s pass let the controller
-    forget the battery between writes on the reporter's installation.
+    This verifies scheduling, not a controller TTL or a no-flicker guarantee.
     """
     hass = MagicMock()
     hass.states.get.side_effect = {"sensor.soc": _state(90, "%")}.get
