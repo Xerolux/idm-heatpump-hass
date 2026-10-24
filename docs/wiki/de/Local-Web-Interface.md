@@ -127,8 +127,8 @@ Siehe [Fehlerbehebung](Troubleshooting) für kategorisierte Fehler und
 ## Versionpaarung
 
 Die dauerhaft gespeicherte Protokollauswahl wurde in der Integrationsversion
-`0.8.1-beta.29` eingeführt. Die aktuelle stabile Version ist `0.15.0` und liefert
-die getesteten Web-Clients `idm-heatpump-api[web]==2.14.5b1`, die zusätzlich
+`0.8.1-beta.29` eingeführt. Der aktuelle Quellbaum verwendet die getesteten
+Web-Clients `idm-heatpump-api[web]==2.14.5b1`, die zusätzlich
 Navigator-10-Heizkreisdaten für die Kreise B–G bereitstellen.
 
 Für den unabhängigen Modbus-Pfad lautet die getestete Manifest-Reihenfolge

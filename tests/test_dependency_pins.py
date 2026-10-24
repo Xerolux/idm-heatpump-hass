@@ -265,13 +265,20 @@ def test_history_statements_survive_an_update(tmp_path: Path, monkeypatch) -> No
     document = _write(
         tmp_path,
         "docs/pins.md",
-        "current: `idm-heatpump-api[web]==1.4.0`\npymodbus is gone as of `idm-heatpump-api` 1.4.0 / integration 0.16.0.\n",
+        "current: `idm-heatpump-api[web]==1.4.0`\n"
+        "pymodbus is gone as of `idm-heatpump-api` 1.4.0 / integration 0.16.0.\n"
+        "Released with `idm-heatpump-api[web]==1.4.0`.\n",
     )
     monkeypatch.setattr(pins, "PIN_DOCUMENTS", ("docs/pins.md",))
     monkeypatch.setattr(
         pins,
         "HISTORY_STATEMENTS",
-        {"docs/pins.md": (r"pymodbus is gone as of `idm-heatpump-api` [0-9][0-9a-z.]*",)},
+        {
+            "docs/pins.md": (
+                r"pymodbus is gone as of `idm-heatpump-api` [0-9][0-9a-z.]*",
+                r"Released with `idm-heatpump-api\[web\]==[0-9.]+`\.",
+            )
+        },
     )
 
     pins.apply_update(pins.parse_requirement("idm-heatpump-api[web]==1.4.0"), "1.5.0", root=tmp_path)
@@ -279,6 +286,7 @@ def test_history_statements_survive_an_update(tmp_path: Path, monkeypatch) -> No
     text = document.read_text(encoding="utf-8")
     assert "current: `idm-heatpump-api[web]==1.5.0`" in text
     assert "pymodbus is gone as of `idm-heatpump-api` 1.4.0" in text
+    assert "Released with `idm-heatpump-api[web]==1.4.0`." in text
 
 
 def test_a_history_statement_never_hides_a_half_finished_rewrite(tmp_path: Path, monkeypatch) -> None:

@@ -540,11 +540,21 @@ def apply_update(requirement: Requirement, new_version: str, root: Path | None =
         if not path.exists():
             continue
         text = original = path.read_text(encoding="utf-8")
+        history: list[str] = []
+
+        def protect(match: re.Match[str], history: list[str] = history) -> str:
+            history.append(match[0])
+            return f"DEPENDENCY_HISTORY_{len(history) - 1}_END"
+
+        for pattern in HISTORY_STATEMENTS.get(relative_path, ()):
+            text = re.sub(pattern, protect, text)
         text = text.replace(old_requirement, new_requirement)
         for target, pattern in BARE_VERSION_STATEMENTS.get(relative_path, ()):
             if target != requirement.name:
                 continue
             text = re.sub(pattern.replace("{version}", re.escape(old_version)), new_version, text)
+        for index, statement in enumerate(history):
+            text = text.replace(f"DEPENDENCY_HISTORY_{index}_END", statement)
         if text != original:
             path.write_text(text, encoding="utf-8")
             changed.append(Path(relative_path).as_posix())

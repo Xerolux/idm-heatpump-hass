@@ -118,8 +118,8 @@ See [Troubleshooting](Troubleshooting) for categorized errors and
 ## Version pairing
 
 The sticky protocol selection was introduced in integration version
-`0.8.1-beta.29`. The current stable release is `0.15.0` and ships the
-tested `idm-heatpump-api[web]==2.14.5b1` web clients, which additionally expose
+`0.8.1-beta.29`. The current source tree uses the tested
+`idm-heatpump-api[web]==2.14.5b1` web clients, which additionally expose
 Navigator 10 heating-circuit data for circuits B–G.
 
 For the independent Modbus path, the tested manifest order is
