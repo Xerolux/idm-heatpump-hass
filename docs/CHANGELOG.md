@@ -13,7 +13,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.23.2-b1] - 2026-10-24
 
 > **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
 > different Navigator models, firmware versions and normal operating states help
@@ -31,13 +31,20 @@ All notable changes to this project will be documented in this file.
 
 ### ⚠️ Upgrade notes
 
-- **Nothing changes for existing installations**: the capture tool is a standalone script and executable for issue reports, not part of the integration. No migration, no new entities; rollback is trivial because nothing is installed.
+- **No configuration migration or model reset**: the system-mode correction uses the tested API prerelease and adds no entities. Rollback restores the previous integration/API pair but also restores the Holiday-mode rejection. The capture tool remains standalone. Navigator 1.7 parsing/status decoding and the recurring battery display issue are still under investigation.
 
 ### ✨ New
 
 - **Raw evidence capture for issue reports** (`scripts/idm_web_capture.py`, Windows executable with a guided German wizard): logs into the Navigator web interface with the user-level PIN and packs every read-only page and WebSocket frame plus a hole-bisected Modbus raw-word sweep into a ZIP recording HTTP status and redirects. The PIN never enters the archive; no write commands exist.
 
+### 🐛 Bugfixes
+
+- **Holiday mode remains available** (#596): tested with `idm-heatpump-api[web]==2.14.5b1`, the allowed system-mode table now includes value 3, matching the controller, web interface and existing selector. Validated Modbus polls keep the value instead of omitting it. Unknown values remain rejected and EEPROM protection is unchanged. Navigator 1.7 retains its separate mode meanings.
+
 ### 💼 Maintenance
+
+- **Forwarding stop/restart behavior is verified and documented** (#493): tests confirm that stopping sends no reset values and restarting uses current sources. The English/German guide now describes the three-second refresh and explicitly leaves controller retention and the reported SoC-display recurrence unresolved. No speculative register reset or byte-decoding change is included.
+- **Dependency updates preserve dated release evidence**: the pin synchronizer now recognizes historical API versions in the open-work audit and English/German release decisions. Regression tests keep those versions unchanged while current dependency claims move to the new pin.
 
 - **The capture executable now carries a version resource and an icon** (`scripts/idm_web_capture_version.txt`, `scripts/idm_web_capture.ico`): the PyInstaller build embeds product metadata and trims unused standard-library modules, which lowers machine-learning false positives on the unsigned binary. The Python script itself is unchanged and byte-identical.
 

@@ -265,13 +265,20 @@ def test_history_statements_survive_an_update(tmp_path: Path, monkeypatch) -> No
     document = _write(
         tmp_path,
         "docs/pins.md",
-        "current: `idm-heatpump-api[web]==1.4.0`\npymodbus is gone as of `idm-heatpump-api` 1.4.0 / integration 0.16.0.\n",
+        "current: `idm-heatpump-api[web]==1.4.0`\n"
+        "pymodbus is gone as of `idm-heatpump-api` 1.4.0 / integration 0.16.0.\n"
+        "Released with `idm-heatpump-api[web]==1.4.0`.\n",
     )
     monkeypatch.setattr(pins, "PIN_DOCUMENTS", ("docs/pins.md",))
     monkeypatch.setattr(
         pins,
         "HISTORY_STATEMENTS",
-        {"docs/pins.md": (r"pymodbus is gone as of `idm-heatpump-api` [0-9][0-9a-z.]*",)},
+        {
+            "docs/pins.md": (
+                r"pymodbus is gone as of `idm-heatpump-api` [0-9][0-9a-z.]*",
+                r"Released with `idm-heatpump-api\[web\]==[0-9.]+`\.",
+            )
+        },
     )
 
     pins.apply_update(pins.parse_requirement("idm-heatpump-api[web]==1.4.0"), "1.5.0", root=tmp_path)
@@ -279,6 +286,7 @@ def test_history_statements_survive_an_update(tmp_path: Path, monkeypatch) -> No
     text = document.read_text(encoding="utf-8")
     assert "current: `idm-heatpump-api[web]==1.5.0`" in text
     assert "pymodbus is gone as of `idm-heatpump-api` 1.4.0" in text
+    assert "Released with `idm-heatpump-api[web]==1.4.0`." in text
 
 
 def test_a_history_statement_never_hides_a_half_finished_rewrite(tmp_path: Path, monkeypatch) -> None:
@@ -296,6 +304,27 @@ def test_the_repository_history_statements_are_anchored_on_real_sentences() -> N
         text = (ROOT / relative_path).read_text(encoding="utf-8")
         for pattern in patterns:
             assert re.search(pattern, text), f"{relative_path}: {pattern} matches nothing"
+
+
+@pytest.mark.parametrize(
+    "relative_path",
+    ["docs/dev/open-work-audit.md", "docs/wiki/de/Stability-and-Release-Readiness.md"],
+)
+def test_api_pin_update_preserves_recorded_release_versions(tmp_path: Path, monkeypatch, relative_path: str) -> None:
+    """A pin bump changes current claims while preserving dated release evidence."""
+    original = (ROOT / relative_path).read_text(encoding="utf-8")
+    patterns = pins.HISTORY_STATEMENTS[relative_path]
+    history = [re.findall(pattern, original) for pattern in patterns]
+    _write(tmp_path, relative_path, original)
+    requirement = next(item for item in pins.manifest_requirements() if item.name == "idm-heatpump-api")
+    _write(tmp_path, "custom_components/idm_heatpump/manifest.json", json.dumps({"requirements": [requirement.raw]}))
+    monkeypatch.setattr(pins, "PIN_DOCUMENTS", (relative_path,))
+
+    pins.apply_update(requirement, "99.0.0", root=tmp_path)
+
+    updated = (tmp_path / relative_path).read_text(encoding="utf-8")
+    assert "99.0.0" in updated
+    assert [re.findall(pattern, updated) for pattern in patterns] == history
 
 
 def test_bump_kind_separates_a_breaking_release_from_a_routine_one() -> None:

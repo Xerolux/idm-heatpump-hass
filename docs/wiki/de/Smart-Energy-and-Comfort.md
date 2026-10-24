@@ -155,11 +155,23 @@ innerhalb von etwa einer Sekunde geschrieben. Weitere Aktualisierungen werden
 gebündelt, ohne einen laufenden Übertragungsdurchgang abzubrechen. Änderungen
 während der Übertragung lösen einen weiteren Durchgang mit den aktuellen
 Quellwerten aus. Periodische und ereignisgesteuerte Durchgänge überlappen nicht.
-Der periodische Fallback-Zyklus beträgt standardmäßig 60 Sekunden (die Option *Weiterleitungsintervall
-für externe Leistungswerte*, 30–3600 Sekunden; der Schreib-Cooldown der
-Integration pro Register drosselt Bursts). Sensor-Aktualisierungen während
-dieses Cooldowns werden still übersprungen — wenn eine Quelle schneller
-aktualisiert als die Drossel, ist nichts falsch.
+Bei aktivierter Weiterleitung werden gültige zugeordnete GLT-Eingänge alle drei
+Sekunden erneut geschrieben, auch bei unveränderten Quellen. Diese
+RAM-Auffrischung hat Vorrang vor dem konfigurierten *Weiterleitungsintervall für
+externe Leistungswerte* (30–3600 Sekunden). Der Schreib-Cooldown dieser Eingänge
+ist auf zwei Sekunden begrenzt; schnellere Sensorereignisse können still
+übersprungen werden.
+
+Deaktivieren oder Entladen der Integration beendet diese Schreibzugriffe ohne
+Nullwert, Ungültig-Markierung oder Rücksetzbefehl. Beim erneuten Aktivieren
+werden die aktuellen gültigen Quellwerte verwendet, keine gespeicherten alten
+Werte. Einen allgemeinen Regler-Timeout garantiert die Integration nicht:
+Gespeicherte Werte und vorübergehend nicht verfügbare Regleranzeigen benötigen
+jeweils einen Nachweis für die konkrete Firmware. Der am 21.10.2026 in #493
+gemeldete Rückfall bleibt ungeklärt. Ein erfolgreicher Schreibzugriff oder ein
+optimistischer HA-Zustand beweist keine durchgehend gültige Navigator-Anzeige.
+Ein pauschales Zurücksetzen beim Beenden könnte einen anderen GLT-Schreiber
+überschreiben.
 
 Der aktuelle Assistent öffnet die Seite der Quellzuordnung über die
 aktivierte externe Leistungsweiterleitung. Bestehende Zuordnungen bleiben

@@ -24,12 +24,11 @@ _LOGGER = logging.getLogger(__name__)
 _POWER_UNITS = frozenset({"W", "kW", "MW"})
 _POWER_NAMES = frozenset(name for name in EXTERNAL_POWER_MEASUREMENT_NAMES if name != "battery_soc")
 
-#: Some Navigator firmwares clear GLT RAM inputs roughly 5-10 seconds after
-#: the last write (observed on NAV10_20.23-903, #493: the battery rows appear
-#: after each write and disappear when the controller watchdog expires). Sensor-driven
-#: forwards naturally refresh faster; the fallback periodic pass must stay
-#: well below that hold window (3.0 s) so jitter and full coordinator polls
-#: (~2.2 s) do not stretch the interval beyond the controller watchdog.
+#: Retain the conservative cyclic GLT RAM refresh used while investigating
+#: #493. The reporter observed a missing battery display between writes, but
+#: that does not establish a controller watchdog or a universal input TTL.
+#: Refreshing every three seconds is a mitigation, not proof that the
+#: Navigator's processed value or display remains continuously valid.
 _RAM_INPUT_REFRESH_SECONDS = 3.0
 
 
@@ -150,9 +149,9 @@ class ExternalPowerForwarder:
         try:
             await self.async_forward()
             while True:
-                # Refresh below the controller's RAM hold window (#493), not
-                # at the configured fallback interval: a 30-60 s pass lets the
-                # controller forget the values between writes.
+                # Keep cyclic GLT refresh even with quiet sources (#493).
+                # This takes precedence over the configured fallback interval;
+                # controller-side retention/processing remains unverified.
                 await asyncio.sleep(_RAM_INPUT_REFRESH_SECONDS)
                 await self.async_forward()
         finally:

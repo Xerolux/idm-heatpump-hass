@@ -164,9 +164,14 @@ HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
     # The name is spelled with and without backticks: once in the rule that
     # describes history statements, once in the history statement itself.
     "AGENTS.md": (r"pymodbus is gone as of `?idm-heatpump-api`? [0-9][0-9a-z.]*",),
-    "docs/dev/open-work-audit.md": (r"`idm-heatpump-api` [0-9][0-9a-z.]* provides the transport-neutral contract",),
+    "docs/dev/open-work-audit.md": (
+        r"`idm-heatpump-api` [0-9][0-9a-z.]* provides the transport-neutral contract",
+        r"idm-heatpump-api [0-9][0-9a-z.]*\)\* — the official doc's UCHAR typing",
+    ),
     "docs/wiki/Stability-and-Release-Readiness.md": (
         r"`idm-heatpump-api` `[0-9][0-9a-z.]*` owns its own",
+        r"branched from the `v[0-9.]+` tag: the device logic moves to\n`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*`",
+        r"for them — and the device logic is pinned to `idm-heatpump-api\[web\]==[0-9][0-9a-z.]*`",
         r"Up to and including `0\.14\.1`[\s\S]*?`tmodbus==0\.5\.0`\.",
         r"\*\*`0\.15\.0`\*\* moved that pair[\s\S]*?`tmodbus\[async-serial\]==0\.5\.1`",
         r"\(`modbus-connection` `[0-9][0-9a-z.]*`, `idm-heatpump-api` `[0-9][0-9a-z.]*`\); no register map or",
@@ -175,6 +180,8 @@ HISTORY_STATEMENTS: dict[str, tuple[str, ...]] = {
     ),
     "docs/wiki/de/Stability-and-Release-Readiness.md": (
         r"Bis\s+einschließlich `0\.14\.1`[\s\S]*?`tmodbus==0\.5\.0` gepinnt\.",
+        r"abgezweigt vom Tag `v[0-9.]+`: Die Geräte-Logik zieht auf\n`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*`",
+        r"und die Gerätelogik ist auf\n`idm-heatpump-api\[web\]==[0-9][0-9a-z.]*` gepinnt",
         r"\*\*`0\.15\.0`\*\* zog dieses Paar[\s\S]*?`tmodbus\[async-serial\]==0\.5\.1`",
         r"`idm-heatpump-api` `[0-9][0-9a-z.]*` ist das mit diesem Schnitt[\s\S]*?validierte Paar\.",
     ),
@@ -533,11 +540,21 @@ def apply_update(requirement: Requirement, new_version: str, root: Path | None =
         if not path.exists():
             continue
         text = original = path.read_text(encoding="utf-8")
+        history: list[str] = []
+
+        def protect(match: re.Match[str], history: list[str] = history) -> str:
+            history.append(match[0])
+            return f"DEPENDENCY_HISTORY_{len(history) - 1}_END"
+
+        for pattern in HISTORY_STATEMENTS.get(relative_path, ()):
+            text = re.sub(pattern, protect, text)
         text = text.replace(old_requirement, new_requirement)
         for target, pattern in BARE_VERSION_STATEMENTS.get(relative_path, ()):
             if target != requirement.name:
                 continue
             text = re.sub(pattern.replace("{version}", re.escape(old_version)), new_version, text)
+        for index, statement in enumerate(history):
+            text = text.replace(f"DEPENDENCY_HISTORY_{index}_END", statement)
         if text != original:
             path.write_text(text, encoding="utf-8")
             changed.append(Path(relative_path).as_posix())

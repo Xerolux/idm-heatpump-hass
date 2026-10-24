@@ -715,7 +715,7 @@ class TestVersionLogic:
 
 
 class TestProgressReporting:
-    def test_progress_is_monotonic_and_complete(self) -> None:
+    def test_progress_is_monotonic_and_complete(self, tmp_path: Path) -> None:
         # nav20 fake server
         server = ThreadingHTTPServer(("127.0.0.1", 0), _FakeNav20Handler)
         threading.Thread(target=server.serve_forever, daemon=True).start()
@@ -741,9 +741,10 @@ class TestProgressReporting:
 
         samples: list[float] = []
         try:
-            capture.perform_capture(
+            archive_path, ok, _warnings = capture.perform_capture(
                 host="127.0.0.1",
-                pin="1",
+                pin="9999",
+                out_dir=str(tmp_path),
                 web_port=server.server_address[1],
                 ws_port=ws_port,
                 modbus_port=mb_port,
@@ -752,9 +753,14 @@ class TestProgressReporting:
             )
         finally:
             server.shutdown()
+            server.server_close()
             ws_listener.close()
             mb_listener.close()
 
+        assert ok
+        with zipfile.ZipFile(archive_path) as archive:
+            manifest = json.loads(archive.read("manifest.json"))
+        assert manifest["variants"]["nav10"]["outcome"] == "ok"
         assert samples, "no progress reported"
         assert all(a <= b + 1e-9 for a, b in itertools.pairwise(samples)), "progress must not go backwards"
         assert samples[-1] >= 0.99

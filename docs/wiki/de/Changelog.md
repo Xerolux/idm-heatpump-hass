@@ -5,6 +5,17 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.2-b1 — 2026-10-24
+
+Der Urlaubsmodus (Wert 3) bleibt mit dem getesteten API-Prerelease auch nach
+validierten Modbus-Abfragen verfügbar. EEPROM-Schutz und die Betriebsarten des
+Navigator 1.7 bleiben erhalten. Tests für Stoppen und Neustarten der
+Weiterleitung sowie die englische/deutsche Anleitung unterscheiden erfolgreiche
+Schreibzugriffe von der Regleranzeige. Der SoC-Rückfall #493 und die verbliebenen
+Web-/Statusprobleme des Navigator 1.7 in #577 bleiben offen. Das Release enthält
+auch das eigenständige rein lesende Capture-Tool und einen freiwilligen Aufruf
+zu privaten Diagnoseaufnahmen. Eine Konfigurationsmigration ist nicht nötig.
+
 ## v0.23.1 — 2026-10-22
 
 Ein Fix-Release nach zwei Feldmeldungen. Hybrid-Anlagen — Navigator 1.7
