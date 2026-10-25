@@ -13,6 +13,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.23.2-b2] - 2026-10-25
+
+> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
+> different Navigator models, firmware versions and normal operating states help
+> us validate values, find missing mappings and improve device support. Working
+> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
+> to record read-only data, review it locally and upload it privately without
+> preparing an email attachment.
+>
+> Recognized PINs, serial numbers, myIDM and network identifiers are removed
+> before sharing. Participation is voluntary; submitted data is used only to
+> improve this integration, and uploads are deleted from the private inbox after
+> 30 days. Technical operating data may still allow inferences about an
+> installation, so complete anonymity is not guaranteed.
+> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
+
+### ⚠️ Upgrade notes
+
+- **No configuration migration or entity reset**: this beta adds recognition for Navigator 10 dual-label sensor identifiers (`B33/B113` and `B34/B114`) used on installations with an intermediate loop (Trennwärmetauscher / frost-protected outdoor loop). Rollback restores `0.23.2-b1` without affecting stored settings. Unresolved field reports (#577, #493) remain under investigation.
+
+### ✨ New
+
+- **Recognize dual-label sensors on Navigator 10 (#598)**: `B33/B113` and `B34/B114` now map to `flow_temperature` (`Vorlauftemperatur (Web)`) and `return_temperature` (`Rücklauftemperatur (Web)`).
+
+### 💼 Maintenance
+
+- **Align quality-scale pins and suppress Python 3.14 event loop warnings (#599)**: fixes cosmetic asyncio test noise on newer Python runtimes.
+
+### ❤️ Thanks
+
+- Thanks to @drconrad815 for reporting the dual-label sensor identifiers and confirming their system layout on the AERO ALM 6–15 (#598).
+
 ## [0.23.2-b1] - 2026-10-24
 
 > **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
