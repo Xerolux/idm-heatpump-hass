@@ -851,11 +851,26 @@ def _create_web_client_with_optional_ip_session(
     return _SessionReleasingWebClient(client, release)
 
 
+def _register_dual_label_sensors() -> None:
+    """Ensure dual-label sensors (e.g. B33/B113 on ALM with intermediate loop) are recognized."""
+    try:
+        from idm_heatpump.web import SENSOR_NAME_MAP
+
+        SENSOR_NAME_MAP.setdefault("B33/B113", "flow_temperature")
+        SENSOR_NAME_MAP.setdefault("B34/B114", "return_temperature")
+    except ImportError:
+        pass
+
+
+_register_dual_label_sensors()
+
+
 def _create_nav10_client(host: str, pin: str, hass: HomeAssistant | None = None) -> _IdmWebClient | None:
     try:
         from idm_heatpump import create_optional_navigator10_web_client
     except ImportError:
         return None
+    _register_dual_label_sensors()
     return _create_web_client_with_optional_ip_session(create_optional_navigator10_web_client, host, pin, hass)
 
 
@@ -864,6 +879,7 @@ def _create_nav20_client(host: str, pin: str, hass: HomeAssistant | None = None)
         from idm_heatpump import create_optional_navigator20_web_client
     except ImportError:
         return None
+    _register_dual_label_sensors()
     return _create_web_client_with_optional_ip_session(create_optional_navigator20_web_client, host, pin, hass)
 
 
