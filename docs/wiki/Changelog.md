@@ -5,6 +5,13 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.2-b3 — 2026-10-25
+
+Pins the API maintenance prerelease `2.14.5b2`: model detection batches its
+heating-circuit probes behind individual gate probes with a per-slot fallback
+(roughly half the requests, identical results). No register-map changes; the
+full integration suite passed against this API tree.
+
 ## v0.23.2-b2 — 2026-10-25
 
 Adds recognition for Navigator 10 dual-label sensor identifiers (`B33/B113` and
