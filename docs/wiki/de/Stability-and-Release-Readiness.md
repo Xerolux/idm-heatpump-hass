@@ -4,14 +4,12 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
-## Prüfumfang zu 0.23.2-b1
+## Prüfumfang zu 0.23.2-b2
 
-Diese Beta verwendet die veröffentlichte API-Korrektur für den Urlaubsmodus.
-Auswahlentität, Registerkodierung und EEPROM-Schutz bleiben erhalten. Tests mit
-simuliertem Transport prüfen alle sechs Betriebsarten der gemeinsamen
-Reglerfamilie und weisen unbekannte Werte zurück. Integrationstests verhindern
-erneute Abweichungen zwischen Auswahlliste und API-Enum. Für diese Korrektur
-wurden keine Reglereinstellungen oder realen Betriebszyklen verändert.
+Diese Beta ergänzt die Erkennung von Doppelkennungen für Navigator 10-Sensoren
+(`B33/B113` und `B34/B114`) auf Anlagen mit Trennwärmetauscher / frostgeschütztem
+Außenkreis (#598) und bereinigt Python 3.14 Event-Loop-Warnungen sowie
+Quality-Scale-Pins (#599).
 
 Issue #577 bleibt für die Webantworten des Navigator 1.7 und die genauen
 Rohabfragen der Statusregister offen. Issue #493 wurde nach dem gemeldeten
@@ -370,7 +368,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.23.2-b1` und `idm-heatpump-api` `2.14.5b1` bilden das aktuelle exakt
+Integration im Quellstand `0.23.2-b2` und `idm-heatpump-api` `2.14.5b1` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

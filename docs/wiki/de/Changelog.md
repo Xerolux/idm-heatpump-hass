@@ -5,6 +5,12 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.2-b2 — 2026-10-25
+
+Erkennt Doppelkennungen für Navigator 10-Sensoren (`B33/B113` und `B34/B114`)
+auf Anlagen mit Trennwärmetauscher / frostgeschütztem Außenkreis (#598) und
+bereinigt Python 3.14 Event-Loop-Warnungen sowie Quality-Scale-Pins (#599).
+
 ## v0.23.2-b1 — 2026-10-24
 
 Der Urlaubsmodus (Wert 3) bleibt mit dem getesteten API-Prerelease auch nach

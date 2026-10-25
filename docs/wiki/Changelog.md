@@ -5,6 +5,13 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.2-b2 — 2026-10-25
+
+Adds recognition for Navigator 10 dual-label sensor identifiers (`B33/B113` and
+`B34/B114`) used on installations with an intermediate loop (Trennwärmetauscher /
+frost-protected outdoor loop, #598) and cleans Python 3.14 event loop warnings
+and quality-scale pins (#599).
+
 ## v0.23.2-b1 — 2026-10-24
 
 Holiday mode (value 3) survives validated Modbus polls with the tested API
