@@ -1814,3 +1814,12 @@ def test_model_name_falls_back_to_the_heatpump_model() -> None:
     supplement = IdmWebSupplement(heatpump_model="TERRA SWC 6-17")
 
     assert supplement.model_name == "TERRA SWC 6-17"
+
+
+def test_dual_label_sensors_registered_in_sensor_name_map() -> None:
+    """Ensure dual-label sensors B33/B113 and B34/B114 are mapped to flow/return."""
+    from idm_heatpump.web import SENSOR_NAME_MAP
+
+    web_data._register_dual_label_sensors()
+    assert SENSOR_NAME_MAP.get("B33/B113") == "flow_temperature"
+    assert SENSOR_NAME_MAP.get("B34/B114") == "return_temperature"
