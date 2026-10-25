@@ -4,6 +4,7 @@ import asyncio
 import math
 import struct
 import sys
+import warnings
 from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, IntEnum
@@ -24,12 +25,16 @@ vol = None
 # Cross-platform event loop setup (Windows uses SelectorEventLoop; Linux is fine)
 # ---------------------------------------------------------------------------
 try:
-    _LOOP_POLICY = asyncio.WindowsSelectorEventLoopPolicy()
-    asyncio.set_event_loop_policy(_LOOP_POLICY)
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        _LOOP_POLICY = asyncio.WindowsSelectorEventLoopPolicy()
+        asyncio.set_event_loop_policy(_LOOP_POLICY)
 
     # Stub homeassistant.runner to prevent HassEventLoopPolicy from overriding ours
     _runner_mod = ModuleType("homeassistant.runner")
-    _runner_mod.HassEventLoopPolicy = type("HassEventLoopPolicy", (asyncio.WindowsSelectorEventLoopPolicy,), {})
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", category=DeprecationWarning)
+        _runner_mod.HassEventLoopPolicy = type("HassEventLoopPolicy", (asyncio.WindowsSelectorEventLoopPolicy,), {})
     sys.modules["homeassistant.runner"] = _runner_mod
 
     @pytest.fixture(scope="session")
