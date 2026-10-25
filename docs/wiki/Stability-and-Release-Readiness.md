@@ -4,6 +4,21 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.2-b3 validation scope
+
+This beta pins the API maintenance prerelease `2.14.5b2`. Model detection now
+batches its heating-circuit probes behind individual gate probes with a
+per-slot fallback; detected models, circuits and entities are unchanged, and
+no register-map or write-path behavior moved. The full integration suite
+(3,149 tests, 99.82 % coverage) and the dependency-freshness and
+documentation-version guards passed against the published PyPI artifact.
+
+Issue #577 remains open for the Navigator 1.7 web responses and exact raw
+status-register requests. Issue #493 was reopened after the reported recurrence;
+its cause and controller-side retention are not proven. Earlier release
+decisions below record the evidence and decisions made at their respective
+dates, not the current issue status. Neither issue is claimed fixed by this beta.
+
 ## 0.23.2-b2 validation scope
 
 This beta adds recognition for Navigator 10 dual-label sensor identifiers
@@ -347,7 +362,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.23.2-b2` and `idm-heatpump-api` `2.14.5b1` form the current
+Source-tree integration `0.23.2-b3` and `idm-heatpump-api` `2.14.5b2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

@@ -5,6 +5,13 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.2-b3 — 2026-10-25
+
+Pinnt das API-Wartungsprerelease `2.14.5b2`: die Modellerkennung bündelt ihre
+Heizkreis-Probes hinter einzelnen Gate-Probes mit Per-Slot-Fallback (etwa
+halbierte Requestzahl, identische Ergebnisse). Keine Änderungen an der
+Register-Map; die komplette Integrationssuite lief gegen diesen API-Stand grün.
+
 ## v0.23.2-b2 — 2026-10-25
 
 Erkennt Doppelkennungen für Navigator 10-Sensoren (`B33/B113` und `B34/B114`)

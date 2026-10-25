@@ -4,6 +4,23 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Prüfumfang zu 0.23.2-b3
+
+Diese Beta pinnt das API-Wartungsprerelease `2.14.5b2`. Die Modellerkennung
+bündelt ihre Heizkreis-Probes hinter einzelnen Gate-Probes mit Per-Slot-Fallback;
+erkannte Modelle, Heizkreise und Entitäten ändern sich nicht, und weder
+Register-Map noch Schreibpfade haben sich bewegt. Die komplette
+Integrationssuite (3.149 Tests, 99,82 % Coverage) sowie die Guards für
+Abhängigkeits-Aktualität und Dokuversions liefen gegen das veröffentlichte
+PyPI-Artefakt grün.
+
+Issue #577 bleibt für die Webantworten des Navigator 1.7 und die genauen
+Rohabfragen der Statusregister offen. Issue #493 wurde nach dem gemeldeten
+Rückfall wieder geöffnet; Ursache und reglerinternes Beibehalten der Werte
+sind nicht bewiesen. Die früheren Release-Entscheidungen unten dokumentieren
+den jeweiligen damaligen Stand, nicht den heutigen Issue-Status. Diese Beta
+beansprucht keine Behebung dieser beiden Issues.
+
 ## Prüfumfang zu 0.23.2-b2
 
 Diese Beta ergänzt die Erkennung von Doppelkennungen für Navigator 10-Sensoren
@@ -368,7 +385,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.23.2-b2` und `idm-heatpump-api` `2.14.5b1` bilden das aktuelle exakt
+Integration im Quellstand `0.23.2-b3` und `idm-heatpump-api` `2.14.5b2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit

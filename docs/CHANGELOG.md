@@ -13,6 +13,41 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.23.2-b3] - 2026-10-25
+
+> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
+> different Navigator models, firmware versions and normal operating states help
+> us validate values, find missing mappings and improve device support. Working
+> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
+> to record read-only data, review it locally and upload it privately without
+> preparing an email attachment.
+>
+> Recognized PINs, serial numbers, myIDM and network identifiers are removed
+> before sharing. Participation is voluntary; submitted data is used only to
+> improve this integration, and uploads are deleted from the private inbox after
+> 30 days. Technical operating data may still allow inferences about an
+> installation, so complete anonymity is not guaranteed.
+> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
+
+### ⚠️ Upgrade notes
+
+- **No configuration migration or entity reset**: this beta pins the API
+  maintenance prerelease `2.14.5b2`. Model detection now batches its
+  heating-circuit probes behind individual gate probes with a per-slot fallback,
+  which roughly halves the requests and worst-case setup time on responsive
+  controllers; detected models, circuits and entities are unchanged. Rollback
+  restores `0.23.2-b2` without affecting stored settings.
+
+### 💼 Maintenance
+
+- **Pin `idm-heatpump-api[web]==2.14.5b2`** (API PR #145): library-side
+  hardening only — batched detection probes with identical results, honest
+  `dry_run` labeling of write plans, shared timeout/error-mapping helpers, a
+  latent `exclude_from_write` float-comparison fix, and expanded test coverage
+  for the key-based write API and the Pymodbus coil extension. No register-map
+  changes; the full integration suite (3,149 tests) passed against this API
+  tree before its publication.
+
 ## [0.23.2-b2] - 2026-10-25
 
 > **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
