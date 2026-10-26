@@ -1793,6 +1793,11 @@ class TestWebToRegisterAliases:
         assert web_data.web_to_register_value("water_temp_top") == "dhw_temp_top"
         assert web_data.web_to_register_value("compressor_1") == "compressor_status_1"
 
+    def test_intermediate_circuit_values_bridge_to_flow_and_return(self) -> None:
+        """Issue #598: web-only plants with dual-label sensors keep their snapshot."""
+        assert web_data.web_to_register_value("intermediate_flow_temperature") == "hp_flow_temp"
+        assert web_data.web_to_register_value("intermediate_return_temperature") == "hp_return_temp"
+
     def test_heating_circuit_web_values_bridge_per_circuit(self) -> None:
         assert web_data.web_to_register_value("flow_temp_HK_D") == "hc_d_flow_temp"
         assert web_data.web_to_register_value("room_temperature_HK_A") == "hc_a_room_temp"
@@ -1817,9 +1822,14 @@ def test_model_name_falls_back_to_the_heatpump_model() -> None:
 
 
 def test_dual_label_sensors_registered_in_sensor_name_map() -> None:
-    """Ensure dual-label sensors B33/B113 and B34/B114 are mapped to flow/return."""
+    """Dual-label sensors map to their own intermediate-circuit value keys.
+
+    Mapping B33/B113 onto ``flow_temperature`` made ``sensor.py`` suppress the
+    entities whenever a Modbus connection is active (issue #598 field report:
+    the sensors vanished on v0.23.2-b3 with Modbus enabled).
+    """
     from idm_heatpump.web import SENSOR_NAME_MAP
 
     web_data._register_dual_label_sensors()
-    assert SENSOR_NAME_MAP.get("B33/B113") == "flow_temperature"
-    assert SENSOR_NAME_MAP.get("B34/B114") == "return_temperature"
+    assert SENSOR_NAME_MAP.get("B33/B113") == "intermediate_flow_temperature"
+    assert SENSOR_NAME_MAP.get("B34/B114") == "intermediate_return_temperature"

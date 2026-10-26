@@ -2283,6 +2283,27 @@ class TestWebSensorDefinitionFiltering:
         # Web-only values survive the filter.
         assert "myidm_id" in keys
 
+    def test_intermediate_circuit_sensors_survive_active_modbus_connection(self):
+        """Issue #598: dual-label sensors must exist next to Modbus flow/return.
+
+        Plants with a separation heat exchanger report B33/B113 and B34/B114
+        as ``intermediate_flow_temperature``/``intermediate_return_temperature``.
+        These are distinct physical sensors, so an active Modbus connection
+        must not suppress them — while the plain web flow/return keys stay
+        suppressed as duplicates of the Modbus registers.
+        """
+        from custom_components.idm_heatpump.sensor import _web_sensor_definitions
+
+        coord = _make_coordinator()
+        coord.active_registers = [_make_register("hp_flow_temp"), _make_register("hp_return_temp")]
+
+        keys = {definition.key for definition in _web_sensor_definitions(coord)}
+
+        assert "intermediate_flow_temperature" in keys
+        assert "intermediate_return_temperature" in keys
+        assert "flow_temperature" not in keys
+        assert "return_temperature" not in keys
+
 
 class TestWebMetadataCoercion:
     def test_invalid_web_metadata_classes_are_dropped(self, monkeypatch):
