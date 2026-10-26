@@ -1826,9 +1826,15 @@ def test_dual_label_sensors_registered_in_sensor_name_map() -> None:
 
     Mapping B33/B113 onto ``flow_temperature`` made ``sensor.py`` suppress the
     entities whenever a Modbus connection is active (issue #598 field report:
-    the sensors vanished on v0.23.2-b3 with Modbus enabled).
+    the sensors vanished on v0.23.2-b3 with Modbus enabled). The library
+    itself ships that mapping since idm-heatpump-api 2.14.5b2, so the
+    registration must override it — seed the library value first to keep the
+    test meaningful on every API pin.
     """
     from idm_heatpump.web import SENSOR_NAME_MAP
+
+    SENSOR_NAME_MAP["B33/B113"] = "flow_temperature"
+    SENSOR_NAME_MAP["B34/B114"] = "return_temperature"
 
     web_data._register_dual_label_sensors()
     assert SENSOR_NAME_MAP.get("B33/B113") == "intermediate_flow_temperature"
