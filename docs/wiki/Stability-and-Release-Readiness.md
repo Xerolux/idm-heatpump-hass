@@ -4,6 +4,24 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.2-b4 validation scope
+
+This beta fixes the Navigator 10 dual-label sensors (#598) with
+integration-side code only; the API pin stays `2.14.5b2`. `B33/B113` and
+`B34/B114` map to their own intermediate-circuit value keys — deliberately
+overriding the library's mapping onto the plain flow/return keys, which
+`setdefault` could not replace — so the entities exist next to a Modbus
+connection. Plants without a separation heat exchanger keep the duplicate
+suppression for plain B33/B34. The full integration suite (3,149 tests,
+99.82 % coverage), strict mypy, ruff and the real-Home-Assistant smoke tests
+passed on the released pin.
+
+Issue #598 stays open until the reporter confirms the renamed entities on his
+plant. Issue #577 remains open for the Navigator 1.7 web responses and exact
+raw status-register requests. Issue #493 was reopened after the reported
+recurrence; its cause and controller-side retention are not proven. Neither
+#577 nor #493 is claimed fixed by this beta.
+
 ## 0.23.2-b3 validation scope
 
 This beta pins the API maintenance prerelease `2.14.5b2`. Model detection now
@@ -362,7 +380,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.23.2-b3` and `idm-heatpump-api` `2.14.5b2` form the current
+Source-tree integration `0.23.2-b4` and `idm-heatpump-api` `2.14.5b2` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to

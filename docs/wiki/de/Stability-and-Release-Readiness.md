@@ -4,6 +4,25 @@ Diese Seite hält fest, was verifiziert wurde, was unsicher bleibt und was gelte
 musste, bevor das Beta-Label entfernt wurde. Sie ist bewusst strenger als ein
 normales Changelog.
 
+## Prüfumfang zu 0.23.2-b4
+
+Diese Beta behebt die Navigator-10-Doppellabel-Sensoren (#598) rein auf
+Integrationsseite; der API-Pin bleibt `2.14.5b2`. `B33/B113` und `B34/B114`
+liegen jetzt auf eigenen Zwischenkreis-Wertschlüsseln — und überschreiben dabei
+bewusst die Zuordnung der Bibliothek auf die schlichten Vorlauf/Rücklauf-Schlüssel,
+die ein `setdefault` nicht ersetzen konnte — sodass die Entitäten neben einer
+Modbus-Verbindung existieren. Anlagen ohne Trennwärmetauscher behalten die
+Duplikat-Unterdrückung für schlichtes B33/B34. Die komplette Integrationssuite
+(3.149 Tests, 99,82 % Coverage), strenges mypy, ruff und die
+Real-Home-Assistant-Smoke-Tests liefen gegen den gepinnten Stand grün.
+
+Issue #598 bleibt offen, bis der Melder die umbenannten Entitäten an seiner
+Anlage bestätigt. Issue #577 bleibt für die Webantworten des Navigator 1.7 und
+die genauen Rohabfragen der Statusregister offen. Issue #493 wurde nach dem
+gemeldeten Rückfall wieder geöffnet; Ursache und reglerinternes Beibehalten der
+Werte sind nicht bewiesen. Diese Beta beansprucht keine Behebung von #577 oder
+#493.
+
 ## Prüfumfang zu 0.23.2-b3
 
 Diese Beta pinnt das API-Wartungsprerelease `2.14.5b2`. Die Modellerkennung
@@ -385,7 +404,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.23.2-b3` und `idm-heatpump-api` `2.14.5b2` bilden das aktuelle exakt
+Integration im Quellstand `0.23.2-b4` und `idm-heatpump-api` `2.14.5b2` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
