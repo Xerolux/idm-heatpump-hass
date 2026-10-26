@@ -79,7 +79,9 @@ unavailable instead of guessing.
 - **Weather**: the existing *Weather entity* option (hourly forecast via
   `weather.get_forecasts`).
 - **PV forecast**: optional sensor in the options
-  (*Predictive advisor PV forecast sensor*); PVForecast-style
+  (*Predictive advisor PV forecast sensor (optional)*). The field may be
+  left empty — the advisor works fully without it; the sensor is only the
+  basis for the PV-based hot-water window recommendations. PVForecast-style
   `detailed_forecast` attributes and Solcast-style `forecast` lists are
   understood, and a sensor of the core **Forecast.Solar** integration is
   read through its `get_forecast` service (hourly `wh_period`) — its own
