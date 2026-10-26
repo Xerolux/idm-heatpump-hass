@@ -93,7 +93,7 @@
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
           "differential_circuits": "Differential-temperature controlled circuits",
-          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor (optional)",
           "predictive_advisor": "Enable predictive advisor"
         },
         "data_description": {
@@ -111,7 +111,7 @@
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
-          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities."
         },
         "sections": {
@@ -149,7 +149,7 @@
               "short_cycle_minutes": "Short compressor-cycle threshold",
               "dynamic_price_entity": "Dynamic electricity price sensor",
               "comfort_schedule_windows": "Additional comfort windows",
-              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor (optional)",
               "predictive_advisor": "Enable predictive advisor",
               "external_power_forwarding_interval": "External power forwarding interval",
               "ai_advisor": "Experimental AI adviser (read-only)",
@@ -201,7 +201,7 @@
               "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
               "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
-              "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+              "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
               "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
               "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
               "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
@@ -565,7 +565,7 @@
           "ai_task_entity": "Home Assistant AI Task entity",
           "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
           "differential_circuits": "Differential-temperature controlled circuits",
-          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor (optional)",
           "predictive_advisor": "Enable predictive advisor",
           "connection_mode": "Connection mode",
           "external_power_forwarding_interval": "External power forwarding interval"
@@ -585,7 +585,7 @@
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
-          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
           "energy_manager_exclusive_control": "The automatic DHW boost stays disabled unless this is confirmed. Do not enable it while Smartfox, openWB or another system controls DHW.",
           "health_monitor": "Adds diagnostic problem sensors and a current health report. It only observes data and never writes to the heat pump. Disabled by default.",
@@ -717,7 +717,7 @@
           "ai_task_entity": "Home Assistant AI Task entity",
           "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
           "differential_circuits": "Differential-temperature controlled circuits",
-          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor (optional)",
           "predictive_advisor": "Enable predictive advisor",
           "connection_mode": "Connection mode",
           "external_power_forwarding_interval": "External power forwarding interval"
@@ -783,7 +783,7 @@
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
           "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
-          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
           "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
           "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."
@@ -879,7 +879,7 @@
           "external_power_forwarding": "Automatic external power forwarding",
           "dynamic_price_entity": "Dynamic electricity price sensor",
           "differential_circuits": "Differential-temperature controlled circuits",
-          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor (optional)",
           "predictive_advisor": "Enable predictive advisor"
         },
         "data_description": {
@@ -897,7 +897,7 @@
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
-          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities."
         },
         "sections": {
@@ -935,7 +935,7 @@
               "short_cycle_minutes": "Short compressor-cycle threshold",
               "dynamic_price_entity": "Dynamic electricity price sensor",
               "comfort_schedule_windows": "Additional comfort windows",
-              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+              "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor (optional)",
               "predictive_advisor": "Enable predictive advisor",
               "external_power_forwarding_interval": "External power forwarding interval",
               "ai_advisor": "Experimental AI adviser (read-only)",
@@ -987,7 +987,7 @@
               "short_cycle_minutes": "Duration below which a fully observed compressor cycle is considered short. The integration does not stop or control the compressor; it only turns on the short-cycle diagnostic binary sensor. A higher value therefore produces notices more often.",
               "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
               "comfort_schedule_windows": "Optional: one line per window as circuit,HH:MM,HH:MM,target (example: a,06:00,09:00,21.0). Up to 16 non-overlapping windows across configured heating circuits. When set, these replace the single legacy window. Requires exclusive heating control.",
-              "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+              "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
               "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
               "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds.",
               "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
@@ -1316,7 +1316,7 @@
           "ai_task_entity": "Home Assistant AI Task entity",
           "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
           "differential_circuits": "Differential-temperature controlled circuits",
-          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor (optional)",
           "predictive_advisor": "Enable predictive advisor",
           "connection_mode": "Connection mode",
           "external_power_forwarding_interval": "External power forwarding interval"
@@ -1336,7 +1336,7 @@
           "external_power_forwarding": "Enables selection of existing Home Assistant sensors and cyclic writes to the IDM GLT power registers.",
           "dynamic_price_entity": "Optional local Home Assistant sensor in EUR/kWh, €/kWh or ct/kWh. If selected, observed energy is priced at the current tariff. Missing or invalid prices leave that energy unpriced rather than using the fixed estimate.",
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
-          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
           "energy_manager_exclusive_control": "The automatic DHW boost stays disabled unless this is confirmed. Do not enable it while Smartfox, openWB or another system controls DHW.",
           "health_monitor": "Adds diagnostic problem sensors and a current health report. It only observes data and never writes to the heat pump. Disabled by default.",
@@ -1468,7 +1468,7 @@
           "ai_task_entity": "Home Assistant AI Task entity",
           "ai_unverified_text": "Enable free-form, not fully verifiable AI explanations (otherwise measured-data reports without model calls)",
           "differential_circuits": "Differential-temperature controlled circuits",
-          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor",
+          "advisor_pv_forecast_entity": "Predictive advisor PV forecast sensor (optional)",
           "predictive_advisor": "Enable predictive advisor",
           "connection_mode": "Connection mode",
           "external_power_forwarding_interval": "External power forwarding interval"
@@ -1534,7 +1534,7 @@
           "knx_respond_to_read": "Reply to a KNX read request with the current value, so a push-button or visualisation asking after a restart gets an answer instead of staying blank.",
           "ai_advisor": "Off by default. Measured-data reports without model calls. Free-form AI explanations need separate opt-in and can be wrong. No plant control or voice exposure.",
           "differential_circuits": "Select only installed circuits whose heating system is set to differential temperature control in the Navigator (for example a wood stove). Shows storage, reference, temperature difference and status; removes normal heating controls. No automatic detection.",
-          "advisor_pv_forecast_entity": "Optional Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes). Needed for PV-based hot-water window recommendations.",
+          "advisor_pv_forecast_entity": "Optional — leave empty if you have none; the advisor works fully without it. A Home Assistant sensor with an hourly PV production forecast (e.g. PVForecast or Solcast attributes) is only the basis for PV-based hot-water window recommendations.",
           "predictive_advisor": "Strictly read-only analysis and recommendations: operation reason, anomalies against the plant's own baselines, health and efficiency scores, heating-curve and hot-water window recommendations and a 24-hour plan. Works fully local and deterministic - no AI, cloud or LLM is involved or required. On by default with the Smart profile; disabling removes all of its entities.",
           "connection_mode": "Automatic keeps the recommended behaviour: Modbus for registers and writes, the local web supplement for additional values when a PIN is configured. Modbus + web supplement pins both paths on and disables the web-only setup fallback. Web only runs without any Modbus connection: the operating mode and error acknowledgement are controlled through the local web interface; setpoints and further controls still require Modbus. Modbus only never contacts the web interface, even with a PIN configured.",
           "external_power_forwarding_interval": "Fallback cycle for writing the selected power sensors to the IDM GLT registers. Sensor-driven updates are forwarded immediately (throttled by the integration's write protection), so this interval only paces quiet periods. Default: 60 seconds."

@@ -82,7 +82,10 @@ sind, bleiben stattdessen nicht verfügbar — sie raten nie.
 - **Wetter**: die bestehende Option *Wetter-Entität* (stündliche Prognose
   über `weather.get_forecasts`).
 - **PV-Prognose**: optionaler Sensor in den Optionen
-  (*PV-Prognose-Sensor für den Predictive Advisor*); PVForecast-Attribute
+  (*PV-Prognose-Sensor für den Predictive Advisor (optional)*). Das Feld
+  darf leer gelassen werden — der Advisor funktioniert auch ohne; der
+  Sensor ist nur die Grundlage für die PV-basierten
+  Warmwasser-Zeitfenster-Empfehlungen. PVForecast-Attribute
   (`detailed_forecast`) und Solcast-Listen (`forecast`) werden verstanden,
   und ein Sensor der Core-Integration **Forecast.Solar** wird über deren
   `get_forecast`-Service gelesen (stündliches `wh_period`) — ihre eigenen
