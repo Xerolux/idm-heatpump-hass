@@ -13,6 +13,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.23.2-b4] - 2026-10-26
+
+> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
+> different Navigator models, firmware versions and normal operating states help
+> us validate values, find missing mappings and improve device support. Working
+> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
+> to record read-only data, review it locally and upload it privately without
+> preparing an email attachment.
+>
+> Recognized PINs, serial numbers, myIDM and network identifiers are removed
+> before sharing. Participation is voluntary; submitted data is used only to
+> improve this integration, and uploads are deleted from the private inbox after
+> 30 days. Technical operating data may still allow inferences about an
+> installation, so complete anonymity is not guaranteed.
+> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
+
+### ⚠️ Upgrade notes
+
+- **Renamed dual-label web entities**: on plants with a separation heat exchanger the two sensors return as *Intermediate circuit flow/return temperature (Web)* (`Vorlauftemperatur/Rücklauftemperatur Zwischenkreis (Web)`); a pair created by b2/b3 in web-only mode may linger unavailable and can be deleted. No configuration migration; rollback to `0.23.2-b3` is safe.
+
+### 🐛 Bugfixes
+
+- **Keep dual-label sensors alive next to a Modbus connection (#598)**: `B33/B113` and `B34/B114` on Navigator 10 plants with an intermediate loop vanished whenever a Modbus connection was active, because they were mapped onto the plain flow/return web keys that are suppressed as Modbus duplicates. The integration now overrides the library mapping with dedicated intermediate-circuit value keys.
+
+### 💼 Maintenance
+
+- **Ignore the DTZ lint rules a ruff release activated**: the newest ruff enables `DTZ001`/`DTZ005` by default; the naive wall-clock datetimes behind the technician codes are deliberate, so the rules are ignored in `ruff.toml` instead of changing the semantics.
+
+### ❤️ Thanks
+
+- @drconrad815 traced the vanished sensors to the duplicate filter, tested the recovery path on his AERO ALM 6–15 with Navigator 10 and supplied live measurements that confirmed the sensors are distinct physical values.
+
 ## [0.23.2-b3] - 2026-10-25
 
 > **Help improve IDM Heatpump: share a diagnostic capture.** More captures from

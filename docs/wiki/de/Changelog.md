@@ -5,6 +5,13 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.23.2-b4 — 2026-10-26
+
+Behebt die Doppellabel-Sensoren (`B33/B113`, `B34/B114`) an Navigator-10-Anlagen
+mit Zwischenkreis: sie verschwanden, sobald eine Modbus-Verbindung aktiv war,
+weil sie die als Modbus-Duplikate unterdrückten Web-Wertschlüssel teilten. Sie
+haben jetzt eigene Entitäten neben den Modbus-Registern.
+
 ## v0.23.2-b3 — 2026-10-25
 
 Pinnt das API-Wartungsprerelease `2.14.5b2`: die Modellerkennung bündelt ihre
