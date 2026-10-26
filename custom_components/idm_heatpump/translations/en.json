@@ -2799,6 +2799,12 @@
       "web_infosystem_notifications": {
         "name": "Info system notifications (Web)"
       },
+      "web_intermediate_flow_temperature": {
+        "name": "Intermediate circuit flow temperature (Web)"
+      },
+      "web_intermediate_return_temperature": {
+        "name": "Intermediate circuit return temperature (Web)"
+      },
       "web_last_success": {
         "name": "Last web update (Web)"
       },

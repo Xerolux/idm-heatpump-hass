@@ -230,6 +230,8 @@ Typische reine Web-Sensoren sind unter anderem:
 | Anzahl Infosystem-Meldungen (Web) | Anzahl aktiver Navigator-10-Infosystem-Meldungen |
 | Anforderungsgrund (Web) | Nur Navigator 10: der vom Regler selbst gemeldete Anforderungsgrund (Issue #353) |
 | Durchflussmesser (Web) | Durchfluss der Wärmesenke in L/min aus der eigenen Durchflusszeile des Reglers; meldet das Modbus-Register 1072 „nicht vorhanden“ (ohne Trennwärmetauscher), füllt dieser Wert automatisch die Entität *Durchfluss Wärmesenke (B2)* auf |
+| Vorlauftemperatur Zwischenkreis (Web) | Vorlauftemperatur des Zwischenkreises bei Anlagen mit Trennwärmetauscher; die Weboberfläche meldet den Sensor unter dem Doppellabel B33/B113. Bestet zusätzlich zu den Modbus-Vorlauf/Rücklauf-Entitäten, da es sich um einen eigenen physikalischen Sensor handelt (Issue #598) |
+| Rücklauftemperatur Zwischenkreis (Web) | Rücklauftemperatur des Zwischenkreises (Doppellabel B34/B114); siehe oben |
 | Warmwasserstation Durchfluss (Web) | Durchfluss durch die Warmwasserstation in L/min aus der Weboberfläche |
 
 Das Wärmepumpenmodell ist bewusst keine eigene Entität: Die Navigator-10-

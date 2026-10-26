@@ -173,6 +173,13 @@ _WEB_VALUE_NAMES: tuple[str, ...] = (
     "heat_quantity_hotwater_today",
     "heat_quantity_hotwater_total",
     "heat_sink_intermediate_circuit_pump_signal",
+    # Dual-label sensors of plants with a separation heat exchanger: the web
+    # interface reports B33/B113 and B34/B114 there, physical sensors next to
+    # the Modbus flow/return registers — deliberately not part of
+    # _WEB_MODBUS_DUPLICATE_VALUES, so they exist alongside a Modbus
+    # connection (issue #598).
+    "intermediate_flow_temperature",
+    "intermediate_return_temperature",
     "heating_water_outlet_temperature",
     "heatstore_temperature",
     "high_pressure_error",
@@ -287,6 +294,8 @@ _WEB_VALUE_UNITS: dict[str, str] = {
     **{f"room_temperature_HK_{letter}": "°C" for letter in HEATING_CIRCUIT_LETTERS},
     "flowmeter": "L/min",
     "heating_water_outlet_temperature": "°C",
+    "intermediate_flow_temperature": "°C",
+    "intermediate_return_temperature": "°C",
     "heat_quantity_heating_today": "kWh",
     "heat_quantity_heating_total": "kWh",
     "heat_quantity_hotwater_today": "kWh",

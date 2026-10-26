@@ -1,1 +1,8 @@
 line-length = 120
+
+[lint]
+# Naive datetimes are deliberate: technician codes and the tests around them
+# compute against the controller's local wall clock, where a tzinfo would
+# change the semantics. DTZ001/DTZ005 entered the default rule set with a
+# ruff release (2026-10-26), not with a code change here.
+ignore = ["DTZ001", "DTZ005"]

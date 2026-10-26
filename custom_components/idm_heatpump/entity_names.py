@@ -452,6 +452,14 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
             "Heat sink intermediate circuit pump signal (Web)",
             "Wärmesenke Zwischenkreispumpe Signal (Web)",
         ),
+        "web_intermediate_flow_temperature": (
+            "Intermediate circuit flow temperature (Web)",
+            "Vorlauftemperatur Zwischenkreis (Web)",
+        ),
+        "web_intermediate_return_temperature": (
+            "Intermediate circuit return temperature (Web)",
+            "Rücklauftemperatur Zwischenkreis (Web)",
+        ),
         "web_heating_water_outlet_temperature": (
             "Heating water outlet temperature (Web)",
             "Heizwasser Austrittstemperatur (Web)",

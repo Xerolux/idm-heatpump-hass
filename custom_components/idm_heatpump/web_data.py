@@ -648,6 +648,8 @@ def _is_authentication_error(err: Exception) -> bool:
 WEB_TO_REGISTER_ALIASES: dict[str, str] = {
     "flowmeter": "heat_sink_flow_rate",
     "flow_temperature": "hp_flow_temp",
+    "intermediate_flow_temperature": "hp_flow_temp",
+    "intermediate_return_temperature": "hp_return_temp",
     "return_temperature": "hp_return_temp",
     "outside_air_temperature": "outdoor_temp",
     "water_temp_top": "dhw_temp_top",
@@ -852,12 +854,23 @@ def _create_web_client_with_optional_ip_session(
 
 
 def _register_dual_label_sensors() -> None:
-    """Ensure dual-label sensors (e.g. B33/B113 on ALM with intermediate loop) are recognized."""
+    """Ensure dual-label sensors (e.g. B33/B113 on ALM with intermediate loop) are recognized.
+
+    Plants with a separation heat exchanger report the intermediate-circuit
+    flow and return under the dual labels B33/B113 and B34/B114 instead of the
+    plain B33/B34. These are distinct physical sensors next to the heat pump's
+    own Modbus flow/return registers, so they map to their own value keys:
+    mapping them onto ``flow_temperature`` (as idm-heatpump-api 2.14.5b2 and
+    this integration before 0.23.2-b4 did) makes ``sensor.py`` suppress them
+    as Modbus duplicates whenever a Modbus connection is active (issue #598
+    comment 6413172594). The assignment deliberately overrides the library's
+    own mapping for these two labels; ``setdefault`` would keep it.
+    """
     try:
         from idm_heatpump.web import SENSOR_NAME_MAP
 
-        SENSOR_NAME_MAP.setdefault("B33/B113", "flow_temperature")
-        SENSOR_NAME_MAP.setdefault("B34/B114", "return_temperature")
+        SENSOR_NAME_MAP["B33/B113"] = "intermediate_flow_temperature"
+        SENSOR_NAME_MAP["B34/B114"] = "intermediate_return_temperature"
     except ImportError:
         pass
 
