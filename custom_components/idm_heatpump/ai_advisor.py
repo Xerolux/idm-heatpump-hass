@@ -32,7 +32,7 @@ from .ai_cloud import (
     AdvisorError as AdvisorError,  # noqa: PLC0414 - preserve the existing public error import
 )
 from .ai_learning import LearningHistory
-from .const import CONF_AI_ADVISOR, DOMAIN
+from .const import CONF_AI_ADVISOR, DOMAIN, LEARNING_MODE_VALUES
 from .health_monitor import HEALTH_CHECKS
 
 _LOGGER = logging.getLogger(__name__)
@@ -110,7 +110,11 @@ def capture_sample(coordinator: Any, timestamp: float) -> dict[str, Any]:
     data = coordinator.data if healthy and isinstance(coordinator.data, dict) else {}
     statistics = getattr(coordinator, "energy_statistics", None)
     mode = _number(data.get("hp_operating_mode"))
-    result: dict[str, Any] = {"at": timestamp, "connected": healthy, "mode": mode if mode in (1, 2, 4) else None}
+    result: dict[str, Any] = {
+        "at": timestamp,
+        "connected": healthy,
+        "mode": mode if mode in LEARNING_MODE_VALUES else None,
+    }
     for key in _TEMPERATURES:
         value = _number(data.get(key))
         result[key] = value if value is not None and -60 <= value <= 110 else None
