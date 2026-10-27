@@ -19,7 +19,7 @@ from typing import Any, Final
 from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
-from .advisor_analytics import AdvisorAnalytics
+from .advisor_analytics import AdvisorAnalytics, DailyBaseline
 from .const import HeatPumpStatus
 from .predictive_advisor import (
     _ROOM_TEMP_RANGE,
@@ -46,6 +46,7 @@ _FLOW_EXCESS_K: Final = 3.0
 
 # Documented anomaly thresholds (spec section 10): today vs. own baseline.
 _FLOW_LOW_PERCENT: Final = -15.0
+_FLOW_MODE_LABELS: Final[dict[str, str]] = {"heating": "heating", "dhw": "hot-water"}
 _SPREAD_HIGH_K: Final = 2.0
 _STARTS_HIGH_PERCENT: Final = 50.0
 _DHW_CHARGE_HIGH_PERCENT: Final = 40.0
@@ -433,6 +434,13 @@ class AdvisorEngine:
         flow_rate = _number(data.get("heat_sink_flow_rate"))
         if flow_rate is not None and flow_rate > 0.05:
             self._analytics.observe_metric("heat_sink_flow_rate", flow_rate, current)
+            # Like-for-like baselines (#607): DHW charging runs at a fraction
+            # of heating flow (6-7 vs 22-32 L/min in the field), so a
+            # DHW-heavy day must not drag the day's mean below the multi-day
+            # heating median and fire a false anomaly.
+            domain = _cop_domain(data.get("hp_operating_mode"))
+            if domain != "total":
+                self._analytics.observe_metric(f"heat_sink_flow_rate:{domain}", flow_rate, current)
         if flow is not None and return_temp is not None:
             self._analytics.observe_metric("hp_temperature_spread", flow - return_temp, current)
         if outdoor is not None and flow is not None and thermal and power:
@@ -520,14 +528,34 @@ class AdvisorEngine:
     # Anomaly producer (phase 3)
     # ------------------------------------------------------------------
 
+    def _flow_anomaly_baseline(self, current: datetime) -> DailyBaseline | None:
+        """Like-for-like flow baseline for the day's dominant demand reason.
+
+        The combined metric mixes heating and DHW charging, and the two
+        profiles sit far apart, so a DHW-heavy day fired the anomaly without
+        a fault (#607). The day's demand-reason mix decides which per-mode
+        baseline applies; a mode without an established baseline stays
+        silent instead of comparing against the wrong profile.
+        """
+        samples = {
+            key: self._analytics.metric_today_samples(key, current)
+            for key in ("heat_sink_flow_rate:heating", "heat_sink_flow_rate:dhw")
+        }
+        dominant = max(samples, key=lambda key: samples[key])
+        if samples[dominant] == 0:
+            return None
+        return self._analytics.metric_baseline(dominant, current)
+
     def _produce_anomalies(self, current: datetime) -> None:
         # key -> (strong, message, reason, baseline_days)
         found: dict[str, tuple[bool, str, str, int]] = {}
-        flow = self._analytics.metric_baseline("heat_sink_flow_rate", current)
+        flow = self._flow_anomaly_baseline(current)
         if flow is not None and flow.deviation_percent is not None and flow.deviation_percent <= _FLOW_LOW_PERCENT:
+            mode_label = _FLOW_MODE_LABELS.get(flow.key.rsplit(":", 1)[-1], "")
+            suffix = f" {mode_label}" if mode_label else ""
             found["anomaly_flow_rate_low"] = (
                 flow.deviation_percent <= 2 * _FLOW_LOW_PERCENT,
-                f"Heat-circle flow is {abs(flow.deviation_percent):.0f}% below its {flow.days}-day baseline",
+                f"Heat-circle flow is {abs(flow.deviation_percent):.0f}% below its {flow.days}-day{suffix} baseline",
                 "heat_circle_flow_below_baseline",
                 flow.days,
             )
