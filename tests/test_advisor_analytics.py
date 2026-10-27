@@ -135,6 +135,49 @@ def test_metric_baseline_stays_silent_without_matching_weather() -> None:
     assert analytics.metric_baseline("compressor_starts", T0) is not None
 
 
+def test_seasonal_baseline_matches_same_month_prior_year() -> None:
+    analytics = _analytics()
+    now = datetime(2026, 10, 27, tzinfo=UTC)
+    # Same month last year at 20.0: the seasonal norm.
+    for day in (24, 25, 26, 27):
+        analytics.observe_metric("compressor_starts", 20.0, datetime(2025, 10, day, tzinfo=UTC), mode="max")
+    # Enough recent days that the 30-day rolling window drops the old year.
+    for offset in range(1, 36):
+        analytics.observe_metric("compressor_starts", 8.0, now - timedelta(days=offset), mode="max")
+    baseline = analytics.metric_baseline("compressor_starts", now)
+    assert baseline is not None
+    assert baseline.median == 8.0  # rolling window ignores the old year
+    assert baseline.seasonal_days == 4
+    assert baseline.seasonal_median == 20.0
+
+
+def test_seasonal_baseline_ignores_wrong_month_and_current_year() -> None:
+    analytics = _analytics()
+    now = datetime(2026, 10, 27, tzinfo=UTC)
+    for offset in (4, 3, 2):
+        analytics.observe_metric("compressor_starts", 8.0, now - timedelta(days=offset), mode="max")
+    # A prior-year day in a different month must not count as seasonal.
+    analytics.observe_metric("compressor_starts", 99.0, datetime(2025, 9, 15, tzinfo=UTC), mode="max")
+    baseline = analytics.metric_baseline("compressor_starts", now)
+    assert baseline is not None
+    assert baseline.seasonal_days == 0
+    assert baseline.seasonal_median is None
+
+
+def test_seasonal_z_score_and_normal_band() -> None:
+    analytics = _analytics()
+    now = datetime(2026, 10, 27, tzinfo=UTC)
+    for day in (24, 25, 26, 27):
+        analytics.observe_metric("compressor_starts", 20.0, datetime(2025, 10, day, tzinfo=UTC), mode="max")
+    for offset in (4, 3, 2):
+        analytics.observe_metric("compressor_starts", 8.0, now - timedelta(days=offset), mode="max")
+    analytics.observe_metric("compressor_starts", 20.0, now, mode="max")  # today equals the seasonal norm
+    baseline = analytics.metric_baseline("compressor_starts", now)
+    assert baseline is not None
+    assert baseline.seasonal_z_score == 0.0
+    assert baseline.is_seasonal_normal is True
+
+
 # ----------------------------------------------------------------------
 # COP map
 # ----------------------------------------------------------------------

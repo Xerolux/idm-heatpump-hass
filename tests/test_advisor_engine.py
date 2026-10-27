@@ -430,6 +430,26 @@ def test_anomaly_producer_honors_snoozed_reason() -> None:
     assert engine.anomaly_active is False
 
 
+def test_anomaly_suppressed_when_seasonally_normal() -> None:
+    """A seasonal transition must not fire a rolling-window anomaly (#611)."""
+    data = {
+        "power_consumption_hp": 2.0,
+        "heat_sink_flow_rate": 1.5,
+        "hp_operating_mode": int(HeatPumpStatus.HEATING),
+    }
+    engine, advisor, analytics, _coordinator = _engine(data)
+    # Same month last year ran at ~1.5: today's 1.5 is seasonally normal.
+    for k in (3, 2, 1, 0):
+        analytics.observe_metric("heat_sink_flow_rate:heating", 1.5, T0.replace(year=T0.year - 1) - timedelta(days=k))
+    # Recent days ran at 2.0, so the rolling window alone would flag 1.5 as low.
+    _seed_days(analytics, "heat_sink_flow_rate:heating", 2.0)
+    _seed_today(analytics, "heat_sink_flow_rate:heating", 1.5)
+    engine.observe(now=T0)
+    anomalies = [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
+    assert not any("flow_rate_low" in rec.id for rec in anomalies)
+    assert engine.anomaly_active is False
+
+
 def test_anomaly_producer_respects_observation_stage() -> None:
     data = {"power_consumption_hp": 2.0, "heat_sink_flow_rate": 1.0}
     engine, advisor, analytics, _coordinator = _engine(data)

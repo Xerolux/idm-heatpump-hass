@@ -36,6 +36,13 @@ _BASELINE_MIN_DAYS: Final = 3
 # day's metric only against prior days with similar weather, so a cold snap
 # does not masquerade as an anomaly on weather-driven metrics.
 _CONDITION_BIN_HALF: Final = 2.5
+# Keep daily aggregates long enough to compare against the same calendar month
+# of the previous year (seasonal baseline, #611); a rolling window is far too
+# short to tell a seasonal transition apart from real drift.
+_SEASONAL_RETENTION_DAYS: Final = 400
+# A value inside this many seasonal-MADs of the same-month prior-year median is
+# seasonally normal and must not fire a rolling-window anomaly.
+_SEASONAL_BAND_Z: Final = 2.0
 _COP_BIN_OUTDOOR: Final = 2.0
 _COP_BIN_FLOW: Final = 4.0
 _COP_NEIGHBOURHOOD: Final = 1  # 3x3 bins around the query point
@@ -92,6 +99,9 @@ class DailyBaseline:
     median: float
     mad: float
     today: float | None
+    seasonal_days: int = 0
+    seasonal_median: float | None = None
+    seasonal_mad: float = 0.0
 
     @property
     def deviation_percent(self) -> float | None:
@@ -119,6 +129,33 @@ class DailyBaseline:
             if scale <= 0:
                 return None
         return round((self.today - self.median) / scale, 2)
+
+    @property
+    def seasonal_z_score(self) -> float | None:
+        """Today's deviation from the same-month prior-year median in MAD units.
+
+        ``None`` while the seasonal baseline is not established (fewer than
+        ``_BASELINE_MIN_DAYS`` same-month prior-year days), in which case the
+        rolling baseline stays the only reference.
+        """
+        if self.today is None or self.seasonal_median is None or self.seasonal_days < _BASELINE_MIN_DAYS:
+            return None
+        scale = self.seasonal_mad
+        if scale <= 0:
+            scale = abs(self.seasonal_median) * 0.05
+            if scale <= 0:
+                return None
+        return round((self.today - self.seasonal_median) / scale, 2)
+
+    @property
+    def is_seasonal_normal(self) -> bool:
+        """Whether today sits within the same-month prior-year normal band.
+
+        False whenever the seasonal baseline is not established, so a missing
+        same-month history never suppresses a rolling-window anomaly.
+        """
+        z = self.seasonal_z_score
+        return z is not None and abs(z) <= _SEASONAL_BAND_Z
 
 
 @dataclass(frozen=True)
@@ -338,13 +375,41 @@ class AdvisorAnalytics:
             return None
         today_total, today_count = days.get(today_key, (0.0, 0.0))
         today = today_total / today_count if today_count else None
+        seasonal = self._seasonal_baseline(days, today_key)
         return DailyBaseline(
             key=key,
             days=len(prior),
             median=round(median, 3),
             mad=round(_mean_absolute_deviation(prior, median), 3),
             today=round(today, 3) if today is not None else None,
+            seasonal_days=seasonal[0],
+            seasonal_median=seasonal[1],
+            seasonal_mad=seasonal[2],
         )
+
+    @staticmethod
+    def _seasonal_baseline(days: dict[str, list[float]], today_key: str) -> tuple[int, float | None, float]:
+        """Same-calendar-month prior-year median/MAD for one metric (#611).
+
+        The rolling window already contains the current month's recent days, so
+        the seasonal reference is the same month of *previous* years: the value
+        that tells a seasonal transition apart from real drift. Returns
+        ``(days, median, mad)``; ``median`` is None until enough same-month
+        prior-year days exist.
+        """
+        today_month = today_key[5:7]
+        today_year = today_key[0:4]
+        prior = [
+            total / count
+            for day, (total, count) in sorted(days.items())
+            if day < today_key and day[5:7] == today_month and day[0:4] != today_year and count > 0
+        ]
+        if len(prior) < _BASELINE_MIN_DAYS:
+            return 0, None, 0.0
+        median = _median(prior)
+        if median is None:
+            return 0, None, 0.0
+        return len(prior), round(median, 3), round(_mean_absolute_deviation(prior, median), 3)
 
     # ------------------------------------------------------------------
     # COP map (phase 4)
@@ -531,11 +596,15 @@ class AdvisorAnalytics:
         if self._last_day == day:
             return
         self._last_day = day
+        # Daily metric aggregates live long enough for a same-month prior-year
+        # comparison (#611); the COP day totals and regressions only need the
+        # rolling window.
+        seasonal_cutoff = (now - timedelta(days=_SEASONAL_RETENTION_DAYS)).date().isoformat()
         cutoff = (now - timedelta(days=_BASELINE_DAYS + 2)).date().isoformat()
         for days in self._daily.values():
-            for key in [key for key in days if key < cutoff]:
+            for key in [key for key in days if key < seasonal_cutoff]:
                 days.pop(key)
-        self._day_outdoor = {key: value for key, value in self._day_outdoor.items() if key >= cutoff}
+        self._day_outdoor = {key: value for key, value in self._day_outdoor.items() if key >= seasonal_cutoff}
         self._cop_days = {key: value for key, value in self._cop_days.items() if key >= cutoff}
         self._cop_days_heating = {key: value for key, value in self._cop_days_heating.items() if key >= cutoff}
         self._cop_days_dhw = {key: value for key, value in self._cop_days_dhw.items() if key >= cutoff}
