@@ -45,6 +45,54 @@ All notable changes to this project will be documented in this file.
 
 - @drconrad815 traced the vanished sensors to the duplicate filter, tested the recovery path on his AERO ALM 6–15 with Navigator 10 and supplied live measurements that confirmed the sensors are distinct physical values.
 
+## [0.23.2-b5] - 2026-10-27
+
+The predictive advisor learns to tell real faults from normal variation: its anomaly detection now calibrates against each plant's own repeatability, the weather and the season, stops firing on heating-versus-hot-water artefacts, and lets you silence a recurring finding you have already understood.
+
+> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
+> different Navigator models, firmware versions and normal operating states help
+> us validate values, find missing mappings and improve device support. Working
+> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
+> to record read-only data, review it locally and upload it privately without
+> preparing an email attachment.
+>
+> Recognized PINs, serial numbers, myIDM and network identifiers are removed
+> before sharing. Participation is voluntary; submitted data is used only to
+> improve this integration, and uploads are deleted from the private inbox after
+> 30 days. Technical operating data may still allow inferences about an
+> installation, so complete anonymity is not guaranteed.
+> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
+
+### ⚠️ Upgrade notes
+
+- **Rollback is safe**: no configuration migration and no stored-setting change, so `0.23.2-b4` restores the previous behaviour; a snooze set here simply disappears on rollback.
+- **Anomaly thresholds re-baseline once**: the fixed percentage and kelvin thresholds become a self-calibrating deviation score, so a finding may appear or disappear once after the update as each plant re-baselines against its own variation.
+- **Two new snooze services** worth wiring into a notification automation: `idm_heatpump.snooze_anomaly` and `idm_heatpump.unsnooze_anomaly`.
+- **Seasonal guard needs a year of history**: the false-positive guard against seasonal drift only activates once ~12 months of same-month history exist, so it stays silent on freshly installed plants.
+
+### ✨ New
+
+- **Anomaly snooze** (#612): two services suppress a stable anomaly reason for 1–365 days and cancel early, so a recurring, understood finding stops re-firing and drops out of the health score until the window elapses.
+
+- **Season-aware baselines** (#611): a same-calendar-month prior-year reference guards the rolling window, so a heating/cooling hand-over no longer reads as drift once a year of history has accumulated.
+
+### 🐛 Bugfixes
+
+- **Demand-reason split for flow and spread** (#607): heating and hot-water charging run at very different flow and spread, so the advisor now compares each day against the same operating mode instead of firing on a DHW-heavy day.
+
+- **Self-calibrating and weather-aware anomalies** (#609): robust deviation scoring replaces the fixed thresholds, and compressor-start/hot-water findings only compare against days with similar outdoor temperature, cutting false alarms.
+
+- **Clearer PV-forecast option** (#606): the optional advisor PV forecast field now says so explicitly in its label and description, ending the setup dead-end for users without a forecast sensor.
+
+### 💼 Maintenance
+
+- **One rule set for both learners** (#610): the advisor and the AI learner now share a single operating-mode taxonomy and one COP plausibility guard, so a spurious counter spike cannot bias one map while the other rejects it.
+
+### ❤️ Thanks
+
+- @ng845 supplied per-mode flow measurements from a Navigator 10 AERO ALM 2-8 that drove the demand-reason split and the seasonal guard.
+- @schugth reported the PV-forecast setup confusion that led to the clearer field text.
+
 ## [0.23.2-b3] - 2026-10-25
 
 > **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
