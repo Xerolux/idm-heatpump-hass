@@ -316,6 +316,11 @@ def _seed_days(analytics: AdvisorAnalytics, key: str, value: float, days: int = 
         analytics.observe_metric(key, value, _day(offset))
 
 
+def _seed_today(analytics: AdvisorAnalytics, key: str, value: float, now: datetime = T0, times: int = 3) -> None:
+    for _ in range(times):
+        analytics.observe_metric(key, value, now)
+
+
 def test_anomaly_producer_submits_and_retracts() -> None:
     data = {
         "power_consumption_hp": 2.0,
@@ -325,6 +330,7 @@ def test_anomaly_producer_submits_and_retracts() -> None:
     engine, advisor, analytics, _coordinator = _engine(data)
     _seed_days(analytics, "heat_sink_flow_rate", 1.5)
     _seed_days(analytics, "heat_sink_flow_rate:heating", 1.5)
+    _seed_today(analytics, "heat_sink_flow_rate:heating", 1.0)
     engine.observe(now=T0)  # first observe runs the producers
     anomaly_ids = [rec.id for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
     assert any("flow_rate_low" in rec_id for rec_id in anomaly_ids)
@@ -340,6 +346,7 @@ def test_anomaly_producer_submits_and_retracts() -> None:
     engine2, advisor2, analytics2, _coord2 = _engine(healthy_data)
     _seed_days(analytics2, "heat_sink_flow_rate", 1.5)
     _seed_days(analytics2, "heat_sink_flow_rate:heating", 1.5)
+    _seed_today(analytics2, "heat_sink_flow_rate:heating", 1.5)
     stale = [rec for rec in advisor2.active_recommendations]
     assert stale == []
     engine2.observe(now=T0)
@@ -357,6 +364,7 @@ def test_anomaly_flow_baseline_compares_same_demand_reason() -> None:
     engine, advisor, analytics, _coordinator = _engine(data)
     _seed_days(analytics, "heat_sink_flow_rate:heating", 25.0)
     _seed_days(analytics, "heat_sink_flow_rate:dhw", 6.5)
+    _seed_today(analytics, "heat_sink_flow_rate:dhw", 6.5)
     engine.observe(now=T0)
     anomalies = [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
     # 6.5 L/min is perfectly normal for DHW charging; against the combined
@@ -375,6 +383,7 @@ def test_anomaly_flow_skips_without_mode_baseline() -> None:
     }
     engine, advisor, analytics, _coordinator = _engine(data)
     _seed_days(analytics, "heat_sink_flow_rate", 1.5)  # combined history only
+    _seed_today(analytics, "heat_sink_flow_rate:heating", 1.0)
     engine.observe(now=T0)
     assert not [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
     assert engine.anomaly_active is False
@@ -389,6 +398,18 @@ def test_anomaly_producer_flags_starts_and_dhw_charge() -> None:
     ids = [rec.id for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
     assert any("compressor_starts" in rec_id for rec_id in ids)
     assert any("dhw_charge_long" in rec_id for rec_id in ids)
+
+
+def test_anomaly_starts_stays_silent_on_weather_mismatch() -> None:
+    """A cold day with many starts has no mild-weather baseline to compare against."""
+    data = {"power_consumption_hp": 2.0, "outdoor_temp": -5.0}
+    engine, advisor, analytics, _coordinator = _engine(data, starts_today=30, dhw_share=0.0)
+    for offset in (4, 3, 2):
+        analytics.observe_metric("compressor_starts", 8.0, _day(offset), mode="max", outdoor=10.0)
+    engine.observe(now=T0)
+    ids = [rec.id for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
+    assert not any("compressor_starts" in rec_id for rec_id in ids)
+    assert engine.anomaly_active is False
 
 
 def test_anomaly_producer_respects_observation_stage() -> None:
@@ -826,9 +847,16 @@ def test_observe_ignores_cooldown_while_indoor_matches_outdoor() -> None:
 
 
 def test_anomaly_producer_flags_high_spread_and_retracts_when_healed() -> None:
-    data = {"power_consumption_hp": 2.0, "hp_flow_temp": 30.0, "hp_return_temp": 22.0}
+    data = {
+        "power_consumption_hp": 2.0,
+        "hp_flow_temp": 30.0,
+        "hp_return_temp": 22.0,
+        "hp_operating_mode": int(HeatPumpStatus.HEATING),
+    }
     engine, advisor, analytics, coordinator = _engine(data)
     _seed_days(analytics, "hp_temperature_spread", 4.0)
+    _seed_days(analytics, "hp_temperature_spread:heating", 4.0)
+    _seed_today(analytics, "hp_temperature_spread:heating", 8.0)
     engine.observe(now=T0)
     spread_recs = [
         rec
@@ -836,10 +864,15 @@ def test_anomaly_producer_flags_high_spread_and_retracts_when_healed() -> None:
         if rec.category is RecommendationCategory.ANOMALY and "spread_high" in rec.id
     ]
     assert len(spread_recs) == 1
-    assert spread_recs[0].severity == RecommendationSeverity.WARNING  # 4 K is double the threshold
+    assert spread_recs[0].severity == RecommendationSeverity.WARNING  # ~13 MAD above baseline
 
     # Seven hours later the spread normalized: the recommendation is withdrawn.
-    coordinator.data = {"power_consumption_hp": 2.0, "hp_flow_temp": 30.0, "hp_return_temp": 27.0}
+    coordinator.data = {
+        "power_consumption_hp": 2.0,
+        "hp_flow_temp": 30.0,
+        "hp_return_temp": 27.0,
+        "hp_operating_mode": int(HeatPumpStatus.HEATING),
+    }
     engine.observe(now=_hour(7))
     assert not [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
     assert engine.anomaly_active is False

@@ -251,6 +251,9 @@ stale measurements and gaps are excluded. Observations at both ends of an
 interval cannot prove that no brief mode change happened between them.
 A baseline requires at least three earlier days and six observed hours in the
 matching bin. Today's comparison additionally requires one observed hour.
+Once the baseline is ready, the comparison also reports the bin's dispersion
+and a z-score of today's deviation, so a real change is distinguishable from
+normal wobble.
 The learning-status sensor shows this progress (since v0.17.2-b13): its
 attributes list the collected days and hours next to the required thresholds,
 plus mode and outdoor bin, and measured-data reports add a progress line while

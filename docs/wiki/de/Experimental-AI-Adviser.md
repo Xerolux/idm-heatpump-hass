@@ -291,7 +291,10 @@ Zählerresets, veraltete Messwerte und Lücken werden ausgeschlossen. Beobachtun
 an beiden Enden eines Intervalls können nicht beweisen, dass zwischen ihnen kein
 kurzer Moduswechsel stattfand. Eine Baseline erfordert mindestens drei frühere
 Tage und sechs beobachtete Stunden im passenden Bin. Der Vergleich für heute
-erfordert zusätzlich eine beobachtete Stunde. Der Lernstatus-Sensor zeigt diesen
+erfordert zusätzlich eine beobachtete Stunde. Sobald die Baseline steht,
+meldet der Vergleich zusätzlich die Streuung des Bins und einen z-Wert der
+heutigen Abweichung, sodass eine echte Veränderung von normalem Wackeln
+unterscheidbar ist. Der Lernstatus-Sensor zeigt diesen
 Fortschritt (seit v0.17.2-b13): Seine Attribute listen die gesammelten Tage und
 Stunden neben den erforderlichen Schwellenwerten auf, dazu Modus und Außen-Bin,
 und Messdatenberichte ergänzen eine Fortschrittszeile, solange die Baseline noch

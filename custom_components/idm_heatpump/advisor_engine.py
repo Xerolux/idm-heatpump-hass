@@ -45,11 +45,18 @@ _CURVE_MAX: Final = 2.5
 _FLOW_EXCESS_K: Final = 3.0
 
 # Documented anomaly thresholds (spec section 10): today vs. own baseline.
-_FLOW_LOW_PERCENT: Final = -15.0
+# Decisions use a robust z-score (deviation in units of the baseline's mean
+# absolute deviation) instead of fixed percentages/kelvin, so each plant is
+# self-calibrating. 2.5 MAD is a conservative "hint" floor; 5.0 MAD (2x) is
+# the warning tier.
+_FLOW_LOW_Z: Final = -2.5
 _FLOW_MODE_LABELS: Final[dict[str, str]] = {"heating": "heating", "dhw": "hot-water"}
-_SPREAD_HIGH_K: Final = 2.0
-_STARTS_HIGH_PERCENT: Final = 50.0
-_DHW_CHARGE_HIGH_PERCENT: Final = 40.0
+_SPREAD_HIGH_Z: Final = 2.5
+_STARTS_HIGH_Z: Final = 2.5
+_DHW_HIGH_Z: Final = 2.5
+# A day's mean is meaningless until a handful of samples have arrived; a
+# single early-morning poll must not fire an anomaly.
+_ANOMALY_MIN_TODAY_SAMPLES: Final = 3
 
 _FORECAST_HORIZON: Final = timedelta(hours=24)
 
@@ -384,11 +391,13 @@ class AdvisorEngine:
         analysis = getattr(self._coordinator, "operation_analysis", None)
         starts = _number(analysis.compressor_starts_today()) if analysis is not None else None
         if starts is not None:
-            self._analytics.observe_metric("compressor_starts", starts, current, mode="max")
+            self._analytics.observe_metric("compressor_starts", starts, current, mode="max", outdoor=outdoor)
         if analysis is not None:
             share = _number(analysis.operating_share("dhw"))
             if share is not None and share > 0:
-                self._analytics.observe_metric("dhw_charge_minutes", share / 100.0 * 1440.0, current, mode="max")
+                self._analytics.observe_metric(
+                    "dhw_charge_minutes", share / 100.0 * 1440.0, current, mode="max", outdoor=outdoor
+                )
 
         self._compressor_on = compressor_on
         self._last_sample_at = current
@@ -432,17 +441,20 @@ class AdvisorEngine:
         return_temp: float | None,
     ) -> None:
         flow_rate = _number(data.get("heat_sink_flow_rate"))
+        domain = _cop_domain(data.get("hp_operating_mode"))
         if flow_rate is not None and flow_rate > 0.05:
             self._analytics.observe_metric("heat_sink_flow_rate", flow_rate, current)
             # Like-for-like baselines (#607): DHW charging runs at a fraction
             # of heating flow (6-7 vs 22-32 L/min in the field), so a
             # DHW-heavy day must not drag the day's mean below the multi-day
             # heating median and fire a false anomaly.
-            domain = _cop_domain(data.get("hp_operating_mode"))
             if domain != "total":
                 self._analytics.observe_metric(f"heat_sink_flow_rate:{domain}", flow_rate, current)
         if flow is not None and return_temp is not None:
-            self._analytics.observe_metric("hp_temperature_spread", flow - return_temp, current)
+            spread = flow - return_temp
+            self._analytics.observe_metric("hp_temperature_spread", spread, current)
+            if domain != "total":
+                self._analytics.observe_metric(f"hp_temperature_spread:{domain}", spread, current)
         if outdoor is not None and flow is not None and thermal and power:
             hours = 0.0
             if self._last_sample_at is not None and self._compressor_on:
@@ -528,73 +540,69 @@ class AdvisorEngine:
     # Anomaly producer (phase 3)
     # ------------------------------------------------------------------
 
-    def _flow_anomaly_baseline(self, current: datetime) -> DailyBaseline | None:
-        """Like-for-like flow baseline for the day's dominant demand reason.
+    def _mode_aware_baseline(self, metric: str, current: datetime) -> DailyBaseline | None:
+        """Like-for-like baseline for the day's dominant demand reason.
 
         The combined metric mixes heating and DHW charging, and the two
         profiles sit far apart, so a DHW-heavy day fired the anomaly without
         a fault (#607). The day's demand-reason mix decides which per-mode
-        baseline applies; a mode without an established baseline stays
-        silent instead of comparing against the wrong profile.
+        baseline applies; a mode without an established baseline (or with too
+        few of today's samples to be meaningful) stays silent instead of
+        comparing against the wrong profile.
         """
         samples = {
-            key: self._analytics.metric_today_samples(key, current)
-            for key in ("heat_sink_flow_rate:heating", "heat_sink_flow_rate:dhw")
+            key: self._analytics.metric_today_samples(key, current) for key in (f"{metric}:heating", f"{metric}:dhw")
         }
         dominant = max(samples, key=lambda key: samples[key])
-        if samples[dominant] == 0:
+        if samples[dominant] < _ANOMALY_MIN_TODAY_SAMPLES:
             return None
         return self._analytics.metric_baseline(dominant, current)
 
     def _produce_anomalies(self, current: datetime) -> None:
         # key -> (strong, message, reason, baseline_days)
         found: dict[str, tuple[bool, str, str, int]] = {}
-        flow = self._flow_anomaly_baseline(current)
-        if flow is not None and flow.deviation_percent is not None and flow.deviation_percent <= _FLOW_LOW_PERCENT:
+        flow = self._mode_aware_baseline("heat_sink_flow_rate", current)
+        if flow is not None and flow.z_score is not None and flow.z_score <= _FLOW_LOW_Z:
             mode_label = _FLOW_MODE_LABELS.get(flow.key.rsplit(":", 1)[-1], "")
             suffix = f" {mode_label}" if mode_label else ""
+            percent = flow.deviation_percent if flow.deviation_percent is not None else 0.0
             found["anomaly_flow_rate_low"] = (
-                flow.deviation_percent <= 2 * _FLOW_LOW_PERCENT,
-                f"Heat-circle flow is {abs(flow.deviation_percent):.0f}% below its {flow.days}-day{suffix} baseline",
+                flow.z_score <= 2 * _FLOW_LOW_Z,
+                f"Heat-circle flow is {abs(percent):.0f}% below its {flow.days}-day{suffix} baseline",
                 "heat_circle_flow_below_baseline",
                 flow.days,
             )
-        spread = self._analytics.metric_baseline("hp_temperature_spread", current)
-        if (
-            spread is not None
-            and spread.today is not None
-            and spread.median is not None
-            and spread.today - spread.median >= _SPREAD_HIGH_K
-        ):
+        spread = self._mode_aware_baseline("hp_temperature_spread", current)
+        if spread is not None and spread.z_score is not None and spread.z_score >= _SPREAD_HIGH_Z:
+            delta = spread.today - spread.median if spread.today is not None and spread.median is not None else None
             found["anomaly_spread_high"] = (
-                spread.today - spread.median >= 2 * _SPREAD_HIGH_K,
-                f"Flow/return spread is {spread.today - spread.median:.1f} K above its baseline",
+                spread.z_score >= 2 * _SPREAD_HIGH_Z,
+                f"Flow/return spread is {delta:.1f} K above its baseline"
+                if delta is not None
+                else "Flow/return spread is above its baseline",
                 "spread_above_baseline",
                 spread.days,
             )
-        starts = self._analytics.metric_baseline("compressor_starts", current)
+        starts = self._analytics.metric_baseline("compressor_starts", current, condition_outdoor=True)
         if (
             starts is not None
-            and starts.deviation_percent is not None
+            and starts.z_score is not None
+            and starts.z_score >= _STARTS_HIGH_Z
             and starts.median >= 4.0
-            and starts.deviation_percent >= _STARTS_HIGH_PERCENT
         ):
+            percent = starts.deviation_percent if starts.deviation_percent is not None else 0.0
             found["anomaly_compressor_starts"] = (
-                starts.deviation_percent >= 2 * _STARTS_HIGH_PERCENT,
-                f"Compressor starts are {starts.deviation_percent:.0f}% above the {starts.days}-day baseline",
+                starts.z_score >= 2 * _STARTS_HIGH_Z,
+                f"Compressor starts are {percent:.0f}% above the {starts.days}-day baseline",
                 "compressor_starts_above_baseline",
                 starts.days,
             )
-        dhw = self._analytics.metric_baseline("dhw_charge_minutes", current)
-        if (
-            dhw is not None
-            and dhw.deviation_percent is not None
-            and dhw.median >= 30.0
-            and dhw.deviation_percent >= _DHW_CHARGE_HIGH_PERCENT
-        ):
+        dhw = self._analytics.metric_baseline("dhw_charge_minutes", current, condition_outdoor=True)
+        if dhw is not None and dhw.z_score is not None and dhw.z_score >= _DHW_HIGH_Z and dhw.median >= 30.0:
+            percent = dhw.deviation_percent if dhw.deviation_percent is not None else 0.0
             found["anomaly_dhw_charge_long"] = (
-                dhw.deviation_percent >= 2 * _DHW_CHARGE_HIGH_PERCENT,
-                f"Hot-water charging takes {dhw.deviation_percent:.0f}% longer than usual",
+                dhw.z_score >= 2 * _DHW_HIGH_Z,
+                f"Hot-water charging takes {percent:.0f}% longer than usual",
                 "dhw_charge_time_above_baseline",
                 dhw.days,
             )

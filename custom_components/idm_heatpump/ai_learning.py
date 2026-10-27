@@ -37,10 +37,12 @@ class LearningHistory:
                     and int(parts[1]) in (1, 2, 4)
                     and -12 <= int(parts[2]) <= 22
                     and isinstance(row, list)
-                    and len(row) == 4
+                    and len(row) in (4, 6)
                     and all(finite(v) and 0 <= v <= 1e9 for v in row)
                 ):
-                    self.buckets[str(key)] = [float(v) for v in row]
+                    # Rows of length 4 predate the dispersion moments; pad them
+                    # with zeros so a comparison can still read the mean.
+                    self.buckets[str(key)] = ([float(v) for v in row] + [0.0, 0.0])[:6]
         self.prune(now)
 
     def prune(self, now: float) -> None:
@@ -82,9 +84,14 @@ class LearningHistory:
         ):
             return
         key = f"{int(after['at'] // 86400)}:{int(mode)}:{math.floor(after['outdoor_temp'] / 5)}"
-        row = self.buckets.setdefault(key, [0.0, 0.0, 0.0, 0.0])
+        row = self.buckets.setdefault(key, [0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
         for i, value in enumerate((electric, thermal, gap, 1)):
             row[i] += value
+        # Weighted COP moments for the per-bin dispersion, so a comparison can
+        # tell a significant deviation from a harmless wobble.
+        cop = thermal / electric
+        row[4] += cop * gap
+        row[5] += cop * cop * gap
         self.prune(after["at"])
 
     def best_bucket(self, now: float) -> dict[str, Any]:
@@ -145,11 +152,23 @@ class LearningHistory:
             result["status_reason"] = "sparse_data"
             return result
         baseline = sum(r[1] for r in rows) / electric
+        baseline_std: float | None = None
+        weight = sum(r[2] for r in rows)
+        if weight > 0 and all(len(r) >= 6 for r in rows):
+            cop_mean = sum(r[4] for r in rows) / weight
+            variance = max(0.0, sum(r[5] for r in rows) / weight - cop_mean * cop_mean)
+            baseline_std = variance**0.5
         result.update(status="ready", baseline_cop=round(baseline, 2))
+        if baseline_std is not None:
+            result["baseline_std"] = round(baseline_std, 3)
         current = self.buckets.get(f"{day}{suffix}")
         if current and current[2] >= CURRENT_MIN_HOURS and current[0] > 0 and baseline > 0:
             cop = current[1] / current[0]
             result.update(current_cop=round(cop, 2), deviation_percent=round(100 * (cop / baseline - 1), 1))
+            if baseline_std is not None:
+                scale = baseline_std if baseline_std > 0 else baseline * 0.02
+                if scale > 0:
+                    result["deviation_z"] = round((cop - baseline) / scale, 2)
         return result
 
     def summary(self, now: float) -> dict[str, Any]:
