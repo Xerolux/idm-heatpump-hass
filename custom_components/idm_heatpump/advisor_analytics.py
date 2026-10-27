@@ -19,6 +19,7 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 
 from .const import DOMAIN
+from .cop_plausibility import cop_interval_is_plausible
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -432,7 +433,12 @@ class AdvisorAnalytics:
         heating / pure hot-water charging); mixed, defrost, cooling and
         unknown modes only feed the all-mode totals.
         """
-        if outdoor is None or flow is None or hours <= 0 or electric_kw <= 0 or thermal_kw <= 0:
+        if outdoor is None or flow is None or hours <= 0:
+            return
+        # Shared plausibility guard (#610): the COP ratio and implied power
+        # are validated by the same predicate ai_learning uses, so a spurious
+        # counter spike cannot bias one map while the other rejects it.
+        if not cop_interval_is_plausible(thermal_kw, electric_kw, electric_kw=electric_kw):
             return
         hours = min(hours, 0.5)
         key = _cop_bin_key(outdoor, flow)

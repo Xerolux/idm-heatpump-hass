@@ -206,6 +206,16 @@ def test_cop_sample_rejects_invalid_input() -> None:
     assert analytics.expected_cop(5.0, 30.0) is None
 
 
+def test_cop_sample_rejects_implausible_cop_and_power() -> None:
+    analytics = _analytics()
+    # A COP of 20 (counter artefact) must not enter the map (#610).
+    analytics.observe_cop_sample(5.0, 30.0, thermal_kw=20.0, electric_kw=1.0, hours=0.2)
+    assert analytics.expected_cop(5.0, 30.0) is None
+    # A 2 MW instantaneous draw is a corrupted counter, not a heat pump.
+    analytics.observe_cop_sample(5.0, 30.0, thermal_kw=4.0, electric_kw=2000.0, hours=0.2)
+    assert analytics.expected_cop(5.0, 30.0) is None
+
+
 def test_observed_cop_window_excludes_old_days() -> None:
     analytics = _analytics()
     analytics.observe_cop_sample(5.0, 30.0, 4.8, 1.2, 0.2)

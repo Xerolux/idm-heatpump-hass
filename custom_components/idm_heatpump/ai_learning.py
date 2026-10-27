@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from .const import LEARNING_MODE_NAMES, LEARNING_MODE_VALUES
+from .cop_plausibility import cop_interval_is_plausible
 
 MAX_BUCKETS = 4096
 RETENTION_DAYS = 365
@@ -77,10 +78,7 @@ class LearningHistory:
             not before.get("connected")
             or not after.get("connected")
             or not 0 < gap <= 900
-            or electric <= 0
-            or thermal < 0
-            or thermal / electric > 15
-            or electric * 3600 / gap > 1000
+            or not cop_interval_is_plausible(thermal, electric, electric_kw=electric * 3600 / gap)
             or abs(after["outdoor_temp"] - before["outdoor_temp"]) > 5
         ):
             return
