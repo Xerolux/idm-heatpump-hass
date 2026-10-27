@@ -53,6 +53,26 @@ def test_learning_separates_modes_weather_and_excludes_current_day():
     assert not history.buckets
 
 
+def test_comparison_reports_dispersion_significance():
+    history = LearningHistory()
+    now = 20000 * 86400
+    # Three prior DHW days with a perfectly stable COP of 3.0 over 6 h each.
+    for day in (19999, 19998, 19997):
+        history.buckets[f"{day}:1:1"] = [2.0, 6.0, 21600.0, 72, 3.0 * 21600.0, 9.0 * 21600.0]
+    sample = {"at": float(now), "mode": 1, "outdoor_temp": 5.0, "connected": True}
+    result = history.comparison(sample)
+    assert result["status"] == "ready" and result["baseline_cop"] == 3.0
+    assert result["baseline_std"] == 0.0
+    assert "deviation_z" not in result  # today has no bucket yet
+
+    # A 20 % COP drop on a zero-dispersion baseline is clearly significant.
+    history.buckets["20000:1:1"] = [2.0, 4.8, 21600.0, 72, 2.4 * 21600.0, 5.76 * 21600.0]
+    result = history.comparison(sample)
+    assert result["current_cop"] == 2.4
+    assert result["deviation_percent"] == -20.0
+    assert result["deviation_z"] == -10.0  # (2.4 - 3.0) / (3.0 * 0.02)
+
+
 @pytest.mark.parametrize(
     "changes",
     [

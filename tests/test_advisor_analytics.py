@@ -88,6 +88,53 @@ def test_metric_max_mode_keeps_running_counter_maximum() -> None:
     assert baseline.deviation_percent == 137.5
 
 
+def test_baseline_z_score_scales_by_mad() -> None:
+    analytics = _analytics()
+    # Prior days vary a little around a median of 10.0 with MAD 0.05.
+    for offset, value in ((4, 9.925), (3, 10.0), (2, 10.075)):
+        analytics.observe_metric("heat_sink_flow_rate", value, _day(offset))
+    analytics.observe_metric("heat_sink_flow_rate", 9.85, T0)
+    baseline = analytics.metric_baseline("heat_sink_flow_rate", T0)
+    assert baseline is not None
+    assert baseline.mad == 0.05
+    assert baseline.z_score == -3.0  # (9.85 - 10.0) / 0.05
+
+
+def test_baseline_z_score_falls_back_on_flat_baseline() -> None:
+    analytics = _analytics()
+    for offset in (4, 3, 2):
+        analytics.observe_metric("heat_sink_flow_rate", 20.0, _day(offset))
+    analytics.observe_metric("heat_sink_flow_rate", 18.0, T0)
+    baseline = analytics.metric_baseline("heat_sink_flow_rate", T0)
+    assert baseline is not None
+    assert baseline.mad == 0.0
+    # A perfectly flat baseline uses 5 % of the median as the scale.
+    assert baseline.z_score == -2.0  # (18 - 20) / (20 * 0.05)
+
+
+def test_metric_baseline_conditions_on_outdoor() -> None:
+    analytics = _analytics()
+    for offset in (4, 3, 2):
+        analytics.observe_metric("compressor_starts", 8.0, _day(offset), mode="max", outdoor=10.0)
+    analytics.observe_metric("compressor_starts", 30.0, _day(1), mode="max", outdoor=-5.0)
+    # Mild today: the cold day is outside the weather window and must not count.
+    analytics.observe_metric("compressor_starts", 8.0, T0, mode="max", outdoor=10.0)
+    conditioned = analytics.metric_baseline("compressor_starts", T0, condition_outdoor=True)
+    assert conditioned is not None
+    assert conditioned.days == 3
+    assert conditioned.median == 8.0
+
+
+def test_metric_baseline_stays_silent_without_matching_weather() -> None:
+    analytics = _analytics()
+    for offset in (4, 3, 2):
+        analytics.observe_metric("compressor_starts", 8.0, _day(offset), mode="max", outdoor=10.0)
+    analytics.observe_metric("compressor_starts", 30.0, T0, mode="max", outdoor=-5.0)
+    assert analytics.metric_baseline("compressor_starts", T0, condition_outdoor=True) is None
+    # The unconditional baseline still sees the mild history.
+    assert analytics.metric_baseline("compressor_starts", T0) is not None
+
+
 # ----------------------------------------------------------------------
 # COP map
 # ----------------------------------------------------------------------

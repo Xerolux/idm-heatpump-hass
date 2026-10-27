@@ -32,6 +32,10 @@ _STORAGE_SAVE_DELAY: Final = 30.0
 _SAVE_THROTTLE: Final = 300.0
 _BASELINE_DAYS: Final = 30
 _BASELINE_MIN_DAYS: Final = 3
+# Half-width of the outdoor-temperature window (in kelvin) used to compare a
+# day's metric only against prior days with similar weather, so a cold snap
+# does not masquerade as an anomaly on weather-driven metrics.
+_CONDITION_BIN_HALF: Final = 2.5
 _COP_BIN_OUTDOOR: Final = 2.0
 _COP_BIN_FLOW: Final = 4.0
 _COP_NEIGHBOURHOOD: Final = 1  # 3x3 bins around the query point
@@ -95,6 +99,26 @@ class DailyBaseline:
         if self.today is None or self.median == 0:
             return None
         return round((self.today - self.median) / abs(self.median) * 100.0, 1)
+
+    @property
+    def z_score(self) -> float | None:
+        """Today's deviation in units of the prior days' mean absolute deviation.
+
+        Robust, self-calibrating alternative to the fixed percentage/Kelvin
+        thresholds: a plant with naturally high variance only alarms on real
+        outliers, while a very repeatable plant still reports subtle drift.
+        A perfectly flat baseline (``mad == 0``) is rare and means the metric
+        is extremely repeatable; a small fraction of the median then stands in
+        as the scale so genuine drift stays measurable.
+        """
+        if self.today is None or self.median is None:
+            return None
+        scale = self.mad
+        if scale <= 0:
+            scale = abs(self.median) * 0.05
+            if scale <= 0:
+                return None
+        return round((self.today - self.median) / scale, 2)
 
 
 @dataclass(frozen=True)
@@ -197,6 +221,9 @@ class AdvisorAnalytics:
         )
         # metric/circuit -> day -> [sum, count] of usable sample values
         self._daily: dict[str, dict[str, list[float]]] = {}
+        # day -> [sum, count] of observed outdoor temperatures, used to match
+        # weather-sensitive metrics against prior days of similar weather.
+        self._day_outdoor: dict[str, list[float]] = {}
         # cop bin -> [electric_kwh, thermal_kwh, hours]
         self._cop_map: dict[str, list[float]] = {}
         # day -> [electric_kwh, thermal_kwh] for the observed-COP window
@@ -226,13 +253,16 @@ class AdvisorAnalytics:
         now: datetime | None = None,
         *,
         mode: str = "mean",
+        outdoor: float | None = None,
     ) -> None:
         """Aggregate one usable sample of a metric into its daily value.
 
         ``mode="mean"`` keeps the day's mean (flow rate, spread); ``max``
         keeps the day's maximum for monotonic running counters (compressor
         starts, DHW charge minutes), where a mean over partial counts would
-        understate the day.
+        understate the day. ``outdoor`` optionally records the matching
+        outdoor temperature so weather-sensitive baselines can later be
+        compared like-for-like.
         """
         if value is None or not math.isfinite(value):
             return
@@ -245,6 +275,10 @@ class AdvisorAnalytics:
         else:
             day[0] += value
             day[1] += 1.0
+        if outdoor is not None and math.isfinite(outdoor):
+            outdoor_day = self._day_outdoor.setdefault(_day_key(current), [0.0, 0.0])
+            outdoor_day[0] += outdoor
+            outdoor_day[1] += 1.0
         self._schedule_save()
 
     def metric_today_samples(self, key: str, now: datetime | None = None) -> int:
@@ -259,15 +293,42 @@ class AdvisorAnalytics:
         _total, count = self._daily.get(key, {}).get(_day_key(current), (0.0, 0.0))
         return int(count)
 
-    def metric_baseline(self, key: str, now: datetime | None = None) -> DailyBaseline | None:
-        """Compare today's mean against the median of the prior days."""
+    def _day_outdoor_mean(self, day: str) -> float | None:
+        total, count = self._day_outdoor.get(day, (0.0, 0.0))
+        return total / count if count > 0 else None
+
+    def metric_baseline(
+        self,
+        key: str,
+        now: datetime | None = None,
+        *,
+        condition_outdoor: bool = False,
+    ) -> DailyBaseline | None:
+        """Compare today's mean against the median of the prior days.
+
+        ``condition_outdoor=True`` restricts the prior days to those whose
+        mean outdoor temperature sat within ``_CONDITION_BIN_HALF`` kelvin of
+        today's, so a cold snap cannot masquerade as a weather-driven anomaly;
+        without enough matching days it stays silent instead of comparing
+        across weather regimes.
+        """
         current = now or _utcnow()
         days = self._daily.get(key, {})
         today_key = _day_key(current)
+        today_outdoor = self._day_outdoor_mean(today_key) if condition_outdoor else None
         prior = [
-            mean
+            total / count
             for day, (total, count) in sorted(days.items())
-            if day < today_key and count > 0 and (mean := total / count) is not None
+            if day < today_key
+            and count > 0
+            and (
+                not condition_outdoor
+                or today_outdoor is None
+                or (
+                    (prior_outdoor := self._day_outdoor_mean(day)) is not None
+                    and abs(prior_outdoor - today_outdoor) <= _CONDITION_BIN_HALF
+                )
+            )
         ]
         prior = prior[-_BASELINE_DAYS:]
         if len(prior) < _BASELINE_MIN_DAYS:
@@ -474,6 +535,7 @@ class AdvisorAnalytics:
         for days in self._daily.values():
             for key in [key for key in days if key < cutoff]:
                 days.pop(key)
+        self._day_outdoor = {key: value for key, value in self._day_outdoor.items() if key >= cutoff}
         self._cop_days = {key: value for key, value in self._cop_days.items() if key >= cutoff}
         self._cop_days_heating = {key: value for key, value in self._cop_days_heating.items() if key >= cutoff}
         self._cop_days_dhw = {key: value for key, value in self._cop_days_dhw.items() if key >= cutoff}
@@ -488,6 +550,7 @@ class AdvisorAnalytics:
             "version": _STORAGE_VERSION,
             "building_model_version": _BUILDING_MODEL_VERSION,
             "daily": self._daily,
+            "day_outdoor": self._day_outdoor,
             "cop_map": self._cop_map,
             "cop_days": self._cop_days,
             "cop_days_heating": self._cop_days_heating,
@@ -522,6 +585,11 @@ class AdvisorAnalytics:
                 str(key): {str(day): list(values) for day, values in days.items() if isinstance(values, list)}
                 for key, days in daily.items()
                 if isinstance(days, dict)
+            }
+        day_outdoor = stored.get("day_outdoor")
+        if isinstance(day_outdoor, dict):
+            self._day_outdoor = {
+                str(day): list(values) for day, values in day_outdoor.items() if isinstance(values, list)
             }
         cop_map = stored.get("cop_map")
         if isinstance(cop_map, dict):
