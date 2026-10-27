@@ -5,6 +5,16 @@ The authoritative, complete history is maintained in
 and the [GitHub releases](https://github.com/Xerolux/idm-heatpump-hass/releases).
 This page only summarizes recent milestones.
 
+## v0.23.2 — 2026-10-27
+
+The stable cut of the b1–b5 line: the predictive advisor calibrates its
+anomaly detection against each plant's own repeatability, the weather and
+the season, splits flow/spread baselines by demand reason, scales finding
+confidence with the deviation, and gains snooze services for recurring,
+understood findings. Adds the read-only web-capture tool, dual-label
+Navigator 10 sensors (including the M125 pump signal via API `2.14.5`)
+and the Holiday-mode fix.
+
 ## v0.23.2-b4 — 2026-10-26
 
 Fixes the dual-label sensors (`B33/B113`, `B34/B114`) on Navigator 10 plants

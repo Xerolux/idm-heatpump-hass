@@ -54,6 +54,26 @@ sind nicht bewiesen. Die früheren Release-Entscheidungen unten dokumentieren
 den jeweiligen damaligen Stand, nicht den heutigen Issue-Status. Diese Beta
 beansprucht keine Behebung dieser beiden Issues.
 
+## Release-Entscheidung zu 0.23.2
+
+**0.23.2** ist der stabile Schnitt der fünf Betas b1–b5 (2026-10-24 bis
+2026-10-27). Jedes Beta der Linie lief vor dem Merge durch das volle
+Qualitäts-Gate — die vierbeinige CI-Matrix (Python 3.14 × HA
+2026.8.1/2026.10.0 × manifest-gepinnt/api-main) mit den Coverage-Gates,
+strict mypy gegen die echte Home-Assistant-Runtime, ruff, hassfest, die
+echte Lifecycle-Smoke-Strecke und der Credentials-Scan — und der Schnitt
+selbst lief die komplette Suite erneut gegen den beförderten stabilen
+API-Pin (3.175+ Tests, 99,7 % Coverage). Die Advisor-Änderungen sind
+strikt lesend (additive Storage-Felder, kein Schreibpfad, kein
+EEPROM-sensitives Register); die Anomalie-Maschinerie re-baselinert sich
+nach dem Update einmal pro Anlage, was die Upgrade-Notes benennen. Der
+Dual-Label-Fix (#598) wurde für b4 vom Reporter live auf seiner AERO ALM
+6–15 bestätigt; die M125-Pumpen-Zuordnung (API #151) trägt die
+Live-WebSocket-Evidenz des Reporters für die Setting-Tabelle.
+`idm-heatpump-api` `2.14.5` ist das mit diesem Schnitt validierte Paar.
+#598 und API #151 sind geschlossen; #577, #493 und #596 warten
+auf Reporter-Felddaten und werden hier nicht als gefixt beansprucht.
+
 ## Release-Entscheidung zu 0.23.1
 
 **0.23.1** ist ein stabiles Fix-Release direkt von main, ohne
@@ -404,7 +424,7 @@ einen Controller derselben Familie nicht falsch einordnet. Dies ist eine bewusst
 Maintainer-Entscheidung zum Release-Zeitpunkt, kein Versehen — hier und in
 `docs/release-evidence/0.17.0.md` festgehalten, damit es sichtbar bleibt.
 
-Integration im Quellstand `0.23.2-b5` und `idm-heatpump-api` `2.14.5b2` bilden das aktuelle exakt
+Integration im Quellstand `0.23.2` und `idm-heatpump-api` `2.14.5` bilden das aktuelle exakt
 gepinnte Integrations-/API-Paar. Die API-Version ist in PEP-440-Form geschrieben,
 weil genau das pip auflöst; die Integration behält SemVer-Tags für HACS. Bis
 einschließlich `0.14.1` war der direkte Socket auf `modbus-connection==4.0.0a3` mit
