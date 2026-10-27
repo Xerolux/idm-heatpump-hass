@@ -80,6 +80,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── predictive_advisor_entities.py # Advisor status/recommendation sensors and optimization-available binary sensor
 │   ├── advisor_analytics.py          # Persistent advisor models: rolling baselines, COP map, building regressions
 │   ├── advisor_engine.py             # Producer orchestration: anomalies, heating curve, DHW window, 24 h plan
+│   ├── cop_plausibility.py           # Shared COP-sample plausibility guard for the advisor and AI learner (#610)
 │   ├── advisor_operation_reason.py   # Composes the why-is-the-heat-pump-running explanation
 │   ├── whats_new.py                  # One-time release notice in Home Assistant Repairs
 │   ├── energy_manager.py              # Optional, fail-closed PV surplus DHW automation
@@ -115,6 +116,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_binary_semantics.py
 │   ├── test_build_pages.py
 │   ├── test_calculated_sensors.py
+│   ├── test_cop_plausibility.py
 │   ├── test_differential_circuits.py
 │   ├── test_changelog_consolidation.py
 │   ├── test_changelog_style.py        # Release-notes style: upgrade-notes block first, closed header set, 60-word bullets (sections after 0.23.0)
