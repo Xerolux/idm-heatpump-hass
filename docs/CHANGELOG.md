@@ -13,7 +13,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.23.2-b4] - 2026-10-26
+## [0.23.2] - 2026-10-27
+
+This release makes the predictive advisor trustworthy on real plants: its anomaly detection calibrates against each plant's own repeatability, the weather and the season, stops firing on heating-versus-hot-water artefacts, scales its confidence with the deviation, and lets you silence a finding you have already understood. A new read-only capture tool, dual-label Navigator 10 sensors and the Holiday-mode fix round it out.
 
 > **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
 > different Navigator models, firmware versions and normal operating states help
@@ -31,169 +33,53 @@ All notable changes to this project will be documented in this file.
 
 ### ⚠️ Upgrade notes
 
-- **Renamed dual-label web entities**: on plants with a separation heat exchanger the two sensors return as *Intermediate circuit flow/return temperature (Web)* (`Vorlauftemperatur/Rücklauftemperatur Zwischenkreis (Web)`); a pair created by b2/b3 in web-only mode may linger unavailable and can be deleted. No configuration migration; rollback to `0.23.2-b3` is safe.
-
-### 🐛 Bugfixes
-
-- **Keep dual-label sensors alive next to a Modbus connection (#598)**: `B33/B113` and `B34/B114` on Navigator 10 plants with an intermediate loop vanished whenever a Modbus connection was active, because they were mapped onto the plain flow/return web keys that are suppressed as Modbus duplicates. The integration now overrides the library mapping with dedicated intermediate-circuit value keys.
-
-### 💼 Maintenance
-
-- **Ignore the DTZ lint rules a ruff release activated**: the newest ruff enables `DTZ001`/`DTZ005` by default; the naive wall-clock datetimes behind the technician codes are deliberate, so the rules are ignored in `ruff.toml` instead of changing the semantics.
-
-### ❤️ Thanks
-
-- @drconrad815 traced the vanished sensors to the duplicate filter, tested the recovery path on his AERO ALM 6–15 with Navigator 10 and supplied live measurements that confirmed the sensors are distinct physical values.
-
-## [0.23.2-b5] - 2026-10-27
-
-The predictive advisor learns to tell real faults from normal variation: its anomaly detection now calibrates against each plant's own repeatability, the weather and the season, stops firing on heating-versus-hot-water artefacts, and lets you silence a recurring finding you have already understood.
-
-> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
-> different Navigator models, firmware versions and normal operating states help
-> us validate values, find missing mappings and improve device support. Working
-> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
-> to record read-only data, review it locally and upload it privately without
-> preparing an email attachment.
->
-> Recognized PINs, serial numbers, myIDM and network identifiers are removed
-> before sharing. Participation is voluntary; submitted data is used only to
-> improve this integration, and uploads are deleted from the private inbox after
-> 30 days. Technical operating data may still allow inferences about an
-> installation, so complete anonymity is not guaranteed.
-> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
-
-### ⚠️ Upgrade notes
-
-- **Rollback is safe**: no configuration migration and no stored-setting change, so `0.23.2-b4` restores the previous behaviour; a snooze set here simply disappears on rollback.
+- **Rollback is safe**: no configuration migration and no stored-setting change; a snooze or learned baseline set here simply disappears when rolling back. The API pin moves from a prerelease to stable `2.14.5` with identical device behaviour.
+- **Renamed dual-label web entities**: on plants with a separation heat exchanger the two sensors arrive as *Intermediate circuit flow/return temperature (Web)* (`Vorlauftemperatur/Rücklauftemperatur Zwischenkreis (Web)`); a pair created by an earlier beta in web-only mode may linger unavailable and can be deleted.
 - **Anomaly thresholds re-baseline once**: the fixed percentage and kelvin thresholds become a self-calibrating deviation score, so a finding may appear or disappear once after the update as each plant re-baselines against its own variation.
-- **Two new snooze services** worth wiring into a notification automation: `idm_heatpump.snooze_anomaly` and `idm_heatpump.unsnooze_anomaly`.
+- **Two new snooze services** worth wiring into a notification automation: `idm_heatpump.snooze_anomaly` and `idm_heatpump.unsnooze_anomaly` suppress a recurring, understood anomaly reason for 1–365 days.
 - **Seasonal guard needs a year of history**: the false-positive guard against seasonal drift only activates once ~12 months of same-month history exist, so it stays silent on freshly installed plants.
 
 ### ✨ New
+
+- **Raw evidence capture for issue reports** (`scripts/idm_web_capture.py`, Windows executable with a guided German wizard): logs into the Navigator web interface with the user-level PIN and packs every read-only page and WebSocket frame plus a hole-bisected Modbus raw-word sweep into a ZIP. The PIN never enters the archive; no write commands exist.
+
+- **Dual-label sensors on Navigator 10 (#598)**: `B33/B113` and `B34/B114` on plants with an intermediate loop now appear as *Vorlauftemperatur/Rücklauftemperatur Zwischenkreis (Web)* and survive an active Modbus connection, which had suppressed them as duplicates of the plain flow/return keys.
 
 - **Anomaly snooze** (#612): two services suppress a stable anomaly reason for 1–365 days and cancel early, so a recurring, understood finding stops re-firing and drops out of the health score until the window elapses.
 
 - **Season-aware baselines** (#611): a same-calendar-month prior-year reference guards the rolling window, so a heating/cooling hand-over no longer reads as drift once a year of history has accumulated.
 
+- **Scaled anomaly confidence**: findings now rate their certainty by how far past the threshold the deviation sits instead of a flat warning bonus, so a borderline anomaly reads as less certain than a far outlier.
+
 ### 🐛 Bugfixes
 
-- **Demand-reason split for flow and spread** (#607): heating and hot-water charging run at very different flow and spread, so the advisor now compares each day against the same operating mode instead of firing on a DHW-heavy day.
+- **Holiday mode remains available** (#596): the allowed system-mode table now includes value 3, matching the controller, web interface and existing selector. Validated Modbus polls keep the value instead of omitting it; unknown values remain rejected, EEPROM protection is unchanged and Navigator 1.7 keeps its separate meanings.
 
-- **Self-calibrating and weather-aware anomalies** (#609): robust deviation scoring replaces the fixed thresholds, and compressor-start/hot-water findings only compare against days with similar outdoor temperature, cutting false alarms.
+- **Demand-reason split for flow and spread** (#607): heating and hot-water charging run at very different flow and spread levels, so the advisor now compares each day against the same operating mode instead of firing on a DHW-heavy day.
 
-- **Clearer PV-forecast option** (#606): the optional advisor PV forecast field now says so explicitly in its label and description, ending the setup dead-end for users without a forecast sensor.
+- **Self-calibrating and weather-aware anomalies** (#609): robust deviation scoring replaces the fixed thresholds, mean-mode baselines wait for enough same-day samples, and compressor-start/hot-water findings only compare against days of similar outdoor temperature.
+
+- **Clearer PV-forecast option** (#606): the optional advisor PV forecast field says so explicitly in its label and description, ending the setup dead-end for users without a forecast sensor.
+
+- **Intermediate-circuit pump signal becomes available** (API #151): the Navigator 10 sends the pump control signal as `M125`, which the API now maps (keeping `M124` as an alias), so *Wärmesenke Zwischenkreispumpe Signal (Web)* shows its percent value instead of staying unavailable.
 
 ### 💼 Maintenance
+
+- **Pin `idm-heatpump-api[web]==2.14.5`** (stable): promotes the tested prerelease line — Holiday system mode, heating-circuit detection probes batched from 14 to 4 round trips with per-slot fallback, honest `dry_run` write-plan labeling, shared timeout/error helpers, the M125 mapping — with no register-map changes; the full suite passed against this tree before publication.
 
 - **One rule set for both learners** (#610): the advisor and the AI learner now share a single operating-mode taxonomy and one COP plausibility guard, so a spurious counter spike cannot bias one map while the other rejects it.
 
+- **Forwarding stop/restart behavior is verified and documented** (#493): tests confirm that stopping sends no reset values and restarting uses current sources; the English/German guide now describes the three-second refresh and explicitly leaves controller retention and the reported SoC-display recurrence unresolved.
+
+- **The capture executable carries a version resource and an icon**: the PyInstaller build embeds product metadata and trims unused standard-library modules, which lowers machine-learning false positives on the unsigned binary. The Python script itself is unchanged.
+
+- **Tooling housekeeping**: dependency updates preserve dated release evidence in the audit documents, quality-scale pins align, Python 3.14 event-loop test noise is suppressed (#599), and the deliberate naive datetimes behind the technician codes ignore the newly activated ruff DTZ rules.
+
 ### ❤️ Thanks
 
+- @drconrad815 reported the dual-label sensor identifiers, traced the vanished sensors to the duplicate filter, tested the recovery on his AERO ALM 6–15 with Navigator 10, supplied live measurements — and found the M125 pump mapping in the API (API #151).
 - @ng845 supplied per-mode flow measurements from a Navigator 10 AERO ALM 2-8 that drove the demand-reason split and the seasonal guard.
 - @schugth reported the PV-forecast setup confusion that led to the clearer field text.
-
-## [0.23.2-b3] - 2026-10-25
-
-> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
-> different Navigator models, firmware versions and normal operating states help
-> us validate values, find missing mappings and improve device support. Working
-> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
-> to record read-only data, review it locally and upload it privately without
-> preparing an email attachment.
->
-> Recognized PINs, serial numbers, myIDM and network identifiers are removed
-> before sharing. Participation is voluntary; submitted data is used only to
-> improve this integration, and uploads are deleted from the private inbox after
-> 30 days. Technical operating data may still allow inferences about an
-> installation, so complete anonymity is not guaranteed.
-> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
-
-### ⚠️ Upgrade notes
-
-- **No configuration migration or entity reset**: this beta pins the API
-  maintenance prerelease `2.14.5b2`. Model detection now batches its
-  heating-circuit probes behind individual gate probes with a per-slot fallback,
-  which roughly halves the requests and worst-case setup time on responsive
-  controllers; detected models, circuits and entities are unchanged. Rollback
-  restores `0.23.2-b2` without affecting stored settings.
-
-### 💼 Maintenance
-
-- **Pin `idm-heatpump-api[web]==2.14.5b2`** (API PR #145): library-side
-  hardening only — batched detection probes with identical results, honest
-  `dry_run` labeling of write plans, shared timeout/error-mapping helpers, a
-  latent `exclude_from_write` float-comparison fix, and expanded test coverage
-  for the key-based write API and the Pymodbus coil extension. No register-map
-  changes; the full integration suite (3,149 tests) passed against this API
-  tree before its publication.
-
-## [0.23.2-b2] - 2026-10-25
-
-> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
-> different Navigator models, firmware versions and normal operating states help
-> us validate values, find missing mappings and improve device support. Working
-> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
-> to record read-only data, review it locally and upload it privately without
-> preparing an email attachment.
->
-> Recognized PINs, serial numbers, myIDM and network identifiers are removed
-> before sharing. Participation is voluntary; submitted data is used only to
-> improve this integration, and uploads are deleted from the private inbox after
-> 30 days. Technical operating data may still allow inferences about an
-> installation, so complete anonymity is not guaranteed.
-> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
-
-### ⚠️ Upgrade notes
-
-- **No configuration migration or entity reset**: this beta adds recognition for Navigator 10 dual-label sensor identifiers (`B33/B113` and `B34/B114`) used on installations with an intermediate loop (Trennwärmetauscher / frost-protected outdoor loop). Rollback restores `0.23.2-b1` without affecting stored settings. Unresolved field reports (#577, #493) remain under investigation.
-
-### ✨ New
-
-- **Recognize dual-label sensors on Navigator 10 (#598)**: `B33/B113` and `B34/B114` now map to `flow_temperature` (`Vorlauftemperatur (Web)`) and `return_temperature` (`Rücklauftemperatur (Web)`).
-
-### 💼 Maintenance
-
-- **Align quality-scale pins and suppress Python 3.14 event loop warnings (#599)**: fixes cosmetic asyncio test noise on newer Python runtimes.
-
-### ❤️ Thanks
-
-- Thanks to @drconrad815 for reporting the dual-label sensor identifiers and confirming their system layout on the AERO ALM 6–15 (#598).
-
-## [0.23.2-b1] - 2026-10-24
-
-> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
-> different Navigator models, firmware versions and normal operating states help
-> us validate values, find missing mappings and improve device support. Working
-> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
-> to record read-only data, review it locally and upload it privately without
-> preparing an email attachment.
->
-> Recognized PINs, serial numbers, myIDM and network identifiers are removed
-> before sharing. Participation is voluntary; submitted data is used only to
-> improve this integration, and uploads are deleted from the private inbox after
-> 30 days. Technical operating data may still allow inferences about an
-> installation, so complete anonymity is not guaranteed.
-> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
-
-### ⚠️ Upgrade notes
-
-- **No configuration migration or model reset**: the system-mode correction uses the tested API prerelease and adds no entities. Rollback restores the previous integration/API pair but also restores the Holiday-mode rejection. The capture tool remains standalone. Navigator 1.7 parsing/status decoding and the recurring battery display issue are still under investigation.
-
-### ✨ New
-
-- **Raw evidence capture for issue reports** (`scripts/idm_web_capture.py`, Windows executable with a guided German wizard): logs into the Navigator web interface with the user-level PIN and packs every read-only page and WebSocket frame plus a hole-bisected Modbus raw-word sweep into a ZIP recording HTTP status and redirects. The PIN never enters the archive; no write commands exist.
-
-### 🐛 Bugfixes
-
-- **Holiday mode remains available** (#596): tested with `idm-heatpump-api[web]==2.14.5b1`, the allowed system-mode table now includes value 3, matching the controller, web interface and existing selector. Validated Modbus polls keep the value instead of omitting it. Unknown values remain rejected and EEPROM protection is unchanged. Navigator 1.7 retains its separate mode meanings.
-
-### 💼 Maintenance
-
-- **Forwarding stop/restart behavior is verified and documented** (#493): tests confirm that stopping sends no reset values and restarting uses current sources. The English/German guide now describes the three-second refresh and explicitly leaves controller retention and the reported SoC-display recurrence unresolved. No speculative register reset or byte-decoding change is included.
-- **Dependency updates preserve dated release evidence**: the pin synchronizer now recognizes historical API versions in the open-work audit and English/German release decisions. Regression tests keep those versions unchanged while current dependency claims move to the new pin.
-
-- **The capture executable now carries a version resource and an icon** (`scripts/idm_web_capture_version.txt`, `scripts/idm_web_capture.ico`): the PyInstaller build embeds product metadata and trims unused standard-library modules, which lowers machine-learning false positives on the unsigned binary. The Python script itself is unchanged and byte-identical.
 
 ## [0.23.1] - 2026-10-22
 

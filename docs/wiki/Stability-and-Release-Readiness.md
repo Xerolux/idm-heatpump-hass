@@ -4,6 +4,26 @@ This page records what has been verified, what remains uncertain and what had
 to be true before the beta label was removed. It is deliberately stricter than
 a normal changelog.
 
+## 0.23.2 release decision
+
+**0.23.2** is the stable cut of the five-beta line (b1–b5, 2026-10-24
+through 2026-10-27). Every beta of the line passed the full quality gate
+before its merge — the four-leg CI matrix (Python 3.14 × HA
+2026.8.1/2026.10.0 × manifest-pinned/api-main) with the coverage gates,
+strict mypy against the real Home Assistant runtime, ruff, hassfest, the
+real-Home-Assistant lifecycle smoke leg and the credential scan — and the
+cut itself re-ran the whole suite against the promoted stable API pin
+(3,175+ tests, 99.7 % coverage). The advisor changes are strictly
+read-only (additive storage fields, no write path, no EEPROM-sensitive
+register); the anomaly machinery re-baselines once per plant after the
+update, which the upgrade notes call out. The dual-label fix (#598) was
+confirmed live by the reporter on his AERO ALM 6–15 for b4; the M125 pump
+mapping (API #151) carries the reporter's live WebSocket evidence for the
+setting table. `idm-heatpump-api` `2.14.5` is the validated pair with
+this cut; the line's prerelease pin was promotion-only. #598 and API #151
+are closed; #577, #493 and #596 wait on
+reporter field data and are not claimed fixed here.
+
 ## 0.23.2-b4 validation scope
 
 This beta fixes the Navigator 10 dual-label sensors (#598) with
@@ -380,7 +400,7 @@ controller. This is a conscious maintainer call taken at release time, not an
 oversight — recorded here and in `docs/release-evidence/0.17.0.md` so it stays
 visible.
 
-Source-tree integration `0.23.2-b5` and `idm-heatpump-api` `2.14.5b2` form the current
+Source-tree integration `0.23.2` and `idm-heatpump-api` `2.14.5` form the current
 exactly pinned integration/API pair. The API version is written in PEP 440 form
 because that is what pip resolves; the integration keeps SemVer tags for HACS.
 Up to and including `0.14.1` the direct socket was pinned to
