@@ -6,12 +6,13 @@ import math
 from datetime import UTC, datetime
 from typing import Any
 
+from .const import LEARNING_MODE_NAMES, LEARNING_MODE_VALUES
+
 MAX_BUCKETS = 4096
 RETENTION_DAYS = 365
 BASELINE_MIN_DAYS = 3
 BASELINE_MIN_HOURS = 6.0
 CURRENT_MIN_HOURS = 3600.0  # seconds of matched-bin observation on the current day
-_MODE_NAMES = {1: "heating", 2: "cooling", 4: "dhw"}
 
 
 def finite(value: Any) -> bool:
@@ -34,7 +35,7 @@ class LearningHistory:
                     len(str(key)) <= 64
                     and len(parts) == 3
                     and all(p.lstrip("-").isdigit() for p in parts)
-                    and int(parts[1]) in (1, 2, 4)
+                    and int(parts[1]) in LEARNING_MODE_VALUES
                     and -12 <= int(parts[2]) <= 22
                     and isinstance(row, list)
                     and len(row) in (4, 6)
@@ -65,7 +66,7 @@ class LearningHistory:
         if (
             not all(finite(v) for v in values)
             or not finite(mode)
-            or mode not in (1, 2, 4)
+            or mode not in LEARNING_MODE_VALUES
             or before.get("mode") != mode
         ):
             return
@@ -116,7 +117,7 @@ class LearningHistory:
             return {"mode": None, "outdoor_bin_c": None, "days": 0, "hours": 0.0}
         (mode, bin_index), entry = max(grouped.items(), key=lambda item: (item[1]["days"], item[1]["hours"]))
         return {
-            "mode": _MODE_NAMES.get(mode, mode),
+            "mode": LEARNING_MODE_NAMES.get(mode, mode),
             "outdoor_bin_c": bin_index * 5,
             "days": int(entry["days"]),
             "hours": round(entry["hours"] / 3600, 2),
@@ -134,7 +135,7 @@ class LearningHistory:
             "status_reason": None,
             "best_bucket": self.best_bucket(float(sample.get("at") or 0.0)),
         }
-        if not finite(sample.get("outdoor_temp")) or sample.get("mode") not in (1, 2, 4):
+        if not finite(sample.get("outdoor_temp")) or sample.get("mode") not in LEARNING_MODE_VALUES:
             result["status_reason"] = "idle"
             return result
         day = int(sample["at"] // 86400)
@@ -188,7 +189,7 @@ class LearningHistory:
             "total_days": len({bucket_day for bucket_day, _, _ in older}),
             "buckets": len(older),
             "total_hours": round(sum(row[2] for _, _, row in older) / 3600, 2),
-            "modes": sorted({_MODE_NAMES.get(mode, str(mode)) for _, mode, _ in older}),
+            "modes": sorted({LEARNING_MODE_NAMES.get(mode, str(mode)) for _, mode, _ in older}),
             "oldest_learning_day_utc": (
                 datetime.fromtimestamp(oldest * 86400, UTC).date().isoformat() if oldest is not None else None
             ),

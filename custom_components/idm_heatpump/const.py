@@ -463,5 +463,17 @@ HP_STATUS_OPTIONS: dict[int, str] = {
     8: "Abtauen",
 }
 
+# Operating modes the local statistical baselines learn, keyed by the
+# ``HeatPumpStatus`` flag values so both the advisor and the AI learner read
+# one source of truth instead of re-declaring magic ints (#610). Cooling is a
+# distinct learning bucket even though the COP map folds it into the all-mode
+# total.
+LEARNING_MODE_NAMES: dict[int, str] = {
+    int(HeatPumpStatus.HEATING): "heating",
+    int(HeatPumpStatus.COOLING): "cooling",
+    int(HeatPumpStatus.WATER): "dhw",
+}
+LEARNING_MODE_VALUES: frozenset[int] = frozenset(LEARNING_MODE_NAMES)
+
 # Experimental local AI is always opt-in and has no control path.
 CONF_AI_ADVISOR = "ai_advisor"
