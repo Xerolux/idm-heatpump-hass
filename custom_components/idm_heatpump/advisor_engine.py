@@ -562,7 +562,12 @@ class AdvisorEngine:
         # key -> (strong, message, reason, baseline_days)
         found: dict[str, tuple[bool, str, str, int]] = {}
         flow = self._mode_aware_baseline("heat_sink_flow_rate", current)
-        if flow is not None and flow.z_score is not None and flow.z_score <= _FLOW_LOW_Z:
+        if (
+            flow is not None
+            and flow.z_score is not None
+            and flow.z_score <= _FLOW_LOW_Z
+            and not flow.is_seasonal_normal
+        ):
             mode_label = _FLOW_MODE_LABELS.get(flow.key.rsplit(":", 1)[-1], "")
             suffix = f" {mode_label}" if mode_label else ""
             percent = flow.deviation_percent if flow.deviation_percent is not None else 0.0
@@ -573,7 +578,12 @@ class AdvisorEngine:
                 flow.days,
             )
         spread = self._mode_aware_baseline("hp_temperature_spread", current)
-        if spread is not None and spread.z_score is not None and spread.z_score >= _SPREAD_HIGH_Z:
+        if (
+            spread is not None
+            and spread.z_score is not None
+            and spread.z_score >= _SPREAD_HIGH_Z
+            and not spread.is_seasonal_normal
+        ):
             delta = spread.today - spread.median if spread.today is not None and spread.median is not None else None
             found["anomaly_spread_high"] = (
                 spread.z_score >= 2 * _SPREAD_HIGH_Z,
@@ -589,6 +599,7 @@ class AdvisorEngine:
             and starts.z_score is not None
             and starts.z_score >= _STARTS_HIGH_Z
             and starts.median >= 4.0
+            and not starts.is_seasonal_normal
         ):
             percent = starts.deviation_percent if starts.deviation_percent is not None else 0.0
             found["anomaly_compressor_starts"] = (
@@ -598,7 +609,13 @@ class AdvisorEngine:
                 starts.days,
             )
         dhw = self._analytics.metric_baseline("dhw_charge_minutes", current, condition_outdoor=True)
-        if dhw is not None and dhw.z_score is not None and dhw.z_score >= _DHW_HIGH_Z and dhw.median >= 30.0:
+        if (
+            dhw is not None
+            and dhw.z_score is not None
+            and dhw.z_score >= _DHW_HIGH_Z
+            and dhw.median >= 30.0
+            and not dhw.is_seasonal_normal
+        ):
             percent = dhw.deviation_percent if dhw.deviation_percent is not None else 0.0
             found["anomaly_dhw_charge_long"] = (
                 dhw.z_score >= 2 * _DHW_HIGH_Z,
