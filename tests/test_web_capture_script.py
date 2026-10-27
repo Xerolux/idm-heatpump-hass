@@ -258,6 +258,26 @@ class TestPinSafety:
 # ---------------------------------------------------------------------------
 
 
+def _assert_secret_absent(node: object, secret: str) -> None:
+    """A secret must not leak into any *string* of the manifest.
+
+    Numbers are excluded on purpose: an ephemeral port such as ``43215`` whose
+    decimal digits happen to contain the PIN ``4321`` is a coincidence, not a
+    leak — the raw substring check over the serialized JSON failed as a flake
+    on exactly that (PR #617 CI run).
+    """
+
+    if isinstance(node, str):
+        assert secret not in node
+    elif isinstance(node, dict):
+        for key, value in node.items():
+            assert secret not in str(key)
+            _assert_secret_absent(value, secret)
+    elif isinstance(node, list):
+        for value in node:
+            _assert_secret_absent(value, secret)
+
+
 class _FakeNav20Handler(BaseHTTPRequestHandler):
     pin = "4321"
 
@@ -330,7 +350,7 @@ def test_end_to_end_nav20(tmp_path: Path) -> None:
     assert nav20["outcome"] == "ok"
     assert nav20["login"]["field"] == "pin"
     assert manifest["safety"]["pin_included"] is False
-    assert _FakeNav20Handler.pin not in json.dumps(manifest)
+    _assert_secret_absent(manifest, _FakeNav20Handler.pin)
     # Five of the six data pages answer with data; the 404 stub is saved as
     # evidence but neither counted as captured nor marked "ok".
     assert nav20["pages_captured"] == len(capture.NAV20_DATA_PATHS) - 1 + len(capture.NAV20_STATISTICS_QUERIES)
@@ -415,7 +435,7 @@ def test_end_to_end_nav10(tmp_path: Path) -> None:
     assert manifest["variants"]["nav10"]["outcome"] == "ok"
     assert manifest["variants"]["nav10"]["frames_captured"] == len(capture.build_nav10_frames())
     assert "nav10/auth_response.json" in frames
-    assert "9999" not in json.dumps(manifest)
+    _assert_secret_absent(manifest, "9999")
 
 
 def test_total_failure_still_writes_evidence_zip(tmp_path: Path) -> None:
