@@ -92,6 +92,19 @@ def _day_stamp(now: datetime) -> str:
     return now.astimezone(UTC).date().strftime("%Y%m%d")
 
 
+def _threshold_overshoot(z_score: float, threshold: float) -> float:
+    """How far past its threshold a deviation sits, 0.0 to 1.0.
+
+    0.0 at the hint threshold and 1.0 at the warning tier (double the
+    threshold); the anomaly confidence scales with this so a borderline
+    finding reads as less certain than a far outlier.
+    """
+    span = abs(threshold)
+    if span <= 0:
+        return 1.0
+    return min(1.0, max(0.0, (abs(z_score) - span) / span))
+
+
 def _cop_domain(mode_value: Any) -> str:
     """Attribute an operating interval to ``heating``/``dhw`` or all-mode total.
 
@@ -559,8 +572,8 @@ class AdvisorEngine:
         return self._analytics.metric_baseline(dominant, current)
 
     def _produce_anomalies(self, current: datetime) -> None:
-        # key -> (strong, message, reason, baseline_days)
-        found: dict[str, tuple[bool, str, str, int]] = {}
+        # key -> (strong, message, reason, baseline_days, threshold_overshoot)
+        found: dict[str, tuple[bool, str, str, int, float]] = {}
         flow = self._mode_aware_baseline("heat_sink_flow_rate", current)
         if (
             flow is not None
@@ -576,6 +589,7 @@ class AdvisorEngine:
                 f"Heat-circle flow is {abs(percent):.0f}% below its {flow.days}-day{suffix} baseline",
                 "heat_circle_flow_below_baseline",
                 flow.days,
+                _threshold_overshoot(flow.z_score, _FLOW_LOW_Z),
             )
         spread = self._mode_aware_baseline("hp_temperature_spread", current)
         if (
@@ -592,6 +606,7 @@ class AdvisorEngine:
                 else "Flow/return spread is above its baseline",
                 "spread_above_baseline",
                 spread.days,
+                _threshold_overshoot(spread.z_score, _SPREAD_HIGH_Z),
             )
         starts = self._analytics.metric_baseline("compressor_starts", current, condition_outdoor=True)
         if (
@@ -607,6 +622,7 @@ class AdvisorEngine:
                 f"Compressor starts are {percent:.0f}% above the {starts.days}-day baseline",
                 "compressor_starts_above_baseline",
                 starts.days,
+                _threshold_overshoot(starts.z_score, _STARTS_HIGH_Z),
             )
         dhw = self._analytics.metric_baseline("dhw_charge_minutes", current, condition_outdoor=True)
         if (
@@ -622,6 +638,7 @@ class AdvisorEngine:
                 f"Hot-water charging takes {percent:.0f}% longer than usual",
                 "dhw_charge_time_above_baseline",
                 dhw.days,
+                _threshold_overshoot(dhw.z_score, _DHW_HIGH_Z),
             )
 
         # Snoozed reasons (#612) are suppressed: they are neither re-submitted
@@ -631,7 +648,7 @@ class AdvisorEngine:
 
         stamp = _day_stamp(current)
         quality = self._advisor.usable_fraction
-        for key, (strong, message, reason, baseline_days) in found.items():
+        for key, (strong, message, reason, baseline_days, overshoot) in found.items():
             self._advisor.submit(
                 Recommendation(
                     id=f"{key}_{stamp}",
@@ -639,8 +656,11 @@ class AdvisorEngine:
                     severity=RecommendationSeverity.WARNING if strong else RecommendationSeverity.HINT,
                     title=message,
                     reasons=(reason,),
+                    # The confidence scales with how far past its threshold the
+                    # deviation sits: a borderline finding carries the base
+                    # score, a far outlier approaches the cap.
                     confidence=clamp_confidence(
-                        (0.5 + 0.05 * min(baseline_days, 8) + (0.1 if strong else 0.0))
+                        (0.5 + 0.05 * min(baseline_days, 8) + 0.15 * overshoot)
                         * (quality if quality is not None else 1.0)
                     ),
                 )

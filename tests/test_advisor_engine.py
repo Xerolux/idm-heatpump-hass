@@ -450,6 +450,29 @@ def test_anomaly_suppressed_when_seasonally_normal() -> None:
     assert engine.anomaly_active is False
 
 
+def test_anomaly_confidence_scales_with_threshold_overshoot() -> None:
+    """A borderline finding is less confident than a far outlier."""
+    for today_flow, expected_confidence in ((9.87, 0.66), (9.70, 0.8)):
+        data = {
+            "power_consumption_hp": 2.0,
+            "heat_sink_flow_rate": today_flow,
+            "hp_operating_mode": int(HeatPumpStatus.HEATING),
+        }
+        engine, advisor, analytics, _coordinator = _engine(data)
+        # Prior days with MAD 0.05: median 10.0, so today 9.87 is z=-2.6
+        # (barely past the -2.5 hint threshold) and 9.70 is z=-6.0 (far out).
+        for offset, value in ((4, 9.925), (3, 10.0), (2, 10.075)):
+            analytics.observe_metric("heat_sink_flow_rate:heating", value, _day(offset))
+        _seed_today(analytics, "heat_sink_flow_rate:heating", today_flow)
+        engine.observe(now=T0)
+        rec = next(
+            rec
+            for rec in advisor.active_recommendations
+            if rec.category is RecommendationCategory.ANOMALY and "flow_rate_low" in rec.id
+        )
+        assert rec.confidence == expected_confidence
+
+
 def test_anomaly_producer_respects_observation_stage() -> None:
     data = {"power_consumption_hp": 2.0, "heat_sink_flow_rate": 1.0}
     engine, advisor, analytics, _coordinator = _engine(data)
