@@ -332,3 +332,63 @@ export_ai_dashboard:
       selector:
         config_entry:
           integration: idm_heatpump
+
+snooze_anomaly:
+  name: "Snooze advisor anomaly"
+  description: >-
+    Suppress one predictive-advisor anomaly reason for a number of days so a
+    recurring, understood finding stops re-firing. Snoozed reasons stay out of
+    the active recommendations and the health score until the window elapses.
+  fields:
+    entry_id:
+      name: "IDM integration"
+      description: "The IDM integration entry."
+      required: true
+      selector:
+        config_entry:
+          integration: idm_heatpump
+    reason:
+      name: "Reason"
+      description: "Stable machine reason code of the anomaly to suppress."
+      required: true
+      selector:
+        select:
+          options:
+            - "heat_circle_flow_below_baseline"
+            - "spread_above_baseline"
+            - "compressor_starts_above_baseline"
+            - "dhw_charge_time_above_baseline"
+    days:
+      name: "Days"
+      description: "How many days to suppress the reason (1-365)."
+      required: false
+      default: 7
+      selector:
+        number:
+          min: 1
+          max: 365
+          step: 1
+          mode: box
+
+unsnooze_anomaly:
+  name: "Unsnooze advisor anomaly"
+  description: "Cancel an anomaly snooze early so the reason can fire again."
+  fields:
+    entry_id:
+      name: "IDM integration"
+      description: "The IDM integration entry."
+      required: true
+      selector:
+        config_entry:
+          integration: idm_heatpump
+    reason:
+      name: "Reason"
+      description: "Stable machine reason code of the anomaly to un-suppress."
+      required: true
+      selector:
+        select:
+          options:
+            - "heat_circle_flow_below_baseline"
+            - "spread_above_baseline"
+            - "compressor_starts_above_baseline"
+            - "dhw_charge_time_above_baseline"

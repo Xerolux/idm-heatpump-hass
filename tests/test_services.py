@@ -17,6 +17,8 @@ from custom_components.idm_heatpump.services import (
     _handle_set_external_climate,
     _handle_set_external_power,
     _handle_set_system_mode,
+    _handle_snooze_anomaly,
+    _handle_unsnooze_anomaly,
     _handle_write_register,
     async_setup_services,
 )
@@ -61,8 +63,9 @@ class TestWriteSafetyHelpers:
 class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
-        # Core services, two DHW boost actions and the read-only AI action.
-        assert mock_hass.services.async_register.call_count == 11
+        # Core services, two DHW boost actions, the read-only AI action and
+        # the two advisor-anomaly snooze actions.
+        assert mock_hass.services.async_register.call_count == 13
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -88,6 +91,8 @@ class TestServiceLifecycleInvariants:
             (DOMAIN, "generate_ai_report"),
             (DOMAIN, "export_ai_dashboard"),
             (DOMAIN, "set_controller_clock"),
+            (DOMAIN, "snooze_anomaly"),
+            (DOMAIN, "unsnooze_anomaly"),
         }
 
     async def test_setup_is_idempotent_when_already_registered(self, mock_hass):
@@ -1460,3 +1465,73 @@ class TestExportAiDashboard:
         cards = result["dashboard"]["views"][0]["cards"]
         assert cards[1]["entities"] == ["sensor.idm_ai_report"]
         assert not [card for card in cards if card["type"] == "history-graph"]
+
+
+def _advisor_entry(entry_id="entry-1", *, advisor=None, domain=DOMAIN, state=None):
+    """Build a loaded config entry whose runtime_data carries a predictive advisor."""
+    from types import SimpleNamespace
+
+    from homeassistant.config_entries import ConfigEntryState
+
+    entry = SimpleNamespace(entry_id=entry_id, domain=domain, state=state or ConfigEntryState.LOADED, options={})
+    entry.runtime_data = SimpleNamespace(predictive_advisor=advisor, coordinator=SimpleNamespace(config_entry=entry))
+    return entry
+
+
+def _real_advisor():
+    """Build a genuine PredictiveAdvisor over a minimal coordinator stub."""
+    from types import SimpleNamespace
+
+    from custom_components.idm_heatpump.predictive_advisor import PredictiveAdvisor
+
+    coordinator = SimpleNamespace(
+        hass=MagicMock(),
+        config_entry=SimpleNamespace(entry_id="entry-1", options={}),
+        data={},
+        web_variant=None,
+    )
+    return PredictiveAdvisor(coordinator)
+
+
+class TestSnoozeAnomaly:
+    async def test_snoozes_an_advisor_reason(self, mock_hass):
+        advisor = _real_advisor()
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=_advisor_entry(advisor=advisor))
+
+        await _handle_snooze_anomaly(mock_hass, _ai_call("entry-1", reason="spread_above_baseline", days=14))
+
+        assert advisor.is_snoozed("spread_above_baseline") is True
+
+    async def test_defaults_to_seven_days(self, mock_hass):
+        advisor = _real_advisor()
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=_advisor_entry(advisor=advisor))
+
+        await _handle_snooze_anomaly(mock_hass, _ai_call("entry-1", reason="spread_above_baseline"))
+
+        assert advisor.is_snoozed("spread_above_baseline") is True
+
+    async def test_rejects_unknown_reason(self, mock_hass):
+        advisor = _real_advisor()
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=_advisor_entry(advisor=advisor))
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_snooze_anomaly(mock_hass, _ai_call("entry-1", reason="nope"))
+
+        assert exc_info.value.translation_key == "advisor_bad_reason"
+
+    async def test_rejects_missing_advisor(self, mock_hass):
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=_advisor_entry(advisor=None))
+
+        with pytest.raises(ServiceValidationError) as exc_info:
+            await _handle_snooze_anomaly(mock_hass, _ai_call("entry-1", reason="spread_above_baseline"))
+
+        assert exc_info.value.translation_key == "advisor_disabled"
+
+    async def test_unsnooze_cancels_early(self, mock_hass):
+        advisor = _real_advisor()
+        advisor.snooze("spread_above_baseline", 7)
+        mock_hass.config_entries.async_get_entry = MagicMock(return_value=_advisor_entry(advisor=advisor))
+
+        await _handle_unsnooze_anomaly(mock_hass, _ai_call("entry-1", reason="spread_above_baseline"))
+
+        assert advisor.is_snoozed("spread_above_baseline") is False
