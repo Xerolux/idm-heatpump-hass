@@ -57,6 +57,18 @@ ADVISOR_STAGES: Final = (_STAGE_COLLECTING, _STAGE_EARLY_HINTS, _STAGE_RECOMMEND
 _FULL_COVERAGE_DAYS: Final = 14.0
 _ESTABLISHED_DAYS: Final = 30.0
 
+#: Stable machine reason codes an anomaly producer can emit; the snooze
+#: service validates against this set so a typo cannot silently suppress.
+ANOMALY_REASONS: Final = frozenset(
+    {
+        "heat_circle_flow_below_baseline",
+        "spread_above_baseline",
+        "compressor_starts_above_baseline",
+        "dhw_charge_time_above_baseline",
+    }
+)
+_SNOOZE_MAX_DAYS: Final = 365
+
 # A value identical for this long on a continuous quantity is treated as a
 # frozen sensor, not a measurement (spec section 26). Discrete states such as
 # the smart-grid status legitimately sit still for hours and are exempt.
@@ -656,6 +668,7 @@ class PredictiveAdvisor:
         self._history: deque[Recommendation] = deque(maxlen=_MAX_HISTORY)
         self._quality: dict[str, _KeyQuality] = {}
         self._counter_save_at: datetime | None = None
+        self._snoozed: dict[str, datetime] = {}
 
     # ------------------------------------------------------------------
     # Observation and data quality
@@ -961,6 +974,49 @@ class PredictiveAdvisor:
         self._schedule_save()
         return True
 
+    # ------------------------------------------------------------------
+    # Anomaly snooze (#612)
+    # ------------------------------------------------------------------
+
+    def snooze(self, reason: str, days: int, now: datetime | None = None) -> bool:
+        """Suppress one anomaly reason for ``days`` days.
+
+        The producers re-issue anomalies daily under a new day stamp, so a
+        per-instance dismiss alone cannot stop a recurring, understood
+        finding. Snoozing the stable reason code keeps it out of the active
+        recommendations (and the health penalty) until the window elapses.
+        Returns False for unknown reasons or non-positive windows.
+        """
+        if reason not in ANOMALY_REASONS or not isinstance(days, int) or days <= 0:
+            return False
+        current = now if now is not None else _utcnow()
+        self._snoozed[reason] = current + timedelta(days=min(days, _SNOOZE_MAX_DAYS))
+        self._schedule_save()
+        return True
+
+    def unsnooze(self, reason: str) -> bool:
+        """Cancel a snooze early so the reason can fire again."""
+        if reason not in self._snoozed:
+            return False
+        del self._snoozed[reason]
+        self._schedule_save()
+        return True
+
+    def is_snoozed(self, reason: str, now: datetime | None = None) -> bool:
+        """Whether ``reason`` is currently suppressed; expired snoozes clear."""
+        until = self._snoozed.get(reason)
+        if until is None:
+            return False
+        current = now if now is not None else _utcnow()
+        if current >= until:
+            self._snoozed.pop(reason, None)
+            return False
+        return True
+
+    def snoozed_until(self, reason: str) -> datetime | None:
+        """The moment a reason's snooze ends, or None when not snoozed."""
+        return self._snoozed.get(reason)
+
     def _expire_recommendations(self, now: datetime) -> bool:
         """Move recommendations past their TTL to history as expired.
 
@@ -1010,6 +1066,7 @@ class PredictiveAdvisor:
             "active": [rec.to_dict() for rec in self._active.values()],
             "history": [rec.to_dict() for rec in self._history],
             "quality": {key: quality.to_dict() for key, quality in self._quality.items()},
+            "snoozed": {reason: until.isoformat() for reason, until in self._snoozed.items()},
         }
 
     def _schedule_save(self) -> None:
@@ -1043,6 +1100,14 @@ class PredictiveAdvisor:
         quality = stored.get("quality")
         if isinstance(quality, Mapping):
             self._quality = {str(key): _KeyQuality.from_dict(value) for key, value in quality.items()}
+        snoozed = stored.get("snoozed")
+        if isinstance(snoozed, Mapping):
+            self._snoozed = {}
+            for reason, value in snoozed.items():
+                if reason in ANOMALY_REASONS:
+                    until = _parse_datetime(value)
+                    if until is not None:
+                        self._snoozed[str(reason)] = until
         self._expire_recommendations(_utcnow())
 
     async def async_save(self) -> None:

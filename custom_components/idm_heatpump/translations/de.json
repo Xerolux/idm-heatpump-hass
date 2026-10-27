@@ -3261,6 +3261,12 @@
     },
     "invalid_datetime": {
       "message": "Ungültiger Datums-/Zeitwert: {value}"
+    },
+    "advisor_disabled": {
+      "message": "Aktiviere zuerst den Predictive Advisor für diesen geladenen IDM-Eintrag."
+    },
+    "advisor_bad_reason": {
+      "message": "Wähle einen gültigen Anomalie-Grundcode."
     }
   },
   "issues": {
@@ -3519,6 +3525,38 @@
         "entry_id": {
           "name": "IDM integration",
           "description": "IDM integration entry."
+        }
+      }
+    },
+    "snooze_anomaly": {
+      "name": "Advisor-Anomalie zurückstellen",
+      "description": "Unterdrückt einen Predictive-Advisor-Anomaliegrund für eine Anzahl von Tagen, sodass ein wiederkehrender, verstandener Befund nicht erneut feuert. Zurückgestellte Gründe bleiben bis zum Ablauf aus den aktiven Empfehlungen und dem Gesundheitswert heraus.",
+      "fields": {
+        "entry_id": {
+          "name": "IDM integration",
+          "description": "Der IDM-Integrations-Eintrag."
+        },
+        "reason": {
+          "name": "Grund",
+          "description": "Stabiler Maschinencode des zu unterdrückenden Anomaliegrunds."
+        },
+        "days": {
+          "name": "Tage",
+          "description": "Wie viele Tage der Grund unterdrückt wird (1-365)."
+        }
+      }
+    },
+    "unsnooze_anomaly": {
+      "name": "Advisor-Anomalie entsperren",
+      "description": "Hebe eine Anomalie-Zurückstellung vorzeitig auf, damit der Grund wieder feuern kann.",
+      "fields": {
+        "entry_id": {
+          "name": "IDM integration",
+          "description": "Der IDM-Integrations-Eintrag."
+        },
+        "reason": {
+          "name": "Grund",
+          "description": "Stabiler Maschinencode des zu entsperrenden Anomaliegrunds."
         }
       }
     },

@@ -833,8 +833,8 @@ class TestAsyncUnloadEntry:
         """#171: unloading an entry must not remove the domain services."""
         await async_setup_services(mock_hass)
         registered_before = mock_hass.services.async_register.call_count
-        # Six domain services plus the two DHW boost actions.
-        assert registered_before == 11
+        # Core services plus the two DHW boost actions and the advisor snooze pair.
+        assert registered_before == 13
 
         entry = MagicMock()
         entry.runtime_data = MagicMock()
@@ -846,7 +846,7 @@ class TestAsyncUnloadEntry:
 
         # Services are untouched: no removals, registration count unchanged.
         mock_hass.services.async_remove.assert_not_called()
-        assert mock_hass.services.async_register.call_count == 11
+        assert mock_hass.services.async_register.call_count == 13
 
     async def test_services_survive_entry_reload(self, mock_hass):
         """#171: after unload + re-setup services remain registered exactly once."""
@@ -863,7 +863,7 @@ class TestAsyncUnloadEntry:
         await async_setup_services(mock_hass)
 
         mock_hass.services.async_remove.assert_not_called()
-        assert mock_hass.services.async_register.call_count == 11
+        assert mock_hass.services.async_register.call_count == 13
 
 
 class TestAsyncReloadEntry:

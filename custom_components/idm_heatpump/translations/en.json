@@ -3261,6 +3261,12 @@
     },
     "invalid_datetime": {
       "message": "Invalid date/time value: {value}"
+    },
+    "advisor_disabled": {
+      "message": "Enable the predictive advisor for this loaded IDM entry first."
+    },
+    "advisor_bad_reason": {
+      "message": "Choose a valid anomaly reason code."
     }
   },
   "issues": {
@@ -3519,6 +3525,38 @@
         "entry_id": {
           "name": "IDM integration",
           "description": "IDM integration entry."
+        }
+      }
+    },
+    "snooze_anomaly": {
+      "name": "Snooze advisor anomaly",
+      "description": "Suppress one predictive-advisor anomaly reason for a number of days so a recurring, understood finding stops re-firing. Snoozed reasons stay out of the active recommendations and the health score until the window elapses.",
+      "fields": {
+        "entry_id": {
+          "name": "IDM integration",
+          "description": "The IDM integration entry."
+        },
+        "reason": {
+          "name": "Reason",
+          "description": "Stable machine reason code of the anomaly to suppress."
+        },
+        "days": {
+          "name": "Days",
+          "description": "How many days to suppress the reason (1-365)."
+        }
+      }
+    },
+    "unsnooze_anomaly": {
+      "name": "Unsnooze advisor anomaly",
+      "description": "Cancel an anomaly snooze early so the reason can fire again.",
+      "fields": {
+        "entry_id": {
+          "name": "IDM integration",
+          "description": "The IDM integration entry."
+        },
+        "reason": {
+          "name": "Reason",
+          "description": "Stable machine reason code of the anomaly to un-suppress."
         }
       }
     },

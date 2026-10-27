@@ -412,6 +412,24 @@ def test_anomaly_starts_stays_silent_on_weather_mismatch() -> None:
     assert engine.anomaly_active is False
 
 
+def test_anomaly_producer_honors_snoozed_reason() -> None:
+    """A snoozed reason (#612) is neither submitted nor left active."""
+    data = {
+        "power_consumption_hp": 2.0,
+        "heat_sink_flow_rate": 1.0,
+        "hp_operating_mode": int(HeatPumpStatus.HEATING),
+    }
+    engine, advisor, analytics, _coordinator = _engine(data)
+    _seed_days(analytics, "heat_sink_flow_rate", 1.5)
+    _seed_days(analytics, "heat_sink_flow_rate:heating", 1.5)
+    _seed_today(analytics, "heat_sink_flow_rate:heating", 1.0)
+    advisor.snooze("heat_circle_flow_below_baseline", 7, now=T0)
+    engine.observe(now=T0)
+    anomalies = [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
+    assert not any("flow_rate_low" in rec.id for rec in anomalies)
+    assert engine.anomaly_active is False
+
+
 def test_anomaly_producer_respects_observation_stage() -> None:
     data = {"power_consumption_hp": 2.0, "heat_sink_flow_rate": 1.0}
     engine, advisor, analytics, _coordinator = _engine(data)

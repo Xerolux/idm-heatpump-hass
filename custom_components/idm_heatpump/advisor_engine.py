@@ -607,6 +607,11 @@ class AdvisorEngine:
                 dhw.days,
             )
 
+        # Snoozed reasons (#612) are suppressed: they are neither re-submitted
+        # nor allowed to linger, so the retraction below also clears any
+        # active recommendation that was snoozed mid-flight.
+        found = {key: value for key, value in found.items() if not self._advisor.is_snoozed(value[2], current)}
+
         stamp = _day_stamp(current)
         quality = self._advisor.usable_fraction
         for key, (strong, message, reason, baseline_days) in found.items():

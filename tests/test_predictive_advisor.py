@@ -526,6 +526,39 @@ async def test_async_load_survives_store_error(mock_hass: Any) -> None:
     assert advisor.recommendation_count == 0
 
 
+def test_snooze_lifecycle(mock_hass: Any) -> None:
+    advisor = PredictiveAdvisor(_coordinator(hass=mock_hass))
+    assert advisor.is_snoozed("spread_above_baseline", T0) is False
+
+    assert advisor.snooze("spread_above_baseline", 7, now=T0) is True
+    assert advisor.is_snoozed("spread_above_baseline", T0) is True
+    assert advisor.is_snoozed("spread_above_baseline", T0 + timedelta(days=6, hours=23)) is True
+    # The window ends exactly at the boundary and clears lazily.
+    assert advisor.is_snoozed("spread_above_baseline", T0 + timedelta(days=7)) is False
+    assert advisor.snoozed_until("spread_above_baseline") is None
+
+    # Unknown reasons and non-positive windows are rejected.
+    assert advisor.snooze("not_a_reason", 7, now=T0) is False
+    assert advisor.snooze("spread_above_baseline", 0, now=T0) is False
+
+    # unsnooze cancels early and reports whether it found an active snooze.
+    assert advisor.snooze("dhw_charge_time_above_baseline", 30, now=T0) is True
+    assert advisor.unsnooze("dhw_charge_time_above_baseline") is True
+    assert advisor.unsnooze("dhw_charge_time_above_baseline") is False
+
+
+async def test_snooze_persists_across_restart(mock_hass: Any) -> None:
+    coordinator = _coordinator(hass=mock_hass)
+    first = PredictiveAdvisor(coordinator)
+    await first.async_load()
+    first.snooze("compressor_starts_above_baseline", 10, now=T0)
+
+    second = PredictiveAdvisor(coordinator)
+    second._store.data = first._serialize()
+    await second.async_load()
+    assert second.is_snoozed("compressor_starts_above_baseline", T0 + timedelta(days=1)) is True
+
+
 def test_required_registers_cover_watch_list() -> None:
     advisor = PredictiveAdvisor(_coordinator(options={"heating_circuits": ["a", "d"]}))
     required = advisor.required_registers

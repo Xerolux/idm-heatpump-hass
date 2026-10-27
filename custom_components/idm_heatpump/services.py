@@ -53,6 +53,7 @@ from .knx_catalog import (
     InvalidGroupAddressError,
     resolve_group_addresses,
 )
+from .predictive_advisor import ANOMALY_REASONS, PredictiveAdvisor
 
 if TYPE_CHECKING:
     from homeassistant.helpers.typing import VolDictType
@@ -193,6 +194,29 @@ async def async_setup_services(hass: HomeAssistant) -> None:
             {vol.Required("entry_id"): cv.string, vol.Optional("report_type", default="daily"): vol.In(REPORT_TYPES)}
         ),
         supports_response=SupportsResponse.OPTIONAL,
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "snooze_anomaly",
+        partial(_handle_snooze_anomaly, hass),
+        schema=vol.Schema(
+            {
+                vol.Required("entry_id"): cv.string,
+                vol.Required("reason"): vol.In(sorted(ANOMALY_REASONS)),
+                vol.Optional("days", default=7): vol.All(vol.Coerce(int), vol.Range(min=1, max=365)),
+            }
+        ),
+    )
+    hass.services.async_register(
+        DOMAIN,
+        "unsnooze_anomaly",
+        partial(_handle_unsnooze_anomaly, hass),
+        schema=vol.Schema(
+            {
+                vol.Required("entry_id"): cv.string,
+                vol.Required("reason"): vol.In(sorted(ANOMALY_REASONS)),
+            }
+        ),
     )
 
 
@@ -692,6 +716,31 @@ async def _handle_export_knx_group_addresses(hass: HomeAssistant, call: ServiceC
         "count": len(rows),
         "objects": rows,
     }
+
+
+async def _get_advisor(hass: HomeAssistant, call: ServiceCall) -> PredictiveAdvisor:
+    """Resolve the predictive advisor of an explicitly selected, loaded entry."""
+    entry = hass.config_entries.async_get_entry(call.data["entry_id"])
+    if entry is None or entry.domain != DOMAIN or entry.state != ConfigEntryState.LOADED:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="advisor_disabled")
+    advisor = getattr(entry.runtime_data, "predictive_advisor", None)
+    if not isinstance(advisor, PredictiveAdvisor):
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="advisor_disabled")
+    return advisor
+
+
+async def _handle_snooze_anomaly(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Suppress one anomaly reason for a number of days."""
+    advisor = await _get_advisor(hass, call)
+    if not advisor.snooze(call.data["reason"], int(call.data.get("days", 7))):
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="advisor_bad_reason")
+
+
+async def _handle_unsnooze_anomaly(hass: HomeAssistant, call: ServiceCall) -> None:
+    """Cancel an anomaly snooze early."""
+    advisor = await _get_advisor(hass, call)
+    if not advisor.unsnooze(call.data["reason"]):
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="advisor_bad_reason")
 
 
 async def _handle_generate_ai_report(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
