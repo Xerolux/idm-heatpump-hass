@@ -49,6 +49,17 @@ def test_metric_baseline_needs_three_prior_days() -> None:
     assert baseline.deviation_percent == -33.3
 
 
+def test_metric_today_samples_counts_even_without_baseline() -> None:
+    analytics = _analytics()
+    assert analytics.metric_today_samples("heat_sink_flow_rate:heating", T0) == 0
+    analytics.observe_metric("heat_sink_flow_rate:heating", 22.0, T0)
+    analytics.observe_metric("heat_sink_flow_rate:heating", 24.0, T0)
+    # No three prior days yet, so metric_baseline returns None — the sample
+    # count is still what tells the engine which demand reason dominates.
+    assert analytics.metric_baseline("heat_sink_flow_rate:heating", T0) is None
+    assert analytics.metric_today_samples("heat_sink_flow_rate:heating", T0) == 2
+
+
 def test_metric_baseline_ignores_invalid_samples_and_counts_mean() -> None:
     analytics = _analytics()
     for offset in (4, 3, 2):

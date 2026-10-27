@@ -247,6 +247,18 @@ class AdvisorAnalytics:
             day[1] += 1.0
         self._schedule_save()
 
+    def metric_today_samples(self, key: str, now: datetime | None = None) -> int:
+        """Today's usable sample count for one metric key.
+
+        The engine uses this to tell which demand reason dominates the day
+        before picking the like-for-like baseline (#607); the count alone is
+        available even when ``metric_baseline`` returns ``None`` because the
+        prior-days floor is not reached yet.
+        """
+        current = now or _utcnow()
+        _total, count = self._daily.get(key, {}).get(_day_key(current), (0.0, 0.0))
+        return int(count)
+
     def metric_baseline(self, key: str, now: datetime | None = None) -> DailyBaseline | None:
         """Compare today's mean against the median of the prior days."""
         current = now or _utcnow()

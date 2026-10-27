@@ -22,6 +22,7 @@ from custom_components.idm_heatpump.advisor_engine import (
     parse_pv_hourly_kwh,
 )
 from custom_components.idm_heatpump.binary_sensor import async_setup_entry as async_setup_binary_sensors
+from custom_components.idm_heatpump.const import HeatPumpStatus
 from custom_components.idm_heatpump.predictive_advisor import (
     PredictiveAdvisor,
     RecommendationCategory,
@@ -316,9 +317,14 @@ def _seed_days(analytics: AdvisorAnalytics, key: str, value: float, days: int = 
 
 
 def test_anomaly_producer_submits_and_retracts() -> None:
-    data = {"power_consumption_hp": 2.0, "heat_sink_flow_rate": 1.0}
+    data = {
+        "power_consumption_hp": 2.0,
+        "heat_sink_flow_rate": 1.0,
+        "hp_operating_mode": int(HeatPumpStatus.HEATING),
+    }
     engine, advisor, analytics, _coordinator = _engine(data)
     _seed_days(analytics, "heat_sink_flow_rate", 1.5)
+    _seed_days(analytics, "heat_sink_flow_rate:heating", 1.5)
     engine.observe(now=T0)  # first observe runs the producers
     anomaly_ids = [rec.id for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
     assert any("flow_rate_low" in rec_id for rec_id in anomaly_ids)
@@ -326,14 +332,52 @@ def test_anomaly_producer_submits_and_retracts() -> None:
     assert engine.anomaly_findings
 
     # A fresh engine on a healthy day withdraws the recommendation again.
-    healthy_data = {"power_consumption_hp": 2.0, "heat_sink_flow_rate": 1.5}
+    healthy_data = {
+        "power_consumption_hp": 2.0,
+        "heat_sink_flow_rate": 1.5,
+        "hp_operating_mode": int(HeatPumpStatus.HEATING),
+    }
     engine2, advisor2, analytics2, _coord2 = _engine(healthy_data)
     _seed_days(analytics2, "heat_sink_flow_rate", 1.5)
+    _seed_days(analytics2, "heat_sink_flow_rate:heating", 1.5)
     stale = [rec for rec in advisor2.active_recommendations]
     assert stale == []
     engine2.observe(now=T0)
     assert not [rec for rec in advisor2.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
     assert engine2.anomaly_active is False
+
+
+def test_anomaly_flow_baseline_compares_same_demand_reason() -> None:
+    """A DHW-heavy day compares against the DHW baseline, not heating's (#607)."""
+    data = {
+        "power_consumption_hp": 2.0,
+        "heat_sink_flow_rate": 6.5,
+        "hp_operating_mode": int(HeatPumpStatus.WATER),
+    }
+    engine, advisor, analytics, _coordinator = _engine(data)
+    _seed_days(analytics, "heat_sink_flow_rate:heating", 25.0)
+    _seed_days(analytics, "heat_sink_flow_rate:dhw", 6.5)
+    engine.observe(now=T0)
+    anomalies = [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
+    # 6.5 L/min is perfectly normal for DHW charging; against the combined
+    # or heating baseline it would have fired the old false positive.
+    assert not any("flow_rate_low" in rec.id for rec in anomalies)
+    heating = analytics.metric_baseline("heat_sink_flow_rate:heating", T0)
+    assert heating is not None and heating.today is None
+
+
+def test_anomaly_flow_skips_without_mode_baseline() -> None:
+    """A mode with no established baseline stays silent instead of guessing (#607)."""
+    data = {
+        "power_consumption_hp": 2.0,
+        "heat_sink_flow_rate": 1.0,
+        "hp_operating_mode": int(HeatPumpStatus.HEATING),
+    }
+    engine, advisor, analytics, _coordinator = _engine(data)
+    _seed_days(analytics, "heat_sink_flow_rate", 1.5)  # combined history only
+    engine.observe(now=T0)
+    assert not [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
+    assert engine.anomaly_active is False
 
 
 def test_anomaly_producer_flags_starts_and_dhw_charge() -> None:
