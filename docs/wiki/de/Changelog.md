@@ -5,6 +5,20 @@ Die maßgebliche, vollständige Historie wird in
 und in den [GitHub-Releases](https://github.com/Xerolux/idm-heatpump-hass/releases) gepflegt.
 Diese Seite fasst lediglich die aktuellen Meilensteine zusammen.
 
+## v0.24.0-b1 — 2026-10-28
+
+Vier Features auf dem API-Release `2.15.0` aufbauend: ein Shared-Modbus-
+Connection-Provider (HA 2026.10+), der Home Assistants zentrale Verbindung
+beansprucht, statt ein konkurrierendes Socket zu öffnen (privates Socket
+bleibt Fallback); Live-Anlagenerkennung beim Onboarding (der
+Verbindungstest liest Modell, Heizkreise, Zonenmodule und Kaskade
+nur-lesend und befüllt jedes Einrichtungsprofil); ein deterministischer
+lokaler Assist-Agent, der Anlagenfragen auf Deutsch oder Englisch
+beantwortet; und der Service `generate_dashboard`, der ein fertig
+verwendbares Lovelace-Dashboard aus deinen echten Entity-IDs erzeugt.
+Dazu die Behebung der Uhrzeit-Abhängigkeit im
+Advisor-Anomalie-Retraction-Test (#622).
+
 ## v0.23.2 — 2026-10-27
 
 Der stabile Schnitt der b1–b5-Linie: Der Predictive Advisor kalibriert seine
