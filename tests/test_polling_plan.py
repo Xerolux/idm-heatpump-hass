@@ -11,6 +11,7 @@ import pytest
 from idm_heatpump import DataType, RegisterDef
 
 from custom_components.idm_heatpump import polling_plan
+from custom_components.idm_heatpump.adapter_glt import EXTERNAL_POWER_MEASUREMENT_NAMES
 from custom_components.idm_heatpump.polling_plan import (
     EntityAwarePollingManager,
     ensure_entity_aware_polling,
@@ -61,6 +62,35 @@ def test_disabled_entity_is_not_polled(monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
     assert required == {"outdoor_temp"}
+
+
+@pytest.mark.parametrize("name", [*EXTERNAL_POWER_MEASUREMENT_NAMES, "zm1_room1_temp", "zm1_room1_humidity"])
+def test_glt_number_keeps_register_polled_without_sensor_or_forwarder(
+    monkeypatch: pytest.MonkeyPatch, name: str
+) -> None:
+    """Issue #493: the Number's _set suffix must not starve its readback."""
+    required = _build(
+        monkeypatch,
+        [_RegistryEntry(f"entry_{name}", disabled_by="user"), _RegistryEntry(f"entry_{name}_set")],
+        {"outdoor_temp", name, "unrelated_register"},
+    )
+    assert required == {"outdoor_temp", name}
+
+
+def test_disabled_glt_number_does_not_keep_register_polled(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert _build(
+        monkeypatch,
+        [_RegistryEntry("entry_battery_soc_set", disabled_by="user")],
+        {"outdoor_temp", "battery_soc"},
+    ) == {"outdoor_temp"}
+
+
+def test_unrelated_set_suffix_does_not_request_a_register(monkeypatch: pytest.MonkeyPatch) -> None:
+    assert _build(
+        monkeypatch,
+        [_RegistryEntry("entry_unknown_set")],
+        {"outdoor_temp", "unknown"},
+    ) == {"outdoor_temp"}
 
 
 def test_calculated_sensor_adds_all_source_registers(monkeypatch: pytest.MonkeyPatch) -> None:

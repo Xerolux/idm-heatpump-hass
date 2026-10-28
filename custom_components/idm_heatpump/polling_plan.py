@@ -12,6 +12,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers import entity_registry as er
 
+from .adapter_glt import is_glt_measurement
 from .calculated_sensors import (
     CALCULATED_SENSOR_DEFINITIONS,
     DIFFERENTIAL_TEMPERATURE_DEFINITIONS,
@@ -66,6 +67,10 @@ _ZONE_CLIMATE = re.compile(r"^climate_zm(\d+)_room(\d+)$")
 
 def _entity_dependencies(unique_suffix: str) -> set[str]:
     """Return register dependencies for non-register entity unique IDs."""
+    if unique_suffix.endswith("_set") and is_glt_measurement(name := unique_suffix.removesuffix("_set")):
+        # GLT Numbers have a distinct ID from their read-only Sensors. Keep
+        # their readback even when no Sensor or automatic forwarder needs it.
+        return {name}
     if unique_suffix == "heat_sink_flow_rate":
         return {"heat_sink_flow_temp"}
     if unique_suffix in _CALCULATED_DEPENDENCIES:
