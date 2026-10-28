@@ -42,7 +42,7 @@ def test_release_generator_keeps_one_data_request(tmp_path: Path, mode: str) -> 
     assert result.index(MARKER) < result.index("### ⚠️ Upgrade notes")
     assert "https://idmtools.xerolux.de/" in result
     assert "voluntary" in result and "only to" in result
-    assert "30 days" in " ".join(result.replace(">", "").split())
+    assert "90 days" in " ".join(result.replace(">", "").split())
     assert "complete anonymity is not guaranteed" in result
     assert "Leave a star on GitHub" in result
     assert "### ☕ Support the project" in result
