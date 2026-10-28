@@ -196,6 +196,8 @@ from .internal_messages import warm_error_code_database
 from .knx_bridge import KnxBridge, KnxBridgeConfig
 from .knx_catalog import OBJECT_GROUPS, InvalidGroupAddressError
 from .library_adapter import get_idm_client
+from .modbus_shared_transport import create_shared_modbus_transport
+from .modbus_transport import ModbusTcpEndpoint
 from .model_resolution import (
     DetectionResult,
     StoredDetection,
@@ -243,6 +245,11 @@ PLATFORMS = [
     Platform.WATER_HEATER,
     Platform.BUTTON,
 ]
+#: The Assist agent needs Home Assistant's ``conversation`` component, which
+#: requires the http/auth stack. It is forwarded whenever that component is
+#: available and skipped with one info line on minimal cores that cannot load
+#: it, instead of failing the whole entry as a manifest dependency would.
+_OPTIONAL_PLATFORMS: tuple[Platform, ...] = (Platform.CONVERSATION,)
 
 _LOGGER = logging.getLogger(__name__)
 _LEGACY_ENTITY_UNIQUE_ID = re.compile(r"^.+:\d+_(?P<entity_key>.+)$")
@@ -673,6 +680,38 @@ async def async_migrate_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> boo
     return True
 
 
+async def _async_optional_platforms(hass: HomeAssistant) -> tuple[Platform, ...]:
+    """Return optional platforms whose host component could be loaded.
+
+    The Assist agent lives on Home Assistant's ``conversation`` entity
+    platform. A manifest dependency would make every entry fail on cores
+    without the http/auth stack, so the component is set up here on demand
+    and the platform is skipped with one info line when that is impossible.
+    """
+    available: list[Platform] = []
+    for platform in _OPTIONAL_PLATFORMS:
+        domain = str(platform.value) if hasattr(platform, "value") else str(platform)
+        if domain in hass.config.components:
+            available.append(platform)
+            continue
+        try:
+            from homeassistant.setup import async_setup_component
+
+            if bool(await async_setup_component(hass, domain, {})):
+                available.append(platform)
+            else:
+                _LOGGER.info(
+                    "Home Assistant's %s component is not available; its optional platform is skipped",
+                    domain,
+                )
+        except Exception:  # noqa: BLE001 - minimal cores lack the http/auth stack
+            _LOGGER.info(
+                "Home Assistant's %s component could not be set up; its optional platform is skipped",
+                domain,
+            )
+    return tuple(available)
+
+
 async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
     integration = await async_get_integration(hass, DOMAIN)
     versions = await async_runtime_versions(integration.manifest.get("version"))
@@ -806,7 +845,21 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             enable_cascade=enable_cascade,
         )
 
-    # Use the library via the adapter (migration Option B)
+    # Use the library via the adapter (migration Option B). Home Assistant
+    # 2026.10+ can share one Modbus socket between entries and integrations;
+    # the entry claims that connection when available and keeps its own
+    # private socket otherwise (older Home Assistant, unloadable modbus
+    # component, conflicting link settings).
+    endpoint = ModbusTcpEndpoint(
+        host=host,
+        port=port,
+        slave_id=slave_id,
+        timeout=modbus_timeout,
+        retries=modbus_max_retries,
+        message_spacing=modbus_message_spacing,
+        connect_delay=modbus_connect_delay,
+    )
+    shared_transport = await create_shared_modbus_transport(hass, entry, endpoint)
     client = get_idm_client(
         host=host,
         port=port,
@@ -815,6 +868,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
         max_retries=modbus_max_retries,
         message_spacing=modbus_message_spacing,
         connect_delay=modbus_connect_delay,
+        transport=shared_transport,
     )
     # Apply the per-entry EEPROM write interval (power-user override; default
     # stays 60s to protect the EEPROM's limited write cycles).
@@ -1079,6 +1133,10 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
                     comfort_schedulers.append(scheduler)
             comfort_scheduler = comfort_schedulers[0] if comfort_schedulers else None
 
+        # Optional platforms (the Assist agent's conversation platform) join
+        # only when their host component could actually be loaded.
+        platforms: tuple[Platform, ...] = (*PLATFORMS, *await _async_optional_platforms(hass))
+
         entry.runtime_data = IdmHeatpumpData(
             coordinator=coordinator,
             client=client,
@@ -1089,12 +1147,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: IdmConfigEntry) -> bool:
             advisor_engine=advisor_engine,
             comfort_scheduler=comfort_scheduler,
             comfort_schedulers=tuple(comfort_schedulers),
-            loaded_platforms=tuple(PLATFORMS),
+            loaded_platforms=platforms,
         )
 
         await coordinator.async_config_entry_first_refresh()
         precreate_main_device(hass, coordinator)
-        await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+        await hass.config_entries.async_forward_entry_setups(entry, platforms)
         cleanup_disabled_feature_entities(hass, coordinator)
         cleanup_stale_model_entities(hass, coordinator)
         cleanup_deconfigured_heating_circuit_entities(hass, coordinator)

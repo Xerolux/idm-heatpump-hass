@@ -414,7 +414,7 @@
       },
       "setup_review": {
         "title": "IDM system detected",
-        "description": "Modbus and the requested local web access were verified.\n\n- Endpoint: **{host}:{port}**\n- Slave ID: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Local web access: **{web}**\n\nReview the automatically detected model. Override it only when detection is demonstrably wrong. Then choose the setup depth. Every level offers every function through short guided steps.",
+        "description": "Modbus and the requested local web access were verified.\n\n- Endpoint: **{host}:{port}**\n- Slave ID: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Local web access: **{web}**\n- Detected plant: **{plant}**\n\nReview the automatically detected model. Override it only when detection is demonstrably wrong. Then choose the setup depth. Every level offers every function through short guided steps.",
         "data": {
           "profile": "Configuration profile",
           "model_override": "Confirm Navigator model"
@@ -1755,6 +1755,11 @@
         "name": "Zone {zone} Room {room}"
       }
     },
+    "conversation": {
+      "assist_agent": {
+        "name": "Assistant"
+      }
+    },
     "number": {
       "battery_discharge": {
         "name": "Battery discharge (external setpoint)"
@@ -3089,7 +3094,7 @@
       "message": "No IDM heat pump is currently configured or loaded."
     },
     "entry_not_loaded": {
-      "message": "The selected IDM heat pump entry is not loaded: {entry_id}"
+      "message": "The selected IDM integration entry is not loaded."
     },
     "multiple_entries_select_entry": {
       "message": "Multiple IDM heat pumps are loaded. Please provide entry_id to target a specific device."
@@ -3267,6 +3272,9 @@
     },
     "advisor_bad_reason": {
       "message": "Choose a valid anomaly reason code."
+    },
+    "dashboard_no_entities": {
+      "message": "No dashboard entities were found for this entry yet; wait for the first successful poll."
     }
   },
   "issues": {
@@ -3569,6 +3577,10 @@
           "description": "The time to set. Omit to use the current Home Assistant time."
         }
       }
+    },
+    "generate_dashboard": {
+      "name": "Generate plant dashboard",
+      "description": "Return a ready-to-use Lovelace dashboard for this plant using your current entity IDs, as structured data and as YAML. Does not change existing dashboards."
     }
   }
 }

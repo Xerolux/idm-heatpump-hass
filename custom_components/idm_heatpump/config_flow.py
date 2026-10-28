@@ -644,6 +644,42 @@ def _options_for_profile(profile: str) -> dict[str, Any]:
     return options
 
 
+def _apply_detected_plant(options: dict[str, Any], detected: dict[str, Any] | None) -> dict[str, Any]:
+    """Seed the plant topology a live detection read into fresh options.
+
+    Heating circuits, zone count and cascade come from the controller itself,
+    so the following steps open with the real plant instead of the safe
+    defaults. ``None`` (no or unusable detection) keeps the defaults: a flaky
+    probe must never block onboarding.
+    """
+    if not detected:
+        return options
+    seeded = dict(options)
+    seeded[CONF_HEATING_CIRCUITS] = list(detected["circuits"])
+    seeded[CONF_ZONE_COUNT] = int(detected["zone_count"])
+    seeded[CONF_ENABLE_CASCADE] = bool(detected["cascade"])
+    return seeded
+
+
+def _detected_plant_summary(detected: dict[str, Any] | None) -> str:
+    """Render the detected topology as one data line for the review step.
+
+    The values are data, not translations — like ``connected`` and
+    ``not detected`` in the same description — so every language reads the
+    same technical summary.
+    """
+    if not detected:
+        return "not detected"
+    circuits = ", ".join(circuit.upper() for circuit in detected["circuits"])
+    zones = int(detected["zone_count"])
+    parts = [f"{detected['model']}", f"heating circuits {circuits}"]
+    if zones:
+        parts.append(f"{zones} zone module{'s' if zones != 1 else ''}")
+    if detected["cascade"]:
+        parts.append("cascade present")
+    return ", ".join(parts)
+
+
 def _build_setup_review_schema(data: dict[str, Any]) -> vol.Schema:
     """Build the post-detection setup profile selector."""
     return vol.Schema(
@@ -2150,6 +2186,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
         self._guided_active = False
         self._modbus_error = _ModbusConnectionStatus.FAILED.value
         self._reconfigure_entry: config_entries.ConfigEntry | None = None
+        self._detected_plant: dict[str, Any] | None = None
 
     async def async_step_user(self, user_input: dict[str, Any] | None = None) -> ConfigFlowResult:
         errors: dict[str, str] = {}
@@ -2250,13 +2287,13 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
             profile = str(user_input.get(_SETUP_PROFILE, _SETUP_PROFILE_RECOMMENDED))
             self._data[CONF_MODEL_OVERRIDE] = _normalize_model_override(user_input)
             if profile in _GUIDED_LEVELS:
-                self._options = _default_options()
+                self._options = _apply_detected_plant(_default_options(), self._detected_plant)
                 self._guided_level = profile
                 return await self.async_step_guided_choose()
             if profile == _SETUP_PROFILE_CUSTOM:
-                self._options = _default_options()
+                self._options = _apply_detected_plant(_default_options(), self._detected_plant)
                 return await self.async_step_options()
-            self._options = _options_for_profile(profile)
+            self._options = _apply_detected_plant(_options_for_profile(profile), self._detected_plant)
             return await self._async_finish_options()
 
         web_enabled = web_pin_configured(_clean_pin(self._data.get(CONF_WEB_PIN)))
@@ -2270,6 +2307,7 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 "navigator": str(self._data.get(CONF_DETECTED_NAVIGATOR_VERSION, "not detected")),
                 "software": str(self._data.get(CONF_DETECTED_SOFTWARE_VERSION, "not detected")),
                 "web": "connected" if web_enabled else "not configured",
+                "plant": _detected_plant_summary(self._detected_plant),
             },
             errors={},
         )
@@ -2799,6 +2837,10 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                     port,
                     slave_id,
                 )
+                # The probe client is connected and validated: read the plant
+                # topology now (read-only) so the following setup steps open
+                # with the real configuration instead of safe defaults.
+                self._detected_plant = await self._async_detect_plant(client)
                 return _ModbusConnectionStatus.SUCCESS
             _LOGGER.warning(
                 "IDM Modbus connection test to %s:%d (slave %s) failed: probe register returned no data",
@@ -2854,6 +2896,41 @@ class IdmHeatpumpConfigFlow(_IdmOptionsStepsMixin, config_entries.ConfigFlow, do
                 await client.disconnect()
             except Exception:
                 _LOGGER.debug("Error closing connection test client", exc_info=True)
+
+    async def _async_detect_plant(self, client: Any) -> dict[str, Any] | None:
+        """Read the plant topology from the connected controller (read-only).
+
+        Uses the library's model detection — the same probes the runtime
+        entry relies on — and returns ``None`` on any failure or implausible
+        answer, so detection is always best-effort and never gates setup.
+        """
+        try:
+            model_info = await client.detect_model()
+        except Exception:
+            _LOGGER.debug("IDM plant topology detection during setup did not answer", exc_info=True)
+            return None
+        model_name = getattr(model_info, "model_name", None)
+        zone_modules = getattr(model_info, "zone_modules", None)
+        has_cascade = getattr(model_info, "has_cascade", None)
+        firmware = getattr(model_info, "firmware_version", None)
+        circuits = sorted(
+            {
+                circuit.lower()
+                for circuit in getattr(model_info, "active_heating_circuits", None) or []
+                if isinstance(circuit, str) and len(circuit) == 1 and circuit.lower() in "abcdefg"
+            }
+        )
+        if not isinstance(model_name, str) or not model_name:
+            return None
+        if not circuits or not isinstance(zone_modules, int) or isinstance(zone_modules, bool):
+            return None
+        return {
+            "model": model_name,
+            "circuits": circuits,
+            "zone_count": max(0, min(zone_modules, MAX_ZONE_COUNT)),
+            "cascade": bool(has_cascade),
+            "firmware": firmware if isinstance(firmware, (int, float)) else None,
+        }
 
     async def _async_detect_web_supplement(
         self,

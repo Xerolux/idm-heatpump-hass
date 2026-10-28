@@ -3,6 +3,7 @@
 import json
 import socket
 from pathlib import Path
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -39,6 +40,7 @@ from custom_components.idm_heatpump.const import (
     CONF_DETECTED_SOFTWARE_VERSION,
     CONF_DETECTED_WEB_VARIANT,
     CONF_DYNAMIC_PRICE_ENTITY,
+    CONF_ENABLE_CASCADE,
     CONF_EXTERNAL_POWER_BATTERY_SIGN,
     CONF_EXTERNAL_POWER_FORWARDING,
     CONF_EXTERNAL_POWER_FORWARDING_ENTITIES,
@@ -3124,3 +3126,178 @@ async def test_advisor_room_sources_step_is_skipped_without_the_advisor():
         }
     )
     assert result["type"] != "form" or result["step_id"] != "advisor_room_sources"
+
+
+class TestPlantTopologyDetection:
+    """Live plant detection during the connection test and the review step."""
+
+    @staticmethod
+    def _model_info(**overrides):
+        from idm_heatpump import MODEL_NAVIGATOR_10, IdmModelInfo
+
+        values = {
+            "model_name": MODEL_NAVIGATOR_10,
+            "active_heating_circuits": ["A", "C", "D"],
+            "zone_modules": 2,
+            "has_solar": True,
+            "has_isc": False,
+            "has_pv": True,
+            "has_cascade": True,
+            "firmware_version": 20.23,
+        }
+        values.update(overrides)
+        return IdmModelInfo(**values)
+
+    @staticmethod
+    def _client_with(model_info):
+        client = AsyncMock()
+        client.is_connected = True
+        client.probe_register = AsyncMock(return_value=[0, 0])
+        client.detect_model = AsyncMock(return_value=model_info)
+        return client
+
+    async def test_connection_test_reads_plant_topology(self):
+        flow = _make_flow()
+        client = self._client_with(self._model_info())
+        with patch(
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
+            return_value=client,
+        ):
+            result = await flow._test_connection({"host": "192.168.1.100", "port": 502, "slave_id": 1})
+
+        assert result is _ModbusConnectionStatus.SUCCESS
+        assert flow._detected_plant == {
+            "model": flow._detected_plant["model"],
+            "circuits": ["a", "c", "d"],
+            "zone_count": 2,
+            "cascade": True,
+            "firmware": 20.23,
+        }
+        client.detect_model.assert_awaited_once()
+
+    async def test_connection_test_survives_detection_failure(self):
+        flow = _make_flow()
+        client = self._client_with(self._model_info())
+        client.detect_model = AsyncMock(side_effect=TimeoutError("probe timed out"))
+        with patch(
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
+            return_value=client,
+        ):
+            result = await flow._test_connection({"host": "192.168.1.100", "port": 502, "slave_id": 1})
+
+        assert result is _ModbusConnectionStatus.SUCCESS
+        assert flow._detected_plant is None
+
+    async def test_detection_rejects_implausible_answers(self):
+        flow = _make_flow()
+        client = self._client_with(self._model_info(active_heating_circuits=[], zone_modules=None))
+        with patch(
+            "custom_components.idm_heatpump.config_flow.get_idm_client",
+            return_value=client,
+        ):
+            await flow._test_connection({"host": "192.168.1.100", "port": 502, "slave_id": 1})
+
+        assert flow._detected_plant is None
+
+    async def test_setup_review_shows_detected_plant(self):
+        flow = _make_flow()
+        flow._detected_plant = {
+            "model": "Navigator 10",
+            "circuits": ["a", "c", "d"],
+            "zone_count": 2,
+            "cascade": True,
+            "firmware": 20.23,
+        }
+        captured: dict[str, Any] = {}
+        original_show_form = flow.async_show_form
+
+        def _capture(**kwargs: Any) -> dict[str, Any]:
+            captured.update(kwargs)
+            return original_show_form(**kwargs)
+
+        with patch.object(flow, "async_show_form", side_effect=_capture):
+            result = await flow.async_step_setup_review(None)
+
+        assert result["step_id"] == "setup_review"
+        summary = captured["description_placeholders"]["plant"]
+        assert "Navigator 10" in summary
+        assert "A, C, D" in summary
+        assert "2 zone modules" in summary
+        assert "cascade" in summary
+
+    async def test_setup_review_without_detection_says_not_detected(self):
+        flow = _make_flow()
+        flow._detected_plant = None
+        captured: dict[str, Any] = {}
+        original_show_form = flow.async_show_form
+
+        def _capture(**kwargs: Any) -> dict[str, Any]:
+            captured.update(kwargs)
+            return original_show_form(**kwargs)
+
+        with patch.object(flow, "async_show_form", side_effect=_capture):
+            await flow.async_step_setup_review(None)
+
+        assert captured["description_placeholders"]["plant"] == "not detected"
+
+    async def test_custom_profile_opens_with_detected_topology(self):
+        flow = _make_flow()
+        flow._detected_plant = {
+            "model": "Navigator 10",
+            "circuits": ["a", "c", "d"],
+            "zone_count": 2,
+            "cascade": True,
+            "firmware": None,
+        }
+        result = await flow.async_step_setup_review({"profile": "custom", "model_override": "auto"})
+
+        assert result["step_id"] == "options"
+        assert flow._options[CONF_HEATING_CIRCUITS] == ["a", "c", "d"]
+        assert flow._options[CONF_ZONE_COUNT] == 2
+        assert flow._options[CONF_ENABLE_CASCADE] is True
+
+    async def test_recommended_profile_seeds_detected_topology(self):
+        flow = _make_flow()
+        flow._detected_plant = {
+            "model": "Navigator 10",
+            "circuits": ["a"],
+            "zone_count": 0,
+            "cascade": False,
+            "firmware": None,
+        }
+        with (
+            patch.object(flow, "_new_features_enabled", return_value=False),
+            patch.object(flow, "_create_flow_entry", return_value="created") as create,
+        ):
+            result = await flow.async_step_setup_review({"profile": "recommended", "model_override": "auto"})
+
+        assert result == "created"
+        assert flow._options[CONF_HEATING_CIRCUITS] == ["a"]
+        assert flow._options[CONF_ZONE_COUNT] == 0
+        create.assert_called_once()
+
+    async def test_missing_detection_keeps_safe_defaults(self):
+        flow = _make_flow()
+        with (
+            patch.object(flow, "_new_features_enabled", return_value=False),
+            patch.object(flow, "_create_flow_entry", return_value="created"),
+        ):
+            await flow.async_step_setup_review({"profile": "recommended", "model_override": "auto"})
+
+        assert flow._options[CONF_HEATING_CIRCUITS] == ["a"]
+        assert flow._options[CONF_ZONE_COUNT] == 0
+
+    async def test_guided_profile_seeds_detected_topology(self):
+        flow = _make_flow()
+        flow._detected_plant = {
+            "model": "Navigator 10",
+            "circuits": ["b", "e"],
+            "zone_count": 1,
+            "cascade": False,
+            "firmware": None,
+        }
+        result = await flow.async_step_setup_review({"profile": "standard", "model_override": "auto"})
+
+        assert result["step_id"] == "guided_choose"
+        assert flow._options[CONF_HEATING_CIRCUITS] == ["b", "e"]
+        assert flow._options[CONF_ZONE_COUNT] == 1

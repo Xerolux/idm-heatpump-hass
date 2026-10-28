@@ -195,7 +195,7 @@ Bibliotheksgrenzen automatisch an, falls eine künftige getestete API-Version
 sie liefert.
 
 Die Tabelle wurde erneut mit dem veröffentlichten Artefakt
-`idm-heatpump-api[web]==2.14.5` abgeglichen. Diese GLT-Leistungsregister
+`idm-heatpump-api[web]==2.15.0` abgeglichen. Diese GLT-Leistungsregister
 deklarieren weiterhin keine universellen Mindest- oder Höchstwerte; die
 Integration behält daher die oben beschriebene Validierung auf endliche
 Zahlen bei.
@@ -297,6 +297,47 @@ service: idm_heatpump.cancel_dhw_boost
 target:
   device_id: abc123def456
 ```
+
+## generate_dashboard
+
+Liefert ein fertig verwendbares Lovelace-Dashboard für **deine** Anlage
+zurück, zusammengesetzt aus der Live-Entity-Registry (deine Entity-IDs, deine
+aktiven Heizkreise, Umbenennungen inklusive): eine Übersicht, Thermostat-
+Karten je Heizkreis, eine Warmwasser-Ansicht mit den Boost-Buttons, die
+persistenten Energie-Zähler und eine Diagnose-Ansicht. Nur-lesend: Home
+Assistant bietet keine API, mit der eine Integration Dashboards anlegen oder
+ändern könnte — es wird also nichts für dich verändert; du meldest oder
+kopierst das Ergebnis selbst an.
+
+**Service:** `idm_heatpump.generate_dashboard`
+
+**Felder:**
+
+| Feld | Pflicht | Beschreibung |
+|------|---------|--------------|
+| `entry_id` | ja | Der IDM-Integrationseintrag, für den das Dashboard erzeugt wird. |
+
+**Beispiel (Entwicklerwerkzeuge → Aktionen):**
+
+Aktion ausführen und `dashboard_yaml` aus der Antwort kopieren. Für ein
+eigenständiges Dashboard: als `lovelace/idm-heatpump.yaml` im
+Konfigurationsverzeichnis speichern und den Schnipsel, mit dem die Antwort
+beginnt, in `configuration.yaml` ergänzen:
+
+```yaml
+lovelace:
+  mode: yaml
+  dashboards:
+    idm-lovelace:
+      mode: yaml
+      title: IDM Heatpump
+      file: lovelace/idm-heatpump.yaml
+```
+
+Karten und Ansichten, die auf Entities verweisen, die deine Anlage nicht hat,
+werden automatisch weggelassen; hat der Eintrag noch keine Entities (erste
+Abfrage steht aus), meldet der Service das, statt ein leeres Dashboard
+zurückzugeben.
 
 ## export_knx_group_addresses
 

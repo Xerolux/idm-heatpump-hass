@@ -118,6 +118,7 @@ Modbus communication in its [technical PV/GLT documentation](https://www.idm-ene
 4. Follow the configuration wizard:
    - **Prerequisite shown in the flow**: Confirm that Navigator **Building management system → Modbus TCP** is enabled
    - **Connection**: Enter a name, the heat pump IP/hostname, port 502, and slave ID 1
+   - **Automatic plant detection**: after a successful connection test the wizard reads the plant configuration read-only from the controller (model, active heating circuits, zone modules, cascade) and shows it on the review step; the following steps open with these values instead of safe defaults. A failed detection silently keeps the defaults.
    - **Optional web access**: Enter the local Navigator web PIN; when using a Modbus proxy, also enable the proxy option and enter the original heat pump address as web host
    - **Setup depth**: Choose Standard, Advanced or Expert; these control detail, not which features are available
    - **Features**: Select the categories you want to configure, such as plant, Smart/Vanilla profile, energy, Health Monitor or comfort
@@ -142,7 +143,7 @@ flowchart TD
     validate -- "Modbus unreachable,<br/>web PIN works" --> fallback{"Use web-only mode?"}
     fallback -- "yes" --> webonly["Web-only entry:<br/>read + limited control,<br/>Modbus options preserved"]
     fallback -- "retry Modbus" --> conn
-    validate -- "ok" --> review["Detection review: confirm the Navigator model,<br/>choose the setup depth"]
+    validate -- "ok" --> review["Detection review: confirm the Navigator model,<br/>detected plant (circuits, zones, cascade),<br/>choose the setup depth"]
     review -- "Standard / Advanced / Expert" --> features["Feature categories:<br/>plant, profile, energy, health,<br/>comfort, forwarding, KNX"]
     features --> pages["Feature pages: requested sensors,<br/>circuit mappings, ownership<br/>confirmation for write features"]
     pages --> zones{"Zone modules<br/>selected?"}

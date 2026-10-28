@@ -13,7 +13,7 @@ This file provides guidance for AI assistants working on this codebase.
 - **Min HA Version**: 2026.8.1
 - **Python**: 3.14+ (Home Assistant 2026.8 requires `>=3.14.2`)
 - **Direct Modbus Runtime**: `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`
-- **Device Logic**: `idm-heatpump-api[web]==2.14.5` (owns its own exception hierarchy; pymodbus is no longer a dependency)
+- **Device Logic**: `idm-heatpump-api[web]==2.15.0` (owns its own exception hierarchy; pymodbus is no longer a dependency)
 - **Completed audit**: `docs/dev/code-audit-2026-09.md` — the September 2026 full-read audit.
   Every work package shipped (D5 was attempted and closed as won't-fix); the document stays as
   the historical record of what was reviewed and why each change was made. The 0.20.0 web-first
@@ -29,8 +29,11 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── __init__.py                   # Domain setup, platform loading, entry lifecycle
 │   ├── manifest.json                 # Integration metadata & HA version requirements
 │   ├── const.py                      # Constants, enums, option keys, defaults
-│   ├── config_flow.py                # UI config flow (user, options, zones, reconfigure, web-only fallback)
+│   ├── config_flow.py                # UI config flow (user, options, zones, reconfigure, web-only fallback, live plant detection)
 │   ├── connection_entities.py         # Diagnostic entities: effective connection mode + web liveness
+│   ├── assist_agent.py               # Deterministic local Assist agent (conversation entity, German/English)
+│   ├── conversation.py               # Conversation platform wiring for the Assist agent
+│   ├── dashboard_generator.py        # Plant dashboard YAML composed from live entity registry IDs
 │   ├── coordinator.py                # DataUpdateCoordinator (polling, web supplement, writes)
 │   ├── entity.py                     # Base entity class (IdmEntity)
 │   ├── device_hierarchy.py           # Opt-in sub-device scopes, placement and registry wiring for the entity hierarchy
@@ -42,7 +45,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── climate.py                    # Climate platform (heating circuits, zone-module rooms)
 │   ├── water_heater.py               # Water heater platform (DHW setpoint)
 │   ├── button.py                     # Button platform (acknowledge errors)
-│   ├── services.py                   # Custom HA services (set_system_mode, acknowledge_errors, write_register)
+│   ├── services.py                   # Custom HA services (set_system_mode, acknowledge_errors, write_register, generate_dashboard)
 │   ├── services.yaml                 # Service schema definitions
 │   ├── diagnostics.py                # HA diagnostics export
 │   ├── repairs.py                    # Repair flows (e.g. missing web PIN)
@@ -51,6 +54,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── model_resolution.py           # Pure rules deciding the Navigator model and register map from probe/stored/web/override
 │   ├── modbus_client.py              # API client adapter routing raw I/O through the local transport
 │   ├── modbus_transport.py           # Backend-neutral contract + modbus-connection/tmodbus implementation
+│   ├── modbus_shared_transport.py    # Claims Home Assistant's shared Modbus connection (2026.10+), private-socket fallback
 │   ├── versions.py                   # Runtime dependency versions for logs, sensors, and diagnostics
 │   ├── ha_compat.py                  # Version-tolerant imports across the supported HA range (vol/probatio, moved enums)
 │   ├── recovery_watchdog.py          # Self-healing reload for entries in setup retry once the endpoint answers again
@@ -113,6 +117,7 @@ This file provides guidance for AI assistants working on this codebase.
 ├── tests/                            # Pytest test suite
 │   ├── conftest.py                   # Shared fixtures and HA/API/Modbus runtime stubs
 │   ├── test_adapter_helpers.py
+│   ├── test_assist_agent.py
 │   ├── test_binary_semantics.py
 │   ├── test_build_pages.py
 │   ├── test_calculated_sensors.py
@@ -122,6 +127,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_changelog_style.py        # Release-notes style: upgrade-notes block first, closed header set, 60-word bullets (sections after 0.23.0)
 │   ├── test_config_flow.py
 │   ├── test_connection_entities.py
+│   ├── test_dashboard_generator.py
 │   ├── test_technician_codes.py
 │   ├── test_const.py
 │   ├── test_controller_stats_reference.py
@@ -167,6 +173,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_library_client.py
 │   ├── test_log_filter.py
 │   ├── test_modbus_client.py
+│   ├── test_modbus_shared_transport.py
 │   ├── test_modbus_transport.py
 │   ├── test_model_resolution.py
 │   ├── test_operation_analysis.py
@@ -249,15 +256,16 @@ Home Assistant
     ├── IdmCoordinator (DataUpdateCoordinator) [coordinator.py]
     │       │
     │       ├── IdmModbusConnectionClient (modbus_client.py)
-    │       │       ├── idm-heatpump-api 2.14.5 (device logic)
-    │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket)
+    │       │       ├── idm-heatpump-api 2.15.0 (device logic)
+    │       │       ├── SharedModbusUnitTransport (HA shared connection, 2026.10+)
+    │       │       └── ModbusConnectionTransport (modbus-connection + tmodbus socket, fallback/probe)
     │       │
     │       ├── Entity Descriptions from registers.py / library_adapter.py
     │       │
     │       └── Optional IdmWebSupplement (web_data.py)
     │
     ├── Platforms: sensor, binary_sensor, number, select, switch,
-    │              climate, water_heater, button
+    │              climate, water_heater, button, conversation
     │       ├── sensor/binary_sensor/number/select/switch extend IdmEntity [entity.py]
     │       │   → CoordinatorEntity (register-backed, unused-register filtering)
     │       └── climate/water_heater/button extend CoordinatorEntity (+ shared device_info)
@@ -273,7 +281,8 @@ Home Assistant
     │       ├── start_dhw_boost / cancel_dhw_boost
     │       ├── export_knx_group_addresses
     │       ├── generate_ai_report
-    │       └── export_ai_dashboard
+    │       ├── export_ai_dashboard
+    │       └── generate_dashboard
     │
     ├── Repairs [repairs.py]
     │       └── web_pin_missing
@@ -295,7 +304,7 @@ Home Assistant
 
 6. **Async I/O**: All Modbus and web communication is async. The adapter keeps the API request lock, and `modbus-connection` serializes physical requests and reconnects on demand.
 
-7. **Private Socket Ownership**: Each config entry owns one tmodbus-backed socket. Home Assistant central cross-entry sharing is not available; `supports_shared_connection` must remain `False` until a real shared provider is integrated.
+7. **Socket Ownership**: On Home Assistant 2026.10+ each config entry claims a unit on Home Assistant's shared Modbus connection (`modbus.async_get_unit`, reference-counted per entry, requests of all holders serialized behind one link lock) via `modbus_shared_transport.py`, reporting `owns_socket=False` / `supports_shared_connection=True`. On older releases — and whenever the shared claim fails — the entry owns a private tmodbus-backed socket (`supports_shared_connection=False`). The config-flow probe always uses the private short-lived socket.
 
 8. **Optimistic Updates**: Write operations update the coordinator data immediately before the device confirms the change.
 
@@ -354,7 +363,7 @@ mypy). Recreate it and check through it with:
 py -3.14 -m venv test_ha
 test_ha/Scripts/python -m pip install homeassistant==2026.8.1 \
     "modbus-connection>=4.12.4" "tmodbus[async-serial]>=0.6.2" \
-    "idm-heatpump-api[web]==2.14.5" mypy
+    "idm-heatpump-api[web]==2.15.0" mypy
 test_ha/Scripts/python -m mypy custom_components/idm_heatpump/
 ```
 
@@ -523,7 +532,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
   same. Tag the API repository with the PEP 440 version (`v2.0.0b1`).
 - **The manifest pins the exact published API version** in PEP 440 form,
   because that is what pip resolves. The manifest currently pins
-  `idm-heatpump-api[web]==2.14.5`.
+  `idm-heatpump-api[web]==2.15.0`.
 
 #### Release notes
 
@@ -541,7 +550,7 @@ generated blocks are out of date. Heating circuits and zone rooms deliberately s
 
 The config flow (defined in `config_flow.py`) has these steps:
 
-1. **user**: Integration name, host, port, slave ID, optional web PIN, Modbus proxy / web host
+1. **user**: Integration name, host, port, slave ID, optional web PIN, Modbus proxy / web host. On a successful connection test the flow also reads the plant topology read-only (`detect_model`) and shows it on the review step; the detected heating circuits, zone count and cascade presence prefill every setup profile
 2. **options**: Connection mode (auto / modbus+web / web-only / modbus-only), scan interval, hide unused registers, heating circuits, zone count, cascade, web settings, room temperature forwarding, Modbus timeout/retries
 3. **zones**: Room count per zone (up to `MAX_ZONE_COUNT` zones × `MAX_ROOM_COUNT` rooms)
 4. **modbus_failed**: Fallback step offering web-only mode when Modbus connection fails but a web PIN is configured
@@ -561,7 +570,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 | Web-only fallback | `__init__.py`, `config_flow.py` | Runs without Modbus when only web access is available |
 | Connection entities | `connection_entities.py` | Diagnostic sensor for the effective connection mode plus web liveness; the *Verbindung neu laden* diagnostic button (`connection_reload`) reloads the config entry immediately instead of waiting out HA's setup-retry backoff |
 | Self-healing Modbus outages | `recovery_watchdog.py`, `coordinator.py` | Calm auto-clearing repair notice while web data flows; background watchdog reloads entries stuck in HA's setup-retry backoff once the endpoint answers again (only runs while an entry waits) |
-| tmodbus transport | `modbus_client.py`, `modbus_transport.py` | Default direct socket path; per-entry ownership, no central cross-entry sharing |
+| tmodbus transport | `modbus_client.py`, `modbus_transport.py`, `modbus_shared_transport.py` | Shared central connection on HA 2026.10+ (`modbus.async_get_unit`, timeout/pacing negotiated per unit); private per-entry socket as fallback and for the config-flow probe |
 | KNX bridge | `knx_bridge.py`, `knx_catalog.py` | Optional. Serves the 654 IDM KNX communication objects through the **Home Assistant `knx` integration** (`knx.send`, `knx.event_register`, `knx_event`) so the Weinzierl BAOS gateway module is not needed. Never implement a KNX stack here — tunnelling, routing and KNX Secure belong to the `knx` integration. Group addresses are `base + object number`, with per-register overrides |
 | Room temp forwarding | `room_temp_forwarding.py` | Forwards HA room sensor temps (per heating circuit) to GLT registers |
 | Humidity forwarding | `room_temp_forwarding.py` | Forwards one HA humidity sensor (global `ext_humidity`) to the GLT humidity register |
@@ -596,7 +605,7 @@ The config flow (defined in `config_flow.py`) has these steps:
 - **Plant control stays local.** The explicitly authorized experimental AI provider module is the only cloud exception: fixed HTTPS endpoints, explicit consent, redacted credentials, numerical allowlist and persisted request limits. Do not add other cloud calls or model tools.
 - **Do not skip type hints** — mypy strict mode will fail CI.
 - **Do not hardcode register addresses** in platform files — reference `const.py` or `registers.py`.
-- **Do not bypass `ModbusConnectionTransport`** with a second direct socket path. The current runtime is tmodbus-backed and deliberately reports `supports_shared_connection=False`.
+- **Do not bypass the transports** (`ModbusConnectionTransport` / `SharedModbusUnitTransport`) with a second direct socket path. The shared provider is the only cross-entry path and only it may report `supports_shared_connection=True`; the private tmodbus socket remains the fallback and the probe path.
 - **Do not write to EEPROM-sensitive registers** without proper guards. The Navigator 1.x coil block sits under the controller's EEPROM note (max. ~300 000 write cycles per register): the Vorrangladung button is manual-use only and must never be driven by a schedule or timed automation.
 - **Keep real-hardware transport validation read-only** unless the owner explicitly authorizes a specific write.
 - **Keep entity names consistent** with `strings.json` and `translations/`.
