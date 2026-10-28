@@ -332,6 +332,16 @@ export_ai_dashboard:
       selector:
         config_entry:
           integration: idm_heatpump
+generate_dashboard:
+  name: "Generate plant dashboard"
+  description: "Return a ready-to-use Lovelace dashboard for this plant using your current entity IDs, as structured data and as YAML. Does not change existing dashboards."
+  fields:
+    entry_id:
+      name: "IDM integration"
+      required: true
+      selector:
+        config_entry:
+          integration: idm_heatpump
 
 snooze_anomaly:
   name: "Snooze advisor anomaly"

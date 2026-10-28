@@ -63,6 +63,7 @@ from .adapter_metadata import (
 from .adapter_names import _get_german_name
 from .adapter_registers import MOMENTARY_COIL_REGISTERS, build_filtered_register_map
 from .modbus_client import IdmModbusConnectionClient
+from .modbus_shared_transport import HaModbusTransport
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -573,6 +574,7 @@ def get_idm_client(
     max_retries: int | None = None,
     message_spacing: float | None = None,
     connect_delay: float | None = None,
+    transport: HaModbusTransport | None = None,
 ) -> LibIdmModbusClient:
     """Factory that returns a properly typed client from the library.
 
@@ -584,6 +586,10 @@ def get_idm_client(
     the underlying ``modbus-connection`` link: the minimum pause between two
     requests and the pause after every (re-)connect. Both stay unpaced (0 s)
     when ``None``.
+
+    ``transport`` injects a ready-made transport (the shared-connection claim
+    built by :func:`get_idm_client_for_entry`); without it the client opens
+    its own private socket.
     """
     kwargs: dict[str, Any] = {}
     if timeout is not None:
@@ -594,6 +600,8 @@ def get_idm_client(
         kwargs["message_spacing"] = float(message_spacing)
     if connect_delay is not None:
         kwargs["connect_delay"] = float(connect_delay)
+    if transport is not None:
+        kwargs["transport"] = transport
     return IdmModbusConnectionClient(host=host, port=port, slave_id=slave_id, **kwargs)
 
 

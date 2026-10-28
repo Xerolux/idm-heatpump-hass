@@ -188,6 +188,13 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     )
     hass.services.async_register(
         DOMAIN,
+        "generate_dashboard",
+        partial(_handle_generate_dashboard, hass),
+        schema=vol.Schema({vol.Required("entry_id"): cv.string}),
+        supports_response=SupportsResponse.ONLY,
+    )
+    hass.services.async_register(
+        DOMAIN,
         "generate_ai_report",
         partial(_handle_generate_ai_report, hass),
         schema=vol.Schema(
@@ -741,6 +748,52 @@ async def _handle_unsnooze_anomaly(hass: HomeAssistant, call: ServiceCall) -> No
     advisor = await _get_advisor(hass, call)
     if not advisor.unsnooze(call.data["reason"]):
         raise ServiceValidationError(translation_domain=DOMAIN, translation_key="advisor_bad_reason")
+
+
+async def _handle_generate_dashboard(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:
+    """Return a ready-to-use plant dashboard built from current entity IDs.
+
+    Home Assistant has no API for an integration to create dashboards, so the
+    response carries the dashboard (structured plus YAML) for the user to
+    register or copy; existing dashboards are never touched.
+    """
+    import yaml  # type: ignore[import-untyped]  # types-PyYAML is not a pinned dev dependency
+    from homeassistant.helpers import entity_registry as er
+
+    from .dashboard_generator import build_plant_dashboard
+
+    entry = hass.config_entries.async_get_entry(call.data["entry_id"])
+    if entry is None or entry.domain != DOMAIN or entry.state != ConfigEntryState.LOADED:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="entry_not_loaded")
+    circuits = entry.options.get("heating_circuits") or entry.data.get("heating_circuits") or ["a"]
+    registry = er.async_get(hass)
+
+    def lookup(unique_id: str, domain: str) -> str | None:
+        return registry.async_get_entity_id(domain, DOMAIN, unique_id)
+
+    try:
+        dashboard = build_plant_dashboard(entry.entry_id, lookup, circuits)
+    except ValueError as err:
+        raise ServiceValidationError(translation_domain=DOMAIN, translation_key="dashboard_no_entities") from err
+    return {
+        "dashboard": dashboard,
+        "dashboard_yaml": yaml.dump(
+            {
+                "lovelace": {
+                    "mode": "yaml",
+                    "dashboards": {
+                        "idm-lovelace": {
+                            "mode": "yaml",
+                            "title": dashboard["title"],
+                            "file": "lovelace/idm-heatpump.yaml",
+                        }
+                    },
+                }
+            },
+            sort_keys=False,
+        )
+        + yaml.dump(dashboard, sort_keys=False, allow_unicode=True),
+    }
 
 
 async def _handle_generate_ai_report(hass: HomeAssistant, call: ServiceCall) -> ServiceResponse:

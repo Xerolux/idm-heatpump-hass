@@ -644,11 +644,11 @@ Dieses Projekt hat zwei unabhängig versionierte Pakete:
 | Benutzerdefinierte Home-Assistant-Integration | `0.17.0-beta.2` (vorherige stabile Version: `0.16.2`) | Änderungen an Integrationscode, Konfigurationsfluss, Diagnose, Entitäten oder der mitgelieferten Nutzerdokumentation |
 | Verbindungsbibliothek | `modbus-connection>=4.12.4` | Änderungen am Transportvertrag, am Verbindungslebenszyklus oder an der Fehlersemantik |
 | Direktes Socket-Backend | `tmodbus[async-serial]>=0.6.2` | Änderungen an der Leitungs-/Backend-Implementierung |
-| Python-Register-/Web-Bibliothek | `idm-heatpump-api[web]==2.14.5` | Änderungen an Registerschema, Kodierung/Dekodierung, Batching, Modellerkennung, Schreibsicherheit oder der wiederverwendbaren Web-Client-Implementierung |
+| Python-Register-/Web-Bibliothek | `idm-heatpump-api[web]==2.15.0` | Änderungen an Registerschema, Kodierung/Dekodierung, Batching, Modellerkennung, Schreibsicherheit oder der wiederverwendbaren Web-Client-Implementierung |
 
 Das Manifest listet die getestete Laufzeit in dieser Reihenfolge:
 `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`
-und `idm-heatpump-api[web]==2.14.5`. Die ersten beiden Pakete besitzen den
+und `idm-heatpump-api[web]==2.15.0`. Die ersten beiden Pakete besitzen den
 direkten Socket. `idm-heatpump-api` bleibt für die IDM-spezifische
 Gerätelogik verantwortlich und besitzt ihre eigene Ausnahmehierarchie; die
 Integration installiert kein pymodbus mehr. `4.12.2` ist die Version von
@@ -656,13 +656,40 @@ Integration installiert kein pymodbus mehr. `4.12.2` ist die Version von
 erstmals mit der IDM-Integrations-Beta `0.11.0-beta.1` ausgeliefert.
 
 Der Adapter ist implementiert, durch automatisierte Tests abgedeckt und auf
-einem Navigator 10 live verifiziert. Seine geschwärzte Diagnose meldet
-`source: modbus_connection.tmodbus`, `owns_socket: true` und
-`supports_shared_connection: false`. Die Abdeckung für Navigator 2.0/Pro und
+einem Navigator 10 live verifiziert. Seine geschwärzte Diagnose meldet die
+aktive Transportquelle. Ab Home Assistant 2026.10 beansprucht jeder
+Konfigurationseintrag die zentrale geteilte Modbus-Verbindung von Home
+Assistant: Die Diagnose meldet dann `source: homeassistant.modbus`,
+`owns_socket: false` und `supports_shared_connection: true`, mehrere
+Einträge an einem Regler teilen sich ein einziges Socket, und der
+konfigurierte Modbus-Timeout wird auf die geteilte Verbindung verhandelt. Auf
+älteren Releases — und immer dann, wenn der geteilte Anspruch nicht zustande
+kommt — meldet die Diagnose `source: modbus_connection.tmodbus`,
+`owns_socket: true` und `supports_shared_connection: false`, was ein privates
+Socket pro Konfigurationseintrag bedeutet. Die Abdeckung für Navigator 2.0/Pro und
 ein absichtlicher Verbindungstrennungs-/Wiederverbindungstest stehen noch
 aus; Schreibzugriffe auf echter Hardware bleiben außerhalb des Umfangs, sofern
 nicht ausdrücklich autorisiert. IDM Heatpump ist eine benutzerdefinierte
 Integration, kein Home-Assistant-Add-on.
+
+## Assist (Text und Sprache)
+
+Die Integration bringt einen lokalen Assist-Agenten mit (Entität *Assistent*
+unter dem Wärmepumpen-Gerät). Wähle ihn unter **Einstellungen → Geräte &
+Dienste → Assist** als bevorzugten Agenten — oder sprich ihn gezielt an — und
+frage auf Deutsch oder Englisch:
+
+- „Warum läuft die Wärmepumpe gerade?" — beantwortet vom Betriebsgrund-
+  Erklärer: Betriebsmodus, Leistungsaufnahme, Temperaturen und der eigene
+  Anforderungsgrund des Reglers, wenn das Web-Supplement ihn liefert.
+- „Welche Empfehlung gibt es?" — die obersten nur-lesenden Empfehlungen des
+  predictive Advisors.
+- „Wie ist der Warmwasserzustand?", „Wie sind die Temperaturen?", „Wie ist der
+  Verbrauch?", „Wie ist der Status?".
+
+Jede Antwort wird lokal aus dem aktuellen Coordinator-Snapshot per
+deterministischem Keyword-Routing erzeugt. Keine Anfrage verlässt die
+Instanz, kein Sprachmodell ist beteiligt.
 
 ## Debug-Protokollierung
 

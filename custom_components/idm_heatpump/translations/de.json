@@ -414,7 +414,7 @@
       },
       "setup_review": {
         "title": "IDM-Anlage erkannt",
-        "description": "Modbus und der gewünschte lokale Webzugriff wurden geprüft.\n\n- Endpunkt: **{host}:{port}**\n- Slave-ID: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Lokaler Webzugriff: **{web}**\n\nPrüfe das automatisch erkannte Modell. Übersteuere es nur, wenn die Erkennung nachweislich falsch ist. Wähle danach ein Profil für den schnellen Abschluss oder „Benutzerdefiniert“ für alle Optionen.",
+        "description": "Modbus und der gewünschte lokale Webzugriff wurden geprüft.\n\n- Endpunkt: **{host}:{port}**\n- Slave-ID: **{slave_id}**\n- Navigator: **{navigator}**\n- Software: **{software}**\n- Lokaler Webzugriff: **{web}**\n- Erkannte Anlage: **{plant}**\n\nPrüfe das automatisch erkannte Modell. Übersteuere es nur, wenn die Erkennung nachweislich falsch ist. Wähle danach ein Profil für den schnellen Abschluss oder „Benutzerdefiniert“ für alle Optionen.",
         "data": {
           "profile": "Konfigurationsprofil",
           "model_override": "Navigator-Modell bestätigen"
@@ -1755,6 +1755,11 @@
         "name": "Zone {zone} Raum {room}"
       }
     },
+    "conversation": {
+      "assist_agent": {
+        "name": "Assistent"
+      }
+    },
     "number": {
       "battery_discharge": {
         "name": "Batterie Entladung (Vorgabe)"
@@ -3089,7 +3094,7 @@
       "message": "Keine IDM-Wärmepumpe ist aktuell konfiguriert oder geladen."
     },
     "entry_not_loaded": {
-      "message": "Der ausgewählte IDM-Wärmepumpen-Eintrag ist nicht geladen: {entry_id}"
+      "message": "Der ausgewählte IDM-Integrationseintrag ist nicht geladen."
     },
     "multiple_entries_select_entry": {
       "message": "Mehrere IDM-Wärmepumpen sind geladen. Bitte gib entry_id an, um ein bestimmtes Gerät auszuwählen."
@@ -3267,6 +3272,9 @@
     },
     "advisor_bad_reason": {
       "message": "Wähle einen gültigen Anomalie-Grundcode."
+    },
+    "dashboard_no_entities": {
+      "message": "Für diesen Eintrag wurden noch keine Dashboard-Entities gefunden; warte auf die erste erfolgreiche Abfrage."
     }
   },
   "issues": {
@@ -3569,6 +3577,10 @@
           "description": "Die zu setzende Zeit. Ohne Angabe wird die aktuelle Home-Assistant-Zeit verwendet."
         }
       }
+    },
+    "generate_dashboard": {
+      "name": "Anlagen-Dashboard erzeugen",
+      "description": "Liefert ein fertig verwendbares Lovelace-Dashboard für diese Anlage mit deinen aktuellen Entity-IDs zurück – als strukturierte Daten und als YAML. Vorhandene Dashboards werden nicht verändert."
     }
   }
 }

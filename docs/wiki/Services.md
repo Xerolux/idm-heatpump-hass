@@ -194,7 +194,7 @@ infinite values and applies library limits automatically if a future tested API
 release supplies them.
 
 The table was rechecked against the published
-`idm-heatpump-api[web]==2.14.5` artifact. Those GLT power registers still do not
+`idm-heatpump-api[web]==2.15.0` artifact. Those GLT power registers still do not
 declare universal minimum or maximum values; the integration therefore keeps
 the finite-number validation described above.
 
@@ -286,6 +286,45 @@ service: idm_heatpump.cancel_dhw_boost
 target:
   device_id: abc123def456
 ```
+
+## generate_dashboard
+
+Returns a ready-to-use Lovelace dashboard for **your** plant, composed from
+the live entity registry (your entity IDs, your active heating circuits, user
+renames included): an overview view, per-circuit thermostat cards, a hot-water
+view with the boost buttons, the persistent energy totals and a diagnostics
+view. Read-only: Home Assistant has no API through which an integration could
+create or edit dashboards, so nothing is changed for you — you register or
+copy the result yourself.
+
+**Service:** `idm_heatpump.generate_dashboard`
+
+**Fields:**
+
+| Field | Required | Description |
+|-------|----------|-------------|
+| `entry_id` | yes | The IDM integration entry to compose the dashboard for. |
+
+**Example (Developer Tools → Actions):**
+
+Run the action and copy the `dashboard_yaml` from the response. To use it as
+its own dashboard, save it as `lovelace/idm-heatpump.yaml` in your config
+directory and add the snippet the response begins with to
+`configuration.yaml`:
+
+```yaml
+lovelace:
+  mode: yaml
+  dashboards:
+    idm-lovelace:
+      mode: yaml
+      title: IDM Heatpump
+      file: lovelace/idm-heatpump.yaml
+```
+
+Cards and views that reference entities your plant does not have are omitted
+automatically; if the entry has no entities yet (first poll pending), the
+service says so instead of returning an empty dashboard.
 
 ## export_knx_group_addresses
 

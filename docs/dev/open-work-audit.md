@@ -106,9 +106,10 @@ diagnostics template, "maintainer" means Basti's own plant or decision.
   paper is the next step once wanted.
 - **Occupancy/geofencing/per-room schedules** *(waiting on demand)* — pick up
   when users ask for it with their own sensors and consent.
-- **Home Assistant shared-connection contract** *(watch point, no action)* —
-  re-check on HA release notes roughly monthly; everything else stays as
-  documented below.
+- **Home Assistant shared-connection contract** *(provider implemented
+  2026-10-28; field validation open)* — the contract shipped with HA 2026.10
+  (`modbus.async_get_unit`) and `modbus_shared_transport.py` claims it; see the
+  section below. Remaining: read-only hardware validation of the shared link.
 - **`via_device_id` fallback removal** *(scheduled by HA releases)* — revisit
   when the declared minimum HA reaches 2026.9; custom integrations keep the
   fallback until Core 2027.8, so there is no deadline pressure.
@@ -127,7 +128,7 @@ diagnostics template, "maintainer" means Basti's own plant or decision.
 - Direct socket through `modbus-connection>=4.12.4` and the separately pinned
   backend level `tmodbus[async-serial]>=0.6.2`; the first integration version to
   ship it is `0.11.0-beta.1`.
-- API device logic stays with `idm-heatpump-api[web]==2.14.5`. The API owns its
+- API device logic stays with `idm-heatpump-api[web]==2.15.0`. The API owns its
   exception hierarchy and the injected transport path does not install or
   import pymodbus; the physical connection belongs to tmodbus.
 - Diagnostics export for the transport source, socket ownership, connection
@@ -316,25 +317,39 @@ consent or explicit controller-ownership decisions are available:
 - Collect Navigator 2.0/Pro diagnostics and load-test the maximum plant
   configuration before making model-wide runtime claims.
 
-### Home Assistant shared-connection contract
+### Home Assistant shared-connection contract (provider implemented 2026-10-28)
 
-The local adapter is implemented. Only the following central sharing points stay
-blocked until Home Assistant publishes a stable contract for custom
-integrations:
+This section kept the central sharing points blocked until Home Assistant
+publishes a stable contract for custom
+integrations. Home Assistant 2026.10 published it:
+`homeassistant.components.modbus` (rebuilt on the same
+`modbus-connection`/`tmodbus` pair) exports `async_get_unit` /
+`async_get_temporary_unit`, which hand out units on connections shared and
+reference-counted between every config entry and integration holding the same
+endpoint. The old YAML-hub `get_hub` path is deprecated and breaks in
+2027.10.
 
-There is currently no final official shared-connection contract such a provider
-could safely build on.
+The integration ships the provider as `modbus_shared_transport.py`:
+`SharedModbusUnitTransport` claims a unit per entry, negotiates the endpoint's
+timeout and pacing floors per unit (`require_timeout`,
+`set_message_spacing`, `require_connect_delay`), declares the API 2.15.0
+`connects_lazily` contract (the claim exists after `connect()`, the wire opens
+with the first request) and soft-closes — the shared link is never torn down
+for its other holders; Home Assistant releases the hold with the entry. It is
+selected automatically on HA >= 2026.10 and skipped before that so releases
+without the contract never install the legacy pymodbus requirement. The
+config-flow probe keeps its short-lived private socket.
 
-- Provider between a future central Home Assistant connection object and
-  `IdmModbusTransport`.
-- Ownership and lifecycle rules for several config entries.
-- Migration path without new unique IDs and without a new write path.
-- Only a central provider that is really integrated may report
-  `supports_shared_connection=True` and `owns_socket=False`.
+Only the shared provider reports `supports_shared_connection=True` and
+`owns_socket=False`; the private tmodbus socket stays the fallback (an
+unloadable `modbus` component, a conflicting claim, older Home Assistant) and
+reports `supports_shared_connection=False`. No transport option exists and
+there is no second pymodbus socket path.
 
-Until then every config entry owns its direct tmodbus socket and reports
-`supports_shared_connection=False`. There is no transport option and no second
-pymodbus socket path.
+Still open on real hardware: a read-only validation of the shared path on a
+live Navigator (the maintainers plant runs Navigator 10), including a
+deliberate connection loss/reconnect while another holder shares the link,
+plus a load observation with several entries on one controller.
 
 ### API decoupling (completed)
 

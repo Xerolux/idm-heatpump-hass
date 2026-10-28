@@ -16,20 +16,24 @@ from __future__ import annotations
 
 from idm_heatpump import IdmModbusClient
 
+from .modbus_shared_transport import HaModbusTransport, SharedModbusUnitTransport
 from .modbus_transport import ModbusConnectionTransport, ModbusTcpEndpoint
 
 
 class IdmModbusConnectionClient(IdmModbusClient):
     """Use the IDM API's device logic with a tmodbus-backed raw transport.
 
-    The API 1.0 ``transport=`` constructor parameter receives the owned
-    :class:`ModbusConnectionTransport`.  All public operations (model detection,
-    batch planning, decoding, write safety, retry, reconnect) are implemented by
-    the API; this class only adds transport-aware diagnostics.
+    The API 1.0 ``transport=`` constructor parameter receives either the
+    owned :class:`ModbusConnectionTransport` (private per-entry socket) or a
+    :class:`SharedModbusUnitTransport` claiming Home Assistant's shared
+    Modbus connection (2026.10+).  All public operations (model detection,
+    batch planning, decoding, write safety, retry, reconnect) are implemented
+    by the API; this class only adds transport-aware diagnostics.
 
-    ``message_spacing`` and ``connect_delay`` are connection-wide pacing applied
-    by ``modbus-connection`` itself; they only reach the owned transport and are
-    ignored when a ready-made ``transport`` is injected.
+    ``message_spacing`` and ``connect_delay`` are connection-wide pacing.  On
+    the owned transport they reach ``modbus-connection`` directly; on the
+    shared transport they are negotiated per unit as floors, and a ready-made
+    ``transport`` ignores them entirely.
     """
 
     def __init__(
@@ -42,7 +46,7 @@ class IdmModbusConnectionClient(IdmModbusClient):
         *,
         message_spacing: float = 0.0,
         connect_delay: float = 0.0,
-        transport: ModbusConnectionTransport | None = None,
+        transport: HaModbusTransport | None = None,
     ) -> None:
         endpoint = ModbusTcpEndpoint(
             host=host,
@@ -64,7 +68,7 @@ class IdmModbusConnectionClient(IdmModbusClient):
         )
         # Keep a dedicated handle to the transport so diagnostics can reach the
         # backend-neutral details without relying on the API's private attribute.
-        self._owned_transport: ModbusConnectionTransport = owned_transport
+        self._owned_transport: HaModbusTransport = owned_transport
 
     def __repr__(self) -> str:
         return f"IdmModbusConnectionClient(host={self.host!r}, port={self.port}, connected={self.is_connected})"
@@ -74,4 +78,4 @@ class IdmModbusConnectionClient(IdmModbusClient):
         return self._owned_transport.as_redacted_diagnostics()
 
 
-__all__ = ["IdmModbusConnectionClient"]
+__all__ = ["IdmModbusConnectionClient", "SharedModbusUnitTransport"]

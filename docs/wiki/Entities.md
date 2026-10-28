@@ -860,6 +860,22 @@ regardless of the hierarchy option.
 
 ---
 
+### Assist agent (always on)
+
+A local, deterministic conversation entity. It answers natural-language
+questions about the running plant — why the heat pump is running, advisor
+recommendations, temperatures, hot water, consumption/COP and status — in
+German or English. Everything is computed from the local coordinator
+snapshot by keyword routing; no utterance leaves the instance and no
+language model is involved. See [Configuration →
+Assist](Configuration#assist-text-and-voice).
+
+| Entity | Description |
+|--------|-------------|
+| Assistant (`assist_agent`) | Conversation agent: ask it about the plant in Assist (text or voice) |
+
+---
+
 ## Device groups (device hierarchy)
 
 With **Device hierarchy** enabled (Configure → Features), the integration

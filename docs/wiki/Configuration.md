@@ -582,11 +582,11 @@ This project has two independently versioned packages:
 | Home Assistant custom integration | `0.17.0-beta.2` (previous stable: `0.16.2`) | Integration code, config flow, diagnostics, entities or bundled user documentation changes |
 | Connection library | `modbus-connection>=4.12.4` | Transport contract, connection lifecycle or error semantics change |
 | Direct socket backend | `tmodbus[async-serial]>=0.6.2` | Wire/backend implementation changes |
-| Python register/web library | `idm-heatpump-api[web]==2.14.5` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
+| Python register/web library | `idm-heatpump-api[web]==2.15.0` | Register schema, encoding/decoding, batching, model detection, write safety or reusable web-client implementation changes |
 
 The manifest lists the tested runtime in this order:
 `modbus-connection>=4.12.4`, `tmodbus[async-serial]>=0.6.2`,
-and `idm-heatpump-api[web]==2.14.5`. The first two packages own the direct
+and `idm-heatpump-api[web]==2.15.0`. The first two packages own the direct
 socket. `idm-heatpump-api` remains responsible for IDM-specific device logic
 and owns its exception hierarchy; the integration no longer installs
 pymodbus. `4.12.4` is the version of `modbus-connection`, not an IDM integration
@@ -594,12 +594,37 @@ version. The transport was first shipped by IDM integration beta
 `0.11.0-beta.1`.
 
 The adapter is implemented, covered by automated tests and live-verified on a
-Navigator 10. Its redacted
+Navigator 10. Its redacted diagnostics report the active transport source. On
+Home Assistant 2026.10 and newer every config entry claims Home Assistant's
+central shared Modbus connection: diagnostics then report
+`source: homeassistant.modbus`, `owns_socket: false` and
+`supports_shared_connection: true`, several entries on one controller share a
+single socket, and the configured Modbus timeout is negotiated onto the shared
+link. On older releases — and whenever the shared claim cannot be established —
 diagnostics report `source: modbus_connection.tmodbus`, `owns_socket: true` and
-`supports_shared_connection: false`. Navigator 2.0/Pro coverage and an
+`supports_shared_connection: false`, meaning one private socket per config
+entry. Navigator 2.0/Pro coverage and an
 intentional connection-loss/reconnect test remain open; real-hardware writes
 stay out of scope unless explicitly authorized. IDM Heatpump is a custom
 integration, not a Home Assistant add-on.
+
+## Assist (text and voice)
+
+The integration ships a local Assist agent (entity *Assistant* under the heat
+pump device). Select it under **Settings → Devices & Services → Assist** as
+the preferred agent — or address it explicitly — and ask in German or English:
+
+- "Why is the heat pump running?" — answered by the operation-reason
+  composer: operating mode, power draw, temperatures and the controller's own
+  demand reason when the web supplement supplies it.
+- "Any recommendation?" — the top read-only predictive-advisor
+  recommendations.
+- "How is the hot water?", "What are the temperatures?", "What is the
+  consumption?", "What is the status?".
+
+Every answer is composed locally from the current coordinator snapshot by
+deterministic keyword routing. No utterance leaves the instance and no
+language model is involved.
 
 ## Debug Logging
 

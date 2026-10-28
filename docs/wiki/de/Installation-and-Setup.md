@@ -122,6 +122,7 @@ Navigators zusätzlich in der [technischen PV-/GLT-Dokumentation](https://www.id
 4. Folge dem Konfigurationsassistenten:
    - **Im Flow angezeigte Voraussetzung**: Bestätige, dass am Navigator **Gebäudeleittechnik → Modbus TCP** aktiviert ist
    - **Verbindung**: Gib einen Namen, die IP/den Hostnamen der Wärmepumpe, Port 502 und Slave-ID 1 ein
+   - **Automatische Anlagenerkennung**: Nach erfolgreichem Verbindungstest liest der Assistent die Anlagenkonfiguration nur-lesend vom Regler (Modell, aktive Heizkreise, Zonenmodule, Kaskade) und zeigt sie im Review-Schritt; die folgenden Schritte öffnen mit diesen Werten statt mit Standardwerten. Eine gescheiterte Erkennung behält stillschweigend die Standardwerte.
    - **Optionaler Webzugriff**: Gib den lokalen Navigator-Web-PIN ein; bei Verwendung eines Modbus-Proxys aktiviere zusätzlich die Proxy-Option und gib die ursprüngliche Wärmepumpen-Adresse als Web-Host ein
    - **Einrichtungstiefe**: Wähle Standard, Erweitert oder Experte; diese steuern den Detailgrad, nicht welche Funktionen verfügbar sind
    - **Funktionen**: Wähle die Kategorien, die du konfigurieren möchtest, z. B. Anlage, Smart-/Vanilla-Profil, Energie, Health Monitor oder Komfort
@@ -145,7 +146,7 @@ flowchart TD
     validate -- "Modbus nicht erreichbar,<br/>Web-PIN funktioniert" --> fallback{"Web-only-Modus nutzen?"}
     fallback -- "ja" --> webonly["Web-only-Eintrag:<br/>Lesen + begrenzte Steuerung,<br/>Modbus-Optionen bleiben erhalten"]
     fallback -- "Modbus erneut versuchen" --> conn
-    validate -- "ok" --> review["Erkennungs-Review: Navigator-Modell bestätigen,<br/>Einrichtungstiefe wählen"]
+    validate -- "ok" --> review["Erkennungs-Review: Navigator-Modell bestätigen,<br/>erkannte Anlage (Kreise, Zonen, Kaskade),<br/>Einrichtungstiefe wählen"]
     review -- "Standard / Erweitert / Experte" --> features["Funktionskategorien:<br/>Anlage, Profil, Energie, Health,<br/>Komfort, Weiterleitung, KNX"]
     features --> pages["Funktionsseiten: angeforderte Sensoren,<br/>Heizkreis-Zuordnungen,<br/>Zuständigkeitsbestätigung für Schreibfunktionen"]
     pages --> zones{"Zonenmodule<br/>ausgewählt?"}

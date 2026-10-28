@@ -581,6 +581,9 @@ DERIVED_NAMES: Final[dict[str, dict[str, tuple[str, str]]]] = {
         "ai_report_health": ("AI health explanation (experimental)", "KI-Zustand erklären (experimentell)"),
         "ai_report_efficiency": ("AI efficiency explanation (experimental)", "KI-Effizienz erklären (experimentell)"),
     },
+    "conversation": {
+        "assist_agent": ("Assistant", "Assistent"),
+    },
     "binary_sensor": {
         "analysis_last_cycle_short": ("Last compressor cycle too short", "Letzter Verdichtertakt zu kurz"),
         "advisor_optimization_available": ("Advisor optimization available", "Advisor-Optimierung verfügbar"),

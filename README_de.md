@@ -119,6 +119,9 @@ Konfigurieren → KNX-Bridge**. Alle Details: **[KNX-Bridge-Dokumentation][wiki-
 | **📡 GLT Fernwartung** | GLT-Temperaturanforderungen (zyklisches Schreiben) |
 | **🛡️ Fehlermanagement** | Fehlererkennung, lesbare interne Meldungen, Fehlerquittierung, Diagnosedaten-Export |
 | **🧭 Geführte Einrichtungsdiagnose** | Unterscheidet unbekannte Hosts, abgelehntes/deaktiviertes Modbus TCP, Timeouts, Netzwerkfehler, falsche Slave-ID, falsche Web-PIN und nicht erreichbare Weboberfläche |
+| **🌱 Live-Anlagenerkennung** | Nach dem Verbindungstest liest der Einrichtungsassistent die Anlagenkonfiguration nur-lesend vom Regler (Modell, aktive Heizkreise, Zonenmodule, Kaskade) und befüllt damit jedes Einrichtungsprofil |
+| **🗣️ Assist & Dashboard** | Lokaler Assist-Agent beantwortet „Warum läuft die Wärmepumpe gerade?" auf Deutsch oder Englisch — deterministisch, keine Anfrage verlässt die Instanz; `generate_dashboard` erzeugt ein fertig verwendbares Lovelace-Dashboard aus deinen echten Entity-IDs |
+| **🔗 Geteilte Modbus-Verbindung** *(HA 2026.10+)* | Jeder Eintrag beansprucht Home Assistants zentrale geteilte Modbus-Verbindung — mehrere Einträge an einem Regler und andere Integrationen teilen sich ein einziges Socket; das private Socket bleibt als Fallback |
 | **🧪 Schreibgeschützter Verbindungstest** | Das Rekonfigurationsmenü testet die gespeicherte Modbus- und optionale Webverbindung, ohne Einstellungen zu ändern oder Register zu schreiben |
 | **📦 Laufzeitversionen** | Diagnose-Sensor und Export zeigen Integration, `idm-heatpump-api`, `modbus-connection` und `tmodbus` |
 | **🔑 Fachmann-Ebene** | Optionale Sensoren für die aktuellen Zugangscodes der Ebenen 1 & 2 (standardmäßig aus, minütlich aktualisiert und ganz oben angeheftet) |
@@ -216,7 +219,7 @@ Maintainer sollten vor einem stabilen Release den
 - Lokale Navigator-Web-PIN für optionale Web-Daten und unterstützte Navigator-10/Pro-Steuerungen im reinen Web-Betrieb
 - Python 3.14+ (wird von Home Assistant bereitgestellt)
 - `modbus-connection>=4.12.4` · `tmodbus[async-serial]>=0.6.2` (direkter Modbus-Socket)
-- `idm-heatpump-api[web]==2.14.5` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
+- `idm-heatpump-api[web]==2.15.0` (Gerätelogik: Registermetadaten, Batching, Decoding, Modellerkennung, Schreibschutz)
 
 ---
 
@@ -275,7 +278,7 @@ Home Assistant
 - **Datentypen**: FLOAT (IEEE 754, zwei Register), UCHAR, INT8, INT16, UINT16, BOOL, BITFLAG
 - **EEPROM-Schutz**: 88 EEPROM-sensitive Register werden erfasst und vor zu häufigem Schreiben geschützt
 - **Direkter lokaler Transport**: FC03-/FC04-Lesezugriffe und FC16-Schreibzugriffe laufen über die HA-kompatiblen Anforderungen `modbus-connection>=4.12.4` und `tmodbus[async-serial]>=0.6.2`; `4.12.4` ist die Version der Verbindungsbibliothek, nicht die IDM-Integrationsversion
-- **API-Grenze**: `idm-heatpump-api[web]==2.14.5` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
+- **API-Grenze**: `idm-heatpump-api[web]==2.15.0` liefert Registermetadaten, Batching, Encoding/Decoding, Modellerkennung und Schreibschutz. Seit diesem Release besitzt die API ihre eigene Fehlerhierarchie, und pymodbus entfällt: die Integration installiert keinen Modbus-Stack mehr, den sie nicht spricht
 - **Auto-Recovery**: Retry-/Backoff-Strategie der API plus bedarfsgesteuerter Reconnect der tmodbus-Verbindung
 - **Bibliotheksbasiert**: Alle Registerdefinitionen stammen aus [`idm-heatpump-api`](https://github.com/Xerolux/idm-heatpump-api) und bleiben so über alle Werkzeuge hinweg konsistent
 - **Navigator-10-Unterstützung**: Trennwärmetauscher-Sensoren, Durchflussüberwachung (Sieb-Erkennung), Grundwassertemperaturen, Booster-A/B-Diagnose

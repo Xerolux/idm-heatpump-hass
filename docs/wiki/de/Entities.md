@@ -705,6 +705,22 @@ Die vier Buttons stehen auch unter [Button](#button). Bei deaktivierter Geräteh
 
 ---
 
+### Assist-Agent (immer aktiv)
+
+Eine lokale, deterministische Konversations-Entität. Sie beantwortet
+Fragen in natürlicher Sprache zur laufenden Anlage — warum die Wärmepumpe
+läuft, Advisor-Empfehlungen, Temperaturen, Warmwasser, Verbrauch/COP und
+Status — auf Deutsch oder Englisch. Alles wird aus dem lokalen
+Coordinator-Snapshot per Keyword-Routing berechnet; keine Anfrage verlässt
+die Instanz, kein Sprachmodell ist beteiligt. Siehe [Konfiguration →
+Assist](Configuration#assist-text-und-sprache).
+
+| Entität | Beschreibung |
+|---------|--------------|
+| Assistent (`assist_agent`) | Konversations-Agent: frage in Assist (Text oder Sprache) über die Anlage |
+
+---
+
 ## Gerätegruppen (Gerätehierarchie)
 
 Mit aktivierter **Gerätehierarchie** (Konfigurieren → Funktionen) verteilt die Integration ihre Entitäten auf Untergeräte, damit das Hauptgerät der Wärmepumpe beim Regler bleibt. Ab Home Assistant 2026.9 sind diese Gruppen *Child-Devices* der Wärmepumpe; auf 2026.8 greift der `via_device`-Fallback, der beim Upgrade automatisch konvertiert wird. Zonenmodule bleiben gewöhnliche verknüpfte Geräte — eigene Hardware, kein logischer Teil — und ihre Räume sind Kinder des Moduls.

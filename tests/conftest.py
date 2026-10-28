@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum, IntEnum
 from types import ModuleType
-from typing import Any
+from typing import Any, ClassVar
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -583,6 +583,20 @@ def _stub_homeassistant() -> None:
     # homeassistant.helpers
     helpers = _make_module("homeassistant.helpers")
 
+    # homeassistant.helpers.intent (used by the conversation agent)
+    intent_mod = _make_module("homeassistant.helpers.intent")
+    helpers.intent = intent_mod
+
+    class _IntentResponse:
+        def __init__(self, language: str | None = None) -> None:
+            self.language = language
+            self.speech = {}
+
+        def async_set_speech(self, text: str, *args, **kwargs) -> None:
+            self.speech["plain"] = text
+
+    intent_mod.IntentResponse = _IntentResponse
+
     # homeassistant.helpers.storage
     storage_mod = _make_module("homeassistant.helpers.storage")
     helpers.storage = storage_mod
@@ -964,6 +978,45 @@ def _stub_homeassistant() -> None:
     components = _make_module("homeassistant.components")
     components.ai_task = _make_module("homeassistant.components.ai_task")
     components.ai_task.async_generate_data = AsyncMock()
+
+    # homeassistant.components.conversation (agent platform base classes)
+    conversation_mod = _make_module("homeassistant.components.conversation")
+    components.conversation = conversation_mod
+
+    class _ConversationEntity:
+        """Minimal stand-in for the real ConversationEntity base class."""
+
+        _attr_supported_languages: ClassVar[list[str]] = []
+
+        def __init_subclass__(cls, **kwargs) -> None:
+            super().__init_subclass__(**kwargs)
+
+        @property
+        def supported_languages(self) -> list[str]:
+            """Mirror the real base class's attribute-backed property."""
+            return self._attr_supported_languages
+
+    class _ConversationInput:
+        def __init__(
+            self,
+            text: str,
+            conversation_id: str | None = None,
+            language: str = "de",
+            context=None,
+        ) -> None:
+            self.text = text
+            self.conversation_id = conversation_id
+            self.language = language
+            self.context = context
+
+    class _ConversationResult:
+        def __init__(self, conversation_id: str | None, response=None) -> None:
+            self.conversation_id = conversation_id
+            self.response = response
+
+    conversation_mod.ConversationEntity = _ConversationEntity
+    conversation_mod.ConversationInput = _ConversationInput
+    conversation_mod.ConversationResult = _ConversationResult
 
     for platform in ["sensor", "binary_sensor", "number", "select", "switch", "diagnostics"]:
         mod = _make_module(f"homeassistant.components.{platform}")

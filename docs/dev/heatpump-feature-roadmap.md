@@ -103,7 +103,7 @@ in planning or in diagnostics.
 - [x] Wire up `IdmModbusConnectionClient` as the production adapter and run raw
   I/O through `modbus-connection>=4.12.4` and `tmodbus[async-serial]>=0.6.2`. The
   path ships for the first time with `0.11.0-beta.1`.
-- [x] Pin `idm-heatpump-api[web]==2.14.5` for device logic. The API owns its
+- [x] Pin `idm-heatpump-api[web]==2.15.0` for device logic. The API owns its
   exception hierarchy and accepts the injected transport without importing or
   installing pymodbus.
 - [x] Diagnose the private per-entry socket ownership and the missing central
@@ -126,10 +126,22 @@ in planning or in diagnostics.
   merges the three documented logical overlaps into one request, while the
   register invariants require them to be requested individually. Measurement and
   re-evaluation criterion: `docs/dev/component-model-evaluation.md`.
-- [ ] Only implement an additional central Home Assistant connection provider
-  once the interface is stably documented for custom integrations.
-- [ ] Plan the migration of existing users separately, should a central
-  shared-connection model later be stably recommended.
+- [x] Implement the central Home Assistant connection provider once the
+  interface is stably documented for custom integrations. Home Assistant
+  2026.10 publishes it (`modbus.async_get_unit` /
+  `async_get_temporary_unit`, shared and reference-counted per entry and
+  unit); `modbus_shared_transport.py` claims it, negotiates the endpoint's
+  timeout and pacing floors per unit and reports
+  `owns_socket=False` / `supports_shared_connection=True`. The private
+  per-entry socket stays the fallback (older releases, unloadable `modbus`
+  component, conflicting claim) and the config-flow probe path. The API
+  2.15.0 `connects_lazily` contract covers the wire opening with the first
+  request.
+- [ ] Validate the shared link on real hardware (read-only): live Navigator,
+  deliberate connection loss/reconnect while another holder shares the
+  connection, several entries on one controller.
+- [ ] Plan the migration of existing users separately, should the central
+  shared-connection model later become the only recommended path.
 - [x] Adopt child devices for the device hierarchy. Home Assistant 2026.9
   introduces `ChildDeviceInfo` with `parent_device_id` and
   `async_get_or_create_child()`, and draws the line explicitly: `via_device_id`

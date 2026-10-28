@@ -13,6 +13,31 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### ⚠️ Upgrade notes
+
+- **Home Assistant 2026.10+ shares one Modbus socket across integrations**: each entry now claims the central connection through `modbus.async_get_unit`, so several IDM entries on one controller — and other Modbus integrations on the same device — share a socket instead of opening competing TCP connections. The entry keeps its own private socket on older releases and whenever the shared claim fails.
+- **The API pin moves to `idm-heatpump-api[web]==2.15.0`** for the shared-connection transport contract (`connects_lazily`); device behaviour is unchanged, and rollback simply keeps the private socket path of the release you return to.
+- **Transport diagnostics name the active source**: `owns_socket` becomes `false` with source `homeassistant.modbus` on the shared path — the capability flags already published in diagnostics change accordingly, so dashboards reading them should expect both shapes.
+- **Rollback is safe**: no configuration migration, no stored-setting change and no new unique IDs; a reload after downgrading rebuilds the private socket exactly as before.
+
+### ✨ New
+
+- **Live plant detection during onboarding**: the connection test runs the library's read-only `detect_model` probe while connected, the review step shows the real plant ("Navigator 10, heating circuits A, C, D, 2 zone modules, cascade present") and every setup profile opens with the detected circuits, zone count and cascade instead of safe defaults. A failed detection keeps the defaults.
+
+- **Deterministic local Assist agent** (`assist_agent.py`): a conversation entity answers questions about your own plant in Assist, in German and English — why the heat pump is running (operation-reason composer), advisor recommendations, temperatures, hot water, consumption/COP and status. Keyword routing onto the local snapshot only; no utterance leaves the instance, no language model.
+
+- **Plant dashboard on demand** (`generate_dashboard` service): composes a ready-to-use Lovelace dashboard for your own plant from the live entity registry — overview, per-circuit thermostat cards, hot water with boost buttons, energy totals, diagnostics — returned as structured data and as YAML with the registration snippet. Existing dashboards are never touched.
+
+- **Shared Modbus connection provider** (`modbus_shared_transport.py`): on Home Assistant 2026.10+ the entry's client claims the central shared connection — reference-counted per entry and unit, all holders' requests serialized behind one link lock, closing when the last holder unloads. Timeout and pacing options are negotiated per unit, so the endpoint settings keep their meaning.
+
+- **Graceful, diagnosable fallback**: releases without the contract, an unloadable `modbus` component and conflicting link settings each log one warning and fall back to the private per-entry socket — setup never fails because sharing is unavailable, and the diagnostics flags state which path serves the entry.
+
+### 💼 Maintenance
+
+- **API 2.15.0 transport contract**: `connects_lazily` declares a transport that acquires a claim in `connect()` and lets the first request open the wire; the client's connected-gate honours it, and the protocol documents that a shared-hold `close()` must not tear down a link other consumers still use. Backed by new API client tests for the lazy, eager and reconnect paths.
+
 ## [0.23.2] - 2026-10-27
 
 This release makes the predictive advisor trustworthy on real plants: its anomaly detection calibrates against each plant's own repeatability, the weather and the season, stops firing on heating-versus-hot-water artefacts, scales its confidence with the deviation, and lets you silence a finding you have already understood. A new read-only capture tool, dual-label Navigator 10 sensors and the Holiday-mode fix round it out.

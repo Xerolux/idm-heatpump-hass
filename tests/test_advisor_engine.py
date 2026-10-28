@@ -46,6 +46,10 @@ from custom_components.idm_heatpump.sensor import async_setup_entry as async_set
 # and a fixed past date flips those assertions one day after it is written.
 # Floored to the hour: forecast parsing folds sub-hourly samples onto
 # calendar hours, so the fixtures must sit on hour boundaries.
+# Relative to the wall clock: the advisor lifecycle stages compare against
+# the real now, so most tests seed their history from a moving T0. Tests that
+# must not depend on the run time define their own fixed timestamps instead
+# (issue #622).
 T0 = datetime.now(UTC).replace(minute=0, second=0, microsecond=0)
 
 
@@ -908,6 +912,13 @@ def test_observe_ignores_cooldown_while_indoor_matches_outdoor() -> None:
 
 
 def test_anomaly_producer_flags_high_spread_and_retracts_when_healed() -> None:
+    # Fixed times (issue #622): a wall-clock "now" made this test depend on
+    # the run time — when now + 7 h crossed the UTC-day boundary the healed
+    # samples landed on a fresh day and the anomaly retracted, at other run
+    # times it stayed.  A fixed noon keeps every sample on the same day and
+    # pins the self-calibrating day aggregate the retraction now uses.
+    fixed_now = datetime(2026, 10, 15, 12, tzinfo=UTC)
+    fixed_healed = fixed_now + timedelta(hours=7)
     data = {
         "power_consumption_hp": 2.0,
         "hp_flow_temp": 30.0,
@@ -915,10 +926,11 @@ def test_anomaly_producer_flags_high_spread_and_retracts_when_healed() -> None:
         "hp_operating_mode": int(HeatPumpStatus.HEATING),
     }
     engine, advisor, analytics, coordinator = _engine(data)
-    _seed_days(analytics, "hp_temperature_spread", 4.0)
-    _seed_days(analytics, "hp_temperature_spread:heating", 4.0)
-    _seed_today(analytics, "hp_temperature_spread:heating", 8.0)
-    engine.observe(now=T0)
+    for offset in range(1, 5):  # prior full days relative to the fixed date
+        analytics.observe_metric("hp_temperature_spread", 4.0, fixed_now - timedelta(days=offset))
+        analytics.observe_metric("hp_temperature_spread:heating", 4.0, fixed_now - timedelta(days=offset))
+    _seed_today(analytics, "hp_temperature_spread:heating", 8.0, now=fixed_now)
+    engine.observe(now=fixed_now)
     spread_recs = [
         rec
         for rec in advisor.active_recommendations
@@ -927,14 +939,21 @@ def test_anomaly_producer_flags_high_spread_and_retracts_when_healed() -> None:
     assert len(spread_recs) == 1
     assert spread_recs[0].severity == RecommendationSeverity.WARNING  # ~13 MAD above baseline
 
-    # Seven hours later the spread normalized: the recommendation is withdrawn.
+    # Seven hours later the spread normalized for the rest of the day: the
+    # day aggregate (the baseline compares prior days' median against
+    # today's MEAN) drops back inside the band and the recommendation is
+    # withdrawn.  Four anomalous observations (three seeds plus the firing
+    # snapshot) against twelve healed samples put today's mean at 4.2 K
+    # against a 4.0 K baseline — z ≈ 0.9, well below the 2.5 threshold
+    # (issue #622).
     coordinator.data = {
         "power_consumption_hp": 2.0,
         "hp_flow_temp": 30.0,
         "hp_return_temp": 27.0,
         "hp_operating_mode": int(HeatPumpStatus.HEATING),
     }
-    engine.observe(now=_hour(7))
+    _seed_today(analytics, "hp_temperature_spread:heating", 3.0, now=fixed_healed, times=12)
+    engine.observe(now=fixed_healed)
     assert not [rec for rec in advisor.active_recommendations if rec.category is RecommendationCategory.ANOMALY]
     assert engine.anomaly_active is False
 

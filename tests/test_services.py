@@ -63,9 +63,9 @@ class TestWriteSafetyHelpers:
 class TestSetupServices:
     async def test_registers_services(self, mock_hass):
         await async_setup_services(mock_hass)
-        # Core services, two DHW boost actions, the read-only AI action and
-        # the two advisor-anomaly snooze actions.
-        assert mock_hass.services.async_register.call_count == 13
+        # Core services, two DHW boost actions, the read-only AI action, the
+        # two advisor-anomaly snooze actions and the dashboard generator.
+        assert mock_hass.services.async_register.call_count == 14
 
     async def test_skips_if_already_registered(self, mock_hass):
         mock_hass.services.has_service = MagicMock(return_value=True)
@@ -90,6 +90,7 @@ class TestServiceLifecycleInvariants:
             (DOMAIN, "cancel_dhw_boost"),
             (DOMAIN, "generate_ai_report"),
             (DOMAIN, "export_ai_dashboard"),
+            (DOMAIN, "generate_dashboard"),
             (DOMAIN, "set_controller_clock"),
             (DOMAIN, "snooze_anomaly"),
             (DOMAIN, "unsnooze_anomaly"),
