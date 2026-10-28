@@ -27,6 +27,10 @@ The changelog section of a version becomes the release notes verbatim
 users see in the HACS/Marketplace update dialog. Write them for that reader —
 not as an internal audit log:
 
+- The release workflow injects the voluntary diagnostic-data request from
+  `docs/DATA-DONATION-CALLOUT.md` before the first section heading, including
+  curated notes, unless the request is already present. Keep its privacy and
+  retention wording aligned with IDM Tools; do not promise full anonymity.
 - Open with one or two sentences of narrative that say *why the release
   matters*, not just what it contains. The release workflow injects the
   ⭐ star callout directly below that intro, before the first section

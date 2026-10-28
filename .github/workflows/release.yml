@@ -199,6 +199,19 @@ jobs:
               )
               release_notes = "\n".join(changelog_lines[start:end]).strip()
 
+          # Keep the voluntary data request in every release, including curated
+          # notes. A changelog that already carries it must not duplicate it.
+          donation_marker = "> **Help improve IDM Heatpump: share a diagnostic capture.**"
+          if donation_marker not in release_notes:
+              donation_callout = Path("docs/DATA-DONATION-CALLOUT.md").read_text(encoding="utf-8").strip()
+              note_lines = release_notes.splitlines()
+              first_section = next(
+                  (index for index, line in enumerate(note_lines) if line.startswith("###")),
+                  len(note_lines),
+              )
+              note_lines[first_section:first_section] = ["", donation_callout, ""]
+              release_notes = "\n".join(note_lines).strip()
+
           # The star callout rides right below the intro narrative, before
           # the first section heading — on every release, curated notes
           # included. The support footer repeats it at the bottom; the
