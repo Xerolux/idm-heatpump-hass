@@ -15,6 +15,20 @@ All notable changes to this project will be documented in this file.
 
 ## [0.24.0-b1] - 2026-10-28
 
+> **Help improve IDM Heatpump: share a diagnostic capture.** More captures from
+> different Navigator models, firmware versions and normal operating states help
+> us validate values, find missing mappings and improve device support. Working
+> installations are welcome too! Use **[IDM Tools](https://idmtools.xerolux.de/)**
+> to record read-only data, review it locally and upload it privately without
+> preparing an email attachment.
+>
+> Recognized PINs, serial numbers, myIDM and network identifiers are removed
+> before sharing. Participation is voluntary; submitted data is used only to
+> improve this integration, and uploads are deleted from the private inbox after
+> 30 days. Technical operating data may still allow inferences about an
+> installation, so complete anonymity is not guaranteed.
+> [Privacy and withdrawal information](https://datenschutz.xerolux.de/idm-web-capture.html).
+
 ### ⚠️ Upgrade notes
 
 - **Home Assistant 2026.10+ shares one Modbus socket across integrations**: each entry now claims the central connection through `modbus.async_get_unit`, so several IDM entries on one controller — and other Modbus integrations on the same device — share a socket instead of opening competing TCP connections. The entry keeps its own private socket on older releases and whenever the shared claim fails.

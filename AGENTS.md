@@ -192,6 +192,7 @@ This file provides guidance for AI assistants working on this codebase.
 │   ├── test_registers.py
 │   ├── test_recovery_watchdog.py
 │   ├── test_release_contract.py
+│   ├── test_release_data_callout.py # Automatic/curated release notes retain one voluntary data request
 │   ├── test_release_discussion.py
 │   ├── test_repairs.py
 │   ├── test_room_temp_forwarding.py
