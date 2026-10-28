@@ -219,9 +219,11 @@ class IdmEntity(IdmCoordinatorEntityBase):
             return False
         if not self.coordinator.data or self._register.name not in self.coordinator.data:
             return False
-        if self._value_out_of_documented_range():
+        if self._value_out_of_documented_range() and not (self.is_writable_control() and self._value_is_sentinel()):
             # A reading beyond the documented range is garbage rather than an
-            # unset control, so unlike the sentinel case below this also takes
+            # unset control. A documented sentinel (e.g. -1 for battery SoC)
+            # can be outside the normal range and still means an unset input.
+            # Unlike that sentinel case, genuine out-of-range data also takes
             # writable controls offline: acting on (or writing against) a
             # register whose readback is random memory is never safe.
             return False

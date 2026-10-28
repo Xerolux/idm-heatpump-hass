@@ -48,7 +48,13 @@ All notable changes to this project will be documented in this file.
 
 - **Graceful, diagnosable fallback**: releases without the contract, an unloadable `modbus` component and conflicting link settings each log one warning and fall back to the private per-entry socket — setup never fails because sharing is unavailable, and the diagnostics flags state which path serves the entry.
 
+### 🐛 Bugfixes
+
+- **GLT controls remain usable without automatic forwarding** (#493): external-power and zone-room input Numbers retain readback polling when their companion Sensors are disabled or absent. Documented unset values, such as battery SoC −1, leave the Number writable with an unknown state; invalid measurements remain unavailable. This does not establish a fix for controller-side SoC flicker.
+
 ### 💼 Maintenance
+
+- **Deterministic anomaly retraction regression** (#622): fixed observation times now cover both same-day healing and healing across UTC midnight, using enough normal samples for the self-calibrating daily baseline.
 
 - **API 2.15.0 transport contract**: `connects_lazily` declares a transport that acquires a claim in `connect()` and lets the first request open the wire; the client's connected-gate honours it, and the protocol documents that a shared-hold `close()` must not tear down a link other consumers still use. Backed by new API client tests for the lazy, eager and reconnect paths.
 

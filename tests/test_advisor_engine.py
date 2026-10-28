@@ -911,13 +911,14 @@ def test_observe_ignores_cooldown_while_indoor_matches_outdoor() -> None:
 # ----------------------------------------------------------------------
 
 
-def test_anomaly_producer_flags_high_spread_and_retracts_when_healed() -> None:
+@pytest.mark.parametrize("hour", [12, 22])
+def test_anomaly_producer_flags_high_spread_and_retracts_when_healed(hour: int) -> None:
     # Fixed times (issue #622): a wall-clock "now" made this test depend on
     # the run time — when now + 7 h crossed the UTC-day boundary the healed
     # samples landed on a fresh day and the anomaly retracted, at other run
-    # times it stayed.  A fixed noon keeps every sample on the same day and
-    # pins the self-calibrating day aggregate the retraction now uses.
-    fixed_now = datetime(2026, 10, 15, 12, tzinfo=UTC)
+    # times it stayed. Fixed noon and late evening exercise both the same-day
+    # aggregate and the fresh bucket after UTC midnight.
+    fixed_now = datetime(2026, 10, 15, hour, tzinfo=UTC)
     fixed_healed = fixed_now + timedelta(hours=7)
     data = {
         "power_consumption_hp": 2.0,
@@ -942,7 +943,7 @@ def test_anomaly_producer_flags_high_spread_and_retracts_when_healed() -> None:
     # Seven hours later the spread normalized for the rest of the day: the
     # day aggregate (the baseline compares prior days' median against
     # today's MEAN) drops back inside the band and the recommendation is
-    # withdrawn.  Four anomalous observations (three seeds plus the firing
+    # withdrawn. In the same-day case, four anomalous observations (three seeds plus the firing
     # snapshot) against twelve healed samples put today's mean at 4.2 K
     # against a 4.0 K baseline — z ≈ 0.9, well below the 2.5 threshold
     # (issue #622).

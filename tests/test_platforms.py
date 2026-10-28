@@ -1884,6 +1884,41 @@ class TestTechnicianCodes:
 class TestWritableControlSentinelState:
     """A writable control reports unknown (None) state under a sentinel and stays available."""
 
+    async def test_battery_number_can_recover_after_forwarding_stops(self) -> None:
+        """Issue #493: an unset GLT input remains writable with its real limits."""
+        from idm_heatpump.registers import get_register
+
+        from custom_components.idm_heatpump.number import IdmNumber
+        from custom_components.idm_heatpump.sensor import IdmSensor
+
+        reg = get_register("battery_soc")
+        coord = _make_coordinator(data={reg.name: 60.0}, hide_unused=True)
+        coord.is_register_unused = MagicMock(side_effect=lambda name, value: value in reg.effective_sentinel_values)
+        number = IdmNumber(coord, reg, _make_desc(reg.name))
+        sensor = IdmSensor(coord, reg, _make_desc(reg.name))
+        assert number.available is True
+        assert sensor.available is True
+
+        coord.data[reg.name] = -1.0
+        coord.unused_registers = {reg.name}
+        assert number.available is True
+        assert number.native_value is None
+        assert sensor.available is False
+        await number.async_set_native_value(61.0)
+        coord.async_write_register.assert_awaited_once_with(reg, 61.0)
+
+        coord.data[reg.name] = 61.0
+        coord.unused_registers.clear()
+        assert number.available is True
+        assert number.native_value == 61.0
+        assert sensor.available is True
+
+        coord.data[reg.name] = 101.0
+        assert number.available is False
+
+        coord.data.clear()
+        assert number.available is False
+
     def test_number_native_value_none_under_sentinel_and_available(self):
         from custom_components.idm_heatpump.number import IdmNumber
 
